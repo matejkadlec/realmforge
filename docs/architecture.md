@@ -6,8 +6,9 @@
 > class kits and balance are data in `content/`.
 >
 > **Status:** baseline of 2026-10-11, recorded in [ADR 0014](decisions/0014-core-mod-architecture.md). Almost
-> everything below is planned; today (end of M0) only the item pipeline exists. M1 builds most of it; parts that
-> come later are marked with their milestone (M2, M3, ...).
+> everything below is planned; today the item pipeline and the empty feature skeleton (M1 task F1: the packages of
+> [4.2](#42-packages-of-the-core-mod), `network/`, `client/` and the import check) exist. M1 builds most of it; parts
+> that come later are marked with their milestone (M2, M3, ...).
 >
 > **Living document.** When code and this document disagree, fix one of them in the same PR. Changing one of the
 > decisions recorded in [ADR 0014](decisions/0014-core-mod-architecture.md) needs a new ADR
@@ -176,6 +177,10 @@ io.github.matejkadlec.realmforge
 ```
 
 Later milestones add `profession/`, `pet/`, `mount/`, `enchanting/` and `contract/` (procedural quests).
+
+Every feature package exists from the start with its `<Name>Feature` class, and `Realmforge` calls them in the
+order of the dependency table ([4.4](#44-dependencies-between-features)), lowest first. The client subpackages
+appear with their first class.
 
 ### 4.3 Shape of a feature package
 
@@ -932,9 +937,10 @@ depth limit.
   system at once.
 - **Client-bound handlers live in `client/network/`.** NeoForge 21.1 has no client-side registration event for
   payloads, so common code registers every payload. `network/` therefore declares an interface with one method per
-  client-bound payload; `client/network/` implements it, and `RealmforgeClient` installs the implementation at
-  startup. The registered handler is a lambda that calls the installed implementation. A dedicated server never
-  installs one and never receives client-bound payloads, and no class outside `client/` refers to a client class.
+  client-bound payload (`ClientboundPayloadHandler`); `client/network/ClientPayloadHandler` implements it, and
+  `RealmforgeClient` installs the implementation at startup (`RealmforgeNetwork.installClientHandler`). The
+  registered handler is a lambda that calls the installed implementation. A dedicated server never installs one and
+  never receives client-bound payloads, and no class outside `client/` refers to a client class.
 
 ### 17.2 What syncs how
 
@@ -965,10 +971,12 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
 - **Layout:** `client/hud`, `client/screen`, `client/input`, `client/render`, `client/tooltip`, `client/network`,
   and `client/compat/<mod>` for the client parts of integrations (JEI and EMI plugins, Jade tooltips).
 - **The rule:** no class outside `client/` imports `net.minecraft.client.*`, `com.mojang.blaze3d.*`,
-  `net.neoforged.neoforge.client.*` or a library's rendering classes. An automated import check enforces it (a
-  pytest over `mod/src`, added in M1). The GameTest server in CI runs as a dedicated server and is a second line of
-  defence, but only for code the tests run, and NeoForge's own client classes are mostly not marked client-only, so
-  only the import check catches those.
+  `net.neoforged.neoforge.client.*` or a library's rendering classes. An automated import check enforces it
+  (`tools/tests/test_client_isolation.py`, run by `uv run pytest`): it scans the main and generated sources of the
+  core mod and of the QA mod (whose own `qa/client/` package is exempt) for those packages in imports and fully
+  qualified names. A library's rendering packages join its list with the library. The GameTest server in CI runs as
+  a dedicated server and is a second line of defence, but only for code the tests run, and NeoForge's own client
+  classes are mostly not marked client-only, so only the import check catches those.
 - **Thin screens:** screens and HUD layers draw from view models computed in common code (`CharacterSheetView`,
   `TalentTreeView`), so their logic is testable without rendering.
 - **Little rendering code:** GeckoLib for animated entities, vanilla widgets for UI, no rendering mixins unless
@@ -1033,7 +1041,7 @@ FTB Quests files) need no code.
 | content | pytest in `tools/tests` | schemas, references, semantic rules, guardrails, talent tree validity |
 | data against codecs | GameTest server start, data errors in its log, generated expectations | every spell decodes; every generated loot table, recipe and advancement loads; ids and key fields match |
 | behaviour in a world | GameTests in `qa-mod` | firebolt damages a dummy by the expected amount; the level stops at the cap; the chapter advancement raises it; the boss enters phase 2 at 70%; an instance is built, entered and cleaned up |
-| client isolation | pytest import check; dedicated GameTest server | - |
+| client isolation | pytest import check (`tools/tests/test_client_isolation.py`); dedicated GameTest server | - |
 | whole pack | `uv run rf pack-boot`: the CI jobs `pack-boot` and `pack-boot-client` boot the pack plus our jar with NeoForge's self tests ([ADR 0018](decisions/0018-pack-boot-tests.md)) | server and client load with and without Quark; no unexplained ERROR line |
 | balance | Python simulation (M3) | time to kill per class and level, boss phase survival, time to item |
 
