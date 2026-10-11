@@ -68,7 +68,7 @@ read, a JQL search included, passes the complete set its check needs:
 | Read | `fields` |
 | --- | --- |
 | Candidate at intake, `flow2` duplicate search | `["comment", "summary", "description", "status", "priority", "issuetype", "assignee", "labels", "parent", "issuelinks", "customfield_10020"]` |
-| Dependency check | `["summary", "description", "status", "labels", "issuelinks", "customfield_10020"]` |
+| Dependency check | `["comment", "summary", "description", "status", "labels", "issuelinks", "customfield_10020"]` |
 | Atomic intake claim, both reads | `["comment", "status", "assignee"]` |
 | Re-read before a promotion or any status move | `["comment", "status", "assignee"]` |
 | Merged-ticket reconciliation | `["comment", "summary", "status"]` |
