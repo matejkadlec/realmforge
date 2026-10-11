@@ -16,9 +16,8 @@ creating or selecting work; this skill may not weaken either.
    with a "Done when" section, in English, and a `Blocks` link for each dependency. Preserve all explicitly
    requested work; merge only truly trivial duplicates. A comment on an existing ticket may already record the
    scope, correction or rejection that decides between creating, updating and merging. Never update a duplicate
-   that is in flight (In Progress, Pending User QA or Pending CR, or named by an open pull request): it
-   belongs to another batch, so create a follow-up ticket linked to it for the new part, or tell Matěj that the
-   requested work is already under way there.
+   that is in flight (_In flight_ in the flow document): it belongs to another batch, so create a follow-up
+   ticket linked to it for the new part, or tell Matěj that the requested work is already under way there.
 3. Set sprint-relative priority and classify each ticket AI-only or Playtest under _QA classification_. A
    requested item that is Matěj's own decision gets the `decision` label and is listed, not implemented
    (_Tickets waiting on Matěj_).

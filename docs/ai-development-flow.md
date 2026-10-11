@@ -119,6 +119,14 @@ skip it and re-plan. A move to Next is either a promotion from To Do or the retu
 claim; a move to To Do returns a ticket to the sprint queue deliberately; a move to Done is the merge, or an
 administrative correction Matěj asks for.
 
+### In flight
+
+A ticket is **in flight** when it is In Progress, Pending User QA or Pending CR, or an open pull request names it
+(`RLM-<n>` in its title), unless [reconciliation](#reconciling-merged-tickets) found that all its associated pull
+requests closed unmerged. A batch is in flight while any of its tickets is. A branch or worktree alone never makes
+a ticket in flight: a released claim's branch or a dead run's batch branch can stay behind. Every rule in this
+document that says "in flight" or "in-flight" means this.
+
 ### Reconciling merged tickets
 
 `monitor-pr` moves its pull request's tickets to Done after the merge, but a pull request merged after its run
@@ -196,10 +204,9 @@ For each unmet dependency of a selected ticket, in this order:
 
 1. **Waiting on Matěj** (a `decision` ticket, or one [waiting on Matěj](#tickets-waiting-on-matěj)): the ticket
    cannot be implemented. Leave it, and list it with the dependency.
-2. **In flight elsewhere** (In Progress, Pending User QA or Pending CR, or a branch or pull request of another
-   session): it belongs to that batch. Defer the ticket. A stacked branch on the dependency's branch is allowed
-   only when it is necessary and safe; its pull request targets that branch and says so, and `monitor-pr`
-   retargets it once the base has merged.
+2. **[In flight](#in-flight) elsewhere:** it belongs to that batch. Defer the ticket. A stacked branch on the
+   dependency's branch is allowed only when it is necessary and safe; its pull request targets that branch and
+   says so, and `monitor-pr` retargets it once the base has merged.
 3. **Otherwise** (To Do, Next, the Jira backlog or a future sprint): pull it into the batch. Put it into the
    active sprint when it is outside it (the sprint field), promote it from To Do to Next, and claim it with the
    rest of the batch. Check its own dependencies the same way, recursively.
@@ -353,11 +360,10 @@ announcement reflects anything material found there.
 Build a conflict map from the in-flight batches: the features, packages, files, content types, registries,
 generated files and GameTests each one changes (read a branch's diff with
 `git diff --name-only origin/master...<branch>`, a local worktree's with `git -C <worktree> status --porcelain`,
-and predict a claimed ticket's from its description). In-flight ownership is every In Progress, Pending User QA
-and Pending CR ticket, every open pull request and every active branch or worktree, except a ticket whose
-associated pull requests all closed unmerged ([reconciliation](#reconciling-merged-tickets) step 4) and its
-branch. Do not select work that overlaps it unless it directly continues the same branch. If no safe
-non-conflicting work exists, stop and report the conflict instead of forcing a risky batch.
+and predict a claimed ticket's from its description). In-flight ownership is every [in-flight](#in-flight)
+ticket with its batch's branch and worktree, and every open pull request. Do not select work that overlaps it
+unless it directly continues the same branch. If no safe non-conflicting work exists, stop and report the
+conflict instead of forcing a risky batch.
 
 ### Conflict domains
 
@@ -492,12 +498,11 @@ the collision on the ticket, keep the local branch for Matěj, and report it und
 The claim arbitrates one ticket, so runs that each saw room under a shared cap can claim different tickets for
 its last place: the last slot of a domain, the last of the six, the one gate-critical place, the last playtest
 slot, or the same generated file. A new batch therefore re-counts at its first ticket's step 4: after its own
-claim comment is recorded, it counts every in-flight batch again from one fresh search read to its end (tickets
-in In Progress, Pending User QA and Pending CR, minus those whose associated pull requests all closed unmerged,
-grouped by the branch their winning claim comments name, with
-the QA mode, domains, gate-critical flag and generated files those comments and later scope or QA-mode comments
-state), each group merged with the open pull request whose head is its branch, plus the other open pull requests.
-It keeps its place only if, besides itself, every cap of
+claim comment is recorded, it counts every in-flight batch again from one fresh search read to its end (the
+in-flight tickets, grouped by the branch their winning claim comments name, with the QA mode, domains,
+gate-critical flag and generated files those comments and later scope or QA-mode comments state), each group
+merged with the open pull request whose head is its branch, plus the other open pull requests. It keeps its place
+only if, besides itself, every cap of
 [Concurrency and run boundaries](#concurrency-and-run-boundaries) it needs still has room and no in-flight batch
 regenerates one of its generated files. Otherwise it stands down: it creates no branch, adds a claim-release
 comment to every ticket it claimed for the batch, returns each to Next, and selects other work or ends the run.
@@ -666,9 +671,8 @@ pull requests: group the in-flight tickets by the branch their winning claim com
 the open pull request whose head is that branch as one batch.
 
 - **Pending-batch slots:** at most four batches in the game domain, three in the tooling domain, and six in total.
-  A batch holds a slot in each of its domains from its claim until it is merged or otherwise resolved (In
-  Progress, Pending User QA or Pending CR, a pushed branch, an open pull request); a batch whose pull requests all
-  closed unmerged is resolved. A shared-root batch holds one in every domain.
+  A batch holds a slot in each of its domains from its claim for as long as it is [in flight](#in-flight). A
+  shared-root batch holds one in every domain.
 - **Gate-critical:** at most one gate-critical batch in flight in the whole repository.
 - **Generated files:** no two in-flight batches regenerate the same generated file
   ([Conflict domains](#conflict-domains)).
