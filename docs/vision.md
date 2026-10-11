@@ -2,7 +2,7 @@
 
 > Translated on 2026-10-11 from the owner's Czech original (Matěj's brief of 10-11 Oct 2026, kept almost verbatim). The English version is now the source of truth. It is written in the owner's voice ("I" = Matěj).
 >
-> Project name: **Realmforge**, mod ID `realmforge`, QA mod ID `realmforge_qa`, Java package `io.github.matejkadlec.realmforge`. Research background: [research-notes.md](research-notes.md). Decisions: [decisions/](decisions/README.md).
+> Project name: **Realmforge**, mod ID `realmforge`, QA mod ID `realmforge_qa`, Java package `io.github.matejkadlec.realmforge`. Research background: [research-notes.md](research-notes.md). Decisions: [decisions/](decisions/README.md). Architecture: [architecture.md](architecture.md). Plan: [roadmap.md](roadmap.md).
 
 ## Owner
 

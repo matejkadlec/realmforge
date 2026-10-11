@@ -175,7 +175,8 @@ severity badge such as `![P1 Badge](...)` followed by a bold title.
    - Run the targeted checks for what you changed:
      - `content/` or `tools/`: `uv run rf gen` (no unexpected changes), `uv run ruff check`,
        `uv run ruff format --check`, `uv run pytest`;
-     - `mod/`, `qa-mod/` or Gradle files: `./gradlew build` and `./gradlew runGameTestServer`;
+     - `mod/`, `qa-mod/` or Gradle files: `.claude/scripts/gradle-queue.sh build` and
+       `.claude/scripts/gradle-queue.sh runGameTestServer`;
      - `pack/`: `cd pack && packwiz refresh`, then `git diff --exit-code pack/`.
    - Make one commit per root cause (Conventional Commits, staged by explicit path), so each reply can name its
      commit.
@@ -186,8 +187,8 @@ severity badge such as `![P1 Badge](...)` followed by a bold title.
      uv run rf gen && git status --porcelain     # must show no changes
      uv run ruff check && uv run ruff format --check
      uv run pytest
-     ./gradlew build
-     ./gradlew runGameTestServer
+     .claude/scripts/gradle-queue.sh build              # waits for memory while other worktrees build
+     .claude/scripts/gradle-queue.sh runGameTestServer
      ```
 
    - Immediately before the push, run `git fetch origin` and require the remote head to still equal the

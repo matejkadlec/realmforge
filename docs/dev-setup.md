@@ -84,8 +84,25 @@ Tip: Prism's **Edit** → **Settings** → **Java** can download a Java 21 runti
 ## 5. Claude Code
 
 `.claude/settings.json` (committed) registers a hook that validates content after every edit in `content/` or
-`tools/`. Personal settings go into `.claude/settings.local.json` (gitignored). `CLAUDE.md` is the entry point
-for every agent session.
+`tools/`, and enables the MCP servers from `.mcp.json`. Personal settings go into `.claude/settings.local.json`
+(gitignored). `CLAUDE.md` is the entry point for every agent session.
+
+**Jira (Atlassian MCP).** The flow skills (`flow1`, `flow2`) and `monitor-pr` reach Jira (space Realmforge, key
+`RLM`) through the `atlassian` server in `.mcp.json`, which runs the `mcp-remote` proxy. Install it once (needs
+Node.js, for example through [nvm](https://github.com/nvm-sh/nvm)):
+
+```bash
+npm install -g mcp-remote@0.1.37
+```
+
+The first Claude Code session that starts the server opens Atlassian's login in the browser; the token is cached
+in `~/.mcp-auth/`, so later sessions reuse it. `/mcp` in a Claude Code terminal shows whether the server is
+connected. `.claude/settings.json` allows the Atlassian tools without a prompt, because the flows move and
+comment on tickets on their own. Cloud sessions use the claude.ai Atlassian connector instead.
+
+**Gradle queue.** Agents running in several worktrees start their Gradle builds and GameTests through
+`.claude/scripts/gradle-queue.sh <task>`, which waits while the machine is short of memory
+([AI development flow](ai-development-flow.md#gradle-queue)).
 
 ### Cloud sessions
 

@@ -2,7 +2,7 @@
 
 Date: 2026-10-11
 
-Status: Accepted
+Status: Accepted; amended by [0014](0014-core-mod-architecture.md) (dungeon rooms are NBT in `content/rooms/`)
 
 ## Context
 

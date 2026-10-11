@@ -25,6 +25,7 @@ Covers only these actions:
 - resolving conflicts with `master`;
 - merging under "Merge";
 - remediation under "After the merge";
+- keeping the pull request's Jira tickets in step under "Jira tickets";
 - reporting.
 
 It never deploys, requests a Codex review, writes to another pull request, bypasses branch protection, or
@@ -55,7 +56,14 @@ weakens a test or check.
 - The label `needs-playtest` means the owner (Matěj) plays the change before it merges. The publishing session
   adds it for gameplay, visual or balance changes (`gh pr edit <n> --add-label needs-playtest`); only Matěj
   removes it.
-- There is no pre-push hook. The local gate is the command list in `CLAUDE.md` "Workflow" step 3.
+- The label `needs-approval` means the pull request changes the plan (anything in `docs/roadmap.md` beyond ticking
+  off finished tasks) and Matěj approves it before it merges. The publishing session adds it; only Matěj removes
+  it.
+- Jira: a pull request from a Jira batch ([`docs/ai-development-flow.md`](../../../docs/ai-development-flow.md))
+  names its tickets (`RLM-<n>`) in its title, and its head branch carries their keys. The Atlassian MCP tools
+  (`.mcp.json`) reach Jira.
+- There is no pre-push hook. The local gate is the command list in `CLAUDE.md` "Workflow" step 3; run its Gradle
+  tasks through `.claude/scripts/gradle-queue.sh`, which waits for memory when other worktrees build.
 - Worktrees live in `../realmforge-worktrees/<branch with "/" replaced by "-">`, outside the repository.
 
 ## Rules
@@ -181,7 +189,8 @@ Read each signal fresh from GitHub at every step, and never trust an earlier rea
   - `blocked`: protection still refuses (an open thread, a missing or failing check, or a changes-requested
     review).
   - `unknown`: GitHub is still computing it. Read it again a minute later.
-- **Labels.** `needs-playtest` on the pull request (`gh pr view <n> --repo matejkadlec/realmforge --json labels`).
+- **Labels.** `needs-playtest` and `needs-approval` on the pull request
+  (`gh pr view <n> --repo matejkadlec/realmforge --json labels`).
 
 ## Loop
 
@@ -325,6 +334,34 @@ all, so instead:
      head satisfies check 7.
    - Blocked: ask under "User needed".
 
+## Jira tickets
+
+When the pull request belongs to a Jira batch, keep its tickets in step with it through the Atlassian MCP tools
+([`docs/ai-development-flow.md`](../../../docs/ai-development-flow.md), "Status model"). Its tickets are the keys
+its title names, plus those whose winning claim comment names its head branch ("Reconciling merged tickets",
+step 2). Re-read each ticket just before each write and move it only while it still shows the status the step
+expects: RLM's transitions are all global, so Jira refuses no stale move.
+
+- **After each push of this run** (a `fix-pr` pass, a thread fix, a check repair, a conflict resolution): one
+  `🤖 Claude QA` comment per ticket with the commits and what they changed, the new head, and the checks that
+  passed.
+- **Playtest passed:** once `needs-playtest` was removed after the current head's push (check 6 of "Merge"), move
+  the tickets in Pending User QA to Pending CR (transition `51`) with a comment naming the played head.
+- **Unplayed head again:** when check 6 re-adds `needs-playtest` because a push came after the playtest, move the
+  tickets in Pending CR back to Pending User QA (`41`) with a comment naming the new head and what changed since
+  the played one.
+- **Playtest failed:** when Matěj reports a problem from the playtest while the label is set (a message in this
+  session, or his thread or comment on the pull request, which this run watches), move the affected tickets to
+  In Progress (`31`), fix it on the branch with `fix-pr`'s verification and single-push delivery, then record the
+  revision on each ticket (what changed, the new head, a "What to look at" limited to the revision) and move them
+  back to Pending User QA (`41`). The label stays until Matěj removes it.
+- **After the merge:** move every ticket to Done (`71`) with one comment: the pull request, the merge commit and
+  the checks it passed. When the merged pull request reverts an earlier one, return that one's tickets to To Do
+  (`11`) in the active sprint, with a comment naming the revert and the failure.
+- A failed Jira write goes into the report and never holds the merge. The next `flow1` or `flow2` reconciliation
+  repairs a missing Done; nothing repairs a failed move back to To Do after a revert, so that one goes to
+  "User needed" with the ticket keys.
+
 ## Merge
 
 When Codex is done with the head (its `+1`, a completed review whose findings are all closed, or the silent
@@ -347,6 +384,10 @@ Check all of these on one fresh reading, in order:
    (`gh pr edit <n> --repo matejkadlec/realmforge --add-label needs-playtest`).
    While the label is set, go to "User needed": ask Matěj to playtest the head (for example with
    `./gradlew runClient`, or `./gradlew :mod:installToPrism` and the Prism instance) and remove the label.
+   No `needs-approval` label is set either. A pull request whose diff changes `docs/roadmap.md` beyond ticking
+   off finished tasks and never carried the label gets it now (`--add-label needs-approval`), and so does one
+   with a push after the label's latest removal that changes `docs/roadmap.md` again. While it is set, go to
+   "User needed": ask Matěj to read the plan change and remove the label to approve it.
 7. In fallback mode: a Clean `finalize-pr` reviewed this exact head, or the user approved this exact head after
    a Capped or Disagreement report.
 8. The head you checked is still the head.
@@ -373,10 +414,10 @@ gh api -X PUT repos/matejkadlec/realmforge/pulls/<n>/merge -f merge_method=merge
 ## After the merge
 
 1. Read the merge commit back from GitHub (`gh pr view <n> --repo matejkadlec/realmforge --json
-   mergeCommit,state`). Remove the worktree and local branch this session created (`git fetch --prune origin`,
-   `git worktree remove <path>` without `--force` over uncommitted changes, `git branch -d <branch>`,
-   `git worktree prune`). GitHub's `deleteBranchOnMerge` setting decides the remote branch; if the remote
-   branch still exists, say so in the report and do not delete it.
+   mergeCommit,state`) and move the tickets to Done under "Jira tickets". Remove the worktree and local branch
+   this session created (`git fetch --prune origin`, `git worktree remove <path>` without `--force` over
+   uncommitted changes, `git branch -d <branch>`, `git worktree prune`). GitHub's `deleteBranchOnMerge` setting
+   decides the remote branch; if the remote branch still exists, say so in the report and do not delete it.
 2. **Follow CI on `master`** (`.github/workflows/ci.yml` runs on push to `master`; nothing deploys) to the end.
    Keep one check-in armed about 5 minutes ahead.
    - **Success** for the merge commit, or for a later commit that contains it: done.
@@ -397,9 +438,9 @@ gh api -X PUT repos/matejkadlec/realmforge/pulls/<n>/merge -f merge_method=merge
 - **Merged by someone else:** run "After the merge" in full, then report and stop.
 - **Closed unmerged:** report, change nothing, and stop.
 - **User needed:** a secret, a provider console, a repository setting, the runners, a product decision, a
-  Blocked thread or a `needs-playtest` label blocks the next step. Use the `**Your assistance is needed:**`
-  form. Keep watching with one check-in about an hour apart, and continue as soon as the user answers or the
-  blocking signal changes.
+  Blocked thread, or a `needs-playtest` or `needs-approval` label blocks the next step. Use the
+  `**Your assistance is needed:**` form. Keep watching with one check-in about an hour apart, and continue as
+  soon as the user answers or the blocking signal changes.
 - **The user says stop:** cancel the waiting and the subscription, and report where the pull request stands.
 - **The session must end first:** report where the pull request stands, and give `/monitor-pr <n>` as the
   command that continues it.
@@ -418,4 +459,5 @@ At each merge or stop, report:
   - conflict resolutions;
   - any usage-limit fallback and its `finalize-pr` outcome;
 - the CI state and the merge commit;
+- the Jira tickets and the status each one ended in;
 - the post-merge outcome, or the step the run stopped at, with any linked remediation.

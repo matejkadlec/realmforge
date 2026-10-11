@@ -5,7 +5,8 @@ races and classes, spells and talents, leveling with story chapters, procedurall
 dimensions, bosses with phases, professions, and a quest campaign. Set in the world of Realmforge.
 
 **Status:** early development. Milestone M0 (bootstrap) provides the build, CI, the content pipeline and a single
-test item; there is no gameplay yet. Goals: [docs/vision.md](docs/vision.md).
+test item; there is no gameplay yet. Next is M1, a small playable vertical slice. Goals:
+[docs/vision.md](docs/vision.md); plan: [docs/roadmap.md](docs/roadmap.md).
 
 ## How it is built
 
@@ -23,7 +24,7 @@ test item; there is no gameplay yet. Goals: [docs/vision.md](docs/vision.md).
 | `mod/`, `qa-mod/` | NeoForge mods (Gradle, ModDevGradle) |
 | `pack/` | packwiz modpack definition (metadata only, no jars) |
 | `art/` | asset sources |
-| `docs/` | vision, [decisions (ADRs)](docs/decisions/README.md), [research notes](docs/research-notes.md), [dev setup](docs/dev-setup.md) |
+| `docs/` | vision, [architecture](docs/architecture.md), [roadmap](docs/roadmap.md), [decisions (ADRs)](docs/decisions/README.md), [research notes](docs/research-notes.md), [dev setup](docs/dev-setup.md) |
 
 ## Quick start
 
