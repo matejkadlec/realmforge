@@ -383,13 +383,14 @@ one batch with new player-facing content run at a time. When implementation show
 a file after all, record the overlap on its tickets, finish the batch, and publish it; whichever pull request
 merges second rebases and regenerates (`monitor-pr` step 2), never hand-merging a generated file.
 
-Decide the domains, gate-critical files and generated files before the claim. If the scope later grows into
-another domain, a shared-root file, a gate-critical file or a generated file another batch owns, re-check the
-caps in [Concurrency and run boundaries](#concurrency-and-run-boundaries) and stop selecting further work if the
-batch no longer fits. An AI-only batch whose scope turns into a gameplay change needs a free playtest slot first:
-add a QA-mode comment naming Playtest to each of its tickets and re-count as in
-[Playtest slot race](#playtest-slot-race); without a slot, split the gameplay part into its own ticket, or keep
-the batch In Progress on its branch until a slot frees.
+Decide the domains, gate-critical files and generated files before the claim; the claim comment states them, so
+peers can count the batch. If the scope later grows into another domain, a shared-root file, a gate-critical file
+or a generated file, add a scope comment with the new values to each ticket, re-check the caps in
+[Concurrency and run boundaries](#concurrency-and-run-boundaries) as in [Slot race](#slot-race), and stop
+selecting further work if the batch no longer fits. An AI-only batch whose scope turns into a gameplay change
+needs a free playtest slot first: add a QA-mode comment naming Playtest to each of its tickets and re-count as in
+[Slot race](#slot-race); without a slot, split the gameplay part into its own ticket, or keep the batch In
+Progress on its branch until a slot frees.
 
 ### Atomic intake claim
 
@@ -412,17 +413,21 @@ Per ticket, in order:
    Branch: feat/rlm-17-rlm-18-feature-skeleton
    Batch: RLM-17, RLM-18
    QA mode: AI-only
+   Domains: game
+   Gate-critical: no
+   Generated: none
    ```
 
-   with "Pulled in as a dependency of RLM-<n>" when that applies. Peer sessions share the acting account, so the
+   `Generated` lists the generated files the batch will regenerate ([Conflict domains](#conflict-domains)), or
+   `none`. Add "Pulled in as a dependency of RLM-<n>" when that applies. Peer sessions share the acting account, so the
    comment is the only claim token that tells them apart: the earliest claim comment recorded since the ticket
    last entered Next wins, and the lower comment id breaks a tie on the same timestamp. Older comments do not
    count, so an interrupted run's claim never defeats a later claimant.
 4. Re-verify: re-read the ticket with the same fields, and list local branches, worktrees, remote branches and
    open pull requests again, ignoring the ones this session created. The claim holds only if the ticket is In
    Progress under the acting account, this session's claim comment is the earliest that counts, no branch,
-   worktree or pull request naming its key appeared without a claim comment behind it, and a new playtest batch
-   still keeps its [playtest slot](#playtest-slot-race). A peer artifact backed by a later claim comment never
+   worktree or pull request naming its key appeared without a claim comment behind it, and a new batch still keeps
+   its place under every cap ([Slot race](#slot-race)). A peer artifact backed by a later claim comment never
    defeats this claim.
 5. Only once the claim holds, create the batch's branch and worktree from the current `origin/master` at its first
    claim ([Branches and worktrees](#branches-and-worktrees)), push the new branch at once, and reuse them for
@@ -461,17 +466,21 @@ the peer owns it. Claim the next eligible ticket, or end the run with the ledger
 peer's ownership only shows after implementation, do not push the work and do not open a competing pull request:
 record the collision on the ticket, keep the local branch for Matěj, and report it under "Blocked or other".
 
-#### Playtest slot race
+#### Slot race
 
-The claim arbitrates one ticket, so runs that each saw a free playtest slot can claim different gameplay tickets
-for the last one. A new playtest batch therefore re-counts at its first ticket's step 4: after its own claim
-comment is recorded, it counts the playtest batches again
-([Concurrency and run boundaries](#concurrency-and-run-boundaries)) from one fresh search read to its end. It
-keeps its slot only if fewer than three playtest batches besides itself hold one. Otherwise it stands down: it
-creates no branch, adds a claim-release comment to every ticket it claimed for the batch, returns each to Next,
-and selects AI-only work or ends the run. Two contenders that see each other both stand down. Jira search can lag
-behind a write, so claims inside that lag can overshoot the limit by the number of agents running at once; later
-selections see the overshoot and wait for a slot.
+The claim arbitrates one ticket, so runs that each saw room under a shared cap can claim different tickets for
+its last place: the last slot of a domain, the last of the six, the one gate-critical place, the last playtest
+slot, or the same generated file. A new batch therefore re-counts at its first ticket's step 4: after its own
+claim comment is recorded, it counts every in-flight batch again from one fresh search read to its end (tickets
+in In Progress, Pending User QA and Pending CR, grouped by the branch their winning claim comments name, with
+the QA mode, domains, gate-critical flag and generated files those comments and later scope or QA-mode comments
+state), plus open pull requests. It keeps its place only if, besides itself, every cap of
+[Concurrency and run boundaries](#concurrency-and-run-boundaries) it needs still has room and no in-flight batch
+regenerates one of its generated files. Otherwise it stands down: it creates no branch, adds a claim-release
+comment to every ticket it claimed for the batch, returns each to Next, and selects other work or ends the run.
+Two contenders that see each other both stand down, which keeps the cap and leaves the place to the next
+selection. Jira search can lag behind a write, so claims inside that lag can still overshoot a cap by the number
+of agents running at once; later selections see the overshoot and wait.
 
 ## Batch selection
 
