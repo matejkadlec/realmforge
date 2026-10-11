@@ -494,7 +494,7 @@ would remove both bonuses.
 | talents | `stats/CharacterStats`, from `talent`'s provider | `realmforge:talent/<tree>/<node>/<n>` | saved, recomputed |
 | derived from primary stats | `stats/CharacterStats`, from stat rules ([8.3](#83-derived-stats-and-milestones)) | `realmforge:stat/<rule>/<n>` | saved, recomputed |
 | gear with fixed stats | vanilla, from the item's attribute modifiers | `realmforge:gear/<slot>/<n>` (generated) | while equipped |
-| affixes and gems (M2) | `ItemAttributeModifierEvent` adds them to the stack's modifiers | `realmforge:affix/<affix>/<slot>/<n>` | while equipped |
+| affixes and gems (M2) | vanilla slots: `ItemAttributeModifierEvent` adds them to the stack's modifiers; curio slots (rings, trinkets): Curios' own modifier API, because Curios ignores vanilla equipment modifiers in its slots (*verify* in M2) | `realmforge:affix/<affix>/<slot>/<n>`, with the curio slot id and index as `<slot>` | while equipped |
 | status effects | vanilla, `MobEffect#addAttributeModifier` | the effect's | while active |
 | mob level | `mob`, at `FinalizeSpawnEvent` | `realmforge:mob_level/<n>` | saved with the mob |
 
