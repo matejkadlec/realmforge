@@ -536,16 +536,17 @@ later. A run that ran out of memory twice is a real failure.
   cd ../realmforge-worktrees/<dir> && uv sync
   ```
 
-  The main checkout belongs to Matěj and to sessions working there: a flow never switches, builds or commits in
-  it. A new worktree has no `build/`, `run/` or `.cache/`, so its first build and
+  A stacked batch ([Dependencies](#dependencies)) starts from `origin/<dependency branch>` instead of
+  `origin/master`, and rebases onto it. The main checkout belongs to Matěj and to sessions working there: a flow
+  never switches, builds or commits in it. A new worktree has no `build/`, `run/` or `.cache/`, so its first build and
   `:mod:extractMinecraftSources` are slow (run both through the queue).
 - **Branch name:** `<type>/<keys>-<slug>`, with the batch's keys in lowercase and ascending order before a slug of
   two to five words: `feat/rlm-17-feature-skeleton`, `feat/rlm-18-rlm-19-registry-pipeline-player-state`. The
   type is the Conventional Commits type of the main change.
 - Work, run every check and commit only inside the worktree. Commits follow `CLAUDE.md` (explicit paths,
   Conventional Commits, never `.local/` or build output).
-- Before publishing, rebase onto the latest `origin/master` when it moved, resolve conflicts (regenerate generated
-  files with `uv run rf gen`), and rerun the affected checks.
+- Before publishing, rebase onto the latest `origin/master` (a stacked batch: its dependency branch) when it
+  moved, resolve conflicts (regenerate generated files with `uv run rf gen`), and rerun the affected checks.
 - After the merge, `monitor-pr` removes the worktree and branch this session created.
 
 ## Publication
