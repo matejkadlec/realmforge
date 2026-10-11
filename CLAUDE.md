@@ -289,7 +289,7 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
 `content/items/test_item.yaml` → `rf gen` →
 
 - `mod/src/generated/java/.../generated/GeneratedItems.java` (registration, creative tab entries), called from
-  `Realmforge`'s constructor;
+  `item/ItemFeature.register`, which `Realmforge`'s constructor calls;
 - `mod/src/generated/resources/assets/realmforge/` models, `lang/en_us.json` + `cs_cz.json`, placeholder textures;
 - `qa-mod/src/generated/java/.../GeneratedItemExpectations.java`, which `ContentItemGameTests` checks in the game;
 - `tools/schemas/items.schema.json` for editor completion.
