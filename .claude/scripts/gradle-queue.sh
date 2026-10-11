@@ -51,11 +51,19 @@ deadline=0
 last_note=0
 
 log=$(mktemp "${TMPDIR:-/tmp}/gradle-queue.XXXXXX")
+stop_grace_timer() {
+    # Stops the grace sleep only while it is still this script's child: once it has exited, its PID may belong to
+    # an unrelated process.
+    if [[ -n $grace_pid && $(ps -o ppid= -p "$grace_pid" 2>/dev/null | tr -d ' ') == "$$" ]]; then
+        kill "$grace_pid" 2>/dev/null || true
+    fi
+    grace_pid=
+}
 # shellcheck disable=SC2317  # invoked by the EXIT trap
 cleanup() {
     rm -f "$log"
     # A finished run no longer needs the admission lock its grace period holds.
-    if [[ -n $grace_pid ]]; then kill "$grace_pid" 2>/dev/null || true; fi
+    stop_grace_timer
 }
 trap cleanup EXIT
 
@@ -119,7 +127,7 @@ admit() {
         sleep 15
     done
     # A background sleep shares the lock and keeps it through the grace period; this script lets go of its copy.
-    if [[ -n $grace_pid ]]; then kill "$grace_pid" 2>/dev/null || true; fi
+    stop_grace_timer
     sleep "$grace_s" >/dev/null 2>&1 {lock_fd}>&- &
     grace_pid=$!
     exec {fd}>&-
