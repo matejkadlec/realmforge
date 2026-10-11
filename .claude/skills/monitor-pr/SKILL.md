@@ -90,6 +90,26 @@ weakens a test or check.
 - **Reports state decisions, not open questions.** This skill asks the user only under "User needed", the
   conflict case in step 2 and the thread cases in step 4.
 
+## Start
+
+Do this before the first wake, and again whenever the run resumes in a new session:
+
+1. **Resolve the target:**
+   `gh pr view <n> --repo matejkadlec/realmforge --json number,title,url,state,isDraft,isCrossRepository,headRefName,headRefOid,baseRefName`.
+   A closed or merged pull request goes to "Stops". A cross-repository pull request is a blocker: report it and
+   stop.
+2. **Locate the worktree** exactly as [`fix-pr`](../fix-pr/SKILL.md) step 2 does: `git fetch origin`, reuse the
+   worktree that `git worktree list` holds for the head branch, or create one in `../realmforge-worktrees/` and
+   run `uv sync` in it. Fast-forward a clean branch that is strictly behind its remote. On uncommitted changes,
+   or a local branch that is ahead of or diverged from the remote, change nothing and ask the user.
+3. **Confirm that the local head equals the remote head,** and record whether this session created the branch
+   (it decides rebase versus merge in step 2 and the cleanup after the merge).
+
+Run every git command, check, commit and push of this run inside that worktree, never in the current checkout
+on its behalf. Before each push, run `git fetch origin` again and confirm that the remote head is still the one
+your work is based on. A remote head that moved under you is new work to read first, never something to
+overwrite.
+
 ## Signals
 
 Read each signal fresh from GitHub at every step, and never trust an earlier reading.
