@@ -1,7 +1,9 @@
 package io.github.matejkadlec.realmforge.qa;
 
 import com.mojang.logging.LogUtils;
+import io.github.matejkadlec.realmforge.qa.castanim.QaCastAnimation;
 import net.minecraft.resources.ResourceLocation;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import org.slf4j.Logger;
 
@@ -11,7 +13,8 @@ public final class RealmforgeQa {
     public static final String MOD_ID = "realmforge_qa";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public RealmforgeQa() {
+    public RealmforgeQa(IEventBus modEventBus) {
+        QaCastAnimation.register(modEventBus);
     }
 
     /** Returns {@code realmforge_qa:<path>}. */

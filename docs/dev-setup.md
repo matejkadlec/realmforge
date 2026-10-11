@@ -37,8 +37,12 @@ decompiled Minecraft + NeoForge sources into `build/mc-sources/`.
 player named `Dev`). Windows 11 shows Linux GUI apps through **WSLg**, so the game window opens on the Windows
 desktop.
 
-- Good for quick checks: does it load, does the item show up, does a screen open. No third-party mods are loaded,
-  only ours.
+- Good for quick checks: does it load, does the item show up, does a screen open. Besides ours, only
+  playerAnimator is loaded (a QA mod dependency).
+- `./gradlew runClient -PwithBetterCombat` adds Better Combat and Cloth Config, the same versions as the pack, to
+  check our code with Better Combat installed. In game, `/qa cast 200` makes `Dev` cast for 10 seconds: a test
+  animation plays and melee is blocked until it ends
+  ([ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)).
 - Graphics go through WSLg's GPU path (Mesa D3D12), which is slower than native. For real play and shaders use
   Prism on Windows (next section).
 - If the window doesn't open or OpenGL fails: run `wsl --update` in PowerShell, update the GPU driver on Windows,

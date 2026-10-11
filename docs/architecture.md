@@ -15,9 +15,9 @@
 > ([section 21](#21-decisions-and-open-questions)).
 >
 > **APIs.** Every Minecraft, NeoForge and FML API named here was checked against the pinned sources (Minecraft
-> 1.21.1, NeoForge 21.1.259) on 2026-10-11; the FTB Quests and Better Combat facts against their 1.21.1 jars
-> (FTB Quests 2101.1.36, Better Combat 2.4.0). Libraries we have not added yet (GeckoLib, Curios, playerAnimator,
-> Jade, Xaero) are marked *verify*: check their API before first use (CLAUDE.md rule 6).
+> 1.21.1, NeoForge 21.1.259) on 2026-10-11; the FTB Quests, Better Combat and playerAnimator facts against their
+> 1.21.1 jars (FTB Quests 2101.1.36, Better Combat 2.4.0, playerAnimator 2.0.4). Libraries we have not added yet
+> (GeckoLib, Curios, Jade, Xaero) are marked *verify*: check their API before first use (CLAUDE.md rule 6).
 
 ## At a glance
 
@@ -590,8 +590,18 @@ inputs and expected outputs, read by both pytest and JUnit, keeps the two implem
 
 Taken unchanged ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md)), with no compile-time dependency. Our
 weapons get Better Combat weapon attribute files generated from item YAML:
-`data/realmforge/weapon_attributes/<item>.json` with `"parent": "bettercombat:<preset>"`. Spike 4 settles how our
-casting animations coexist with it (both would use playerAnimator) and whether swings are blocked while casting.
+`data/realmforge/weapon_attributes/<item>.json` with `"parent": "bettercombat:<preset>"`.
+
+Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md), spike 4):
+
+- **Animations:** both use playerAnimator, a required client-side dependency of the core mod. Our cast layer sits
+  at priority 3000, above Better Combat's attack layer (2000) and idle poses (1 to 4), and animates only the body
+  parts a cast needs ([11.6](#116-client-side)).
+- **No melee while casting:** during a cast-time or channelled spell the server cancels `AttackEntityEvent` (every
+  melee hit, Better Combat's included, goes through `Player#attack`) and sets Better Combat's entity tag
+  `bettercombat_disabled`, which stops its swings and cancels the one in progress; the client cancels the attack
+  key. The `combat` attachment records that a cast set the tag, so an operator's own tag survives and a login
+  removes one a crash left behind. A cast cancels a swing; an attack does not interrupt a cast.
 
 ## 10. Character: races, classes, leveling
 
@@ -686,7 +696,10 @@ type only for genuinely new behaviour.
 
 The spell bar, cast bar and cooldown sweep are HUD layers; key mappings follow a default scheme decided in M1
 (proposal: a separate spell bar with its own keys, leaving the item hotbar alone); tooltips are built from data
-with live numbers; animations and particles start on `CastStartedPayload` (spike 4).
+with live numbers; animations and particles start on `CastStartedPayload`. Cast animations are Emotecraft JSON
+files in `assets/realmforge/player_animations/`, played by `client/animation` on the caster's playerAnimator layer
+for the caster and every tracking player, with the third-person model's arms in first person
+([ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)).
 
 ## 12. Talents
 
@@ -969,14 +982,16 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   (`EntityRenderersEvent.RegisterRenderers`), particles (`RegisterParticleProvidersEvent`), menu screens
   (`RegisterMenuScreensEvent`) and tooltip components (`RegisterClientTooltipComponentFactoriesEvent`).
 - **Layout:** `client/hud`, `client/screen`, `client/input`, `client/render`, `client/tooltip`, `client/network`,
-  and `client/compat/<mod>` for the client parts of integrations (JEI and EMI plugins, Jade tooltips).
+  `client/animation` (the playerAnimator cast layer), and `client/compat/<mod>` for the client parts of
+  integrations (JEI and EMI plugins, Jade tooltips).
 - **The rule:** no class outside `client/` imports `net.minecraft.client.*`, `com.mojang.blaze3d.*`,
   `net.neoforged.neoforge.client.*` or a library's rendering classes. An automated import check enforces it
   (`tools/tests/test_client_isolation.py`, run by `uv run pytest`): it scans the main and generated sources of the
   core mod and of the QA mod (whose own `qa/client/` package is exempt) for those packages in imports and fully
-  qualified names. A library's rendering packages join its list with the library. The GameTest server in CI runs as
-  a dedicated server and is a second line of defence, but only for code the tests run, and NeoForge's own client
-  classes are mostly not marked client-only, so only the import check catches those.
+  qualified names. A library's rendering packages join its list with the library (so far playerAnimator's
+  `dev.kosmx.playerAnim`, [ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)). The GameTest
+  server in CI runs as a dedicated server and is a second line of defence, but only for code the tests run, and
+  NeoForge's own client classes are mostly not marked client-only, so only the import check catches those.
 - **Thin screens:** screens and HUD layers draw from view models computed in common code (`CharacterSheetView`,
   `TalentTreeView`), so their logic is testable without rendering.
 - **Little rendering code:** GeckoLib for animated entities, vanilla widgets for UI, no rendering mixins unless
@@ -1021,8 +1036,8 @@ comment saying why, and gets a test.
 ### 19.4 Optional integrations
 
 `compat/<modid>/` (client parts in `client/compat/<modid>/`) runs only when `ModList.get().isLoaded(modid)`, with
-an optional dependency in `neoforge.mods.toml`. Data-only integrations (Better Combat weapon files, Xaero icons,
-FTB Quests files) need no code.
+an optional dependency in `neoforge.mods.toml`. Data-only integrations (Better Combat weapon files and its disable
+tag, Xaero icons, FTB Quests files) need no code.
 
 ### 19.5 Performance
 

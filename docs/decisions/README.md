@@ -28,6 +28,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0015](0015-merging-through-monitor-pr.md) | Merging through monitor-pr | Accepted (amends 0011) |
 | [0016](0016-jira-batch-delivery.md) | Jira batch delivery with flow1 and flow2 | Accepted (extends 0011) |
 | [0018](0018-pack-boot-tests.md) | Pack boot tests: server and client self tests on every PR | Accepted (amends 0010) |
+| [0020](0020-cast-animations-and-melee-while-casting.md) | Cast animations through playerAnimator, no melee while casting | Accepted |
 
 ## Open questions (not decided)
 

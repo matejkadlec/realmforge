@@ -101,7 +101,7 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   the middle of a run. *Done when:* a GameTest builds, enters and frees an
   instance, and the PR records the numbers and the chosen strategy (an ADR if it changes
   [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)). Settles D8 with Matěj. Blocks W4.
-- [ ] **Spike 4: Better Combat and spell-casting animations** (M). *Question:* can our casting animations play on
+- [x] **Spike 4: Better Combat and spell-casting animations** ([PR #19](https://github.com/matejkadlec/realmforge/pull/19)) (M). *Question:* can our casting animations play on
   the player while Better Combat (which animates attacks through playerAnimator) is installed, and do the inputs
   coexist? *How:* a dev run with Better Combat and playerAnimator; one test animation through playerAnimator's API
   (*verify* it) layered with Better Combat's; first and third person, dual wielding, a cast interrupted by an

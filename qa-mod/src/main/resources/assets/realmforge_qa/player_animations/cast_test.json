@@ -1,0 +1,36 @@
+{
+    "name": "cast_test",
+    "author": "Realmforge",
+    "description": "Spike 4 test cast (ADR 0020): both arms rise forward and pulse while channelling. Animates only the arms' rotations, so lower layers (Better Combat's idle poses, walking) show through everywhere else.",
+    "emote": {
+        "isLoop": true,
+        "returnTick": 6,
+        "beginTick": 0,
+        "endTick": 22,
+        "stopTick": 22,
+        "degrees": false,
+        "moves": [
+            {
+                "tick": 6,
+                "easing": "EASEOUTQUAD",
+                "turn": 0,
+                "rightArm": {"pitch": -1.95, "yaw": -0.40, "roll": 0.10},
+                "leftArm": {"pitch": -1.95, "yaw": 0.40, "roll": -0.10}
+            },
+            {
+                "tick": 14,
+                "easing": "EASEINOUTSINE",
+                "turn": 0,
+                "rightArm": {"pitch": -2.20, "yaw": -0.25, "roll": 0.20},
+                "leftArm": {"pitch": -2.20, "yaw": 0.25, "roll": -0.20}
+            },
+            {
+                "tick": 22,
+                "easing": "EASEINOUTSINE",
+                "turn": 0,
+                "rightArm": {"pitch": -1.95, "yaw": -0.40, "roll": 0.10},
+                "leftArm": {"pitch": -1.95, "yaw": 0.40, "roll": -0.10}
+            }
+        ]
+    }
+}
