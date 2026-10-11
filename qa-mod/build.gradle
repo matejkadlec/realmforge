@@ -68,8 +68,38 @@ neoForge {
     }
 }
 
+repositories {
+    // Modrinth's Maven endpoint (maven.modrinth.com is an alias of it), only for the `maven.modrinth` group below.
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'Modrinth'
+                url = 'https://api.modrinth.com/maven'
+            }
+        }
+        filter {
+            includeGroup 'maven.modrinth'
+        }
+    }
+}
+
+// The versions the modpack ships (pack/mods/*.pw.toml). Spike 4, ADR 0020.
+def playerAnimatorVersion = '2.0.4+1.21.1-forge'
+def betterCombatVersion = '2.4.0+1.21.1-neoforge'
+def clothConfigVersion = '15.0.140+neoforge'
+
 dependencies {
     implementation project(':mod')
+
+    // playerAnimator, the animation library Better Combat uses: the QA mod's test cast animation (/qa cast).
+    implementation "maven.modrinth:playeranimator:${playerAnimatorVersion}"
+
+    // Better Combat and its config library join the dev runs only with `-PwithBetterCombat`, so the default runs
+    // and CI test the mods without it: ./gradlew runClient -PwithBetterCombat
+    if (providers.gradleProperty('withBetterCombat').isPresent()) {
+        runtimeOnly "maven.modrinth:better-combat:${betterCombatVersion}"
+        runtimeOnly "maven.modrinth:cloth-config:${clothConfigVersion}"
+    }
 }
 
 def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
