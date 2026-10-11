@@ -50,8 +50,8 @@ It never merges, deploys or requests a Codex review.
   there. Read the pull request with `gh api repos/matejkadlec/realmforge/pulls/<n>` instead.
 - **When the user is needed,** say it in exactly this form, with only the label bold:
   `**Your assistance is needed:** {what to do, where, and what you will check afterwards}`.
-- **Reports state decisions, not open questions.** This skill asks the user nothing except under
-  Disagreement and Blocked.
+- **Reports state decisions, not open questions.** This skill asks the user nothing except about uncommitted
+  changes in the worktree (step 1) and under Disagreement and Blocked.
 
 ## Roles
 
@@ -77,7 +77,9 @@ It never merges, deploys or requests a Codex review.
    Run `git fetch origin`, then reuse the worktree that `git worktree list` holds for the branch, creating one
    only when none exists (`git worktree add ../realmforge-worktrees/<dir> <branch>`, then `uv sync` in it).
    Confirm that the local head equals the remote head. A mismatch, a cross-repository pull request, or a closed
-   or merged one is a blocker: report it and stop.
+   or merged one is a blocker: report it and stop. Uncommitted changes in the worktree (`git status --porcelain`
+   is not empty) may be another session's or the user's work: change nothing, and ask the user whether to fold
+   them in or stop, before any review or fix.
 
 2. **Build the review bundle** in the session scratchpad directory (or a `mktemp -d` directory outside the
    repository), never inside the repository:
