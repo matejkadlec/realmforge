@@ -219,8 +219,10 @@ severity badge such as `![P1 Badge](...)` followed by a bold title.
 
    - Every thread that was current at the start is now resolved, or still open as Blocked. Resolve any closed
      thread that still reads unresolved.
-   - A new Codex thread whose `originalCommit` is the starting head belongs to this pass: take it through steps
-     4–8.
+   - A new Codex thread whose `originalCommit` is the starting head belongs to this pass. If the pass has not
+     pushed yet, take it through steps 4–8. If it has pushed, close it now only when its disposition needs no
+     commit (Declined, Tracked, Stale, Repeated or Incorrect, judged against the pushed head). One that needs a
+     code change stays open for the next pass and goes into the report, so the pass keeps its single push.
    - A new thread on the pushed head is the next round: list it in the report and do not act on it.
 
 9. **Report and stop** (see "Report").
