@@ -244,6 +244,9 @@ Otherwise act on the first of steps 2–7 that applies. If none applies yet, wai
 3. **Codex findings: run `fix-pr`.** Whenever the head has unresolved Codex threads, invoke `/fix-pr <n>`,
    every round. Do not repeat its procedure here; its report returns to this run.
 
+   - From the pull request's fourth review round on, `fix-pr`'s "Late rounds" rule applies: a P2 or P3 that
+     names no concrete failure in normal use is Declined for churn or Tracked instead of fixed. Keep a tally of
+     the rounds and of the findings that rule deferred, for the report.
    - Then re-list the threads. Resolve any thread that `fix-pr` closed but that still reads unresolved.
    - A Blocked thread goes to the user under "User needed".
    - A badge-labelled Codex finding (`![P0 Badge]` to `![P3 Badge]`) in a Codex review body or a top-level pull
@@ -323,7 +326,9 @@ A current usage limit means no Codex review is coming. The silent window would t
 all, so instead:
 
 1. **Run `/finalize-pr <n>` on the current head in this run** ([`finalize-pr`](../finalize-pr/SKILL.md)). The
-   fresh reviewer it starts provides the independent review. Its finishing state comes back here.
+   fresh reviewer it starts provides the independent review. Its finishing state comes back here. Each of its
+   reviewer rounds counts as a review round for the "Late rounds" rule of [`fix-pr`](../fix-pr/SKILL.md), so give
+   it the current round count.
 2. **The run enters fallback mode for this pull request.**
    - It treats the usage-limit comment as silence from now on.
    - Every later push needs another `/finalize-pr <n>` pass on the new head before the merge. This includes a
@@ -452,6 +457,7 @@ At each merge or stop, report:
 
 - the pull request number and URL;
 - the head SHA (merged or current);
+- the number of review rounds, and how many findings `fix-pr`'s "Late rounds" rule declined or tracked;
 - each round's outcome:
   - the Codex reaction;
   - the `fix-pr` pass and its commits;

@@ -162,7 +162,7 @@ severity badge such as `![P1 Badge](...)` followed by a bold title.
    `content/README.md`, `tools/README.md`, `pack/README.md`). For a Minecraft or NeoForge API claim, check the
    pinned sources in `build/mc-sources/` (`./gradlew :mod:extractMinecraftSources` creates them), not
    upstream branches. Compare the finding with the resolved Codex threads and with the other current findings.
-   Give it exactly one disposition (see "Dispositions").
+   Give it exactly one disposition (see "Dispositions"), under "Severity" and "Late rounds".
 
 5. **Fix** every finding whose disposition is Fixed:
 
@@ -280,10 +280,34 @@ severity badge such as `![P1 Badge](...)` followed by a bold title.
   verifiable. Otherwise track or decline it, with a concrete technical reason: the scope, risk or churn it
   adds, or the decision it presupposes. "Optional" and "low severity" are not reasons. An optional finding
   still gets a reply and is resolved.
+- **Churn on an already reviewed area** is a valid Declined reason: the finding only hardens a rare edge case in
+  code or text an earlier round already reviewed, it names no failure in normal use, and its fix would add new
+  surface for the next round. The reply names the earlier rounds and the rare case, for example: `Declined:
+  churn. This asks the push step to also handle a lease rejected between the fetch and the push; that case
+  already fails safe (the push is refused and the pass reports a moved head), rounds 2 to 4 reviewed this step,
+  and another guard here adds surface without fixing a failure in normal use.`
 - **Evidence beats the badge.** Stale, Repeated and Incorrect apply at every severity, but only with concrete
   evidence from the current branch: a commit, the file and line of a guard, why no input reaches the path, or
   an earlier thread whose closure still holds. When the verdict rests on a test, run it. A plausible argument
   is not evidence.
+
+## Late rounds
+
+Codex reviews every push, and late rounds narrow to rare edge cases in what earlier rounds already reviewed;
+fixing them adds surface for the next round. PR #2 took 8 rounds and 29 threads, and two of its round-6 findings
+were regressions from earlier fixes. So the pass counts the rounds:
+
+- **Review round:** the heads of this pull request that a review covered, in order. Count the distinct
+  `commit_id`s of Codex's reviews (`gh api --paginate repos/matejkadlec/realmforge/pulls/<n>/reviews`, author
+  `chatgpt-codex-connector[bot]`), plus, when [`monitor-pr`](../monitor-pr/SKILL.md) is in its usage-limit
+  fallback, the `finalize-pr` reviewer rounds it reports. A finding's round is the position of the head its
+  first comment names (`originalCommit`, or `original_commit_id` in REST).
+- **Rounds 1 to 3:** "Severity" applies as written.
+- **From round 4 on,** a P2 or P3 is Fixed only when it names a concrete failure in normal use (a realistic input,
+  command or workflow of this repository: a session, a CI job, a player) or a regression that an earlier round's
+  fix introduced. Every other P2 or P3 is Declined for churn or Tracked. P0 and P1 are unaffected: a valid one is
+  always Fixed.
+- The report gives the round and how many findings this rule declined or tracked.
 
 ## Repeated findings
 
@@ -306,6 +330,7 @@ Include:
 - the pull request number and URL, the branch, and the head SHA at the start and now;
 - if the pass pushed, whether the remote head equals your final commit, and the CI state read once
   after the push (never polled);
+- the review round (see "Late rounds") and how many findings its rule declined or tracked;
 - one line per finding: severity, title, disposition, and the commit, ticket or evidence;
 - what was left unchanged and why;
 - the exact checks that passed;
