@@ -949,9 +949,12 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
 
 ### 19.1 World defaults
 
-- On the first start of a new world (a flag in our `SavedData`), set the vision's gamerules once: `keepInventory`
-  and `doImmediateRespawn` on; `blockExplosionDropDecay`, `mobExplosionDropDecay` and `tntExplosionDropDecay` off.
-  Players may change them afterwards.
+- When a world is created, set the vision's gamerules once: `keepInventory` and `doImmediateRespawn` on;
+  `blockExplosionDropDecay`, `mobExplosionDropDecay` and `tntExplosionDropDecay` off. The signal is
+  `LevelEvent.CreateSpawnPosition` (listened to, never cancelled, since cancelling skips vanilla's spawn search):
+  the server posts it only while it sets up a world that is not yet initialized. A flag in our own `SavedData`
+  could not tell a new world from an existing one that Realmforge is added to. Players may change the gamerules
+  afterwards, and worlds that existed before Realmforge keep theirs.
 - Destructive mobs: the [research notes](research-notes.md#default-gamerules) recommend targeted protection over the
   `mobGriefing` gamerule (which also stops villagers farming and mobs picking up items): stop terrain damage with
   `EntityMobGriefingEvent` and by clearing the block list in `ExplosionEvent.Detonate`. Final call in M1.
