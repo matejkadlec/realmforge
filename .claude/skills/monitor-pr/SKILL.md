@@ -89,6 +89,9 @@ weakens a test or check.
   - Resolve: `gh api -X POST repos/matejkadlec/realmforge/pulls/<n>/ccr/comments/<first comment id>/resolve`.
   - Merge: `gh api -X PUT repos/matejkadlec/realmforge/pulls/<n>/merge -f merge_method=merge -f sha=<sha>`
     (`gh pr merge` sends a GraphQL mutation; with `sha` GitHub refuses the merge when the head moved).
+  - Retarget to `master`: `gh api -X PATCH repos/matejkadlec/realmforge/pulls/<n> -f base=master`.
+  - Add a label: `gh api -X POST repos/matejkadlec/realmforge/issues/<n>/labels -f "labels[]=needs-playtest"`.
+  - Every `gh pr edit` below is GraphQL too; use these forms for it.
 - **When the user is needed,** say it in exactly this form, with only the label bold:
   `**Your assistance is needed:** {what to do, where, and what you will check afterwards}`.
 - **Reports state decisions, not open questions.** This skill asks the user only under "User needed", the
