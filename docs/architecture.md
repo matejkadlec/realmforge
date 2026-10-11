@@ -441,7 +441,9 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   once), so data meant for different audiences needs separate attachments.
 - Combat state changes too often for that. It is a mutable object synced explicitly with `player.syncData(type)`,
   at most a few times per second or on important changes (cast started, cooldown started). Cooldowns are stored as
-  the server game time when they end, so they survive relogging and need no per-tick updates.
+  the server game time when they end, so they survive relogging and need no per-tick updates. The current cast is
+  transient: the saved `Codec` leaves it out, so neither relogging nor the copy on death brings it back (NeoForge's
+  default copy handler round-trips the saved codec), and death cancels it.
 - **The predicate filters updates only.** When a player starts tracking an entity, NeoForge 21.1.259 sends that
   player every synced attachment on it without asking the predicate (`ServerEntity#sendPairingData` →
   `AttachmentSync.syncInitialEntityAttachments`). The sync handler's `write` is not told the recipient, so no

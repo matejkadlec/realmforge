@@ -128,8 +128,9 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   decoded in the game and checked by a GameTest.
 - [ ] **F3 Player state** (M, after F2). The attachments `level` (every living entity), `character`, `spellbook`,
   `talents` and `combat` with codecs, sync and copy on death; the `/qa` command root (show and reset state). *Done
-  when:* JUnit round-trips every attachment's `Codec` and `StreamCodec`, and a GameTest checks copy on death and
-  save and load on a mock server player (`GameTestHelper#makeMockServerPlayerInLevel`).
+  when:* JUnit round-trips every attachment's `Codec` and `StreamCodec`, and a GameTest checks copy on death
+  (resource and cooldowns kept, the current cast dropped) and save and load on a mock server player
+  (`GameTestHelper#makeMockServerPlayerInLevel`).
 - [ ] **F4 Stats** (M, after F3; D5). Primary and secondary attributes on players; `CharacterStats` with the
   saved-but-recomputed modifiers, the first-tick recompute and the health rules
   ([architecture 8.2](architecture.md#82-where-modifiers-come-from)); `realmforge:stat_rule` with derived bonuses
