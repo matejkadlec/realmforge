@@ -251,8 +251,9 @@ How features cooperate without breaking the direction:
 | | `EntityAttributeModificationEvent` (mod) | add our attributes to players and other living entities |
 | | `EntityAttributeCreationEvent` (mod) | attributes of our own entity types |
 | | `RegisterPayloadHandlersEvent` (mod) | all payloads ([17](#17-networking)) |
+| | `RegisterTicketControllersEvent` (mod) | chunk ticket controllers: instance plots ([15.5](#155-instances)) |
 | Server start | `RegisterCommandsEvent`, `ServerStartedEvent` (game) | commands; world defaults on a new world ([19.1](#191-world-defaults)) |
-| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerEvent.PlayerRespawnEvent` (game) | schedule a stat recompute for the player's first tick; keep health across respawns ([8.2](#82-where-modifiers-come-from)) |
+| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerEvent.PlayerRespawnEvent`, `PlayerEvent.PlayerChangedDimensionEvent` (game) | schedule a stat recompute for the player's first tick; keep health across respawns ([8.2](#82-where-modifiers-come-from)); keep or end the player's instance run ([15.5](#155-instances)) |
 | Play | damage, death, spawn, tick and advancement events (game) | sections 8-16 |
 | Client start | `RealmforgeClient` constructor; client registration events (mod) | [section 18](#18-client-code-rendering-gui-input) |
 
@@ -436,7 +437,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:combat` | `spell` | players and mobs that cast | resource (mana, rage), cooldowns, current cast | owner, throttled (players; clients never read a mob's copy) |
 | `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points | owner |
 | `realmforge:dark_vision` | `world` | players | whether Dark Vision is switched on | not synced (the effect itself is) |
-| `realmforge:instance` | `dungeon` | players | the instance the player is in, the return point, the game mode to restore | not synced |
+| `realmforge:instance` | `dungeon` | players | the run's plot and the return point (spike 3); W4 adds the game mode to restore | not synced |
 
 - Values are immutable records with a `Codec` for saving and a `StreamCodec` for syncing, declared with
   `AttachmentType.builder(...).serialize(codec).copyOnDeath().sync(predicate, streamCodec)`. A change is
@@ -827,7 +828,10 @@ loot: realmforge:boss/hollow_warden
   validated and copied to `data/realmforge/dimension/`, `dimension_type/` and `worldgen/`.
 - Gameplay rules in `realmforge:dimension_rules`: mob levels, the access requirement (for example a chapter), flags.
 - Access by portal or item, locked behind the requirement (the vision's "locked dimensions").
-- A technical dimension `realmforge:instances` (void, no natural spawning, fixed time) hosts dungeon instances.
+- A technical dimension `realmforge:instances` (void, no natural spawning, fixed time) hosts dungeon instances. The
+  code depends on it, so it lives in the core mod's resources (`data/realmforge/dimension/instances.json` and
+  `dimension_type/instances.json`), not in `content/worldgen/`
+  ([ADR 0019](decisions/0019-dungeon-instances-in-plots.md)).
 - The Nether and End stay an open question ([roadmap](roadmap.md#open-decisions)); M1 does not touch them.
 
 ### 15.2 Dungeon types
@@ -878,15 +882,34 @@ room reachable). A QA command renders a layout preview for review.
 
 ### 15.5 Instances
 
-- `InstanceManager` keeps a `SavedData` in the instance dimension (`DimensionDataStorage#computeIfAbsent`): a grid
-  of plots with wide spacing (Compact Machines uses 1,024 blocks), each with its dungeon type, seed, state
-  (building, ready, active, completed, closing, free) and party. Each player's return point and previous game mode
-  live in the player's `realmforge:instance` attachment ([7](#7-player-state)).
-- **Entry:** an entrance in the world → allocate a plot → build over ticks → teleport the party
-  (`ServerPlayer#teleportTo(ServerLevel, x, y, z, yaw, pitch)`).
-- **Chunk loading:** while a plot is built and played, its chunks are kept loaded through a NeoForge
-  `TicketController` (registered in `RegisterTicketControllersEvent`; its forced chunks survive restarts), so they
-  never unload mid-build; cleanup releases them. Spike 3 checks this.
+Spike 3 built this and measured it; the numbers and the reasons are in
+[ADR 0019](decisions/0019-dungeon-instances-in-plots.md). Code: `dungeon/DungeonFeature`, `dungeon/DungeonAttachments`
+and `dungeon/instance/`.
+
+- `InstanceManager` keeps a `SavedData` (`realmforge_instances`) in the instance dimension
+  (`DimensionDataStorage#computeIfAbsent`): a grid of plots 1,024 blocks apart (`PlotGrid`; Compact Machines uses the
+  same spacing), filled row by row, each plot's rooms within 256 blocks of its origin at y 64. Each plot has its
+  state (building, ready, active, closing, free; W4 adds completed), layout (W4: dungeon type and seed), the boxes of
+  its rooms and of blocks still to clear, its work progress, its party and the chunks it holds. The party is a list
+  of players: solo in M1 (decision D8), parties later (RLM-68) without a data migration. Each player's run and
+  return point live in the player's `realmforge:instance` attachment ([7](#7-player-state)); W4 adds the previous
+  game mode.
+- **Entry:** an entrance in the world (W4: a temporary portal opened with a dungeon key, D8) → allocate a plot
+  (`InstanceManager#open`, lowest free plot first) → build over ticks → teleport the online party members
+  (`ServerPlayer#teleportTo(ServerLevel, x, y, z, yaw, pitch)`). Until W4 the QA mod's `/qa instance enter` opens a
+  plot with three test rooms.
+- **Building over ticks:** placing a room and clearing a box are cut into units of one chunk column each
+  (`PlotWork`; placing uses `StructurePlaceSettings#setBoundingBox`, known shapes and update flag 2 like structure
+  blocks). The builder runs units for up to 5 ms per tick, at least one, in `LevelTickEvent.Post` of the instance
+  level, so its time shows in the server's tick time. The unit list is a pure function of the saved plot, so a
+  restart resumes at the saved step, and a unit whose chunk is still loading waits for a later tick instead of
+  loading it on the main thread.
+- **Chunk loading:** from opening until it is free, every chunk a plot touches is held by the NeoForge
+  `TicketController` `realmforge:instance_plots` (registered in `RegisterTicketControllersEvent`, owner: the plot's
+  origin, non-ticking). Its tickets survive restarts; its validation callback drops the tickets of plots that are
+  free or unknown when the level loads. `TicketController#forceChunk` loads the chunk synchronously, which makes
+  opening a plot block the main thread for 2-80 ms, and for 0.3-1 s the first time a plot cell is used (vanilla
+  generates and saves the neighbours of a forced chunk too, 3-4 MB per cell); W4 keeps that off the entry path.
 - **Rules inside: nobody edits the rooms.** Survival players are switched to Adventure mode while inside (creative
   operators keep theirs); the previous game mode is saved in an attachment and restored when they leave (also on
   the next login after a crash).
@@ -902,7 +925,16 @@ room reachable). A QA command renders a layout preview for review.
   are cancelled there too. W4's GameTests use a bucket, flint and steel, an axe, a hoe and a tool with `can_break`,
   and place and break blocks inside an instance, and expect the room unchanged.
 - **Also inside:** respawn at the entrance, no natural spawns, leave through the exit portal or a command.
-- **Cleanup and plot reuse:** answered by spike 3 (clear the plot, never reuse plots, or overwrite on reuse).
+- **Leaving and disconnects:** leaving by command or exit, respawning outside the dimension
+  (`PlayerEvent.PlayerRespawnEvent`) or being teleported out (`PlayerEvent.PlayerChangedDimensionEvent`) leaves the
+  run; a run whose party is empty is released. A disconnect keeps the run. On login
+  (`PlayerEvent.PlayerLoggedInEvent`) a player inside the dimension stays if their run is still playable and is sent
+  back to their return point otherwise. W4 adds a timeout for party members who stay offline.
+- **Cleanup and plot reuse: clear, then reuse** (spike 3). When a run is released, its blocks are cleared over the
+  next ticks (containers emptied first so nothing drops, entities other than players removed), its chunks are
+  released and the plot becomes free for the next run; nobody waits for it. Overwriting on reuse doubled the next
+  run's build time, and never reusing plots grew the world by 3 MB per run; `/qa instance cleanup` still switches to
+  them for measurements.
 - No dimensions are created at runtime (ADR 0012).
 
 ### 15.6 World structures (M4)
@@ -1031,7 +1063,8 @@ numbers are content, so they are versioned, validated and tested.
 ### 19.3 Mixins and access transformers
 
 Last resort, only where no event or API exists. Each one sits in `mixin/` (or the access transformer file) with a
-comment saying why, and gets a test.
+comment saying why, and gets a test. The QA mod has one too, for tests only: `GameTestServerMixin` gives the GameTest
+world the data pack dimensions, which vanilla leaves out ([20](#20-tests-per-layer)).
 
 ### 19.4 Optional integrations
 
@@ -1062,7 +1095,12 @@ tag, Xaero icons, FTB Quests files) need no code.
 
 The QA mod grows with the features: `/qa` commands (level, class, talents, gear presets, boss at phase N, enter an
 instance with a given seed, reset cooldowns, god mode), a training dummy with a DPS meter, and a combat log file
-that agents can read.
+that agents can read. The first are `/qa instance enter|leave|build|free|list|cleanup|bench` from spike 3.
+
+The vanilla GameTest server builds its world from the flat preset with an empty dimension registry, so our data pack
+dimensions (`realmforge:instances`, later the M1 dimension) exist in GameTests only through the QA mod's
+`GameTestServerMixin`. A GameTest can log a fake player out and in again through the normal save and login path
+(`PlayerList#remove`, `PlayerList#placeNewPlayer`), as `InstanceGameTests` does to test reconnects.
 
 ## 21. Decisions and open questions
 
