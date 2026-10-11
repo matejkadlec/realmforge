@@ -1,0 +1,951 @@
+# Architecture
+
+> How the Realmforge core mod is built: code layout, registries, data flow and the main systems. Goals live in
+> [vision.md](vision.md), settled decisions in the [ADRs](decisions/README.md), the order of work in
+> [roadmap.md](roadmap.md). This document describes mechanisms and boundaries, not game numbers: coefficients,
+> class kits and balance are data in `content/`.
+>
+> **Status:** baseline of 2026-10-11, recorded in [ADR 0014](decisions/0014-core-mod-architecture.md). Almost
+> everything below is planned; today (end of M0) only the item pipeline exists. M1 builds most of it; parts that
+> come later are marked with their milestone (M2, M3, ...).
+>
+> **Living document.** When code and this document disagree, fix one of them in the same PR. Changing one of the
+> decisions recorded in [ADR 0014](decisions/0014-core-mod-architecture.md) needs a new ADR
+> ([section 21](#21-decisions-and-open-questions)).
+>
+> **APIs.** Every Minecraft, NeoForge and FML API named here was checked against the pinned sources (Minecraft
+> 1.21.1, NeoForge 21.1.259) on 2026-10-11; the FTB Quests and Better Combat facts against their 1.21.1 jars
+> (FTB Quests 2101.1.36, Better Combat 2.4.0). Libraries we have not added yet (GeckoLib, Curios, playerAnimator,
+> Jade, Xaero) are marked *verify*: check their API before first use (CLAUDE.md rule 6).
+
+## At a glance
+
+- One core mod split into **feature packages** (`character/`, `spell/`, `boss/`, `dungeon/`, ...), each with one
+  `<Name>Feature` entry class. All client-only code sits under `client/`, enforced by an automated check.
+- **Three kinds of registries:** static (what Minecraft needs Java objects for: items, entities, status effects,
+  attributes), datapack (our game definitions: races, classes, spells, talents, bosses, dungeon types, affixes),
+  reloadable vanilla data (loot tables, recipes, tags, advancements). Polymorphic data dispatches on Java
+  "type registries".
+- **YAML → `rf gen` → generated Java and JSON → jar → game.** Python validates first; codecs validate again at
+  world load; GameTests compare the running game with expectations generated from the same YAML.
+- **One spell and effect engine** for players, mobs, bosses, items and talent procs. Boss abilities are spells.
+- **One attribute model:** primary stats (STR, DEX, INT, ...) are attributes; race, class, level, talents, gear and
+  effects all act through attribute modifiers. Our own damage pipeline sits on NeoForge's damage events.
+- **Player state** lives in NeoForge data attachments that sync to the client automatically.
+- **Quests stay in FTB Quests**, bridged by advancements and statistics: a chapter's last quest grants an
+  advancement, and that raises the level cap.
+- **Dungeons** are planned and laid out by pure, seed-driven Java, then built from hand-made NBT rooms into plots
+  of one instance dimension.
+- **Networking:** one registration point with a protocol version; client → server messages are intents that the
+  server validates.
+
+## Contents
+
+1. [Terms](#1-terms)
+2. [Principles](#2-principles)
+3. [Overview](#3-overview)
+4. [Code layout](#4-code-layout)
+5. [Registries](#5-registries)
+6. [Data flow: from YAML into the game](#6-data-flow-from-yaml-into-the-game)
+7. [Player state](#7-player-state)
+8. [Stats and attributes](#8-stats-and-attributes)
+9. [Combat](#9-combat)
+10. [Character: races, classes, leveling](#10-character-races-classes-leveling)
+11. [Spells and status effects](#11-spells-and-status-effects)
+12. [Talents](#12-talents)
+13. [Items, gear and loot](#13-items-gear-and-loot)
+14. [Mobs and bosses](#14-mobs-and-bosses)
+15. [Dimensions and dungeons](#15-dimensions-and-dungeons)
+16. [Progression and quests](#16-progression-and-quests)
+17. [Networking](#17-networking)
+18. [Client code: rendering, GUI, input](#18-client-code-rendering-gui-input)
+19. [Cross-cutting rules](#19-cross-cutting-rules)
+20. [Tests per layer](#20-tests-per-layer)
+21. [Decisions and open questions](#21-decisions-and-open-questions)
+
+## 1. Terms
+
+| Term | Meaning |
+| --- | --- |
+| Logical server / client | The server runs the rules and owns all state; the client renders and sends input. In singleplayer both run in one process, but the code still keeps them apart. |
+| Mod bus / game bus | Two event buses. The mod bus carries startup and registration events; the game bus (`NeoForge.EVENT_BUS`) carries gameplay events (damage, ticks, logins). |
+| Static registry | A Minecraft registry filled from Java code at game start and frozen afterwards: items, blocks, entity types, status effects, attributes. |
+| Datapack registry | A registry filled from JSON files when a world loads, like vanilla biomes or enchantments. Each file is decoded and validated by a codec; the registry can be synced to clients. |
+| Codec, `StreamCodec` | Mojang's declarative serializers. A `Codec` reads and validates JSON or NBT (the Java counterpart of a pydantic model); a `StreamCodec` encodes network messages. |
+| `MapCodec`, dispatch | A codec for the fields of an object. Dispatch picks the `MapCodec` from a `type` field, like a pydantic discriminated union. |
+| `ResourceKey`, `Holder` | A `ResourceKey` names a registry entry (`realmforge:firebolt` in the spell registry); a `Holder` is a resolved reference to the entry itself. |
+| Tag | A named set of registry entries defined in data, such as `#minecraft:swords` or `#minecraft:bypasses_armor`. |
+| Data attachment | NeoForge's way to store our own data on a player, entity, chunk or level (character level, talents), saved with its holder and optionally synced. |
+| Data component | Typed data on an item stack (replaces stack NBT since 1.20.5): rarity, affixes, sockets. |
+| Attribute, modifier | Vanilla's stat system (`generic.max_health`, `generic.attack_damage`, ...). Modifiers with an id add to or multiply the base value. |
+| `SavedData` | Vanilla's way to store data for a whole level or world (our dungeon plots, world flags). |
+| Payload | One network message: a Java `record` plus its `StreamCodec`. |
+| Jigsaw | Vanilla's structure assembler (villages, Trial Chambers): rooms from template pools joined at jigsaw blocks. |
+| GameTest | An automated test that runs inside a headless game server ([ADR 0010](decisions/0010-testing-strategy.md)). |
+| Property test | A test that checks rules against many random inputs, like Python's Hypothesis. |
+| Mixin, access transformer | Ways to patch Minecraft classes or open up private members. Last resort here ([19.3](#193-mixins-and-access-transformers)). |
+
+## 2. Principles
+
+1. **Server-authoritative.** All rules and state live on the logical server. The client renders, plays effects and
+   sends intents ("cast spell X at target Y"); the server validates every intent.
+2. **Java holds behaviour types, data holds instances**
+   ([ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)). A new spell, talent, boss or dungeon
+   type is YAML. Java changes only for a new kind of behaviour, such as a new spell effect type.
+3. **One effect engine.** Players, mobs, bosses, items and talent procs act through the same spell system. Boss
+   abilities are spells, so interrupts, dispels and crowd control work on bosses by design ("boss mechanics that
+   tie in with the skills and talents" in the [vision](vision.md)).
+4. **One attribute model.** Every combat number is a vanilla or Realmforge attribute changed by modifiers with
+   stable ids, so all sources stack the same way and show up in tooltips.
+5. **Pure core, thin glue.** Formulas, generators, state machines and rule checks are plain Java with as few
+   Minecraft types as possible, tested by JUnit in milliseconds. Event handlers only translate between Minecraft
+   and that core.
+6. **Client code is isolated** ([ADR 0003](decisions/0003-platform-minecraft-1-21-1-neoforge.md)). Rendering,
+   screens, input and `Minecraft.getInstance()` live only under `client/`; a future port rewrites mostly that.
+7. **Fail at load, not in play.** Python validates content before the build. When a world loads, an error in one of
+   our registries stops it; errors in vanilla data (loot tables, recipes, advancements, tags) are only logged, so
+   CI fails on those log lines. GameTests compare the running game with generated expectations.
+8. **Integrate through standard surfaces:** advancements, statistics, data files and public APIs, never another
+   mod's internals ([ADR 0006](decisions/0006-quests-ftb-quests-generated-from-data.md)).
+9. **Performance is a requirement:** event-driven work with early exits, no per-tick scans of all entities,
+   world generation spread over ticks, throttled network sync.
+10. **Hard no's are validation rules.** Where a hard no from the vision can be checked mechanically (no flying
+    bosses, few bosses with blindness or darkness, no trash loot), `tools/` enforces it.
+
+## 3. Overview
+
+```text
+content/   YAML, plus worldgen JSON and room NBT
+   │  uv run rf gen    tools/: schema → ids and references → semantic rules → generators
+   ▼
+generated and committed, never edited by hand
+   mod/src/generated/java ........ registrations and id constants (items, blocks, entities, effects, ...)
+   mod/src/generated/resources ... assets: models, textures, lang, sounds
+                                   data: our registries, loot tables, recipes, tags, advancements,
+                                         damage types, worldgen, structures
+   qa-mod/src/generated .......... expectations and structures for GameTests
+   pack/config/ftbquests ......... the quest book (FTB Quests SNBT)
+   │  ./gradlew build → realmforge jar                packwiz → modpack
+   ▼
+game start .. static registries (generated and hand-written Java), then frozen
+world load .. datapack registries decoded by codecs and synced to clients
+/reload ..... loot tables, recipes, tags, advancements
+   ▼
+server: feature systems (character, stats, combat, spells, talents, mobs, bosses, dungeons, ...)
+   ⇅  payloads and synced attachments
+client: HUD, screens, input, renderers (client/ only)
+```
+
+## 4. Code layout
+
+### 4.1 Gradle projects
+
+| Project | Mod ID | Contents | Released |
+| --- | --- | --- | --- |
+| `mod/` | `realmforge` | everything players get | yes |
+| `qa-mod/` | `realmforge_qa` | GameTests, `/qa` commands, training dummy, combat log, test scenarios | never |
+
+The QA mod may call the core mod's public APIs; the core mod never depends on the QA mod (CLAUDE.md rule 7).
+
+### 4.2 Packages of the core mod
+
+```text
+io.github.matejkadlec.realmforge
+├─ Realmforge         entry point: registers every feature in a fixed order
+├─ generated/         output of `rf gen` (never edit)
+├─ core/              shared infrastructure: registry keys, codec helpers, requirements, curves
+├─ network/           payload registration (one place) and the protocol version
+├─ progression/       chapters, criteria triggers, statistics: the bridge to quests
+├─ stats/             attributes, entity levels, stat sources, derived stats, caps
+├─ combat/            damage pipeline, crit, dodge, resistances
+├─ effect/            behaviour classes of our status effects
+├─ spell/             spells, schools, effect types, casting, cooldowns, resources, procs, spell entities
+├─ talent/            talent trees, points, spell modifiers; glyphs later
+├─ item/              item behaviours, gear components; affixes and gems later
+├─ loot/              loot functions and conditions, reward rolls
+├─ character/         races, classes, character data, leveling, level caps
+├─ world/             dimension rules and access, world defaults, Dark Vision, griefing protection
+├─ mob/               mob levels and scaling, AI goal library, custom mobs
+├─ boss/              boss definitions, phase machine, boss entity
+├─ dungeon/           dungeon types, planner, layout, builder, instances
+├─ command/           `/realmforge` operator commands (developer commands live in the QA mod)
+├─ compat/            optional integrations, one subpackage per mod (client parts: client/compat/)
+└─ client/            everything client-only, mirroring the features
+   ├─ RealmforgeClient   client entry point
+   └─ hud/  screen/  input/  render/  tooltip/  network/  compat/
+```
+
+Later milestones add `profession/`, `pet/`, `mount/`, `enchanting/` and `contract/` (procedural quests).
+
+### 4.3 Shape of a feature package
+
+Every feature has the same parts, so it is clear where code goes:
+
+| Part | Example in `spell/` | Role |
+| --- | --- | --- |
+| `<Name>Feature` | `SpellFeature` | `static void register(IEventBus modBus)`: the feature's `DeferredRegister`s, registry declarations and event listeners. Called once from `Realmforge`. |
+| Records with `CODEC` (and `STREAM_CODEC` when sent) | `Spell`, `SpellEffect` | Shapes of datapack entries, attachment values and payloads. |
+| Pure logic | `CastRules`, `SpellScaling` | Formulas and decisions without world access; JUnit. |
+| Systems | `SpellCaster` | Glue: read the world, call the pure logic, apply the result. |
+| `net/` | `CastSpellPayload` | The feature's payload records (registered in `network/`). |
+| Public API | `Spells` | The only part other features use. |
+
+Event listeners are registered explicitly in `<Name>Feature.register` (`modBus.addListener(...)`,
+`NeoForge.EVENT_BUS.addListener(...)`) rather than through `@EventBusSubscriber`, so every hook of a feature is
+visible in one file.
+
+### 4.4 Dependencies between features
+
+Dependencies point one way, and data references follow the same direction (a class names its spells and talent
+trees, so `character` sits above `spell` and `talent`). "May use" includes whatever the used package may use.
+
+| Package | May use |
+| --- | --- |
+| `core` | - |
+| `progression`, `stats` | `core` |
+| `combat` | `stats` |
+| `effect` | `combat` |
+| `spell` | `effect`, `progression` |
+| `talent`, `item` | `spell` |
+| `loot` | `item` |
+| `character` | `talent`, `progression` |
+| `world` | `progression`, `stats` |
+| `mob` | `world`, `loot` |
+| `boss` | `mob` |
+| `dungeon` | `boss`, `character` |
+| `Realmforge` (entry point), `command`, `compat`, `network` | public APIs of any feature |
+| `client` | anything; nothing outside `client/` uses `client/` |
+
+Generated classes belong to the feature that owns their content type (`GeneratedItems` to `item`, generated
+status effects to `effect`) and follow that feature's row.
+
+How features cooperate without breaking the direction:
+
+- **Higher calls lower** through its public API: on level-up, `character` grants talent points through `talent`'s
+  API and teaches class spells through `spell`'s; after a change, `talent` asks `stats` to recompute and `spell` to
+  drop its cached spell modifiers.
+- **Lower asks higher through provider interfaces** it defines and the higher feature implements: casting needs
+  talent modifiers, the spellbook needs spells granted by equipped items, `stats` collects modifiers from race,
+  class and talents, and `talent` needs to know which trees the player's class allows.
+- **Higher reacts to lower through our own events** posted on the game bus: for example, `combat` reports a
+  critical hit and the proc engine in `spell` reacts to it.
+- **Each feature declares its own registries and their keys** (`spell/SpellRegistries.SPELL`). Shared type
+  registries are filled by their users: `core` declares `realmforge:requirement_type`, `character` registers
+  `level_at_least` in it and `progression` registers `chapter_completed`.
+- **Facts that many features read live low:** every living entity's level is one attachment in `stats`
+  ([7](#7-player-state)), written by `character` for players and by `mob` for mobs.
+
+### 4.5 Startup and lifecycle
+
+| When | Event (bus) | What we do |
+| --- | --- | --- |
+| Mod construction | constructor `Realmforge(IEventBus modBus, ModContainer container)` | call every `<Name>Feature.register(modBus)`; register configs with `container.registerConfig(...)` |
+| Registration | `DeferredRegister`s (mod) | static entries: items, blocks, entity types, mob effects, attributes, attachment types, data components, sounds, particles, menus, criteria triggers, custom statistics, loot function types |
+| | `NewRegistryEvent` (mod) | our type registries ([5.3](#53-type-registries)) |
+| | `DataPackRegistryEvent.NewRegistry` (mod) | our datapack registries ([5.2](#52-our-datapack-registries)) |
+| | `EntityAttributeModificationEvent` (mod) | add our attributes to players and other living entities |
+| | `EntityAttributeCreationEvent` (mod) | attributes of our own entity types |
+| | `RegisterPayloadHandlersEvent` (mod) | all payloads ([17](#17-networking)) |
+| Server start | `RegisterCommandsEvent`, `ServerStartedEvent` (game) | commands; world defaults on a new world ([19.1](#191-world-defaults)) |
+| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerEvent.PlayerRespawnEvent` (game) | schedule a stat recompute for the player's first tick; keep health across respawns ([8.2](#82-where-modifiers-come-from)) |
+| Play | damage, death, spawn, tick and advancement events (game) | sections 8-16 |
+| Client start | `RealmforgeClient` constructor; client registration events (mod) | [section 18](#18-client-code-rendering-gui-input) |
+
+## 5. Registries
+
+### 5.1 Which kind for what
+
+| Kind | Filled | `/reload` | Client | We use it for |
+| --- | --- | --- | --- | --- |
+| Static | at game start from Java, then frozen | no | ids synced by NeoForge | everything Minecraft needs a Java object for: items, blocks, entity types, status effects (`MobEffect`), attributes, sounds, particles, attachment types, data components, menus, criteria triggers, custom statistics |
+| Datapack | at world load from `data/`, decoded by codecs | no, the world must be reopened | synced if registered with a network codec | our game definitions ([5.2](#52-our-datapack-registries)) |
+| Reloadable vanilla data | at world load and on `/reload` | yes | partly (recipes, tags, advancements) | loot tables, recipes, tags, advancements |
+
+- Static entries that are content (items, blocks, mobs, status effects) are still written in YAML. `rf gen` turns
+  them into Java registration code, so Java refers to them by constants and a typo fails compilation.
+- A datapack registry only changes when the world is reopened (in singleplayer: save, quit, reopen; seconds). If
+  some table needs hot reload while tuning, it can move to a reload listener (`AddReloadListenerEvent`); decide
+  per case.
+- File location: `data/<pack namespace>/<registry namespace>/<registry path>/<entry>.json`. NeoForge prefixes
+  non-vanilla registries with their namespace (`CommonHooks.prefixNamespace`), so the spell `realmforge:firebolt`
+  is `data/realmforge/realmforge/spell/firebolt.json`.
+- Registration: `DataPackRegistryEvent.NewRegistry#dataPackRegistry(key, codec, networkCodec)`. With a network
+  codec the registry is synced to clients and every client must have it; without one it stays on the server.
+  Use the same codec for both unless an entry is large: a client with the same mod version can load the entries
+  from its own jar with the network codec, so that codec must still read the full JSON.
+
+### 5.2 Our datapack registries
+
+| Registry | Content | One entry | Synced | Milestone |
+| --- | --- | --- | --- | --- |
+| `realmforge:race` | `content/races/` | playable race: base modifiers, innate spells, allowed classes | yes | M1 |
+| `realmforge:class` | `content/classes/` | class: resource type, stat growth, spells by level, talent trees, starting kit | yes | M1 |
+| `realmforge:spell_school` | `content/spell_schools/` | school: damage type, colour, power and resistance attributes (the attributes themselves are generated static registrations, so a new school needs a game restart) | yes | M1 |
+| `realmforge:spell` | `content/spells/` | spell for players or NPCs: school, targeting, cost, cast, cooldown, typed effects, scaling | yes | M1 |
+| `realmforge:talent_tree` | `content/talents/` | WoW-style tree: nodes on a grid, ranks, prerequisites, typed effects per rank | yes | M1 |
+| `realmforge:stat_rule` | `content/stat_rules/` | what a primary stat gives: per-point modifiers, milestone bonuses | yes | M1 |
+| `realmforge:curve` | `content/curves/` | named table of points (level → value), linearly interpolated: XP per level, mob scaling, item budgets | yes | M1 |
+| `realmforge:chapter` | `content/chapters/` | story chapter: order and the level cap after completion (what a chapter unlocks names the chapter through `chapter_completed`) | yes | M1 |
+| `realmforge:dimension_rules` | `content/dimensions/` | gameplay rules of one dimension (entry id = dimension id): mob levels, access requirement, flags | no | M1 |
+| `realmforge:boss` | `content/bosses/` | fixed level, attributes, phases, abilities (spells), arena, loot | no | M1 |
+| `realmforge:dungeon_type` | `content/dungeons/` | rule set: theme, room pools, layout rules, ending, budgets, level range | no | M1 |
+| `realmforge:affix` | `content/affixes/` | rollable modifier: item categories (tags), tiers by rarity and level | yes | M2 |
+| `realmforge:gem` | `content/gems/` | socketable gem and its bonuses | yes | M2 |
+
+Professions, pets, mounts and contract templates follow in later milestones. A milestone task may still rename a
+registry before its first use. Server-only registries reach players only through what the server sends: the boss
+bar's title carries the boss's phase name, for example.
+
+### 5.3 Type registries
+
+Polymorphic data uses Mojang's dispatch pattern: each JSON object has a `type` that selects a `MapCodec` and a
+Java class, the way vanilla handles loot functions. The types are entries of static registries we create in
+`NewRegistryEvent` (`RegistryBuilder`), so a new behaviour means "write a class and register its type".
+
+| Registry | Types (first set) | Used by |
+| --- | --- | --- |
+| `realmforge:spell_effect_type` | damage, heal, apply_effect, remove_effect, projectile, area, teleport, dash, knockback; summon later | spells, so also boss abilities and procs |
+| `realmforge:targeting_type` | self, enemy, ally, ground point, direction; for NPCs current target, random player, farthest player, arena point | spells, boss abilities |
+| `realmforge:talent_effect_type` | attribute_modifier, spell_modifier, grant_spell, proc | talents; later glyphs and set bonuses |
+| `realmforge:resource_type` | mana, rage | classes |
+| `realmforge:phase_trigger_type` | health_below, time_in_phase, adds_defeated | bosses |
+| `realmforge:dungeon_ending_type` | boss_lair, treasury; later puzzle, wave_arena, escape, mounted_run, exploration | dungeon types |
+| `realmforge:requirement_type` | level_at_least, chapter_completed, class_is, has_advancement | unlocks: dimensions, dungeons, items, talents |
+| `realmforge:affix_type` (M2) | attribute, on_hit, on_kill | affixes |
+
+### 5.4 Using registry entries in Java
+
+- Each feature declares the keys of the registries it owns (`spell/SpellRegistries.SPELL`); `core` declares only
+  its own (`curve`, `requirement_type`). Lookups go through the level's registries:
+  `level.registryAccess().registryOrThrow(SpellRegistries.SPELL)`.
+- Saved data (attachments, item components) stores `ResourceKey`s; runtime code resolves them to `Holder`s. A key
+  whose entry no longer exists (content removed) is dropped with a warning in the log, never a crash.
+- Entries reference each other with `RegistryFixedCodec` (by id) or `RegistryFileCodec` (by id or inline), and
+  lists with `RegistryCodecs.homogeneousList` (which also accepts `#tag`). A dangling reference fails the world
+  load; Python reports it earlier and with a better message.
+- Java rarely names a specific content entry. Where it must (well-known curves, QA presets), `rf gen` emits
+  `ResourceKey` constants, so a renamed entry breaks compilation instead of play.
+
+## 6. Data flow: from YAML into the game
+
+### 6.1 Stages
+
+1. **Schema:** one pydantic model per content type (`tools/realmforge_tools/schema/`).
+2. **Ids and references** against the ID universe: the vanilla snapshot plus our content; the full-pack registry
+   dump is still a TODO ([ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)).
+3. **Semantic rules:** the ADR 0005 rules (every item obtainable, rewards usable and repairable in their chapter,
+   quest texts match the data, no orphaned lang keys or textures), structural rules per type (talent trees have
+   no cycles and no unreachable nodes, boss phase thresholds decrease, dungeon rules are satisfiable) and the
+   vision guardrails (principle 10).
+4. **Generators** write every derived file; CI fails when `rf gen` changes anything.
+5. **Runtime:** when a world loads, a decoding error in one of our datapack registries stops the GameTest server
+   and fails CI. Vanilla data (loot tables, recipes, advancements, tags) is different: a broken file is logged
+   (`Couldn't parse element`, `Parsing error loading recipe`, ...) and skipped. So CI also fails on those log lines,
+   and GameTests check that every generated id resolves and matches the generated expectations.
+
+### 6.2 What each content type becomes
+
+| `content/` | Generated | Loaded as |
+| --- | --- | --- |
+| `items/` (exists), `blocks/`, `entities/`, `effects/`, `sounds/` | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
+| `races/`, `classes/`, `spells/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `bosses/`, `dungeons/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
+| `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json`, the tag entries in `#minecraft:bypasses_cooldown` ([9.1](#91-damage-pipeline)), generated registrations of the school's power and resistance attributes | vanilla damage types, tags; static attributes |
+| `loot/`, `recipes/`, tags | `data/realmforge/loot_table/`, `recipe/`, `tags/` | reloadable vanilla data |
+| `chapters/`, `quests/` | `data/realmforge/advancement/`; `pack/config/ftbquests/quests/` (SNBT, stable ids per ADR 0006) | advancements; the FTB Quests book |
+| `worldgen/` (JSON, [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)) | validated and copied to `data/realmforge/dimension/`, `dimension_type/`, `worldgen/` | vanilla worldgen registries |
+| `rooms/` (NBT plus a YAML sidecar) | validated and copied to `data/realmforge/structure/` | structure templates |
+| item YAML with a weapon preset | `data/realmforge/weapon_attributes/<item>.json` (Better Combat format) | read by Better Combat |
+| mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
+| every type | `tools/schemas/<type>.schema.json` | editor completion |
+
+The quest book is part of the modpack (All Rights Reserved, [ADR 0009](decisions/0009-licensing.md)), so its
+files are generated into `pack/`, not into the jar. FTB Quests reads them from `config/ftbquests/quests/` in the
+instance. After `rf gen` changes files in `pack/`, run `packwiz refresh` (CI checks the pack index).
+
+### 6.3 Conventions
+
+- One YAML file per entry; the file name equals the id (existing rule).
+- snake_case keys in YAML and JSON, as in vanilla data.
+- **Human units in YAML, game units in data.** YAML says `cooldown_seconds: 8` or `chance_percent: 5`; generated
+  JSON and Java use ticks and fractions. Field names carry the unit; generators convert.
+- Player-facing text is `LocalizedText` in YAML; generated data holds only translation keys, following the scheme
+  `<type>.realmforge.<id>.<field>`, for example `spell.realmforge.firebolt.name`.
+- Numbers shown to players come from data, never typed into prose. Spell tooltips fill placeholders such as
+  `{damage}` at runtime from the current values, talents included; quest texts are generated from the same YAML as
+  the game (boss level, location, recipe).
+
+### 6.4 Example: the life of a spell
+
+```yaml
+# content/spells/firebolt.yaml (sketch; names are examples, the pydantic model is the authority once written)
+id: firebolt
+name: {en_us: Firebolt}
+description: {en_us: "Hurls a bolt of fire that deals {damage} fire damage."}
+school: realmforge:fire
+targeting: {type: enemy, range: 24}
+cast: {type: cast_time, seconds: 1.5}
+cooldown_seconds: 0
+cost: {resource: realmforge:mana, amount: 20}
+max_level: 5
+effects:
+  - type: realmforge:projectile
+    speed: 1.2
+    on_hit:
+      - {type: realmforge:damage, base: 12, per_level: 3, spell_power: 0.8}
+      - {type: realmforge:apply_effect, effect: realmforge:burning, duration_seconds: 4}
+```
+
+1. `uv run rf validate` checks the schema, that `realmforge:fire` is a known school, that the effect and every
+   referenced status effect exist, and the semantic rules.
+2. `uv run rf gen` writes `data/realmforge/realmforge/spell/firebolt.json`, the `spell.realmforge.firebolt.*` lang
+   entries and a GameTest expectation.
+3. `./gradlew build` packs them into the jar, whose resources act as the mod's built-in data pack.
+4. When a world loads, `Spell.CODEC` decodes the file and resolves its references; NeoForge syncs the registry to
+   joining clients.
+5. The player presses a spell key. The client sends `CastSpellPayload`; `SpellCaster` validates it and runs the
+   effects; the damage goes through the combat pipeline; nearby clients get `CastStartedPayload` for the cast bar
+   and animation.
+6. A GameTest casts `firebolt` at a dummy and compares the damage with the expectation.
+
+### 6.5 Adding a content type
+
+CLAUDE.md rule 1 lists the Python side. A datapack-registry type also needs, on the Java side: a record with a
+`CODEC` in its feature package, the registry key in that feature's registries class, the `dataPackRegistry(...)`
+call, and a
+GameTest that checks the generated expectations. The pydantic model and the codec describe the same shape; CI
+keeps them in step because it starts a game that decodes every generated file and compares it with the
+expectations.
+
+## 7. Player state
+
+Player and entity data lives in NeoForge data attachments, one per rate of change and audience:
+
+| Attachment | Owner package | On | Holds | Synced to |
+| --- | --- | --- | --- | --- |
+| `realmforge:level` | `stats` | every living entity | the level: derived from XP and the cap for players, set at spawn for mobs, fixed for bosses | the player itself and everyone tracking the entity |
+| `realmforge:character` | `character` | players | race, classes (a list: one in M1, room for dual class), total character XP, cached level cap | the owner and nearby players (small, nothing secret) |
+| `realmforge:spellbook` | `spell` | players | known spells and their levels, spell bar layout | owner |
+| `realmforge:combat` | `spell` | players | resource (mana, rage), cooldowns, current cast | owner, throttled |
+| `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points | owner |
+| `realmforge:dark_vision` | `world` | players | whether Dark Vision is switched on | not synced (the effect itself is) |
+
+- Values are immutable records with a `Codec` for saving and a `StreamCodec` for syncing, declared with
+  `AttachmentType.builder(...).serialize(codec).copyOnDeath().sync(predicate, streamCodec)`. A change is
+  `player.setData(type, newValue)`; NeoForge 21.1.259 then syncs it automatically to the players the predicate
+  allows (for example `(holder, to) -> holder == to` for owner-only data).
+- A synced attachment sends the same data to every player its predicate accepts (NeoForge encodes each update
+  once), so data meant for different audiences needs separate attachments.
+- Combat state changes too often for that. It is a mutable object synced explicitly with `player.syncData(type)`,
+  at most a few times per second or on important changes (cast started, cooldown started). Cooldowns are stored as
+  the server game time when they end, so they survive relogging and need no per-tick updates.
+- Computed values (attribute modifiers, spell modifiers) are derived from these attachments and the registries,
+  never treated as a source of truth ([8.2](#82-where-modifiers-come-from)).
+
+## 8. Stats and attributes
+
+### 8.1 The attribute set
+
+- **Vanilla, kept:** max health, armor, armor toughness, attack damage and speed, movement speed, knockback
+  resistance, luck and the rest. In 1.21.1 their ids keep their prefixes (`minecraft:generic.max_health`,
+  `minecraft:player.block_interaction_range`).
+- **Primary stats (ours):** the vision's STR, DEX, INT and whatever else the M1 design settles on (for example a
+  stamina stat). They are attributes, so gear, buffs and talents modify them like anything else.
+- **Secondary stats (ours):** crit chance, crit damage, dodge, spell power, haste (cast and cooldown speed),
+  resource regeneration, healing power; per-school power and resistance come with the schools. NeoForge's
+  `PercentageAttribute` for percentages, `RangedAttribute` otherwise, `setSyncable(true)` for what the character
+  sheet shows.
+- Registered in `stats/` on `Registries.ATTRIBUTE`, added to players (and to mobs where needed, such as spell
+  power for casters) in `EntityAttributeModificationEvent`.
+- NeoForge also has a boolean `creative_flight` attribute (`NeoForgeMod.CREATIVE_FLIGHT`): the planned basis for
+  Angel Wings-style spells and flying mounts.
+
+### 8.2 Where modifiers come from
+
+An attribute holds at most one modifier per id. Vanilla's equipment code and the `addOrUpdate...` and
+`addOrReplace...` methods replace a modifier with the same id; the plain `add...` methods throw. So every id is
+unique per source, entry, equipment slot and modifier (`<n>` is the modifier's position in its entry), the way
+vanilla armor uses one id per slot. Otherwise two rings with the same affix would count once, and taking one off
+would remove both bonuses.
+
+| Source | Applied by | Modifier id | Lifetime |
+| --- | --- | --- | --- |
+| race, class and level | `stats/CharacterStats`, from `character`'s provider | `realmforge:race/<race>/<n>`, `realmforge:class/<class>/<n>` | saved, recomputed |
+| talents | `stats/CharacterStats`, from `talent`'s provider | `realmforge:talent/<tree>/<node>/<n>` | saved, recomputed |
+| derived from primary stats | `stats/CharacterStats`, from stat rules ([8.3](#83-derived-stats-and-milestones)) | `realmforge:stat/<rule>/<n>` | saved, recomputed |
+| gear with fixed stats | vanilla, from the item's attribute modifiers | `realmforge:gear/<slot>/<n>` (generated) | while equipped |
+| affixes and gems (M2) | `ItemAttributeModifierEvent` adds them to the stack's modifiers | `realmforge:affix/<affix>/<slot>/<n>` | while equipped |
+| status effects | vanilla, `MobEffect#addAttributeModifier` | the effect's | while active |
+| mob level | `mob`, at `FinalizeSpawnEvent` | `realmforge:mob_level/<n>` | saved with the mob |
+
+"Saved, recomputed" means: `CharacterStats` writes these modifiers with `addOrReplacePermanentModifier` and rewrites
+the whole set (removing ids it no longer produces) whenever a source changes, and on the player's first tick after
+login or respawn. The
+data stays the source of truth, so a rebalanced talent applies at the next login without migrations. The
+modifiers are saved rather than transient because of how vanilla handles health:
+
+- **Loading a player** applies saved modifiers first, then health, and `setHealth` clamps to the max health at that
+  moment (`LivingEntity#readAdditionalSaveData`). Transient bonuses would not exist yet, so health would be cut.
+- **Gear applies one tick later.** Equipment modifiers are transient and are first applied on the player's first
+  tick (`LivingEntity#detectEquipmentUpdates`), and lowering max health clamps health at once
+  (`LivingEntity#onAttributeUpdated`). Hence two rules: gear never adds `generic.max_health` directly (a validation
+  rule; max health comes from primary stats through the saved derived modifiers), and the recompute after login
+  waits for that first tick, so it sees the same gear the saved values were computed with.
+- **Respawning:** after a death, vanilla copies only base values and sets health before our modifiers exist
+  (`ServerPlayer#restoreFrom`), so refill health to the new maximum after the first-tick recompute. Leaving the End
+  (`PlayerRespawnEvent#isEndConquered`) is not a death: restore the health captured in `PlayerEvent.Clone` instead.
+
+### 8.3 Derived stats and milestones
+
+- A `realmforge:stat_rule` entry says what one primary stat gives: per-point modifiers (the vision's
+  "10 STR = +10% attack damage" is 1% per point) and milestone bonuses at thresholds.
+- Recompute when a primary stat may have changed: marked dirty by `LivingEquipmentChangeEvent`,
+  `MobEffectEvent.Added`, `MobEffectEvent.Remove`, `MobEffectEvent.Expired` and our own changes (level, talents),
+  plus a cheap check every 10 ticks that compares primary values with the last applied snapshot (covers curios and
+  other mods).
+- No cycles: rules read primary stats and write only secondary or vanilla attributes (a validation rule).
+
+### 8.4 Caps
+
+Vanilla caps in 1.21.1 are armor 30, armor toughness 20, max health 1024 and attack damage 2048, and the vanilla
+armor formula never blocks more than 80% (`CombatRules.getDamageAfterAbsorb`). The vision wants armor, toughness
+and health far beyond vanilla, so:
+
+- caps are raised in one place (`stats/AttributeCaps`), by an access transformer on `RangedAttribute#maxValue` or
+  a small mixin, whichever the M1 stats task proves to work;
+- armor mitigation uses our own level-aware formula ([9.1](#91-damage-pipeline)).
+
+## 9. Combat
+
+### 9.1 Damage pipeline
+
+1. **Sources.** Melee goes through vanilla `Player#attack` (Better Combat only changes swings, combos and reach).
+   Spells call `hurt` with a `DamageSource` subclass defined in `combat/`, which carries the school's id, the
+   spell level and the attributes for the school's power and resistance, so `combat` needs no knowledge of spells.
+   Each school is a vanilla damage type (`data/realmforge/damage_type/<school>.json`), so death messages and damage
+   type tags keep working.
+2. **`LivingIncomingDamageEvent`**, before mitigation: attacker side (spell power and school bonus attributes, crit
+   roll) through `setAmount`; talents act through those attributes or are already part of the spell's damage
+   ([11.5](#115-resources-cooldowns-modifiers)). Defender side: dodge (cancel the event), school resistance, and our
+   armor formula in place of vanilla's through `addReductionModifier(DamageContainer.Reduction.ARMOR, ...)`.
+   NeoForge runs that reduction for every hit, so our formula must itself skip damage in
+   `#minecraft:bypasses_armor`, as vanilla's does.
+3. **Vanilla's hurt cooldown** comes next. Within 10 ticks of the previous hit, a hit that is not bigger than the
+   previous one is dropped without any further event, and a bigger one deals only the difference; a hit outside
+   that window starts a new one. Spell, area and damage-over-time hits would be swallowed, and each would shield the
+   target from the next sword swing. So the school damage types are in the `#minecraft:bypasses_cooldown` tag
+   (generated), and spell hits keep the target's current window (`setInvulnerabilityTicks(target.invulnerableTime)`),
+   so they neither grant nor clear invulnerability. They still overwrite vanilla's protected `lastHurt`, so a melee
+   hit right after a spell hit can deal slightly more than in vanilla; task F5 decides whether that matters.
+4. The reductions apply: armor (our formula), enchantments, effects. **`LivingDamageEvent.Pre`** sees the damage
+   before absorption hearts take their share.
+5. **`LivingDamageEvent.Post`** reports what was actually taken from health: on-hit procs, combat text payloads,
+   the QA combat log; threat later (with pets).
+
+All formulas live in a pure `DamageCalculator` (inputs: attacker and defender stat snapshots, spell and school, a
+random source), tested by JUnit. The Python balance simulation (M3) will use the same formulas; one JSON file of
+inputs and expected outputs, read by both pytest and JUnit, keeps the two implementations equal.
+
+### 9.2 Better Combat
+
+Taken unchanged ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md)), with no compile-time dependency. Our
+weapons get Better Combat weapon attribute files generated from item YAML:
+`data/realmforge/weapon_attributes/<item>.json` with `"parent": "bettercombat:<preset>"`. Spike 4 settles how our
+casting animations coexist with it (both would use playerAnimator) and whether swings are blocked while casting.
+
+## 10. Character: races, classes, leveling
+
+### 10.1 Races and classes
+
+- **Creation:** while a player's `character` attachment has no race, the client shows the character creation screen,
+  which cannot be closed. `CreateCharacterPayload(race, class)` → the server checks the combination and that no
+  character exists yet → sets the attachment, gives the starting kit, recomputes stats.
+- **A race** gives base modifiers, innate spells, optionally a size (`generic.scale`), and the allowed classes.
+- **A class** gives its resource type, stat growth per level, spells by level, talent trees and starting kit.
+- **Dual class:** the data model keeps a list of classes; the rules come in M3.
+- **Changing race or class:** a QA command in M1, an in-game way later.
+
+### 10.2 Leveling
+
+- **Character XP is separate from vanilla experience** (proposal, see the roadmap's open decisions). Vanilla XP
+  stays the currency for enchanting and anvils until the enchanting overhaul; character XP is never spent.
+- **Level is derived:** `level = min(cap, level_for(total_xp))`, with the XP table from `realmforge:curve`, and
+  stored in the `realmforge:level` attachment that every system reads. XP above the cap keeps accumulating (the
+  Otherworld pattern in the [research notes](research-notes.md#inputs)), so raising the cap levels the player up
+  at once.
+- **Level cap:** the highest cap among completed chapters (a base cap before any), cached in the `character`
+  attachment and recomputed on `AdvancementEvent.AdvancementEarnEvent` and on login ([16](#16-progression-and-quests)).
+- **XP sources** (amounts are data): kills, where `character` listens to `LivingDeathEvent` and scales the XP by the
+  victim's level relative to the player's (mobs far below give nothing); quests; dungeon completion and boss kills;
+  later discoveries and professions.
+- **Level-up:** recompute stats, grant talent points and teach class spells through their features' APIs, toast and
+  sound, fire the `realmforge:level_reached` trigger for advancements.
+
+## 11. Spells and status effects
+
+### 11.1 Model
+
+A `realmforge:spell` entry ([sketch in 6.4](#64-example-the-life-of-a-spell)) has a school, targeting, cast type
+(instant, cast time, channel), cost, cooldown, range, typed effects, a maximum level with per-level scaling (the
+vision prefers spell levels or power over rarities), icon, animation and sound keys, and an `npc_only` flag for
+mob and boss spells.
+
+A player knows a spell through their class (by level), race, talents (`grant_spell`) or items (an item component
+lists spells granted while equipped or on use): the vision's "some from the race or class, some from items".
+
+### 11.2 Casting (server-authoritative)
+
+1. The client sends `CastSpellPayload(spell, target entity or position)`.
+2. `SpellCaster` checks: the spell is known, off cooldown and global cooldown, the resource suffices, the target is
+   in range and line of sight, and the caster is not silenced, stunned or already casting.
+3. Instant spells run now. A cast-time spell stores the current cast in the `combat` attachment and sends
+   `CastStartedPayload` to the caster and tracking players (cast bar, animation). Moving or an interrupt cancels
+   it, as the spell's rules say.
+4. On completion every effect runs with an `EffectContext` (caster, targets, position, spell level, stat snapshot,
+   random source); cost and cooldowns apply.
+5. Mobs and bosses use the same `SpellCaster`, without a payload. Their cast bars are the telegraphs players react
+   to.
+
+### 11.3 Spell entities
+
+Registries freeze at startup, so variety lives in data: one generic projectile entity type and one generic area
+entity type (persistent ground zones), configured by the spell (speed, size, visuals, effects on hit). A new entity
+type only for genuinely new behaviour.
+
+### 11.4 Status effects
+
+- `MobEffect` is a static registry, so our status effects are YAML in `content/effects/` turned into generated
+  registrations: attribute modifiers through `MobEffect#addAttributeModifier`, periodic damage or healing through
+  a few behaviour classes in `effect/` (`applyEffectTick`, `shouldApplyEffectTickThisTick`). Vanilla effects can be
+  referenced directly.
+- Effects applied by spells remember their source as plain ids (the caster's UUID, the spell's id), because
+  `effect` sits below `spell`; dispels and talent interactions use them.
+- Guardrail: only a few bosses may apply blindness or darkness (validation counts them).
+
+### 11.5 Resources, cooldowns, modifiers
+
+- Resource kinds are Java types (`realmforge:resource_type`: mana regenerates, rage is gained in combat and
+  decays); a class picks one and sets its numbers in data.
+- Spell modifiers from talents (later glyphs and gear) are collected into a cached per-player view, invalidated
+  when talents or gear change, and applied when a cast starts: cast time, cost, cooldown, damage, extra effects.
+
+### 11.6 Client side
+
+The spell bar, cast bar and cooldown sweep are HUD layers; key mappings follow a default scheme decided in M1
+(proposal: a separate spell bar with its own keys, leaving the item hotbar alone); tooltips are built from data
+with live numbers; animations and particles start on `CastStartedPayload` (spike 4).
+
+## 12. Talents
+
+- **Model:** one `realmforge:talent_tree` entry per tree with its grid size and nodes: id, column, row, icon, max
+  rank, prerequisites (another node at some rank; points spent in the tree for each tier) and typed effects per
+  rank.
+- **Effect types:** attribute modifier; spell modifier (for one spell or a whole school: cast time, cost, cooldown,
+  damage, added effects); grant spell; proc (on hit, crit, kill or being hit: cast a spell or apply an effect).
+  Big-impact talents are combinations of these.
+- **Learning:** on level-up, `character` grants points through `talent`'s API, as its class data says (for example
+  one per level from some level on). `LearnTalentPayload(tree, node)` → pure `TalentRules` check that the tree is
+  one of the player's class trees (a provider that `character` implements), points, prerequisites, tier and rank →
+  the `talents` attachment → stats and spell modifiers are recomputed. Respec is a QA command first, an in-game way
+  later.
+- **Validation:** Python checks every tree (no cycles, every node reachable, the tier math works out); JUnit
+  property tests check that no sequence of payloads reaches an invalid allocation.
+- **Glyphs** (M3) reuse the same effect types, with glyph items as the source.
+- **Screen:** a WoW-style grid, drawn from a pure `TalentTreeView`.
+
+## 13. Items, gear and loot
+
+- **M1:** fixed-stat gear from YAML: generated items with vanilla attribute modifiers (`Item.Properties#attributes`,
+  per-slot ids from [8.2](#82-where-modifiers-come-from)), Better Combat presets for weapons, and vanilla's rarity
+  (`Item.Properties#rarity`).
+- **Rarity:** the vision wants five tiers, common to legendary; vanilla's `Rarity` has four (common to epic). M2
+  picks one of two ways:
+  - extend vanilla `Rarity` with a fifth constant through NeoForge's enum extension (in NeoForge 21.1 `Rarity` is
+    an `IExtensibleEnum`): name colours then work wherever vanilla styles item names (tooltips, chat) and likely in
+    mods that reuse that styling (*verify* Jade and EMI), but vanilla raises the shown rarity of enchanted common,
+    uncommon and rare items (`ItemStack#getRarity`);
+  - our own data component: full control and WoW-style colours, but we style item names ourselves and other mods
+    do not see the tier.
+- **Affixes, gems, reforging (M2):** rolled affixes are a data component on the stack (`realmforge:affixes`: affix
+  key plus rolled values). `ItemAttributeModifierEvent` turns them into attribute modifiers, so vanilla applies them
+  on equip and lists them in tooltips; special affixes are procs. Sockets and gems are another component;
+  reforging is a station with a menu.
+- **Loot:** loot tables generated from YAML, with our own loot functions (`Registries.LOOT_FUNCTION_TYPE`, for
+  example "roll affixes for the mob's level"), so EMI Loot and data packs see ordinary loot tables. "No trash loot"
+  is a validation rule: a denylist plus a minimum value per tier.
+- **Rewards:** quest choice rewards are pre-rolled stacks written into the quest files (ADR 0006). RNG item chests
+  (M2) are items that roll a loot table when opened.
+- **Curios (M2)** supplies curio slots ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md)); *verify* its
+  1.21.1 API when adding it.
+
+## 14. Mobs and bosses
+
+### 14.1 Mob levels
+
+- `realmforge:dimension_rules` (owned by `world`) gives every dimension a level rule: by distance from the
+  dimension's origin and by depth, with some jitter, clamped to a range.
+- In `FinalizeSpawnEvent`, `mob` computes the level from those rules, writes it into `realmforge:level` and applies
+  scaling modifiers (health, damage, armor, from curves). Vanilla hostile mobs get levels the same way as ours.
+  Bosses take the fixed level from their definition.
+- XP (`character`), loot (`loot`) and the armor formula (`combat`) read the level from `realmforge:level`. Jade
+  shows it through a compat plugin (*verify* Jade's API), the boss bar for bosses.
+
+### 14.2 Custom mobs
+
+- Entity types are static. A small Java library of archetypes (base classes with AI goal sets, such as melee brute
+  or ranged caster) plus YAML mobs that pick an archetype, attributes, spells, model and loot. A new archetype is
+  Java; a new mob of an existing archetype is YAML.
+- Models and animations: GeckoLib 4 ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md); *verify* its 1.21.1
+  API and asset paths when adding it), renderers in `client/render/`.
+- Minimap icons for Xaero's maps are generated files, no code ([ADR 0002](decisions/0002-hybrid-core-mod-and-modpack.md)).
+
+### 14.3 Bosses
+
+```yaml
+# content/bosses/hollow_warden.yaml (sketch; names are examples)
+id: hollow_warden
+entity: realmforge:hollow_warden     # the boss's entity type
+level: 10
+attributes: {max_health: 400, attack_damage: 9, armor: 8}
+arena: {radius: 18}
+phases:
+  - id: awakening
+    abilities:
+      - {spell: realmforge:grave_cleave, cooldown_seconds: 6, target: current_target}
+      - {spell: realmforge:bone_spikes, cooldown_seconds: 12, target: random_player}
+  - id: summoning
+    enter_when: {type: health_below, percent: 70}
+    on_enter: [{type: realmforge:apply_effect, effect: realmforge:bone_armor, target: self}]
+    abilities: [...]
+  - id: fury
+    enter_when: {type: health_below, percent: 30}
+    abilities: [...]
+loot: realmforge:boss/hollow_warden
+```
+
+- **Phase machine:** pure Java (`BossPhaseMachine`: health fraction, time in phase and living adds go in; the current
+  phase and transitions come out), JUnit-tested against every boss definition.
+- **Boss entity:** one base class runs the abilities through the spell engine, so every boss attack is a readable,
+  telegraphed cast that player tools can answer. Ground movement only: no flying bosses (a validation rule). Pulled
+  out of its arena, the boss resets.
+- **Boss bar:** a `ServerBossEvent` whose title carries the phase name; `ServerBossEvent#setName` sends title changes
+  to the players, so M1 needs no payload and no custom drawing for it.
+- **Level and lore** come from the same data as the quest texts.
+- **GameTests:** spawn the boss, set its health, assert the phase changes and their effects.
+
+## 15. Dimensions and dungeons
+
+### 15.1 Dimensions
+
+- Worldgen JSON in `content/worldgen/` ([ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)),
+  validated and copied to `data/realmforge/dimension/`, `dimension_type/` and `worldgen/`.
+- Gameplay rules in `realmforge:dimension_rules`: mob levels, the access requirement (for example a chapter), flags.
+- Access by portal or item, locked behind the requirement (the vision's "locked dimensions").
+- A technical dimension `realmforge:instances` (void, no natural spawning, fixed time) hosts dungeon instances.
+- The Nether and End stay an open question ([roadmap](roadmap.md#open-decisions)); M1 does not touch them.
+
+### 15.2 Dungeon types
+
+```yaml
+# content/dungeons/sunken_crypt.yaml (sketch; names are examples)
+id: sunken_crypt
+placement: instance                  # world_structure later (M4)
+theme: realmforge:crypt              # block palette, applied by structure processors
+rooms: realmforge:crypt              # room pool
+layout:
+  main_path_rooms: [6, 9]
+  branches: {count: [1, 3], rooms: [1, 2]}
+  required_rooms: [treasure, trap]
+ending: {type: realmforge:boss_lair, boss: realmforge:hollow_warden}   # or realmforge:treasury, ...
+encounters: {budget_per_room: [2, 4], mobs: realmforge:crypt}
+loot: {chests: [2, 4], table: realmforge:dungeon/sunken_crypt}
+level: [8, 12]
+```
+
+The ending is a rule of the type, so "not every dungeon ends with a boss" is just another ending type.
+
+### 15.3 Generation: pure first, then Minecraft
+
+1. **Plan** (pure Java): seed + rules → room graph (start, main path, branches, special rooms, ending).
+2. **Layout** (pure Java): graph → room boxes placed so their connectors meet; backtracking, no overlaps.
+3. **Build** (Minecraft): place the NBT templates (`StructureTemplate#placeInWorld`) with the theme's processors;
+   read data markers (structure blocks in data mode, as vanilla does) for spawns, chests and traps; spread the work
+   over ticks within a time budget.
+4. **Populate:** encounters and loot from the budgets.
+
+Steps 1 and 2 are deterministic; JUnit fuzzes them over thousands of seeds (constraints hold, no overlaps, every
+room reachable). A QA command renders a layout preview for review.
+
+### 15.4 Rooms
+
+- Built by hand in creative with structure blocks and saved as NBT in `content/rooms/<pool>/`, each with a small
+  YAML sidecar (tags, weight). Connectors are vanilla jigsaw blocks, so the same rooms work in world structures
+  later. Rooms are the second exception to YAML-only content, after worldgen JSON (ADR 0014 amends
+  [ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)).
+- Validation: size limits, connectors on the room's boundary, known markers, only blocks the themes can swap.
+
+### 15.5 Instances
+
+- `InstanceManager` keeps a `SavedData` in the instance dimension (`DimensionDataStorage#computeIfAbsent`): a grid
+  of plots with wide spacing (Compact Machines uses 1,024 blocks), each with its dungeon type, seed, state
+  (building, ready, active, completed, closing, free), party and return points.
+- **Entry:** an entrance in the world → allocate a plot → build over ticks → teleport the party
+  (`ServerPlayer#teleportTo(ServerLevel, x, y, z, yaw, pitch)`).
+- **Chunk loading:** while a plot is built and played, its chunks are kept loaded through a NeoForge
+  `TicketController` (registered in `RegisterTicketControllersEvent`; its forced chunks survive restarts), so they
+  never unload mid-build; cleanup releases them. Spike 3 checks this.
+- **Rules inside:** no breaking or placing blocks (`BlockEvent.BreakEvent`, `BlockEvent.EntityPlaceEvent`), respawn
+  at the entrance, no natural spawns, leave through the exit portal or a command.
+- **Cleanup and plot reuse:** answered by spike 3 (clear the plot, never reuse plots, or overwrite on reuse).
+- No dimensions are created at runtime (ADR 0012).
+
+### 15.6 World structures (M4)
+
+The same dungeon type format with `placement: world_structure`: the pipeline emits jigsaw `worldgen/structure`,
+`structure_set`, `template_pool` and `processor_list` files. Vanilla 1.21.1 limits jigsaw to depth 20
+(`JigsawStructure.MAX_DEPTH`) and 128 blocks from the start (`MAX_TOTAL_STRUCTURE_RANGE`); Lithostitched lifts the
+depth limit.
+
+## 16. Progression and quests
+
+- `realmforge:chapter`: order and the level cap after completion. Content that a chapter unlocks (a dimension, a
+  dungeon) names the chapter through the `chapter_completed` requirement.
+- Quests stay in FTB Quests ([ADR 0006](decisions/0006-quests-ftb-quests-generated-from-data.md)) and connect only
+  through its standard reward and task types:
+  - **Quests → our mod:** the last quest of a chapter has an `AdvancementReward` that grants
+    `realmforge:chapter/<id>` (an advancement whose only criterion is `minecraft:impossible`, so nothing else grants
+    it). Our `AdvancementEarnEvent` listener raises the level cap. Character XP rewards use a `CommandReward` that
+    runs our operator command `/realmforge xp`, so the generator writes `permission_level: 2` (FTB Quests' default
+    is 0).
+  - **Our mod → quests:** our criteria triggers (`Registries.TRIGGER_TYPE`) complete advancements generated from
+    content: `realmforge:level_reached`, `boss_defeated`, `dungeon_completed`, `spell_cast`, `talent_learned`.
+    Custom statistics (`Registries.CUSTOM_STAT`) count repeatable things such as dungeons cleared. FTB Quests'
+    `AdvancementTask` and `StatTask` read them and are retroactive.
+- **Pipeline:** `content/chapters/` and `content/quests/` → advancements in the jar, FTB Quests SNBT in
+  `pack/config/ftbquests/quests/` (ids derived from quest keys), lang. Quest texts come from the same data (boss
+  level; where, how and with what).
+- Procedural contracts come later (M7), in our own `contract/` package.
+
+## 17. Networking
+
+### 17.1 Rules
+
+- **One registration point:** `network/RealmforgeNetwork` handles `RegisterPayloadHandlersEvent` with
+  `event.registrar(PROTOCOL_VERSION)`. Any payload change bumps the version; a client with a different version is
+  refused at login with a clear message instead of desyncing.
+- **A payload** is a `record` implementing `CustomPacketPayload` with a `TYPE` and a `STREAM_CODEC`
+  (`StreamCodec.composite(...)`), kept in its feature's `net/` package.
+- **Client → server payloads are intents.** The server validates every field (the sender may act on it, range,
+  cooldown, resource, rate limit) and never trusts numbers from the client.
+- **Handlers run on the main thread** (the registrar's default, `HandlerThread.MAIN`) and hand over to the feature's
+  system at once.
+- **Client-bound handlers live in `client/network/`.** NeoForge 21.1 has no client-side registration event for
+  payloads, so common code registers every payload. `network/` therefore declares an interface with one method per
+  client-bound payload; `client/network/` implements it, and `RealmforgeClient` installs the implementation at
+  startup. The registered handler is a lambda that calls the installed implementation. A dedicated server never
+  installs one and never receives client-bound payloads, and no class outside `client/` refers to a client class.
+
+### 17.2 What syncs how
+
+| Data | Mechanism |
+| --- | --- |
+| datapack registries | NeoForge, at login, through each registry's network codec |
+| character, spellbook, talents | synced attachments, sent on every `setData` |
+| combat state | attachment synced explicitly and throttled |
+| entity level | synced attachment, to the player itself and everyone tracking the entity |
+| boss phase | the boss bar's title (`ServerBossEvent#setName`) |
+| events: cast started or ended, combat text, dungeon status | payloads, for example `PacketDistributor.sendToPlayersTrackingEntityAndSelf` |
+
+Cast bars and cooldowns are drawn from a start time and a duration, so they need no per-tick packets.
+
+### 17.3 First payloads (M1)
+
+- Client → server: `CreateCharacter`, `CastSpell`, `CancelCast`, `SetSpellBarSlot`, `LearnTalent`,
+  `ToggleDarkVision`.
+- Server → client: `CastStarted`, `CastEnded`, `CombatText`, `DungeonStatus`.
+
+## 18. Client code: rendering, GUI, input
+
+- **Entry point:** `client/RealmforgeClient`, annotated `@Mod(value = Realmforge.MOD_ID, dist = Dist.CLIENT)`, which
+  FML constructs only on the client. It registers HUD layers (`RegisterGuiLayersEvent`: spell bar, cast bar,
+  resource bar, combat text), key mappings (`RegisterKeyMappingsEvent`), entity renderers
+  (`EntityRenderersEvent.RegisterRenderers`), particles (`RegisterParticleProvidersEvent`), menu screens
+  (`RegisterMenuScreensEvent`) and tooltip components (`RegisterClientTooltipComponentFactoriesEvent`).
+- **Layout:** `client/hud`, `client/screen`, `client/input`, `client/render`, `client/tooltip`, `client/network`,
+  and `client/compat/<mod>` for the client parts of integrations (JEI and EMI plugins, Jade tooltips).
+- **The rule:** no class outside `client/` imports `net.minecraft.client.*`, `com.mojang.blaze3d.*`,
+  `net.neoforged.neoforge.client.*` or a library's rendering classes. An automated import check enforces it (a
+  pytest over `mod/src`, added in M1). The GameTest server in CI runs as a dedicated server and is a second line of
+  defence, but only for code the tests run, and NeoForge's own client classes are mostly not marked client-only, so
+  only the import check catches those.
+- **Thin screens:** screens and HUD layers draw from view models computed in common code (`CharacterSheetView`,
+  `TalentTreeView`), so their logic is testable without rendering.
+- **Little rendering code:** GeckoLib for animated entities, vanilla widgets for UI, no rendering mixins unless
+  unavoidable, no shaders of our own (Iris and Complementary). Porting costs the most here
+  ([ADR 0003](decisions/0003-platform-minecraft-1-21-1-neoforge.md)), so it stays small.
+- **Client config** (`ModConfigSpec`, client type) holds UI preferences only.
+
+## 19. Cross-cutting rules
+
+### 19.1 World defaults
+
+- On the first start of a new world (a flag in our `SavedData`), set the vision's gamerules once: `keepInventory`
+  and `doImmediateRespawn` on; `blockExplosionDropDecay`, `mobExplosionDropDecay` and `tntExplosionDropDecay` off.
+  Players may change them afterwards.
+- Destructive mobs: the [research notes](research-notes.md#default-gamerules) recommend targeted protection over the
+  `mobGriefing` gamerule (which also stops villagers farming and mobs picking up items): stop terrain damage with
+  `EntityMobGriefingEvent` and by clearing the block list in `ExplosionEvent.Detonate`. Final call in M1.
+- Dark Vision: a key toggles vanilla night vision as an infinite, hidden effect
+  (`MobEffectInstance.INFINITE_DURATION`); every player has it. The on/off state lives in the
+  `realmforge:dark_vision` attachment because effects do not survive death: the effect is reapplied on respawn and
+  login. Milk removes effects through NeoForge's `EffectCures.MILK`, so our instance drops that cure
+  (`MobEffectInstance#getCures`).
+
+### 19.2 Configuration
+
+`ModConfigSpec` only for operator and UI settings (instance limits, timeouts, debug flags, HUD options). Gameplay
+numbers are content, so they are versioned, validated and tested.
+
+### 19.3 Mixins and access transformers
+
+Last resort, only where no event or API exists. Each one sits in `mixin/` (or the access transformer file) with a
+comment saying why, and gets a test.
+
+### 19.4 Optional integrations
+
+`compat/<modid>/` (client parts in `client/compat/<modid>/`) runs only when `ModList.get().isLoaded(modid)`, with
+an optional dependency in `neoforge.mods.toml`. Data-only integrations (Better Combat weapon files, Xaero icons,
+FTB Quests files) need no code.
+
+### 19.5 Performance
+
+- Event handlers exit early (side, entity type, dimension) before doing work.
+- No per-tick loops over all entities; periodic checks are throttled.
+- Derived values are cached and invalidated by events.
+- Dungeon building runs under a per-tick time budget.
+- The network carries changes, not full state every tick.
+- A spark profile before every release; nightly profiles later ([ADR 0010](decisions/0010-testing-strategy.md)).
+
+## 20. Tests per layer
+
+| What | Where | M1 examples |
+| --- | --- | --- |
+| pure logic | JUnit in `mod/src/test` | damage formula, talent rules, dungeon planner fuzzing, boss phase machine, XP curve |
+| content | pytest in `tools/tests` | schemas, references, semantic rules, guardrails, talent tree validity |
+| data against codecs | GameTest server start, data errors in its log, generated expectations | every spell decodes; every generated loot table, recipe and advancement loads; ids and key fields match |
+| behaviour in a world | GameTests in `qa-mod` | firebolt damages a dummy by the expected amount; the level stops at the cap; the chapter advancement raises it; the boss enters phase 2 at 70%; an instance is built, entered and cleaned up |
+| client isolation | pytest import check; dedicated GameTest server | - |
+| whole pack | CI pack boot job (spike 6) | - |
+| balance | Python simulation (M3) | time to kill per class and level, boss phase survival, time to item |
+
+The QA mod grows with the features: `/qa` commands (level, class, talents, gear presets, boss at phase N, enter an
+instance with a given seed, reset cooldowns, god mode), a training dummy with a DPS meter, and a combat log file
+that agents can read.
+
+## 21. Decisions and open questions
+
+The decisions this document makes are listed in [ADR 0014](decisions/0014-core-mod-architecture.md); changing one
+of them needs a new ADR. Everything else here may change with the code, in the same PR.
+
+Still open, for the owner (details and proposals in the [roadmap](roadmap.md#open-decisions)): character XP
+separate from vanilla XP, the spell key scheme, the final set of primary stats, how many custom mobs M1 gets,
+griefing protection, and the Nether and End. M2 decides how rarity works ([13](#13-items-gear-and-loot)).
