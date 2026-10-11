@@ -393,11 +393,12 @@ merges second rebases and regenerates (`monitor-pr` step 2), never hand-merging 
 Decide the domains, gate-critical files and generated files before the claim; the claim comment states them, so
 peers can count the batch. If the scope later grows into another domain, a shared-root file, a gate-critical file
 or a generated file, add a scope comment with the new values to each ticket, re-check the caps in
-[Concurrency and run boundaries](#concurrency-and-run-boundaries) as in [Slot race](#slot-race), and stop
-selecting further work if the batch no longer fits. An AI-only batch whose scope turns into a gameplay change
-needs a free playtest slot first: add a QA-mode comment naming Playtest to each of its tickets and re-count as in
-[Slot race](#slot-race); without a slot, split the gameplay part into its own ticket, or keep the batch In
-Progress on its branch until a slot frees.
+[Concurrency and run boundaries](#concurrency-and-run-boundaries) as in [Slot race](#slot-race). If the grown
+batch no longer fits, the grown part does not go ahead: split it into its own ticket for a later batch, or keep
+the batch In Progress on its branch, unpublished, until the cap has room. An AI-only batch whose scope turns
+into a gameplay change needs a free playtest slot first: add a QA-mode comment naming Playtest to each of its
+tickets and re-count as in [Slot race](#slot-race); without a slot, split the gameplay part into its own ticket,
+or keep the batch In Progress on its branch until a slot frees.
 
 ### Atomic intake claim
 
