@@ -86,3 +86,42 @@ Tip: Prism's **Edit** → **Settings** → **Java** can download a Java 21 runti
 `.claude/settings.json` (committed) registers a hook that validates content after every edit in `content/` or
 `tools/`. Personal settings go into `.claude/settings.local.json` (gitignored). `CLAUDE.md` is the entry point
 for every agent session.
+
+### Cloud sessions
+
+Cloud sessions (claude.ai/code, or a cloud session started from the desktop app) run in a fresh container with
+Java 21 and uv preinstalled; there is no SDKMAN and `JAVA_HOME` is already set.
+
+`.claude/settings.json` runs `.claude/hooks/cloud-warmup.sh` at SessionStart: `--env` on every SessionStart, the
+warm-up only at `startup` and `resume` (not after `/clear`, compaction or a fork, so it never starts mid-session
+next to the agent's own Gradle runs). Both exit at once unless `CLAUDE_CODE_REMOTE` is `true`, so local sessions
+are unaffected.
+
+- **`cloud-warmup.sh --env`** (synchronous, milliseconds). The container resolves no hostnames itself; every
+  download goes through Claude's HTTPS proxy. Its `NO_PROXY` still lists PyPI, so uv would skip the proxy and fail
+  with `dns error`. The hook removes PyPI from `NO_PROXY` for the whole session (via `CLAUDE_ENV_FILE`).
+- **`cloud-warmup.sh`** (`"async": true`, never delays the session). In the background it runs `uv sync --locked`,
+  then `./gradlew :mod:extractMinecraftSources classes`: the Gradle distribution, all dependencies, the NeoForm
+  decompile/recompile, `build/mc-sources/` and a first compile. The Gradle daemon keeps running for the agent's
+  first build. Measured in a fresh clone with an empty Gradle home (October 2026): the first `./gradlew build`
+  takes about 5 minutes cold; the warm-up takes about 4 minutes in the background, and the first build after it
+  about 45 seconds.
+  - Maven Central sometimes answers bursts with `429 Too Many Requests` for a few minutes. After a 429 (or a
+    502/503/504) the warm-up retries the Gradle step after 60 s and again after 120 s; any other failure ends it
+    at once.
+  - State in `.cache/warmup/` (gitignored): `status` (`running`, `done` or `failed`), `summary`, `log`, and
+    `stamp`, a hash of the build inputs (`gradle.properties`, wrapper properties, `settings.gradle`, the
+    `build.gradle` files, `uv.lock`, `pyproject.toml`, `.python-version`). On resume, the same stamp skips the
+    warm-up.
+  - When it ends, Claude Code passes the summary to Claude on the next turn. On failure the summary and the log
+    name the hosts the agent proxy refused.
+  - **`cloud-warmup.sh --wait [seconds]`** blocks until the warm-up has finished (default limit 540 s, exit code
+    2 when it is still running). Agents run it before their first Gradle command and after a resume (rule in
+    `CLAUDE.md`).
+- The environment's network access (environment settings → **Network access**) must allow the default package
+  managers plus `downloads.gradle.org`; NeoForge, Parchment and Mojang hosts were reachable without extra
+  entries. A blocked host fails with `403` / `CONNECT tunnel failed`; `curl -sS "$HTTPS_PROXY/__agentproxy/status"`
+  lists the recent denials.
+- The environment's setup script (environment settings) provisions tools only. It runs before Claude Code launches
+  and its result is cached for later sessions, but only when it finishes within about five minutes. The Gradle
+  warm-up alone takes about four, plus any rate-limit retries, so the project warm-up stays in the hook.
