@@ -744,8 +744,10 @@ with live numbers; animations and particles start on `CastStartedPayload` (spike
   (`loadedFromDisk`) or moving between dimensions.
 - Some spawns skip `finalizeSpawn` and with it this event: slime splits (`Slime#remove`), silverfish from infested
   blocks, `GameTestHelper#spawn`. Split children copy the parent's level and scaling in `MobSplitEvent`
-  (`getParent`, `getChildren`), and an `EntityJoinLevelEvent` fallback gives a level to any mob that joins without
-  one (checked with `hasData`), so the default level never passes for an assigned one.
+  (`getParent`, `getChildren`). Any other mob that joins without a level (checked with `hasData`) goes through an
+  `EntityJoinLevelEvent` fallback that runs the same leveling as `FinalizeSpawnEvent`: the level from the rules,
+  the scaling modifiers, then the health refill. So the default level never passes for an assigned one, and no mob
+  carries a level without its scaling.
 - XP (`character`), loot (`loot`) and the armor formula (`combat`) read the level from `realmforge:level`. Jade
   shows it through a compat plugin (*verify* Jade's API), the boss bar for bosses.
 
