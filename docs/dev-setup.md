@@ -86,3 +86,19 @@ Tip: Prism's **Edit** → **Settings** → **Java** can download a Java 21 runti
 `.claude/settings.json` (committed) registers a hook that validates content after every edit in `content/` or
 `tools/`. Personal settings go into `.claude/settings.local.json` (gitignored). `CLAUDE.md` is the entry point
 for every agent session.
+
+### Cloud sessions
+
+Cloud sessions (claude.ai/code, or a cloud session started from the desktop app) run in a fresh container with
+Java 21 and uv preinstalled; there is no SDKMAN and `JAVA_HOME` is already set.
+
+- `.claude/hooks/session-start.sh` (a SessionStart hook) runs `uv sync --locked` before the session starts. It does
+  nothing in local sessions.
+- The container resolves no hostnames itself; every download goes through Claude's HTTPS proxy. Its `NO_PROXY`
+  still lists PyPI, so uv would skip the proxy and fail with `dns error`. The hook removes PyPI from `NO_PROXY` for
+  the whole session.
+- The environment's network access (environment settings → **Network access**) must allow the default package
+  managers plus `downloads.gradle.org`. A blocked host fails with `403` / `CONNECT tunnel failed`;
+  `curl -sS "$HTTPS_PROXY/__agentproxy/status"` lists the recent denials.
+- The first `./gradlew build` in a new container downloads Gradle, Minecraft and NeoForge and decompiles: about
+  5 minutes.
