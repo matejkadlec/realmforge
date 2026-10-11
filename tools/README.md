@@ -8,6 +8,7 @@ uv run rf validate        # validate content/ (schema, ids, references)
 uv run rf gen             # validate, then regenerate every generated file
 uv run rf gen --check     # exit 1 if any generated file is out of date
 uv run rf ids vanilla     # re-extract the vanilla ID universe (downloads the server jar, needs Java 21)
+uv run rf pack-boot       # boot the whole pack plus mod/build/libs' jar on a server and a client (needs Java 21)
 uv run pytest             # tests
 uv run ruff check && uv run ruff format --check
 ```
@@ -20,9 +21,32 @@ uv run ruff check && uv run ruff format --check
 | `realmforge_tools/id_universe.py`, `vanilla.py` | the ID universe and the vanilla extractor |
 | `realmforge_tools/generate/` | generators; `generate_all` + `sync` own the generated directories |
 | `realmforge_tools/formats/` | deterministic PNG, NBT, gzip/zlib and JSON writers |
+| `realmforge_tools/packboot.py` | `rf pack-boot`: installs and boots the pack with NeoForge's self tests ([below](#pack-boot)) |
+| `realmforge_tools/client_isolation.py` | the import check that keeps client classes under `client/` (architecture 18) |
 | `id_universe/` | generated vanilla id snapshot (committed) |
 | `schemas/` | generated JSON Schemas for editor completion (committed) |
 | `tests/` | pytest |
 
 Generated directories (owned by `rf gen`, never edit by hand): `mod/src/generated/`, `qa-mod/src/generated/`,
 `tools/schemas/`. `tools/id_universe/` is written by `rf ids vanilla`.
+
+## Pack boot
+
+`uv run rf pack-boot` ([ADR 0018](../docs/decisions/0018-pack-boot-tests.md)) checks that the whole modpack plus the
+core mod jar loads, on both sides, the way players and server owners install it. Build the jar first
+(`./gradlew :mod:jar`). It works in `.cache/pack-boot/`:
+
+1. installs the game: the NeoForge server from its installer (`server/`), or the client through the
+   [portablemc](https://github.com/mindstorm38/portablemc) launcher run by `uvx` (`client/` is the game directory,
+   `launcher/` holds the vanilla client, NeoForge, libraries and about 1 GB of assets);
+2. installs the pack's mods for that side with packwiz-installer, serving `pack/` over a local HTTP server;
+3. copies the jar into `mods/` and boots with NeoForge's self test, once with the optional mods (Quark) and once
+   without; the client runs under Xvfb when `xvfb-run` exists (`sudo apt install xvfb`);
+4. fails on a non-zero exit, a missing self-test report, a crash report, a jar that was not loaded, or an ERROR or
+   FATAL log line that `ALLOWED_ERRORS` in `packboot.py` does not explain.
+
+`--side server|client` boots one side, `--optional with|without` one variant, `--pack-dir` another pack (to try a
+change, or a deliberately broken copy). Logs land in `.cache/pack-boot/reports/<side>/<variant>/`. The NeoForge
+installer, packwiz-installer and its bootstrap are sha256-pinned and portablemc is version-pinned in `packboot.py`;
+a NeoForge upgrade updates the pin there too (`test_packboot.py` fails until it matches `pack/pack.toml` and
+`gradle.properties`).

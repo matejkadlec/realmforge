@@ -2,7 +2,7 @@
 
 Date: 2026-10-11
 
-Status: Accepted
+Status: Accepted; amended by [0018](0018-pack-boot-tests.md) (the whole pack boots on a server and a client on every PR)
 
 ## Context
 

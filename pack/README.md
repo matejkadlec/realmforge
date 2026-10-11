@@ -51,6 +51,19 @@ servers) cannot choose options and installs every optional mod, Quark included
 ("Accepting option Quark as option choosing is not implemented in the CLI").
 On a server without Quark, delete its jar after installing.
 
+## Boot test
+
+CI boots the whole pack plus the core mod on a dedicated server (job `pack-boot`) and on a client under Xvfb (job
+`pack-boot-client`) for every pull request, each with and without Quark. Run the same locally from the repository
+root after changing anything here:
+
+```sh
+./gradlew :mod:jar && uv run rf pack-boot
+```
+
+See [tools/README.md](../tools/README.md#pack-boot) and
+[ADR 0018](../docs/decisions/0018-pack-boot-tests.md) for what it checks.
+
 ## License
 
 The modpack is All Rights Reserved. See [LICENSE](LICENSE) in this folder.

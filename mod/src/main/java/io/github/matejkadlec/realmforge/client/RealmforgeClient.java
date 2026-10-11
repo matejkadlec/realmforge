@@ -1,0 +1,21 @@
+package io.github.matejkadlec.realmforge.client;
+
+import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.client.network.ClientPayloadHandler;
+import io.github.matejkadlec.realmforge.network.RealmforgeNetwork;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
+
+/**
+ * Client entry point of the core mod. FML constructs it only on a physical client, after or beside {@link Realmforge},
+ * so everything client-only starts here (architecture 18). Only classes under {@code client/} may use client classes;
+ * {@code tools/tests/test_client_isolation.py} enforces it.
+ */
+@Mod(value = Realmforge.MOD_ID, dist = Dist.CLIENT)
+public final class RealmforgeClient {
+    public RealmforgeClient(IEventBus modBus) {
+        RealmforgeNetwork.installClientHandler(new ClientPayloadHandler());
+        // Client registration events (HUD layers, key mappings, renderers, screens) are added to modBus here.
+    }
+}

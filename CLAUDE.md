@@ -26,8 +26,9 @@ modpack adds third-party QoL, performance and library mods.
   publication of ticket work, read [docs/ai-development-flow.md](docs/ai-development-flow.md) completely. Agents
   never implement `decision` tickets or tickets waiting on Matěj.
 - **Status:** M0 (bootstrap) is done: build, CI, content pipeline, one test item (`realmforge:test_item`), modpack
-  definition. Next is M1, the playable vertical slice (proposed as v0.1.0, roadmap decision D7), starting with its
-  spikes. No gameplay yet.
+  definition. M1, the playable vertical slice (proposed as v0.1.0, roadmap decision D7), is under way: CI boots the
+  whole pack on a server and a client (spike 6), and the core mod has its empty feature skeleton (F1). No gameplay
+  yet.
 
 ## Pinned versions
 
@@ -36,13 +37,14 @@ Changing any of these requires a new ADR ([0003](docs/decisions/0003-platform-mi
 | Component | Version | Where |
 | --- | --- | --- |
 | Minecraft | 1.21.1 (data version 3955) | `gradle.properties`, `tools/realmforge_tools/project.py` |
-| NeoForge | 21.1.259 | `gradle.properties`, `pack/pack.toml` |
+| NeoForge | 21.1.259 | `gradle.properties`, `pack/pack.toml`, `tools/realmforge_tools/packboot.py` |
 | ModDevGradle | 2.0.148 | `settings.gradle` |
 | Gradle | 9.2.1 (checksum-pinned wrapper) | `gradle/wrapper/gradle-wrapper.properties` |
 | Java | 21 (Temurin) | toolchain in `*/build.gradle` |
 | Parchment | 1.21.1 / 2024.11.17 | `gradle.properties` |
 | Python | 3.12+ (3.14 pinned in `.python-version`), managed by uv | `pyproject.toml`, `uv.lock` |
 | packwiz | commit `ef87d96` | `.github/workflows/ci.yml` |
+| packwiz-installer, portablemc (pack boot tests) | 0.5.14 (bootstrap 0.0.3), 4.4.1 | `tools/realmforge_tools/packboot.py` |
 
 ## Commands
 
@@ -63,6 +65,7 @@ uv run rf gen --check                     # exit 1 if generated files are out of
 uv run pytest                             # Python tests
 uv run ruff check && uv run ruff format   # lint + format Python
 uv run rf ids vanilla                     # re-extract the vanilla ID universe (only when the MC version changes)
+uv run rf pack-boot                       # boot the whole pack + mod/build/libs jar on a server and a client
 
 ./gradlew build                           # compile both mods + JUnit
 ./gradlew runGameTestServer               # headless GameTests; exit code != 0 on failure
@@ -272,7 +275,8 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
    when commands, structure, rules or decisions change. Stale docs mislead the next session.
 5. Open the PR against `master` with `gh pr create`, then run `/monitor-pr <n>`. CI (`.github/workflows/ci.yml`)
    runs: content pipeline + generated-files check, Gradle build + JUnit + GameTests, vanilla ID universe
-   reproducibility, packwiz index. These four jobs are the required checks on `master`.
+   reproducibility, packwiz index (these four are the required checks on `master`), and the full pack boot on a
+   dedicated server and on a client ([ADR 0018](docs/decisions/0018-pack-boot-tests.md)).
 6. `monitor-pr` merges once Codex is done (its approval, a completed review whose findings are all closed, or
    10 silent minutes), every review thread is resolved and the required checks are green, unless the PR has the
    `needs-playtest` label (Matěj playtests first and removes the label) or the `needs-approval` label (Matěj
