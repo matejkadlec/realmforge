@@ -636,17 +636,20 @@ lists spells granted while equipped or on use): the vision's "some from the race
 1. The client sends `CastSpellPayload(spell, target entity or position)`.
 2. `SpellCaster` checks: the spell is known, off cooldown and global cooldown, the resource suffices, the target is
    in range and line of sight, and the caster is not silenced, stunned or already casting.
-3. Instant spells run now. A cast-time spell stores the current cast in the `combat` attachment and sends
-   `CastStartedPayload` to the caster and tracking players (cast bar, animation). A player who starts tracking the
-   caster later (walking up to a boss, reconnecting mid-cast) gets the current cast from a
+3. Instant spells run now. A cast-time or channelled spell stores the current cast in the `combat` attachment and
+   sends `CastStartedPayload` to the caster and tracking players (cast bar, animation). A player who starts
+   tracking the caster later (walking up to a boss, reconnecting mid-cast) gets the current cast from a
    `PlayerEvent.StartTracking` listener, as a `CastStartedPayload` with the original start time, so the telegraph
    still shows. Moving or an interrupt cancels the cast, as the spell's rules say.
-4. On completion the server checks the resource and the target again, because both can change during the cast:
-   rage decays, effects drain mana, and the target can die, leave the caster's dimension, move out of range or go
-   behind cover. If either check fails, the cast fails like an interrupt; a spell that should lock on says so in
-   its data. Otherwise the cost and cooldowns apply first, then every effect runs with an `EffectContext` (caster,
-   targets, position, spell level, stat snapshot, random source).
-5. Mobs and bosses use the same `SpellCaster`, without a payload. Their cooldowns and current cast live in their
+4. When a cast-time spell completes, the server checks the resource and the target again, because both can change
+   during the cast: rage decays, effects drain mana, and the target can die, leave the caster's dimension, move out
+   of range or go behind cover. If either check fails, the cast fails like an interrupt; a spell that should lock
+   on says so in its data. Otherwise the cost and cooldowns apply first, then every effect runs with an
+   `EffectContext` (caster, targets, position, spell level, stat snapshot, random source).
+5. A channel pays its cost and starts its cooldown when it begins, then runs its effects at the tick interval its
+   data sets for as long as it lasts, checking the target before every tick as in step 4. Moving or an interrupt
+   ends it early, and the ticks already run stay applied.
+6. Mobs and bosses use the same `SpellCaster`, without a payload. Their cooldowns and current cast live in their
    own `combat` attachment ([7](#7-player-state)), and their cast bars, the telegraphs players react to, reach
    clients only through the cast payloads.
 
