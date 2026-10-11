@@ -463,10 +463,19 @@ continue that branch (it then becomes that session's batch: a worktree on the ex
 comment naming it on each ticket), or releases it: the tickets go back to Next with a claim-release comment
 naming the branch, which stays for him to delete or keep and no longer blocks a claim.
 
-A claim is **lost** when step 4 shows a peer moved first. Do not implement it and do not move the ticket back:
-the peer owns it. Claim the next eligible ticket, or end the run with the ledger when nothing safe remains. If a
-peer's ownership only shows after implementation, do not push the work and do not open a competing pull request:
-record the collision on the ticket, keep the local branch for Matěj, and report it under "Blocked or other".
+A claim is **lost** when step 4 shows a peer moved first. Do not implement that ticket and do not move it back:
+the peer owns it. When it was a later ticket of a batch whose earlier tickets this session already claimed, never
+leave those behind; either:
+
+- **shrink the batch:** drop the lost ticket and every ticket that depends on it (claim-release comment, back to
+  Next for those this session claimed), and add a comment naming the smaller batch to each remaining ticket. The
+  branch keeps its name; claim comments and pull request titles, not branch names, decide whose a ticket is; or
+- **end the batch:** release every ticket this session claimed for it (a claim-release comment naming the branch,
+  back to Next) and delete the branch it pushed while it holds no commit (`git push origin --delete <branch>`).
+
+Then claim the next eligible ticket, or end the run with the ledger when nothing safe remains. If a peer's
+ownership only shows after implementation, do not push the work and do not open a competing pull request: record
+the collision on the ticket, keep the local branch for Matěj, and report it under "Blocked or other".
 
 #### Slot race
 
