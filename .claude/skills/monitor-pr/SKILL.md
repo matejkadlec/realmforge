@@ -347,6 +347,9 @@ expects: RLM's transitions are all global, so Jira refuses no stale move.
   passed.
 - **Playtest passed:** once `needs-playtest` was removed after the current head's push (check 6 of "Merge"), move
   the tickets in Pending User QA to Pending CR (transition `51`) with a comment naming the played head.
+- **Unplayed head again:** when check 6 re-adds `needs-playtest` because a push came after the playtest, move the
+  tickets in Pending CR back to Pending User QA (`41`) with a comment naming the new head and what changed since
+  the played one.
 - **Playtest failed:** when Matěj reports a problem from the playtest while the label is set (his thread, a
   message in this session, or his comment on a ticket), move the affected tickets to In Progress (`31`), fix it
   on the branch with `fix-pr`'s verification and single-push delivery, then record the revision on each ticket
