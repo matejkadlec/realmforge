@@ -419,10 +419,10 @@ Per ticket, in order:
    ```
 
    `Generated` lists the generated files the batch will regenerate ([Conflict domains](#conflict-domains)), or
-   `none`. Add "Pulled in as a dependency of RLM-<n>" when that applies. Peer sessions share the acting account, so the
-   comment is the only claim token that tells them apart: the earliest claim comment recorded since the ticket
-   last entered Next wins, and the lower comment id breaks a tie on the same timestamp. Older comments do not
-   count, so an interrupted run's claim never defeats a later claimant.
+   `none`. Add "Pulled in as a dependency of RLM-<n>" when that applies. Peer sessions share the acting account,
+   so the comment is the only claim token that tells them apart: the earliest claim comment recorded since the
+   ticket last entered Next wins, and the lower comment id breaks a tie on the same timestamp. Older comments do
+   not count, so an interrupted run's claim never defeats a later claimant.
 4. Re-verify: re-read the ticket with the same fields, and list local branches, worktrees, remote branches and
    open pull requests again, ignoring the ones this session created. The claim holds only if the ticket is In
    Progress under the acting account, this session's claim comment is the earliest that counts, no branch,
