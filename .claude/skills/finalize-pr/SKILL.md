@@ -36,8 +36,9 @@ It never merges, deploys or requests a Codex review.
   quote Codex's own footer. GitHub hands any mention to Codex as a new request: a review, or a Cloud task that
   can push to the branch.
 - **One push per run.** Every push starts a full CI run and can start a new Codex review. Commit once per root
-  cause, push once at the end, then read the pull request's head back from GitHub and confirm that your final
-  commit is reachable from it.
+  cause, push once at the end, then read the pull request's head back from GitHub and confirm that it equals
+  your final commit. Any other head, even a descendant of your commit, means someone else pushed: treat it as a
+  remote head that moved under you.
 - **Never weaken anything to get green.** Never weaken, skip or disable a test, a required check, branch
   protection or a security policy. Never use `--no-verify`, `--admin` or any bypass.
 - **No merging, no deploying.** Only [`monitor-pr`](../monitor-pr/SKILL.md) merges. Nothing deploys in this
@@ -136,8 +137,8 @@ It never merges, deploys or requests a Codex review.
      ```
 
    - Push once (`git push origin <branch>`), read the remote head back
-     (`gh pr view <n> --repo matejkadlec/realmforge --json headRefOid`), and confirm that your final commit is
-     reachable from it.
+     (`gh pr view <n> --repo matejkadlec/realmforge --json headRefOid`), and confirm that it equals your final
+     commit. A different head, even a descendant, is a remote head that moved under you: Blocked.
    - A failed push or gate is a delivery blocker, not a completed fix. Keep the commits local and report them.
 
 8. **Report and stop.** When [`monitor-pr`](../monitor-pr/SKILL.md) started this run (its usage-limit fallback),
@@ -171,7 +172,7 @@ Never fix a P3 on this branch. Never end the report with an offer to fix one "if
 Include:
 
 - the pull request number and URL, the branch and the base;
-- the head SHA at the start and now, and whether your final commit is reachable from the remote head;
+- the head SHA at the start and now, and whether the remote head equals your final commit;
 - the CI state, read once after the push;
 - the rounds that ran, and why the loop stopped;
 - every finding with its severity and outcome: fixed, rejected with the reason, tracked as `#<issue>`, or

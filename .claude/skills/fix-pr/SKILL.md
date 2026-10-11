@@ -51,7 +51,8 @@ user, and `monitor-pr` does the waiting.
   new request: a review, or a Cloud task that can push to the branch.
 - **One push per pass.** Every push starts a full CI run and can start a new Codex review. Commit once per root
   cause, then publish the whole pass with a single push. After the push, read the pull request's head back from
-  GitHub and confirm that your final commit is reachable from it.
+  GitHub and confirm that it equals your final commit. Any other head, even a descendant of your commit, means
+  someone else pushed: treat it as a remote head that moved under you.
 - **Never weaken anything to get green.** Never weaken, skip or disable a test, a required check, branch
   protection or a security policy. Never use `--no-verify`, `--admin` or any bypass.
 - **No merging, no deploying.** Only `monitor-pr` merges. Nothing deploys in this repository; never re-run or
@@ -190,8 +191,8 @@ severity badge such as `![P1 Badge](...)` followed by a bold title.
      ```
 
    - Publish every commit with one push: `git push origin <branch>`. Then read the head back
-     (`gh pr view <n> --repo matejkadlec/realmforge --json headRefOid`) and confirm that your final commit is
-     reachable from it.
+     (`gh pr view <n> --repo matejkadlec/realmforge --json headRefOid`) and confirm that it equals your final
+     commit. A different head, even a descendant, is a remote head that moved under you.
    - A pass that fixed nothing pushes nothing.
    - If delivery fails (the push, the gate, authentication, or a remote head that moved under you), post
      nothing and resolve nothing. Keep the commits local and report them, every disposition, and the blocker.
@@ -286,7 +287,7 @@ concrete input the earlier closure does not cover.
 Include:
 
 - the pull request number and URL, the branch, and the head SHA at the start and now;
-- if the pass pushed, whether your final commit is reachable from the remote head, and the CI state read once
+- if the pass pushed, whether the remote head equals your final commit, and the CI state read once
   after the push (never polled);
 - one line per finding: severity, title, disposition, and the commit, issue or evidence;
 - what was left unchanged and why;

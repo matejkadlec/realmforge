@@ -67,7 +67,8 @@ weakens a test or check.
   new request: a review, or a Cloud task that can push to the branch.
 - **One push per pass.** Every push starts a full CI run and can start a new Codex review. Commit once per root
   cause, then publish each pass with a single push. After the push, read the pull request's head back from
-  GitHub and confirm that your final commit is reachable from it.
+  GitHub and confirm that it equals your final commit. Any other head, even a descendant of your commit, means
+  someone else pushed: treat it as a remote head that moved under you, and read it before acting again.
 - **Never weaken anything to get green.** Never weaken, skip or disable a test, a required check, branch
   protection or a security policy. Never use `--no-verify`, `--admin`, `--auto` or any bypass.
 - **Merging and deploying.** This skill is the only one that merges. Nothing deploys in this repository; never
