@@ -137,8 +137,10 @@ nothing else.
 3. Move the ticket to Done only when an associated pull request merged into `master`, none is still open, and no
    merged pull request reverts an associated one. Re-read the ticket immediately before the move and skip it
    unless it is still in the status it was listed with.
-4. Otherwise leave it: no associated pull request, only closed unmerged ones, one still open, a merge into
-   another branch, or a merged revert (whether the change is still on `master` is then Matěj's call).
+4. Otherwise leave it: no associated pull request, one still open, a merge into another branch, or a merged
+   revert (whether the change is still on `master` is then Matěj's call). A ticket whose associated pull requests
+   all closed unmerged is no longer in flight: it holds no slot, and the ledger lists it under "Blocked or other"
+   for Matěj to send back to Next or reject.
 
 A batch pull request reconciles every ticket associated with it. The pass changes that one status and nothing
 else. A ticket that cannot be read or matched is skipped and never stops the run. The run's batch ledger lists
