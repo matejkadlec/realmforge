@@ -100,7 +100,11 @@ Do this before the first wake, and again whenever the run resumes in a new sessi
    `gh pr view <n> --repo matejkadlec/realmforge --json number,title,url,state,isDraft,isCrossRepository,headRefName,headRefOid,baseRefName`.
    A closed or merged pull request goes to "Stops". A cross-repository pull request is a blocker: report it and
    stop. A draft is not ready to merge: go to "User needed" and ask the user to mark it ready for review (or to
-   say it should stay a draft), and keep watching until it is ready.
+   say it should stay a draft), and keep watching until it is ready. This skill merges only into `master`, and
+   every step below compares with `master`. A pull request whose `baseRefName` is another branch depends on
+   unmerged work: keep watching with check-ins about 30 minutes apart until that base has merged into
+   `master`, then retarget it (`gh pr edit <n> --repo matejkadlec/realmforge --base master`; GitHub does this
+   itself when it deletes the merged base branch) and continue. Never merge into another feature branch.
 2. **Locate the worktree** exactly as [`fix-pr`](../fix-pr/SKILL.md) step 2 does: `git fetch origin`, reuse the
    worktree that `git worktree list` holds for the head branch, or create one in `../realmforge-worktrees/` and
    run `uv sync` in it. Fast-forward a clean branch that is strictly behind its remote. On uncommitted changes,
@@ -315,8 +319,8 @@ Check all of these on one fresh reading, in order:
 
 1. The round is clean under step 7.
 2. Checks are green on the head.
-3. The pull request is open, not a draft (a draft goes to "User needed", as in "Start"), `mergeable` and not
-   `dirty`.
+3. The pull request is open, based on `master`, not a draft (a draft goes to "User needed", as in "Start"),
+   `mergeable` and not `dirty`.
 4. A fresh listing shows every review thread resolved. An open thread sends the run back to step 3 or 4.
 5. No human review requests changes.
 6. No `needs-playtest` label is set, no badge-labelled Codex finding outside a thread is waiting for the user
