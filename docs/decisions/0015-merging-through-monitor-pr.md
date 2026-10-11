@@ -15,8 +15,9 @@ when it opens.
 ## Decision
 
 - The `monitor-pr` skill (`.claude/skills/monitor-pr/SKILL.md`) merges a pull request, with a merge commit, once
-  Codex is done with its head (its approval, or 10 minutes of silence after the push), every review thread is
-  resolved, every required check is green, and no hold applies.
+  Codex is done with its head (its approval, a completed review whose findings `fix-pr` has all closed, or
+  10 minutes of silence after the push), every review thread is resolved, every required check is green, and no
+  hold applies.
 - Holds that wait for the owner:
   - the `needs-playtest` label, which the publishing session adds when the owner should play the change first
     (gameplay, visuals, balance) and which only the owner removes;

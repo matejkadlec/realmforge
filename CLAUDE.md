@@ -223,11 +223,11 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
 5. Open the PR against `master` with `gh pr create`, then run `/monitor-pr <n>`. CI (`.github/workflows/ci.yml`)
    runs: content pipeline + generated-files check, Gradle build + JUnit + GameTests, vanilla ID universe
    reproducibility, packwiz index. These four jobs are the required checks on `master`.
-6. `monitor-pr` merges once Codex is done (its approval, or 10 silent minutes), every review thread is resolved
-   and the required checks are green, unless the PR has the `needs-playtest` label: then Matěj playtests first and
-   removes the label ([ADR 0015](docs/decisions/0015-merging-through-monitor-pr.md)). Distribution: GitHub
-   Releases now, CurseForge later
-   ([ADR 0008](docs/decisions/0008-distribution-github-and-curseforge.md)).
+6. `monitor-pr` merges once Codex is done (its approval, a completed review whose findings are all closed, or
+   10 silent minutes), every review thread is resolved and the required checks are green, unless the PR has the
+   `needs-playtest` label: then Matěj playtests first and removes the label
+   ([ADR 0015](docs/decisions/0015-merging-through-monitor-pr.md)). Distribution: GitHub Releases now,
+   CurseForge later ([ADR 0008](docs/decisions/0008-distribution-github-and-curseforge.md)).
 
 ## How the pipeline fits together
 
