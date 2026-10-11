@@ -87,6 +87,8 @@ weakens a test or check.
     `original_commit_id` name the reviewed head.
   - Reply: `gh api repos/matejkadlec/realmforge/pulls/<n>/comments/<first comment id>/replies -f body=<reply>`.
   - Resolve: `gh api -X POST repos/matejkadlec/realmforge/pulls/<n>/ccr/comments/<first comment id>/resolve`.
+  - Merge: `gh api -X PUT repos/matejkadlec/realmforge/pulls/<n>/merge -f merge_method=merge -f sha=<sha>`
+    (`gh pr merge` sends a GraphQL mutation; with `sha` GitHub refuses the merge when the head moved).
 - **When the user is needed,** say it in exactly this form, with only the label bold:
   `**Your assistance is needed:** {what to do, where, and what you will check afterwards}`.
 - **Reports state decisions, not open questions.** This skill asks the user only under "User needed", the
@@ -347,6 +349,13 @@ Then merge:
 
 ```bash
 gh pr merge <n> --repo matejkadlec/realmforge --merge --match-head-commit <sha>
+```
+
+In a cloud session (`CLAUDE_CODE_REMOTE=true`) that command fails, because it uses GraphQL. Use the REST form,
+which keeps the same head protection:
+
+```bash
+gh api -X PUT repos/matejkadlec/realmforge/pulls/<n>/merge -f merge_method=merge -f sha=<sha>
 ```
 
 - Never use `--admin` or `--auto`, and never bypass protection.
