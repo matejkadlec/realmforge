@@ -7,13 +7,16 @@
 
 - **Milestones are minor releases:** M1 ships as v0.1.0, M2 as v0.2.0, and so on (open decision D7). Only M1 is
   planned task by task; later milestones are outlines, detailed when the previous one ends.
-- **One task, one PR.** Large tasks are split into several PRs. A task is done when its "done when" holds and the
-  checks in CLAUDE.md pass; tick it off (`[x]` plus the PR link) in the same PR.
-- **Agents** take the next unblocked task of the current milestone, spikes first. A task waiting on an open
-  decision ([below](#open-decisions)) asks Matěj before starting.
+- **One task, or one coherent batch of tasks, per PR** ([ADR 0016](decisions/0016-jira-batch-delivery.md)).
+  Large tasks are split into several PRs. A task is done when its "done when" holds and the checks in CLAUDE.md
+  pass; tick it off (`[x]` plus the PR link) in the same PR.
+- **Agents** take the next unblocked task of the current milestone, spikes first, through the Jira tickets that
+  mirror this plan (`flow1`, [AI development flow](ai-development-flow.md)); the "after" order below is mirrored
+  as "is blocked by" links. A task waiting on an open decision ([below](#open-decisions)) is not started: the
+  agent lists it for Matěj.
 - **Changing the plan** is a PR to this file that waits for Matěj's approval: a hold under
-  [ADR 0015](decisions/0015-merging-through-monitor-pr.md), so `monitor-pr` does not merge it on its own. A change
-  of direction also needs an ADR. Ticking off a finished task is not a plan change.
+  [ADR 0015](decisions/0015-merging-through-monitor-pr.md) (the `needs-approval` label), so `monitor-pr` does not
+  merge it on its own. A change of direction also needs an ADR. Ticking off a finished task is not a plan change.
 - **Sizes** instead of dates: S fits one agent session, M takes one to three, L takes more and is split. Playtests,
   hand-built rooms and art review depend on Matěj's time, so calendar estimates would be guesses.
 
