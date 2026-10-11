@@ -70,6 +70,7 @@ uv run rf pack-boot                       # boot the whole pack + mod/build/libs
 ./gradlew build                           # compile both mods + JUnit
 ./gradlew runGameTestServer               # headless GameTests; exit code != 0 on failure
 ./gradlew runClient                       # dev client with core + QA mod (game dir: run/client)
+./gradlew runClient -PwithBetterCombat    # the same plus Better Combat (ADR 0020); /qa cast <ticks> in game
 ./gradlew runServer                       # dev dedicated server (run/server; accept run/server/eula.txt once)
 ./gradlew :mod:extractMinecraftSources    # decompiled MC + NeoForge sources -> build/mc-sources/
 ./gradlew :mod:installToPrism             # copy the jar into the Prism instance (see docs/dev-setup.md)
