@@ -1,0 +1,23 @@
+# Normalize all text files to LF in the repository and in the working tree,
+# so Windows and WSL never fight over line endings.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.ogg binary
+*.nbt binary
+*.jar binary
+*.zip binary
+
+# Generated files: collapsed in GitHub diffs, never edited by hand
+mod/src/generated/** linguist-generated=true
+qa-mod/src/generated/** linguist-generated=true
+tools/schemas/** linguist-generated=true
+tools/id_universe/** linguist-generated=true
+pack/index.toml linguist-generated=true
+pack/mods/*.pw.toml linguist-generated=true

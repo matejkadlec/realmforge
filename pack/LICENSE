@@ -1,0 +1,33 @@
+Realmforge modpack
+Copyright (c) 2026 Matěj Kadlec. All Rights Reserved.
+
+Scope
+-----
+This notice covers the Realmforge modpack: everything in the pack/ directory
+(the packwiz pack definition, mod list, configuration files, quests and any
+other modpack files), plus any other file in this repository that states it
+is part of the modpack.
+
+Terms
+-----
+No permission is granted to copy, modify, redistribute, re-upload, mirror or
+republish this modpack or any part of it, in whole or in part, without prior
+written permission from the copyright holder.
+
+You may download and play the modpack through its official channels: GitHub
+Releases of https://github.com/matejkadlec/realmforge (and CurseForge, once
+published). Hosting this repository publicly on GitHub grants only the rights
+described in the GitHub Terms of Service (viewing and forking on GitHub).
+
+Third-party mods
+----------------
+Third-party mods referenced by the pack are not included in this repository.
+They are downloaded from their original sources and remain under their own
+licenses.
+
+The Realmforge mod
+------------------
+The Realmforge mod itself (mod/, qa-mod/, tools/ and everything shipped in the
+realmforge jar) is licensed separately: source code under the Mozilla Public
+License 2.0 (see /LICENSE) and assets under Creative Commons Attribution 4.0
+International (see /LICENSE-ASSETS).
