@@ -404,8 +404,10 @@ Per ticket, in order:
 1. Re-read it from Jira with the claim field set; never claim from the intake snapshot.
 2. Confirm that it is still in Next, unassigned or assigned to the acting account, and that no local branch,
    worktree, remote branch or open pull request names its key (`rlm-<n>` in a branch name, `RLM-<n>` in a title,
-   as a whole token, so `rlm-17` does not match `rlm-170`). The branch and worktree this session already created
-   for this batch at an earlier ticket's claim name every key of the batch; they do not count.
+   as a whole token, so `rlm-17` does not match `rlm-170`). Two kinds of branch do not count: the branch and
+   worktree this session already created for this batch at an earlier ticket's claim (they name every key of the
+   batch), and a branch that a claim-release comment on this ticket names (a released claim's branch, which may
+   stay on the remote).
 3. Assign it to the acting account, move it to In Progress, and add one claim comment:
 
    ```text
@@ -458,8 +460,8 @@ is younger than six hours. CLAUDE.md forbids committing to another session's bra
 finished work, so a stale claim is not taken over automatically: intake skips it and lists it in the ledger under
 "Blocked or other", with the branch, its last activity and the two ways on. Matěj either asks a session to
 continue that branch (it then becomes that session's batch: a worktree on the existing branch, a new claim
-comment naming it on each ticket), or releases it: the tickets go back to Next with a claim-release comment, and
-the branch stays for him to delete or keep.
+comment naming it on each ticket), or releases it: the tickets go back to Next with a claim-release comment
+naming the branch, which stays for him to delete or keep and no longer blocks a claim.
 
 A claim is **lost** when step 4 shows a peer moved first. Do not implement it and do not move the ticket back:
 the peer owns it. Claim the next eligible ticket, or end the run with the ledger when nothing safe remains. If a
