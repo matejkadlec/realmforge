@@ -439,9 +439,9 @@ and its move to In Progress (status history) is more than thirty minutes old. Re
 claim: add one claim-recovery comment naming the abandoned claim comment (or the bare move), re-read the ticket
 directly (an issue read, not a search, which may lag), and only while all four conditions still hold and your
 recovery comment is the earliest counting one since that claim comment (or that move), move the ticket to Next
-and claim it normally. A recovery comment older than thirty minutes no longer counts. Anything short of all four is in-flight
-ownership: skip it. The batch branch names every ticket key of the batch and is on the remote from its first
-claim, so none of its tickets looks abandoned while the run lives, wherever the run is.
+and claim it normally. A recovery comment older than thirty minutes no longer counts. Anything short of all four
+is in-flight ownership: skip it. The batch branch names every ticket key of the batch and is on the remote from
+its first claim, so none of its tickets looks abandoned while the run lives, wherever the run is.
 
 A claim is **lost** when step 4 shows a peer moved first. Do not implement it and do not move the ticket back:
 the peer owns it. Claim the next eligible ticket, or end the run with the ledger when nothing safe remains. If a
@@ -523,8 +523,9 @@ therefore run every Gradle build and test task through `.claude/scripts/gradle-q
 `runClient`, which Matěj starts himself). It allows one run per 5 GiB of RAM (two on Matěj's PC), waits while
 every slot is busy or less than 4 GiB is available, and runs a build that died of memory again once instead of
 failing. Runs start one at a time: a start keeps the admission lock for up to a minute (or until that run ends),
-so the next run checks memory only after the new JVMs have claimed theirs. A run that waited too long exits with 75: that is a queue timeout, not a build result, so run it again
-later. A run that ran out of memory twice is a real failure.
+so the next run checks memory only after the new JVMs have claimed theirs. A run that waited too long exits with
+75: that is a queue timeout, not a build result, so run it again later. A run that ran out of memory twice is a
+real failure.
 
 ## Branches and worktrees
 
@@ -539,8 +540,8 @@ later. A run that ran out of memory twice is a real failure.
 
   A stacked batch ([Dependencies](#dependencies)) starts from `origin/<dependency branch>` instead of
   `origin/master`, and rebases onto it. The main checkout belongs to Matěj and to sessions working there: a flow
-  never switches, builds or commits in it. A new worktree has no `build/`, `run/` or `.cache/`, so its first build and
-  `:mod:extractMinecraftSources` are slow (run both through the queue).
+  never switches, builds or commits in it. A new worktree has no `build/`, `run/` or `.cache/`, so its first
+  build and `:mod:extractMinecraftSources` are slow (run both through the queue).
 - **Branch name:** `<type>/<keys>-<slug>`, with the batch's keys in lowercase and ascending order before a slug of
   two to five words: `feat/rlm-17-feature-skeleton`, `feat/rlm-18-rlm-19-registry-pipeline-player-state`. The
   type is the Conventional Commits type of the main change.
