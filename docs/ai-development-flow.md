@@ -164,8 +164,9 @@ Every session taking work from Next maintains the queue:
    ([Batch selection](#batch-selection)).
 5. Move from Next to In Progress only when implementation begins (the claim).
 
-These are the only promotions, plus the one exception [Dependencies](#dependencies) makes for a dependency of a
-selected ticket. Never promote other Backlog or future-sprint work. A ticket is eligible when it is not
+These are the only promotions, plus two exceptions: [Dependencies](#dependencies) pulls in a dependency of a
+selected ticket, and `flow2` promotes and selects the tickets it creates or picks for Matěj's request directly,
+whatever else Next holds, because he asked for that work now. Never promote other Backlog or future-sprint work. A ticket is eligible when it is not
 [waiting on Matěj](#tickets-waiting-on-matěj) and none of its dependencies is in flight elsewhere. Intake works
 from a snapshot a peer may already have overtaken, so immediately before each promotion re-read the ticket and
 promote it only while it is still To Do. A ticket that already left To Do belongs to a peer: skip it and re-plan.

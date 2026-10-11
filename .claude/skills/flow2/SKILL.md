@@ -19,9 +19,10 @@ creating or selecting work; this skill may not weaken either.
 3. Set sprint-relative priority and classify each ticket AI-only or Playtest under _QA classification_. A
    requested item that is Matěj's own decision gets the `decision` label and is listed, not implemented
    (_Tickets waiting on Matěj_).
-4. Route new or newly selected work through To Do -> Next, replenishing Next under _Priority and the Next queue_.
-   The step 6 claim owns the Next -> In Progress move; do not make it here, or the claim's "still in Next"
-   precondition is false on every run.
+4. Route new or newly selected work through To Do -> Next (the `flow2` exception in _Priority and the Next queue_
+   lets it in whatever else Next holds), replenishing Next under the same section. The step 6 claim owns the
+   Next -> In Progress move; do not make it here, or the claim's "still in Next" precondition is false on every
+   run.
 5. Inspect in-flight ownership, conflicts and dependencies before implementing, exactly as `flow1` steps 1 and 2
    do, including the conflict domains, the generated files, the pending-batch slots and the playtest limit. Pull
    unfinished dependencies into the batch under _Dependencies_.
