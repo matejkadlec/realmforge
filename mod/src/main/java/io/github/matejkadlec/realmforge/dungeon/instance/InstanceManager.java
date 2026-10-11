@@ -91,9 +91,13 @@ public final class InstanceManager extends SavedData {
         return Collections.unmodifiableCollection(plots.values());
     }
 
-    /** The plot the player's run belongs to, if they are in one. */
+    /** The plot the player's run belongs to, if they are in one: entered, or still being built for them. */
     public Optional<Plot> plotOf(ServerPlayer player) {
-        return player.getExistingData(DungeonAttachments.VISIT).flatMap(visit -> plot(visit.plot()));
+        Optional<Plot> entered = player.getExistingData(DungeonAttachments.VISIT).flatMap(visit -> plot(visit.plot()));
+        if (entered.isPresent()) {
+            return entered;
+        }
+        return plots.values().stream().filter(plot -> plot.party().contains(player.getUUID())).findFirst();
     }
 
     /** Timing of the last finished build or clearing of a plot, since the server started. */
