@@ -18,7 +18,7 @@ covers only these actions:
 - run the checks;
 - push that branch once;
 - reply to and resolve its Codex threads;
-- open GitHub issues for real findings it does not fix here;
+- create RLM Jira tickets for real findings it does not fix here (never GitHub issues);
 - report.
 
 It never merges or deploys. It never requests a Codex review, and it never waits or polls for one. A push may
@@ -244,8 +244,8 @@ severity badge such as `![P1 Badge](...)` followed by a bold title.
 | Disposition | Use it when | The reply opens with |
 | --- | --- | --- |
 | Fixed | the finding is valid and this pass fixed it | `Fixed in <sha>:` the change and the check |
-| Declined | a P2 or P3 is not worth doing, here or in an issue | `Declined:` the concrete reason |
-| Tracked | worth doing, but it belongs outside this pull request | `Tracked as #<issue>:` why it is outside |
+| Declined | a P2 or P3 is not worth doing, here or in a ticket | `Declined:` the concrete reason |
+| Tracked | worth doing, but it belongs outside this pull request | `Tracked as RLM-<n>:` why it is outside |
 | Stale | the branch already fixed it, or the flagged code no longer exists | `Stale:` the commit or current location |
 | Repeated | it restates a finding an earlier round closed, and that closure holds | `Repeated:` the earlier thread, evidence |
 | Incorrect | the failure it describes cannot happen | `Incorrect:` the evidence |
@@ -254,10 +254,13 @@ severity badge such as `![P1 Badge](...)` followed by a bold title.
 - Two current findings that describe the same failure on the same input are duplicates. The second takes the
   first one's disposition and links to it.
 - Findings with different failures but one cause share the fix, and each reply names the shared commit.
-- **Tracked:** search the open issues first (`gh issue list --repo matejkadlec/realmforge --state open --search
-  <terms>`). If an equivalent one exists, cite it. If none does, open one with `gh issue create` that carries
-  the file, the scenario, the smallest fix, and any pull request it must wait for. Group findings that share a
-  file or a fix into one issue. If issues are ever disabled, use Declined and list the follow-up in the report.
+- **Tracked:** an RLM Jira ticket, never a GitHub issue ([flow, "Issues"](../../../docs/ai-development-flow.md#issues)).
+  Search `RLM` first (`searchJiraIssuesUsingJql`, `project = RLM AND text ~ "<terms>"`, with comments). If an
+  equivalent ticket is open, cite it and comment this pull request's evidence. If none is, create a Task in the
+  active sprint (parent RLM-1 for workflow and tooling, the milestone epic for game code; `## Context`, `## Task`,
+  `## Done when`) that carries the file, the scenario, the smallest fix, and any pull request it must wait for.
+  Group findings that share a file or a fix into one ticket. When no Atlassian tool reaches Jira, reply
+  `Tracked (Jira unreachable):` and list the follow-up in the report for Matěj.
 
 ## Severity
 
@@ -300,10 +303,10 @@ Include:
 - the pull request number and URL, the branch, and the head SHA at the start and now;
 - if the pass pushed, whether the remote head equals your final commit, and the CI state read once
   after the push (never polled);
-- one line per finding: severity, title, disposition, and the commit, issue or evidence;
+- one line per finding: severity, title, disposition, and the commit, ticket or evidence;
 - what was left unchanged and why;
 - the exact checks that passed;
-- any issues opened;
+- any RLM tickets created or cited;
 - any Codex thread left for the next round.
 
 With no current findings, say so and change nothing.
