@@ -104,7 +104,9 @@ Do this before the first wake, and again whenever the run resumes in a new sessi
    every step below compares with `master`. A pull request whose `baseRefName` is another branch depends on
    unmerged work: keep watching with check-ins about 30 minutes apart until that base has merged into
    `master`, then retarget it (`gh pr edit <n> --repo matejkadlec/realmforge --base master`; GitHub does this
-   itself when it deletes the merged base branch) and continue. Never merge into another feature branch.
+   itself when it deletes the merged base branch) and continue. Never merge into another feature branch. If the
+   base's pull request closes without merging, or its branch disappears without having merged, the wait cannot
+   end: go to "User needed" and ask whether to retarget this pull request to `master` or close it.
 2. **Locate the worktree** exactly as [`fix-pr`](../fix-pr/SKILL.md) step 2 does: `git fetch origin`, reuse the
    worktree that `git worktree list` holds for the head branch, or create one in `../realmforge-worktrees/` and
    run `uv sync` in it. Fast-forward a clean branch that is strictly behind its remote. On uncommitted changes,
