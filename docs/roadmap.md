@@ -139,8 +139,9 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   registry, their damage types (in `#minecraft:bypasses_cooldown`) and generated attributes. `DamageCalculator` on
   the NeoForge damage events with the hurt-cooldown handling ([architecture 9.1](architecture.md#91-damage-pipeline));
   crit, dodge, resistances; our armor formula; minimal combat text; a QA training dummy with a DPS meter and a
-  combat log file. *Done when:* JUnit covers the formulas, and GameTests hit the dummy, check the numbers and show
-  that school damage right after a melee hit is not swallowed.
+  combat log file. *Done when:* JUnit covers the formulas, and GameTests hit the dummy, check the numbers, show
+  that school damage right after a melee hit is not swallowed, and show that a dodged hit leaves no damage container
+  behind ([architecture 9.1](architecture.md#91-damage-pipeline)).
 
 ### Phase 2: character and abilities
 

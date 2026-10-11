@@ -539,8 +539,9 @@ and health far beyond vanilla, so:
    type tags keep working.
 2. **`LivingIncomingDamageEvent`**, before mitigation: attacker side (spell power and school bonus attributes, crit
    roll) through `setAmount`; talents act through those attributes or are already part of the spell's damage
-   ([11.5](#115-resources-cooldowns-modifiers)). Defender side: dodge (cancel the event), school resistance, and our
-   armor formula in place of vanilla's through `addReductionModifier(DamageContainer.Reduction.ARMOR, ...)`.
+   ([11.5](#115-resources-cooldowns-modifiers)). Defender side: dodge (never by cancelling the event, see below),
+   school resistance, and our armor formula in place of vanilla's through
+   `addReductionModifier(DamageContainer.Reduction.ARMOR, ...)`.
    NeoForge runs that reduction for every hit, so our formula must itself skip damage in
    `#minecraft:bypasses_armor`, as vanilla's does.
 3. **Vanilla's hurt cooldown** comes next. Within 10 ticks of the previous hit, a hit that is not bigger than the
@@ -554,6 +555,20 @@ and health far beyond vanilla, so:
    before absorption hearts take their share.
 5. **`LivingDamageEvent.Post`** reports what was actually taken from health: on-hit procs, combat text payloads,
    the QA combat log; threat later (with pets).
+
+**Never cancel `LivingIncomingDamageEvent`.** In NeoForge 21.1.259, `LivingEntity#hurt` pushes a `DamageContainer`
+onto the defender's `damageContainers` stack, posts the event, and returns on a cancelled event without popping the
+container; only the hurt-cooldown drop and the normal end pop it. Every cancel therefore leaves a container, with
+its `DamageSource`, attacker and projectile, on the defender until the entity object is discarded. Dodge and any
+other code that must stop a hit need another mechanism; task F5 picks one, and a GameTest shows that the stack does
+not grow. Candidates:
+
+- a listener with `priority = EventPriority.LOWEST` and `receiveCanceled = true` that pops the cancelled event's
+  container, through an access transformer on the protected `damageContainers` field
+  ([19.3](#193-mixins-and-access-transformers));
+- an `EntityInvulnerabilityCheckEvent` listener, which runs before the push. `isInvulnerableTo` is asked several
+  times per hit (`ServerPlayer#hurt`, `Player#hurt`, `LivingEntity#hurt`, `actuallyHurt`) and by other code, so a
+  dodge roll there must be made once per hit and reused.
 
 All formulas live in a pure `DamageCalculator` (inputs: attacker and defender stat snapshots, spell and school, a
 random source), tested by JUnit. The Python balance simulation (M3) will use the same formulas; one JSON file of

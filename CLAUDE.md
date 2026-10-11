@@ -141,6 +141,9 @@ cd pack && packwiz refresh                # after changing anything in pack/
   Damage that must always land (spells, damage over time) uses damage types in `#minecraft:bypasses_cooldown` and
   keeps the target's current window (`setInvulnerabilityTicks(target.invulnerableTime)`), so it neither grants nor
   clears invulnerability ([architecture 9.1](docs/architecture.md#91-damage-pipeline)).
+- **Never cancel `LivingIncomingDamageEvent`:** in 21.1.259 `LivingEntity#hurt` then returns without popping the
+  `DamageContainer` it pushed, so every cancel leaks one on the defender. Dodge and other "stop this hit" code use
+  another mechanism ([architecture 9.1](docs/architecture.md#91-damage-pipeline)).
 - **Data pack folders are singular since 1.21:** `recipe/`, `loot_table/`, `advancement/`, `structure/`,
   `tags/item/`, `tags/block/`. Enchantments are data-driven (`enchantment/`) and are looked up as
   `Holder<Enchantment>` through registry access, not static fields.
