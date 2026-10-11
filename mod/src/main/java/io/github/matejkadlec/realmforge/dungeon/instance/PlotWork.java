@@ -21,7 +21,9 @@ public final class PlotWork {
     public sealed interface Unit permits DiscardEntities, Clear, Place {
     }
 
-    /** Remove every entity except players inside {@code area}, before blocks are cleared. */
+    /**
+     * Remove every entity except players inside {@code area} (one box the plot holds), before blocks are cleared.
+     */
     public record DiscardEntities(BoundingBox area) implements Unit {
     }
 
@@ -40,7 +42,11 @@ public final class PlotWork {
     public static List<Unit> units(List<BoundingBox> dirty, List<BoundingBox> rooms) {
         List<Unit> units = new ArrayList<>();
         if (!dirty.isEmpty()) {
-            units.add(new DiscardEntities(BoundingBox.encapsulatingBoxes(dirty).orElseThrow()));
+            // One unit per box, not the box around them all: that could reach chunks the plot does not hold, and a
+            // unit waits until every chunk it touches is loaded.
+            for (BoundingBox box : dirty) {
+                units.add(new DiscardEntities(box));
+            }
             for (BoundingBox box : dirty) {
                 for (BoundingBox slice : chunkSlices(box)) {
                     units.add(new Clear(slice));

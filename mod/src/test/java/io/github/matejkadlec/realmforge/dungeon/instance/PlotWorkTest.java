@@ -63,6 +63,27 @@ class PlotWorkTest {
     }
 
     @Test
+    void removingEntitiesTouchesOnlyChunksThePlotHolds() {
+        // An L of two rooms: the box around both would reach chunk (2, 2), which neither room touches.
+        BoundingBox along = new BoundingBox(0, 64, 0, 40, 70, 10);
+        BoundingBox down = new BoundingBox(0, 64, 11, 10, 70, 40);
+        List<BoundingBox> dirty = List.of(along, down);
+        Set<Long> held = new HashSet<>(PlotWork.chunks(dirty));
+        List<PlotWork.Unit> units = PlotWork.units(dirty, List.of());
+
+        List<BoundingBox> areas = units.stream()
+                .filter(PlotWork.DiscardEntities.class::isInstance)
+                .map(unit -> ((PlotWork.DiscardEntities) unit).area())
+                .toList();
+        assertEquals(dirty, areas);
+        for (BoundingBox area : areas) {
+            assertTrue(held.containsAll(PlotWork.chunks(List.of(area))), "entity removal stays in held chunks");
+        }
+        assertTrue(units.indexOf(areas.getLast()) < units.indexOf(units.stream()
+                .filter(PlotWork.Clear.class::isInstance).findFirst().orElseThrow()), "entities go before blocks");
+    }
+
+    @Test
     void aCleanPlotOnlyPlacesAndClosingOnlyClears() {
         BoundingBox room = new BoundingBox(0, 64, 0, 14, 70, 14);
         assertTrue(PlotWork.units(List.of(), List.of(room)).stream().allMatch(PlotWork.Place.class::isInstance));
