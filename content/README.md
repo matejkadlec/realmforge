@@ -11,7 +11,8 @@ Rules:
 
 - One YAML file per entry; the file name (without `.yaml`) must equal the entry's `id`.
 - References to other content use full ids (`minecraft:ingredients`, `realmforge:test_item`); every one is
-  validated against the ID universe (`tools/id_universe/`) plus our own content.
+  validated against the ID universe (`tools/id_universe/`) plus our own content. Lists of ids must not repeat
+  an entry (e.g. the same creative tab twice crashes the game).
 - Player-facing texts are `LocalizedText`: `en_us` is required, `cs_cz` is optional. In lore and texts the
   in-game world is always called **Realmforge**.
 - Start each file with the `yaml-language-server` schema comment (see `items/test_item.yaml`) for editor

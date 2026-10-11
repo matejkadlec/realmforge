@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from realmforge_tools.schema.common import ContentId, LocalizedText, ResourceId, StrictModel
+from realmforge_tools.schema.common import ContentId, LocalizedText, StrictModel, UniqueResourceIds
 
 
 class ItemDef(StrictModel):
@@ -13,7 +13,7 @@ class ItemDef(StrictModel):
     id: ContentId
     name: LocalizedText = Field(description="Display name.")
     max_stack_size: int = Field(default=64, ge=1, le=99, description="Maximum stack size (1-99).")
-    creative_tabs: list[ResourceId] = Field(
+    creative_tabs: UniqueResourceIds = Field(
         default_factory=list,
-        description="Creative mode tabs to list the item in, e.g. minecraft:ingredients.",
+        description="Creative mode tabs to list the item in, e.g. minecraft:ingredients. No duplicates.",
     )

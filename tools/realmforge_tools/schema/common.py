@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
 
 
 class StrictModel(BaseModel):
@@ -25,6 +25,22 @@ ResourceId = Annotated[
     str,
     StringConstraints(pattern=r"^[a-z0-9_.-]+:[a-z0-9_./-]+$"),
     Field(description="Namespaced id, e.g. minecraft:stone. Validated against the ID universe."),
+]
+
+
+def _require_unique(values: list[str]) -> list[str]:
+    duplicates = sorted({value for value in values if values.count(value) > 1})
+    if duplicates:
+        raise ValueError(f"duplicate entries: {', '.join(duplicates)}")
+    return values
+
+
+# A list of ResourceIds without repeats. Duplicates are usually a typo, and some game APIs reject them outright
+# (adding an item to the same creative tab twice throws in BuildCreativeModeTabContentsEvent).
+UniqueResourceIds = Annotated[
+    list[ResourceId],
+    AfterValidator(_require_unique),
+    Field(json_schema_extra={"uniqueItems": True}),
 ]
 
 NonEmptyText = Annotated[str, StringConstraints(min_length=1, strip_whitespace=False)]

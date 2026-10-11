@@ -37,14 +37,15 @@
   "description": "A simple item. Generates its registration, model, lang entries and (for now) a placeholder texture.",
   "properties": {
     "creative_tabs": {
-      "description": "Creative mode tabs to list the item in, e.g. minecraft:ingredients.",
+      "description": "Creative mode tabs to list the item in, e.g. minecraft:ingredients. No duplicates.",
       "items": {
         "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
         "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
         "type": "string"
       },
       "title": "Creative Tabs",
-      "type": "array"
+      "type": "array",
+      "uniqueItems": true
     },
     "id": {
       "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",

@@ -84,6 +84,13 @@ def test_reference_needs_namespace(repo: RepoPaths) -> None:
     assert any("creative_tabs.0: String should match pattern" in p for p in problems_for(repo))
 
 
+def test_duplicate_creative_tabs_are_rejected(repo: RepoPaths) -> None:
+    # NeoForge throws when the same item is added to one creative tab twice, so this must fail validation.
+    write(repo.content / "items" / "a.yaml", VALID_ITEM.format(id="a") + "  - minecraft:ingredients\n")
+    (problem,) = problems_for(repo)
+    assert "items/a.yaml: creative_tabs: Value error, duplicate entries: minecraft:ingredients" in problem
+
+
 def test_duplicate_yaml_keys_are_errors(repo: RepoPaths) -> None:
     write(repo.content / "items" / "a.yaml", VALID_ITEM.format(id="a") + "max_stack_size: 4\n")
     assert any("items/a.yaml: line" in p and "duplicate" in p.lower() for p in problems_for(repo))

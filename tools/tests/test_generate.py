@@ -123,3 +123,4 @@ def test_json_schema_is_generated(repo: RepoPaths) -> None:
     assert schema["title"] == "ItemDef"
     assert schema["additionalProperties"] is False
     assert {"id", "name"} <= set(schema["required"])
+    assert schema["properties"]["creative_tabs"]["uniqueItems"] is True
