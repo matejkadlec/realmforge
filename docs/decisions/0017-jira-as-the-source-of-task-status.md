@@ -33,5 +33,7 @@ apart from a plan change, which waits for the owner's approval.
 - No tick-off commits: a batch that finishes a roadmap task leaves the roadmap alone.
 - "Is it done?" is a Jira question; the roadmap answers "what and in which order?".
 - Every roadmap edit waits for the owner, including a milestone's status in the milestones table.
-- A key named in the roadmap but missing in Jira, or a ticket without its roadmap line, is a gap to fix, not a
-  second status to reconcile.
+- A task, decision or backlog item in the roadmap whose key is missing in Jira is a gap to fix, not a second
+  status to reconcile. The reverse is not: tickets that serve the plan without changing it (follow-ups, the
+  parts of a split task, flow2 tickets for work inside an existing task) live under their milestone epic with no
+  roadmap line.

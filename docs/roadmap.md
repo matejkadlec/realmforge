@@ -11,8 +11,9 @@
   Every task, decision and backlog item names its ticket in the Jira space Realmforge (`RLM-<n>`, at
   `https://envelopment.atlassian.net/browse/RLM-<n>`), and every milestone its epic. Whether a task waits, is in
   progress or is done is its ticket's status; this file has no checkboxes. The "after" order below is mirrored as
-  "is blocked by" links. Work outside this plan (developer workflow and tooling under RLM-1, the storyline under
-  RLM-30) lives only in Jira.
+  "is blocked by" links. Tickets that serve the plan without changing it (follow-ups, the parts of a split task)
+  live only in Jira under their milestone epic, and so does work outside this plan (developer workflow and
+  tooling under RLM-1, the storyline under RLM-30).
 - **One task, or one coherent batch of tasks, per PR** ([ADR 0016](decisions/0016-jira-batch-delivery.md)).
   Large tasks are split into several PRs. A task is done when its "done when" holds, the checks in CLAUDE.md pass
   and its PR has merged; `monitor-pr` then moves its ticket to Done.
