@@ -82,7 +82,7 @@ of 2026-10-11:
 
 - C3a and C3b implement point 3 in the core mod, with the "tag set by a cast" flag in the `combat` attachment (the
   prototype uses a marker tag instead). C6 adds playerAnimator to the core mod, `client/animation/` and the real
-  animations, and puts `dev.kosmx.playerAnim` on the client import check's list of library rendering packages.
+  animations. The client import check already bans `dev.kosmx.playerAnim` outside `client/` (architecture 18).
 - First person needs its own framing: the test pose (arms raised forward) fills most of the screen and brings the
   held sword close to the camera. C6 tunes first-person poses (lower arms, or one hand) and, like Better Combat,
   falls back to `FirstPersonMode.NONE` when a camera mod such as First-person Model or Real Camera is installed;

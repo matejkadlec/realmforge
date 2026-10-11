@@ -988,9 +988,10 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   `net.neoforged.neoforge.client.*` or a library's rendering classes. An automated import check enforces it
   (`tools/tests/test_client_isolation.py`, run by `uv run pytest`): it scans the main and generated sources of the
   core mod and of the QA mod (whose own `qa/client/` package is exempt) for those packages in imports and fully
-  qualified names. A library's rendering packages join its list with the library. The GameTest server in CI runs as
-  a dedicated server and is a second line of defence, but only for code the tests run, and NeoForge's own client
-  classes are mostly not marked client-only, so only the import check catches those.
+  qualified names. A library's rendering packages join its list with the library (so far playerAnimator's
+  `dev.kosmx.playerAnim`, [ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)). The GameTest
+  server in CI runs as a dedicated server and is a second line of defence, but only for code the tests run, and
+  NeoForge's own client classes are mostly not marked client-only, so only the import check catches those.
 - **Thin screens:** screens and HUD layers draw from view models computed in common code (`CharacterSheetView`,
   `TalentTreeView`), so their logic is testable without rendering.
 - **Little rendering code:** GeckoLib for animated entities, vanilla widgets for UI, no rendering mixins unless

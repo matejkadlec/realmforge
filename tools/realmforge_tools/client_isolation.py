@@ -14,7 +14,13 @@ from pathlib import Path
 
 from realmforge_tools.project import JAVA_PACKAGE, QA_JAVA_PACKAGE, RepoPaths
 
-BANNED_PACKAGES = ("net.minecraft.client", "com.mojang.blaze3d", "net.neoforged.neoforge.client")
+BANNED_PACKAGES = (
+    "net.minecraft.client",
+    "com.mojang.blaze3d",
+    "net.neoforged.neoforge.client",
+    # playerAnimator (ADR 0020): its API works on client players and models only.
+    "dev.kosmx.playerAnim",
+)
 
 _BANNED = re.compile(
     r"(?<![\w.])(" + "|".join(re.escape(p) for p in BANNED_PACKAGES) + r")(?![\w])",
