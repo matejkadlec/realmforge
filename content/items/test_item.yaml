@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# Pipeline smoke test (milestone M0): proves content -> generators -> game -> GameTests end to end.
+# Not gameplay content.
+id: test_item
+name:
+  en_us: Test Item
+  cs_cz: Testovací předmět
+max_stack_size: 16
+creative_tabs:
+  - minecraft:ingredients

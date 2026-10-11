@@ -1,0 +1,75 @@
+{
+  "$defs": {
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text in every supported locale. en_us is required; missing locales fall back to it.",
+      "properties": {
+        "cs_cz": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Czech. Optional.",
+          "title": "Cs Cz"
+        },
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A simple item. Generates its registration, model, lang entries and (for now) a placeholder texture.",
+  "properties": {
+    "creative_tabs": {
+      "description": "Creative mode tabs to list the item in, e.g. minecraft:ingredients.",
+      "items": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        "type": "string"
+      },
+      "title": "Creative Tabs",
+      "type": "array"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "max_stack_size": {
+      "default": 64,
+      "description": "Maximum stack size (1-99).",
+      "maximum": 99,
+      "minimum": 1,
+      "title": "Max Stack Size",
+      "type": "integer"
+    },
+    "name": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "Display name."
+    }
+  },
+  "required": [
+    "id",
+    "name"
+  ],
+  "title": "ItemDef",
+  "type": "object"
+}
