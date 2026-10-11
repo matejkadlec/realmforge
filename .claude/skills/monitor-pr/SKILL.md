@@ -56,9 +56,9 @@ weakens a test or check.
 - The label `needs-playtest` means the owner (Matěj) plays the change before it merges. The publishing session
   adds it for gameplay, visual or balance changes (`gh pr edit <n> --add-label needs-playtest`); only Matěj
   removes it.
-- The label `needs-approval` means the pull request changes the plan (anything in `docs/roadmap.md` beyond ticking
-  off finished tasks) and Matěj approves it before it merges. The publishing session adds it; only Matěj removes
-  it.
+- The label `needs-approval` means the pull request changes the plan (any change to `docs/roadmap.md`, which holds
+  no task status: [ADR 0017](../../../docs/decisions/0017-jira-as-the-source-of-task-status.md)) and Matěj
+  approves it before it merges. The publishing session adds it; only Matěj removes it.
 - Jira: a pull request from a Jira batch ([`docs/ai-development-flow.md`](../../../docs/ai-development-flow.md))
   names its tickets (`RLM-<n>`) in its title, and its head branch carries their keys. The Atlassian MCP tools
   (`.mcp.json`) reach Jira.
@@ -384,9 +384,9 @@ Check all of these on one fresh reading, in order:
    (`gh pr edit <n> --repo matejkadlec/realmforge --add-label needs-playtest`).
    While the label is set, go to "User needed": ask Matěj to playtest the head (for example with
    `./gradlew runClient`, or `./gradlew :mod:installToPrism` and the Prism instance) and remove the label.
-   No `needs-approval` label is set either. A pull request whose diff changes `docs/roadmap.md` beyond ticking
-   off finished tasks and never carried the label gets it now (`--add-label needs-approval`), and so does one
-   with a push after the label's latest removal that changes `docs/roadmap.md` again. While it is set, go to
+   No `needs-approval` label is set either. A pull request whose diff changes `docs/roadmap.md` and never
+   carried the label gets it now (`--add-label needs-approval`), and so does one with a push after the label's
+   latest removal that changes `docs/roadmap.md` again. While it is set, go to
    "User needed": ask Matěj to read the plan change and remove the label to approve it.
 7. In fallback mode: a Clean `finalize-pr` reviewed this exact head, or the user approved this exact head after
    a Capped or Disagreement report.

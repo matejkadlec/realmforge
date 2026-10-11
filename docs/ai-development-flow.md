@@ -13,7 +13,8 @@ the pull request skills take over: [`monitor-pr`](../.claude/skills/monitor-pr/S
 [ADR 0015](decisions/0015-merging-through-monitor-pr.md).
 
 The roadmap ([roadmap.md](roadmap.md)) stays the plan and the source of the task order; Jira is the queue that
-mirrors it, plus work outside the roadmap.
+mirrors it, plus work outside the roadmap, and the only source of task status
+([ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md)).
 
 ## Jira
 
@@ -387,11 +388,11 @@ Every batch belongs to at least one conflict domain, decided by the primary path
 - **tooling:** `.github/`, `.claude/`, `docs/` and every other tracked path neither domain names.
 
 The documents a change must keep current in the same batch are accompanying updates and add no domain:
-`docs/architecture.md`, the roadmap tick-off, `content/README.md`, `tools/README.md`, `pack/README.md`,
-`docs/dev-setup.md` and a new ADR with its index row. A batch whose main work is a document (workflow wording, a
-design, an ADR, research) is a tooling batch. Ticking off a roadmap task and adding a row to the ADR index are
-line-local edits and never count as an overlap; an ADR number does: take the next number that no `master` file,
-open pull request or in-flight branch uses.
+`docs/architecture.md`, `content/README.md`, `tools/README.md`, `pack/README.md`, `docs/dev-setup.md` and a new
+ADR with its index row. A batch whose main work is a document (workflow wording, a design, an ADR, research, a
+roadmap change) is a tooling batch. Adding a row to the ADR index is a line-local edit and never counts as an
+overlap; an ADR number does: take the next number that no `master` file, open pull request or in-flight branch
+uses.
 
 **Shared-root files** belong to every domain at once: `CLAUDE.md`, `README.md`, `.gitignore`, `.gitattributes`,
 `.mcp.json` and `.claude/settings.json`. A batch that changes one occupies a slot in every domain.
@@ -572,8 +573,8 @@ cross-cutting or engine-level work (the damage pipeline, networking, worldgen).
   (cd pack && packwiz refresh) && git diff --exit-code pack/   # only when pack/ changed
   ```
 
-- Keep `CLAUDE.md`, [architecture.md](architecture.md), the READMEs and the ADRs current in the same batch, and
-  tick off finished roadmap tasks ([Publication](#publication)).
+- Keep `CLAUDE.md`, [architecture.md](architecture.md), the READMEs and the ADRs current in the same batch. The
+  roadmap holds no status: a finished task changes only its ticket, never [roadmap.md](roadmap.md).
 - Scale extra rigor to the risk: a docs-only batch needs the gate, not new tests; the damage pipeline, saved data,
   networking and anything that could corrupt a world need tests for the edge cases, and a dedicated server boot
   (`./gradlew runServer`) for client isolation.
@@ -633,19 +634,18 @@ monitored merge. Publication happens in this order:
      keys comma-separated;
    - **description:** What to look at first; the tickets with links; what changed and why; dependencies pulled in;
      the checks that ran; a stacked base or plan change, if any; never `@codex` anywhere.
-3. **Labels:** `needs-playtest` for a playtest batch; `needs-approval` when the batch changes the plan (anything
-   in [roadmap.md](roadmap.md) beyond ticking off finished tasks: new, removed, reordered or reworded tasks, a
-   recorded decision, a changed milestone). Only Matěj removes either label.
-4. **Tick-off:** for each finished roadmap task, commit `[x]` plus the pull request link in
-   [roadmap.md](roadmap.md) and push it, before `monitor-pr` starts.
-5. Read the pull request's head back from GitHub and confirm it is your final commit.
-6. On each ticket, record the `🤖 Claude QA` summary (what was verified and how, the pull request, the head SHA),
+3. **Labels:** `needs-playtest` for a playtest batch; `needs-approval` when the batch changes the plan, which is
+   any change to [roadmap.md](roadmap.md) (new, removed, reordered or reworded tasks, a recorded decision, a
+   changed milestone, a key; [ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md)). Only Matěj removes
+   either label.
+4. Read the pull request's head back from GitHub and confirm it is your final commit.
+5. On each ticket, record the `🤖 Claude QA` summary (what was verified and how, the pull request, the head SHA),
    plus the `🎮 Playtest handoff` for a playtest batch.
-7. Move the tickets: an AI-only batch to Pending CR, a playtest batch to Pending User QA.
-8. Hand off to Matěj, leading with [What to look at](#what-to-look-at): the pull request number and URL, the
+6. Move the tickets: an AI-only batch to Pending CR, a playtest batch to Pending User QA.
+7. Hand off to Matěj, leading with [What to look at](#what-to-look-at): the pull request number and URL, the
    branch, the head, the checks, the Jira state, any hold, and for a playtest batch the
    [playtest commands](#playtest-commands). Name an action for him only when one is needed.
-9. In the same run, run `/monitor-pr <n>` on the pull request. The handoff is a progress report, not the end of
+8. In the same run, run `/monitor-pr <n>` on the pull request. The handoff is a progress report, not the end of
    the run: a published pull request left unmonitored is unfinished work.
 
 ### After publication

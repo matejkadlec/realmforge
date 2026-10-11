@@ -3,7 +3,8 @@
 Date: 2026-10-11
 
 Status: Accepted (extends the agent workflow of [0011](0011-repository-layout-and-workflow.md) and builds on
-[0015](0015-merging-through-monitor-pr.md))
+[0015](0015-merging-through-monitor-pr.md); plan-change rule amended by
+[0017](0017-jira-as-the-source-of-task-status.md))
 
 ## Context
 
