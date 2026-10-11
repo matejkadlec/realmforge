@@ -7,6 +7,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.Clearable;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -38,6 +39,27 @@ final class InstanceBuilder {
                 yield 0;
             }
         };
+    }
+
+    /**
+     * Whether every chunk the unit touches is loaded (and, for removing entities, their entities too). Work waits
+     * for chunks that are still loading, after a restart for example, instead of loading them on the main thread.
+     */
+    static boolean ready(ServerLevel level, PlotWork.Unit unit) {
+        BoundingBox box = switch (unit) {
+            case PlotWork.DiscardEntities discard -> discard.area();
+            case PlotWork.Clear clear -> clear.slice();
+            case PlotWork.Place place -> place.slice();
+        };
+        for (long chunk : PlotWork.chunks(List.of(box))) {
+            if (level.getChunkSource().getChunkNow(ChunkPos.getX(chunk), ChunkPos.getZ(chunk)) == null) {
+                return false;
+            }
+            if (unit instanceof PlotWork.DiscardEntities && !level.areEntitiesLoaded(chunk)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** The settings a room is placed with; its box comes from the same settings. */

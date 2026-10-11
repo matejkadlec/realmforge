@@ -151,7 +151,10 @@ public final class InstanceManager extends SavedData {
         return plot;
     }
 
-    /** Does up to {@link #TICK_BUDGET_NANOS} of building and clearing; called once per tick of the instance level. */
+    /**
+     * Does up to {@link #TICK_BUDGET_NANOS} of building and clearing; called once per tick of the instance level.
+     * A plot whose next unit's chunks are still loading waits for a later tick.
+     */
     public void tick() {
         ServerLevel level = this.level;
         if (level == null) {
@@ -171,16 +174,21 @@ public final class InstanceManager extends SavedData {
                     setDirty();
                     return;
                 }
-                first = false;
                 PlotWork.Unit unit = units.get(plot.step());
+                if (!InstanceBuilder.ready(level, unit)) {
+                    break;
+                }
+                first = false;
                 long cleared = InstanceBuilder.run(level, plot, unit);
                 int room = unit instanceof PlotWork.Place place ? place.room() : -1;
                 plot.recorder().unit(level.getGameTime(), room, System.nanoTime() - start, cleared);
                 plot.advance();
                 changed = true;
             }
-            finishWork(plot);
-            changed = true;
+            if (plot.step() >= units.size()) {
+                finishWork(plot);
+                changed = true;
+            }
         }
         if (changed) {
             setDirty();
