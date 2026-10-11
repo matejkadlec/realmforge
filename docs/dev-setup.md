@@ -106,8 +106,9 @@ are unaffected.
   first build. Measured in a fresh clone with an empty Gradle home (October 2026): the first `./gradlew build`
   takes about 5 minutes cold; the warm-up takes about 4 minutes in the background, and the first build after it
   about 45 seconds.
-  - Maven Central sometimes answers bursts with `429 Too Many Requests` for a few minutes. The warm-up retries
-    the Gradle step after 60 s and again after 120 s; it doesn't retry an HTTP 403 from the proxy.
+  - Maven Central sometimes answers bursts with `429 Too Many Requests` for a few minutes. After a 429 (or a
+    502/503/504) the warm-up retries the Gradle step after 60 s and again after 120 s; any other failure ends it
+    at once.
   - State in `.cache/warmup/` (gitignored): `status` (`running`, `done` or `failed`), `summary`, `log`, and
     `stamp`, a hash of the build inputs (`gradle.properties`, wrapper properties, `settings.gradle`, the
     `build.gradle` files, `uv.lock`, `pyproject.toml`, `.python-version`). On resume, the same stamp skips the

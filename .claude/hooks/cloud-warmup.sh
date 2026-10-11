@@ -93,16 +93,17 @@ step() {
   return "$rc"
 }
 
-# Gradle gets two more attempts: Maven Central answers download bursts with "429 Too Many Requests" for a few
-# minutes. A refusal by the agent proxy (HTTP 403) doesn't heal by itself, so it ends the warm-up at once.
+# Gradle gets two more attempts, but only after a rate limit or a transient server error: Maven Central answers
+# download bursts with "429 Too Many Requests" for a few minutes. Any other failure ends the warm-up at once.
 gradle_with_retries() {
-  local delay
+  local delay from
   for delay in 0 60 120; do
     if [ "$delay" -gt 0 ]; then
-      grep -qE 'status code 403|403 Forbidden|response 403' "$log" && return 1
+      tail -n +"$from" "$log" | grep -qE 'status code (429|502|503|504)|Too Many Requests' || return 1
       echo "== retrying in $delay s" >>"$log"
       sleep "$delay"
     fi
+    from=$(($(wc -l <"$log") + 1))
     step gradle ./gradlew --console=plain :mod:extractMinecraftSources classes && return 0
   done
   return 1
