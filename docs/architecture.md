@@ -725,10 +725,13 @@ with live numbers; animations and particles start on `CastStartedPayload` (spike
 - `realmforge:dimension_rules` (owned by `world`) gives every dimension a level rule: by distance from the
   dimension's origin and by depth, with some jitter, clamped to a range.
 - In `FinalizeSpawnEvent`, `mob` computes the level from the rules for the mob's dimension, writes it into
-  `realmforge:level` and applies scaling modifiers (health, damage, armor, from curves). Then it sets the mob's
-  health to the new maximum: the constructor filled health from the unscaled maximum, and raising the maximum does
-  not refill it. Vanilla hostile mobs get levels the same way as ours. Bosses take the fixed level from their
-  definition.
+  `realmforge:level` and applies scaling modifiers (health, damage, armor, from curves). Vanilla hostile mobs get
+  levels the same way as ours. Bosses take the fixed level from their definition.
+- **Health refill on join:** the constructor filled health from the unscaled maximum, and raising the maximum does
+  not refill it. NeoForge posts `FinalizeSpawnEvent` before vanilla's `Mob#finalizeSpawn`, which can still raise
+  the maximum (the leader zombie bonus), so `mob` sets health to the maximum only when the mob joins the level
+  (`EntityJoinLevelEvent`), and only for a mob leveled in this spawn: never for one loaded from disk
+  (`loadedFromDisk`) or moving between dimensions.
 - Some spawns skip `finalizeSpawn` and with it this event: slime splits (`Slime#remove`), silverfish from infested
   blocks, `GameTestHelper#spawn`. Split children copy the parent's level and scaling in `MobSplitEvent`
   (`getParent`, `getChildren`), and an `EntityJoinLevelEvent` fallback gives a level to any mob that joins without
