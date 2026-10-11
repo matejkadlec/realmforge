@@ -139,6 +139,8 @@ It never merges, deploys or requests a Codex review.
      ./gradlew runGameTestServer
      ```
 
+   - Immediately before the push, run `git fetch origin` and require the remote head to still equal the
+     starting head. A different head, even an ancestor after someone reset the branch, is Blocked: do not push.
    - Push once (`git push origin <branch>`), read the remote head back
      (`gh pr view <n> --repo matejkadlec/realmforge --json headRefOid`), and confirm that it equals your final
      commit. A different head, even a descendant, is a remote head that moved under you: Blocked.
