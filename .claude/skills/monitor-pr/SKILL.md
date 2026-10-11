@@ -215,6 +215,10 @@ Otherwise act on the first of steps 2–7 that applies. If none applies yet, wai
 
    - Then re-list the threads. Resolve any thread that `fix-pr` closed but that still reads unresolved.
    - A Blocked thread goes to the user under "User needed".
+   - A badge-labelled Codex finding (`![P0 Badge]` to `![P3 Badge]`) in a Codex review body or a top-level pull
+     request comment on the current head has no thread, so `fix-pr` only reports it as unhandled. It holds the
+     merge: go to "User needed" with the finding and your verification of it, and continue once the user rules
+     on it.
    - A push from `fix-pr` starts a new round.
 
 4. **Other open threads: close them.**
@@ -307,7 +311,8 @@ Check all of these on one fresh reading, in order:
 3. The pull request is open, not a draft, `mergeable` and not `dirty`.
 4. A fresh listing shows every review thread resolved. An open thread sends the run back to step 3 or 4.
 5. No human review requests changes.
-6. No `needs-playtest` label is set, and nothing else the user asked to hold for their own judgment is pending.
+6. No `needs-playtest` label is set, no badge-labelled Codex finding outside a thread is waiting for the user
+   (step 3), and nothing else the user asked to hold for their own judgment is pending.
    While the label is set, go to "User needed": ask Matěj to playtest the head (for example with
    `./gradlew runClient`, or `./gradlew :mod:installToPrism` and the Prism instance) and remove the label.
 7. In fallback mode: a Clean `finalize-pr` reviewed this exact head, or the user approved this exact head after

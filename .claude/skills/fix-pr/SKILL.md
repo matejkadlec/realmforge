@@ -85,7 +85,8 @@ severity badge such as `![P1 Badge](...)` followed by a bold title.
 - Resolved Codex threads are earlier rounds. The repeated-finding check reads them.
 - A Codex thread without a badge counts as P1 until verification shows otherwise.
 - A badge-labelled finding in a Codex review body or pull request comment is reported as unhandled and is not
-  acted on.
+  acted on. It has no thread to resolve, so [`monitor-pr`](../monitor-pr/SKILL.md) holds the merge for it until
+  the user rules on it.
 - These are not findings, and the pass leaves them alone:
   - human comments and other reviewers;
   - CI failures;
