@@ -773,8 +773,10 @@ A Claude Code cloud session (`CLAUDE_CODE_REMOTE=true`) runs the same flow; only
 - **Its own clone** is its worktree, and the branch Claude Code put it on is the batch branch
   ([Branches and worktrees](#branches-and-worktrees)). It sees only its own branches, so its intake and claim
   rely on Jira claim comments, remote branches and open pull requests.
-- **Jira** goes through the claude.ai Atlassian connector, with the same tools and field sets.
-- **GitHub:** the proxy refuses GraphQL; the pull request skills list the REST forms to use instead.
+- **Jira** goes through the claude.ai Atlassian connector, with the same tools and field sets. The `atlassian`
+  server from `.mcp.json` fails to start there (no `mcp-remote`), which is expected.
+- **GitHub:** the proxy refuses GraphQL; the pull request skills list the REST forms to use instead. `gh api`
+  calls are authenticated (`gh api user` answers) even though `gh auth status` reports the token as invalid.
 - **Gradle:** the queue sees only the VM's own runs.
 - **Playtests** are handed off with the cloud [playtest commands](#playtest-commands); a revision may run in the
   same cloud session or any later local or cloud one.
