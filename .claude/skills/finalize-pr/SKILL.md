@@ -82,9 +82,10 @@ It never merges, deploys or requests a Codex review.
 2. **Build the review bundle** in the session scratchpad directory (or a `mktemp -d` directory outside the
    repository), never inside the repository:
 
-   - `pr-<n>-round-<k>.diff`: the complete `git diff origin/master...HEAD`;
-   - `pr-<n>-round-<k>-meta.txt`: the number, branch, base SHA (`git merge-base origin/master HEAD`), head SHA
-     and changed files (`git diff --name-only origin/master...HEAD`).
+   - `pr-<n>-round-<k>.diff`: the complete `git diff origin/<base>...HEAD`, where `<base>` is the recorded
+     `baseRefName` (usually `master`; a pull request that depends on unmerged work targets another branch);
+   - `pr-<n>-round-<k>-meta.txt`: the number, branch, base branch, base SHA (`git merge-base origin/<base> HEAD`),
+     head SHA and changed files (`git diff --name-only origin/<base>...HEAD`).
 
    No secrets, logs or dumps go into the bundle.
 
