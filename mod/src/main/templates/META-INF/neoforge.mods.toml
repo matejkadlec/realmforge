@@ -1,0 +1,30 @@
+# Mod metadata. Dollar-brace placeholders are expanded from gradle.properties by the generateModMetadata Gradle task.
+modLoader = "javafml"
+loaderVersion = "${loader_version_range}"
+# Code: MPL-2.0, assets: CC BY 4.0 (see LICENSE and LICENSE-ASSETS in the repository root)
+license = "${mod_license}"
+issueTrackerURL = "https://github.com/matejkadlec/realmforge/issues"
+
+[[mods]]
+modId = "realmforge"
+version = "${mod_version}"
+displayName = "Realmforge"
+authors = "Matěj Kadlec"
+displayURL = "https://github.com/matejkadlec/realmforge"
+description = '''
+An RPG overhaul inspired by World of Warcraft: Wrath of the Lich King.
+'''
+
+[[dependencies.realmforge]]
+modId = "neoforge"
+type = "required"
+versionRange = "[${neo_version},)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.realmforge]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft_version_range}"
+ordering = "NONE"
+side = "BOTH"

@@ -1,0 +1,16 @@
+# Files in this directory that are NOT part of the modpack itself.
+# Anything matched here is excluded from index.toml, so packwiz-installer
+# will never copy it into players' instances. (gitignore syntax)
+
+# Repository / documentation files
+/LICENSE
+/README.md
+/*.md
+/.editorconfig
+/.gitattributes
+/.gitignore
+
+# Exports and build artifacts (mod jars must never live in this repo)
+/*.zip
+*.mrpack
+*.jar

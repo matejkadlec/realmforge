@@ -1,0 +1,42 @@
+[project]
+name = "realmforge-tools"
+version = "0.0.1"
+description = "Realmforge content pipeline: validates content/ and generates assets, data and Java registrations."
+readme = "tools/README.md"
+license = "MPL-2.0"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.12,<3",
+    "ruamel.yaml>=0.18,<0.20",
+]
+
+[project.scripts]
+rf = "realmforge_tools.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4",
+    "ruff>=0.14",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.3,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "realmforge_tools"
+module-root = "tools"
+
+[tool.pytest.ini_options]
+testpaths = ["tools/tests"]
+addopts = "-ra --strict-markers"
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+src = ["tools"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+# Line length is enforced by `ruff format`; long comments and docstrings are fine.
+ignore = ["E501"]

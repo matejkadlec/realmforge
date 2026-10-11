@@ -1,0 +1,20 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+    }
+    plugins {
+        // ModDevGradle 2. Pinned; upgrades need an ADR (docs/decisions/).
+        id 'net.neoforged.moddev' version '2.0.148'
+    }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'realmforge'
+
+// Core mod (mod ID `realmforge`): all RPG systems. Released.
+include 'mod'
+// Dev-only QA mod (mod ID `realmforge_qa`): GameTests and debug tools. Never released.
+include 'qa-mod'

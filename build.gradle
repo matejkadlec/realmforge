@@ -1,0 +1,5 @@
+// Root project: no code. See mod/ (core mod) and qa-mod/ (dev-only QA mod).
+
+tasks.named('wrapper', Wrapper).configure {
+    distributionType = Wrapper.DistributionType.BIN
+}

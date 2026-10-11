@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  content:
+    name: Content pipeline (validation, pytest, generated files)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync --locked
+
+      - name: Lint
+        run: |
+          uv run ruff check
+          uv run ruff format --check
+
+      - name: Validate content
+        run: uv run rf validate
+
+      - name: pytest
+        run: uv run pytest
+
+      - name: Generated files are up to date
+        run: |
+          uv run rf gen
+          git diff --exit-code
+          untracked="$(git status --porcelain --untracked-files=all)"
+          if [ -n "$untracked" ]; then
+            echo "::error::Regenerating produced files that are not committed. Run 'uv run rf gen' and commit:"
+            echo "$untracked"
+            exit 1
+          fi
+
+  gradle:
+    name: Gradle build, JUnit, GameTests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Build and JUnit
+        run: ./gradlew build --console=plain
+
+      - name: GameTests (headless)
+        run: ./gradlew runGameTestServer --console=plain
+
+      - name: Upload logs and reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: gradle-logs-and-reports
+          if-no-files-found: ignore
+          path: |
+            run/*/logs/
+            run/*/crash-reports/
+            **/build/reports/
+            **/build/test-results/
+            hs_err_pid*.log
+
+  id-universe:
+    name: Vanilla ID universe is reproducible
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          enable-cache: true
+
+      - uses: actions/cache@v6
+        with:
+          path: .cache/vanilla
+          key: vanilla-server-${{ hashFiles('tools/realmforge_tools/project.py') }}
+
+      - name: Re-extract and compare
+        run: |
+          uv sync --locked
+          uv run rf ids vanilla
+          git diff --exit-code tools/id_universe
+
+  pack:
+    name: Modpack index is up to date
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+          cache: false
+
+      - name: Install packwiz
+        # Pinned packwiz commit (packwiz has no tagged releases).
+        run: go install github.com/packwiz/packwiz@ef87d964f8cbd52b3b13ea42453ef322290e2b9e
+
+      - name: Refresh and compare
+        working-directory: pack
+        run: |
+          packwiz refresh
+          git diff --exit-code .
