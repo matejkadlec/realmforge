@@ -99,12 +99,20 @@ Read each signal fresh from GitHub at every step, and never trust an earlier rea
   (`gh api --paginate repos/matejkadlec/realmforge/commits/<sha>/check-runs`). CI starts the moment a push
   lands. The head's *seen time* is when this run first read that head; it stands in for the push time until a
   check run exists.
-- **Codex reaction.** Reactions on the pull request by Codex
-  (`gh api --paginate repos/matejkadlec/realmforge/issues/<n>/reactions`).
-  - `eyes` means Codex is reviewing.
-  - `+1` means Codex found nothing. It counts for the current head only when its `created_at` is later than
-    both the head's push time and Codex's latest `eyes`. An older `+1` approved an earlier head, and a later
-    `eyes` means another review is running.
+- **Codex reaction and status.** Reactions on the pull request by Codex
+  (`gh api --paginate repos/matejkadlec/realmforge/issues/<n>/reactions`), and its "Codex Review Summary"
+  comment (`<!-- codex-pull-request-review-summary -->`, edited in place), whose table names the reviewed
+  commit and the review's status.
+  - `eyes` means Codex is reviewing, and so does a summary row for the current head that is not yet
+    Completed. On PRs #1 and #2 no Codex reaction remained after the review ended, so `eyes` may be gone.
+  - `+1` means Codex found nothing. It counts for the current head only when the review it ends was of this
+    head: the summary comment's latest Code Review row shows Completed for the current head's short SHA, or
+    Codex's latest `eyes` is later than the head's push time and the `+1` is later than that `eyes`. A `+1`
+    whose review started before the push (an `eyes` older than the push time, or a summary row naming another
+    commit) approved an earlier head, even when the `+1` itself arrived after the push. A later `eyes` means
+    another review is running.
+  - A Codex review (`gh api --paginate repos/matejkadlec/realmforge/pulls/<n>/reviews`) belongs to the head in
+    its `commit_id`.
   - Any other Codex error comment counts as silence.
 - **Codex usage limit.** A Codex comment (`gh api --paginate repos/matejkadlec/realmforge/issues/<n>/comments`)
   whose body opens with `You have reached your Codex usage limits for code reviews`. It is *current* while none
@@ -241,7 +249,7 @@ Otherwise act on the first of steps 2–7 that applies. If none applies yet, wai
 
    - Codex's `+1` counts for this head;
    - 10 minutes have passed since the later of the push time and Codex's latest `eyes`, with no new Codex review
-     or reaction on this head.
+     or reaction on this head and no summary row for this head still running.
 
    Codex's automatic trigger can leave a round with neither a review nor a `+1` (in this repository it did not
    review pushes after the pull request opened), so the silent window ends the wait instead of holding the pull
