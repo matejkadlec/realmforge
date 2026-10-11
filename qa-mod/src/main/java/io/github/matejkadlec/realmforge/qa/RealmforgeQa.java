@@ -9,6 +9,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import org.slf4j.Logger;
 
@@ -23,6 +24,7 @@ public final class RealmforgeQa {
         NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent.class, QaCommands::register);
         NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class,
                 event -> InstanceBench.onServerTick(event.getServer()));
+        NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, event -> InstanceBench.onServerStopped());
     }
 
     /** Returns {@code realmforge_qa:<path>}. */

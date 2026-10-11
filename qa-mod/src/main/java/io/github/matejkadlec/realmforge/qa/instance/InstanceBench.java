@@ -82,6 +82,14 @@ public final class InstanceBench {
         return running != null;
     }
 
+    /**
+     * Forgets a bench whose server stopped. In the dev client the next world runs in the same JVM, where a leftover
+     * bench would wait forever on a plot of the old world and refuse every new bench.
+     */
+    public static void onServerStopped() {
+        running = null;
+    }
+
     /** Called at the end of every server tick. */
     public static void onServerTick(MinecraftServer server) {
         if (running != null) {
