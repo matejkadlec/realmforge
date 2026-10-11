@@ -350,8 +350,9 @@ Build a conflict map from the in-flight batches: the features, packages, files, 
 generated files and GameTests each one changes (read a branch's diff with
 `git diff --name-only origin/master...<branch>`, a local worktree's with `git -C <worktree> status --porcelain`,
 and predict a claimed ticket's from its description). In-flight ownership is every In Progress, Pending User QA
-and Pending CR ticket, every open pull request and every active branch or worktree. Do not select work that
-overlaps it unless it directly continues the same branch. If no safe non-conflicting work exists, stop and report
+and Pending CR ticket, every open pull request and every active branch or worktree, except a ticket whose
+associated pull requests all closed unmerged ([reconciliation](#reconciling-merged-tickets) step 4) and its
+branch. Do not select work that overlaps it unless it directly continues the same branch. If no safe non-conflicting work exists, stop and report
 the conflict instead of forcing a risky batch.
 
 ### Conflict domains
@@ -487,7 +488,8 @@ The claim arbitrates one ticket, so runs that each saw room under a shared cap c
 its last place: the last slot of a domain, the last of the six, the one gate-critical place, the last playtest
 slot, or the same generated file. A new batch therefore re-counts at its first ticket's step 4: after its own
 claim comment is recorded, it counts every in-flight batch again from one fresh search read to its end (tickets
-in In Progress, Pending User QA and Pending CR, grouped by the branch their winning claim comments name, with
+in In Progress, Pending User QA and Pending CR, minus those whose associated pull requests all closed unmerged,
+grouped by the branch their winning claim comments name, with
 the QA mode, domains, gate-critical flag and generated files those comments and later scope or QA-mode comments
 state), each group merged with the open pull request whose head is its branch, plus the other open pull requests.
 It keeps its place only if, besides itself, every cap of
@@ -655,8 +657,8 @@ the open pull request whose head is that branch as one batch.
 
 - **Pending-batch slots:** at most four batches in the game domain, three in the tooling domain, and six in total.
   A batch holds a slot in each of its domains from its claim until it is merged or otherwise resolved (In
-  Progress, Pending User QA or Pending CR, a pushed branch, an open pull request). A shared-root batch holds one in
-  every domain.
+  Progress, Pending User QA or Pending CR, a pushed branch, an open pull request); a batch whose pull requests all
+  closed unmerged is resolved. A shared-root batch holds one in every domain.
 - **Gate-critical:** at most one gate-critical batch in flight in the whole repository.
 - **Generated files:** no two in-flight batches regenerate the same generated file
   ([Conflict domains](#conflict-domains)).
