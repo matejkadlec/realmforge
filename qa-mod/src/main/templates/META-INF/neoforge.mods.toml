@@ -1,0 +1,22 @@
+# Dev-only QA mod. Never released. Dollar-brace placeholders are expanded by the generateModMetadata Gradle task.
+modLoader = "javafml"
+loaderVersion = "${loader_version_range}"
+license = "${mod_license}"
+issueTrackerURL = "https://github.com/matejkadlec/realmforge/issues"
+
+[[mods]]
+modId = "realmforge_qa"
+version = "${mod_version}"
+displayName = "Realmforge QA"
+authors = "Matěj Kadlec"
+displayURL = "https://github.com/matejkadlec/realmforge"
+description = '''
+Development-only QA tools and GameTests for Realmforge. Not for players.
+'''
+
+[[dependencies.realmforge_qa]]
+modId = "realmforge"
+type = "required"
+versionRange = "[${mod_version}]"
+ordering = "AFTER"
+side = "BOTH"
