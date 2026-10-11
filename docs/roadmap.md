@@ -82,7 +82,7 @@ and the release come last. "After" in a task names what must be merged first.
 The four spikes left from the research report. Each is time-boxed and ends in one small PR with a written answer,
 plus an ADR when it decides something. Prototype code stays only if it fits the architecture.
 
-- [ ] **Spike 6: full pack boot test** (S, first, because it protects every later PR). *Question:* does the whole
+- [x] **Spike 6: full pack boot test** ([PR #15](https://github.com/matejkadlec/realmforge/pull/15)) (S, first, because it protects every later PR). *Question:* does the whole
   pack (every server-side mod plus our jar) boot cleanly on a dedicated server, and does the full client (Iris,
   Sodium, Distant Horizons) load? *How:* a CI job builds our jar, installs the pack's server side with
   packwiz-installer, starts NeoForge 21.1.259 with its dedicated-server self test
@@ -118,7 +118,7 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
 
 ### Phase 1: foundations
 
-- [ ] **F1 Feature skeleton** (S, after spike 6). Packages from [architecture 4.2](architecture.md#42-packages-of-the-core-mod)
+- [x] **F1 Feature skeleton** ([PR #15](https://github.com/matejkadlec/realmforge/pull/15)) (S, after spike 6). Packages from [architecture 4.2](architecture.md#42-packages-of-the-core-mod)
   with empty `<Name>Feature` classes wired in `Realmforge`; `client/RealmforgeClient`;
   `network/RealmforgeNetwork`, versioned by the mod version, with the interface for client-bound handlers; the import
   check that bans `net.minecraft.client`, `com.mojang.blaze3d` and `net.neoforged.neoforge.client` outside
