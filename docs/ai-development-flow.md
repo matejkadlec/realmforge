@@ -464,16 +464,13 @@ comment naming it on each ticket), or releases it: the tickets go back to Next w
 naming the branch, which stays for him to delete or keep and no longer blocks a claim.
 
 A claim is **lost** when step 4 shows a peer moved first. Do not implement that ticket and do not move it back:
-the peer owns it. When it was a later ticket of a batch whose earlier tickets this session already claimed, never
-leave those behind; either:
+the peer owns it. When it was a later ticket of a batch whose earlier tickets this session already claimed, end
+the batch, so no branch of this session keeps naming the peer's key: release every ticket this session claimed
+for it (a claim-release comment naming the branch, back to Next), and delete the branch and worktree it created,
+which hold no commit yet (`git push origin --delete <branch>`, `git worktree remove`, `git branch -D`). Claims
+come before any implementation, so nothing is lost.
 
-- **shrink the batch:** drop the lost ticket and every ticket that depends on it (claim-release comment, back to
-  Next for those this session claimed), and add a comment naming the smaller batch to each remaining ticket. The
-  branch keeps its name; claim comments and pull request titles, not branch names, decide whose a ticket is; or
-- **end the batch:** release every ticket this session claimed for it (a claim-release comment naming the branch,
-  back to Next) and delete the branch it pushed while it holds no commit (`git push origin --delete <branch>`).
-
-Then claim the next eligible ticket, or end the run with the ledger when nothing safe remains. If a peer's
+Then select and claim a new batch, or end the run with the ledger when nothing safe remains. If a peer's
 ownership only shows after implementation, do not push the work and do not open a competing pull request: record
 the collision on the ticket, keep the local branch for Matěj, and report it under "Blocked or other".
 
