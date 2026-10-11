@@ -428,7 +428,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:level` | `stats` | every living entity | the level: derived from XP and the cap for players, set at spawn for mobs, fixed for bosses | the player itself and everyone tracking the entity |
 | `realmforge:character` | `character` | players | race, classes (a list: one in M1, room for dual class), total character XP, cached level cap | the owner and nearby players (small, nothing secret) |
 | `realmforge:spellbook` | `spell` | players | known spells and their levels, spell bar layout | owner |
-| `realmforge:combat` | `spell` | players | resource (mana, rage), cooldowns, current cast | owner, throttled |
+| `realmforge:combat` | `spell` | players and mobs that cast | resource (mana, rage), cooldowns, current cast | owner, throttled (players; clients never read a mob's copy) |
 | `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points | owner |
 | `realmforge:dark_vision` | `world` | players | whether Dark Vision is switched on | not synced (the effect itself is) |
 | `realmforge:instance` | `dungeon` | players | the instance the player is in, the return point, the game mode to restore | not synced |
@@ -645,8 +645,9 @@ lists spells granted while equipped or on use): the vision's "some from the race
    effects drain mana). If it no longer suffices, the cast fails like an interrupt. Otherwise the cost and cooldowns
    apply first, then every effect runs with an `EffectContext` (caster, targets, position, spell level, stat
    snapshot, random source).
-5. Mobs and bosses use the same `SpellCaster`, without a payload. Their cast bars are the telegraphs players react
-   to.
+5. Mobs and bosses use the same `SpellCaster`, without a payload. Their cooldowns and current cast live in their
+   own `combat` attachment ([7](#7-player-state)), and their cast bars, the telegraphs players react to, reach
+   clients only through the cast payloads.
 
 ### 11.3 Spell entities
 
