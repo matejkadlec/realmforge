@@ -26,7 +26,8 @@ modpack adds third-party QoL, performance and library mods.
   it: `flow1` takes a batch of tickets from the active sprint, `flow2` turns Matěj's task description into a
   ticket, and direct work uses the flow's intake claim; the key goes into the branch name and the PR title, and
   `monitor-pr` moves the ticket to Done after the merge ([ADR 0016](docs/decisions/0016-jira-batch-delivery.md)).
-  Before any Jira intake, ticket creation or
+  Follow-ups a change does not fix (review findings, gaps found on the way) become RLM tickets, not GitHub issues
+  ([follow-up tickets](docs/ai-development-flow.md#follow-up-tickets)). Before any Jira intake, ticket creation or
   publication of ticket work, read [docs/ai-development-flow.md](docs/ai-development-flow.md) completely. Agents
   never implement `decision` tickets or tickets waiting on Matěj.
 - **Status:** M0 (bootstrap) is done: build, CI, content pipeline, one test item (`realmforge:test_item`), modpack

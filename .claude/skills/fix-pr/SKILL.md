@@ -39,6 +39,9 @@ user, and `monitor-pr` does the waiting.
   `Vanilla ID universe is reproducible`, `Modpack index is up to date`.
 - There is no pre-push hook. The local gate is the command list in `CLAUDE.md` "Workflow" step 3 (see step 6).
 - Worktrees live in `../realmforge-worktrees/<branch with "/" replaced by "-">`, outside the repository.
+- Follow-ups go to Jira (space Realmforge, key `RLM`) through the Atlassian MCP tools: the `atlassian` server
+  from `.mcp.json` locally, the claude.ai Atlassian connector in cloud sessions. Never GitHub issues: when neither
+  reaches Jira, the follow-up goes into the report for Matěj (`CLAUDE.md` rule 12).
 
 ## Rules
 

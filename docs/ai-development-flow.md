@@ -59,7 +59,36 @@ mirrors it, plus work outside the roadmap, and the only source of task status
   ticket (search for an equivalent first, as above), never a GitHub issue or a local TODO. A declined, dropped or
   incorrect finding needs only its recorded reason. When no Atlassian tool reaches Jira, the follow-up goes into the
   session's report for Matěj. An open GitHub issue is migrated: a ticket whose description opens with `Migrated from
-  GitHub issue matejkadlec/realmforge#<n>`, then the issue is closed as not planned with the ticket's key.
+  GitHub issue matejkadlec/realmforge#<n>`, then the issue is closed as not planned with the ticket's key. The
+  procedure: [Follow-up tickets](#follow-up-tickets).
+
+### Follow-up tickets
+
+Work a change leaves undone becomes an RLM ticket, never a GitHub issue: a review finding that `fix-pr` or
+`finalize-pr` tracks instead of fixing, a real finding outside the pull request's scope, and a larger follow-up
+found during implementation.
+
+1. **Search first** with `searchJiraIssuesUsingJql` (`project = RLM AND text ~ "<terms>"`, the candidate field set
+   from [Reading a ticket](#reading-a-ticket)), and read each candidate with its comments. When an equivalent
+   ticket exists and is not Done, cite it and add a comment with the new evidence (the pull request, the head, the
+   scenario) instead of creating a duplicate.
+2. **Otherwise create a Task** with `createJiraIssue` in the format of [Issues](#issues):
+   - **title:** sentence case with an area prefix (`Docs: ...`, `Gradle queue: ...`);
+   - **parent:** the epic the work belongs to: the milestone epic for game code and its design (RLM-6 for M1),
+     RLM-1 for workflow and tooling, RLM-30 for the storyline;
+   - **labels:** the area labels and the milestone label of that epic;
+   - **priority:** Medium, unless the defect clearly calls for High (it breaks normal use) or Low (polish);
+   - **sprint:** the active sprint (`customfield_10020` with the numeric id read from Jira, [Project
+     facts](#project-facts)), so the next intake sees it;
+   - **description:** `## Context` (where it was found: the review and its round, the pull request and head SHA,
+     the severity), `## Task` (the problem, a concrete scenario, the smallest fix, and any pull request it must
+     wait for), `## Done when`;
+   - **links:** `Relates` to the batch's tickets, and `Blocks` from any ticket it must wait for.
+
+   Findings that share a file or a fix go into one ticket.
+3. **Reference it** as `RLM-<n>` wherever the finding is closed (a thread reply `Tracked as RLM-<n>:`, a report).
+4. **Jira unreachable:** when no Atlassian tool reaches Jira in the session (neither the `atlassian` server
+   nor the claude.ai connector), list the follow-up in the session's report for Matěj, never as a GitHub issue.
 
 ### Reading a ticket
 

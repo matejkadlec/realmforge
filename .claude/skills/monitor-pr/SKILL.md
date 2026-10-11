@@ -61,7 +61,8 @@ weakens a test or check.
   approves it before it merges. The publishing session adds it; only Matěj removes it.
 - Jira: a pull request from a Jira batch ([`docs/ai-development-flow.md`](../../../docs/ai-development-flow.md))
   names its tickets (`RLM-<n>`) in its title, and its head branch carries their keys. The Atlassian MCP tools
-  (`.mcp.json`) reach Jira.
+  (`.mcp.json`, or the claude.ai connector in cloud sessions) reach Jira. Findings this run tracks instead of
+  fixing become [follow-up tickets](../../../docs/ai-development-flow.md#follow-up-tickets), not GitHub issues.
 - There is no pre-push hook. The local gate is the command list in `CLAUDE.md` "Workflow" step 3; run its Gradle
   tasks through `.claude/scripts/gradle-queue.sh`, which waits for memory when other worktrees build.
 - Worktrees live in `../realmforge-worktrees/<branch with "/" replaced by "-">`, outside the repository.
