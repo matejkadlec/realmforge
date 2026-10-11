@@ -119,13 +119,14 @@ administrative correction Matěj asks for.
 ### Reconciling merged tickets
 
 `monitor-pr` moves its pull request's tickets to Done after the merge, but a pull request merged after its run
-stopped (by Matěj, or by a later session) leaves its tickets in Pending CR or Pending User QA, and every later
-intake would read them as in flight. `flow1` and `flow2` therefore run this pass first, before creating,
+stopped (by Matěj, or by a later session) leaves its tickets in Pending CR or Pending User QA, and a Jira write
+that failed at publication and again after the merge leaves them In Progress. Every later intake would read them
+as in flight. `flow1` and `flow2` therefore run this pass first, before creating,
 selecting or claiming anything. It reads merge state that already exists, never waits for a merge, and changes
 nothing else.
 
-1. List every `RLM` ticket in Pending CR or Pending User QA, whatever its sprint, with the reconciliation field
-   set.
+1. List every `RLM` ticket in In Progress, Pending CR or Pending User QA, whatever its sprint, with the
+   reconciliation field set.
 2. Associate pull requests in `matejkadlec/realmforge` only from evidence of the ticket's current work cycle,
    which begins when the ticket last entered Next (its status history). Evidence is a pull request opened since
    then whose head branch is the batch branch named in the ticket's winning claim comment (the earliest one since
@@ -135,7 +136,7 @@ nothing else.
    `This reverts commit <its merge commit>`, opened after that merge) is associated too.
 3. Move the ticket to Done only when an associated pull request merged into `master`, none is still open, and no
    merged pull request reverts an associated one. Re-read the ticket immediately before the move and skip it
-   unless it is still in Pending CR or Pending User QA.
+   unless it is still in the status it was listed with.
 4. Otherwise leave it: no associated pull request, only closed unmerged ones, one still open, a merge into
    another branch, or a merged revert (whether the change is still on `master` is then Matěj's call).
 
