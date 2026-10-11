@@ -19,6 +19,12 @@ modpack adds third-party QoL, performance and library mods.
   sections for the system you touch before writing code.
 - **Roadmap:** [docs/roadmap.md](docs/roadmap.md): milestones, the current milestone's tasks and open owner
   decisions. Work on tasks of the current milestone and tick them off in the same PR.
+- **Jira:** the work queue that mirrors the roadmap: space Realmforge, key `RLM`, one Task per roadmap task or
+  other piece of work, `Blocks` links for the roadmap's "after" order. `flow1` takes a batch of tickets from the
+  active sprint and `flow2` turns Matěj's task description into a ticket; both deliver one PR per batch
+  ([ADR 0016](docs/decisions/0016-jira-batch-delivery.md)). Before any Jira intake, ticket creation or
+  publication of ticket work, read [docs/ai-development-flow.md](docs/ai-development-flow.md) completely. Agents
+  never implement `decision` tickets or tickets waiting on Matěj.
 - **Status:** M0 (bootstrap) is done: build, CI, content pipeline, one test item (`realmforge:test_item`), modpack
   definition. Next is M1, the playable vertical slice (proposed as v0.1.0, roadmap decision D7), starting with its
   spikes. No gameplay yet.
@@ -58,6 +64,7 @@ uv run rf ids vanilla                     # re-extract the vanilla ID universe (
 ./gradlew runServer                       # dev dedicated server (run/server; accept run/server/eula.txt once)
 ./gradlew :mod:extractMinecraftSources    # decompiled MC + NeoForge sources -> build/mc-sources/
 ./gradlew :mod:installToPrism             # copy the jar into the Prism instance (see docs/dev-setup.md)
+.claude/scripts/gradle-queue.sh <task>    # agents: any Gradle build/test task, queued while memory is short
 
 cd pack && packwiz refresh                # after changing anything in pack/
 ```
@@ -78,7 +85,8 @@ cd pack && packwiz refresh                # after changing anything in pack/
 | `art/` | asset sources: prompts, palettes, Blockbench files | yes |
 | `docs/` | vision, architecture, roadmap, research notes, ADRs, dev setup | yes |
 | `.github/workflows/ci.yml` | CI | yes |
-| `.claude/` | Claude Code settings, content validation hook, PR skills (`fix-pr`, `finalize-pr`, `monitor-pr`), `pr-reviewer` agent | yes |
+| `.claude/` | Claude Code settings, content validation hook, Gradle queue script, flow skills (`flow1`, `flow2`), PR skills (`fix-pr`, `finalize-pr`, `monitor-pr`), `pr-reviewer` agent | yes |
+| `.mcp.json` | MCP servers for Claude Code: `atlassian` (Jira) | yes |
 | `.local/` | owner's private inputs; gitignored, **never commit** | - |
 | `run/`, `build/`, `.cache/` | runtime and build output; gitignored | - |
 
@@ -169,7 +177,8 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
 - **Start every task from a fresh `origin/master`:** `git fetch origin && git switch -c <type>/<slug> origin/master`.
   `<type>` is the Conventional Commits type of the main change (`feat`, `fix`, `docs`, `build`, `ci`, `test`,
   `chore`); `<slug>` is two to five kebab-case words, e.g. `feat/talent-tree-schema`. One branch is one pull
-  request is one feature or content batch.
+  request is one feature or content batch. A Jira batch puts its ticket keys before the slug, e.g.
+  `feat/rlm-17-feature-skeleton` ([flow](docs/ai-development-flow.md#branches-and-worktrees)).
 - A session that Claude Code already put on its own branch or worktree (the desktop app's `claude/<name>`
   branches, a cloud session's clone) works there and creates no other.
 - Before creating a branch, look for existing work on the same task (`git branch -a`, `git worktree list`,
@@ -202,7 +211,9 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
 **Worktrees**
 
 - One session at a time: a branch in the main checkout is enough. Use a worktree when the main checkout is busy
-  (another session works there, it holds uncommitted changes, or you run tasks in parallel).
+  (another session works there, it holds uncommitted changes, or you run tasks in parallel). `flow1` and `flow2`
+  always work in their own worktree, and their parallel batches are capped
+  ([flow](docs/ai-development-flow.md#concurrency-and-run-boundaries)).
 - Location: `../realmforge-worktrees/<branch with "/" replaced by "-">`, outside the repository so ruff, Gradle,
   `git status` and editors never see a second copy. New branch:
   `git worktree add -b <branch> ../realmforge-worktrees/<dir> origin/master`. Existing branch:
@@ -222,7 +233,9 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
   changed, why, and which checks passed. Never write `@codex` on a pull request (description, comments,
   replies): any mention starts a Codex review or a Cloud task that can push to the branch.
 - Add the `needs-playtest` label when Matěj should play the change before it merges (gameplay, visuals,
-  balance).
+  balance), and the `needs-approval` label when the PR changes the plan (`docs/roadmap.md` beyond ticking off
+  finished tasks). Only Matěj removes either label.
+- A PR from a Jira batch names its tickets in the title, e.g. `feat(spells): add the spell engine core (RLM-24)`.
 - After publishing or updating a ready pull request as your own task work, run `/monitor-pr <n>` on it straight
   after, in the same run. Codex findings alone: `/fix-pr <n>`. Extra independent review: `/finalize-pr <n>`.
   The skills live in `.claude/skills/`.
@@ -238,13 +251,16 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
 
 ## Workflow
 
-1. Take a task from the current milestone in [docs/roadmap.md](docs/roadmap.md); one task, feature or content
-   batch per pull request (branches: [Git and branches](#git-and-branches)). Commit messages follow Conventional
-   Commits (`feat:`, `fix:`, `docs:`, `build:`, `ci:`, `test:`, `chore:`).
+1. Take a task from the current milestone in [docs/roadmap.md](docs/roadmap.md), or run `flow1`/`flow2` for
+   Jira tickets ([docs/ai-development-flow.md](docs/ai-development-flow.md)); one task, feature, content batch or
+   flow batch of tickets per pull request (branches: [Git and branches](#git-and-branches)). Commit messages
+   follow Conventional Commits (`feat:`, `fix:`, `docs:`, `build:`, `ci:`, `test:`, `chore:`).
 2. A Claude Code hook (`.claude/settings.json`) runs `uv run rf validate` after every edit in `content/` or
    `tools/` and reports problems back. It does not compile Java.
 3. **Before opening a PR, run and report:** `uv run rf gen` (no unexpected changes), `uv run ruff check`,
-   `uv run ruff format --check`, `uv run pytest`, `./gradlew build`, `./gradlew runGameTestServer`.
+   `uv run ruff format --check`, `uv run pytest`, `./gradlew build`, `./gradlew runGameTestServer`. Agents run
+   the two Gradle tasks through `.claude/scripts/gradle-queue.sh`, which waits for memory while other worktrees
+   build.
 4. Keep `CLAUDE.md`, `docs/` (including the roadmap's task list) and the relevant READMEs current in the same PR
    when commands, structure, rules or decisions change. Stale docs mislead the next session.
 5. Open the PR against `master` with `gh pr create`, then run `/monitor-pr <n>`. CI (`.github/workflows/ci.yml`)
@@ -252,9 +268,10 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
    reproducibility, packwiz index. These four jobs are the required checks on `master`.
 6. `monitor-pr` merges once Codex is done (its approval, a completed review whose findings are all closed, or
    10 silent minutes), every review thread is resolved and the required checks are green, unless the PR has the
-   `needs-playtest` label: then Matěj playtests first and removes the label
-   ([ADR 0015](docs/decisions/0015-merging-through-monitor-pr.md)). Distribution: GitHub Releases now,
-   CurseForge later ([ADR 0008](docs/decisions/0008-distribution-github-and-curseforge.md)).
+   `needs-playtest` label (Matěj playtests first and removes the label) or the `needs-approval` label (Matěj
+   approves the plan change) ([ADR 0015](docs/decisions/0015-merging-through-monitor-pr.md),
+   [ADR 0016](docs/decisions/0016-jira-batch-delivery.md)). Distribution: GitHub Releases now, CurseForge later
+   ([ADR 0008](docs/decisions/0008-distribution-github-and-curseforge.md)).
 
 ## How the pipeline fits together
 
