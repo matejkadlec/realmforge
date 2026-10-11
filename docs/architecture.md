@@ -818,7 +818,7 @@ loot: realmforge:boss/hollow_warden
 # content/dungeons/sunken_crypt.yaml (sketch; names are examples)
 id: sunken_crypt
 placement: instance                  # world_structure later (M4)
-theme: realmforge:crypt              # block palette, applied by structure processors
+theme: realmforge:crypt              # block palette: a processor list from content/worldgen/
 rooms: realmforge:crypt              # room pool
 layout:
   main_path_rooms: [6, 9]
@@ -831,6 +831,12 @@ level: [8, 12]
 ```
 
 The ending is a rule of the type, so "not every dungeon ends with a boss" is just another ending type.
+
+A theme is a vanilla processor list (`worldgen/processor_list`, for example
+`content/worldgen/processor_list/crypt.json`), validated and copied like the other worldgen JSON
+([6.2](#62-what-each-content-type-becomes)), so it needs no registry of our own. Its rules swap the blocks rooms
+are built from for the dungeon's look; the builder applies it when placing rooms, and room validation reads the
+themes' rules to check that a room uses only blocks they can swap.
 
 ### 15.3 Generation: pure first, then Minecraft
 
