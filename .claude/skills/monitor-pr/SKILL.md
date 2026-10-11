@@ -358,8 +358,9 @@ expects: RLM's transitions are all global, so Jira refuses no stale move.
 - **After the merge:** move every ticket to Done (`71`) with one comment: the pull request, the merge commit and
   the checks it passed. When the merged pull request reverts an earlier one, return that one's tickets to To Do
   (`11`) in the active sprint, with a comment naming the revert and the failure.
-- A failed Jira write goes into the report and never holds the merge; the next `flow1` or `flow2` reconciliation
-  repairs a missing Done.
+- A failed Jira write goes into the report and never holds the merge. The next `flow1` or `flow2` reconciliation
+  repairs a missing Done; nothing repairs a failed move back to To Do after a revert, so that one goes to
+  "User needed" with the ticket keys.
 
 ## Merge
 
