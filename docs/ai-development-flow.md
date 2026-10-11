@@ -578,6 +578,11 @@ real failure.
   cd ../realmforge-worktrees/<dir> && uv sync
   ```
 
+  A session that Claude Code already put on its own branch (a cloud session's clone, the desktop app's
+  `claude/<name>` branch) creates no other branch or worktree (CLAUDE.md): at the first claim it rebases that
+  branch onto the current `origin/master`, pushes it, and uses it as the batch branch. Its name carries no keys,
+  so the claim comments name it and the pull request title carries the keys.
+
   A stacked batch ([Dependencies](#dependencies)) starts from `origin/<dependency branch>` instead of
   `origin/master`, and rebases onto it. The main checkout belongs to Matěj and to sessions working there: a flow
   never switches, builds or commits in it. A new worktree has no `build/`, `run/` or `.cache/`, so its first
@@ -713,8 +718,9 @@ and no unfinished active-sprint ticket remains, the truthful statement is: **The
 
 A Claude Code cloud session (`CLAUDE_CODE_REMOTE=true`) runs the same flow; only this differs:
 
-- **Its own clone** is its worktree. It sees only its own branches, so its intake and claim rely on Jira claim
-  comments, remote branches and open pull requests.
+- **Its own clone** is its worktree, and the branch Claude Code put it on is the batch branch
+  ([Branches and worktrees](#branches-and-worktrees)). It sees only its own branches, so its intake and claim
+  rely on Jira claim comments, remote branches and open pull requests.
 - **Jira** goes through the claude.ai Atlassian connector, with the same tools and field sets.
 - **GitHub:** the proxy refuses GraphQL; the pull request skills list the REST forms to use instead.
 - **Gradle:** the queue sees only the VM's own runs.
