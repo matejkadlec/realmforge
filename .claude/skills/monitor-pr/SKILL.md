@@ -234,11 +234,13 @@ Otherwise act on the first of steps 2–7 that applies. If none applies yet, wai
 5. **Failing check: fix it and push.** Read the failing job's log (`gh run view <run id> --log-failed`; for the
    Gradle job also `gh run download <run id> -n gradle-logs-and-reports` into the scratchpad).
 
-   - **Not this pull request's failure:** the check is also red on `master`, or the error is in an area the diff
-     never touches. Port an existing fix if one exists. Otherwise say what fails and why, and bring the base in
-     (step 2) once it carries the fix. Re-read the latest CI on `master` at each check-in
-     (`gh run list --repo matejkadlec/realmforge --branch master --limit 5`), because no pull request event
-     announces it.
+   - **Not this pull request's failure** needs evidence: the same check also fails on `master`'s latest run
+     (`gh run list --repo matejkadlec/realmforge --branch master --limit 5`), or the failure reproduces on the
+     base commit (`git merge-base origin/master HEAD`, checked out with `git worktree add --detach` in the
+     scratchpad). A failure in a file or test the diff never touches is not evidence by itself: a changed
+     generator, API or shared configuration can break untouched code. With that evidence, port an existing fix
+     if one exists. Otherwise say what fails and why, and bring the base in (step 2) once it carries the fix.
+     Re-read the latest CI on `master` at each check-in, because no pull request event announces it.
    - **This pull request's failure:** root-cause it, fix it on the branch, run the targeted checks, and push
      once. A described fix is not a fix, and a red head is never left waiting.
    - "Flake" is not a cause. Re-run a job only when it died before any test ran, and at most once
