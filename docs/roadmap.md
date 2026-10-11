@@ -186,9 +186,10 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
 - [ ] **W4 Dungeon framework** (L, after spike 3 and W1). The instance dimension from spike 3;
   `realmforge:dungeon_type`; the room format and its validation (`content/rooms/`); the pure planner and layout
   with fuzz tests; the builder with data markers and chunk tickets; `InstanceManager`; entry and exit; the rules
-  inside (Adventure mode plus guards for non-player edits, [architecture 15.5](architecture.md#155-instances)); QA
-  commands to preview a layout and enter a dungeon. *Done when:* GameTests build and enter an instance, and a
-  bucket, flint and steel, an axe, a hoe, placing and breaking all leave the room unchanged.
+  inside (Adventure mode plus guards for non-player edits and for items with `can_break` or `can_place_on`,
+  [architecture 15.5](architecture.md#155-instances)); QA commands to preview a layout and enter a dungeon. *Done
+  when:* GameTests build and enter an instance, and a bucket, flint and steel, an axe, a hoe, a tool with
+  `can_break`, placing and breaking all leave the room unchanged.
 - [ ] **W5 Boss** (L, after C3a and W3). `realmforge:boss`, `BossPhaseMachine`, abilities through the spell engine,
   the boss entity and model, the phase name in the boss bar, arena rules, loot. The boss is tested on its own,
   before any dungeon references it. *Done when:* GameTests cover every phase change.

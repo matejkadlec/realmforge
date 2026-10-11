@@ -852,9 +852,12 @@ room reachable). A QA command renders a layout preview for review.
   blocks; doors, levers, chests and combat still work. Edits by anything else are cancelled inside the instance
   dimension: entities placing blocks (`BlockEvent.EntityPlaceEvent`), fluids creating blocks
   (`BlockEvent.FluidPlaceBlockEvent`), trampled farmland (`BlockEvent.FarmlandTrampleEvent`), mob griefing
-  (`EntityMobGriefingEvent`) and explosions (the block list of `ExplosionEvent.Detonate`). W4's GameTests use a
-  bucket, flint and steel, an axe and a hoe, and place and break blocks inside an instance, and expect the room
-  unchanged.
+  (`EntityMobGriefingEvent`) and explosions (the block list of `ExplosionEvent.Detonate`). Adventure mode still
+  lets an item with the `can_break` or `can_place_on` component (`DataComponents.CAN_BREAK`, `CAN_PLACE_ON`) edit
+  matching blocks, and commands, data packs or other mods can hand out such items, so block breaks
+  (`BlockEvent.BreakEvent`) and placements (`BlockEvent.EntityPlaceEvent`) by players who are not in creative mode
+  are cancelled there too. W4's GameTests use a bucket, flint and steel, an axe, a hoe and a tool with `can_break`,
+  and place and break blocks inside an instance, and expect the room unchanged.
 - **Also inside:** respawn at the entrance, no natural spawns, leave through the exit portal or a command.
 - **Cleanup and plot reuse:** answered by spike 3 (clear the plot, never reuse plots, or overwrite on reuse).
 - No dimensions are created at runtime (ADR 0012).
