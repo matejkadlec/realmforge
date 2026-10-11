@@ -277,8 +277,11 @@ Otherwise act on the first of steps 2–7 that applies. If none applies yet, wai
 7. **Clean round: merge.** The round is clean when no review thread is open and one of these holds:
 
    - Codex's `+1` counts for this head;
-   - 10 minutes have passed since the later of the push time and Codex's latest `eyes`, with no new Codex review
-     or reaction on this head and no summary row for this head still running.
+   - Codex completed a review of this head (a Codex review whose `commit_id` is the head, or the summary row
+     Completed for its short SHA), and every thread from that review has been closed by `fix-pr`, with or
+     without a code change. Without a new push no further review or `+1` comes, so this ends the round;
+   - 10 minutes have passed since the later of the push time and Codex's latest `eyes`, with no Codex review or
+     reaction on this head and no summary row for this head still running.
 
    Codex's automatic trigger can leave a round with neither a review nor a `+1` (none of PR #1's later pushes
    was reviewed), so the silent window ends the wait instead of holding the pull
@@ -306,7 +309,8 @@ all, so instead:
 
 ## Merge
 
-When Codex is done with the head (its `+1`, or the silent window), the run merges unless check 6 holds it.
+When Codex is done with the head (its `+1`, a completed review whose findings are all closed, or the silent
+window), the run merges unless check 6 holds it.
 Check all of these on one fresh reading, in order:
 
 1. The round is clean under step 7.
