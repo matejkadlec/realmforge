@@ -432,11 +432,14 @@ Per ticket, in order:
 
 A ticket is an **abandoned claim**, from a run that died between steps 3 and 5, only when all of these hold: it
 is In Progress, the branch its earliest counting claim comment names exists neither locally nor on the remote, no
-worktree or open pull request names its key, and that comment is more than thirty minutes old. Recovery is
-arbitrated like a claim: add one claim-recovery comment naming the abandoned claim comment, re-read the ticket
+worktree or open pull request names its key, and that comment is more than thirty minutes old. Step 3 is several
+Jira writes, so a run can also die after the move to In Progress and before its comment: without any counting
+claim comment, the ticket is abandoned when no local or remote branch, worktree or open pull request names its key
+and its move to In Progress (status history) is more than thirty minutes old. Recovery is arbitrated like a
+claim: add one claim-recovery comment naming the abandoned claim comment (or the bare move), re-read the ticket
 directly (an issue read, not a search, which may lag), and only while all four conditions still hold and your
-recovery comment is the earliest counting one since that claim comment, move the ticket to Next and claim it
-normally. A recovery comment older than thirty minutes no longer counts. Anything short of all four is in-flight
+recovery comment is the earliest counting one since that claim comment (or that move), move the ticket to Next
+and claim it normally. A recovery comment older than thirty minutes no longer counts. Anything short of all four is in-flight
 ownership: skip it. The batch branch names every ticket key of the batch and is on the remote from its first
 claim, so none of its tickets looks abandoned while the run lives, wherever the run is.
 
