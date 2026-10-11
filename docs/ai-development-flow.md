@@ -522,7 +522,8 @@ Parallel worktrees can start several Gradle builds and GameTest servers at once,
 therefore run every Gradle build and test task through `.claude/scripts/gradle-queue.sh <task>` (not
 `runClient`, which Matěj starts himself). It allows one run per 5 GiB of RAM (two on Matěj's PC), waits while
 every slot is busy or less than 4 GiB is available, and runs a build that died of memory again once instead of
-failing. A run that waited too long exits with 75: that is a queue timeout, not a build result, so run it again
+failing. Runs start one at a time: a start keeps the admission lock for up to a minute (or until that run ends),
+so the next run checks memory only after the new JVMs have claimed theirs. A run that waited too long exits with 75: that is a queue timeout, not a build result, so run it again
 later. A run that ran out of memory twice is a real failure.
 
 ## Branches and worktrees

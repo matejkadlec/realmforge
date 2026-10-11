@@ -5,15 +5,18 @@
 #   .claude/scripts/gradle-queue.sh build
 #   .claude/scripts/gradle-queue.sh runGameTestServer
 #
-# A run starts once one of the slots is free and enough memory is available; until then it waits and says why. A
-# run that dies of memory (a JVM that cannot reserve its heap, an OutOfMemoryError, an OOM-killed daemon or game
-# JVM) waits for memory and runs again, once. Every other failure keeps Gradle's own exit code. Exit code 75 means
-# the queue gave up waiting, which is not a build result.
+# A run starts once one of the slots is free and enough memory is available; until then it waits and says why.
+# Runs are admitted one at a time: the admission lock stays held for a grace period after a start (or until that
+# run ends), so the next run checks memory only after the new JVMs have claimed theirs. A run that dies of memory
+# (a JVM that cannot reserve its heap, an OutOfMemoryError, an OOM-killed daemon or game JVM) waits for memory and
+# runs again, once. Every other failure keeps Gradle's own exit code. Exit code 75 means the queue gave up waiting,
+# which is not a build result.
 #
 # Settings (environment):
 #   RF_GRADLE_SLOTS             concurrent runs; default one per 5 GiB of RAM, at least 1
 #   RF_GRADLE_MIN_FREE_MIB      MemAvailable a run needs before it starts; default 4096
-#   RF_GRADLE_QUEUE_TIMEOUT_MIN how long each wait (for a slot, for memory) may last; default 120
+#   RF_GRADLE_QUEUE_TIMEOUT_MIN how long each wait (for a slot, for admission) may last; default 120
+#   RF_GRADLE_ADMIT_GRACE_S     how long a start keeps the admission lock; default 60
 set -euo pipefail
 
 if [[ $# -eq 0 ]]; then
@@ -37,16 +40,24 @@ slots=${RF_GRADLE_SLOTS:-$(($(mem_total_mib) / 5120))}
 ((slots >= 1)) || slots=1
 need_mib=${RF_GRADLE_MIN_FREE_MIB:-4096}
 timeout_min=${RF_GRADLE_QUEUE_TIMEOUT_MIN:-120}
+grace_s=${RF_GRADLE_ADMIT_GRACE_S:-60}
 lock_dir=${XDG_CACHE_HOME:-$HOME/.cache}/realmforge/gradle-queue
 mkdir -p "$lock_dir"
 
-log=$(mktemp "${TMPDIR:-/tmp}/gradle-queue.XXXXXX")
-trap 'rm -f "$log"' EXIT
-
 lock_fd=
 slot_no=
+grace_pid=
 deadline=0
 last_note=0
+
+log=$(mktemp "${TMPDIR:-/tmp}/gradle-queue.XXXXXX")
+# shellcheck disable=SC2317  # invoked by the EXIT trap
+cleanup() {
+    rm -f "$log"
+    # A finished run no longer needs the admission lock its grace period holds.
+    if [[ -n $grace_pid ]]; then kill "$grace_pid" 2>/dev/null || true; fi
+}
+trap cleanup EXIT
 
 note() {
     # Prints a queue message at most once a minute.
@@ -91,16 +102,27 @@ take_slot() {
     done
 }
 
-wait_for_memory() {
-    local free
+admit() {
+    # Checks memory and starts under one lock, so two waiting runs never start on the same free memory.
+    local fd free
     start_wait_clock
+    exec {fd}>"$lock_dir/admission.lock"
+    until flock -w 15 "$fd"; do
+        note "waiting: another Gradle run is starting"
+        give_up_if_late "another run was starting"
+    done
     while true; do
         free=$(mem_available_mib)
-        ((free >= need_mib)) && return
+        ((free >= need_mib)) && break
         note "waiting: ${free} MiB available, a run needs ${need_mib} MiB"
         give_up_if_late "not enough memory"
         sleep 15
     done
+    # A background sleep shares the lock and keeps it through the grace period; this script lets go of its copy.
+    if [[ -n $grace_pid ]]; then kill "$grace_pid" 2>/dev/null || true; fi
+    sleep "$grace_s" >/dev/null 2>&1 {lock_fd}>&- &
+    grace_pid=$!
+    exec {fd}>&-
 }
 
 ran_out_of_memory() {
@@ -112,7 +134,7 @@ ran_out_of_memory() {
 
 take_slot
 for attempt in 1 2; do
-    wait_for_memory
+    admit
     echo "gradle-queue: running ./gradlew $* (slot $slot_no of $slots, $(mem_available_mib) MiB available)" >&2
     set +e
     # The slot lock stays with this script; Gradle and the processes it starts don't inherit it.
