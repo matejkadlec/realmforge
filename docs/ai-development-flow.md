@@ -168,10 +168,11 @@ Every session taking work from Next maintains the queue:
 
 These are the only promotions, plus two exceptions: [Dependencies](#dependencies) pulls in a dependency of a
 selected ticket, and `flow2` promotes and selects the tickets it creates or picks for Matěj's request directly,
-whatever else Next holds, because he asked for that work now. Never promote other Backlog or future-sprint work. A ticket is eligible when it is not
-[waiting on Matěj](#tickets-waiting-on-matěj) and none of its dependencies is in flight elsewhere. Intake works
-from a snapshot a peer may already have overtaken, so immediately before each promotion re-read the ticket and
-promote it only while it is still To Do. A ticket that already left To Do belongs to a peer: skip it and re-plan.
+whatever else Next holds, because he asked for that work now. Never promote other Backlog or future-sprint
+work. A ticket is eligible when it is not [waiting on Matěj](#tickets-waiting-on-matěj) and none of its
+dependencies is in flight elsewhere. Intake works from a snapshot a peer may already have overtaken, so
+immediately before each promotion re-read the ticket and promote it only while it is still To Do. A ticket that
+already left To Do belongs to a peer: skip it and re-plan.
 
 Before every handoff boundary (publishing or updating a ready pull request, or ending a run), re-inspect Next and
 To Do with what the batch taught you, and replenish Next while eligible To Do work remains. This never authorizes
@@ -266,10 +267,11 @@ they cannot be separated, the whole batch is a playtest batch. Pulled-in depende
 6. **Playtest passed:** Matěj removes the label. `monitor-pr` moves the tickets to Pending CR, merges once
    everything else is clean, and moves them to Done.
 7. **Playtest failed:** Matěj says what is wrong in the session or on the pull request, the channels
-   `monitor-pr` watches (a comment on a ticket alone goes unseen), and leaves the label. Move the affected tickets to In Progress, fix on the same branch (the session that handed off
-   or any later one), run the affected checks, push, record the revision on each ticket, move them back to
-   Pending User QA, and hand back a What to look at limited to the revision, with the command that updates his
-   checkout. The label stays until he removes it.
+   `monitor-pr` watches (a comment on a ticket alone goes unseen), and leaves the label. Move the affected
+   tickets to In Progress, fix on the same branch (the session that handed off or any later one), run the affected
+   checks, push, record the revision on each ticket, move them back to Pending User QA, and hand back a What to
+   look at limited to the revision, with the command that updates his checkout. The label stays until he removes
+   it.
 
 While Matěj plays from the batch's worktree, run no Gradle task in it.
 
@@ -664,8 +666,8 @@ the open pull request whose head is that branch as one batch.
   every revision. Count them, as batches, from fresh reads, every result page and comment page to its end: tickets
   in Pending User QA; tickets In Progress whose latest QA-mode statement in the current cycle (the claim comment
   or a later QA-mode comment) names Playtest; open pull requests with `needs-playtest`. Select a playtest batch
-  only while that count is below three; otherwise select AI-only work. A revision is not a new selection, so the limit never
-  blocks it.
+  only while that count is below three; otherwise select AI-only work. A revision is not a new selection, so the
+  limit never blocks it.
 - Start another batch only while every cap allows it and the conflict map shows the branch safe, independent, and
   neither overlapping nor stacked on an in-flight branch without need. A free slot never authorizes an overlap.
 - Linked remediation stays in its original batch's slots.
