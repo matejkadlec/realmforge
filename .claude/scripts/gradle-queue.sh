@@ -13,7 +13,7 @@
 # Settings (environment):
 #   RF_GRADLE_SLOTS             concurrent runs; default one per 5 GiB of RAM, at least 1
 #   RF_GRADLE_MIN_FREE_MIB      MemAvailable a run needs before it starts; default 4096
-#   RF_GRADLE_QUEUE_TIMEOUT_MIN how long to wait in the queue; default 120
+#   RF_GRADLE_QUEUE_TIMEOUT_MIN how long each wait (for a slot, for memory) may last; default 120
 set -euo pipefail
 
 if [[ $# -eq 0 ]]; then
@@ -36,7 +36,7 @@ mem_total_mib() { awk '/^MemTotal:/ { print int($2 / 1024) }' /proc/meminfo; }
 slots=${RF_GRADLE_SLOTS:-$(($(mem_total_mib) / 5120))}
 ((slots >= 1)) || slots=1
 need_mib=${RF_GRADLE_MIN_FREE_MIB:-4096}
-deadline=$(($(date +%s) + ${RF_GRADLE_QUEUE_TIMEOUT_MIN:-120} * 60))
+timeout_min=${RF_GRADLE_QUEUE_TIMEOUT_MIN:-120}
 lock_dir=${XDG_CACHE_HOME:-$HOME/.cache}/realmforge/gradle-queue
 mkdir -p "$lock_dir"
 
@@ -45,6 +45,7 @@ trap 'rm -f "$log"' EXIT
 
 lock_fd=
 slot_no=
+deadline=0
 last_note=0
 
 note() {
@@ -57,9 +58,15 @@ note() {
     fi
 }
 
+start_wait_clock() {
+    # Every wait gets the full timeout; time spent running Gradle never counts against it.
+    deadline=$(($(date +%s) + timeout_min * 60))
+    last_note=0
+}
+
 give_up_if_late() {
     if (($(date +%s) >= deadline)); then
-        echo "gradle-queue: gave up after ${RF_GRADLE_QUEUE_TIMEOUT_MIN:-120} minutes in the queue ($1)." >&2
+        echo "gradle-queue: gave up after ${timeout_min} minutes in the queue ($1)." >&2
         echo "gradle-queue: this is not a build result; run it again once other Gradle runs have finished." >&2
         exit 75
     fi
@@ -67,6 +74,7 @@ give_up_if_late() {
 
 take_slot() {
     local i fd
+    start_wait_clock
     while true; do
         for ((i = 1; i <= slots; i++)); do
             exec {fd}>"$lock_dir/slot-$i.lock"
@@ -85,6 +93,7 @@ take_slot() {
 
 wait_for_memory() {
     local free
+    start_wait_clock
     while true; do
         free=$(mem_available_mib)
         ((free >= need_mib)) && return
@@ -115,7 +124,6 @@ for attempt in 1 2; do
     fi
     if ((attempt == 1)); then
         echo "gradle-queue: the run ran out of memory (exit $rc); waiting for memory and running it again." >&2
-        last_note=0
     fi
 done
 echo "gradle-queue: the run ran out of memory twice with ${need_mib} MiB available at its start; this is a" >&2
