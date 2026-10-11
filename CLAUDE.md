@@ -225,7 +225,8 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
    reproducibility, packwiz index. These four jobs are the required checks on `master`.
 6. `monitor-pr` merges once Codex is done (its approval, or 10 silent minutes), every review thread is resolved
    and the required checks are green, unless the PR has the `needs-playtest` label: then Matěj playtests first and
-   removes the label. Distribution: GitHub Releases now, CurseForge later
+   removes the label ([ADR 0015](docs/decisions/0015-merging-through-monitor-pr.md)). Distribution: GitHub
+   Releases now, CurseForge later
    ([ADR 0008](docs/decisions/0008-distribution-github-and-curseforge.md)).
 
 ## How the pipeline fits together

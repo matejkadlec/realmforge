@@ -24,6 +24,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0011](0011-repository-layout-and-workflow.md) | Repository layout and workflow | Accepted |
 | [0012](0012-procedural-dungeons-and-dimensions.md) | Procedural dungeons and dimensions | Accepted |
 | [0013](0013-modpack-composition.md) | Modpack composition | Accepted (written separately) |
+| [0015](0015-merging-through-monitor-pr.md) | Merging through monitor-pr | Accepted (amends 0011) |
 
 ## Open questions (not decided)
 
