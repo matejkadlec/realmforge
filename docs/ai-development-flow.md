@@ -404,8 +404,9 @@ the batch touches (`tools/realmforge_tools/generate/`; every player-facing text 
 `lang/en_us.json` and `lang/cs_cz.json`), and confirm with the diff after `uv run rf gen`. Never select a batch
 that regenerates a file an in-flight batch also regenerates, until that batch has merged. In practice this lets
 one batch with new player-facing content run at a time. When implementation shows the batch must regenerate such
-a file after all, record the overlap on its tickets, finish the batch, and publish it; whichever pull request
-merges second rebases and regenerates (`monitor-pr` step 2), never hand-merging a generated file.
+a file after all, that is scope growth (next paragraph): the overlapping part waits or is split out, and the batch
+is not published while the other batch owns the file. A conflict in a generated file is resolved by rebasing and
+regenerating (`monitor-pr` step 2), never by hand-merging it.
 
 Decide the domains, gate-critical files and generated files before the claim; the claim comment states them, so
 peers can count the batch. If the scope later grows into another domain, a shared-root file, a gate-critical file
