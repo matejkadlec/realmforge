@@ -23,7 +23,7 @@ route_pypi_through_proxy() {
   [ -n "${HTTPS_PROXY:-}" ] || return 1
   timeout 5 getent hosts pypi.org >/dev/null 2>&1 && return 1
   local fixed
-  fixed="$(printf '%s' "${NO_PROXY:-${no_proxy:-}}" | tr ',' '\n' \
+  fixed="$(printf '%s,%s' "${NO_PROXY:-}" "${no_proxy:-}" | tr ',' '\n' | awk 'NF && !seen[$0]++' \
     | { grep -vxE 'pypi\.org|files\.pythonhosted\.org' || true; } | paste -sd, -)"
   export NO_PROXY="$fixed" no_proxy="$fixed"
 }
