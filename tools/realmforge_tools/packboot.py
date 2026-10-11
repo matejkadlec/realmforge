@@ -13,7 +13,8 @@
    packwiz-installer's command line always installs, and without them, the default choice for players
    (pack/README.md, "Optional mods").
 5. Fail on a non-zero exit, a missing self-test report, a crash report, a core mod that was not loaded, or an
-   ERROR or FATAL line in ``logs/latest.log`` that the side's allowlist does not cover.
+   ERROR or FATAL line in ``logs/latest.log`` that the side's allowlist does not cover. A game that keeps running
+   after a fatal error (the client then waits on FML's error screen) is stopped instead of waiting for the timeout.
 """
 
 from __future__ import annotations
@@ -23,6 +24,7 @@ import http.server
 import os
 import re
 import shutil
+import signal
 import socket
 import subprocess
 import threading
@@ -30,7 +32,7 @@ import time
 import tomllib
 import urllib.request
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
@@ -85,12 +87,19 @@ ALLOWED_ERRORS: dict[str, tuple[tuple[str, str], ...]] = {
             r"^net\.minecraft\.client\.sounds\.SoundEngine: Error starting SoundSystem",
             "a headless machine has no audio device; the game turns sound off and carries on",
         ),
+        (
+            r"^com\.mojang\.text2speech\.Narrator: Error while loading the narrator",
+            "the narrator needs the flite text-to-speech library, which CI runners lack; the game runs without it",
+        ),
     ),
 }
 
 SERVER_HEAP = "-Xmx3G"
 CLIENT_HEAP = "-Xmx4G"
 BOOT_TIMEOUT_S = 600
+# After a loading error the client waits on FML's error screen forever, so a boot that logged a FATAL line or wrote
+# a crash report is stopped this many seconds later instead of at the timeout.
+FATAL_GRACE_S = 10
 INSTALL_TIMEOUT_S = 1800
 # The fixed seed keeps the generated spawn area, and so the worldgen code that runs, the same on every boot.
 SERVER_PROPERTIES = """\
@@ -172,17 +181,20 @@ def unexpected_errors(entries: list[LogEntry], allowed: tuple[tuple[str, str], .
 class BootOutcome:
     """What one boot left behind, gathered after the game process ended."""
 
-    exit_code: int | None  # None: killed after the timeout
+    exit_code: int | None  # None: killed, after a fatal error or the timeout
     report_written: bool
     crash_reports: tuple[str, ...]
     log: str | None  # None: the game wrote no latest.log
     mod_jar_name: str
+    stopped_after_fatal: bool = False
 
 
 def boot_problems(outcome: BootOutcome, allowed: tuple[tuple[str, str], ...]) -> list[str]:
     """Everything that makes a boot fail, as messages; an empty list is a clean boot."""
     problems: list[str] = []
-    if outcome.exit_code is None:
+    if outcome.exit_code is None and outcome.stopped_after_fatal:
+        problems.append(f"the game kept running {FATAL_GRACE_S} s after a fatal error and was stopped")
+    elif outcome.exit_code is None:
         problems.append(f"the game did not stop within {BOOT_TIMEOUT_S} s and was killed")
     elif outcome.exit_code != 0:
         problems.append(f"the game exited with code {outcome.exit_code}")
@@ -359,15 +371,17 @@ def boot(
     reports.mkdir(parents=True, exist_ok=True)
     started = time.monotonic()
     with (reports / "console.log").open("wb") as console:
+        # Its own session, so stopping it also stops what it started (xvfb-run starts Xvfb, uvx the launcher).
         process = subprocess.Popen(
-            command, cwd=game_dir, env=env, stdin=subprocess.DEVNULL, stdout=console, stderr=subprocess.STDOUT
+            command,
+            cwd=game_dir,
+            env=env,
+            stdin=subprocess.DEVNULL,
+            stdout=console,
+            stderr=subprocess.STDOUT,
+            start_new_session=os.name == "posix",
         )
-        try:
-            exit_code: int | None = process.wait(timeout=BOOT_TIMEOUT_S)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            process.wait()
-            exit_code = None
+        exit_code, stopped_after_fatal = _wait_for_game(process, game_dir)
     seconds = time.monotonic() - started
 
     latest_log = game_dir / "logs" / "latest.log"
@@ -382,8 +396,47 @@ def boot(
         crash_reports=crash_reports,
         log=latest_log.read_text(encoding="utf-8", errors="replace") if latest_log.is_file() else None,
         mod_jar_name=mod_jar_name,
+        stopped_after_fatal=stopped_after_fatal,
     )
     return BootReport(label=label, seconds=seconds, problems=boot_problems(outcome, ALLOWED_ERRORS[side]))
+
+
+def _wait_for_game(process: subprocess.Popen, game_dir: Path) -> tuple[int | None, bool]:
+    """Wait until the game exits; stop it after the timeout, or soon after it failed to load.
+
+    Returns the exit code (None when it was stopped) and whether it was stopped after a fatal error.
+    """
+    deadline = time.monotonic() + BOOT_TIMEOUT_S
+    failed_at: float | None = None
+    while True:
+        try:
+            return process.wait(timeout=2), False
+        except subprocess.TimeoutExpired:
+            pass
+        now = time.monotonic()
+        if failed_at is None and failed_to_load(game_dir):
+            failed_at = now
+        if (failed_at is not None and now - failed_at >= FATAL_GRACE_S) or now >= deadline:
+            _stop(process)
+            return None, failed_at is not None
+
+
+def failed_to_load(game_dir: Path) -> bool:
+    """Whether the running game wrote a crash report or a FATAL log line, after which it will not load."""
+    crash_dir = game_dir / "crash-reports"
+    if crash_dir.is_dir() and any(crash_dir.iterdir()):
+        return True
+    latest_log = game_dir / "logs" / "latest.log"
+    return latest_log.is_file() and b"/FATAL] [" in latest_log.read_bytes()
+
+
+def _stop(process: subprocess.Popen) -> None:
+    if os.name == "posix":
+        with suppress(ProcessLookupError):
+            os.killpg(process.pid, signal.SIGKILL)
+    else:
+        process.kill()
+    process.wait()
 
 
 def _install_server(work: _Workspace, log) -> None:

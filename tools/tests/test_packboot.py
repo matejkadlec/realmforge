@@ -83,6 +83,7 @@ def test_allowlisted_errors_pass() -> None:
     [
         ({"exit_code": 1}, "the game exited with code 1"),
         ({"exit_code": None}, f"the game did not stop within {packboot.BOOT_TIMEOUT_S} s and was killed"),
+        ({"exit_code": None, "stopped_after_fatal": True}, "the game kept running"),
         ({"report_written": False}, "no self-test report: the game never finished loading"),
         ({"crash_reports": ("crash-2026-10-11_21.20.41-server.txt",)}, "crash report: crash-2026"),
         ({"log": None}, "the game wrote no logs/latest.log"),
@@ -106,12 +107,14 @@ CLIENT_LOG = f"""\
 {FOUND_JAR}
 [11Oct2026 21:33:38.671] [Render thread/ERROR] [xaero.map.WorldMap/]: io exception while checking versions: Online mod data expired! Date: Wed Oct 07 12:36:48 CEST 2026
 [11Oct2026 21:33:43.428] [Render thread/ERROR] [net.minecraft.client.sounds.SoundEngine/SOUNDS]: Error starting SoundSystem. Turning off sounds & music
+[11Oct2026 19:43:01.000] [Render thread/ERROR] [com.mojang.text2speech.Narrator/]: Error while loading the narrator
+com.mojang.text2speech.Narrator$InitializeException: Failed to load library flite
 """
 
 
 def test_the_client_allowlist_covers_headless_noise_only_on_the_client() -> None:
     assert boot_problems(_outcome(log=CLIENT_LOG), ALLOWED_ERRORS["client"]) == []
-    assert len(boot_problems(_outcome(log=CLIENT_LOG), ALLOWED_ERRORS["server"])) == 2
+    assert len(boot_problems(_outcome(log=CLIENT_LOG), ALLOWED_ERRORS["server"])) == 3
 
 
 def test_the_client_runs_under_xvfb_when_it_exists(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -177,3 +180,42 @@ def test_a_download_with_the_wrong_hash_is_refused(tmp_path: Path) -> None:
     with pytest.raises(packboot.PackBootError, match="does not match the pinned"):
         packboot.fetch(download, tmp_path / "cache")
     assert not (tmp_path / "cache" / "file.jar").exists()
+
+
+def test_a_fatal_line_or_a_crash_report_means_the_game_failed_to_load(tmp_path: Path) -> None:
+    assert not packboot.failed_to_load(tmp_path)
+    write(tmp_path / "logs" / "latest.log", CLEAN_LOG)
+    assert not packboot.failed_to_load(tmp_path)
+    write(tmp_path / "logs" / "latest.log", ERROR_LOG)
+    assert packboot.failed_to_load(tmp_path)
+    (tmp_path / "logs" / "latest.log").unlink()
+    write(
+        tmp_path / "crash-reports" / "crash-2026-10-11_19.43.23-fml.txt", "---- Minecraft Crash Report ----"
+    )
+    assert packboot.failed_to_load(tmp_path)
+
+
+def test_a_game_that_hangs_after_a_fatal_error_is_stopped(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import subprocess
+    import sys
+    import time
+
+    monkeypatch.setattr(packboot, "FATAL_GRACE_S", 0)
+    write(tmp_path / "logs" / "latest.log", ERROR_LOG)
+    process = subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(120)"], start_new_session=sys.platform != "win32"
+    )
+    started = time.monotonic()
+    assert packboot._wait_for_game(process, tmp_path) == (None, True)
+    assert time.monotonic() - started < 30
+    assert process.poll() is not None
+
+
+def test_a_game_that_exits_returns_its_exit_code(tmp_path: Path) -> None:
+    import subprocess
+    import sys
+
+    process = subprocess.Popen([sys.executable, "-c", "raise SystemExit(3)"])
+    assert packboot._wait_for_game(process, tmp_path) == (3, False)
