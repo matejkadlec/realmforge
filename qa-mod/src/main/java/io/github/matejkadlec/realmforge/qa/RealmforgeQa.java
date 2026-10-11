@@ -2,9 +2,14 @@ package io.github.matejkadlec.realmforge.qa;
 
 import com.mojang.logging.LogUtils;
 import io.github.matejkadlec.realmforge.qa.castanim.QaCastAnimation;
+import io.github.matejkadlec.realmforge.qa.command.QaCommands;
+import io.github.matejkadlec.realmforge.qa.instance.InstanceBench;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import org.slf4j.Logger;
 
 /** Entry point of the dev-only Realmforge QA mod. Never released. */
@@ -15,6 +20,9 @@ public final class RealmforgeQa {
 
     public RealmforgeQa(IEventBus modEventBus) {
         QaCastAnimation.register(modEventBus);
+        NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent.class, QaCommands::register);
+        NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class,
+                event -> InstanceBench.onServerTick(event.getServer()));
     }
 
     /** Returns {@code realmforge_qa:<path>}. */
