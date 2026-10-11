@@ -101,7 +101,11 @@ Java 21 and uv preinstalled; there is no SDKMAN and `JAVA_HOME` is already set.
 - **`cloud-warmup.sh`** (`"async": true`, never delays the session). In the background it runs `uv sync --locked`,
   then `./gradlew :mod:extractMinecraftSources classes`: the Gradle distribution, all dependencies, the NeoForm
   decompile/recompile, `build/mc-sources/` and a first compile. The Gradle daemon keeps running for the agent's
-  first build.
+  first build. Measured in a fresh clone with an empty Gradle home (October 2026): the first `./gradlew build`
+  takes about 5 minutes cold; the warm-up takes about 4 minutes in the background, and the first build after it
+  about 45 seconds.
+  - Maven Central sometimes answers bursts with `429 Too Many Requests` for a few minutes. The warm-up retries
+    the Gradle step after 60 s and again after 120 s; it doesn't retry an HTTP 403 from the proxy.
   - State in `.cache/warmup/` (gitignored): `status` (`running`, `done` or `failed`), `summary`, `log`, and
     `stamp`, a hash of the build inputs (`gradle.properties`, wrapper properties, `settings.gradle`, the
     `build.gradle` files, `uv.lock`). SessionStart also fires on resume; with the same stamp the warm-up is
@@ -115,5 +119,5 @@ Java 21 and uv preinstalled; there is no SDKMAN and `JAVA_HOME` is already set.
   entries. A blocked host fails with `403` / `CONNECT tunnel failed`; `curl -sS "$HTTPS_PROXY/__agentproxy/status"`
   lists the recent denials.
 - The environment's setup script (environment settings) provisions tools only. It runs before Claude Code launches
-  and its result is cached for later sessions, but only when it finishes within about five minutes, and the
-  Gradle warm-up alone takes about that long. So the project warm-up stays in the hook.
+  and its result is cached for later sessions, but only when it finishes within about five minutes. The Gradle
+  warm-up alone takes about four, plus any rate-limit retries, so the project warm-up stays in the hook.
