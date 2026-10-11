@@ -46,6 +46,11 @@ To move to a newer pair, update Sodium and Iris together (`packwiz unpin`,
 client must enable it too. Its library Zeta is always installed, which is
 harmless.
 
+Caveat: packwiz-installer's command-line mode (`-g`, typical for dedicated
+servers) cannot choose options and installs every optional mod, Quark included
+("Accepting option Quark as option choosing is not implemented in the CLI").
+On a server without Quark, delete its jar after installing.
+
 ## License
 
 The modpack is All Rights Reserved. See [LICENSE](LICENSE) in this folder.

@@ -31,5 +31,5 @@ The modpack wraps our core mod with third-party QoL, UI, performance and library
 - Some libraries are beta-channel builds (Structurize, BlockUI, Domum Ornamentum for MineColonies; JEI, MezzConfig, playerAnimator); `packwiz update` keeps picking the newest file regardless of channel.
 - Kotlin for Forge was added by hand, because packwiz didn't pull it as a dependency of Fzzy Config (EMI Loot). After every mod addition, check the dependencies the jars declare.
 - Better Combat depends on playerAnimator, which is no longer developed; our spell-casting animations must coexist with it (spike).
-- Quark adds content: if a server enables it, every client must too.
-- The full pack is not yet booted in CI (planned: dedicated-server boot test, [0010](0010-testing-strategy.md)).
+- Quark adds content: if a server enables it, every client must too. packwiz-installer's CLI mode (used for servers) cannot choose options and installs Quark anyway; remove its jar on servers that should run without it.
+- A manual dedicated-server boot on 2026-10-11 (NeoForge 21.1.259, the 44 non-client pack mods including Quark, plus `realmforge` 0.0.1) started in about 19 s with no errors. Client-only mods were not covered. The boot is not yet automated in CI (planned, [0010](0010-testing-strategy.md)).
