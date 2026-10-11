@@ -116,8 +116,8 @@ Do this before the first wake, and again whenever the run resumes in a new sessi
 
 Run every git command, check, commit and push of this run inside that worktree, never in the current checkout
 on its behalf. Before each push, run `git fetch origin` again and confirm that the remote head is still the one
-your work is based on. A remote head that moved under you is new work to read first, never something to
-overwrite.
+your work is based on, then push with `--force-with-lease=<branch>:<that sha>` so the push fails if it moved in
+between. A remote head that moved under you is new work to read first, never something to overwrite.
 
 ## Signals
 
@@ -211,7 +211,8 @@ Otherwise act on the first of steps 2–7 that applies. If none applies yet, wai
 
 2. **Conflict: resolve it.** On `dirty` or `behind`, bring `master` in before anything else.
 
-   - Rebase a branch this session created onto `origin/master`, and push with `--force-with-lease`. Merge
+   - Rebase a branch this session created onto `origin/master`, and push with
+     `--force-with-lease=<branch>:<remote head before the rebase>`. Merge
      `origin/master` into anyone else's branch.
    - Keep the intent of both sides.
    - Regenerate generated files with the project's own tooling, never by hand: `uv run rf gen` for

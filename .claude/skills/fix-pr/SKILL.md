@@ -193,7 +193,10 @@ severity badge such as `![P1 Badge](...)` followed by a bold title.
    - Immediately before the push, run `git fetch origin` and require the remote head to still equal the
      starting head. A different head, even an ancestor after someone reset the branch, is a remote head that
      moved under you: do not push.
-   - Publish every commit with one push: `git push origin <branch>`. Then read the head back
+   - Publish every commit with one push that succeeds only while the remote is still at the starting head:
+     `git push --force-with-lease=<branch>:<starting sha> origin <branch>`. The lease makes the check and the
+     push atomic (a rejected lease is a remote head that moved under you). It never rewrites history here,
+     because your commits descend from the starting head. Then read the head back
      (`gh pr view <n> --repo matejkadlec/realmforge --json headRefOid`) and confirm that it equals your final
      commit. A different head, even a descendant, is a remote head that moved under you.
    - A pass that fixed nothing pushes nothing.

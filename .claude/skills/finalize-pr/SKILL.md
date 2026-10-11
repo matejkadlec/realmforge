@@ -141,7 +141,9 @@ It never merges, deploys or requests a Codex review.
 
    - Immediately before the push, run `git fetch origin` and require the remote head to still equal the
      starting head. A different head, even an ancestor after someone reset the branch, is Blocked: do not push.
-   - Push once (`git push origin <branch>`), read the remote head back
+   - Push once, and only while the remote is still at the starting head:
+     `git push --force-with-lease=<branch>:<starting sha> origin <branch>`. A rejected lease is Blocked; nothing
+     is rewritten, because your commits descend from that head. Then read the remote head back
      (`gh pr view <n> --repo matejkadlec/realmforge --json headRefOid`), and confirm that it equals your final
      commit. A different head, even a descendant, is a remote head that moved under you: Blocked.
    - A failed push or gate is a delivery blocker, not a completed fix. Keep the commits local and report them.
