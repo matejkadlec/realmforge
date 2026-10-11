@@ -73,7 +73,7 @@ wait_for_warmup() {
     *)
       cat "$state/summary"
       echo "Last lines of .cache/warmup/log:"
-      tail -n 25 "$log"
+      grep -v '^Picked up JAVA_TOOL_OPTIONS' "$log" | tail -n 25
       return 1
       ;;
   esac
@@ -90,6 +90,21 @@ step() {
   rc=$?
   echo "== $name: exit code $rc after $(($(date +%s) - started)) s" >>"$log"
   return "$rc"
+}
+
+# Gradle gets two more attempts: Maven Central answers download bursts with "429 Too Many Requests" for a few
+# minutes. A refusal by the agent proxy (HTTP 403) doesn't heal by itself, so it ends the warm-up at once.
+gradle_with_retries() {
+  local delay
+  for delay in 0 60 120; do
+    if [ "$delay" -gt 0 ]; then
+      grep -qE 'status code 403|403 Forbidden|response 403' "$log" && return 1
+      echo "== retrying in $delay s" >>"$log"
+      sleep "$delay"
+    fi
+    step gradle ./gradlew --console=plain :mod:extractMinecraftSources classes && return 0
+  done
+  return 1
 }
 
 # One line of JSON on stdout: Claude Code hands additionalContext to Claude when the async hook ends.
@@ -123,12 +138,9 @@ warm_up() {
   route_pypi_through_proxy || true
   cd "$root" || return 1
 
-  # Gradle gets a second attempt: registries such as Maven Central answer bursts with "429 Too Many Requests".
   if ! step uv uv sync --locked; then
     failed_step="uv sync"
-  elif ! step gradle ./gradlew --console=plain :mod:extractMinecraftSources classes \
-    && ! { echo "== retrying in 30 s" >>"$log" && sleep 30 \
-      && step gradle ./gradlew --console=plain :mod:extractMinecraftSources classes; }; then
+  elif ! gradle_with_retries; then
     failed_step="Gradle"
   fi
 
