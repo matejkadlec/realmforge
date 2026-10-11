@@ -402,7 +402,8 @@ Per ticket, in order:
 1. Re-read it from Jira with the claim field set; never claim from the intake snapshot.
 2. Confirm that it is still in Next, unassigned or assigned to the acting account, and that no local branch,
    worktree, remote branch or open pull request names its key (`rlm-<n>` in a branch name, `RLM-<n>` in a title,
-   as a whole token, so `rlm-17` does not match `rlm-170`).
+   as a whole token, so `rlm-17` does not match `rlm-170`). The branch and worktree this session already created
+   for this batch at an earlier ticket's claim name every key of the batch; they do not count.
 3. Assign it to the acting account, move it to In Progress, and add one claim comment:
 
    ```text
