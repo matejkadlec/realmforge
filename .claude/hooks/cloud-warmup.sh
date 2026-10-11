@@ -123,9 +123,12 @@ warm_up() {
   route_pypi_through_proxy || true
   cd "$root" || return 1
 
+  # Gradle gets a second attempt: registries such as Maven Central answer bursts with "429 Too Many Requests".
   if ! step uv uv sync --locked; then
     failed_step="uv sync"
-  elif ! step gradle ./gradlew --console=plain :mod:extractMinecraftSources classes; then
+  elif ! step gradle ./gradlew --console=plain :mod:extractMinecraftSources classes \
+    && ! { echo "== retrying in 30 s" >>"$log" && sleep 30 \
+      && step gradle ./gradlew --console=plain :mod:extractMinecraftSources classes; }; then
     failed_step="Gradle"
   fi
 
@@ -142,7 +145,7 @@ warm_up() {
     if [ -n "$hosts" ]; then
       summary+=" The network allowlist blocked: $hosts (add them under Network access in the cloud environment's"
       summary+=" settings)."
-    elif grep -qE '403|Forbidden' "$log"; then
+    elif grep -qE 'status code 403|403 Forbidden|response 403' "$log"; then
       summary+=" A download was refused (HTTP 403); \`curl -sS \"\$HTTPS_PROXY/__agentproxy/status\"\` lists the"
       summary+=" refused hosts."
     fi
