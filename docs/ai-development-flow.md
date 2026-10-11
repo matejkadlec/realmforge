@@ -263,8 +263,8 @@ they cannot be separated, the whole batch is a playtest batch. Pulled-in depende
    merge while the label is set. Its check-ins keep watching for Matěj's answer.
 6. **Playtest passed:** Matěj removes the label. `monitor-pr` moves the tickets to Pending CR, merges once
    everything else is clean, and moves them to Done.
-7. **Playtest failed:** Matěj says what is wrong (in the session, in a pull request comment or on a ticket) and
-   leaves the label. Move the affected tickets to In Progress, fix on the same branch (the session that handed off
+7. **Playtest failed:** Matěj says what is wrong in the session or on the pull request, the channels
+   `monitor-pr` watches (a comment on a ticket alone goes unseen), and leaves the label. Move the affected tickets to In Progress, fix on the same branch (the session that handed off
    or any later one), run the affected checks, push, record the revision on each ticket, move them back to
    Pending User QA, and hand back a What to look at limited to the revision, with the command that updates his
    checkout. The label stays until he removes it.
