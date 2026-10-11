@@ -27,8 +27,9 @@ pull request exists.
    selection_, which define the only promotions from To Do and how far to fill an AI-only batch. Priority is a
    recommendation. A playtest batch also needs a free playtest slot; while none is free, select AI-only work. The
    announcement names the tickets, the pulled-in dependencies and why the batch has this size.
-5. **Claim** every newly selected ticket through the _Atomic intake claim_ before writing any implementation;
-   only then create the batch's one branch and worktree under _Branches and worktrees_.
+5. **Claim** every newly selected ticket through the _Atomic intake claim_ before writing any implementation.
+   The batch's one branch and worktree are created and pushed at the first claim that holds (_Branches and
+   worktrees_) and reused for every later ticket of the batch.
 6. **Implement** in that worktree, following `CLAUDE.md`'s rules. Changes keep `docs/architecture.md`,
    `CLAUDE.md`, the READMEs and the ADRs current in the same batch.
 7. **Validate** under _Implementation and verification_: content regenerated from YAML, ruff, pytest,
