@@ -496,7 +496,7 @@ would remove both bonuses.
 | gear with fixed stats | vanilla, from the item's attribute modifiers | `realmforge:gear/<slot>/<n>` (generated) | while equipped |
 | affixes and gems (M2) | vanilla slots: `ItemAttributeModifierEvent` adds them to the stack's modifiers; curio slots (rings, trinkets): Curios' own modifier API, because Curios ignores vanilla equipment modifiers in its slots (*verify* in M2) | `realmforge:affix/<affix>/<slot>/<n>`, with the curio slot id and index as `<slot>` | while equipped |
 | status effects | vanilla, `MobEffect#addAttributeModifier` | the effect's | while active |
-| mob level | `mob`, at `FinalizeSpawnEvent` | `realmforge:mob_level/<n>` | saved with the mob |
+| mob level | `mob`, at `FinalizeSpawnEvent` ([14.1](#141-mob-levels)) | `realmforge:mob_level/<n>` | saved with the mob, reapplied from its level and the current curves when it loads |
 
 "Saved, recomputed" means: `CharacterStats` writes these modifiers with `addOrReplacePermanentModifier` and rewrites
 the whole set (removing ids it no longer produces) whenever a source changes, and on the player's first tick after
@@ -748,6 +748,10 @@ with live numbers; animations and particles start on `CastStartedPayload` (spike
   `EntityJoinLevelEvent` fallback that runs the same leveling as `FinalizeSpawnEvent`: the level from the rules,
   the scaling modifiers, then the health refill. So the default level never passes for an assigned one, and no mob
   carries a level without its scaling.
+- **Saved mobs follow changed curves:** when a mob loads from disk (`EntityJoinLevelEvent` with `loadedFromDisk`),
+  `mob` reapplies the scaling from its stored level and the current curves, replacing its
+  `realmforge:mob_level/<n>` modifiers and keeping its health fraction. A release or data pack that changes a curve
+  then reaches old mobs too.
 - XP (`character`), loot (`loot`) and the armor formula (`combat`) read the level from `realmforge:level`. Jade
   shows it through a compat plugin (*verify* Jade's API), the boss bar for bosses.
 
