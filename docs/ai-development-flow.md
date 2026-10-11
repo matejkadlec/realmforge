@@ -436,7 +436,8 @@ Per ticket, in order:
    every further ticket of the batch. A batch has exactly one branch. Creating it any earlier would let a git name
    collision, not the claim order, decide a race. The push makes the claim visible to sessions on other machines
    and in the cloud, which cannot see this machine's branches; without it, a live run's claim would look
-   abandoned to them after thirty minutes.
+   abandoned to them after thirty minutes. If the push fails, the claim does not hold: end the batch as for a lost
+   claim (below).
 
 A ticket is an **abandoned claim**, from a run that died between steps 3 and 5, only when all of these hold: it
 is In Progress, the branch its earliest counting claim comment names exists neither locally nor on the remote, no
@@ -451,12 +452,13 @@ and claim it normally. A recovery comment older than thirty minutes no longer co
 is in-flight ownership: skip it. The batch branch names every ticket key of the batch and is on the remote from
 its first claim, so none of its tickets looks abandoned while the run lives, wherever the run is.
 
-A run that dies after that push leaves a **stale claim**: its branch stays on the remote, so the abandoned-claim
-test never holds. To keep a live claim distinguishable, a run pushes each commit to the batch branch as it makes
-it (a branch push starts no CI), and when two hours pass without a commit it adds a `🔒 Claim heartbeat` comment to
-each ticket of the batch. A claim is stale when no open pull request names its keys, no worktree on this machine
-holds its branch, and neither the branch's newest commit nor the newest claim or heartbeat comment on its tickets
-is younger than six hours. CLAUDE.md forbids committing to another session's branch, and the branch may hold
+A run that dies after creating its branch leaves a **stale claim**: the branch stays (on the remote, or only in
+a local worktree when it died before the push), so the abandoned-claim test never holds. To keep a live claim
+distinguishable, a run pushes each commit to the batch branch as it makes it (a branch push starts no CI), and
+when two hours pass without a commit it adds a `🔒 Claim heartbeat` comment to each ticket of the batch. A claim is
+stale when no open pull request names its keys and neither the branch's newest commit (local or remote) nor the
+newest claim or heartbeat comment on its tickets is younger than six hours; a worktree a dead run left behind
+does not keep it alive. CLAUDE.md forbids committing to another session's branch, and the branch may hold
 finished work, so a stale claim is not taken over automatically: intake skips it and lists it in the ledger under
 "Blocked or other", with the branch, its last activity and the two ways on. Matěj either asks a session to
 continue that branch (it then becomes that session's batch: a worktree on the existing branch, a new claim
