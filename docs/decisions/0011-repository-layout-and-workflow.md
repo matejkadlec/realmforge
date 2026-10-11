@@ -2,7 +2,7 @@
 
 Date: 2026-10-11
 
-Status: Accepted
+Status: Accepted (merge step amended by [0015](0015-merging-through-monitor-pr.md))
 
 ## Context
 

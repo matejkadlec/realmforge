@@ -74,7 +74,7 @@ cd pack && packwiz refresh                # after changing anything in pack/
 | `art/` | asset sources: prompts, palettes, Blockbench files | yes |
 | `docs/` | vision, research notes, ADRs, dev setup | yes |
 | `.github/workflows/ci.yml` | CI | yes |
-| `.claude/` | Claude Code settings and the content validation hook | yes |
+| `.claude/` | Claude Code settings, content validation hook, PR skills (`fix-pr`, `finalize-pr`, `monitor-pr`), `pr-reviewer` agent | yes |
 | `.local/` | owner's private inputs; gitignored, **never commit** | - |
 | `run/`, `build/`, `.cache/` | runtime and build output; gitignored | - |
 
@@ -132,20 +132,102 @@ cd pack && packwiz refresh                # after changing anything in pack/
   realmforge_qa/structure/` (see `tools/realmforge_tools/generate/gametest.py`). Positions are relative to the
   structure block: the template's floor is at y = 1.
 
+## Git and branches
+
+Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
+
+**Branches**
+
+- **Never commit or push to `master`.** Every change reaches it through a pull request; the ruleset blocks direct
+  pushes, force-pushes and deletion. A local commit on `master` is still a mistake: undo it (below), never push it.
+- **Start every task from a fresh `origin/master`:** `git fetch origin && git switch -c <type>/<slug> origin/master`.
+  `<type>` is the Conventional Commits type of the main change (`feat`, `fix`, `docs`, `build`, `ci`, `test`,
+  `chore`); `<slug>` is two to five kebab-case words, e.g. `feat/talent-tree-schema`. One branch is one pull
+  request is one feature or content batch.
+- A session that Claude Code already put on its own branch or worktree (the desktop app's `claude/<name>`
+  branches, a cloud session's clone) works there and creates no other.
+- Before creating a branch, look for existing work on the same task (`git branch -a`, `git worktree list`,
+  `gh pr list`) and continue it instead of starting a parallel one. Never commit to another session's branch
+  unless Matěj asks.
+- Branch from `origin/master`, not from another feature branch, unless the task depends on unmerged work; then
+  the pull request description says so.
+- Run `git status` before switching branches. Never switch, reset, stash or clean a checkout that holds
+  uncommitted changes you did not make: they belong to Matěj or another session, so use a worktree instead.
+- Matěj's own uncommitted edits that belong to the task (small manual polish): fold them into the next relevant
+  commit. Ask first when they look large, risky, generated or unrelated. Never discard them.
+- Committed to the local `master` by mistake: `git branch <type>/<slug>` (keeps the commits; confirm with
+  `git log`), `git switch <type>/<slug>`, `git branch -f master origin/master`. Never `reset --hard` for this.
+
+**Commits and pushes**
+
+- Stage explicit paths and read `git diff --staged` before each commit. Never commit `.local/`, build or run
+  output, logs, secrets or third-party jars. Regenerate generated files with `uv run rf gen`; never edit or
+  hand-merge them.
+- Small, coherent commits with Conventional Commits messages.
+- Before every push, check that `git remote get-url origin` points to `matejkadlec/realmforge`. Push only your
+  own branch: `git push -u origin <branch>`. Never use `--no-verify`.
+- Force-push only your own branch, only with `--force-with-lease`, and only to replace commits nobody else has
+  built on.
+- When `master` has moved on and conflicts, rebase your own branch onto `origin/master`. On a branch someone else
+  created or shares, merge `origin/master` in instead.
+- Never discard work you did not create: no `git reset --hard`, `git clean`, `git checkout -- <path>`,
+  `git restore` or `git stash drop` on it.
+
+**Worktrees**
+
+- One session at a time: a branch in the main checkout is enough. Use a worktree when the main checkout is busy
+  (another session works there, it holds uncommitted changes, or you run tasks in parallel).
+- Location: `../realmforge-worktrees/<branch with "/" replaced by "-">`, outside the repository so ruff, Gradle,
+  `git status` and editors never see a second copy. New branch:
+  `git worktree add -b <branch> ../realmforge-worktrees/<dir> origin/master`. Existing branch:
+  `git worktree add ../realmforge-worktrees/<dir> <branch>`; a branch lives in only one worktree, so reuse the
+  one `git worktree list` shows.
+- A new worktree has none of the gitignored files: run `uv sync`. `build/`, `run/` and `.cache/` start empty, so
+  the first Gradle build and `:mod:extractMinecraftSources` are slow and `run/server/eula.txt` must be accepted
+  again. Copy from `.local/` only what the task needs, and never commit it.
+- Work only inside the worktree: run every command, check and commit there.
+- After the merge, remove only what your session created: `git fetch --prune origin`,
+  `git worktree remove <path>` (never `--force` over uncommitted changes), `git branch -d <branch>`,
+  `git worktree prune`. The remote branch is GitHub's job ("Automatically delete head branches").
+
+**Pull requests**
+
+- Open them ready for review (never drafts) against `master` with `gh pr create`. The description says what
+  changed, why, and which checks passed. Never write `@codex` on a pull request (description, comments,
+  replies): any mention starts a Codex review or a Cloud task that can push to the branch.
+- Add the `needs-playtest` label when Matěj should play the change before it merges (gameplay, visuals,
+  balance).
+- After publishing or updating a ready pull request as your own task work, run `/monitor-pr <n>` on it straight
+  after, in the same run. Codex findings alone: `/fix-pr <n>`. Extra independent review: `/finalize-pr <n>`.
+  The skills live in `.claude/skills/`.
+- Never merge with `--admin`, and never bypass the ruleset.
+- Renaming a CI job (its `name:` in `ci.yml`) breaks the merge gate: the `master` ruleset requires checks by job
+  name, so every pull request would wait forever for the old name. Say so in the pull request description and
+  ask Matěj to update the required checks before it merges.
+
+**Ending a session**
+
+- Stop every process you started (`runClient`, `runServer`, `runGameTestServer`, `packwiz serve`), remove your
+  temporary files, and name any uncommitted work you leave behind in your final message.
+
 ## Workflow
 
-1. Work on a branch (never commit to `master` directly); one feature or one content batch per PR. Commit
-   messages follow Conventional Commits (`feat:`, `fix:`, `docs:`, `build:`, `ci:`, `test:`, `chore:`).
+1. One feature or content batch per pull request. Commit messages follow Conventional Commits (`feat:`, `fix:`,
+   `docs:`, `build:`, `ci:`, `test:`, `chore:`).
 2. A Claude Code hook (`.claude/settings.json`) runs `uv run rf validate` after every edit in `content/` or
    `tools/` and reports problems back. It does not compile Java.
 3. **Before opening a PR, run and report:** `uv run rf gen` (no unexpected changes), `uv run ruff check`,
    `uv run ruff format --check`, `uv run pytest`, `./gradlew build`, `./gradlew runGameTestServer`.
 4. Keep `CLAUDE.md`, `docs/` and the relevant READMEs current in the same PR when commands, structure, rules or
    decisions change. Stale docs mislead the next session.
-5. Open the PR against `master` with `gh pr create`. CI (`.github/workflows/ci.yml`) runs: content pipeline +
-   generated-files check, Gradle build + JUnit + GameTests, vanilla ID universe reproducibility, packwiz index.
-6. Matěj playtests and merges. Distribution: GitHub Releases now, CurseForge later
-   ([ADR 0008](docs/decisions/0008-distribution-github-and-curseforge.md)).
+5. Open the PR against `master` with `gh pr create`, then run `/monitor-pr <n>`. CI (`.github/workflows/ci.yml`)
+   runs: content pipeline + generated-files check, Gradle build + JUnit + GameTests, vanilla ID universe
+   reproducibility, packwiz index. These four jobs are the required checks on `master`.
+6. `monitor-pr` merges once Codex is done (its approval, a completed review whose findings are all closed, or
+   10 silent minutes), every review thread is resolved and the required checks are green, unless the PR has the
+   `needs-playtest` label: then Matěj playtests first and removes the label
+   ([ADR 0015](docs/decisions/0015-merging-through-monitor-pr.md)). Distribution: GitHub Releases now,
+   CurseForge later ([ADR 0008](docs/decisions/0008-distribution-github-and-curseforge.md)).
 
 ## How the pipeline fits together
 
