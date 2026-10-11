@@ -39,7 +39,8 @@ What the spike measured on 2026-10-11 (WSL2, the pack of `master` at `a5afcd1`, 
   shipped.
 - **A boot passes** when the game exits with code 0, writes the self-test report, writes no crash report, loads our
   jar, and logs no ERROR or FATAL line outside its side's allowlist. The allowlists stay short, and every entry
-  carries its reason. The client's two headless lines are its only entries today.
+  carries its reason. The client's three headless lines are its only entries today: Xaero's World Map version
+  check, no audio device, and no flite library for the narrator (missing on CI runners).
 - **Optional mods both ways:** each side boots with the optional mods (what every command-line install has) and
   without them (the default choice in Prism).
 - **CI on every PR and `master` push:** the `pack-boot` job boots the server, the `pack-boot-client` job the client

@@ -53,7 +53,12 @@ mirrors it, plus work outside the roadmap.
       on what to build, `**Done when:** ...`, then `Roadmap: [...]. Architecture: [...]` links;
     - any other task: `## Context`, `## Task` (or `## Proposal`), `## Done when`.
   - **Dependencies:** every "after" and every decision the ticket waits for is also a `Blocks` link.
-- When implementation reveals a larger follow-up, create or update a ticket instead of leaving a local TODO.
+- **Jira is the single source of truth for work; GitHub issues are never used.** Every follow-up and bug worth
+  doing that a pull request leaves undone, including a valid review finding tracked instead of fixed, becomes an RLM
+  ticket (search for an equivalent first, as above), never a GitHub issue or a local TODO. A declined, dropped or
+  incorrect finding needs only its recorded reason. When no Atlassian tool reaches Jira, the follow-up goes into the
+  session's report for Matěj. An open GitHub issue is migrated: a ticket whose description opens with `Migrated from
+  GitHub issue matejkadlec/realmforge#<n>`, then the issue is closed as not planned with the ticket's key.
 
 ### Reading a ticket
 

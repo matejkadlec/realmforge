@@ -131,6 +131,14 @@ cd pack && packwiz refresh                # after changing anything in pack/
     one-way dependencies, client-only code only under `client/`, game definitions as datapack registries. To
     deviate, update the document in the same PR; changing a decision recorded in
     [ADR 0014](docs/decisions/0014-core-mod-architecture.md) needs a new ADR.
+12. **Jira is the single source of truth for work. Never open a GitHub issue.** Every task, bug and follow-up
+    worth doing that a pull request does not do, including a valid review finding tracked instead of fixed, is an
+    RLM ticket in Jira (space Realmforge, key `RLM`; search for an equivalent first,
+    [flow](docs/ai-development-flow.md#issues)). A declined, dropped or incorrect finding needs only its recorded
+    reason. No `gh issue create`, no TODO comment as a tracker. When no Atlassian tool reaches Jira, list the
+    follow-up in your report for Matěj. An open GitHub issue gets migrated: an RLM ticket whose description opens
+    with `Migrated from GitHub issue matejkadlec/realmforge#<n>`, then the issue is closed as not planned with the
+    ticket's key.
 
 ## Minecraft 1.21.1 / NeoForge 21.1 pitfalls
 
@@ -290,7 +298,7 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
 `content/items/test_item.yaml` → `rf gen` →
 
 - `mod/src/generated/java/.../generated/GeneratedItems.java` (registration, creative tab entries), called from
-  `Realmforge`'s constructor;
+  `item/ItemFeature.register`, which `Realmforge`'s constructor calls;
 - `mod/src/generated/resources/assets/realmforge/` models, `lang/en_us.json` + `cs_cz.json`, placeholder textures;
 - `qa-mod/src/generated/java/.../GeneratedItemExpectations.java`, which `ContentItemGameTests` checks in the game;
 - `tools/schemas/items.schema.json` for editor completion.

@@ -15,7 +15,7 @@ Covers one named pull request and only these actions:
 - fix verified findings on its branch;
 - run the checks;
 - push that branch once, at the end;
-- open GitHub issues for real findings it does not fix here;
+- create RLM Jira tickets for real findings it does not fix here (never GitHub issues);
 - report.
 
 It never merges, deploys or requests a Codex review.
@@ -102,8 +102,8 @@ It never merges, deploys or requests a Codex review.
    - Reject a finding only with a concrete technical reason, and record it. Valid reasons: the claimed path
      does not exist, a guard already exists at a named location, no input reaches the path, or the finding is
      outside this pull request's scope.
-   - A real but out-of-scope finding becomes a GitHub issue (`gh issue create --repo matejkadlec/realmforge`,
-     after searching `gh issue list` for an equivalent). Never dismiss it silently.
+   - A real but out-of-scope finding becomes an RLM Jira ticket under "Tracked" in "P3 disposition" (never a
+     GitHub issue). Never dismiss it silently.
 
 5. **Check and commit the round locally.** Run the targeted checks and commit the fix:
 
@@ -156,8 +156,12 @@ It never merges, deploys or requests a Codex review.
 You have read the code, so the judgment is yours and the user never rules on a P3. Verify each P3 as carefully
 as a P1, then close it in one of two ways:
 
-- **Tracked:** open a GitHub issue with the file, the scenario and the smallest fix. Group P3s that share a file
-  or a fix.
+- **Tracked:** an RLM Jira ticket, never a GitHub issue ([flow, "Issues"](../../../docs/ai-development-flow.md#issues)).
+  Search `RLM` first (`searchJiraIssuesUsingJql`, `project = RLM AND text ~ "<terms>"`, with comments); if an
+  equivalent ticket is open, cite it and comment this pull request's evidence. Otherwise create a Task in the
+  active sprint (parent RLM-1 for workflow and tooling, the milestone epic for game code; `## Context`, `## Task`,
+  `## Done when`) with the file, the scenario and the smallest fix. Group P3s that share a file or a fix. When no
+  Atlassian tool reaches Jira, list the follow-up in the report for Matěj instead.
 - **Dropped:** record a concrete technical reason. "Low severity" alone is not one.
 
 Never fix a P3 on this branch. Never end the report with an offer to fix one "if you want".
@@ -165,8 +169,8 @@ Never fix a P3 on this branch. Never end the report with an offer to fix one "if
 ## Finishing states
 
 - **Clean.** The last review left no P1 or P2 open against this pull request: each was absent, rejected in
-  step 4 with a recorded concrete reason, or tracked as an out-of-scope GitHub issue (the report lists every
-  rejection with its evidence and every issue), and no fix landed after that review. A round whose findings
+  step 4 with a recorded concrete reason, or tracked as an out-of-scope RLM ticket (the report lists every
+  rejection with its evidence and every ticket), and no fix landed after that review. A round whose findings
   were all rejected or tracked stops the loop with this state.
 - **Capped.** Three reviews ran and the third still found a P1 or P2, or a fix landed after the final review.
   Say plainly that the head carries changes no reviewer has seen. List what the last review found and what you
@@ -185,7 +189,7 @@ Include:
 - the head SHA at the start and now, and whether the remote head equals your final commit;
 - the CI state, read once after the push;
 - the rounds that ran, and why the loop stopped;
-- every finding with its severity and outcome: fixed, rejected with the reason, tracked as `#<issue>`, or
+- every finding with its severity and outcome: fixed, rejected with the reason, tracked as `RLM-<n>`, or
   dropped with the reason;
 - the exact checks that passed;
 - the finishing state.
