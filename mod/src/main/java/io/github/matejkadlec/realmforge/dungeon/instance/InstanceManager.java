@@ -151,7 +151,7 @@ public final class InstanceManager extends SavedData {
         return plot;
     }
 
-    /** Does up to {@link #TICK_BUDGET_NANOS} of building and clearing; called once per server tick. */
+    /** Does up to {@link #TICK_BUDGET_NANOS} of building and clearing; called once per tick of the instance level. */
     public void tick() {
         ServerLevel level = this.level;
         if (level == null) {

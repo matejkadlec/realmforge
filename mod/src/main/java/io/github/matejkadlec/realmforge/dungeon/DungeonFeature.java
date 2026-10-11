@@ -1,14 +1,16 @@
 package io.github.matejkadlec.realmforge.dungeon;
 
+import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
 import java.util.function.BiConsumer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.world.chunk.RegisterTicketControllersEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
 /** Dungeon types, planner, layout, builder and instances (architecture 15). */
 public final class DungeonFeature {
@@ -20,10 +22,13 @@ public final class DungeonFeature {
         DungeonAttachments.register(modBus);
         modBus.addListener(RegisterTicketControllersEvent.class, event -> event.register(InstanceManager.TICKETS));
 
-        NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, event -> {
-            InstanceManager manager = InstanceManager.get(event.getServer());
-            if (manager != null) {
-                manager.tick();
+        // Inside the level tick, so the builder's time counts in the server's tick time (and /tick query, spark).
+        NeoForge.EVENT_BUS.addListener(LevelTickEvent.Post.class, event -> {
+            if (event.getLevel() instanceof ServerLevel level && InstanceDimension.isInstance(level)) {
+                InstanceManager manager = InstanceManager.get(level.getServer());
+                if (manager != null) {
+                    manager.tick();
+                }
             }
         });
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class,
