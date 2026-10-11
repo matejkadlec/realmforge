@@ -209,8 +209,13 @@ public final class InstanceBench {
         long[] sorted = values.stream().mapToLong(value).sorted().toArray();
         double mean = Arrays.stream(sorted).average().orElse(0);
         return String.format(Locale.ROOT, "mean " + format + ", median " + format + ", max " + format + "%s (n=%d)",
-                mean / divisor, sorted[sorted.length / 2] / divisor, sorted[sorted.length - 1] / divisor, unit,
-                sorted.length);
+                mean / divisor, median(sorted) / divisor, sorted[sorted.length - 1] / divisor, unit, sorted.length);
+    }
+
+    /** The median of sorted values: the middle one, or the mean of the two middle ones for an even count. */
+    public static double median(long[] sorted) {
+        int middle = sorted.length / 2;
+        return sorted.length % 2 == 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2.0;
     }
 
     /** Saves the instance level with every chunk written, then sums the sizes of its region and entity files. */

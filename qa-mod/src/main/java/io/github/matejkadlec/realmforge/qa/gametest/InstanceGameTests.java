@@ -7,6 +7,7 @@ import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
 import io.github.matejkadlec.realmforge.dungeon.instance.Plot;
 import io.github.matejkadlec.realmforge.dungeon.instance.PlotState;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
+import io.github.matejkadlec.realmforge.qa.instance.InstanceBench;
 import io.github.matejkadlec.realmforge.qa.instance.SpikeLayouts;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.List;
@@ -171,6 +172,15 @@ public final class InstanceGameTests {
                 })
                 .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.FREE, "plot is " + plot.state()))
                 .thenSucceed();
+    }
+
+    /** The bench's median takes the middle sample, or the mean of the two middle ones for an even count. */
+    @GameTest(template = PLATFORM)
+    public static void benchMedianAveragesTheTwoMiddleSamples(GameTestHelper helper) {
+        helper.assertValueEqual(InstanceBench.median(new long[] {1, 5, 100}), 5.0, "odd count");
+        helper.assertValueEqual(InstanceBench.median(new long[] {1, 100}), 50.5, "even count");
+        helper.assertValueEqual(InstanceBench.median(new long[] {1, 2, 4, 100}), 3.0, "even count");
+        helper.succeed();
     }
 
     private static InstanceManager manager(GameTestHelper helper) {

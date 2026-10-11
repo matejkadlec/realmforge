@@ -55,7 +55,7 @@ budget 5 ms per tick, with `/qa instance bench <runs> <rooms> <strategy>`. Runs 
 row of rooms, so a reused plot never gets the same blocks in the same places. Rooms: start 15×7×15, corridor 25×6×7,
 hall 31×13×31 (pillars, five lanterns, a chest); 3 rooms hold 4,547 blocks, 9 rooms (start and four corridor-hall
 pairs) about 16,000. Medians of 20 runs (3 rooms) or 12 runs (9 rooms) once the plot cell existed; maxima in
-brackets.
+brackets. For these even counts the bench reported the upper of the two middle samples (it averages them since).
 
 | | 3 rooms, clear | 3 rooms, overwrite | 3 rooms, never reuse | 9 rooms, clear | 9 rooms, overwrite |
 | --- | --- | --- | --- | --- | --- |
