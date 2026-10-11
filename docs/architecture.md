@@ -641,10 +641,11 @@ lists spells granted while equipped or on use): the vision's "some from the race
    caster later (walking up to a boss, reconnecting mid-cast) gets the current cast from a
    `PlayerEvent.StartTracking` listener, as a `CastStartedPayload` with the original start time, so the telegraph
    still shows. Moving or an interrupt cancels the cast, as the spell's rules say.
-4. On completion the server checks the resource again, because it can change during the cast (rage decays,
-   effects drain mana). If it no longer suffices, the cast fails like an interrupt. Otherwise the cost and cooldowns
-   apply first, then every effect runs with an `EffectContext` (caster, targets, position, spell level, stat
-   snapshot, random source).
+4. On completion the server checks the resource and the target again, because both can change during the cast:
+   rage decays, effects drain mana, and the target can die, leave the caster's dimension, move out of range or go
+   behind cover. If either check fails, the cast fails like an interrupt; a spell that should lock on says so in
+   its data. Otherwise the cost and cooldowns apply first, then every effect runs with an `EffectContext` (caster,
+   targets, position, spell level, stat snapshot, random source).
 5. Mobs and bosses use the same `SpellCaster`, without a payload. Their cooldowns and current cast live in their
    own `combat` attachment ([7](#7-player-state)), and their cast bars, the telegraphs players react to, reach
    clients only through the cast payloads.
