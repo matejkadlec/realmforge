@@ -629,8 +629,10 @@ lists spells granted while equipped or on use): the vision's "some from the race
 3. Instant spells run now. A cast-time spell stores the current cast in the `combat` attachment and sends
    `CastStartedPayload` to the caster and tracking players (cast bar, animation). Moving or an interrupt cancels
    it, as the spell's rules say.
-4. On completion every effect runs with an `EffectContext` (caster, targets, position, spell level, stat snapshot,
-   random source); cost and cooldowns apply.
+4. On completion the server checks the resource again, because it can change during the cast (rage decays,
+   effects drain mana). If it no longer suffices, the cast fails like an interrupt. Otherwise the cost and cooldowns
+   apply first, then every effect runs with an `EffectContext` (caster, targets, position, spell level, stat
+   snapshot, random source).
 5. Mobs and bosses use the same `SpellCaster`, without a payload. Their cast bars are the telegraphs players react
    to.
 

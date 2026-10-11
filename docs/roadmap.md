@@ -155,7 +155,8 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   raising the level.
 - [ ] **C3a Spell engine** (L, after C2). `realmforge:spell` (schools exist since F5), effect and targeting types,
   `SpellCaster`, cooldowns and the global cooldown, mana and rage, procs, the projectile and area entities. *Done
-  when:* GameTests cast every effect type.
+  when:* GameTests cast every effect type, and a cast whose resource runs out before completion fails without its
+  effects.
 - [ ] **C3b Casting controls and HUD** (M, after C3a and spike 4; D4). Spell bar, key mappings, cast bar,
   cooldown sweep, tooltips with live numbers, the payloads.
 - [ ] **C3c Status effects** (M, after C3a). `content/effects/` to generated `MobEffect` registrations; damage and
