@@ -124,10 +124,12 @@ overwrite.
 Read each signal fresh from GitHub at every step, and never trust an earlier reading.
 
 - **Head.** The head SHA (`gh pr view <n> --repo matejkadlec/realmforge --json headRefOid`), and its *push
-  time*: the earliest `started_at` among the check runs on that SHA
-  (`gh api --paginate repos/matejkadlec/realmforge/commits/<sha>/check-runs`). CI starts the moment a push
-  lands. The head's *seen time* is when this run first read that head; it stands in for the push time until a
-  check run exists.
+  time*. When this run pushed the head itself, that is the time of its push. Otherwise it is the earliest
+  `started_at` among the check runs on that SHA
+  (`gh api --paginate repos/matejkadlec/realmforge/commits/<sha>/check-runs`) that started after the previous
+  head was seen: CI starts the moment a push lands, and check runs from an earlier time the same SHA was the
+  head (after a reset or force-push back to it) do not count. The head's *seen time* is when this run first
+  read that head; it stands in for the push time until such a check run exists.
 - **Codex reaction and status.** Reactions on the pull request by Codex
   (`gh api --paginate repos/matejkadlec/realmforge/issues/<n>/reactions`), and its "Codex Review Summary"
   comment (`<!-- codex-pull-request-review-summary -->`, edited in place), whose table names the reviewed
