@@ -11,7 +11,9 @@
   checks in CLAUDE.md pass; tick it off (`[x]` plus the PR link) in the same PR.
 - **Agents** take the next unblocked task of the current milestone, spikes first. A task waiting on an open
   decision ([below](#open-decisions)) asks Matěj before starting.
-- **Changing the plan** is a PR to this file that Matěj approves; a change of direction also needs an ADR.
+- **Changing the plan** is a PR to this file that waits for Matěj's approval: a hold under
+  [ADR 0015](decisions/0015-merging-through-monitor-pr.md), so `monitor-pr` does not merge it on its own. A change
+  of direction also needs an ADR. Ticking off a finished task is not a plan change.
 - **Sizes** instead of dates: S fits one agent session, M takes one to three, L takes more and is split. Playtests,
   hand-built rooms and art review depend on Matěj's time, so calendar estimates would be guesses.
 
