@@ -23,8 +23,8 @@ covers only these actions:
 
 It never merges or deploys. It never requests a Codex review, and it never waits or polls for one. A push may
 trigger Codex's automatic review of the new commits; that comes from the repository's Codex settings, not from
-a request, and the user runs `fix-pr` again when that review lands. On PR #1, Codex reviewed only when the pull
-request was opened; later pushes drew no new review.
+a request, and the user runs `fix-pr` again when that review lands. Codex reviewed PR #2's pushes ("New
+commits") but none of PR #1's later pushes, so a new review is likely but not guaranteed.
 
 Inside a [`monitor-pr`](../monitor-pr/SKILL.md) run, the pass reports back to `monitor-pr` instead of to the
 user, and `monitor-pr` does the waiting.

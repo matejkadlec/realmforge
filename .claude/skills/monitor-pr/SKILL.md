@@ -48,8 +48,9 @@ weakens a test or check.
 - No workflow deploys. After a merge, only CI on `master` runs.
 - `deleteBranchOnMerge` decides whether GitHub deletes the head branch at merge. In October 2026 it was off.
 - Codex is the ChatGPT Codex GitHub connector: `chatgpt-codex-connector[bot]` in REST, `chatgpt-codex-connector`
-  in GraphQL. On PR #1 it reviewed when the pull request was opened (the review landed about 7 minutes later)
-  and did not review later pushes. Its "Codex Review Summary" comment (`<!-- codex-pull-request-review-summary -->`)
+  in GraphQL. It reviews when a pull request opens and usually after new commits (trigger "New commits" in its
+  summary); on PRs #1 and #2 each review landed 5–7 minutes after the push, but none of PR #1's later pushes was
+  reviewed. Its "Codex Review Summary" comment (`<!-- codex-pull-request-review-summary -->`)
   is a status comment, not a finding.
 - The label `needs-playtest` means the owner (Matěj) plays the change before it merges. The publishing session
   adds it for gameplay, visual or balance changes (`gh pr edit <n> --add-label needs-playtest`); only Matěj
@@ -279,8 +280,8 @@ Otherwise act on the first of steps 2–7 that applies. If none applies yet, wai
    - 10 minutes have passed since the later of the push time and Codex's latest `eyes`, with no new Codex review
      or reaction on this head and no summary row for this head still running.
 
-   Codex's automatic trigger can leave a round with neither a review nor a `+1` (in this repository it did not
-   review pushes after the pull request opened), so the silent window ends the wait instead of holding the pull
+   Codex's automatic trigger can leave a round with neither a review nor a `+1` (none of PR #1's later pushes
+   was reviewed), so the silent window ends the wait instead of holding the pull
    request forever. A clean round goes straight to "Merge" in the same wake, as soon as checks are green, with
    no further approval or report. A finding that lands after the window still goes through step 3 before any
    merge.

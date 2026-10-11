@@ -33,7 +33,7 @@ when it opens.
 
 - The owner playtests what matters (labelled pull requests) and everything else merges without waiting.
 - A head can merge without its own Codex review when Codex stays silent for 10 minutes (in this repository Codex
-  reviewed when a pull request opened, not on later pushes). The required checks and resolved threads remain
-  the gate.
+  usually reviews new commits, but on PR #1 it reviewed none of the later pushes). The required checks and
+  resolved threads remain the gate.
 - The owner's "plays and merges" step in [0011](0011-repository-layout-and-workflow.md) now applies only to
   pull requests with the `needs-playtest` label.
