@@ -175,7 +175,8 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
 - [ ] **W1 Mob levels** (M, after F5). `realmforge:dimension_rules` with an entry for `minecraft:overworld`
   (named in its `dimension` field); levels at spawn for vanilla hostile mobs (and later ours); scaling from curves,
   with health refilled to the scaled maximum; Jade shows the level (optional). *Done when:* GameTests check the
-  level by distance, the scaled maximum health and that a new mob's current health equals it.
+  level by distance, the scaled maximum health, that a new mob's current health equals it, and that a split
+  slime's children keep the parent's level.
 - [ ] **W2 Dimension** (M, after W1 and C2). Worldgen JSON for the first dimension and its dimension rules; the
   `realmforge:requirement_type` registry with its first types; access by portal or item, locked by a chapter 1
   step. *Done when:* a GameTest shows access refused before the requirement and allowed after it.

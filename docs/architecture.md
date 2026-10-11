@@ -729,6 +729,10 @@ with live numbers; animations and particles start on `CastStartedPayload` (spike
   health to the new maximum: the constructor filled health from the unscaled maximum, and raising the maximum does
   not refill it. Vanilla hostile mobs get levels the same way as ours. Bosses take the fixed level from their
   definition.
+- Some spawns skip `finalizeSpawn` and with it this event: slime splits (`Slime#remove`), silverfish from infested
+  blocks, `GameTestHelper#spawn`. Split children copy the parent's level and scaling in `MobSplitEvent`
+  (`getParent`, `getChildren`), and an `EntityJoinLevelEvent` fallback gives a level to any mob that joins without
+  one (checked with `hasData`), so the default level never passes for an assigned one.
 - XP (`character`), loot (`loot`) and the armor formula (`combat`) read the level from `realmforge:level`. Jade
   shows it through a compat plugin (*verify* Jade's API), the boss bar for bosses.
 
