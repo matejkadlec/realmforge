@@ -92,8 +92,10 @@ for every agent session.
 Cloud sessions (claude.ai/code, or a cloud session started from the desktop app) run in a fresh container with
 Java 21 and uv preinstalled; there is no SDKMAN and `JAVA_HOME` is already set.
 
-`.claude/settings.json` runs `.claude/hooks/cloud-warmup.sh` twice at SessionStart. Both exit at once unless
-`CLAUDE_CODE_REMOTE` is `true`, so local sessions are unaffected.
+`.claude/settings.json` runs `.claude/hooks/cloud-warmup.sh` at SessionStart: `--env` on every SessionStart, the
+warm-up only at `startup` and `resume` (not after `/clear`, compaction or a fork, so it never starts mid-session
+next to the agent's own Gradle runs). Both exit at once unless `CLAUDE_CODE_REMOTE` is `true`, so local sessions
+are unaffected.
 
 - **`cloud-warmup.sh --env`** (synchronous, milliseconds). The container resolves no hostnames itself; every
   download goes through Claude's HTTPS proxy. Its `NO_PROXY` still lists PyPI, so uv would skip the proxy and fail
@@ -113,7 +115,8 @@ Java 21 and uv preinstalled; there is no SDKMAN and `JAVA_HOME` is already set.
   - When it ends, Claude Code passes the summary to Claude on the next turn. On failure the summary and the log
     name the hosts the agent proxy refused.
   - **`cloud-warmup.sh --wait [seconds]`** blocks until the warm-up has finished (default limit 540 s, exit code
-    2 when it is still running). Agents run it before their first Gradle command (rule in `CLAUDE.md`).
+    2 when it is still running). Agents run it before their first Gradle command and after a resume (rule in
+    `CLAUDE.md`).
 - The environment's network access (environment settings → **Network access**) must allow the default package
   managers plus `downloads.gradle.org`; NeoForge, Parchment and Mojang hosts were reachable without extra
   entries. A blocked host fails with `403` / `CONNECT tunnel failed`; `curl -sS "$HTTPS_PROXY/__agentproxy/status"`

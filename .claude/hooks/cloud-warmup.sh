@@ -3,10 +3,11 @@
 # The hook modes exit at once unless CLAUDE_CODE_REMOTE is true, so local sessions are unaffected.
 #
 #   cloud-warmup.sh --env   synchronous hook (milliseconds): route PyPI through the agent proxy for the session
-#   cloud-warmup.sh         async hook: `uv sync --locked`, then the first Gradle run (distribution, dependencies,
-#                           NeoForm setup, build/mc-sources/, compile); the Gradle daemon keeps running
-#   cloud-warmup.sh --wait  block until the warm-up has finished; run it before the first Gradle command, because
-#                           two Gradle runs in one project wait on each other's locks and can time out
+#   cloud-warmup.sh         async hook at startup and resume: `uv sync --locked`, then the first Gradle run
+#                           (distribution, dependencies, NeoForm setup, build/mc-sources/, compile); the Gradle
+#                           daemon keeps running
+#   cloud-warmup.sh --wait  block until the warm-up has finished; run it before the first Gradle command (and after
+#                           a resume), because two Gradle runs in one project wait on each other's locks
 #
 # State lives in .cache/warmup/ (gitignored): status (running, done or failed), summary, log, and stamp (hash of
 # the build inputs that were warmed, so resumed sessions skip the work).

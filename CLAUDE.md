@@ -40,8 +40,9 @@ Java comes from SDKMAN. Non-interactive shells don't read `~/.bashrc`, so run
 `source ~/.sdkman/bin/sdkman-init.sh` before Gradle (or `export JAVA_HOME=~/.sdkman/candidates/java/current`).
 Cloud sessions have no SDKMAN: Java 21 is preinstalled, and a background SessionStart hook warms up uv and Gradle
 ([docs/dev-setup.md](docs/dev-setup.md#cloud-sessions)). **In a cloud session, run
-`.claude/hooks/cloud-warmup.sh --wait` (Bash timeout 10 minutes) before the first Gradle command:** two Gradle
-runs in one project wait on each other's locks and the second can fail with "Timeout waiting to lock". If it
+`.claude/hooks/cloud-warmup.sh --wait` (Bash timeout 10 minutes) before the first Gradle command, and again after
+the session resumes:** two Gradle runs in one project wait on each other's locks and the second can fail with
+"Timeout waiting to lock". If it
 reports a failure, read `.cache/warmup/log`; Gradle still downloads what it needs on demand.
 
 ```bash
