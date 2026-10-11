@@ -42,9 +42,10 @@ relies on were checked against the pinned 1.21.1 sources, and the FTB Quests and
    into plots of the instance dimension ([0012](0012-procedural-dungeons-and-dimensions.md)). Rooms live in
    `content/rooms/` as NBT with a YAML sidecar: the second exception to YAML-only content after worldgen JSON. This
    amends [0005](0005-content-pipeline-yaml-single-source-of-truth.md).
-9. **Networking:** one registration point with a protocol version; client-to-server payloads are intents the server
-   validates; client-bound payloads are handled through an interface declared in `network/` and implemented in
-   `client/`.
+9. **Networking:** one registration point whose protocol version is the mod version, so a client and server with
+   different Realmforge versions never connect (our codecs also travel inside NeoForge's and vanilla's packets,
+   which the payload version check does not cover); client-to-server payloads are intents the server validates;
+   client-bound payloads are handled through an interface declared in `network/` and implemented in `client/`.
 10. **Content conventions:** human units in YAML (seconds, percent), game units in generated data (ticks,
     fractions); numbers shown to players always come from data.
 

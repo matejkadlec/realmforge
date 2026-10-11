@@ -36,8 +36,8 @@
   advancement, and that raises the level cap.
 - **Dungeons** are planned and laid out by pure, seed-driven Java, then built from hand-made NBT rooms into plots
   of one instance dimension.
-- **Networking:** one registration point with a protocol version; client → server messages are intents that the
-  server validates.
+- **Networking:** one registration point, versioned by the mod version; client → server messages are intents that
+  the server validates.
 
 ## Contents
 
@@ -154,7 +154,7 @@ io.github.matejkadlec.realmforge
 ├─ Realmforge         entry point: registers every feature in a fixed order
 ├─ generated/         output of `rf gen` (never edit)
 ├─ core/              shared infrastructure: registry keys, codec helpers, requirements, curves
-├─ network/           payload registration (one place) and the protocol version
+├─ network/           payload registration (one place), versioned by the mod version
 ├─ progression/       chapters, criteria triggers, statistics: the bridge to quests
 ├─ stats/             attributes, entity levels, stat sources, derived stats, caps
 ├─ combat/            damage pipeline, crit, dodge, resistances
@@ -286,7 +286,7 @@ How features cooperate without breaking the direction:
 | `realmforge:stat_rule` | `content/stat_rules/` | what a primary stat gives: per-point modifiers, milestone bonuses | yes | M1 |
 | `realmforge:curve` | `content/curves/` | named table of points (level → value), linearly interpolated: XP per level, mob scaling, item budgets | yes | M1 |
 | `realmforge:chapter` | `content/chapters/` | story chapter: order and the level cap after completion (what a chapter unlocks names the chapter through `chapter_completed`) | yes | M1 |
-| `realmforge:dimension_rules` | `content/dimensions/` | gameplay rules of one dimension (entry id = dimension id): mob levels, access requirement, flags | no | M1 |
+| `realmforge:dimension_rules` | `content/dimensions/` | gameplay rules of one dimension, named in a `dimension` field (for example `minecraft:overworld`): mob levels, access requirement, flags. Validation allows one entry per dimension; the server indexes the entries by dimension | no | M1 |
 | `realmforge:boss` | `content/bosses/` | fixed level, attributes, phases, abilities (spells), arena, loot | no | M1 |
 | `realmforge:dungeon_type` | `content/dungeons/` | rule set: theme, room pools, layout rules, ending, budgets, level range | no | M1 |
 | `realmforge:affix` | `content/affixes/` | rollable modifier: item categories (tags), tiers by rarity and level | yes | M2 |
@@ -365,6 +365,9 @@ instance. After `rf gen` changes files in `pack/`, run `packwiz refresh` (CI che
 ### 6.3 Conventions
 
 - One YAML file per entry; the file name equals the id (existing rule).
+- Every entry we generate is `realmforge:<id>`: a datapack entry takes its namespace from the folder under `data/`,
+  and we write everything under `data/realmforge/`. An entry about something in another namespace (the rules of
+  `minecraft:overworld`) names it in a field, never in its id.
 - snake_case keys in YAML and JSON, as in vanilla data.
 - **Human units in YAML, game units in data.** YAML says `cooldown_seconds: 8` or `chance_percent: 5`; generated
   JSON and Java use ticks and fractions. Field names carry the unit; generators convert.
@@ -428,6 +431,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:combat` | `spell` | players | resource (mana, rage), cooldowns, current cast | owner, throttled |
 | `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points | owner |
 | `realmforge:dark_vision` | `world` | players | whether Dark Vision is switched on | not synced (the effect itself is) |
+| `realmforge:instance` | `dungeon` | players | the instance the player is in, the return point, the game mode to restore | not synced |
 
 - Values are immutable records with a `Codec` for saving and a `StreamCodec` for syncing, declared with
   `AttachmentType.builder(...).serialize(codec).copyOnDeath().sync(predicate, streamCodec)`. A change is
@@ -683,9 +687,11 @@ with live numbers; animations and particles start on `CastStartedPayload` (spike
 
 - `realmforge:dimension_rules` (owned by `world`) gives every dimension a level rule: by distance from the
   dimension's origin and by depth, with some jitter, clamped to a range.
-- In `FinalizeSpawnEvent`, `mob` computes the level from those rules, writes it into `realmforge:level` and applies
-  scaling modifiers (health, damage, armor, from curves). Vanilla hostile mobs get levels the same way as ours.
-  Bosses take the fixed level from their definition.
+- In `FinalizeSpawnEvent`, `mob` computes the level from the rules for the mob's dimension, writes it into
+  `realmforge:level` and applies scaling modifiers (health, damage, armor, from curves). Then it sets the mob's
+  health to the new maximum: the constructor filled health from the unscaled maximum, and raising the maximum does
+  not refill it. Vanilla hostile mobs get levels the same way as ours. Bosses take the fixed level from their
+  definition.
 - XP (`character`), loot (`loot`) and the armor formula (`combat`) read the level from `realmforge:level`. Jade
   shows it through a compat plugin (*verify* Jade's API), the boss bar for bosses.
 
@@ -787,14 +793,25 @@ room reachable). A QA command renders a layout preview for review.
 
 - `InstanceManager` keeps a `SavedData` in the instance dimension (`DimensionDataStorage#computeIfAbsent`): a grid
   of plots with wide spacing (Compact Machines uses 1,024 blocks), each with its dungeon type, seed, state
-  (building, ready, active, completed, closing, free), party and return points.
+  (building, ready, active, completed, closing, free) and party. Each player's return point and previous game mode
+  live in the player's `realmforge:instance` attachment ([7](#7-player-state)).
 - **Entry:** an entrance in the world → allocate a plot → build over ticks → teleport the party
   (`ServerPlayer#teleportTo(ServerLevel, x, y, z, yaw, pitch)`).
 - **Chunk loading:** while a plot is built and played, its chunks are kept loaded through a NeoForge
   `TicketController` (registered in `RegisterTicketControllersEvent`; its forced chunks survive restarts), so they
   never unload mid-build; cleanup releases them. Spike 3 checks this.
-- **Rules inside:** no breaking or placing blocks (`BlockEvent.BreakEvent`, `BlockEvent.EntityPlaceEvent`), respawn
-  at the entrance, no natural spawns, leave through the exit portal or a command.
+- **Rules inside: nobody edits the rooms.** Survival players are switched to Adventure mode while inside (creative
+  operators keep theirs); the previous game mode is saved in an attachment and restored when they leave (also on
+  the next login after a crash).
+  Vanilla then refuses every player edit, including buckets, flint and steel and tool edits such as stripping or
+  tilling (`Player#mayUseItemAt`, `ItemStack#useOn`), and the client predicts the refusal, so there are no ghost
+  blocks; doors, levers, chests and combat still work. Edits by anything else are cancelled inside the instance
+  dimension: entities placing blocks (`BlockEvent.EntityPlaceEvent`), fluids creating blocks
+  (`BlockEvent.FluidPlaceBlockEvent`), trampled farmland (`BlockEvent.FarmlandTrampleEvent`), mob griefing
+  (`EntityMobGriefingEvent`) and explosions (the block list of `ExplosionEvent.Detonate`). W4's GameTests use a
+  bucket, flint and steel, an axe and a hoe, and place and break blocks inside an instance, and expect the room
+  unchanged.
+- **Also inside:** respawn at the entrance, no natural spawns, leave through the exit portal or a command.
 - **Cleanup and plot reuse:** answered by spike 3 (clear the plot, never reuse plots, or overwrite on reuse).
 - No dimensions are created at runtime (ADR 0012).
 
@@ -829,9 +846,12 @@ depth limit.
 
 ### 17.1 Rules
 
-- **One registration point:** `network/RealmforgeNetwork` handles `RegisterPayloadHandlersEvent` with
-  `event.registrar(PROTOCOL_VERSION)`. Any payload change bumps the version; a client with a different version is
-  refused at login with a clear message instead of desyncing.
+- **One registration point, versioned by the mod version:** `network/RealmforgeNetwork` handles
+  `RegisterPayloadHandlersEvent` with `event.registrar(version)`, where `version` is the mod's own version
+  (`ModContainer#getModInfo().getVersion()`). The registrar's version check only covers our own payloads, but our
+  codecs also travel inside NeoForge's and vanilla's packets (synced attachments, synced datapack registries).
+  Tying the check to the mod version refuses any client whose Realmforge version differs from the server's when it
+  connects, whatever changed on the wire, instead of letting it desync. Nobody has to remember to bump a number.
 - **A payload** is a `record` implementing `CustomPacketPayload` with a `TYPE` and a `STREAM_CODEC`
   (`StreamCodec.composite(...)`), kept in its feature's `net/` package.
 - **Client → server payloads are intents.** The server validates every field (the sender may act on it, range,

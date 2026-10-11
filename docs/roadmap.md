@@ -115,7 +115,7 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
 
 - [ ] **F1 Feature skeleton** (S, after spike 6). Packages from [architecture 4.2](architecture.md#42-packages-of-the-core-mod)
   with empty `<Name>Feature` classes wired in `Realmforge`; `client/RealmforgeClient`;
-  `network/RealmforgeNetwork` with its protocol version and the interface for client-bound handlers; the import
+  `network/RealmforgeNetwork`, versioned by the mod version, with the interface for client-bound handlers; the import
   check that bans `net.minecraft.client`, `com.mojang.blaze3d` and `net.neoforged.neoforge.client` outside
   `client/`. *Done when:* everything builds and passes, and the import check fails on a deliberate violation.
 - [ ] **F2 Pipeline for datapack registries** (M, after F1). A generic generator from a content type to
@@ -167,9 +167,10 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
 
 ### Phase 3: world, dungeons and the boss
 
-- [ ] **W1 Mob levels** (M, after F5). `realmforge:dimension_rules` with level rules for the overworld; levels at
-  spawn for vanilla hostile mobs (and later ours); scaling from curves; Jade shows the level (optional). *Done
-  when:* GameTests check the level by distance and the scaling.
+- [ ] **W1 Mob levels** (M, after F5). `realmforge:dimension_rules` with an entry for `minecraft:overworld`
+  (named in its `dimension` field); levels at spawn for vanilla hostile mobs (and later ours); scaling from curves,
+  with health refilled to the scaled maximum; Jade shows the level (optional). *Done when:* GameTests check the
+  level by distance, the scaled maximum health and that a new mob's current health equals it.
 - [ ] **W2 Dimension** (M, after W1 and C2). Worldgen JSON for the first dimension and its dimension rules; the
   `realmforge:requirement_type` registry with its first types; access by portal or item, locked by a chapter 1
   step. *Done when:* a GameTest shows access refused before the requirement and allowed after it.
@@ -178,8 +179,10 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   drop valid loot.
 - [ ] **W4 Dungeon framework** (L, after spike 3 and W1). The instance dimension from spike 3;
   `realmforge:dungeon_type`; the room format and its validation (`content/rooms/`); the pure planner and layout
-  with fuzz tests; the builder with data markers and chunk tickets; `InstanceManager`; entry, exit and the rules
-  inside; QA commands to preview a layout and enter a dungeon.
+  with fuzz tests; the builder with data markers and chunk tickets; `InstanceManager`; entry and exit; the rules
+  inside (Adventure mode plus guards for non-player edits, [architecture 15.5](architecture.md#155-instances)); QA
+  commands to preview a layout and enter a dungeon. *Done when:* GameTests build and enter an instance, and a
+  bucket, flint and steel, an axe, a hoe, placing and breaking all leave the room unchanged.
 - [ ] **W5 Boss** (L, after C3a and W3). `realmforge:boss`, `BossPhaseMachine`, abilities through the spell engine,
   the boss entity and model, the phase name in the boss bar, arena rules, loot. The boss is tested on its own,
   before any dungeon references it. *Done when:* GameTests cover every phase change.

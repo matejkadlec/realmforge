@@ -131,7 +131,8 @@ cd pack && packwiz refresh                # after changing anything in pack/
   them: declared with `.sync(...)`, they are sent on every `setData`; after mutating a value in place, call
   `syncData`.
 - **Our datapack registries** load from `data/<ns>/realmforge/<registry>/` (NeoForge puts non-vanilla registry
-  folders under the registry's namespace), e.g. `data/realmforge/realmforge/spell/firebolt.json`.
+  folders under the registry's namespace), e.g. `data/realmforge/realmforge/spell/firebolt.json`. The `<ns>` folder
+  becomes the entry's namespace, so an entry about `minecraft:overworld` names it in a field, not in its id.
 - **Vanilla attribute ids keep their prefixes** in 1.21.1 (`minecraft:generic.max_health`,
   `minecraft:player.block_interaction_range`); newer versions dropped them, so don't copy their examples.
 - **Hurt cooldown:** within 10 ticks of the last hit, a hit not bigger than it is dropped before
