@@ -140,7 +140,8 @@ nothing else.
 4. Otherwise leave it: no associated pull request, one still open, a merge into another branch, or a merged
    revert (whether the change is still on `master` is then Matěj's call). A ticket whose associated pull requests
    all closed unmerged is no longer in flight: it holds no slot, and the ledger lists it under "Blocked or other"
-   for Matěj to send back to Next or reject.
+   for Matěj to send back to Next or reject. Sending it back adds a claim-release comment naming its old branch,
+   so that branch no longer blocks a claim.
 
 A batch pull request reconciles every ticket associated with it. The pass changes that one status and nothing
 else. A ticket that cannot be read or matched is skipped and never stops the run. The run's batch ledger lists
