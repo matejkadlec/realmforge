@@ -146,18 +146,19 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
 
 ### Phase 2: character and abilities
 
-- [ ] **C1 Races and classes** (M, after F5; D1). The registries, the character creation screen and payload, the
-  starting kit; the race and both classes as content (stats only; spells come in C4). *Done when:* a new player must
-  create a character, and a GameTest checks the creation rules.
+- [ ] **C1 Races and classes** (M, after F5; D1). The registries, including the `realmforge:resource_type` type
+  registry with `mana` and `rage` (ids only; C3a gives them behaviour), so class entries can name their resource;
+  the character creation screen and payload, the starting kit; the race and both classes as content (stats only;
+  spells come in C4). *Done when:* a new player must create a character, and a GameTest checks the creation rules.
 - [ ] **C2 Leveling and the level cap** (M, after C1; D2, D3). The XP curve; XP from kills by the victim's level
   (`realmforge:level`, 1 for every mob until W1 assigns levels) and from `/realmforge xp`; the
   `realmforge:chapter` registry and the cap from chapter advancements; level-up effects; the `level_reached`
   trigger; an XP bar. *Done when:* GameTests show XP accumulating past the cap and granting the chapter advancement
   raising the level.
 - [ ] **C3a Spell engine** (L, after C2). `realmforge:spell` (schools exist since F5), effect and targeting types,
-  `SpellCaster`, cooldowns and the global cooldown, mana and rage, procs, the projectile and area entities. *Done
-  when:* GameTests cast every effect type, and a cast whose resource runs out or whose target leaves range before
-  completion fails without its effects.
+  `SpellCaster`, cooldowns and the global cooldown, the behaviour of mana and rage, procs, the projectile and area
+  entities. *Done when:* GameTests cast every effect type, and a cast whose resource runs out or whose target
+  leaves range before completion fails without its effects.
 - [ ] **C3b Casting controls and HUD** (M, after C3a and spike 4; D4). Spell bar, key mappings, cast bar,
   cooldown sweep, tooltips with live numbers, the payloads.
 - [ ] **C3c Status effects** (M, after C3a). `content/effects/` to generated `MobEffect` registrations; damage and
