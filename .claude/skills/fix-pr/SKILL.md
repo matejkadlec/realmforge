@@ -199,6 +199,10 @@ severity badge such as `![P1 Badge](...)` followed by a bold title.
 
 7. **Close every thread.** Do this after step 6 delivers, or straight away if nothing was fixed.
 
+   - If nothing was pushed, first re-read the remote head (`gh pr view <n> --repo matejkadlec/realmforge --json
+     headRefOid`). It must still equal the starting head. If it moved, post nothing and resolve nothing: run
+     `git fetch origin`, update the worktree as in step 2, and verify every finding again from step 4 against
+     the new head.
    - First re-check each reply's evidence against the pushed head, because another finding's fix can change it.
    - Post one reply per thread. The reply opens with its disposition and carries its evidence. Then resolve the
      thread:
