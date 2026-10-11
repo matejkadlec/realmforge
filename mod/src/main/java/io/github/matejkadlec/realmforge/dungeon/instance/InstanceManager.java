@@ -269,7 +269,8 @@ public final class InstanceManager extends SavedData {
 
     /**
      * After a login: a player inside the instance dimension stays only if their run still exists; anyone else is
-     * sent back. A player outside it who still holds a visit (they left while offline) leaves their run.
+     * sent back. A player outside it leaves the run they belong to: one they left while offline (they still hold
+     * a visit), or one they never entered because they disconnected while it was being built.
      */
     public void onLogin(ServerPlayer player) {
         InstanceVisit visit = player.getExistingDataOrNull(DungeonAttachments.VISIT);
@@ -277,6 +278,11 @@ public final class InstanceManager extends SavedData {
             if (visit != null) {
                 player.removeData(DungeonAttachments.VISIT);
                 leftRun(player.getUUID(), visit.plot());
+            }
+            for (Plot plot : List.copyOf(plots.values())) {
+                if (plot.party().contains(player.getUUID())) {
+                    leftRun(player.getUUID(), plot.id());
+                }
             }
             return;
         }
@@ -325,9 +331,10 @@ public final class InstanceManager extends SavedData {
         }
     }
 
+    /** Drops the player from the plot's party; a run left with nobody, built or still building, is released. */
     private void leftRun(UUID player, int plotId) {
         Plot plot = plots.get(plotId);
-        if (plot != null && plot.removeFromParty(player) && plot.party().isEmpty() && plot.state().isPlayable()) {
+        if (plot != null && plot.removeFromParty(player) && plot.party().isEmpty()) {
             release(plot);
         }
         setDirty();

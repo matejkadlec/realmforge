@@ -42,7 +42,8 @@ mod's `/qa instance` commands, bench and GameTests ([architecture 15.5](../archi
 6. **Players.** Entering stores the run and the return point in the `realmforge:instance` attachment (saved, copied
    on death, not synced). Leaving by command or exit, respawning outside the dimension or being teleported out all
    leave the run; a run whose party is empty is released. A disconnect keeps the run: on login a player inside the
-   dimension stays if their run is still playable, and is sent back to their return point otherwise.
+   dimension stays if their run is still playable, and is sent back to their return point otherwise. A player who
+   disconnected while their run was being built never entered it, and drops out of it when they log in again.
 7. **GameTests run in the real dimension.** The vanilla GameTest server bakes its world with an empty dimension
    registry, so data pack dimensions are missing there; a dev-only mixin in the QA mod (`GameTestServerMixin`) bakes
    it with the data pack dimensions, as a normal world does.

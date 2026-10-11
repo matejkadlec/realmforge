@@ -145,6 +145,34 @@ public final class InstanceGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * A player who disconnects while their plot is still being built never enters it; when they reconnect, the run
+     * they never entered is released instead of waiting for them with its chunks held.
+     */
+    @GameTest(template = PLATFORM, timeoutTicks = TIMEOUT)
+    public static void reconnectBeforeEnteringReleasesTheRun(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        InstanceManager manager = manager(helper);
+        GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-early-leave");
+        ServerPlayer first = login(server, profile);
+        Plot plot = manager.open(SpikeLayouts.spike(), List.of(profile.getId()));
+        server.getPlayerList().remove(first);
+
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.READY, "plot is " + plot.state()))
+                .thenExecute(() -> {
+                    helper.assertTrue(plot.party().contains(profile.getId()),
+                            "the built run still waits for its member");
+                    ServerPlayer again = login(server, profile);
+                    helper.assertTrue(again.level() != InstanceDimension.level(server), "the player never entered");
+                    helper.assertTrue(manager.plotOf(again).isEmpty(), "the run the player never entered is gone");
+                    helper.assertTrue(plot.state() == PlotState.CLOSING, "the empty run is released");
+                    server.getPlayerList().remove(again);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.FREE, "plot is " + plot.state()))
+                .thenSucceed();
+    }
+
     private static InstanceManager manager(GameTestHelper helper) {
         InstanceManager manager = InstanceManager.get(helper.getLevel().getServer());
         helper.assertTrue(manager != null, "the GameTest world has no realmforge:instances dimension");

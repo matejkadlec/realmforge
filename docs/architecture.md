@@ -927,9 +927,10 @@ and `dungeon/instance/`.
 - **Also inside:** respawn at the entrance, no natural spawns, leave through the exit portal or a command.
 - **Leaving and disconnects:** leaving by command or exit, respawning outside the dimension
   (`PlayerEvent.PlayerRespawnEvent`) or being teleported out (`PlayerEvent.PlayerChangedDimensionEvent`) leaves the
-  run; a run whose party is empty is released. A disconnect keeps the run. On login
+  run; a run whose party is empty is released, built or still building. A disconnect keeps the run. On login
   (`PlayerEvent.PlayerLoggedInEvent`) a player inside the dimension stays if their run is still playable and is sent
-  back to their return point otherwise. W4 adds a timeout for party members who stay offline.
+  back to their return point otherwise; a player outside it drops out of a run they never entered (they disconnected
+  while it was being built). W4 adds a timeout for party members who stay offline.
 - **Cleanup and plot reuse: clear, then reuse** (spike 3). When a run is released, its blocks are cleared over the
   next ticks (containers emptied first so nothing drops, entities other than players removed), its chunks are
   released and the plot becomes free for the next run; nobody waits for it. Overwriting on reuse doubled the next
