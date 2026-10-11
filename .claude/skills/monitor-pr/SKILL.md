@@ -332,7 +332,11 @@ Check all of these on one fresh reading, in order:
 4. A fresh listing shows every review thread resolved. An open thread sends the run back to step 3 or 4.
 5. No human review requests changes.
 6. No `needs-playtest` label is set, no badge-labelled Codex finding outside a thread is waiting for the user
-   (step 3), and nothing else the user asked to hold for their own judgment is pending.
+   (step 3), and nothing else the user asked to hold for their own judgment is pending. If the pull request ever
+   carried the label, its latest removal (the last `unlabeled` event for `needs-playtest` in
+   `gh api --paginate repos/matejkadlec/realmforge/issues/<n>/events`) must be later than the current head's
+   push time. A head pushed after the playtest was never played: re-add the label
+   (`gh pr edit <n> --repo matejkadlec/realmforge --add-label needs-playtest`).
    While the label is set, go to "User needed": ask Matěj to playtest the head (for example with
    `./gradlew runClient`, or `./gradlew :mod:installToPrism` and the Prism instance) and remove the label.
 7. In fallback mode: a Clean `finalize-pr` reviewed this exact head, or the user approved this exact head after
