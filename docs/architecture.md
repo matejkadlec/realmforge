@@ -637,8 +637,10 @@ lists spells granted while equipped or on use): the vision's "some from the race
 2. `SpellCaster` checks: the spell is known, off cooldown and global cooldown, the resource suffices, the target is
    in range and line of sight, and the caster is not silenced, stunned or already casting.
 3. Instant spells run now. A cast-time spell stores the current cast in the `combat` attachment and sends
-   `CastStartedPayload` to the caster and tracking players (cast bar, animation). Moving or an interrupt cancels
-   it, as the spell's rules say.
+   `CastStartedPayload` to the caster and tracking players (cast bar, animation). A player who starts tracking the
+   caster later (walking up to a boss, reconnecting mid-cast) gets the current cast from a
+   `PlayerEvent.StartTracking` listener, as a `CastStartedPayload` with the original start time, so the telegraph
+   still shows. Moving or an interrupt cancels the cast, as the spell's rules say.
 4. On completion the server checks the resource again, because it can change during the cast (rage decays,
    effects drain mana). If it no longer suffices, the cast fails like an interrupt. Otherwise the cost and cooldowns
    apply first, then every effect runs with an `EffectContext` (caster, targets, position, spell level, stat
