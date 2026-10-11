@@ -129,7 +129,8 @@ cd pack && packwiz refresh                # after changing anything in pack/
 - **Data attachments** (`AttachmentType`, registry `NeoForgeRegistries.Keys.ATTACHMENT_TYPES`) store per-entity
   or per-level data such as player stats; use them instead of capabilities or raw NBT. NeoForge 21.1.259 can sync
   them: declared with `.sync(...)`, they are sent on every `setData`; after mutating a value in place, call
-  `syncData`.
+  `syncData`. The `sync(predicate, ...)` predicate filters updates only: a player who starts tracking an entity
+  receives every synced attachment on it ([architecture 7](docs/architecture.md#7-player-state)).
 - **Our datapack registries** load from `data/<ns>/realmforge/<registry>/` (NeoForge puts non-vanilla registry
   folders under the registry's namespace), e.g. `data/realmforge/realmforge/spell/firebolt.json`. The `<ns>` folder
   becomes the entry's namespace, so an entry about `minecraft:overworld` names it in a field, not in its id.

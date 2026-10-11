@@ -30,9 +30,12 @@ relies on were checked against the pinned 1.21.1 sources, and the FTB Quests and
    dispatches through our own static type registries.
 4. **One spell and effect engine** for players, mobs, bosses, items and talent procs. Boss abilities are spells.
 5. **Player state in NeoForge data attachments** (immutable records, synced by NeoForge; one attachment per
-   audience). Attribute modifiers from race, class, level, talents and stat rules are saved but always recomputed
-   from data, on change and on the first tick after login or respawn; modifier ids are unique per source, entry,
-   slot and modifier.
+   audience of its updates). NeoForge 21.1.259 sends every synced attachment to each player who starts tracking
+   the holder, whatever the sync predicate says, so a synced attachment holds nothing other players' clients must
+   not see, and client code reads owner-only attachments only from the local player
+   ([architecture 7](../architecture.md#7-player-state)). Attribute modifiers from race, class, level, talents
+   and stat rules are saved but always recomputed from data, on change and on the first tick after login or
+   respawn; modifier ids are unique per source, entry, slot and modifier.
 6. **One attribute model:** primary stats are attributes, derived stats come from data rules, attribute caps are
    raised in one place, and armor mitigation is our own formula applied through NeoForge's damage container.
 7. **Quests and the mod meet only through standard FTB Quests features:** a chapter's last quest grants a chapter

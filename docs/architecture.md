@@ -435,13 +435,23 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 
 - Values are immutable records with a `Codec` for saving and a `StreamCodec` for syncing, declared with
   `AttachmentType.builder(...).serialize(codec).copyOnDeath().sync(predicate, streamCodec)`. A change is
-  `player.setData(type, newValue)`; NeoForge 21.1.259 then syncs it automatically to the players the predicate
-  allows (for example `(holder, to) -> holder == to` for owner-only data).
+  `player.setData(type, newValue)`; NeoForge 21.1.259 then sends the update to the players the predicate allows
+  (for example `(holder, to) -> holder == to` for owner-only data).
 - A synced attachment sends the same data to every player its predicate accepts (NeoForge encodes each update
   once), so data meant for different audiences needs separate attachments.
 - Combat state changes too often for that. It is a mutable object synced explicitly with `player.syncData(type)`,
   at most a few times per second or on important changes (cast started, cooldown started). Cooldowns are stored as
   the server game time when they end, so they survive relogging and need no per-tick updates.
+- **The predicate filters updates only.** When a player starts tracking an entity, NeoForge 21.1.259 sends that
+  player every synced attachment on it without asking the predicate (`ServerEntity#sendPairingData` →
+  `AttachmentSync.syncInitialEntityAttachments`). The sync handler's `write` is not told the recipient, so no
+  handler can filter that first sync either. Other players' clients therefore hold a snapshot of the owner-only
+  attachments (`spellbook`, `combat`, `talents`) that later updates never refresh. Two rules follow:
+  - a synced attachment holds nothing that other players' clients must not see; such data stays unsynced and
+    reaches its owner through a payload;
+  - client code reads owner-only attachments only from the local player, never from another player's entity.
+    What clients show about other players (levels, cast bars) comes from attachments synced to every tracker or
+    from payloads ([17.2](#172-what-syncs-how)).
 - Computed values (attribute modifiers, spell modifiers) are derived from these attachments and the registries,
   never treated as a source of truth ([8.2](#82-where-modifiers-come-from)).
 
