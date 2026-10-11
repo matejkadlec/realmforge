@@ -663,7 +663,8 @@ type only for genuinely new behaviour.
   a few behaviour classes in `effect/` (`applyEffectTick`, `shouldApplyEffectTickThisTick`). Vanilla effects can be
   referenced directly.
 - Effects applied by spells remember their source as plain ids (the caster's UUID, the spell's id), because
-  `effect` sits below `spell`; dispels and talent interactions use them.
+  `effect` sits below `spell`; dispels and talent interactions use them. They also remember whether a proc
+  applied them, and the damage or healing of their ticks carries that proc origin ([12](#12-talents)).
 - Guardrail: only a few bosses may apply blindness or darkness (validation counts them).
 
 ### 11.5 Resources, cooldowns, modifiers
@@ -689,7 +690,9 @@ with live numbers; animations and particles start on `CastStartedPayload` (spike
   Big-impact talents are combinations of these.
 - **Procs never trigger procs:** a proc's spell or effect runs with a proc origin in its `EffectContext`, our
   damage source carries it, and the proc engine ignores hits that have one. Otherwise a guaranteed on-hit proc
-  that deals damage would trigger itself until the server's stack overflows.
+  that deals damage would trigger itself until the server's stack overflows. A status effect applied by a proc
+  keeps the origin for all its later ticks ([11.4](#114-status-effects)), so a proc's damage over time cannot
+  start a chain either.
 - **Learning:** on level-up, `character` grants points through `talent`'s API, as its class data says (for example
   one per level from some level on). `LearnTalentPayload(tree, node)` → pure `TalentRules` check that the tree is
   one of the player's class trees (a provider that `character` implements), points, prerequisites, tier and rank →

@@ -166,7 +166,8 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   with per-slot modifier ids and the rule that gear never adds max health directly
   ([architecture 8.2](architecture.md#82-where-modifiers-come-from)); a first balance pass on the training dummy.
 - [ ] **C5 Talents** (M, after C4). The registry, effect types, `TalentRules`, the talent screen, a respec command,
-  one tree per class. *Done when:* JUnit property tests pass and a GameTest shows a talent changing a cast.
+  one tree per class. *Done when:* JUnit property tests pass, a GameTest shows a talent changing a cast, and one
+  shows that neither a proc's hit nor the ticks of a damage-over-time effect it applied trigger procs.
 - [ ] **C6 Casting animations and effects** (M, after spike 4 and C4). Animations, particles and sounds for both
   classes.
 
