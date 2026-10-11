@@ -306,7 +306,7 @@ all, so instead:
      conflict resolution, a base merge, a check repair, and a `fix-pr` or thread commit. A textually clean merge
      says nothing about how two changes interact.
 3. **Act on the finishing state.**
-   - Clean: satisfies merge check 7 for exactly that head.
+   - Clean: satisfies merge checks 1 and 7 for exactly that head.
    - Capped or Disagreement: report and ask under "User needed". The user's explicit approval of that exact
      head satisfies check 7.
    - Blocked: ask under "User needed".
@@ -317,7 +317,9 @@ When Codex is done with the head (its `+1`, a completed review whose findings ar
 window), the run merges unless check 6 holds it.
 Check all of these on one fresh reading, in order:
 
-1. The round is clean under step 7.
+1. The round is clean under step 7, or, in fallback mode, check 7 already holds for this head (a Clean
+   `finalize-pr` of this exact head, or the user's approval of it) and no review thread is open. A stale
+   `eyes` or running summary row from the failed Codex attempt then does not hold the merge.
 2. Checks are green on the head.
 3. The pull request is open, based on `master`, not a draft (a draft goes to "User needed", as in "Start"),
    `mergeable` and not `dirty`.
