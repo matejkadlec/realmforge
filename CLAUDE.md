@@ -14,10 +14,14 @@ modpack adds third-party QoL, performance and library mods.
   Explain Java/Minecraft specifics briefly when they matter for a decision; don't assume modding knowledge.
 - **Vision:** [docs/vision.md](docs/vision.md) (goals, likes, hard no's such as flying bosses or RNG grind).
 - **Decisions:** [docs/decisions/](docs/decisions/README.md) (ADRs). Background: [docs/research-notes.md](docs/research-notes.md).
-- **Not written yet:** `docs/architecture.md` and `docs/roadmap.md` (planned for the next session). Until they
-  exist, do not write gameplay code.
-- **Status:** milestone M0 (bootstrap): build, CI, content pipeline, one test item (`realmforge:test_item`),
-  modpack definition. No gameplay yet.
+- **Architecture:** [docs/architecture.md](docs/architecture.md): how the core mod is built (feature packages,
+  registries, data flow from YAML into the game, player state, stats, networking, client isolation). Read the
+  sections for the system you touch before writing code.
+- **Roadmap:** [docs/roadmap.md](docs/roadmap.md): milestones, the current milestone's tasks and open owner
+  decisions. Work on tasks of the current milestone and tick them off in the same PR.
+- **Status:** M0 (bootstrap) is done: build, CI, content pipeline, one test item (`realmforge:test_item`), modpack
+  definition. Next is M1, the playable vertical slice (proposed as v0.1.0, roadmap decision D7), starting with its
+  spikes. No gameplay yet.
 
 ## Pinned versions
 
@@ -72,7 +76,7 @@ cd pack && packwiz refresh                # after changing anything in pack/
 | `qa-mod/src/generated/` | content expectations for GameTests, GameTest structures from `rf gen` | **no** |
 | `pack/` | packwiz modpack definition (metadata only, no jars) | via `packwiz` commands |
 | `art/` | asset sources: prompts, palettes, Blockbench files | yes |
-| `docs/` | vision, research notes, ADRs, dev setup | yes |
+| `docs/` | vision, architecture, roadmap, research notes, ADRs, dev setup | yes |
 | `.github/workflows/ci.yml` | CI | yes |
 | `.claude/` | Claude Code settings, content validation hook, PR skills (`fix-pr`, `finalize-pr`, `monitor-pr`), `pr-reviewer` agent | yes |
 | `.local/` | owner's private inputs; gitignored, **never commit** | - |
@@ -105,6 +109,10 @@ cd pack && packwiz refresh                # after changing anything in pack/
 9. **Licenses:** the mod (`mod/`, `qa-mod/`, `tools/`, everything in the jar) is MPL-2.0 for code and CC BY 4.0
    for assets; the modpack (`pack/`) is All Rights Reserved ([ADR 0009](docs/decisions/0009-licensing.md)).
 10. **Decisions get an ADR** in `docs/decisions/` (next free number, add it to the index).
+11. **Code follows [docs/architecture.md](docs/architecture.md):** feature packages with a `<Name>Feature` entry,
+    one-way dependencies, client-only code only under `client/`, game definitions as datapack registries. To
+    deviate, update the document in the same PR; changing a decision recorded in
+    [ADR 0014](docs/decisions/0014-core-mod-architecture.md) needs a new ADR.
 
 ## Minecraft 1.21.1 / NeoForge 21.1 pitfalls
 
@@ -115,9 +123,22 @@ cd pack && packwiz refresh                # after changing anything in pack/
   `ResourceLocation.parse("ns:path")`, or our `Realmforge.id("path")`.
 - **Networking is payload-based:** a `record` implementing `CustomPacketPayload` with a `Type` and a
   `StreamCodec`, registered in `RegisterPayloadHandlersEvent` via `PayloadRegistrar#playToClient/playToServer`.
-  There is no `SimpleChannel`.
+  There is no `SimpleChannel`. 21.1 has no client-only payload registration event: common code registers every
+  payload, and client-bound handlers go through an interface implemented in `client/`
+  ([architecture 17.1](docs/architecture.md#171-rules)).
 - **Data attachments** (`AttachmentType`, registry `NeoForgeRegistries.Keys.ATTACHMENT_TYPES`) store per-entity
-  or per-level data such as player stats; use them instead of capabilities or raw NBT.
+  or per-level data such as player stats; use them instead of capabilities or raw NBT. NeoForge 21.1.259 can sync
+  them: declared with `.sync(...)`, they are sent on every `setData`; after mutating a value in place, call
+  `syncData`.
+- **Our datapack registries** load from `data/<ns>/realmforge/<registry>/` (NeoForge puts non-vanilla registry
+  folders under the registry's namespace), e.g. `data/realmforge/realmforge/spell/firebolt.json`.
+- **Vanilla attribute ids keep their prefixes** in 1.21.1 (`minecraft:generic.max_health`,
+  `minecraft:player.block_interaction_range`); newer versions dropped them, so don't copy their examples.
+- **Hurt cooldown:** within 10 ticks of the last hit, a hit not bigger than it is dropped before
+  `LivingDamageEvent` fires; a hit outside that window, or one that bypasses it, starts new invulnerability ticks.
+  Damage that must always land (spells, damage over time) uses damage types in `#minecraft:bypasses_cooldown` and
+  keeps the target's current window (`setInvulnerabilityTicks(target.invulnerableTime)`), so it neither grants nor
+  clears invulnerability ([architecture 9.1](docs/architecture.md#91-damage-pipeline)).
 - **Data pack folders are singular since 1.21:** `recipe/`, `loot_table/`, `advancement/`, `structure/`,
   `tags/item/`, `tags/block/`. Enchantments are data-driven (`enchantment/`) and are looked up as
   `Holder<Enchantment>` through registry access, not static fields.
@@ -212,14 +233,15 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
 
 ## Workflow
 
-1. One feature or content batch per pull request. Commit messages follow Conventional Commits (`feat:`, `fix:`,
-   `docs:`, `build:`, `ci:`, `test:`, `chore:`).
+1. Take a task from the current milestone in [docs/roadmap.md](docs/roadmap.md); one task, feature or content
+   batch per pull request (branches: [Git and branches](#git-and-branches)). Commit messages follow Conventional
+   Commits (`feat:`, `fix:`, `docs:`, `build:`, `ci:`, `test:`, `chore:`).
 2. A Claude Code hook (`.claude/settings.json`) runs `uv run rf validate` after every edit in `content/` or
    `tools/` and reports problems back. It does not compile Java.
 3. **Before opening a PR, run and report:** `uv run rf gen` (no unexpected changes), `uv run ruff check`,
    `uv run ruff format --check`, `uv run pytest`, `./gradlew build`, `./gradlew runGameTestServer`.
-4. Keep `CLAUDE.md`, `docs/` and the relevant READMEs current in the same PR when commands, structure, rules or
-   decisions change. Stale docs mislead the next session.
+4. Keep `CLAUDE.md`, `docs/` (including the roadmap's task list) and the relevant READMEs current in the same PR
+   when commands, structure, rules or decisions change. Stale docs mislead the next session.
 5. Open the PR against `master` with `gh pr create`, then run `/monitor-pr <n>`. CI (`.github/workflows/ci.yml`)
    runs: content pipeline + generated-files check, Gradle build + JUnit + GameTests, vanilla ID universe
    reproducibility, packwiz index. These four jobs are the required checks on `master`.

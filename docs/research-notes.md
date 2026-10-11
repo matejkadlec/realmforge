@@ -423,6 +423,8 @@ Effort: very high, comparable to all of Realmforge. Makes sense as a standalone 
 
 ## 10. Next steps
 
+> Status: M0 finished step 1 and most of step 2; steps 3-6 and the vertical slice are planned in the [roadmap](roadmap.md), the architecture is in [architecture.md](architecture.md).
+
 No more desk research needed; remaining unknowns are resolved by small technical spikes, each a small PR with an answer:
 
 1. Skeleton: NeoForge 1.21.1 MDK, CI with a build and one GameTest.
