@@ -26,6 +26,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0013](0013-modpack-composition.md) | Modpack composition | Accepted (written separately) |
 | [0014](0014-core-mod-architecture.md) | Core mod architecture | Accepted |
 | [0015](0015-merging-through-monitor-pr.md) | Merging through monitor-pr | Accepted (amends 0011) |
+| [0016](0016-jira-batch-delivery.md) | Jira batch delivery with flow1 and flow2 | Accepted (extends 0011) |
 
 ## Open questions (not decided)
 
