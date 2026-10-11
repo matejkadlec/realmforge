@@ -124,7 +124,7 @@ warm_up() {
 
   local inputs
   inputs="$(cd "$root" && cat gradle.properties gradle/wrapper/gradle-wrapper.properties settings.gradle \
-    build.gradle ./*/build.gradle uv.lock 2>/dev/null | sha256sum | cut -d' ' -f1)"
+    build.gradle ./*/build.gradle uv.lock pyproject.toml .python-version 2>/dev/null | sha256sum | cut -d' ' -f1)"
   if [ "$(cat "$state/status" 2>/dev/null)" = "done" ] && [ "$(cat "$state/stamp" 2>/dev/null)" = "$inputs" ] \
     && [ -d "$root/build/mc-sources" ]; then
     return 0

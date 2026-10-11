@@ -110,8 +110,8 @@ are unaffected.
     the Gradle step after 60 s and again after 120 s; it doesn't retry an HTTP 403 from the proxy.
   - State in `.cache/warmup/` (gitignored): `status` (`running`, `done` or `failed`), `summary`, `log`, and
     `stamp`, a hash of the build inputs (`gradle.properties`, wrapper properties, `settings.gradle`, the
-    `build.gradle` files, `uv.lock`). SessionStart also fires on resume; with the same stamp the warm-up is
-    skipped.
+    `build.gradle` files, `uv.lock`, `pyproject.toml`, `.python-version`). On resume, the same stamp skips the
+    warm-up.
   - When it ends, Claude Code passes the summary to Claude on the next turn. On failure the summary and the log
     name the hosts the agent proxy refused.
   - **`cloud-warmup.sh --wait [seconds]`** blocks until the warm-up has finished (default limit 540 s, exit code
