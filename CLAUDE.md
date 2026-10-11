@@ -38,8 +38,11 @@ Changing any of these requires a new ADR ([0003](docs/decisions/0003-platform-mi
 
 Java comes from SDKMAN. Non-interactive shells don't read `~/.bashrc`, so run
 `source ~/.sdkman/bin/sdkman-init.sh` before Gradle (or `export JAVA_HOME=~/.sdkman/candidates/java/current`).
-Cloud sessions have no SDKMAN: Java 21 is preinstalled, and a SessionStart hook has already run `uv sync --locked`
-([docs/dev-setup.md](docs/dev-setup.md#cloud-sessions)).
+Cloud sessions have no SDKMAN: Java 21 is preinstalled, and a background SessionStart hook warms up uv and Gradle
+([docs/dev-setup.md](docs/dev-setup.md#cloud-sessions)). **In a cloud session, run
+`.claude/hooks/cloud-warmup.sh --wait` (Bash timeout 10 minutes) before the first Gradle command:** two Gradle
+runs in one project wait on each other's locks and the second can fail with "Timeout waiting to lock". If it
+reports a failure, read `.cache/warmup/log`; Gradle still downloads what it needs on demand.
 
 ```bash
 uv sync                                   # Python environment (once, and after pyproject/uv.lock changes)
@@ -76,7 +79,7 @@ cd pack && packwiz refresh                # after changing anything in pack/
 | `art/` | asset sources: prompts, palettes, Blockbench files | yes |
 | `docs/` | vision, research notes, ADRs, dev setup | yes |
 | `.github/workflows/ci.yml` | CI | yes |
-| `.claude/` | Claude Code settings, content validation hook, cloud SessionStart hook, PR skills (`fix-pr`, `finalize-pr`, `monitor-pr`), `pr-reviewer` agent | yes |
+| `.claude/` | Claude Code settings, content validation hook, cloud warm-up hook, PR skills (`fix-pr`, `finalize-pr`, `monitor-pr`), `pr-reviewer` agent | yes |
 | `.local/` | owner's private inputs; gitignored, **never commit** | - |
 | `run/`, `build/`, `.cache/` | runtime and build output; gitignored | - |
 
@@ -217,8 +220,8 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
 1. One feature or content batch per pull request. Commit messages follow Conventional Commits (`feat:`, `fix:`,
    `docs:`, `build:`, `ci:`, `test:`, `chore:`).
 2. A Claude Code hook (`.claude/settings.json`) runs `uv run rf validate` after every edit in `content/` or
-   `tools/` and reports problems back. It does not compile Java. In cloud sessions a SessionStart hook runs
-   `uv sync --locked` before the session starts.
+   `tools/` and reports problems back. It does not compile Java. In cloud sessions SessionStart hooks route PyPI
+   through the agent proxy and warm up uv and Gradle in the background (`.claude/hooks/cloud-warmup.sh`).
 3. **Before opening a PR, run and report:** `uv run rf gen` (no unexpected changes), `uv run ruff check`,
    `uv run ruff format --check`, `uv run pytest`, `./gradlew build`, `./gradlew runGameTestServer`.
 4. Keep `CLAUDE.md`, `docs/` and the relevant READMEs current in the same PR when commands, structure, rules or
