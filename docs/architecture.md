@@ -956,8 +956,13 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   could not tell a new world from an existing one that Realmforge is added to. Players may change the gamerules
   afterwards, and worlds that existed before Realmforge keep theirs.
 - Destructive mobs: the [research notes](research-notes.md#default-gamerules) recommend targeted protection over the
-  `mobGriefing` gamerule (which also stops villagers farming and mobs picking up items): stop terrain damage with
-  `EntityMobGriefingEvent` and by clearing the block list in `ExplosionEvent.Detonate`. Final call in M1.
+  `mobGriefing` gamerule (which also stops villagers farming and mobs picking up items): stop terrain damage by
+  clearing the block list in `ExplosionEvent.Detonate`, and with `EntityMobGriefingEvent` decided per mob type.
+  That event names the entity but not the action, and every griefing check posts it, so denying it for a mob
+  denies all of that mob's checks. That suits mobs whose checks only damage terrain (endermen, ravagers,
+  silverfish, the wither), but not a zombie, whose check gates both breaking turtle eggs and picking up items: such
+  mixed cases need an action-specific hook or stay allowed. Inside instances every mob is denied, which is
+  intended there ([15.5](#155-instances)). Final call in M1.
 - Dark Vision: a key toggles vanilla night vision as an infinite, hidden effect
   (`MobEffectInstance.INFINITE_DURATION`); every player has it. The on/off state lives in the
   `realmforge:dark_vision` attachment because effects do not survive death: the effect is reapplied on respawn and
