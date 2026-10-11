@@ -556,10 +556,7 @@ monitored merge. Publication happens in this order:
      the checks that ran; a stacked base or plan change, if any; never `@codex` anywhere.
 3. **Labels:** `needs-playtest` for a playtest batch; `needs-approval` when the batch changes the plan (anything
    in [roadmap.md](roadmap.md) beyond ticking off finished tasks: new, removed, reordered or reworded tasks, a
-   recorded decision, a changed milestone). Create a missing label once:
-   `gh label create needs-playtest --repo matejkadlec/realmforge --color FBCA04 --description "Matěj playtests before the merge"`,
-   `gh label create needs-approval --repo matejkadlec/realmforge --color D93F0B --description "Plan change: Matěj approves before the merge"`.
-   Only Matěj removes either label.
+   recorded decision, a changed milestone). Only Matěj removes either label.
 4. **Tick-off:** for each finished roadmap task, commit `[x]` plus the pull request link in
    [roadmap.md](roadmap.md) and push it, before `monitor-pr` starts.
 5. Read the pull request's head back from GitHub and confirm it is your final commit.
