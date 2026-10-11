@@ -24,7 +24,8 @@ apart from a plan change, which waits for the owner's approval.
   work, with the key in the branch name and the pull request title.
 - **Every change to `docs/roadmap.md` is a plan change:** its pull request carries the `needs-approval` label,
   which only the owner removes, and `monitor-pr` does not merge it while the label is set. A new task gets its
-  ticket in the active sprint or the backlog and its key in the roadmap in the same pull request.
+  key in the roadmap in the same pull request, and its ticket waits in the backlog, with a comment naming that
+  pull request, until the pull request merges; only then can it enter a sprint. Until then no agent starts it.
 - **The hold list** of [0015](0015-merging-through-monitor-pr.md) therefore includes the `needs-approval` label,
   next to `needs-playtest`.
 

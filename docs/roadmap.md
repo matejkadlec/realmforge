@@ -24,8 +24,8 @@
 - **Changing the plan** is a PR to this file, and every change to it is one. It carries the `needs-approval`
   label and waits for Matěj's approval, a hold under [ADR 0015](decisions/0015-merging-through-monitor-pr.md) and
   [ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md), so `monitor-pr` does not merge it on its own.
-  A new task gets its ticket (in the active sprint or the backlog) and its key here in the same PR. A change of
-  direction also needs an ADR.
+  A new task gets its key here in the same PR; its ticket waits in the backlog, with a comment naming the PR,
+  until the PR merges, so no agent starts unapproved work. A change of direction also needs an ADR.
 - **Sizes** instead of dates: S fits one agent session, M takes one to three, L takes more and is split. Playtests,
   hand-built rooms and art review depend on Matěj's time, so calendar estimates would be guesses.
 
