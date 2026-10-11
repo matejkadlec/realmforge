@@ -352,8 +352,8 @@ generated files and GameTests each one changes (read a branch's diff with
 and predict a claimed ticket's from its description). In-flight ownership is every In Progress, Pending User QA
 and Pending CR ticket, every open pull request and every active branch or worktree, except a ticket whose
 associated pull requests all closed unmerged ([reconciliation](#reconciling-merged-tickets) step 4) and its
-branch. Do not select work that overlaps it unless it directly continues the same branch. If no safe non-conflicting work exists, stop and report
-the conflict instead of forcing a risky batch.
+branch. Do not select work that overlaps it unless it directly continues the same branch. If no safe
+non-conflicting work exists, stop and report the conflict instead of forcing a risky batch.
 
 ### Conflict domains
 
