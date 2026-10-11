@@ -595,6 +595,9 @@ casting animations coexist with it (both would use playerAnimator) and whether s
 - **Creation:** while a player's `character` attachment has no race, the client shows the character creation screen,
   which cannot be closed. `CreateCharacterPayload(race, class)` → the server checks the combination and that no
   character exists yet → sets the attachment, gives the starting kit, recomputes stats.
+- **The server enforces creation too:** a client that skips the screen gains nothing. Until the character exists,
+  the server refuses the player's gameplay payloads (casting, spell bar, talents) and awards no character XP, and
+  every system that reads race or class handles a missing character instead of assuming one.
 - **A race** gives base modifiers, innate spells, optionally a size (`generic.scale`), and the allowed classes.
 - **A class** gives its resource type, stat growth per level, spells by level, talent trees and starting kit.
 - **Dual class:** the data model keeps a list of classes; the rules come in M3.
