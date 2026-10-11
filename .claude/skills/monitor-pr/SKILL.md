@@ -150,7 +150,8 @@ Read each signal fresh from GitHub at every step, and never trust an earlier rea
   of these exists after it:
   - a Codex review of the current head (its `commit_id` in
     `gh api --paginate repos/matejkadlec/realmforge/pulls/<n>/reviews`);
-  - a Codex `eyes`;
+  - a Codex summary row for the current head, running or Completed (an `eyes` reaction alone does not count:
+    reactions carry no commit, and a delayed review of an older head can add one);
   - a `+1` that counts for the current head.
 - **Codex task replies.** A Codex comment opening with `### Summary` answers a Codex mention as a Cloud task. It
   is not a review.
