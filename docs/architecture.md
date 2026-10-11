@@ -454,6 +454,11 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   - client code reads owner-only attachments only from the local player, never from another player's entity.
     What clients show about other players (levels, cast bars) comes from attachments synced to every tracker or
     from payloads ([17.2](#172-what-syncs-how)).
+- **Saved shapes stay readable.** NeoForge logs an attachment that fails to decode and skips it
+  (`AttachmentHolder#deserializeAttachments`), so the next save drops that player's data. From the first release
+  (v0.1.0) on, a saved `Codec` therefore changes only compatibly: a new field is `optionalFieldOf` with a default,
+  and a change that cannot be expressed that way adds a version field and a migration. JUnit keeps a saved sample
+  of every released shape and decodes it.
 - Computed values (attribute modifiers, spell modifiers) are derived from these attachments and the registries,
   never treated as a source of truth ([8.2](#82-where-modifiers-come-from)).
 
