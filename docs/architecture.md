@@ -1034,7 +1034,7 @@ FTB Quests files) need no code.
 | data against codecs | GameTest server start, data errors in its log, generated expectations | every spell decodes; every generated loot table, recipe and advancement loads; ids and key fields match |
 | behaviour in a world | GameTests in `qa-mod` | firebolt damages a dummy by the expected amount; the level stops at the cap; the chapter advancement raises it; the boss enters phase 2 at 70%; an instance is built, entered and cleaned up |
 | client isolation | pytest import check; dedicated GameTest server | - |
-| whole pack | CI pack boot job (spike 6) | - |
+| whole pack | `uv run rf pack-boot`: the CI jobs `pack-boot` and `pack-boot-client` boot the pack plus our jar with NeoForge's self tests ([ADR 0018](decisions/0018-pack-boot-tests.md)) | server and client load with and without Quark; no unexplained ERROR line |
 | balance | Python simulation (M3) | time to kill per class and level, boss phase survival, time to item |
 
 The QA mod grows with the features: `/qa` commands (level, class, talents, gear presets, boss at phase N, enter an

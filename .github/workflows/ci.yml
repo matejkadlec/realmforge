@@ -131,3 +131,99 @@ jobs:
         run: |
           packwiz refresh
           git diff --exit-code .
+
+  # Spike 6 (ADR 0018): the whole pack plus our jar, installed the way players and server owners install it, must
+  # boot without errors. `uv run rf pack-boot` runs the same locally.
+  pack-boot:
+    name: Full pack boots on a dedicated server
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          enable-cache: true
+
+      # The pinned installers and the installed NeoForge server. The mods are installed fresh on every run, the way
+      # a new server gets them.
+      - uses: actions/cache@v6
+        with:
+          path: |
+            .cache/pack-boot/downloads
+            .cache/pack-boot/server/libraries
+          key: pack-boot-server-${{ hashFiles('tools/realmforge_tools/packboot.py') }}
+          restore-keys: pack-boot-server-
+
+      - name: Build the core mod jar
+        run: ./gradlew :mod:jar --console=plain
+
+      - name: Boot with and without the optional mods
+        run: |
+          uv sync --locked
+          uv run rf pack-boot --side server
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pack-boot-server-logs
+          if-no-files-found: ignore
+          path: .cache/pack-boot/reports/
+
+  pack-boot-client:
+    name: Full pack boots on a client
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          enable-cache: true
+
+      - name: Install Xvfb and Mesa (software OpenGL)
+        run: |
+          dpkg -s xvfb libgl1-mesa-dri > /dev/null 2>&1 || {
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends xvfb libgl1-mesa-dri
+          }
+
+      # The pinned installers and the launcher's vanilla client, NeoForge, libraries and assets (about 1 GB).
+      - uses: actions/cache@v6
+        with:
+          path: |
+            .cache/pack-boot/downloads
+            .cache/pack-boot/launcher
+          key: pack-boot-client-${{ hashFiles('tools/realmforge_tools/packboot.py') }}
+          restore-keys: pack-boot-client-
+
+      - name: Build the core mod jar
+        run: ./gradlew :mod:jar --console=plain
+
+      - name: Boot with and without the optional mods
+        run: |
+          uv sync --locked
+          uv run rf pack-boot --side client
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pack-boot-client-logs
+          if-no-files-found: ignore
+          path: .cache/pack-boot/reports/

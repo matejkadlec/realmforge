@@ -20,13 +20,14 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0007](0007-asset-pipeline.md) | Asset pipeline | Accepted |
 | [0008](0008-distribution-github-and-curseforge.md) | Distribution: GitHub Releases now, CurseForge later | Accepted |
 | [0009](0009-licensing.md) | Licensing | Accepted |
-| [0010](0010-testing-strategy.md) | Testing strategy | Accepted |
+| [0010](0010-testing-strategy.md) | Testing strategy | Accepted, amended by [0018](0018-pack-boot-tests.md) |
 | [0011](0011-repository-layout-and-workflow.md) | Repository layout and workflow | Accepted |
 | [0012](0012-procedural-dungeons-and-dimensions.md) | Procedural dungeons and dimensions | Accepted |
 | [0013](0013-modpack-composition.md) | Modpack composition | Accepted (written separately) |
 | [0014](0014-core-mod-architecture.md) | Core mod architecture | Accepted |
 | [0015](0015-merging-through-monitor-pr.md) | Merging through monitor-pr | Accepted (amends 0011) |
 | [0016](0016-jira-batch-delivery.md) | Jira batch delivery with flow1 and flow2 | Accepted (extends 0011) |
+| [0018](0018-pack-boot-tests.md) | Pack boot tests: server and client self tests on every PR | Accepted (amends 0010) |
 
 ## Open questions (not decided)
 

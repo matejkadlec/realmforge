@@ -4,14 +4,16 @@ uv run rf validate          validate content/ (schema, ids, references)
 uv run rf gen               validate, then regenerate every generated file
 uv run rf gen --check       exit 1 if any generated file is out of date (writes nothing)
 uv run rf ids vanilla       re-extract the vanilla ID universe from the official server jar (needs Java 21)
+uv run rf pack-boot         boot the whole pack plus the core mod jar on a server and a client (needs Java 21)
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
-from realmforge_tools import vanilla
+from realmforge_tools import packboot, vanilla
 from realmforge_tools.generate import generate_all, sync
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import MINECRAFT_VERSION, RepoPaths
@@ -28,6 +30,26 @@ def main(argv: list[str] | None = None) -> int:
     ids_commands = ids.add_subparsers(dest="ids_command", required=True)
     ids_vanilla = ids_commands.add_parser("vanilla", help="extract vanilla ids from the official server jar")
     ids_vanilla.add_argument("--version", default=MINECRAFT_VERSION)
+    pack_boot = commands.add_parser(
+        "pack-boot",
+        help="boot the whole pack plus the core mod jar on a server and a client; exit 1 on errors",
+    )
+    pack_boot.add_argument(
+        "--side",
+        choices=("both", *packboot.SIDES),
+        default="both",
+        help="boot a dedicated server, a client (under Xvfb when xvfb-run exists), or both (default)",
+    )
+    pack_boot.add_argument(
+        "--mod-jar", type=Path, help="core mod jar (default: the one ./gradlew :mod:jar builds)"
+    )
+    pack_boot.add_argument("--pack-dir", type=Path, help="packwiz pack to install (default: pack/)")
+    pack_boot.add_argument(
+        "--optional",
+        choices=("both", "with", "without"),
+        default="both",
+        help="boot with the optional mods, without them, or both (default)",
+    )
 
     args = parser.parse_args(argv)
     paths = RepoPaths()
@@ -36,6 +58,9 @@ def main(argv: list[str] | None = None) -> int:
         target = vanilla.extract(args.version, paths)
         print(f"Wrote {paths.rel(target)}")
         return 0
+
+    if args.command == "pack-boot":
+        return _pack_boot(args, paths)
 
     try:
         content, _ = load_and_validate(paths)
@@ -62,6 +87,38 @@ def main(argv: list[str] | None = None) -> int:
         print(line)
     print("Generated files are up to date." if result.clean else f"Updated {len(result.lines())} file(s).")
     return 0
+
+
+def _pack_boot(args: argparse.Namespace, paths: RepoPaths) -> int:
+    variants = {
+        "both": packboot.VARIANTS,
+        "with": ("with-optional",),
+        "without": ("without-optional",),
+    }[args.optional]
+    sides = packboot.SIDES if args.side == "both" else (args.side,)
+    failed = False
+    for side in sides:
+        try:
+            reports = packboot.run(
+                paths, side=side, mod_jar=args.mod_jar, pack_dir=args.pack_dir, variants=variants
+            )
+        except packboot.PackBootError as e:
+            failed = True
+            print(f"FAIL {side}: could not start it: {e}", flush=True)
+            continue
+        for report in reports:
+            if report.problems:
+                failed = True
+                print(
+                    f"FAIL {report.label} ({report.seconds:.0f} s): {len(report.problems)} problem(s)",
+                    flush=True,
+                )
+                for problem in report.problems:
+                    print("  " + problem.replace("\n", "\n  "), flush=True)
+            else:
+                print(f"OK   {report.label}: clean boot in {report.seconds:.0f} s", flush=True)
+    print(f"Logs: {paths.rel(paths.cache / 'pack-boot' / 'reports')}/")
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":
