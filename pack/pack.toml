@@ -1,0 +1,13 @@
+name = "Realmforge"
+author = "Matěj Kadlec"
+version = "0.0.1"
+pack-format = "packwiz:1.1.0"
+
+[index]
+file = "index.toml"
+hash-format = "sha256"
+hash = "7c95ad8325c9e5bcfc530819744d6637fb43811494f38c928f31393f0ce27348"
+
+[versions]
+minecraft = "1.21.1"
+neoforge = "21.1.259"
