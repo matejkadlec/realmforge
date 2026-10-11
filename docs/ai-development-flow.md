@@ -656,10 +656,12 @@ These caps keep parallel worktrees from turning into merge conflicts:
 - **Playtest slots:** at most three playtest batches hold a playtest slot. The limit caps the branches waiting on
   Matěj's playtest, not the number of agents: branches beyond what he can play only go stale. A playtest batch
   holds its slot from its claim until Matěj removes `needs-playtest` or the batch is otherwise resolved, through
-  every revision. Count them from fresh reads, every result page and comment page to its end: tickets in Pending
-  User QA; tickets In Progress whose latest QA-mode statement in the current cycle (the claim comment or a later
-  QA-mode comment) names Playtest; open pull requests with `needs-playtest`. Select a playtest batch only while
-  that count is below three; otherwise select AI-only work. A revision is not a new selection, so the limit never
+  every revision. Count batches, not tickets, from fresh reads, every result page and comment page to its end:
+  tickets in Pending User QA; tickets In Progress whose latest QA-mode statement in the current cycle (the claim
+  comment or a later QA-mode comment) names Playtest; open pull requests with `needs-playtest`. Group the tickets
+  by the branch their winning claim comments name, and count a group and the open pull request whose head is that
+  branch as one batch. Select a playtest batch only while that count is below three; otherwise select AI-only
+  work. A revision is not a new selection, so the limit never
   blocks it.
 - Start another batch only while every cap allows it and the conflict map shows the branch safe, independent, and
   neither overlapping nor stacked on an in-flight branch without need. A free slot never authorizes an overlap.
