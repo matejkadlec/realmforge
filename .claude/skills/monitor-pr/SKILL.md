@@ -164,8 +164,10 @@ Read each signal fresh from GitHub at every step, and never trust an earlier rea
   [`fix-pr`](../fix-pr/SKILL.md) step 3 without the Codex filter, or the REST form above).
   - *Codex findings* are the unresolved threads whose first comment is Codex's.
   - Any open thread, Codex's or anyone else's, blocks the merge: the `master` ruleset requires resolution.
-- **Checks.** Every check run on the head SHA.
-  - Green means each one completed with `success`, `neutral` or `skipped`, and all four required checks
+- **Checks.** The latest attempt of every check on the head SHA:
+  `gh api --paginate "repos/matejkadlec/realmforge/commits/<sha>/check-runs?filter=latest"` (`latest` is also
+  the default; never use `filter=all` here, because it adds obsolete attempts that a re-run replaced).
+  - Green means each of those completed with `success`, `neutral` or `skipped`, and all four required checks
     (listed under "Repository facts") are among them.
   - Behind them are the workflow runs (`gh api "repos/matejkadlec/realmforge/actions/runs?head_sha=<sha>"`)
     and their jobs (`gh api repos/matejkadlec/realmforge/actions/runs/<id>/jobs`, with `status`,
