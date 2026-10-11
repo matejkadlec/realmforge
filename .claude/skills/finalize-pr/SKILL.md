@@ -160,9 +160,10 @@ Never fix a P3 on this branch. Never end the report with an offer to fix one "if
 
 ## Finishing states
 
-- **Clean.** The last review's P1 and P2 findings were none, or every one was rejected in step 4 with a recorded
-  concrete reason (the report lists each rejection and its evidence), and no fix landed after that review. A
-  round whose findings were all rejected stops the loop with this state.
+- **Clean.** The last review left no P1 or P2 open against this pull request: each was absent, rejected in
+  step 4 with a recorded concrete reason, or tracked as an out-of-scope GitHub issue (the report lists every
+  rejection with its evidence and every issue), and no fix landed after that review. A round whose findings
+  were all rejected or tracked stops the loop with this state.
 - **Capped.** Three reviews ran and the third still found a P1 or P2, or a fix landed after the final review.
   Say plainly that the head carries changes no reviewer has seen. List what the last review found and what you
   did about it. Never start a fourth round. When both apply, Capped outranks Disagreement, and the report also
