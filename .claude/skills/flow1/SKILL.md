@@ -9,8 +9,10 @@ Follow `CLAUDE.md` and read [`docs/ai-development-flow.md`](../../../docs/ai-dev
 selecting work; this skill may not weaken either. Each step names the section of that document that holds its
 rules.
 
-`flow1` is one autonomous goal. Do not treat it as a request for a single ticket, and do not stop before a ready
-pull request exists.
+`flow1` is one autonomous goal. Do not treat it as a request for a single ticket, and do not stop at a report
+before a ready pull request exists, unless the run reaches a boundary in _Concurrency and run boundaries_ first:
+no startable batch (everything left waits on Matěj, conflicts with in-flight work or exceeds a cap), or a stop
+for Matěj.
 
 1. **Intake:** first run _Reconciling merged tickets_; a ticket that cannot be matched never blocks the run. Then
    follow _Intake and conflict control_: inspect the active sprint (Next before To Do), the in-flight tickets,
