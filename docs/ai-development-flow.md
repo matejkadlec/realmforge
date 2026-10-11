@@ -485,7 +485,8 @@ slot, or the same generated file. A new batch therefore re-counts at its first t
 claim comment is recorded, it counts every in-flight batch again from one fresh search read to its end (tickets
 in In Progress, Pending User QA and Pending CR, grouped by the branch their winning claim comments name, with
 the QA mode, domains, gate-critical flag and generated files those comments and later scope or QA-mode comments
-state), plus open pull requests. It keeps its place only if, besides itself, every cap of
+state), each group merged with the open pull request whose head is its branch, plus the other open pull requests.
+It keeps its place only if, besides itself, every cap of
 [Concurrency and run boundaries](#concurrency-and-run-boundaries) it needs still has room and no in-flight batch
 regenerates one of its generated files. Otherwise it stands down: it creates no branch, adds a claim-release
 comment to every ticket it claimed for the batch, returns each to Next, and selects other work or ends the run.
@@ -644,7 +645,9 @@ start of `flow1` and `flow2`.
 
 ## Concurrency and run boundaries
 
-These caps keep parallel worktrees from turning into merge conflicts:
+These caps keep parallel worktrees from turning into merge conflicts. Every cap counts batches, not tickets or
+pull requests: group the in-flight tickets by the branch their winning claim comments name, and count a group and
+the open pull request whose head is that branch as one batch.
 
 - **Pending-batch slots:** at most four batches in the game domain, three in the tooling domain, and six in total.
   A batch holds a slot in each of its domains from its claim until it is merged or otherwise resolved (In
@@ -656,12 +659,10 @@ These caps keep parallel worktrees from turning into merge conflicts:
 - **Playtest slots:** at most three playtest batches hold a playtest slot. The limit caps the branches waiting on
   Matěj's playtest, not the number of agents: branches beyond what he can play only go stale. A playtest batch
   holds its slot from its claim until Matěj removes `needs-playtest` or the batch is otherwise resolved, through
-  every revision. Count batches, not tickets, from fresh reads, every result page and comment page to its end:
-  tickets in Pending User QA; tickets In Progress whose latest QA-mode statement in the current cycle (the claim
-  comment or a later QA-mode comment) names Playtest; open pull requests with `needs-playtest`. Group the tickets
-  by the branch their winning claim comments name, and count a group and the open pull request whose head is that
-  branch as one batch. Select a playtest batch only while that count is below three; otherwise select AI-only
-  work. A revision is not a new selection, so the limit never
+  every revision. Count them, as batches, from fresh reads, every result page and comment page to its end: tickets
+  in Pending User QA; tickets In Progress whose latest QA-mode statement in the current cycle (the claim comment
+  or a later QA-mode comment) names Playtest; open pull requests with `needs-playtest`. Select a playtest batch
+  only while that count is below three; otherwise select AI-only work. A revision is not a new selection, so the limit never
   blocks it.
 - Start another batch only while every cap allows it and the conflict map shows the branch safe, independent, and
   neither overlapping nor stacked on an in-flight branch without need. A free slot never authorizes an overlap.
