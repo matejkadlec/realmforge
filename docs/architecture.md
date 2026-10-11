@@ -683,6 +683,9 @@ with live numbers; animations and particles start on `CastStartedPayload` (spike
 - **Effect types:** attribute modifier; spell modifier (for one spell or a whole school: cast time, cost, cooldown,
   damage, added effects); grant spell; proc (on hit, crit, kill or being hit: cast a spell or apply an effect).
   Big-impact talents are combinations of these.
+- **Procs never trigger procs:** a proc's spell or effect runs with a proc origin in its `EffectContext`, our
+  damage source carries it, and the proc engine ignores hits that have one. Otherwise a guaranteed on-hit proc
+  that deals damage would trigger itself until the server's stack overflows.
 - **Learning:** on level-up, `character` grants points through `talent`'s API, as its class data says (for example
   one per level from some level on). `LearnTalentPayload(tree, node)` → pure `TalentRules` check that the tree is
   one of the player's class trees (a provider that `character` implements), points, prerequisites, tier and rank →
