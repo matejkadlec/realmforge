@@ -424,9 +424,11 @@ Per ticket, in order:
    still keeps its [playtest slot](#playtest-slot-race). A peer artifact backed by a later claim comment never
    defeats this claim.
 5. Only once the claim holds, create the batch's branch and worktree from the current `origin/master` at its first
-   claim ([Branches and worktrees](#branches-and-worktrees)), and reuse them for every further ticket of the
-   batch. A batch has exactly one branch. Creating it any earlier would let a git name collision, not the claim
-   order, decide a race.
+   claim ([Branches and worktrees](#branches-and-worktrees)), push the new branch at once, and reuse them for
+   every further ticket of the batch. A batch has exactly one branch. Creating it any earlier would let a git name
+   collision, not the claim order, decide a race. The push makes the claim visible to sessions on other machines
+   and in the cloud, which cannot see this machine's branches; without it, a live run's claim would look
+   abandoned to them after thirty minutes.
 
 A ticket is an **abandoned claim**, from a run that died between steps 3 and 5, only when all of these hold: it
 is In Progress, the branch its earliest counting claim comment names exists neither locally nor on the remote, no
@@ -435,13 +437,13 @@ arbitrated like a claim: add one claim-recovery comment naming the abandoned cla
 directly (an issue read, not a search, which may lag), and only while all four conditions still hold and your
 recovery comment is the earliest counting one since that claim comment, move the ticket to Next and claim it
 normally. A recovery comment older than thirty minutes no longer counts. Anything short of all four is in-flight
-ownership: skip it. The batch branch names every ticket key of the batch, so its later tickets never look
-abandoned while the run lives.
+ownership: skip it. The batch branch names every ticket key of the batch and is on the remote from its first
+claim, so none of its tickets looks abandoned while the run lives, wherever the run is.
 
 A claim is **lost** when step 4 shows a peer moved first. Do not implement it and do not move the ticket back:
 the peer owns it. Claim the next eligible ticket, or end the run with the ledger when nothing safe remains. If a
-peer's ownership only shows after implementation, do not push and do not open a competing pull request: record
-the collision on the ticket, keep the local branch for Matěj, and report it under "Blocked or other".
+peer's ownership only shows after implementation, do not push the work and do not open a competing pull request:
+record the collision on the ticket, keep the local branch for Matěj, and report it under "Blocked or other".
 
 #### Playtest slot race
 
@@ -527,6 +529,7 @@ later. A run that ran out of memory twice is a real failure.
   ```bash
   git fetch origin
   git worktree add -b <branch> ../realmforge-worktrees/<branch with "/" replaced by "-"> origin/master
+  git -C ../realmforge-worktrees/<dir> push -u origin <branch>   # the claim's visible artifact; starts no CI
   cd ../realmforge-worktrees/<dir> && uv sync
   ```
 
