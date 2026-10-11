@@ -444,6 +444,18 @@ and claim it normally. A recovery comment older than thirty minutes no longer co
 is in-flight ownership: skip it. The batch branch names every ticket key of the batch and is on the remote from
 its first claim, so none of its tickets looks abandoned while the run lives, wherever the run is.
 
+A run that dies after that push leaves a **stale claim**: its branch stays on the remote, so the abandoned-claim
+test never holds. To keep a live claim distinguishable, a run pushes each commit to the batch branch as it makes
+it (a branch push starts no CI), and when two hours pass without a commit it adds a `🔒 Claim heartbeat` comment to
+each ticket of the batch. A claim is stale when no open pull request names its keys, no worktree on this machine
+holds its branch, and neither the branch's newest commit nor the newest claim or heartbeat comment on its tickets
+is younger than six hours. CLAUDE.md forbids committing to another session's branch, and the branch may hold
+finished work, so a stale claim is not taken over automatically: intake skips it and lists it in the ledger under
+"Blocked or other", with the branch, its last activity and the two ways on. Matěj either asks a session to
+continue that branch (it then becomes that session's batch: a worktree on the existing branch, a new claim
+comment naming it on each ticket), or releases it: the tickets go back to Next with a claim-release comment, and
+the branch stays for him to delete or keep.
+
 A claim is **lost** when step 4 shows a peer moved first. Do not implement it and do not move the ticket back:
 the peer owns it. Claim the next eligible ticket, or end the run with the ledger when nothing safe remains. If a
 peer's ownership only shows after implementation, do not push the work and do not open a competing pull request:
