@@ -141,7 +141,7 @@ nothing else.
    revert (whether the change is still on `master` is then Matěj's call). A ticket whose associated pull requests
    all closed unmerged is no longer in flight: it holds no slot, and the ledger lists it under "Blocked or other"
    for Matěj to send back to Next or reject. Sending it back adds a claim-release comment naming its old branch,
-   so that branch no longer blocks a claim.
+   for the record.
 
 A batch pull request reconciles every ticket associated with it. The pass changes that one status and nothing
 else. A ticket that cannot be read or matched is skipped and never stops the run. The run's batch ledger lists
@@ -410,12 +410,12 @@ batch is the moment its implementation begins, so every ticket claimed for it mo
 Per ticket, in order:
 
 1. Re-read it from Jira with the claim field set; never claim from the intake snapshot.
-2. Confirm that it is still in Next, unassigned or assigned to the acting account, and that no local branch,
-   worktree, remote branch or open pull request names its key (`rlm-<n>` in a branch name, `RLM-<n>` in a title,
-   as a whole token, so `rlm-17` does not match `rlm-170`). Two kinds of branch do not count: the branch and
-   worktree this session already created for this batch at an earlier ticket's claim (they name every key of the
-   batch), and a branch that a claim-release comment on this ticket names (a released claim's branch, which may
-   stay on the remote).
+2. Confirm that it is still in Next, unassigned or assigned to the acting account, and that no open pull request
+   names its key (`RLM-<n>` in its title, as a whole token, so `RLM-17` does not match `RLM-170`). A branch or
+   worktree whose name carries the key (`rlm-<n>`) does not block a ticket in Next on its own, because claim
+   comments decide (steps 3 and 4) and such a branch can be harmless: this session's own batch branch at a later
+   ticket, a released claim's branch, or the batch branch of a run that died before it claimed this ticket. Note
+   the ones that exist now for step 4.
 3. Assign it to the acting account, move it to In Progress, and add one claim comment:
 
    ```text
@@ -436,9 +436,9 @@ Per ticket, in order:
 4. Re-verify: re-read the ticket with the same fields, and list local branches, worktrees, remote branches and
    open pull requests again, ignoring the ones this session created. The claim holds only if the ticket is In
    Progress under the acting account, this session's claim comment is the earliest that counts, no branch,
-   worktree or pull request naming its key appeared without a claim comment behind it, and a new batch still keeps
-   its place under every cap ([Slot race](#slot-race)). A peer artifact backed by a later claim comment never
-   defeats this claim.
+   worktree or pull request naming its key appeared since step 2 without a claim comment behind it, and a new
+   batch still keeps its place under every cap ([Slot race](#slot-race)). A peer artifact backed by a later claim
+   comment never defeats this claim.
 5. Only once the claim holds, create the batch's branch and worktree from the current `origin/master` at its first
    claim ([Branches and worktrees](#branches-and-worktrees)), push the new branch at once, and reuse them for
    every further ticket of the batch. A batch has exactly one branch. Creating it any earlier would let a git name
@@ -471,7 +471,7 @@ finished work, so a stale claim is not taken over automatically: intake skips it
 "Blocked or other", with the branch, its last activity and the two ways on. Matěj either asks a session to
 continue that branch (it then becomes that session's batch: a worktree on the existing branch, a new claim
 comment naming it on each ticket), or releases it: the tickets go back to Next with a claim-release comment
-naming the branch, which stays for him to delete or keep and no longer blocks a claim.
+naming the branch, which stays for him to delete or keep.
 
 A claim is **lost** when step 4 shows a peer moved first. Do not implement that ticket and do not move it back:
 the peer owns it. When it was a later ticket of a batch whose earlier tickets this session already claimed, end
