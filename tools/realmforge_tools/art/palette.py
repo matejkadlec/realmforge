@@ -55,7 +55,10 @@ class Palette:
 def load_gpl(path: Path) -> Palette:
     """Read a GIMP palette: a ``GIMP Palette`` header, optional ``Name:``/``Columns:`` lines, ``#`` comments,
     then one ``R G B name`` line per color. Every name must be unique."""
-    lines = path.read_text(encoding="utf-8").splitlines()
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except UnicodeDecodeError as e:
+        raise PaletteError(f"{path}: not UTF-8 text ({e.reason} at byte {e.start})") from e
     if not lines or lines[0].strip() != "GIMP Palette":
         raise PaletteError(f"{path}: not a GIMP palette (first line must be 'GIMP Palette')")
     name = path.stem

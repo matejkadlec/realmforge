@@ -151,6 +151,13 @@ def test_load_gpl_rejects_bad_files(tmp_path: Path, text: str, message: str) -> 
         load_gpl(_write(tmp_path, text))
 
 
+def test_load_gpl_rejects_a_file_that_is_not_utf8(tmp_path: Path) -> None:
+    path = tmp_path / "p.gpl"
+    path.write_bytes(b"GIMP Palette\n1 2 3 \xff\xfe\n")
+    with pytest.raises(PaletteError, match="not UTF-8 text"):
+        load_gpl(path)
+
+
 def test_nearest_is_perceptual_and_prefers_the_first_on_ties() -> None:
     assert PALETTE.nearest((250, 0, 0)).name == "red"
     assert PALETTE.nearest((0, 0, 255)).name == "blue"
