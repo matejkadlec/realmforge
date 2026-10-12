@@ -250,9 +250,9 @@ section { display: grid; gap: 10px; }
 .views { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
 figure { margin: 0; display: grid; gap: 4px; justify-items: center; }
 figcaption { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
-img.px { width: 128px; height: 128px; image-rendering: pixelated; background: var(--slot);
+img.px { width: 128px; height: auto; image-rendering: pixelated; background: var(--slot);
   box-shadow: inset 0 0 0 2px var(--slot-edge); max-width: 100%; }
-img.px.tiled { width: 192px; height: 192px; }
+img.px.tiled { width: 192px; }
 .stats { margin: 0; color: var(--muted); }
 .pick { display: flex; gap: 6px; align-items: center; font-weight: 600; cursor: pointer; }
 .pick input { accent-color: var(--accent); width: 18px; height: 18px; }

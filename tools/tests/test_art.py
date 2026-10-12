@@ -255,6 +255,15 @@ def test_gallery_keeps_picks_per_batch_of_candidates(tmp_path: Path) -> None:
     assert gallery.batch_id(gallery.collect(root, PALETTE, 16)[1]) != first
 
 
+def test_gallery_previews_keep_the_aspect_ratio_of_a_strip(tmp_path: Path) -> None:
+    (tmp_path / "strip").mkdir()
+    (tmp_path / "strip" / "x.png").write_bytes(encode_rgba(16, 32, [RED] * 16 * 32))
+    info, subjects = gallery.collect(tmp_path, PALETTE, 16)
+    page = gallery.render(info, subjects, PALETTE)
+    assert 'width="16" height="32"' in page  # the intrinsic ratio the browser scales by
+    assert "height: auto" in page and "height: 128px" not in page  # CSS fixes only the width
+
+
 def test_gallery_reports_a_broken_yaml_with_its_path(tmp_path: Path) -> None:
     root = _candidates(tmp_path)
     (root / "gallery.yaml").write_text("subjects:\n  b_item: {title: Item, colour: red}\n", encoding="utf-8")
