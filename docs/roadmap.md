@@ -260,9 +260,11 @@ Outline: five rarity tiers everywhere (first decide how: extend vanilla `Rarity`
 [architecture 13](architecture.md#13-items-gear-and-loot)); affixes with item levels and loot by mob level; gems
 and sockets; a
 reforging station; RNG item chests (as items); quest choice rewards with pre-rolled gear; Curios with the first
-curios; more weapon and armor sets. Probably also the full-pack registry dump for the ID universe
-([ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)), once content references other mods'
-items.
+curios; more weapon and armor sets; simple craftable foods and potions with weak, long-lasting buffs (a few percent,
+more against one mob type, for example +5% damage for an hour or +8% against undead), brewable without Nether
+materials ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)). Probably also the full-pack registry dump for
+the ID universe ([ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)), once content
+references other mods' items.
 
 ## M3: Classes and combat depth
 
@@ -281,9 +283,10 @@ start of the village, villager and trade overhaul.
 
 ## M5: Professions and enchanting
 
-Outline: professions that can be combined and leveled (for example mining, alchemy with long-lasting potions,
-smithing, jewelcrafting for curios, tailoring, cooking); new foods; enchanting without RNG on data-driven
-enchantments; the final role of vanilla XP (follows D3).
+Outline: professions that can be combined and leveled (for example mining, alchemy, smithing, jewelcrafting for
+curios, tailoring, cooking); cooking and alchemy bring the stronger foods and potions, with medium to very strong
+effects (M2 has the simple ones); enchanting without RNG on data-driven enchantments; the final role of vanilla XP
+(follows D3).
 
 ## M6: Companions and mounts
 
