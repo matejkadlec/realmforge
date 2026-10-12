@@ -7,6 +7,7 @@ import pytest
 from realmforge_tools.generate import generate_all
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import RepoPaths
+from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES
 from realmforge_tools.validate import load_and_validate
 from tests.conftest import write
 
@@ -32,6 +33,30 @@ def test_files_are_copied_byte_for_byte_into_their_registry_folders(repo: RepoPa
     files = generate(repo)
     assert files[f"{DATA}/dimension/shadowlands.json"] == DIMENSION.encode()
     assert files[f"{DATA}/worldgen/biome/ashen_waste.json"] == biome.encode()
+
+
+def test_every_vanilla_datapack_worldgen_registry_has_a_directory(repo: RepoPaths) -> None:
+    # The data-driven worldgen registries of 1.21.1 (RegistryDataLoader.WORLDGEN_REGISTRIES); the rest of the
+    # minecraft:worldgen/* registries in the ID universe are static type registries (feature, carver, ...).
+    datapack = {
+        "biome",
+        "configured_carver",
+        "configured_feature",
+        "placed_feature",
+        "structure",
+        "structure_set",
+        "processor_list",
+        "template_pool",
+        "noise_settings",
+        "noise",
+        "density_function",
+        "world_preset",
+        "flat_level_generator_preset",
+        "multi_noise_biome_source_parameter_list",
+    }
+    assert {d for d, r in WORLDGEN_REGISTRIES.items() if r.startswith("minecraft:worldgen/")} == datapack
+    write(repo.content / "worldgen" / "world_preset" / "realms.json", "{}")
+    assert f"{DATA}/worldgen/world_preset/realms.json" in generate(repo)
 
 
 def test_worldgen_ids_join_the_universe(repo: RepoPaths) -> None:

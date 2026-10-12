@@ -23,6 +23,8 @@ WORLDGEN_REGISTRIES: dict[str, str] = {
     "structure_set": "minecraft:worldgen/structure_set",
     "processor_list": "minecraft:worldgen/processor_list",
     "template_pool": "minecraft:worldgen/template_pool",
+    "world_preset": "minecraft:worldgen/world_preset",
+    "flat_level_generator_preset": "minecraft:worldgen/flat_level_generator_preset",
 }
 
 
