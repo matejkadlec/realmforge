@@ -8,4 +8,5 @@ names its Jira ticket, lists its open questions for Matěj, and changes when he 
 
 | Document | What it covers | Ticket |
 | --- | --- | --- |
+| [guide.md](guide.md) | The in-game guide: a searchable screen about the realms, dungeons, bosses and rewards, unlocked by chapter | RLM-102 |
 | [realms.md](realms.md) | The realms, their order and contents, chapters and levels, dungeon completion, puzzles and traps | RLM-40 |
