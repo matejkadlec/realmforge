@@ -44,6 +44,8 @@ public final class InstanceBench {
     private int phaseTicks;
     private int run;
     private int startTick;
+    /** The highest plot id this bench opened: the same plot again and again when plots are reused. */
+    private int highestPlotId = -1;
     @Nullable
     private Plot plot;
     private long diskBefore;
@@ -132,6 +134,7 @@ public final class InstanceBench {
             case OPEN -> {
                 long start = System.nanoTime();
                 plot = manager.open(SpikeLayouts.row(rooms, run % 2 == 1), List.of());
+                highestPlotId = Math.max(highestPlotId, plot.id());
                 openNanos.add(System.nanoTime() - start);
                 next(Phase.BUILDING);
             }
@@ -203,8 +206,9 @@ public final class InstanceBench {
         lines.add(String.format(Locale.ROOT,
                 "  disk (instance dimension): %.1f KiB before, %.1f KiB after, %+.1f KiB per run",
                 diskBefore / 1024.0, diskAfter / 1024.0, (diskAfter - diskBefore) / 1024.0 / runs));
-        lines.add(String.format(Locale.ROOT, "  plots in use: %d, next new plot id %s", manager.plots().size(),
-                manager.plots().stream().mapToInt(Plot::id).max().orElse(-1) + 1));
+        // Not derived from manager.plots(): never_reuse drops released plots from it.
+        lines.add(String.format(Locale.ROOT, "  plots in use: %d, highest plot id this bench used: %d",
+                manager.plots().size(), highestPlotId));
         for (String line : lines) {
             RealmforgeQa.LOGGER.info(line);
             source.sendSuccess(() -> Component.literal(line), false);
