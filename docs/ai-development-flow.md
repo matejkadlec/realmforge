@@ -703,7 +703,10 @@ After the sprint and Next rules, group by QA mode, then by similarity: the same 
 generators or verification path (the same GameTests, the same pytest module). Maximize the safe coherent batch
 without losing precision, reviewability, automated verification or conflict avoidance. Independent AI-only
 tickets from different areas fit one batch when they share no conflict-prone files and one gate covers them. A
-playtest batch also needs a free playtest slot; while every slot is taken, select an AI-only batch instead.
+playtest batch also needs a free playtest slot; while every slot is taken, select an AI-only batch instead. A
+batch that generates textures (step 1 of the [art pipeline](../art/README.md), Retro Diffusion through its MCP
+server: A1 and later art tickets) runs only in a local session, because cloud sessions lack that server
+([Cloud sessions](#cloud-sessions)); the generated placeholder textures `uv run rf gen` writes need none.
 
 Fill an AI-only batch toward the expected scale. Intake, the claim, the first build of a new worktree and the
 gate cost the same for one ticket as for ten, and every batch holds a slot until it merges, so small AI-only
@@ -907,9 +910,10 @@ A run delivers one batch. It ends, with the batch ledger, when:
   file an in-flight batch owns, or every playtest slot is taken and only playtest work remains;
 - no safe active-sprint ticket remains after the conflict, dependency and ownership checks.
 
-A candidate whose slots are unavailable is not safe remaining work in any domain. The run therefore ends once
-every remaining candidate is blocked that way, and never while another domain still has a startable batch, or a
-full playtest limit still leaves a startable AI-only batch.
+A candidate whose slots are unavailable is not safe remaining work in any domain, and neither is a texture batch
+for a cloud session ([Cloud sessions](#cloud-sessions)). The run therefore ends once every remaining candidate is
+blocked that way, and never while another domain still has a startable batch, or a full playtest limit still
+leaves a startable AI-only batch.
 
 Stop for Matěj when continuing needs a new or changed product or architecture decision, a secret or account, a
 changed destructive scope, uncertain state, weakened security or substantial unrelated scope.
@@ -953,4 +957,9 @@ A Claude Code cloud session (`CLAUDE_CODE_REMOTE=true`) runs the same flow; only
   `.claude/hooks/cloud-warmup.sh --wait` first ([CLAUDE.md](../CLAUDE.md#commands)).
 - **Playtests** are handed off with the [launch commands](#launch-commands) for a branch on `origin`; `qa1` and
   `qa2` may run in the same cloud session or any later local or cloud one.
+- **No texture batches:** cloud sessions have no Retro Diffusion MCP server: it authenticates with Matěj's
+  personal API key and is set up per machine, outside the repository ([dev setup](dev-setup.md#5-claude-code)). A
+  cloud session therefore never selects or claims a batch that generates textures (A1 and later art tickets,
+  [Batch selection](#batch-selection)) and leaves it where it is for a local session. The ticket stays eligible:
+  replenishing Next may still promote it, and the ledger needs no line for it.
 - **Cleanup:** branch deletion and worktree removal stay with local sessions.
