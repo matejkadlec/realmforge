@@ -21,11 +21,13 @@
   active sprint: `flow1`, `flow2`, or the intake claim of the [AI development flow](ai-development-flow.md) for
   direct work, with the key in the branch name and the PR title. A task waiting on an open decision
   ([below](#open-decisions)) is not started: the agent lists it for Matěj.
-- **Changing the plan** is a PR to this file, and every change to it is one. It carries the `needs-approval`
-  label and waits for Matěj's approval, a hold under [ADR 0015](decisions/0015-merging-through-monitor-pr.md) and
-  [ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md), so `monitor-pr` does not merge it on its own.
-  A new task gets its key here in the same PR; its ticket waits in the backlog, with a comment naming the PR,
-  until the PR merges, so no agent starts unapproved work. A change of direction also needs an ADR.
+- **Changing the plan** is a PR to this file, and every change to it is one
+  ([ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md)). Agents make it only as Matěj decided it (a
+  Done decision ticket, his request, or a ticket he wrote that asks for it) and propose any other change to him
+  first; the PR names the change and its source, carries no label and merges like any other
+  ([ADR 0021](decisions/0021-status-overview-and-plan-changes.md)). A new task gets its key here in the same PR;
+  its ticket waits in the backlog, with a comment naming the PR, until the PR merges, so no agent starts work the
+  plan does not hold yet. A change of direction also needs an ADR.
 - **Sizes** instead of dates: S fits one agent session, M takes one to three, L takes more and is split. Playtests,
   hand-built rooms and art review depend on Matěj's time, so calendar estimates would be guesses.
 

@@ -269,14 +269,15 @@ Agents never implement a ticket labelled `decision`, or one waiting on Matěj. A
 be started or finished without something only he can give: a decision or a pick between options, an account,
 credentials or credits, approval to install a tool or MCP server, content he builds himself (rooms in creative),
 or his own playthrough. The description usually says so ("Decision for Matěj", "Owner decision", "Needs Matěj",
-"Needs from Matěj"), and so does an unmet `Blocks` link to a decision ticket or to another waiting ticket. A ticket
-whose roadmap task exists only in an open pull request with `needs-approval` (a comment on it names that pull
-request, [ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md)) waits for that approval too. A review or
-playtest at the end of the work does not count: that is the playtest hold.
+"Needs from Matěj"), and so does an unmet `Blocks` link to a decision ticket or to another waiting ticket. A review
+or playtest at the end of the work does not count: that is the playtest hold. A ticket whose roadmap task exists
+only in an open pull request (a comment on it names that pull request,
+[ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md)) is not selectable either until that pull request
+merges.
 
 - Such tickets are neither selected nor promoted; they stay in To Do.
-- Every run lists them in its ledger under "Waiting for Matěj", one line each: a decision ticket with its proposal
-  and the tickets it blocks; any other ticket with what it needs.
+- Every [status overview](../CLAUDE.md#status-overview) lists them under "Blocked or other", one line each: a
+  decision ticket with its proposal and the tickets it blocks; any other ticket with what it needs.
 - A decision is made when its ticket is Done; its comments record what Matěj decided, and the implementing batch
   follows that. Writing the outcome into the roadmap's open decisions is a plan change
   ([Publication](#publication)).
@@ -315,9 +316,10 @@ they cannot be separated, the whole batch is a playtest batch. Pulled-in depende
 2. Commit the coherent work and publish it as one ready pull request with the `needs-playtest` label
    ([Publication](#publication)).
 3. On each ticket, record the `🤖 Claude QA` summary and the `🎮 Playtest handoff`: the pull request, its head,
-   [What to look at](#what-to-look-at) and the [playtest commands](#playtest-commands). Then move the tickets to
-   Pending User QA.
-4. Give Matěj the handoff, leading with What to look at, then the playtest commands.
+   [What to test](#what-to-test) and the [launch commands](#launch-commands). Then move the tickets to Pending User
+   QA.
+4. Give Matěj the handoff as the [status overview](../CLAUDE.md#status-overview) in its manual-test shape: What to
+   test, the launch commands, the verification and the batch ledger.
 5. Run `monitor-pr` on the pull request in the same run. It carries review, threads and checks, and holds the
    merge while the label is set. Its check-ins keep watching for Matěj's answer.
 6. **Playtest passed:** Matěj removes the label. `monitor-pr` moves the tickets to Pending CR, merges once
@@ -326,14 +328,14 @@ they cannot be separated, the whole batch is a playtest batch. Pulled-in depende
    `monitor-pr` watches (a comment on a ticket alone goes unseen), and leaves the label. Move the affected
    tickets to In Progress, fix on the same branch (the session that handed off or any later one), run the affected
    checks, push, record the revision on each ticket, move them back to Pending User QA, and hand back a What to
-   look at limited to the revision, with the command that updates his checkout. The label stays until he removes
-   it.
+   test limited to the revision, with the command that updates his checkout. The label stays until he removes it.
 
 While Matěj plays from the batch's worktree, run no Gradle task in it.
 
-### Playtest commands
+### Launch commands
 
-Every handoff ends with complete commands Matěj can paste into his WSL terminal.
+Every manual-test handoff gives complete commands Matěj can paste into his WSL terminal, under "Launch commands"
+in the [status overview](../CLAUDE.md#status-overview).
 
 - **The dev client** (core mod and QA mod, offline player `Dev`, QA commands available; opens through WSLg):
 
@@ -372,17 +374,19 @@ client.
   in `qa-mod/` (dev-only, merged with the batch) instead of asking Matěj to grind.
 - Verify each command where an agent can: a GameTest that runs it, or the dev server console
   (`./gradlew runServer`).
-- When a state exists only in an automated test, say so in What to look at.
+- When a state exists only in an automated test, say so in What to test.
 
-### What to look at
+### What to test
 
-Every handoff that returns work to Matěj (a playtest handoff, a revision, a published pull request) leads with
-"What to look at". He reads it instead of the tickets, so each item pairs what changed with how to see it, in a
-sentence or two: "Cast Frostbolt on the training dummy, because its slow is new", or "Mobs scale with distance;
-the best way to see it is `/tp Dev 1000 ~ 0` and the level above their heads". An item names where to go, the
-state and how to reach it, first or third person where it matters, and what he should see or feel; it says when
-an effect is subtle or shows only in an automated test. A behavior change he must decide on comes first and says
-so. For AI-only work it says what he can observe, if anything, and otherwise what the automated evidence covers.
+Every handoff that returns work to Matěj for a manual test (a playtest handoff, a revision) leads with "What to
+test", the first part of the [status overview](../CLAUDE.md#status-overview). He reads it instead of the tickets:
+one sentence on where to start, then a numbered list. Each item opens with a bold name for the check and pairs
+what changed with how to see it, with the steps as sub-bullets: "**Frostbolt's slow**, on the training dummy:
+cast Frostbolt; the dummy walks at half speed for 4 s", or "**Mobs scale with distance:** `/tp Dev 1000 ~ 0`; the
+level above their heads reads about 10". An item names where to go, the state and how to reach it, first or third
+person where it matters, and what he should see or feel; it says when an effect is subtle or shows only in an
+automated test. A behavior change he must decide on comes first and says so. AI-only work has no What to test:
+its overview says under "Merged into master" or "Pending CR" what changed and what the automated evidence covers.
 Files, implementation detail and the full verification stay in the ticket comments.
 
 ## Intake and conflict control
@@ -663,20 +667,26 @@ monitored merge. Publication happens in this order:
    stacked batch):
    - **title:** Conventional Commits with the keys, `feat(spells): add the spell engine core (RLM-24)`, several
      keys comma-separated;
-   - **description:** What to look at first; the tickets with links; what changed and why; dependencies pulled in;
-     the checks that ran; a stacked base or plan change, if any; never `@codex` anywhere.
-3. **Labels:** `needs-playtest` for a playtest batch; `needs-approval` when the batch changes the plan, which is
-   any change to [roadmap.md](roadmap.md) (new, removed, reordered or reworded tasks, a recorded decision, a
-   changed milestone, a key; [ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md)). Only Matěj removes
-   either label.
-4. Read the pull request's head back from GitHub and confirm it is your final commit.
-5. On each ticket, record the `🤖 Claude QA` summary (what was verified and how, the pull request, the head SHA),
+   - **description:** What to test first for a playtest batch; the tickets with links; what changed and why;
+     dependencies pulled in; the checks that ran; a stacked base or plan change, if any; never `@codex` anywhere.
+3. **Labels:** `needs-playtest` for a playtest batch; only Matěj removes it.
+4. **Plan changes** carry no label and hold no merge
+   ([ADR 0021](decisions/0021-status-overview-and-plan-changes.md)). A plan change is any change to
+   [roadmap.md](roadmap.md): new, removed, reordered or reworded tasks, a recorded decision, a changed milestone, a
+   key ([ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md)). A batch makes one only as Matěj decided
+   it: a Done decision ticket, his request in the session, or a ticket he wrote that asks for it. The description
+   names the plan change and that source. A plan change an agent finds worth making on its own is not published:
+   it goes to Matěj under "Blocked or other" in the [status overview](../CLAUDE.md#status-overview), or as a
+   `decision` ticket, and waits for his answer.
+5. Read the pull request's head back from GitHub and confirm it is your final commit.
+6. On each ticket, record the `🤖 Claude QA` summary (what was verified and how, the pull request, the head SHA),
    plus the `🎮 Playtest handoff` for a playtest batch.
-6. Move the tickets: an AI-only batch to Pending CR, a playtest batch to Pending User QA.
-7. Hand off to Matěj, leading with [What to look at](#what-to-look-at): the pull request number and URL, the
-   branch, the head, the checks, the Jira state, any hold, and for a playtest batch the
-   [playtest commands](#playtest-commands). Name an action for him only when one is needed.
-8. In the same run, run `/monitor-pr <n>` on the pull request. The handoff is a progress report, not the end of
+7. Move the tickets: an AI-only batch to Pending CR, a playtest batch to Pending User QA.
+8. Hand off to Matěj with the [status overview](../CLAUDE.md#status-overview): a playtest batch in the manual-test
+   shape ([What to test](#what-to-test), the [launch commands](#launch-commands), the verification), and every
+   batch with the pull request number and URL, the branch, the head, the checks, the Jira state and any hold in
+   its ledger. Name an action for him only when one is needed.
+9. In the same run, run `/monitor-pr <n>` on the pull request. The handoff is a progress report, not the end of
    the run: a published pull request left unmonitored is unfinished work.
 
 ### After publication
@@ -685,9 +695,9 @@ monitored merge. Publication happens in this order:
 [ADR 0015](decisions/0015-merging-through-monitor-pr.md): it runs `fix-pr` on Codex findings, closes every review
 thread, fixes failing or stuck checks and conflicts with `master`, falls back to `finalize-pr` when Codex hits its
 usage limit, and merges once everything is clean and no hold applies. The holds are `needs-playtest` (Matěj plays
-the head), `needs-approval` (Matěj approves the plan change), a changes-requested review, a Codex finding outside
-a thread, and anything Matěj asked to hold. Its "Jira tickets" section keeps the tickets in step: a `🤖 Claude QA`
-update after each of its pushes, Pending User QA to Pending CR when the playtest passes, Done after the merge.
+the head), a changes-requested review, a Codex finding outside a thread, and anything Matěj asked to hold. Its
+"Jira tickets" section keeps the tickets in step: a `🤖 Claude QA` update after each of its pushes, Pending User QA
+to Pending CR when the playtest passes, Done after the merge.
 
 Outside such a run (another session's pull request, or one whose run stopped), do not poll, fix, merge or update
 its tickets unless Matěj resumes or delegates that pull request (`/monitor-pr <n>`, `/fix-pr <n>`,
@@ -751,17 +761,20 @@ full playtest limit still leaves a startable AI-only batch.
 Stop for Matěj when continuing needs a new or changed product or architecture decision, a secret or account, a
 changed destructive scope, uncertain state, weakened security or substantial unrelated scope.
 
-At every stop, give a concise **batch ledger**, grouped by:
+Every response, and every stop, ends with the [status overview](../CLAUDE.md#status-overview). Its **batch
+ledger** groups, as this flow fills them:
 
 - **Merged into master**, including the tickets the reconciliation moved to Done;
-- **Pending CR**, with the exact state (`monitor-pr` waiting for Codex, a hold such as `needs-approval`, or
-  `owner action: ...` when the run stopped);
+- **Pending CR**, with the exact state (`monitor-pr` waiting for Codex, a hold such as a changes-requested
+  review, or `owner action: ...` when the run stopped);
 - **Pending User QA** (playtest);
-- **Waiting for Matěj**: decision tickets and tickets waiting on him, one line each
-  ([Tickets waiting on Matěj](#tickets-waiting-on-matěj));
-- **Blocked or other**.
+- **Blocked or other**: decision tickets and tickets waiting on Matěj, one line each
+  ([Tickets waiting on Matěj](#tickets-waiting-on-matěj)), plan changes proposed to him, stale or lost claims,
+  tickets whose comments or history could not be read completely, searches that could not be completed, and
+  conflicts.
 
-List the ticket keys and only the most important player-visible or architectural changes.
+Without a manual test, Pending CR and Pending User QA share one line. List the ticket keys and only the most
+important player-visible or architectural changes.
 
 When the batch holds the last unstarted tickets of the active sprint and both To Do and the unselected rest of
 Next are empty, say: **This batch contains the final remaining implementation task(s) in the active sprint.**
@@ -780,6 +793,6 @@ A Claude Code cloud session (`CLAUDE_CODE_REMOTE=true`) runs the same flow; only
 - **GitHub:** the proxy refuses GraphQL; the pull request skills list the REST forms to use instead. `gh api`
   calls are authenticated (`gh api user` answers) even though `gh auth status` reports the token as invalid.
 - **Gradle:** the queue sees only the VM's own runs.
-- **Playtests** are handed off with the cloud [playtest commands](#playtest-commands); a revision may run in the
+- **Playtests** are handed off with the cloud [launch commands](#launch-commands); a revision may run in the
   same cloud session or any later local or cloud one.
 - **Cleanup:** branch deletion and worktree removal stay with local sessions.

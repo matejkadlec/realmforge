@@ -11,15 +11,18 @@ modpack adds third-party QoL, performance and library mods.
 
 - **Owner:** Matěj, a Python full-stack (Django) developer with little Java and modding experience. The project is
   vibe-coded: agents do most of the work, Matěj sets direction, reviews and playtests. **Communicate in English.**
-  Explain Java/Minecraft specifics briefly when they matter for a decision; don't assume modding knowledge.
+  Explain Java/Minecraft specifics briefly when they matter for a decision; don't assume modding knowledge. Every
+  response to him ends with the [status overview](#status-overview).
 - **Vision:** [docs/vision.md](docs/vision.md) (goals, likes, hard no's such as flying bosses or RNG grind).
 - **Decisions:** [docs/decisions/](docs/decisions/README.md) (ADRs). Background: [docs/research-notes.md](docs/research-notes.md).
 - **Architecture:** [docs/architecture.md](docs/architecture.md): how the core mod is built (feature packages,
   registries, data flow from YAML into the game, player state, stats, networking, client isolation). Read the
   sections for the system you touch before writing code.
 - **Roadmap:** [docs/roadmap.md](docs/roadmap.md): the plan (milestones, the current milestone's tasks and owner
-  decisions, each with its Jira key). It holds no status, and every change to it is a plan change that waits for
-  Matěj (`needs-approval`, [ADR 0017](docs/decisions/0017-jira-as-the-source-of-task-status.md)).
+  decisions, each with its Jira key). It holds no status
+  ([ADR 0017](docs/decisions/0017-jira-as-the-source-of-task-status.md)), and every change to it is a plan
+  change, which agents make only as Matěj decided it
+  ([ADR 0021](docs/decisions/0021-status-overview-and-plan-changes.md)).
 - **Jira:** the work queue and the source of task status: space Realmforge, key `RLM`, one Task per roadmap task or
   other piece of work, milestone epics RLM-6 to RLM-12 (M1 to M7), RLM-1 for developer workflow and tooling,
   RLM-30 for the storyline, `Blocks` links for the roadmap's "after" order. Work on a ticket always goes through
@@ -256,8 +259,11 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
   changed, why, and which checks passed. Never write `@codex` on a pull request (description, comments,
   replies): any mention starts a Codex review or a Cloud task that can push to the branch.
 - Add the `needs-playtest` label when Matěj should play the change before it merges (gameplay, visuals,
-  balance), and the `needs-approval` label when the PR changes the plan (any change to `docs/roadmap.md`). Only
-  Matěj removes either label.
+  balance). Only Matěj removes it.
+- A plan change (any change to `docs/roadmap.md`) carries no label and does not hold the merge. Make one only as
+  Matěj decided it: a Done decision ticket, his request, or a ticket he wrote that asks for it; the description
+  names the plan change and that source. Propose any other plan change to him first, under "Blocked or other" in
+  the [status overview](#status-overview) ([ADR 0021](docs/decisions/0021-status-overview-and-plan-changes.md)).
 - A PR from a Jira batch names its tickets in the title, e.g. `feat(spells): add the spell engine core (RLM-24)`.
 - After publishing or updating a ready pull request as your own task work, run `/monitor-pr <n>` on it straight
   after, in the same run. Codex findings alone: `/fix-pr <n>`. Extra independent review: `/finalize-pr <n>`.
@@ -270,7 +276,7 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
 **Ending a session**
 
 - Stop every process you started (`runClient`, `runServer`, `runGameTestServer`, `packwiz serve`), remove your
-  temporary files, and name any uncommitted work you leave behind in your final message.
+  temporary files, and name any uncommitted work you leave behind in the status overview's Cleanup line.
 
 ## Workflow
 
@@ -294,11 +300,55 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
    dedicated server and on a client ([ADR 0018](docs/decisions/0018-pack-boot-tests.md)).
 6. `monitor-pr` merges once Codex is done (its approval, a completed review whose findings are all closed, or
    10 silent minutes), every review thread is resolved and the required checks are green, unless the PR has the
-   `needs-playtest` label (Matěj playtests first and removes the label) or the `needs-approval` label (Matěj
-   approves the plan change) ([ADR 0015](docs/decisions/0015-merging-through-monitor-pr.md),
+   `needs-playtest` label (Matěj playtests first and removes the label)
+   ([ADR 0015](docs/decisions/0015-merging-through-monitor-pr.md),
    [ADR 0016](docs/decisions/0016-jira-batch-delivery.md),
-   [ADR 0017](docs/decisions/0017-jira-as-the-source-of-task-status.md)). Distribution: GitHub Releases now,
+   [ADR 0021](docs/decisions/0021-status-overview-and-plan-changes.md)). Distribution: GitHub Releases now,
    CurseForge later ([ADR 0008](docs/decisions/0008-distribution-github-and-curseforge.md)).
+
+## Status overview
+
+Every response to Matěj ends with a status overview, so he can keep track of the work without scrolling back
+([ADR 0021](docs/decisions/0021-status-overview-and-plan-changes.md)). It covers what this session did and what
+it watches: pull requests, tickets, and everything waiting on him. An empty group says "none" (or "none from this
+run"). Ticket keys and pull request links, plus the player-visible or architectural changes that matter; files,
+implementation detail and the full evidence stay in the ticket comments. It comes in one of two shapes.
+
+**Something waits for Matěj's manual test** (a playtest, a revision of one, anything he should try before it
+merges). Four parts:
+
+1. **What to test:** one sentence on where to start (the world, the first command), then a numbered list. Each
+   item opens with a bold name for the check and the state it needs, gives the steps as sub-bullets with the
+   exact commands that reach that state, and says what he should see. A behavior change he must decide on comes
+   first and says so ([flow: What to test](docs/ai-development-flow.md#what-to-test)).
+2. **Launch commands:** complete commands he can paste, in one block, with the checkout named in the heading,
+   e.g. "Launch commands (your WSL checkout)"
+   ([flow: Launch commands](docs/ai-development-flow.md#launch-commands)).
+3. **Verification ✅** (optional): what ran and passed, one bullet each; never "all checks passed" for a partial
+   run.
+4. **Batch ledger**, one bullet per group:
+   - **Merged into master:** the pull requests merged in this run, or "none";
+   - **Pending CR:** pull requests under review, each with its exact state (waiting for Codex, a hold,
+     `owner action: ...`);
+   - **Pending User QA:** the tickets and pull request waiting for this test;
+   - **Blocked or other:** everything else that needs his attention (below).
+
+Close with one line on how he answers: removing `needs-playtest` passes the test; a problem goes into the
+session or a pull request comment.
+
+**Nothing waits for his test.** Three parts:
+
+- **Merged into master**, per merged pull request, as bullets: **What** (the tickets, the merge commit, and the
+  changes that matter as sub-bullets), **Review** (Codex or `finalize-pr`, and what it found or tracked),
+  **Checks** (the required checks, and CI on `master` after the merge), **Jira** (where the tickets ended).
+  "None" when nothing merged.
+- **Pending CR / Pending User QA:** one line each with the exact state, or "none from this run".
+- **Blocked or other**, as bullets.
+
+In both shapes, **Blocked or other** holds: decision tickets and tickets waiting on Matěj, with what each needs;
+plan changes proposed to him; follow-up tickets this session created; findings it did not file, with the reason;
+conflicts, stale claims and searches it could not complete; the Next queue when it matters. A last
+**Cleanup:** line may say which processes stopped, what was removed, and any uncommitted work left behind.
 
 ## How the pipeline fits together
 

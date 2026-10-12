@@ -3,7 +3,8 @@
 Date: 2026-10-11
 
 Status: Accepted (amends the plan-change rule of [0016](0016-jira-batch-delivery.md) and the hold list of
-[0015](0015-merging-through-monitor-pr.md))
+[0015](0015-merging-through-monitor-pr.md)); the `needs-approval` label and its hold replaced by
+[0021](0021-status-overview-and-plan-changes.md)
 
 ## Context
 

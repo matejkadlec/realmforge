@@ -196,3 +196,6 @@ Include:
   dropped with the reason;
 - the exact checks that passed;
 - the finishing state.
+
+When the review ends the response (run on its own, not inside `monitor-pr`), close with the status overview from
+`CLAUDE.md`.

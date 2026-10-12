@@ -56,9 +56,10 @@ weakens a test or check.
 - The label `needs-playtest` means the owner (Matěj) plays the change before it merges. The publishing session
   adds it for gameplay, visual or balance changes (`gh pr edit <n> --add-label needs-playtest`); only Matěj
   removes it.
-- The label `needs-approval` means the pull request changes the plan (any change to `docs/roadmap.md`, which holds
-  no task status: [ADR 0017](../../../docs/decisions/0017-jira-as-the-source-of-task-status.md)) and Matěj
-  approves it before it merges. The publishing session adds it; only Matěj removes it.
+- A plan change (any change to `docs/roadmap.md`) holds nothing: agents make one only as Matěj decided it
+  ([ADR 0021](../../../docs/decisions/0021-status-overview-and-plan-changes.md)). The `needs-approval` label is
+  retired; a pull request that still carries it from before is not held by it, and the run removes it
+  (`gh pr edit <n> --repo matejkadlec/realmforge --remove-label needs-approval`).
 - Jira: a pull request from a Jira batch ([`docs/ai-development-flow.md`](../../../docs/ai-development-flow.md))
   names its tickets (`RLM-<n>`) in its title, and its head branch carries their keys. The Atlassian MCP tools
   (`.mcp.json`, or the claude.ai connector in cloud sessions) reach Jira. Findings this run tracks instead of
@@ -190,7 +191,7 @@ Read each signal fresh from GitHub at every step, and never trust an earlier rea
   - `blocked`: protection still refuses (an open thread, a missing or failing check, or a changes-requested
     review).
   - `unknown`: GitHub is still computing it. Read it again a minute later.
-- **Labels.** `needs-playtest` and `needs-approval` on the pull request
+- **Labels.** `needs-playtest` on the pull request
   (`gh pr view <n> --repo matejkadlec/realmforge --json labels`).
 
 ## Loop
@@ -359,7 +360,7 @@ expects: RLM's transitions are all global, so Jira refuses no stale move.
 - **Playtest failed:** when Matěj reports a problem from the playtest while the label is set (a message in this
   session, or his thread or comment on the pull request, which this run watches), move the affected tickets to
   In Progress (`31`), fix it on the branch with `fix-pr`'s verification and single-push delivery, then record the
-  revision on each ticket (what changed, the new head, a "What to look at" limited to the revision) and move them
+  revision on each ticket (what changed, the new head, a "What to test" limited to the revision) and move them
   back to Pending User QA (`41`). The label stays until Matěj removes it.
 - **After the merge:** move every ticket to Done (`71`) with one comment: the pull request, the merge commit and
   the checks it passed. When the merged pull request reverts an earlier one, return that one's tickets to To Do
@@ -390,10 +391,8 @@ Check all of these on one fresh reading, in order:
    (`gh pr edit <n> --repo matejkadlec/realmforge --add-label needs-playtest`).
    While the label is set, go to "User needed": ask Matěj to playtest the head (for example with
    `./gradlew runClient`, or `./gradlew :mod:installToPrism` and the Prism instance) and remove the label.
-   No `needs-approval` label is set either. A pull request whose diff changes `docs/roadmap.md` and never
-   carried the label gets it now (`--add-label needs-approval`), and so does one with a push after the label's
-   latest removal that changes `docs/roadmap.md` again. While it is set, go to
-   "User needed": ask Matěj to read the plan change and remove the label to approve it.
+   A change to `docs/roadmap.md` is no hold
+   ([ADR 0021](../../../docs/decisions/0021-status-overview-and-plan-changes.md)).
 7. In fallback mode: a Clean `finalize-pr` reviewed this exact head, or the user approved this exact head after
    a Capped or Disagreement report.
 8. The head you checked is still the head.
@@ -444,7 +443,7 @@ gh api -X PUT repos/matejkadlec/realmforge/pulls/<n>/merge -f merge_method=merge
 - **Merged by someone else:** run "After the merge" in full, then report and stop.
 - **Closed unmerged:** report, change nothing, and stop.
 - **User needed:** a secret, a provider console, a repository setting, the runners, a product decision, a
-  Blocked thread, or a `needs-playtest` or `needs-approval` label blocks the next step. Use the
+  Blocked thread, or the `needs-playtest` label blocks the next step. Use the
   `**Your assistance is needed:**` form. Keep watching with one check-in about an hour apart, and continue as
   soon as the user answers or the blocking signal changes.
 - **The user says stop:** cancel the waiting and the subscription, and report where the pull request stands.
@@ -453,7 +452,10 @@ gh api -X PUT repos/matejkadlec/realmforge/pulls/<n>/merge -f merge_method=merge
 
 ## Report
 
-At each merge or stop, report:
+At each merge or stop, report as the status overview from `CLAUDE.md`: this pull request under "Merged into
+master" (**What**, **Review**, **Checks**, **Jira**), or under "Pending CR" or "Pending User QA" with the step the
+run stopped at; while it waits for a playtest, in the manual-test shape with _What to test_ and the launch
+commands. The details below go into those bullets:
 
 - the pull request number and URL;
 - the head SHA (merged or current);
