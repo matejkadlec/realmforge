@@ -333,8 +333,11 @@ arrival: {y: [20, 90], pocket_radius: 3, floor: realmforge:slate_bricks}   # alw
   keeps its row in the dependency table.
 - **`rf gen` writes** the registry entry, the unlock advancement `realmforge:realm/<id>`, the lang keys
   (`realm.realmforge.<id>.name`, ...) and GameTest expectations.
-- **Validation:** the dimension and the sigil exist; one realm per dimension; the sigil stacks to 1; the realm
-  dimension's `dimension_rules` access requirement includes the unlock advancement.
+- **Validation:** every id the entry names (the dimension, the sigil, the particle, the landing's floor block) exists
+  in the ID universe, which holds `minecraft:particle_type` and `minecraft:block` (CLAUDE.md rule 3); one realm per
+  dimension, and one realm per sigil (two realms on one sigil would both unlock from it and leave the selector no
+  single destination); the sigil stacks to 1; the realm dimension's `dimension_rules` access requirement includes the
+  unlock advancement.
 - **The sigil source check comes later.** Every sigil needs a renewable source (a recipe, a repeatable quest, or the
   guaranteed drop of a boss that can be replayed), never only a one-time reward, as the "every item obtainable" rule
   asks ([ADR 0005](../decisions/0005-content-pipeline-yaml-single-source-of-truth.md)). That rule is not in the
