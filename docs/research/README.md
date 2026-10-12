@@ -63,3 +63,10 @@ consumable decisions of 11–12 October 2026.
 - A recommendation is input, not a decision: anything that changes a decision needs Matěj's decision ticket or an ADR,
   and the roadmap changes only as he decided.
 - Later topic research (for example `realm-portals.md`, RLM-39) goes into this folder too.
+
+## Chococraft and mount tiers (2026-10-12, RLM-101)
+
+- **[chococraft.md](chococraft.md)**: whether the Chococraft mod (0.11.12 for NeoForge 1.21.1) can carry Matěj's
+  mount tiers, read from its jar and licence files: its ten hard-coded colours, flight, taming and breeding, what
+  config and data can change, the tier table against it, ADR 0004 and architecture principle 8, and a proposal (our
+  own mounts) with the questions for Matěj's decision.
