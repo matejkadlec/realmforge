@@ -252,8 +252,9 @@ How features cooperate without breaking the direction:
 | | `EntityAttributeCreationEvent` (mod) | attributes of our own entity types |
 | | `RegisterPayloadHandlersEvent` (mod) | all payloads ([17](#17-networking)) |
 | | `RegisterTicketControllersEvent` (mod) | chunk ticket controllers: instance plots ([15.5](#155-instances)) |
-| Server start | `RegisterCommandsEvent`, `ServerStartedEvent` (game) | commands; world defaults on a new world ([19.1](#191-world-defaults)) |
-| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerEvent.PlayerRespawnEvent`, `PlayerEvent.PlayerChangedDimensionEvent` (game) | schedule a stat recompute for the player's first tick; keep health across respawns ([8.2](#82-where-modifiers-come-from)); keep or end the player's instance run ([15.5](#155-instances)) |
+| World creation | `LevelEvent.CreateSpawnPosition` (game; listened to, never cancelled) | the gamerules of a new world, once ([19.1](#191-world-defaults)) |
+| Server start | `RegisterCommandsEvent`, `ServerStartedEvent` (game) | commands |
+| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerEvent.PlayerRespawnEvent`, `PlayerEvent.PlayerChangedDimensionEvent` (game) | schedule a stat recompute for the player's first tick; keep health across respawns ([8.2](#82-where-modifiers-come-from)); keep or end the player's instance run ([15.5](#155-instances)); reapply Dark Vision ([19.1](#191-world-defaults)) |
 | Play | damage, death, spawn, tick and advancement events (game) | sections 8-16 |
 | Client start | `RealmforgeClient` constructor; client registration events (mod) | [section 18](#18-client-code-rendering-gui-input) |
 
@@ -364,6 +365,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `rooms/` (NBT plus a YAML sidecar) | validated and copied to `data/realmforge/structure/` | structure templates |
 | item YAML with a weapon preset | `data/realmforge/weapon_attributes/<item>.json` (Better Combat format) | read by Better Combat |
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
+| `texts/` (exists) | lang keys `<group>.realmforge.<name>`, `GeneratedTexts` constants | translations |
 | every type | `tools/schemas/<type>.schema.json` | editor completion |
 
 The quest book is part of the modpack (All Rights Reserved, [ADR 0009](decisions/0009-licensing.md)), so its
@@ -383,7 +385,10 @@ instance. After `rf gen` changes files in `pack/`, run `packwiz refresh` (CI che
   fraction `<name>`.
 - Player-facing text is `LocalizedText` in YAML; generated data holds only translation keys, following the scheme
   `<registry>.realmforge.<id>.<field path>`, for example `spell.realmforge.firebolt.name` (a nested field adds its
-  path: `spell.realmforge.firebolt.effects.0.label`).
+  path: `spell.realmforge.firebolt.effects.0.label`). Texts that belong to no content type (key mapping names,
+  messages) live in `content/texts/<group>.yaml` and get the key `<group>.realmforge.<name>`
+  (`key.realmforge.dark_vision`); Java names them through the generated `GeneratedTexts` constants
+  (`GeneratedTexts.KEY_DARK_VISION`), which belong to `core`, so every feature and `client` may use them.
 - One generator writes every datapack type (`tools/realmforge_tools/generate/datapack.py`): the `id` becomes the
   file name, texts become keys, units are converted, unset optional fields are left out, and everything else keeps
   its YAML name and value. A type that needs a different JSON shape converts in its own generator instead.
@@ -446,7 +451,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:spellbook` | `spell` | players | known spells and their levels, spell bar layout | owner |
 | `realmforge:combat` | `spell` | players and mobs that cast | resource (mana, rage), cooldowns, current cast | owner, throttled (players; clients never read a mob's copy) |
 | `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points | owner |
-| `realmforge:dark_vision` | `world` | players | whether Dark Vision is switched on | not synced (the effect itself is) |
+| `realmforge:dark_vision` | `world` | players | whether Dark Vision is switched on (on by default) | not synced (the effect itself is) |
 | `realmforge:instance` | `dungeon` | players | the run's plot and the return point (spike 3); W4 adds the game mode to restore | not synced |
 
 - Values are immutable records with a `Codec` for saving and a `StreamCodec` for syncing, declared with
@@ -1028,7 +1033,7 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
 ### 17.3 First payloads (M1)
 
 - Client → server: `CreateCharacter`, `CastSpell`, `CancelCast`, `SetSpellBarSlot`, `LearnTalent`,
-  `ToggleDarkVision`.
+  `ToggleDarkVision` (exists: `world/net/ToggleDarkVisionPayload`, sent by `client/input/DarkVisionKey`).
 - Server → client: `CastStarted`, `CastEnded`, `CombatText`, `DungeonStatus`.
 
 ## 18. Client code: rendering, GUI, input
@@ -1060,25 +1065,48 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
 
 ### 19.1 World defaults
 
+Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, `DarkVision`.
+
 - When a world is created, set the vision's gamerules once: `keepInventory` and `doImmediateRespawn` on;
   `blockExplosionDropDecay`, `mobExplosionDropDecay` and `tntExplosionDropDecay` off. The signal is
-  `LevelEvent.CreateSpawnPosition` (listened to, never cancelled, since cancelling skips vanilla's spawn search):
-  the server posts it only while it sets up a world that is not yet initialized. A flag in our own `SavedData`
-  could not tell a new world from an existing one that Realmforge is added to. Players may change the gamerules
-  afterwards, and worlds that existed before Realmforge keep theirs.
-- Destructive mobs: the [research notes](research-notes.md#default-gamerules) recommend targeted protection over the
-  `mobGriefing` gamerule (which also stops villagers farming and mobs picking up items): stop terrain damage by
-  clearing the block list in `ExplosionEvent.Detonate`, and with `EntityMobGriefingEvent` decided per mob type.
-  That event names the entity but not the action, and every griefing check posts it, so denying it for a mob
-  denies all of that mob's checks. That suits mobs whose checks only damage terrain (endermen, ravagers,
-  silverfish, the wither), but not a zombie, whose check gates both breaking turtle eggs and picking up items: such
-  mixed cases need an action-specific hook or stay allowed. Inside instances every mob is denied, which is
-  intended there ([15.5](#155-instances)). Final call in M1.
-- Dark Vision: a key toggles vanilla night vision as an infinite, hidden effect
-  (`MobEffectInstance.INFINITE_DURATION`); every player has it. The on/off state lives in the
-  `realmforge:dark_vision` attachment because effects do not survive death: the effect is reapplied on respawn and
-  login. Milk removes effects through NeoForge's `EffectCures.MILK`, so our instance drops that cure
-  (`MobEffectInstance#getCures`).
+  `LevelEvent.CreateSpawnPosition` (listened to, never cancelled, since cancelling skips vanilla's spawn search; the
+  listener also receives it when another mod cancelled it): the server posts it only while it sets up a world that
+  is not yet initialized. A flag in our own `SavedData` could not tell a new world from an existing one that
+  Realmforge is added to. Players may change the gamerules afterwards, and worlds that existed before Realmforge
+  keep theirs. `mobGriefing` stays on: the next point replaces it.
+- Destructive mobs (decision D6, RLM-56): targeted protection instead of `mobGriefing=false`, which the
+  [research notes](research-notes.md#default-gamerules) advise against because it also stops villagers farming,
+  piglins bartering and mobs picking up items. Mobs never damage blocks; players keep their own destruction (TNT,
+  beds, respawn anchors). Four hooks:
+  - **Explosions:** `ExplosionEvent.Detonate` clears the block list of every explosion a mob caused, that is whose
+    `Explosion#getIndirectSourceEntity` is a living entity other than a player: a creeper, the ghast or wither
+    that owns a projectile, the mob that lit a TNT. Fire lands only where blocks were destroyed, so such an
+    explosion lights none either. It also takes the objects a player placed off the entity list (item frames,
+    paintings and leash knots, armor stands, boats and minecarts: `GriefingProtection#isPlacedObject`), so they
+    survive with their contents; players and mobs are still hurt and pushed. TNT lit by redstone or a player, beds
+    and respawn anchors keep breaking blocks.
+  - **Per mob type:** `EntityMobGriefingEvent` names the entity but not the action, and every griefing check posts
+    it, so denying it for a mob denies all of that mob's checks. It is denied only for mobs whose every check
+    changes blocks (`GriefingProtection#TERRAIN_GRIEFERS`): endermen, ravagers, silverfish, the wither (also its
+    wither roses), blazes (their fireballs' fire) and rabbits (carrot crops).
+  - **Breaking blocks with their bodies:** `LivingDestroyBlockEvent` (posted by `CommonHooks#canEntityDestroy`) is
+    cancelled for every entity but a player: zombies and vindicators breaking doors, the ender dragon flying
+    through blocks, the wither breaking out. This is the action-specific hook for the zombie, whose griefing check
+    also gates picking up items.
+  - **Farmland:** `BlockEvent.FarmlandTrampleEvent` is cancelled for every entity but a player.
+
+  Still allowed, as mixed or harmless cases: zombies breaking turtle eggs, a skeleton's arrows breaking decorated
+  pots, chorus flowers or pointed dripstone, foxes picking sweet berries, sheep eating grass, snow golems leaving
+  snow. Inside instances every mob is denied, which is intended there ([15.5](#155-instances)).
+- Dark Vision: a key (`client/input/DarkVisionKey`, N by default, "Toggle Dark Vision" under Realmforge in the
+  controls) sends `ToggleDarkVisionPayload`; the server flips the sender's switch and confirms it on the action
+  bar. The effect is vanilla night vision as an infinite, hidden effect (`MobEffectInstance.INFINITE_DURATION`, no
+  particles, no icon); every player has it, switched on by default. The on/off state lives in the
+  `realmforge:dark_vision` attachment (copied on death) because effects do not survive death: the effect is
+  reapplied on respawn and login. Milk and a totem of undying remove effects through NeoForge's cures
+  (`EffectCures.MILK`, `PROTECTED_BY_TOTEM`), so our instance has none (`MobEffectInstance#getCures`, saved with
+  the effect); only the switch and `/effect clear` remove it. Switching on replaces a potion's night vision, which
+  Dark Vision outlasts; switching off removes only infinite night vision, so a potion drunk while it is off stays.
 
 ### 19.2 Configuration
 
@@ -1128,8 +1156,8 @@ dimensions (`realmforge:instances`, later the M1 dimension) exist in GameTests o
 `GameTestServerMixin`. A GameTest can log a fake player out and in again through the normal save and login path
 (`PlayerList#remove`, `PlayerList#placeNewPlayer`) with `QaPlayers#login`, as `InstanceGameTests` does to test
 reconnects; its connection goes through NeoForge's `NetworkRegistry#configureMockConnection`, so synced attachments
-can be sent to it. `PlayerList#respawn(player, false, ...)` stands in for a respawn after death
-(`PlayerStateGameTests`).
+can be sent to it. `PlayerList#respawn(player, false, ...)` stands in for a respawn after death, which copies the
+copy-on-death attachments (`PlayerStateGameTests`, and `WorldRulesGameTests` for Dark Vision).
 
 ## 21. Decisions and open questions
 
