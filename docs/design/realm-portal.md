@@ -22,8 +22,8 @@
   its lowest-level area starts. **The way back always leads home**: to the Overworld portal the player last left
   from (RE-2).
 - **Each realm has its own colour**, particles and sound, and a flavour line (RE-1).
-- **Only players travel.** Items, mobs and vehicles never pass, so there is no chunk-loading trick and no realm mob
-  in the Overworld.
+- **Only players travel.** Items, mobs and vehicles never pass a realm portal, and no other entity enters or leaves a
+  realm by any path, so there is no chunk-loading trick and no realm mob in the Overworld.
 
 | Realm | Sigil (working name) | How a player gets it | Portal colour |
 | --- | --- | --- | --- |
@@ -266,6 +266,10 @@ If Matěj decides otherwise in the realm design, this section follows his answer
   passenger), and the realm portal refuses every entity that is not a player, so a player on a horse must dismount.
   WoW-style summoned mounts (M6) are dismissed and summoned again on the other side, and pets (later) follow their
   owner through their own system.
+- **Other paths carry no mobs either.** `EntityTravelToDimensionEvent` is cancelled for every entity that is not a
+  player when the realm is its source or its target. The Waystones mod, for one, can take leashed mobs along on a
+  warp (its `transportLeashed` setting, *verify* the pack's value), and `Entity#changeDimension` posts the event for
+  them too. The pet system (later) adds its own exception.
 
 ## Edge cases
 
@@ -355,7 +359,7 @@ dimension rules and access:
     column of blocks;
   - `RealmLandings`, the saved landing per realm;
   - `RealmAccess`, which asks `core`'s requirement API, at the portal and in its `EntityTravelToDimensionEvent`
-    listener;
+    listener, which also stops every entity that is not a player from entering or leaving a realm;
   - the `realmforge:realm_travel` attachment and the respawn listener;
 - `client/`: the portal block's colour handler;
 - Portal Stone, the selector and the sigils as YAML content: blocks once the block content type exists, sigils as
@@ -382,7 +386,8 @@ Tests:
     blocks in place;
   - TNT lit by a player next to the landing leaves its zone unchanged;
   - the selector refuses in the instance dimension;
-  - an item, a mob and a mounted player do not travel;
+  - an item, a mob and a mounted player do not travel through a portal, and a mob teleported into or out of a realm
+    (as a leashed mob on a waystone warp) stays where it is;
   - a death in the realm respawns at the landing.
 
 ## What M1 takes from this
