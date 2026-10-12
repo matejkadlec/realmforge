@@ -400,7 +400,7 @@ played. When the commits the pull request added after the published head that Ma
 ([QA classification](#qa-classification)), `monitor-pr` adds `needs-playtest`, moves the tickets back to Pending
 User QA with a `🎮 Playtest handoff` limited to the change, and holds the merge until Matěj answers `qa1` (or
 removes the label) or `qa2`. Commits that change nothing a player sees (docs, tests, a refactor its tests cover,
-a merge of `master` without conflicts in game code) need no new playtest.
+a merge of `master` whose conflict resolutions touch nothing a player sees) need no new playtest.
 
 ### Launch commands
 

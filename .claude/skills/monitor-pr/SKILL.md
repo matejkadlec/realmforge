@@ -404,9 +404,9 @@ Check all of these on one fresh reading, in order:
    pull request added after the played head (not changes that came in with `master`) change gameplay, as the
    flow's "QA classification" defines it, the current head was never played: add the label (the REST form
    above), and move the tickets back under "Jira tickets" ("Reconfirmation"). Commits that change nothing a player
-   sees (docs, tests, a refactor its tests cover, a merge of `master` without conflicts in game code) need no new
-   playtest. While the label is set, go to "User needed": ask Matěj to playtest the head with the launch commands
-   for its branch and answer `qa1` (or remove the label) or `qa2` with what is wrong.
+   sees (docs, tests, a refactor its tests cover, a merge of `master` whose conflict resolutions touch nothing a
+   player sees) need no new playtest. While the label is set, go to "User needed": ask Matěj to playtest the head
+   with the launch commands for its branch and answer `qa1` (or remove the label) or `qa2` with what is wrong.
    A change to `docs/roadmap.md` is no hold
    ([ADR 0021](../../../docs/decisions/0021-status-overview-and-plan-changes.md)), and neither is a leftover
    `needs-approval` label: remove it as in "Start" step 4.
