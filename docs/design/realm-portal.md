@@ -349,7 +349,9 @@ arrival: {y: [20, 90], pocket_radius: 3, floor: realmforge:slate_bricks}   # alw
 - **`rf gen` writes** the registry entry, the unlock advancement `realmforge:realm/<id>`, the lang keys
   (`realm.realmforge.<id>.name`, ...) and GameTest expectations.
 - **Validation:** every id the entry names (the dimension, the sigil, the particle, the landing's floor block) exists
-  in the ID universe, which holds `minecraft:particle_type` and `minecraft:block` (CLAUDE.md rule 3); one realm per
+  in the ID universe, which holds `minecraft:particle_type` and `minecraft:block` (CLAUDE.md rule 3); the particle is
+  a type without options (a `SimpleParticleType` such as `minecraft:ash`, from a list the validator keeps), because
+  types such as `minecraft:dust` or `minecraft:block` need option data the entry does not carry; one realm per
   dimension, and one realm per sigil (two realms on one sigil would both unlock from it and leave the selector no
   single destination); the sigil stacks to 1; the realm dimension's `dimension_rules` access requirement includes the
   unlock advancement.
