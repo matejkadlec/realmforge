@@ -58,32 +58,33 @@ Guide entries are content like everything else
 ```yaml
 # content/guide/catacombs.yaml (sketch; names are examples)
 id: catacombs
-category: dungeon            # realm | dungeon | boss | basics
-chapter: chapter_1           # realmforge:chapter whose players can read it
-subject: catacombs           # optional: the dungeon type, boss or dimension it describes
+category: dungeon                 # realm | dungeon | boss | basics
+chapter: realmforge:chapter_1     # the realmforge:chapter whose players can read it
+subject: realmforge:catacombs     # optional: the dungeon type, boss or dimension it describes
 title: {en_us: Catacombs, cs_cz: Katakomby}
 summary: {en_us: "Dungeon in the stone realm, levels {level_min}-{level_max}", cs_cz: "..."}
 text:
   en_us: |
     An open crypt under the stone realm's mines...
-related: [stone_realm, bone_warden]
+related: [realmforge:stone_realm, realmforge:bone_warden]
 keywords: {en_us: [crypt, undead]}
-requires: []                 # optional extra unlocks, same types as dimension access
+requires: []                      # optional extra unlocks, same types as dimension access
 ```
 
 - **Facts come from the subject, never from prose** ([architecture 6.3](../architecture.md#63-conventions)): the
   generator fills the facts block and placeholders such as `{level_min}` from the dungeon type, boss or dimension
   rules the entry describes (level range, where it is, how to enter, its bosses and their levels, its notable
   rewards). A changed boss level changes the guide with it.
-- **One source for quests and the guide (PR-2):** a quest names a guide entry (`guide: catacombs`) and its FTB Quests
-  description gets the entry's summary and a "see the guide" line, generated from the same text. Teaching quests and
-  Basics entries share their text the same way, so nothing is written twice.
+- **One source for quests and the guide (PR-2):** a quest names a guide entry (`guide: realmforge:catacombs`) and
+  its FTB Quests description gets the entry's summary and a "see the guide" line, generated from the same text.
+  Teaching quests and Basics entries share their text the same way, so nothing is written twice.
 - **Generated:** a synced datapack registry `realmforge:guide_entry`
   (`data/realmforge/realmforge/guide_entry/<id>.json`) with the category, chapter, subject, related entries, the
   computed facts and translation keys (`guide_entry.realmforge.<id>.title`, …); the texts go into the generated
   `lang/en_us.json` and `cs_cz.json`.
 - **Validation** (Python): the chapter, subject, related entries and requirements exist; the subject fits the
-  category; every placeholder resolves; every realm, dungeon type and boss has a guide entry once the guide ships.
+  category; `requires` uses only requirement types the server recomputes on ([Unlock rule](#unlock-rule)); every
+  placeholder resolves; every realm, dungeon type and boss has a guide entry once the guide ships.
 
 ## Unlock rule
 
@@ -93,9 +94,14 @@ requires: []                 # optional extra unlocks, same types as dimension a
   (`realmforge:requirement_type`, [architecture 5.3](../architecture.md#53-type-registries)), for an entry that should
   wait for more than its chapter, such as a secret boss.
 - **The server decides** ([principle 1](../architecture.md#2-principles)): it evaluates the rule and sends the
-  player the set of readable entry ids on login, after a chapter advancement and after `/reload`. The client shows
-  and searches only those. The texts themselves reach every client with the registry and the lang files, which is
-  fine: locking prevents spoilers, it does not keep secrets.
+  player the set of readable entry ids on login and after `/reload`, and recomputes it whenever a requirement
+  type's input can change: an earned advancement (`AdvancementEvent.AdvancementEarnEvent`) for `chapter_completed`
+  (chapters complete through their advancements) and `has_advancement`, a level-up for `level_at_least`, and a
+  class change for `class_is`. It sends the set again only when it changed, since recipe unlocks are advancements
+  too. Validation accepts in `requires` only the requirement types with such a trigger, so a type added later
+  needs its trigger here first. The client shows and searches only the readable entries. The texts themselves
+  reach every client with the registry and the lang files, which is fine: locking prevents spoilers, it does not
+  keep secrets.
 
 ## Search
 
@@ -116,7 +122,9 @@ For the task that builds it ([architecture 4 and 18](../architecture.md#4-code-l
   (grouping, filtering, search, ordering), built from vanilla widgets (`EditBox`, a selection list, buttons, wrapped
   text, `GuiGraphics#renderItem` for icons);
 - tests: pytest for the schema, validation and generation; JUnit for the unlock rule and the search (accents,
-  ordering); a GameTest that a completed chapter advancement adds the next chapter's entries to the payload.
+  ordering); GameTests that a completed chapter advancement adds the next chapter's entries to the payload, and
+  that an entry gated by `requires` (`has_advancement`, `level_at_least`) joins it in the same session once the
+  player earns that advancement or reaches that level.
 
 Size M for the screen, the pipeline and the entries of the content that exists then; each later chapter adds its
 entries with its content.
