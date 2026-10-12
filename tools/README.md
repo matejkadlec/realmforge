@@ -24,7 +24,7 @@ uv run ruff check && uv run ruff format --check
 | `realmforge_tools/id_universe.py`, `vanilla.py` | the ID universe and the vanilla extractor |
 | `realmforge_tools/generate/` | generators; `generate_all` + `sync` own the generated directories; `datapack.py` writes every type in `DATAPACK_TYPES` as datapack registry entries (translation keys, unit conversion) |
 | `realmforge_tools/formats/` | deterministic PNG, NBT, gzip/zlib and JSON writers; a PNG reader for generator output |
-| `realmforge_tools/art/` | texture pipeline ([ADR 0022](../docs/decisions/0022-texture-generators.md)): palette, `rf art clean`, `rf art gallery` |
+| `realmforge_tools/art/` | texture pipeline ([ADR 0023](../docs/decisions/0023-texture-generator.md)): palette, `rf art clean`, `rf art gallery` |
 | `realmforge_tools/packboot.py` | `rf pack-boot`: installs and boots the pack with NeoForge's self tests ([below](#pack-boot)) |
 | `realmforge_tools/gamelog.py` | NeoForge log parsing shared by `rf pack-boot` and `rf gametest-log` ([below](#gametest-log)) |
 | `realmforge_tools/client_isolation.py` | the import check that keeps client classes under `client/` (architecture 18) |

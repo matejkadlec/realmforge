@@ -218,7 +218,7 @@ Recommendation (accepted, [ADR 0005](decisions/0005-content-pipeline-yaml-single
 
 ## 5. Assets
 
-Recommendation (accepted, [ADR 0007](decisions/0007-asset-pipeline.md); the generator choice refined by [ADR 0022](decisions/0022-texture-generators.md): Retro Diffusion Fast only): Retro Diffusion as the main texture generator, PixelLab as a cheap fallback, models via Blockbench MCP and GeckoLib, sounds from vanilla plus ElevenLabs. Both generators have an MCP server for Claude Code, so the agent calls them directly. Budget (2026-10-11): roughly 40-140 USD per month while producing assets, 0-18 USD per month otherwise (excluding VAT).
+Recommendation (accepted, [ADR 0007](decisions/0007-asset-pipeline.md); the generator choice refined by [ADR 0023](decisions/0023-texture-generator.md): Retro Diffusion Fast only): Retro Diffusion as the main texture generator, PixelLab as a cheap fallback, models via Blockbench MCP and GeckoLib, sounds from vanilla plus ElevenLabs. Both generators have an MCP server for Claude Code, so the agent calls them directly. Budget (2026-10-11): roughly 40-140 USD per month while producing assets, 0-18 USD per month otherwise (excluding VAT).
 
 ### Image generators
 
@@ -233,7 +233,7 @@ Recommendation (accepted, [ADR 0007](decisions/0007-asset-pipeline.md); the gene
 - Retro Diffusion wins: the only one with Minecraft-specific styles. It can also lock a palette, do seamless tiling (works for `rd_fast__mc_texture`, spike 5) and make cuboid 3D models exported to `.bbmodel` as a Blockbench draft.
 - Spike 5 (2026-10-12) compared both on the same 10 textures. Matěj picked Retro Diffusion Fast for all 10, cleaned
   to the project palette; PixelLab looked like a generic pixel-art game rather than Minecraft and is dropped
-  ([ADR 0022](decisions/0022-texture-generators.md), [results](../art/spike5/README.md)).
+  ([ADR 0023](decisions/0023-texture-generator.md), [results](../art/spike5/README.md)).
 - Big general models (GPT Image, Gemini) are only for concept art, e.g. three views of a mob.
 
 ### Texture pipeline

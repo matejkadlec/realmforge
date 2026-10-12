@@ -6,7 +6,7 @@ step and put them in one review gallery.
 **Outcome (2026-10-12):** Matěj picked Retro Diffusion Fast for all 10 textures and preferred the cleaned version
 of each: Retro Diffusion Plus "looks weird", and PixelLab "doesn't look like it's for Minecraft". Retro Diffusion
 Fast, cleaned to the project palette, is the texture generator
-([ADR 0022](../../docs/decisions/0022-texture-generators.md)). The PixelLab and Plus candidates stay here as the
+([ADR 0023](../../docs/decisions/0023-texture-generator.md)). The PixelLab and Plus candidates stay here as the
 spike's evidence.
 
 ```bash

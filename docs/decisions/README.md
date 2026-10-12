@@ -17,7 +17,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0004](0004-build-rpg-systems-in-house.md) | Build all RPG systems in-house | Accepted |
 | [0005](0005-content-pipeline-yaml-single-source-of-truth.md) | Content pipeline: YAML as the single source of truth | Accepted, amended by [0014](0014-core-mod-architecture.md) |
 | [0006](0006-quests-ftb-quests-generated-from-data.md) | Quests: FTB Quests generated from data | Accepted |
-| [0007](0007-asset-pipeline.md) | Asset pipeline | Accepted, refined by [0022](0022-texture-generators.md) |
+| [0007](0007-asset-pipeline.md) | Asset pipeline | Accepted, refined by [0023](0023-texture-generator.md) |
 | [0008](0008-distribution-github-and-curseforge.md) | Distribution: GitHub Releases now, CurseForge later | Accepted |
 | [0009](0009-licensing.md) | Licensing | Accepted |
 | [0010](0010-testing-strategy.md) | Testing strategy | Accepted, amended by [0018](0018-pack-boot-tests.md) |
@@ -33,7 +33,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0020](0020-cast-animations-and-melee-while-casting.md) | Cast animations through playerAnimator, no melee while casting | Accepted |
 | [0021](0021-status-overview-and-plan-changes.md) | A status overview ends every response; plan changes without a label | Accepted (amends 0015, 0016 and 0017) |
 | [0022](0022-playtest-before-the-pull-request.md) | Playtest before the pull request: qa1 and qa2 | Accepted (amends 0016 and 0021) |
-| [0022](0022-texture-generators.md) | Texture generator: Retro Diffusion Fast, cleaned to the project palette | Accepted (refines 0007) |
+| [0023](0023-texture-generator.md) | Texture generator: Retro Diffusion Fast, cleaned to the project palette | Accepted (refines 0007) |
 
 ## Open questions (not decided)
 

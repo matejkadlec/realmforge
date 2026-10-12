@@ -10,7 +10,7 @@ images before they are processed into game textures. Nothing here is loaded by t
 | `spike5/` | spike 5: the same 10 textures from Retro Diffusion and PixelLab, and their review gallery ([README](spike5/README.md)) |
 
 Texture pipeline ([ADR 0007](../docs/decisions/0007-asset-pipeline.md),
-[ADR 0022](../docs/decisions/0022-texture-generators.md)):
+[ADR 0023](../docs/decisions/0023-texture-generator.md)):
 
 1. Generate candidates through the generators' MCP servers and save them unchanged as
    `<batch>/<subject>/<candidate>.png`, with labels and prompts in `<batch>/gallery.yaml`.

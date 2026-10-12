@@ -1,4 +1,4 @@
-# 0022. Texture generator: Retro Diffusion Fast, cleaned to the project palette
+# 0023. Texture generator: Retro Diffusion Fast, cleaned to the project palette
 
 Date: 2026-10-12
 
