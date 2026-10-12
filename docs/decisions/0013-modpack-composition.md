@@ -28,7 +28,7 @@ The modpack wraps our core mod with third-party QoL, UI, performance and library
 ## Consequences
 
 - Updating mods is `packwiz update --all` plus a playtest; the pinned render stack is updated deliberately.
-- Some libraries are beta-channel builds (Structurize, BlockUI, Domum Ornamentum for MineColonies; JEI, MezzConfig, playerAnimator); `packwiz update` keeps picking the newest file regardless of channel.
+- `packwiz update` picks the newest file regardless of its release channel. Libraries that publish betas between releases are therefore pinned to their newest release build: Structurize, BlockUI and Domum Ornamentum for MineColonies, and JEI, whose release build needs no MezzConfig. playerAnimator has no release build and stays a beta ([pack README](../../pack/README.md#release-builds-of-libraries)).
 - Kotlin for Forge was added by hand, because packwiz didn't pull it as a dependency of Fzzy Config (EMI Loot). After every mod addition, check the dependencies the jars declare.
 - Better Combat depends on playerAnimator, which is no longer developed; our spell-casting animations must coexist with it (spike).
 - Quark adds content: if a server enables it, every client must too. packwiz-installer's CLI mode (used for servers) cannot choose options and installs Quark anyway; remove its jar on servers that should run without it.

@@ -104,22 +104,24 @@ repositories {
     }
 }
 
-// The versions the modpack ships (pack/mods/*.pw.toml). Spike 4, ADR 0020.
-def playerAnimatorVersion = '2.0.4+1.21.1-forge'
-def betterCombatVersion = '2.4.0+1.21.1-neoforge'
-def clothConfigVersion = '15.0.140+neoforge'
+// The builds the modpack ships, by Modrinth version id: each id is the `version` under [update.modrinth] in
+// pack/mods/<slug>.pw.toml. An id never changes, while a version number can be edited by its author. Update them
+// together with the pack; tools/tests/test_qa_mod_dependencies.py fails while one differs. Spike 4, ADR 0020.
+def playerAnimator = 'maven.modrinth:playeranimator:HJZB6bmA' // 2.0.4+1.21.1-forge
+def betterCombat = 'maven.modrinth:better-combat:VhIOvcXP' // 2.4.0+1.21.1-neoforge
+def clothConfig = 'maven.modrinth:cloth-config:izKINKFg' // 15.0.140+neoforge
 
 dependencies {
     implementation project(':mod')
 
     // playerAnimator, the animation library Better Combat uses: the QA mod's test cast animation (/qa cast).
-    implementation "maven.modrinth:playeranimator:${playerAnimatorVersion}"
+    implementation playerAnimator
 
     // Better Combat and its config library join the dev runs only with `-PwithBetterCombat`, so the default runs
     // and CI test the mods without it: ./gradlew runClient -PwithBetterCombat
     if (providers.gradleProperty('withBetterCombat').isPresent()) {
-        runtimeOnly "maven.modrinth:better-combat:${betterCombatVersion}"
-        runtimeOnly "maven.modrinth:cloth-config:${clothConfigVersion}"
+        runtimeOnly betterCombat
+        runtimeOnly clothConfig
     }
 }
 

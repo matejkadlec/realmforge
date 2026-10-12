@@ -22,7 +22,7 @@ metafile = true
 
 [[files]]
 file = "mods/blockui.pw.toml"
-hash = "0dc7230f27f24e0e64a36f5a26a6b430baaf6452a3c533bc7ae8e999f77b549b"
+hash = "3ecee76f621d0c71c814ea72ce6570ea694c76cbc65d39d5423f042dc7cc0c5b"
 metafile = true
 
 [[files]]
@@ -42,7 +42,7 @@ metafile = true
 
 [[files]]
 file = "mods/domum-ornamentum.pw.toml"
-hash = "d46331e2fffde2c3c2a952575e61827fb67ecbc200a030649bf3e08ad637c049"
+hash = "142c3b1d9fe3c576471db026920e76ee20c2663dea5d56775ae7697cd8bc300f"
 metafile = true
 
 [[files]]
@@ -117,7 +117,7 @@ metafile = true
 
 [[files]]
 file = "mods/jei.pw.toml"
-hash = "8bc018284b753276f8e3510101852809bcccdad31a7ae17847df210c71a2c512"
+hash = "c9397d739e667b9cafa27e1c260ddc35faba4400f949ff49d8e15bd6faeb8d48"
 metafile = true
 
 [[files]]
@@ -148,11 +148,6 @@ metafile = true
 [[files]]
 file = "mods/lithostitched.pw.toml"
 hash = "0294264654da6777cfbbbd24ffa6dd1d082768fa7ae28b36b76f78261f53fce9"
-metafile = true
-
-[[files]]
-file = "mods/mezzconfig.pw.toml"
-hash = "cf5d87f046590b99d92096a79f6ea2f456290ba5d423c256f06674d2d10a1592"
 metafile = true
 
 [[files]]
@@ -242,7 +237,7 @@ metafile = true
 
 [[files]]
 file = "mods/structurize.pw.toml"
-hash = "de6a284d3055d9d00a16be172b254a6fe74d1e181ed34cee1332054c0c8f860f"
+hash = "2d372aff2935a1ca34a3bb6aaa6ef2c83c1cf76c0edaee409f0f9b15c7aad192"
 metafile = true
 
 [[files]]
