@@ -12,7 +12,7 @@ The modpack wraps our core mod with third-party QoL, UI, performance and library
 
 - **packwiz** defines the pack in `pack/` (metadata only). Players and Prism install it with packwiz-installer. Mods come from Modrinth where possible and from CurseForge when they are CurseForge-only.
 - **Mods** (all verified to have NeoForge 1.21.1 builds on 2026-10-11; dependencies are pulled by packwiz):
-  - QoL and UI: Jade, Jade Addons, JEI, EMI, EMI Loot, EMI Ores, JEED, Enchantment Descriptions, Mouse Tweaks, AppleSkin, Overflowing Bars, TrashSlot, Just Zoom, Neat, Toast Control.
+  - QoL and UI: Jade, Jade Addons, JEI, EMI, EMI Loot, EMI Ores, JEED, Enchantment Descriptions, Mouse Tweaks, AppleSkin, Overflowing Bars, TrashSlot, Just Zoom, Neat, Toast Control, Yeetus Experimentus (added 2026-10-12 by RLM-84: skips the experimental-settings warning our data pack dimensions cause on every new world, [architecture 15.1](../architecture.md#151-dimensions)).
   - Map and travel: Xaero's Minimap, Xaero's World Map, Waystones.
   - Storage: Sophisticated Storage, Sophisticated Backpacks, Tom's Simple Storage.
   - World: Regions Unexplored, HT's TreeChop, Quark (**optional, disabled by default**).
@@ -22,7 +22,7 @@ The modpack wraps our core mod with third-party QoL, UI, performance and library
 - **Replacements:** Neat replaces YDM's MobHealthBar. Toast Control temporarily replaces Toast Remover.
 - **Missing on NeoForge 1.21.1, to be built by us later:** EMI Trades, Damage Numbers, No Recipe Book, Lightweight Inventory Sorting.
 - **Pinned render stack:** Sodium 0.6.13 + Iris 1.8.12 (the stable pair; stable Iris 1.8.12 only works with Sodium 0.6.13, and Sodium 0.8.x needs Iris 1.8.14-beta.1) + Distant Horizons 3.3.3. These three change only together and only after a test with a DH-capable shaderpack.
-- **Sides are set per mod** in each `.pw.toml`: client for rendering and UI-only mods (Sodium, Iris, Distant Horizons, ImmediatelyFast, EntityCulling, Xaero's maps, Neat, Toast Control, Just Zoom, Mouse Tweaks, Overflowing Bars, JEED, Enchantment Descriptions); both for everything that adds content, syncs data or is a library.
+- **Sides are set per mod** in each `.pw.toml`: client for rendering and UI-only mods (Sodium, Iris, Distant Horizons, ImmediatelyFast, EntityCulling, Xaero's maps, Neat, Toast Control, Just Zoom, Mouse Tweaks, Overflowing Bars, JEED, Enchantment Descriptions, Yeetus Experimentus); both for everything that adds content, syncs data or is a library.
 - `packwiz refresh` must leave the committed index unchanged (CI check).
 
 ## Consequences
