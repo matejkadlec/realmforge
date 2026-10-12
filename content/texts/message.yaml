@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# Chat and action bar messages (message.realmforge.<name>).
+id: message
+texts:
+  dark_vision_off:
+    en_us: Dark Vision off
+    cs_cz: Temné vidění vypnuto
+  dark_vision_on:
+    en_us: Dark Vision on
+    cs_cz: Temné vidění zapnuto

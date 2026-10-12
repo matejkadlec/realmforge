@@ -11,6 +11,7 @@ from realmforge_tools.id_universe import IdUniverse, load_vanilla
 from realmforge_tools.problems import Problem, ValidationFailed
 from realmforge_tools.project import MOD_ID, RepoPaths
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES
+from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
 
 ITEM_REGISTRY = "minecraft:item"
@@ -21,6 +22,13 @@ DIMENSION_TYPE_REGISTRY = "minecraft:dimension_type"
 REGISTRY_OF_TYPE: dict[str, str] = {
     "items": ITEM_REGISTRY,
     **{t.directory: f"{MOD_ID}:{t.registry}" for t in DATAPACK_TYPES},
+}
+
+# Translation key prefixes other content types generate (`item.realmforge.<id>`, `curve.realmforge.<id>.name`): a
+# text group with one of these ids could produce the same key as an entry of that type.
+RESERVED_TEXT_GROUPS: dict[str, str] = {
+    "item": "content/items/",
+    **{t.registry: f"content/{t.directory}/" for t in DATAPACK_TYPES},
 }
 
 
@@ -51,6 +59,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_ids(content)
     problems += _check_references(content, universe)
     problems += _check_worldgen_references(content, universe)
+    problems += _check_text_groups(content)
     return problems
 
 
@@ -86,6 +95,35 @@ def _check_references(content: Content, universe: IdUniverse) -> list[Problem]:
                         entry.source, f"creative_tabs.{i}", _unknown(tab, CREATIVE_TAB_REGISTRY, universe)
                     )
                 )
+    return problems
+
+
+def _check_text_groups(content: Content) -> list[Problem]:
+    """Text groups must not reuse another type's key prefix, and their Java constants must be unique."""
+    problems: list[Problem] = []
+    constants: dict[str, str] = {}
+    for entry in content.texts:
+        group = entry.model.id
+        if group in RESERVED_TEXT_GROUPS:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "id",
+                    f"{group!r} is the translation key prefix of {RESERVED_TEXT_GROUPS[group]}; "
+                    "name the group after what the texts are (key, message, ...)",
+                )
+            )
+        for name in entry.model.texts:
+            constant = text_constant(group, name)
+            if constant in constants:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"texts.{name}",
+                        f"Java constant {constant} is also generated for {constants[constant]}",
+                    )
+                )
+            constants.setdefault(constant, f"{entry.source} (texts.{name})")
     return problems
 
 

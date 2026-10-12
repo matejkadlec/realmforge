@@ -1,0 +1,67 @@
+{
+  "$defs": {
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text in every supported locale. en_us is required; missing locales fall back to it.",
+      "properties": {
+        "cs_cz": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Czech. Optional.",
+          "title": "Cs Cz"
+        },
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A group of texts sharing the translation key prefix ``<id>.realmforge.``, for example ``key`` for key\nmapping names (``key.realmforge.dark_vision``) or ``message`` for chat and action bar messages.",
+  "properties": {
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "texts": {
+      "description": "Text name (lowercase snake_case) -> text; the key is <id>.realmforge.<name>.",
+      "minProperties": 1,
+      "patternProperties": {
+        "^[a-z][a-z0-9_]*$": {
+          "$ref": "#/$defs/LocalizedText"
+        }
+      },
+      "propertyNames": {
+        "maxLength": 64
+      },
+      "title": "Texts",
+      "type": "object"
+    }
+  },
+  "required": [
+    "id",
+    "texts"
+  ],
+  "title": "TextGroupDef",
+  "type": "object"
+}

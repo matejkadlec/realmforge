@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# Key mapping names in Options > Controls (key.realmforge.<name>); `category` heads the group of our keys.
+id: key
+texts:
+  category:
+    en_us: Realmforge
+  dark_vision:
+    en_us: Toggle Dark Vision
+    cs_cz: Přepnout temné vidění

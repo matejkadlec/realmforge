@@ -8,11 +8,13 @@ from dataclasses import dataclass
 
 from realmforge_tools.schema.curve import CurveDef
 from realmforge_tools.schema.item import ItemDef
+from realmforge_tools.schema.text import TextGroupDef
 
 # content/<directory> -> model. One YAML file per entry; the file name (without .yaml) must equal the id.
 CONTENT_TYPES: dict[str, type] = {
     "items": ItemDef,
     "curves": CurveDef,
+    "texts": TextGroupDef,
 }
 
 # content/worldgen/ holds vanilla worldgen JSON instead of YAML; it is validated and copied (content.py, validate.py).
@@ -30,4 +32,12 @@ class DatapackType:
 # Content types generated into data/realmforge/realmforge/<registry>/<id>.json by generate/datapack.py.
 DATAPACK_TYPES: tuple[DatapackType, ...] = (DatapackType("curves", "curve"),)
 
-__all__ = ["CONTENT_TYPES", "DATAPACK_TYPES", "WORLDGEN_DIR", "CurveDef", "DatapackType", "ItemDef"]
+__all__ = [
+    "CONTENT_TYPES",
+    "DATAPACK_TYPES",
+    "WORLDGEN_DIR",
+    "CurveDef",
+    "DatapackType",
+    "ItemDef",
+    "TextGroupDef",
+]
