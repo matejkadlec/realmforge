@@ -43,11 +43,13 @@ publishing; this skill may not weaken either. _qa1: playtest passed_ there holds
    playtest was Matěj's last required step. This session has taken the batch over: its worktree and local branch
    count as created by this session, so `monitor-pr` removes them after the merge.
 
-**A pull request that waits for a reconfirmation** (_Reconfirmation_): `qa1` publishes nothing new. It passes
-only the head Matěj played, the one the latest `🎮 Playtest handoff` names: when the pull request moved on since
-then and the new commits change gameplay (_QA classification_), it hands those back for another playtest
-instead. Otherwise it records the `🎮 Playtest passed` for that head on each ticket, moves the tickets to Pending
-CR, and the `monitor-pr` run continues to the merge. One `monitor-pr` run owns a pull request: when the answer
-comes in the session whose run waits for this playtest, that run carries on. In any other session, ask Matěj
-first whether that run has stopped; only then does `qa1` continue `monitor-pr` here, and otherwise it changes
-nothing and points him to the waiting session.
+**A pull request that waits for a reconfirmation** (_Reconfirmation_): `qa1` publishes nothing new. It passes only
+the head Matěj played, the one the latest `🎮 Playtest handoff` names: when the pull request moved on since then and
+the new commits change gameplay (_QA classification_), it hands those back for another playtest instead. Otherwise
+it first rewrites the pull request description's `Playtest passed: played <sha>, published <sha>` line to name that
+head (`gh api -X PATCH repos/matejkadlec/realmforge/pulls/<n> -F body=@<file>`), the record that survives a failed
+Jira write, then records the `🎮 Playtest passed` for that head on each ticket, moves the tickets to Pending CR, and
+the `monitor-pr` run continues to the merge. One `monitor-pr` run owns a pull request: when the answer comes in the
+session whose run waits for this playtest, that run carries on. In any other session, ask Matěj first whether that
+run has stopped; only then does `qa1` continue `monitor-pr` here, and otherwise it changes nothing and points him to
+the waiting session.

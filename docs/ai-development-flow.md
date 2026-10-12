@@ -369,8 +369,9 @@ Matěj's `qa1` passes the playtest and authorizes publishing the batch. The
 
 For a pull request that waits for a [reconfirmation](#reconfirmation), `qa1` instead passes only the head Matěj
 played (the one the latest `🎮 Playtest handoff` names; gameplay commits added since then go back to him for
-another playtest), records the `🎮 Playtest passed` for that head on each ticket, moves the tickets to Pending CR,
-and the `monitor-pr` run continues to the merge. One `monitor-pr` run owns a pull request: an
+another playtest), rewrites the description's `Playtest passed` line to name that head (the record that survives
+a failed Jira write), records the `🎮 Playtest passed` for that head on each ticket, moves the tickets to Pending
+CR, and the `monitor-pr` run continues to the merge. One `monitor-pr` run owns a pull request: an
 answer in the session whose run waits for it continues that run; in any other session `qa1` first asks Matěj
 whether the waiting run has stopped, and acts only then.
 

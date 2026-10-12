@@ -384,18 +384,21 @@ Check all of these on one fresh reading, in order:
    `mergeable` and not `dirty`.
 4. A fresh listing shows every review thread resolved. An open thread sends the run back to step 3 or 4.
 5. No human review requests changes.
-6. No ticket of the pull request is in Pending User QA (a reconfirmation waiting for Matěj), no badge-labelled
-   Codex finding outside a thread is waiting for the user (step 3), and nothing else the user asked to hold for
-   their own judgment is pending. When Matěj played the pull request's changes, find the **played head**, the
-   later of: the published head the latest `🎮 Playtest passed` comment on its tickets names (from `qa1`); the
-   published head in the description's `Playtest passed: played <sha>, published <sha>` line (`qa1` writes it,
-   so it survives a failed Jira write). When the commits this pull request added after the played head (not
-   changes that came in with `master`) change gameplay, as the flow's "QA classification" defines it, the current
-   head was never played: move the tickets back under "Jira tickets" ("Reconfirmation") and go to "User needed":
-   ask Matěj to retest the head with the launch commands for its branch and answer `qa1` or `qa2` with what is
-   wrong. Commits that change nothing a player sees (docs, tests, a refactor its tests cover, a merge of `master`
-   whose conflict resolutions touch nothing a player sees) need no new playtest. A change to `docs/roadmap.md` is
-   no hold ([ADR 0021](../../../docs/decisions/0021-status-overview-and-plan-changes.md)).
+6. No ticket of the pull request is in Pending User QA (a reconfirmation waiting for Matěj), no badge-labelled Codex
+   finding outside a thread is waiting for the user (step 3), and nothing else the user asked to hold for their own
+   judgment is pending. A ticket left in Pending User QA although the description's `Playtest passed` line already
+   names the head its latest `🎮 Playtest handoff` asked Matěj to retest means his `qa1` passed it and only the Jira
+   move failed: retry the move under "Jira tickets" and do not hold the merge for it. When Matěj played the pull
+   request's changes, find the **played head**, the later of: the published head the latest `🎮 Playtest passed`
+   comment on its tickets names (from `qa1`); the published head in the description's `Playtest passed: played
+   <sha>, published <sha>` line (`qa1` writes it, so it survives a failed Jira write). When the commits this pull
+   request added after the played head (not changes that came in with `master`) change gameplay, as the flow's "QA
+   classification" defines it, the current head was never played: move the tickets back under "Jira tickets"
+   ("Reconfirmation") and go to "User needed": ask Matěj to retest the head with the launch commands for its branch
+   and answer `qa1` or `qa2` with what is wrong. Commits that change nothing a player sees (docs, tests, a refactor
+   its tests cover, a merge of `master` whose conflict resolutions touch nothing a player sees) need no new
+   playtest. A change to `docs/roadmap.md` is no hold
+   ([ADR 0021](../../../docs/decisions/0021-status-overview-and-plan-changes.md)).
 7. In fallback mode: a Clean `finalize-pr` reviewed this exact head, or the user approved this exact head after
    a Capped or Disagreement report.
 8. The head you checked is still the head.
