@@ -180,9 +180,10 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
   outside creative:
   - cannot break or place blocks (`BlockEvent.BreakEvent` and `BlockEvent.EntityPlaceEvent` are cancelled for
     them), except that they may place a block in the tag `#realmforge:landing_placeable`, which holds the Waystones
-    mod's waystone (*verify* its id), on the one free spot the landing reserves for it beside the frame, for the
-    waystone fallback below. Anywhere else in the zone the tag gives no exception, so no stray waystone can block the
-    landing;
+    mod's waystone (*verify* its id), on the free spot the landing reserves for it beside the frame, for the
+    waystone fallback below. The spot is two blocks high, because a waystone is a two-block block (a lower and an
+    upper half, *verify* in the pack's Waystones version), and both halves belong there. Anywhere else in the zone
+    the tag gives no exception, so no stray waystone can block the landing;
   - cannot use buckets. `BucketItem#use` places and picks up fluids with `Level#setBlock` and posts no block event
     ([architecture 15.5](../architecture.md#155-instances)), so, as in instances,
     `PlayerInteractEvent.RightClickItem` is cancelled for a `BucketItem` when the player stands in the zone or aims
@@ -199,13 +200,13 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
   **The landing also repairs itself,** because the guards above only cover the edits that post an event: once a second
   while a landing's chunks are loaded, its box (the floor, the frame and the air above the floor, about 180 blocks) is
   compared with what the landing built. A block or fluid that does not belong there is removed without a drop, and a
-  missing floor, frame, portal or light block is put back, the portal open on return; a waystone on the reserved spot
-  belongs there. So whatever gets in by a way no guard covers (water or lava flowing in, sand or gravel falling in,
-  another mod) never closes the way to the portal or the arrival spot for more than a second. Plain flow and falling
-  blocks post no event, hence the check; a fluid that would create a block in the zone (lava making stone or fire) is
-  also refused with `BlockEvent.FluidPlaceBlockEvent`, which fires only for that. A player in a realm can then always
-  get home. If the frame is gone while no chunk of the landing is loaded (an operator, another mod), the next arrival
-  rebuilds it in place.
+  missing floor, frame, portal or light block is put back, the portal open on return; a waystone, both halves, on the
+  reserved spot belongs there. So whatever gets in by a way no guard covers (water or lava flowing in, sand or gravel
+  falling in, another mod) never closes the way to the portal or the arrival spot for more than a second. Plain flow
+  and falling blocks post no event, hence the check; a fluid that would create a block in the zone (lava making stone
+  or fire) is also refused with `BlockEvent.FluidPlaceBlockEvent`, which fires only for that. A player in a realm can
+  then always get home. If the frame is gone while no chunk of the landing is loaded (an operator, another mod), the
+  next arrival rebuilds it in place.
 - **Arrival puts the player on the floor in front of the frame, facing away from it,** not inside the portal, so
   nobody bounces straight back. Every arrival checks that spot first (solid floor and 2 blocks of air); when
   something still blocks it (an operator, a fluid, another mod), the player lands on the nearest safe spot next to
@@ -412,7 +413,7 @@ Tests:
     one;
   - a bucket used in the landing's zone is refused, water flowing into a portal's opening leaves its portal blocks in
     place, and lava poured or gravel dropped just outside the zone is gone from the landing's box within a second,
-    while a waystone on the reserved spot stays;
+    while a waystone on the reserved spot, both halves, stays;
   - TNT lit by a player next to the landing leaves its zone unchanged, and so does a piston pushing blocks into it
     or out of it from below;
   - the selector refuses in the instance dimension;
