@@ -41,6 +41,73 @@ uv sync && uv run rf gen && uv run pytest   # validate content, regenerate, test
 This project is developed mostly by AI agents; [CLAUDE.md](CLAUDE.md) is their guide and the best technical
 overview of the repository.
 
+## Git worktree cleanup
+
+`./git_clean_worktrees.sh` removes local branches already merged into `origin/master`, with their attached
+worktrees, and orphaned worktree folders in the two worktree homes: Claude Code's session worktrees in
+`.claude/worktrees/` (gitignored) and the flow worktrees in `../realmforge-worktrees/`. It fails closed: anything
+that may hold unmerged work, or that it cannot inspect, is kept and reported; keeping a checkout with real work is
+an ordinary keep, and `ERROR` means a worktree could not be inspected. Run it from the primary checkout yourself;
+agents never run it on a real checkout.
+
+```bash
+./git_clean_worktrees.sh
+./git_clean_worktrees.sh --closed-prs        # also closed, unmerged PRs; type DELETE to confirm
+./git_clean_worktrees.sh --closed-prs --yes  # the same, confirmed non-interactively
+./git_clean_worktrees.sh --rewritten-prs     # also partly covered rewritten branches; type DELETE to confirm
+bash tests/test_git_clean_worktrees.sh       # its safety regression suite (CI runs it in the content job)
+```
+
+Requirements: Git 2.40 or newer, and `gh` authenticated for `matejkadlec/realmforge`. Every rule that needs a pull
+request fails closed without `gh`: the branch or folder is kept.
+
+- A branch whose commits were rewritten before they merged (a playtest branch that `qa1` rebased, a commit a
+  later review fix in the same pull request changed) is no ancestor of `origin/master` although its work is
+  there. It is removed like a merged branch when its remote branch is gone or already in `origin/master`, and
+  every commit it holds outside `origin/master` is already delivered: merging the whole branch changes nothing (as
+  after a squash), or, commit by commit, `origin/master` gained the same patch, whitespace included
+  (`git patch-id --verbatim`; `git cherry` ignores whitespace), or applying the commit alone changes nothing (a
+  merge commit against its first parent), or (for a commit a rebase with conflicts or a later review fix rewrote,
+  and only once GitHub's newest pull request for the branch is merged into `master` as a merge commit with none
+  open) GitHub holds the exact commit, a commit of that pull request has its subject (conventional-commit type
+  and scope aside), and every line the commit adds or removes is covered, file by file: the pull request's final
+  change (its merge commit against the first parent, never its intermediate commits) made it in that file, or
+  `origin/master`'s version of the file holds the added line or no longer holds the removed one. The merges need
+  `git merge-tree --merge-base` (Git 2.40; older Git relies on the other checks and says so). A commit made only
+  in this checkout, or a change the merge left out, passes none of them, and a branch whose remote still holds
+  unmerged commits may be in a playtest or review, so both are kept.
+- A rewritten branch its merged pull request covers only in part (review rewrote some of its lines, so those
+  lines of the local copy are not in `origin/master`) is kept and reported with its uncovered line count.
+  `--rewritten-prs` deletes it, with its worktree, once `DELETE` or `--yes` confirms (asked separately from
+  `--closed-prs`), when every other condition above holds and the pull request's own commits made at least 80 % of
+  each commit's changed lines, so a subject never decides alone.
+- Known limitation: the coverage check reads text lines, so binary, empty-file and mode-only changes are not
+  measured. A commit made only of them is kept; one that mixes them with text is judged by its text lines alone.
+- `claude/*` session branches follow the same rules; the prefix decides nothing. A session that never committed
+  is an ancestor of `origin/master` and goes with its clean worktree; one whose pull request merged after a rebase
+  or a revision goes under the rewritten-branch rules or is offered by `--rewritten-prs`; one with uncommitted
+  changes or commits that exist nowhere else is kept and reported.
+- A worktree is removed only when it is pristine or every change Git reports is already byte-identical to
+  `origin/master`. **The ignored files inside it are discarded with it**, which here includes `run/` (dev client
+  and server worlds) and `.local/`: move a world you built in a worktree elsewhere before running the cleanup.
+  Renames, copies, unmerged records, permission-bit differences, a staged change the working tree then modified
+  or deleted, and any content not already in `origin/master` keep the checkout.
+- An orphaned folder directly inside a worktree home is removed only when it is recognized generated residue
+  (only `.gradle/`, `build/`, `mod/build/`, `qa-mod/build/`, `.venv/`, `.pytest_cache/`, `.ruff_cache/`,
+  `.cache/` and `__pycache__/` content; never `run/` or `.local/`), or when its stale `.git` pointer belongs to
+  this repository, GitHub identifies one merged branch head for it, and every remaining tracked file still matches
+  that head. A folder matches a branch by name: `realmforge-worktrees/feat-rlm-17-x` matches `feat/rlm-17-x`
+  (every `/` as `-`), `.claude/worktrees/bold-hawking` matches `claude/bold-hawking` (or `NAME-<slug>` under at
+  most one prefix) and `worktree-bold-hawking` (`claude --worktree`), and every matching merged pull request and
+  local branch must be the same merged commit.
+- The current branch, `master`, `recovery/*` branches, worktrees with real uncommitted work, empty or unknown
+  folders, nested registered worktrees, a symlinked home (or a symlinked `.claude/`), modified orphan files, and
+  anything with ambiguous or partially unavailable metadata are kept. Only the two homes are scanned for orphans;
+  registered worktrees elsewhere are handled through their branch. A worktree location changed in the Claude
+  desktop app's settings is not scanned.
+- `--closed-prs` deletes a branch only when its remote branch is gone, GitHub reports one closed unmerged pull
+  request whose head exactly matches it, and any attached worktree is removable under the same rule.
+
 ## Distribution
 
 Releases will be published on GitHub Releases, CurseForge later. Not on Modrinth.
