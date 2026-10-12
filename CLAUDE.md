@@ -301,7 +301,9 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
    build.
 4. Keep `CLAUDE.md`, `docs/` and the relevant READMEs current in the same PR when commands, structure, rules or
    decisions change (the roadmap only when the plan changes). Stale docs mislead the next session.
-5. Open the PR against `master` with `gh pr create`, then run `/monitor-pr <n>`. CI (`.github/workflows/ci.yml`)
+5. Open the PR against `master` with `gh pr create`, then run `/monitor-pr <n>`. Work that needs Matěj's
+   playtest opens no PR before his `qa1`: push the branch and hand it off instead
+   ([flow: Playtest handoff](docs/ai-development-flow.md#playtest-handoff)). CI (`.github/workflows/ci.yml`)
    runs: content pipeline + generated-files check, Gradle build + JUnit + GameTests, vanilla ID universe
    reproducibility, packwiz index (these four are the required checks on `master`), and the full pack boot on a
    dedicated server and on a client ([ADR 0018](docs/decisions/0018-pack-boot-tests.md)).
