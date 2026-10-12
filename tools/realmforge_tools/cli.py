@@ -5,6 +5,7 @@ uv run rf gen               validate, then regenerate every generated file
 uv run rf gen --check       exit 1 if any generated file is out of date (writes nothing)
 uv run rf ids vanilla       re-extract the vanilla ID universe from the official server jar (needs Java 21)
 uv run rf pack-boot         boot the whole pack plus the core mod jar on a server and a client (needs Java 21)
+uv run rf gametest-log      exit 1 if the last GameTest run logged a data loading error (after runGameTestServer)
 """
 
 from __future__ import annotations
@@ -13,7 +14,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from realmforge_tools import packboot, vanilla
+from realmforge_tools import gamelog, packboot, vanilla
 from realmforge_tools.generate import generate_all, sync
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import MINECRAFT_VERSION, RepoPaths
@@ -51,6 +52,12 @@ def main(argv: list[str] | None = None) -> int:
         help="boot with the optional mods, without them, or both (default)",
     )
 
+    gametest_log = commands.add_parser(
+        "gametest-log",
+        help="check the log of the last ./gradlew runGameTestServer; exit 1 on data loading errors",
+    )
+    gametest_log.add_argument("--log", type=Path, help="log file (default: run/gametest/logs/latest.log)")
+
     args = parser.parse_args(argv)
     paths = RepoPaths()
 
@@ -62,6 +69,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "pack-boot":
         return _pack_boot(args, paths)
 
+    if args.command == "gametest-log":
+        return _gametest_log(args.log or gamelog.gametest_log(paths), paths)
+
     try:
         content, _ = load_and_validate(paths)
     except ValidationFailed as e:
@@ -71,7 +81,10 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if args.command == "validate":
-        print(f"Content OK: {len(content.items)} item(s).")
+        print(
+            f"Content OK: {len(content.items)} item(s), {len(content.curves)} curve(s), "
+            f"{len(content.worldgen)} worldgen file(s)."
+        )
         return 0
 
     result = sync(generate_all(content, paths), paths, check=args.check)
@@ -86,6 +99,20 @@ def main(argv: list[str] | None = None) -> int:
     for line in result.lines():
         print(line)
     print("Generated files are up to date." if result.clean else f"Updated {len(result.lines())} file(s).")
+    return 0
+
+
+def _gametest_log(log: Path, paths: RepoPaths) -> int:
+    if not log.is_file():
+        print(f"FAIL {paths.rel(log)} does not exist; run ./gradlew runGameTestServer first", flush=True)
+        return 1
+    problems = gamelog.gametest_problems(log.read_text(encoding="utf-8", errors="replace"))
+    if problems:
+        print(f"FAIL {paths.rel(log)}: {len(problems)} problem(s)", flush=True)
+        for problem in problems:
+            print("  " + problem.replace("\n", "\n  "), flush=True)
+        return 1
+    print(f"OK   {paths.rel(log)}: no data loading errors", flush=True)
     return 0
 
 

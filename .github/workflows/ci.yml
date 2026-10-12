@@ -64,11 +64,22 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          enable-cache: true
+
       - name: Build and JUnit
         run: ./gradlew build --console=plain
 
       - name: GameTests (headless)
         run: ./gradlew runGameTestServer --console=plain
+
+      # Vanilla skips a broken loot table, recipe, advancement or tag with an ERROR line, so the GameTests alone
+      # pass without it (architecture 6.1). `uv run rf gametest-log` fails on those lines.
+      - name: GameTest log has no data loading errors
+        run: |
+          uv sync --locked
+          uv run rf gametest-log
 
       - name: Upload logs and reports
         if: failure()
