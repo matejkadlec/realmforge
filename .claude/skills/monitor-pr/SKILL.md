@@ -367,10 +367,11 @@ expects: RLM's transitions are all global, so Jira refuses no stale move.
 - **Playtest passed again:** Matěj's `qa1` records it and moves the tickets itself (the [`qa1`](../qa1/SKILL.md)
   skill). When he removes the label instead, record the `🎮 Playtest passed` for the current head on each ticket
   and move the tickets from Pending User QA to Pending CR (`51`).
-- **Playtest failed:** his `qa2`, or a problem he reports from the playtest in this session or on the pull
-  request while the label is set, follows the [`qa2`](../qa2/SKILL.md) skill on this branch: the tickets go to In
-  Progress (`31`), the fix is pushed once to the pull request, and they return to Pending User QA (`41`) with the
-  revision recorded. The label stays.
+- **Playtest failed:** his `qa2` with what is wrong, in this session or any later one, follows the
+  [`qa2`](../qa2/SKILL.md) skill on this branch: the tickets go to In Progress (`31`), the fix is pushed once to
+  the pull request, and they return to Pending User QA (`41`) with the revision recorded. The label stays. This
+  run reads no top-level pull request comments, so the reconfirmation handoff asks for `qa1` or `qa2`, not a
+  comment.
 - **After the merge:** move every ticket to Done (`71`) with one comment: the pull request, the merge commit and
   the checks it passed. When the merged pull request reverts an earlier one, return that one's tickets to To Do
   (`11`) in the active sprint, with a comment naming the revert and the failure.
