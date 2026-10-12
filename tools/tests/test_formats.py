@@ -25,7 +25,7 @@ def test_nbt_round_trip() -> None:
     root = {
         "byte": nbt.Byte(-1),
         "short": nbt.Short(300),
-        "int": nbt.Int(3955),
+        "int": nbt.Int(4790),
         "long": nbt.Long(2**40),
         "float": nbt.Float(0.5),
         "double": nbt.Double(1.25),
