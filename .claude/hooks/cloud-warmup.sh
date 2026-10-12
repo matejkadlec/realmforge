@@ -2,7 +2,8 @@
 # Claude Code SessionStart hooks for cloud sessions (claude.ai/code, cloud sessions started from the desktop app).
 # The hook modes exit at once unless CLAUDE_CODE_REMOTE is true, so local sessions are unaffected.
 #
-#   cloud-warmup.sh --env   synchronous hook (milliseconds): route PyPI through the agent proxy for the session
+#   cloud-warmup.sh --env   synchronous hook (milliseconds): route PyPI through the agent proxy for the session;
+#                           at startup and resume, tell Claude when the warm-up below is about to run
 #   cloud-warmup.sh         async hook at startup and resume: `uv sync --locked`, then the first Gradle run
 #                           (distribution, dependencies, NeoForm setup, build/mc-sources/, compile); the Gradle
 #                           daemon keeps running
@@ -41,6 +42,30 @@ except ValueError:
 hosts = sorted({f["host"].rsplit(":", 1)[0] for f in failures if f.get("host") and f.get("ts", "") >= since})
 print(" ".join(h for h in hosts if h in log))
 ' "$1" "$log" 2>/dev/null
+}
+
+# Hash of the build inputs a warm-up covers.
+build_inputs() {
+  (cd "$root" && cat gradle.properties gradle/wrapper/gradle-wrapper.properties settings.gradle \
+    build.gradle ./*/build.gradle uv.lock pyproject.toml .python-version 2>/dev/null | sha256sum | cut -d' ' -f1)
+}
+
+# True when the last warm-up finished for exactly these build inputs, so a new one would skip.
+warmup_current() {
+  [ "$(cat "$state/status" 2>/dev/null)" = "done" ] && [ "$(cat "$state/stamp" 2>/dev/null)" = "$1" ] \
+    && [ -d "$root/build/mc-sources" ]
+}
+
+# The SessionStart source (startup, resume, clear or compact) from the hook input on stdin; empty without one.
+hook_source() {
+  [ -t 0 ] && return 0
+  python3 -I -c '
+import json, sys
+try:
+    print(json.load(sys.stdin).get("source", ""))
+except (ValueError, AttributeError):
+    pass
+' 2>/dev/null
 }
 
 # A warm-up holds the lock for as long as it runs.
@@ -124,12 +149,8 @@ warm_up() {
   flock -n 9 || return 0 # another warm-up is running
 
   local inputs
-  inputs="$(cd "$root" && cat gradle.properties gradle/wrapper/gradle-wrapper.properties settings.gradle \
-    build.gradle ./*/build.gradle uv.lock pyproject.toml .python-version 2>/dev/null | sha256sum | cut -d' ' -f1)"
-  if [ "$(cat "$state/status" 2>/dev/null)" = "done" ] && [ "$(cat "$state/stamp" 2>/dev/null)" = "$inputs" ] \
-    && [ -d "$root/build/mc-sources" ]; then
-    return 0
-  fi
+  inputs="$(build_inputs)"
+  warmup_current "$inputs" && return 0
 
   local since started summary hosts failed_step=""
   since="$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)"
@@ -177,6 +198,17 @@ case "${1:-}" in
     if route_pypi_through_proxy && [ -n "${CLAUDE_ENV_FILE:-}" ]; then
       printf "export NO_PROXY='%s' no_proxy='%s'\n" "$NO_PROXY" "$NO_PROXY" >>"$CLAUDE_ENV_FILE"
     fi
+    # The async warm-up reports only when it ends. On a resume with changed build inputs or after a failed
+    # warm-up, the agent would not know that a Gradle run is starting next to its own, so say it now.
+    case "$(hook_source)" in
+      startup | resume)
+        if ! warmup_current "$(build_inputs)"; then
+          notice="Cloud warm-up is starting in the background (uv sync, then the first Gradle run). Run"
+          notice+=" \`.claude/hooks/cloud-warmup.sh --wait\` (Bash timeout 10 minutes) before the next Gradle command."
+          report "$notice"
+        fi
+        ;;
+    esac
     ;;
   --wait)
     wait_for_warmup "${2:-540}"

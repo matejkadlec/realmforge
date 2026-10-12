@@ -112,6 +112,11 @@ is already open (a reconfirmation) is answered in the session that asked for it.
 Windows 11 shows Linux GUI apps through **WSLg**, so `./gradlew runClient` in WSL opens the game window on the
 Windows desktop. Use it for quick checks: does the game load, does the item show up, does a screen open.
 
+To check an agent's batch in WSL, play from a **playtest checkout**, a detached worktree of the handed-off head
+(`../realmforge-worktrees/<dir>-playtest`), never from the agent's own worktree: the agent may build or rebase
+there while the game runs. The handoff gives the commands
+([AI development flow](ai-development-flow.md#launch-commands)).
+
 - **Mouse look does not work.** The camera snaps to straight down and does not follow the mouse: WSLg passes input
   over Wayland and RDP and gives GLFW no relative pointer lock, which first-person mouse look needs
   ([microsoft/wslg#376](https://github.com/microsoft/wslg/issues/376)). Our code cannot fix it, so anything that
@@ -188,6 +193,22 @@ in `~/.mcp-auth/`, so later sessions reuse it. `/mcp` in a Claude Code terminal 
 connected. `.claude/settings.json` allows the Atlassian tools without a prompt, because the flows move and
 comment on tickets on their own. Cloud sessions use the claude.ai Atlassian connector instead.
 
+**Retro Diffusion (MCP).** Textures come from Retro Diffusion Fast through its hosted MCP server
+([ADR 0023](decisions/0023-texture-generator.md), [art/README.md](../art/README.md)). It is not in `.mcp.json`,
+because it authenticates with a personal API key that never enters the repository. Add it once per machine at
+user scope, so it works in every worktree, with a key from Developer Tools on retrodiffusion.ai (keys start with
+`rdpk-`):
+
+```bash
+claude mcp add --scope user --transport http retro-diffusion https://mcp.retrodiffusion.ai/mcp \
+  --header "Authorization: Bearer rdpk-..."
+```
+
+Claude Code keeps the key in its user configuration (`~/.claude.json`), outside every checkout: never paste it
+into the repository, a ticket or a chat. `claude mcp list` (or `/mcp` in a session) shows `retro-diffusion` as
+connected. Generations spend prepaid credit, so agents ask Matěj before buying credit, and auto-refill stays off.
+Cloud sessions do not have this server, so texture batches run in a local session.
+
 **Gradle queue.** Agents running in several worktrees start their Gradle builds and GameTests through
 `.claude/scripts/gradle-queue.sh <task>`, which waits while the machine is short of memory
 ([AI development flow](ai-development-flow.md#gradle-queue)).
@@ -204,7 +225,11 @@ are unaffected.
 
 - **`cloud-warmup.sh --env`** (synchronous, milliseconds). The container resolves no hostnames itself; every
   download goes through Claude's HTTPS proxy. Its `NO_PROXY` still lists PyPI, so uv would skip the proxy and fail
-  with `dns error`. The hook removes PyPI from `NO_PROXY` for the whole session (via `CLAUDE_ENV_FILE`).
+  with `dns error`. The hook removes PyPI from `NO_PROXY` for the whole session (via `CLAUDE_ENV_FILE`). At
+  `startup` and `resume` (the `source` in the hook input) it also tells Claude, as session context, when the
+  warm-up below is about to run: no finished warm-up for the current build inputs (`status` not `done`, a changed
+  `stamp`, or no `build/mc-sources/`). A resumed session whose agent changed a build input, or whose last warm-up
+  failed, then knows to run `--wait` before its next Gradle command; with a matching stamp it prints nothing.
 - **`cloud-warmup.sh`** (`"async": true`, never delays the session). In the background it runs `uv sync --locked`,
   then `./gradlew :mod:extractMinecraftSources classes`: the Gradle distribution, all dependencies, the NeoForm
   decompile/recompile, `build/mc-sources/` and a first compile. The Gradle daemon keeps running for the agent's

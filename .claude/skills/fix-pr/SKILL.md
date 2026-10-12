@@ -258,13 +258,25 @@ severity badge such as `![P1 Badge](...)` followed by a bold title.
 - Two current findings that describe the same failure on the same input are duplicates. The second takes the
   first one's disposition and links to it.
 - Findings with different failures but one cause share the fix, and each reply names the shared commit.
-- **Tracked:** an RLM Jira ticket, never a GitHub issue ([flow, "Issues"](../../../docs/ai-development-flow.md#issues)).
-  Search `RLM` first (`searchJiraIssuesUsingJql`, `project = RLM AND text ~ "<terms>"`, with comments). If an
-  equivalent ticket is open, cite it and comment this pull request's evidence. If none is, create a Task in the
-  active sprint (parent RLM-1 for workflow and tooling, the milestone epic for game code; `## Context`, `## Task`,
-  `## Done when`) that carries the file, the scenario, the smallest fix, and any pull request it must wait for.
-  Group findings that share a file or a fix into one ticket. When no Atlassian tool reaches Jira, reply
-  `Tracked (Jira unreachable):` and list the follow-up in the report for Matěj.
+- **Tracked:** an RLM Jira ticket, never a GitHub issue
+  ([flow, "Follow-up tickets"](../../../docs/ai-development-flow.md#follow-up-tickets)). Search `RLM` first
+  (`searchJiraIssuesUsingJql`, `project = RLM AND text ~ "<terms>"`, with comments). An equivalent ticket decides
+  by its status:
+  - not Done or Rejected: cite it and comment this pull request's evidence;
+  - Rejected: create nothing. A P2 or P3 is Declined instead, citing the rejection reason; a P0 or P1 is Blocked,
+    for the user to rule on against that rejection. A ticket rejected as a duplicate stands for its original.
+    Only a finding that names a concrete failure the rejection reason does not cover gets a new ticket, which
+    cites the rejected one;
+  - none, or only a Done one: create a Task in the active sprint (parent RLM-1 for workflow and tooling, the
+    milestone epic for game code; `## Context`, `## Task`, `## Done when`) that carries the file, the scenario
+    and the smallest fix, with a `Relates` link to the Done ticket if there is one.
+
+  A follow-up about code or text this pull request adds must wait for its merge: link it as blocked by each
+  ticket the pull request's title names (`createIssueLink`, `type: Blocks`, `inwardIssue` that ticket,
+  `outwardIssue` the follow-up), so `flow1` defers it until they are Done. When the title names no ticket, create
+  it in the backlog instead of the active sprint, with this pull request in its `## Task`. Group findings that
+  share a file or a fix into one ticket. When no Atlassian tool reaches Jira, reply `Tracked (Jira unreachable):`
+  and list the follow-up in the report under "Follow-ups not ticketed", which carries it to Matěj.
 
 ## Severity
 
@@ -336,6 +348,8 @@ Include:
 - what was left unchanged and why;
 - the exact checks that passed;
 - any RLM tickets created or cited;
+- "Follow-ups not ticketed": every `Tracked (Jira unreachable)` follow-up with its file, scenario and smallest
+  fix, or "none";
 - any Codex thread left for the next round.
 
 With no current findings, say so and change nothing. When the pass ends the response (run on its own, not inside

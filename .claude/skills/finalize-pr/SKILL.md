@@ -104,7 +104,8 @@ It never merges, deploys or requests a Codex review.
      outside this pull request's scope.
    - When [`monitor-pr`](../monitor-pr/SKILL.md) gives a review round count, each reviewer round here adds one.
      From the pull request's fourth review round on, the "Late rounds" rule of [`fix-pr`](../fix-pr/SKILL.md)
-     applies: a P2 that names no concrete failure in normal use is rejected as churn, with that reason recorded.
+     applies: a P2 that names neither a concrete failure in normal use nor a regression that an earlier round's
+     fix introduced is rejected as churn, with that reason recorded.
    - A real but out-of-scope finding becomes an RLM Jira ticket under "Tracked" in "P3 disposition" (never a
      GitHub issue). Never dismiss it silently.
 
@@ -161,12 +162,24 @@ It never merges, deploys or requests a Codex review.
 You have read the code, so the judgment is yours and the user never rules on a P3. Verify each P3 as carefully
 as a P1, then close it in one of two ways:
 
-- **Tracked:** an RLM Jira ticket, never a GitHub issue ([flow, "Issues"](../../../docs/ai-development-flow.md#issues)).
-  Search `RLM` first (`searchJiraIssuesUsingJql`, `project = RLM AND text ~ "<terms>"`, with comments); if an
-  equivalent ticket is open, cite it and comment this pull request's evidence. Otherwise create a Task in the
-  active sprint (parent RLM-1 for workflow and tooling, the milestone epic for game code; `## Context`, `## Task`,
-  `## Done when`) with the file, the scenario and the smallest fix. Group P3s that share a file or a fix. When no
-  Atlassian tool reaches Jira, list the follow-up in the report for Matěj instead.
+- **Tracked:** an RLM Jira ticket, never a GitHub issue
+  ([flow, "Follow-up tickets"](../../../docs/ai-development-flow.md#follow-up-tickets)). Search `RLM` first
+  (`searchJiraIssuesUsingJql`, `project = RLM AND text ~ "<terms>"`, with comments). An equivalent ticket decides
+  by its status:
+  - not Done or Rejected: cite it and comment this pull request's evidence;
+  - Rejected: create nothing; the finding is Dropped (a P3) or rejected in step 4 (an out-of-scope P1 or P2),
+    citing the rejection reason. A ticket rejected as a duplicate stands for its original. Only a finding that
+    names a concrete failure the rejection reason does not cover gets a new ticket, which cites the rejected one;
+  - none, or only a Done one: create a Task in the active sprint (parent RLM-1 for workflow and tooling, the
+    milestone epic for game code; `## Context`, `## Task`, `## Done when`) with the file, the scenario and the
+    smallest fix, and a `Relates` link to the Done ticket if there is one.
+
+  A follow-up about code or text this pull request adds must wait for its merge: link it as blocked by each
+  ticket the pull request's title names (`createIssueLink`, `type: Blocks`, `inwardIssue` that ticket,
+  `outwardIssue` the follow-up), so `flow1` defers it until they are Done. When the title names no ticket, create
+  it in the backlog instead of the active sprint, with this pull request in its `## Task`. Group findings that
+  share a file or a fix. When no Atlassian tool reaches Jira, list the follow-up in the report under "Follow-ups
+  not ticketed" instead, which carries it to Matěj.
 - **Dropped:** record a concrete technical reason. "Low severity" alone is not one.
 
 Never fix a P3 on this branch. Never end the report with an offer to fix one "if you want".
@@ -176,7 +189,8 @@ Never fix a P3 on this branch. Never end the report with an offer to fix one "if
 - **Clean.** The last review left no P1 or P2 open against this pull request: each was absent, rejected in
   step 4 with a recorded concrete reason, or tracked as an out-of-scope RLM ticket (the report lists every
   rejection with its evidence and every ticket), and no fix landed after that review. A round whose findings
-  were all rejected or tracked stops the loop with this state.
+  were all rejected or tracked stops the loop with this state. When no Atlassian tool reaches Jira, an
+  out-of-scope P1 or P2 listed under "Follow-ups not ticketed" counts as tracked: it does not prevent Clean.
 - **Capped.** Three reviews ran and the third still found a P1 or P2, or a fix landed after the final review.
   Say plainly that the head carries changes no reviewer has seen. List what the last review found and what you
   did about it. Never start a fourth round. When both apply, Capped outranks Disagreement, and the report also
@@ -196,6 +210,8 @@ Include:
 - the rounds that ran, and why the loop stopped;
 - every finding with its severity and outcome: fixed, rejected with the reason, tracked as `RLM-<n>`, or
   dropped with the reason;
+- "Follow-ups not ticketed": every follow-up that could not become a ticket because Jira was unreachable, with
+  its file, scenario and smallest fix, or "none";
 - the exact checks that passed;
 - the finishing state.
 

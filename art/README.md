@@ -12,8 +12,9 @@ images before they are processed into game textures. Nothing here is loaded by t
 Texture pipeline ([ADR 0007](../docs/decisions/0007-asset-pipeline.md),
 [ADR 0023](../docs/decisions/0023-texture-generator.md)):
 
-1. Generate candidates through the generators' MCP servers and save them unchanged as
-   `<batch>/<subject>/<candidate>.png`, with labels and prompts in `<batch>/gallery.yaml`.
+1. Generate candidates with Retro Diffusion Fast through its MCP server (set up once per machine:
+   [dev setup](../docs/dev-setup.md#5-claude-code), "Retro Diffusion (MCP)"; cloud sessions lack it) and save them
+   unchanged as `<batch>/<subject>/<candidate>.png`, with labels and prompts in `<batch>/gallery.yaml`.
 2. `uv run rf art gallery <batch>` builds the review gallery (`.cache/art/`): every candidate before and after
    cleanup, tiled when it is opaque. Matěj picks.
 3. `uv run rf art clean <candidate>.png <texture>.png` produces the texture: reduced to the 16x16 grid, alpha
