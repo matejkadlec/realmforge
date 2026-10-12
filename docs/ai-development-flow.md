@@ -355,8 +355,9 @@ Matěj's `qa1` passes the playtest and authorizes publishing the batch. The
    for another playtest instead of being published.
 3. **Finish:** commit. When `origin/master` (for a stacked batch: its dependency branch) moved, rebase onto it
    and regenerate generated files with `uv run rf gen`. Whenever the head differs from the handed-off head the
-   gate last passed on, run the full gate again. A rebase whose conflicts touched game code changes what Matěj
-   played: push it and hand it back for another playtest, as a `qa2` revision does, instead of publishing.
+   gate last passed on, run the full gate again. A rebase whose conflict resolutions touch anything a player sees
+   ([QA classification](#qa-classification)) changes what Matěj played: push it and hand it back for another
+   playtest, as a `qa2` revision does, instead of publishing.
 4. **Publish** as in [Publication](#publication): push, one ready pull request without `needs-playtest`, the head
    read back. The description carries the line `Playtest passed: played <sha>, published <sha>`, so the played
    head survives a failed Jira write.

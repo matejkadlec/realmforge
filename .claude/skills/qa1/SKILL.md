@@ -26,8 +26,9 @@ publishing; this skill may not weaken either. _qa1: playtest passed_ there holds
 3. **Finish:** commit the coherent batch. When `origin/master` moved (for a stacked batch: its dependency
    branch), rebase onto it and regenerate generated files with `uv run rf gen`. Whenever the head differs from the
    handed-off head the gate last passed on (his commits or edits, a rebase), run the full gate again
-   (_Implementation and verification_, Gradle through the _Gradle queue_). A rebase whose conflicts touched game
-   code changes what Matěj played: push it and hand it back for another playtest, as `qa2` does, instead of
+   (_Implementation and verification_, Gradle through the _Gradle queue_). A rebase whose conflict resolutions
+   touch anything a player sees (_QA classification_: code, content, assets, pack configuration) changes what
+   Matěj played: push it and hand it back for another playtest, as `qa2` does, instead of
    publishing.
 4. **Publish** under _Publication_: push (leased as in step 2), open one ready pull request to `master` (a
    stacked batch: to its dependency branch, until that merges) without `needs-playtest`, and read the remote head
