@@ -18,7 +18,9 @@ with in-flight work or exceeds a cap, or a `cloud` run finds only local-only wor
 cloud session (`CLAUDE_CODE_REMOTE=true`) always runs as `cloud`. `cloud` selects only cloud-capable tickets and,
 when Next and To Do hold none that can start, ends without a claim and lists the local-only tickets left. `local`
 selects startable local-only tickets first, from Next and To Do alike, and falls back to normal priority when there
-are none. Name the mode in the batch announcement.
+are none. A `cloud` run never promotes a local-only ticket to keep Next filled, and when it finds a local-only
+step after its claim, it records `Location: local-only` on the tickets and splits that part off or
+releases the batch (_Run location_). Name the mode in the batch announcement.
 
 1. **Intake:** first run _Reconciling merged tickets_; a ticket that cannot be matched never blocks the run. Then
    follow _Intake and conflict control_: inspect the active sprint (Next before To Do), the in-flight tickets,
