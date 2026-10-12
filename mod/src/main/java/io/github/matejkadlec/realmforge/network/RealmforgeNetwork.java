@@ -1,6 +1,9 @@
 package io.github.matejkadlec.realmforge.network;
 
+import io.github.matejkadlec.realmforge.world.DarkVision;
+import io.github.matejkadlec.realmforge.world.net.ToggleDarkVisionPayload;
 import java.util.Objects;
+import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -31,6 +34,12 @@ public final class RealmforgeNetwork {
         // Each feature's payloads from its net/ package go here (architecture 17.3). Handlers run on the main thread
         // (the registrar's default). A client-bound handler is `(payload, context) -> clientHandler().onX(payload,
         // context)`; a server-bound one hands the intent to the feature's system, which validates every field.
+        registrar.playToServer(ToggleDarkVisionPayload.TYPE, ToggleDarkVisionPayload.STREAM_CODEC,
+                (payload, context) -> {
+                    if (context.player() instanceof ServerPlayer player) {
+                        DarkVision.toggle(player);
+                    }
+                });
     }
 
     /** Installs the client side's handler; {@code RealmforgeClient} calls this once at startup. */

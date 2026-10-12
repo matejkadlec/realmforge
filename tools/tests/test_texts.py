@@ -1,0 +1,101 @@
+from __future__ import annotations
+
+import json
+
+import pytest
+
+from realmforge_tools.generate import generate_all
+from realmforge_tools.problems import ValidationFailed
+from realmforge_tools.project import RepoPaths
+from realmforge_tools.validate import load_and_validate
+from tests.conftest import write
+
+GENERATED_TEXTS = "mod/src/generated/java/io/github/matejkadlec/realmforge/generated/GeneratedTexts.java"
+LANG = "mod/src/generated/resources/assets/realmforge/lang"
+
+HINTS = """\
+id: hint
+texts:
+  first_steps:
+    en_us: Press N
+    cs_cz: Stiskni N
+  english_only:
+    en_us: Only English
+"""
+
+
+def generate(repo: RepoPaths) -> dict[str, bytes]:
+    content, _ = load_and_validate(repo)
+    return {repo.rel(path): data for path, data in generate_all(content, repo).items()}
+
+
+def problems_for(repo: RepoPaths) -> list[str]:
+    with pytest.raises(ValidationFailed) as excinfo:
+        load_and_validate(repo)
+    return [str(p) for p in excinfo.value.problems]
+
+
+def test_texts_become_lang_keys_and_constants(repo: RepoPaths) -> None:
+    write(repo.content / "texts" / "hint.yaml", HINTS)
+    files = generate(repo)
+
+    en_us = json.loads(files[f"{LANG}/en_us.json"])
+    cs_cz = json.loads(files[f"{LANG}/cs_cz.json"])
+    assert en_us["hint.realmforge.first_steps"] == "Press N"
+    assert cs_cz["hint.realmforge.first_steps"] == "Stiskni N"
+    assert en_us["hint.realmforge.english_only"] == "Only English"
+    # A missing locale is left out, so the game falls back to English.
+    assert "hint.realmforge.english_only" not in cs_cz
+
+    java = files[GENERATED_TEXTS].decode()
+    assert 'public static final String HINT_FIRST_STEPS = "hint.realmforge.first_steps";' in java
+    assert 'public static final String HINT_ENGLISH_ONLY = "hint.realmforge.english_only";' in java
+    # Constants are sorted by name within a group, so the output does not depend on YAML key order.
+    assert java.index("HINT_ENGLISH_ONLY") < java.index("HINT_FIRST_STEPS")
+
+
+def test_repository_texts_cover_the_dark_vision_key(repo: RepoPaths) -> None:
+    files = generate(repo)
+    java = files[GENERATED_TEXTS].decode()
+    for constant in ("KEY_CATEGORY", "KEY_DARK_VISION", "MESSAGE_DARK_VISION_ON", "MESSAGE_DARK_VISION_OFF"):
+        assert f"public static final String {constant} = " in java
+    assert json.loads(files[f"{LANG}/en_us.json"])["key.realmforge.dark_vision"] == "Toggle Dark Vision"
+
+
+def test_text_comment_cannot_close_the_javadoc(repo: RepoPaths) -> None:
+    write(repo.content / "texts" / "hint.yaml", "id: hint\ntexts:\n  odd:\n    en_us: 'a */ b @c'\n")
+    java = generate(repo)[GENERATED_TEXTS].decode()
+    assert "a *&#47; b &#64;c" in java
+    assert "a */ b" not in java
+
+
+@pytest.mark.parametrize("group", ["item", "curve"])
+def test_group_may_not_reuse_another_types_key_prefix(repo: RepoPaths, group: str) -> None:
+    write(repo.content / "texts" / f"{group}.yaml", f"id: {group}\ntexts:\n  test_item:\n    en_us: Clash\n")
+    assert any(
+        f"texts/{group}.yaml: id: '{group}' is the translation key prefix of content/" in p
+        for p in problems_for(repo)
+    )
+
+
+def test_java_constants_must_be_unique(repo: RepoPaths) -> None:
+    write(repo.content / "texts" / "a_b.yaml", "id: a_b\ntexts:\n  c:\n    en_us: One\n")
+    write(repo.content / "texts" / "a.yaml", "id: a\ntexts:\n  b_c:\n    en_us: Two\n")
+    assert any("Java constant A_B_C is also generated for" in p for p in problems_for(repo))
+
+
+@pytest.mark.parametrize(
+    ("yaml", "expected"),
+    [
+        ("id: hint\ntexts: {}\n", "texts: Dictionary should have at least 1 item"),
+        (
+            "id: hint\ntexts:\n  Bad-Name:\n    en_us: X\n",
+            "texts.Bad-Name.[key]: String should match pattern",
+        ),
+        ("id: hint\ntexts:\n  a:\n    cs_cz: Jen česky\n", "texts.a.en_us: Field required"),
+        ("id: hint\n", "texts: Field required"),
+    ],
+)
+def test_invalid_text_groups_are_rejected(repo: RepoPaths, yaml: str, expected: str) -> None:
+    write(repo.content / "texts" / "hint.yaml", yaml)
+    assert any(expected in p for p in problems_for(repo))

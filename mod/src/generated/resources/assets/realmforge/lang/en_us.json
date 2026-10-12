@@ -1,4 +1,8 @@
 {
   "curve.realmforge.test_curve.name": "Test Curve",
-  "item.realmforge.test_item": "Test Item"
+  "item.realmforge.test_item": "Test Item",
+  "key.realmforge.category": "Realmforge",
+  "key.realmforge.dark_vision": "Toggle Dark Vision",
+  "message.realmforge.dark_vision_off": "Dark Vision off",
+  "message.realmforge.dark_vision_on": "Dark Vision on"
 }

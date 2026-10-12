@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.client;
 
 import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.client.input.DarkVisionKey;
 import io.github.matejkadlec.realmforge.client.network.ClientPayloadHandler;
 import io.github.matejkadlec.realmforge.network.RealmforgeNetwork;
 import net.neoforged.api.distmarker.Dist;
@@ -17,5 +18,6 @@ public final class RealmforgeClient {
     public RealmforgeClient(IEventBus modBus) {
         RealmforgeNetwork.installClientHandler(new ClientPayloadHandler());
         // Client registration events (HUD layers, key mappings, renderers, screens) are added to modBus here.
+        DarkVisionKey.register(modBus);
     }
 }
