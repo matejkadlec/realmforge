@@ -44,8 +44,9 @@ subjects:
       crest ornament centered on the top edge; the inside of the panel is plain dark navy with no text;
       symmetrical, straight edges, on a plain white background
   preview_nine_slice:
-    # Cropped to the opaque bounding box; corners copied, an 8-pixel strip per edge and an 8x8 center block tiled
-    # as a 1.21.1 nine_slice GUI sprite tiles them; the crest cut out and drawn centered on the top edge.
+    # A nine_slice sprite cut from the frame (cropped to its opaque bounding box): the corners, one 8-pixel strip
+    # per edge and an 8x8 center block as the regions between the borders, tiled to 400x240 as 1.21.1
+    # GuiGraphics#blitNineSlicedSprite tiles them; the crest cut out and drawn centered on the top edge.
     # rd-fast-2102: border 40 on all sides, strips right next to the corners, crest box (112,40)-(150,60).
     # rd-plus-2101: border left 36, top 44, right 36, bottom 36, strips 20 pixels from the corners (the first
     # pixels after each corner hold a stud), crest box (104,12)-(152,56).

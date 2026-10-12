@@ -29,12 +29,16 @@ Fast and Plus look bad. No ADR yet: Matěj picks from the shortlist below.
   thin gold lines, outline only; the style's automatic transparency handles the background.
 - **Cleanup:** `uv run rf art clean` on the five icons only.
 - **Previews** of the two frames picked below, both 400x240, with no generation cost:
-  - **nine-slice:** the frame cropped to its opaque bounding box; the four corners copied unchanged; each edge tiles
-    an 8-pixel strip and the center an 8x8 block, the way a 1.21.1 `nine_slice` GUI sprite is drawn
-    (`GuiGraphics#blitNineSlicedSprite` tiles edges and center, it does not stretch them); the crest cut out and
-    drawn centered on the top edge, as a separate sprite would be. Border widths were guessed so the corners hold
-    the corner ornaments: RD Fast 2102 40 on all sides; RD Plus 2101 left 36, top 44, right 36, bottom 36, with its
-    strips taken 20 pixels from the corners because the first pixels after each corner hold a stud.
+  - **nine-slice:** how a 1.21.1 `nine_slice` GUI sprite cut from the frame would draw.
+    `GuiGraphics#blitNineSlicedSprite` keeps the corners and tiles the whole region between the borders; it does
+    not stretch them. So the preview first cuts such a sprite from the frame (cropped to its opaque bounding box):
+    the four corners unchanged, one 8-pixel strip per edge and an 8x8 block from the panel's center as the regions
+    between the borders, and the crest cut out to be drawn as a separate sprite centered on the top edge. Then it
+    tiles that sprite to 400x240. The raw frame used as the sprite would tile its whole edge spans instead and
+    repeat the crest, the studs next to the corners and, on RD Plus 2101, the panel's vignette. Border widths were
+    guessed so the corners hold the corner ornaments: RD Fast 2102 40 on all sides; RD Plus 2101 left 36, top 44,
+    right 36, bottom 36, with its strips taken 20 pixels from the corners because the first pixels after each
+    corner hold a stud.
   - **stretched:** the cropped frame scaled to 400x240 with nearest-neighbour sampling.
 - **Measurements** on each frame (opaque pixels): its bounding box; left/right mirror symmetry as the share of
   mirrored pixel pairs whose colors differ visibly (OKLab distance above 0.05); edge straightness as the spread of
@@ -51,10 +55,10 @@ Fast and Plus look bad. No ADR yet: Matěj picks from the shortlist below.
 | RD Fast, mockup corner as input | only a corner (the input was a corner), cut off at the canvas edge: a bevelled gold bar with a filigree spray into the panel | the closest in style: the mockup's corner in pixel art | not a frame; the bar itself is straight | 0.03 USD |
 | RD Plus, mockup corner as input | a gold corner bracket with diamond studs; background removal took the dark panel too | motif close, no panel | not a frame | 0.06 USD |
 
-- **Previews:** both picked frames nine-slice cleanly at 400x240 once the crest is drawn on its own (with the crest
-  left in the top edge, tiling would repeat it). Stretching fails for both: it scales the frame unevenly
-  (RD Fast 2102 by 1.98x across and 1.26x down), so corners and pixels change shape. A resizable guide window needs
-  nine-slice.
+- **Previews:** cut into such a sprite (plain edge strips, the crest drawn on its own), both picked frames tile
+  cleanly at 400x240; tiling a raw frame's whole edge spans would repeat the crest and the studs. Stretching fails
+  for both: it scales the frame unevenly (RD Fast 2102 by 1.98x across and 1.26x down), so corners and pixels
+  change shape. A resizable guide window needs nine-slice.
 - **Icons** (5 x 0.03 USD): `rd_fast__mc_item` ignores "thin gold lines, outline only" and draws filled, shaded
   Minecraft items. All five read at 16x16, but the portal is a gold ring rather than a swirl, the key came out dark
   iron instead of gold, and the skull is bone-white with gold horns. Cleanup reduces them to 11-15 colors and visibly
@@ -67,10 +71,10 @@ The account balance went from 25.02 to 24.60 USD.
 ## Shortlist
 
 1. **RD Fast, seed 2102:** the closest full frame to the brief: bright gold, decorated corners, a crest, a flat
-   navy panel. It nine-slices cleanly with a 40-pixel border. To fix: the left/right asymmetry (mirror one half in an
-   editor, or regenerate), and the crest as its own sprite.
-2. **RD Plus, seed 2101:** the most symmetric and most ornate frame, and it nine-slices cleanly; but it is bronze
-   rather than gold, its band is heavier than thin, and it costs twice as much.
+   navy panel. Cut into a nine-slice sprite with a 40-pixel border and plain edge strips, it tiles cleanly. To fix:
+   the left/right asymmetry (mirror one half in an editor, or regenerate), and the crest as its own sprite.
+2. **RD Plus, seed 2101:** the most symmetric and most ornate frame, and a nine-slice sprite cut the same way tiles
+   cleanly; but it is bronze rather than gold, its band is heavier than thin, and it costs twice as much.
 3. **RD Fast with the mockup corner as input:** the closest to the mockup's style, but it returns only a corner. A
    frame would be that corner mirrored four ways plus tiled edges, at no extra generation cost; worth one follow-up
    if Matěj likes the look.
