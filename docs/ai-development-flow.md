@@ -959,7 +959,6 @@ A Claude Code cloud session (`CLAUDE_CODE_REMOTE=true`) runs the same flow; only
   `qa2` may run in the same cloud session or any later local or cloud one.
 - **No texture batches:** cloud sessions have no Retro Diffusion MCP server: it authenticates with Matěj's
   personal API key and is set up per machine, outside the repository ([dev setup](dev-setup.md#5-claude-code)). A
-  cloud session therefore never selects or claims a batch that generates textures (A1 and later art tickets,
-  [Batch selection](#batch-selection)) and leaves it where it is for a local session. The ticket stays eligible:
-  replenishing Next may still promote it, and the ledger needs no line for it.
+  cloud session therefore never selects, promotes or claims a batch that generates textures (A1 and later art
+  tickets, [Batch selection](#batch-selection)) and leaves it for a local session.
 - **Cleanup:** branch deletion and worktree removal stay with local sessions.
