@@ -251,8 +251,10 @@ for it:
 - [Dependencies](#dependencies) pulls in a dependency of a selected ticket.
 - `flow2` promotes and selects the tickets it creates or picks for Matěj's request directly, whatever else Next
   holds.
-- A `local` run ([Run location](#run-location)) promotes a startable local-only ticket from To Do and selects it
-  ahead of cloud-capable work in Next.
+- A [run location](#run-location) narrows what a run may select. A `local` run promotes a startable local-only
+  ticket from To Do and selects it ahead of cloud-capable work in Next. A `cloud` run whose Next holds no startable
+  cloud-capable ticket promotes the most appropriate startable cloud-capable To Do ticket or batch and selects it,
+  as rule 2 does for an empty Next.
 - **Direct work** on a ticket Matěj names in the session ("implement F1") promotes that ticket from To Do to Next
   and then claims it with the [atomic intake claim](#atomic-intake-claim), its dependencies included. Every other
   rule still applies: the ticket must not be [waiting on Matěj](#tickets-waiting-on-matěj) or in flight, and the
@@ -546,10 +548,13 @@ approved).
 
 The modes change only what is selected; every other rule of this document applies unchanged:
 
-- **`cloud`:** only cloud-capable tickets are eligible, in Next and To Do alike. A local-only ticket is neither
-  selected nor promoted, and a candidate whose unmet dependency is local-only is deferred. When Next and To Do hold
-  no startable cloud-capable ticket after the dependency, ownership and cap checks, the run claims nothing and ends
-  ([Concurrency and run boundaries](#concurrency-and-run-boundaries)); its status overview lists the local-only
+- **`cloud`:** only cloud-capable tickets are eligible for selection, in Next and To Do alike. A local-only ticket is
+  never selected, and a candidate whose unmet dependency is local-only is deferred. When Next holds no startable
+  cloud-capable ticket, the run promotes one from To Do (the exception in [Priority and the Next
+  queue](#priority-and-the-next-queue)). Keeping Next filled (rule 3 and the replenishment before a handoff) still
+  counts local-only tickets: a `cloud` run may promote one only for that, never to select it. When Next and To Do
+  hold no startable cloud-capable ticket after the dependency, ownership and cap checks, the run claims nothing and
+  ends ([Concurrency and run boundaries](#concurrency-and-run-boundaries)); its status overview lists the local-only
   tickets left under "Blocked or other", each with what it needs, so Matěj can start a `local` run for them.
 - **`local`:** local-only tickets come first, in Next and To Do alike, by priority among themselves: a startable
   local-only ticket in To Do is promoted and selected ahead of cloud-capable work in Next (the exception in
