@@ -583,8 +583,20 @@ and health far beyond vanilla, so:
    that window starts a new one. Spell, area and damage-over-time hits would be swallowed, and each would shield the
    target from the next sword swing. So the school damage types are in the `#minecraft:bypasses_cooldown` tag
    (generated), and spell hits keep the target's current window (`setInvulnerabilityTicks(target.invulnerableTime)`),
-   so they neither grant nor clear invulnerability. They still overwrite vanilla's protected `lastHurt`, so a melee
-   hit right after a spell hit can deal slightly more than in vanilla; task F5 decides whether that matters.
+   so they neither grant nor clear invulnerability. They still set vanilla's protected `lastHurt`, the amount every
+   later hit in the window is measured against (`LivingEntity#hurt` takes the `else` branch for a hit that bypasses
+   the cooldown and stores `lastHurt = amount`). Inside an open window a melee hit is therefore compared with the
+   last spell or damage-over-time hit, not with the hit that opened the window:
+   - **after a small one it lands almost in full:** a zombie hits a player for 6 (the window opens, `lastHurt` 6), a
+     DoT ticks for 1 three ticks later (`lastHurt` 1, window kept), and a second zombie hitting for 6 at tick 6
+     deals 5 instead of vanilla's 0. Any DoT on a target largely removes its in-window protection against melee
+     from mobs, pets and party members;
+   - **after a bigger one it is dropped:** a spell hit for 20 inside an open window sets `lastHurt` 20, and a melee
+     hit for 8 in the same window deals 0, where vanilla would deal the difference from the previous melee hit.
+
+   Task F5 measures this with a GameTest (a melee hit after a DoT tick inside the window) and decides: keep it,
+   restore `lastHurt` after each spell hit (an access transformer, [19.3](#193-mixins-and-access-transformers)), or
+   another approach.
 4. The reductions apply: armor (our formula), enchantments, effects. **`LivingDamageEvent.Pre`** sees the damage
    before absorption hearts take their share.
 5. **`LivingDamageEvent.Post`** reports what was actually taken from health: on-hit procs, combat text payloads,
@@ -791,6 +803,21 @@ for the caster and every tracking player, with the third-person model's arms in 
   `EntityJoinLevelEvent` fallback that runs the same leveling as `FinalizeSpawnEvent`: the level from the rules,
   the scaling modifiers, then the health refill. So the default level never passes for an assigned one, and no mob
   carries a level without its scaling.
+- **Conversions** (`Mob#convertTo`: a zombie drowns, a skeleton turns into a stray, a piglin or hoglin zombifies)
+  add the new mob with `addFreshEntity`, so the fallback above levels and scales it from the rules, and players
+  nearby already receive that level when they start tracking it. Only then does the caller post
+  `LivingConversionEvent.Post`, where NeoForge (`AttachmentInternals.onLivingConvert`) copies the old mob's
+  copy-on-death attachments onto the new one, `realmforge:level` included ([7](#7-player-state)), without syncing
+  them (`IEntityExtension#copyAttachmentsFrom`). Left alone, XP, loot and armor would use the old mob's level while
+  health and damage stay scaled for the rules' level, and clients would keep showing the rules' level. So `mob`
+  listens to `LivingConversionEvent.Post` at `EventPriority.LOW`, after NeoForge's copy: a new mob of a kind that
+  gets levels keeps the level it holds after the copy (the old mob's, or the fallback's when the old mob had none),
+  gets its scaling reapplied from it (as for a mob loaded from disk, keeping its health fraction), and is synced
+  with `syncData`; one of a kind that does not (a zombie villager cured into a villager) loses the level through
+  `removeData`, which syncs. Lightning conversions (`Pig#thunderHit`, `Villager#thunderHit`) post the event before
+  they add the new mob, so the listener finds no level there and leaves the mob to the join fallback. W1's GameTests convert a leveled mob (a piglin
+  summoned outside the Nether with `TimeInOverworld` 300 zombifies on its next tick) and check that its level and
+  scaled maximum health belong together.
 - **Saved mobs follow changed curves:** when a mob loads from disk (`EntityJoinLevelEvent` with `loadedFromDisk`),
   `mob` reapplies the scaling from its stored level and the current curves, replacing its
   `realmforge:mob_level/<n>` modifiers and keeping its health fraction. A release or data pack that changes a curve
@@ -946,8 +973,16 @@ and `dungeon/instance/`.
   lets an item with the `can_break` or `can_place_on` component (`DataComponents.CAN_BREAK`, `CAN_PLACE_ON`) edit
   matching blocks, and commands, data packs or other mods can hand out such items, so block breaks
   (`BlockEvent.BreakEvent`) and placements (`BlockEvent.EntityPlaceEvent`) by players who are not in creative mode
-  are cancelled there too. W4's GameTests use a bucket, flint and steel, an axe, a hoe and a tool with `can_break`,
-  and place and break blocks inside an instance, and expect the room unchanged.
+  are cancelled there too. Buckets get past both events: `BucketItem#use` (`MobBucketItem` included) checks only
+  `Player#mayUseItemAt`, which a matching `can_place_on` passes, then places or picks up the fluid with
+  `Level#setBlock` and posts no block event, and `CommonHooks.onPlaceItemIntoWorld` captures no block snapshots for
+  a `BucketItem`. So `PlayerInteractEvent.RightClickItem` is cancelled for a `BucketItem` used by a player who is
+  not in creative mode inside the dimension. `BucketItem` has no `useOn`, so a bucket reaches `use` only through
+  that event, and `RightClickBlock` stays alone: doors, levers and chests keep working with a bucket in hand. The
+  event fires on the client too (`MultiPlayerGameMode#useItem`), so the same listener stops the client's
+  prediction and no ghost fluid appears. W4's GameTests use a bucket (a plain one, and water, lava and empty
+  buckets with `can_place_on` matching a room block, placing and picking up), flint and steel, an axe, a hoe and a
+  tool with `can_break`, and place and break blocks inside an instance, and expect the room unchanged.
 - **Also inside:** respawn at the entrance, no natural spawns, leave through the exit portal or a command.
 - **Leaving and disconnects:** leaving by command or exit, respawning outside the dimension
   (`PlayerEvent.PlayerRespawnEvent`) or being teleported out (`PlayerEvent.PlayerChangedDimensionEvent`) leaves the
@@ -980,6 +1015,19 @@ depth limit.
     it). Our `AdvancementEarnEvent` listener raises the level cap. Character XP rewards use a `CommandReward` that
     runs our operator command `/realmforge xp`, so the generator writes `permission_level: 2` (FTB Quests' default
     is 0).
+  - **Every team member gets the chapter advancement** (checked in the FTB Quests 2101.1.36 jar, RLM-73). Quest
+    progress belongs to the FTB Teams team, while advancements and level caps are per player. FTB Quests records a
+    claimed reward under the claiming player, or under `Util.NIL_UUID` for a team reward (`QuestKey#forReward`),
+    so a team reward is claimed once, by the player who completes the quest, and the other members never get the
+    advancement. The chapter reward is therefore a per-player reward that claims itself: the generator writes
+    `team_reward: false` and `auto: "enabled"` (any value but `disabled`, and never `default`, which defers to the
+    quest file) on the `AdvancementReward`, and the quest file never sets `suppress_all_autoclaiming`. FTB Quests
+    then claims it for every online member when the quest completes (`TeamData#checkAutoCompletion`) and for each
+    other member at their next login (`ServerQuestFile#playerLoggedIn` runs the same check over every quest), a
+    player who joins the team later included; `TeamData#claimReward` grants a reward once per player
+    (`markRewardAsClaimed`). No FTB Quests API is needed, so decision 7 of
+    [ADR 0014](decisions/0014-core-mod-architecture.md) stands. Q1's pytest checks that every generated chapter
+    reward is per player and auto-claimed.
   - **Our mod → quests:** our criteria triggers (`Registries.TRIGGER_TYPE`) complete advancements generated from
     content: `realmforge:level_reached`, `boss_defeated`, `dungeon_completed`, `spell_cast`, `talent_learned`.
     Custom statistics (`Registries.CUSTOM_STAT`) count repeatable things such as dungeons cleared. FTB Quests'

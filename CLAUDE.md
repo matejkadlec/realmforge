@@ -190,7 +190,9 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
   `LivingDamageEvent` fires; a hit outside that window, or one that bypasses it, starts new invulnerability ticks.
   Damage that must always land (spells, damage over time) uses damage types in `#minecraft:bypasses_cooldown` and
   keeps the target's current window (`setInvulnerabilityTicks(target.invulnerableTime)`), so it neither grants nor
-  clears invulnerability ([architecture 9.1](docs/architecture.md#91-damage-pipeline)).
+  clears invulnerability. It still sets the `lastHurt` that later hits in the window are measured against: a melee
+  hit after a small spell or DoT tick lands almost in full, one after a bigger spell hit is dropped; task F5
+  decides what to keep ([architecture 9.1](docs/architecture.md#91-damage-pipeline)).
 - **Never cancel `LivingIncomingDamageEvent`:** in 21.1.259 `LivingEntity#hurt` then returns without popping the
   `DamageContainer` it pushed, so every cancel leaks one on the defender. Dodge and other "stop this hit" code use
   another mechanism ([architecture 9.1](docs/architecture.md#91-damage-pipeline)).
