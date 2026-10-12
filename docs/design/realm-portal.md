@@ -163,7 +163,8 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
   frame, with the frame's selector set to return, air 4 blocks high above the floor, light, and a safe pocket around
   it (RE-6: radius 3 by default, larger for a realm that needs it, such as an underwater one). Its spot is the one
   nearest the dimension's origin (x 0, z 0) where the landing fits between the floor and the ceiling, searched
-  within the realm's `y` range; when nothing fits, the landing is carved out at the range's middle. The origin is
+  within 16 blocks of the origin horizontally (the origin's chunk and its neighbours) and within the realm's `y`
+  range; when nothing fits there, the landing is carved out at the origin, at the range's middle. The origin is
   where the level rule's distance starts, and validation checks that the rule's depth part gives the arrival `y`
   range the realm's lowest level too ([architecture 14.1](../architecture.md#141-mob-levels)), so the landing sits
   in the realm's lowest-level area and no data can move it out. The search covers the cases AoA kept fixing (RE-2):
