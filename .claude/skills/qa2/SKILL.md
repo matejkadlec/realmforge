@@ -9,12 +9,11 @@ Follow `CLAUDE.md` and read [`docs/ai-development-flow.md`](../../../docs/ai-dev
 revising; this skill may not weaken either. _qa2: changes required_ there holds the rules.
 
 1. **Find the batch** as `qa1` does: the one this session handed off, the keys, branch or pull request Matěj
-   names, or the only batch waiting for a playtest (tickets in Pending User QA, or an open pull request with
-   `needs-playtest`, one outside the Jira flow included); with several and no hint, ask which one. Read his
+   names, or the only batch waiting for a playtest (its tickets in Pending User QA, with or without a pull
+   request); with several and no hint, ask which one. Read his
    feedback first: what changes the plan or needs his decision goes back to him under "Blocked or other", and its
    tickets stay in Pending User QA with the open question in a comment. Then move only the tickets whose feedback
-   this revision fixes from Pending User QA to In Progress; a pull request without tickets has no Jira step, here
-   or below.
+   this revision fixes from Pending User QA to In Progress.
 2. **Stay on the same branch:** no new branch and no replacement work. Reuse its worktree or create one from
    `origin/<branch>` after `git fetch origin`. Then bring the local branch up to `origin/<branch>` before
    anything else: `git merge --ff-only origin/<branch>`, or `git merge origin/<branch>` when both sides have
@@ -26,7 +25,8 @@ revising; this skill may not weaken either. _qa2: changes required_ there holds 
    the _Gradle queue_), then commit.
 5. **Push** the revision (`--force-with-lease` after a rebase) and read the remote head back. Open no pull request.
    A batch whose pull request waits for a reconfirmation (_Reconfirmation_) gets the new head on that pull
-   request, and its `monitor-pr` run carries on.
+   request, and its `monitor-pr` run carries on. Such a `qa2` belongs in the session whose `monitor-pr` run owns
+   the pull request; in any other session, ask Matěj first whether that run has stopped, as `qa1` does.
 6. **Record and move:** on each affected ticket, a new `🎮 Playtest handoff` for the revision (what changed, the
    new head, a What to test limited to it), which makes the new head the one Matěj plays next; then move the
    tickets back to Pending User QA. The batch keeps its playtest slot through the revision.
