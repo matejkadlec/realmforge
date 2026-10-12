@@ -17,7 +17,7 @@ Later topic research, starting with the reference games Craft to Exile 2, Advent
 | ID universe includes a full-pack registry dump | Vanilla reports now; the Registry Dump step is a TODO | [0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md) |
 | GameTests (location unspecified) | In the dev-only QA mod `realmforge_qa`; the release jar has no test code | [0010](decisions/0010-testing-strategy.md) |
 | Communicate with the owner in Czech | English | [vision](vision.md#owner) |
-| Remove Nether and End "if you choose it" | Still an open question | [Open questions](#open-questions) |
+| Remove Nether and End "if you choose it" | Removed (decided 2026-10-12); a late fire realm replaces the Nether, and the items get new sources | [0025](decisions/0025-remove-the-nether-and-end.md) |
 
 ## Inputs
 
@@ -157,7 +157,7 @@ All have NeoForge 1.21.1 builds. The pack only references them, nothing is forke
 | Villages, villagers, trades | Cisco's Medieval RPG | repeatable trade quests, later contracts (section 9) |
 | Structure locator | Explorer's Compass | none of its code (CC BY-NC-SA) |
 | Small UI | EMI Trades, Lightweight Inventory Sorting, YDM's MobHealthBar, Damage Numbers, Toast Remover, No Recipe Book | missing on 1.21.1 or Fabric-only. **Superseded in part:** Neat and Toast Control (temporary) cover two of them, see [overrides](#owner-overrides) |
-| Default world rules, Dark Vision toggle, possibly disabled Nether and End | Otherworld (Dark Vision) | notes below |
+| Default world rules, Dark Vision toggle, Nether and End removed ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)) | Otherworld (Dark Vision) | notes below |
 | QA and debug mod | Dummmmmmy | section 6 |
 
 ### Quests
@@ -173,7 +173,7 @@ All have NeoForge 1.21.1 builds. The pack only references them, nothing is forke
 
 ### Removing the Nether and End
 
-Only relevant if that option is chosen (open question). Vanilla ties materials and items to them, e.g. blaze rods, nether wart, quartz, netherite, shulker boxes, elytra. The "every item is obtainable" validation therefore also runs over vanilla recipes, and missing materials get another source, e.g. in our dimensions.
+Chosen on 2026-10-12 ([ADR 0025](decisions/0025-remove-the-nether-and-end.md), which maps the new sources). Vanilla ties materials and items to them, e.g. blaze rods, nether wart, quartz, netherite, shulker boxes, elytra. The "every item is obtainable" validation therefore also runs over vanilla recipes, and missing materials get another source, e.g. in our dimensions.
 
 ### Risks
 
@@ -443,7 +443,6 @@ Then architecture and a roadmap whose first milestone is a small playable vertic
 
 ## Open questions
 
-- Nether and End: overhaul or remove (consequences of removal: [above](#removing-the-nether-and-end)).
 - Seasons: explicitly not for now.
 
 ## Sources

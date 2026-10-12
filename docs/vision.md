@@ -2,7 +2,7 @@
 
 > Translated on 2026-10-11 from the owner's Czech original (Matěj's brief of 10-11 Oct 2026, kept almost verbatim). The English version is now the source of truth. It is written in the owner's voice ("I" = Matěj).
 >
-> Project name: **Realmforge**, mod ID `realmforge`, QA mod ID `realmforge_qa`, Java package `io.github.matejkadlec.realmforge`. Research background: [research-notes.md](research-notes.md). Decisions: [decisions/](decisions/README.md). Architecture: [architecture.md](architecture.md). Plan: [roadmap.md](roadmap.md).
+> Project name: **Realmforge**, mod ID `realmforge`, QA mod ID `realmforge_qa`, Java package `io.github.matejkadlec.realmforge`. Research background: [research-notes.md](research-notes.md). Decisions: [decisions/](decisions/README.md). Architecture: [architecture.md](architecture.md). Plan: [roadmap.md](roadmap.md). Realms: [design/realms.md](design/realms.md).
 
 ## Owner
 
@@ -28,7 +28,7 @@ An RPG experience for Minecraft, open source on GitHub. I'm making it mainly for
     - talents that have a big impact on the game, e.g. +50 melee damage/-50% ranged damage (a very simple example; I probably wouldn't want that particular talent)
   - stats and some stat bonuses for milestones (STR, DEX, INT...; 10 STR = +10% attack damage)
   - custom dimensions (e.g. 5-10 or even more new dimensions), procedurally generated
-  - improved/overhauled Nether/End, OR maybe remove them completely; I wouldn't mind at all as long as we have our own dimensions. FTB Architect Exodus also has only custom dimensions and that modpack felt incredibly polished to me. The Nether and End are in every, literally every pack; this would make ours stand out, and I'd be fine with that. (Status: open question, not decided.)
+  - improved/overhauled Nether/End, OR maybe remove them completely; I wouldn't mind at all as long as we have our own dimensions. FTB Architect Exodus also has only custom dimensions and that modpack felt incredibly polished to me. The Nether and End are in every, literally every pack; this would make ours stand out, and I'd be fine with that. (Status: decided on 2026-10-12: both are removed, and a late fire realm replaces the Nether; [ADR 0025](decisions/0025-remove-the-nether-and-end.md).)
   - improved/overhauled villages, villagers and trades
   - custom dungeons; 100+ structures, from small structures like a single building up to large dungeons like the Trial Chambers from newer vanilla MC
     - procedurally generated dungeons: not 1 fixed structure; 1 dungeon type can generate in a practically unlimited number of ways, it will look similar and follow the same rules, but no two dungeons will ever be the same (like most modded dungeons or vanilla mineshafts)
@@ -122,5 +122,4 @@ Everything above, but feel free to cut down everything: fewer races, fewer class
 
 Not decided yet; not to be treated as decisions:
 
-- Nether and End: overhaul them, or remove them entirely (consequences of removal: [research notes](research-notes.md#removing-the-nether-and-end)).
 - Seasons: explicitly not for now (not in v0.1, nor in the first several versions).
