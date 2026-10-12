@@ -32,10 +32,10 @@ Without options, safely remove local branches and their removable attached
 worktrees that are already merged into origin/master. A worktree is removable
 when it is pristine, or when every change Git reports is already byte-identical
 to origin/master, and it holds no file under run/ (worlds; GameTest output in
-run/gametest/ aside) or .local/, which Git ignores. This also removes fail-closed orphan worktree residue directly
-inside the two worktree homes: .claude/worktrees/ in the primary checkout
-(Claude Code session worktrees) and realmforge-worktrees/ beside it (flow
-worktrees).
+run/gametest/ aside) or .local/, which Git ignores. This also removes
+fail-closed orphan worktree residue directly inside the two worktree homes:
+.claude/worktrees/ in the primary checkout (Claude Code session worktrees) and
+realmforge-worktrees/ beside it (flow worktrees).
 
 A branch whose commits were rewritten before they merged, such as a playtest
 branch that qa1 rebased, also counts as merged when its remote branch is gone or
