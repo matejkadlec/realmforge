@@ -173,7 +173,8 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
   it) counts as gone: the next arrival builds a new landing at the spot nearest the origin inside the border
   and saves that one, so the player never arrives away from the portal.
 - **The landing cannot be broken, built over, flooded or switched.** Its protected zone is the landing's box (the
-  floor and the air above it) widened by 4 blocks on each side. In the zone, players outside creative:
+  floor and the air above it) widened by 4 blocks in every direction, below the floor included. In the zone, players
+  outside creative:
   - cannot break or place blocks (`BlockEvent.BreakEvent` and `BlockEvent.EntityPlaceEvent` are cancelled for
     them), except that they may place the blocks in the tag `#realmforge:landing_placeable`, which holds the
     Waystones mod's waystone (*verify* its id), for the waystone fallback below;
@@ -182,11 +183,14 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
     `PlayerInteractEvent.RightClickItem` is cancelled for a `BucketItem` when the player stands in the zone or aims
     at a block in it (`Entity#pick`).
 
-  No explosion changes the zone: every explosion's block list (`ExplosionEvent.Detonate#getAffectedBlocks`) loses the
-  positions inside it, player-lit TNT included, which the world's griefing protection otherwise lets break blocks
+  No piston moves a block of the zone, wherever the piston stands: a piston move (`PistonEvent.Pre`) is cancelled
+  when a block it pushes or destroys, or a position it pushes into, lies in the zone
+  (`PistonStructureResolver#getToPush` and `getToDestroy`). No explosion changes the zone: every explosion's block
+  list (`ExplosionEvent.Detonate#getAffectedBlocks`) loses the positions inside it, player-lit TNT included, which
+  the world's griefing protection otherwise lets break blocks
   ([architecture 19.1](../architecture.md#191-world-defaults)). The selector refuses sigils ("The landing always
-  leads home"). Fluids that flow in from outside the zone cannot remove the portal ([Edge cases](#edge-cases)), and the
-  arrival check below handles a flooded spot. A player in a realm can then always get home. If the frame is gone
+  leads home"). Fluids that flow in from outside the zone cannot remove the portal ([Edge cases](#edge-cases)), and
+  the arrival check below handles a flooded spot. A player in a realm can then always get home. If the frame is gone
   anyway (an operator, another mod), the next arrival rebuilds it in place.
 - **Arrival puts the player on the floor in front of the frame, facing away from it,** not inside the portal, so
   nobody bounces straight back. Every arrival checks that spot first (solid floor and 2 blocks of air); when
@@ -391,7 +395,8 @@ Tests:
     one;
   - a bucket used in the landing's zone is refused, and water flowing into a portal's opening leaves its portal
     blocks in place;
-  - TNT lit by a player next to the landing leaves its zone unchanged;
+  - TNT lit by a player next to the landing leaves its zone unchanged, and so does a piston pushing blocks into it
+    or out of it from below;
   - the selector refuses in the instance dimension;
   - an item, a mob and a mounted player do not travel through a portal, and a mob teleported into or out of a realm
     (as a leashed mob on a waystone warp) stays where it is;
