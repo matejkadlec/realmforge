@@ -320,10 +320,13 @@ arrival: {x: 0, z: 0, y: [20, 90], pocket_radius: 3, floor: realmforge:slate_bri
 - **`rf gen` writes** the registry entry, the unlock advancement `realmforge:realm/<id>`, the lang keys
   (`realm.realmforge.<id>.name`, ...) and GameTest expectations.
 - **Validation:** the dimension and the sigil exist; one realm per dimension; the sigil stacks to 1; the realm
-  dimension's `dimension_rules` access requirement includes the unlock advancement; every sigil has a renewable
-  source (a recipe, a repeatable quest, or the guaranteed drop of a boss that can be replayed), never only a one-time
-  reward, as the "every item obtainable" rule asks
-  ([ADR 0005](../decisions/0005-content-pipeline-yaml-single-source-of-truth.md)).
+  dimension's `dimension_rules` access requirement includes the unlock advancement.
+- **The sigil source check comes later.** Every sigil needs a renewable source (a recipe, a repeatable quest, or the
+  guaranteed drop of a boss that can be replayed), never only a one-time reward, as the "every item obtainable" rule
+  asks ([ADR 0005](../decisions/0005-content-pipeline-yaml-single-source-of-truth.md)). That rule is not in the
+  pipeline yet: it needs recipes, loot and quests as data, and quests arrive with Q1. The sigil check joins it then.
+  Until Q2 adds the chapter 1 quests, the Stone Sigil has no source in play: `/give` and a QA command hand it out
+  for tests and playtests, so W2 does not wait for Q2.
 - **Not in the data yet:** a realm map's positions and parents (RE-7) and a level band of its own (the levels come
   from `dimension_rules`, which stays on the server). They join when a client view needs them, synced with the realm
   entry.
@@ -377,8 +380,8 @@ A proposal for the M1 tasks, not a plan change:
 
 - **W2** builds the whole portal for one realm: the frame, the selector, the portal block, the Stone Sigil, the
   `realmforge:realm` entries for the Overworld and the stone realm, the unlock advancement and the access check,
-  the landing, the return, and the respawn rule. It uses vanilla particles and sounds; textures are placeholders
-  until the art pipeline makes them.
+  the landing, the return, and the respawn rule. Until Q2, the Stone Sigil comes from `/give` and the QA mod. It
+  uses vanilla particles and sounds; textures are placeholders until the art pipeline makes them.
 - **Q2** (chapter 1) adds the quests that walk through the frame and reward the Stone Sigil, and the repeatable
   quest that replaces a lost one.
 - **Later:** the desert and tundra sigils with M4's realms; a tinted overlay; our own sounds (A3); a realm map;
