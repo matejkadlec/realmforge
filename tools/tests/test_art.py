@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import re
 import struct
+import tracemalloc
 import zlib
 from pathlib import Path
 
@@ -94,6 +96,7 @@ def test_decode_grayscale_with_color_key() -> None:
         (_png(1, 1, 8, 6, [b"\x00" + bytes(4)], interlace=1), "interlaced"),
         (_png(1, 1, 8, 3, [b"\x00\x00"]), "without a PLTE"),
         (_png(2, 2, 8, 6, [b"\x00" + bytes(8)]), "shorter than the header"),
+        (_png(1, 1, 8, 6, [b"\x00" + bytes(4)] * 2), "longer than the header"),
         (_png(1, 1, 8, 6, [b"\x07" + bytes(4)]), "filter type 7"),
         (PNG_SIGNATURE + _chunk(b"IHDR", bytes(12)), "IHDR chunk has 12 bytes"),
         (_png(0, 1, 8, 6, [b"\x00"]), "a 0x1 image has no pixels"),
@@ -102,6 +105,30 @@ def test_decode_grayscale_with_color_key() -> None:
 def test_decode_rejects_broken_or_unsupported_files(data: bytes, message: str) -> None:
     with pytest.raises(PngError, match=message):
         decode_rgba(data)
+
+
+def _png_with_idat(width: int, height: int, idat: bytes) -> bytes:
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
+    return PNG_SIGNATURE + _chunk(b"IHDR", ihdr) + _chunk(b"IDAT", idat) + _chunk(b"IEND", b"")
+
+
+def test_decode_refuses_a_decompression_bomb_without_inflating_it() -> None:
+    # A 1x1 image whose image data is 64 MiB of zeros, about 64 KiB compressed.
+    bomb = _png_with_idat(1, 1, zlib.compress(bytes(64 * 1024 * 1024), 9))
+    tracemalloc.start()
+    try:
+        with pytest.raises(PngError, match="longer than the header"):
+            decode_rgba(bomb)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert peak < 4 * 1024 * 1024
+
+
+def test_decode_rejects_a_truncated_image_stream() -> None:
+    stream = zlib.compress(b"\x00" + bytes(4))[:-4]  # the scanline is complete, the Adler-32 checksum is cut
+    with pytest.raises(PngError, match="incomplete or truncated stream"):
+        decode_rgba(_png_with_idat(1, 1, stream))
 
 
 def test_decode_rejects_a_chunk_whose_crc_does_not_match() -> None:
@@ -284,6 +311,26 @@ def test_gallery_reports_a_broken_yaml_with_its_path(tmp_path: Path) -> None:
     (root / "gallery.yaml").write_text("subjects:\n  b_item: {title: Item, colour: red}\n", encoding="utf-8")
     with pytest.raises(gallery.GalleryError, match=r"gallery\.yaml: subjects\.b_item\.colour"):
         gallery.collect(root, PALETTE, 16)
+
+
+@pytest.mark.parametrize(
+    ("data", "message"),
+    [
+        (_png(1, 1, 8, 6, [b"\x00" + bytes(4)], interlace=1), "interlaced PNGs are not supported"),
+        (encode_rgba(20, 20, [RED] * 400), "a 20x20 image cannot be reduced to 16 pixels wide"),
+    ],
+    ids=["interlaced", "not-a-whole-grid"],
+)
+def test_gallery_names_the_candidate_it_cannot_read(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], data: bytes, message: str
+) -> None:
+    root = _candidates(tmp_path)
+    bad = root / "a_block" / "z.png"
+    bad.write_bytes(data)
+    with pytest.raises(gallery.GalleryError, match=f"^{re.escape(str(bad))}: {message}"):
+        gallery.collect(root, PALETTE, 16)
+    assert main(["art", "gallery", str(root), "--out", str(tmp_path / "g.html")]) == 1
+    assert f"rf art gallery: {bad}: {message}" in capsys.readouterr().err
 
 
 def test_gallery_reports_a_yaml_that_is_not_utf8(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

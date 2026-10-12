@@ -2,7 +2,8 @@
 
 The decoder reads what texture generators and image editors write: 8-bit grayscale, RGB, palette and RGBA images
 (palette and grayscale also at 1, 2 and 4 bits), with or without ``tRNS`` transparency. 16-bit and interlaced
-images are refused with a ``PngError``; re-export them as 8-bit, non-interlaced PNGs.
+images are refused with a ``PngError``; re-export them as 8-bit, non-interlaced PNGs. So is image data that
+inflates to more or less than the header promises, and it is never inflated past that size.
 """
 
 from __future__ import annotations
@@ -93,15 +94,23 @@ def decode_rgba(data: bytes) -> tuple[int, int, list[Rgba]]:
         raise PngError("interlaced PNGs are not supported; re-export without interlacing")
     if color_type == 3 and not palette:
         raise PngError("palette image without a PLTE chunk")
-    try:
-        raw = zlib.decompress(bytes(idat))
-    except zlib.error as e:
-        raise PngError(f"corrupt image data: {e}") from e
 
     bits_per_pixel = _CHANNELS[color_type] * depth
     stride = (width * bits_per_pixel + 7) // 8
-    if len(raw) < height * (stride + 1):
+    expected = height * (stride + 1)  # every scanline plus its filter byte
+    # Inflate at most one byte more than the header promises, so a small image with a huge compressed stream
+    # (a decompression bomb) is refused without being inflated.
+    inflater = zlib.decompressobj()
+    try:
+        raw = inflater.decompress(bytes(idat), expected + 1)
+    except zlib.error as e:
+        raise PngError(f"corrupt image data: {e}") from e
+    if len(raw) > expected:
+        raise PngError("image data is longer than the header promises")
+    if len(raw) < expected:
         raise PngError("image data is shorter than the header promises")
+    if not inflater.eof:
+        raise PngError("corrupt image data: incomplete or truncated stream")
     rows = _unfilter(raw, height, stride, max(1, bits_per_pixel // 8))
 
     pixels: list[Rgba] = []
