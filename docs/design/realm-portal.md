@@ -163,9 +163,10 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
   it (RE-6: radius 3 by default, larger for a realm that needs it, such as an underwater one). Its spot is the one
   nearest the dimension's origin (x 0, z 0) where the landing fits between the floor and the ceiling, searched
   within the realm's `y` range; when nothing fits, the landing is carved out at the range's middle. The origin is
-  where the level rule's distance starts, so the landing always sits in the realm's lowest-level area, and no data
-  can move it away. The search covers the cases AoA kept fixing (RE-2): a ceiling (the stone realm has a bedrock
-  one), a void below, water.
+  where the level rule's distance starts, and validation checks that the rule's depth part gives the arrival `y`
+  range the realm's lowest level too ([architecture 14.1](../architecture.md#141-mob-levels)), so the landing sits
+  in the realm's lowest-level area and no data can move it out. The search covers the cases AoA kept fixing (RE-2):
+  a ceiling (the stone realm has a bedrock one), a void below, water.
 - **The landing's position is saved** for the realm (a `SavedData` in the realm's level), so later arrivals look at
   one known place instead of searching a radius. Vanilla's nether portal search reads the point-of-interest data of
   every chunk within 128 blocks (`PortalForcer#findClosestPortalPosition` with `PoiManager#ensureLoadedAndValid`);
