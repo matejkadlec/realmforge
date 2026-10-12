@@ -204,7 +204,11 @@ are unaffected.
 
 - **`cloud-warmup.sh --env`** (synchronous, milliseconds). The container resolves no hostnames itself; every
   download goes through Claude's HTTPS proxy. Its `NO_PROXY` still lists PyPI, so uv would skip the proxy and fail
-  with `dns error`. The hook removes PyPI from `NO_PROXY` for the whole session (via `CLAUDE_ENV_FILE`).
+  with `dns error`. The hook removes PyPI from `NO_PROXY` for the whole session (via `CLAUDE_ENV_FILE`). At
+  `startup` and `resume` (the `source` in the hook input) it also tells Claude, as session context, when the
+  warm-up below is about to run: no finished warm-up for the current build inputs (`status` not `done`, a changed
+  `stamp`, or no `build/mc-sources/`). A resumed session whose agent changed a build input, or whose last warm-up
+  failed, then knows to run `--wait` before its next Gradle command; with a matching stamp it prints nothing.
 - **`cloud-warmup.sh`** (`"async": true`, never delays the session). In the background it runs `uv sync --locked`,
   then `./gradlew :mod:extractMinecraftSources classes`: the Gradle distribution, all dependencies, the NeoForm
   decompile/recompile, `build/mc-sources/` and a first compile. The Gradle daemon keeps running for the agent's
