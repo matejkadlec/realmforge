@@ -19,13 +19,13 @@ publishing; this skill may not weaken either. _qa1: playtest passed_ there holds
    push is leased on that fetched head (`--force-with-lease=<branch>:<sha>`). His uncommitted edits follow
    `CLAUDE.md`: fold small ones that belong to the batch into the next commit, and ask about anything larger.
 3. **Finish:** run the checks for anything that changed since the played head and commit the coherent batch.
-   When `origin/master` moved, rebase onto it, regenerate generated files with `uv run rf gen`, and run the full
-   gate (_Implementation and verification_, Gradle through the _Gradle queue_). A rebase whose conflicts touched
-   game code changes what Matěj played: push it and hand it back for another playtest, as `qa2` does, instead of
-   publishing.
-4. **Publish** under _Publication_: push (`--force-with-lease` after a rebase), open one ready pull request to
-   `master` without `needs-playtest`, its description naming the head Matěj played, and read the remote head back:
-   it must be your final commit.
+   When `origin/master` moved (for a stacked batch: its dependency branch), rebase onto it, regenerate generated
+   files with `uv run rf gen`, and run the full gate (_Implementation and verification_, Gradle through the
+   _Gradle queue_). A rebase whose conflicts touched game code changes what Matěj played: push it and hand it back
+   for another playtest, as `qa2` does, instead of publishing.
+4. **Publish** under _Publication_: push (leased as in step 2), open one ready pull request to `master` (a
+   stacked batch: to its dependency branch, until that merges) without `needs-playtest`, its description naming the
+   head Matěj played, and read the remote head back: it must be your final commit.
 5. **Record and move:** on each ticket, the `🎮 Playtest passed` (the played head, the head it is published as,
    Matěj's words if he gave any)
    and the `🤖 Claude QA` summary (what was verified, the pull request, the head); then move every ticket of the

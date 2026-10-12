@@ -350,9 +350,9 @@ Matěj's `qa1` passes the playtest and authorizes publishing the batch. The
    leased on that fetched head. His uncommitted edits in the worktree follow `CLAUDE.md`: fold small ones that
    belong to the batch into the next commit, ask about anything larger.
 3. **Finish:** run the checks for anything that changed since the played head and commit. When `origin/master`
-   moved, rebase onto it, regenerate generated files with `uv run rf gen`, and run the full gate again. A rebase
-   whose conflicts touched game code changes what Matěj played: push it and hand it back for another playtest, as
-   a `qa2` revision does, instead of publishing.
+   (for a stacked batch: its dependency branch) moved, rebase onto it, regenerate generated files with
+   `uv run rf gen`, and run the full gate again. A rebase whose conflicts touched game code changes what Matěj
+   played: push it and hand it back for another playtest, as a `qa2` revision does, instead of publishing.
 4. **Publish** as in [Publication](#publication): push, one ready pull request without `needs-playtest`, the head
    read back. The description says which head Matěj played and when.
 5. **Record** on each ticket the `🎮 Playtest passed` (the played head, the head it was published as, his words if
