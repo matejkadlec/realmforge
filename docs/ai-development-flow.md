@@ -167,7 +167,8 @@ flowchart LR
 ```
 
 - **To Do:** in the active sprint, not queued yet.
-- **Next:** the curated execution queue of the active sprint, never empty while eligible To Do tickets remain.
+- **Next:** the curated execution queue of the active sprint, never empty while eligible To Do tickets remain (for
+  a `cloud` run's upkeep, eligible means cloud-capable: [Run location](#run-location)).
 - **In Progress:** a session claimed it and implementation began.
 - **Pending User QA:** a playtest batch waits for Matěj's playtest, and nothing else: its branch is pushed and has
   **no pull request** until his `qa1` ([Playtest handoff](#playtest-handoff)). The one exception is a
@@ -254,7 +255,8 @@ for it:
 - A [run location](#run-location) narrows what a run may select. A `local` run promotes a startable local-only
   ticket from To Do and selects it ahead of cloud-capable work in Next. A `cloud` run whose Next holds no startable
   cloud-capable ticket promotes the most appropriate startable cloud-capable To Do ticket or batch and selects it,
-  as rule 2 does for an empty Next.
+  as rule 2 does for an empty Next. Rules 2 and 3 and the replenishment never make a `cloud` run promote a
+  local-only ticket.
 - **Direct work** on a ticket Matěj names in the session ("implement F1") promotes that ticket from To Do to Next
   and then claims it with the [atomic intake claim](#atomic-intake-claim), its dependencies included. Every other
   rule still applies: the ticket must not be [waiting on Matěj](#tickets-waiting-on-matěj) or in flight, and the
@@ -547,16 +549,19 @@ batch is local-only when one of its tickets is. A ticket [waiting on Matěj](#ti
 waiting in either mode, whatever it needs afterwards (Retro Diffusion credit he has not topped up, a tool he has not
 approved).
 
-The modes change only what is selected; every other rule of this document applies unchanged:
+The modes change only what is selected and, for a `cloud` run, what it promotes to keep Next filled; every other
+rule of this document applies unchanged:
 
 - **`cloud`:** only cloud-capable tickets are eligible for selection, in Next and To Do alike. A local-only ticket is
   never selected, and a candidate whose unmet dependency is local-only is deferred. When Next holds no startable
   cloud-capable ticket, the run promotes one from To Do (the exception in [Priority and the Next
   queue](#priority-and-the-next-queue)). Keeping Next filled (rules 2 and 3 and the replenishment before a handoff)
-  counts only cloud-capable tickets: a `cloud` run never promotes a local-only ticket, texture batches included,
-  because a `local` run promotes its own work from To Do. When Next and To Do hold no startable cloud-capable
-  ticket after the dependency, ownership and cap checks, the run claims nothing and ends ([Concurrency and run boundaries](#concurrency-and-run-boundaries)); its status overview lists the local-only
-  tickets left under "Blocked or other", each with what it needs, so Matěj can start a `local` run for them.
+  counts only cloud-capable tickets: a `cloud` run never promotes a local-only ticket for that, texture batches
+  included, because a `local` run promotes its own work from To Do. The local-only items Matěj asks `flow2` for
+  still go to Next, unclaimed (below). When Next and To Do hold no startable cloud-capable ticket after the
+  dependency, ownership and cap checks, the run claims nothing and ends ([Concurrency and run
+  boundaries](#concurrency-and-run-boundaries)); its status overview lists the local-only tickets left under
+  "Blocked or other", each with what it needs, so Matěj can start a `local` run for them.
 - **`local`:** local-only tickets come first, in Next and To Do alike, by priority among themselves: a startable
   local-only ticket in To Do is promoted and selected ahead of cloud-capable work in Next (the exception in
   [Priority and the Next queue](#priority-and-the-next-queue)), and its dependencies are pulled in whatever their
@@ -782,8 +787,8 @@ tickets from different areas fit one batch when they share no conflict-prone fil
 playtest batch also needs a free playtest slot; while every slot is taken, select an AI-only batch instead. A
 batch that generates textures (step 1 of the [art pipeline](../art/README.md), Retro Diffusion through its MCP
 server: A1 and later art tickets) is local-only, because cloud sessions lack that server: a `cloud` run never
-selects or promotes it ([Run location](#run-location)). The generated placeholder textures `uv run rf gen` writes
-need no server.
+selects it, nor promotes it to keep Next filled ([Run location](#run-location)). The generated placeholder
+textures `uv run rf gen` writes need no server.
 
 Fill an AI-only batch toward the expected scale. Intake, the claim, the first build of a new worktree and the
 gate cost the same for one ticket as for ten, and every batch holds a slot until it merges, so small AI-only
@@ -1022,8 +1027,9 @@ and no unfinished active-sprint ticket remains, the truthful statement is: **The
 A Claude Code cloud session (`CLAUDE_CODE_REMOTE=true`) runs the same flow; only this differs:
 
 - **Run location:** always `cloud`, whatever argument the run was given ([Run location](#run-location)), so it
-  selects and promotes only cloud-capable work, and a local-only step found after its claim is recorded and split
-  off or released as that section says.
+  selects only cloud-capable work and promotes no local-only ticket to keep Next filled (`flow2` still routes the
+  local-only items Matěj asks for to Next, unclaimed), and a local-only step found after its claim is recorded and
+  split off or released as that section says.
 - **Its own clone** is its worktree, and the branch Claude Code put it on is the batch branch
   ([Branches and worktrees](#branches-and-worktrees)). It sees only its own branches, so its intake and claim
   rely on Jira claim comments, remote branches and open pull requests.
@@ -1042,5 +1048,6 @@ A Claude Code cloud session (`CLAUDE_CODE_REMOTE=true`) runs the same flow; only
 - **No texture batches:** cloud sessions have no Retro Diffusion MCP server: it authenticates with Matěj's
   personal API key and is set up per machine, outside the repository ([dev setup](dev-setup.md#5-claude-code)). A
   batch that generates textures (A1 and later art tickets, [Batch selection](#batch-selection)) is therefore
-  local-only, and a cloud session never selects, promotes or claims it ([Run location](#run-location)).
+  local-only, and a cloud session never selects or claims it, nor promotes it to keep Next filled
+  ([Run location](#run-location)).
 - **Cleanup:** branch deletion and worktree removal stay with local sessions.
