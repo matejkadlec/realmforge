@@ -703,7 +703,10 @@ After the sprint and Next rules, group by QA mode, then by similarity: the same 
 generators or verification path (the same GameTests, the same pytest module). Maximize the safe coherent batch
 without losing precision, reviewability, automated verification or conflict avoidance. Independent AI-only
 tickets from different areas fit one batch when they share no conflict-prone files and one gate covers them. A
-playtest batch also needs a free playtest slot; while every slot is taken, select an AI-only batch instead.
+playtest batch also needs a free playtest slot; while every slot is taken, select an AI-only batch instead. A
+batch that generates textures (step 1 of the [art pipeline](../art/README.md), Retro Diffusion through its MCP
+server: A1 and later art tickets) runs only in a local session, because cloud sessions lack that server
+([Cloud sessions](#cloud-sessions)); the generated placeholder textures `uv run rf gen` writes need none.
 
 Fill an AI-only batch toward the expected scale. Intake, the claim, the first build of a new worktree and the
 gate cost the same for one ticket as for ten, and every batch holds a slot until it merges, so small AI-only
@@ -753,7 +756,8 @@ every slot is busy or less than 4 GiB is available, and runs a build that died o
 failing. Runs start one at a time: a start keeps the admission lock for up to a minute (or until that run ends),
 so the next run checks memory only after the new JVMs have claimed theirs. A run that waited too long exits with
 75: that is a queue timeout, not a build result, so run it again later. A run that ran out of memory twice is a
-real failure.
+real failure. In a cloud session the queue first waits for the SessionStart warm-up ([Cloud
+sessions](#cloud-sessions)), and a failed or interrupted warm-up does not hold it back.
 
 ## Branches and worktrees
 
@@ -906,9 +910,10 @@ A run delivers one batch. It ends, with the batch ledger, when:
   file an in-flight batch owns, or every playtest slot is taken and only playtest work remains;
 - no safe active-sprint ticket remains after the conflict, dependency and ownership checks.
 
-A candidate whose slots are unavailable is not safe remaining work in any domain. The run therefore ends once
-every remaining candidate is blocked that way, and never while another domain still has a startable batch, or a
-full playtest limit still leaves a startable AI-only batch.
+A candidate whose slots are unavailable is not safe remaining work in any domain, and neither is a texture batch
+for a cloud session ([Cloud sessions](#cloud-sessions)). The run therefore ends once every remaining candidate is
+blocked that way, and never while another domain still has a startable batch, or a full playtest limit still
+leaves a startable AI-only batch.
 
 Stop for Matěj when continuing needs a new or changed product or architecture decision, a secret or account, a
 changed destructive scope, uncertain state, weakened security or substantial unrelated scope.
@@ -945,7 +950,15 @@ A Claude Code cloud session (`CLAUDE_CODE_REMOTE=true`) runs the same flow; only
   server from `.mcp.json` fails to start there (no `mcp-remote`), which is expected.
 - **GitHub:** the proxy refuses GraphQL; the pull request skills list the REST forms to use instead. `gh api`
   calls are authenticated (`gh api user` answers) even though `gh auth status` reports the token as invalid.
-- **Gradle:** the queue sees only the VM's own runs.
+- **Gradle:** the queue sees only the VM's own runs. Before it takes a slot, it waits while the SessionStart
+  warm-up (`.claude/hooks/cloud-warmup.sh`) still runs Gradle in the clone, because a second Gradle run in the same
+  project can fail with "Timeout waiting to lock"; a failed or interrupted warm-up lets it go ahead (Gradle then
+  downloads what it needs on demand). A Gradle command run outside the queue needs
+  `.claude/hooks/cloud-warmup.sh --wait` first ([CLAUDE.md](../CLAUDE.md#commands)).
 - **Playtests** are handed off with the [launch commands](#launch-commands) for a branch on `origin`; `qa1` and
   `qa2` may run in the same cloud session or any later local or cloud one.
+- **No texture batches:** cloud sessions have no Retro Diffusion MCP server: it authenticates with Matěj's
+  personal API key and is set up per machine, outside the repository ([dev setup](dev-setup.md#5-claude-code)). A
+  cloud session therefore never selects, promotes or claims a batch that generates textures (A1 and later art
+  tickets, [Batch selection](#batch-selection)) and leaves it for a local session.
 - **Cleanup:** branch deletion and worktree removal stay with local sessions.

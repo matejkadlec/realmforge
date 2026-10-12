@@ -44,6 +44,10 @@ jobs:
       - name: Worktree cleanup safety suite
         run: bash tests/test_git_clean_worktrees.sh
 
+      # Every agent gate runs Gradle through the queue, so its cloud warm-up wait is tested too.
+      - name: Gradle queue cloud warm-up suite
+        run: bash tests/test_gradle_queue.sh
+
       - name: Generated files are up to date
         run: |
           uv run rf gen

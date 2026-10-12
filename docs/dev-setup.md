@@ -229,7 +229,7 @@ are unaffected.
   `startup` and `resume` (the `source` in the hook input) it also tells Claude, as session context, when the
   warm-up below is about to run: no finished warm-up for the current build inputs (`status` not `done`, a changed
   `stamp`, or no `build/mc-sources/`). A resumed session whose agent changed a build input, or whose last warm-up
-  failed, then knows to run `--wait` before its next Gradle command; with a matching stamp it prints nothing.
+  failed, then knows that a Gradle run is starting next to its own; with a matching stamp it prints nothing.
 - **`cloud-warmup.sh`** (`"async": true`, never delays the session). In the background it runs `uv sync --locked`,
   then `./gradlew :mod:extractMinecraftSources classes`: the Gradle distribution, all dependencies, the NeoForm
   decompile/recompile, `build/mc-sources/` and a first compile. The Gradle daemon keeps running for the agent's
@@ -246,8 +246,9 @@ are unaffected.
   - When it ends, Claude Code passes the summary to Claude on the next turn. On failure the summary and the log
     name the hosts the agent proxy refused.
   - **`cloud-warmup.sh --wait [seconds]`** blocks until the warm-up has finished (default limit 540 s, exit code
-    2 when it is still running). Agents run it before their first Gradle command and after a resume (rule in
-    `CLAUDE.md`).
+    2 when it is still running, 1 when it failed or was interrupted). `.claude/scripts/gradle-queue.sh` polls it
+    before every run and starts Gradle only once the warm-up is no longer running; agents run it themselves before
+    any Gradle command outside the queue and after a resume (rule in `CLAUDE.md`).
 - The environment's network access (environment settings → **Network access**) must allow the default package
   managers plus `downloads.gradle.org`; NeoForge, Parchment and Mojang hosts were reachable without extra
   entries. A blocked host fails with `403` / `CONNECT tunnel failed`; `curl -sS "$HTTPS_PROXY/__agentproxy/status"`
