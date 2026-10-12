@@ -39,18 +39,21 @@ looks like a nether portal.
 
 ## The frame
 
-- **Shape:** a vertical rectangle, 5 wide and 6 tall, corners included, around a 3×4 opening, along either
-  horizontal axis (like a nether portal). That is 17 **Portal Stone** blocks and one **realm selector** in the
-  middle of the bottom row. One fixed size keeps the check simple and every portal recognisable; AoA used the same
-  size (RE-1).
+- **Shape:** a vertical rectangle, 5 wide and 6 tall, around a 3×4 opening, along either horizontal axis (like a
+  nether portal). The four corners are optional decoration, as on a nether portal: the frame is the 14 blocks that
+  touch the opening, 13 **Portal Stone** and one **realm selector** in the middle of the bottom row. So every
+  required block touches a portal block, and breaking any of them reaches the portal through a neighbour update
+  ([Edge cases](#edge-cases)). One fixed size keeps the check simple and every portal recognisable; AoA used the
+  same outline (RE-1).
 - **Materials, cheap and from the Overworld,** because the first frame is built before any realm is open, and AoA's
   players stalled on exactly this step (they ended up buying its runes from an NPC):
   - **Portal Stone:** 4 stone bricks around a copper ingot make 4. A tag of stone bricks
     (`#realmforge:portal_stone_bricks`) also takes the realms' own bricks, so a frame can be built inside a realm
     that has no vanilla stone;
   - **realm selector:** 4 Portal Stone, 4 gold ingots and a compass;
-  - a whole frame is 20 stone bricks, 5 copper ingots, 4 gold ingots and a compass: a short mining trip for a level
-    1–5 player, and chapter 1's first quests walk through it. The numbers are proposals for Matěj's playtest.
+  - a whole frame takes 17 Portal Stone (13 in the frame, 4 in the selector), so 5 crafts: 20 stone bricks and 5
+    copper ingots, plus 4 gold ingots and a compass. That is a short mining trip for a level 1–5 player, and chapter
+    1's first quests walk through it. The numbers are proposals for Matěj's playtest.
 - **Lighting:** right-click the selector with a sigil. The selector checks the frame:
   - **complete,** with the opening empty (air, or blocks such as grass that are replaced when something is placed
     there): the opening fills with portal blocks of that
@@ -234,7 +237,8 @@ If Matěj decides otherwise in the realm design, this section follows his answer
   entrances are a different thing: a temporary portal opened with a dungeon key that is used up (D8, W4); leaving an
   instance returns the player to its entrance and never touches the home point.
 - **Broken frames:** breaking any frame block or the selector closes the portal at once (the portal blocks check
-  their frame on neighbour updates, as nether portal blocks do). A player standing in it stays where they are. The
+  their frame on neighbour updates, as nether portal blocks do; every required frame block touches the opening, and
+  the corners are optional, so every break reaches a portal block). A player standing in it stays where they are. The
   frame can be rebuilt and opened again with the sigil. The landing is the exception: it cannot be broken.
 - **Chunk loading:** a trip loads only the chunks around the arrival point, for a short time, through vanilla's
   portal ticket (`DimensionTransition.PLACE_PORTAL_TICKET`, as for nether portals). Portals load nothing
@@ -299,9 +303,9 @@ dimension rules and access:
 
 Tests:
 
-- **JUnit:** the frame check (both axes; a missing corner; a block in the opening; the selector off-centre; a frame
-  too big or too small); the home point and its fallbacks; the safe-spot search (a ceiling, a void, water, a full
-  column).
+- **JUnit:** the frame check (both axes; corners present or missing, which both light; a missing side block; a block
+  in the opening; the selector off-centre; a frame too big or too small); the home point and its fallbacks; the
+  safe-spot search (a ceiling, a void, water, a full column).
 - **pytest:** the schema, the references, the generated advancement, the access requirement check.
 - **GameTests** (W2's "Done when"):
   - access is refused before the unlock advancement and allowed after it;
