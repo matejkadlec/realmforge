@@ -314,11 +314,18 @@ If Matěj decides otherwise in the realm design, this section follows his answer
 - **A missing destination:** a selector set to a realm that no longer exists (content removed, data pack off) shows
   "unknown realm" and refuses; a home point in a missing dimension falls back to the respawn point, then the world
   spawn. A player who logs in inside a dimension that no longer exists is moved by vanilla.
-- **Fluids:** the portal block refuses fluids: it is a `LiquidBlockContainer` whose `canPlaceLiquid` answers false.
-  Vanilla's `FlowingFluid#canHoldFluid` spares only its own portal blocks by name (`Blocks.NETHER_PORTAL`,
-  `END_PORTAL`, `END_GATEWAY`), so without that, flowing water or lava would wash away a realm portal's blocks,
-  which have no collision, and a bucket could empty into them. A portal anywhere, the landing included, keeps its
-  opening.
+- **Fluids:** the portal block refuses fluids in two ways, one per vanilla path:
+  - **flowing fluids:** it is a `LiquidBlockContainer` whose `canPlaceLiquid` answers false. Vanilla's
+    `FlowingFluid#canHoldFluid` spares only its own portal blocks by name (`Blocks.NETHER_PORTAL`, `END_PORTAL`,
+    `END_GATEWAY`), so without that, flowing water or lava would wash away a realm portal's blocks, which have no
+    collision;
+  - **buckets and dispensers:** it overrides `canBeReplaced(BlockState, Fluid)` to answer false.
+    `BucketItem#emptyContents`, which dispensers call too, asks `canBeReplaced` first. The default answers true for
+    any block that is not solid, and a block without collision is not, so the bucket would destroy the portal
+    block and never ask `canPlaceLiquid`. With the override, the bucket leaves the portal alone: depending on the
+    face it aims at, it empties in front of the portal or not at all.
+
+  A portal anywhere, the landing included, keeps its opening.
 - **World border:** every arrival point is clamped inside the border, and a landing the border has left outside is
   rebuilt inside it ([the landing](#into-a-realm-the-landing)).
 - **Other travel:** a cross-dimension warp by waystone, an instance exit or a command leaves the home point alone,
@@ -382,7 +389,8 @@ dimension rules and access:
   - `Realm` (record with `CODEC`) and its registry key;
   - `PortalFrame`, the frame check as plain Java over a block lookup: both axes, the missing positions;
   - `RealmPortalBlock`, implementing vanilla's `Portal` (`getPortalDestination`, `getPortalTransitionTime`,
-    `getLocalTransition`) and `LiquidBlockContainer` (it refuses every fluid);
+    `getLocalTransition`) and `LiquidBlockContainer`, and overriding `canBeReplaced(BlockState, Fluid)` (it refuses
+    every fluid, flowing or from a bucket);
   - `RealmSelectorBlock` with its block entity;
   - `RealmTravel`: the landing, the home point and the fallbacks, with the safe-spot search as plain Java over a
     column of blocks;
@@ -411,6 +419,8 @@ Tests:
   - a removed landing frame is rebuilt, and so is a landing outside a shrunken world border;
   - a block placed into the landing's arrival space is refused, and a blocked arrival spot moves the player to a safe
     one;
+  - a water bucket emptied into a lit portal's opening, by a player and by a dispenser, leaves its portal blocks in
+    place;
   - a bucket used in the landing's zone is refused, water flowing into a portal's opening leaves its portal blocks in
     place, and lava poured or gravel dropped just outside the zone is gone from the landing's box within a second,
     while a waystone on the reserved spot, both halves, stays;
