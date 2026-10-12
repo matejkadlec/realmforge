@@ -1,13 +1,13 @@
 name = "Overflowing Bars"
-filename = "OverflowingBars-v21.1.1-1.21.1-NeoForge.jar"
+filename = "OverflowingBars-v26.1.0-mc26.1.x-NeoForge.jar"
 side = "client"
 
 [download]
-url = "https://cdn.modrinth.com/data/XD7XOrAF/versions/PYRrjTaY/OverflowingBars-v21.1.1-1.21.1-NeoForge.jar"
+url = "https://cdn.modrinth.com/data/XD7XOrAF/versions/lechTFMr/OverflowingBars-v26.1.0-mc26.1.x-NeoForge.jar"
 hash-format = "sha512"
-hash = "2962a12664e24711096d9be98bfda2ae0b86c5050d0860a36b3567870d794767d308328060c6fbe4f4854b569d97ce465b8b250775f3ae7a5d0a563f342a4136"
+hash = "458f14a67c597709756d3d0115326ee74ea48a14e7ed8e0f0d970d91c5ba9e95041b3278eb7420499c9d63c52ab29377d3da786d6e5ab5c6e93772f0f528d202"
 
 [update]
 [update.modrinth]
 mod-id = "XD7XOrAF"
-version = "PYRrjTaY"
+version = "lechTFMr"

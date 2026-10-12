@@ -1,0 +1,13 @@
+name = "No Recipe Book"
+filename = "norecipebook-1.1+mc26.3-neoforge.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/h8t6h658/versions/h9GBSG7D/norecipebook-1.1%2Bmc26.3-neoforge.jar"
+hash-format = "sha512"
+hash = "feecff2b9242f41e12133eacc90c6edb6408052312b3f92f07fbcf181298900ef52bdb7316cb8cff60f649b1e78f6e83a6a022dfc65689140863b76a4f4d4c43"
+
+[update]
+[update.modrinth]
+mod-id = "h8t6h658"
+version = "h9GBSG7D"
