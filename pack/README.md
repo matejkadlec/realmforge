@@ -39,6 +39,31 @@ These are pinned (`pin = true`), so `packwiz update --all` skips them:
 To move to a newer pair, update Sodium and Iris together (`packwiz unpin`,
 `packwiz update`, `packwiz pin`). Then check Distant Horizons again.
 
+### Release builds of libraries
+
+packwiz picks a project's newest file whatever its release channel, and some
+libraries publish many beta (snapshot) builds between two releases. These are
+pinned to their newest release build, so `packwiz update --all` cannot move
+them back to a beta:
+
+- **Structurize 1.0.832**, **BlockUI 1.0.209** and **Domum Ornamentum
+  1.0.231**, the MineColonies libraries. MineColonies 1.1.1403 is built against
+  Structurize 1.0.832, BlockUI 1.0.199 and Domum Ornamentum 1.0.223.
+- **JEI 19.51.0.418**. The later JEI builds are betas that also need the
+  MezzConfig library; this one does not, so MezzConfig is not in the pack.
+
+Every mod in the pack that depends on them accepts these builds (the
+`versionRange`s in the jars' `neoforge.mods.toml`). To update one, find its
+newer release build (Modrinth: version type "release"; CurseForge: file type
+"Release"), then `packwiz unpin <mod>`, add exactly that file
+(`packwiz mr add --project-id <id> --version-id <id>` or
+`packwiz cf add --addon-id <id> --file-id <id>`), `packwiz pin <mod>`, and
+boot the pack ([Boot test](#boot-test)).
+
+One library stays a beta build: **playerAnimator 2.0.4**, which Better Combat
+requires. It has no release build for NeoForge 1.21.1 and is no longer
+developed ([ADR 0020](../docs/decisions/0020-cast-animations-and-melee-while-casting.md)).
+
 ## Optional mods
 
 **Quark** is optional and disabled by default (`[option]` in
