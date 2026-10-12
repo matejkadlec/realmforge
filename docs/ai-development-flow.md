@@ -1,13 +1,15 @@
 # AI development flow
 
 > How agent sessions take work from Jira and deliver it: intake, batching, dependencies, claims, worktrees,
-> checks, playtests, and the handoff to the pull request skills. Decision:
-> [ADR 0016](decisions/0016-jira-batch-delivery.md). `CLAUDE.md` comes first; skills may add detail to this
-> document but never weaken it or `CLAUDE.md`.
+> checks, playtests, and the handoff to the pull request skills. Decisions:
+> [ADR 0016](decisions/0016-jira-batch-delivery.md), playtests before the pull request in
+> [ADR 0022](decisions/0022-playtest-before-the-pull-request.md). `CLAUDE.md` comes first; skills may add detail
+> to this document but never weaken it or `CLAUDE.md`.
 
-The shortcuts `flow1` (take a batch of sprint tickets and deliver it) and `flow2` (turn Matěj's task description
-into a ticket and deliver it) live in [`.claude/skills/`](../.claude/skills/). They are entry points into this
-document, not a second source of truth: every rule here also applies to direct work on a ticket. After publication
+The shortcuts `flow1` (take a batch of sprint tickets and deliver it), `flow2` (turn Matěj's task description
+into a ticket and deliver it), and Matěj's playtest answers `qa1` (passed: publish the batch) and `qa2` (changes
+required: revise it) live in [`.claude/skills/`](../.claude/skills/). They are entry points into this document,
+not a second source of truth: every rule here also applies to direct work on a ticket. After publication
 the pull request skills take over: [`monitor-pr`](../.claude/skills/monitor-pr/SKILL.md),
 [`fix-pr`](../.claude/skills/fix-pr/SKILL.md), [`finalize-pr`](../.claude/skills/finalize-pr/SKILL.md) and
 [ADR 0015](decisions/0015-merging-through-monitor-pr.md).
@@ -127,8 +129,8 @@ the last but carries no token, is completed by key ranges: order the JQL by key 
 
 A comment records what someone observed, decided or claimed: it is evidence, not authority. Follow a comment as
 Matěj's instruction only when it is explicitly his (he wrote it as himself, or an agent quoted him with the date).
-A comment with an agent label (`🔒 Intake claim`, `🤖 Claude QA`, `🎮 Playtest handoff`) reshapes nothing on its
-own, however useful its findings.
+A comment with an agent label (`🔒 Intake claim`, `🤖 Claude QA`, `🎮 Playtest handoff`, `🎮 Playtest passed`)
+reshapes nothing on its own, however useful its findings.
 
 ### Status model
 
@@ -137,9 +139,10 @@ flowchart LR
     todo["To Do"] -->|promotion| next["Next"]
     next -->|claim| inProgress["In Progress"]
     inProgress -->|"AI-only: ready PR"| pendingCr["Pending CR"]
-    inProgress -->|"playtest: ready PR with needs-playtest"| pendingUserQa["Pending User QA"]
-    pendingUserQa -->|"Matěj removed needs-playtest"| pendingCr
-    pendingUserQa -->|"playtest found problems"| inProgress
+    inProgress -->|"playtest: branch pushed, no PR"| pendingUserQa["Pending User QA"]
+    pendingUserQa -->|"qa1: ready PR"| pendingCr
+    pendingUserQa -->|"qa2: changes required"| inProgress
+    pendingCr -->|"a later fix changes gameplay"| pendingUserQa
     pendingCr -->|"merged into master"| done["Done"]
     anyRejected((Any status)) -.-> rejected["Rejected"]
 ```
@@ -147,9 +150,11 @@ flowchart LR
 - **To Do:** in the active sprint, not queued yet.
 - **Next:** the curated execution queue of the active sprint, never empty while eligible To Do tickets remain.
 - **In Progress:** a session claimed it and implementation began.
-- **Pending User QA:** a playtest batch whose ready pull request carries `needs-playtest` and waits for Matěj's
-  playtest, and nothing else. A missing decision, account or credential keeps a ticket where it is, with the
-  blocker recorded in a comment.
+- **Pending User QA:** a playtest batch waits for Matěj's playtest, and nothing else: its branch is pushed and has
+  **no pull request** until his `qa1` ([Playtest handoff](#playtest-handoff)). The one exception is a
+  reconfirmation: a pull request published by `qa1` whose later fix changed gameplay, held by `needs-playtest`
+  until he plays it again. A missing decision, account or credential keeps a ticket where it is, with the blocker
+  recorded in a comment.
 - **Pending CR:** a ready pull request is open and its publishing session's monitored merge carries it through
   review, checks and merge, or that run stopped and Matěj manages it.
 - **Done:** only after the pull request merged into `master`.
@@ -260,7 +265,7 @@ For each unmet dependency of a selected ticket, in this order:
   from the bottom (the unblocked dependencies, as many as fit) and the dependent ticket stays in Next for a later
   batch. The batch announcement says so.
 - A batch has one QA mode: if the dependent ticket or a pulled-in dependency needs a playtest, the whole batch is
-  a playtest batch (one pull request, one label).
+  a playtest batch (one branch, one playtest, one pull request after `qa1`).
 - The batch announcement and the claim comment of each pulled-in ticket name the ticket that needed it.
 
 ### Tickets waiting on Matěj
@@ -284,15 +289,16 @@ merges.
 
 ### QA evidence
 
-Each ticket's comments hold its evidence: the claim, the `🤖 Claude QA` summary that
-[publication](#publication) records (what was verified and how, the pull request, its head), the
-`🎮 Playtest handoff` and each revision, and the updates `monitor-pr` records after its own pushes. Matěj reads
-the session's handoff first and opens a ticket only for detail.
+Each ticket's comments hold its evidence: the claim, the `🎮 Playtest handoff` and each `qa2` revision, the
+`🎮 Playtest passed` record of a `qa1`, the `🤖 Claude QA` summary that [publication](#publication) records (what
+was verified and how, the pull request, its head), and the updates `monitor-pr` records after its own pushes.
+Matěj reads the session's handoff first and opens a ticket only for detail.
 
 ## QA classification
 
-Classify every candidate ticket before batching it. Matěj plays every gameplay change before it merges
-([ADR 0015](decisions/0015-merging-through-monitor-pr.md)); everything else merges on automated evidence.
+Classify every candidate ticket before batching it. Matěj plays every gameplay change before its pull request
+opens ([ADR 0022](decisions/0022-playtest-before-the-pull-request.md)); everything else merges on automated
+evidence.
 
 **AI-only:** the ticket changes nothing a player sees, hears or does in the game. This covers tooling, CI, docs,
 ADRs, research and design documents, the content pipeline when the game data it produces is unchanged, tests and
@@ -312,25 +318,75 @@ they cannot be separated, the whole batch is a playtest batch. Pulled-in depende
 
 ### Playtest handoff
 
-1. Run the full gate ([Implementation and verification](#implementation-and-verification)).
-2. Commit the coherent work and publish it as one ready pull request with the `needs-playtest` label
-   ([Publication](#publication)).
-3. On each ticket, record the `🤖 Claude QA` summary and the `🎮 Playtest handoff`: the pull request, its head,
-   [What to test](#what-to-test) and the [launch commands](#launch-commands). Then move the tickets to Pending User
-   QA.
-4. Give Matěj the handoff as the [status overview](../CLAUDE.md#status-overview) in its manual-test shape: What to
-   test, the launch commands, the verification and the batch ledger.
-5. Run `monitor-pr` on the pull request in the same run. It carries review, threads and checks, and holds the
-   merge while the label is set. Its check-ins keep watching for Matěj's answer.
-6. **Playtest passed:** Matěj removes the label. `monitor-pr` moves the tickets to Pending CR, merges once
-   everything else is clean, and moves them to Done.
-7. **Playtest failed:** Matěj says what is wrong in the session or on the pull request, the channels
-   `monitor-pr` watches (a comment on a ticket alone goes unseen), and leaves the label. Move the affected
-   tickets to In Progress, fix on the same branch (the session that handed off or any later one), run the affected
-   checks, push, record the revision on each ticket, move them back to Pending User QA, and hand back a What to
-   test limited to the revision, with the command that updates his checkout. The label stays until he removes it.
+A playtest batch opens **no pull request while it waits for Matěj's playtest**: Codex review, CI and the merge
+come after he passes it with `qa1`. Its branch is on `origin` from the claim on, so he plays it from there.
+
+1. Run the full gate ([Implementation and verification](#implementation-and-verification)) and commit the
+   coherent work.
+2. Push the branch (`git push origin <branch>`, with `--force-with-lease` after a rebase) and read its remote head
+   back: it must be your final commit. A branch push starts no CI. Open no pull request.
+3. On each ticket, record the `🎮 Playtest handoff`: the branch and its head, [What to test](#what-to-test), the
+   [launch commands](#launch-commands) and the checks that passed. Then move the tickets to Pending User QA.
+4. Keep the branch and the worktree for the answer.
+5. Give Matěj the handoff as the [status overview](../CLAUDE.md#status-overview) in its manual-test shape: What to
+   test, the launch commands, the verification and the batch ledger, closing with how he answers: `qa1` when the
+   playtest passes, `qa2` with what is wrong.
+6. Stop: the handoff ends the run ([Concurrency and run boundaries](#concurrency-and-run-boundaries)). His answer
+   may come in this session or any later one, local or cloud.
 
 While Matěj plays from the batch's worktree, run no Gradle task in it.
+
+### qa1: playtest passed
+
+Matěj's `qa1` passes the playtest and authorizes publishing the batch. The
+[`qa1` skill](../.claude/skills/qa1/SKILL.md) carries it out:
+
+1. **Find the batch:** the one this session handed off, the keys or branch Matěj names, or the only playtest
+   batch in Pending User QA. With several and no hint, ask which one, listing each with its tickets and branch.
+2. **Take the branch:** reuse the worktree that holds it, or create one from `origin/<branch>`
+   ([Branches and worktrees](#branches-and-worktrees)). Fetch first: commits Matěj pushed to the branch from his
+   own clone belong to the batch. His uncommitted edits in the worktree follow `CLAUDE.md`: fold small ones that
+   belong to the batch into the next commit, ask about anything larger.
+3. **Finish:** run the checks for anything that changed since the played head and commit. When `origin/master`
+   moved, rebase onto it, regenerate generated files with `uv run rf gen`, and run the full gate again. A rebase
+   whose conflicts touched game code changes what Matěj played: push it and hand it back for another playtest, as
+   a `qa2` revision does, instead of publishing.
+4. **Publish** as in [Publication](#publication): push, one ready pull request without `needs-playtest`, the head
+   read back. The description says which head Matěj played and when.
+5. **Record** on each ticket the `🎮 Playtest passed` (the played head, the head it was published as, his words if
+   he gave any) and the `🤖 Claude QA` summary, then move the tickets from Pending User QA to Pending CR. That
+   frees the batch's playtest slot.
+6. **Hand off and monitor:** the status overview, then `/monitor-pr <n>` in the same run, to the merge.
+
+For a pull request that waits for a [reconfirmation](#reconfirmation), `qa1` instead records the
+`🎮 Playtest passed` for its current head on each ticket, removes `needs-playtest` for Matěj (his `qa1` is his
+answer), moves the tickets to Pending CR, and continues `monitor-pr` on it.
+
+### qa2: changes required
+
+Matěj's `qa2` with what is wrong sends the batch back for a revision on the same branch. The
+[`qa2` skill](../.claude/skills/qa2/SKILL.md) carries it out:
+
+1. **Find the batch** as for `qa1`, and move the affected tickets from Pending User QA to In Progress.
+2. **Take the same branch** (never a new one), in its worktree or a new one from `origin/<branch>`. Read the
+   tickets' comments for context the handoff did not repeat.
+3. **Fix** what he reported, run the affected checks and the full gate, and commit.
+4. **Push** the revision (`--force-with-lease` after a rebase) and read the remote head back. Open no pull request;
+   a reconfirmation's pull request simply gets the new head, and its `monitor-pr` run carries on.
+5. **Record** the revision on each affected ticket (what changed, the new head, a What to test limited to it) and
+   move the tickets back to Pending User QA. The batch keeps its playtest slot through the revision.
+6. **Hand back** with the status overview in its manual-test shape: What to test limited to the revision, the
+   command that updates his checkout ([Launch commands](#launch-commands)), and the closing line on `qa1` and
+   `qa2`. Then wait for his next answer.
+
+### Reconfirmation
+
+A fix after `qa1` (a `fix-pr` commit, a thread fix, a check repair, a conflict resolution) can change what Matěj
+played. When the commits the pull request added after the published head that Matěj passed change gameplay
+([QA classification](#qa-classification)), `monitor-pr` adds `needs-playtest`, moves the tickets back to Pending
+User QA with a `🎮 Playtest handoff` limited to the change, and holds the merge until Matěj answers `qa1` (or
+removes the label) or `qa2`. Commits that change nothing a player sees (docs, tests, a refactor its tests cover,
+a merge of `master` without conflicts in game code) need no new playtest.
 
 ### Launch commands
 
@@ -391,9 +447,10 @@ account name), our own commands, and the QA mod's `/qa` commands in the dev clie
 
 ### What to test
 
-Every handoff that returns work to Matěj for a manual test (a playtest handoff, a revision) leads with "What to
-test", the first part of the [status overview](../CLAUDE.md#status-overview). He reads it instead of the tickets:
-one sentence on where to start, then a numbered list. Each item opens with a bold name for the check and pairs
+Every handoff that returns work to Matěj for a manual test (a playtest handoff, a `qa2` revision, a
+reconfirmation) leads with "What to test", the first part of the
+[status overview](../CLAUDE.md#status-overview). He reads it instead of the tickets: one sentence on where to
+start, then a numbered list. Each item opens with a bold name for the check and pairs
 what changed with how to see it, with the steps as sub-bullets: "**Frostbolt's slow**, on the training dummy:
 cast Frostbolt; the dummy walks at half speed for 4 s", or "**Mobs scale with distance:** `/tp @s 1000 ~ 0`; the
 level above their heads reads about 10". An item names where to go, the state and how to reach it, first or third
@@ -476,8 +533,9 @@ or keep the batch In Progress on its branch until a slot frees.
 
 Intake reads a snapshot, and a peer session can select the same ticket before work starts, so claim every newly
 selected ticket in the batch before writing any implementation. Work this session already owns through an
-existing branch or worktree (resumed work, linked remediation, a playtest revision) is not re-claimed. Claiming a
-batch is the moment its implementation begins, so every ticket claimed for it moves to In Progress together.
+existing branch or worktree (resumed work, linked remediation, `qa1`, a `qa2` revision) is not re-claimed.
+Claiming a batch is the moment its implementation begins, so every ticket claimed for it moves to In Progress
+together.
 
 Per ticket, in order:
 
@@ -667,12 +725,15 @@ real failure.
   Conventional Commits, never `.local/` or build output).
 - Before publishing, rebase onto the latest `origin/master` (a stacked batch: its dependency branch) when it
   moved, resolve conflicts (regenerate generated files with `uv run rf gen`), and rerun the affected checks.
-- After the merge, `monitor-pr` removes the worktree and branch this session created.
+- After the merge, `monitor-pr` removes the batch's worktree and local branch. A playtest batch keeps its
+  worktree from the handoff until then; the session that runs `qa1` takes the batch over, so it removes them.
 
 ## Publication
 
 The agent owns implementation, the gate, push, the ready pull request, the ticket moves, the handoff and the
-monitored merge. Publication happens in this order:
+monitored merge. An AI-only batch is published as soon as its gate passes. A playtest batch stops at the
+[Playtest handoff](#playtest-handoff) without a pull request and is published only by Matěj's
+[`qa1`](#qa1-playtest-passed). Publication happens in this order:
 
 1. Check that `git remote get-url origin` points to `matejkadlec/realmforge`, then push:
    `git push -u origin <branch>`.
@@ -680,9 +741,12 @@ monitored merge. Publication happens in this order:
    stacked batch):
    - **title:** Conventional Commits with the keys, `feat(spells): add the spell engine core (RLM-24)`, several
      keys comma-separated;
-   - **description:** What to test first for a playtest batch; the tickets with links; what changed and why;
-     dependencies pulled in; the checks that ran; a stacked base or plan change, if any; never `@codex` anywhere.
-3. **Labels:** `needs-playtest` for a playtest batch; only Matěj removes it.
+   - **description:** the tickets with links; what changed and why; for a batch published by `qa1`, the head
+     Matěj played; dependencies pulled in; the checks that ran; a stacked base or plan change, if any; never
+     `@codex` anywhere.
+3. **Labels:** none for a flow batch. A playtest batch was played before its pull request opened, so it carries
+   no `needs-playtest`. That label holds the merge only for a [reconfirmation](#reconfirmation) and for a gameplay
+   pull request outside the flow (`CLAUDE.md`); only Matěj clears it, by removing it or by answering `qa1`.
 4. **Plan changes** carry no label and hold no merge
    ([ADR 0021](decisions/0021-status-overview-and-plan-changes.md)). A plan change is any change to
    [roadmap.md](roadmap.md): new, removed, reordered or reworded tasks, a recorded decision, a changed milestone, a
@@ -692,13 +756,13 @@ monitored merge. Publication happens in this order:
    it goes to Matěj under "Blocked or other" in the [status overview](../CLAUDE.md#status-overview), or as a
    `decision` ticket, and waits for his answer.
 5. Read the pull request's head back from GitHub and confirm it is your final commit.
-6. On each ticket, record the `🤖 Claude QA` summary (what was verified and how, the pull request, the head SHA),
-   plus the `🎮 Playtest handoff` for a playtest batch.
-7. Move the tickets: an AI-only batch to Pending CR, a playtest batch to Pending User QA.
-8. Hand off to Matěj with the [status overview](../CLAUDE.md#status-overview): a playtest batch in the manual-test
-   shape ([What to test](#what-to-test), the [launch commands](#launch-commands), the verification), and every
-   batch with the pull request number and URL, the branch, the head, the checks, the Jira state and any hold in
-   its ledger. Name an action for him only when one is needed.
+6. On each ticket, record the `🤖 Claude QA` summary (what was verified and how, the pull request, the head SHA;
+   after `qa1`, next to its `🎮 Playtest passed`).
+7. Move the tickets to Pending CR: an AI-only batch from In Progress, a batch published by `qa1` from Pending User
+   QA.
+8. Hand off to Matěj with the [status overview](../CLAUDE.md#status-overview): the pull request number and URL,
+   the branch, the head, the checks, the Jira state and any hold in its ledger. Name an action for him only when
+   one is needed.
 9. In the same run, run `/monitor-pr <n>` on the pull request. The handoff is a progress report, not the end of
    the run: a published pull request left unmonitored is unfinished work.
 
@@ -707,10 +771,11 @@ monitored merge. Publication happens in this order:
 [`monitor-pr`](../.claude/skills/monitor-pr/SKILL.md) carries the pull request to its merge under
 [ADR 0015](decisions/0015-merging-through-monitor-pr.md): it runs `fix-pr` on Codex findings, closes every review
 thread, fixes failing or stuck checks and conflicts with `master`, falls back to `finalize-pr` when Codex hits its
-usage limit, and merges once everything is clean and no hold applies. The holds are `needs-playtest` (Matěj plays
-the head), a changes-requested review, a Codex finding outside a thread, and anything Matěj asked to hold. Its
-"Jira tickets" section keeps the tickets in step: a `🤖 Claude QA` update after each of its pushes, Pending User QA
-to Pending CR when the playtest passes, Done after the merge.
+usage limit, and merges once everything is clean and no hold applies. The holds are `needs-playtest` (a
+[reconfirmation](#reconfirmation), or a gameplay pull request outside the flow), a changes-requested review, a
+Codex finding outside a thread, and anything Matěj asked to hold. Its "Jira tickets" section keeps the tickets in
+step: a `🤖 Claude QA` update after each of its pushes, Pending User QA and back for a reconfirmation, Done after
+the merge.
 
 Outside such a run (another session's pull request, or one whose run stopped), do not poll, fix, merge or update
 its tickets unless Matěj resumes or delegates that pull request (`/monitor-pr <n>`, `/fix-pr <n>`,
@@ -746,12 +811,12 @@ the open pull request whose head is that branch as one batch.
   ([Conflict domains](#conflict-domains)).
 - **Playtest slots:** at most three playtest batches hold a playtest slot. The limit caps the branches waiting on
   Matěj's playtest, not the number of agents: branches beyond what he can play only go stale. A playtest batch
-  holds its slot from its claim until Matěj removes `needs-playtest` or the batch is otherwise resolved, through
-  every revision. Count them, as batches, from fresh reads, every result page and comment page to its end: tickets
-  in Pending User QA; tickets In Progress whose latest QA-mode statement in the current cycle (the claim comment
-  or a later QA-mode comment) names Playtest; open pull requests with `needs-playtest`. Select a playtest batch
-  only while that count is below three; otherwise select AI-only work. A revision is not a new selection, so the
-  limit never blocks it.
+  holds its slot from its claim until `qa1` publishes it or the batch is otherwise resolved, through every `qa2`
+  revision, and again while its pull request waits for a reconfirmation. Count them, as batches, from fresh reads,
+  every result page and comment page to its end: tickets in Pending User QA; tickets In Progress whose latest
+  QA-mode statement in the current cycle (the claim comment or a later QA-mode comment) names Playtest; open pull
+  requests with `needs-playtest`. Select a playtest batch only while that count is below three; otherwise select
+  AI-only work. A `qa2` revision or a reconfirmation is not a new selection, so the limit never blocks it.
 - Start another batch only while every cap allows it and the conflict map shows the branch safe, independent, and
   neither overlapping nor stacked on an in-flight branch without need. A free slot never authorizes an overlap.
 - Linked remediation stays in its original batch's slots.
@@ -760,8 +825,10 @@ the open pull request whose head is that branch as one batch.
 
 A run delivers one batch. It ends, with the batch ledger, when:
 
-- its pull request was published and its monitored merge has merged it or stopped, never at the publication
-  itself (a playtest batch's monitored merge keeps watching for Matěj's playtest);
+- an AI-only batch: its pull request was published and its monitored merge has merged it or stopped, never at
+  the publication itself;
+- a playtest batch: its [playtest handoff](#playtest-handoff) is given. Matěj's `qa1` starts the run that
+  publishes the batch and carries it to its merge; his `qa2` starts a revision that ends at the next handoff;
 - the caps leave no startable batch: the overall limit is reached, every domain with safe work left is full, a
   gate-critical batch is in flight and only gate-critical work remains, every remaining candidate regenerates a
   file an in-flight batch owns, or every playtest slot is taken and only playtest work remains;
@@ -806,6 +873,6 @@ A Claude Code cloud session (`CLAUDE_CODE_REMOTE=true`) runs the same flow; only
 - **GitHub:** the proxy refuses GraphQL; the pull request skills list the REST forms to use instead. `gh api`
   calls are authenticated (`gh api user` answers) even though `gh auth status` reports the token as invalid.
 - **Gradle:** the queue sees only the VM's own runs.
-- **Playtests** are handed off with the cloud [launch commands](#launch-commands); a revision may run in the
-  same cloud session or any later local or cloud one.
+- **Playtests** are handed off with the [launch commands](#launch-commands) for a branch on `origin`; `qa1` and
+  `qa2` may run in the same cloud session or any later local or cloud one.
 - **Cleanup:** branch deletion and worktree removal stay with local sessions.
