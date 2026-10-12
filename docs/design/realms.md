@@ -105,7 +105,8 @@ Puzzles are welcome under these rules (Matěj, 2026-10-12, replacing the earlier
   quest chain.
 - **The next realm's item comes from the realm the player leaves:** crafted from the current realm's ore or gem plus
   the guaranteed drop of its main-path boss, with the recipe shown in the quest log (RE-9). The item is never
-  consumed. The portal itself, the item per realm and the access rules are the portal spec's job (RLM-41).
+  consumed. The portal itself, the item per realm and the access rules are the
+  [realm portal spec](realm-portal.md)'s job (RLM-41).
 
 ### Travel
 
@@ -123,9 +124,9 @@ The layout of every realm assumes cheap travel; nobody walks 1,000–10,000 bloc
 
 - **The starting area for levels 1–5**, kept close to vanilla plus the pack's world mods. The Nether and End are
   removed ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)).
-- **The hub.** The realm portal (RLM-41) stands in the Overworld, and every realm's way back leads there. A waystone
-  at the portal makes the hub the node between realms (TR-7), and the area around it gains NPCs and services with
-  each chapter (WF-8). With cheap waystones the hub costs no walking.
+- **The hub.** The [realm portal](realm-portal.md) stands in the Overworld, and every realm's way back leads there.
+  A waystone at the portal makes the hub the node between realms (TR-7), and the area around it gains NPCs and
+  services with each chapter (WF-8). With cheap waystones the hub costs no walking.
 
 ### The stone realm
 
