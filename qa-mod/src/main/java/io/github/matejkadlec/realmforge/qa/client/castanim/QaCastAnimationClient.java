@@ -25,8 +25,9 @@ import net.neoforged.neoforge.common.NeoForge;
 
 /**
  * Client side of the test cast (ADR 0020): one playerAnimator layer per player plays
- * {@code assets/realmforge_qa/player_animations/cast_test.json} while the server says that player casts, and the local
- * player's attack key does nothing during their own cast.
+ * {@code assets/realmforge_qa/player_animations/cast_test.json} while the server says that player casts, its arms
+ * aimed where the player looks ({@link QaCastAimAnimation}), and the local player's attack key does nothing during
+ * their own cast.
  */
 public final class QaCastAnimationClient {
     /**
@@ -91,23 +92,27 @@ public final class QaCastAnimationClient {
             localPlayerCasting = payload.isStart();
         }
         if (PlayerAnimationAccess.getPlayerAssociatedData(player).get(LAYER_ID) instanceof CastLayer layer) {
-            IAnimation next = payload.isStart() ? createCastAnimation() : null;
+            IAnimation next = payload.isStart() ? createCastAnimation(player) : null;
             layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(FADE_TICKS, Ease.INOUTSINE), next);
         }
     }
 
-    /** The test animation, or null (no animation) when it failed to load. */
-    private static IAnimation createCastAnimation() {
+    /**
+     * The test animation for this player, its arms aimed where they look, or null (no animation) when it failed to
+     * load.
+     */
+    private static IAnimation createCastAnimation(AbstractClientPlayer player) {
         IPlayable animation = PlayerAnimationRegistry.getAnimation(ANIMATION_ID);
         if (animation == null) {
             RealmforgeQa.LOGGER.warn("Player animation {} is missing", ANIMATION_ID);
             return null;
         }
         // In first person, draw both arms of the third-person model with the animation applied, as Better Combat
-        // does for its swings, instead of vanilla's first-person hand.
-        return animation.playAnimation()
+        // does for its swings, instead of vanilla's first-person hand. The aim wraps the animation itself, not the
+        // layer, so the fade out of a cast still blends from the aimed pose.
+        return new QaCastAimAnimation(player, animation.playAnimation()
                 .setFirstPersonMode(FirstPersonMode.THIRD_PERSON_MODEL)
-                .setFirstPersonConfiguration(new FirstPersonConfiguration(true, true, true, true));
+                .setFirstPersonConfiguration(new FirstPersonConfiguration(true, true, true, true)));
     }
 
     /** Its own type, so a lookup in the player's animation data needs no unchecked cast. */

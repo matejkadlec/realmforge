@@ -738,7 +738,11 @@ The spell bar, cast bar and cooldown sweep are HUD layers; key mappings follow a
 with live numbers; animations and particles start on `CastStartedPayload`. Cast animations are Emotecraft JSON
 files in `assets/realmforge/player_animations/`, played by `client/animation` on the caster's playerAnimator layer
 for the caster and every tracking player, with the third-person model's arms in first person
-([ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)).
+([ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)). The arms aim where the player looks, since
+the model's arms hang on a body that never pitches and trails the head by up to 50 degrees: in first person they
+turn rigidly with the camera about the eye (rotation and shoulder pivots), so the hands keep their place on screen;
+seen from outside only their rotation follows the head, like vanilla's bow pose. The QA mod's test cast does this in
+`QaCastAimAnimation` (RLM-108), which C6 moves into `client/animation`.
 
 ## 12. Talents
 
