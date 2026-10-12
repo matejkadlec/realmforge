@@ -161,11 +161,18 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
   the landing needs none of that. A saved landing that the world border has left outside (an operator moved or shrank
   it) counts as gone: the next arrival builds a new landing at the spot nearest the arrival point inside the border
   and saves that one, so the player never arrives away from the portal.
-- **The landing cannot be broken, built over or switched:** players outside creative can neither break its frame or
-  selector nor place blocks on its floor and in the air above it (`BlockEvent.BreakEvent` and
-  `BlockEvent.EntityPlaceEvent` are cancelled for them inside the landing's box), its blocks resist explosions like
-  bedrock, and its selector refuses sigils ("The landing always leads home"). A player in a realm can then always
-  get home. If the frame is gone anyway (an operator, another mod), the next arrival rebuilds it in place.
+- **The landing cannot be broken, built over, flooded or switched.** Its protected zone is the landing's box (the
+  floor and the air above it) widened by 4 blocks on each side. In the zone, players outside creative:
+  - cannot break or place blocks (`BlockEvent.BreakEvent` and `BlockEvent.EntityPlaceEvent` are cancelled for them);
+  - cannot use buckets. `BucketItem#use` places and picks up fluids with `Level#setBlock` and posts no block event
+    ([architecture 15.5](../architecture.md#155-instances)), so, as in instances,
+    `PlayerInteractEvent.RightClickItem` is cancelled for a `BucketItem` when the player stands in the zone or aims
+    at a block in it (`Entity#pick`).
+
+  Its frame and selector resist explosions like bedrock, and the selector refuses sigils ("The landing always leads
+  home"). Fluids that flow in from outside the zone cannot remove the portal ([Edge cases](#edge-cases)), and the
+  arrival check below handles a flooded spot. A player in a realm can then always get home. If the frame is gone
+  anyway (an operator, another mod), the next arrival rebuilds it in place.
 - **Arrival puts the player on the floor in front of the frame, facing away from it,** not inside the portal, so
   nobody bounces straight back. Every arrival checks that spot first (solid floor and 2 blocks of air); when
   something still blocks it (an operator, a fluid, another mod), the player lands on the nearest safe spot next to
@@ -268,6 +275,11 @@ If Matěj decides otherwise in the realm design, this section follows his answer
 - **A missing destination:** a selector set to a realm that no longer exists (content removed, data pack off) shows
   "unknown realm" and refuses; a home point in a missing dimension falls back to the respawn point, then the world
   spawn. A player who logs in inside a dimension that no longer exists is moved by vanilla.
+- **Fluids:** the portal block refuses fluids: it is a `LiquidBlockContainer` whose `canPlaceLiquid` answers false.
+  Vanilla's `FlowingFluid#canHoldFluid` spares only its own portal blocks by name (`Blocks.NETHER_PORTAL`,
+  `END_PORTAL`, `END_GATEWAY`), so without that, flowing water or lava would wash away a realm portal's blocks,
+  which have no collision, and a bucket could empty into them. A portal anywhere, the landing included, keeps its
+  opening.
 - **World border:** every arrival point is clamped inside the border, and a landing the border has left outside is
   rebuilt inside it ([the landing](#into-a-realm-the-landing)).
 - **Other travel:** a cross-dimension warp by waystone, an instance exit or a command leaves the home point alone,
@@ -319,7 +331,7 @@ dimension rules and access:
   - `Realm` (record with `CODEC`) and its registry key;
   - `PortalFrame`, the frame check as plain Java over a block lookup: both axes, the missing positions;
   - `RealmPortalBlock`, implementing vanilla's `Portal` (`getPortalDestination`, `getPortalTransitionTime`,
-    `getLocalTransition`);
+    `getLocalTransition`) and `LiquidBlockContainer` (it refuses every fluid);
   - `RealmSelectorBlock` with its block entity;
   - `RealmTravel`: the landing, the home point and the fallbacks, with the safe-spot search as plain Java over a
     column of blocks;
@@ -347,6 +359,8 @@ Tests:
   - a removed landing frame is rebuilt, and so is a landing outside a shrunken world border;
   - a block placed into the landing's arrival space is refused, and a blocked arrival spot moves the player to a safe
     one;
+  - a bucket used in the landing's zone is refused, and water flowing into a portal's opening leaves its portal
+    blocks in place;
   - the selector refuses in the instance dimension;
   - an item, a mob and a mounted player do not travel;
   - a death in the realm respawns at the landing.
