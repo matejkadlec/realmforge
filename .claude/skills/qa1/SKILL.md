@@ -18,6 +18,9 @@ publishing; this skill may not weaken either. _qa1: playtest passed_ there holds
    commits. Commits Matěj pushed from his own clone belong to the batch and are never pushed over; every later
    push is leased on that fetched head (`--force-with-lease=<branch>:<sha>`). His uncommitted edits follow
    `CLAUDE.md`: fold small ones that belong to the batch into the next commit, and ask about anything larger.
+   Anything after the handed-off head that changes gameplay (his edits, his pushed commits) was played only if he
+   says so in his `qa1`; otherwise it goes back to him for another playtest, as `qa2` does, instead of being
+   published.
 3. **Finish:** run the checks for anything that changed since the played head and commit the coherent batch.
    When `origin/master` moved (for a stacked batch: its dependency branch), rebase onto it, regenerate generated
    files with `uv run rf gen`, and run the full gate (_Implementation and verification_, Gradle through the

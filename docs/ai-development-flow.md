@@ -348,7 +348,9 @@ Matěj's `qa1` passes the playtest and authorizes publishing the batch. The
    `origin/<branch>` before anything else (`git merge --ff-only`, or a merge when both sides have commits):
    commits Matěj pushed from his own clone belong to the batch and are never pushed over, and every later push is
    leased on that fetched head. His uncommitted edits in the worktree follow `CLAUDE.md`: fold small ones that
-   belong to the batch into the next commit, ask about anything larger.
+   belong to the batch into the next commit, ask about anything larger. A gameplay change after the handed-off
+   head (his edits or pushed commits) counts as played only when his `qa1` says so; otherwise it goes back to him
+   for another playtest instead of being published.
 3. **Finish:** run the checks for anything that changed since the played head and commit. When `origin/master`
    (for a stacked batch: its dependency branch) moved, rebase onto it, regenerate generated files with
    `uv run rf gen`, and run the full gate again. A rebase whose conflicts touched game code changes what Matěj
