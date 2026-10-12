@@ -95,13 +95,15 @@ requires: []                      # optional extra unlocks, same types as dimens
   wait for more than its chapter, such as a secret boss.
 - **The server decides** ([principle 1](../architecture.md#2-principles)): it evaluates the rule and sends the
   player the set of readable entry ids on login and after `/reload`, and recomputes it whenever a requirement
-  type's input can change: an earned advancement (`AdvancementEvent.AdvancementEarnEvent`) for `chapter_completed`
-  (chapters complete through their advancements) and `has_advancement`, a level-up for `level_at_least`, and a
-  class change for `class_is`. It sends the set again only when it changed, since recipe unlocks are advancements
-  too. Validation accepts in `requires` only the requirement types with such a trigger, so a type added later
-  needs its trigger here first. The client shows and searches only the readable entries. The texts themselves
-  reach every client with the registry and the lang files, which is fine: locking prevents spoilers, it does not
-  keep secrets.
+  type's input can change: any advancement criterion granted or revoked
+  (`AdvancementEvent.AdvancementProgressEvent`, both `ProgressType`s) for `chapter_completed` (chapters complete
+  through their advancements) and `has_advancement`, a level-up for `level_at_least`, and a class change for
+  `class_is`. Not `AdvancementEarnEvent`: NeoForge 21.1 posts it only for advancements with a display, and never
+  on a revoke. It sends the set again only when it changed, since every criterion of every advancement (recipe
+  unlocks included) posts the event. Validation accepts in `requires` only the requirement types with such a
+  trigger, so a type added later needs its trigger here first. The client shows and searches only the readable
+  entries. The texts themselves reach every client with the registry and the lang files, which is fine: locking
+  prevents spoilers, it does not keep secrets.
 
 ## Search
 
@@ -124,7 +126,8 @@ For the task that builds it ([architecture 4 and 18](../architecture.md#4-code-l
 - tests: pytest for the schema, validation and generation; JUnit for the unlock rule and the search (accents,
   ordering); GameTests that a completed chapter advancement adds the next chapter's entries to the payload, and
   that an entry gated by `requires` (`has_advancement`, `level_at_least`) joins it in the same session once the
-  player earns that advancement or reaches that level.
+  player earns that advancement (one without a display included) or reaches that level, and leaves it when the
+  advancement is revoked.
 
 Size M for the screen, the pipeline and the entries of the content that exists then; each later chapter adds its
 entries with its content.
