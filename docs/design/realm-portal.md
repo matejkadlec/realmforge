@@ -193,13 +193,18 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
   list (`ExplosionEvent.Detonate#getAffectedBlocks`) loses the positions inside it, player-lit TNT included, which
   the world's griefing protection otherwise lets break blocks
   ([architecture 19.1](../architecture.md#191-world-defaults)). The selector refuses sigils ("The landing always
-  leads home"). Fluids that flow in from outside cannot remove the portal ([Edge cases](#edge-cases)), and they do not
-  stay in the landing either: once a second while a landing's chunks are loaded, every fluid in its box (the floor
-  and the air above it, about 140 blocks) is removed, so water or lava poured next to the zone never closes the way
-  to the portal or the arrival spot. Plain flow posts no event, hence the check; a fluid that would create a block
-  in the zone (lava making stone or fire) is refused with `BlockEvent.FluidPlaceBlockEvent`, which fires only for
-  that. A player in a realm can then always get home. If the frame is gone
-  anyway (an operator, another mod), the next arrival rebuilds it in place.
+  leads home"). Fluids that flow in from outside cannot remove the portal ([Edge cases](#edge-cases)).
+
+  **The landing also repairs itself,** because the guards above only cover the edits that post an event: once a second
+  while a landing's chunks are loaded, its box (the floor, the frame and the air above the floor, about 180 blocks) is
+  compared with what the landing built. A block or fluid that does not belong there is removed without a drop, and a
+  missing floor, frame, portal or light block is put back, the portal open on return; a waystone on the reserved spot
+  belongs there. So whatever gets in by a way no guard covers (water or lava flowing in, sand or gravel falling in,
+  another mod) never closes the way to the portal or the arrival spot for more than a second. Plain flow and falling
+  blocks post no event, hence the check; a fluid that would create a block in the zone (lava making stone or fire) is
+  also refused with `BlockEvent.FluidPlaceBlockEvent`, which fires only for that. A player in a realm can then always
+  get home. If the frame is gone while no chunk of the landing is loaded (an operator, another mod), the next arrival
+  rebuilds it in place.
 - **Arrival puts the player on the floor in front of the frame, facing away from it,** not inside the portal, so
   nobody bounces straight back. Every arrival checks that spot first (solid floor and 2 blocks of air); when
   something still blocks it (an operator, a fluid, another mod), the player lands on the nearest safe spot next to
@@ -378,7 +383,7 @@ dimension rules and access:
   - `RealmSelectorBlock` with its block entity;
   - `RealmTravel`: the landing, the home point and the fallbacks, with the safe-spot search as plain Java over a
     column of blocks;
-  - `RealmLandings`, the saved landing per realm, its protected zone and its once-a-second fluid check;
+  - `RealmLandings`, the saved landing per realm, its protected zone and its once-a-second repair;
   - `RealmAccess`, which asks `core`'s requirement API, at the portal and in its `EntityTravelToDimensionEvent`
     listener, which also stops every entity that is not a player from entering or leaving a realm;
   - the `realmforge:realm_travel` attachment and the respawn listener;
@@ -404,7 +409,8 @@ Tests:
   - a block placed into the landing's arrival space is refused, and a blocked arrival spot moves the player to a safe
     one;
   - a bucket used in the landing's zone is refused, water flowing into a portal's opening leaves its portal blocks in
-    place, and lava poured just outside the zone is gone from the landing's box within a second;
+    place, and lava poured or gravel dropped just outside the zone is gone from the landing's box within a second,
+    while a waystone on the reserved spot stays;
   - TNT lit by a player next to the landing leaves its zone unchanged, and so does a piston pushing blocks into it
     or out of it from below;
   - the selector refuses in the instance dimension;
