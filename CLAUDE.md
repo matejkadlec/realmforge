@@ -15,6 +15,8 @@ modpack adds third-party QoL, performance and library mods.
   response to him ends with the [status overview](#status-overview).
 - **Vision:** [docs/vision.md](docs/vision.md) (goals, likes, hard no's such as flying bosses or RNG grind).
 - **Decisions:** [docs/decisions/](docs/decisions/README.md) (ADRs). Background: [docs/research-notes.md](docs/research-notes.md).
+- **Research:** [docs/research/](docs/research/README.md): reference games (Craft to Exile 2, Advent of Ascension,
+  Hytale) with Adopt / Adapt / Avoid recommendations by ID (`RE-9`, `DU-4`, …) that tickets cite.
 - **Architecture:** [docs/architecture.md](docs/architecture.md): how the core mod is built (feature packages,
   registries, data flow from YAML into the game, player state, stats, networking, client isolation). Read the
   sections for the system you touch before writing code.
