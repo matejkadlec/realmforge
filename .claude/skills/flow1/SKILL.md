@@ -1,6 +1,6 @@
 ---
 name: flow1
-description: Autonomously select and deliver a coherent batch of 1-N tickets from the active RLM Jira sprint (Next first, then To Do), pulling unfinished dependencies into the batch and keeping Next filled by priority. Claims the tickets, implements the batch in its own git worktree, validates it, publishes one ready pull request and carries it to its merge with monitor-pr (a gameplay batch waits there for Matěj's playtest). Never implements decision tickets or tickets waiting on Matěj; lists them instead. Use when the user says "flow1" or asks the agent to pick up and deliver sprint work.
+description: Autonomously select and deliver a coherent batch of 1-N tickets from the active RLM Jira sprint (Next first, then To Do), pulling unfinished dependencies into the batch and keeping Next filled by priority. Claims the tickets, implements the batch in its own git worktree and validates it. An AI-only batch is published as one ready pull request and carried to its merge with monitor-pr; a gameplay batch is pushed without a pull request and handed to Matěj for a playtest, which he answers with qa1 or qa2. Never implements decision tickets or tickets waiting on Matěj; lists them instead. Use when the user says "flow1" or asks the agent to pick up and deliver sprint work.
 ---
 
 # flow1: autonomous batch delivery
@@ -10,9 +10,9 @@ selecting work; this skill may not weaken either. Each step names the section of
 rules.
 
 `flow1` is one autonomous goal. Do not treat it as a request for a single ticket, and do not stop at a report
-before a ready pull request exists, unless the run reaches a boundary in _Concurrency and run boundaries_ first:
-no startable batch (everything left waits on Matěj, conflicts with in-flight work or exceeds a cap), or a stop
-for Matěj.
+before an AI-only batch's ready pull request or a playtest batch's handoff exists, unless the run reaches a
+boundary in _Concurrency and run boundaries_ first: no startable batch (everything left waits on Matěj, conflicts
+with in-flight work or exceeds a cap), or a stop for Matěj.
 
 1. **Intake:** first run _Reconciling merged tickets_; a ticket that cannot be matched never blocks the run. Then
    follow _Intake and conflict control_: inspect the active sprint (Next before To Do), the in-flight tickets,
@@ -38,16 +38,19 @@ for Matěj.
    `./gradlew build` and the GameTests green, every Gradle task through the _Gradle queue_. Report only the
    commands that actually ran.
 8. **Replenish** Next and reassess active-sprint priority before handing off.
-9. **Publish** under _Publication_: push, open one ready pull request (`needs-playtest` for a playtest batch; a
-   change to `docs/roadmap.md` only as Matěj decided it, with no label), verify that the remote head is your final
-   commit, record the `🤖 Claude QA` summary (and the `🎮 Playtest handoff`) on each ticket, move the tickets to
-   Pending CR (AI-only) or Pending User QA (playtest), and hand off with the status overview from `CLAUDE.md`
-   (for a playtest batch in its manual-test shape: _What to test_, the _Launch commands_, the verification and the
-   batch ledger). The roadmap holds no status, so a finished task changes only its ticket.
-10. **Monitor to the merge, always.** Do not end the turn at the handoff: in the same run, local or cloud, run
-    [`monitor-pr`](../monitor-pr/SKILL.md) on that pull request until it merges or reaches one of its stops
-    (_After publication_). A playtest batch waits there until Matěj removes `needs-playtest`; a failed playtest
-    follows _Playtest handoff_. A batch is not delivered until its pull request has merged.
+9. **AI-only batch: publish** under _Publication_: push, open one ready pull request (a change to
+   `docs/roadmap.md` only as Matěj decided it), verify that the remote head is your final commit, record the
+   `🤖 Claude QA` summary on each ticket, move the tickets to Pending CR, and hand off with the status overview from
+   `CLAUDE.md`. The roadmap holds no status, so a finished task changes only its ticket.
+10. **AI-only batch: monitor to the merge, always.** Do not end the turn at the handoff: in the same run, local or
+    cloud, run [`monitor-pr`](../monitor-pr/SKILL.md) on that pull request until it merges or reaches one of its
+    stops (_After publication_). A batch is not delivered until its pull request has merged.
+11. **Playtest batch: hand off and stop** under _Playtest handoff_: push the branch and open **no pull request**,
+    record the `🎮 Playtest handoff` on each ticket, move the tickets to Pending User QA, keep the branch and the
+    worktree, and give the status overview in its manual-test shape (_What to test_, the _Launch commands_, the
+    verification and the batch ledger), closing with how Matěj answers. Stop there: his
+    [`qa1`](../qa1/SKILL.md) publishes the batch and carries it to its merge, and his [`qa2`](../qa2/SKILL.md)
+    revises it.
 
 The run ends at a boundary in _Concurrency and run boundaries_. Every response of the run, the last one included,
 ends with the status overview from `CLAUDE.md`, its batch ledger filled as that section describes (tickets waiting

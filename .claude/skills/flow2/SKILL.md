@@ -1,6 +1,6 @@
 ---
 name: flow2
-description: Turn Matěj's task description into RLM Jira tasks in the active sprint (the existing ticket format - parent milestone epic, labels, a "Done when" section, English), claim them (In Progress) and implement them right away through the flow1 lifecycle, pulling in unfinished dependencies. Use when the user describes a task and says "flow2".
+description: Turn Matěj's task description into RLM Jira tasks in the active sprint (the existing ticket format - parent milestone epic, labels, a "Done when" section, English), claim them (In Progress) and implement them right away through the flow1 lifecycle, pulling in unfinished dependencies (an AI-only batch ends in a pull request, a gameplay batch in a playtest handoff for qa1 or qa2). Use when the user describes a task and says "flow2".
 ---
 
 # flow2: capture then deliver
@@ -31,8 +31,9 @@ creating or selecting work; this skill may not weaken either.
 6. Claim every ticket you will implement through the atomic intake claim before writing any implementation, as
    `flow1` step 5 requires. A ticket this run just created is claimed the same way; creating it grants no
    ownership.
-7. Implement as much of the safe coherent scope as current precision allows, then follow `flow1` steps 6 to 10
-   for validation, publication, the handoff (the status overview; a playtest batch with its _Launch commands_), the
-   monitored merge that always follows publication, the ticket statuses, concurrency and the stop rules.
+7. Implement as much of the safe coherent scope as current precision allows, then follow `flow1` steps 6 to 11
+   for validation, the ticket statuses, concurrency and the stop rules: an AI-only batch is published and monitored
+   to its merge; a playtest batch is pushed without a pull request and handed to Matěj (the status overview with
+   its _Launch commands_) for `qa1` or `qa2`.
 8. Leave blocked tickets in the appropriate non-complete state with the exact dependency recorded (a `Blocks`
    link and a comment).
