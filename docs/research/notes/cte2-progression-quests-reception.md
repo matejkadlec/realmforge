@@ -10,7 +10,7 @@ Local source abbreviations used in citations (all read-only):
 - `MNSDP/` = `CTE2 1.1.3 instance: config/openloader/data/cte_mns/data/mmorpg/` (CTE2's own Mine and Slash datapack, which overrides the jar defaults)
 - `GH/` = `CTE2 GitHub repo: ` (`CHANGELOG.md` = 2.1.x; `ARCHIVED CHANGELOG.MD` = 0.1.0 (2023-10-05) to 2.0.4 (2026-08-10))
 
-**Version caveat.** The local instance is CTE2 **1.1.3**: `manifest.json` gives name "Craft to Exile 2", version "1.1.3", Forge 47.4.10, MC 1.20.1 and 401 mods (`CTE2 1.1.3 instance: manifest.json`). The changelog dates 1.1.3 to 2025-11-06. The current line is 2.1.4 (2026-09-10). Between them, 2.0.0 reworked mapping (the Atlas), added 2 classes and 2.1.0 added a Mercenary companion and loot filtering (`CTE2 GitHub repo: CHANGELOG.md`, [GH/ARCHIVED CHANGELOG.MD](<CTE2 GitHub repo: ARCHIVED CHANGELOG.MD>)). Quest numbers below are for 1.1.3 unless marked otherwise. I computed the counts with a throw-away SNBT parser; its output is in `local analysis script (not published)`. A third-party wiki made for 2.1.4 lists almost the same per-chapter counts (Prologue 27, Act I 51, Act IV 33, Act V 29, Campaign Shop 13; all others identical), so the structure has been stable ([minecraft-guides.com CTE2 wiki](https://www.minecraft-guides.com/modpacks/craft-to-exile-2/)).
+**Version caveat.** The local instance is CTE2 **1.1.3**: `manifest.json` gives name "Craft to Exile 2", version "1.1.3", Forge 47.4.10, MC 1.20.1 and 401 mods (`CTE2 1.1.3 instance: manifest.json`). The changelog dates 1.1.3 to 2025-11-06. The current line is 2.1.4 (2026-09-10). Between them, 2.0.0 reworked mapping (the Atlas), added 2 classes and 2.1.0 added a Mercenary companion and loot filtering (`CTE2 GitHub repo: CHANGELOG.md`, [GH/ARCHIVED CHANGELOG.MD](https://github.com/mahjerion/Craft-to-Exile-2/blob/main/ARCHIVED%20CHANGELOG.MD)). Quest numbers below are for 1.1.3 unless marked otherwise. I computed the counts with a throw-away SNBT parser; its output is in `local analysis script (not published)`. A third-party wiki made for 2.1.4 lists almost the same per-chapter counts (Prologue 27, Act I 51, Act IV 33, Act V 29, Campaign Shop 13; all others identical), so the structure has been stable ([minecraft-guides.com CTE2 wiki](https://www.minecraft-guides.com/modpacks/craft-to-exile-2/)).
 
 ## 1. Quest book structure: chapters, counts, task and reward types, gating, points
 
@@ -42,7 +42,7 @@ CTE2's FTB Quests book has about 620 quests in 21 chapters and 4 groups: Campaig
   Side chapters are mostly `item` tasks (Magical Flora 111, Culinary 89, Jolly Cooperation 68). Exploration is 33 `structure` + 5 `advancement` tasks. Other Hobbies uses `stat` tasks (deaths, mob kills, gateways defeated).
 - **Reward types:** flat M&S XP via `/mine_and_slash give exp @p N`, loot chests ("Rare Gear Loot Chest (Lv. N)"), pick-one choice tables, Lightman's coins, Gateway pearls, cosmetic hats for achievements, and "custom" icons that display point grants.
 - **Flat XP per act** (sum of `give exp`): Prologue 3,150; Act I 44,975; Act II 57,250; Act III 222,250; Act IV 486,250; Act V 547,300; Epilogue 0 (items only). Single quests range from 50 XP (Prologue "Anti Mob Farm") to 35,000 XP (Act V "Untied Loose Ends").
-- **Side chapters pay level-scaled XP** (`give xp_times_lvl @p N`): N = 50 for exploration and fishing finds, 100 typical, 500 for "Challenge" quests, 750 for a chapter "Achievement" (`CTE2 1.1.3 instance: config/ftbquests/quests/chapters/exploration.snbt`, `CTE2 1.1.3 instance: config/ftbquests/quests/chapters/fishing.snbt`). The 0.4.0 changelog gives the rationale: "Quests not found in the main Acts now provide experience scaled to your level. It's not a percentage, as it would be too strong at higher levels (people could just horde % rewards till 99)" ([GH/ARCHIVED CHANGELOG.MD](<CTE2 GitHub repo: ARCHIVED CHANGELOG.MD>)).
+- **Side chapters pay level-scaled XP** (`give xp_times_lvl @p N`): N = 50 for exploration and fishing finds, 100 typical, 500 for "Challenge" quests, 750 for a chapter "Achievement" (`CTE2 1.1.3 instance: config/ftbquests/quests/chapters/exploration.snbt`, `CTE2 1.1.3 instance: config/ftbquests/quests/chapters/fishing.snbt`). The 0.4.0 changelog gives the rationale: "Quests not found in the main Acts now provide experience scaled to your level. It's not a percentage, as it would be too strong at higher levels (people could just horde % rewards till 99)" ([GH/ARCHIVED CHANGELOG.MD](https://github.com/mahjerion/Craft-to-Exile-2/blob/main/ARCHIVED%20CHANGELOG.MD)).
 - **Main-quest chains:** Act I 6, Act II 6, Act III 7, Act IV 9, Act V 8. The Act I lost page "Acts" says: "once you've completed the line of main quests (typically 5-7 quests in length), you will receive the quest to move on to the next act/dimension … each act is associated with a different dimension" (`CTE2 1.1.3 instance: config/ftbquests/quests/chapters/act_i.snbt`, quest "Acts").
 - **Gating** (cross-chapter dependencies, parsed):
 
@@ -100,14 +100,14 @@ CTE2's FTB Quests book has about 620 quests in 21 chapters and 4 groups: Campaig
   - The 0.9.1 changelog says repeatables "have been moved out of the main lines and into a new Chapter to prevent players from getting 'stuck'".
 - **Act achievements:** each act has a hexagon "Achievement" that pays a cosmetic hat and coins (Act I "Read All Act I Lost Pages!", Act II "Defeat All Act II Mini-Bosses!", Acts III to V "Complete All Act N Quests!"). "The Completionist" needs every chapter achievement and broadcasts a server-wide message (`CTE2 1.1.3 instance: config/ftbquests/quests/chapters/completionist.snbt`).
 - **XP curve** (CTE2 keeps the M&S formula; `NORMAL_STAT_SCALING {base 1.0, per_level 0.2}` in the override above):
-  - XP to next level = (10·(1+0.2·(L−1)))^2.4; base mob XP = 50 + (4·(1+0.2·(L−1)))^1.1 (`Mine and Slash source (1.20-Forge): src/main/java/com/robertx22/mine_and_slash/uncommon/utilityclasses/LevelUtils.java`, lines 54–64).
-  - XP for one level: Lv 15 needs 6,187; Lv 50 needs 75,895; Lv 99 needs 357,504.
-  - Cumulative: Lv 15 ≈ 31k, Lv 30 ≈ 237k, Lv 50 ≈ 1.17M, Lv 55 ≈ 1.58M, Lv 75 ≈ 4.30M, Lv 100 ≈ 11.0M.
+  - XP to go from level L to L+1 = (10·(1+0.2·L))^2.4 (Mine and Slash evaluates its level helper at L+1); base mob XP = 50 + (4·(1+0.2·(L−1)))^1.1 (`Mine and Slash source (1.20-Forge): src/main/java/com/robertx22/mine_and_slash/uncommon/utilityclasses/LevelUtils.java`, lines 54–64).
+  - XP for one level: from Lv 1 389; from Lv 15 6,998; from Lv 50 79,313; from Lv 99 365,891.
+  - Cumulative XP to reach: Lv 15 ≈ 37k, Lv 30 ≈ 262k, Lv 50 ≈ 1.24M, Lv 55 ≈ 1.68M, Lv 75 ≈ 4.49M, Lv 100 ≈ 11.38M (computed).
   - Real kill XP is multiplied by mob rarity, map tier and CTE2 multipliers, so kill counts from the base formula are only indicative.
 
 ### Inferences
 - The critical path is short (about 36 main quests across Acts I to V, plus Prologue pages) while total volume is large (about 620). Hobbies are opt-in.
-- Levels 1–55 (the whole campaign) are only about 14% of the XP to 100. About 86% of the grind (55→100) comes after the campaign, in Maps. That matches the dev's own "drop off in engagement at 55" diagnosis (section 6).
+- Levels 1–55 (the whole campaign) are only about 15% of the XP to 100. About 85% of the grind (55→100) comes after the campaign, in Maps. That matches the dev's own "drop off in engagement at 55" diagnosis (section 6).
 - The flat campaign quest XP (about 1.36M) roughly equals the base XP to reach level 52. Quests were deliberately made a main XP source during the campaign (0.6.0 and 0.9.0 fixes, section 6).
 
 ### Gaps
@@ -141,7 +141,7 @@ Each act follows the same template: kill a few local mob packs, find the act's s
   | Twilight Forest | 90–100 | 2.0 | none |
 
   Twilight Forest mobs also get "+400% more health", +25% armor and dodge, and +25 elemental and chaos resist.
-- **Guide book and quest copies of the same table:** the Patchouli "Dimensions" entries list level range, enraged range, quests covered, gateways, bosses and portal recipe for each dimension (`CTE2 1.1.3 instance: patchouli_books/CTE2/en_us/entries/dimensions/`). The Act III lost page "Travelling Backwards" explains enraging ("At certain breakpoint levels, past Dimensions will 'enrage'") (`CTE2 1.1.3 instance: config/ftbquests/quests/chapters/act_iii.snbt`). Enraging was added in 0.9.1 as "Something players have been asking for" ([GH/ARCHIVED CHANGELOG.MD](<CTE2 GitHub repo: ARCHIVED CHANGELOG.MD>)).
+- **Guide book and quest copies of the same table:** the Patchouli "Dimensions" entries list level range, enraged range, quests covered, gateways, bosses and portal recipe for each dimension (`CTE2 1.1.3 instance: patchouli_books/CTE2/en_us/entries/dimensions/`). The Act III lost page "Travelling Backwards" explains enraging ("At certain breakpoint levels, past Dimensions will 'enrage'") (`CTE2 1.1.3 instance: config/ftbquests/quests/chapters/act_iii.snbt`). Enraging was added in 0.9.1 as "Something players have been asking for" ([GH/ARCHIVED CHANGELOG.MD](https://github.com/mahjerion/Craft-to-Exile-2/blob/main/ARCHIVED%20CHANGELOG.MD)).
 - **Scaling rules:**
   - "Although mobs scale to player level, they cap out in each dimension, making it possible to 'overlevel' for a dimension if you're struggling with it" (Act I lost page "Acts").
   - "the higher level a mob is to you it takes less damage and deals more … This bonus starts at a 3 level differential" (Act II "Dark Ritual").
@@ -201,13 +201,13 @@ Each act follows the same template: kill a few local mob packs, find the act's s
   - Four "Primal Titans" from Bosses of Mass Destruction, all at "minimum level of 90 and at Mythic Rarity".
   - Then the Twilight Forest. Its portal must be built in the Otherside, and "Mobs from Twilight Forest spawn at a minimum of level 90!".
   - The chapter follows TF's own boss order: Naga → Lich → Minoshroom → Hydra → Knight Phantoms → Ur-Ghast → Alpha Yeti → Snow Queen. Bosses have respawn monuments, and "Explorer's Compass … doesn't work".
-  - The Epilogue was added in 0.7.0; the TF section in 0.8.0 "Note that this is a level 90 zone" ([GH/ARCHIVED CHANGELOG.MD](<CTE2 GitHub repo: ARCHIVED CHANGELOG.MD>)).
+  - The Epilogue was added in 0.7.0; the TF section in 0.8.0 "Note that this is a level 90 zone" ([GH/ARCHIVED CHANGELOG.MD](https://github.com/mahjerion/Craft-to-Exile-2/blob/main/ARCHIVED%20CHANGELOG.MD)).
 - **Elemental identity per dimension** ("Mob Affinities" lost page in `CTE2 1.1.3 instance: config/ftbquests/quests/chapters/act_ii.snbt`): Overworld none, Nether Fire, Undergarden Chaos, Aquamirae Cold, Everbright Cold+Lightning, Everdawn Fire+Chaos, End Fire+Lightning+Chaos, Otherside Chaos.
 - **Resist penalty by level** ("Resistances" lost page in `CTE2 1.1.3 instance: config/ftbquests/quests/chapters/act_iii.snbt`): Lv 1–24 +25%, 25–49 0%, 50–74 −25%, 75+ −50% elemental and chaos resistance.
 - **Boss-finding aids:**
   - Gateways to Eternity pearls let players summon quest bosses and mobs instead of hunting rare spawns.
   - Since 0.8.0: "Mobs in dimensions up to and including Act V can now spawn Gateways on death."
-  - Changelog fixes for hard-to-complete quests: "Split Defenders of the Nether into 2 quests … Added images to show what the structure looks like" (1.0.6); "Changed objectives for Awful Ghast and Nether Keeper quest so it's more reliable to complete" (1.0.0); "You no longer need to kill the Maze Mother to continue the quest line" (0.2.1) ([GH/ARCHIVED CHANGELOG.MD](<CTE2 GitHub repo: ARCHIVED CHANGELOG.MD>)).
+  - Changelog fixes for hard-to-complete quests: "Split Defenders of the Nether into 2 quests … Added images to show what the structure looks like" (1.0.6); "Changed objectives for Awful Ghast and Nether Keeper quest so it's more reliable to complete" (1.0.0); "You no longer need to kill the Maze Mother to continue the quest line" (0.2.1) ([GH/ARCHIVED CHANGELOG.MD](https://github.com/mahjerion/Craft-to-Exile-2/blob/main/ARCHIVED%20CHANGELOG.MD)).
 
 ### Inferences
 - The pacing walls visible in the data:
@@ -262,7 +262,7 @@ About 20 systems are introduced before the first real fight. That front-loading 
   - Epilogue (1).
 - **Patchouli "Adventurer Handbook"** (v1.0.7), 5 categories and 51 entries: Lost Pages 21, Dimensions 9 (each with an in-world "visualize portal" button), Disabled Crafts 7, Professions 10, Storage 4 (`CTE2 1.1.3 instance: patchouli_books/CTE2/book.json`).
   - Landing text: "More vital information is contained within the questbook. Please read."
-  - Added in 1.1.0 (2025-10-22): "A new Patchoulie book has been added which consolidates the information found in the quests!" ([GH/ARCHIVED CHANGELOG.MD](<CTE2 GitHub repo: ARCHIVED CHANGELOG.MD>)).
+  - Added in 1.1.0 (2025-10-22): "A new Patchoulie book has been added which consolidates the information found in the quests!" ([GH/ARCHIVED CHANGELOG.MD](https://github.com/mahjerion/Craft-to-Exile-2/blob/main/ARCHIVED%20CHANGELOG.MD)).
 - **MineMenu radial wheel ("H")** (`CTE2 1.1.3 instance: minemenu/menu.json`): Mine and Slash Hub, Quests, FTB Teams, Wallet, Food Book, Professions Shop, Minimap Settings, Waypoints, Jade Settings, Inventory HUD Settings.
   - Other hotkeys the quests teach: Alt (dodge), Alt+B (Master Bag), Y (quick potion), \` (Ultimine), = (monster stats), Delete (unsummon), Shift+] (DPS overlay).
 - **First join:** the message "You wake up in an unfamiliar place." (`CTE2 1.1.3 instance: config/firstjoinmessage.json5`), and the spawn is forced into a village (`CTE2 1.1.3 instance: config/villagespawnpoint.json5`).
@@ -270,7 +270,7 @@ About 20 systems are introduced before the first real fight. That front-loading 
 - **The M&S author's newbie docs:** "Mine and Slash is a big and complex mod, but if you know the basics, you can't screw up too badly. Progression is simple, but optimizing your build and knowing how to efficiently grind gear is the complex part" ([Starting Out](https://moddedmc.wiki/en/project/mine-and-slash/latest/docs/newbie_guide/starting_out)).
   - "Mistakes to Avoid" lists: killing mobs ±10 levels away, no base, not salvaging, unspent points ("Reset Potions are cheap"), not replacing gear, ignoring professions ([Mistakes to Avoid](https://moddedmc.wiki/en/project/mine-and-slash/latest/docs/newbie_guide/mistakes_to_avoid)).
 - **The CTE2 GitHub wiki also admits the friction:** "The talent tree may appear intimidating at first". Parts of it are stale; for example, Favor is described with a 250 cap and −125 on death, versus 2,500 and −500 in the 1.1.3 config ([wiki Mine-&-Slash page](https://github.com/mahjerion/Craft-to-Exile-2/wiki/Mine-&-Slash)).
-- **Teaching fixes in the changelog** ([GH/ARCHIVED CHANGELOG.MD](<CTE2 GitHub repo: ARCHIVED CHANGELOG.MD>), `CTE2 GitHub repo: CHANGELOG.md`):
+- **Teaching fixes in the changelog** ([GH/ARCHIVED CHANGELOG.MD](https://github.com/mahjerion/Craft-to-Exile-2/blob/main/ARCHIVED%20CHANGELOG.MD), `CTE2 GitHub repo: CHANGELOG.md`):
   - "Weapon type requirement tooltips have been streamlined a bit to make more sense to the newer player" (0.7.0).
   - "Added a few more Lost Page quests to help with newer players" (0.6.0).
   - "Improved introduction to Runeword in Prologue" (1.0.3).
@@ -292,13 +292,13 @@ About 20 systems are introduced before the first real fight. That front-loading 
 ## 4. Quality of life and travel
 
 ### Takeaway
-CTE2 ships a dense QoL layer from minute one: iron backpack, a loot "Master Bag", auto-salvage, waystones plus warp scrolls, a return-scroll emergency item, a paraglider with no stamina, sleeping bags, Ultimine, quick-stack, trash slot, minimap and keep-inventory. Real flight is rationed: a flying Chocobo breed (Nether), the elytra after the Ender Dragon (Lv 50+), and a Botania tiara at the end of that chapter. Travel is waystone-centric: it costs XP per distance plus a few coins, and cross-dimension travel works only via global waystones.
+CTE2 ships a dense QoL layer from minute one: iron backpack, a loot "Master Bag", auto-salvage, waystones plus warp scrolls, a return-scroll emergency item, a paraglider with no stamina, sleeping bags, Ultimine, quick-stack, trash slot, minimap and keep-inventory. Real flight is rationed: a flying Chocobo breed (Nether), the elytra after the Ender Dragon (Lv 50+), and a Botania tiara at the end of that chapter. Travel is waystone-centric: normal use costs no XP (both XP cost settings are 0), only a few coins (1 per 100 m, at most 10); cross-dimension travel works only via global waystones and costs 3 levels.
 
 ### Cited Findings
 - **Free starting gear from Prologue quests:** Iron Backpack, 12 bread, Gold Wallet, 8 Warp Scrolls, a Heart Container, and the Master Bag ("wear the bag in a Curio slot and access it via 'Alt + B'") (`CTE2 1.1.3 instance: config/ftbquests/quests/chapters/act_0.snbt`).
-- **Waystones** (`CTE2 1.1.3 instance: config/waystones-common.toml`): `blocksPerXpLevel = 1000`, `dimensionalWarp = "GLOBAL_ONLY"` (cost 3), `warpStoneCooldown = 360` s, `generatedWaystonesUnbreakable = true`, `transportLeashed = true`, worldgen `frequency = 20`.
+- **Waystones** (`CTE2 1.1.3 instance: config/waystones-common.toml`): `blocksPerXpLevel = 1000` (no effect, because `minimumBaseXpCost` and `maximumBaseXpCost` are 0), `dimensionalWarp = "GLOBAL_ONLY"` (cost 3), `warpStoneCooldown = 360` s, `generatedWaystonesUnbreakable = true`, `transportLeashed = true`, worldgen `frequency = 20`.
   - A coin cost on top: `moneyCostPerHundredMeter = 1`, `maximumCost = 10` (`CTE2 1.1.3 instance: config/waystoneandlightman-common.toml`).
-  - 2.0.2: "Warp Stone cooldown is now 2 minutes instead of 6" ([GH/ARCHIVED CHANGELOG.MD](<CTE2 GitHub repo: ARCHIVED CHANGELOG.MD>)).
+  - 2.0.2: "Warp Stone cooldown is now 2 minutes instead of 6" ([GH/ARCHIVED CHANGELOG.MD](https://github.com/mahjerion/Craft-to-Exile-2/blob/main/ARCHIVED%20CHANGELOG.MD)).
 - **Paraglider:** `paraglidingConsumesStamina = false`, `runningAndSwimmingConsumesStamina = false`, `maxHeartContainers = 100` (`CTE2 1.1.3 instance: defaultconfigs/paraglider-server.toml`). 0.5.2: "Completely removed Stamina from the game".
 - **Mounts and flight:**
   - Act I Chocobo quest (+1 talent): "All this running around has to be tiring... Maybe it's time for a mount … breed special Chocobos that have the ability to fly!"
@@ -326,7 +326,7 @@ CTE2 ships a dense QoL layer from minute one: iron backpack, a loot "Master Bag"
 - Loot overload was a recurring, long-requested fix area across 0.7 to 2.1.
 
 ### Gaps
-- Not verified whether the waystone XP cost uses vanilla XP; most likely it does, since M&S XP is a separate bar.
+- The only waystone XP cost is the 3-level dimensional warp; it is presumably vanilla XP, since Mine and Slash XP is a separate bar (not verified).
 
 ## 5. Difficulty, mob scaling and death handling
 
@@ -336,7 +336,7 @@ Death is soft. Keep-inventory is on and gear is never lost. Only from level 50 d
 ### Cited Findings
 - **Gamerules:** `keep_inventory = true`, `natural_regeneration = false`, `disable_raids = true`, `mob_griefing = true` (`CTE2 1.1.3 instance: config/globalgamerules-common.toml`).
 - **Death costs:** `DEATH_PENALTY_START_LEVEL = 50`, `death_exp_penalty = 0.05`, `favor_death_loss = 500.0`, `MAX_POSSIBLE_FAVOR = 2500` (`CTE2 1.1.3 instance: defaultconfigs/mine_and_slash-server.toml`).
-  - History: 5% → 10% (0.6.0) → "Death EXP penalty now only starts at level 50" (0.9.0) → "reduced from 10% to 5%" (1.1.0) ([GH/ARCHIVED CHANGELOG.MD](<CTE2 GitHub repo: ARCHIVED CHANGELOG.MD>)).
+  - History: 5% → 10% (0.6.0) → "Death EXP penalty now only starts at level 50" (0.9.0) → "reduced from 10% to 5%" (1.1.0) ([GH/ARCHIVED CHANGELOG.MD](https://github.com/mahjerion/Craft-to-Exile-2/blob/main/ARCHIVED%20CHANGELOG.MD)).
 - **Favor** "rewards players for living". At the 2,500 cap it gives "+25% increase to loot and experience"; dying costs 500. Rarity gates: Epic from Lv 10, Legendary 25, Mythic 50 (Act I lost page "Favor").
 - **Anti Mob Farm:** 15 free kills per chunk, then −2% per kill, recovering 5% per minute, +5 free kills per looted chest. Exempt: the M&S dungeon dimension, Everbright, Everdawn and bosses (`CTE2 1.1.3 instance: config/anti_mob_farm-common.toml`). The Prologue's reason: "to encourage travel and exploration instead of the usage of automated experience methods". The CTE2 wiki explains how to delete the anti-farm mods ([wiki Modpack-Tweaks](https://github.com/mahjerion/Craft-to-Exile-2/wiki/Modpack-Tweaks)).
 - **Death-count quests** with a joke tone: "Welcome to Craft to Exile 2" (1 death), "This is Craft to Exile 2" (25), "…Prepare to Mine Edition" (50), "Hollowed" (100) (`CTE2 1.1.3 instance: config/ftbquests/quests/chapters/other_hobbies.snbt`).
@@ -371,7 +371,7 @@ Over about 3 years (0.1.0 in Oct 2023 to 2.1.4 in Sep 2026) the dev:
 In 2.0.0 he named the four biggest pain points himself: the engagement drop at Lv 55 (maps), mapping UX and lag, weak early skill-gem scaling, and confusing skills and stats.
 
 ### Cited Findings
-All from [GH/ARCHIVED CHANGELOG.MD](<CTE2 GitHub repo: ARCHIVED CHANGELOG.MD>) and `CTE2 GitHub repo: CHANGELOG.md`.
+All from [GH/ARCHIVED CHANGELOG.MD](https://github.com/mahjerion/Craft-to-Exile-2/blob/main/ARCHIVED%20CHANGELOG.MD) and `CTE2 GitHub repo: CHANGELOG.md`.
 - **2.0.0 dev note (2026-08-02):** "I wanted to address some of the major pain points experienced by players: the drop off in engagement at 55 (maps), the mapping experience in general (teleporter block, lag), difficulty with skill gem scaling in the early game, and confusion from certain skills and stats."
   - Same patch: "The progression through Acts IV and V has been refined to optimize player onboarding for the mapping phase"; "Maps start dropping at 50 now"; an Atlas passive tree that starts with 4 map types.
 - **XP see-saw:**
@@ -485,7 +485,7 @@ CTE2 (Forge 1.20.1, Mine and Slash) brings back Dissonance's linear dimension la
   - Its ladder: Overworld 1–30, Bumblezone 14–18, Nether 18–26, End 26–30, Atum 30–40, Good Night's Sleep 40–50, Tropicraft or Midnight 50–58, Gaia 58–74, and "Maps" 30–99.
   - Crafting tied to levels: "Craft a stone sword to help you from levels 4-8, then swap over to an iron sword at level 9".
   - "Global waystones intrinsically cost more vanilla XP … and impose an increased cool down" (same description).
-- **Timeline:** CTE2's first changelog entry is 0.1.0 on 2023-10-05 with "New class-based system. Ascensions and Skill Gems have been combined" ([GH/ARCHIVED CHANGELOG.MD](<CTE2 GitHub repo: ARCHIVED CHANGELOG.MD>)). CurseForge first release: Nov 14, 2023 ([ModpackIndex](https://www.modpackindex.com/modpack/72640/craft-to-exile-2-20-atlas-update)).
+- **Timeline:** CTE2's first changelog entry is 0.1.0 on 2023-10-05 with "New class-based system. Ascensions and Skill Gems have been combined" ([GH/ARCHIVED CHANGELOG.MD](https://github.com/mahjerion/Craft-to-Exile-2/blob/main/ARCHIVED%20CHANGELOG.MD)). CurseForge first release: Nov 14, 2023 ([ModpackIndex](https://www.modpackindex.com/modpack/72640/craft-to-exile-2-20-atlas-update)).
 - **A CTE2 player wants CTE1's maps back:** "i also wish there was more side content like the first cte with the maps" ([ModDex aroyund](https://moddex.gg/modpack/craft-to-exile-2)).
 
 ### Inferences
@@ -536,9 +536,9 @@ CTE2 (Forge 1.20.1, Mine and Slash) brings back Dissonance's linear dimension la
   - Realmforge's hard caps (10, 20, 30…) stop the "power straight through the dimensions" complaint.
   - Use soft entry, as already decided: the first realm is open from Lv 1 but recommended from 5.
   - Never leave a CTE2-style gap (Epilogue at Lv 90 after Lv 60–75 content, scaffolded only by maps).
-- **XP curve.** In CTE2 about 86% of the XP to 100 sits after the campaign (55→100), driven by an exponent of 2.4 on the level multiplier.
+- **XP curve.** In CTE2 about 85% of the XP to 100 sits after the campaign (55→100), driven by an exponent of 2.4 on the level multiplier.
   - With chapter caps, Realmforge can tune XP per chapter so each 10-level band takes a target time, with quests supplying a fixed share. CTE2's changelog shows more than 10 global XP re-tunes between 0.1.0 and 1.1.0 (section 6), consistent with having no such targets.
-- **Travel.** CTE2 charges about 1 XP level per 1,000 blocks plus coins and allows cross-dimension hops only via global waystones; flight comes at Lv 50+.
+- **Travel.** CTE2 charges only coins for normal waystone travel (1 per 100 m, at most 10; XP cost 0) and allows cross-dimension hops only via global waystones, for 3 levels; flight comes at Lv 50+.
   - For an owner who hates walking: free or cheap waystones within a realm, the realm portal hub for cross-realm travel, and an early teleport or blink spell or mount (already decided).
 - **Anti-farm.** CTE2's per-chunk diminishing returns (15 free kills, −2% per kill, +5% per minute regen, +5 per chest) push exploration but alienated builders and automation players.
   - If Realmforge adopts it, exempt instances, wave dungeons and bosses (as CTE2 does).
