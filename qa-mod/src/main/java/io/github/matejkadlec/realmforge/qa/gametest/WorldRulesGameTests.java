@@ -20,6 +20,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.Pig;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.item.PrimedTnt;
@@ -27,6 +28,7 @@ import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.LargeFireball;
+import net.minecraft.world.entity.projectile.WitherSkull;
 import net.minecraft.world.entity.vehicle.Minecart;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -104,11 +106,31 @@ public final class WorldRulesGameTests {
         explode(helper, fireball, 3.0F, true, Level.ExplosionInteraction.MOB);
 
         assertTargetsStand(helper);
-        helper.forEveryBlockInStructure(pos -> {
-            if (helper.getBlockState(pos).is(Blocks.FIRE)) {
-                helper.fail("fire at " + pos, pos);
-            }
-        });
+        assertNoFire(helper);
+        helper.succeed();
+    }
+
+    /**
+     * A fireball or skull still in flight when its ghast or wither dies (or unloads) has no owner any more, and is
+     * still a mob's explosion.
+     */
+    @GameTest(template = PLATFORM)
+    public static void projectileOfAGoneMobBreaksNothing(GameTestHelper helper) {
+        placeTargets(helper);
+        Ghast ghast = EntityType.GHAST.create(helper.getLevel());
+        LargeFireball fireball = new LargeFireball(helper.getLevel(), ghast, Vec3.ZERO, 1);
+        WitherBoss wither = EntityType.WITHER.create(helper.getLevel());
+        WitherSkull skull = new WitherSkull(helper.getLevel(), wither, Vec3.ZERO);
+        ghast.discard();
+        wither.discard();
+        helper.assertTrue(fireball.getOwner() == null, "the fireball still has an owner");
+        helper.assertTrue(skull.getOwner() == null, "the skull still has an owner");
+
+        explode(helper, fireball, 3.0F, true, Level.ExplosionInteraction.MOB);
+        explode(helper, skull, 3.0F, false, Level.ExplosionInteraction.MOB);
+
+        assertTargetsStand(helper);
+        assertNoFire(helper);
         helper.succeed();
     }
 
@@ -262,6 +284,14 @@ public final class WorldRulesGameTests {
         if (helper.getBlockEntity(CHEST) instanceof ChestBlockEntity chest) {
             helper.assertValueEqual(chest.getItem(0).getItem(), Items.DIAMOND, "item in the chest");
         }
+    }
+
+    private static void assertNoFire(GameTestHelper helper) {
+        helper.forEveryBlockInStructure(pos -> {
+            if (helper.getBlockState(pos).is(Blocks.FIRE)) {
+                helper.fail("fire at " + pos, pos);
+            }
+        });
     }
 
     private static void assertTargetsGone(GameTestHelper helper) {

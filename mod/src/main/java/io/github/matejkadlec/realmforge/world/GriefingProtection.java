@@ -7,6 +7,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.decoration.BlockAttachedEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.LargeFireball;
+import net.minecraft.world.entity.projectile.WitherSkull;
 import net.minecraft.world.entity.vehicle.VehicleEntity;
 import net.minecraft.world.level.Explosion;
 import net.neoforged.neoforge.event.entity.EntityMobGriefingEvent;
@@ -40,12 +42,18 @@ public final class GriefingProtection {
 
     /**
      * Whether a mob caused the explosion: the creeper itself, the ghast or wither that shot the projectile, the mob a
-     * primed TNT names as its owner. Explosions without a living cause (TNT lit by redstone, beds, respawn anchors) and
-     * those a player caused are not.
+     * primed TNT names as its owner. A ghast fireball or wither skull counts even when its shooter died or unloaded in
+     * flight, which leaves it without an owner ({@code Projectile#getOwner}): only those mobs fire them, and a player
+     * who deflects one becomes its owner. Explosions without a living cause (TNT lit by redstone, beds, respawn
+     * anchors) and those a player caused are not.
      */
     public static boolean isMobCaused(Explosion explosion) {
         LivingEntity cause = explosion.getIndirectSourceEntity();
-        return cause != null && !(cause instanceof Player);
+        if (cause != null) {
+            return !(cause instanceof Player);
+        }
+        Entity source = explosion.getDirectSourceEntity();
+        return source instanceof LargeFireball || source instanceof WitherSkull;
     }
 
     /**

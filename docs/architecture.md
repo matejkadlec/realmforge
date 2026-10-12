@@ -1080,7 +1080,9 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
   beds, respawn anchors). Four hooks:
   - **Explosions:** `ExplosionEvent.Detonate` clears the block list of every explosion a mob caused, that is whose
     `Explosion#getIndirectSourceEntity` is a living entity other than a player: a creeper, the ghast or wither
-    that owns a projectile, the mob that lit a TNT. Fire lands only where blocks were destroyed, so such an
+    that owns a projectile, the mob that lit a TNT. A ghast fireball or wither skull whose shooter died or unloaded
+    in flight has no owner left (`Projectile#getOwner`) and still counts: only those mobs fire them, and a player
+    who deflects one becomes its owner. Fire lands only where blocks were destroyed, so such an
     explosion lights none either. It also takes the objects a player placed off the entity list (item frames,
     paintings and leash knots, armor stands, boats and minecarts: `GriefingProtection#isPlacedObject`), so they
     survive with their contents; players and mobs are still hurt and pushed. TNT lit by redstone or a player, beds
