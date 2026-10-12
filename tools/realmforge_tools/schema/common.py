@@ -45,6 +45,22 @@ UniqueResourceIds = Annotated[
 
 NonEmptyText = Annotated[str, StringConstraints(min_length=1, strip_whitespace=False)]
 
+TICKS_PER_SECOND = 20
+
+
+def _whole_ticks(seconds: float) -> float:
+    ticks = seconds * TICKS_PER_SECOND
+    if abs(ticks - round(ticks)) > 1e-9:
+        raise ValueError(f"{seconds} s is not a whole number of game ticks (use multiples of 0.05 s)")
+    return seconds
+
+
+# A duration in YAML. Name the field `<name>_seconds`: generators write it as `<name>_ticks` (architecture 6.3).
+Seconds = Annotated[float, Field(ge=0, allow_inf_nan=False), AfterValidator(_whole_ticks)]
+
+# A share in YAML (5 means 5 %). Name the field `<name>_percent`: generators write the fraction as `<name>`.
+Percent = Annotated[float, Field(allow_inf_nan=False)]
+
 
 class LocalizedText(StrictModel):
     """A player-facing text in every supported locale. en_us is required; missing locales fall back to it."""

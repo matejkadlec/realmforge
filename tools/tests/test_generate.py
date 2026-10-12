@@ -50,10 +50,8 @@ def test_item_outputs(repo: RepoPaths) -> None:
         "textures": {"layer0": "realmforge:item/test_item"},
     }
 
-    assert json.loads(files[f"{ASSETS}/lang/en_us.json"]) == {"item.realmforge.test_item": "Test Item"}
-    assert json.loads(files[f"{ASSETS}/lang/cs_cz.json"]) == {
-        "item.realmforge.test_item": "Testovací předmět"
-    }
+    assert json.loads(files[f"{ASSETS}/lang/en_us.json"])["item.realmforge.test_item"] == "Test Item"
+    assert json.loads(files[f"{ASSETS}/lang/cs_cz.json"])["item.realmforge.test_item"] == "Testovací předmět"
 
     expectations = files[EXPECTATIONS_JAVA].decode()
     assert '"realmforge:test_item",' in expectations
@@ -69,6 +67,7 @@ def test_default_stack_size_is_not_emitted(repo: RepoPaths) -> None:
 
 def test_locale_without_texts_is_omitted(repo: RepoPaths) -> None:
     (repo.content / "items" / "test_item.yaml").unlink()
+    (repo.content / "curves" / "test_curve.yaml").unlink()
     write(repo.content / "items" / "plain.yaml", "id: plain\nname:\n  en_us: Plain\n")
     files = generate(repo)
     assert f"{ASSETS}/lang/en_us.json" in files

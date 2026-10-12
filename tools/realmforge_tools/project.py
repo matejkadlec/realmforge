@@ -31,6 +31,11 @@ class RepoPaths:
         return self.root / "content"
 
     @property
+    def mod_resources(self) -> Path:
+        """The core mod's hand-written resources (not generated)."""
+        return self.root / "mod" / "src" / "main" / "resources"
+
+    @property
     def mod_generated(self) -> Path:
         return self.root / "mod" / "src" / "generated"
 

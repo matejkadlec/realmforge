@@ -1,0 +1,97 @@
+{
+  "$defs": {
+    "CurvePoint": {
+      "additionalProperties": false,
+      "description": "One point of a curve: the value at a level.",
+      "properties": {
+        "level": {
+          "description": "Level (0 or more).",
+          "minimum": 0,
+          "title": "Level",
+          "type": "integer"
+        },
+        "value": {
+          "description": "Value at that level.",
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "level",
+        "value"
+      ],
+      "title": "CurvePoint",
+      "type": "object"
+    },
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text in every supported locale. en_us is required; missing locales fall back to it.",
+      "properties": {
+        "cs_cz": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Czech. Optional.",
+          "title": "Cs Cz"
+        },
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A named table of points (level -> value), linearly interpolated between the points and constant beyond the\nfirst and the last one: XP per level, mob scaling, item budgets.",
+  "properties": {
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LocalizedText"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional display name, for tools and debugging."
+    },
+    "points": {
+      "description": "Points in strictly increasing level order.",
+      "items": {
+        "$ref": "#/$defs/CurvePoint"
+      },
+      "minItems": 1,
+      "title": "Points",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "points"
+  ],
+  "title": "CurveDef",
+  "type": "object"
+}
