@@ -1,12 +1,17 @@
 ---
 name: flow2
-description: Turn Matěj's task description into RLM Jira tasks in the active sprint (the existing ticket format - parent milestone epic, labels, a "Done when" section, English), claim them (In Progress) and implement them right away through the flow1 lifecycle, pulling in unfinished dependencies (an AI-only batch ends in a pull request, a gameplay batch in a playtest handoff for qa1 or qa2). Use when the user describes a task and says "flow2".
+description: Turn Matěj's task description into RLM Jira tasks in the active sprint (the existing ticket format - parent milestone epic, labels, a "Done when" section, English), claim them (In Progress) and implement them right away through the flow1 lifecycle, pulling in unfinished dependencies (an AI-only batch ends in a pull request, a gameplay batch in a playtest handoff for qa1 or qa2). Takes an optional run location: "flow2 cloud" (the default) delivers only the items a cloud session can do and leaves local-only ones captured but unclaimed; "flow2 local" delivers local-only items first, then the rest. Use when the user describes a task and says "flow2", "flow2 cloud" or "flow2 local".
 ---
 
 # flow2: capture then deliver
 
 Follow `CLAUDE.md` and read [`docs/ai-development-flow.md`](../../../docs/ai-development-flow.md) completely before
 creating or selecting work; this skill may not weaken either.
+
+**Run location** (_Run location_): the argument is `cloud` or `local`; `flow2` without one is `flow2 cloud`, and a
+cloud session (`CLAUDE_CODE_REMOTE=true`) always runs as `cloud`. Both modes capture every requested item as a
+ticket. `cloud` claims and delivers only the cloud-capable ones; `local` delivers local-only items first, then the
+rest by normal priority.
 
 1. Start with _Reconciling merged tickets_, so a ticket whose pull request already merged reads as Done in the
    duplicate search. Then analyze every requested item and search `RLM` for duplicates, reading each candidate,
@@ -20,9 +25,9 @@ creating or selecting work; this skill may not weaken either.
    scope, correction or rejection that decides between creating, updating and merging. Never update a duplicate
    that is in flight (_In flight_ in the flow document): it belongs to another batch, so create a follow-up
    ticket linked to it for the new part, or tell Matěj that the requested work is already under way there.
-3. Set sprint-relative priority and classify each ticket AI-only or Playtest under _QA classification_. A
-   requested item that is Matěj's own decision gets the `decision` label and is listed, not implemented
-   (_Tickets waiting on Matěj_).
+3. Set sprint-relative priority, classify each ticket AI-only or Playtest under _QA classification_, and
+   local-only or cloud-capable under _Run location_. A requested item that is Matěj's own decision gets the
+   `decision` label and is listed, not implemented (_Tickets waiting on Matěj_).
 4. Route new or newly selected work through To Do -> Next (the `flow2` exception in _Priority and the Next queue_
    lets it in whatever else Next holds), replenishing Next under the same section. The step 6 claim owns the
    Next -> In Progress move; do not make it here, or the claim's "still in Next" precondition is false on every
@@ -32,7 +37,9 @@ creating or selecting work; this skill may not weaken either.
    unfinished dependencies into the batch under _Dependencies_.
 6. Claim every ticket you will implement through the atomic intake claim before writing any implementation, as
    `flow1` step 5 requires. A ticket this run just created is claimed the same way; creating it grants no
-   ownership.
+   ownership. A `cloud` run claims no local-only ticket: it leaves each in Next with a comment that it waits for a
+   local session, and when no requested item is cloud-capable it ends here with the status overview, naming the
+   tickets a `flow1 local` or `flow2 local` run delivers.
 7. Implement as much of the safe coherent scope as current precision allows, then follow `flow1` steps 6 to 11
    for validation, the ticket statuses, concurrency and the stop rules: an AI-only batch is published and monitored
    to its merge; a playtest batch is pushed without a pull request and handed to Matěj (the status overview with
