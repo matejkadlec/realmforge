@@ -22,7 +22,6 @@ from __future__ import annotations
 import hashlib
 import http.server
 import os
-import re
 import shutil
 import signal
 import socket
@@ -37,6 +36,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
 
+from realmforge_tools.gamelog import parse_log, unexpected_errors
 from realmforge_tools.project import RepoPaths
 
 NEOFORGE_VERSION = "21.1.259"
@@ -109,72 +109,6 @@ server-ip=127.0.0.1
 server-port={port}
 """
 XVFB_SCREEN = "-screen 0 1280x720x24"
-
-_LOG_LINE = re.compile(
-    r"^\[(?P<time>[^\]]*)\] \[(?P<thread>[^\]]*)/(?P<level>TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\] "
-    r"\[(?P<logger>[^\]]*)\]: (?P<message>.*)$"
-)
-_TRACE_LINES_SHOWN = 6
-
-
-@dataclass(frozen=True)
-class LogEntry:
-    """One log event: its first line and the lines that follow it (stack traces)."""
-
-    line_number: int
-    level: str
-    logger: str
-    message: str
-    continuation: tuple[str, ...] = ()
-
-    @property
-    def subject(self) -> str:
-        """What the allowlists match: the logger without its marker, and the message."""
-        return f"{self.logger.split('/', 1)[0]}: {self.message}"
-
-    def describe(self) -> str:
-        lines = [f"latest.log:{self.line_number}: [{self.level}] {self.subject}"]
-        lines += [f"    {line}" for line in self.continuation[:_TRACE_LINES_SHOWN]]
-        if len(self.continuation) > _TRACE_LINES_SHOWN:
-            lines.append(f"    ... {len(self.continuation) - _TRACE_LINES_SHOWN} more line(s)")
-        return "\n".join(lines)
-
-
-def parse_log(text: str) -> list[LogEntry]:
-    """Split a NeoForge ``latest.log`` into entries; lines that do not start an entry continue the previous one."""
-    entries: list[LogEntry] = []
-    current: dict | None = None
-    for number, line in enumerate(text.splitlines(), start=1):
-        match = _LOG_LINE.match(line)
-        if match:
-            if current is not None:
-                entries.append(_entry(current))
-            current = {
-                "line_number": number,
-                "level": match["level"],
-                "logger": match["logger"],
-                "message": match["message"],
-                "continuation": [],
-            }
-        elif current is not None and line.strip():
-            current["continuation"].append(line)
-    if current is not None:
-        entries.append(_entry(current))
-    return entries
-
-
-def _entry(data: dict) -> LogEntry:
-    return LogEntry(**{**data, "continuation": tuple(data["continuation"])})
-
-
-def unexpected_errors(entries: list[LogEntry], allowed: tuple[tuple[str, str], ...]) -> list[LogEntry]:
-    """ERROR and FATAL entries that no allowlist pattern matches."""
-    patterns = [re.compile(pattern) for pattern, _reason in allowed]
-    return [
-        entry
-        for entry in entries
-        if entry.level in ("ERROR", "FATAL") and not any(p.search(entry.subject) for p in patterns)
-    ]
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,17 @@
+{
+  "name": "curve.realmforge.test_curve.name",
+  "points": [
+    {
+      "level": 1,
+      "value": 0.0
+    },
+    {
+      "level": 10,
+      "value": 450.0
+    },
+    {
+      "level": 20,
+      "value": 1200.5
+    }
+  ]
+}

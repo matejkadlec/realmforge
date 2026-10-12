@@ -618,6 +618,7 @@ cross-cutting or engine-level work (the damage pipeline, networking, worldgen).
   uv run pytest
   .claude/scripts/gradle-queue.sh build               # both mods compile, JUnit
   .claude/scripts/gradle-queue.sh runGameTestServer   # GameTests
+  uv run rf gametest-log                               # no data loading errors in the GameTest log
   (cd pack && packwiz refresh) && git diff --exit-code pack/   # only when pack/ changed
   ```
 

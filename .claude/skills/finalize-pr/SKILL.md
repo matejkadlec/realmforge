@@ -113,7 +113,8 @@ It never merges, deploys or requests a Codex review.
    - `content/` or `tools/`: `uv run rf gen` (no unexpected changes), `uv run ruff check`,
      `uv run ruff format --check`, `uv run pytest`;
    - `mod/`, `qa-mod/` or Gradle files: `.claude/scripts/gradle-queue.sh build` and
-     `.claude/scripts/gradle-queue.sh runGameTestServer` (the queue sources SDKMAN when `JAVA_HOME` is unset);
+     `.claude/scripts/gradle-queue.sh runGameTestServer` (the queue sources SDKMAN when `JAVA_HOME` is unset),
+     then `uv run rf gametest-log`;
    - `pack/`: `cd pack && packwiz refresh`, then `git diff --exit-code pack/`.
 
    Never edit generated files; change `content/` or the generator and run `uv run rf gen`. Do not push: the next
@@ -140,6 +141,7 @@ It never merges, deploys or requests a Codex review.
      uv run pytest
      .claude/scripts/gradle-queue.sh build              # waits for memory while other worktrees build
      .claude/scripts/gradle-queue.sh runGameTestServer
+     uv run rf gametest-log                      # no data loading errors in the GameTest log
      ```
 
    - Immediately before the push, run `git fetch origin` and require the remote head to still equal the

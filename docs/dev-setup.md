@@ -35,6 +35,7 @@ uv run rf gen --check        # content valid, generated files up to date
 uv run pytest
 ./gradlew build              # first run downloads Minecraft + assets (~1 GB) and decompiles: 5-10 minutes
 ./gradlew runGameTestServer  # headless GameTests
+uv run rf gametest-log       # no data loading errors in the GameTest log
 ```
 
 Optional, for agents and for reading Minecraft code: `./gradlew :mod:extractMinecraftSources` unpacks the

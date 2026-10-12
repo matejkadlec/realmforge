@@ -11,13 +11,22 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from realmforge_tools.content import Content
-from realmforge_tools.generate import gametest, items, lang, schemas
+from realmforge_tools.generate import curves, datapack, gametest, items, lang, schemas, worldgen
 from realmforge_tools.project import RepoPaths
 
 
 def generate_all(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     files: dict[Path, bytes] = {}
-    for generator in (items.generate, lang.generate, gametest.generate, schemas.generate):
+    generators = (
+        items.generate,
+        datapack.generate,
+        curves.generate,
+        worldgen.generate,
+        lang.generate,
+        gametest.generate,
+        schemas.generate,
+    )
+    for generator in generators:
         for path, data in generator(content, paths).items():
             if path in files:
                 raise RuntimeError(f"two generators produced {paths.rel(path)}")

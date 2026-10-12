@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/curves.schema.json
+# Pipeline test (F2): proves content -> datapack registry -> game -> GameTests end to end for curves.
+# Not gameplay content.
+id: test_curve
+name:
+  en_us: Test Curve
+  cs_cz: Testovací křivka
+points:
+  - {level: 1, value: 0}
+  - {level: 10, value: 450}
+  - {level: 20, value: 1200.5}

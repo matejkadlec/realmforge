@@ -179,7 +179,7 @@ severity badge such as `![P1 Badge](...)` followed by a bold title.
      - `content/` or `tools/`: `uv run rf gen` (no unexpected changes), `uv run ruff check`,
        `uv run ruff format --check`, `uv run pytest`;
      - `mod/`, `qa-mod/` or Gradle files: `.claude/scripts/gradle-queue.sh build` and
-       `.claude/scripts/gradle-queue.sh runGameTestServer`;
+       `.claude/scripts/gradle-queue.sh runGameTestServer`, then `uv run rf gametest-log`;
      - `pack/`: `cd pack && packwiz refresh`, then `git diff --exit-code pack/`.
    - Make one commit per root cause (Conventional Commits, staged by explicit path), so each reply can name its
      commit.
@@ -192,6 +192,7 @@ severity badge such as `![P1 Badge](...)` followed by a bold title.
      uv run pytest
      .claude/scripts/gradle-queue.sh build              # waits for memory while other worktrees build
      .claude/scripts/gradle-queue.sh runGameTestServer
+     uv run rf gametest-log                      # no data loading errors in the GameTest log
      ```
 
    - Immediately before the push, run `git fetch origin` and require the remote head to still equal the
