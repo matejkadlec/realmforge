@@ -5,11 +5,11 @@ package io.github.matejkadlec.realmforge.generated;
 
 /** Translation keys of the texts in {@code content/texts/}, so Java names a text without typing its key. */
 public final class GeneratedTexts {
-    /** {@code key.realmforge.category} from {@code content/texts/key.yaml}: "Realmforge" */
-    public static final String KEY_CATEGORY = "key.realmforge.category";
-
     /** {@code key.realmforge.dark_vision} from {@code content/texts/key.yaml}: "Toggle Dark Vision" */
     public static final String KEY_DARK_VISION = "key.realmforge.dark_vision";
+
+    /** {@code key.category.realmforge.main} from {@code content/texts/key.category.yaml}: "Realmforge" */
+    public static final String KEY_CATEGORY_MAIN = "key.category.realmforge.main";
 
     /** {@code message.realmforge.dark_vision_off} from {@code content/texts/message.yaml}: "Dark Vision off" */
     public static final String MESSAGE_DARK_VISION_OFF = "message.realmforge.dark_vision_off";

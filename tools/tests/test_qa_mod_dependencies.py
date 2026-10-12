@@ -1,8 +1,8 @@
 """The QA mod's Modrinth dependencies are the builds the modpack ships (RLM-83).
 
-`qa-mod/build.gradle` names playerAnimator, Better Combat, Cloth Config and Yeetus Experimentus by Modrinth version id
-(`maven.modrinth:<slug>:<id>`); each id must equal `version` under `[update.modrinth]` in `pack/mods/<slug>.pw.toml`,
-or the dev runs would test our code against other jars than players get.
+`qa-mod/build.gradle` names Player Animation Library, Better Combat, Cloth Config and Yeetus Experimentus by Modrinth
+version id (`maven.modrinth:<slug>:<id>`); each id must equal `version` under `[update.modrinth]` in
+`pack/mods/<slug>.pw.toml`, or the dev runs would test our code against other jars than players get.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from realmforge_tools.project import REPO_ROOT
 from tests.conftest import write
 
 COORDINATE = re.compile(r"""['"]maven\.modrinth:([a-z0-9_-]+):([^'"$]+)['"]""")
-PACK_SLUGS = {"playeranimator", "better-combat", "cloth-config", "yeetus-experimentus"}
+PACK_SLUGS = {"player-animation-library", "better-combat", "cloth-config", "yeetus-experimentus"}
 
 
 def modrinth_coordinates(build_gradle: str) -> dict[str, str]:
@@ -44,11 +44,14 @@ def test_qa_mod_uses_the_pack_builds() -> None:
 
 def test_coordinates_are_read_from_literals() -> None:
     script = """
-def playerAnimator = 'maven.modrinth:playeranimator:HJZB6bmA' // 2.0.4+1.21.1-forge
-runtimeOnly "maven.modrinth:better-combat:VhIOvcXP"
+def playerAnimationLib = 'maven.modrinth:player-animation-library:QmAdOGjK' // 1.2.8+26.1
+runtimeOnly "maven.modrinth:better-combat:YPa9bdAg"
 implementation "maven.modrinth:cloth-config:${clothConfigVersion}"
 """
-    assert modrinth_coordinates(script) == {"playeranimator": "HJZB6bmA", "better-combat": "VhIOvcXP"}
+    assert modrinth_coordinates(script) == {
+        "player-animation-library": "QmAdOGjK",
+        "better-combat": "YPa9bdAg",
+    }
 
 
 def test_a_different_build_is_reported(tmp_path: Path) -> None:
@@ -56,12 +59,12 @@ def test_a_different_build_is_reported(tmp_path: Path) -> None:
         tmp_path / "better-combat.pw.toml",
         '[update]\n[update.modrinth]\nmod-id = "5sy6g3kz"\nversion = "NEWER123"\n',
     )
-    assert pack_mismatches({"better-combat": "VhIOvcXP"}, tmp_path) == [
-        "better-combat: qa-mod/build.gradle has VhIOvcXP, better-combat.pw.toml has NEWER123"
+    assert pack_mismatches({"better-combat": "YPa9bdAg"}, tmp_path) == [
+        "better-combat: qa-mod/build.gradle has YPa9bdAg, better-combat.pw.toml has NEWER123"
     ]
 
 
 def test_a_mod_missing_from_the_pack_is_reported(tmp_path: Path) -> None:
-    assert pack_mismatches({"cloth-config": "izKINKFg"}, tmp_path) == [
+    assert pack_mismatches({"cloth-config": "TimoYzse"}, tmp_path) == [
         "cloth-config: no cloth-config.pw.toml in the pack"
     ]

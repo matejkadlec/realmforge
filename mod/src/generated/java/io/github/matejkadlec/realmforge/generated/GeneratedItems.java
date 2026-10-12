@@ -16,7 +16,7 @@ public final class GeneratedItems {
 
     /** {@code realmforge:test_item} from {@code content/items/test_item.yaml}. */
     public static final DeferredItem<Item> TEST_ITEM =
-            ITEMS.registerSimpleItem("test_item", new Item.Properties().stacksTo(16));
+            ITEMS.registerSimpleItem("test_item", properties -> properties.stacksTo(16));
 
     private GeneratedItems() {
     }
@@ -28,7 +28,7 @@ public final class GeneratedItems {
     }
 
     private static void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {
-        switch (event.getTabKey().location().toString()) {
+        switch (event.getTabKey().identifier().toString()) {
             case "minecraft:ingredients" -> {
                 event.accept(TEST_ITEM);
             }

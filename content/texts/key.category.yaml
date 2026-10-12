@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# Key category headings in Options > Controls. The game reads a category's name from key.category.<namespace>.<path>,
+# so `main` names the category realmforge:main that holds our keys.
+id: key.category
+texts:
+  main:
+    en_us: Realmforge

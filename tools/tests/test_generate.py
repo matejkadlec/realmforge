@@ -40,9 +40,12 @@ def test_generation_is_deterministic(repo: RepoPaths) -> None:
 def test_item_outputs(repo: RepoPaths) -> None:
     files = generate(repo)
     java = files[GENERATED_JAVA].decode()
-    assert 'ITEMS.registerSimpleItem("test_item", new Item.Properties().stacksTo(16));' in java
+    assert 'ITEMS.registerSimpleItem("test_item", properties -> properties.stacksTo(16));' in java
     assert 'case "minecraft:ingredients" -> {' in java
     assert "event.accept(TEST_ITEM);" in java
+
+    definition = json.loads(files[f"{ASSETS}/items/test_item.json"])
+    assert definition == {"model": {"type": "minecraft:model", "model": "realmforge:item/test_item"}}
 
     model = json.loads(files[f"{ASSETS}/models/item/test_item.json"])
     assert model == {
@@ -62,7 +65,7 @@ def test_item_outputs(repo: RepoPaths) -> None:
 def test_default_stack_size_is_not_emitted(repo: RepoPaths) -> None:
     write(repo.content / "items" / "plain.yaml", "id: plain\nname:\n  en_us: Plain\n")
     java = generate(repo)[GENERATED_JAVA].decode()
-    assert 'ITEMS.registerSimpleItem("plain", new Item.Properties());' in java
+    assert 'ITEMS.registerSimpleItem("plain");' in java
 
 
 def test_locale_without_texts_is_omitted(repo: RepoPaths) -> None:
