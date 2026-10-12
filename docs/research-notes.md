@@ -4,6 +4,8 @@
 
 Section numbers follow the original report.
 
+Later topic research, starting with the reference games Craft to Exile 2, Advent of Ascension and Hytale (2026-10-12), lives in [research/](research/README.md).
+
 ## Owner overrides
 
 | Originally (report, or Czech vision) | Now | ADR |
