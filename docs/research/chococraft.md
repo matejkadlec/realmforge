@@ -54,8 +54,8 @@ clients, decides everything else through `ChocoboColor`, an enum whose abilities
 - **Movement speed** is the vanilla `minecraft:generic.movement_speed` base value, set when the chocobo spawns
   (the enum value divided by 100). A ridden chocobo moves like a ridden horse (`travel` sets its speed from the
   attribute), so the numbers compare directly: a vanilla horse rolls 0.1125–0.3375
-  (`AbstractHorse#generateSpeed`). Yellow is an average horse; Gold, Pink and Red are about 1.5 times the best
-  possible horse.
+  (`AbstractHorse#generateSpeed`, 0.225 on average). Yellow is a slightly slow horse; Gold, Pink and Red are
+  about 1.5 times the best possible horse.
 - **Flight** is not an attribute at runtime: `travel` reads the colour's airborne speed directly, so flight speed
   cannot be changed with attribute modifiers. Red flies 40% faster than Gold, which flies like Purple and Flame.
   The golden chocobo is the all-rounder (fire-immune, climbs, walks on water), not the fastest flier.
@@ -67,8 +67,8 @@ clients, decides everything else through `ChocoboColor`, an enum whose abilities
   every tick it jumps again and accelerates forward by the airborne speed / 100. There is no stamina, no ceiling
   and no landing rule; releasing jump lets it fall.
 - `AllowedFlight` is written at spawn from the one flight setting in the config (`canChocobosFly`, default true),
-  so the config turns flight on or off for every chocobo at once. It is saved per entity, so a command (`/data`)
-  can change one chocobo.
+  so the config turns flight on or off for every chocobo spawned after the change. It is saved per entity, so a
+  command (`/data`) can change one chocobo.
 - The rider cannot dismount while the chocobo is in the air (`RidingEventHandler` cancels the dismount unless it
   is on the ground or in water), which prevents falls.
 - How fast this is in blocks per second was not measured; any adaptation measures it in play first.
@@ -81,7 +81,8 @@ clients, decides everything else through `ChocoboColor`, an enum whose abilities
   of those tags.
 - **Taming:** feed gysahl greens; each green tames with a chance of 15% (`tameChance`). Gysahl greens generate in
   every `#minecraft:is_overworld` biome and grow as a crop. A saddle (crafted) makes it rideable; saddle bags and
-  the saddle pack add an inventory; the whistle switches between follow, stay and wander.
+  the saddle pack add an inventory; the whistle, used on a tamed chocobo, switches it between follow, stay and
+  wander.
 - **Spawn eggs:** one per colour (`chococraft:<colour>_chocobo_spawn_egg`). It is Chococraft's own item, not a
   vanilla spawn egg: it spawns an untamed adult (a baby when the player sneaks) and ignores any entity data on the
   stack. A spawn egg as a quest reward therefore still needs taming.
@@ -111,7 +112,7 @@ unlocked one; a quest reward gives the spawn egg of each new tier.
 | Tier | Proposal | Closest colour | What it would take |
 | --- | --- | --- | --- |
 | 1 (chapter 1) | does not fly | Yellow (wild, tameable from day one) | nothing |
-| 2 (chapter 2) | flies slowly, not super slowly | Gold (0.25) | config: nothing. Gold is also fire-immune and the best walker, which tier 5 is meant to bring |
+| 2 (chapter 2) | flies slowly, not super slowly | Gold (0.25) | nothing, but Gold is also fire-immune, which tier 5 is meant to bring |
 | 3 (chapter 3) | flies faster | Pink (0.30) | nothing |
 | 4 | the fastest | Red (0.35) | only 40% above tier 2; a real spread needs new numbers (internals) |
 | 5 | as fast as tier 4, plus fire resistance | Purple or Flame (rider gets Fire Resistance) | they fly like tier 2 and walk slower than tier 4 (0.40); matching tier 4 needs new numbers (internals) |
@@ -128,8 +129,8 @@ The rest of the proposal:
   then tame the chocobo (15% per green). A tamed reward needs our own item that spawns it through Chococraft's
   classes (internals again).
 - **Summoned when used, hidden otherwise** ([vision](../vision.md), [M6 outline](../roadmap.md#m6-companions-and-mounts)):
-  Chococraft has no such mode. Chocobos stay where they were left, can be killed and are then gone; the whistle
-  only works nearby.
+  Chococraft has no such mode. Chocobos stay where they were left, can be killed and are then gone; the whistle is
+  used on the chocobo itself, so it cannot call one from afar.
 
 ### Against our own rules
 
@@ -141,9 +142,10 @@ The rest of the proposal:
   files and public APIs, never another mod's internals. Config, data and standard events reach tiers 1 to 3 as
   above; tiers 4 to 6 as proposed do not.
 - **Names:** quest texts and rewards would name chocobos and gysahl greens, so Final Fantasy names would become
-  part of Realmforge's story. The research rule is that names of other games never appear in Realmforge content
-  ([reference games](reference-games.md#reference-games-at-a-glance)); a third-party mod's own item names are a grey
-  zone the decision should settle.
+  part of Realmforge's story. Our own rules keep other games' names out of Realmforge content (the reference games'
+  names in [reference-games.md](reference-games.md#reference-games-at-a-glance), and "never use names from other
+  games" in the lore task RLM-43). A third-party mod's own item names are not covered by either; the decision
+  settles whether quests may use them.
 - **Replacing it later** (Chococraft now, our mounts in M6) would strand every player's chocobos and their tiers.
 
 ### What our own mounts would reuse
@@ -162,7 +164,7 @@ share-alike clause conflicts with our CC BY 4.0 assets, and its sound belongs to
 | What ships | Chococraft unchanged; a breeding file where children keep a parent's colour; a mount lock per chapter in `compat/chococraft/`; spawn eggs as quest rewards | a `realmforge:mount` registry from `content/mounts/`: tier, unlock requirement, ground and flight speed, abilities as our status effects, model; a mount summoned by a key or spell and dismissed on dismount |
 | Tiers | 1 to 3 as proposed; 4 only 40% faster than 2; 5 slower than 4; no tier 6 | all six as proposed, numbers in data and balanced with the rest |
 | Model and animations | done (chocobo, CC BY-SA, Final Fantasy names) | new GeckoLib models per mount family, reviewed by Matěj (like A2) |
-| Behaviour | world entity: tame, saddle, feed, can die, whistle nearby | summoned when used, cannot be lost, faster than Speed II on the ground, flying tiers measured against elytra |
+| Behaviour | world entity: tame, saddle, feed, can die, left where it was dismounted | summoned when used, cannot be lost, faster than Speed II on the ground, flying tiers measured against elytra |
 | Rules | new ADR beside ADR 0004; principle 8 kept only for tiers 1 to 3 | fits ADR 0004 and the architecture as they stand |
 | Size | S to M: the pack entry, the breeding file, the mount lock, rewards, a pack-boot check, a playtest | L, split: the mount registry and summoning with one ground tier; flight; the remaining tiers with their models |
 
