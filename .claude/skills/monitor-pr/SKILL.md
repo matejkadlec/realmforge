@@ -364,7 +364,7 @@ expects: RLM's transitions are all global, so Jira refuses no stale move.
 - **Reconfirmation:** when check 6 adds `needs-playtest` because commits after the played head change gameplay,
   move the tickets in Pending CR back to Pending User QA (transition `41`) with a `🎮 Playtest handoff` limited to
   that change (the new head, "What to test", the launch commands for this branch), and report in the manual-test
-  shape.
+  shape, asking for the answer (`qa1` or `qa2`) in this session, which keeps owning the pull request.
 - **Playtest passed again:** Matěj's `qa1` records it and moves the tickets itself (the [`qa1`](../qa1/SKILL.md)
   skill). When he removes the label instead, record the `🎮 Playtest passed` for the current head on each ticket
   and move the tickets from Pending User QA to Pending CR (`51`).

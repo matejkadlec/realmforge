@@ -42,4 +42,7 @@ request outside the flow with `needs-playtest`): `qa1` publishes nothing new. It
 for the pull request's current head on each of its tickets (one outside the flow may have none: the label's
 removal then records the playtest), removes `needs-playtest` for Matěj (his `qa1` is his answer;
 `gh api -X DELETE repos/matejkadlec/realmforge/issues/<n>/labels/needs-playtest`), moves the tickets to Pending
-CR, and continues `monitor-pr` on it.
+CR, and continues `monitor-pr` on it. One `monitor-pr` run owns a pull request: when the answer comes in the
+session whose run waits for this playtest, that run carries on. In any other session, ask Matěj first whether that
+run has stopped; only then does `qa1` continue `monitor-pr` here, and otherwise it changes nothing and points him
+to the waiting session.

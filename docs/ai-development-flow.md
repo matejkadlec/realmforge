@@ -365,7 +365,9 @@ For a pull request that already waits for a playtest (a [reconfirmation](#reconf
 request outside the flow with `needs-playtest`), `qa1` instead records the `🎮 Playtest passed` for its current
 head on each of its tickets (one outside the flow may have none: the label's removal then records the playtest),
 removes `needs-playtest` for Matěj (his `qa1` is his answer), moves the tickets to Pending CR, and continues
-`monitor-pr` on it.
+`monitor-pr` on it. One `monitor-pr` run owns a pull request: an answer in the session whose run waits for it
+continues that run; in any other session `qa1` first asks Matěj whether the waiting run has stopped, and acts only
+then.
 
 ### qa2: changes required
 
