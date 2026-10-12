@@ -1,7 +1,7 @@
 {
     "name": "cast_test",
     "author": "Realmforge",
-    "description": "Spike 4 test cast (ADR 0020): both arms rise forward and pulse while channelling. Animates only the arms' rotations, so lower layers (Better Combat's idle poses, walking) show through everywhere else.",
+    "description": "Spike 4 test cast (ADR 0020): both arms rise forward and pulse while channelling. In first person the hands meet below the crosshair with a gap between them (RLM-89): pitch -1.60 and yaw 0.22 at the hold, -1.85 and 0.07 at the pulse. Animates only the arms' rotations, so lower layers (Better Combat's idle poses, walking) show through everywhere else.",
     "emote": {
         "isLoop": true,
         "returnTick": 6,
@@ -14,22 +14,22 @@
                 "tick": 6,
                 "easing": "EASEOUTQUAD",
                 "turn": 0,
-                "rightArm": {"pitch": -1.95, "yaw": -0.40, "roll": 0.10},
-                "leftArm": {"pitch": -1.95, "yaw": 0.40, "roll": -0.10}
+                "rightArm": {"pitch": -1.60, "yaw": -0.22, "roll": 0.10},
+                "leftArm": {"pitch": -1.60, "yaw": 0.22, "roll": -0.10}
             },
             {
                 "tick": 14,
                 "easing": "EASEINOUTSINE",
                 "turn": 0,
-                "rightArm": {"pitch": -2.20, "yaw": -0.25, "roll": 0.20},
-                "leftArm": {"pitch": -2.20, "yaw": 0.25, "roll": -0.20}
+                "rightArm": {"pitch": -1.85, "yaw": -0.07, "roll": 0.20},
+                "leftArm": {"pitch": -1.85, "yaw": 0.07, "roll": -0.20}
             },
             {
                 "tick": 22,
                 "easing": "EASEINOUTSINE",
                 "turn": 0,
-                "rightArm": {"pitch": -1.95, "yaw": -0.40, "roll": 0.10},
-                "leftArm": {"pitch": -1.95, "yaw": 0.40, "roll": -0.10}
+                "rightArm": {"pitch": -1.60, "yaw": -0.22, "roll": 0.10},
+                "leftArm": {"pitch": -1.60, "yaw": 0.22, "roll": -0.10}
             }
         ]
     }
