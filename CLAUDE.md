@@ -342,7 +342,8 @@ session or a pull request comment.
   changes that matter as sub-bullets), **Review** (Codex or `finalize-pr`, and what it found or tracked),
   **Checks** (the required checks, and CI on `master` after the merge), **Jira** (where the tickets ended).
   "None" when nothing merged.
-- **Pending CR / Pending User QA:** one line each with the exact state, or "none from this run".
+- **Pending CR / Pending User QA:** both queues on one shared line, each with its exact state, or "none from this
+  run".
 - **Blocked or other**, as bullets.
 
 In both shapes, **Blocked or other** holds: decision tickets and tickets waiting on Matěj, with what each needs;
