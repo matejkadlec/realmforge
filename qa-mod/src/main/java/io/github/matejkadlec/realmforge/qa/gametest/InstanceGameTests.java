@@ -9,18 +9,14 @@ import io.github.matejkadlec.realmforge.dungeon.instance.PlotState;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.instance.InstanceBench;
 import io.github.matejkadlec.realmforge.qa.instance.SpikeLayouts;
-import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.Connection;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
@@ -67,7 +63,7 @@ public final class InstanceGameTests {
         MinecraftServer server = helper.getLevel().getServer();
         InstanceManager manager = manager(helper);
         ServerLevel instances = InstanceDimension.level(server);
-        ServerPlayer player = login(server, new GameProfile(UUID.randomUUID(), "qa-instance"));
+        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-instance"));
         Vec3 start = helper.absoluteVec(new Vec3(2.5, 2, 2.5));
         player.teleportTo(helper.getLevel(), start.x, start.y, start.z, 0.0F, 0.0F);
 
@@ -120,7 +116,7 @@ public final class InstanceGameTests {
         InstanceManager manager = manager(helper);
         ServerLevel instances = InstanceDimension.level(server);
         GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-reconnect");
-        ServerPlayer first = login(server, profile);
+        ServerPlayer first = QaPlayers.login(server, profile);
         Vec3 start = helper.absoluteVec(new Vec3(2.5, 2, 2.5));
         first.teleportTo(helper.getLevel(), start.x, start.y, start.z, 0.0F, 0.0F);
         Plot plot = manager.open(SpikeLayouts.spike(), List.of(profile.getId()));
@@ -129,14 +125,14 @@ public final class InstanceGameTests {
                 .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.ACTIVE, "plot is " + plot.state()))
                 .thenExecute(() -> {
                     server.getPlayerList().remove(first);
-                    ServerPlayer second = login(server, profile);
+                    ServerPlayer second = QaPlayers.login(server, profile);
                     helper.assertTrue(second.level() == instances, "a reconnecting player stays in a live run");
                     helper.assertTrue(plot.state() == PlotState.ACTIVE && plot.party().contains(profile.getId()),
                             "the run kept its member");
 
                     server.getPlayerList().remove(second);
                     manager.release(plot);
-                    ServerPlayer third = login(server, profile);
+                    ServerPlayer third = QaPlayers.login(server, profile);
                     helper.assertTrue(third.level() == helper.getLevel(), "a player whose run is gone is sent back");
                     helper.assertTrue(third.position().closerThan(start, 0.01), "...to where they entered from");
                     helper.assertFalse(third.hasData(DungeonAttachments.VISIT), "the stale visit is gone");
@@ -155,7 +151,7 @@ public final class InstanceGameTests {
         MinecraftServer server = helper.getLevel().getServer();
         InstanceManager manager = manager(helper);
         GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-early-leave");
-        ServerPlayer first = login(server, profile);
+        ServerPlayer first = QaPlayers.login(server, profile);
         Plot plot = manager.open(SpikeLayouts.spike(), List.of(profile.getId()));
         server.getPlayerList().remove(first);
 
@@ -164,7 +160,7 @@ public final class InstanceGameTests {
                 .thenExecute(() -> {
                     helper.assertTrue(plot.party().contains(profile.getId()),
                             "the built run still waits for its member");
-                    ServerPlayer again = login(server, profile);
+                    ServerPlayer again = QaPlayers.login(server, profile);
                     helper.assertTrue(again.level() != InstanceDimension.level(server), "the player never entered");
                     helper.assertTrue(manager.plotOf(again).isEmpty(), "the run the player never entered is gone");
                     helper.assertTrue(plot.state() == PlotState.CLOSING, "the empty run is released");
@@ -195,19 +191,5 @@ public final class InstanceGameTests {
         InstanceManager manager = InstanceManager.get(helper.getLevel().getServer());
         helper.assertTrue(manager != null, "the GameTest world has no realmforge:instances dimension");
         return manager;
-    }
-
-    /**
-     * Logs a fake player in through the normal login path, so saved data (position, dimension, attachments) is
-     * loaded and the login event fires, as for a real reconnect. Like
-     * {@code GameTestHelper#makeMockServerPlayerInLevel}, but with a chosen profile.
-     */
-    private static ServerPlayer login(MinecraftServer server, GameProfile profile) {
-        CommonListenerCookie cookie = CommonListenerCookie.createInitial(profile, false);
-        ServerPlayer player = new ServerPlayer(server, server.overworld(), profile, cookie.clientInformation());
-        Connection connection = new Connection(PacketFlow.SERVERBOUND);
-        new EmbeddedChannel(connection);
-        server.getPlayerList().placeNewPlayer(connection, player, cookie);
-        return player;
     }
 }

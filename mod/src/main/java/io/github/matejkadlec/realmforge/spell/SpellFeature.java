@@ -9,5 +9,6 @@ public final class SpellFeature {
 
     /** Registers the feature's registries and event listeners. Called once from {@code Realmforge}. */
     public static void register(IEventBus modBus) {
+        SpellAttachments.register(modBus);
     }
 }

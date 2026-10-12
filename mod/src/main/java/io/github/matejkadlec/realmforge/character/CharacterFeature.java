@@ -9,5 +9,6 @@ public final class CharacterFeature {
 
     /** Registers the feature's registries and event listeners. Called once from {@code Realmforge}. */
     public static void register(IEventBus modBus) {
+        CharacterAttachments.register(modBus);
     }
 }
