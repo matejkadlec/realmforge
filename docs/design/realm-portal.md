@@ -213,7 +213,10 @@ If Matěj decides otherwise in the realm design, this section follows his answer
 - **One portal block** for every realm, tinted with the colour of the realm its selector shows (return portals use
   the Overworld's green). Its texture is one greyscale swirl, tinted on the client by a block colour handler
   (`RegisterColorHandlersEvent.Block`) that reads the frame's selector; the selector's block entity sends its
-  setting to clients, and the colours come from the synced realm registry ([Data](#data-contentrealms)).
+  setting to clients, and the colours come from the synced realm registry ([Data](#data-contentrealms)). Block
+  colours are baked into the chunk mesh, so when the setting arrives on the client, the selector marks the opening
+  for re-rendering (`Level#sendBlockUpdated` on the client level, which calls `LevelRenderer#blockChanged`);
+  otherwise a switched portal would keep the old realm's colour.
 - **Particles:** a swirl of vanilla dust in the realm's colour (`DustParticleOptions`), plus one vanilla particle
   that suits the realm: ash for the stone realm (`minecraft:ash`), pale ash like blown sand for the desert
   (`minecraft:white_ash`), snowflakes for the tundra (`minecraft:snowflake`), small flames for the fire realm
