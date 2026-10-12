@@ -343,9 +343,11 @@ Matěj's `qa1` passes the playtest and authorizes publishing the batch. The
 
 1. **Find the batch:** the one this session handed off, the keys or branch Matěj names, or the only playtest
    batch in Pending User QA. With several and no hint, ask which one, listing each with its tickets and branch.
-2. **Take the branch:** reuse the worktree that holds it, or create one from `origin/<branch>`
-   ([Branches and worktrees](#branches-and-worktrees)). Fetch first: commits Matěj pushed to the branch from his
-   own clone belong to the batch. His uncommitted edits in the worktree follow `CLAUDE.md`: fold small ones that
+2. **Take the branch:** `git fetch origin`, then reuse the worktree that holds it, or create one from
+   `origin/<branch>` ([Branches and worktrees](#branches-and-worktrees)). Bring the local branch up to
+   `origin/<branch>` before anything else (`git merge --ff-only`, or a merge when both sides have commits):
+   commits Matěj pushed from his own clone belong to the batch and are never pushed over, and every later push is
+   leased on that fetched head. His uncommitted edits in the worktree follow `CLAUDE.md`: fold small ones that
    belong to the batch into the next commit, ask about anything larger.
 3. **Finish:** run the checks for anything that changed since the played head and commit. When `origin/master`
    moved, rebase onto it, regenerate generated files with `uv run rf gen`, and run the full gate again. A rebase
@@ -368,8 +370,8 @@ Matěj's `qa2` with what is wrong sends the batch back for a revision on the sam
 [`qa2` skill](../.claude/skills/qa2/SKILL.md) carries it out:
 
 1. **Find the batch** as for `qa1`, and move the affected tickets from Pending User QA to In Progress.
-2. **Take the same branch** (never a new one), in its worktree or a new one from `origin/<branch>`. Read the
-   tickets' comments for context the handoff did not repeat.
+2. **Take the same branch** (never a new one), in its worktree or a new one from `origin/<branch>`, brought up to
+   `origin/<branch>` as for `qa1`. Read the tickets' comments for context the handoff did not repeat.
 3. **Fix** what he reported, run the affected checks and the full gate, and commit.
 4. **Push** the revision (`--force-with-lease` after a rebase) and read the remote head back. Open no pull request;
    a reconfirmation's pull request simply gets the new head, and its `monitor-pr` run carries on.

@@ -12,8 +12,11 @@ revising; this skill may not weaken either. _qa2: changes required_ there holds 
    playtest batch in Pending User QA; with several and no hint, ask which one. Then move the tickets his feedback
    affects from Pending User QA to In Progress.
 2. **Stay on the same branch:** no new branch and no replacement work. Reuse its worktree or create one from
-   `origin/<branch>` after `git fetch origin`. Read the affected tickets' comments for context the handoff did not
-   repeat (_Reading a ticket_).
+   `origin/<branch>` after `git fetch origin`. Then bring the local branch up to `origin/<branch>` before
+   anything else: `git merge --ff-only origin/<branch>`, or `git merge origin/<branch>` when both sides have
+   commits. Commits Matěj pushed from his own clone belong to the batch and are never pushed over; every later
+   push is leased on that fetched head (`--force-with-lease=<branch>:<sha>`). Read the affected tickets'
+   comments for context the handoff did not repeat (_Reading a ticket_).
 3. **Apply his feedback**, and nothing beyond it. Feedback that changes the plan or needs a decision goes back to
    him under "Blocked or other" instead.
 4. **Check and commit:** the affected checks and the full gate (_Implementation and verification_, Gradle through

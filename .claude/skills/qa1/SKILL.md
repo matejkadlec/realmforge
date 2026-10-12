@@ -13,9 +13,11 @@ publishing; this skill may not weaken either. _qa1: playtest passed_ there holds
    with its tickets and branch. A batch whose tickets are not in Pending User QA is not waiting for a playtest:
    say so and stop.
 2. **Take the preserved branch:** `git fetch origin`, then reuse the worktree that holds it or create one from
-   `origin/<branch>` (_Branches and worktrees_). Commits Matěj pushed to the branch from his own clone belong to
-   the batch. His uncommitted edits follow `CLAUDE.md`: fold small ones that belong to the batch into the next
-   commit, and ask about anything larger.
+   `origin/<branch>` (_Branches and worktrees_). Then bring the local branch up to `origin/<branch>` before
+   anything else: `git merge --ff-only origin/<branch>`, or `git merge origin/<branch>` when both sides have
+   commits. Commits Matěj pushed from his own clone belong to the batch and are never pushed over; every later
+   push is leased on that fetched head (`--force-with-lease=<branch>:<sha>`). His uncommitted edits follow
+   `CLAUDE.md`: fold small ones that belong to the batch into the next commit, and ask about anything larger.
 3. **Finish:** run the checks for anything that changed since the played head and commit the coherent batch.
    When `origin/master` moved, rebase onto it, regenerate generated files with `uv run rf gen`, and run the full
    gate (_Implementation and verification_, Gradle through the _Gradle queue_). A rebase whose conflicts touched
