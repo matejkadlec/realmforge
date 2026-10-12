@@ -51,6 +51,17 @@ servers) cannot choose options and installs every optional mod, Quark included
 ("Accepting option Quark as option choosing is not implemented in the CLI").
 On a server without Quark, delete its jar after installing.
 
+## Mods the QA mod uses too
+
+The dev-only QA mod gets **playerAnimator**, **Better Combat** and **Cloth
+Config** from Modrinth's Maven, so `./gradlew runClient -PwithBetterCombat`
+tests our code against the jars players get. `qa-mod/build.gradle` names them
+by Modrinth version id, the `version` under `[update.modrinth]` in
+`mods/playeranimator.pw.toml`, `better-combat.pw.toml` and
+`cloth-config.pw.toml`. Updating one of these mods means updating
+`qa-mod/build.gradle` too: `uv run pytest`
+(`tools/tests/test_qa_mod_dependencies.py`) fails while they differ.
+
 ## Boot test
 
 CI boots the whole pack plus the core mod on a dedicated server (job `pack-boot`) and on a client under Xvfb (job

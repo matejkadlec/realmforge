@@ -1,0 +1,67 @@
+"""The QA mod's Modrinth dependencies are the builds the modpack ships (RLM-83).
+
+`qa-mod/build.gradle` names playerAnimator, Better Combat and Cloth Config by Modrinth version id
+(`maven.modrinth:<slug>:<id>`); each id must equal `version` under `[update.modrinth]` in `pack/mods/<slug>.pw.toml`,
+or `runClient -PwithBetterCombat` would test our code against other jars than players get.
+"""
+
+from __future__ import annotations
+
+import re
+import tomllib
+from pathlib import Path
+
+from realmforge_tools.project import REPO_ROOT
+from tests.conftest import write
+
+COORDINATE = re.compile(r"""['"]maven\.modrinth:([a-z0-9_-]+):([^'"$]+)['"]""")
+PACK_SLUGS = {"playeranimator", "better-combat", "cloth-config"}
+
+
+def modrinth_coordinates(build_gradle: str) -> dict[str, str]:
+    """`{slug: version}` for every `maven.modrinth:<slug>:<version>` literal in a Gradle script."""
+    return {slug: version for slug, version in COORDINATE.findall(build_gradle)}
+
+
+def pack_mismatches(coordinates: dict[str, str], mods_dir: Path) -> list[str]:
+    problems = []
+    for slug, version in sorted(coordinates.items()):
+        pw_toml = mods_dir / f"{slug}.pw.toml"
+        if not pw_toml.is_file():
+            problems.append(f"{slug}: no {pw_toml.name} in the pack")
+            continue
+        pack_version = tomllib.loads(pw_toml.read_text(encoding="utf-8"))["update"]["modrinth"]["version"]
+        if version != pack_version:
+            problems.append(f"{slug}: qa-mod/build.gradle has {version}, {pw_toml.name} has {pack_version}")
+    return problems
+
+
+def test_qa_mod_uses_the_pack_builds() -> None:
+    coordinates = modrinth_coordinates((REPO_ROOT / "qa-mod" / "build.gradle").read_text(encoding="utf-8"))
+    assert set(coordinates) == PACK_SLUGS
+    assert pack_mismatches(coordinates, REPO_ROOT / "pack" / "mods") == []
+
+
+def test_coordinates_are_read_from_literals() -> None:
+    script = """
+def playerAnimator = 'maven.modrinth:playeranimator:HJZB6bmA' // 2.0.4+1.21.1-forge
+runtimeOnly "maven.modrinth:better-combat:VhIOvcXP"
+implementation "maven.modrinth:cloth-config:${clothConfigVersion}"
+"""
+    assert modrinth_coordinates(script) == {"playeranimator": "HJZB6bmA", "better-combat": "VhIOvcXP"}
+
+
+def test_a_different_build_is_reported(tmp_path: Path) -> None:
+    write(
+        tmp_path / "better-combat.pw.toml",
+        '[update]\n[update.modrinth]\nmod-id = "5sy6g3kz"\nversion = "NEWER123"\n',
+    )
+    assert pack_mismatches({"better-combat": "VhIOvcXP"}, tmp_path) == [
+        "better-combat: qa-mod/build.gradle has VhIOvcXP, better-combat.pw.toml has NEWER123"
+    ]
+
+
+def test_a_mod_missing_from_the_pack_is_reported(tmp_path: Path) -> None:
+    assert pack_mismatches({"cloth-config": "izKINKFg"}, tmp_path) == [
+        "cloth-config: no cloth-config.pw.toml in the pack"
+    ]
