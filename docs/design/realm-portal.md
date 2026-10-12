@@ -123,6 +123,13 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
   a player without access. That player stays where they are; the action bar says "The Stone Realm is sealed to you"
   plus the realm's hint ("Its sigil is a chapter 1 quest reward"), at most once every 3 seconds, with a short
   refusal sound.
+- **Every other way in is checked too,** so the advancement seals the realm whatever the path: NeoForge's
+  cancellable `EntityTravelToDimensionEvent` is cancelled for a player whose target is a realm they have not
+  unlocked, with the same message. `ServerPlayer#changeDimension` posts that event, and `ServerPlayer#teleportTo`
+  into another level goes through it, so it covers waystones (a global waystone at a landing included), other
+  mods' teleports and commands. A respawn does not pass through it (`PlayerList#respawn` creates the player in the
+  target level directly), and a player respawns in a realm only at its landing or at their own bed there, both
+  places they first reached with access.
 - **What a locked realm shows elsewhere:** a portal someone else opened onto it looks the same as for anyone (its
   colour, particles and sound), so a player sees where a friend went. The sigil's tooltip and the realm's hint say
   how to get it. A realm map with locked realms and their hints (RE-7) is a later view, in the guide (RLM-102,
@@ -254,7 +261,8 @@ If Matěj decides otherwise in the realm design, this section follows his answer
   spawn. A player who logs in inside a dimension that no longer exists is moved by vanilla.
 - **World border:** every arrival point is clamped inside the border.
 - **Other travel:** a cross-dimension warp by waystone, an instance exit or a command leaves the home point alone,
-  so the return portal still leads to the last Overworld portal the player used.
+  so the return portal still leads to the last Overworld portal the player used. Entering a realm that way still
+  needs access ([Access and unlocks](#access-and-unlocks)).
 
 ## Data: `content/realms/`
 
@@ -300,7 +308,8 @@ dimension rules and access:
   - `RealmTravel`: the landing, the home point and the fallbacks, with the safe-spot search as plain Java over a
     column of blocks;
   - `RealmLandings`, the saved landing per realm;
-  - `RealmAccess`, which asks `core`'s requirement API;
+  - `RealmAccess`, which asks `core`'s requirement API, at the portal and in its `EntityTravelToDimensionEvent`
+    listener;
   - the `realmforge:realm_travel` attachment and the respawn listener;
 - `client/`: the portal block's colour handler;
 - Portal Stone, the selector and the sigils as YAML content: blocks once the block content type exists, sigils as
@@ -313,7 +322,8 @@ Tests:
   safe-spot search (a ceiling, a void, water, a full column).
 - **pytest:** the schema, the references, the generated advancement, the access requirement check.
 - **GameTests** (W2's "Done when"):
-  - access is refused before the unlock advancement and allowed after it;
+  - access is refused before the unlock advancement and allowed after it, through the portal and through a teleport
+    into the realm (as a waystone makes one);
   - a sigil lights a complete frame and a second sigil switches it; the landing's selector refuses a sigil;
   - an incomplete frame stays dark;
   - breaking a frame block closes the portal;
