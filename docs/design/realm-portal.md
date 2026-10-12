@@ -359,7 +359,8 @@ arrival: {y: [20, 90], pocket_radius: 3, floor: realmforge:slate_bricks}   # alw
   a type without options (a `SimpleParticleType` such as `minecraft:ash`, from a list the validator keeps), because
   types such as `minecraft:dust` or `minecraft:block` need option data the entry does not carry; one realm per
   dimension, and one realm per sigil (two realms on one sigil would both unlock from it and leave the selector no
-  single destination); the sigil stacks to 1; the realm dimension's `dimension_rules` access requirement includes the
+  single destination); every realm but the Overworld names a sigil, since a realm without one has no unlock and no
+  way onto a selector; the sigil stacks to 1; the realm dimension's `dimension_rules` access requirement includes the
   unlock advancement.
 - **The sigil source check comes later.** Every sigil needs a renewable source (a recipe, a repeatable quest, or the
   guaranteed drop of a boss that can be replayed), never only a one-time reward, as the "every item obtainable" rule
