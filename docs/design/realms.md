@@ -249,3 +249,8 @@ For Matěj; each has a proposal so the design can go on.
    cover chapter 2. Proposal: the forest for chapter 3, with underwater in chapter 4.
 6. **The fire realm's chapter.** Proposal: chapter 5 or later, after the elytra in chapter 4, so its dragons can be
    strong.
+7. **Elytra or flying mounts first?** Your reason for elytra in chapter 4 ("a little better than a mount") differs
+   from the vision and the M6 outline, which want flying mounts better than elytra
+   ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)). Proposal: your newer rule wins (elytra a little
+   better than the fastest mount tier of RLM-101, so they come with or after it), and the vision's line and the M6
+   outline change to say so once you confirm.

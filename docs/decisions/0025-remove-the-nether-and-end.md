@@ -39,7 +39,7 @@ Matěj decided on 2026-10-11 and 2026-10-12 (Jira RLM-47; its comments hold his 
 
   | Item | Vanilla source | New source |
   | --- | --- | --- |
-  | Elytra | End cities | Chapter 4, when the fastest mount tier unlocks (RLM-101), or later (chapter 5, or a side questline of chapter 4), because elytra are a little better than a mount. They get **their own equipment slot** and never take the chestplate slot (below) |
+  | Elytra | End cities | Chapter 4, when the fastest mount tier unlocks (RLM-101), or later (chapter 5, or a side questline of chapter 4); Matěj's reason: "elytra are a little better than a mount". They get **their own equipment slot** and never take the chestplate slot (below) |
   | Shulker shells (shulker boxes) | Shulkers in End cities | Mostly unneeded next to backpacks and Tom's Simple Storage. A trade, or shulkers that live in a realm (possibly already the stone realm) with grey instead of purple as their default colour |
   | Beacon (nether star) | The Wither, summoned from Nether materials | Earlier than the fire realm, because a vanilla beacon is easy to get: a nether star as a chapter 3 boss reward (any boss, not necessarily the Wither), or a small built beacon (two layers, for example emerald blocks) at the end of a dungeon |
   | Ender pearls | Endermen | Stay (endermen spawn in the Overworld), plus a Cleric trade and a repeatable quest, because recipes need them |
@@ -59,9 +59,10 @@ Matěj decided on 2026-10-11 and 2026-10-12 (Jira RLM-47; its comments hold his 
 ## Consequences
 
 - **When:** the removal and the new sources ship together in M4 (roadmap: "the Nether and End removed"). Until
-  then both dimensions stay untouched; M1 does not change them. How they are removed (a world preset without them,
-  or portals that never light and a cancelled dimension change; NeoForge 21.1 has the cancellable
-  `BlockEvent.PortalSpawnEvent` and `EntityTravelToDimensionEvent`) is that task's call.
+  then both dimensions stay untouched; M1 does not change them. A system that needs a new source earlier brings that
+  source with it (M2's brewing, below). How the dimensions are removed (a world preset without them, or portals
+  that never light and a cancelled dimension change; NeoForge 21.1 has the cancellable `BlockEvent.PortalSpawnEvent`
+  and `EntityTravelToDimensionEvent`) is that task's call.
 - **Every item stays obtainable.** The table above covers the items Matěj named. The rest of the Nether and End's
   items still need a source, which the M4 task maps through the same three channels (quests, trades, realm drops).
   Among them: ghast tears, wither skeleton skulls, magma cream, crimson and
@@ -70,8 +71,9 @@ Matěj decided on 2026-10-11 and 2026-10-12 (Jira RLM-47; its comments hold his 
   End (rib, snout, spire), and the Pigstep disc. The obtainability validation lists what is left once it runs over
   vanilla recipes and loot.
 - **Early brewing:** the brewing stand needs a blaze rod and blaze powder as fuel, and most potions need nether wart.
-  M2's simple potions take those from early sources (the stone realm's nether wart, the blaze rod quest) or are
-  brewed in a reworked way without them (open question 8 of the research).
+  M2's simple potions must not depend on the Nether: either their inputs get early sources that ship with M2, ahead
+  of the removal (the stone realm's nether wart, the blaze rod quest), or they are brewed in a reworked way without
+  them (open question 8 of the research).
 - **Vanilla advancements:** the Nether and End advancement tabs, and Overworld advancements that point at them
   ("We Need to Go Deeper", "The End?", "Eye Spy"), become unreachable. The removal task hides or replaces them with
   our own chapter advancements, so the advancement screen shows nothing a player cannot do.
@@ -86,5 +88,10 @@ Matěj decided on 2026-10-11 and 2026-10-12 (Jira RLM-47; its comments hold his 
   from the chest slot (`Player#tryToStartFallFlying` and `LivingEntity#updateFallFlying` read
   `getItemBySlot(EquipmentSlot.CHEST)`, and NeoForge's `IItemExtension#canElytraFly` is asked only for that stack).
   The task that adds the slot verifies Curios' API (*verify*, [architecture](../architecture.md)) and adds that hook.
+- **Elytra and flying mounts:** Matěj's reason for the elytra's chapter ("a little better than a mount") differs
+  from the vision (flying mounts "better than Elytra") and the M6 outline ("flying mounts better than elytra").
+  This ADR fixes only the elytra's chapter and slot. How fast they are against the mount tiers is decided with the
+  mount design (RLM-101), and the vision and M6 change only as Matěj decides
+  ([realm design, open question 7](../design/realms.md#open-questions)).
 - **The fire realm** gets its place in the progression from the realm design; it has no milestone yet. Its dragons
   are grounded bosses, in line with the vision.

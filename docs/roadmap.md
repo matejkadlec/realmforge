@@ -261,9 +261,9 @@ Outline: five rarity tiers everywhere (first decide how: extend vanilla `Rarity`
 and sockets; a
 reforging station; RNG item chests (as items); quest choice rewards with pre-rolled gear; Curios with the first
 curios; more weapon and armor sets; simple craftable foods and potions with weak, long-lasting buffs (a few percent,
-more against one mob type, for example +5% damage for an hour or +8% against undead), brewable without Nether
-materials ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)). Probably also the full-pack registry dump for
-the ID universe ([ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)), once content
+more against one mob type, for example +5% damage for an hour or +8% against undead), brewable without the Nether
+([ADR 0025](decisions/0025-remove-the-nether-and-end.md)). Probably also the full-pack registry dump for the ID
+universe ([ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)), once content
 references other mods' items.
 
 ## M3: Classes and combat depth
