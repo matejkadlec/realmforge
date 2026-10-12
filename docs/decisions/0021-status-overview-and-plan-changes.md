@@ -4,7 +4,8 @@ Date: 2026-10-12
 
 Status: Accepted (amends the hold list of [0015](0015-merging-through-monitor-pr.md), the plan-change rule,
 handoff and batch ledger of [0016](0016-jira-batch-delivery.md), and the `needs-approval` rule of
-[0017](0017-jira-as-the-source-of-task-status.md))
+[0017](0017-jira-as-the-source-of-task-status.md); its `needs-playtest` note for playtests replaced by
+[0022](0022-playtest-before-the-pull-request.md))
 
 ## Context
 
