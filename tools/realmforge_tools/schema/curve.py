@@ -11,12 +11,14 @@ from pydantic import Field, model_validator
 from realmforge_tools.schema.common import ContentId, LocalizedText, StrictModel
 
 FiniteNumber = Annotated[float, Field(allow_inf_nan=False)]
+# The game reads levels as a Java int (core/Curve.Point).
+JAVA_INT_MAX = 2**31 - 1
 
 
 class CurvePoint(StrictModel):
     """One point of a curve: the value at a level."""
 
-    level: int = Field(ge=0, description="Level (0 or more).")
+    level: int = Field(ge=0, le=JAVA_INT_MAX, description="Level (0 or more).")
     value: FiniteNumber = Field(description="Value at that level.")
 
 

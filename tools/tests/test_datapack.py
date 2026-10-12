@@ -69,6 +69,10 @@ def test_curve_accepts_whole_numbers_as_values(repo: RepoPaths) -> None:
         ),
         ("  []\n", "points: List should have at least 1 item"),
         ("  - {level: -1, value: 1}\n", "points.0.level: Input should be greater than or equal to 0"),
+        (
+            "  - {level: 2147483648, value: 1}\n",
+            "points.0.level: Input should be less than or equal to 2147483647",
+        ),
         ("  - {level: 1, value: .nan}\n", "points.0.value: Input should be a finite number"),
         ("  - {level: 1.5, value: 1}\n", "points.0.level: Input should be a valid integer"),
         ('  - {level: 1, value: "1"}\n', "points.0.value: Input should be a valid number"),

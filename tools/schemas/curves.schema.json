@@ -6,6 +6,7 @@
       "properties": {
         "level": {
           "description": "Level (0 or more).",
+          "maximum": 2147483647,
           "minimum": 0,
           "title": "Level",
           "type": "integer"
