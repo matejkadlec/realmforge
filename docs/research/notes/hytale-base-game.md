@@ -216,7 +216,7 @@ The desert stays varied through oases sunk into the dunes (with exclusive fauna)
 ## Q5. Open-world dungeons: types, layouts (handcrafted vs procedural), bosses, loot, and how many per zone
 
 ### Takeaway
-In Early Access, dungeons are open-world prefabs. Hand-built rooms are chained by rules (each prefab node ends in stairs or a ladder that the next one continues) down to a "final room". The wiki counts six named dungeons: 3 in Zone 1, 1 in Zone 2 (2 counting the Sandswept Catacombs), 2 in Zone 3, none in Zone 4. Each has an elite or miniboss. Every zone also has one portal temple guarded by a golem, and dozens of tiered ruins and camps. True multi-phase bosses and a fully handcrafted dungeon arrive only with Chapter 1.
+In Early Access, dungeons are open-world prefabs. Hand-built rooms are chained by rules (each prefab node ends in stairs or a ladder that the next one continues) down to a "final room". The wiki counts six named dungeons: 3 in Zone 1, 1 in Zone 2 and 2 in Zone 3, none in Zone 4 (seven if the Sandswept Catacombs in Zone 2 count as a dungeon). Each has an elite or miniboss. Every zone also has one portal temple guarded by a golem, and dozens of tiered ruins and camps. True multi-phase bosses and a fully handcrafted dungeon arrive only with Chapter 1.
 
 ### Cited Findings
 - [Shown 2019-01 → EA] Definition: dungeons "comprise multiple chambers and encounters joined by connecting passageways, often culminating in a 'Final Room', providing challenges and special rewards tailored by our worldteam". Prefabs can carry their own triggers and events. — [Worldgen Introduction](https://hytale.com/news/2019/1/worldgen-introduction)

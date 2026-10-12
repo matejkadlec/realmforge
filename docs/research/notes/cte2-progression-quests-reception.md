@@ -107,7 +107,7 @@ CTE2's FTB Quests book has about 620 quests in 21 chapters and 4 groups: Campaig
 
 ### Inferences
 - The critical path is short (about 36 main quests across Acts I to V, plus Prologue pages) while total volume is large (about 620). Hobbies are opt-in.
-- Levels 1–55 (the whole campaign) are only about 15% of the XP to 100. About 85% of the grind (55→100) comes after the campaign, in Maps. That matches the dev's own "drop off in engagement at 55" diagnosis (section 6).
+- Levels 1–55 (up to the map unlock at 55) are only about 15% of the XP to 100. About 85% of the grind (55→100) comes after Maps unlock; Act V (Warden at level 60) and the Epilogue still run past 55, so this is the share after the map unlock, not strictly after the campaign. That matches the dev's own "drop off in engagement at 55" diagnosis (section 6).
 - The flat campaign quest XP (about 1.36M) roughly equals the base XP to reach level 52. Quests were deliberately made a main XP source during the campaign (0.6.0 and 0.9.0 fixes, section 6).
 
 ### Gaps
@@ -536,7 +536,7 @@ CTE2 (Forge 1.20.1, Mine and Slash) brings back Dissonance's linear dimension la
   - Realmforge's hard caps (10, 20, 30…) stop the "power straight through the dimensions" complaint.
   - Use soft entry, as already decided: the first realm is open from Lv 1 but recommended from 5.
   - Never leave a CTE2-style gap (Epilogue at Lv 90 after Lv 60–75 content, scaffolded only by maps).
-- **XP curve.** In CTE2 about 85% of the XP to 100 sits after the campaign (55→100), driven by an exponent of 2.4 on the level multiplier.
+- **XP curve.** In CTE2 about 85% of the XP to 100 sits after the map unlock at level 55 (55→100), driven by an exponent of 2.4 on the level multiplier.
   - With chapter caps, Realmforge can tune XP per chapter so each 10-level band takes a target time, with quests supplying a fixed share. CTE2's changelog shows more than 10 global XP re-tunes between 0.1.0 and 1.1.0 (section 6), consistent with having no such targets.
 - **Travel.** CTE2 charges only coins for normal waystone travel (1 per 100 m, at most 10; XP cost 0) and allows cross-dimension hops only via global waystones, for 3 levels; flight comes at Lv 50+.
   - For an owner who hates walking: free or cheap waystones within a realm, the realm portal hub for cross-realm travel, and an early teleport or blink spell or mount (already decided).
