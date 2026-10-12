@@ -286,6 +286,13 @@ def test_gallery_reports_a_broken_yaml_with_its_path(tmp_path: Path) -> None:
         gallery.collect(root, PALETTE, 16)
 
 
+def test_gallery_reports_a_yaml_that_is_not_utf8(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    root = _candidates(tmp_path)
+    (root / "gallery.yaml").write_bytes(b"title: \xff\xfe\n")
+    assert main(["art", "gallery", str(root), "--out", str(tmp_path / "g.html")]) == 1
+    assert "gallery.yaml: not UTF-8 text" in capsys.readouterr().err
+
+
 def test_cli_cleans_a_texture_and_builds_a_gallery(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

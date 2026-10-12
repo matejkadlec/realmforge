@@ -95,6 +95,8 @@ def _load_info(path: Path) -> GalleryInfo:
     except YamlLoadError as e:
         where = f":{e.line}" if e.line else ""
         raise GalleryError(f"{path}{where}: {e}") from e
+    except UnicodeDecodeError as e:
+        raise GalleryError(f"{path}: not UTF-8 text ({e.reason} at byte {e.start})") from e
     except ValidationError as e:
         problems = "; ".join(f"{'.'.join(map(str, err['loc']))}: {err['msg']}" for err in e.errors())
         raise GalleryError(f"{path}: {problems}") from e
