@@ -128,9 +128,9 @@ The rest of the proposal:
 - **The quest reward:** an FTB Quests item reward of the tier's spawn egg works without code, but the player must
   then tame the chocobo (15% per green). A tamed reward needs our own item that spawns it through Chococraft's
   classes (internals again).
-- **Summoned when used, hidden otherwise** ([vision](../vision.md), [M6 outline](../roadmap.md#m6-companions-and-mounts)):
-  Chococraft has no such mode. Chocobos stay where they were left, can be killed and are then gone; the whistle is
-  used on the chocobo itself, so it cannot call one from afar.
+- **Summoned when used, hidden otherwise** ([vision](../vision.md),
+  [M6 outline](../roadmap.md#m6-companions-and-mounts)): Chococraft has no such mode. Chocobos stay where they were
+  left, can be killed and are then gone; the whistle is used on the chocobo itself, so it cannot call one from afar.
 
 ### Against our own rules
 

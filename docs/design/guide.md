@@ -89,7 +89,7 @@ requires: []                 # optional extra unlocks, same types as dimension a
 
 - **An entry is readable once its chapter is reached:** chapter 1 from the start, chapter N once chapter N − 1 is
   completed (its chapter advancement, [architecture 16](../architecture.md#16-progression-and-quests)).
-- **Optional `requires`** uses the requirement types that already gate dimensions and dungeons
+- **Optional `requires`** uses the requirement types the architecture defines for unlocking dimensions and dungeons
   (`realmforge:requirement_type`, [architecture 5.3](../architecture.md#53-type-registries)), for an entry that should
   wait for more than its chapter, such as a secret boss.
 - **The server decides** ([principle 1](../architecture.md#2-principles)): it evaluates the rule and sends the
@@ -127,8 +127,8 @@ The guide is worth opening once there is content to look up, and its unlock rule
 chapters. M1 (v0.1.0) has one realm, its dungeons and one boss, which the quest book describes; adding the guide
 there would widen the vertical slice.
 
-**Proposal: M4** (The world grows), which brings chapters 2 and 3, the desert and tundra realms and more dungeons
-and bosses; the entries for chapter 1 content are written in the same milestone. **Alternative: M2**, to ship it
+**Proposal: M4** (The world grows), which brings chapters 2 and 3, realms 2 and 3 and more dungeons and
+bosses; the entries for chapter 1 content are written in the same milestone. **Alternative: M2**, to ship it
 with the first release after v0.1.0, when gear and loot make the reward lists useful. Either way, Q1 (the quest
 pipeline, M1) keeps quest descriptions as data, so a quest can later point to a guide entry without rewriting it.
 
@@ -137,6 +137,7 @@ pipeline, M1) keeps quest descriptions as data, so a quest can later point to a 
 1. **Approve the design:** a screen with Realms, Dungeons, Bosses and Basics; rewards inside the entries and
    through item search; the chapter unlock rule; `content/guide/` as the source.
 2. **Milestone:** M4 (proposed) or M2.
-3. **Default key:** `J`, unless a mod in the pack already uses it (checked when it is built; Dark Vision has `N`).
+3. **Default key:** `J`, unless a mod in the pack already uses it (checked when it is built; RLM-42's Dark Vision
+   key takes `N`).
 4. **Locked chapters:** one "Chapter 3: locked" line (proposed), or hidden completely?
 5. **Basics:** should the guide explain the systems too, or only the world?
