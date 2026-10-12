@@ -163,7 +163,9 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
   and saves that one, so the player never arrives away from the portal.
 - **The landing cannot be broken, built over, flooded or switched.** Its protected zone is the landing's box (the
   floor and the air above it) widened by 4 blocks on each side. In the zone, players outside creative:
-  - cannot break or place blocks (`BlockEvent.BreakEvent` and `BlockEvent.EntityPlaceEvent` are cancelled for them);
+  - cannot break or place blocks (`BlockEvent.BreakEvent` and `BlockEvent.EntityPlaceEvent` are cancelled for
+    them), except that they may place the blocks in the tag `#realmforge:landing_placeable`, which holds the
+    Waystones mod's waystone (*verify* its id), for the waystone fallback below;
   - cannot use buckets. `BucketItem#use` places and picks up fluids with `Level#setBlock` and posts no block event
     ([architecture 15.5](../architecture.md#155-instances)), so, as in instances,
     `PlayerInteractEvent.RightClickItem` is cancelled for a `BucketItem` when the player stands in the zone or aims
@@ -180,7 +182,7 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
   seconds on every arrival; the first arrival also shows its flavour line.
 - **A waystone at the landing** makes it the node between realms (TR-7), if the Waystones mod's block can be placed
   from code and then works like a placed one (*verify* its API); otherwise a landing quest step asks the player to
-  place one.
+  place one on the landing's floor, which the zone allows for that block.
 
 ### Return travel
 
