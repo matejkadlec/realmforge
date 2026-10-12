@@ -27,7 +27,7 @@
 | Realm | Sigil (working name) | How a player gets it | Portal colour |
 | --- | --- | --- | --- |
 | The Overworld | none | the way home from any realm ([Return travel](#return-travel)) | green `#5DBB63` |
-| Stone realm | Stone Sigil | reward of an early chapter 1 quest that a level-1 player can finish | slate blue `#7A8FB0` |
+| Stone realm | Stone Sigil | reward of an early chapter 1 quest that a level-1 player can finish; a repeatable quest replaces a lost one | slate blue `#7A8FB0` |
 | Desert realm | Desert Sigil | crafted from a stone realm ore plus the stone realm boss's guaranteed drop (RE-9) | gold `#E8B84A` |
 | Tundra realm | Tundra Sigil | the same, with a different stone realm ore | ice white `#BFF4FF` |
 | Fire realm | Fire Sigil | from the realm before it, by the same rule | red `#E0502C` |
@@ -91,6 +91,9 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
   - **the stone realm's sigil** is the reward of an early chapter 1 quest, for example "build the realm portal".
     That quest step is W2's "locked by a chapter 1 step", and a level-1 player can finish it (the stone realm is
     open from level 1 and recommended from 5, [realm design](realms.md#chapters-and-levels));
+  - **a lost Stone Sigil** comes back through a repeatable quest that opens once that first quest is complete and
+    gives a new sigil for a few copper ingots (FTB Quests' repeatable quests; Q1 checks the field). The quest gate
+    holds, and a player who lost the sigil before or after opening a portal is never stuck;
   - **every later main-path sigil is crafted** from an ore or gem of the realm the player is leaving plus the
     guaranteed drop of that realm's main-path boss. The recipe is shown in the quest log, and crafting the sigil is
     a step of the chapter's main chain. Beating that boss is what "completing" a realm means; the realm itself has
@@ -99,9 +102,10 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
     realm it opens, two for chapter 2, every kill;
   - **an optional side realm's sigil** comes from wherever its design puts it: a dungeon chest at 100% or a trade,
     never a random drop (PR-15).
-- **Nothing depends on luck:** each source is a quest reward, a guaranteed drop or a recipe, and an NPC sells the
-  keys of dungeons already done (LE-2), so a lost sigil is crafted again from a boss the player can always replay.
-  A lost sigil never locks the realm again, because the unlock belongs to the player.
+- **Nothing depends on luck, and every sigil can be replaced:** each source is a quest reward, a guaranteed drop or
+  a recipe. The Stone Sigil has its repeatable quest; every later sigil is crafted again from a boss the player can
+  always replay, since an NPC sells the keys of dungeons already done (LE-2). A lost sigil never locks the realm
+  again, because the unlock belongs to the player; the player needs a sigil only to open or switch a portal.
 
 ## Access and unlocks
 
@@ -275,8 +279,9 @@ arrival: {x: 0, z: 0, y: [20, 90], pocket_radius: 3, floor: realmforge:slate_bri
 - **`rf gen` writes** the registry entry, the unlock advancement `realmforge:realm/<id>`, the lang keys
   (`realm.realmforge.<id>.name`, ...) and GameTest expectations.
 - **Validation:** the dimension and the sigil exist; one realm per dimension; the sigil stacks to 1; the realm
-  dimension's `dimension_rules` access requirement includes the unlock advancement; every sigil has a source (a quest
-  reward, a recipe or a guaranteed drop), as the "every item obtainable" rule asks
+  dimension's `dimension_rules` access requirement includes the unlock advancement; every sigil has a renewable
+  source (a recipe, a repeatable quest, or the guaranteed drop of a boss that can be replayed), never only a one-time
+  reward, as the "every item obtainable" rule asks
   ([ADR 0005](../decisions/0005-content-pipeline-yaml-single-source-of-truth.md)).
 - **Not in the data yet:** a realm map's positions and parents (RE-7) and a level band of its own (the levels come
   from `dimension_rules`). They join when a view needs them.
@@ -326,7 +331,8 @@ A proposal for the M1 tasks, not a plan change:
   `realmforge:realm` entries for the Overworld and the stone realm, the unlock advancement and the access check,
   the landing, the return, and the respawn rule. It uses vanilla particles and sounds; textures are placeholders
   until the art pipeline makes them.
-- **Q2** (chapter 1) adds the quests that walk through the frame and reward the Stone Sigil.
+- **Q2** (chapter 1) adds the quests that walk through the frame and reward the Stone Sigil, and the repeatable
+  quest that replaces a lost one.
 - **Later:** the desert and tundra sigils with M4's realms; a tinted overlay; our own sounds (A3); a realm map;
   team unlocks with parties; a portal shrine near spawn ([open question 2](#open-questions)).
 - **Size:** W2 is M in the roadmap. Worldgen for the stone realm, its dimension rules, the requirement types and
