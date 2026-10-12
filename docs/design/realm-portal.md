@@ -157,14 +157,19 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
 - **The landing's position is saved** for the realm (a `SavedData` in the realm's level), so later arrivals look at
   one known place instead of searching a radius. Vanilla's nether portal search reads the point-of-interest data of
   every chunk within 128 blocks (`PortalForcer#findClosestPortalPosition` with `PoiManager#ensureLoadedAndValid`);
-  the landing needs none of that.
-- **The landing cannot be broken or switched:** players outside creative cannot break its frame or selector
-  (`BlockEvent.BreakEvent` is cancelled for them), its blocks resist explosions like bedrock, and its selector
-  refuses sigils ("The landing always leads home"). A player in a realm can then always get home. If the frame is
-  gone anyway (an operator, another mod), the next arrival rebuilds it in place.
+  the landing needs none of that. A saved landing that the world border has left outside (an operator moved or shrank
+  it) counts as gone: the next arrival builds a new landing at the spot nearest the arrival point inside the border
+  and saves that one, so the player never arrives away from the portal.
+- **The landing cannot be broken, built over or switched:** players outside creative can neither break its frame or
+  selector nor place blocks on its floor and in the air above it (`BlockEvent.BreakEvent` and
+  `BlockEvent.EntityPlaceEvent` are cancelled for them inside the landing's box), its blocks resist explosions like
+  bedrock, and its selector refuses sigils ("The landing always leads home"). A player in a realm can then always
+  get home. If the frame is gone anyway (an operator, another mod), the next arrival rebuilds it in place.
 - **Arrival puts the player on the floor in front of the frame, facing away from it,** not inside the portal, so
-  nobody bounces straight back. A title shows the realm's name and levels for 2 seconds on every arrival; the first
-  arrival also shows its flavour line.
+  nobody bounces straight back. Every arrival checks that spot first (solid floor and 2 blocks of air); when
+  something still blocks it (an operator, a fluid, another mod), the player lands on the nearest safe spot next to
+  the landing instead, with the same search as for the home point. A title shows the realm's name and levels for 2
+  seconds on every arrival; the first arrival also shows its flavour line.
 - **A waystone at the landing** makes it the node between realms (TR-7), if the Waystones mod's block can be placed
   from code and then works like a placed one (*verify* its API); otherwise a landing quest step asks the player to
   place one.
@@ -259,7 +264,8 @@ If Matěj decides otherwise in the realm design, this section follows his answer
 - **A missing destination:** a selector set to a realm that no longer exists (content removed, data pack off) shows
   "unknown realm" and refuses; a home point in a missing dimension falls back to the respawn point, then the world
   spawn. A player who logs in inside a dimension that no longer exists is moved by vanilla.
-- **World border:** every arrival point is clamped inside the border.
+- **World border:** every arrival point is clamped inside the border, and a landing the border has left outside is
+  rebuilt inside it ([the landing](#into-a-realm-the-landing)).
 - **Other travel:** a cross-dimension warp by waystone, an instance exit or a command leaves the home point alone,
   so the return portal still leads to the last Overworld portal the player used. Entering a realm that way still
   needs access ([Access and unlocks](#access-and-unlocks)).
@@ -328,7 +334,9 @@ Tests:
   - an incomplete frame stays dark;
   - breaking a frame block closes the portal;
   - a trip there builds the landing, and the way back arrives at the home point;
-  - a removed landing frame is rebuilt;
+  - a removed landing frame is rebuilt, and so is a landing outside a shrunken world border;
+  - a block placed into the landing's arrival space is refused, and a blocked arrival spot moves the player to a safe
+    one;
   - the selector refuses in the instance dimension;
   - an item, a mob and a mounted player do not travel;
   - a death in the realm respawns at the landing.
