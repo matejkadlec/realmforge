@@ -242,8 +242,10 @@ The realm design's [open question 1](realms.md#open-questions) proposes respawni
 through, so a death costs no long way back. With the landing, that becomes:
 
 - a player who dies in a realm respawns at its landing, unless their spawn point (a bed) is in that realm;
-- beds work in realms (`bed_works: true` in the realm's dimension type, so they set a spawn point and do not
-  explode); respawn anchors do not (`respawn_anchor_works: false`);
+- beds work in realms, which takes two fields of the realm's dimension type: `bed_works: true` (a bed does not
+  explode) and `natural: true` (`ServerPlayer#startSleepInBed` refuses, without a message, before it sets the spawn
+  point when `natural` is false; with it, compasses and clocks work too); respawn anchors do not
+  (`respawn_anchor_works: false`);
 - implemented with NeoForge's `PlayerRespawnPositionEvent`, which may change where a player respawns, and with
   `keepInventory` and `doImmediateRespawn` on ([architecture 19.1](../architecture.md#191-world-defaults)) a death
   is cheap.
@@ -429,7 +431,8 @@ Tests:
   - the selector refuses in the instance dimension;
   - an item, a mob and a mounted player do not travel through a portal, and a mob teleported into or out of a realm
     (as a leashed mob on a waystone warp) stays where it is;
-  - a death in the realm respawns at the landing.
+  - a death in the realm respawns at the landing; a bed used in the realm sets the spawn point, and a death then
+    respawns at the bed.
 
 ## What M1 takes from this
 
