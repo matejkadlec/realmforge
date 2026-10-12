@@ -9,5 +9,6 @@ public final class TalentFeature {
 
     /** Registers the feature's registries and event listeners. Called once from {@code Realmforge}. */
     public static void register(IEventBus modBus) {
+        TalentAttachments.register(modBus);
     }
 }
