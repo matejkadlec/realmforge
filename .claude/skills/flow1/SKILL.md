@@ -1,6 +1,6 @@
 ---
 name: flow1
-description: Autonomously select and deliver a coherent batch of 1-N tickets from the active RLM Jira sprint (Next first, then To Do), pulling unfinished dependencies into the batch and keeping Next filled by priority. Claims the tickets, implements the batch in its own git worktree and validates it. An AI-only batch is published as one ready pull request and carried to its merge with monitor-pr; a gameplay batch is pushed without a pull request and handed to Matěj for a playtest, which he answers with qa1 or qa2. Never implements decision tickets or tickets waiting on Matěj; lists them instead. Use when the user says "flow1" or asks the agent to pick up and deliver sprint work.
+description: Autonomously select and deliver a coherent batch of 1-N tickets from the active RLM Jira sprint (Next first, then To Do), pulling unfinished dependencies into the batch and keeping Next filled by priority. Claims the tickets, implements the batch in its own git worktree and validates it. An AI-only batch is published as one ready pull request and carried to its merge with monitor-pr; a gameplay batch is pushed without a pull request and handed to Matěj for a playtest, which he answers with qa1 or qa2. Never implements decision tickets or tickets waiting on Matěj; lists them instead. Takes an optional run location: "flow1 cloud" (the default) selects only work a cloud session can do and stops when none is left; "flow1 local" selects work only a local session can do first, then goes by normal priority. Use when the user says "flow1", "flow1 cloud" or "flow1 local", or asks the agent to pick up and deliver sprint work.
 ---
 
 # flow1: autonomous batch delivery
@@ -12,7 +12,13 @@ rules.
 `flow1` is one autonomous goal. Do not treat it as a request for a single ticket, and do not stop at a report
 before an AI-only batch's ready pull request or a playtest batch's handoff exists, unless the run reaches a
 boundary in _Concurrency and run boundaries_ first: no startable batch (everything left waits on Matěj, conflicts
-with in-flight work or exceeds a cap), or a stop for Matěj.
+with in-flight work or exceeds a cap, or a `cloud` run finds only local-only work), or a stop for Matěj.
+
+**Run location** (_Run location_): the argument is `cloud` or `local`; `flow1` without one is `flow1 cloud`, and a
+cloud session (`CLAUDE_CODE_REMOTE=true`) always runs as `cloud`. `cloud` selects only cloud-capable tickets and,
+when Next and To Do hold none that can start, ends without a claim and lists the local-only tickets left. `local`
+selects startable local-only tickets first, from Next and To Do alike, and falls back to normal priority when there
+are none. Name the mode in the batch announcement.
 
 1. **Intake:** first run _Reconciling merged tickets_; a ticket that cannot be matched never blocks the run. Then
    follow _Intake and conflict control_: inspect the active sprint (Next before To Do), the in-flight tickets,
@@ -23,15 +29,15 @@ with in-flight work or exceeds a cap), or a stop for Matěj.
 2. **Dependencies:** resolve every candidate's unfinished dependencies under _Dependencies_: pull each one from
    To Do, Next or the backlog into the batch, defer a ticket whose dependency is in flight elsewhere, and list one
    that waits on Matěj.
-3. **Classify** each candidate AI-only or Playtest under _QA classification_. A batch has one QA mode; a pulled-in
-   dependency follows _Dependencies_.
-4. **Select and announce** one coherent batch from Next under _Priority and the Next queue_ and _Batch
-   selection_, which define the only promotions from To Do and how far to fill an AI-only batch. Priority is a
+3. **Classify** each candidate AI-only or Playtest under _QA classification_, and local-only or cloud-capable under
+   _Run location_. A batch has one QA mode; a pulled-in dependency follows _Dependencies_.
+4. **Select and announce** one coherent batch from Next under _Priority and the Next queue_, _Run location_ and
+   _Batch selection_, which define the only promotions from To Do and how far to fill an AI-only batch. Priority is a
    recommendation. A playtest batch also needs a free playtest slot; while none is free, select AI-only work. The
    announcement names the tickets, the pulled-in dependencies and why the batch has this size.
-5. **Claim** every newly selected ticket through the _Atomic intake claim_ before writing any implementation.
-   The batch's one branch and worktree are created and pushed at the first claim that holds (_Branches and
-   worktrees_) and reused for every later ticket of the batch.
+5. **Claim** every newly selected ticket through the _Atomic intake claim_ (its `Location` line included) before
+   writing any implementation. The batch's one branch and worktree are created and pushed at the first claim that
+   holds (_Branches and worktrees_) and reused for every later ticket of the batch.
 6. **Implement** in that worktree, following `CLAUDE.md`'s rules. Changes keep `docs/architecture.md`,
    `CLAUDE.md`, the READMEs and the ADRs current in the same batch.
 7. **Validate** under _Implementation and verification_: content regenerated from YAML, ruff, pytest,

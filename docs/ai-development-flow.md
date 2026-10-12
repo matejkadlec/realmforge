@@ -9,7 +9,8 @@
 
 The shortcuts `flow1` (take a batch of sprint tickets and deliver it), `flow2` (turn Matěj's task description
 into a ticket and deliver it), and Matěj's playtest answers `qa1` (passed: publish the batch) and `qa2` (changes
-required: revise it) live in [`.claude/skills/`](../.claude/skills/). They are entry points into this document,
+required: revise it) live in [`.claude/skills/`](../.claude/skills/). `flow1` and `flow2` take an optional
+[run location](#run-location), `cloud` (the default) or `local`. They are entry points into this document,
 not a second source of truth: every rule here also applies to direct work on a ticket. After publication
 the pull request skills take over: [`monitor-pr`](../.claude/skills/monitor-pr/SKILL.md),
 [`fix-pr`](../.claude/skills/fix-pr/SKILL.md), [`finalize-pr`](../.claude/skills/finalize-pr/SKILL.md) and
@@ -244,12 +245,16 @@ Every session taking work from Next maintains the queue:
    ([Batch selection](#batch-selection)).
 5. Move from Next to In Progress only when implementation begins (the claim).
 
-These are the only promotions, plus three exceptions, each because Matěj asked for that work now or it is needed
+These are the only promotions, plus four exceptions, each because Matěj asked for that work now or it is needed
 for it:
 
 - [Dependencies](#dependencies) pulls in a dependency of a selected ticket.
 - `flow2` promotes and selects the tickets it creates or picks for Matěj's request directly, whatever else Next
   holds.
+- A [run location](#run-location) narrows what a run may select. A `local` run promotes a startable local-only
+  ticket from To Do and selects it ahead of cloud-capable work in Next. A `cloud` run whose Next holds no startable
+  cloud-capable ticket promotes the most appropriate startable cloud-capable To Do ticket or batch and selects it,
+  as rule 2 does for an empty Next.
 - **Direct work** on a ticket Matěj names in the session ("implement F1") promotes that ticket from To Do to Next
   and then claims it with the [atomic intake claim](#atomic-intake-claim), its dependencies included. Every other
   rule still applies: the ticket must not be [waiting on Matěj](#tickets-waiting-on-matěj) or in flight, and the
@@ -514,6 +519,58 @@ automated test. A behavior change he must decide on comes first and says so. AI-
 its overview says under "Merged into master" or "Pending CR" what changed and what the automated evidence covers.
 Files, implementation detail and the full verification stay in the ticket comments.
 
+## Run location
+
+`flow1` and `flow2` take an optional argument: `flow1 cloud`, `flow1 local`, `flow2 cloud` or `flow2 local`.
+Without one, the run is `cloud`. The argument decides which work the run selects. A cloud session
+(`CLAUDE_CODE_REMOTE=true`, [Cloud sessions](#cloud-sessions)) cannot deliver local-only work, so it always runs as
+`cloud`; when it was given `local`, its batch announcement says so.
+
+Classify every candidate before selecting it, next to its [QA classification](#qa-classification):
+
+- **Local-only:** the ticket cannot be finished without something only Matěj's machine has:
+  - an MCP server or tool set up only there, such as Retro Diffusion for textures and icons
+    ([dev setup](dev-setup.md#5-claude-code));
+  - a rendered game client: screenshots, a pose or effect the agent has to look at, or his Minecraft login
+    (DevLogin);
+  - his Windows side or Prism (`installToPrism`, the pack in his launcher);
+  - private inputs in `.local/`;
+  - this machine's git state: its worktrees and local branches;
+  - a host the cloud proxy refuses, once a cloud run recorded the refusal on the ticket.
+- **Cloud-capable:** everything else: code, content, the pipeline, JUnit and GameTests (headless), a dedicated
+  server, docs, CI, pack metadata, Jira and GitHub. A playtest does not make a ticket local-only: the batch branch is
+  on `origin`, so a cloud run hands it off the same way ([Launch commands](#launch-commands)).
+
+The ticket's "Done when" decides: a ticket whose evidence needs one local-only step is local-only as a whole, and a
+batch is local-only when one of its tickets is. A ticket [waiting on Matěj](#tickets-waiting-on-matěj) stays
+waiting in either mode, whatever it needs afterwards (Retro Diffusion credit he has not topped up, a tool he has not
+approved).
+
+The modes change only what is selected; every other rule of this document applies unchanged:
+
+- **`cloud`:** only cloud-capable tickets are eligible for selection, in Next and To Do alike. A local-only ticket is
+  never selected, and a candidate whose unmet dependency is local-only is deferred. When Next holds no startable
+  cloud-capable ticket, the run promotes one from To Do (the exception in [Priority and the Next
+  queue](#priority-and-the-next-queue)). Keeping Next filled (rule 3 and the replenishment before a handoff) still
+  counts local-only tickets: a `cloud` run may promote one only for that, never to select it. When Next and To Do
+  hold no startable cloud-capable ticket after the dependency, ownership and cap checks, the run claims nothing and
+  ends ([Concurrency and run boundaries](#concurrency-and-run-boundaries)); its status overview lists the local-only
+  tickets left under "Blocked or other", each with what it needs, so Matěj can start a `local` run for them.
+- **`local`:** local-only tickets come first, in Next and To Do alike, by priority among themselves: a startable
+  local-only ticket in To Do is promoted and selected ahead of cloud-capable work in Next (the exception in
+  [Priority and the Next queue](#priority-and-the-next-queue)), and its dependencies are pulled in whatever their
+  location. When no local-only ticket is startable, the run selects by the normal rules, cloud-capable work
+  included.
+- **`flow2`** captures every requested item as a ticket in either mode. In `local` it delivers them, local-only
+  items first. In `cloud` it delivers only the cloud-capable ones: a local-only item is routed to Next like any
+  `flow2` ticket but not claimed, with a comment that it waits for a local session. When no requested item is
+  cloud-capable, the run ends after the capture, and its status overview names the tickets a `flow1 local` or
+  `flow2 local` run delivers.
+
+The claim comment records the batch's location (`Location:` in the [atomic intake claim](#atomic-intake-claim)).
+A `qa1` or `qa2` for a local-only batch runs in a local session when the step itself needs something local-only
+(new screenshots, regenerated textures); a cloud session that receives such an answer says so and stops.
+
 ## Intake and conflict control
 
 Intake opens with [Reconciling merged tickets](#reconciling-merged-tickets). Then, before selecting or starting
@@ -608,16 +665,18 @@ Per ticket, in order:
    Branch: feat/rlm-17-rlm-18-feature-skeleton
    Batch: RLM-17, RLM-18
    QA mode: AI-only
+   Location: cloud-capable
    Domains: game
    Gate-critical: no
    Generated: none
    ```
 
-   `Generated` lists the generated files the batch will regenerate ([Conflict domains](#conflict-domains)), or
-   `none`. Add "Pulled in as a dependency of RLM-<n>" when that applies. Peer sessions share the acting account,
-   so the comment is the only claim token that tells them apart: the earliest claim comment recorded since the
-   ticket last entered Next wins, and the lower comment id breaks a tie on the same timestamp. Older comments do
-   not count, so an interrupted run's claim never defeats a later claimant.
+   `Location` is the batch's [run location](#run-location), `local-only` or `cloud-capable`. `Generated` lists the
+   generated files the batch will regenerate ([Conflict domains](#conflict-domains)), or `none`. Add "Pulled in as a
+   dependency of RLM-<n>" when that applies. Peer sessions share the acting account, so the comment is the only claim
+   token that tells them apart: the earliest claim comment recorded since the ticket last entered Next wins, and the
+   lower comment id breaks a tie on the same timestamp. Older comments do not count, so an interrupted run's claim
+   never defeats a later claimant.
 4. Re-verify: re-read the ticket with the same fields, and list local branches, worktrees, remote branches and
    open pull requests again, ignoring the ones this session created. The claim holds only if the ticket is In
    Progress under the acting account, this session's claim comment is the earliest that counts, no branch,
@@ -908,7 +967,8 @@ A run delivers one batch. It ends, with the batch ledger, when:
 - the caps leave no startable batch: the overall limit is reached, every domain with safe work left is full, a
   gate-critical batch is in flight and only gate-critical work remains, every remaining candidate regenerates a
   file an in-flight batch owns, or every playtest slot is taken and only playtest work remains;
-- no safe active-sprint ticket remains after the conflict, dependency and ownership checks.
+- no safe active-sprint ticket remains after the conflict, dependency and ownership checks;
+- a `cloud` run: no startable cloud-capable ticket remains in Next or To Do ([Run location](#run-location)).
 
 A candidate whose slots are unavailable is not safe remaining work in any domain, and neither is a texture batch
 for a cloud session ([Cloud sessions](#cloud-sessions)). The run therefore ends once every remaining candidate is
