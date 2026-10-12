@@ -93,6 +93,9 @@ uv run rf gametest-log                    # after runGameTestServer: exit 1 on d
 .claude/scripts/gradle-queue.sh <task>    # agents: any Gradle build/test task, queued while memory is short
 
 cd pack && packwiz refresh                # after changing anything in pack/
+
+./git_clean_worktrees.sh                  # Matěj only: merged branches, their worktrees, worktree residue (README)
+bash tests/test_git_clean_worktrees.sh    # its safety regression suite (CI runs it in the content job)
 ```
 
 ## Repository map
@@ -112,9 +115,12 @@ cd pack && packwiz refresh                # after changing anything in pack/
 | `art/` | asset sources: the project palette, generator candidates, prompts, Blockbench files | yes |
 | `docs/` | vision, architecture, roadmap, research notes, ADRs, dev setup | yes |
 | `.github/workflows/ci.yml` | CI | yes |
+| `git_clean_worktrees.sh` | Matěj's cleanup of merged branches, their worktrees and worktree residue ([README](README.md#git-worktree-cleanup)) | yes |
+| `tests/` | shell test suites: the worktree cleanup's safety regression suite | yes |
 | `.claude/` | Claude Code settings, content validation hook, cloud warm-up hook, Gradle queue script, flow skills (`flow1`, `flow2`, `qa1`, `qa2`), PR skills (`fix-pr`, `finalize-pr`, `monitor-pr`), `pr-reviewer` agent | yes |
 | `.mcp.json` | MCP servers for Claude Code: `atlassian` (Jira) | yes |
 | `.local/` | owner's private inputs; gitignored, **never commit** | - |
+| `.claude/worktrees/` | Claude Code session worktrees (desktop app, `claude --worktree`); gitignored | - |
 | `run/`, `build/`, `.cache/` | runtime and build output; gitignored | - |
 
 ## Rules
@@ -261,6 +267,9 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
 - After the merge, remove only what your session created: `git fetch --prune origin`,
   `git worktree remove <path>` (never `--force` over uncommitted changes), `git branch -d <branch>`,
   `git worktree prune`. The remote branch is GitHub's job ("Automatically delete head branches").
+- Claude Code's own session worktrees live in `.claude/worktrees/<name>` (gitignored). Matěj's
+  `./git_clean_worktrees.sh` ([README](README.md#git-worktree-cleanup)) removes merged branches with their
+  worktrees and orphaned residue in both worktree homes; agents never run it on a real checkout.
 
 **Pull requests**
 
@@ -302,14 +311,16 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
    through the agent proxy and warm up uv and Gradle in the background (`.claude/hooks/cloud-warmup.sh`).
 3. **Before opening a PR, run and report:** `uv run rf gen` (no unexpected changes), `uv run ruff check`,
    `uv run ruff format --check`, `uv run pytest`, `./gradlew build`, `./gradlew runGameTestServer`,
-   `uv run rf gametest-log`. Agents run the two Gradle tasks through `.claude/scripts/gradle-queue.sh`, which waits
-   for memory while other worktrees build.
+   `uv run rf gametest-log`, and `bash tests/test_git_clean_worktrees.sh` when the cleanup script or its suite
+   changed. Agents run the two Gradle tasks through `.claude/scripts/gradle-queue.sh`, which waits for memory
+   while other worktrees build.
 4. Keep `CLAUDE.md`, `docs/` and the relevant READMEs current in the same PR when commands, structure, rules or
    decisions change (the roadmap only when the plan changes). Stale docs mislead the next session.
 5. Open the PR against `master` with `gh pr create`, then run `/monitor-pr <n>`. Work that needs Matěj's
    playtest opens no PR before his `qa1`: push the branch and hand it off instead
    ([flow: Playtest handoff](docs/ai-development-flow.md#playtest-handoff)). CI (`.github/workflows/ci.yml`)
-   runs: content pipeline + generated-files check, Gradle build + JUnit + GameTests, vanilla ID universe
+   runs: content pipeline + generated-files check + the worktree cleanup suite, Gradle build + JUnit + GameTests,
+   vanilla ID universe
    reproducibility, packwiz index (these four are the required checks on `master`), and the full pack boot on a
    dedicated server and on a client ([ADR 0018](docs/decisions/0018-pack-boot-tests.md)).
 6. `monitor-pr` merges once Codex is done (its approval, a completed review whose findings are all closed, or
