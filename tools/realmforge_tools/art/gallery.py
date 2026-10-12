@@ -8,6 +8,7 @@ one self-contained HTML page: the images are embedded, so it opens offline and c
 from __future__ import annotations
 
 import base64
+import hashlib
 import html
 from dataclasses import dataclass
 from pathlib import Path
@@ -108,7 +109,7 @@ def render(info: GalleryInfo, subjects: tuple[Subject, ...], palette: Palette) -
         '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">',
         _FONTS,
         f"<style>{_CSS}</style>",
-        '<main class="page">',
+        f'<main class="page" data-batch="{batch_id(subjects)}">',
         "<header>",
         f"<h1>{esc(info.title)}</h1>",
     ]
@@ -149,6 +150,17 @@ def render(info: GalleryInfo, subjects: tuple[Subject, ...], palette: Palette) -
     out.append("</section></main>")
     out.append(f"<script>{_JS}</script>")
     return "\n".join(out) + "\n"
+
+
+def batch_id(subjects: tuple[Subject, ...]) -> str:
+    """A short digest of the candidates' names and pixels. The page keeps a reviewer's picks under it, so a
+    gallery of other candidates never shows picks made for these."""
+    digest = hashlib.sha256()
+    for subject in subjects:
+        for candidate in subject.candidates:
+            digest.update(f"{subject.name}/{candidate.name}\0".encode())
+            digest.update(candidate.raw.png())
+    return digest.hexdigest()[:16]
 
 
 def _card(subject: str, candidate: Candidate, info: GalleryInfo) -> str:
@@ -253,7 +265,7 @@ button:focus-visible, .pick input:focus-visible { outline: 2px solid var(--accen
 
 _JS = """
 (() => {
-  const KEY = "realmforge-gallery-picks:" + document.title;
+  const KEY = "realmforge-gallery-picks:" + document.querySelector("main").dataset.batch;
   const radios = [...document.querySelectorAll('.pick input[type="radio"]')];
   const text = document.getElementById("picks-text");
   const status = document.getElementById("copy-status");

@@ -245,6 +245,16 @@ def test_gallery_follows_the_yaml_order_and_tiles_only_opaque_textures(tmp_path:
     assert page == gallery.render(info, subjects, PALETTE)
 
 
+def test_gallery_keeps_picks_per_batch_of_candidates(tmp_path: Path) -> None:
+    root = _candidates(tmp_path)
+    info, subjects = gallery.collect(root, PALETTE, 16)
+    first = gallery.batch_id(subjects)
+    assert f'data-batch="{first}"' in gallery.render(info, subjects, PALETTE)
+    assert gallery.batch_id(gallery.collect(root, PALETTE, 16)[1]) == first
+    (root / "a_block" / "y.png").write_bytes(encode_rgba(16, 16, [BLUE] * 256))  # same names, new pixels
+    assert gallery.batch_id(gallery.collect(root, PALETTE, 16)[1]) != first
+
+
 def test_gallery_reports_a_broken_yaml_with_its_path(tmp_path: Path) -> None:
     root = _candidates(tmp_path)
     (root / "gallery.yaml").write_text("subjects:\n  b_item: {title: Item, colour: red}\n", encoding="utf-8")
