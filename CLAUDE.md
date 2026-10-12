@@ -77,6 +77,7 @@ uv run rf pack-boot                       # boot the whole pack + mod/build/libs
 
 ./gradlew build                           # compile both mods + JUnit
 ./gradlew runGameTestServer               # headless GameTests; exit code != 0 on failure
+uv run rf gametest-log                    # after runGameTestServer: exit 1 on data loading errors in its log
 ./gradlew runClient                       # dev client with core + QA mod, Matěj's account (DevLogin), run/client;
                                           # playtests run it from his Windows clone (docs/dev-setup.md, 3.2)
 ./gradlew runClient -PwithBetterCombat    # the same plus Better Combat (ADR 0020); /qa cast <ticks> in game
@@ -291,9 +292,9 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
    `tools/` and reports problems back. It does not compile Java. In cloud sessions SessionStart hooks route PyPI
    through the agent proxy and warm up uv and Gradle in the background (`.claude/hooks/cloud-warmup.sh`).
 3. **Before opening a PR, run and report:** `uv run rf gen` (no unexpected changes), `uv run ruff check`,
-   `uv run ruff format --check`, `uv run pytest`, `./gradlew build`, `./gradlew runGameTestServer`. Agents run
-   the two Gradle tasks through `.claude/scripts/gradle-queue.sh`, which waits for memory while other worktrees
-   build.
+   `uv run ruff format --check`, `uv run pytest`, `./gradlew build`, `./gradlew runGameTestServer`,
+   `uv run rf gametest-log`. Agents run the two Gradle tasks through `.claude/scripts/gradle-queue.sh`, which waits
+   for memory while other worktrees build.
 4. Keep `CLAUDE.md`, `docs/` and the relevant READMEs current in the same PR when commands, structure, rules or
    decisions change (the roadmap only when the plan changes). Stale docs mislead the next session.
 5. Open the PR against `master` with `gh pr create`, then run `/monitor-pr <n>`. CI (`.github/workflows/ci.yml`)

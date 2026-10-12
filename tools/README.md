@@ -9,6 +9,7 @@ uv run rf gen             # validate, then regenerate every generated file
 uv run rf gen --check     # exit 1 if any generated file is out of date
 uv run rf ids vanilla     # re-extract the vanilla ID universe (downloads the server jar, needs Java 21)
 uv run rf pack-boot       # boot the whole pack plus mod/build/libs' jar on a server and a client (needs Java 21)
+uv run rf gametest-log    # after ./gradlew runGameTestServer: exit 1 on data loading errors in its log
 uv run pytest             # tests
 uv run ruff check && uv run ruff format --check
 ```
@@ -19,9 +20,10 @@ uv run ruff check && uv run ruff format --check
 | `realmforge_tools/content.py` | loads `content/` (step 1: schema) |
 | `realmforge_tools/validate.py` | own ids and references against the ID universe (steps 2-3) |
 | `realmforge_tools/id_universe.py`, `vanilla.py` | the ID universe and the vanilla extractor |
-| `realmforge_tools/generate/` | generators; `generate_all` + `sync` own the generated directories |
+| `realmforge_tools/generate/` | generators; `generate_all` + `sync` own the generated directories; `datapack.py` writes every type in `DATAPACK_TYPES` as datapack registry entries (translation keys, unit conversion) |
 | `realmforge_tools/formats/` | deterministic PNG, NBT, gzip/zlib and JSON writers |
 | `realmforge_tools/packboot.py` | `rf pack-boot`: installs and boots the pack with NeoForge's self tests ([below](#pack-boot)) |
+| `realmforge_tools/gamelog.py` | NeoForge log parsing shared by `rf pack-boot` and `rf gametest-log` ([below](#gametest-log)) |
 | `realmforge_tools/client_isolation.py` | the import check that keeps client classes under `client/` (architecture 18) |
 | `id_universe/` | generated vanilla id snapshot (committed) |
 | `schemas/` | generated JSON Schemas for editor completion (committed) |
@@ -50,3 +52,12 @@ change, or a deliberately broken copy). Logs land in `.cache/pack-boot/reports/<
 installer, packwiz-installer and its bootstrap are sha256-pinned and portablemc is version-pinned in `packboot.py`;
 a NeoForge upgrade updates the pin there too (`test_packboot.py` fails until it matches `pack/pack.toml` and
 `gradle.properties`).
+
+## GameTest log
+
+`./gradlew runGameTestServer` fails when a GameTest fails or when one of our datapack registries does not decode (the
+server stops). Vanilla data is different: a broken loot table, recipe, advancement or tag is logged and skipped, so
+the GameTests still pass. `uv run rf gametest-log` (CI's gradle job, after the GameTests) therefore reads
+`run/gametest/logs/latest.log` and fails on every ERROR or FATAL line that `GAMETEST_ALLOWED_ERRORS` in `gamelog.py`
+does not explain, on loot table validation warnings, and on a log without the "All N required tests passed" line.
+`--log` checks another file.

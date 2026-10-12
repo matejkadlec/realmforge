@@ -346,8 +346,10 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 4. **Generators** write every derived file; CI fails when `rf gen` changes anything.
 5. **Runtime:** when a world loads, a decoding error in one of our datapack registries stops the GameTest server
    and fails CI. Vanilla data (loot tables, recipes, advancements, tags) is different: a broken file is logged
-   (`Couldn't parse element`, `Parsing error loading recipe`, ...) and skipped. So CI also fails on those log lines,
-   and GameTests check that every generated id resolves and matches the generated expectations.
+   (`Couldn't parse element`, `Parsing error loading recipe`, ...) and skipped. So CI also fails on those log lines
+   (`uv run rf gametest-log` after the GameTests: every ERROR or FATAL line outside a reasoned allowlist, and loot
+   table validation warnings; `tools/realmforge_tools/gamelog.py`), and GameTests check that every generated id
+   resolves and matches the generated expectations.
 
 ### 6.2 What each content type becomes
 
@@ -358,7 +360,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json`, the tag entries in `#minecraft:bypasses_cooldown` ([9.1](#91-damage-pipeline)), generated registrations of the school's power and resistance attributes | vanilla damage types, tags; static attributes |
 | `loot/`, `recipes/`, tags | `data/realmforge/loot_table/`, `recipe/`, `tags/` | reloadable vanilla data |
 | `chapters/`, `quests/` | `data/realmforge/advancement/`; `pack/config/ftbquests/quests/` (SNBT, stable ids per ADR 0006) | advancements; the FTB Quests book |
-| `worldgen/` (JSON, [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)) | validated and copied to `data/realmforge/dimension/`, `dimension_type/`, `worldgen/` | vanilla worldgen registries |
+| `worldgen/<registry>/<id>.json` (JSON, [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)) | validated and copied unchanged to `data/realmforge/dimension/`, `dimension_type/`, `worldgen/<registry>/` | vanilla worldgen registries |
 | `rooms/` (NBT plus a YAML sidecar) | validated and copied to `data/realmforge/structure/` | structure templates |
 | item YAML with a weapon preset | `data/realmforge/weapon_attributes/<item>.json` (Better Combat format) | read by Better Combat |
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
@@ -376,9 +378,15 @@ instance. After `rf gen` changes files in `pack/`, run `packwiz refresh` (CI che
   `minecraft:overworld`) names it in a field, never in its id.
 - snake_case keys in YAML and JSON, as in vanilla data.
 - **Human units in YAML, game units in data.** YAML says `cooldown_seconds: 8` or `chance_percent: 5`; generated
-  JSON and Java use ticks and fractions. Field names carry the unit; generators convert.
+  JSON and Java use ticks and fractions. Field names carry the unit; generators convert: `<name>_seconds` becomes
+  `<name>_ticks` (the `Seconds` type in `schema/common.py` allows only whole ticks) and `<name>_percent` becomes the
+  fraction `<name>`.
 - Player-facing text is `LocalizedText` in YAML; generated data holds only translation keys, following the scheme
-  `<type>.realmforge.<id>.<field>`, for example `spell.realmforge.firebolt.name`.
+  `<registry>.realmforge.<id>.<field path>`, for example `spell.realmforge.firebolt.name` (a nested field adds its
+  path: `spell.realmforge.firebolt.effects.0.label`).
+- One generator writes every datapack type (`tools/realmforge_tools/generate/datapack.py`): the `id` becomes the
+  file name, texts become keys, units are converted, unset optional fields are left out, and everything else keeps
+  its YAML name and value. A type that needs a different JSON shape converts in its own generator instead.
 - Numbers shown to players come from data, never typed into prose. Spell tooltips fill placeholders such as
   `{damage}` at runtime from the current values, talents included; quest texts are generated from the same YAML as
   the game (boss level, location, recipe).
@@ -418,12 +426,14 @@ effects:
 
 ### 6.5 Adding a content type
 
-CLAUDE.md rule 1 lists the Python side. A datapack-registry type also needs, on the Java side: a record with a
-`CODEC` in its feature package, the registry key in that feature's registries class, the `dataPackRegistry(...)`
-call, and a
-GameTest that checks the generated expectations. The pydantic model and the codec describe the same shape; CI
-keeps them in step because it starts a game that decodes every generated file and compares it with the
-expectations.
+CLAUDE.md rule 1 lists the Python side; a datapack-registry type is also a `DatapackType` entry in
+`schema/__init__.py`, which the generic generator turns into data and lang entries. On the Java side it needs a
+record with a `CODEC` in its feature package, the registry key in that feature's registries class, the
+`dataPackRegistry(...)` call, and a GameTest that checks the generated expectations. Curves are the worked
+example: `CurveDef`, `generate/curves.py` (`GeneratedCurves` key constants, `GeneratedCurveExpectations`),
+`core/Curve`, `core/CoreRegistries` and `ContentCurveGameTests`. The pydantic model and the codec describe the
+same shape; CI keeps them in step because it starts a game that decodes every generated file and compares it with
+the expectations.
 
 ## 7. Player state
 
@@ -824,8 +834,11 @@ loot: realmforge:boss/hollow_warden
 
 ### 15.1 Dimensions
 
-- Worldgen JSON in `content/worldgen/` ([ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)),
-  validated and copied to `data/realmforge/dimension/`, `dimension_type/` and `worldgen/`.
+- Worldgen JSON in `content/worldgen/<registry>/<id>.json`
+  ([ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)), validated and copied unchanged to
+  `data/realmforge/dimension/`, `dimension_type/` and `worldgen/<registry>/`. Python checks the location, the id,
+  that the file is a JSON object, that a dimension's `type` names a known dimension type, and that no file clashes
+  with the core mod's own resources; the game decodes the rest when a world loads.
 - Gameplay rules in `realmforge:dimension_rules`: mob levels, the access requirement (for example a chapter), flags.
 - Access by portal or item, locked behind the requirement (the vision's "locked dimensions").
 - A technical dimension `realmforge:instances` (void, no natural spawning, fixed time) hosts dungeon instances. The
@@ -1088,7 +1101,7 @@ tag, Xaero icons, FTB Quests files) need no code.
 | --- | --- | --- |
 | pure logic | JUnit in `mod/src/test` | damage formula, talent rules, dungeon planner fuzzing, boss phase machine, XP curve |
 | content | pytest in `tools/tests` | schemas, references, semantic rules, guardrails, talent tree validity |
-| data against codecs | GameTest server start, data errors in its log, generated expectations | every spell decodes; every generated loot table, recipe and advancement loads; ids and key fields match |
+| data against codecs | GameTest server start, data errors in its log (`uv run rf gametest-log`), generated expectations | every spell decodes; every generated loot table, recipe and advancement loads; ids and key fields match |
 | behaviour in a world | GameTests in `qa-mod` | firebolt damages a dummy by the expected amount; the level stops at the cap; the chapter advancement raises it; the boss enters phase 2 at 70%; an instance is built, entered and cleaned up |
 | client isolation | pytest import check (`tools/tests/test_client_isolation.py`); dedicated GameTest server | - |
 | whole pack | `uv run rf pack-boot`: the CI jobs `pack-boot` and `pack-boot-client` boot the pack plus our jar with NeoForge's self tests ([ADR 0018](decisions/0018-pack-boot-tests.md)) | server and client load with and without Quark; no unexplained ERROR line |
