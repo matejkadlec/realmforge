@@ -11,7 +11,9 @@ publishing; this skill may not weaken either. _qa1: playtest passed_ there holds
 1. **Find the batch** Matěj passed: the one this session handed off, the ticket keys, branch or pull request he
    names, or the only batch waiting for a playtest (tickets in Pending User QA, or an open pull request with
    `needs-playtest`, one outside the Jira flow included). With several and no hint, ask which one, listing each
-   with its tickets, branch or pull request. Nothing waiting for a playtest: say so and stop.
+   with its tickets, branch or pull request. Nothing waiting for a playtest: say so and stop. When a `qa2` left a
+   decision question open on the batch's tickets, ask Matěj to answer it first, or to confirm that his `qa1`
+   accepts the batch as it is; publish nothing before that.
 2. **Take the preserved branch:** `git fetch origin`, then reuse the worktree that holds it or create one from
    `origin/<branch>` (_Branches and worktrees_). Then bring the local branch up to `origin/<branch>` before
    anything else: `git merge --ff-only origin/<branch>`, or `git merge origin/<branch>` when both sides have

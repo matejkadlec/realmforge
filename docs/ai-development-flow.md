@@ -342,7 +342,9 @@ Matěj's `qa1` passes the playtest and authorizes publishing the batch. The
 [`qa1` skill](../.claude/skills/qa1/SKILL.md) carries it out:
 
 1. **Find the batch:** the one this session handed off, the keys or branch Matěj names, or the only playtest
-   batch in Pending User QA. With several and no hint, ask which one, listing each with its tickets and branch.
+   batch in Pending User QA. With several and no hint, ask which one, listing each with its tickets and branch. An
+   open decision question that a `qa2` left on its tickets is answered (or he confirms the batch as it is) before
+   anything is published.
 2. **Take the branch:** `git fetch origin`, then reuse the worktree that holds it, or create one from
    `origin/<branch>` ([Branches and worktrees](#branches-and-worktrees)). Bring the local branch up to
    `origin/<branch>` before anything else (`git merge --ff-only`, or a merge when both sides have commits):
