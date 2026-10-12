@@ -1,7 +1,8 @@
 # Roadmap
 
-> The order of work, by milestone. Goals: [vision.md](vision.md). How things are built:
-> [architecture.md](architecture.md). Decisions: [ADRs](decisions/README.md). Baseline of 2026-10-11.
+> The order of work, by milestone. Goals: [vision.md](vision.md). Realms and their order:
+> [design/realms.md](design/realms.md). How things are built: [architecture.md](architecture.md). Decisions:
+> [ADRs](decisions/README.md). Baseline of 2026-10-11.
 
 ## How to use this roadmap
 
@@ -73,7 +74,7 @@ add content to systems that already work instead of building them.
 | Talents | one tree per class, about 8-10 nodes in 3 tiers, including spell-modifying talents and one big-impact talent |
 | Leveling | levels 1-10 with a level cap; finishing chapter 1 raises the cap (proposal D2: 10, then 20) |
 | Stats | primary stats with derived bonuses and at least one milestone bonus; a character sheet |
-| Dimension | 1 custom dimension (data-driven worldgen), locked until a chapter 1 quest unlocks it |
+| Dimension | 1 custom dimension, the stone realm: a huge enclosed cave world (working name "Stoneblock", [realm design](design/realms.md#the-stone-realm)); data-driven worldgen, locked until a chapter 1 quest unlocks it |
 | Mobs | levels by location for vanilla hostile mobs, plus 1-2 custom mob types for the dungeons (proposal D11) |
 | Dungeons | 2 procedural, instanced dungeon types: one ends in the boss's lair, one in a treasury with no boss |
 | Boss | 1 boss with 3 phases, on the ground, no blindness or darkness |
@@ -271,7 +272,9 @@ balance simulation in CI and a nightly client test ([ADR 0010](decisions/0010-te
 
 ## M4: The world grows
 
-Outline: dimensions 2 and 3; the Nether and End decision (D10) carried out; world-structure dungeons (jigsaw and
+Outline: dimensions 2 and 3, the desert and tundra realms of chapter 2 (levels 10-20,
+[realm design](design/realms.md)); the Nether and End removed and their items given new sources (D10,
+[ADR 0025](decisions/0025-remove-the-nether-and-end.md)); world-structure dungeons (jigsaw and
 Lithostitched); more dungeon endings (puzzle temple, wave arena, escape, mounted run, ruin exploration); our own
 structure locator; more mobs (friendly ones too) and bosses with lore and locator items; chapters 2 and 3; the
 start of the village, villager and trade overhaul.
@@ -336,5 +339,5 @@ decided, which wins over the proposal here.
 | D7 | RLM-57 | Release numbering | R2 | M1 is v0.1.0. The vision describes v0.1 as "everything, cut down"; the research report called v0.1 a vertical slice; this roadmap follows the report and the M1 brief |
 | D8 | RLM-58 | Who enters an instance | spike 3 | **Decided 2026-10-11 (RLM-58): solo only in M1.** Every player who enters gets their own instance; entry is a temporary portal opened with a dungeon key (W4); parties come later through our own command-based party system (RLM-68), not FTB Teams |
 | D9 | RLM-59 | License of `content/`, `art/` and `docs/` | R2 | an ADR before the first release ([ADR 0009](decisions/0009-licensing.md) left it open); the quest texts feed the All Rights Reserved pack |
-| D10 | RLM-47 | Nether and End: overhaul or remove | M4 planning | open, no proposal yet ([vision](vision.md#open-questions)) |
+| D10 | RLM-47 | Nether and End: overhaul or remove | M4 planning | **Decided 2026-10-12 (RLM-47): remove both** ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)). Their items get new sources (quests, trades, realm drops); a late fire realm replaces the Nether; the Overworld is the starting area for levels 1-5 and the hub ([realm design](design/realms.md)). Carried out in M4 |
 | D11 | RLM-60 | Custom mobs in M1 | W3 | 1-2 custom types (a melee and a caster archetype) plus leveled vanilla hostile mobs; every custom mob needs a model, animations and a UV texture that Matěj reviews, so more wait for M4 |

@@ -173,7 +173,7 @@ All have NeoForge 1.21.1 builds. The pack only references them, nothing is forke
 
 ### Removing the Nether and End
 
-Only relevant if that option is chosen (open question). Vanilla ties materials and items to them, e.g. blaze rods, nether wart, quartz, netherite, shulker boxes, elytra. The "every item is obtainable" validation therefore also runs over vanilla recipes, and missing materials get another source, e.g. in our dimensions.
+Chosen on 2026-10-12 ([ADR 0025](decisions/0025-remove-the-nether-and-end.md), which maps the new sources). Vanilla ties materials and items to them, e.g. blaze rods, nether wart, quartz, netherite, shulker boxes, elytra. The "every item is obtainable" validation therefore also runs over vanilla recipes, and missing materials get another source, e.g. in our dimensions.
 
 ### Risks
 
@@ -443,7 +443,6 @@ Then architecture and a roadmap whose first milestone is a small playable vertic
 
 ## Open questions
 
-- Nether and End: overhaul or remove (consequences of removal: [above](#removing-the-nether-and-end)).
 - Seasons: explicitly not for now.
 
 ## Sources
