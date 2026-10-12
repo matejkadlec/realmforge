@@ -10,17 +10,18 @@ revising; this skill may not weaken either. _qa2: changes required_ there holds 
 
 1. **Find the batch** as `qa1` does: the one this session handed off, the keys, branch or pull request Matěj
    names, or the only batch waiting for a playtest (tickets in Pending User QA, or an open pull request with
-   `needs-playtest`, one outside the Jira flow included); with several and no hint, ask which one. Then move the
-   tickets his feedback affects from Pending User QA to In Progress; a pull request without tickets has no Jira
-   step, here or below.
+   `needs-playtest`, one outside the Jira flow included); with several and no hint, ask which one. Read his
+   feedback first: what changes the plan or needs his decision goes back to him under "Blocked or other", and its
+   tickets stay in Pending User QA with the open question in a comment. Then move only the tickets whose feedback
+   this revision fixes from Pending User QA to In Progress; a pull request without tickets has no Jira step, here
+   or below.
 2. **Stay on the same branch:** no new branch and no replacement work. Reuse its worktree or create one from
    `origin/<branch>` after `git fetch origin`. Then bring the local branch up to `origin/<branch>` before
    anything else: `git merge --ff-only origin/<branch>`, or `git merge origin/<branch>` when both sides have
    commits. Commits Matěj pushed from his own clone belong to the batch and are never pushed over; every later
    push is leased on that fetched head (`--force-with-lease=<branch>:<sha>`). Read the affected tickets'
    comments for context the handoff did not repeat (_Reading a ticket_).
-3. **Apply his feedback**, and nothing beyond it. Feedback that changes the plan or needs a decision goes back to
-   him under "Blocked or other" instead.
+3. **Apply his feedback**, and nothing beyond it (feedback that needs his decision was set aside in step 1).
 4. **Check and commit:** the affected checks and the full gate (_Implementation and verification_, Gradle through
    the _Gradle queue_), then commit.
 5. **Push** the revision (`--force-with-lease` after a rebase) and read the remote head back. Open no pull request.
