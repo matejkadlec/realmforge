@@ -45,9 +45,12 @@ publishing; this skill may not weaken either. _qa1: playtest passed_ there holds
    count as created by this session, so `monitor-pr` removes them after the merge.
 
 **A pull request that already waits for a playtest** (a reconfirmation, _Reconfirmation_, or a gameplay pull
-request outside the flow with `needs-playtest`): `qa1` publishes nothing new. It records the `🎮 Playtest passed`
-for the pull request's current head on each of its tickets (one outside the flow may have none: the label's
-removal then records the playtest), removes `needs-playtest` for Matěj (his `qa1` is his answer;
+request outside the flow with `needs-playtest`): `qa1` publishes nothing new. It passes only the head Matěj
+played, the one the latest `🎮 Playtest handoff` names: when the pull request moved on since then and the new
+commits change gameplay (_QA classification_), it hands those back for another playtest instead. Otherwise it
+records the `🎮 Playtest passed` for the pull request's current head on each of its tickets (one outside the flow
+may have none: the label's removal then records the playtest), removes `needs-playtest` for Matěj (his `qa1` is
+his answer;
 `gh api -X DELETE repos/matejkadlec/realmforge/issues/<n>/labels/needs-playtest`), moves the tickets to Pending
 CR, and continues `monitor-pr` on it. One `monitor-pr` run owns a pull request: when the answer comes in the
 session whose run waits for this playtest, that run carries on. In any other session, ask Matěj first whether that
