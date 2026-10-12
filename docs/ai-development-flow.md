@@ -40,7 +40,8 @@ mirrors it, plus work outside the roadmap, and the only source of task status
 - Search `RLM` for an equivalent ticket before creating one (JQL `project = RLM AND text ~ "<terms>"`), and read
   each candidate with its comments.
 - A ticket created from Matěj's prompt goes into the active sprint unless he asks for the backlog or another
-  sprint.
+  sprint, or it is a new roadmap task that a plan change adds: that one waits in the backlog until the plan's pull
+  request merges ([Publication](#publication), step 4).
 - Follow the existing tickets' format:
   - **Type:** Task for planned work, Bug only for confirmed broken behavior, Epic only when Matěj asks for one.
   - **Title:** a roadmap task keeps its roadmap id (`F1: Feature skeleton`); other tickets use sentence case
@@ -72,9 +73,16 @@ Work a change leaves undone becomes an RLM ticket, never a GitHub issue: a revie
 found during implementation.
 
 1. **Search first** with `searchJiraIssuesUsingJql` (`project = RLM AND text ~ "<terms>"`, the candidate field set
-   from [Reading a ticket](#reading-a-ticket)), and read each candidate with its comments. When an equivalent
-   ticket exists and is not Done, cite it and add a comment with the new evidence (the pull request, the head, the
-   scenario) instead of creating a duplicate.
+   from [Reading a ticket](#reading-a-ticket)), and read each candidate with its comments. An equivalent ticket
+   decides by its status:
+   - **not Done or Rejected:** cite it and add a comment with the new evidence (the pull request, the head, the
+     scenario) instead of creating a duplicate;
+   - **Rejected:** someone already decided against it, so create nothing and close the finding as declined
+     (`fix-pr` Declined, or Blocked for Matěj's ruling on a P0 or P1; `finalize-pr` Dropped or rejected), citing
+     the rejection reason.
+     A ticket rejected as a duplicate stands for its original: apply this rule to that one. Only a finding that
+     names a concrete failure the rejection reason does not cover gets a new ticket, which cites the rejected one;
+   - **Done** (the problem came back): create a new ticket (step 2) with a `Relates` link to it.
 2. **Otherwise create a Task** with `createJiraIssue` in the format of [Issues](#issues):
    - **title:** sentence case with an area prefix (`Docs: ...`, `Gradle queue: ...`);
    - **parent:** the epic the work belongs to: the milestone epic for game code and its design (RLM-6 for M1),
@@ -82,16 +90,25 @@ found during implementation.
    - **labels:** the area labels and the milestone label of that epic;
    - **priority:** Medium, unless the defect clearly calls for High (it breaks normal use) or Low (polish);
    - **sprint:** the active sprint (`customfield_10020` with the numeric id read from Jira, [Project
-     facts](#project-facts)), so the next intake sees it;
+     facts](#project-facts)), so the next intake sees it; for the one exception, see **links**;
    - **description:** `## Context` (where it was found: the review and its round, the pull request and head SHA,
      the severity), `## Task` (the problem, a concrete scenario, the smallest fix, and any pull request it must
      wait for), `## Done when`;
-   - **links:** `Relates` to the batch's tickets, and `Blocks` from any ticket it must wait for.
+   - **links:** `Relates` to the batch's tickets, and `Blocks` from any ticket it must wait for. A follow-up about
+     code or text that an unmerged pull request adds must wait for that merge: link it as blocked by each ticket
+     the pull request's title names (`createIssueLink` with `type: Blocks`, `inwardIssue` that ticket,
+     `outwardIssue` the follow-up). Those tickets stay [in flight](#in-flight) until the merge, so
+     [Dependencies](#dependencies) defers the follow-up until they are Done. When the pull request names no
+     ticket, nothing can carry the wait: create the follow-up in the backlog instead of the active sprint, with
+     the pull request in its `## Task`.
 
    Findings that share a file or a fix go into one ticket.
 3. **Reference it** as `RLM-<n>` wherever the finding is closed (a thread reply `Tracked as RLM-<n>:`, a report).
 4. **Jira unreachable:** when no Atlassian tool reaches Jira in the session (neither the `atlassian` server
    nor the claude.ai connector), list the follow-up in the session's report for Matěj, never as a GitHub issue.
+   A skill that reports to another run (`fix-pr` or `finalize-pr` inside `monitor-pr`) lists it in that report,
+   `monitor-pr` carries it into its own, and the run's [status overview](../CLAUDE.md#status-overview) names it
+   under "Blocked or other".
 
 ### Reading a ticket
 
@@ -227,13 +244,21 @@ Every session taking work from Next maintains the queue:
    ([Batch selection](#batch-selection)).
 5. Move from Next to In Progress only when implementation begins (the claim).
 
-These are the only promotions, plus two exceptions: [Dependencies](#dependencies) pulls in a dependency of a
-selected ticket, and `flow2` promotes and selects the tickets it creates or picks for Matěj's request directly,
-whatever else Next holds, because he asked for that work now. Never promote other Backlog or future-sprint
-work. A ticket is eligible when it is not [waiting on Matěj](#tickets-waiting-on-matěj) and none of its
-dependencies is in flight elsewhere. Intake works from a snapshot a peer may already have overtaken, so
-immediately before each promotion re-read the ticket and promote it only while it is still To Do. A ticket that
-already left To Do belongs to a peer: skip it and re-plan.
+These are the only promotions, plus three exceptions, each because Matěj asked for that work now or it is needed
+for it:
+
+- [Dependencies](#dependencies) pulls in a dependency of a selected ticket.
+- `flow2` promotes and selects the tickets it creates or picks for Matěj's request directly, whatever else Next
+  holds.
+- **Direct work** on a ticket Matěj names in the session ("implement F1") promotes that ticket from To Do to Next
+  and then claims it with the [atomic intake claim](#atomic-intake-claim), its dependencies included. Every other
+  rule still applies: the ticket must not be [waiting on Matěj](#tickets-waiting-on-matěj) or in flight, and the
+  caps must have room. A ticket outside the active sprint first goes into it (the sprint field).
+
+Never promote other Backlog or future-sprint work. A ticket is eligible when it is not
+[waiting on Matěj](#tickets-waiting-on-matěj) and none of its dependencies is in flight elsewhere. Intake works
+from a snapshot a peer may already have overtaken, so immediately before each promotion re-read the ticket and
+promote it only while it is still To Do. A ticket that already left To Do belongs to a peer: skip it and re-plan.
 
 Before every handoff boundary (publishing or updating a ready pull request, or ending a run), re-inspect Next and
 To Do with what the batch taught you, and replenish Next while eligible To Do work remains. This never authorizes
@@ -786,6 +811,22 @@ monitored merge. An AI-only batch is published as soon as its gate passes. A pla
    names the plan change and that source. A plan change an agent finds worth making on its own is not published:
    it goes to Matěj under "Blocked or other" in the [status overview](../CLAUDE.md#status-overview), or as a
    `decision` ticket, and waits for his answer.
+
+   A new roadmap task that the plan change adds gets its key in the roadmap in the same pull request, but nobody
+   may start it before that pull request merges ([ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md)).
+   So its ticket:
+
+   - is created in the backlog, not the active sprint, and is never claimed by this batch;
+   - stays out of the pull request title, which names only the batch's own tickets, so `monitor-pr` never moves it
+     to Pending CR or Done; the description names it with the plan change;
+   - gets no `Blocks` link before the merge: its "after" order stands in its description and in the roadmap the
+     pull request changes;
+   - gets a comment naming the pull request right after `gh pr create`, which keeps it
+     [waiting](#tickets-waiting-on-matěj) until the merge.
+
+   After the merge it is an ordinary backlog ticket. The roadmap's "after" order makes it a dependency of the tasks
+   that follow it ([Dependencies](#dependencies), which adds the missing `Blocks` links), or Matěj puts it into a
+   sprint.
 5. Read the pull request's head back from GitHub and confirm it is your final commit.
 6. On each ticket, record the `🤖 Claude QA` summary (what was verified and how, the pull request, the head SHA;
    after `qa1`, next to its `🎮 Playtest passed`).
@@ -881,8 +922,9 @@ ledger** groups, as this flow fills them:
 - **Pending User QA** (playtest);
 - **Blocked or other**: decision tickets and tickets waiting on Matěj, one line each
   ([Tickets waiting on Matěj](#tickets-waiting-on-matěj)), plan changes proposed to him, stale or lost claims,
-  tickets whose comments or history could not be read completely, searches that could not be completed, and
-  conflicts.
+  tickets whose comments or history could not be read completely, searches that could not be completed,
+  follow-ups that could not be ticketed because Jira was unreachable ([Follow-up tickets](#follow-up-tickets),
+  step 4), and conflicts.
 
 Without a manual test, Pending CR and Pending User QA share one line. List the ticket keys and only the most
 important player-visible or architectural changes.

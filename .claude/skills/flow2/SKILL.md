@@ -13,7 +13,9 @@ creating or selecting work; this skill may not weaken either.
    comments included, with the candidate field set from _Reading a ticket_.
 2. Create or update tickets in the current active sprint under _Issues_: Task type, the parent milestone epic (or
    the epic that covers work outside the roadmap), labels, priority, a description in one of the existing shapes
-   with a "Done when" section, in English, and a `Blocks` link for each dependency. Preserve all explicitly
+   with a "Done when" section, in English, and a `Blocks` link for each dependency. A new roadmap task that a plan
+   change adds is the exception: its ticket waits in the backlog, unclaimed and without `Blocks` links, until the
+   plan's pull request merges (_Publication_, step 4). Preserve all explicitly
    requested work; merge only truly trivial duplicates. A comment on an existing ticket may already record the
    scope, correction or rejection that decides between creating, updating and merging. Never update a duplicate
    that is in flight (_In flight_ in the flow document): it belongs to another batch, so create a follow-up

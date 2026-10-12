@@ -247,8 +247,9 @@ Otherwise act on the first of steps 2–7 that applies. If none applies yet, wai
    every round. Do not repeat its procedure here; its report returns to this run.
 
    - From the pull request's fourth review round on, `fix-pr`'s "Late rounds" rule applies: a P2 or P3 that
-     names no concrete failure in normal use is Declined for churn or Tracked instead of fixed. Keep a tally of
-     the rounds and of the findings that rule deferred, for the report.
+     names neither a concrete failure in normal use nor a regression that an earlier round's fix introduced is
+     Declined for churn or Tracked instead of fixed. Keep a tally of the rounds and of the findings that rule
+     deferred, for the report.
    - Then re-list the threads. Resolve any thread that `fix-pr` closed but that still reads unresolved.
    - A Blocked thread goes to the user under "User needed".
    - A badge-labelled Codex finding (`![P0 Badge]` to `![P3 Badge]`) in a Codex review body or a top-level pull
@@ -476,4 +477,6 @@ launch commands, closing with how Matěj answers (`qa1` or `qa2`). The details b
   - any usage-limit fallback and its `finalize-pr` outcome;
 - the CI state and the merge commit;
 - the Jira tickets and the status each one ended in;
+- every follow-up that this run, `fix-pr` or `finalize-pr` could not ticket because Jira was unreachable (their
+  "Follow-ups not ticketed"), under "Blocked or other";
 - the post-merge outcome, or the step the run stopped at, with any linked remediation.
