@@ -100,6 +100,10 @@ def test_decode_grayscale_with_color_key() -> None:
         (_png(1, 1, 8, 6, [b"\x07" + bytes(4)]), "filter type 7"),
         (PNG_SIGNATURE + _chunk(b"IHDR", bytes(12)), "IHDR chunk has 12 bytes"),
         (_png(0, 1, 8, 6, [b"\x00"]), "a 0x1 image has no pixels"),
+        (
+            _png(0xFFFFFFFF, 0xFFFFFFFF, 8, 6, [b"\x00" + bytes(4)]),
+            "a 4294967295x4294967295 image is too large",
+        ),
     ],
 )
 def test_decode_rejects_broken_or_unsupported_files(data: bytes, message: str) -> None:

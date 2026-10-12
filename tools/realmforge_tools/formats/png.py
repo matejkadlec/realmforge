@@ -9,6 +9,7 @@ inflates to more or less than the header promises, and it is never inflated past
 from __future__ import annotations
 
 import struct
+import sys
 import zlib
 
 from realmforge_tools.formats.deflate import zlib_stored
@@ -98,6 +99,8 @@ def decode_rgba(data: bytes) -> tuple[int, int, list[Rgba]]:
     bits_per_pixel = _CHANNELS[color_type] * depth
     stride = (width * bits_per_pixel + 7) // 8
     expected = height * (stride + 1)  # every scanline plus its filter byte
+    if expected >= sys.maxsize:  # zlib's output limit is a C ssize_t
+        raise PngError(f"a {width}x{height} image is too large to decode")
     # Inflate at most one byte more than the header promises, so a small image with a huge compressed stream
     # (a decompression bomb) is refused without being inflated.
     inflater = zlib.decompressobj()
