@@ -175,8 +175,10 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
     `PlayerInteractEvent.RightClickItem` is cancelled for a `BucketItem` when the player stands in the zone or aims
     at a block in it (`Entity#pick`).
 
-  Its frame and selector resist explosions like bedrock, and the selector refuses sigils ("The landing always leads
-  home"). Fluids that flow in from outside the zone cannot remove the portal ([Edge cases](#edge-cases)), and the
+  No explosion changes the zone: every explosion's block list (`ExplosionEvent.Detonate#getAffectedBlocks`) loses the
+  positions inside it, player-lit TNT included, which the world's griefing protection otherwise lets break blocks
+  ([architecture 19.1](../architecture.md#191-world-defaults)). The selector refuses sigils ("The landing always
+  leads home"). Fluids that flow in from outside the zone cannot remove the portal ([Edge cases](#edge-cases)), and the
   arrival check below handles a flooded spot. A player in a realm can then always get home. If the frame is gone
   anyway (an operator, another mod), the next arrival rebuilds it in place.
 - **Arrival puts the player on the floor in front of the frame, facing away from it,** not inside the portal, so
@@ -370,6 +372,7 @@ Tests:
     one;
   - a bucket used in the landing's zone is refused, and water flowing into a portal's opening leaves its portal
     blocks in place;
+  - TNT lit by a player next to the landing leaves its zone unchanged;
   - the selector refuses in the instance dimension;
   - an item, a mob and a mounted player do not travel;
   - a death in the realm respawns at the landing.
