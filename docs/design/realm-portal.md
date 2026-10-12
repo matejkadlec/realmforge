@@ -191,8 +191,12 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
   list (`ExplosionEvent.Detonate#getAffectedBlocks`) loses the positions inside it, player-lit TNT included, which
   the world's griefing protection otherwise lets break blocks
   ([architecture 19.1](../architecture.md#191-world-defaults)). The selector refuses sigils ("The landing always
-  leads home"). Fluids that flow in from outside the zone cannot remove the portal ([Edge cases](#edge-cases)), and
-  the arrival check below handles a flooded spot. A player in a realm can then always get home. If the frame is gone
+  leads home"). Fluids that flow in from outside cannot remove the portal ([Edge cases](#edge-cases)), and they do not
+  stay in the landing either: once a second while a landing's chunks are loaded, every fluid in its box (the floor
+  and the air above it, about 140 blocks) is removed, so water or lava poured next to the zone never closes the way
+  to the portal or the arrival spot. Plain flow posts no event, hence the check; a fluid that would create a block
+  in the zone (lava making stone or fire) is refused with `BlockEvent.FluidPlaceBlockEvent`, which fires only for
+  that. A player in a realm can then always get home. If the frame is gone
   anyway (an operator, another mod), the next arrival rebuilds it in place.
 - **Arrival puts the player on the floor in front of the frame, facing away from it,** not inside the portal, so
   nobody bounces straight back. Every arrival checks that spot first (solid floor and 2 blocks of air); when
@@ -370,7 +374,7 @@ dimension rules and access:
   - `RealmSelectorBlock` with its block entity;
   - `RealmTravel`: the landing, the home point and the fallbacks, with the safe-spot search as plain Java over a
     column of blocks;
-  - `RealmLandings`, the saved landing per realm;
+  - `RealmLandings`, the saved landing per realm, its protected zone and its once-a-second fluid check;
   - `RealmAccess`, which asks `core`'s requirement API, at the portal and in its `EntityTravelToDimensionEvent`
     listener, which also stops every entity that is not a player from entering or leaving a realm;
   - the `realmforge:realm_travel` attachment and the respawn listener;
@@ -395,8 +399,8 @@ Tests:
   - a removed landing frame is rebuilt, and so is a landing outside a shrunken world border;
   - a block placed into the landing's arrival space is refused, and a blocked arrival spot moves the player to a safe
     one;
-  - a bucket used in the landing's zone is refused, and water flowing into a portal's opening leaves its portal
-    blocks in place;
+  - a bucket used in the landing's zone is refused, water flowing into a portal's opening leaves its portal blocks in
+    place, and lava poured just outside the zone is gone from the landing's box within a second;
   - TNT lit by a player next to the landing leaves its zone unchanged, and so does a piston pushing blocks into it
     or out of it from below;
   - the selector refuses in the instance dimension;
