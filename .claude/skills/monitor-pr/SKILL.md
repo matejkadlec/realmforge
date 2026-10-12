@@ -58,8 +58,8 @@ weakens a test or check.
   removes it.
 - A plan change (any change to `docs/roadmap.md`) holds nothing: agents make one only as Matěj decided it
   ([ADR 0021](../../../docs/decisions/0021-status-overview-and-plan-changes.md)). The `needs-approval` label is
-  retired; a pull request that still carries it from before is not held by it, and the run removes it
-  (`gh pr edit <n> --repo matejkadlec/realmforge --remove-label needs-approval`).
+  retired; a pull request that still carries it from before is not held by it, and the run removes it ("Start"
+  step 4).
 - Jira: a pull request from a Jira batch ([`docs/ai-development-flow.md`](../../../docs/ai-development-flow.md))
   names its tickets (`RLM-<n>`) in its title, and its head branch carries their keys. The Atlassian MCP tools
   (`.mcp.json`, or the claude.ai connector in cloud sessions) reach Jira. Findings this run tracks instead of
@@ -101,6 +101,7 @@ weakens a test or check.
     (`gh pr merge` sends a GraphQL mutation; with `sha` GitHub refuses the merge when the head moved).
   - Retarget to `master`: `gh api -X PATCH repos/matejkadlec/realmforge/pulls/<n> -f base=master`.
   - Add a label: `gh api -X POST repos/matejkadlec/realmforge/issues/<n>/labels -f "labels[]=needs-playtest"`.
+  - Remove a label: `gh api -X DELETE repos/matejkadlec/realmforge/issues/<n>/labels/needs-approval`.
   - Every `gh pr edit` below is GraphQL too; use these forms for it.
 - **When the user is needed,** say it in exactly this form, with only the label bold:
   `**Your assistance is needed:** {what to do, where, and what you will check afterwards}`.
@@ -128,6 +129,10 @@ Do this before the first wake, and again whenever the run resumes in a new sessi
    or a local branch that is ahead of or diverged from the remote, change nothing and ask the user.
 3. **Confirm that the local head equals the remote head,** and record whether this session created the branch
    (it decides rebase versus merge in step 2 and the cleanup after the merge).
+4. **Remove a leftover `needs-approval` label.** If the pull request's labels
+   (`gh pr view <n> --repo matejkadlec/realmforge --json labels`) still include the retired `needs-approval`,
+   remove it (`gh pr edit <n> --repo matejkadlec/realmforge --remove-label needs-approval`, or the REST form
+   under "Rules" in a cloud session). It holds nothing, so the run never waits on it.
 
 Run every git command, check, commit and push of this run inside that worktree, never in the current checkout
 on its behalf. Before each push, run `git fetch origin` again and confirm that the remote head is still the one
@@ -392,7 +397,8 @@ Check all of these on one fresh reading, in order:
    While the label is set, go to "User needed": ask Matěj to playtest the head (for example with
    `./gradlew runClient`, or `./gradlew :mod:installToPrism` and the Prism instance) and remove the label.
    A change to `docs/roadmap.md` is no hold
-   ([ADR 0021](../../../docs/decisions/0021-status-overview-and-plan-changes.md)).
+   ([ADR 0021](../../../docs/decisions/0021-status-overview-and-plan-changes.md)), and neither is a leftover
+   `needs-approval` label: remove it as in "Start" step 4.
 7. In fallback mode: a Clean `finalize-pr` reviewed this exact head, or the user approved this exact head after
    a Capped or Disagreement report.
 8. The head you checked is still the head.
