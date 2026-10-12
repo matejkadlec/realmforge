@@ -257,6 +257,8 @@ def test_gallery_keeps_picks_per_batch_of_candidates(tmp_path: Path) -> None:
     first = gallery.batch_id(subjects)
     assert f'data-batch="{first}"' in gallery.render(info, subjects, PALETTE)
     assert gallery.batch_id(gallery.collect(root, PALETTE, 16)[1]) == first
+    reds = Palette("reds", (PaletteColor("red", (200, 30, 30)),))
+    assert gallery.batch_id(gallery.collect(root, reds, 16)[1]) != first  # same candidates, other cleanup
     (root / "a_block" / "y.png").write_bytes(encode_rgba(16, 16, [BLUE] * 256))  # same names, new pixels
     assert gallery.batch_id(gallery.collect(root, PALETTE, 16)[1]) != first
 

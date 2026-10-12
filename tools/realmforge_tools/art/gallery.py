@@ -153,13 +153,15 @@ def render(info: GalleryInfo, subjects: tuple[Subject, ...], palette: Palette) -
 
 
 def batch_id(subjects: tuple[Subject, ...]) -> str:
-    """A short digest of the candidates' names and pixels. The page keeps a reviewer's picks under it, so a
-    gallery of other candidates never shows picks made for these."""
+    """A short digest of the candidates' names and pixels, before and after cleanup. The page keeps a reviewer's
+    picks under it, so a gallery of other candidates, or of the same ones cleaned with another palette or size,
+    never shows picks made for these."""
     digest = hashlib.sha256()
     for subject in subjects:
         for candidate in subject.candidates:
             digest.update(f"{subject.name}/{candidate.name}\0".encode())
             digest.update(candidate.raw.png())
+            digest.update(candidate.cleaned.png())
     return digest.hexdigest()[:16]
 
 
