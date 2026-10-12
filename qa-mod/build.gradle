@@ -24,6 +24,23 @@ sourceSets.main {
     resources.srcDir 'src/generated/resources'
 }
 
+// Gives a fresh dev client our default settings: copies dev/options.txt into the client's game directory, but only
+// while it has no options.txt yet, so changes made in game persist. Delete run/client/options.txt to reset.
+// Configuration-cache safe: the actions use only the file and provider captured here, never `project`.
+def seedDevOptions = tasks.register('seedDevOptions') {
+    group = 'realmforge'
+    description = 'Copies dev/options.txt into the dev client game directory unless it has an options.txt.'
+    def template = rootProject.file('dev/options.txt')
+    def target = neoForge.runs.client.gameDirectory.file('options.txt')
+    inputs.file(template)
+    onlyIf('the dev client has no options.txt yet') { !target.get().asFile.exists() }
+    doLast {
+        def file = target.get().asFile
+        file.parentFile.mkdirs()
+        java.nio.file.Files.copy(template.toPath(), file.toPath())
+    }
+}
+
 neoForge {
     version = neo_version
 
@@ -43,6 +60,10 @@ neoForge {
         client {
             client()
             gameDirectory = rootProject.file('run/client')
+            taskBefore seedDevOptions
+            // Logs in with a real Minecraft account (covers1624's DevLogin, built into ModDevGradle) instead of
+            // the offline `Dev` profile; the first launch prints a Microsoft login link in the console.
+            devLogin = true
         }
 
         server {
