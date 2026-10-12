@@ -39,6 +39,11 @@ jobs:
       - name: pytest
         run: uv run pytest
 
+      # git_clean_worktrees.sh deletes branches and worktrees, so its safety
+      # regression suite guards every change.
+      - name: Worktree cleanup safety suite
+        run: bash tests/test_git_clean_worktrees.sh
+
       - name: Generated files are up to date
         run: |
           uv run rf gen

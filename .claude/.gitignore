@@ -1,0 +1,3 @@
+# Claude Code session worktrees (desktop app sessions, `claude --worktree`).
+# git_clean_worktrees.sh removes them once their branch has merged.
+/worktrees/
