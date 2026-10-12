@@ -38,16 +38,18 @@ for Matěj.
    `./gradlew build` and the GameTests green, every Gradle task through the _Gradle queue_. Report only the
    commands that actually ran.
 8. **Replenish** Next and reassess active-sprint priority before handing off.
-9. **Publish** under _Publication_: push, open one ready pull request (`needs-playtest` for a playtest batch,
-   `needs-approval` for any change to `docs/roadmap.md`), verify that the remote head is your final commit, record
-   the `🤖 Claude QA` summary (and the `🎮 Playtest handoff`) on each ticket, move the tickets to Pending CR
-   (AI-only) or Pending User QA (playtest), and hand off leading with _What to look at_, plus the _Playtest
-   commands_ for a playtest batch. The roadmap holds no status, so a finished task changes only its ticket.
+9. **Publish** under _Publication_: push, open one ready pull request (`needs-playtest` for a playtest batch; a
+   change to `docs/roadmap.md` only as Matěj decided it, with no label), verify that the remote head is your final
+   commit, record the `🤖 Claude QA` summary (and the `🎮 Playtest handoff`) on each ticket, move the tickets to
+   Pending CR (AI-only) or Pending User QA (playtest), and hand off with the status overview from `CLAUDE.md`
+   (for a playtest batch in its manual-test shape: _What to test_, the _Launch commands_, the verification and the
+   batch ledger). The roadmap holds no status, so a finished task changes only its ticket.
 10. **Monitor to the merge, always.** Do not end the turn at the handoff: in the same run, local or cloud, run
     [`monitor-pr`](../monitor-pr/SKILL.md) on that pull request until it merges or reaches one of its stops
     (_After publication_). A playtest batch waits there until Matěj removes `needs-playtest`; a failed playtest
     follows _Playtest handoff_. A batch is not delivered until its pull request has merged.
 
-The run ends at a boundary in _Concurrency and run boundaries_ and closes with the batch ledger defined there,
-"Waiting for Matěj" included. In a cloud session (`CLAUDE_CODE_REMOTE=true`), _Cloud sessions_ adds what differs
-there.
+The run ends at a boundary in _Concurrency and run boundaries_. Every response of the run, the last one included,
+ends with the status overview from `CLAUDE.md`, its batch ledger filled as that section describes (tickets waiting
+on Matěj under "Blocked or other"). In a cloud session (`CLAUDE_CODE_REMOTE=true`), _Cloud sessions_ adds what
+differs there.

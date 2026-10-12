@@ -32,7 +32,7 @@ creating or selecting work; this skill may not weaken either.
    `flow1` step 5 requires. A ticket this run just created is claimed the same way; creating it grants no
    ownership.
 7. Implement as much of the safe coherent scope as current precision allows, then follow `flow1` steps 6 to 10
-   for validation, publication, the handoff (a playtest batch with its _Playtest commands_), the monitored merge
-   that always follows publication, the ticket statuses, concurrency and the stop rules.
+   for validation, publication, the handoff (the status overview; a playtest batch with its _Launch commands_), the
+   monitored merge that always follows publication, the ticket statuses, concurrency and the stop rules.
 8. Leave blocked tickets in the appropriate non-complete state with the exact dependency recorded (a `Blocks`
    link and a comment).

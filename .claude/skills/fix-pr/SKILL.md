@@ -337,4 +337,5 @@ Include:
 - any RLM tickets created or cited;
 - any Codex thread left for the next round.
 
-With no current findings, say so and change nothing.
+With no current findings, say so and change nothing. When the pass ends the response (run on its own, not inside
+`monitor-pr`), close with the status overview from `CLAUDE.md`.

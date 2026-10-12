@@ -25,11 +25,12 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0012](0012-procedural-dungeons-and-dimensions.md) | Procedural dungeons and dimensions | Accepted |
 | [0013](0013-modpack-composition.md) | Modpack composition | Accepted (written separately) |
 | [0014](0014-core-mod-architecture.md) | Core mod architecture | Accepted |
-| [0015](0015-merging-through-monitor-pr.md) | Merging through monitor-pr | Accepted (amends 0011), holds extended by [0016](0016-jira-batch-delivery.md) and [0017](0017-jira-as-the-source-of-task-status.md) |
-| [0016](0016-jira-batch-delivery.md) | Jira batch delivery with flow1 and flow2 | Accepted (extends 0011), amended by [0017](0017-jira-as-the-source-of-task-status.md) |
-| [0017](0017-jira-as-the-source-of-task-status.md) | Jira as the source of task status | Accepted (amends 0015 and 0016) |
+| [0015](0015-merging-through-monitor-pr.md) | Merging through monitor-pr | Accepted (amends 0011), holds extended by [0016](0016-jira-batch-delivery.md) and [0017](0017-jira-as-the-source-of-task-status.md), `needs-approval` removed by [0021](0021-status-overview-and-plan-changes.md) |
+| [0016](0016-jira-batch-delivery.md) | Jira batch delivery with flow1 and flow2 | Accepted (extends 0011), amended by [0017](0017-jira-as-the-source-of-task-status.md) and [0021](0021-status-overview-and-plan-changes.md) |
+| [0017](0017-jira-as-the-source-of-task-status.md) | Jira as the source of task status | Accepted (amends 0015 and 0016), amended by [0021](0021-status-overview-and-plan-changes.md) |
 | [0018](0018-pack-boot-tests.md) | Pack boot tests: server and client self tests on every PR | Accepted (amends 0010) |
 | [0020](0020-cast-animations-and-melee-while-casting.md) | Cast animations through playerAnimator, no melee while casting | Accepted |
+| [0021](0021-status-overview-and-plan-changes.md) | A status overview ends every response; plan changes without a label | Accepted (amends 0015, 0016 and 0017) |
 
 ## Open questions (not decided)
 
