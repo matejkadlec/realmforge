@@ -101,6 +101,10 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
     no completion flag ([realm design](realms.md#opening-the-next-realm));
   - **when a chapter opens two realms** (chapter 2: the desert and the tundra), the boss drops one material per
     realm it opens, two for chapter 2, every kill;
+  - **when two realms share a chapter, the next main-path sigil needs both:** its recipe takes the guaranteed drop
+    of each realm's main-path boss (for the realm after chapter 2: the desert's and the tundra's), so finishing one
+    branch never opens the next realm. Both realms are needed for further progress
+    ([realm design](realms.md#the-desert-realm));
   - **an optional side realm's sigil** comes from wherever its design puts it: a dungeon chest at 100% or a trade,
     never a random drop (PR-15).
 - **Nothing depends on luck, and every sigil can be replaced:** each source is a quest reward, a guaranteed drop or
