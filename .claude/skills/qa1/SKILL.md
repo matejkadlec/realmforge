@@ -32,7 +32,8 @@ publishing; this skill may not weaken either. _qa1: playtest passed_ there holds
    batch from Pending User QA to Pending CR. Never leave a passed ticket in Pending User QA.
 6. **Hand off and monitor:** the status overview from `CLAUDE.md`, then in the same run, local or cloud,
    [`monitor-pr`](../monitor-pr/SKILL.md) on the pull request until it merges or reaches one of its stops. The
-   playtest was Matěj's last required step.
+   playtest was Matěj's last required step. This session has taken the batch over: its worktree and local branch
+   count as created by this session, so `monitor-pr` removes them after the merge.
 
 **A pull request that already waits for a playtest** (a reconfirmation, _Reconfirmation_, or a gameplay pull
 request outside the flow with `needs-playtest`): `qa1` publishes nothing new. It records the `🎮 Playtest passed`

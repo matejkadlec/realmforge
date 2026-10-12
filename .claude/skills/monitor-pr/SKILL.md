@@ -131,7 +131,8 @@ Do this before the first wake, and again whenever the run resumes in a new sessi
    run `uv sync` in it. Fast-forward a clean branch that is strictly behind its remote. On uncommitted changes,
    or a local branch that is ahead of or diverged from the remote, change nothing and ask the user.
 3. **Confirm that the local head equals the remote head,** and record whether this session created the branch
-   (it decides rebase versus merge in step 2 and the cleanup after the merge).
+   (it decides rebase versus merge in step 2 and the cleanup after the merge). A playtest batch's branch and
+   worktree that this session took over with [`qa1`](../qa1/SKILL.md) count as its own.
 4. **Remove a leftover `needs-approval` label.** If the pull request's labels
    (`gh pr view <n> --repo matejkadlec/realmforge --json labels`) still include the retired `needs-approval`,
    remove it (`gh pr edit <n> --repo matejkadlec/realmforge --remove-label needs-approval`, or the REST form
@@ -434,9 +435,10 @@ gh api -X PUT repos/matejkadlec/realmforge/pulls/<n>/merge -f merge_method=merge
 
 1. Read the merge commit back from GitHub (`gh pr view <n> --repo matejkadlec/realmforge --json
    mergeCommit,state`) and move the tickets to Done under "Jira tickets". Remove the worktree and local branch
-   this session created (`git fetch --prune origin`, `git worktree remove <path>` without `--force` over
-   uncommitted changes, `git branch -d <branch>`, `git worktree prune`). GitHub's `deleteBranchOnMerge` setting
-   decides the remote branch; if the remote branch still exists, say so in the report and do not delete it.
+   this session created or took over with `qa1` (`git fetch --prune origin`, `git worktree remove <path>` without
+   `--force` over uncommitted changes, `git branch -d <branch>`, `git worktree prune`). GitHub's
+   `deleteBranchOnMerge` setting decides the remote branch; if the remote branch still exists, say so in the
+   report and do not delete it.
 2. **Follow CI on `master`** (`.github/workflows/ci.yml` runs on push to `master`; nothing deploys) to the end.
    Keep one check-in armed about 5 minutes ahead.
    - **Success** for the merge commit, or for a later commit that contains it: done.
