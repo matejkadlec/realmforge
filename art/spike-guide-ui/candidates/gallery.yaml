@@ -1,0 +1,80 @@
+# Labels, prompts, seeds and costs for the guide UI spike (RLM-127, for the decision RLM-116).
+# Generated on 2026-10-12 through the Retro Diffusion MCP server; 0.42 USD in total.
+# frame/ and icon_*/ hold the generator output exactly as returned. preview_*/ are derived from two frames (no
+# generation cost): see ../README.md for how they were cut. The schema is the one `rf art gallery` reads, but that
+# command cleans every candidate at one width and cannot render this mixed-size folder (README, "Pipeline notes").
+title: Guide UI art spike
+intro: >-
+  A pixel-art version of the "modern fantasy hybrid" guide window (dark navy panel, thin gold ornate border,
+  decorated corners, a gold crest on the top edge) from RD Fast and RD Plus, the same prompt for every frame, plus
+  two frames guided by a crop of the mockup's corner, nine-slice and stretched previews of the two best frames, and
+  five 16x16 category icons. Pick a frame, and say whether the icons are usable or need another style.
+candidates:
+  rd-fast-2101:
+    label: RD Fast, seed 2101
+    note: ui_element:rd_flux (RD Fast UI Element), 256x256, remove_bg; 0.03 USD
+  rd-fast-2102:
+    label: RD Fast, seed 2102
+    note: ui_element:rd_flux (RD Fast UI Element), 256x256, remove_bg; 0.03 USD
+  rd-plus-2101:
+    label: RD Plus, seed 2101
+    note: rd_plus__ui_element, 256x256, remove_bg; 0.06 USD
+  rd-plus-2102:
+    label: RD Plus, seed 2102
+    note: rd_plus__ui_element, 256x256, remove_bg; 0.06 USD
+  rd-fast-img2img:
+    label: RD Fast, mockup corner as input
+    note: >-
+      ui_element:rd_flux, 256x256, input_image ../reference/corner-crop.png, strength 0.6, seed 2101, remove_bg;
+      0.03 USD
+  rd-plus-img2img:
+    label: RD Plus, mockup corner as input
+    note: >-
+      rd_plus__ui_element, 256x256, input_image ../reference/corner-crop.png, strength 0.6, seed 2101, remove_bg;
+      0.06 USD
+  rd-fast:
+    label: RD Fast MC Item
+    note: rd_fast__mc_item, 16x16, seed 2101, automatic transparency; 0.03 USD each
+subjects:
+  frame:
+    title: Window frame, 256x256
+    prompt: >-
+      an empty fantasy RPG game window panel seen straight on, filling the image: a dark navy blue to charcoal
+      rectangular panel framed by a thin ornate gold filigree border, decorated gold corner pieces, and a small gold
+      crest ornament centered on the top edge; the inside of the panel is plain dark navy with no text;
+      symmetrical, straight edges, on a plain white background
+  preview_nine_slice:
+    # Cropped to the opaque bounding box; corners copied, an 8-pixel strip per edge and an 8x8 center block tiled
+    # as a 1.21.1 nine_slice GUI sprite tiles them; the crest cut out and drawn centered on the top edge.
+    # rd-fast-2102: border 40 on all sides, strips right next to the corners, crest box (112,40)-(150,60).
+    # rd-plus-2101: border left 36, top 44, right 36, bottom 36, strips 20 pixels from the corners (the first
+    # pixels after each corner hold a stud), crest box (104,12)-(152,56).
+    title: Preview, nine-slice at 400x240 (derived from the frame, no cost)
+  preview_stretched:
+    # The cropped frame scaled to 400x240 with nearest-neighbour sampling.
+    title: Preview, stretched to 400x240 (derived from the frame, no cost)
+  icon_realms:
+    title: Icon, realms (a swirling portal)
+    prompt: >-
+      a swirling magic portal drawn with thin gold lines: a round gold spiral ring curling inward, outline only, no
+      fill, on a plain white background
+  icon_dungeons:
+    title: Icon, dungeons (a dungeon key)
+    prompt: >-
+      an old dungeon key drawn with thin gold lines: a round ornate bow, a long shaft and a toothed bit, held
+      diagonally, outline only, on a plain white background
+  icon_bosses:
+    title: Icon, bosses (a horned skull)
+    prompt: >-
+      a horned skull seen from the front, drawn with thin gold lines: a skull with dark eye sockets and two curved
+      horns, outline only, on a plain white background
+  icon_basics:
+    title: Icon, basics (an open book)
+    prompt: >-
+      an open book seen from the front, drawn with thin gold lines: two open pages with a center spine, outline
+      only, on a plain white background
+  icon_locked:
+    title: Icon, locked (a padlock)
+    prompt: >-
+      a closed padlock seen from the front, drawn with thin gold lines: a rounded shackle on top of a square body
+      with a keyhole, outline only, on a plain white background
