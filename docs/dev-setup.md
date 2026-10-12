@@ -140,11 +140,14 @@ there while the game runs. The handoff gives the commands
   - `Assets URL ... uses unexpected schema`: the NeoForge dev environment.
   - `Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2`: vanilla.
 - **Cast screenshots without input.** `REALMFORGE_QA_CAST_SHOTS=<label> ./gradlew runClient` makes the QA mod
-  create a superflat world from the title screen, run `/qa cast`, save the cast pose in first person and both
-  third-person views, at field of view 110 and 70, to `run/client/screenshots/<label>-*.png`, and quit, about
-  20 seconds after the title screen (`-PwithBetterCombat` adds the Better Combat set). It needs no mouse, so it
-  works around the broken mouse look above; agents use it to check the framing of cast animations (RLM-89).
-  DevLogin still runs first: without a cached login it waits for the console prompt.
+  create a superflat world from the title screen, run `/qa cast`, save the cast pose and quit, about 50 seconds
+  after the title screen (`-PwithBetterCombat` adds the Better Combat set). It shoots six views (looking level,
+  up 45 and 80 degrees, down 45 and 80, right after a 90-degree turn) in four cameras (first person, both
+  third-person views, and a still `side` camera 2.5 blocks to the player's right) at field of view 110 and 70, to
+  `run/client/screenshots/<label>-<plain|bettercombat>-<view>-fov<n>-<camera>-hold.png`, plus the peak of the
+  pulse (`-pulse.png`) looking level. It needs no mouse, so it works around the broken mouse look above; agents
+  use it to check the framing of cast animations (RLM-89, RLM-108). DevLogin still runs first: without a cached
+  login it waits for the console prompt.
 - `./gradlew runServer` starts a dev dedicated server in `run/server`; accept the EULA once in
   `run/server/eula.txt`.
 
