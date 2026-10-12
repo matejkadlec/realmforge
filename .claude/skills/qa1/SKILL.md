@@ -24,8 +24,10 @@ publishing; this skill may not weaken either. _qa1: playtest passed_ there holds
    _Gradle queue_). A rebase whose conflicts touched game code changes what Matěj played: push it and hand it back
    for another playtest, as `qa2` does, instead of publishing.
 4. **Publish** under _Publication_: push (leased as in step 2), open one ready pull request to `master` (a
-   stacked batch: to its dependency branch, until that merges) without `needs-playtest`, its description naming the
-   head Matěj played, and read the remote head back: it must be your final commit.
+   stacked batch: to its dependency branch, until that merges) without `needs-playtest`, and read the remote head
+   back: it must be your final commit. The description carries the line
+   `Playtest passed: played <sha>, published <sha>`, the GitHub-side record `monitor-pr` falls back on when a
+   Jira write fails.
 5. **Record and move:** on each ticket, the `🎮 Playtest passed` (the played head, the head it is published as,
    Matěj's words if he gave any)
    and the `🤖 Claude QA` summary (what was verified, the pull request, the head); then move every ticket of the

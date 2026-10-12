@@ -354,7 +354,8 @@ Matěj's `qa1` passes the playtest and authorizes publishing the batch. The
    `uv run rf gen`, and run the full gate again. A rebase whose conflicts touched game code changes what Matěj
    played: push it and hand it back for another playtest, as a `qa2` revision does, instead of publishing.
 4. **Publish** as in [Publication](#publication): push, one ready pull request without `needs-playtest`, the head
-   read back. The description says which head Matěj played and when.
+   read back. The description carries the line `Playtest passed: played <sha>, published <sha>`, so the played
+   head survives a failed Jira write.
 5. **Record** on each ticket the `🎮 Playtest passed` (the played head, the head it was published as, his words if
    he gave any) and the `🤖 Claude QA` summary, then move the tickets from Pending User QA to Pending CR. That
    frees the batch's playtest slot.

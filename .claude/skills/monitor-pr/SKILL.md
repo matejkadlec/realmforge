@@ -396,9 +396,11 @@ Check all of these on one fresh reading, in order:
 5. No human review requests changes.
 6. No `needs-playtest` label is set, no badge-labelled Codex finding outside a thread is waiting for the user
    (step 3), and nothing else the user asked to hold for their own judgment is pending. When Matěj played the
-   pull request's changes, find the **played head**: the published head the latest `🎮 Playtest passed` comment
-   on its tickets names (from `qa1`), or the head at the label's latest removal (the last `unlabeled` event for
-   `needs-playtest` in `gh api --paginate repos/matejkadlec/realmforge/issues/<n>/events`). When the commits this
+   pull request's changes, find the **played head**, the latest of: the published head the latest
+   `🎮 Playtest passed` comment on its tickets names (from `qa1`); the published head in the description's
+   `Playtest passed: played <sha>, published <sha>` line (`qa1` writes it, so it survives a failed Jira write);
+   the head at the label's latest removal (the last `unlabeled` event for `needs-playtest` in
+   `gh api --paginate repos/matejkadlec/realmforge/issues/<n>/events`). When the commits this
    pull request added after the played head (not changes that came in with `master`) change gameplay, as the
    flow's "QA classification" defines it, the current head was never played: add the label (the REST form
    above), and move the tickets back under "Jira tickets" ("Reconfirmation"). Commits that change nothing a player
