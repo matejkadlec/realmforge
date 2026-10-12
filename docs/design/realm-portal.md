@@ -158,18 +158,19 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
   arrives. A player who comes another way (a waystone, a command, another mod's teleport) arrives where that path
   aims, and entering the realm (`PlayerEvent.PlayerChangedDimensionEvent`) builds the landing if the realm has none
   yet, so the way home exists from the first visit, a walk or a waystone away.
-- **The landing:** a floor of the realm's own stone (named in its data), 7 wide and 5 deep
-  under and in front of a frame, with the frame's selector set to return, air 4 blocks high above the floor, light,
-  and a safe pocket around it (RE-6: radius 3 by default, larger for a realm that needs it, such as an underwater
-  one). The spot is the nearest one to the realm's arrival point (its `x`, `z` in data) where the landing fits
-  between the floor and the ceiling, searched within the realm's `y` range; when nothing fits, the landing is carved
-  out at the range's middle. That covers the cases AoA kept fixing (RE-2): a ceiling (the stone realm has a bedrock
+- **The landing:** a floor of the realm's own stone (named in its data), 7 wide and 5 deep under and in front of a
+  frame, with the frame's selector set to return, air 4 blocks high above the floor, light, and a safe pocket around
+  it (RE-6: radius 3 by default, larger for a realm that needs it, such as an underwater one). Its spot is the one
+  nearest the dimension's origin (x 0, z 0) where the landing fits between the floor and the ceiling, searched
+  within the realm's `y` range; when nothing fits, the landing is carved out at the range's middle. The origin is
+  where the level rule's distance starts, so the landing always sits in the realm's lowest-level area, and no data
+  can move it away. The search covers the cases AoA kept fixing (RE-2): a ceiling (the stone realm has a bedrock
   one), a void below, water.
 - **The landing's position is saved** for the realm (a `SavedData` in the realm's level), so later arrivals look at
   one known place instead of searching a radius. Vanilla's nether portal search reads the point-of-interest data of
   every chunk within 128 blocks (`PortalForcer#findClosestPortalPosition` with `PoiManager#ensureLoadedAndValid`);
   the landing needs none of that. A saved landing that the world border has left outside (an operator moved or shrank
-  it) counts as gone: the next arrival builds a new landing at the spot nearest the arrival point inside the border
+  it) counts as gone: the next arrival builds a new landing at the spot nearest the origin inside the border
   and saves that one, so the player never arrives away from the portal.
 - **The landing cannot be broken, built over, flooded or switched.** Its protected zone is the landing's box (the
   floor and the air above it) widened by 4 blocks on each side. In the zone, players outside creative:
@@ -318,7 +319,7 @@ particle: minecraft:ash              # the extra particle next to the tinted dus
 sound_pitch: 0.8                     # until A3 brings our own sounds
 flavour: {en_us: "Cold air rises from below, smelling of dust and old stone."}
 locked_hint: {en_us: "Its sigil is a chapter 1 quest reward."}
-arrival: {x: 0, z: 0, y: [20, 90], pocket_radius: 3, floor: realmforge:slate_bricks}
+arrival: {y: [20, 90], pocket_radius: 3, floor: realmforge:slate_bricks}   # always near x 0, z 0
 ```
 
 - **`realmforge:realm`, a new datapack registry** owned by `world`
