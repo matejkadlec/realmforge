@@ -96,6 +96,7 @@ def test_decode_grayscale_with_color_key() -> None:
         (_png(2, 2, 8, 6, [b"\x00" + bytes(8)]), "shorter than the header"),
         (_png(1, 1, 8, 6, [b"\x07" + bytes(4)]), "filter type 7"),
         (PNG_SIGNATURE + _chunk(b"IHDR", bytes(12)), "IHDR chunk has 12 bytes"),
+        (_png(0, 1, 8, 6, [b"\x00"]), "a 0x1 image has no pixels"),
     ],
 )
 def test_decode_rejects_broken_or_unsupported_files(data: bytes, message: str) -> None:
@@ -192,6 +193,11 @@ def test_clean_reduces_an_upscaled_image_by_its_grid() -> None:
 def test_clean_keeps_the_aspect_ratio_of_a_strip() -> None:
     cleaned, _ = clean(Image(32, 64, (RED,) * 32 * 64), PALETTE)
     assert (cleaned.width, cleaned.height) == (16, 32)
+
+
+def test_clean_refuses_an_empty_image() -> None:
+    with pytest.raises(TextureError, match="no pixels"):
+        clean(Image(0, 16, ()), PALETTE)
 
 
 @pytest.mark.parametrize(("width", "height"), [(20, 20), (32, 33)])

@@ -79,6 +79,8 @@ def clean(
     """
     if size <= 0:
         raise TextureError(f"size must be positive, got {size}")
+    if image.width == 0 or image.height == 0:
+        raise TextureError(f"a {image.width}x{image.height} image has no pixels")
     if not 1 <= alpha_threshold <= 255:
         raise TextureError(f"alpha threshold must be between 1 and 255, got {alpha_threshold}")
     if image.width % size:

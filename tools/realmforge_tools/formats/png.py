@@ -83,6 +83,8 @@ def decode_rgba(data: bytes) -> tuple[int, int, list[Rgba]]:
     if header is None:
         raise PngError("missing IHDR chunk")
     width, height, depth, color_type, _compression, _filter, interlace = header
+    if width == 0 or height == 0:
+        raise PngError(f"a {width}x{height} image has no pixels")
     if color_type not in _CHANNELS:
         raise PngError(f"unknown color type {color_type}")
     if depth not in _BIT_DEPTHS[color_type]:
