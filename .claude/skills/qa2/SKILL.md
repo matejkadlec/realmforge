@@ -27,8 +27,9 @@ revising; this skill may not weaken either. _qa2: changes required_ there holds 
 5. **Push** the revision (`--force-with-lease` after a rebase) and read the remote head back. Open no pull request.
    A batch whose pull request waits for a reconfirmation (_Reconfirmation_) gets the new head on that pull
    request, and its `monitor-pr` run carries on.
-6. **Record and move:** on each affected ticket, the revision (what changed, the new head, a What to test limited
-   to it); then move the tickets back to Pending User QA. The batch keeps its playtest slot through the revision.
+6. **Record and move:** on each affected ticket, a new `🎮 Playtest handoff` for the revision (what changed, the
+   new head, a What to test limited to it), which makes the new head the one Matěj plays next; then move the
+   tickets back to Pending User QA. The batch keeps its playtest slot through the revision.
 7. **Hand back** with the status overview from `CLAUDE.md` in its manual-test shape: _What to test_ limited to
    what the revision changed, the command that updates Matěj's checkout (_Launch commands_), and the closing line
    on `qa1` and `qa2`. Then wait for his next answer.

@@ -386,8 +386,9 @@ Matěj's `qa2` with what is wrong sends the batch back for a revision on the sam
 3. **Fix** what he reported, run the affected checks and the full gate, and commit.
 4. **Push** the revision (`--force-with-lease` after a rebase) and read the remote head back. Open no pull request;
    a reconfirmation's pull request simply gets the new head, and its `monitor-pr` run carries on.
-5. **Record** the revision on each affected ticket (what changed, the new head, a What to test limited to it) and
-   move the tickets back to Pending User QA. The batch keeps its playtest slot through the revision.
+5. **Record** the revision on each affected ticket as a new `🎮 Playtest handoff` (what changed, the new head, a
+   What to test limited to it), so its head is the one `qa1` passes next, and move the tickets back to Pending
+   User QA. The batch keeps its playtest slot through the revision.
 6. **Hand back** with the status overview in its manual-test shape: What to test limited to the revision, the
    command that updates his checkout ([Launch commands](#launch-commands)), and the closing line on `qa1` and
    `qa2`. Then wait for his next answer.
