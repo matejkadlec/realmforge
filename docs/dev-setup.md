@@ -104,7 +104,8 @@ For a later revision of the same branch, `git pull --ff-only` updates it, or aft
 followed by `git reset --keep origin/<branch>`, which refuses to discard local edits. When you are done,
 `.\gradlew.bat --stop` stops the Gradle daemon and frees its memory. Then answer in any Claude Code session:
 `qa1` when the playtest passed (the batch gets its pull request), or `qa2` with what is wrong (the agent revises
-the same branch; [AI development flow](ai-development-flow.md#playtest-handoff)).
+the same branch; [AI development flow](ai-development-flow.md#playtest-handoff)). A retest of a pull request that
+is already open (a reconfirmation) is answered in the session that asked for it.
 
 ### 3.3 In WSL (quick checks)
 

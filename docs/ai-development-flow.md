@@ -3,8 +3,9 @@
 > How agent sessions take work from Jira and deliver it: intake, batching, dependencies, claims, worktrees,
 > checks, playtests, and the handoff to the pull request skills. Decisions:
 > [ADR 0016](decisions/0016-jira-batch-delivery.md), playtests before the pull request in
-> [ADR 0022](decisions/0022-playtest-before-the-pull-request.md). `CLAUDE.md` comes first; skills may add detail
-> to this document but never weaken it or `CLAUDE.md`.
+> [ADR 0022](decisions/0022-playtest-before-the-pull-request.md) and
+> [ADR 0024](decisions/0024-no-github-labels.md). `CLAUDE.md` comes first; skills may add detail to this document
+> but never weaken it or `CLAUDE.md`.
 
 The shortcuts `flow1` (take a batch of sprint tickets and deliver it), `flow2` (turn Matěj's task description
 into a ticket and deliver it), and Matěj's playtest answers `qa1` (passed: publish the batch) and `qa2` (changes
@@ -152,9 +153,9 @@ flowchart LR
 - **In Progress:** a session claimed it and implementation began.
 - **Pending User QA:** a playtest batch waits for Matěj's playtest, and nothing else: its branch is pushed and has
   **no pull request** until his `qa1` ([Playtest handoff](#playtest-handoff)). The one exception is a
-  reconfirmation: a pull request published by `qa1` whose later fix changed gameplay, held by `needs-playtest`
-  until he plays it again. A missing decision, account or credential keeps a ticket where it is, with the blocker
-  recorded in a comment.
+  [reconfirmation](#reconfirmation): a pull request published by `qa1` whose later fix changed gameplay; its
+  tickets wait here, which holds the merge, until he answers again. A missing decision, account or credential
+  keeps a ticket where it is, with the blocker recorded in a comment.
 - **Pending CR:** a ready pull request is open and its publishing session's monitored merge carries it through
   review, checks and merge, or that run stopped and Matěj manages it.
 - **Done:** only after the pull request merged into `master`.
@@ -358,20 +359,19 @@ Matěj's `qa1` passes the playtest and authorizes publishing the batch. The
    gate last passed on, run the full gate again. A rebase whose conflict resolutions touch anything a player sees
    ([QA classification](#qa-classification)) changes what Matěj played: push it and hand it back for another
    playtest, as a `qa2` revision does, instead of publishing.
-4. **Publish** as in [Publication](#publication): push, one ready pull request without `needs-playtest`, the head
-   read back. The description carries the line `Playtest passed: played <sha>, published <sha>`, so the played
-   head survives a failed Jira write.
+4. **Publish** as in [Publication](#publication): push, one ready pull request, the head read back. The
+   description carries the line `Playtest passed: played <sha>, published <sha>`, so the played head survives a
+   failed Jira write.
 5. **Record** on each ticket the `🎮 Playtest passed` (the played head, the head it was published as, his words if
    he gave any) and the `🤖 Claude QA` summary, then move the tickets from Pending User QA to Pending CR. That
    frees the batch's playtest slot.
 6. **Hand off and monitor:** the status overview, then `/monitor-pr <n>` in the same run, to the merge.
 
-For a pull request that already waits for a playtest (a [reconfirmation](#reconfirmation), or a gameplay pull
-request outside the flow with `needs-playtest`), `qa1` instead passes only the head Matěj played (the one the
-latest `🎮 Playtest handoff` names; gameplay commits added since then go back to him for another playtest), and
-records the `🎮 Playtest passed` for its current head on each of its tickets (one outside the flow may have none:
-the label's removal then records the playtest), removes `needs-playtest` for Matěj (his `qa1` is his answer),
-moves the tickets to Pending CR, and continues `monitor-pr` on it. One `monitor-pr` run owns a pull request: an
+For a pull request that waits for a [reconfirmation](#reconfirmation), `qa1` instead passes only the head Matěj
+played (the one the latest `🎮 Playtest handoff` names; gameplay commits added since then go back to him for
+another playtest), rewrites the description's `Playtest passed` line to name that head (the record that survives
+a failed Jira write), records the `🎮 Playtest passed` for that head on each ticket, moves the tickets to Pending
+CR, and the `monitor-pr` run continues to the merge. One `monitor-pr` run owns a pull request: an
 answer in the session whose run waits for it continues that run; in any other session `qa1` first asks Matěj
 whether the waiting run has stopped, and acts only then.
 
@@ -397,10 +397,12 @@ Matěj's `qa2` with what is wrong sends the batch back for a revision on the sam
 
 A fix after `qa1` (a `fix-pr` commit, a thread fix, a check repair, a conflict resolution) can change what Matěj
 played. When the commits the pull request added after the published head that Matěj passed change gameplay
-([QA classification](#qa-classification)), `monitor-pr` adds `needs-playtest`, moves the tickets back to Pending
-User QA with a `🎮 Playtest handoff` limited to the change, and holds the merge until Matěj answers `qa1` (or
-removes the label) or `qa2`. Commits that change nothing a player sees (docs, tests, a refactor its tests cover,
-a merge of `master` whose conflict resolutions touch nothing a player sees) need no new playtest.
+([QA classification](#qa-classification)), `monitor-pr` runs the same loop as before the pull request: it moves
+the tickets back to Pending User QA with a `🎮 Playtest handoff` limited to the change (what to retest and how),
+and waits for his `qa1` or `qa2`. Tickets in Pending User QA hold the merge. Commits that change nothing a player
+sees (docs, tests, a refactor its tests cover, a merge of `master` whose conflict resolutions touch nothing a
+player sees) need no new playtest. `monitor-pr` brings `master` into a branch Matěj has played by merging, never
+by rebasing, so the played head stays in its history.
 
 ### Launch commands
 
@@ -760,10 +762,9 @@ monitored merge. An AI-only batch is published as soon as its gate passes. A pla
    - **description:** the tickets with links; what changed and why; for a batch published by `qa1`, the head
      Matěj played; dependencies pulled in; the checks that ran; a stacked base or plan change, if any; never
      `@codex` anywhere.
-3. **Labels:** none for a flow batch. A playtest batch was played before its pull request opened, so it carries
-   no `needs-playtest`. That label holds the merge only for a [reconfirmation](#reconfirmation) and for a gameplay
-   pull request outside the flow (`CLAUDE.md`); only Matěj clears it, by removing it or by answering `qa1`.
-4. **Plan changes** carry no label and hold no merge
+3. **No labels:** pull requests carry no GitHub labels ([ADR 0024](decisions/0024-no-github-labels.md)). What
+   waits for Matěj is a ticket in Pending User QA, never a label.
+4. **Plan changes** hold no merge
    ([ADR 0021](decisions/0021-status-overview-and-plan-changes.md)). A plan change is any change to
    [roadmap.md](roadmap.md): new, removed, reordered or reworded tasks, a recorded decision, a changed milestone, a
    key ([ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md)). A batch makes one only as Matěj decided
@@ -787,9 +788,9 @@ monitored merge. An AI-only batch is published as soon as its gate passes. A pla
 [`monitor-pr`](../.claude/skills/monitor-pr/SKILL.md) carries the pull request to its merge under
 [ADR 0015](decisions/0015-merging-through-monitor-pr.md): it runs `fix-pr` on Codex findings, closes every review
 thread, fixes failing or stuck checks and conflicts with `master`, falls back to `finalize-pr` when Codex hits its
-usage limit, and merges once everything is clean and no hold applies. The holds are `needs-playtest` (a
-[reconfirmation](#reconfirmation), or a gameplay pull request outside the flow), a changes-requested review, a
-Codex finding outside a thread, and anything Matěj asked to hold. Its "Jira tickets" section keeps the tickets in
+usage limit, and merges once everything is clean and no hold applies. The holds are a
+[reconfirmation](#reconfirmation) (a ticket in Pending User QA), a changes-requested review, a Codex finding
+outside a thread, and anything Matěj asked to hold. Its "Jira tickets" section keeps the tickets in
 step: a `🤖 Claude QA` update after each of its pushes, Pending User QA and back for a reconfirmation, Done after
 the merge.
 
@@ -830,8 +831,8 @@ the open pull request whose head is that branch as one batch.
   holds its slot from its claim until `qa1` publishes it or the batch is otherwise resolved, through every `qa2`
   revision, and again while its pull request waits for a reconfirmation. Count them, as batches, from fresh reads,
   every result page and comment page to its end: tickets in Pending User QA; tickets In Progress whose latest
-  QA-mode statement in the current cycle (the claim comment or a later QA-mode comment) names Playtest; open pull
-  requests with `needs-playtest`. Select a playtest batch only while that count is below three; otherwise select
+  QA-mode statement in the current cycle (the claim comment or a later QA-mode comment) names Playtest. Select a
+  playtest batch only while that count is below three; otherwise select
   AI-only work. A `qa2` revision or a reconfirmation is not a new selection, so the limit never blocks it.
 - Start another batch only while every cap allows it and the conflict map shows the branch safe, independent, and
   neither overlapping nor stacked on an in-flight branch without need. A free slot never authorizes an overlap.

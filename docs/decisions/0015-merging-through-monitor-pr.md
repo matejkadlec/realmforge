@@ -5,8 +5,8 @@ Date: 2026-10-11
 Status: Accepted (amends the merge step of [0011](0011-repository-layout-and-workflow.md); the `needs-approval`
 hold added by [0016](0016-jira-batch-delivery.md) and [0017](0017-jira-as-the-source-of-task-status.md), and
 removed again by [0021](0021-status-overview-and-plan-changes.md); a flow playtest happens before the pull
-request since [0022](0022-playtest-before-the-pull-request.md), so `needs-playtest` holds a reconfirmation or a
-gameplay pull request outside the flow)
+request since [0022](0022-playtest-before-the-pull-request.md); the `needs-playtest` label dropped by
+[0024](0024-no-github-labels.md): a reconfirmation is held by its tickets' Jira status)
 
 ## Context
 

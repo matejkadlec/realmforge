@@ -4,7 +4,8 @@ Date: 2026-10-12
 
 Status: Accepted (amends the playtest step of [0016](0016-jira-batch-delivery.md) and the `needs-playtest` note of
 [0021](0021-status-overview-and-plan-changes.md); keeps the `needs-playtest` hold of
-[0015](0015-merging-through-monitor-pr.md) for reconfirmations and for gameplay pull requests outside the flow)
+[0015](0015-merging-through-monitor-pr.md) for reconfirmations and for gameplay pull requests outside the flow);
+that label dropped by [0024](0024-no-github-labels.md): a reconfirmation is held by its Jira status
 
 ## Context
 

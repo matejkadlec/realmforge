@@ -1,6 +1,6 @@
 ---
 name: qa1
-description: Record Matěj's passed playtest of a batch in Pending User QA, publish its preserved branch as one ready pull request (no needs-playtest), move its tickets to Pending CR and carry the pull request to its merge with monitor-pr. Also confirms a reconfirmation on a published pull request. Only playtest batches use it. Use when the user says "qa1" or approves a playtest.
+description: Record Matěj's passed playtest of a batch in Pending User QA, publish its preserved branch as one ready pull request, move its tickets to Pending CR and carry the pull request to its merge with monitor-pr. Also confirms a reconfirmation on a published pull request. Only playtest batches use it. Use when the user says "qa1" or approves a playtest.
 ---
 
 # qa1: playtest passed, publish
@@ -9,9 +9,9 @@ Follow `CLAUDE.md` and read [`docs/ai-development-flow.md`](../../../docs/ai-dev
 publishing; this skill may not weaken either. _qa1: playtest passed_ there holds the rules.
 
 1. **Find the batch** Matěj passed: the one this session handed off, the ticket keys, branch or pull request he
-   names, or the only batch waiting for a playtest (tickets in Pending User QA, or an open pull request with
-   `needs-playtest`, one outside the Jira flow included). With several and no hint, ask which one, listing each
-   with its tickets, branch or pull request. Nothing waiting for a playtest: say so and stop. When a `qa2` left a
+   names, or the only batch waiting for a playtest (its tickets in Pending User QA, with or without a pull
+   request). With several and no hint, ask which one, listing each with its tickets, branch or pull request.
+   Nothing waiting for a playtest: say so and stop. When a `qa2` left a
    decision question open on the batch's tickets, ask Matěj to answer it first, or to confirm that his `qa1`
    accepts the batch as it is; publish nothing before that.
 2. **Take the preserved branch:** `git fetch origin`, then reuse the worktree that holds it or create one from
@@ -28,11 +28,10 @@ publishing; this skill may not weaken either. _qa1: playtest passed_ there holds
    handed-off head the gate last passed on (his commits or edits, a rebase), run the full gate again
    (_Implementation and verification_, Gradle through the _Gradle queue_). A rebase whose conflict resolutions
    touch anything a player sees (_QA classification_: code, content, assets, pack configuration) changes what
-   Matěj played: push it and hand it back for another playtest, as `qa2` does, instead of
-   publishing.
+   Matěj played: push it and hand it back for another playtest, as `qa2` does, instead of publishing.
 4. **Publish** under _Publication_: push (leased as in step 2), open one ready pull request to `master` (a
-   stacked batch: to its dependency branch, until that merges) without `needs-playtest`, and read the remote head
-   back: it must be your final commit. The description carries the line
+   stacked batch: to its dependency branch, until that merges), and read the remote head back: it must be your
+   final commit. The description carries the line
    `Playtest passed: played <sha>, published <sha>`, the GitHub-side record `monitor-pr` falls back on when a
    Jira write fails.
 5. **Record and move:** on each ticket, the `🎮 Playtest passed` (the played head, the head it is published as,
@@ -44,15 +43,13 @@ publishing; this skill may not weaken either. _qa1: playtest passed_ there holds
    playtest was Matěj's last required step. This session has taken the batch over: its worktree and local branch
    count as created by this session, so `monitor-pr` removes them after the merge.
 
-**A pull request that already waits for a playtest** (a reconfirmation, _Reconfirmation_, or a gameplay pull
-request outside the flow with `needs-playtest`): `qa1` publishes nothing new. It passes only the head Matěj
-played, the one the latest `🎮 Playtest handoff` names: when the pull request moved on since then and the new
-commits change gameplay (_QA classification_), it hands those back for another playtest instead. Otherwise it
-records the `🎮 Playtest passed` for the pull request's current head on each of its tickets (one outside the flow
-may have none: the label's removal then records the playtest), removes `needs-playtest` for Matěj (his `qa1` is
-his answer;
-`gh api -X DELETE repos/matejkadlec/realmforge/issues/<n>/labels/needs-playtest`), moves the tickets to Pending
-CR, and continues `monitor-pr` on it. One `monitor-pr` run owns a pull request: when the answer comes in the
+**A pull request that waits for a reconfirmation** (_Reconfirmation_): `qa1` publishes nothing new. It passes only
+the head Matěj played, the one the latest `🎮 Playtest handoff` names: when the pull request moved on since then and
+the new commits change gameplay (_QA classification_), it hands those back for another playtest instead. Otherwise
+it first rewrites the pull request description's `Playtest passed: played <sha>, published <sha>` line to name that
+head (`gh api -X PATCH repos/matejkadlec/realmforge/pulls/<n> -F body=@<file>`), the record that survives a failed
+Jira write, then records the `🎮 Playtest passed` for that head on each ticket, moves the tickets to Pending CR, and
+the `monitor-pr` run continues to the merge. One `monitor-pr` run owns a pull request: when the answer comes in the
 session whose run waits for this playtest, that run carries on. In any other session, ask Matěj first whether that
-run has stopped; only then does `qa1` continue `monitor-pr` here, and otherwise it changes nothing and points him
-to the waiting session.
+run has stopped; only then does `qa1` continue `monitor-pr` here, and otherwise it changes nothing and points him to
+the waiting session.
