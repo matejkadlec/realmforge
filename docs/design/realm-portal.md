@@ -86,7 +86,8 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
 ## Realm sigils
 
 - **One per realm,** stacking to 1, never consumed (RE-1), fire resistant (`Item.Properties#fireResistant`), so lava
-  does not take it. Its tooltip names the realm and its levels and says "Never used up".
+  does not take it. Its tooltip names the realm and says "Never used up". It shows no levels: they live in the
+  server-only `realmforge:dimension_rules`, and the arrival title, which the server sends, shows them.
 - **Where sigils come from** (RE-9, LE-1):
   - **the stone realm's sigil** is the reward of an early chapter 1 quest, for example "build the realm portal".
     That quest step is W2's "locked by a chapter 1 step", and a level-1 player can finish it (the stone realm is
@@ -301,7 +302,8 @@ arrival: {x: 0, z: 0, y: [20, 90], pocket_radius: 3, floor: realmforge:slate_bri
   reward, as the "every item obtainable" rule asks
   ([ADR 0005](../decisions/0005-content-pipeline-yaml-single-source-of-truth.md)).
 - **Not in the data yet:** a realm map's positions and parents (RE-7) and a level band of its own (the levels come
-  from `dimension_rules`). They join when a view needs them.
+  from `dimension_rules`, which stays on the server). They join when a client view needs them, synced with the realm
+  entry.
 
 ## Code shape
 
