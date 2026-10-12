@@ -311,8 +311,9 @@ No milestone yet:
 - Nightly spark profiles; our own performance mod (RLM-63).
 - A local bridge so agents can see screenshots and game state from Matěj's PC (RLM-64,
   [research notes, section 6](research-notes.md#6-testing-and-qa)).
-- Port to a newer Minecraft: re-evaluate in 2027 at the earliest (RLM-65,
-  [ADR 0003](decisions/0003-platform-minecraft-1-21-1-neoforge.md)).
+- Minecraft version: decided 2026-10-12 to port to 26.1.2 before M1 gameplay code (RLM-65,
+  [ADR 0026](decisions/0026-platform-minecraft-26-1-2-neoforge.md)); a later move beyond 26.1.2 is a decision of
+  its own.
 - Explicitly not for now: seasons, decorative pets, "full No Man's Sky" (possibly a separate mod,
   [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)).
 

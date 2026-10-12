@@ -1,6 +1,6 @@
 # Realmforge
 
-An RPG mod and modpack for Minecraft **1.21.1** (NeoForge), inspired by World of Warcraft: Wrath of the Lich King:
+An RPG mod and modpack for Minecraft **26.1.2** (NeoForge), inspired by World of Warcraft: Wrath of the Lich King:
 races and classes, spells and talents, leveling with story chapters, procedurally generated dungeons and
 dimensions, bosses with phases, professions, and a quest campaign. Set in the world of Realmforge.
 
@@ -12,7 +12,7 @@ test item; there is no gameplay yet. Next is M1, a small playable vertical slice
 
 - **Core mod** (`mod/`, mod ID `realmforge`): all RPG systems, written by us.
 - **Modpack** (`pack/`, [packwiz](https://packwiz.infra.link/)): the core mod plus third-party QoL, map, storage
-  and performance mods (JEI/EMI, Jade, Xaero's maps, Sophisticated Storage, Sodium, Iris, ...).
+  and performance mods (JEI, Jade, Xaero's maps, Sophisticated Storage, Sodium, Iris, ...).
 - **Content pipeline** (`content/` + `tools/`): all game content is YAML, validated and turned into Java
   registrations, assets and data by Python. Generated files are committed and never edited by hand.
 - **QA mod** (`qa-mod/`, `realmforge_qa`): development-only GameTests and debug tools; never released.
@@ -28,7 +28,7 @@ test item; there is no gameplay yet. Next is M1, a small playable vertical slice
 
 ## Quick start
 
-Requirements: Java 21, [uv](https://docs.astral.sh/uv/), and [packwiz](https://github.com/packwiz/packwiz) for pack
+Requirements: Java 25, [uv](https://docs.astral.sh/uv/), and [packwiz](https://github.com/packwiz/packwiz) for pack
 work. Full setup, including playing the pack with Prism Launcher on Windows: [docs/dev-setup.md](docs/dev-setup.md).
 
 ```bash

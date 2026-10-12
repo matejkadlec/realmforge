@@ -20,7 +20,9 @@ Rules:
   in-game world is always called **Realmforge**.
 - `texts/` holds player-facing texts that belong to no other type (key mapping names, messages). The group id
   is the key prefix (`key`, `message`, ...) and must not be another type's prefix (`item`, `curve`); Java
-  names a text through its `GeneratedTexts` constant (`KEY_DARK_VISION`), never by typing the key.
+  names a text through its `GeneratedTexts` constant (`KEY_DARK_VISION`), never by typing the key. A group id may
+  contain dots where the game prescribes a key format: `key.category.yaml` names key categories, which Options >
+  Controls reads from `key.category.<namespace>.<path>` (constant `KEY_CATEGORY_MAIN`).
 - Human units in YAML, game units in data: a field named `<name>_seconds` is written as `<name>_ticks`, one named
   `<name>_percent` as the fraction `<name>` ([architecture 6.3](../docs/architecture.md#63-conventions)).
 - `worldgen/` is the one exception to YAML: Minecraft's own worldgen JSON (`dimension/`, `dimension_type/`,

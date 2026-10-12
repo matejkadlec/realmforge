@@ -5,7 +5,7 @@ must be written into the repo (this file, `docs/`, git history).
 
 ## Project
 
-Realmforge is an RPG mod and modpack for Minecraft 1.21.1 (NeoForge) inspired by World of Warcraft: Wrath of the
+Realmforge is an RPG mod and modpack for Minecraft 26.1.2 (NeoForge) inspired by World of Warcraft: Wrath of the
 Lich King ("WoW" always means WotLK, never retail). It is a hybrid: our own core mod holds all RPG systems; the
 modpack adds third-party QoL, performance and library mods.
 
@@ -39,30 +39,33 @@ modpack adds third-party QoL, performance and library mods.
   never implement `decision` tickets or tickets waiting on Matěj.
 - **Status:** M0 (bootstrap) is done: build, CI, content pipeline, one test item (`realmforge:test_item`), modpack
   definition. M1, the playable vertical slice (proposed as v0.1.0, roadmap decision D7), is under way: CI boots the
-  whole pack on a server and a client (spike 6), and the core mod has its empty feature skeleton (F1). No gameplay
-  yet.
+  whole pack on a server and a client (spike 6), and the core mod has its empty feature skeleton (F1). Before any
+  gameplay code the project moved from Minecraft 1.21.1 to 26.1.2 (RLM-65, RLM-123, RLM-124). No gameplay yet.
 
 ## Pinned versions
 
-Changing any of these requires a new ADR ([0003](docs/decisions/0003-platform-minecraft-1-21-1-neoforge.md)).
+Changing any of these requires a new ADR ([0026](docs/decisions/0026-platform-minecraft-26-1-2-neoforge.md)).
 
 | Component | Version | Where |
 | --- | --- | --- |
-| Minecraft | 1.21.1 (data version 3955) | `gradle.properties`, `tools/realmforge_tools/project.py` |
-| NeoForge | 21.1.259 | `gradle.properties`, `pack/pack.toml`, `tools/realmforge_tools/packboot.py` |
+| Minecraft | 26.1.2 (data version 4790), unobfuscated: no Parchment | `gradle.properties`, `tools/realmforge_tools/project.py` |
+| NeoForge | 26.1.2.116 | `gradle.properties`, `pack/pack.toml`, `tools/realmforge_tools/packboot.py` |
 | ModDevGradle | 2.0.148 | `settings.gradle` |
 | Gradle | 9.2.1 (checksum-pinned wrapper) | `gradle/wrapper/gradle-wrapper.properties` |
-| Java | 21 (Temurin) | toolchain in `*/build.gradle`; Gradle daemon in `gradle/gradle-daemon-jvm.properties` |
-| Parchment | 1.21.1 / 2024.11.17 | `gradle.properties` |
+| Java | 25 (Temurin) | toolchain in `*/build.gradle`; Gradle daemon in `gradle/gradle-daemon-jvm.properties`; CI; pack boot |
 | Python | 3.12+ (3.14 pinned in `.python-version`), managed by uv | `pyproject.toml`, `uv.lock` |
 | packwiz | commit `ef87d96` | `.github/workflows/ci.yml` |
 | packwiz-installer, portablemc (pack boot tests) | 0.5.14 (bootstrap 0.0.3), 4.4.1 | `tools/realmforge_tools/packboot.py` |
 
 ## Commands
 
-Java comes from SDKMAN. Non-interactive shells don't read `~/.bashrc`, so run
+Java 25 comes from SDKMAN. Non-interactive shells don't read `~/.bashrc`, so run
 `source ~/.sdkman/bin/sdkman-init.sh` before Gradle (or `export JAVA_HOME=~/.sdkman/candidates/java/current`).
-Cloud sessions have no SDKMAN: Java 21 is preinstalled, and a background SessionStart hook warms up uv and Gradle
+Gradle's foojay resolver downloads Java 25 into `~/.gradle/jdks` for the daemon and the toolchains when no Java 25 is
+installed, but `rf ids vanilla` and `rf pack-boot` start Java themselves and need `JAVA_HOME` (or `java` on `PATH`)
+at Java 25 ([dev setup](docs/dev-setup.md#1-tools-in-wsl-no-sudo-needed)). Cloud sessions have no SDKMAN: Java 21 is
+preinstalled, Gradle has to download Java 25 there (not tried in a cloud session yet, see dev setup), and a
+background SessionStart hook warms up uv and Gradle
 ([docs/dev-setup.md](docs/dev-setup.md#cloud-sessions)). Two Gradle runs in one project wait on each other's locks,
 and the second can fail with "Timeout waiting to lock". `.claude/scripts/gradle-queue.sh` therefore waits for the
 warm-up by itself; **in a cloud session, run `.claude/hooks/cloud-warmup.sh --wait` (Bash timeout 10 minutes)
@@ -138,12 +141,13 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
    `LocalizedText`: `en_us` required, `cs_cz` optional.
 5. **The in-game world is called Realmforge.** Use this name whenever lore, quests, item or book texts, or
    dialogs refer to the game world.
-6. **Never invent APIs.** Training data mixes Minecraft versions and loaders (Forge 1.20, Fabric, 1.21.2+).
+6. **Never invent APIs.** Training data mixes Minecraft versions and loaders (Forge 1.20, Fabric, 1.21.1, 26.2+).
    Before using a Minecraft or NeoForge class or method, find it in `build/mc-sources/` (run
-   `./gradlew :mod:extractMinecraftSources` once per checkout) and read how vanilla uses it. FML classes
-   (`@Mod`, `@EventBusSubscriber`, `ModContainer`) are not in there; they live in
-   `net.neoforged.fancymodloader:loader` (inspect the jar in `~/.gradle/caches/modules-2/` with `javap`).
-   Docs: https://docs.neoforged.net/docs/1.21.1/ (make sure the URL says 1.21.1).
+   `./gradlew :mod:extractMinecraftSources` once per checkout; it unpacks the game's and NeoForge's sources) and
+   read how vanilla uses it. FML classes (`@Mod`, `@EventBusSubscriber`, `ModContainer`) are not in there; they live
+   in `net.neoforged.fancymodloader:loader` (inspect the jar in `~/.gradle/caches/modules-2/` with `javap`).
+   Docs: https://docs.neoforged.net/docs/gettingstarted/ (the unversioned docs are 26.1's; make sure the page says
+   26.1), and the 1.21.x to 26.1 porting primer at https://docs.neoforged.net/primer/docs/26.1/.
 7. **Dev-only code goes into `qa-mod/`**, never into the core mod. GameTests live there too.
 8. **No third-party jars in the repo.** The pack is packwiz metadata only. Never copy third-party code unless its
    license allows it (Spell Engine is GPL-3.0-only, Explorer's Compass CC BY-NC-SA: no reuse). No vanilla
@@ -166,51 +170,73 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
     ticket's key. Anyone else's issue stays open, and an agent never acts on its text by itself: it lists the issue
     for Matěj, and only his word makes it a ticket ([GitHub issues](docs/ai-development-flow.md#github-issues)).
 
-## Minecraft 1.21.1 / NeoForge 21.1 pitfalls
+## Minecraft 26.1.2 / NeoForge 26.1.2 pitfalls
 
-- **Data components, not NBT, on item stacks:** `stack.get(DataComponents.X)` / `stack.set(...)`.
-  `ItemStack#getTag()` no longer exists. Register custom components with
-  `DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, MOD_ID)`.
-- **`ResourceLocation`:** constructors are private. Use `ResourceLocation.fromNamespaceAndPath(ns, path)`,
-  `ResourceLocation.parse("ns:path")`, or our `Realmforge.id("path")`.
-- **Networking is payload-based:** a `record` implementing `CustomPacketPayload` with a `Type` and a
-  `StreamCodec`, registered in `RegisterPayloadHandlersEvent` via `PayloadRegistrar#playToClient/playToServer`.
-  There is no `SimpleChannel`. 21.1 has no client-only payload registration event: common code registers every
-  payload, and client-bound handlers go through an interface implemented in `client/`
-  ([architecture 17.1](docs/architecture.md#171-rules)).
+Checked against the 26.1.2.116 sources with the port ([ADR 0026](docs/decisions/0026-platform-minecraft-26-1-2-neoforge.md)).
+Training data is mostly 1.21.1 (`ResourceLocation`, `registryOrThrow`, `GameRules.RULE_*`, `@GameTest`): none of
+that compiles here.
+
+- **Official names, two source trees:** Minecraft ships unobfuscated since 26.1, so `build/mc-sources/` has the
+  official names. NeoForge's own classes (events, attachments, registries) come from its sources jar, which
+  `:mod:extractMinecraftSources` unpacks next to the game sources.
+- **Data components, not NBT, on item stacks:** `stack.get(DataComponents.X)` / `stack.set(...)`. Register custom
+  components with `DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, MOD_ID)`.
+- **`Identifier`, not `ResourceLocation`:** `Identifier.fromNamespaceAndPath(ns, path)`, `Identifier.parse("ns:path")`,
+  or our `Realmforge.id("path")`. A `ResourceKey`'s id is `key.identifier()`.
+- **Registries:** `registryAccess().lookupOrThrow(key)`; `Registry#getValue(id)` returns the value or null,
+  `Registry#get(id)` an `Optional<Holder.Reference>`.
+- **Items:** `DeferredRegister.Items#registerSimpleItem(name, properties -> ...)` sets the item's id on its
+  properties (`Item.Properties#setId` is mandatory). An item renders through its item model definition in
+  `assets/<ns>/items/<id>.json`, which points at the model in `assets/<ns>/models/item/`; the item generator writes
+  both.
+- **Networking is payload-based:** a `record` implementing `CustomPacketPayload` with a `Type` and a `StreamCodec`,
+  registered in `RegisterPayloadHandlersEvent` via `PayloadRegistrar#playToClient/playToServer`; the client sends
+  with `ClientPacketDistributor.sendToServer`. Common code registers every payload, and client-bound handlers go
+  through an interface implemented in `client/` ([architecture 17.1](docs/architecture.md#171-rules)); 26.1's
+  client-only `RegisterClientPayloadHandlersEvent` is an open alternative.
 - **Data attachments** (`AttachmentType`, registry `NeoForgeRegistries.Keys.ATTACHMENT_TYPES`) store per-entity
-  or per-level data such as player stats; use them instead of capabilities or raw NBT. NeoForge 21.1.259 can sync
-  them: declared with `.sync(...)`, they are sent on every `setData`; after mutating a value in place, call
-  `syncData`. The `sync(predicate, ...)` predicate filters updates only: a player who starts tracking an entity
-  receives every synced attachment on it ([architecture 7](docs/architecture.md#7-player-state)).
+  or per-level data such as player stats; use them instead of capabilities or raw NBT. They save through a
+  `MapCodec`: `.serialize(CODEC.fieldOf("value"))`. Declared with `.sync(...)`, they are sent on every `setData`;
+  after mutating a value in place, call `syncData`. The `sync(predicate, ...)` predicate filters updates only: a
+  player who starts tracking an entity receives every synced attachment on it
+  ([architecture 7](docs/architecture.md#7-player-state)).
+- **Saving:** `SavedData` comes with a `SavedDataType(id, constructor, codec)` and
+  `level.getDataStorage().computeIfAbsent(TYPE)`. Entities save and load through `ValueOutput`/`ValueInput`
+  (`TagValueOutput.createWithContext`, `TagValueInput.create`), not through a `CompoundTag` argument.
+- **Gamerules are the server's saved data** (`net.minecraft.world.level.gamerules.GameRules`): `level.getGameRules()`
+  or `server.getGameRules()`, `rules.get(GameRules.KEEP_INVENTORY)`, `rules.set(rule, value, server)`. Their ids are
+  snake_case (`keep_inventory`, `mob_griefing`).
 - **Our datapack registries** load from `data/<ns>/realmforge/<registry>/` (NeoForge puts non-vanilla registry
   folders under the registry's namespace), e.g. `data/realmforge/realmforge/spell/firebolt.json`. The `<ns>` folder
   becomes the entry's namespace, so an entry about `minecraft:overworld` names it in a field, not in its id.
-- **Vanilla attribute ids keep their prefixes** in 1.21.1 (`minecraft:generic.max_health`,
-  `minecraft:player.block_interaction_range`); newer versions dropped them, so don't copy their examples.
+- **Dimension types use environment attributes:** beds, respawn anchors, raids, piglins, sky and fog live in
+  `attributes` (`minecraft:gameplay/bed_rule`, `minecraft:visual/sky_color`, ...), with their defaults in
+  `EnvironmentAttributes`; `fixed_time` became `has_fixed_time`, `effects` became `skybox`.
+- **Vanilla attribute ids have no prefixes** (`minecraft:max_health`, `minecraft:block_interaction_range`): 1.21.1
+  examples with `generic.` or `player.` are wrong.
 - **Hurt cooldown:** within 10 ticks of the last hit, a hit not bigger than it is dropped before
   `LivingDamageEvent` fires; a hit outside that window, or one that bypasses it, starts new invulnerability ticks.
   Damage that must always land (spells, damage over time) uses damage types in `#minecraft:bypasses_cooldown` and
-  keeps the target's current window (`setInvulnerabilityTicks(target.invulnerableTime)`), so it neither grants nor
-  clears invulnerability. It still sets the `lastHurt` that later hits in the window are measured against: a melee
-  hit after a small spell or DoT tick lands almost in full, one after a bigger spell hit is dropped; task F5
-  decides what to keep ([architecture 9.1](docs/architecture.md#91-damage-pipeline)).
-- **Never cancel `LivingIncomingDamageEvent`:** in 21.1.259 `LivingEntity#hurt` then returns without popping the
-  `DamageContainer` it pushed, so every cancel leaks one on the defender. Dodge and other "stop this hit" code use
-  another mechanism ([architecture 9.1](docs/architecture.md#91-damage-pipeline)).
-- **Data pack folders are singular since 1.21:** `recipe/`, `loot_table/`, `advancement/`, `structure/`,
-  `tags/item/`, `tags/block/`. Enchantments are data-driven (`enchantment/`) and are looked up as
-  `Holder<Enchantment>` through registry access, not static fields.
-- **Not in 1.21.1** (newer versions only, don't use): `Item.Properties#setId`, item model definitions in
-  `assets/<ns>/items/`, `Registry#getValue`. 1.21.1 item models live in `assets/<ns>/models/item/`.
+  keeps the target's current window (`DamageContainer#setPostAttackInvulnerabilityTicks(target.invulnerableTime)`),
+  so it neither grants nor clears invulnerability. It still sets the `lastHurt` that later hits in the window are
+  measured against: a melee hit after a small spell or DoT tick lands almost in full, one after a bigger spell hit is
+  dropped; task F5 decides what to keep ([architecture 9.1](docs/architecture.md#91-damage-pipeline)).
+- **Cancelling `LivingIncomingDamageEvent` stops a hit cleanly:** `LivingEntity#hurtServer` pops the
+  `DamageContainer` of a cancelled hit (NeoForge 21.1 leaked it) ([architecture 9.1](docs/architecture.md#91-damage-pipeline)).
+- **Effects have no cures:** milk and a totem clear every effect (`LivingEntity#removeAllEffects`); to keep one,
+  cancel its `MobEffectEvent.Remove`.
+- **Data pack folders are singular:** `recipe/`, `loot_table/`, `advancement/`, `structure/`, `tags/item/`,
+  `tags/block/`. Enchantments are data-driven (`enchantment/`) and are looked up as `Holder<Enchantment>` through
+  registry access, not static fields.
 - **Registration:** `DeferredRegister.Items`/`Blocks`/`create(...)`, holders `DeferredItem`/`DeferredHolder`;
   register the `DeferredRegister` on the mod event bus. Game events go to `NeoForge.EVENT_BUS`.
 - **Client-only code** (rendering, screens, `Minecraft.getInstance()`) must sit in classes only loaded on the
   client (e.g. `@Mod(value = MOD_ID, dist = Dist.CLIENT)`), or the dedicated server crashes.
-- **GameTests:** `@GameTestHolder(RealmforgeQa.MOD_ID)` + `@PrefixGameTestTemplate(false)` +
-  `@GameTest(template = "platform_5x5")`. Templates are generated into `qa-mod/src/generated/resources/data/
+- **GameTests:** a `public static void` method taking a `GameTestHelper`, marked `@QaGameTest` (template, timeout),
+  in a class listed in `QaGameTests`; it registers a test function and a test instance, named
+  `realmforge_qa:<group>/<method>`. Templates are generated into `qa-mod/src/generated/resources/data/
   realmforge_qa/structure/` (see `tools/realmforge_tools/generate/gametest.py`). Positions are relative to the
-  structure block: the template's floor is at y = 1.
+  template's corner: the floor of `platform_5x5` is at y = 0.
 
 ## Git and branches
 

@@ -13,7 +13,7 @@ The owner wants the core of the game (quests, dimensions, dungeons, mobs, bosses
 
 ## Decision
 
-- **Hybrid.** Our own core mod holds all RPG systems; the modpack adds third-party QoL, UI, performance and library mods (plus Better Combat, MineColonies, Distant Horizons and Iris unchanged, see [0004](0004-build-rpg-systems-in-house.md)). The game ships as a modpack, the core mod also as a separate jar.
+- **Hybrid.** Our own core mod holds all RPG systems; the modpack adds third-party QoL, UI, performance and library mods (plus Better Combat, MineColonies, Distant Horizons and Iris unchanged, see [0004](0004-build-rpg-systems-in-house.md); MineColonies is paused on Minecraft 26.1.2 until it has a build there, [0026](0026-platform-minecraft-26-1-2-neoforge.md)). The game ships as a modpack, the core mod also as a separate jar.
 - **One core mod**, mod ID `realmforge`, Java package `io.github.matejkadlec.realmforge`, organised in feature packages (classes, spells, talents, loot, dungeons, ...). Split into more jars only when there is a concrete need.
 - **Dev-only QA mod**, mod ID `realmforge_qa` in `qa-mod/`: depends on the core mod, holds debug commands, test scenarios and GameTests, and is never released.
 - **Modpack** defined in the repo with packwiz (`pack/`), metadata only; composition is decided in [0013](0013-modpack-composition.md) (modpack composition).

@@ -12,8 +12,9 @@ Later topic research, starting with the reference games Craft to Exile 2, Advent
 | --- | --- | --- |
 | License: MIT for code, CC0 for assets | Mod (`mod/`, `qa-mod/`, `tools/`, everything in the jar): MPL-2.0 code, CC BY 4.0 assets. Modpack (`pack/`): All Rights Reserved | [0009](decisions/0009-licensing.md) |
 | Release on GitHub and CurseForge | GitHub Releases now, CurseForge later; no Modrinth publishing (mods may still be sourced from Modrinth for the pack) | [0008](decisions/0008-distribution-github-and-curseforge.md) |
-| Build ourselves: YDM's MobHealthBar, Toast Remover | Neat replaces YDM's MobHealthBar; Toast Control is a temporary replacement for Toast Remover. Still to build later: EMI Trades, Damage Numbers, No Recipe Book, Lightweight Inventory Sorting | [0013](decisions/0013-modpack-composition.md) |
-| Pin Iris and Sodium | The pack pins a compatible pair (stable Iris 1.8.12 works only with Sodium 0.6.13; Sodium 0.8.x needs Iris 1.8.14-beta.1) | [0013](decisions/0013-modpack-composition.md) |
+| Build ourselves: YDM's MobHealthBar, Toast Remover, No Recipe Book | Neat (over YDM's MobHealthBar) and Toast Control (over Toast Remover) are Matěj's deliberate picks (2026-10-12); No Recipe Book is in the pack since the 26.1.2 port. Still to build later: EMI Trades, Damage Numbers, Lightweight Inventory Sorting | [0013](decisions/0013-modpack-composition.md) |
+| Pin Iris and Sodium | The pack pins the render stack together: Sodium 0.9.2, Iris 1.11.4 and Distant Horizons 3.3.3 on 26.1.2 (on 1.21.1 it was the stable pair Iris 1.8.12 and Sodium 0.6.13) | [0013](decisions/0013-modpack-composition.md) |
+| Platform: NeoForge 1.21.1, port re-evaluated in 2027 at the earliest | NeoForge 26.1.2, ported on 2026-10-12 before any M1 gameplay code; MineColonies paused, EMI and its addons, TreeChop and Quark gone | [0026](decisions/0026-platform-minecraft-26-1-2-neoforge.md) |
 | ID universe includes a full-pack registry dump | Vanilla reports now; the Registry Dump step is a TODO | [0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md) |
 | GameTests (location unspecified) | In the dev-only QA mod `realmforge_qa`; the release jar has no test code | [0010](decisions/0010-testing-strategy.md) |
 | Communicate with the owner in Czech | English | [vision](vision.md#owner) |
@@ -81,7 +82,13 @@ Recommendation (accepted, [ADR 0002](decisions/0002-hybrid-core-mod-and-modpack.
 
 ## 2. Platform
 
-Recommendation (accepted, [ADR 0003](decisions/0003-platform-minecraft-1-21-1-neoforge.md)): NeoForge 1.21.1 (21.1.x), ModDevGradle 2, Java 21, Parchment mappings. NeoForge 21.1.259 was released on 2026-10-10.
+**Current platform** (accepted, [ADR 0026](decisions/0026-platform-minecraft-26-1-2-neoforge.md), superseding [ADR 0003](decisions/0003-platform-minecraft-1-21-1-neoforge.md)): NeoForge 26.1.2 (26.1.2.116), ModDevGradle 2, Java 25, no Parchment (Minecraft is unobfuscated since 26.1). Matěj chose on 2026-10-12 to port before M1 gameplay code, from the research in the RLM-65 comment of that day (Modrinth, CurseForge, the NeoForge and FTB Mavens, the mods' Git branches):
+
+- No version newer than 1.21.1 has every mod. Of the 38 mods ADR 0013 chose, 26.1.2 has 32 (30 releases, 2 betas), 26.2 has 24, 26.3 has 23, 1.21.11 has 27.
+- 26.2 and 26.3 lack the FTB Quests stack (FTB targets only 26.1.2) and a third of the pack.
+- Every M1 task built on 1.21.1 would have raised the price of a port: the primers measure about 158,000 words of changes from 1.21.1 to 26.1, concentrated in GUI, rendering, GameTests and item models.
+
+The original recommendation, kept for its reasoning: NeoForge 1.21.1 (21.1.x), ModDevGradle 2, Java 21, Parchment mappings ([ADR 0003](decisions/0003-platform-minecraft-1-21-1-neoforge.md), 2026-10-11).
 
 **Community (Modrinth API queries, 2026-10-11):** NeoForge 1.21.1 has about 2,150 modpacks, over 30x more than NeoForge 26.1.2. In 2026 over 1,000 new modpacks were created on NeoForge 1.21.1, only 34 on 26.1.2. Fabric and Forge 1.20.1 have more packs but lack key mods from the owner's list.
 
@@ -89,12 +96,13 @@ Recommendation (accepted, [ADR 0003](decisions/0003-platform-minecraft-1-21-1-ne
 
 | Platform | Missing | Verdict |
 | --- | --- | --- |
-| NeoForge 1.21.1 | EMI Trades, YDM's MobHealthBar, No Recipe Book, Toast Remover, Damage Numbers. All small UI: some replaced by existing mods (Neat, Toast Control), the rest we build | recommended |
+| NeoForge 26.1.2 | MineColonies (with its libraries), EMI, EMI Loot, EMI Ores, HT's TreeChop, Quark; Regions Unexplored and FTB Teams only as betas (2026-10-12) | **chosen 2026-10-12** ([ADR 0026](decisions/0026-platform-minecraft-26-1-2-neoforge.md)) |
+| NeoForge 26.2 and 26.3 | as 26.1.2, plus the FTB Quests stack, Regions Unexplored, JEED, JadeAddons, Toast Control, ModernFix; Neat only a beta on 26.2, JEI only a beta on 26.3 | no: no FTB Quests |
+| NeoForge 1.21.1 | EMI Trades, YDM's MobHealthBar, No Recipe Book, Toast Remover, Damage Numbers. All small UI: some replaced by existing mods (Neat, Toast Control), the rest we build | recommended on 2026-10-11, superseded |
 | Forge 1.20.1 | Iris and Sodium only as unofficial forks (Oculus, Embeddium); also no Damage Numbers, No Recipe Book, Toast Remover. Older APIs: NBT on items, LazyOptional, SimpleChannel | no |
-| NeoForge 26.1.2 to 26.3 | MineColonies, EMI and its addons, Quark, TreeChop; on 26.2 and 26.3 also Regions Unexplored, JEED, JadeAddons. NeoForge for 26.3 is still beta | not yet |
 | Fabric 1.21.1 | MineColonies, Sophisticated Storage and Backpacks, Curios, Quark | no |
 
-**Why 1.21.1:**
+**Why 1.21.1 was chosen first** (2026-10-11):
 
 - Community size (above).
 - Modern APIs that fit an RPG (vs 1.20.1):
@@ -104,11 +112,11 @@ Recommendation (accepted, [ADR 0003](decisions/0003-platform-minecraft-1-21-1-ne
   - attribute tooltip API, upstreamed from Apothic Attributes into NeoForge 21.1.60 (NeoForge PR #1551).
 - AI knows it well. The 26.x APIs (March to September 2026) are missing or weakly represented in model training data.
 
-**Cost: a later port is expensive.** The NeoForge porting primers from 1.21.1 to 26.1 total roughly 160,000 words of changes (rough measurement), mostly entity rendering, item models and GUI. Candidate for the next "stable" version: 26.1.2 (ATM11, still alpha, and FTB Evolution 2 build on it). Re-evaluate a port in 2027 at the earliest.
+**Cost: a later port is expensive.** The NeoForge porting primers from 1.21.1 to 26.1 total roughly 160,000 words of changes (rough measurement), mostly entity rendering, item models and GUI. That cost, growing with every M1 task, is what moved the port forward to 2026-10-12 (above).
 
 **Mitigation:** keep rendering and GUI code in a few isolated packages; keep content in data. YAML content ports cheaply (only the JSON generators change); rendering ports expensively.
 
-**What we give up:** since 26.1 Minecraft ships without obfuscation. On 1.21.1, Mojang mappings plus Parchment keep the sources readable anyway.
+**What 26.1.2 brings:** Minecraft without obfuscation (official names in the sources, no Parchment), Better Combat 3 on the maintained Player Animation Library, No Recipe Book, a release render stack, data-driven villager trades. **What it costs:** a smaller community (66 NeoForge modpacks on Modrinth for 26.1.2 against 2,152 for 1.21.1), weaker AI knowledge of its APIs, and the mods above.
 
 ## 3. Take as-is vs build
 
@@ -116,15 +124,15 @@ Recommendation (accepted, [ADR 0004](decisions/0004-build-rpg-systems-in-house.m
 
 ### Take as-is
 
-All have NeoForge 1.21.1 builds. The pack only references them, nothing is forked, so ARR licenses do not matter. Current pack composition: [ADR 0013](decisions/0013-modpack-composition.md).
+All have NeoForge 26.1.2 builds. The pack only references them, nothing is forked, so ARR licenses do not matter. Current pack composition: [ADR 0013](decisions/0013-modpack-composition.md).
 
 | Area | Mods | Note |
 | --- | --- | --- |
-| QoL and UI | Jade (+ JadeAddons), JEI + EMI (+ EMI Loot, EMI Ores), JEED, Enchantment Descriptions, Mouse Tweaks, AppleSkin, Overflowing Bars, TrashSlot, Just Zoom | EMI also uses JEI plugins |
+| QoL and UI | Jade (+ JadeAddons), JEI, JEED, Enchantment Descriptions, Mouse Tweaks, AppleSkin, Overflowing Bars, TrashSlot, Just Zoom, Neat, Toast Control, No Recipe Book | EMI (+ EMI Loot, EMI Ores) has no build after 1.21.1; loot and ore information goes into our in-game guide (RLM-116) |
 | Map and travel | Xaero's Minimap + World Map, Waystones | Xaero monetizes only via CurseForge and Modrinth; outside them (GitHub Release) link to his page |
 | Storage | Sophisticated Storage + Backpacks, Tom's Simple Storage | |
-| World | Regions Unexplored, TreeChop, Quark (optional) | |
-| Big mods unchanged | Better Combat, MineColonies, Distant Horizons, Iris | MineColonies is CurseForge-only |
+| World | Regions Unexplored (beta on 26.1.2), Tree Harvester | Tree Harvester replaces TreeChop, which stayed on 1.21.1; Quark was dropped |
+| Big mods unchanged | Better Combat, Distant Horizons, Iris; MineColonies paused | MineColonies (CurseForge-only) has no 26.1.2 build yet; RLM-125 adds it back |
 | Performance | Sodium, Lithium, FerriteCore, ModernFix, ImmediatelyFast, EntityCulling, spark (profiler) | Embeddium is replaced by official Sodium |
 
 ### Libraries we build on
@@ -156,7 +164,7 @@ All have NeoForge 1.21.1 builds. The pack only references them, nothing is forke
 | Dimensions and dungeons | AoA 1.12, Hytale, Trial Chambers | section 9 |
 | Villages, villagers, trades | Cisco's Medieval RPG | repeatable trade quests, later contracts (section 9) |
 | Structure locator | Explorer's Compass | none of its code (CC BY-NC-SA) |
-| Small UI | EMI Trades, Lightweight Inventory Sorting, YDM's MobHealthBar, Damage Numbers, Toast Remover, No Recipe Book | missing on 1.21.1 or Fabric-only. **Superseded in part:** Neat and Toast Control (temporary) cover two of them, see [overrides](#owner-overrides) |
+| Small UI | EMI Trades, Lightweight Inventory Sorting, Damage Numbers | missing on NeoForge or Fabric-only. **Superseded in part:** Neat and Toast Control cover YDM's MobHealthBar and Toast Remover by Matěj's choice, and No Recipe Book is in the pack since 26.1.2, see [overrides](#owner-overrides) |
 | Default world rules, Dark Vision toggle, Nether and End removed ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)) | Otherworld (Dark Vision) | notes below |
 | QA and debug mod | Dummmmmmy | section 6 |
 
@@ -177,9 +185,9 @@ Chosen on 2026-10-12 ([ADR 0025](decisions/0025-remove-the-nether-and-end.md), w
 
 ### Risks
 
-- **Iris and Sodium:** stable Iris 1.8.12 works only with Sodium 0.6.13; Sodium 0.8.x needs Iris 1.8.14-beta.1. The pack pins a compatible pair; the nightly client test watches it. A dedicated server loads neither Iris nor Sodium.
-- **Better Combat** on 1.21.1 depends on playerAnimator, which is no longer developed. Its successor [Player Animation Library](https://github.com/ZigyTheBird/PlayerAnimationLibrary) is used by Better Combat only from 1.21.11. Our spell-casting animations must coexist with it: spike 4 showed they do, on a playerAnimator layer above Better Combat's, and that its swings can be blocked during a cast without a compile-time dependency ([ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)).
-- **CurseForge-only:** MineColonies (with Structurize, BlockUI, Domum Ornamentum) and FTB Quests (with FTB Library, FTB Teams). A Modrinth pack (`.mrpack`) may download only from Modrinth, GitHub and GitLab.
+- **Iris and Sodium:** the pack pins Sodium 0.9.2, Iris 1.11.4 and Distant Horizons 3.3.3 together (on 1.21.1 stable Iris 1.8.12 worked only with Sodium 0.6.13); the client pack boot watches them. A dedicated server loads neither Iris nor Sodium.
+- **Better Combat** 3 on 26.1.2 depends on [Player Animation Library](https://github.com/ZigyTheBird/PlayerAnimationLibrary), which is maintained (on 1.21.1 it needed playerAnimator, which is not). Our spell-casting animations must coexist with it: spike 4 showed they do, on a layer above Better Combat's, and that its swings can be blocked during a cast without a compile-time dependency; the port repeated that check on PAL ([ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)).
+- **CurseForge-only:** FTB Quests (with FTB Library, FTB Teams), and MineColonies (with Structurize, BlockUI, Domum Ornamentum) once it returns. A Modrinth pack (`.mrpack`) may download only from Modrinth, GitHub and GitLab.
 - **Modrinth and AI:** since 2026-08-13 Modrinth does not publicly allow projects "primarily generated by AI" ([policy](https://support.modrinth.com/en/articles/16551575)). Hence GitHub and CurseForge (section 7).
 - **Spell Engine is GPL-3.0-only.** Not a problem for an open-source mod, but its code must not be copied into our files under a different license (the report said MIT; the same applies to our MPL-2.0 files). It stays an architectural inspiration only: it brings its own attributes and depends on Spell Power, playerAnimator and Curios.
 - **Project license:** the report proposed MIT for code and CC0 for assets. **Superseded** by [ADR 0009](decisions/0009-licensing.md).

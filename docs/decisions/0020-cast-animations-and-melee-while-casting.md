@@ -3,7 +3,9 @@
 Date: 2026-10-11
 
 Status: Accepted (settles spike 4, input for decision D4; keeps the Better Combat integration of
-[0014](0014-core-mod-architecture.md) free of compile-time dependencies)
+[0014](0014-core-mod-architecture.md) free of compile-time dependencies), amended 2026-10-12 by
+[0026](0026-platform-minecraft-26-1-2-neoforge.md): Player Animation Library replaces playerAnimator (see the
+amendment at the end)
 
 ## Context
 
@@ -97,3 +99,27 @@ of 2026-10-11:
 - playerAnimator gets no more fixes on 1.21.1. Its MIT license allows patching or vendoring it if a bug needs it.
 - Not covered by the spike: a second client watching the caster (the prototype sends the payload to tracking
   players and to players who start tracking mid-cast, as `CastStartedPayload` will), and shaders (Iris).
+
+## Amendment (2026-10-12, 26.1.2 port)
+
+With the port to Minecraft 26.1.2 ([0026](0026-platform-minecraft-26-1-2-neoforge.md), RLM-123) playerAnimator,
+which has no 26.x build, is replaced by **Player Animation Library** (PAL, MIT, 1.2.8), the library Better Combat 3
+(3.2.2) uses. Everything above that names playerAnimator now means PAL; the decisions stand:
+
+- Our cast layer stays at priority 3000, above Better Combat's attack layer (2000) and idle poses; PAL applies
+  layers from low to high priority as playerAnimator did. The `PlayerAnimationFactory`, `ModifierLayer` and
+  `replaceAnimationWithFade` calls keep their shape (packages `com.zigythebird.playeranim` and
+  `com.zigythebird.playeranimcore`); a keyframe animation now plays in a `PlayerAnimationController` that the layer
+  holds.
+- PAL loads the Emotecraft (playerAnimator) JSON format unchanged (`PlayerAnimatorLoader`), names an animation
+  `<namespace>:<its name field>`, and loops it the same way (from `returnTick - 1` once it reaches `endTick`, 17 ticks
+  for `cast_test`), so `cast_test.json` stays as it was. New animations may also use PAL's GeckoLib-style format.
+- The QA cast's camera-following arms (RLM-108) read and write PAL bones. PAL's own
+  `setFirstPersonFollowsCamera` is not used: it turns the model by the head's interpolated angles, which trail the
+  camera while it turns.
+- Better Combat 3.2.2 still copies the `bettercombat_disabled` tag into its combat flags (`CombatFlags`), so no melee
+  while casting works as before, without a compile-time dependency on Better Combat. The client import check bans
+  PAL's packages outside `client/`.
+- Checked on 2026-10-12 with the QA mod's cast screenshots (six views, four cameras), with and without Better
+  Combat, and `QaCastGameTests`.
+
