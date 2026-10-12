@@ -324,8 +324,11 @@ arrival: {y: [20, 90], pocket_radius: 3, floor: realmforge:slate_bricks}   # alw
 
 - **`realmforge:realm`, a new datapack registry** owned by `world`
   ([architecture 5.2](../architecture.md#52-our-datapack-registries)), synced to clients, because they need the
-  colour and the name. The Overworld is an entry too (`overworld`, no
-  sigil), which gives return portals their colour and gives a later realm map its root.
+  colour and the name. The Overworld is an entry too (`overworld`, no sigil), which gives return portals their colour
+  and gives a later realm map its root. The architecture lists only what is decided: the task that builds the
+  registry adds it to [architecture 5.2](../architecture.md#52-our-datapack-registries) and the content type to
+  [6.2](../architecture.md#62-what-each-content-type-becomes) in its own pull request (CLAUDE.md rule 11), once
+  Matěj has approved this spec (RLM-128).
 - **Package direction** ([architecture 4.4](../architecture.md#44-dependencies-between-features)): the realm entry
   names its sigil by id in vanilla's static item registry, resolved by vanilla's item codec, the way a worldgen file
   names its blocks. `world` uses no code and no registry of the `item` feature for it: a sigil is a plain generated
