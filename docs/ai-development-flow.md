@@ -596,19 +596,23 @@ A `qa1` or `qa2` for a local-only batch runs in a local session when the step it
 
 **A local-only step found after a cloud claim.** The classification happens before the claim, so a `cloud` run can
 still meet a local-only step afterwards: a host the cloud proxy refuses, or a "Done when" that turns out to need a
-Retro Diffusion texture. The run records on each ticket of the batch what it found and why, in a comment that
-states `Location: local-only` (like the scope and QA-mode comments of [Conflict domains](#conflict-domains)), and
-then either:
+Retro Diffusion texture. It records what it found and why in a comment that states `Location: local-only` (like
+the scope and QA-mode comments of [Conflict domains](#conflict-domains)), on the tickets the next step names, and
+either:
 
 - splits the local-only part into its own ticket ([Follow-up tickets](#follow-up-tickets), its description naming
-  the local-only step, blocked by the batch's tickets when it builds on their work) and finishes the rest of the
-  batch as usual; or
-- releases the batch when that part cannot be split off: a claim-release comment naming the branch on each ticket,
-  and the tickets back to Next. The branch stays on `origin`. A `local` run that selects the tickets again claims
-  them anew; continuing the released branch needs Matěj, as for a [stale claim](#atomic-intake-claim).
+  the local-only step, blocked by the batch's tickets when it builds on their work). The `Location: local-only`
+  comment goes on that split-off ticket only. Each ticket of the batch gets a plain note naming it instead and
+  stays cloud-capable, and the run finishes the batch as usual. The run lists the split-off ticket under "Blocked
+  or other"; or
+- releases the batch when that part cannot be split off. Then every ticket of the batch gets the
+  `Location: local-only` comment and a claim-release comment naming the branch, and goes back to Next. The branch
+  stays on `origin`. A `local` run that selects the tickets again claims them anew; continuing the released branch
+  needs Matěj, as for a [stale claim](#atomic-intake-claim). The run lists the released batch under "Blocked or
+  other".
 
-Either way the run lists the batch under "Blocked or other". The `Location: local-only` comment is the tickets'
-classification from then on, so no later `cloud` run selects them.
+A `Location: local-only` comment is its ticket's classification from then on, so no later `cloud` run selects
+that ticket.
 
 ## Intake and conflict control
 
