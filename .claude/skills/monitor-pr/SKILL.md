@@ -53,9 +53,12 @@ weakens a test or check.
   summary); on PRs #1 and #2 each review landed 5–7 minutes after the push, but none of PR #1's later pushes was
   reviewed. Its "Codex Review Summary" comment (`<!-- codex-pull-request-review-summary -->`)
   is a status comment, not a finding.
-- The label `needs-playtest` means the owner (Matěj) plays the change before it merges. The publishing session
-  adds it for gameplay, visual or balance changes (`gh pr edit <n> --add-label needs-playtest`); only Matěj
-  removes it.
+- The label `needs-playtest` means the head carries gameplay changes the owner (Matěj) has not played, and holds
+  the merge. A Jira playtest batch is played before its pull request opens: his `qa1` publishes it without the
+  label ([`docs/ai-development-flow.md`](../../../docs/ai-development-flow.md), "Playtest handoff"). The label
+  comes back only for a reconfirmation (check 6 of "Merge"). A gameplay pull request outside the flow gets it from
+  its publishing session (`gh pr edit <n> --add-label needs-playtest`). Only Matěj clears it: by removing it, or
+  by answering `qa1`, which removes it for him.
 - A plan change (any change to `docs/roadmap.md`) holds nothing: agents make one only as Matěj decided it
   ([ADR 0021](../../../docs/decisions/0021-status-overview-and-plan-changes.md)). The `needs-approval` label is
   retired; a pull request that still carries it from before is not held by it, and the run removes it ("Start"
@@ -128,7 +131,8 @@ Do this before the first wake, and again whenever the run resumes in a new sessi
    run `uv sync` in it. Fast-forward a clean branch that is strictly behind its remote. On uncommitted changes,
    or a local branch that is ahead of or diverged from the remote, change nothing and ask the user.
 3. **Confirm that the local head equals the remote head,** and record whether this session created the branch
-   (it decides rebase versus merge in step 2 and the cleanup after the merge).
+   (it decides rebase versus merge in step 2 and the cleanup after the merge). A playtest batch's branch and
+   worktree that this session took over with [`qa1`](../qa1/SKILL.md) count as its own.
 4. **Remove a leftover `needs-approval` label.** If the pull request's labels
    (`gh pr view <n> --repo matejkadlec/realmforge --json labels`) still include the retired `needs-approval`,
    remove it (`gh pr edit <n> --repo matejkadlec/realmforge --remove-label needs-approval`, or the REST form
@@ -357,16 +361,18 @@ expects: RLM's transitions are all global, so Jira refuses no stale move.
 - **After each push of this run** (a `fix-pr` pass, a thread fix, a check repair, a conflict resolution): one
   `🤖 Claude QA` comment per ticket with the commits and what they changed, the new head, and the checks that
   passed.
-- **Playtest passed:** once `needs-playtest` was removed after the current head's push (check 6 of "Merge"), move
-  the tickets in Pending User QA to Pending CR (transition `51`) with a comment naming the played head.
-- **Unplayed head again:** when check 6 re-adds `needs-playtest` because a push came after the playtest, move the
-  tickets in Pending CR back to Pending User QA (`41`) with a comment naming the new head and what changed since
-  the played one.
-- **Playtest failed:** when Matěj reports a problem from the playtest while the label is set (a message in this
-  session, or his thread or comment on the pull request, which this run watches), move the affected tickets to
-  In Progress (`31`), fix it on the branch with `fix-pr`'s verification and single-push delivery, then record the
-  revision on each ticket (what changed, the new head, a "What to test" limited to the revision) and move them
-  back to Pending User QA (`41`). The label stays until Matěj removes it.
+- **Reconfirmation:** when check 6 adds `needs-playtest` because commits after the played head change gameplay,
+  move the tickets in Pending CR back to Pending User QA (transition `41`) with a `🎮 Playtest handoff` limited to
+  that change (the new head, "What to test", the launch commands for this branch), and report in the manual-test
+  shape, asking for the answer (`qa1` or `qa2`) in this session, which keeps owning the pull request.
+- **Playtest passed again:** Matěj's `qa1` records it and moves the tickets itself (the [`qa1`](../qa1/SKILL.md)
+  skill). When he removes the label instead, record the `🎮 Playtest passed` for the current head on each ticket
+  and move the tickets from Pending User QA to Pending CR (`51`).
+- **Playtest failed:** his `qa2` with what is wrong, in this session or any later one, follows the
+  [`qa2`](../qa2/SKILL.md) skill on this branch: the tickets go to In Progress (`31`), the fix is pushed once to
+  the pull request, and they return to Pending User QA (`41`) with the revision recorded. The label stays. This
+  run reads no top-level pull request comments, so the reconfirmation handoff asks for `qa1` or `qa2`, not a
+  comment.
 - **After the merge:** move every ticket to Done (`71`) with one comment: the pull request, the merge commit and
   the checks it passed. When the merged pull request reverts an earlier one, return that one's tickets to To Do
   (`11`) in the active sprint, with a comment naming the revert and the failure.
@@ -389,13 +395,18 @@ Check all of these on one fresh reading, in order:
 4. A fresh listing shows every review thread resolved. An open thread sends the run back to step 3 or 4.
 5. No human review requests changes.
 6. No `needs-playtest` label is set, no badge-labelled Codex finding outside a thread is waiting for the user
-   (step 3), and nothing else the user asked to hold for their own judgment is pending. If the pull request ever
-   carried the label, its latest removal (the last `unlabeled` event for `needs-playtest` in
-   `gh api --paginate repos/matejkadlec/realmforge/issues/<n>/events`) must be later than the current head's
-   push time. A head pushed after the playtest was never played: re-add the label
-   (`gh pr edit <n> --repo matejkadlec/realmforge --add-label needs-playtest`).
-   While the label is set, go to "User needed": ask Matěj to playtest the head (for example with
-   `./gradlew runClient`, or `./gradlew :mod:installToPrism` and the Prism instance) and remove the label.
+   (step 3), and nothing else the user asked to hold for their own judgment is pending. When Matěj played the
+   pull request's changes, find the **played head**, the latest of: the published head the latest
+   `🎮 Playtest passed` comment on its tickets names (from `qa1`); the published head in the description's
+   `Playtest passed: played <sha>, published <sha>` line (`qa1` writes it, so it survives a failed Jira write);
+   the head at the label's latest removal (the last `unlabeled` event for `needs-playtest` in
+   `gh api --paginate repos/matejkadlec/realmforge/issues/<n>/events`). When the commits this
+   pull request added after the played head (not changes that came in with `master`) change gameplay, as the
+   flow's "QA classification" defines it, the current head was never played: add the label (the REST form
+   above), and move the tickets back under "Jira tickets" ("Reconfirmation"). Commits that change nothing a player
+   sees (docs, tests, a refactor its tests cover, a merge of `master` whose conflict resolutions touch nothing a
+   player sees) need no new playtest. While the label is set, go to "User needed": ask Matěj to playtest the head
+   with the launch commands for its branch and answer `qa1` (or remove the label) or `qa2` with what is wrong.
    A change to `docs/roadmap.md` is no hold
    ([ADR 0021](../../../docs/decisions/0021-status-overview-and-plan-changes.md)), and neither is a leftover
    `needs-approval` label: remove it as in "Start" step 4.
@@ -426,9 +437,10 @@ gh api -X PUT repos/matejkadlec/realmforge/pulls/<n>/merge -f merge_method=merge
 
 1. Read the merge commit back from GitHub (`gh pr view <n> --repo matejkadlec/realmforge --json
    mergeCommit,state`) and move the tickets to Done under "Jira tickets". Remove the worktree and local branch
-   this session created (`git fetch --prune origin`, `git worktree remove <path>` without `--force` over
-   uncommitted changes, `git branch -d <branch>`, `git worktree prune`). GitHub's `deleteBranchOnMerge` setting
-   decides the remote branch; if the remote branch still exists, say so in the report and do not delete it.
+   this session created or took over with `qa1` (`git fetch --prune origin`, `git worktree remove <path>` without
+   `--force` over uncommitted changes, `git branch -d <branch>`, `git worktree prune`). GitHub's
+   `deleteBranchOnMerge` setting decides the remote branch; if the remote branch still exists, say so in the
+   report and do not delete it.
 2. **Follow CI on `master`** (`.github/workflows/ci.yml` runs on push to `master`; nothing deploys) to the end.
    Keep one check-in armed about 5 minutes ahead.
    - **Success** for the merge commit, or for a later commit that contains it: done.
@@ -449,7 +461,7 @@ gh api -X PUT repos/matejkadlec/realmforge/pulls/<n>/merge -f merge_method=merge
 - **Merged by someone else:** run "After the merge" in full, then report and stop.
 - **Closed unmerged:** report, change nothing, and stop.
 - **User needed:** a secret, a provider console, a repository setting, the runners, a product decision, a
-  Blocked thread, or the `needs-playtest` label blocks the next step. Use the
+  Blocked thread, or the `needs-playtest` label (a reconfirmation) blocks the next step. Use the
   `**Your assistance is needed:**` form. Keep watching with one check-in about an hour apart, and continue as
   soon as the user answers or the blocking signal changes.
 - **The user says stop:** cancel the waiting and the subscription, and report where the pull request stands.
@@ -460,8 +472,8 @@ gh api -X PUT repos/matejkadlec/realmforge/pulls/<n>/merge -f merge_method=merge
 
 At each merge or stop, report as the status overview from `CLAUDE.md`: this pull request under "Merged into
 master" (**What**, **Review**, **Checks**, **Jira**), or under "Pending CR" or "Pending User QA" with the step the
-run stopped at; while it waits for a playtest, in the manual-test shape with _What to test_ and the launch
-commands. The details below go into those bullets:
+run stopped at; while it waits for a reconfirmation, in the manual-test shape with _What to test_ and the
+launch commands, closing with how Matěj answers (`qa1` or `qa2`). The details below go into those bullets:
 
 - the pull request number and URL;
 - the head SHA (merged or current);

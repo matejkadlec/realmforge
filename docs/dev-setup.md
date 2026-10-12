@@ -102,7 +102,9 @@ git switch <branch>
 
 For a later revision of the same branch, `git pull --ff-only` updates it, or after a rebase `git fetch origin`
 followed by `git reset --keep origin/<branch>`, which refuses to discard local edits. When you are done,
-`.\gradlew.bat --stop` stops the Gradle daemon and frees its memory.
+`.\gradlew.bat --stop` stops the Gradle daemon and frees its memory. Then answer in any Claude Code session:
+`qa1` when the playtest passed (the batch gets its pull request), or `qa2` with what is wrong (the agent revises
+the same branch; [AI development flow](ai-development-flow.md#playtest-handoff)).
 
 ### 3.3 In WSL (quick checks)
 

@@ -5,7 +5,8 @@ Date: 2026-10-11
 Status: Accepted (extends the agent workflow of [0011](0011-repository-layout-and-workflow.md) and builds on
 [0015](0015-merging-through-monitor-pr.md); plan-change rule amended by
 [0017](0017-jira-as-the-source-of-task-status.md) and [0021](0021-status-overview-and-plan-changes.md), handoff
-and batch ledger by [0021](0021-status-overview-and-plan-changes.md))
+and batch ledger by [0021](0021-status-overview-and-plan-changes.md), playtest step by
+[0022](0022-playtest-before-the-pull-request.md))
 
 ## Context
 
