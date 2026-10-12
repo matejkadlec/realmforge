@@ -50,6 +50,11 @@ public final class QaCastAnimationClient {
         NeoForge.EVENT_BUS.addListener(QaCastAnimationClient::onInteractionKey);
         NeoForge.EVENT_BUS.addListener(QaCastAnimationClient::onLoggingOut);
         QaCastAnimation.installClientHandler(QaCastAnimationClient::handle);
+        QaCastShots.registerIfRequested();
+    }
+
+    static boolean isLocalPlayerCasting() {
+        return localPlayerCasting;
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {
