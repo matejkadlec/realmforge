@@ -814,8 +814,12 @@ for the caster and every tracking player, with the third-person model's arms in 
   gets levels keeps the level it holds after the copy (the old mob's, or the fallback's when the old mob had none),
   gets its scaling reapplied from it (as for a mob loaded from disk, keeping its health fraction), and is synced
   with `syncData`; one of a kind that does not (a zombie villager cured into a villager) loses the level through
-  `removeData`, which syncs. Lightning conversions (`Pig#thunderHit`, `Villager#thunderHit`) post the event before
-  they add the new mob, so the listener finds no level there and leaves the mob to the join fallback. W1's GameTests convert a leveled mob (a piglin
+  `removeData`, which syncs. The two lightning conversions differ. `Pig#thunderHit` posts the event before it adds
+  the zombified piglin, so the listener finds no level there and leaves the mob to the join fallback.
+  `Villager#thunderHit` calls `finalizeSpawn` on the witch first, and NeoForge's method-redirector coremod (its
+  `finalize_spawn_targets.json` lists `Villager`) turns that call into `EventHooks.finalizeMobSpawn`: so
+  `FinalizeSpawnEvent` levels and scales the witch before the conversion event, the listener keeps that level
+  through its normal path, and the join fallback never runs for it. W1's GameTests convert a leveled mob (a piglin
   summoned outside the Nether with `TimeInOverworld` 300 zombifies on its next tick) and check that its level and
   scaled maximum health belong together.
 - **Saved mobs follow changed curves:** when a mob loads from disk (`EntityJoinLevelEvent` with `loadedFromDisk`),
@@ -973,7 +977,8 @@ and `dungeon/instance/`.
   lets an item with the `can_break` or `can_place_on` component (`DataComponents.CAN_BREAK`, `CAN_PLACE_ON`) edit
   matching blocks, and commands, data packs or other mods can hand out such items, so block breaks
   (`BlockEvent.BreakEvent`) and placements (`BlockEvent.EntityPlaceEvent`) by players who are not in creative mode
-  are cancelled there too. Buckets get past both events: `BucketItem#use` (`MobBucketItem` included) checks only
+  are cancelled there too. Buckets get past both events: `BucketItem#use` (`MobBucketItem` included) checks
+  `Level#mayInteract` (spawn protection, which covers only the Overworld, and the world border) and
   `Player#mayUseItemAt`, which a matching `can_place_on` passes, then places or picks up the fluid with
   `Level#setBlock` and posts no block event, and `CommonHooks.onPlaceItemIntoWorld` captures no block snapshots for
   a `BucketItem`. So `PlayerInteractEvent.RightClickItem` is cancelled for a `BucketItem` used by a player who is
