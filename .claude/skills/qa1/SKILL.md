@@ -21,11 +21,12 @@ publishing; this skill may not weaken either. _qa1: playtest passed_ there holds
    Anything after the handed-off head that changes gameplay (his edits, his pushed commits) was played only if he
    says so in his `qa1`; otherwise it goes back to him for another playtest, as `qa2` does, instead of being
    published.
-3. **Finish:** run the checks for anything that changed since the played head and commit the coherent batch.
-   When `origin/master` moved (for a stacked batch: its dependency branch), rebase onto it, regenerate generated
-   files with `uv run rf gen`, and run the full gate (_Implementation and verification_, Gradle through the
-   _Gradle queue_). A rebase whose conflicts touched game code changes what Matěj played: push it and hand it back
-   for another playtest, as `qa2` does, instead of publishing.
+3. **Finish:** commit the coherent batch. When `origin/master` moved (for a stacked batch: its dependency
+   branch), rebase onto it and regenerate generated files with `uv run rf gen`. Whenever the head differs from the
+   handed-off head the gate last passed on (his commits or edits, a rebase), run the full gate again
+   (_Implementation and verification_, Gradle through the _Gradle queue_). A rebase whose conflicts touched game
+   code changes what Matěj played: push it and hand it back for another playtest, as `qa2` does, instead of
+   publishing.
 4. **Publish** under _Publication_: push (leased as in step 2), open one ready pull request to `master` (a
    stacked batch: to its dependency branch, until that merges) without `needs-playtest`, and read the remote head
    back: it must be your final commit. The description carries the line
