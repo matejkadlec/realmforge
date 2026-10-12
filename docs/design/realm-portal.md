@@ -106,8 +106,9 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
     of each realm's main-path boss (for the realm after chapter 2: the desert's and the tundra's), so finishing one
     branch never opens the next realm. Both realms are needed for further progress
     ([realm design](realms.md#the-desert-realm));
-  - **an optional side realm's sigil** comes from wherever its design puts it: a dungeon chest at 100% or a trade,
-    never a random drop (PR-15).
+  - **an optional side realm's sigil** comes from wherever its design puts it: a chest at 100% in an instanced
+    dungeon, which is rebuilt for every run, or a trade that restocks; never a random drop, and never a chest found
+    only once (PR-15).
 - **Nothing depends on luck, and every sigil can be replaced:** each source is a quest reward, a guaranteed drop or
   a recipe. The Stone Sigil has its repeatable quest; every later sigil is crafted again from a boss the player can
   always replay, since an NPC sells the keys of dungeons already done (LE-2). A lost sigil never locks the realm
