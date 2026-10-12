@@ -14,11 +14,11 @@ description = '''
 Development-only QA tools and GameTests for Realmforge. Not for players.
 '''
 
-# The test cast animation of /qa cast (spike 4, ADR 0020) uses playerAnimator's API on the client.
+# The test cast animation of /qa cast (spike 4, ADR 0020) uses Player Animation Library's API on the client.
 [[dependencies.realmforge_qa]]
-modId = "playeranimator"
+modId = "player_animation_library"
 type = "required"
-versionRange = "[2,)"
+versionRange = "[1.2.8,)"
 ordering = "AFTER"
 side = "CLIENT"
 

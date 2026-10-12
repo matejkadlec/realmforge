@@ -1,21 +1,23 @@
 package io.github.matejkadlec.realmforge.qa.client.castanim;
 
-import dev.kosmx.playerAnim.api.IPlayable;
-import dev.kosmx.playerAnim.api.firstPerson.FirstPersonConfiguration;
-import dev.kosmx.playerAnim.api.firstPerson.FirstPersonMode;
-import dev.kosmx.playerAnim.api.layered.IAnimation;
-import dev.kosmx.playerAnim.api.layered.ModifierLayer;
-import dev.kosmx.playerAnim.api.layered.modifier.AbstractFadeModifier;
-import dev.kosmx.playerAnim.core.util.Ease;
-import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess;
-import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationFactory;
-import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationRegistry;
+import com.zigythebird.playeranim.animation.PlayerAnimResources;
+import com.zigythebird.playeranim.animation.PlayerAnimationController;
+import com.zigythebird.playeranim.api.PlayerAnimationAccess;
+import com.zigythebird.playeranim.api.PlayerAnimationFactory;
+import com.zigythebird.playeranimcore.animation.Animation;
+import com.zigythebird.playeranimcore.animation.layered.IAnimation;
+import com.zigythebird.playeranimcore.animation.layered.ModifierLayer;
+import com.zigythebird.playeranimcore.animation.layered.modifier.AbstractFadeModifier;
+import com.zigythebird.playeranimcore.api.firstPerson.FirstPersonConfiguration;
+import com.zigythebird.playeranimcore.api.firstPerson.FirstPersonMode;
+import com.zigythebird.playeranimcore.easing.EasingType;
+import com.zigythebird.playeranimcore.enums.PlayState;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.castanim.QaCastAnimation;
 import io.github.matejkadlec.realmforge.qa.castanim.QaCastPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
@@ -24,20 +26,23 @@ import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
- * Client side of the test cast (ADR 0020): one playerAnimator layer per player plays
+ * Client side of the test cast (ADR 0020): one Player Animation Library (PAL) layer per player plays
  * {@code assets/realmforge_qa/player_animations/cast_test.json} while the server says that player casts, its arms
  * aimed where the player looks ({@link QaCastAimAnimation}), and the local player's attack key does nothing during
  * their own cast.
  */
 public final class QaCastAnimationClient {
     /**
-     * Above Better Combat's attack layer (2000) and idle poses (1 to 4): playerAnimator applies layers from low to
-     * high priority, so the cast wins on every body part it animates and the rest shows through.
+     * Above Better Combat's attack layer (2000) and idle poses (1 to 4): PAL applies layers from low to high
+     * priority, so the cast wins on every body part it animates and the rest shows through.
      */
     private static final int LAYER_PRIORITY = 3000;
-    private static final ResourceLocation LAYER_ID = RealmforgeQa.id("cast");
-    /** playerAnimator names an animation by its file's namespace and its {@code name} field. */
-    private static final ResourceLocation ANIMATION_ID = RealmforgeQa.id("cast_test");
+    private static final Identifier LAYER_ID = RealmforgeQa.id("cast");
+    /**
+     * PAL names an animation by its file's namespace and its {@code name} field; it reads the playerAnimator format
+     * of {@code cast_test.json} as it is ({@code PlayerAnimatorLoader}).
+     */
+    private static final Identifier ANIMATION_ID = RealmforgeQa.id("cast_test");
     private static final int FADE_TICKS = 4;
 
     /** Whether the server said the local player casts. Trails the server by the ping. */
@@ -59,9 +64,9 @@ public final class QaCastAnimationClient {
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {
-        // Every client player gets a CastLayer in its animation stack when it is created.
+        // Every client player (every Avatar: mannequins too) gets a CastLayer in its animation stack when created.
         event.enqueueWork(() -> PlayerAnimationFactory.ANIMATION_DATA_FACTORY.registerFactory(
-                LAYER_ID, LAYER_PRIORITY, player -> new CastLayer()));
+                LAYER_ID, LAYER_PRIORITY, avatar -> new CastLayer()));
     }
 
     /**
@@ -91,9 +96,10 @@ public final class QaCastAnimationClient {
         if (player == minecraft.player) {
             localPlayerCasting = payload.isStart();
         }
-        if (PlayerAnimationAccess.getPlayerAssociatedData(player).get(LAYER_ID) instanceof CastLayer layer) {
+        if (PlayerAnimationAccess.getPlayerAnimationLayer(player, LAYER_ID) instanceof CastLayer layer) {
             IAnimation next = payload.isStart() ? createCastAnimation(player) : null;
-            layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(FADE_TICKS, Ease.INOUTSINE), next);
+            layer.replaceAnimationWithFade(
+                    AbstractFadeModifier.standardFadeIn(FADE_TICKS, EasingType.EASE_IN_OUT_SINE), next);
         }
     }
 
@@ -102,17 +108,21 @@ public final class QaCastAnimationClient {
      * load.
      */
     private static IAnimation createCastAnimation(AbstractClientPlayer player) {
-        IPlayable animation = PlayerAnimationRegistry.getAnimation(ANIMATION_ID);
+        Animation animation = PlayerAnimResources.getAnimation(ANIMATION_ID);
         if (animation == null) {
             RealmforgeQa.LOGGER.warn("Player animation {} is missing", ANIMATION_ID);
             return null;
         }
-        // In first person, draw both arms of the third-person model with the animation applied, as Better Combat
-        // does for its swings, instead of vanilla's first-person hand. The aim wraps the animation itself, not the
-        // layer, so the fade out of a cast still blends from the aimed pose.
-        return new QaCastAimAnimation(player, animation.playAnimation()
-                .setFirstPersonMode(FirstPersonMode.THIRD_PERSON_MODEL)
-                .setFirstPersonConfiguration(new FirstPersonConfiguration(true, true, true, true)));
+        // A controller of its own plays the animation: triggered, it loops as the file says, whatever the state
+        // handler (which picks nothing) returns. In first person, draw both arms of the third-person model with the
+        // animation applied, as Better Combat does for its swings, instead of vanilla's first-person hand. The aim
+        // wraps the controller, not the layer, so the fade out of a cast still blends from the aimed pose.
+        PlayerAnimationController controller =
+                new PlayerAnimationController(player, (self, state, setter) -> PlayState.STOP);
+        controller.setFirstPersonMode(FirstPersonMode.THIRD_PERSON_MODEL)
+                .setFirstPersonConfiguration(new FirstPersonConfiguration(true, true, true, true));
+        controller.triggerAnimation(animation);
+        return new QaCastAimAnimation(player, controller);
     }
 
     /** Its own type, so a lookup in the player's animation data needs no unchecked cast. */

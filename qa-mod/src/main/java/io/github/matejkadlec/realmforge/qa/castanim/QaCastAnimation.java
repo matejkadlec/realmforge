@@ -47,7 +47,7 @@ public final class QaCastAnimation {
 
     private static void registerCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("qa")
-                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(Commands.literal("cast")
                         .then(Commands.literal("stop").executes(context -> {
                             QaCasts.stop(context.getSource().getPlayerOrException());

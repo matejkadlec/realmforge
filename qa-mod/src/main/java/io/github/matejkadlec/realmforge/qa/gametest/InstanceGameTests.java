@@ -6,13 +6,12 @@ import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
 import io.github.matejkadlec.realmforge.dungeon.instance.Plot;
 import io.github.matejkadlec.realmforge.dungeon.instance.PlotState;
-import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.instance.InstanceBench;
 import io.github.matejkadlec.realmforge.qa.instance.SpikeLayouts;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
-import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -25,27 +24,22 @@ import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.levelgen.FlatLevelSource;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
  * Spike 3: instanced dungeons in plots of {@code realmforge:instances}. A plot is built from the spike rooms,
  * entered, left and cleared; a player who reconnects stays in a live run and is sent back from a gone one.
  *
  * <p>The GameTest world has the dimension only through {@code GameTestServerMixin}. Coordinates in the test
- * structure are relative to the structure block: the stone floor is at y = 1.
+ * structure are relative to the template's corner: the stone floor is at y = 0.
  */
-@GameTestHolder(RealmforgeQa.MOD_ID)
-@PrefixGameTestTemplate(false)
 public final class InstanceGameTests {
-    private static final String PLATFORM = "platform_5x5";
     /** Building and clearing take a few dozen ticks; this leaves room for a slow CI machine. */
     private static final int TIMEOUT = 600;
 
     private InstanceGameTests() {
     }
 
-    @GameTest(template = PLATFORM)
+    @QaGameTest
     public static void instanceDimensionIsAFixedTimeVoid(GameTestHelper helper) {
         ServerLevel instances = InstanceDimension.level(helper.getLevel().getServer());
         helper.assertTrue(instances != null, "the GameTest world has no realmforge:instances dimension");
@@ -58,14 +52,14 @@ public final class InstanceGameTests {
     }
 
     /** Done when of spike 3: a GameTest builds, enters and frees an instance. */
-    @GameTest(template = PLATFORM, timeoutTicks = TIMEOUT)
+    @QaGameTest(timeoutTicks = TIMEOUT)
     public static void instanceIsBuiltEnteredLeftAndCleared(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         InstanceManager manager = manager(helper);
         ServerLevel instances = InstanceDimension.level(server);
         ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-instance"));
-        Vec3 start = helper.absoluteVec(new Vec3(2.5, 2, 2.5));
-        player.teleportTo(helper.getLevel(), start.x, start.y, start.z, 0.0F, 0.0F);
+        Vec3 start = helper.absoluteVec(new Vec3(2.5, 1, 2.5));
+        player.teleportTo(helper.getLevel(), start.x, start.y, start.z, Set.of(), 0.0F, 0.0F, true);
 
         Plot plot = manager.open(SpikeLayouts.spike(), List.of(player.getUUID()));
         BlockPos origin = plot.origin();
@@ -73,7 +67,7 @@ public final class InstanceGameTests {
         helper.assertFalse(plot.chunks().isEmpty(), "an open plot holds its chunks");
         for (long chunk : plot.chunks()) {
             helper.assertTrue(instances.hasChunk(ChunkPos.getX(chunk), ChunkPos.getZ(chunk)),
-                    "a held chunk is loaded: " + new ChunkPos(chunk));
+                    "a held chunk is loaded: " + ChunkPos.unpack(chunk));
         }
 
         helper.startSequence()
@@ -110,16 +104,16 @@ public final class InstanceGameTests {
     }
 
     /** A player who disconnects inside a run is still inside on reconnect, and is sent back once the run is gone. */
-    @GameTest(template = PLATFORM, timeoutTicks = TIMEOUT)
+    @QaGameTest(timeoutTicks = TIMEOUT)
     public static void reconnectKeepsALiveRunAndLeavesAGoneOne(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         InstanceManager manager = manager(helper);
         ServerLevel instances = InstanceDimension.level(server);
         GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-reconnect");
         ServerPlayer first = QaPlayers.login(server, profile);
-        Vec3 start = helper.absoluteVec(new Vec3(2.5, 2, 2.5));
-        first.teleportTo(helper.getLevel(), start.x, start.y, start.z, 0.0F, 0.0F);
-        Plot plot = manager.open(SpikeLayouts.spike(), List.of(profile.getId()));
+        Vec3 start = helper.absoluteVec(new Vec3(2.5, 1, 2.5));
+        first.teleportTo(helper.getLevel(), start.x, start.y, start.z, Set.of(), 0.0F, 0.0F, true);
+        Plot plot = manager.open(SpikeLayouts.spike(), List.of(profile.id()));
 
         helper.startSequence()
                 .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.ACTIVE, "plot is " + plot.state()))
@@ -127,7 +121,7 @@ public final class InstanceGameTests {
                     server.getPlayerList().remove(first);
                     ServerPlayer second = QaPlayers.login(server, profile);
                     helper.assertTrue(second.level() == instances, "a reconnecting player stays in a live run");
-                    helper.assertTrue(plot.state() == PlotState.ACTIVE && plot.party().contains(profile.getId()),
+                    helper.assertTrue(plot.state() == PlotState.ACTIVE && plot.party().contains(profile.id()),
                             "the run kept its member");
 
                     server.getPlayerList().remove(second);
@@ -146,19 +140,19 @@ public final class InstanceGameTests {
      * A player who disconnects while their plot is still being built never enters it; when they reconnect, the run
      * they never entered is released instead of waiting for them with its chunks held.
      */
-    @GameTest(template = PLATFORM, timeoutTicks = TIMEOUT)
+    @QaGameTest(timeoutTicks = TIMEOUT)
     public static void reconnectBeforeEnteringReleasesTheRun(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         InstanceManager manager = manager(helper);
         GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-early-leave");
         ServerPlayer first = QaPlayers.login(server, profile);
-        Plot plot = manager.open(SpikeLayouts.spike(), List.of(profile.getId()));
+        Plot plot = manager.open(SpikeLayouts.spike(), List.of(profile.id()));
         server.getPlayerList().remove(first);
 
         helper.startSequence()
                 .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.READY, "plot is " + plot.state()))
                 .thenExecute(() -> {
-                    helper.assertTrue(plot.party().contains(profile.getId()),
+                    helper.assertTrue(plot.party().contains(profile.id()),
                             "the built run still waits for its member");
                     ServerPlayer again = QaPlayers.login(server, profile);
                     helper.assertTrue(again.level() != InstanceDimension.level(server), "the player never entered");
@@ -171,7 +165,7 @@ public final class InstanceGameTests {
     }
 
     /** The bench's median takes the middle sample, or the mean of the two middle ones for an even count. */
-    @GameTest(template = PLATFORM)
+    @QaGameTest
     public static void benchMedianAveragesTheTwoMiddleSamples(GameTestHelper helper) {
         helper.assertValueEqual(InstanceBench.median(new long[] {1, 5, 100}), 5.0, "odd count");
         helper.assertValueEqual(InstanceBench.median(new long[] {1, 100}), 50.5, "even count");
@@ -180,7 +174,7 @@ public final class InstanceGameTests {
     }
 
     /** The bench samples no tick that started it: a console command's save and disk walk would count as idle time. */
-    @GameTest(template = PLATFORM)
+    @QaGameTest
     public static void benchSkipsTheTickThatStartedIt(GameTestHelper helper) {
         helper.assertFalse(InstanceBench.sampled(41, 41), "the tick that ran the command");
         helper.assertTrue(InstanceBench.sampled(42, 41), "the next tick");

@@ -17,7 +17,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * Server side of the test cast: who casts until when, and the melee block while they do (ADR 0020).
  *
  * <p>While a cast runs, the caster carries Better Combat's entity tag {@value #BETTER_COMBAT_DISABLED_TAG}. Better
- * Combat 2.4.0 copies it every server tick into a synced player flag: its client then starts no swing and cancels the
+ * Combat 3.2.2 copies it every server tick into a synced player flag: its client then starts no swing and cancels the
  * one in progress, and its server rejects attack requests. Without the tag, or without Better Combat, the attack key
  * falls through to vanilla, which the client blocks ({@code QaCastAnimationClient}) and {@link #onAttack} blocks on
  * the server. Entity tags are saved with the player, so {@value #MARKER_TAG} records that a cast, not an operator,
@@ -37,7 +37,7 @@ public final class QaCasts {
 
     /** Starts (or restarts) a cast of {@code ticks} ticks for {@code player}. */
     public static void start(ServerPlayer player, int ticks) {
-        CAST_ENDS.put(player, player.server.getTickCount() + (long) ticks);
+        CAST_ENDS.put(player, player.level().getServer().getTickCount() + (long) ticks);
         if (player.addTag(BETTER_COMBAT_DISABLED_TAG)) {
             player.addTag(MARKER_TAG);
         }
@@ -96,7 +96,7 @@ public final class QaCasts {
         if (event.getTarget() instanceof ServerPlayer caster && event.getEntity() instanceof ServerPlayer watcher) {
             Long endTick = CAST_ENDS.get(caster);
             if (endTick != null) {
-                int ticksLeft = (int) Math.max(1, endTick - caster.server.getTickCount());
+                int ticksLeft = (int) Math.max(1, endTick - caster.level().getServer().getTickCount());
                 PacketDistributor.sendToPlayer(watcher, new QaCastPayload(caster.getId(), ticksLeft));
             }
         }

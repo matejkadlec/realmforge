@@ -4,7 +4,6 @@ import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.character.CharacterAttachments;
 import io.github.matejkadlec.realmforge.character.CharacterData;
-import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.command.StateCommands;
 import io.github.matejkadlec.realmforge.spell.CombatState;
 import io.github.matejkadlec.realmforge.spell.SpellAttachments;
@@ -18,32 +17,31 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
-import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.entity.ConversionParams;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.monster.Drowned;
-import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.zombie.Drowned;
+import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.neoforged.neoforge.event.EventHooks;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
  * F3: the player state attachments (architecture 7) survive saving and loading, are copied on death without the
  * current cast, and the entity level also works on mobs. Players log in through {@link QaPlayers#login}, the mock
  * server player of {@code GameTestHelper#makeMockServerPlayerInLevel} with a chosen profile.
  */
-@GameTestHolder(RealmforgeQa.MOD_ID)
-@PrefixGameTestTemplate(false)
 public final class PlayerStateGameTests {
-    private static final String PLATFORM = "platform_5x5";
-    private static final ResourceLocation FIREBOLT = Realmforge.id("firebolt");
-    private static final ResourceLocation FROSTBOLT = Realmforge.id("frostbolt");
+    private static final Identifier FIREBOLT = Realmforge.id("firebolt");
+    private static final Identifier FROSTBOLT = Realmforge.id("frostbolt");
 
     private static final EntityLevel LEVEL = new EntityLevel(14);
     private static final CharacterData CHARACTER = new CharacterData(Optional.of(Realmforge.id("human")),
@@ -57,7 +55,7 @@ public final class PlayerStateGameTests {
     }
 
     /** Done when of F3: the attachments come back after the player logs out (saved) and in again (loaded). */
-    @GameTest(template = PLATFORM)
+    @QaGameTest
     public static void playerStateSurvivesSaveAndLoad(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-state-save");
@@ -72,7 +70,7 @@ public final class PlayerStateGameTests {
     }
 
     /** Done when of F3: a respawn after death copies every attachment, but not the cast the player died in. */
-    @GameTest(template = PLATFORM)
+    @QaGameTest
     public static void playerStateIsCopiedOnDeath(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         ServerPlayer dead = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-state-death"));
@@ -87,7 +85,7 @@ public final class PlayerStateGameTests {
     }
 
     /** A new player has none of the attachments yet and reads their defaults. */
-    @GameTest(template = PLATFORM)
+    @QaGameTest
     public static void newPlayerReadsTheDefaults(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-state-new"));
@@ -105,7 +103,7 @@ public final class PlayerStateGameTests {
     }
 
     /** {@code /qa state reset} removes every attachment, so the player reads the defaults again. */
-    @GameTest(template = PLATFORM)
+    @QaGameTest
     public static void stateResetRemovesEveryAttachment(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-state-reset"));
@@ -122,32 +120,36 @@ public final class PlayerStateGameTests {
     }
 
     /** The entity level lives on mobs too: saved with the mob and read as level 1 when nobody set it. */
-    @GameTest(template = PLATFORM)
+    @QaGameTest
     public static void mobLevelIsSavedWithTheMob(GameTestHelper helper) {
-        Zombie zombie = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, new BlockPos(2, 2, 2));
+        Zombie zombie = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, new BlockPos(2, 1, 2));
         helper.assertValueEqual(zombie.getData(StatsAttachments.LEVEL), EntityLevel.DEFAULT, "a mob without a level");
         zombie.setData(StatsAttachments.LEVEL, LEVEL);
 
-        CompoundTag saved = zombie.saveWithoutId(new CompoundTag());
-        Zombie loaded = EntityType.ZOMBIE.create(helper.getLevel());
+        ProblemReporter.Collector problems = new ProblemReporter.Collector();
+        TagValueOutput output = TagValueOutput.createWithContext(problems, helper.getLevel().registryAccess());
+        zombie.saveWithoutId(output);
+        CompoundTag saved = output.buildResult();
+        Zombie loaded = EntityType.ZOMBIE.create(helper.getLevel(), EntitySpawnReason.LOAD);
         helper.assertTrue(loaded != null, "a zombie can be created");
-        loaded.load(saved);
+        loaded.load(TagValueInput.create(problems, helper.getLevel().registryAccess(), saved));
+        helper.assertTrue(problems.isEmpty(), "problems saving or loading the zombie: " + problems.getReport());
         helper.assertValueEqual(loaded.getData(StatsAttachments.LEVEL), LEVEL, "the loaded zombie's level");
         helper.succeed();
     }
 
     /**
      * A converting mob keeps its level: NeoForge copies copy-on-death attachments on {@code LivingConversionEvent}.
-     * The conversion is the pair of calls vanilla's {@code Zombie#convertToZombieType} makes when a zombie drowns.
-     * W1 makes the converted mob's scaling follow the copied level.
+     * The conversion is the one vanilla's {@code Zombie#convertToZombieType} makes when a zombie drowns, without its
+     * attribute rolls. W1 makes the converted mob's scaling follow the copied level.
      */
-    @GameTest(template = PLATFORM)
+    @QaGameTest
     public static void convertedMobKeepsItsLevel(GameTestHelper helper) {
-        Zombie zombie = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, new BlockPos(2, 2, 2));
+        Zombie zombie = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, new BlockPos(2, 1, 2));
         zombie.setData(StatsAttachments.LEVEL, LEVEL);
-        Drowned drowned = zombie.convertTo(EntityType.DROWNED, true);
+        Drowned drowned = zombie.convertTo(EntityType.DROWNED, ConversionParams.single(zombie, true, true),
+                converted -> EventHooks.onLivingConvert(zombie, converted));
         helper.assertTrue(drowned != null, "the zombie converted");
-        EventHooks.onLivingConvert(zombie, drowned);
         helper.assertValueEqual(drowned.getData(StatsAttachments.LEVEL), LEVEL, "the drowned's level");
         helper.succeed();
     }
