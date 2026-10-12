@@ -88,9 +88,13 @@ request fails closed without `gh`: the branch or folder is kept.
   or a revision goes under the rewritten-branch rules or is offered by `--rewritten-prs`; one with uncommitted
   changes or commits that exist nowhere else is kept and reported.
 - A worktree is removed only when it is pristine or every change Git reports is already byte-identical to
-  `origin/master`. **The ignored files inside it are discarded with it**, which here includes `run/` (dev client
-  and server worlds) and `.local/`: move a world you built in a worktree elsewhere before running the cleanup.
-  Renames, copies, unmerged records, permission-bit differences, a staged change the working tree then modified
+  `origin/master`, and it holds no file under `run/` (dev client and server worlds, which may hold rooms built by
+  hand) or `.local/` (private inputs). Both are gitignored, so Git calls such a worktree clean: the cleanup checks
+  them itself, on every removal path (merged, rewritten, `--rewritten-prs`, `--closed-prs`) and again right before
+  the removal, keeps the worktree and its branch, and reports `Keeping run/ or .local/ files in the worktree of:`;
+  move or delete those files, then run it again. `run/gametest/`, which every GameTest run recreates, keeps
+  nothing. The other ignored files (build output, caches, `.venv/`) are discarded with the worktree. Renames,
+  copies, unmerged records, permission-bit differences, a staged change the working tree then modified
   or deleted, and any content not already in `origin/master` keep the checkout.
 - An orphaned folder directly inside a worktree home is removed only when it is recognized generated residue
   (only `.gradle/`, `build/`, `mod/build/`, `qa-mod/build/`, `.venv/`, `.pytest_cache/`, `.ruff_cache/`,

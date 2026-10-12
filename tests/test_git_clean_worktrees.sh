@@ -37,6 +37,10 @@ assert_output_contains() {
   grep -Fq -- "$2" <<< "$1" || fail "Expected cleanup output to contain: $2"
 }
 
+strip_colors() {
+  sed $'s/\x1b\\[[0-9;]*m//g'
+}
+
 assert_output_excludes() {
   if grep -Fq -- "$2" <<< "$1"; then
     fail "Expected cleanup output not to contain: $2"
@@ -688,6 +692,74 @@ test_closed_unmerged_worktree_matching_target_is_removed() {
   assert_output_excludes "$output" "changed after confirmation"
 }
 
+# run/ and .local/ are gitignored, so Git calls a worktree that holds a world or
+# a private input clean; the cleanup keeps it anyway, on the merged path and for
+# a --closed-prs candidate. Build output, GameTest output in run/gametest/ and
+# empty directories keep nothing.
+test_worktree_with_run_or_local_files_is_kept() {
+  local repo
+  local world_worktree
+  local private_worktree
+  local build_worktree
+  local closed_worktree
+  local closed_head
+  local output
+
+  repo="$(new_fixture local-files)"
+  printf '%s\n' 'run/' '.local/' 'build/' >> "$repo/.git/info/exclude"
+
+  create_merged_branch "$repo" merged-world
+  world_worktree="$TEST_ROOT/local-files/world"
+  git -C "$repo" worktree add "$world_worktree" merged-world >/dev/null
+  mkdir -p "$world_worktree/run/client/saves/Rooms"
+  printf 'world\n' > "$world_worktree/run/client/saves/Rooms/level.dat"
+
+  create_merged_branch "$repo" merged-private
+  private_worktree="$TEST_ROOT/local-files/private"
+  git -C "$repo" worktree add "$private_worktree" merged-private >/dev/null
+  mkdir -p "$private_worktree/.local"
+  printf 'private input\n' > "$private_worktree/.local/input.txt"
+
+  create_merged_branch "$repo" merged-build
+  build_worktree="$TEST_ROOT/local-files/build"
+  git -C "$repo" worktree add "$build_worktree" merged-build >/dev/null
+  mkdir -p "$build_worktree/build/classes" "$build_worktree/run/gametest/logs" "$build_worktree/run/client/saves"
+  printf 'class\n' > "$build_worktree/build/classes/Main.class"
+  printf 'log\n' > "$build_worktree/run/gametest/logs/latest.log"
+
+  create_unmerged_branch "$repo" closed-world "Closed world work"
+  closed_head="$(git -C "$repo" rev-parse closed-world)"
+  closed_worktree="$TEST_ROOT/local-files/closed"
+  git -C "$repo" worktree add "$closed_worktree" closed-world >/dev/null
+  mkdir -p "$closed_worktree/run/server/world" "$closed_worktree/build"
+  printf 'world\n' > "$closed_worktree/run/server/world/level.dat"
+  printf 'jar\n' > "$closed_worktree/build/mod.jar"
+
+  [[ -z "$(git -C "$world_worktree" status --porcelain)" ]] || fail "Expected the world worktree to read clean."
+
+  output="$("$repo/git_clean_worktrees.sh" 2>&1 | strip_colors)"
+  assert_branch_exists "$repo" merged-world
+  assert_path_exists "$world_worktree/run/client/saves/Rooms/level.dat"
+  assert_output_contains "$output" "Keeping run/ or .local/ files in the worktree of: merged-world"
+  assert_branch_exists "$repo" merged-private
+  assert_path_exists "$private_worktree/.local/input.txt"
+  assert_output_contains "$output" "Keeping run/ or .local/ files in the worktree of: merged-private"
+  assert_branch_missing "$repo" merged-build
+  assert_path_missing "$build_worktree"
+
+  output="$(run_closed_cleanup_output "$repo" closed "$closed_head" | strip_colors)"
+  assert_branch_exists "$repo" closed-world
+  assert_path_exists "$closed_worktree/run/server/world/level.dat"
+  assert_output_contains "$output" "Keeping run/ or .local/ files in the worktree of: closed-world"
+  assert_output_excludes "$output" "Removing closed PR worktree:"
+
+  # Once the world is moved away, only build output is left and the next run removes it.
+  rm -r "$closed_worktree/run/server/world"
+  output="$(run_closed_cleanup_output "$repo" closed "$closed_head" | strip_colors)"
+  assert_branch_missing "$repo" closed-world
+  assert_path_missing "$closed_worktree"
+}
+
 test_closed_unmerged_branch_requires_and_accepts_confirmation() {
   local repo
   local worktree
@@ -1291,6 +1363,7 @@ test_rewritten_branch_needs_merge_tree_merge_base
 test_closed_pr_worktree_follows_confirmation
 test_merged_branch_and_worktree_removal
 test_merged_worktree_matching_target_is_removed
+test_worktree_with_run_or_local_files_is_kept
 test_uninspectable_merged_worktree_is_reported_as_an_error
 test_worktree_path_with_trailing_newline_is_not_truncated
 test_generated_only_orphan_residue_cleanup_is_scoped

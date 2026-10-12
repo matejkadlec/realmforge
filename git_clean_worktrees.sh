@@ -31,7 +31,8 @@ Usage: ./git_clean_worktrees.sh [--closed-prs] [--rewritten-prs] [--yes]
 Without options, safely remove local branches and their removable attached
 worktrees that are already merged into origin/master. A worktree is removable
 when it is pristine, or when every change Git reports is already byte-identical
-to origin/master. This also removes fail-closed orphan worktree residue directly
+to origin/master, and it holds no file under run/ (worlds; GameTest output in
+run/gametest/ aside) or .local/, which Git ignores. This also removes fail-closed orphan worktree residue directly
 inside the two worktree homes: .claude/worktrees/ in the primary checkout
 (Claude Code session worktrees) and realmforge-worktrees/ beside it (flow
 worktrees).
@@ -449,7 +450,36 @@ worktree_is_disposable() {
     printf -v "$state_variable" '%s' 'unreadable'
   fi
 
+  if [[ "$comparison_status" -eq 0 ]] && worktree_holds_local_files "$worktree_path"; then
+    printf -v "$state_variable" '%s' 'local-files'
+    comparison_status=1
+  fi
+
   [[ "$comparison_status" -eq 0 ]]
+}
+
+# run/ (dev client and server worlds, which may hold rooms built by hand) and
+# .local/ (the owner's private inputs) are gitignored, so a worktree holding
+# them still reads clean, and `git worktree remove` would delete them without a
+# word. Any file there keeps the worktree, except in run/gametest/: the GameTest
+# server's output, which every `runGameTestServer` of the gate recreates. A scan
+# that fails could have missed a world, so it keeps the worktree too.
+worktree_holds_local_files() {
+  local worktree_path="$1"
+  local search_paths=()
+  local first_file
+
+  [[ -e "$worktree_path/run" || -L "$worktree_path/run" ]] && search_paths+=(run)
+  [[ -e "$worktree_path/.local" || -L "$worktree_path/.local" ]] && search_paths+=(.local)
+  [[ ${#search_paths[@]} -gt 0 ]] || return 1
+
+  # Relative paths keep -path free of whatever glob characters the worktree path holds.
+  if ! first_file="$(cd "$worktree_path" && find "${search_paths[@]}" -path run/gametest -prune \
+    -o ! -type d -print -quit 2>/dev/null)"; then
+    return 0
+  fi
+
+  [[ -n "$first_file" ]]
 }
 
 # Preserving a checkout that holds real work is the expected outcome, so only a
@@ -464,6 +494,11 @@ report_preserved_worktree() {
     return
   fi
 
+  if [[ "$worktree_state" == "local-files" ]]; then
+    echo -e "${YELLOW}Keeping run/ or .local/ files in the worktree of:${NC} $branch ($worktree_path); move them, then rerun"
+    return
+  fi
+
   print_error "Keeping $branch because its worktree could not be inspected: $worktree_path"
 }
 
@@ -471,12 +506,19 @@ report_preserved_worktree() {
 # Git, so removing it needs the explicit override. `--force` also skips the
 # validation `git worktree remove` performs for itself, so the disposability
 # check is repeated immediately before it, and the ignored files the removal
-# discards without ever comparing them are named first.
+# discards without ever comparing them are named first. Either removal deletes
+# ignored files, so run/ and .local/ are checked again right before it: a dev
+# client can save a world after the caller's check.
 remove_worktree_checkout() {
   local worktree_path="$1"
   local worktree_state="$2"
   local recheck_state=""
   local ignored_entries=""
+
+  if worktree_holds_local_files "$worktree_path"; then
+    print_error "Worktree gained run/ or .local/ files while it was being removed: $worktree_path"
+    return 1
+  fi
 
   if [[ "$worktree_state" != "dirty" ]]; then
     git worktree remove "$worktree_path"
@@ -492,7 +534,7 @@ remove_worktree_checkout() {
   if ignored_entries="$(git -C "$worktree_path" status --porcelain=v1 \
     --untracked-files=no --ignored=traditional 2>/dev/null)" \
     && grep -q '^!! ' <<< "$ignored_entries"; then
-    print_info "Also discarding ignored files that were never compared, such as run/ worlds or .local/ inputs: $worktree_path"
+    print_info "Also discarding ignored files that were never compared, such as build output, caches or run/gametest/: $worktree_path"
   fi
 
   git worktree remove --force "$worktree_path"
