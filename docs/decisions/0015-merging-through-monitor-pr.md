@@ -2,7 +2,8 @@
 
 Date: 2026-10-11
 
-Status: Accepted (amends the merge step of [0011](0011-repository-layout-and-workflow.md))
+Status: Accepted (amends the merge step of [0011](0011-repository-layout-and-workflow.md); the `needs-approval`
+hold added by [0016](0016-jira-batch-delivery.md) and [0017](0017-jira-as-the-source-of-task-status.md))
 
 ## Context
 

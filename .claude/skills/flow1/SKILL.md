@@ -39,10 +39,10 @@ for Matěj.
    commands that actually ran.
 8. **Replenish** Next and reassess active-sprint priority before handing off.
 9. **Publish** under _Publication_: push, open one ready pull request (`needs-playtest` for a playtest batch,
-   `needs-approval` for a plan change), tick off finished roadmap tasks, verify that the remote head is your final
-   commit, record the `🤖 Claude QA` summary (and the `🎮 Playtest handoff`) on each ticket, move the tickets to
-   Pending CR (AI-only) or Pending User QA (playtest), and hand off leading with _What to look at_, plus the
-   _Playtest commands_ for a playtest batch.
+   `needs-approval` for any change to `docs/roadmap.md`), verify that the remote head is your final commit, record
+   the `🤖 Claude QA` summary (and the `🎮 Playtest handoff`) on each ticket, move the tickets to Pending CR
+   (AI-only) or Pending User QA (playtest), and hand off leading with _What to look at_, plus the _Playtest
+   commands_ for a playtest batch. The roadmap holds no status, so a finished task changes only its ticket.
 10. **Monitor to the merge, always.** Do not end the turn at the handoff: in the same run, local or cloud, run
     [`monitor-pr`](../monitor-pr/SKILL.md) on that pull request until it merges or reaches one of its stops
     (_After publication_). A playtest batch waits there until Matěj removes `needs-playtest`; a failed playtest

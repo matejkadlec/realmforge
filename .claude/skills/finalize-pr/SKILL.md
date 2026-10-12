@@ -102,6 +102,9 @@ It never merges, deploys or requests a Codex review.
    - Reject a finding only with a concrete technical reason, and record it. Valid reasons: the claimed path
      does not exist, a guard already exists at a named location, no input reaches the path, or the finding is
      outside this pull request's scope.
+   - When [`monitor-pr`](../monitor-pr/SKILL.md) gives a review round count, each reviewer round here adds one.
+     From the pull request's fourth review round on, the "Late rounds" rule of [`fix-pr`](../fix-pr/SKILL.md)
+     applies: a P2 that names no concrete failure in normal use is rejected as churn, with that reason recorded.
    - A real but out-of-scope finding becomes an RLM Jira ticket under "Tracked" in "P3 disposition" (never a
      GitHub issue). Never dismiss it silently.
 

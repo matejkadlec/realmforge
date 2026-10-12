@@ -7,31 +7,40 @@
 
 - **Milestones are minor releases:** M1 ships as v0.1.0, M2 as v0.2.0, and so on (open decision D7). Only M1 is
   planned task by task; later milestones are outlines, detailed when the previous one ends.
+- **The plan lives here, the status in Jira** ([ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md)).
+  Every task, decision and backlog item names its ticket in the Jira space Realmforge (`RLM-<n>`, at
+  `https://envelopment.atlassian.net/browse/RLM-<n>`), and every milestone its epic. Whether a task waits, is in
+  progress or is done is its ticket's status; this file has no checkboxes. The "after" order below is mirrored as
+  "is blocked by" links. Tickets that serve the plan without changing it (follow-ups, the parts of a split task)
+  live only in Jira under their milestone epic, and so does work outside this plan (developer workflow and
+  tooling under RLM-1, the storyline under RLM-30).
 - **One task, or one coherent batch of tasks, per PR** ([ADR 0016](decisions/0016-jira-batch-delivery.md)).
-  Large tasks are split into several PRs. A task is done when its "done when" holds and the checks in CLAUDE.md
-  pass; tick it off (`[x]` plus the PR link) in the same PR.
-- **Agents** take the next unblocked task of the current milestone, spikes first, through the Jira tickets that
-  mirror this plan (`flow1`, [AI development flow](ai-development-flow.md)); the "after" order below is mirrored
-  as "is blocked by" links. A task waiting on an open decision ([below](#open-decisions)) is not started: the
-  agent lists it for Matěj.
-- **Changing the plan** is a PR to this file that waits for Matěj's approval: a hold under
-  [ADR 0015](decisions/0015-merging-through-monitor-pr.md) (the `needs-approval` label), so `monitor-pr` does not
-  merge it on its own. A change of direction also needs an ADR. Ticking off a finished task is not a plan change.
+  Large tasks are split into several PRs. A task is done when its "done when" holds, the checks in CLAUDE.md pass
+  and its PR has merged; `monitor-pr` then moves its ticket to Done.
+- **Agents** take the next unblocked task of the current milestone, spikes first, through its ticket in the
+  active sprint: `flow1`, `flow2`, or the intake claim of the [AI development flow](ai-development-flow.md) for
+  direct work, with the key in the branch name and the PR title. A task waiting on an open decision
+  ([below](#open-decisions)) is not started: the agent lists it for Matěj.
+- **Changing the plan** is a PR to this file, and every change to it is one. It carries the `needs-approval`
+  label and waits for Matěj's approval, a hold under [ADR 0015](decisions/0015-merging-through-monitor-pr.md) and
+  [ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md), so `monitor-pr` does not merge it on its own.
+  A new task gets its key here in the same PR; its ticket waits in the backlog, with a comment naming the PR,
+  until the PR merges, so no agent starts unapproved work. A change of direction also needs an ADR.
 - **Sizes** instead of dates: S fits one agent session, M takes one to three, L takes more and is split. Playtests,
   hand-built rooms and art review depend on Matěj's time, so calendar estimates would be guesses.
 
 ## Milestones
 
-| Milestone | Theme | Release | Status |
-| --- | --- | --- | --- |
-| [M0](#m0-bootstrap) | Bootstrap: build, CI, content pipeline, modpack | - | done |
-| [M1](#m1-vertical-slice-the-first-chapter) | Vertical slice: the first chapter | v0.1.0 | next |
-| [M2](#m2-gear-and-loot) | Gear and loot | v0.2.0 | outline |
-| [M3](#m3-classes-and-combat-depth) | Classes and combat depth | v0.3.0 | outline |
-| [M4](#m4-the-world-grows) | The world grows | v0.4.0 | outline |
-| [M5](#m5-professions-and-enchanting) | Professions and enchanting | v0.5.0 | outline |
-| [M6](#m6-companions-and-mounts) | Companions and mounts | v0.6.0 | outline |
-| [M7](#m7-contracts) | Contracts | v0.7.0 | outline |
+| Milestone | Epic | Theme | Release | Status |
+| --- | --- | --- | --- | --- |
+| [M0](#m0-bootstrap) | - | Bootstrap: build, CI, content pipeline, modpack | - | done |
+| [M1](#m1-vertical-slice-the-first-chapter) | RLM-6 | Vertical slice: the first chapter | v0.1.0 | next |
+| [M2](#m2-gear-and-loot) | RLM-7 | Gear and loot | v0.2.0 | outline |
+| [M3](#m3-classes-and-combat-depth) | RLM-8 | Classes and combat depth | v0.3.0 | outline |
+| [M4](#m4-the-world-grows) | RLM-9 | The world grows | v0.4.0 | outline |
+| [M5](#m5-professions-and-enchanting) | RLM-10 | Professions and enchanting | v0.5.0 | outline |
+| [M6](#m6-companions-and-mounts) | RLM-11 | Companions and mounts | v0.6.0 | outline |
+| [M7](#m7-contracts) | RLM-12 | Contracts | v0.7.0 | outline |
 
 The order follows dependencies and what makes the slice worth playing: loot gives dungeons a purpose (M2), new
 classes need a combat system with depth (M3), new dimensions need mobs, bosses and dungeon archetypes to fill them
@@ -82,7 +91,7 @@ and the release come last. "After" in a task names what must be merged first.
 The four spikes left from the research report. Each is time-boxed and ends in one small PR with a written answer,
 plus an ADR when it decides something. Prototype code stays only if it fits the architecture.
 
-- [x] **Spike 6: full pack boot test** ([PR #15](https://github.com/matejkadlec/realmforge/pull/15)) (S, first, because it protects every later PR). *Question:* does the whole
+- **Spike 6: full pack boot test** (RLM-13, S, first, because it protects every later PR). *Question:* does the whole
   pack (every server-side mod plus our jar) boot cleanly on a dedicated server, and does the full client (Iris,
   Sodium, Distant Horizons) load? *How:* a CI job builds our jar, installs the pack's server side with
   packwiz-installer, starts NeoForge 21.1.259 with its dedicated-server self test
@@ -92,7 +101,7 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   test (`NEOFORGE_CLIENT_SELFTEST`) under Xvfb is worth a try to automate that, otherwise the automated client test
   (mc-runtime-test) follows in M3. *Done when:* the `pack-boot` CI job is green on `master` and fails on a
   deliberately broken pack.
-- [ ] **Spike 3: instanced dungeon in a plot** (M). *Question:* can we build dungeons into plots of one instance
+- **Spike 3: instanced dungeon in a plot** (RLM-14, M). *Question:* can we build dungeons into plots of one instance
   dimension on 1.21.1 reliably and fast enough, and clean up afterwards? *How:* a void dimension
   `realmforge:instances`, a plot allocator in `SavedData`, the plot's chunks kept loaded by a NeoForge
   `TicketController`, three hand-made rooms placed by a minimal planner (start, corridor, end), teleport in and
@@ -101,14 +110,14 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   the middle of a run. *Done when:* a GameTest builds, enters and frees an
   instance, and the PR records the numbers and the chosen strategy (an ADR if it changes
   [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)). Settles D8 with Matěj. Blocks W4.
-- [x] **Spike 4: Better Combat and spell-casting animations** ([PR #19](https://github.com/matejkadlec/realmforge/pull/19)) (M). *Question:* can our casting animations play on
+- **Spike 4: Better Combat and spell-casting animations** (RLM-15, M). *Question:* can our casting animations play on
   the player while Better Combat (which animates attacks through playerAnimator) is installed, and do the inputs
   coexist? *How:* a dev run with Better Combat and playerAnimator; one test animation through playerAnimator's API
   (*verify* it) layered with Better Combat's; first and third person, dual wielding, a cast interrupted by an
   attack; and the core mod without Better Combat. *Done when:* an ADR picks the animation approach
   (playerAnimator as an optional or required dependency, or something else) and says whether swings are blocked
   while casting; input for D4. Blocks C3b and C6.
-- [ ] **Spike 5: textures, Retro Diffusion vs PixelLab** (M, needs Matěj). *Question:* which generator gives
+- **Spike 5: textures, Retro Diffusion vs PixelLab** (RLM-16, M, needs Matěj). *Question:* which generator gives
   better vanilla-style 16x16 textures for us, at what cost and effort? *How:* the same 10 textures in both (for
   example a sword, a staff, a potion, two spell icons, two tileable blocks, a gem, an armor icon and a mob
   texture) through their MCP servers, then palette cleanup (Pillow `quantize` or unfake) and a review gallery
@@ -118,28 +127,29 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
 
 ### Phase 1: foundations
 
-- [x] **F1 Feature skeleton** ([PR #15](https://github.com/matejkadlec/realmforge/pull/15)) (S, after spike 6). Packages from [architecture 4.2](architecture.md#42-packages-of-the-core-mod)
-  with empty `<Name>Feature` classes wired in `Realmforge`; `client/RealmforgeClient`;
-  `network/RealmforgeNetwork`, versioned by the mod version, with the interface for client-bound handlers; the import
-  check that bans `net.minecraft.client`, `com.mojang.blaze3d` and `net.neoforged.neoforge.client` outside
-  `client/`. *Done when:* everything builds and passes, and the import check fails on a deliberate violation.
-- [ ] **F2 Pipeline for datapack registries** (M, after F1). A generic generator from a content type to
+- **F1 Feature skeleton** (RLM-17, S, after spike 6). Packages from
+  [architecture 4.2](architecture.md#42-packages-of-the-core-mod) with empty `<Name>Feature` classes wired in
+  `Realmforge`; `client/RealmforgeClient`; `network/RealmforgeNetwork`, versioned by the mod version, with the
+  interface for client-bound handlers; the import check that bans `net.minecraft.client`, `com.mojang.blaze3d` and
+  `net.neoforged.neoforge.client` outside `client/`. *Done when:* everything builds and passes, and the import
+  check fails on a deliberate violation.
+- **F2 Pipeline for datapack registries** (RLM-18, M, after F1). A generic generator from a content type to
   `data/realmforge/realmforge/<registry>/`; translation keys for data types; unit conversion (seconds to ticks,
   percent to fractions); generated `ResourceKey` constants; generated expectations with a GameTest pattern;
   `content/curves/` as the first type; validate-and-copy for `content/worldgen/`; CI fails on data loading errors
   in the GameTest log ([architecture 6.1](architecture.md#61-stages)). *Done when:* a curve written in YAML is
   decoded in the game and checked by a GameTest.
-- [ ] **F3 Player state** (M, after F2). The attachments `level` (every living entity), `character`, `spellbook`,
+- **F3 Player state** (RLM-19, M, after F2). The attachments `level` (every living entity), `character`, `spellbook`,
   `talents` and `combat` with codecs, sync and copy on death; the `/qa` command root (show and reset state). *Done
   when:* JUnit round-trips every attachment's `Codec` and `StreamCodec`, and a GameTest checks copy on death
   (resource and cooldowns kept, the current cast dropped) and save and load on a mock server player
   (`GameTestHelper#makeMockServerPlayerInLevel`).
-- [ ] **F4 Stats** (M, after F3; D5). Primary and secondary attributes on players; `CharacterStats` with the
+- **F4 Stats** (RLM-20, M, after F3; D5). Primary and secondary attributes on players; `CharacterStats` with the
   saved-but-recomputed modifiers, the first-tick recompute and the health rules
   ([architecture 8.2](architecture.md#82-where-modifiers-come-from)); `realmforge:stat_rule` with derived bonuses
   and milestones; the cap mechanism; a basic character sheet. *Done when:* JUnit covers the rules; GameTests show
   STR raising attack damage as configured and bonus max health surviving a relog and a respawn.
-- [ ] **F5 Combat core** (M, after F4). Spell schools: `content/spell_schools/`, the `realmforge:spell_school`
+- **F5 Combat core** (RLM-21, M, after F4). Spell schools: `content/spell_schools/`, the `realmforge:spell_school`
   registry, their damage types (in `#minecraft:bypasses_cooldown`) and generated attributes. `DamageCalculator` on
   the NeoForge damage events with the hurt-cooldown handling ([architecture 9.1](architecture.md#91-damage-pipeline));
   crit, dodge, resistances; our armor formula; minimal combat text; a QA training dummy with a DPS meter and a
@@ -149,84 +159,84 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
 
 ### Phase 2: character and abilities
 
-- [ ] **C1 Races and classes** (M, after F5; D1). The registries, including the `realmforge:resource_type` type
+- **C1 Races and classes** (RLM-22, M, after F5; D1). The registries, including the `realmforge:resource_type` type
   registry with `mana` and `rage` (ids only; C3a gives them behaviour), so class entries can name their resource;
   the character creation screen and payload, the starting kit; the race and both classes as content (stats only;
   spells come in C4). *Done when:* a new player must create a character, and a GameTest checks the creation rules.
-- [ ] **C2 Leveling and the level cap** (M, after C1; D2, D3). The XP curve; XP from kills by the victim's level
+- **C2 Leveling and the level cap** (RLM-23, M, after C1; D2, D3). The XP curve; XP from kills by the victim's level
   (`realmforge:level`, 1 for every mob until W1 assigns levels) and from `/realmforge xp`; the
   `realmforge:chapter` registry and the cap from chapter advancements; level-up effects; the `level_reached`
   trigger; an XP bar. *Done when:* GameTests show XP accumulating past the cap and granting the chapter advancement
   raising the level.
-- [ ] **C3a Spell engine** (L, after C2). `realmforge:spell` (schools exist since F5), effect and targeting types,
+- **C3a Spell engine** (RLM-24, L, after C2). `realmforge:spell` (schools exist since F5), effect and targeting types,
   `SpellCaster`, cooldowns and the global cooldown, the behaviour of mana and rage, procs, the projectile and area
   entities. *Done when:* GameTests cast every effect type, a cast whose resource runs out or whose target leaves
   range before completion fails without its effects, and a channel ticks at its interval and stops when
   interrupted.
-- [ ] **C3b Casting controls and HUD** (M, after C3a and spike 4; D4). Spell bar, key mappings, cast bar,
+- **C3b Casting controls and HUD** (RLM-25, M, after C3a and spike 4; D4). Spell bar, key mappings, cast bar,
   cooldown sweep, tooltips with live numbers, the payloads.
-- [ ] **C3c Status effects** (M, after C3a). `content/effects/` to generated `MobEffect` registrations; damage and
+- **C3c Status effects** (RLM-26, M, after C3a). `content/effects/` to generated `MobEffect` registrations; damage and
   healing over time; source tracking for dispels.
-- [ ] **C4 Class kits** (M, after C3b and C3c). 4-5 spells per class; starting gear with fixed stats, generated
+- **C4 Class kits** (RLM-27, M, after C3b and C3c). 4-5 spells per class; starting gear with fixed stats, generated
   with per-slot modifier ids and the rule that gear never adds max health directly
   ([architecture 8.2](architecture.md#82-where-modifiers-come-from)); a first balance pass on the training dummy.
-- [ ] **C5 Talents** (M, after C4). The registry, effect types, `TalentRules`, the talent screen, a respec command,
+- **C5 Talents** (RLM-28, M, after C4). The registry, effect types, `TalentRules`, the talent screen, a respec command,
   one tree per class. *Done when:* JUnit property tests pass, a GameTest shows a talent changing a cast, and one
   shows that neither a proc's hit nor the ticks of a damage-over-time effect it applied trigger procs.
-- [ ] **C6 Casting animations and effects** (M, after spike 4 and C4). Animations, particles and sounds for both
+- **C6 Casting animations and effects** (RLM-29, M, after spike 4 and C4). Animations, particles and sounds for both
   classes.
 
 ### Phase 3: world, dungeons and the boss
 
-- [ ] **W1 Mob levels** (M, after F5). `realmforge:dimension_rules` with an entry for `minecraft:overworld`
+- **W1 Mob levels** (RLM-31, M, after F5). `realmforge:dimension_rules` with an entry for `minecraft:overworld`
   (named in its `dimension` field); levels at spawn for vanilla hostile mobs (and later ours); scaling from curves,
   with health refilled to the scaled maximum; Jade shows the level (optional). *Done when:* GameTests check the
   level by distance, the scaled maximum health, that a new mob's current health equals it, that a split slime's
   children keep the parent's level, and that a mob added without `finalizeSpawn` (`GameTestHelper#spawn`) gets a
   level and its scaling.
-- [ ] **W2 Dimension** (M, after W1 and C2). Worldgen JSON for the first dimension and its dimension rules; the
+- **W2 Dimension** (RLM-32, M, after W1 and C2). Worldgen JSON for the first dimension and its dimension rules; the
   `realmforge:requirement_type` registry with its first types; access by portal or item, locked by a chapter 1
   step. *Done when:* a GameTest shows access refused before the requirement and allowed after it.
-- [ ] **W3 Custom mobs** (M, after W1 and C3a; D11). 1-2 custom mob types for the dungeons (archetypes: melee and
+- **W3 Custom mobs** (RLM-33, M, after W1 and C3a; D11). 1-2 custom mob types for the dungeons (archetypes: melee and
   caster), GeckoLib models, loot tables without trash. *Done when:* GameTests check that they spawn with levels and
   drop valid loot.
-- [ ] **W4 Dungeon framework** (L, after spike 3 and W1). The instance dimension from spike 3;
+- **W4 Dungeon framework** (RLM-34, L, after spike 3 and W1). The instance dimension from spike 3;
   `realmforge:dungeon_type`; the room format and its validation (`content/rooms/`); the pure planner and layout
   with fuzz tests; the builder with data markers and chunk tickets; `InstanceManager`; entry and exit; the rules
   inside (Adventure mode plus guards for non-player edits and for items with `can_break` or `can_place_on`,
   [architecture 15.5](architecture.md#155-instances)); QA commands to preview a layout and enter a dungeon. *Done
   when:* GameTests build and enter an instance, and a bucket, flint and steel, an axe, a hoe, a tool with
   `can_break`, placing and breaking all leave the room unchanged.
-- [ ] **W5 Boss** (L, after C3a and W3). `realmforge:boss`, `BossPhaseMachine`, abilities through the spell engine,
+- **W5 Boss** (RLM-35, L, after C3a and W3). `realmforge:boss`, `BossPhaseMachine`, abilities through the spell engine,
   the boss entity and model, the phase name in the boss bar, arena rules, loot. The boss is tested on its own,
   before any dungeon references it. *Done when:* GameTests cover every phase change.
-- [ ] **W6 Two dungeon types** (L, after W4 and W5). Type A ends in the boss's lair; type B ends in a treasury with
+- **W6 Two dungeon types** (RLM-36, L, after W4 and W5). Type A ends in the boss's lair; type B ends in a treasury with
   traps and a vault, without a boss. Matěj builds the key rooms in creative; agents assemble variants and set
   encounter and loot budgets.
 
 ### Phase 4: story, polish, release
 
-- [ ] **Q1 Quest pipeline** (L, after C2). `content/quests/` (chapters exist since C2) to FTB Quests SNBT with
+- **Q1 Quest pipeline** (RLM-37, L, after C2). `content/quests/` (chapters exist since C2) to FTB Quests SNBT with
   stable ids, advancements, our criteria triggers and statistics, lang; `CommandReward`s with `permission_level: 2`
   for our commands; `packwiz refresh` after generation; quest validation (where, how, with what; boss levels from
   data). Finishes the quest half of research spike 2.
-- [ ] **Q2 Chapter 1** (M, after Q1 and W6). About 15 quests with lore set in Realmforge, rewards from the gear
+- **Q2 Chapter 1** (RLM-38, M, after Q1 and W6). About 15 quests with lore set in Realmforge, rewards from the gear
   set; the last quest grants the chapter advancement.
-- [ ] **R1 World rules** (S, after F1; D6). Default gamerules for new worlds, griefing protection, Dark Vision.
-- [ ] **R2 Release pipeline** (M, after Q2; D7, D9). A workflow that builds the jar and the pack from a `v*` tag
+- **R1 World rules** (RLM-42, S, after F1; D6). Default gamerules for new worlds, griefing protection, Dark Vision.
+- **R2 Release pipeline** (RLM-44, M, after Q2; D7, D9). A workflow that builds the jar and the pack from a `v*` tag
   ([ADR 0008](decisions/0008-distribution-github-and-curseforge.md)), version 0.1.0, changelog, README.
-- [ ] **R3 Playtest and balance** (M, repeated, after Q2). Matěj plays the slice in Prism; agents fix what he
+- **R3 Playtest and balance** (RLM-45, M, repeated, after Q2). Matěj plays the slice in Prism; agents fix what he
   finds; a spark profile on his PC.
 
 ### Assets (parallel)
 
 Placeholders are generated until real art exists ([ADR 0007](decisions/0007-asset-pipeline.md)).
 
-- [ ] **A1 Icons** for spells, items and gear (after spike 5).
-- [ ] **A2 Models and animations** for the custom mobs and the boss (GeckoLib; Blockbench MCP, installed only with
+- **A1 Icons** (RLM-46, after spike 5) for spells, items and gear.
+- **A2 Models and animations** (RLM-48) for the custom mobs and the boss (GeckoLib; Blockbench MCP, installed only with
   Matěj's approval). UV-mapped entity textures need his eye ([ADR 0007](decisions/0007-asset-pipeline.md)).
-- [ ] **A3 Sounds:** vanilla sounds remapped in `sounds.json`, a few new ones.
-- [ ] **A4 Rooms:** key rooms built by Matěj, variants by agents.
+- **A3 Sounds** (RLM-49): vanilla sounds remapped in `sounds.json`, a few new ones.
+- **A4 Rooms** (RLM-50): key rooms built by Matěj, variants by agents.
 
 ### Definition of done
 
@@ -286,15 +296,15 @@ the day"; repeatable trade quests move over from FTB Quests
 
 No milestone yet:
 
-- Small UI mods missing on NeoForge 1.21.1 ([ADR 0013](decisions/0013-modpack-composition.md)): EMI Trades, Damage
-  Numbers (M1's combat text may cover it), No Recipe Book, Lightweight Inventory Sorting, and a replacement for the
-  temporary Toast Control.
-- CurseForge publishing ([ADR 0008](decisions/0008-distribution-github-and-curseforge.md)).
-- Nightly spark profiles; our own performance mod.
-- A local bridge so agents can see screenshots and game state from Matěj's PC
-  ([research notes, section 6](research-notes.md#6-testing-and-qa)).
-- Port to a newer Minecraft: re-evaluate in 2027 at the earliest
-  ([ADR 0003](decisions/0003-platform-minecraft-1-21-1-neoforge.md)).
+- Small UI mods missing on NeoForge 1.21.1 (RLM-61, [ADR 0013](decisions/0013-modpack-composition.md)): EMI
+  Trades, Damage Numbers (M1's combat text may cover it), No Recipe Book, Lightweight Inventory Sorting, and a
+  replacement for the temporary Toast Control.
+- CurseForge publishing (RLM-62, [ADR 0008](decisions/0008-distribution-github-and-curseforge.md)).
+- Nightly spark profiles; our own performance mod (RLM-63).
+- A local bridge so agents can see screenshots and game state from Matěj's PC (RLM-64,
+  [research notes, section 6](research-notes.md#6-testing-and-qa)).
+- Port to a newer Minecraft: re-evaluate in 2027 at the earliest (RLM-65,
+  [ADR 0003](decisions/0003-platform-minecraft-1-21-1-neoforge.md)).
 - Explicitly not for now: seasons, decorative pets, "full No Man's Sky" (possibly a separate mod,
   [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)).
 
@@ -310,18 +320,19 @@ No milestone yet:
 ## Open decisions
 
 Owner decisions the plan depends on. Each has a proposal so work is not blocked; the task that needs it asks Matěj
-before starting.
+before starting. Whether a decision is made is its ticket's status: a Done decision's comments record what Matěj
+decided, which wins over the proposal here.
 
-| # | Decision | Needed by | Proposal |
-| --- | --- | --- | --- |
-| D1 | The two M1 classes | C1 | a warrior-like melee class (rage) and a mage-like caster (mana): the most different pair, which tests both Better Combat melee and casting |
-| D2 | Level cap numbers | C2 | cap 10 during chapter 1, raised to 20 when it is finished |
-| D3 | Character XP and vanilla XP | C2 | separate: character XP is never spent; vanilla XP stays the currency for enchanting and anvils until M5 decides its role |
-| D4 | Spell key scheme | C3b | a separate spell bar with its own keys, leaving the item hotbar alone; spike 4 informs it |
-| D5 | Primary stats | F4 | STR, DEX, INT and a stamina stat (health); one stat per play style plus survivability |
-| D6 | Destructive mobs | R1 | targeted protection (no terrain damage) instead of `mobGriefing=false`, as the research notes recommend |
-| D7 | Release numbering | R2 | M1 is v0.1.0. The vision describes v0.1 as "everything, cut down"; the research report called v0.1 a vertical slice; this roadmap follows the report and the M1 brief |
-| D8 | Who enters an instance | spike 3 | solo first; players standing at the entrance join the run; FTB Teams parties later |
-| D9 | License of `content/`, `art/` and `docs/` | R2 | an ADR before the first release ([ADR 0009](decisions/0009-licensing.md) left it open); the quest texts feed the All Rights Reserved pack |
-| D10 | Nether and End: overhaul or remove | M4 planning | open, no proposal yet ([vision](vision.md#open-questions)) |
-| D11 | Custom mobs in M1 | W3 | 1-2 custom types (a melee and a caster archetype) plus leveled vanilla hostile mobs; every custom mob needs a model, animations and a UV texture that Matěj reviews, so more wait for M4 |
+| # | Ticket | Decision | Needed by | Proposal |
+| --- | --- | --- | --- | --- |
+| D1 | RLM-51 | The two M1 classes | C1 | a warrior-like melee class (rage) and a mage-like caster (mana): the most different pair, which tests both Better Combat melee and casting |
+| D2 | RLM-52 | Level cap numbers | C2 | cap 10 during chapter 1, raised to 20 when it is finished |
+| D3 | RLM-53 | Character XP and vanilla XP | C2 | separate: character XP is never spent; vanilla XP stays the currency for enchanting and anvils until M5 decides its role |
+| D4 | RLM-54 | Spell key scheme | C3b | a separate spell bar with its own keys, leaving the item hotbar alone; spike 4 informs it |
+| D5 | RLM-55 | Primary stats | F4 | STR, DEX, INT and a stamina stat (health); one stat per play style plus survivability |
+| D6 | RLM-56 | Destructive mobs | R1 | targeted protection (no terrain damage) instead of `mobGriefing=false`, as the research notes recommend |
+| D7 | RLM-57 | Release numbering | R2 | M1 is v0.1.0. The vision describes v0.1 as "everything, cut down"; the research report called v0.1 a vertical slice; this roadmap follows the report and the M1 brief |
+| D8 | RLM-58 | Who enters an instance | spike 3 | solo first; players standing at the entrance join the run; FTB Teams parties later |
+| D9 | RLM-59 | License of `content/`, `art/` and `docs/` | R2 | an ADR before the first release ([ADR 0009](decisions/0009-licensing.md) left it open); the quest texts feed the All Rights Reserved pack |
+| D10 | RLM-47 | Nether and End: overhaul or remove | M4 planning | open, no proposal yet ([vision](vision.md#open-questions)) |
+| D11 | RLM-60 | Custom mobs in M1 | W3 | 1-2 custom types (a melee and a caster archetype) plus leveled vanilla hostile mobs; every custom mob needs a model, animations and a UV texture that Matěj reviews, so more wait for M4 |

@@ -13,7 +13,8 @@ the pull request skills take over: [`monitor-pr`](../.claude/skills/monitor-pr/S
 [ADR 0015](decisions/0015-merging-through-monitor-pr.md).
 
 The roadmap ([roadmap.md](roadmap.md)) stays the plan and the source of the task order; Jira is the queue that
-mirrors it, plus work outside the roadmap.
+mirrors it, plus work outside the roadmap, and the only source of task status
+([ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md)).
 
 ## Jira
 
@@ -58,7 +59,36 @@ mirrors it, plus work outside the roadmap.
   ticket (search for an equivalent first, as above), never a GitHub issue or a local TODO. A declined, dropped or
   incorrect finding needs only its recorded reason. When no Atlassian tool reaches Jira, the follow-up goes into the
   session's report for Matěj. An open GitHub issue is migrated: a ticket whose description opens with `Migrated from
-  GitHub issue matejkadlec/realmforge#<n>`, then the issue is closed as not planned with the ticket's key.
+  GitHub issue matejkadlec/realmforge#<n>`, then the issue is closed as not planned with the ticket's key. The
+  procedure: [Follow-up tickets](#follow-up-tickets).
+
+### Follow-up tickets
+
+Work a change leaves undone becomes an RLM ticket, never a GitHub issue: a review finding that `fix-pr` or
+`finalize-pr` tracks instead of fixing, a real finding outside the pull request's scope, and a larger follow-up
+found during implementation.
+
+1. **Search first** with `searchJiraIssuesUsingJql` (`project = RLM AND text ~ "<terms>"`, the candidate field set
+   from [Reading a ticket](#reading-a-ticket)), and read each candidate with its comments. When an equivalent
+   ticket exists and is not Done, cite it and add a comment with the new evidence (the pull request, the head, the
+   scenario) instead of creating a duplicate.
+2. **Otherwise create a Task** with `createJiraIssue` in the format of [Issues](#issues):
+   - **title:** sentence case with an area prefix (`Docs: ...`, `Gradle queue: ...`);
+   - **parent:** the epic the work belongs to: the milestone epic for game code and its design (RLM-6 for M1),
+     RLM-1 for workflow and tooling, RLM-30 for the storyline;
+   - **labels:** the area labels and the milestone label of that epic;
+   - **priority:** Medium, unless the defect clearly calls for High (it breaks normal use) or Low (polish);
+   - **sprint:** the active sprint (`customfield_10020` with the numeric id read from Jira, [Project
+     facts](#project-facts)), so the next intake sees it;
+   - **description:** `## Context` (where it was found: the review and its round, the pull request and head SHA,
+     the severity), `## Task` (the problem, a concrete scenario, the smallest fix, and any pull request it must
+     wait for), `## Done when`;
+   - **links:** `Relates` to the batch's tickets, and `Blocks` from any ticket it must wait for.
+
+   Findings that share a file or a fix go into one ticket.
+3. **Reference it** as `RLM-<n>` wherever the finding is closed (a thread reply `Tracked as RLM-<n>:`, a report).
+4. **Jira unreachable:** when no Atlassian tool reaches Jira in the session (neither the `atlassian` server
+   nor the claude.ai connector), list the follow-up in the session's report for Matěj, never as a GitHub issue.
 
 ### Reading a ticket
 
@@ -239,8 +269,10 @@ Agents never implement a ticket labelled `decision`, or one waiting on Matěj. A
 be started or finished without something only he can give: a decision or a pick between options, an account,
 credentials or credits, approval to install a tool or MCP server, content he builds himself (rooms in creative),
 or his own playthrough. The description usually says so ("Decision for Matěj", "Owner decision", "Needs Matěj",
-"Needs from Matěj"), and so does an unmet `Blocks` link to a decision ticket or to another waiting ticket. A review
-or playtest at the end of the work does not count: that is the playtest hold.
+"Needs from Matěj"), and so does an unmet `Blocks` link to a decision ticket or to another waiting ticket. A ticket
+whose roadmap task exists only in an open pull request with `needs-approval` (a comment on it names that pull
+request, [ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md)) waits for that approval too. A review or
+playtest at the end of the work does not count: that is the playtest hold.
 
 - Such tickets are neither selected nor promoted; they stay in To Do.
 - Every run lists them in its ledger under "Waiting for Matěj", one line each: a decision ticket with its proposal
@@ -387,11 +419,11 @@ Every batch belongs to at least one conflict domain, decided by the primary path
 - **tooling:** `.github/`, `.claude/`, `docs/` and every other tracked path neither domain names.
 
 The documents a change must keep current in the same batch are accompanying updates and add no domain:
-`docs/architecture.md`, the roadmap tick-off, `content/README.md`, `tools/README.md`, `pack/README.md`,
-`docs/dev-setup.md` and a new ADR with its index row. A batch whose main work is a document (workflow wording, a
-design, an ADR, research) is a tooling batch. Ticking off a roadmap task and adding a row to the ADR index are
-line-local edits and never count as an overlap; an ADR number does: take the next number that no `master` file,
-open pull request or in-flight branch uses.
+`docs/architecture.md`, `content/README.md`, `tools/README.md`, `pack/README.md`, `docs/dev-setup.md` and a new
+ADR with its index row. A batch whose main work is a document (workflow wording, a design, an ADR, research, a
+roadmap change) is a tooling batch. Adding a row to the ADR index is a line-local edit and never counts as an
+overlap; an ADR number does: take the next number that no `master` file, open pull request or in-flight branch
+uses.
 
 **Shared-root files** belong to every domain at once: `CLAUDE.md`, `README.md`, `.gitignore`, `.gitattributes`,
 `.mcp.json` and `.claude/settings.json`. A batch that changes one occupies a slot in every domain.
@@ -572,8 +604,8 @@ cross-cutting or engine-level work (the damage pipeline, networking, worldgen).
   (cd pack && packwiz refresh) && git diff --exit-code pack/   # only when pack/ changed
   ```
 
-- Keep `CLAUDE.md`, [architecture.md](architecture.md), the READMEs and the ADRs current in the same batch, and
-  tick off finished roadmap tasks ([Publication](#publication)).
+- Keep `CLAUDE.md`, [architecture.md](architecture.md), the READMEs and the ADRs current in the same batch. The
+  roadmap holds no status: a finished task changes only its ticket, never [roadmap.md](roadmap.md).
 - Scale extra rigor to the risk: a docs-only batch needs the gate, not new tests; the damage pipeline, saved data,
   networking and anything that could corrupt a world need tests for the edge cases, and a dedicated server boot
   (`./gradlew runServer`) for client isolation.
@@ -633,19 +665,18 @@ monitored merge. Publication happens in this order:
      keys comma-separated;
    - **description:** What to look at first; the tickets with links; what changed and why; dependencies pulled in;
      the checks that ran; a stacked base or plan change, if any; never `@codex` anywhere.
-3. **Labels:** `needs-playtest` for a playtest batch; `needs-approval` when the batch changes the plan (anything
-   in [roadmap.md](roadmap.md) beyond ticking off finished tasks: new, removed, reordered or reworded tasks, a
-   recorded decision, a changed milestone). Only Matěj removes either label.
-4. **Tick-off:** for each finished roadmap task, commit `[x]` plus the pull request link in
-   [roadmap.md](roadmap.md) and push it, before `monitor-pr` starts.
-5. Read the pull request's head back from GitHub and confirm it is your final commit.
-6. On each ticket, record the `🤖 Claude QA` summary (what was verified and how, the pull request, the head SHA),
+3. **Labels:** `needs-playtest` for a playtest batch; `needs-approval` when the batch changes the plan, which is
+   any change to [roadmap.md](roadmap.md) (new, removed, reordered or reworded tasks, a recorded decision, a
+   changed milestone, a key; [ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md)). Only Matěj removes
+   either label.
+4. Read the pull request's head back from GitHub and confirm it is your final commit.
+5. On each ticket, record the `🤖 Claude QA` summary (what was verified and how, the pull request, the head SHA),
    plus the `🎮 Playtest handoff` for a playtest batch.
-7. Move the tickets: an AI-only batch to Pending CR, a playtest batch to Pending User QA.
-8. Hand off to Matěj, leading with [What to look at](#what-to-look-at): the pull request number and URL, the
+6. Move the tickets: an AI-only batch to Pending CR, a playtest batch to Pending User QA.
+7. Hand off to Matěj, leading with [What to look at](#what-to-look-at): the pull request number and URL, the
    branch, the head, the checks, the Jira state, any hold, and for a playtest batch the
    [playtest commands](#playtest-commands). Name an action for him only when one is needed.
-9. In the same run, run `/monitor-pr <n>` on the pull request. The handoff is a progress report, not the end of
+8. In the same run, run `/monitor-pr <n>` on the pull request. The handoff is a progress report, not the end of
    the run: a published pull request left unmonitored is unfinished work.
 
 ### After publication
@@ -744,8 +775,10 @@ A Claude Code cloud session (`CLAUDE_CODE_REMOTE=true`) runs the same flow; only
 - **Its own clone** is its worktree, and the branch Claude Code put it on is the batch branch
   ([Branches and worktrees](#branches-and-worktrees)). It sees only its own branches, so its intake and claim
   rely on Jira claim comments, remote branches and open pull requests.
-- **Jira** goes through the claude.ai Atlassian connector, with the same tools and field sets.
-- **GitHub:** the proxy refuses GraphQL; the pull request skills list the REST forms to use instead.
+- **Jira** goes through the claude.ai Atlassian connector, with the same tools and field sets. The `atlassian`
+  server from `.mcp.json` fails to start there (no `mcp-remote`), which is expected.
+- **GitHub:** the proxy refuses GraphQL; the pull request skills list the REST forms to use instead. `gh api`
+  calls are authenticated (`gh api user` answers) even though `gh auth status` reports the token as invalid.
 - **Gradle:** the queue sees only the VM's own runs.
 - **Playtests** are handed off with the cloud [playtest commands](#playtest-commands); a revision may run in the
   same cloud session or any later local or cloud one.

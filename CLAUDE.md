@@ -17,12 +17,17 @@ modpack adds third-party QoL, performance and library mods.
 - **Architecture:** [docs/architecture.md](docs/architecture.md): how the core mod is built (feature packages,
   registries, data flow from YAML into the game, player state, stats, networking, client isolation). Read the
   sections for the system you touch before writing code.
-- **Roadmap:** [docs/roadmap.md](docs/roadmap.md): milestones, the current milestone's tasks and open owner
-  decisions. Work on tasks of the current milestone and tick them off in the same PR.
-- **Jira:** the work queue that mirrors the roadmap: space Realmforge, key `RLM`, one Task per roadmap task or
-  other piece of work, `Blocks` links for the roadmap's "after" order. `flow1` takes a batch of tickets from the
-  active sprint and `flow2` turns Matěj's task description into a ticket; both deliver one PR per batch
-  ([ADR 0016](docs/decisions/0016-jira-batch-delivery.md)). Before any Jira intake, ticket creation or
+- **Roadmap:** [docs/roadmap.md](docs/roadmap.md): the plan (milestones, the current milestone's tasks and owner
+  decisions, each with its Jira key). It holds no status, and every change to it is a plan change that waits for
+  Matěj (`needs-approval`, [ADR 0017](docs/decisions/0017-jira-as-the-source-of-task-status.md)).
+- **Jira:** the work queue and the source of task status: space Realmforge, key `RLM`, one Task per roadmap task or
+  other piece of work, milestone epics RLM-6 to RLM-12 (M1 to M7), RLM-1 for developer workflow and tooling,
+  RLM-30 for the storyline, `Blocks` links for the roadmap's "after" order. Work on a ticket always goes through
+  it: `flow1` takes a batch of tickets from the active sprint, `flow2` turns Matěj's task description into a
+  ticket, and direct work uses the flow's intake claim; the key goes into the branch name and the PR title, and
+  `monitor-pr` moves the ticket to Done after the merge ([ADR 0016](docs/decisions/0016-jira-batch-delivery.md)).
+  Follow-ups a change does not fix (review findings, gaps found on the way) become RLM tickets, not GitHub issues
+  ([follow-up tickets](docs/ai-development-flow.md#follow-up-tickets)). Before any Jira intake, ticket creation or
   publication of ticket work, read [docs/ai-development-flow.md](docs/ai-development-flow.md) completely. Agents
   never implement `decision` tickets or tickets waiting on Matěj.
 - **Status:** M0 (bootstrap) is done: build, CI, content pipeline, one test item (`realmforge:test_item`), modpack
@@ -251,8 +256,8 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
   changed, why, and which checks passed. Never write `@codex` on a pull request (description, comments,
   replies): any mention starts a Codex review or a Cloud task that can push to the branch.
 - Add the `needs-playtest` label when Matěj should play the change before it merges (gameplay, visuals,
-  balance), and the `needs-approval` label when the PR changes the plan (`docs/roadmap.md` beyond ticking off
-  finished tasks). Only Matěj removes either label.
+  balance), and the `needs-approval` label when the PR changes the plan (any change to `docs/roadmap.md`). Only
+  Matěj removes either label.
 - A PR from a Jira batch names its tickets in the title, e.g. `feat(spells): add the spell engine core (RLM-24)`.
 - After publishing or updating a ready pull request as your own task work, run `/monitor-pr <n>` on it straight
   after, in the same run. Codex findings alone: `/fix-pr <n>`. Extra independent review: `/finalize-pr <n>`.
@@ -269,10 +274,11 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
 
 ## Workflow
 
-1. Take a task from the current milestone in [docs/roadmap.md](docs/roadmap.md), or run `flow1`/`flow2` for
-   Jira tickets ([docs/ai-development-flow.md](docs/ai-development-flow.md)); one task, feature, content batch or
-   flow batch of tickets per pull request (branches: [Git and branches](#git-and-branches)). Commit messages
-   follow Conventional Commits (`feat:`, `fix:`, `docs:`, `build:`, `ci:`, `test:`, `chore:`).
+1. Take work through its RLM ticket in the active sprint: `flow1`/`flow2`, or the intake claim of
+   [docs/ai-development-flow.md](docs/ai-development-flow.md) for direct work on a ticket (a roadmap task
+   included); the key goes into the branch name and the PR title. One task, feature, content batch or flow batch
+   of tickets per pull request (branches: [Git and branches](#git-and-branches)). Commit messages follow
+   Conventional Commits (`feat:`, `fix:`, `docs:`, `build:`, `ci:`, `test:`, `chore:`).
 2. A Claude Code hook (`.claude/settings.json`) runs `uv run rf validate` after every edit in `content/` or
    `tools/` and reports problems back. It does not compile Java. In cloud sessions SessionStart hooks route PyPI
    through the agent proxy and warm up uv and Gradle in the background (`.claude/hooks/cloud-warmup.sh`).
@@ -280,8 +286,8 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
    `uv run ruff format --check`, `uv run pytest`, `./gradlew build`, `./gradlew runGameTestServer`. Agents run
    the two Gradle tasks through `.claude/scripts/gradle-queue.sh`, which waits for memory while other worktrees
    build.
-4. Keep `CLAUDE.md`, `docs/` (including the roadmap's task list) and the relevant READMEs current in the same PR
-   when commands, structure, rules or decisions change. Stale docs mislead the next session.
+4. Keep `CLAUDE.md`, `docs/` and the relevant READMEs current in the same PR when commands, structure, rules or
+   decisions change (the roadmap only when the plan changes). Stale docs mislead the next session.
 5. Open the PR against `master` with `gh pr create`, then run `/monitor-pr <n>`. CI (`.github/workflows/ci.yml`)
    runs: content pipeline + generated-files check, Gradle build + JUnit + GameTests, vanilla ID universe
    reproducibility, packwiz index (these four are the required checks on `master`), and the full pack boot on a
@@ -290,8 +296,9 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
    10 silent minutes), every review thread is resolved and the required checks are green, unless the PR has the
    `needs-playtest` label (Matěj playtests first and removes the label) or the `needs-approval` label (Matěj
    approves the plan change) ([ADR 0015](docs/decisions/0015-merging-through-monitor-pr.md),
-   [ADR 0016](docs/decisions/0016-jira-batch-delivery.md)). Distribution: GitHub Releases now, CurseForge later
-   ([ADR 0008](docs/decisions/0008-distribution-github-and-curseforge.md)).
+   [ADR 0016](docs/decisions/0016-jira-batch-delivery.md),
+   [ADR 0017](docs/decisions/0017-jira-as-the-source-of-task-status.md)). Distribution: GitHub Releases now,
+   CurseForge later ([ADR 0008](docs/decisions/0008-distribution-github-and-curseforge.md)).
 
 ## How the pipeline fits together
 

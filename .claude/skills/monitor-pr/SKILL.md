@@ -56,12 +56,13 @@ weakens a test or check.
 - The label `needs-playtest` means the owner (Matěj) plays the change before it merges. The publishing session
   adds it for gameplay, visual or balance changes (`gh pr edit <n> --add-label needs-playtest`); only Matěj
   removes it.
-- The label `needs-approval` means the pull request changes the plan (anything in `docs/roadmap.md` beyond ticking
-  off finished tasks) and Matěj approves it before it merges. The publishing session adds it; only Matěj removes
-  it.
+- The label `needs-approval` means the pull request changes the plan (any change to `docs/roadmap.md`, which holds
+  no task status: [ADR 0017](../../../docs/decisions/0017-jira-as-the-source-of-task-status.md)) and Matěj
+  approves it before it merges. The publishing session adds it; only Matěj removes it.
 - Jira: a pull request from a Jira batch ([`docs/ai-development-flow.md`](../../../docs/ai-development-flow.md))
   names its tickets (`RLM-<n>`) in its title, and its head branch carries their keys. The Atlassian MCP tools
-  (`.mcp.json`) reach Jira.
+  (`.mcp.json`, or the claude.ai connector in cloud sessions) reach Jira. Findings this run tracks instead of
+  fixing become [follow-up tickets](../../../docs/ai-development-flow.md#follow-up-tickets), not GitHub issues.
 - There is no pre-push hook. The local gate is the command list in `CLAUDE.md` "Workflow" step 3; run its Gradle
   tasks through `.claude/scripts/gradle-queue.sh`, which waits for memory when other worktrees build.
 - Worktrees live in `../realmforge-worktrees/<branch with "/" replaced by "-">`, outside the repository.
@@ -243,6 +244,9 @@ Otherwise act on the first of steps 2–7 that applies. If none applies yet, wai
 3. **Codex findings: run `fix-pr`.** Whenever the head has unresolved Codex threads, invoke `/fix-pr <n>`,
    every round. Do not repeat its procedure here; its report returns to this run.
 
+   - From the pull request's fourth review round on, `fix-pr`'s "Late rounds" rule applies: a P2 or P3 that
+     names no concrete failure in normal use is Declined for churn or Tracked instead of fixed. Keep a tally of
+     the rounds and of the findings that rule deferred, for the report.
    - Then re-list the threads. Resolve any thread that `fix-pr` closed but that still reads unresolved.
    - A Blocked thread goes to the user under "User needed".
    - A badge-labelled Codex finding (`![P0 Badge]` to `![P3 Badge]`) in a Codex review body or a top-level pull
@@ -322,7 +326,9 @@ A current usage limit means no Codex review is coming. The silent window would t
 all, so instead:
 
 1. **Run `/finalize-pr <n>` on the current head in this run** ([`finalize-pr`](../finalize-pr/SKILL.md)). The
-   fresh reviewer it starts provides the independent review. Its finishing state comes back here.
+   fresh reviewer it starts provides the independent review. Its finishing state comes back here. Each of its
+   reviewer rounds counts as a review round for the "Late rounds" rule of [`fix-pr`](../fix-pr/SKILL.md), so give
+   it the current round count.
 2. **The run enters fallback mode for this pull request.**
    - It treats the usage-limit comment as silence from now on.
    - Every later push needs another `/finalize-pr <n>` pass on the new head before the merge. This includes a
@@ -384,9 +390,9 @@ Check all of these on one fresh reading, in order:
    (`gh pr edit <n> --repo matejkadlec/realmforge --add-label needs-playtest`).
    While the label is set, go to "User needed": ask Matěj to playtest the head (for example with
    `./gradlew runClient`, or `./gradlew :mod:installToPrism` and the Prism instance) and remove the label.
-   No `needs-approval` label is set either. A pull request whose diff changes `docs/roadmap.md` beyond ticking
-   off finished tasks and never carried the label gets it now (`--add-label needs-approval`), and so does one
-   with a push after the label's latest removal that changes `docs/roadmap.md` again. While it is set, go to
+   No `needs-approval` label is set either. A pull request whose diff changes `docs/roadmap.md` and never
+   carried the label gets it now (`--add-label needs-approval`), and so does one with a push after the label's
+   latest removal that changes `docs/roadmap.md` again. While it is set, go to
    "User needed": ask Matěj to read the plan change and remove the label to approve it.
 7. In fallback mode: a Clean `finalize-pr` reviewed this exact head, or the user approved this exact head after
    a Capped or Disagreement report.
@@ -451,6 +457,7 @@ At each merge or stop, report:
 
 - the pull request number and URL;
 - the head SHA (merged or current);
+- the number of review rounds, and how many findings `fix-pr`'s "Late rounds" rule declined or tracked;
 - each round's outcome:
   - the Codex reaction;
   - the `fix-pr` pass and its commits;
