@@ -265,12 +265,12 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
 - Open them ready for review (never drafts) against `master` with `gh pr create`. The description says what
   changed, why, and which checks passed. Never write `@codex` on a pull request (description, comments,
   replies): any mention starts a Codex review or a Cloud task that can push to the branch.
-- A Jira batch that changes gameplay (visuals, balance) is played before its PR exists: push the branch, hand it
-  to Matěj, and publish only after his `qa1`
-  ([flow: Playtest handoff](docs/ai-development-flow.md#playtest-handoff)). The `needs-playtest` label holds a
-  PR only for a reconfirmation (a later fix changed gameplay) and for a gameplay PR outside the flow. Only Matěj
-  clears it: by removing it, or by answering `qa1`.
-- A plan change (any change to `docs/roadmap.md`) carries no label and does not hold the merge. Make one only as
+- Work that changes gameplay (visuals, balance) is played before its PR exists: push the branch, tell Matěj what
+  to test and how, and stop. His `qa1` opens the PR and `monitor-pr` follows; his `qa2` with changes gets them
+  made and a new handoff, until `qa1` ([flow: Playtest handoff](docs/ai-development-flow.md#playtest-handoff)).
+  Work that needs no playtest gets its PR straight away. PRs carry no GitHub labels
+  ([ADR 0024](docs/decisions/0024-no-github-labels.md)).
+- A plan change (any change to `docs/roadmap.md`) does not hold the merge. Make one only as
   Matěj decided it: a Done decision ticket, his request, or a ticket he wrote that asks for it; the description
   names the plan change and that source. Propose any other plan change to him first, under "Blocked or other" in
   the [status overview](#status-overview) ([ADR 0021](docs/decisions/0021-status-overview-and-plan-changes.md)).
@@ -311,12 +311,13 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
    reproducibility, packwiz index (these four are the required checks on `master`), and the full pack boot on a
    dedicated server and on a client ([ADR 0018](docs/decisions/0018-pack-boot-tests.md)).
 6. `monitor-pr` merges once Codex is done (its approval, a completed review whose findings are all closed, or
-   10 silent minutes), every review thread is resolved and the required checks are green, unless the PR has the
-   `needs-playtest` label (a reconfirmation: Matěj plays the new head and answers `qa1` or `qa2`)
+   10 silent minutes), every review thread is resolved and the required checks are green, unless a fix after
+   Matěj's playtest changed gameplay: then he retests and answers `qa1` or `qa2` first
    ([ADR 0015](docs/decisions/0015-merging-through-monitor-pr.md),
    [ADR 0016](docs/decisions/0016-jira-batch-delivery.md),
    [ADR 0021](docs/decisions/0021-status-overview-and-plan-changes.md),
-   [ADR 0022](docs/decisions/0022-playtest-before-the-pull-request.md)). Distribution: GitHub Releases now,
+   [ADR 0022](docs/decisions/0022-playtest-before-the-pull-request.md),
+   [ADR 0024](docs/decisions/0024-no-github-labels.md)). Distribution: GitHub Releases now,
    CurseForge later ([ADR 0008](docs/decisions/0008-distribution-github-and-curseforge.md)).
 
 ## Status overview
@@ -350,8 +351,8 @@ merges). Four parts:
 
 Close with one line on how he answers. For a first playtest, in this session or any later one: `qa1` passes the
 test (the batch is then published), `qa2` with what is wrong asks for a revision. For a reconfirmation of a
-published pull request, in this session, whose `monitor-pr` run owns it: `qa1` passes it (the label goes and the
-run continues to the merge), `qa2` asks for a revision.
+published pull request, in this session, whose `monitor-pr` run owns it: `qa1` passes it (the run continues to
+the merge), `qa2` asks for a revision.
 
 **Nothing waits for his test.** Three parts:
 
