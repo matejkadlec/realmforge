@@ -327,7 +327,8 @@ merges). Four parts:
 3. **Verification ✅** (optional): what ran and passed, one bullet each; never "all checks passed" for a partial
    run.
 4. **Batch ledger**, one bullet per group:
-   - **Merged into master:** the pull requests merged in this run, or "none";
+   - **Merged into master:** the pull requests merged in this run, and those whose tickets this run's
+     reconciliation moved to Done, or "none";
    - **Pending CR:** pull requests under review, each with its exact state (waiting for Codex, a hold,
      `owner action: ...`);
    - **Pending User QA:** the tickets and pull request waiting for this test;
@@ -341,7 +342,8 @@ session or a pull request comment.
 - **Merged into master**, per merged pull request, as bullets: **What** (the tickets, the merge commit, and the
   changes that matter as sub-bullets), **Review** (Codex or `finalize-pr`, and what it found or tracked),
   **Checks** (the required checks, and CI on `master` after the merge), **Jira** (where the tickets ended).
-  "None" when nothing merged.
+  It also lists the tickets this run's reconciliation moved to Done, each with its pull request. "None" when
+  nothing merged.
 - **Pending CR / Pending User QA:** both queues on one shared line, each with its exact state, or "none from this
   run".
 - **Blocked or other**, as bullets.
