@@ -5,19 +5,15 @@ import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.world.DarkVision;
 import io.github.matejkadlec.realmforge.world.GriefingProtection;
 import io.github.matejkadlec.realmforge.world.WorldDefaults;
-import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.Connection;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -173,7 +169,7 @@ public final class WorldRulesGameTests {
     @GameTest(template = PLATFORM)
     public static void darkVisionIsOnAfterTheFirstLogin(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = login(server, new GameProfile(UUID.randomUUID(), "qa-dark-vision"));
+        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-dark-vision"));
         try {
             helper.assertTrue(DarkVision.isEnabled(player), "Dark Vision is off by default");
             assertHasDarkVision(helper, player);
@@ -220,7 +216,7 @@ public final class WorldRulesGameTests {
     public static void switchSurvivesDeathAndRelog(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-dark-relog");
-        ServerPlayer player = login(server, profile);
+        ServerPlayer player = QaPlayers.login(server, profile);
         try {
             DarkVision.setEnabled(player, false);
             player = server.getPlayerList().respawn(player, false, Entity.RemovalReason.KILLED);
@@ -234,13 +230,13 @@ public final class WorldRulesGameTests {
 
             DarkVision.setEnabled(player, false);
             server.getPlayerList().remove(player);
-            player = login(server, profile);
+            player = QaPlayers.login(server, profile);
             helper.assertFalse(DarkVision.isEnabled(player), "relog switched Dark Vision back on");
             helper.assertFalse(player.hasEffect(MobEffects.NIGHT_VISION), "night vision after relog while off");
 
             DarkVision.setEnabled(player, true);
             server.getPlayerList().remove(player);
-            player = login(server, profile);
+            player = QaPlayers.login(server, profile);
             assertHasDarkVision(helper, player);
         } finally {
             server.getPlayerList().remove(player);
@@ -287,15 +283,5 @@ public final class WorldRulesGameTests {
 
     private static ServerPlayer fakePlayer(GameTestHelper helper) {
         return FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), "qa-world-rules"));
-    }
-
-    /** Logs a fake player in through the normal login path, as {@code InstanceGameTests} does. */
-    private static ServerPlayer login(MinecraftServer server, GameProfile profile) {
-        CommonListenerCookie cookie = CommonListenerCookie.createInitial(profile, false);
-        ServerPlayer player = new ServerPlayer(server, server.overworld(), profile, cookie.clientInformation());
-        Connection connection = new Connection(PacketFlow.SERVERBOUND);
-        new EmbeddedChannel(connection);
-        server.getPlayerList().placeNewPlayer(connection, player, cookie);
-        return player;
     }
 }
