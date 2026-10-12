@@ -399,9 +399,9 @@ played. When the commits the pull request added after the published head that Ma
 ([QA classification](#qa-classification)), `monitor-pr` runs the same loop as before the pull request: it moves
 the tickets back to Pending User QA with a `🎮 Playtest handoff` limited to the change (what to retest and how),
 and waits for his `qa1` or `qa2`. Tickets in Pending User QA hold the merge. Commits that change nothing a player
-sees (docs, tests, a refactor its tests cover, a merge of `master` whose conflict
-resolutions touch nothing a player sees) need no new playtest. `monitor-pr` brings `master` into a branch Matěj
-has played by merging, never by rebasing, so the played head stays in its history.
+sees (docs, tests, a refactor its tests cover, a merge of `master` whose conflict resolutions touch nothing a
+player sees) need no new playtest. `monitor-pr` brings `master` into a branch Matěj has played by merging, never
+by rebasing, so the played head stays in its history.
 
 ### Launch commands
 
