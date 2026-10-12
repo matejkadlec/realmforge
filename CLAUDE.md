@@ -345,8 +345,10 @@ merges). Four parts:
      reconfirmation, the pull request);
    - **Blocked or other:** everything else that needs his attention (below).
 
-Close with one line on how he answers, in this session or any later one: `qa1` passes the test (the batch is
-then published), `qa2` with what is wrong asks for a revision.
+Close with one line on how he answers. For a first playtest, in this session or any later one: `qa1` passes the
+test (the batch is then published), `qa2` with what is wrong asks for a revision. For a reconfirmation of a
+published pull request, in this session, whose `monitor-pr` run owns it: `qa1` passes it (the label goes and the
+run continues to the merge), `qa2` asks for a revision.
 
 **Nothing waits for his test.** Three parts:
 
