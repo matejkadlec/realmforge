@@ -118,7 +118,8 @@ public final class Plot {
     BuildReport.Recorder recorder() {
         if (recorder == null) {
             int roomCount = state == PlotState.BUILDING ? rooms.size() : 0;
-            recorder = new BuildReport.Recorder(id, state, units().size(), roomCount);
+            // A job resumed after a restart reports only the units it runs from here on.
+            recorder = new BuildReport.Recorder(id, state, units().size() - step, roomCount);
         }
         return recorder;
     }

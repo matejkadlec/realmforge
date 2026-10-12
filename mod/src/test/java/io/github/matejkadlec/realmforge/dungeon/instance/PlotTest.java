@@ -41,6 +41,8 @@ class PlotTest {
         assertEquals(2, loaded.step());
         assertEquals(List.of(PLAYER), loaded.party());
         assertEquals(plot.units(), loaded.units(), "the same work list is rebuilt after a restart");
+        assertEquals(loaded.units().size() - 2, loaded.recorder().finish().units(),
+                "a resumed job reports only the units left after the saved step");
     }
 
     @Test
