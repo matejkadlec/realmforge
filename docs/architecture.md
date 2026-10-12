@@ -477,6 +477,17 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   of every released shape and decodes it.
 - Computed values (attribute modifiers, spell modifiers) are derived from these attachments and the registries,
   never treated as a source of truth ([8.2](#82-where-modifiers-come-from)).
+- **In code (F3):** each owner package declares its attachments in a `<Feature>Attachments` class
+  (`stats/StatsAttachments`, `character/CharacterAttachments`, `spell/SpellAttachments`,
+  `talent/TalentAttachments`), registered from its `<Name>Feature`. The values are `stats/EntityLevel`,
+  `character/CharacterData`, `spell/Spellbook`, `spell/CombatState` and `talent/TalentAllocation`; owner-only data
+  syncs with `core/Attachments#toOwner`. Races, classes, spells and talent trees are named by `ResourceLocation`
+  until their registries exist (C1, C3a, C5); a `ResourceKey` saves the same string, so saves stay readable. The
+  cached level cap stays empty until C2 computes it. Every saved field is optional with a default, so an empty
+  save reads as the default value.
+- `level` is copied on death, and NeoForge copies the same attachments when a mob converts (a zombie drowns,
+  `LivingConversionEvent.Post`), so the converted mob keeps its level; W1 makes its scaling follow
+  ([14.1](#141-mob-levels)).
 
 ## 8. Stats and attributes
 
@@ -1109,12 +1120,16 @@ tag, Xaero icons, FTB Quests files) need no code.
 
 The QA mod grows with the features: `/qa` commands (level, class, talents, gear presets, boss at phase N, enter an
 instance with a given seed, reset cooldowns, god mode), a training dummy with a DPS meter, and a combat log file
-that agents can read. The first are `/qa instance enter|leave|build|free|list|cleanup|bench` from spike 3.
+that agents can read. The first are `/qa instance enter|leave|build|free|list|cleanup|bench` from spike 3 and
+`/qa state show|reset [<entity>]` from F3, which prints or clears the player state attachments ([7](#7-player-state)).
 
 The vanilla GameTest server builds its world from the flat preset with an empty dimension registry, so our data pack
 dimensions (`realmforge:instances`, later the M1 dimension) exist in GameTests only through the QA mod's
 `GameTestServerMixin`. A GameTest can log a fake player out and in again through the normal save and login path
-(`PlayerList#remove`, `PlayerList#placeNewPlayer`), as `InstanceGameTests` does to test reconnects.
+(`PlayerList#remove`, `PlayerList#placeNewPlayer`) with `QaPlayers#login`, as `InstanceGameTests` does to test
+reconnects; its connection goes through NeoForge's `NetworkRegistry#configureMockConnection`, so synced attachments
+can be sent to it. `PlayerList#respawn(player, false, ...)` stands in for a respawn after death
+(`PlayerStateGameTests`).
 
 ## 21. Decisions and open questions
 
