@@ -334,10 +334,22 @@ While Matěj plays from the batch's worktree, run no Gradle task in it.
 
 ### Launch commands
 
-Every manual-test handoff gives complete commands Matěj can paste into his WSL terminal, under "Launch commands"
-in the [status overview](../CLAUDE.md#status-overview).
+Every manual-test handoff gives complete commands Matěj can paste, under "Launch commands" in the
+[status overview](../CLAUDE.md#status-overview): PowerShell for his Windows clone, his WSL terminal otherwise.
 
-- **The dev client** (core mod and QA mod, offline player `Dev`, QA commands available; opens through WSLg):
+- **The dev client on Windows**, the default for a playtest (core mod and QA mod, QA commands available, logged in
+  with his own account through DevLogin, working mouse look; [dev setup](dev-setup.md#32-on-windows-playtests)).
+  The batch branch is on `origin` from the claim on, so this works for local and cloud batches alike:
+
+  ```powershell
+  cd $HOME\projects\realmforge-win
+  git fetch origin
+  git switch <branch>
+  .\gradlew.bat runClient
+  ```
+
+- **The dev client in WSL**, only for a check that needs no mouse look (does it load, does a screen open; WSLg
+  breaks first-person mouse look, [dev setup](dev-setup.md#33-in-wsl-quick-checks)):
 
   ```bash
   cd ~/projects/realmforge-worktrees/<dir> && ./gradlew runClient
@@ -353,7 +365,7 @@ in the [status overview](../CLAUDE.md#status-overview).
   cd ~/projects/realmforge-worktrees/<dir>/pack && packwiz serve
   ```
 
-- **A branch from a cloud session** exists only on `origin`, so the commands first create the worktree:
+- **A branch from a cloud session** exists only on `origin`, so the WSL commands first create the worktree:
 
   ```bash
   cd ~/projects/realmforge && git fetch origin <branch> && git worktree add ../realmforge-worktrees/<dir> <branch>
@@ -361,14 +373,15 @@ in the [status overview](../CLAUDE.md#status-overview).
   ```
 
 - **A revision** gives the command that updates an existing checkout: `git pull --ff-only`, or after a rebase
-  `git fetch origin && git reset --keep origin/<branch>`, which refuses to discard local edits.
+  `git fetch origin && git reset --keep origin/<branch>` (in PowerShell, one command per line), which refuses to
+  discard local edits.
 
 ### Reaching the state
 
 For every state Matěj must judge (a class, a level, a spell's cooldown, a boss phase, a dungeon room, a locked
-dimension), the handoff gives the exact commands that reach it in a new world: vanilla commands (`/give Dev
-realmforge:<id>`, `/gamemode`, `/tp`, `/summon`), our own commands, and the QA mod's `/qa` commands in the dev
-client.
+dimension), the handoff gives the exact commands that reach it in a new world: vanilla commands (`/give @s
+realmforge:<id>`, `/gamemode`, `/tp`, `/summon`; target `@s`, because the dev client plays under Matěj's own
+account name), our own commands, and the QA mod's `/qa` commands in the dev client.
 
 - When a state is tedious to reach (a high level, a late boss phase), the batch adds or extends a `/qa` command
   in `qa-mod/` (dev-only, merged with the batch) instead of asking Matěj to grind.
@@ -382,7 +395,7 @@ Every handoff that returns work to Matěj for a manual test (a playtest handoff,
 test", the first part of the [status overview](../CLAUDE.md#status-overview). He reads it instead of the tickets:
 one sentence on where to start, then a numbered list. Each item opens with a bold name for the check and pairs
 what changed with how to see it, with the steps as sub-bullets: "**Frostbolt's slow**, on the training dummy:
-cast Frostbolt; the dummy walks at half speed for 4 s", or "**Mobs scale with distance:** `/tp Dev 1000 ~ 0`; the
+cast Frostbolt; the dummy walks at half speed for 4 s", or "**Mobs scale with distance:** `/tp @s 1000 ~ 0`; the
 level above their heads reads about 10". An item names where to go, the state and how to reach it, first or third
 person where it matters, and what he should see or feel; it says when an effect is subtle or shows only in an
 automated test. A behavior change he must decide on comes first and says so. AI-only work has no What to test:

@@ -1,7 +1,9 @@
 # Development setup
 
-Development happens in **WSL (Ubuntu)**; playing and playtesting the full modpack happens on **Windows** with
-Prism Launcher. Background: [ADR 0011](decisions/0011-repository-layout-and-workflow.md).
+Development happens in **WSL (Ubuntu)**; playing and playtesting happen on **Windows**: the dev client with the QA
+mod from a Windows clone ([section 3.2](#32-on-windows-playtests)), the full modpack in Prism Launcher
+([section 4](#4-playing-the-pack-on-windows-prism-launcher--packwiz-installer)). Background:
+[ADR 0011](decisions/0011-repository-layout-and-workflow.md).
 
 ## 1. Tools in WSL (no sudo needed)
 
@@ -18,6 +20,13 @@ the Windows-WSL file bridge makes Gradle many times slower.
 SDKMAN adds itself to `~/.bashrc`. Scripts and non-interactive shells need
 `source ~/.sdkman/bin/sdkman-init.sh` first.
 
+**Which Java runs Gradle.** `gradlew` starts on whatever Java `JAVA_HOME` or `PATH` gives it (17 or newer). The
+Gradle daemon, which compiles the build scripts and runs the build, always runs on Java 21:
+`gradle/gradle-daemon-jvm.properties` (written by `./gradlew updateDaemonJvm --jvm-version=21`) makes Gradle pick an
+installed Java 21 or download Temurin 21 into `~/.gradle/jdks`. Without it, a newer default Java (26, say) fails
+before configuration with `Unsupported class file major version 70`, because Gradle 9.2.1 runs only on Java 17 to
+25. The mod's own toolchain (`java.toolchain` in `*/build.gradle`) is Java 21 as well.
+
 ## 2. First build
 
 ```bash
@@ -31,22 +40,93 @@ uv run pytest
 Optional, for agents and for reading Minecraft code: `./gradlew :mod:extractMinecraftSources` unpacks the
 decompiled Minecraft + NeoForge sources into `build/mc-sources/`.
 
-## 3. `runClient` in WSL (quick checks)
+## 3. The dev client (`runClient`)
 
-`./gradlew runClient` starts a dev client with the core mod and the QA mod (game directory `run/client`, offline
-player named `Dev`). Windows 11 shows Linux GUI apps through **WSLg**, so the game window opens on the Windows
-desktop.
+`./gradlew runClient` starts a dev client with the core mod and the QA mod, so the `/qa` commands work. Besides
+ours, only playerAnimator is loaded (a QA mod dependency). Its game directory is `run/client` in the checkout
+(saves, options, logs). Playtests run it on Windows (3.2), where mouse look works; in WSL it is good only for
+"does it load" checks (3.3).
 
-- Good for quick checks: does it load, does the item show up, does a screen open. Besides ours, only
-  playerAnimator is loaded (a QA mod dependency).
-- `./gradlew runClient -PwithBetterCombat` adds Better Combat and Cloth Config, the same versions as the pack, to
-  check our code with Better Combat installed. In game, `/qa cast 200` makes `Dev` cast for 10 seconds: a test
-  animation plays and melee is blocked until it ends
+### 3.1 What every dev client gets
+
+- **Your own Minecraft account.** The client run has `devLogin = true` (`qa-mod/build.gradle`): ModDevGradle starts
+  the game through covers1624's [DevLogin](https://github.com/covers1624/DevLogin), so you play as yourself, with
+  your skin, instead of an offline player named `Dev`. The first launch on a machine prints a `[DevLogin]` line
+  with a Microsoft link and a code in the console; open the link, enter the code and sign in with the Microsoft
+  account that owns Minecraft, and the game starts. DevLogin keeps the tokens in `~/.devlogin/accounts.json`
+  (`%USERPROFILE%\.devlogin\accounts.json` on Windows) and reuses them; when they expire, the console asks again.
+  The file holds login tokens: never commit, share or paste it. Deleting it logs you out.
+- **Default options.** Before the client starts, `seedDevOptions` copies `dev/options.txt` into
+  `run/client/options.txt`, but only while that file does not exist, so what you change in game persists. The
+  defaults: GUI scale 2, master volume off, VSync off, field of view 110, FOV effects off, no accessibility
+  onboarding and no tutorial hints. Delete `run/client/options.txt` to get them back. To change them for every
+  fresh client, edit `dev/options.txt` without comment lines (Minecraft logs those as bad options); option names
+  and encodings are vanilla's (`fov:1.0` is 70 + 40 × 1.0).
+- **Better Combat on demand.** `./gradlew runClient -PwithBetterCombat` adds Better Combat and Cloth Config, the
+  same versions as the pack, to check our code with Better Combat installed. In game, `/qa cast 200` makes you cast
+  for 10 seconds: a test animation plays and melee is blocked until it ends
   ([ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)).
-- Graphics go through WSLg's GPU path (Mesa D3D12), which is slower than native. For real play and shaders use
-  Prism on Windows (next section).
-- If the window doesn't open or OpenGL fails: run `wsl --update` in PowerShell, update the GPU driver on Windows,
-  then `wsl --shutdown` and retry. `glxinfo -B` (package `mesa-utils`) should report a `D3D12` renderer.
+- **Logs.** Every launch writes `run/client/logs/latest.log` and `run/client/logs/debug.log` (the same plus debug
+  lines); older launches are gzipped next to them (`2026-10-12-1.log.gz`, `debug-1.log.gz`), and a crash leaves a
+  report in `run/client/crash-reports/`. To hand a problem to an agent, attach the file, or paste the output of
+  `grep -nE "ERROR|Exception" run/client/logs/latest.log`.
+
+### 3.2 On Windows (playtests)
+
+The Windows client has native graphics and working mouse look, and unlike Prism (section 4) it loads the QA mod.
+It needs its own clone on the Windows file system. Never build the WSL checkout from Windows (`\\wsl$\...`), and
+never a Windows folder from WSL (`/mnt/c/...`).
+
+Once, in PowerShell, with [Git for Windows](https://git-scm.com/download/win) and a JDK installed (Temurin 21 from
+[adoptium.net](https://adoptium.net/); any Java 17 or newer starts Gradle, and the daemon finds or downloads Java 21
+by itself, see [section 1](#1-tools-in-wsl-no-sudo-needed)):
+
+```powershell
+cd $HOME\projects
+git clone https://github.com/matejkadlec/realmforge.git realmforge-win
+```
+
+Everything the build needs is in the repository: the generated files are committed (no Python or uv), and
+`.gitattributes` keeps LF line endings (CRLF only for `.bat`), so nothing comes from WSL. The first `runClient`
+downloads Minecraft and NeoForge and takes several minutes; then DevLogin asks for your login (3.1).
+
+For each playtest, switch the clone to the branch under test and start the client:
+
+```powershell
+cd $HOME\projects\realmforge-win
+git fetch origin
+git switch <branch>
+.\gradlew.bat runClient
+```
+
+For a later revision of the same branch, `git pull --ff-only` updates it, or after a rebase `git fetch origin`
+followed by `git reset --keep origin/<branch>`, which refuses to discard local edits. When you are done,
+`.\gradlew.bat --stop` stops the Gradle daemon and frees its memory.
+
+### 3.3 In WSL (quick checks)
+
+Windows 11 shows Linux GUI apps through **WSLg**, so `./gradlew runClient` in WSL opens the game window on the
+Windows desktop. Use it for quick checks: does the game load, does the item show up, does a screen open.
+
+- **Mouse look does not work.** The camera snaps to straight down and does not follow the mouse: WSLg passes input
+  over Wayland and RDP and gives GLFW no relative pointer lock, which first-person mouse look needs
+  ([microsoft/wslg#376](https://github.com/microsoft/wslg/issues/376)). Our code cannot fix it, so anything that
+  needs looking around runs on Windows (3.2).
+- **WSLg must be on.** `%USERPROFILE%\.wslconfig` must not set `guiApplications=false` (the client then fails with
+  `glfwInit failed`), and `echo $DISPLAY` in WSL prints `:0`.
+- **Graphics** go through WSLg's GPU path (Mesa D3D12), which is slower than native. The `EARLYDISPLAY` line
+  `GL info:` in the log names the renderer; `llvmpipe` there means software rendering on the CPU. Then run
+  `wsl --update` in PowerShell, update the GPU driver on Windows, run `wsl --shutdown` and retry.
+  `glxinfo -B` (package `mesa-utils`) should report a `D3D12` renderer.
+- **Harmless log messages** that look like errors:
+  - `Failed to load library flite` with a stack trace: the narrator; WSL has no `libflite.so`.
+  - `Error starting SoundSystem` and `Failed to open OpenAL device`, plus ALSA lines in the console: WSL has no
+    audio device.
+  - `Ambiguity between arguments [teleport, ...]`: vanilla's command tree, logged in dev environments.
+  - `Missing sound for event: minecraft:item.goat_horn.play` (and `minecraft:entity.goat.screaming.horn_break`):
+    vanilla.
+  - `Assets URL ... uses unexpected schema`: the NeoForge dev environment.
+  - `Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2`: vanilla.
 - `./gradlew runServer` starts a dev dedicated server in `run/server`; accept the EULA once in
   `run/server/eula.txt`.
 

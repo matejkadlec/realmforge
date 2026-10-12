@@ -48,7 +48,7 @@ Changing any of these requires a new ADR ([0003](docs/decisions/0003-platform-mi
 | NeoForge | 21.1.259 | `gradle.properties`, `pack/pack.toml`, `tools/realmforge_tools/packboot.py` |
 | ModDevGradle | 2.0.148 | `settings.gradle` |
 | Gradle | 9.2.1 (checksum-pinned wrapper) | `gradle/wrapper/gradle-wrapper.properties` |
-| Java | 21 (Temurin) | toolchain in `*/build.gradle` |
+| Java | 21 (Temurin) | toolchain in `*/build.gradle`; Gradle daemon in `gradle/gradle-daemon-jvm.properties` |
 | Parchment | 1.21.1 / 2024.11.17 | `gradle.properties` |
 | Python | 3.12+ (3.14 pinned in `.python-version`), managed by uv | `pyproject.toml`, `uv.lock` |
 | packwiz | commit `ef87d96` | `.github/workflows/ci.yml` |
@@ -77,7 +77,8 @@ uv run rf pack-boot                       # boot the whole pack + mod/build/libs
 
 ./gradlew build                           # compile both mods + JUnit
 ./gradlew runGameTestServer               # headless GameTests; exit code != 0 on failure
-./gradlew runClient                       # dev client with core + QA mod (game dir: run/client)
+./gradlew runClient                       # dev client with core + QA mod, Matěj's account (DevLogin), run/client;
+                                          # playtests run it from his Windows clone (docs/dev-setup.md, 3.2)
 ./gradlew runClient -PwithBetterCombat    # the same plus Better Combat (ADR 0020); /qa cast <ticks> in game
 ./gradlew runServer                       # dev dedicated server (run/server; accept run/server/eula.txt once)
 ./gradlew :mod:extractMinecraftSources    # decompiled MC + NeoForge sources -> build/mc-sources/
@@ -99,6 +100,7 @@ cd pack && packwiz refresh                # after changing anything in pack/
 | `mod/src/generated/` | Java registrations, models, lang, textures from `rf gen` | **no** |
 | `qa-mod/` | dev-only mod `realmforge_qa` (GameTests, later debug tools); never released | `src/main` |
 | `qa-mod/src/generated/` | content expectations for GameTests, GameTest structures from `rf gen` | **no** |
+| `dev/` | dev client defaults: `options.txt`, seeded into `run/client` by `seedDevOptions` | yes |
 | `pack/` | packwiz modpack definition (metadata only, no jars) | via `packwiz` commands |
 | `art/` | asset sources: prompts, palettes, Blockbench files | yes |
 | `docs/` | vision, architecture, roadmap, research notes, ADRs, dev setup | yes |
@@ -322,7 +324,7 @@ merges). Four parts:
    exact commands that reach that state, and says what he should see. A behavior change he must decide on comes
    first and says so ([flow: What to test](docs/ai-development-flow.md#what-to-test)).
 2. **Launch commands:** complete commands he can paste, in one block, with the checkout named in the heading,
-   e.g. "Launch commands (your WSL checkout)"
+   e.g. "Launch commands (your Windows clone)"
    ([flow: Launch commands](docs/ai-development-flow.md#launch-commands)).
 3. **Verification ✅** (optional): what ran and passed, one bullet each; never "all checks passed" for a partial
    run.
