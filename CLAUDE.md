@@ -29,6 +29,8 @@ modpack adds third-party QoL, performance and library mods.
   it: `flow1` takes a batch of tickets from the active sprint, `flow2` turns Matěj's task description into a
   ticket, and direct work uses the flow's intake claim; the key goes into the branch name and the PR title, and
   `monitor-pr` moves the ticket to Done after the merge ([ADR 0016](docs/decisions/0016-jira-batch-delivery.md)).
+  A batch that needs Matěj's playtest opens no PR while it waits for him: he answers `qa1` (passed: publish it)
+  or `qa2` (changes required: revise it) ([ADR 0022](docs/decisions/0022-playtest-before-the-pull-request.md)).
   Follow-ups a change does not fix (review findings, gaps found on the way) become RLM tickets, not GitHub issues
   ([follow-up tickets](docs/ai-development-flow.md#follow-up-tickets)). Before any Jira intake, ticket creation or
   publication of ticket work, read [docs/ai-development-flow.md](docs/ai-development-flow.md) completely. Agents
@@ -105,7 +107,7 @@ cd pack && packwiz refresh                # after changing anything in pack/
 | `art/` | asset sources: prompts, palettes, Blockbench files | yes |
 | `docs/` | vision, architecture, roadmap, research notes, ADRs, dev setup | yes |
 | `.github/workflows/ci.yml` | CI | yes |
-| `.claude/` | Claude Code settings, content validation hook, cloud warm-up hook, Gradle queue script, flow skills (`flow1`, `flow2`), PR skills (`fix-pr`, `finalize-pr`, `monitor-pr`), `pr-reviewer` agent | yes |
+| `.claude/` | Claude Code settings, content validation hook, cloud warm-up hook, Gradle queue script, flow skills (`flow1`, `flow2`, `qa1`, `qa2`), PR skills (`fix-pr`, `finalize-pr`, `monitor-pr`), `pr-reviewer` agent | yes |
 | `.mcp.json` | MCP servers for Claude Code: `atlassian` (Jira) | yes |
 | `.local/` | owner's private inputs; gitignored, **never commit** | - |
 | `run/`, `build/`, `.cache/` | runtime and build output; gitignored | - |
@@ -260,8 +262,11 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
 - Open them ready for review (never drafts) against `master` with `gh pr create`. The description says what
   changed, why, and which checks passed. Never write `@codex` on a pull request (description, comments,
   replies): any mention starts a Codex review or a Cloud task that can push to the branch.
-- Add the `needs-playtest` label when Matěj should play the change before it merges (gameplay, visuals,
-  balance). Only Matěj removes it.
+- A Jira batch that changes gameplay (visuals, balance) is played before its PR exists: push the branch, hand it
+  to Matěj, and publish only after his `qa1`
+  ([flow: Playtest handoff](docs/ai-development-flow.md#playtest-handoff)). The `needs-playtest` label holds a
+  PR only for a reconfirmation (a later fix changed gameplay) and for a gameplay PR outside the flow. Only Matěj
+  clears it: by removing it, or by answering `qa1`.
 - A plan change (any change to `docs/roadmap.md`) carries no label and does not hold the merge. Make one only as
   Matěj decided it: a Done decision ticket, his request, or a ticket he wrote that asks for it; the description
   names the plan change and that source. Propose any other plan change to him first, under "Blocked or other" in
@@ -302,10 +307,11 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
    dedicated server and on a client ([ADR 0018](docs/decisions/0018-pack-boot-tests.md)).
 6. `monitor-pr` merges once Codex is done (its approval, a completed review whose findings are all closed, or
    10 silent minutes), every review thread is resolved and the required checks are green, unless the PR has the
-   `needs-playtest` label (Matěj playtests first and removes the label)
+   `needs-playtest` label (a reconfirmation: Matěj plays the new head and answers `qa1` or `qa2`)
    ([ADR 0015](docs/decisions/0015-merging-through-monitor-pr.md),
    [ADR 0016](docs/decisions/0016-jira-batch-delivery.md),
-   [ADR 0021](docs/decisions/0021-status-overview-and-plan-changes.md)). Distribution: GitHub Releases now,
+   [ADR 0021](docs/decisions/0021-status-overview-and-plan-changes.md),
+   [ADR 0022](docs/decisions/0022-playtest-before-the-pull-request.md)). Distribution: GitHub Releases now,
    CurseForge later ([ADR 0008](docs/decisions/0008-distribution-github-and-curseforge.md)).
 
 ## Status overview
@@ -333,11 +339,12 @@ merges). Four parts:
      reconciliation moved to Done, or "none";
    - **Pending CR:** pull requests under review, each with its exact state (waiting for Codex, a hold,
      `owner action: ...`);
-   - **Pending User QA:** the tickets and pull request waiting for this test;
+   - **Pending User QA:** the tickets and branch waiting for this test (no pull request yet; for a
+     reconfirmation, the pull request);
    - **Blocked or other:** everything else that needs his attention (below).
 
-Close with one line on how he answers: removing `needs-playtest` passes the test; a problem goes into the
-session or a pull request comment.
+Close with one line on how he answers, in this session or any later one: `qa1` passes the test (the batch is
+then published), `qa2` with what is wrong asks for a revision.
 
 **Nothing waits for his test.** Three parts:
 
