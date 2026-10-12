@@ -8,9 +8,11 @@ description: Record Matěj's failed playtest of a batch in Pending User QA and r
 Follow `CLAUDE.md` and read [`docs/ai-development-flow.md`](../../../docs/ai-development-flow.md) completely before
 revising; this skill may not weaken either. _qa2: changes required_ there holds the rules.
 
-1. **Find the batch** as `qa1` does: the one this session handed off, the keys or branch Matěj names, or the only
-   playtest batch in Pending User QA; with several and no hint, ask which one. Then move the tickets his feedback
-   affects from Pending User QA to In Progress.
+1. **Find the batch** as `qa1` does: the one this session handed off, the keys, branch or pull request Matěj
+   names, or the only batch waiting for a playtest (tickets in Pending User QA, or an open pull request with
+   `needs-playtest`, one outside the Jira flow included); with several and no hint, ask which one. Then move the
+   tickets his feedback affects from Pending User QA to In Progress; a pull request without tickets has no Jira
+   step, here or below.
 2. **Stay on the same branch:** no new branch and no replacement work. Reuse its worktree or create one from
    `origin/<branch>` after `git fetch origin`. Then bring the local branch up to `origin/<branch>` before
    anything else: `git merge --ff-only origin/<branch>`, or `git merge origin/<branch>` when both sides have
