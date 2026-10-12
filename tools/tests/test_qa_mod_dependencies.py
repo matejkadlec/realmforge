@@ -1,8 +1,8 @@
 """The QA mod's Modrinth dependencies are the builds the modpack ships (RLM-83).
 
-`qa-mod/build.gradle` names playerAnimator, Better Combat and Cloth Config by Modrinth version id
+`qa-mod/build.gradle` names playerAnimator, Better Combat, Cloth Config and Yeetus Experimentus by Modrinth version id
 (`maven.modrinth:<slug>:<id>`); each id must equal `version` under `[update.modrinth]` in `pack/mods/<slug>.pw.toml`,
-or `runClient -PwithBetterCombat` would test our code against other jars than players get.
+or the dev runs would test our code against other jars than players get.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from realmforge_tools.project import REPO_ROOT
 from tests.conftest import write
 
 COORDINATE = re.compile(r"""['"]maven\.modrinth:([a-z0-9_-]+):([^'"$]+)['"]""")
-PACK_SLUGS = {"playeranimator", "better-combat", "cloth-config"}
+PACK_SLUGS = {"playeranimator", "better-combat", "cloth-config", "yeetus-experimentus"}
 
 
 def modrinth_coordinates(build_gradle: str) -> dict[str, str]:

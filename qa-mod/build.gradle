@@ -110,12 +110,18 @@ repositories {
 def playerAnimator = 'maven.modrinth:playeranimator:HJZB6bmA' // 2.0.4+1.21.1-forge
 def betterCombat = 'maven.modrinth:better-combat:VhIOvcXP' // 2.4.0+1.21.1-neoforge
 def clothConfig = 'maven.modrinth:cloth-config:izKINKFg' // 15.0.140+neoforge
+def yeetusExperimentus = 'maven.modrinth:yeetus-experimentus:Pp0TjcvD' // 87.0.0
 
 dependencies {
     implementation project(':mod')
 
     // playerAnimator, the animation library Better Combat uses: the QA mod's test cast animation (/qa cast).
     implementation playerAnimator
+
+    // Yeetus Experimentus skips the experimental-settings warning that our data pack dimensions cause on every new
+    // world, as it does in the pack (architecture 15.1, RLM-84). Its mixins are client-only, so the server and
+    // GameTest runs load it without effect.
+    runtimeOnly yeetusExperimentus
 
     // Better Combat and its config library join the dev runs only with `-PwithBetterCombat`, so the default runs
     // and CI test the mods without it: ./gradlew runClient -PwithBetterCombat

@@ -892,6 +892,13 @@ loot: realmforge:boss/hollow_warden
   code depends on it, so it lives in the core mod's resources (`data/realmforge/dimension/instances.json` and
   `dimension_type/instances.json`), not in `content/worldgen/`
   ([ADR 0019](decisions/0019-dungeon-instances-in-plots.md)).
+- **No experimental-settings warning.** Vanilla calls every level stem other than the overworld, nether and end
+  experimental (`WorldDimensions#checkStability` and `bake`), so each of our dimensions would make
+  `WorldOpenFlows.confirmWorldCreation` show "These settings are using experimental features" for every new world,
+  and a world created before Realmforge was added would ask for a backup once. The client-only pack mod Yeetus
+  Experimentus ([ADR 0013](decisions/0013-modpack-composition.md)) skips both screens and the warning for
+  experimental data packs in the create screen; nothing changes on servers. The dev client loads the same build
+  from `qa-mod/build.gradle`. We add no mixin of our own for it ([19.3](#193-mixins-and-access-transformers)).
 - The Nether and End stay an open question ([roadmap](roadmap.md#open-decisions)); M1 does not touch them.
 
 ### 15.2 Dungeon types

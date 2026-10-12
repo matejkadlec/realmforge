@@ -78,12 +78,13 @@ On a server without Quark, delete its jar after installing.
 
 ## Mods the QA mod uses too
 
-The dev-only QA mod gets **playerAnimator**, **Better Combat** and **Cloth
-Config** from Modrinth's Maven, so `./gradlew runClient -PwithBetterCombat`
-tests our code against the jars players get. `qa-mod/build.gradle` names them
-by Modrinth version id, the `version` under `[update.modrinth]` in
-`mods/playeranimator.pw.toml`, `better-combat.pw.toml` and
-`cloth-config.pw.toml`. Updating one of these mods means updating
+The dev-only QA mod gets **playerAnimator**, **Better Combat**, **Cloth
+Config** and **Yeetus Experimentus** from Modrinth's Maven, so the dev runs
+(`./gradlew runClient`, with `-PwithBetterCombat` for Better Combat) test our
+code against the jars players get. `qa-mod/build.gradle` names them by Modrinth
+version id, the `version` under `[update.modrinth]` in
+`mods/playeranimator.pw.toml`, `better-combat.pw.toml`, `cloth-config.pw.toml`
+and `yeetus-experimentus.pw.toml`. Updating one of these mods means updating
 `qa-mod/build.gradle` too: `uv run pytest`
 (`tools/tests/test_qa_mod_dependencies.py`) fails while they differ.
 

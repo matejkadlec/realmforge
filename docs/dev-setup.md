@@ -44,9 +44,9 @@ decompiled Minecraft + NeoForge sources into `build/mc-sources/`.
 ## 3. The dev client (`runClient`)
 
 `./gradlew runClient` starts a dev client with the core mod and the QA mod, so the `/qa` commands work. Besides
-ours, only playerAnimator is loaded (a QA mod dependency). Its game directory is `run/client` in the checkout
-(saves, options, logs). Playtests run it on Windows (3.2), where mouse look works; in WSL it is good only for
-"does it load" checks (3.3).
+ours, only playerAnimator (a QA mod dependency) and Yeetus Experimentus are loaded. Its game directory is
+`run/client` in the checkout (saves, options, logs). Playtests run it on Windows (3.2), where mouse look works; in
+WSL it is good only for "does it load" checks (3.3).
 
 ### 3.1 What every dev client gets
 
@@ -63,6 +63,9 @@ ours, only playerAnimator is loaded (a QA mod dependency). Its game directory is
   onboarding and no tutorial hints. Delete `run/client/options.txt` to get them back. To change them for every
   fresh client, edit `dev/options.txt` without comment lines (Minecraft logs those as bad options); option names
   and encodings are vanilla's (`fov:1.0` is 70 + 40 × 1.0).
+- **No experimental-settings warning.** Our data pack dimensions make vanilla call every new world
+  experimental; Yeetus Experimentus, the same build as the pack, skips the warning screen
+  ([architecture 15.1](architecture.md#151-dimensions)).
 - **Better Combat on demand.** `./gradlew runClient -PwithBetterCombat` adds Better Combat and Cloth Config, the
   same versions as the pack, to check our code with Better Combat installed. In game, `/qa cast 200` makes you cast
   for 10 seconds: a test animation plays and melee is blocked until it ends
