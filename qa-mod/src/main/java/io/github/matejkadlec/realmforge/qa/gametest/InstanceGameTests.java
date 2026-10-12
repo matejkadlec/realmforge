@@ -183,6 +183,14 @@ public final class InstanceGameTests {
         helper.succeed();
     }
 
+    /** The bench samples no tick that started it: a console command's save and disk walk would count as idle time. */
+    @GameTest(template = PLATFORM)
+    public static void benchSkipsTheTickThatStartedIt(GameTestHelper helper) {
+        helper.assertFalse(InstanceBench.sampled(41, 41), "the tick that ran the command");
+        helper.assertTrue(InstanceBench.sampled(42, 41), "the next tick");
+        helper.succeed();
+    }
+
     private static InstanceManager manager(GameTestHelper helper) {
         InstanceManager manager = InstanceManager.get(helper.getLevel().getServer());
         helper.assertTrue(manager != null, "the GameTest world has no realmforge:instances dimension");

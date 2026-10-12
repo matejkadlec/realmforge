@@ -43,6 +43,7 @@ public final class InstanceBench {
     private Phase phase = Phase.WARMUP;
     private int phaseTicks;
     private int run;
+    private int startTick;
     @Nullable
     private Plot plot;
     private long diskBefore;
@@ -74,6 +75,7 @@ public final class InstanceBench {
         InstanceBench bench = new InstanceBench(source, runs, rooms, cleanup);
         manager.setCleanup(cleanup);
         bench.diskBefore = bench.flushAndMeasureDisk();
+        bench.startTick = source.getServer().getTickCount();
         running = bench;
         return true;
     }
@@ -90,6 +92,15 @@ public final class InstanceBench {
         running = null;
     }
 
+    /**
+     * Whether the tick with this count gives a sample. A command typed into the dedicated server's console runs
+     * inside a tick (chat and RCON commands run between ticks), so the tick that started the bench also holds the
+     * save and disk walk of {@link #start} and is left out.
+     */
+    public static boolean sampled(int tickCount, int startTick) {
+        return tickCount != startTick;
+    }
+
     /** Called at the end of every server tick. */
     public static void onServerTick(MinecraftServer server) {
         if (running != null) {
@@ -101,6 +112,9 @@ public final class InstanceBench {
         InstanceManager manager = InstanceManager.get(server);
         if (manager == null) {
             running = null;
+            return;
+        }
+        if (!sampled(server.getTickCount(), startTick)) {
             return;
         }
         int index = server.getTickCount() % 100;
