@@ -220,7 +220,7 @@ Recommendation (accepted, [ADR 0005](decisions/0005-content-pipeline-yaml-single
 
 ## 5. Assets
 
-Recommendation (accepted, [ADR 0007](decisions/0007-asset-pipeline.md); the generator choice refined by [ADR 0023](decisions/0023-texture-generator.md): Retro Diffusion Fast only): Retro Diffusion as the main texture generator, PixelLab as a cheap fallback, models via Blockbench MCP and GeckoLib, sounds from vanilla plus ElevenLabs. Both generators have an MCP server for Claude Code, so the agent calls them directly. Budget (2026-10-11): roughly 40-140 USD per month while producing assets, 0-18 USD per month otherwise (excluding VAT).
+Recommendation (accepted, [ADR 0007](decisions/0007-asset-pipeline.md); the generator choice refined by [ADR 0023](decisions/0023-texture-generator.md): Retro Diffusion Fast only): Retro Diffusion as the texture generator, models via Blockbench MCP and GeckoLib, sounds from vanilla plus ElevenLabs. ADR 0007 also named PixelLab as a cheap fallback; spike 5 dropped it (ADR 0023). Retro Diffusion has an MCP server for Claude Code, so the agent calls it directly ([setup](dev-setup.md#5-claude-code)). Budget (2026-10-11): roughly 40-140 USD per month while producing assets, 0-18 USD per month otherwise (excluding VAT).
 
 ### Image generators
 
@@ -241,7 +241,7 @@ Recommendation (accepted, [ADR 0007](decisions/0007-asset-pipeline.md); the gene
 ### Texture pipeline
 
 1. A fixed project palette, close to vanilla: `art/palette/realmforge.gpl`.
-2. A batch of candidates from Retro Diffusion or PixelLab via MCP.
+2. A batch of candidates from Retro Diffusion Fast via MCP ([ADR 0023](decisions/0023-texture-generator.md)).
 3. Grid and palette cleanup: [unfake](https://pypi.org/project/unfake/) (MIT) or Pillow `quantize`. Built in
    spike 5 without either, as `uv run rf art clean` (standard library only).
 4. Review gallery: accept, reject, regenerate (`uv run rf art gallery`).

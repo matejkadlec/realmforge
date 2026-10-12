@@ -188,6 +188,22 @@ in `~/.mcp-auth/`, so later sessions reuse it. `/mcp` in a Claude Code terminal 
 connected. `.claude/settings.json` allows the Atlassian tools without a prompt, because the flows move and
 comment on tickets on their own. Cloud sessions use the claude.ai Atlassian connector instead.
 
+**Retro Diffusion (MCP).** Textures come from Retro Diffusion Fast through its hosted MCP server
+([ADR 0023](decisions/0023-texture-generator.md), [art/README.md](../art/README.md)). It is not in `.mcp.json`,
+because it authenticates with a personal API key that never enters the repository. Add it once per machine at
+user scope, so it works in every worktree, with a key from Developer Tools on retrodiffusion.ai (keys start with
+`rdpk-`):
+
+```bash
+claude mcp add --scope user --transport http retro-diffusion https://mcp.retrodiffusion.ai/mcp \
+  --header "Authorization: Bearer rdpk-..."
+```
+
+Claude Code keeps the key in its user configuration (`~/.claude.json`), outside every checkout: never paste it
+into the repository, a ticket or a chat. `claude mcp list` (or `/mcp` in a session) shows `retro-diffusion` as
+connected. Generations spend prepaid credit, so agents ask Matěj before buying credit, and auto-refill stays off.
+Cloud sessions do not have this server, so texture batches run in a local session.
+
 **Gradle queue.** Agents running in several worktrees start their Gradle builds and GameTests through
 `.claude/scripts/gradle-queue.sh <task>`, which waits while the machine is short of memory
 ([AI development flow](ai-development-flow.md#gradle-queue)).
