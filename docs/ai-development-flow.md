@@ -600,7 +600,8 @@ distinguishable, a run pushes each commit to the batch branch as it makes it (a 
 when two hours pass without a commit it adds a `🔒 Claim heartbeat` comment to each ticket of the batch. A claim is
 stale when no open pull request names its keys and neither the branch's newest commit (local or remote) nor the
 newest claim or heartbeat comment on its tickets is younger than six hours; a worktree a dead run left behind
-does not keep it alive. CLAUDE.md forbids committing to another session's branch, and the branch may hold
+does not keep it alive. Only tickets In Progress can be stale: a batch in Pending User QA has no pull request on
+purpose and waits for Matěj's `qa1` or `qa2`, however long that takes. CLAUDE.md forbids committing to another session's branch, and the branch may hold
 finished work, so a stale claim is not taken over automatically: intake skips it and lists it in the ledger under
 "Blocked or other", with the branch, its last activity and the two ways on. Matěj either asks a session to
 continue that branch (it then becomes that session's batch: a worktree on the existing branch, a new claim
