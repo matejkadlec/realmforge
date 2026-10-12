@@ -602,9 +602,11 @@ either:
 
 - splits the local-only part into its own ticket ([Follow-up tickets](#follow-up-tickets), its description naming
   the local-only step, blocked by the batch's tickets when it builds on their work). The `Location: local-only`
-  comment goes on that split-off ticket only. Each ticket of the batch gets a plain note naming it instead and
-  stays cloud-capable, and the run finishes the batch as usual. The run lists the split-off ticket under "Blocked
-  or other"; or
+  comment goes on that split-off ticket only. The split moves the local-only criteria too: they go into the
+  split-off ticket's "Done when", each batch ticket's "Done when" is edited to drop them, and a plain note on
+  each batch ticket names the split-off ticket and the criteria it took over. The batch's tickets stay
+  cloud-capable, and the run finishes them against their edited "Done when". The run lists the split-off ticket
+  under "Blocked or other"; or
 - releases the batch when that part cannot be split off. Then every ticket of the batch gets the
   `Location: local-only` comment and a claim-release comment naming the branch, and goes back to Next. The branch
   stays on `origin`. A `local` run that selects the tickets again claims them anew; continuing the released branch
