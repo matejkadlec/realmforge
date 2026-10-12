@@ -33,7 +33,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0020](0020-cast-animations-and-melee-while-casting.md) | Cast animations through playerAnimator, no melee while casting | Accepted |
 | [0021](0021-status-overview-and-plan-changes.md) | A status overview ends every response; plan changes without a label | Accepted (amends 0015, 0016 and 0017) |
 | [0022](0022-playtest-before-the-pull-request.md) | Playtest before the pull request: qa1 and qa2 | Accepted (amends 0016 and 0021) |
-| [0022](0022-texture-generators.md) | Texture generators: Retro Diffusion for blocks, PixelLab Pro for items and icons | Proposed (refines 0007) |
+| [0022](0022-texture-generators.md) | Texture generator: Retro Diffusion Fast, cleaned to the project palette | Accepted (refines 0007) |
 
 ## Open questions (not decided)
 

@@ -1,7 +1,13 @@
 # Spike 5: Retro Diffusion vs PixelLab
 
 Spike 5 (RLM-16) generated the same 10 textures with both generators, cleaned them with the first texture pipeline
-step and put them in one review gallery. The decision it feeds: [ADR 0022](../../docs/decisions/0022-texture-generators.md).
+step and put them in one review gallery.
+
+**Outcome (2026-10-12):** Matěj picked Retro Diffusion Fast for all 10 textures and preferred the cleaned version
+of each: Retro Diffusion Plus "looks weird", and PixelLab "doesn't look like it's for Minecraft". Retro Diffusion
+Fast, cleaned to the project palette, is the texture generator
+([ADR 0022](../../docs/decisions/0022-texture-generators.md)). The PixelLab and Plus candidates stay here as the
+spike's evidence.
 
 ```bash
 uv run rf art gallery art/spike5/candidates      # writes .cache/art/candidates-gallery.html
