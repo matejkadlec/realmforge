@@ -272,18 +272,24 @@ _JS = """
   };
   for (const r of radios) r.addEventListener("change", update);
   update();
+  const selectPicks = () => {
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    status.textContent = "Selected; press Ctrl+C";
+  };
   document.getElementById("copy-picks").addEventListener("click", () => {
-    navigator.clipboard.writeText(text.textContent).then(
-      () => { status.textContent = "Copied"; },
-      () => {
-        const range = document.createRange();
-        range.selectNodeContents(text);
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
-        status.textContent = "Selected; press Ctrl+C";
-      }
-    );
+    // navigator.clipboard is missing outside secure contexts; the call then throws instead of rejecting.
+    try {
+      navigator.clipboard.writeText(text.textContent).then(
+        () => { status.textContent = "Copied"; },
+        selectPicks
+      );
+    } catch (e) {
+      selectPicks();
+    }
   });
 })();
 """
