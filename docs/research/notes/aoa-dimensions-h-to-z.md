@@ -656,7 +656,7 @@ AoA already tried versions of every candidate realm: sky islands (Haven), a wate
    - Shyrelands wind gusts hit exposed high ground.
    - Vox Ponds atmosphere drains HP (Hazmat suit or Face Mask).
    - Lunalus has low gravity, oxygen and a void that returns you from the sky.
-   - Every rebuilt AoA realm kept or added one. For Realmforge: underwater pressure/depth, space oxygen, sky-realm wind, desert heat (owner's M4 desert).
+   - Every rebuilt AoA realm kept or added one. For Realmforge: underwater pressure/depth, space oxygen, sky-realm wind, a sandstorm event in the desert (owner's M4 desert; never temperature, a vision hard no).
    - Sources: [A12 LelyetiaEvents, ShyrelandsEvents, VoxPondsEvents; A21 LunalusEvents]
 6. **Per-biome spawn tables with passive and ambient categories**, using A21 Precasia's layout as the template: herds of 2–4 grazers, predator packs of 2–3, river frogs and tadpoles, ocean fish and squid, cave-only species, all per biome. This directly answers "neutral mobs, animals… as full as a well-modded Overworld" — [A21 data/aoa3/worldgen/biome/precasian_*.json]
 7. **Ambient "harvestable life" tied to a profession**, like pixons siphoned with a bowl for realm-specific infusion stones. This is a cheap way to make realms feel inhabited and give non-combat reasons to stay — [A12 EntityPixon.java; bestiary ambient_pixon.txt]
