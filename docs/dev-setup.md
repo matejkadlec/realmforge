@@ -112,6 +112,11 @@ is already open (a reconfirmation) is answered in the session that asked for it.
 Windows 11 shows Linux GUI apps through **WSLg**, so `./gradlew runClient` in WSL opens the game window on the
 Windows desktop. Use it for quick checks: does the game load, does the item show up, does a screen open.
 
+To check an agent's batch in WSL, play from a **playtest checkout**, a detached worktree of the handed-off head
+(`../realmforge-worktrees/<dir>-playtest`), never from the agent's own worktree: the agent may build or rebase
+there while the game runs. The handoff gives the commands
+([AI development flow](ai-development-flow.md#launch-commands)).
+
 - **Mouse look does not work.** The camera snaps to straight down and does not follow the mouse: WSLg passes input
   over Wayland and RDP and gives GLFW no relative pointer lock, which first-person mouse look needs
   ([microsoft/wslg#376](https://github.com/microsoft/wslg/issues/376)). Our code cannot fix it, so anything that

@@ -335,7 +335,8 @@ come after he passes it with `qa1`. Its branch is on `origin` from the claim on,
 6. Stop: the handoff ends the run ([Concurrency and run boundaries](#concurrency-and-run-boundaries)). His answer
    may come in this session or any later one, local or cloud.
 
-While Matěj plays from the batch's worktree, run no Gradle task in it.
+Matěj plays from his Windows clone or from a playtest checkout ([Launch commands](#launch-commands)), never from
+the batch's worktree, so the session that owns the batch can keep building and committing there.
 
 ### qa1: playtest passed
 
@@ -420,33 +421,46 @@ Every manual-test handoff gives complete commands Matěj can paste, under "Launc
   .\gradlew.bat runClient
   ```
 
-- **The dev client in WSL**, only for a check that needs no mouse look (does it load, does a screen open; WSLg
-  breaks first-person mouse look, [dev setup](dev-setup.md#33-in-wsl-quick-checks)):
+- **WSL launches use a playtest checkout:** a detached worktree of the handed-off head at
+  `../realmforge-worktrees/<dir>-playtest`, in which no agent builds. The batch's own worktree belongs to the
+  session working on it: a `qa2` revision, a `fix-pr` pass during a reconfirmation or a rebase there rewrites the
+  classes and resources a running dev client loads, and changes the head he is judging. The batch branch is on
+  `origin` from the claim on, so the same commands work for local and cloud batches. Create the checkout once per
+  batch, with `<sha>` the handed-off head:
 
   ```bash
-  cd ~/projects/realmforge-worktrees/<dir> && ./gradlew runClient
+  cd ~/projects/realmforge && git fetch origin <branch> && git worktree add --detach ../realmforge-worktrees/<dir>-playtest <sha>
   ```
 
-- **The full pack in Prism**, when the change only shows with the pack, or `pack/` changed: install the jar,
-  and serve the pack from the worktree when `pack/` changed (the local pre-launch command in
-  [dev setup](dev-setup.md#4-playing-the-pack-on-windows-prism-launcher--packwiz-installer)). The QA mod is never
-  installed into Prism, so QA commands are missing there.
+  - **The dev client in WSL**, only for a check that needs no mouse look (does it load, does a screen open; WSLg
+    breaks first-person mouse look, [dev setup](dev-setup.md#33-in-wsl-quick-checks)):
 
-  ```bash
-  cd ~/projects/realmforge-worktrees/<dir> && ./gradlew :mod:installToPrism
-  cd ~/projects/realmforge-worktrees/<dir>/pack && packwiz serve
-  ```
+    ```bash
+    cd ~/projects/realmforge-worktrees/<dir>-playtest && ./gradlew runClient
+    ```
 
-- **A branch from a cloud session** exists only on `origin`, so the WSL commands first create the worktree:
+  - **The full pack in Prism**, when the change only shows with the pack, or `pack/` changed: install the jar,
+    and serve the pack from the checkout when `pack/` changed (the local pre-launch command in
+    [dev setup](dev-setup.md#4-playing-the-pack-on-windows-prism-launcher--packwiz-installer)). The QA mod is never
+    installed into Prism, so QA commands are missing there.
 
-  ```bash
-  cd ~/projects/realmforge && git fetch origin <branch> && git worktree add ../realmforge-worktrees/<dir> <branch>
-  cd ~/projects/realmforge-worktrees/<dir> && uv sync && ./gradlew runClient
-  ```
+    ```bash
+    cd ~/projects/realmforge-worktrees/<dir>-playtest && ./gradlew :mod:installToPrism
+    cd ~/projects/realmforge-worktrees/<dir>-playtest/pack && packwiz serve
+    ```
 
-- **A revision** gives the command that updates an existing checkout: `git pull --ff-only`, or after a rebase
-  `git fetch origin && git reset --keep origin/<branch>` (in PowerShell, one command per line), which refuses to
-  discard local edits.
+  - Once the batch has merged, `git worktree remove ../realmforge-worktrees/<dir>-playtest` (run in
+    `~/projects/realmforge`) deletes the checkout; it refuses while the checkout holds uncommitted edits.
+
+- **A revision** gives the command that moves his checkout to the new head, which refuses to discard local
+  edits:
+  - the Windows clone: `git pull --ff-only`, or after a rebase `git fetch origin` and then
+    `git reset --keep origin/<branch>` (in PowerShell, one command per line);
+  - a playtest checkout, with `<sha>` the new head:
+
+    ```bash
+    cd ~/projects/realmforge-worktrees/<dir>-playtest && git fetch origin <branch> && git switch --detach <sha>
+    ```
 
 ### Reaching the state
 
