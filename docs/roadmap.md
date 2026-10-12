@@ -83,7 +83,7 @@ add content to systems that already work instead of building them.
 
 **Not in M1:** a second race, more classes, dual class, glyphs, affixes, gems, reforging, professions, pets, mounts,
 villages, the enchanting overhaul, contracts, world-structure dungeons, changes to the Nether and End, and
-multiplayer parties beyond "players who enter together" (proposal D8).
+dungeon parties: instances are solo in M1 (decision D8); parties come later (RLM-68).
 
 **Order:** the spikes first, then foundations; character and world work can run in parallel after that; quests
 and the release come last. "After" in a task names what must be merged first.
@@ -334,7 +334,7 @@ decided, which wins over the proposal here.
 | D5 | RLM-55 | Primary stats | F4 | STR, DEX, INT and a stamina stat (health); one stat per play style plus survivability |
 | D6 | RLM-56 | Destructive mobs | R1 | targeted protection (no terrain damage) instead of `mobGriefing=false`, as the research notes recommend |
 | D7 | RLM-57 | Release numbering | R2 | M1 is v0.1.0. The vision describes v0.1 as "everything, cut down"; the research report called v0.1 a vertical slice; this roadmap follows the report and the M1 brief |
-| D8 | RLM-58 | Who enters an instance | spike 3 | solo first; players standing at the entrance join the run; FTB Teams parties later |
+| D8 | RLM-58 | Who enters an instance | spike 3 | **Decided 2026-10-11 (RLM-58): solo only in M1.** Every player who enters gets their own instance; entry is a temporary portal opened with a dungeon key (W4); parties come later through our own command-based party system (RLM-68), not FTB Teams |
 | D9 | RLM-59 | License of `content/`, `art/` and `docs/` | R2 | an ADR before the first release ([ADR 0009](decisions/0009-licensing.md) left it open); the quest texts feed the All Rights Reserved pack |
 | D10 | RLM-47 | Nether and End: overhaul or remove | M4 planning | open, no proposal yet ([vision](vision.md#open-questions)) |
 | D11 | RLM-60 | Custom mobs in M1 | W3 | 1-2 custom types (a melee and a caster archetype) plus leveled vanilla hostile mobs; every custom mob needs a model, animations and a UV texture that Matěj reviews, so more wait for M4 |

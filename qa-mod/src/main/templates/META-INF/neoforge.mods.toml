@@ -28,3 +28,6 @@ type = "required"
 versionRange = "[${mod_version}]"
 ordering = "AFTER"
 side = "BOTH"
+
+[[mixins]]
+config = "realmforge_qa.mixins.json"

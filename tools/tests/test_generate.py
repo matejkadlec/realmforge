@@ -8,6 +8,7 @@ import zlib
 from realmforge_tools.formats import nbt
 from realmforge_tools.formats.png import PNG_SIGNATURE
 from realmforge_tools.generate import generate_all, sync
+from realmforge_tools.generate.gametest import AIR, SPIKE_ROOMS, room_blocks
 from realmforge_tools.generate.textures import placeholder_texture
 from realmforge_tools.project import DATA_VERSION, RepoPaths
 from realmforge_tools.validate import load_and_validate
@@ -116,6 +117,45 @@ def test_gametest_platform_structure(repo: RepoPaths) -> None:
     assert root["size"] == nbt.int_list(5, 5, 5)
     assert [p["Name"] for p in root["palette"].items] == ["minecraft:smooth_stone", "minecraft:air"]
     assert len(root["blocks"].items) == 5 * 5 * 5
+
+
+SPIKE_DIR = "qa-mod/src/generated/resources/data/realmforge_qa/structure/spike"
+
+
+def test_spike_rooms_store_every_position_of_their_box_once(repo: RepoPaths) -> None:
+    files = generate(repo)
+    for name, room in SPIKE_ROOMS.items():
+        _, root = nbt.decode(gzip.decompress(files[f"{SPIKE_DIR}/{name}.nbt"]))
+        size_x, size_y, size_z = room.size
+        assert root["size"] == nbt.int_list(size_x, size_y, size_z)
+        positions = [tuple(i.value for i in block["pos"].items) for block in root["blocks"].items]
+        assert len(positions) == len(set(positions)) == size_x * size_y * size_z
+        palette = root["palette"].items
+        assert all(0 <= block["state"].value < len(palette) for block in root["blocks"].items)
+
+
+def test_spike_hall_chest_holds_an_item_and_lanterns_hang(repo: RepoPaths) -> None:
+    _, root = nbt.decode(gzip.decompress(generate(repo)[f"{SPIKE_DIR}/hall.nbt"]))
+    palette = [entry["Name"] for entry in root["palette"].items]
+    lantern = root["palette"].items[palette.index("minecraft:lantern")]
+    assert lantern["Properties"] == {"hanging": "true", "waterlogged": "false"}
+    with_nbt = [block for block in root["blocks"].items if "nbt" in block]
+    assert len(with_nbt) == 1
+    assert palette[with_nbt[0]["state"].value] == "minecraft:chest"
+    assert with_nbt[0]["nbt"]["Items"].items[0]["id"] == "minecraft:bread"
+    # Block entities come last, as vanilla orders them, so their neighbours exist when they load.
+    assert root["blocks"].items[-1] is with_nbt[0]
+
+
+def test_spike_room_openings_line_up_in_a_row() -> None:
+    # Placed along x: start at z 0, corridor at z +4, hall at z -8; the openings meet at z 6..8 of the start room.
+    start, corridor, hall = (room_blocks(SPIKE_ROOMS[name]) for name in ("start", "corridor", "hall"))
+    for z in range(6, 9):
+        for y in range(1, 4):
+            assert start[14, y, z] == AIR
+            assert corridor[0, y, z - 4] == corridor[24, y, z - 4] == AIR
+            assert hall[0, y, z + 8] == hall[30, y, z + 8] == AIR
+    assert start[14, 1, 5] != AIR and hall[0, 1, 13] != AIR
 
 
 def test_json_schema_is_generated(repo: RepoPaths) -> None:
