@@ -61,10 +61,16 @@ def decode_rgba(data: bytes) -> tuple[int, int, list[Rgba]]:
         (length,) = struct.unpack_from(">I", data, offset)
         kind = data[offset + 4 : offset + 8]
         body = data[offset + 8 : offset + 8 + length]
+        name = kind.decode("latin-1")
         if len(body) != length or offset + 12 + length > len(data):
-            raise PngError(f"truncated {kind.decode('latin-1')} chunk")
+            raise PngError(f"truncated {name} chunk")
+        (crc,) = struct.unpack_from(">I", data, offset + 8 + length)
+        if crc != zlib.crc32(kind + body):
+            raise PngError(f"corrupt {name} chunk (CRC mismatch)")
         offset += 12 + length
         if kind == b"IHDR":
+            if length != 13:
+                raise PngError(f"IHDR chunk has {length} bytes instead of 13")
             header = struct.unpack(">IIBBBBB", body)
         elif kind == b"PLTE":
             palette = [tuple(body[i : i + 3]) for i in range(0, length - length % 3, 3)]  # type: ignore[misc]

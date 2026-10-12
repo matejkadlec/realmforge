@@ -95,11 +95,20 @@ def test_decode_grayscale_with_color_key() -> None:
         (_png(1, 1, 8, 3, [b"\x00\x00"]), "without a PLTE"),
         (_png(2, 2, 8, 6, [b"\x00" + bytes(8)]), "shorter than the header"),
         (_png(1, 1, 8, 6, [b"\x07" + bytes(4)]), "filter type 7"),
+        (PNG_SIGNATURE + _chunk(b"IHDR", bytes(12)), "IHDR chunk has 12 bytes"),
     ],
 )
 def test_decode_rejects_broken_or_unsupported_files(data: bytes, message: str) -> None:
     with pytest.raises(PngError, match=message):
         decode_rgba(data)
+
+
+def test_decode_rejects_a_chunk_whose_crc_does_not_match() -> None:
+    data = bytearray(encode_rgba(2, 1, [RED, BLUE]))
+    width_offset = len(PNG_SIGNATURE) + 8  # first byte of IHDR's width
+    data[width_offset + 3] = 3  # the image now claims to be 3 pixels wide, but the CRC still says 2
+    with pytest.raises(PngError, match="corrupt IHDR chunk"):
+        decode_rgba(bytes(data))
 
 
 # --- Palette ----------------------------------------------------------------------------------------------
