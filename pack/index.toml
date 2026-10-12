@@ -77,7 +77,7 @@ metafile = true
 
 [[files]]
 file = "mods/jade.pw.toml"
-hash = "460cd3eb9cad1682e1c50e62e67bafd5733bfcb1dded687d8cbd5d050ba823be"
+hash = "6ace34b78bfae6952708f1596d166fc09709f8c24e21250b276b95f77c05b53a"
 metafile = true
 
 [[files]]
@@ -227,5 +227,5 @@ metafile = true
 
 [[files]]
 file = "mods/yeetus-experimentus.pw.toml"
-hash = "6ff2a4247b3a3a5451f7e7c0b768db735d78c1b64eb6735181b15f3ef4cbb6dd"
+hash = "fc6b3334a02345f9263ccfc364ad06992e7855134169a81e00169c8f5212ca78"
 metafile = true

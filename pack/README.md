@@ -1,7 +1,8 @@
 # Realmforge modpack (packwiz)
 
 This directory is the [packwiz](https://packwiz.infra.link/) definition of the
-Realmforge modpack: Minecraft 1.21.1, NeoForge 21.1.259.
+Realmforge modpack: Minecraft 26.1.2, NeoForge 26.1.2.116
+([ADR 0026](../docs/decisions/0026-platform-minecraft-26-1-2-neoforge.md)).
 
 It holds metadata only: `pack.toml`, `index.toml` and `mods/*.pw.toml`.
 No mod jars are stored here, and none should ever be committed. Players get the
@@ -22,77 +23,75 @@ packwiz update --all             # update everything that is not pinned
 packwiz list                     # list the mods in the pack
 ```
 
-Every mod must have a NeoForge 1.21.1 build. After adding a mod, check the
+Every mod must have a NeoForge 26.1.2 build. After adding a mod, check the
 `side` field in its `.pw.toml` (`client`, `server` or `both`) instead of relying
-on the default packwiz picks.
+on the default packwiz picks, and check the dependencies its jar declares
+(`META-INF/neoforge.mods.toml`, embedded jars included): packwiz misses some
+([ADR 0013](../docs/decisions/0013-modpack-composition.md)).
 
 ## Pinned mods
 
 These are pinned (`pin = true`), so `packwiz update --all` skips them:
 
-- **Sodium 0.6.13** and **Iris 1.8.12**. Iris 1.8.12 is the current stable Iris,
-  and it only works with Sodium 0.6.x (its Modrinth build depends on exactly
-  Sodium 0.6.13). Sodium 0.8.x needs Iris 1.8.14-beta.1 or newer.
-- **Distant Horizons 3.3.3**. Tested against the Iris 1.8.12 API, and pinned so
-  the three rendering mods only change together.
+- **Sodium 0.9.2**, **Iris 1.11.4** and **Distant Horizons 3.3.3**, the render
+  stack. All three are releases on 26.1.2; they change only together and only
+  after a test with a Distant Horizons-capable shaderpack.
 
-To move to a newer pair, update Sodium and Iris together (`packwiz unpin`,
-`packwiz update`, `packwiz pin`). Then check Distant Horizons again.
+To move the render stack, update all three (`packwiz unpin`, `packwiz update`,
+`packwiz pin`) and run that shaderpack test.
 
-### Release builds of libraries
+### Release builds
 
 packwiz picks a project's newest file whatever its release channel, and some
-libraries publish many beta (snapshot) builds between two releases. These are
-pinned to their newest release build, so `packwiz update --all` cannot move
-them back to a beta:
+mods publish beta builds after their latest release. These are pinned to their
+newest release build, so `packwiz update --all` cannot move them to a beta:
 
-- **Structurize 1.0.832**, **BlockUI 1.0.209** and **Domum Ornamentum
-  1.0.231**, the MineColonies libraries. MineColonies 1.1.1403 is built against
-  Structurize 1.0.832, BlockUI 1.0.199 and Domum Ornamentum 1.0.223.
-- **JEI 19.51.0.418**. The later JEI builds are betas that also need the
-  MezzConfig library; this one does not, so MezzConfig is not in the pack.
+- **JEI 29.34.0.90**: the later 26.1.2 builds are betas.
+- **Jade 26.1.10**: 26.1.11 is a beta.
 
-Every mod in the pack that depends on them accepts these builds (the
-`versionRange`s in the jars' `neoforge.mods.toml`). To update one, find its
-newer release build (Modrinth: version type "release"; CurseForge: file type
-"Release"), then `packwiz unpin <mod>`, add exactly that file
-(`packwiz mr add --project-id <id> --version-id <id>` or
+**Yeetus Experimentus 99.0.0** is pinned too: Modrinth tags it 26.1 only (its jar
+accepts Minecraft 26.1 to 26.1.x), so `packwiz update` finds no 26.1.2 build.
+
+To update one, find its newer release build (Modrinth: version type "release";
+CurseForge: file type "Release"), then `packwiz unpin <mod>`, add exactly that
+file (`packwiz mr add --project-id <id> --version-id <id>` or
 `packwiz cf add --addon-id <id> --file-id <id>`), `packwiz pin <mod>`, and
 boot the pack ([Boot test](#boot-test)).
 
-One library stays a beta build: **playerAnimator 2.0.4**, which Better Combat
-requires. It has no release build for NeoForge 1.21.1 and is no longer
-developed ([ADR 0020](../docs/decisions/0020-cast-animations-and-melee-while-casting.md)).
+### Release-channel exceptions
+
+Two mods have no release build for 26.1.2 and are betas on purpose (Matěj,
+RLM-65 and RLM-124):
+
+- **Regions Unexplored 0.7.0-beta2**. If it crashes or logs errors in the pack
+  boot or a playtest, report it to Matěj before choosing anything else; Biomes
+  O' Plenty is not wanted as a replacement.
+- **FTB Teams 26.1.2.4** (CurseForge), which FTB Quests needs.
 
 ## Optional mods
 
-**Quark** is optional and disabled by default (`[option]` in
-`mods/quark.pw.toml`). It adds content, so if a server enables it, every
-client must enable it too. Its library Zeta is always installed, which is
-harmless.
-
-Caveat: packwiz-installer's command-line mode (`-g`, typical for dedicated
-servers) cannot choose options and installs every optional mod, Quark included
-("Accepting option Quark as option choosing is not implemented in the CLI").
-On a server without Quark, delete its jar after installing.
+The pack has none since Quark left with the 26.1.2 port. An optional mod is
+marked `[option]` in its `.pw.toml`. Caveat for the next one: packwiz-installer's
+command-line mode (`-g`, typical for dedicated servers) cannot choose options
+and installs every optional mod.
 
 ## Mods the QA mod uses too
 
-The dev-only QA mod gets **playerAnimator**, **Better Combat**, **Cloth
-Config** and **Yeetus Experimentus** from Modrinth's Maven, so the dev runs
-(`./gradlew runClient`, with `-PwithBetterCombat` for Better Combat) test our
-code against the jars players get. `qa-mod/build.gradle` names them by Modrinth
-version id, the `version` under `[update.modrinth]` in
-`mods/playeranimator.pw.toml`, `better-combat.pw.toml`, `cloth-config.pw.toml`
-and `yeetus-experimentus.pw.toml`. Updating one of these mods means updating
-`qa-mod/build.gradle` too: `uv run pytest`
+The dev-only QA mod gets **Player Animation Library**, **Better Combat**,
+**Cloth Config** and **Yeetus Experimentus** from Modrinth's Maven, so the dev
+runs (`./gradlew runClient`, with `-PwithBetterCombat` for Better Combat) test
+our code against the jars players get. `qa-mod/build.gradle` names them by
+Modrinth version id, the `version` under `[update.modrinth]` in
+`mods/player-animation-library.pw.toml`, `better-combat.pw.toml`,
+`cloth-config.pw.toml` and `yeetus-experimentus.pw.toml`. Updating one of these
+mods means updating `qa-mod/build.gradle` too: `uv run pytest`
 (`tools/tests/test_qa_mod_dependencies.py`) fails while they differ.
 
 ## Boot test
 
 CI boots the whole pack plus the core mod on a dedicated server (job `pack-boot`) and on a client under Xvfb (job
-`pack-boot-client`) for every pull request, each with and without Quark. Run the same locally from the repository
-root after changing anything here:
+`pack-boot-client`) for every pull request (with and without the optional mods, when the pack has any). Run the
+same locally from the repository root after changing anything here, with Java 25:
 
 ```sh
 ./gradlew :mod:jar && uv run rf pack-boot
