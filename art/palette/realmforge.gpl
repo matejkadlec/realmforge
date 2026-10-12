@@ -1,0 +1,104 @@
+GIMP Palette
+Name: Realmforge
+Columns: 8
+#
+# The project palette (ADR 0007, spike 5). Every texture is snapped to these colors by
+# `uv run rf art clean`. Hand-picked ramps, dark to light, with cool shadows and warm highlights;
+# never sampled from vanilla textures. Readable by GIMP, Aseprite and LibreSprite.
+# Edit a ramp as a whole and keep every name unique.
+#
+ 11  11  14	black
+ 28  28  32	stone 1
+ 44  44  50	stone 2
+ 63  63  70	stone 3
+ 85  85  92	stone 4
+109 109 115	stone 5
+135 135 140	stone 6
+163 163 166	stone 7
+190 190 192	iron 1
+211 211 213	iron 2
+230 230 231	iron 3
+ 40  62  80	steel 1
+ 60  92 115	steel 2
+ 85 122 145	steel 3
+120 156 178	steel 4
+255 255 255	white
+ 30  22  16	wood 1
+ 47  33  21	wood 2
+ 66  47  29	wood 3
+ 87  63  38	wood 4
+109  81  50	wood 5
+133 101  64	wood 6
+160 125  82	wood 7
+188 152 104	wood 8
+ 74  52  35	leather 1
+101  73  47	leather 2
+130  97  64	leather 3
+160 125  89	leather 4
+ 50  38  31	dirt 1
+ 76  57  42	dirt 2
+104  79  58	dirt 3
+ 20  38  20	leaf 1
+ 32  58  27	leaf 2
+ 48  82  36	leaf 3
+ 70 109  46	leaf 4
+ 98 138  58	leaf 5
+133 168  77	leaf 6
+ 10  90  30	venom 1
+ 20 150  40	venom 2
+ 60 205  60	venom 3
+150 240 110	venom 4
+ 47  56  44	rot 1
+ 70  83  63	rot 2
+ 97 112  85	rot 3
+130 144 110	rot 4
+166 178 141	rot 5
+ 50  12  14	blood 1
+ 85  20  22	blood 2
+124  29  29	blood 3
+163  41  36	blood 4
+200  64  50	blood 5
+230 104  83	blood 6
+110   8  24	ruby 1
+170  14  36	ruby 2
+222  30  44	ruby 3
+250  90  90	ruby 4
+255 170 165	ruby 5
+146  58  22	fire 1
+196  95  30	fire 2
+232 144  46	fire 3
+250 195  80	fire 4
+255 236 160	fire 5
+ 72  50  14	gold 1
+110  80  22	gold 2
+150 115  33	gold 3
+196 158  50	gold 4
+230 198  77	gold 5
+250 230 140	gold 6
+ 15  24  56	frost 1
+ 24  44  98	frost 2
+ 33  72 145	frost 3
+ 52 113 196	frost 4
+ 88 160 226	frost 5
+140 204 244	frost 6
+200 236 252	frost 7
+ 18  58  60	teal 1
+ 30  92  90	teal 2
+ 48 132 124	teal 3
+ 82 178 162	teal 4
+136 220 198	teal 5
+ 28  16  44	shadow 1
+ 48  26  76	shadow 2
+ 73  40 110	shadow 3
+102  59 146	shadow 4
+138  92 182	shadow 5
+180 140 214	shadow 6
+222 192 240	shadow 7
+ 60   6 120	arcane 1
+ 96  14 180	arcane 2
+130  50 220	arcane 3
+170 110 240	arcane 4
+ 90  58  42	skin 1
+134  90  66	skin 2
+182 132 101	skin 3
+222 178 144	skin 4

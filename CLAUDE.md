@@ -76,6 +76,8 @@ uv run pytest                             # Python tests
 uv run ruff check && uv run ruff format   # lint + format Python
 uv run rf ids vanilla                     # re-extract the vanilla ID universe (only when the MC version changes)
 uv run rf pack-boot                       # boot the whole pack + mod/build/libs jar on a server and a client
+uv run rf art clean SRC DST               # snap a generated texture to the grid and art/palette/realmforge.gpl
+uv run rf art gallery DIR                 # review gallery for DIR/<subject>/<candidate>.png -> .cache/art/
 
 ./gradlew build                           # compile both mods + JUnit
 ./gradlew runGameTestServer               # headless GameTests; exit code != 0 on failure
@@ -105,7 +107,7 @@ cd pack && packwiz refresh                # after changing anything in pack/
 | `qa-mod/src/generated/` | content expectations for GameTests, GameTest structures from `rf gen` | **no** |
 | `dev/` | dev client defaults: `options.txt`, seeded into `run/client` by `seedDevOptions` | yes |
 | `pack/` | packwiz modpack definition (metadata only, no jars) | via `packwiz` commands |
-| `art/` | asset sources: prompts, palettes, Blockbench files | yes |
+| `art/` | asset sources: the project palette, generator candidates, prompts, Blockbench files | yes |
 | `docs/` | vision, architecture, roadmap, research notes, ADRs, dev setup | yes |
 | `.github/workflows/ci.yml` | CI | yes |
 | `.claude/` | Claude Code settings, content validation hook, cloud warm-up hook, Gradle queue script, flow skills (`flow1`, `flow2`, `qa1`, `qa2`), PR skills (`fix-pr`, `finalize-pr`, `monitor-pr`), `pr-reviewer` agent | yes |

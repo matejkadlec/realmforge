@@ -6,6 +6,8 @@ uv run rf gen --check       exit 1 if any generated file is out of date (writes 
 uv run rf ids vanilla       re-extract the vanilla ID universe from the official server jar (needs Java 21)
 uv run rf pack-boot         boot the whole pack plus the core mod jar on a server and a client (needs Java 21)
 uv run rf gametest-log      exit 1 if the last GameTest run logged a data loading error (after runGameTestServer)
+uv run rf art clean SRC DST snap a generated texture to the 16x16 grid and the project palette
+uv run rf art gallery DIR   build the review gallery for the candidate textures in DIR
 """
 
 from __future__ import annotations
@@ -15,6 +17,10 @@ import sys
 from pathlib import Path
 
 from realmforge_tools import gamelog, packboot, vanilla
+from realmforge_tools.art import gallery
+from realmforge_tools.art.palette import DEFAULT_PALETTE, PaletteError, load_gpl
+from realmforge_tools.art.texture import DEFAULT_SIZE, Image, TextureError, clean
+from realmforge_tools.formats.png import PngError, decode_rgba
 from realmforge_tools.generate import generate_all, sync
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import MINECRAFT_VERSION, RepoPaths
@@ -51,6 +57,30 @@ def main(argv: list[str] | None = None) -> int:
         default="both",
         help="boot with the optional mods, without them, or both (default)",
     )
+    art = commands.add_parser("art", help="texture pipeline: palette cleanup and the review gallery")
+    art_commands = art.add_subparsers(dest="art_command", required=True)
+    art_clean = art_commands.add_parser(
+        "clean", help="snap a generated PNG to the texture grid and the project palette"
+    )
+    art_clean.add_argument("source", type=Path, help="generated PNG")
+    art_clean.add_argument("target", type=Path, help="where to write the cleaned PNG")
+    art_gallery = art_commands.add_parser(
+        "gallery", help="build an HTML review gallery from <dir>/<subject>/<candidate>.png"
+    )
+    art_gallery.add_argument(
+        "directory", type=Path, help="directory of candidates, e.g. art/spike5/candidates"
+    )
+    art_gallery.add_argument(
+        "--out", type=Path, help="HTML file to write (default: .cache/art/<directory name>-gallery.html)"
+    )
+    for sub in (art_clean, art_gallery):
+        sub.add_argument("--palette", type=Path, help=f"GIMP palette (default: {DEFAULT_PALETTE.as_posix()})")
+        sub.add_argument(
+            "--size",
+            type=int,
+            default=DEFAULT_SIZE,
+            help=f"texture width in pixels (default: {DEFAULT_SIZE})",
+        )
 
     gametest_log = commands.add_parser(
         "gametest-log",
@@ -60,6 +90,9 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     paths = RepoPaths()
+
+    if args.command == "art":
+        return _art(args, paths)
 
     if args.command == "ids":
         target = vanilla.extract(args.version, paths)
@@ -146,6 +179,36 @@ def _pack_boot(args: argparse.Namespace, paths: RepoPaths) -> int:
                 print(f"OK   {report.label}: clean boot in {report.seconds:.0f} s", flush=True)
     print(f"Logs: {paths.rel(paths.cache / 'pack-boot' / 'reports')}/")
     return 1 if failed else 0
+
+
+def _art(args: argparse.Namespace, paths: RepoPaths) -> int:
+    try:
+        palette = load_gpl(args.palette or paths.root / DEFAULT_PALETTE)
+        if args.art_command == "clean":
+            width, height, pixels = decode_rgba(args.source.read_bytes())
+            cleaned, report = clean(Image(width, height, tuple(pixels)), palette, args.size)
+            args.target.parent.mkdir(parents=True, exist_ok=True)
+            args.target.write_bytes(cleaned.png())
+            print(
+                f"Wrote {paths.rel(args.target)} ({cleaned.width}x{cleaned.height}, "
+                f"{report.colors_before} -> {report.colors_after} colors, {report.changed_pixels} pixels recolored)"
+            )
+            return 0
+        info, subjects = gallery.collect(args.directory, palette, args.size)
+        if not subjects:
+            print(
+                f"No candidates found: expected {args.directory}/<subject>/<candidate>.png", file=sys.stderr
+            )
+            return 1
+        out = args.out or paths.cache / "art" / f"{args.directory.name}-gallery.html"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(gallery.render(info, subjects, palette), encoding="utf-8")
+        count = sum(len(s.candidates) for s in subjects)
+        print(f"Wrote {paths.rel(out)} ({len(subjects)} subject(s), {count} candidate(s))")
+        return 0
+    except (OSError, PaletteError, PngError, TextureError, gallery.GalleryError) as e:
+        print(f"rf art {args.art_command}: {e}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

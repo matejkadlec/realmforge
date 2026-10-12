@@ -1,0 +1,57 @@
+# Labels and prompts for `uv run rf art gallery art/spike5/candidates` (spike 5, RLM-16).
+# Generated on 2026-10-12 through the generators' MCP servers, 16x16, seeds 1601-1610 by subject.
+title: Spike 5 textures
+intro: >-
+  The same 10 textures from Retro Diffusion and PixelLab, each shown as the generator returned it and after
+  rf art clean snapped it to the project palette. Blocks and the mob face also show a 3x3 tiling. Pick the
+  candidate you like best per texture; the picks decide which generator becomes the primary one.
+candidates:
+  rd-fast:
+    label: Retro Diffusion Fast
+    note: rd_fast__mc_item, blocks and face rd_fast__mc_texture with tiling on; 0.03 USD each
+  rd-plus:
+    label: Retro Diffusion Plus
+    note: rd_plus__mc_item / rd_plus__mc_texture; 0.06 USD each; only 3 subjects (free credits ran out)
+  pixellab-pixen:
+    label: PixelLab Pixen
+    note: "create_image_pixen 16x16; 1 generation each (trial: 40 free, then 10 a day)"
+  pixellab-pro-1:
+    label: PixelLab Pro, pick 1 of 64
+    note: create_image_pro returns 64 candidates for 10 generations; an agent shortlisted 4
+  pixellab-pro-2:
+    label: PixelLab Pro, pick 2 of 64
+  pixellab-pro-3:
+    label: PixelLab Pro, pick 3 of 64
+  pixellab-pro-4:
+    label: PixelLab Pro, pick 4 of 64
+subjects:
+  sword:
+    title: Sword
+    prompt: a straight iron longsword with a brown leather-wrapped grip and a small gold crossguard, blade pointing to the upper right
+  staff:
+    title: Staff
+    prompt: a wooden mage staff topped with a glowing pale blue ice crystal, held diagonally with the crystal at the upper right
+  potion:
+    title: Potion
+    prompt: a round glass flask filled with glowing red healing potion, cork stopper, bright highlight on the glass
+  spell_frostbolt:
+    title: Spell icon, Frostbolt
+    prompt: "spell icon: a jagged bolt of blue ice flying diagonally to the upper right, frosty white sparkles trailing behind it"
+  spell_shadowbolt:
+    title: Spell icon, Shadow Bolt
+    prompt: "spell icon: a crackling orb of dark purple shadow magic with swirling black and violet wisps"
+  block_bricks:
+    title: Block, dungeon bricks (tileable)
+    prompt: dark grey stone dungeon bricks with worn chipped edges and a little green moss in the mortar cracks
+  block_ore:
+    title: Block, ore (tileable)
+    prompt: grey stone with embedded chunks of dark blue-green metallic ore that glow faintly
+  gem_ruby:
+    title: Gem
+    prompt: a faceted cut ruby gemstone, bright red with a white highlight on the top facet
+  armor_chestplate:
+    title: Armor icon, chestplate
+    prompt: an iron chestplate armor piece seen from the front, riveted plates and shoulder guards
+  mob_ghoul_face:
+    title: Mob texture, ghoul face
+    prompt: "the flat front face of an undead ghoul's head filling the whole square: grey-green rotting skin, sunken glowing yellow eyes, a wide mouth with jagged teeth"
