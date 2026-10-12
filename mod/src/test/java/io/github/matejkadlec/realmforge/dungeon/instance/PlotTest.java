@@ -7,7 +7,7 @@ import com.mojang.serialization.JsonOps;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
@@ -16,9 +16,9 @@ import org.junit.jupiter.api.Test;
 class PlotTest {
     private static final UUID PLAYER = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final InstanceLayout LAYOUT = new InstanceLayout(
-            List.of(new RoomPlacement(ResourceLocation.parse("realmforge_qa:spike/start"), BlockPos.ZERO,
+            List.of(new RoomPlacement(Identifier.parse("realmforge_qa:spike/start"), BlockPos.ZERO,
                             Rotation.NONE),
-                    new RoomPlacement(ResourceLocation.parse("realmforge_qa:spike/hall"), new BlockPos(15, 0, -8),
+                    new RoomPlacement(Identifier.parse("realmforge_qa:spike/hall"), new BlockPos(15, 0, -8),
                             Rotation.CLOCKWISE_90)),
             new Vec3(7.5, 1, 7.5), -90.0F);
     private static final List<BoundingBox> ROOMS =

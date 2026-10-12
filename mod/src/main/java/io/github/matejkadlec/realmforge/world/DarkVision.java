@@ -7,13 +7,15 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 /**
  * Dark Vision (architecture 19.1): vanilla night vision as an infinite, hidden effect that every player can switch on
  * and off with a key. The switch lives in {@link WorldAttachments#DARK_VISION}, because effects do not survive death:
- * the effect is reapplied on login and respawn. Nothing but the switch removes it: milk, a totem of undying and the
- * other cures leave it alone.
+ * the effect is reapplied on login and respawn. Nothing but the switch removes it: while the switch is on, every
+ * removal of the effect is cancelled ({@link MobEffectEvent.Remove}), so milk, a totem of undying and
+ * {@code /effect clear} leave it alone.
  */
 public final class DarkVision {
     private DarkVision() {
@@ -28,7 +30,7 @@ public final class DarkVision {
         boolean enabled = !isEnabled(player);
         setEnabled(player, enabled);
         String message = enabled ? GeneratedTexts.MESSAGE_DARK_VISION_ON : GeneratedTexts.MESSAGE_DARK_VISION_OFF;
-        player.displayClientMessage(Component.translatable(message), true);
+        player.sendOverlayMessage(Component.translatable(message));
         return enabled;
     }
 
@@ -54,23 +56,35 @@ public final class DarkVision {
         }
     }
 
-    /** A new Dark Vision effect: infinite, without particles or icon, and curable by nothing. */
+    /** A new Dark Vision effect: infinite, without particles or icon. */
     public static MobEffectInstance effect() {
-        MobEffectInstance effect = new MobEffectInstance(
+        return new MobEffectInstance(
                 MobEffects.NIGHT_VISION, MobEffectInstance.INFINITE_DURATION, 0, false, false, false);
-        effect.getCures().clear();
-        return effect;
     }
 
-    /** Whether {@code effect} is exactly what {@link #effect()} creates. */
+    /**
+     * Whether {@code effect} is exactly what {@link #effect()} creates. A hidden, infinite night vision from
+     * {@code /effect} looks the same and counts as Dark Vision, which changes nothing a player sees.
+     */
     public static boolean isDarkVision(@Nullable MobEffectInstance effect) {
         return effect != null
                 && effect.is(MobEffects.NIGHT_VISION)
                 && effect.isInfiniteDuration()
                 && effect.getAmplifier() == 0
                 && !effect.isVisible()
-                && !effect.showIcon()
-                && effect.getCures().isEmpty();
+                && !effect.showIcon();
+    }
+
+    /**
+     * Keeps Dark Vision while the switch is on: milk and a totem clear every effect
+     * ({@code LivingEntity#removeAllEffects}), and the event lets each effect veto its own removal. The switch itself
+     * turns off first, then removes the effect.
+     */
+    static void onEffectRemove(MobEffectEvent.Remove event) {
+        if (event.getEntity() instanceof ServerPlayer player && isEnabled(player)
+                && isDarkVision(event.getEffectInstance())) {
+            event.setCanceled(true);
+        }
     }
 
     static void onLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {

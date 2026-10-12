@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.matejkadlec.realmforge.Realmforge;
+import java.util.regex.Pattern;
+import net.minecraft.SharedConstants;
 import net.neoforged.fml.ModList;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +15,8 @@ class RealmforgeNetworkTest {
     void payloadVersionIsTheModVersion() {
         var container = ModList.get().getModContainerById(Realmforge.MOD_ID).orElseThrow();
         String version = RealmforgeNetwork.version(container);
-        assertTrue(version.matches("\\d+\\.\\d+\\.\\d+\\+mc1\\.21\\.1"), version);
+        String minecraft = Pattern.quote(SharedConstants.getCurrentVersion().name());
+        assertTrue(version.matches("\\d+\\.\\d+\\.\\d+\\+mc" + minecraft), version);
     }
 
     @Test

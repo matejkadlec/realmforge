@@ -4,7 +4,6 @@ import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.Clearable;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
@@ -20,8 +19,12 @@ import net.minecraft.world.phys.AABB;
 final class InstanceBuilder {
     /** Structure blocks and world generation place templates with the same flag. */
     private static final int PLACE_FLAGS = Block.UPDATE_CLIENTS;
-    /** Clearing removes everything nearby anyway, so neighbours get no shape updates (no popping torches). */
-    private static final int CLEAR_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
+    /**
+     * Clearing removes everything nearby anyway, so neighbours get no shape updates (no popping torches), and block
+     * entities go without their removal side effects: a container vanishes with its items instead of dropping them.
+     */
+    private static final int CLEAR_FLAGS =
+            Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS;
 
     private InstanceBuilder() {
     }
@@ -95,10 +98,6 @@ final class InstanceBuilder {
                     BlockState state = level.getBlockState(pos);
                     if (state.isAir()) {
                         continue;
-                    }
-                    if (state.hasBlockEntity()) {
-                        // Empty containers first, or removing them would drop their items, as /fill does.
-                        Clearable.tryClear(level.getBlockEntity(pos));
                     }
                     level.setBlock(pos, air, CLEAR_FLAGS);
                     cleared++;

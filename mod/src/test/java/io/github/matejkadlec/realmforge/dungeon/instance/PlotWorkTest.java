@@ -37,7 +37,7 @@ class PlotWorkTest {
     void chunksListEveryTouchedChunkOnce() {
         BoundingBox first = new BoundingBox(0, 0, 0, 20, 5, 5);
         BoundingBox second = new BoundingBox(10, 0, 0, 40, 5, 5);
-        assertEquals(Set.of(ChunkPos.asLong(0, 0), ChunkPos.asLong(1, 0), ChunkPos.asLong(2, 0)),
+        assertEquals(Set.of(ChunkPos.pack(0, 0), ChunkPos.pack(1, 0), ChunkPos.pack(2, 0)),
                 new HashSet<>(PlotWork.chunks(List.of(first, second))));
     }
 

@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.ExtraCodecs;
 
 /**
@@ -21,7 +21,7 @@ import net.minecraft.util.ExtraCodecs;
  *                      dropped)
  * @param unspentPoints talent points granted but not spent yet
  */
-public record TalentAllocation(Map<ResourceLocation, Map<String, Integer>> ranks, int unspentPoints) {
+public record TalentAllocation(Map<Identifier, Map<String, Integer>> ranks, int unspentPoints) {
     public static final TalentAllocation NONE = new TalentAllocation(Map.of(), 0);
 
     /** A node id inside its tree, the same shape as the path of our content ids. */
@@ -32,7 +32,7 @@ public record TalentAllocation(Map<ResourceLocation, Map<String, Integer>> ranks
             : DataResult.error(() -> "Not a talent node id: " + id));
 
     public static final Codec<TalentAllocation> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.unboundedMap(ResourceLocation.CODEC, Codec.unboundedMap(NODE_ID_CODEC, ExtraCodecs.POSITIVE_INT))
+            Codec.unboundedMap(Identifier.CODEC, Codec.unboundedMap(NODE_ID_CODEC, ExtraCodecs.POSITIVE_INT))
                     .optionalFieldOf("ranks", Map.of()).forGetter(TalentAllocation::ranks),
             ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("unspent_points", 0).forGetter(TalentAllocation::unspentPoints)
     ).apply(instance, TalentAllocation::new));
@@ -41,12 +41,12 @@ public record TalentAllocation(Map<ResourceLocation, Map<String, Integer>> ranks
             ByteBufCodecs.map(HashMap::new, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.VAR_INT);
 
     public static final StreamCodec<ByteBuf, TalentAllocation> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.map(HashMap::new, ResourceLocation.STREAM_CODEC, NODES_STREAM_CODEC), TalentAllocation::ranks,
+            ByteBufCodecs.map(HashMap::new, Identifier.STREAM_CODEC, NODES_STREAM_CODEC), TalentAllocation::ranks,
             ByteBufCodecs.VAR_INT, TalentAllocation::unspentPoints,
             TalentAllocation::new);
 
     public TalentAllocation {
-        Map<ResourceLocation, Map<String, Integer>> copy = new LinkedHashMap<>();
+        Map<Identifier, Map<String, Integer>> copy = new LinkedHashMap<>();
         ranks.forEach((tree, nodes) -> {
             nodes.forEach((node, rank) -> {
                 if (!NODE_ID.matcher(node).matches()) {
@@ -67,12 +67,12 @@ public record TalentAllocation(Map<ResourceLocation, Map<String, Integer>> ranks
     }
 
     /** The rank allocated in a node, 0 when none. */
-    public int rank(ResourceLocation tree, String node) {
+    public int rank(Identifier tree, String node) {
         return ranks.getOrDefault(tree, Map.of()).getOrDefault(node, 0);
     }
 
     /** Points spent in a tree, which its tiers count (architecture 12). */
-    public int pointsSpent(ResourceLocation tree) {
+    public int pointsSpent(Identifier tree) {
         return ranks.getOrDefault(tree, Map.of()).values().stream().mapToInt(Integer::intValue).sum();
     }
 }

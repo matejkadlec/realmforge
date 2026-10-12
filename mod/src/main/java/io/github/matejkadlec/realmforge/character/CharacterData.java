@@ -10,7 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.ExtraCodecs;
 
 /**
@@ -26,21 +26,21 @@ import net.minecraft.util.ExtraCodecs;
  * @param totalXp  every point of character XP earned, also beyond the level cap (architecture 10.2)
  * @param levelCap the cap last computed from completed chapters, empty until {@code character} computes it
  */
-public record CharacterData(Optional<ResourceLocation> race, List<ResourceLocation> classes, long totalXp,
+public record CharacterData(Optional<Identifier> race, List<Identifier> classes, long totalXp,
         Optional<Integer> levelCap) {
     public static final CharacterData NONE = new CharacterData(Optional.empty(), List.of(), 0, Optional.empty());
 
     public static final Codec<CharacterData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            ResourceLocation.CODEC.optionalFieldOf("race").forGetter(CharacterData::race),
-            Codecs.distinctList(ResourceLocation.CODEC).optionalFieldOf("classes", List.of())
+            Identifier.CODEC.optionalFieldOf("race").forGetter(CharacterData::race),
+            Codecs.distinctList(Identifier.CODEC).optionalFieldOf("classes", List.of())
                     .forGetter(CharacterData::classes),
             Codecs.NON_NEGATIVE_LONG.optionalFieldOf("total_xp", 0L).forGetter(CharacterData::totalXp),
             ExtraCodecs.POSITIVE_INT.optionalFieldOf("level_cap").forGetter(CharacterData::levelCap)
     ).apply(instance, CharacterData::new));
 
     public static final StreamCodec<ByteBuf, CharacterData> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.optional(ResourceLocation.STREAM_CODEC), CharacterData::race,
-            ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), CharacterData::classes,
+            ByteBufCodecs.optional(Identifier.STREAM_CODEC), CharacterData::race,
+            Identifier.STREAM_CODEC.apply(ByteBufCodecs.list()), CharacterData::classes,
             ByteBufCodecs.VAR_LONG, CharacterData::totalXp,
             ByteBufCodecs.optional(ByteBufCodecs.VAR_INT), CharacterData::levelCap,
             CharacterData::new);

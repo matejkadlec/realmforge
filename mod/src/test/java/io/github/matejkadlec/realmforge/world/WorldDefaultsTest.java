@@ -4,27 +4,28 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.level.gamerules.GameRules;
 import org.junit.jupiter.api.Test;
 
 class WorldDefaultsTest {
     @Test
     void newWorldRulesMatchTheVision() {
-        GameRules rules = new GameRules();
+        GameRules rules = new GameRules(FeatureFlags.DEFAULT_FLAGS);
         WorldDefaults.apply(rules);
-        assertTrue(rules.getBoolean(GameRules.RULE_KEEPINVENTORY));
-        assertTrue(rules.getBoolean(GameRules.RULE_DO_IMMEDIATE_RESPAWN));
-        assertFalse(rules.getBoolean(GameRules.RULE_BLOCK_EXPLOSION_DROP_DECAY));
-        assertFalse(rules.getBoolean(GameRules.RULE_MOB_EXPLOSION_DROP_DECAY));
-        assertFalse(rules.getBoolean(GameRules.RULE_TNT_EXPLOSION_DROP_DECAY));
+        assertTrue(rules.get(GameRules.KEEP_INVENTORY));
+        assertTrue(rules.get(GameRules.IMMEDIATE_RESPAWN));
+        assertFalse(rules.get(GameRules.BLOCK_EXPLOSION_DROP_DECAY));
+        assertFalse(rules.get(GameRules.MOB_EXPLOSION_DROP_DECAY));
+        assertFalse(rules.get(GameRules.TNT_EXPLOSION_DROP_DECAY));
     }
 
-    /** Targeted protection replaces mobGriefing=false (D6), so the defaults leave it alone. */
+    /** Targeted protection replaces mob_griefing=false (D6), so the defaults leave it alone. */
     @Test
     void mobGriefingKeepsItsVanillaValue() {
-        GameRules rules = new GameRules();
+        GameRules rules = new GameRules(FeatureFlags.DEFAULT_FLAGS);
         WorldDefaults.apply(rules);
-        assertTrue(rules.getBoolean(GameRules.RULE_MOBGRIEFING));
+        assertTrue(rules.get(GameRules.MOB_GRIEFING));
         assertEquals(5, WorldDefaults.RULES.size());
     }
 }

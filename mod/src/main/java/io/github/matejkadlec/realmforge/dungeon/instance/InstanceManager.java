@@ -17,18 +17,18 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
+import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.world.chunk.TicketController;
 import net.neoforged.neoforge.common.world.chunk.TicketHelper;
@@ -47,14 +47,18 @@ public final class InstanceManager extends SavedData {
             new TicketController(Realmforge.id("instance_plots"), InstanceManager::validateTickets);
 
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final String DATA_NAME = "realmforge_instances";
-    private static final SavedData.Factory<InstanceManager> FACTORY =
-            new SavedData.Factory<>(InstanceManager::new, InstanceManager::load);
-    private static final Codec<Saved> SAVED_CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.INT.fieldOf("next_id").forGetter(Saved::nextId),
-            Codec.INT.listOf().optionalFieldOf("free", List.of()).forGetter(Saved::free),
-            Plot.CODEC.listOf().optionalFieldOf("plots", List.of()).forGetter(Saved::plots)
-    ).apply(instance, Saved::new));
+    private static final Codec<InstanceManager> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.INT.fieldOf("next_id").forGetter(manager -> manager.nextId),
+            Codec.INT.listOf().optionalFieldOf("free", List.of()).forGetter(manager -> List.copyOf(manager.free)),
+            Plot.CODEC.listOf().optionalFieldOf("plots", List.of())
+                    .forGetter(manager -> List.copyOf(manager.plots.values()))
+    ).apply(instance, InstanceManager::new));
+    /**
+     * Saved as {@code data/realmforge/instances.dat} in the instance dimension's folder. Data that fails to parse is
+     * logged and replaced by an empty manager (vanilla's {@code SavedDataStorage}).
+     */
+    private static final SavedDataType<InstanceManager> TYPE =
+            new SavedDataType<>(Realmforge.id("instances"), InstanceManager::new, CODEC);
 
     private int nextId;
     /** Freed plots, reused lowest id first so the world stays compact. */
@@ -68,6 +72,12 @@ public final class InstanceManager extends SavedData {
     private InstanceManager() {
     }
 
+    private InstanceManager(int nextId, List<Integer> free, List<Plot> plots) {
+        this.nextId = nextId;
+        this.free.addAll(free);
+        plots.forEach(plot -> this.plots.put(plot.id(), plot));
+    }
+
     /** The manager of this server's instance dimension, or {@code null} when the dimension is missing. */
     @Nullable
     public static InstanceManager get(MinecraftServer server) {
@@ -76,7 +86,7 @@ public final class InstanceManager extends SavedData {
     }
 
     private static InstanceManager get(ServerLevel level) {
-        InstanceManager manager = level.getDataStorage().computeIfAbsent(FACTORY, DATA_NAME);
+        InstanceManager manager = level.getDataStorage().computeIfAbsent(TYPE);
         manager.level = level;
         return manager;
     }
@@ -217,7 +227,7 @@ public final class InstanceManager extends SavedData {
         }
         InstanceLayout layout = plot.layout().orElseThrow();
         Vec3 spawn = Vec3.atLowerCornerOf(plot.origin()).add(layout.spawn());
-        player.teleportTo(level(), spawn.x, spawn.y, spawn.z, layout.spawnYaw(), 0.0F);
+        player.teleportTo(level(), spawn.x, spawn.y, spawn.z, Set.of(), layout.spawnYaw(), 0.0F, true);
         plot.activate();
         setDirty();
         return true;
@@ -291,7 +301,7 @@ public final class InstanceManager extends SavedData {
             return;
         }
         LOGGER.info("Sending {} out of the instance dimension: their run is gone",
-                player.getGameProfile().getName());
+                player.getGameProfile().name());
         if (visit == null) {
             sendToSpawn(player);
         } else {
@@ -342,20 +352,23 @@ public final class InstanceManager extends SavedData {
 
     private void sendBack(ServerPlayer player, InstanceVisit visit) {
         player.removeData(DungeonAttachments.VISIT);
-        ServerLevel target = player.server.getLevel(visit.returnLevel());
+        ServerLevel target = player.level().getServer().getLevel(visit.returnLevel());
         if (target == null) {
             sendToSpawn(player);
             return;
         }
         Vec3 pos = visit.returnPos();
-        player.teleportTo(target, pos.x, pos.y, pos.z, visit.returnYaw(), visit.returnPitch());
+        player.teleportTo(target, pos.x, pos.y, pos.z, Set.of(), visit.returnYaw(), visit.returnPitch(), true);
     }
 
+    /** To the world spawn, whose respawn data names its dimension (not always the overworld). */
     private static void sendToSpawn(ServerPlayer player) {
-        ServerLevel overworld = player.server.overworld();
-        BlockPos spawn = overworld.getSharedSpawnPos();
-        player.teleportTo(overworld, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5,
-                overworld.getSharedSpawnAngle(), 0.0F);
+        MinecraftServer server = player.level().getServer();
+        ServerLevel spawnLevel = server.findRespawnDimension();
+        LevelData.RespawnData spawn = server.getRespawnData();
+        BlockPos pos = spawn.pos();
+        player.teleportTo(spawnLevel, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, Set.of(),
+                spawn.yaw(), spawn.pitch(), true);
     }
 
     private void holdChunks(Plot plot, LongSet chunks) {
@@ -386,7 +399,7 @@ public final class InstanceManager extends SavedData {
         for (BlockPos owner : tickets.getBlockTickets().keySet()) {
             Plot plot = manager == null ? null : manager.plots.get(PlotGrid.plotAt(owner.getX(), owner.getZ()));
             if (plot == null || !plot.origin().equals(owner) || plot.state() == PlotState.FREE) {
-                LOGGER.info("Dropping stale instance chunk tickets of {} in {}", owner, level.dimension().location());
+                LOGGER.info("Dropping stale instance chunk tickets of {} in {}", owner, level.dimension().identifier());
                 tickets.removeAllTickets(owner);
             }
         }
@@ -395,32 +408,4 @@ public final class InstanceManager extends SavedData {
         }
     }
 
-    // ---- Saving ----
-
-    private record Saved(int nextId, List<Integer> free, List<Plot> plots) {
-    }
-
-    @Override
-    public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
-        Saved saved = new Saved(nextId, List.copyOf(free), List.copyOf(plots.values()));
-        SAVED_CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), saved)
-                .resultOrPartial(error -> LOGGER.error("Could not save instance plots: {}", error))
-                .ifPresent(encoded -> tag.put("instances", encoded));
-        return tag;
-    }
-
-    private static InstanceManager load(CompoundTag tag, HolderLookup.Provider registries) {
-        InstanceManager manager = new InstanceManager();
-        if (!tag.contains("instances")) {
-            return manager;
-        }
-        SAVED_CODEC.parse(registries.createSerializationContext(NbtOps.INSTANCE), tag.get("instances"))
-                .resultOrPartial(error -> LOGGER.error("Could not load instance plots: {}", error))
-                .ifPresent(saved -> {
-                    manager.nextId = saved.nextId();
-                    manager.free.addAll(saved.free());
-                    saved.plots().forEach(plot -> manager.plots.put(plot.id(), plot));
-                });
-        return manager;
-    }
 }

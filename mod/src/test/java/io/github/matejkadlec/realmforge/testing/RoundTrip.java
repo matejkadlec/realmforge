@@ -50,7 +50,7 @@ public final class RoundTrip {
     /** Decodes a saved shape written as SNBT, for samples and malformed data. */
     public static <T> DataResult<T> parseSnbt(Codec<T> codec, String snbt) {
         try {
-            return codec.parse(NbtOps.INSTANCE, TagParser.parseTag(snbt));
+            return codec.parse(NbtOps.INSTANCE, TagParser.parseCompoundFully(snbt));
         } catch (CommandSyntaxException e) {
             throw new IllegalArgumentException("Not valid SNBT: " + snbt, e);
         }

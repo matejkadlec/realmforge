@@ -19,7 +19,7 @@ public final class StatsAttachments {
      */
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<EntityLevel>> LEVEL =
             ATTACHMENTS.register("level", () -> AttachmentType.builder(() -> EntityLevel.DEFAULT)
-                    .serialize(EntityLevel.CODEC).copyOnDeath().sync(EntityLevel.STREAM_CODEC).build());
+                    .serialize(EntityLevel.CODEC.fieldOf("value")).copyOnDeath().sync(EntityLevel.STREAM_CODEC).build());
 
     private StatsAttachments() {
     }

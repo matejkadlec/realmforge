@@ -10,8 +10,8 @@ base {
     archivesName = 'realmforge'
 }
 
-// Mojang ships Java 21 to end users in 1.21.1, so mods target Java 21.
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+// Mojang ships Java 25 to end users since 26.1, so mods target Java 25.
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 sourceSets.main {
     // Generated from content/ by tools/ (`uv run rf gen`). Committed, never edited by hand.
@@ -21,11 +21,6 @@ sourceSets.main {
 
 neoForge {
     version = neo_version
-
-    parchment {
-        minecraftVersion = parchment_minecraft_version
-        mappingsVersion = parchment_mappings_version
-    }
 
     // No runs here on purpose: all runs live in qa-mod/ and load both mods,
     // so `./gradlew runClient` from the root starts exactly one client.
@@ -83,7 +78,7 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
-// Unpacks the decompiled Minecraft + NeoForge sources (with Parchment names) into build/mc-sources/
+// Unpacks the decompiled Minecraft + NeoForge sources (official names, unobfuscated since 26.1) into build/mc-sources/
 // so they can be searched. Verify every Minecraft/NeoForge API there instead of guessing (see CLAUDE.md).
 tasks.register('extractMinecraftSources', Sync) {
     group = 'realmforge'

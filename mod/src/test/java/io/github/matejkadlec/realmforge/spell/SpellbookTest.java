@@ -8,12 +8,12 @@ import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.testing.RoundTrip;
 import java.util.Map;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 class SpellbookTest {
-    private static final ResourceLocation FIREBOLT = Realmforge.id("firebolt");
-    private static final ResourceLocation FROSTBOLT = Realmforge.id("frostbolt");
+    private static final Identifier FIREBOLT = Realmforge.id("firebolt");
+    private static final Identifier FROSTBOLT = Realmforge.id("frostbolt");
     private static final Spellbook BOOK = new Spellbook(Map.of(FIREBOLT, 3, FROSTBOLT, 1),
             Map.of(0, FIREBOLT, 11, FROSTBOLT));
 

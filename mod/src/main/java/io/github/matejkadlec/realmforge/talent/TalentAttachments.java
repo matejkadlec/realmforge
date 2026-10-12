@@ -16,7 +16,7 @@ public final class TalentAttachments {
     /** {@code realmforge:talents}: a player's allocated ranks and unspent points. Owner-only sync; copied on death. */
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<TalentAllocation>> TALENTS =
             ATTACHMENTS.register("talents", () -> AttachmentType.builder(() -> TalentAllocation.NONE)
-                    .serialize(TalentAllocation.CODEC)
+                    .serialize(TalentAllocation.CODEC.fieldOf("value"))
                     .copyOnDeath()
                     .sync(Attachments::toOwner, TalentAllocation.STREAM_CODEC)
                     .build());
