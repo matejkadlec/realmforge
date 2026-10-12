@@ -357,7 +357,7 @@ Hytale's instancing is the **Fragments of Orbis** system. You craft an **Ancient
 ## Q7. Creatures, factions and AI behaviours that create a sense of life
 
 ### Takeaway
-Each zone pairs a friendly or neutral faction with a hostile one (Kweebec/Trork, Feran/Scarak, then Outlander), with undead and Void layered across zones. Each faction has its own blockset, furniture, chest style, archetypes and settlement tiers. The sense of life comes from many small data-driven behaviours: villagers wary of axes, sparring Trorks, bait and fear reactions, pack hunting, predators hunting prey, mimicry. The framework is strong, but pathfinding, flocking and combat positioning are still weak.
+Zones 1 and 2 pair a friendly or neutral faction with a hostile one (Kweebec/Trork, Feran/Scarak); Zone 3 has only the Outlanders so far (its Bramblekin are unimplemented) and both Zone 4 factions are unimplemented, with undead and Void layered across zones. Each faction has its own blockset, furniture, chest style, archetypes and settlement tiers. The sense of life comes from many small data-driven behaviours: villagers wary of axes, sparring Trorks, bait and fear reactions, pack hunting, predators hunting prey, mimicry. The framework is strong, but pathfinding, flocking and combat positioning are still weak.
 
 ### Cited Findings
 - [EA] Faction dispositions: friendly (Kweebecs), neutral (Ferans, Klops) and hostile (Trorks, Outlanders, Scaraks, Goblins). Unimplemented: Bramblekin, Humans (ruins only), Saurians, Slothians, Tuluk. — [wiki: Faction](https://hytalewiki.org/w/Faction)
@@ -608,8 +608,8 @@ These points are tied to the owner decisions of 11–12 Oct 2026, docs/vision.md
    - The portal fades if nobody enters within about 90 s.
    - Refund the key if generation fails.
    - No "close" while a player is inside.
-   - Delete the instance from disk when it closes.
-   - Eject everyone if all players die.
+   - When it closes, clear its plot, remove its run state and release its chunks (Realmforge runs instances as plots in one shared dimension, ADR 0019, so there is no per-run file to delete).
+   - What happens when the solo entrant dies (run ends, key refunded, or respawn at the entrance) is still Matěj's call: open question 3 in the report.
 
    These feed straight into Spike 3 (plot cleanup) and W4 `InstanceManager` (Q6).
 4. **Wave-survival instance modelled on the Coffer Event.** Locked coffers in the arena; elites in later waves drop keys that are "lost on leaving"; when the event ends, coffers pay out by the last wave cleared; the final wave can return a key. Completion = last wave cleared, as the owner decided (Q6).
