@@ -5,6 +5,9 @@
 #   .claude/scripts/gradle-queue.sh build
 #   .claude/scripts/gradle-queue.sh runGameTestServer
 #
+# In a cloud session (CLAUDE_CODE_REMOTE=true) a run first waits for the SessionStart warm-up
+# (.claude/hooks/cloud-warmup.sh), which runs Gradle in this checkout without a slot: a second run next to it can
+# fail with "Timeout waiting to lock". A failed or interrupted warm-up does not hold the run back.
 # A run starts once one of the slots is free and enough memory is available; until then it waits and says why.
 # Runs are admitted one at a time: the admission lock stays held for a grace period after a start (or until that
 # run ends), so the next run checks memory only after the new JVMs have claimed theirs. A run that dies of memory
@@ -15,8 +18,9 @@
 # Settings (environment):
 #   RF_GRADLE_SLOTS             concurrent runs; default one per 5 GiB of RAM, at least 1
 #   RF_GRADLE_MIN_FREE_MIB      MemAvailable a run needs before it starts; default 4096
-#   RF_GRADLE_QUEUE_TIMEOUT_MIN how long each wait (for a slot, for admission) may last; default 120
+#   RF_GRADLE_QUEUE_TIMEOUT_MIN how long each wait (for the cloud warm-up, a slot, admission) may last; default 120
 #   RF_GRADLE_ADMIT_GRACE_S     how long a start keeps the admission lock; default 60
+#   RF_GRADLE_POLL_S            seconds between checks while waiting; default 15
 set -euo pipefail
 
 if [[ $# -eq 0 ]]; then
@@ -41,6 +45,7 @@ slots=${RF_GRADLE_SLOTS:-$(($(mem_total_mib) / 5120))}
 need_mib=${RF_GRADLE_MIN_FREE_MIB:-4096}
 timeout_min=${RF_GRADLE_QUEUE_TIMEOUT_MIN:-120}
 grace_s=${RF_GRADLE_ADMIT_GRACE_S:-60}
+poll_s=${RF_GRADLE_POLL_S:-15}
 lock_dir=${XDG_CACHE_HOME:-$HOME/.cache}/realmforge/gradle-queue
 mkdir -p "$lock_dir"
 
@@ -91,6 +96,25 @@ give_up_if_late() {
     fi
 }
 
+wait_for_cloud_warmup() {
+    # Exit codes of `cloud-warmup.sh --wait`: 0 done (or no warm-up in this checkout), 1 failed or interrupted
+    # (Gradle then downloads what it needs on demand), 2 still running after the given number of seconds.
+    local rc
+    [[ ${CLAUDE_CODE_REMOTE:-} == true && -x .claude/hooks/cloud-warmup.sh ]] || return 0
+    start_wait_clock
+    while true; do
+        rc=0
+        .claude/hooks/cloud-warmup.sh --wait 0 >/dev/null || rc=$?
+        ((rc == 2)) || break
+        note "waiting: the cloud warm-up is still running Gradle in this checkout (.cache/warmup/log)"
+        give_up_if_late "the cloud warm-up was still running"
+        sleep "$poll_s"
+    done
+    if ((rc != 0)); then
+        echo "gradle-queue: the cloud warm-up failed or was interrupted (.cache/warmup/log); going ahead." >&2
+    fi
+}
+
 take_slot() {
     local i fd
     start_wait_clock
@@ -106,7 +130,7 @@ take_slot() {
         done
         note "waiting: all $slots slot(s) busy with Gradle runs from other worktrees"
         give_up_if_late "no free slot"
-        sleep 15
+        sleep "$poll_s"
     done
 }
 
@@ -115,7 +139,7 @@ admit() {
     local fd free
     start_wait_clock
     exec {fd}>"$lock_dir/admission.lock"
-    until flock -w 15 "$fd"; do
+    until flock -w "$poll_s" "$fd"; do
         note "waiting: another Gradle run is starting"
         give_up_if_late "another run was starting"
     done
@@ -124,7 +148,7 @@ admit() {
         ((free >= need_mib)) && break
         note "waiting: ${free} MiB available, a run needs ${need_mib} MiB"
         give_up_if_late "not enough memory"
-        sleep 15
+        sleep "$poll_s"
     done
     # A background sleep shares the lock and keeps it through the grace period; this script lets go of its copy.
     stop_grace_timer
@@ -140,6 +164,7 @@ ran_out_of_memory() {
         "$log"
 }
 
+wait_for_cloud_warmup
 take_slot
 for attempt in 1 2; do
     admit

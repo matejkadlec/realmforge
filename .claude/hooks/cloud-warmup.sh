@@ -7,8 +7,9 @@
 #   cloud-warmup.sh         async hook at startup and resume: `uv sync --locked`, then the first Gradle run
 #                           (distribution, dependencies, NeoForm setup, build/mc-sources/, compile); the Gradle
 #                           daemon keeps running
-#   cloud-warmup.sh --wait  block until the warm-up has finished; run it before the first Gradle command (and after
-#                           a resume), because two Gradle runs in one project wait on each other's locks
+#   cloud-warmup.sh --wait  block until the warm-up has finished, because two Gradle runs in one project wait on each
+#                           other's locks; .claude/scripts/gradle-queue.sh waits this way before every run, agents
+#                           before any other Gradle command (and after a resume)
 #
 # State lives in .cache/warmup/ (gitignored): status (running, done or failed), summary, log, and stamp (hash of
 # the build inputs that were warmed, so resumed sessions skip the work).
@@ -203,8 +204,9 @@ case "${1:-}" in
     case "$(hook_source)" in
       startup | resume)
         if ! warmup_current "$(build_inputs)"; then
-          notice="Cloud warm-up is starting in the background (uv sync, then the first Gradle run). Run"
-          notice+=" \`.claude/hooks/cloud-warmup.sh --wait\` (Bash timeout 10 minutes) before the next Gradle command."
+          notice="Cloud warm-up is starting in the background (uv sync, then the first Gradle run)."
+          notice+=" \`.claude/scripts/gradle-queue.sh\` waits for it; before any other Gradle command, run"
+          notice+=" \`.claude/hooks/cloud-warmup.sh --wait\` (Bash timeout 10 minutes)."
           report "$notice"
         fi
         ;;

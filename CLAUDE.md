@@ -63,11 +63,11 @@ Changing any of these requires a new ADR ([0003](docs/decisions/0003-platform-mi
 Java comes from SDKMAN. Non-interactive shells don't read `~/.bashrc`, so run
 `source ~/.sdkman/bin/sdkman-init.sh` before Gradle (or `export JAVA_HOME=~/.sdkman/candidates/java/current`).
 Cloud sessions have no SDKMAN: Java 21 is preinstalled, and a background SessionStart hook warms up uv and Gradle
-([docs/dev-setup.md](docs/dev-setup.md#cloud-sessions)). **In a cloud session, run
-`.claude/hooks/cloud-warmup.sh --wait` (Bash timeout 10 minutes) before the first Gradle command, and again after
-the session resumes:** two Gradle runs in one project wait on each other's locks and the second can fail with
-"Timeout waiting to lock". If it
-reports a failure, read `.cache/warmup/log`; Gradle still downloads what it needs on demand.
+([docs/dev-setup.md](docs/dev-setup.md#cloud-sessions)). Two Gradle runs in one project wait on each other's locks,
+and the second can fail with "Timeout waiting to lock". `.claude/scripts/gradle-queue.sh` therefore waits for the
+warm-up by itself; **in a cloud session, run `.claude/hooks/cloud-warmup.sh --wait` (Bash timeout 10 minutes)
+before any other Gradle command (`./gradlew ...` directly), and again after the session resumes.** If it reports a
+failure, read `.cache/warmup/log`; Gradle still downloads what it needs on demand.
 
 ```bash
 uv sync                                   # Python environment (once, and after pyproject/uv.lock changes)
@@ -96,6 +96,7 @@ cd pack && packwiz refresh                # after changing anything in pack/
 
 ./git_clean_worktrees.sh                  # Matěj only: merged branches, their worktrees, worktree residue (README)
 bash tests/test_git_clean_worktrees.sh    # its safety regression suite (CI runs it in the content job)
+bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up suite (CI runs it in the content job)
 ```
 
 ## Repository map
@@ -116,7 +117,7 @@ bash tests/test_git_clean_worktrees.sh    # its safety regression suite (CI runs
 | `docs/` | vision, architecture, roadmap, research notes, ADRs, dev setup | yes |
 | `.github/workflows/ci.yml` | CI | yes |
 | `git_clean_worktrees.sh` | Matěj's cleanup of merged branches, their worktrees and worktree residue ([README](README.md#git-worktree-cleanup)) | yes |
-| `tests/` | shell test suites: the worktree cleanup's safety regression suite | yes |
+| `tests/` | shell test suites: the worktree cleanup's safety regression suite, the Gradle queue's warm-up suite | yes |
 | `.claude/` | Claude Code settings, content validation hook, cloud warm-up hook, Gradle queue script, flow skills (`flow1`, `flow2`, `qa1`, `qa2`), PR skills (`fix-pr`, `finalize-pr`, `monitor-pr`), `pr-reviewer` agent | yes |
 | `.mcp.json` | MCP servers for Claude Code: `atlassian` (Jira) | yes |
 | `.local/` | owner's private inputs; gitignored, **never commit** | - |
@@ -311,18 +312,19 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
    through the agent proxy and warm up uv and Gradle in the background (`.claude/hooks/cloud-warmup.sh`).
 3. **Before opening a PR, run and report:** `uv run rf gen` (no unexpected changes), `uv run ruff check`,
    `uv run ruff format --check`, `uv run pytest`, `./gradlew build`, `./gradlew runGameTestServer`,
-   `uv run rf gametest-log`, and `bash tests/test_git_clean_worktrees.sh` when the cleanup script or its suite
+   `uv run rf gametest-log`, `bash tests/test_git_clean_worktrees.sh` when the cleanup script or its suite
+   changed, and `bash tests/test_gradle_queue.sh` when the Gradle queue, the cloud warm-up hook or that suite
    changed. Agents run the two Gradle tasks through `.claude/scripts/gradle-queue.sh`, which waits for memory
-   while other worktrees build.
+   while other worktrees build (and, in a cloud session, for the warm-up).
 4. Keep `CLAUDE.md`, `docs/` and the relevant READMEs current in the same PR when commands, structure, rules or
    decisions change (the roadmap only when the plan changes). Stale docs mislead the next session.
 5. Open the PR against `master` with `gh pr create`, then run `/monitor-pr <n>`. Work that needs Matěj's
    playtest opens no PR before his `qa1`: push the branch and hand it off instead
    ([flow: Playtest handoff](docs/ai-development-flow.md#playtest-handoff)). CI (`.github/workflows/ci.yml`)
-   runs: content pipeline + generated-files check + the worktree cleanup suite, Gradle build + JUnit + GameTests,
-   vanilla ID universe
-   reproducibility, packwiz index (these four are the required checks on `master`), and the full pack boot on a
-   dedicated server and on a client ([ADR 0018](docs/decisions/0018-pack-boot-tests.md)).
+   runs: content pipeline + generated-files check + the worktree cleanup and Gradle queue suites, Gradle build +
+   JUnit + GameTests, vanilla ID universe reproducibility, packwiz index (these four are the required checks on
+   `master`), and the full pack boot on a dedicated server and on a client
+   ([ADR 0018](docs/decisions/0018-pack-boot-tests.md)).
 6. `monitor-pr` merges once Codex is done (its approval, a completed review whose findings are all closed, or
    10 silent minutes), every review thread is resolved and the required checks are green, unless a fix after
    Matěj's playtest changed gameplay: then he retests and answers `qa1` or `qa2` first

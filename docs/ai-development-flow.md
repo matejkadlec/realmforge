@@ -753,7 +753,8 @@ every slot is busy or less than 4 GiB is available, and runs a build that died o
 failing. Runs start one at a time: a start keeps the admission lock for up to a minute (or until that run ends),
 so the next run checks memory only after the new JVMs have claimed theirs. A run that waited too long exits with
 75: that is a queue timeout, not a build result, so run it again later. A run that ran out of memory twice is a
-real failure.
+real failure. In a cloud session the queue first waits for the SessionStart warm-up ([Cloud
+sessions](#cloud-sessions)), and a failed or interrupted warm-up does not hold it back.
 
 ## Branches and worktrees
 
@@ -945,7 +946,11 @@ A Claude Code cloud session (`CLAUDE_CODE_REMOTE=true`) runs the same flow; only
   server from `.mcp.json` fails to start there (no `mcp-remote`), which is expected.
 - **GitHub:** the proxy refuses GraphQL; the pull request skills list the REST forms to use instead. `gh api`
   calls are authenticated (`gh api user` answers) even though `gh auth status` reports the token as invalid.
-- **Gradle:** the queue sees only the VM's own runs.
+- **Gradle:** the queue sees only the VM's own runs. Before it takes a slot, it waits while the SessionStart
+  warm-up (`.claude/hooks/cloud-warmup.sh`) still runs Gradle in the clone, because a second Gradle run in the same
+  project can fail with "Timeout waiting to lock"; a failed or interrupted warm-up lets it go ahead (Gradle then
+  downloads what it needs on demand). A Gradle command run outside the queue needs
+  `.claude/hooks/cloud-warmup.sh --wait` first ([CLAUDE.md](../CLAUDE.md#commands)).
 - **Playtests** are handed off with the [launch commands](#launch-commands) for a branch on `origin`; `qa1` and
   `qa2` may run in the same cloud session or any later local or cloud one.
 - **Cleanup:** branch deletion and worktree removal stay with local sessions.
