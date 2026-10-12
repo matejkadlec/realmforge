@@ -8,10 +8,10 @@ description: Record Matěj's passed playtest of a batch in Pending User QA, publ
 Follow `CLAUDE.md` and read [`docs/ai-development-flow.md`](../../../docs/ai-development-flow.md) completely before
 publishing; this skill may not weaken either. _qa1: playtest passed_ there holds the rules.
 
-1. **Find the batch** Matěj passed: the one this session handed off, the ticket keys or branch he names, or the
-   only playtest batch whose tickets are in Pending User QA. With several and no hint, ask which one, listing each
-   with its tickets and branch. A batch whose tickets are not in Pending User QA is not waiting for a playtest:
-   say so and stop.
+1. **Find the batch** Matěj passed: the one this session handed off, the ticket keys, branch or pull request he
+   names, or the only batch waiting for a playtest (tickets in Pending User QA, or an open pull request with
+   `needs-playtest`, one outside the Jira flow included). With several and no hint, ask which one, listing each
+   with its tickets, branch or pull request. Nothing waiting for a playtest: say so and stop.
 2. **Take the preserved branch:** `git fetch origin`, then reuse the worktree that holds it or create one from
    `origin/<branch>` (_Branches and worktrees_). Then bring the local branch up to `origin/<branch>` before
    anything else: `git merge --ff-only origin/<branch>`, or `git merge origin/<branch>` when both sides have
@@ -34,8 +34,9 @@ publishing; this skill may not weaken either. _qa1: playtest passed_ there holds
    [`monitor-pr`](../monitor-pr/SKILL.md) on the pull request until it merges or reaches one of its stops. The
    playtest was Matěj's last required step.
 
-**Reconfirmation:** when the batch already has a pull request whose `needs-playtest` waits for a reconfirmation
-(_Reconfirmation_), `qa1` publishes nothing new: it records the `🎮 Playtest passed` for the pull request's current
-head on each ticket, removes `needs-playtest` for Matěj (his `qa1` is his answer;
+**A pull request that already waits for a playtest** (a reconfirmation, _Reconfirmation_, or a gameplay pull
+request outside the flow with `needs-playtest`): `qa1` publishes nothing new. It records the `🎮 Playtest passed`
+for the pull request's current head on each of its tickets (one outside the flow may have none: the label's
+removal then records the playtest), removes `needs-playtest` for Matěj (his `qa1` is his answer;
 `gh api -X DELETE repos/matejkadlec/realmforge/issues/<n>/labels/needs-playtest`), moves the tickets to Pending
 CR, and continues `monitor-pr` on it.

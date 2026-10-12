@@ -360,9 +360,11 @@ Matěj's `qa1` passes the playtest and authorizes publishing the batch. The
    frees the batch's playtest slot.
 6. **Hand off and monitor:** the status overview, then `/monitor-pr <n>` in the same run, to the merge.
 
-For a pull request that waits for a [reconfirmation](#reconfirmation), `qa1` instead records the
-`🎮 Playtest passed` for its current head on each ticket, removes `needs-playtest` for Matěj (his `qa1` is his
-answer), moves the tickets to Pending CR, and continues `monitor-pr` on it.
+For a pull request that already waits for a playtest (a [reconfirmation](#reconfirmation), or a gameplay pull
+request outside the flow with `needs-playtest`), `qa1` instead records the `🎮 Playtest passed` for its current
+head on each of its tickets (one outside the flow may have none: the label's removal then records the playtest),
+removes `needs-playtest` for Matěj (his `qa1` is his answer), moves the tickets to Pending CR, and continues
+`monitor-pr` on it.
 
 ### qa2: changes required
 
