@@ -294,6 +294,11 @@ arrival: {x: 0, z: 0, y: [20, 90], pocket_radius: 3, floor: realmforge:slate_bri
   ([architecture 5.2](../architecture.md#52-our-datapack-registries)), synced to clients, because they need the
   colour and the name. The Overworld is an entry too (`overworld`, no
   sigil), which gives return portals their colour and gives a later realm map its root.
+- **Package direction** ([architecture 4.4](../architecture.md#44-dependencies-between-features)): the realm entry
+  names its sigil by id in vanilla's static item registry, resolved by vanilla's item codec, the way a worldgen file
+  names its blocks. `world` uses no code and no registry of the `item` feature for it: a sigil is a plain generated
+  item without behaviour of its own, and the selector compares the held stack with the realm's item. So `world`
+  keeps its row in the dependency table.
 - **`rf gen` writes** the registry entry, the unlock advancement `realmforge:realm/<id>`, the lang keys
   (`realm.realmforge.<id>.name`, ...) and GameTest expectations.
 - **Validation:** the dimension and the sigil exist; one realm per dimension; the sigil stacks to 1; the realm
