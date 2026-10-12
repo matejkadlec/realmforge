@@ -57,8 +57,8 @@ looks like a nether portal.
     1's first quests walk through it. The numbers are proposals for Matěj's playtest.
 - **Lighting:** right-click the selector with a sigil. The selector checks the frame:
   - **complete,** with the opening empty (air, or blocks such as grass that are replaced when something is placed
-    there): the opening fills with portal blocks of that
-    realm, and the action bar says "The portal opens onto the Stone Realm";
+    there) or already filled with this frame's own portal blocks (a switch): the opening fills with portal blocks of
+    that realm, and the action bar says "The portal opens onto the Stone Realm";
   - **incomplete:** nothing lights, the action bar says "The frame is incomplete", and particles mark every missing
     or wrong block for a few seconds, so the player sees what is left (the visible-progress rule of the
     [realm design](realms.md#puzzles-and-traps)).
