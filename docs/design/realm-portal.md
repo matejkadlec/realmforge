@@ -18,8 +18,9 @@
   portal onto that realm, or switches an open portal straight to it, with no clearing step (RE-1).
 - **Holding a sigil unlocks its realm for that player, for good.** The unlock is a per-player advancement, and it is
   the realm's access requirement in `realmforge:dimension_rules`. Losing the sigil later locks nothing.
-- **Arrival is always at the realm's landing**, one shared portal near the realm's origin, where its lowest-level
-  area starts. **The way back always leads home**: to the Overworld portal the player last left from (RE-2).
+- **Arrival through a portal is always at the realm's landing**, one shared portal near the realm's origin, where
+  its lowest-level area starts. **The way back always leads home**: to the Overworld portal the player last left
+  from (RE-2).
 - **Each realm has its own colour**, particles and sound, and a flavour line (RE-1).
 - **Only players travel.** Items, mobs and vehicles never pass, so there is no chunk-loading trick and no realm mob
   in the Overworld.
@@ -146,13 +147,18 @@ a realm's landing ([below](#into-a-realm-the-landing)): its selector always stay
 
 ### Into a realm: the landing
 
-- **Every trip into a realm arrives at its landing**, near the origin of the realm's dimension. Mob levels rise with
-  the distance from the origin ([architecture 14.1](../architecture.md#141-mob-levels)), and the stone realm's
-  sub-regions rise from its arrival point outwards ([realm design](realms.md#the-stone-realm)). With AoA's 1:1
-  coordinates, a player whose Overworld portal stands at x 5,000 would arrive in the level-10 area of the stone realm.
+- **Every trip through a realm portal arrives at its landing**, near the origin of the realm's dimension. Mob levels
+  rise with the distance from the origin ([architecture 14.1](../architecture.md#141-mob-levels)), and the stone
+  realm's sub-regions rise from its arrival point outwards ([realm design](realms.md#the-stone-realm)). With AoA's
+  1:1 coordinates, a player whose Overworld portal stands at x 5,000 would arrive in the level-10 area of the stone
+  realm.
   One landing per realm also means one place to find, mark on the map (TR-11) and grow into a camp with NPCs later
   (WF-8).
-- **The first arrival builds the landing:** a floor of the realm's own stone (named in its data), 7 wide and 5 deep
+- **The first player to enter the realm builds the landing, by any path.** A portal trip builds it before the player
+  arrives. A player who comes another way (a waystone, a command, another mod's teleport) arrives where that path
+  aims, and entering the realm (`PlayerEvent.PlayerChangedDimensionEvent`) builds the landing if the realm has none
+  yet, so the way home exists from the first visit, a walk or a waystone away.
+- **The landing:** a floor of the realm's own stone (named in its data), 7 wide and 5 deep
   under and in front of a frame, with the frame's selector set to return, air 4 blocks high above the floor, light,
   and a safe pocket around it (RE-6: radius 3 by default, larger for a realm that needs it, such as an underwater
   one). The spot is the nearest one to the realm's arrival point (its `x`, `z` in data) where the landing fits
@@ -254,7 +260,8 @@ If Matěj decides otherwise in the realm design, this section follows his answer
   newcomer ([open question 1](#open-questions)).
 - **A player without access** in a portal someone else opened is refused as in
   [Access and unlocks](#access-and-unlocks), while their friends pass through.
-- **Everyone arrives at the same landing** and each player returns to their own home point.
+- **Everyone who comes through a portal arrives at the same landing**, and each player returns to their own home
+  point.
 - **Only players travel.** Vanilla already keeps a passenger out of portals (`Entity#canUsePortal` is false for a
   passenger), and the realm portal refuses every entity that is not a player, so a player on a horse must dismount.
   WoW-style summoned mounts (M6) are dismissed and summoned again on the other side, and pets (later) follow their
@@ -366,7 +373,8 @@ Tests:
   - a sigil lights a complete frame and a second sigil switches it; the landing's selector refuses a sigil;
   - an incomplete frame stays dark;
   - breaking a frame block closes the portal;
-  - a trip there builds the landing, and the way back arrives at the home point;
+  - a trip there builds the landing, and the way back arrives at the home point; a first entry by teleport builds
+    it too;
   - a removed landing frame is rebuilt, and so is a landing outside a shrunken world border;
   - a block placed into the landing's arrival space is refused, and a blocked arrival spot moves the player to a safe
     one;
