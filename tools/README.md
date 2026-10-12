@@ -10,6 +10,8 @@ uv run rf gen --check     # exit 1 if any generated file is out of date
 uv run rf ids vanilla     # re-extract the vanilla ID universe (downloads the server jar, needs Java 21)
 uv run rf pack-boot       # boot the whole pack plus mod/build/libs' jar on a server and a client (needs Java 21)
 uv run rf gametest-log    # after ./gradlew runGameTestServer: exit 1 on data loading errors in its log
+uv run rf art clean SRC DST   # snap a generated texture to the 16x16 grid and the project palette
+uv run rf art gallery DIR     # review gallery for DIR/<subject>/<candidate>.png (.cache/art/)
 uv run pytest             # tests
 uv run ruff check && uv run ruff format --check
 ```
@@ -21,7 +23,8 @@ uv run ruff check && uv run ruff format --check
 | `realmforge_tools/validate.py` | own ids and references against the ID universe (steps 2-3) |
 | `realmforge_tools/id_universe.py`, `vanilla.py` | the ID universe and the vanilla extractor |
 | `realmforge_tools/generate/` | generators; `generate_all` + `sync` own the generated directories; `datapack.py` writes every type in `DATAPACK_TYPES` as datapack registry entries (translation keys, unit conversion) |
-| `realmforge_tools/formats/` | deterministic PNG, NBT, gzip/zlib and JSON writers |
+| `realmforge_tools/formats/` | deterministic PNG, NBT, gzip/zlib and JSON writers; a PNG reader for generator output |
+| `realmforge_tools/art/` | texture pipeline ([ADR 0022](../docs/decisions/0022-texture-generators.md)): palette, `rf art clean`, `rf art gallery` |
 | `realmforge_tools/packboot.py` | `rf pack-boot`: installs and boots the pack with NeoForge's self tests ([below](#pack-boot)) |
 | `realmforge_tools/gamelog.py` | NeoForge log parsing shared by `rf pack-boot` and `rf gametest-log` ([below](#gametest-log)) |
 | `realmforge_tools/client_isolation.py` | the import check that keeps client classes under `client/` (architecture 18) |

@@ -231,15 +231,18 @@ Recommendation (accepted, [ADR 0007](decisions/0007-asset-pipeline.md)): Retro D
 | FLUX via fal.ai | no, LoRA + downscale | official MCP | about 0.02-0.04 USD per megapixel | commercial use OK |
 
 - Retro Diffusion wins: the only one with Minecraft-specific styles. It can also lock a palette, do seamless tiling (to verify for the MC styles) and make cuboid 3D models exported to `.bbmodel` as a Blockbench draft.
-- Quality has not been compared yet. Spike 5 generates the same 10 textures in both (both offer free credits).
+- Spike 5 (2026-10-12) compared both on the same 10 textures: Retro Diffusion for blocks (seamless tiling,
+  vanilla-like shading), PixelLab Pro for items and icons (64 candidates per call)
+  ([ADR 0022](decisions/0022-texture-generators.md), [results](../art/spike5/README.md)).
 - Big general models (GPT Image, Gemini) are only for concept art, e.g. three views of a mob.
 
 ### Texture pipeline
 
-1. A fixed project palette, close to vanilla.
+1. A fixed project palette, close to vanilla: `art/palette/realmforge.gpl`.
 2. A batch of candidates from Retro Diffusion or PixelLab via MCP.
-3. Grid and palette cleanup: [unfake](https://pypi.org/project/unfake/) (MIT) or Pillow `quantize`.
-4. Review gallery: accept, reject, regenerate.
+3. Grid and palette cleanup: [unfake](https://pypi.org/project/unfake/) (MIT) or Pillow `quantize`. Built in
+   spike 5 without either, as `uv run rf art clean` (standard library only).
+4. Review gallery: accept, reject, regenerate (`uv run rf art gallery`).
 5. Manual touch-ups only where needed (LibreSprite free, Aseprite paid).
 6. Variants scripted from one base: rarities, gem colours, armor tiers. Saves money and keeps the style consistent.
 
