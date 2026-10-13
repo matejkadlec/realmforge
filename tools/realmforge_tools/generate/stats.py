@@ -1,5 +1,5 @@
 """Stats: the attribute registrations, and the QA mod's expectations for stats and stat rules (the stat rules'
-data itself: datapack.py)."""
+data itself: datapack.py; the stat names: the lang files, lang.py)."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from pathlib import Path
 from realmforge_tools.content import Content
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
+from realmforge_tools.schema.common import LocalizedText
 from realmforge_tools.schema.stat import StatDef, stat_description_id
 from realmforge_tools.schema.stat_rule import StatRuleDef
 
@@ -26,6 +27,11 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
             _expectations(content)
         ),
     }
+
+
+def translations(content: Content) -> dict[str, LocalizedText]:
+    """Every stat's name, by its attribute's translation key ``attribute.realmforge.<id>``."""
+    return {stat_description_id(entry.model.id): entry.model.name for entry in content.stats}
 
 
 def sample_values(rule: StatRuleDef, stat_max: float | None = None) -> list[float]:
@@ -53,6 +59,12 @@ def _double(value: float) -> str:
     return repr(float(value))
 
 
+def _comment(stat: StatDef) -> str:
+    """The stat's kind and English name, safe inside a Javadoc comment."""
+    english = stat.name.en_us.replace("*/", "*&#47;").replace("@", "&#64;")
+    return f'{stat.kind}, "{english}"'
+
+
 def _attribute(stat: StatDef) -> str:
     description_id = string_literal(stat_description_id(stat.id))
     numbers = f"{_double(stat.game_default)}, 0.0, {_double(stat.game_max)}"
@@ -62,7 +74,7 @@ def _attribute(stat: StatDef) -> str:
 
 def _registrations(content: Content) -> bytes:
     fields = "".join(
-        f"    /** {{@code {MOD_ID}:{entry.model.id}}} from {{@code {entry.source}}}: {entry.model.kind}. */\n"
+        f"    /** {{@code {MOD_ID}:{entry.model.id}}} from {{@code {entry.source}}}: {_comment(entry.model)}. */\n"
         f"    public static final DeferredHolder<Attribute, Attribute> {constant_name(entry.model.id)} =\n"
         f"            ATTRIBUTES.register({string_literal(entry.model.id)},\n"
         f"                    () -> {_attribute(entry.model)}.setSyncable(true));\n"

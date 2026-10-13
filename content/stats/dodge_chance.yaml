@@ -2,5 +2,6 @@
 # Chance to avoid a hit completely (F5). No primary stat gives it: D5 keeps dodge for future classes such as the
 # Rogue and the Hunter.
 id: dodge_chance
+name: {en_us: Dodge Chance}
 kind: secondary
 max_percent: 100

@@ -21,52 +21,52 @@ public final class GeneratedStats {
     public static final DeferredRegister<Attribute> ATTRIBUTES =
             DeferredRegister.create(Registries.ATTRIBUTE, Realmforge.MOD_ID);
 
-    /** {@code realmforge:crit_chance} from {@code content/stats/crit_chance.yaml}: secondary. */
+    /** {@code realmforge:crit_chance} from {@code content/stats/crit_chance.yaml}: secondary, "Crit Chance". */
     public static final DeferredHolder<Attribute, Attribute> CRIT_CHANCE =
             ATTRIBUTES.register("crit_chance",
                     () -> new PercentageAttribute("attribute.realmforge.crit_chance", 0.05, 0.0, 1.0).setSyncable(true));
 
-    /** {@code realmforge:crit_damage} from {@code content/stats/crit_damage.yaml}: secondary. */
+    /** {@code realmforge:crit_damage} from {@code content/stats/crit_damage.yaml}: secondary, "Crit Damage". */
     public static final DeferredHolder<Attribute, Attribute> CRIT_DAMAGE =
             ATTRIBUTES.register("crit_damage",
                     () -> new PercentageAttribute("attribute.realmforge.crit_damage", 0.5, 0.0, 10.0).setSyncable(true));
 
-    /** {@code realmforge:dexterity} from {@code content/stats/dexterity.yaml}: primary. */
+    /** {@code realmforge:dexterity} from {@code content/stats/dexterity.yaml}: primary, "Dexterity". */
     public static final DeferredHolder<Attribute, Attribute> DEXTERITY =
             ATTRIBUTES.register("dexterity",
                     () -> new RangedAttribute("attribute.realmforge.dexterity", 0.0, 0.0, 100000.0).setSyncable(true));
 
-    /** {@code realmforge:dodge_chance} from {@code content/stats/dodge_chance.yaml}: secondary. */
+    /** {@code realmforge:dodge_chance} from {@code content/stats/dodge_chance.yaml}: secondary, "Dodge Chance". */
     public static final DeferredHolder<Attribute, Attribute> DODGE_CHANCE =
             ATTRIBUTES.register("dodge_chance",
                     () -> new PercentageAttribute("attribute.realmforge.dodge_chance", 0.0, 0.0, 1.0).setSyncable(true));
 
-    /** {@code realmforge:haste} from {@code content/stats/haste.yaml}: secondary. */
+    /** {@code realmforge:haste} from {@code content/stats/haste.yaml}: secondary, "Haste". */
     public static final DeferredHolder<Attribute, Attribute> HASTE =
             ATTRIBUTES.register("haste",
                     () -> new PercentageAttribute("attribute.realmforge.haste", 0.0, 0.0, 10.0).setSyncable(true));
 
-    /** {@code realmforge:healing_power} from {@code content/stats/healing_power.yaml}: secondary. */
+    /** {@code realmforge:healing_power} from {@code content/stats/healing_power.yaml}: secondary, "Healing Power". */
     public static final DeferredHolder<Attribute, Attribute> HEALING_POWER =
             ATTRIBUTES.register("healing_power",
                     () -> new PercentageAttribute("attribute.realmforge.healing_power", 0.0, 0.0, 10.0).setSyncable(true));
 
-    /** {@code realmforge:intellect} from {@code content/stats/intellect.yaml}: primary. */
+    /** {@code realmforge:intellect} from {@code content/stats/intellect.yaml}: primary, "Intellect". */
     public static final DeferredHolder<Attribute, Attribute> INTELLECT =
             ATTRIBUTES.register("intellect",
                     () -> new RangedAttribute("attribute.realmforge.intellect", 0.0, 0.0, 100000.0).setSyncable(true));
 
-    /** {@code realmforge:spell_power} from {@code content/stats/spell_power.yaml}: secondary. */
+    /** {@code realmforge:spell_power} from {@code content/stats/spell_power.yaml}: secondary, "Spell Power". */
     public static final DeferredHolder<Attribute, Attribute> SPELL_POWER =
             ATTRIBUTES.register("spell_power",
                     () -> new PercentageAttribute("attribute.realmforge.spell_power", 0.0, 0.0, 10.0).setSyncable(true));
 
-    /** {@code realmforge:strength} from {@code content/stats/strength.yaml}: primary. */
+    /** {@code realmforge:strength} from {@code content/stats/strength.yaml}: primary, "Strength". */
     public static final DeferredHolder<Attribute, Attribute> STRENGTH =
             ATTRIBUTES.register("strength",
                     () -> new RangedAttribute("attribute.realmforge.strength", 0.0, 0.0, 100000.0).setSyncable(true));
 
-    /** {@code realmforge:vitality} from {@code content/stats/vitality.yaml}: primary. */
+    /** {@code realmforge:vitality} from {@code content/stats/vitality.yaml}: primary, "Vitality". */
     public static final DeferredHolder<Attribute, Attribute> VITALITY =
             ATTRIBUTES.register("vitality",
                     () -> new RangedAttribute("attribute.realmforge.vitality", 0.0, 0.0, 100000.0).setSyncable(true));

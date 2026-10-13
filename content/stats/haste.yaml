@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=../../tools/schemas/stats.schema.json
 # Faster casts and shorter cooldowns, in percent (the spell engine applies it): 100 halves a cast time.
 id: haste
+name: {en_us: Haste}
 kind: secondary
 max_percent: 1000
