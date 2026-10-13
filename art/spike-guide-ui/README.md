@@ -9,16 +9,20 @@ Fast and Plus look bad. No ADR yet.
 **Round 1 outcome (Matěj, 2026-10-12):** the five RD Fast icons are fine. He rejected every frame: none looks close
 to the mockup, the corners are too fancy, the border is too thick, the panel is royal blue where the mockup is far
 darker, and the gold reads as bronze or even wood. The RD Fast frame guided by the mockup's corner came closest.
-[Round 2](#round-2-rlm-131) (RLM-131) answers that with four RD Fast frames; Plus and Pro were not tried. Matěj may
-pick one to remake with RD Pro.
+[Round 2](#round-2-rlm-131) (RLM-131) answers that with four RD Fast frames; Plus and Pro were not tried.
+
+**Round 2 outcome (Matěj, 2026-10-13):** "go with d, make the pro version". The
+[RD Pro version](#rd-pro-version-rlm-134) (RLM-134) holds two RD Pro frames made from d.
 
 - `reference/mockup.png`: Matěj's mockup (generated with ChatGPT). `reference/corner-crop.png`: its top-left
   window corner, cropped at (192, 58), 136x136, composited on white, scaled to 256x256 (bilinear) and snapped to the
   project palette. It was the `input_image` for the two corner-guided frames.
 - `reference/frame-composite.png`, `reference/frame-palette.png`: round 2's `input_image` (a symmetric frame built
   from the mockup's own parts) and `input_palette` ([Round 2](#round-2-rlm-131)).
+- `reference/frame-d-256.png`, `reference/frame-composite-256.png`: round 2's frame d and the composite at 256x184,
+  the inputs of the RD Pro version ([RD Pro version](#rd-pro-version-rlm-134)).
 - `candidates/<subject>/<candidate>.png`: the generator output exactly as returned (`frame/`, `frame_r2/`,
-  `icon_*/`), and the derived previews (`preview_nine_slice/`, `preview_stretched/`).
+  `frame_pro/`, `icon_*/`), and the derived previews (`preview_nine_slice/`, `preview_stretched/`).
 - `candidates/gallery.yaml`: labels, prompts, seeds and the cost of every image.
 - `cleaned/icon_*.png`: the icons after `uv run rf art clean` (16x16, project palette).
 - Review page: built from `gallery.yaml` with the `rf art gallery` styles and published for Matěj as a private
@@ -134,6 +138,37 @@ which round 1 lost. a has the shape closest to the input. Both need their corner
 should match the mockup exactly; Pro could take the composite and the picked frame as its `reference_images`.
 
 **Spent: 0.12 USD** (4 x 0.03). The balance went from 24.60 to 24.48 USD; both rounds together cost 0.54 USD.
+
+## RD Pro version (RLM-134)
+
+**Method (2026-10-13).** Matěj picked round 2's frame d for an RD Pro remake. RD Pro draws at most 256x256 and has
+no UI frame style like RD Fast's, so the frame is 256x184 (d's proportions) and two RD Pro styles each made one
+take:
+
+- **The inputs** at 256x184 on white, scaled with area averaging and reduced to at most 64 colors:
+  - `reference/frame-d-256.png`: frame d, cropped to its opaque box;
+  - `reference/frame-composite-256.png`: round 2's composite.
+- **rd-pro-edit:** `rd_pro__edit`, which reworks an `input_image`: d as the input, the composite as a
+  `reference_images` entry, and a prompt to keep d's composition and redraw it crisp, with 45-degree cut corners.
+- **rd-pro-default:** `rd_pro__default`, drawn fresh from `reference_images` (d and the composite) and a
+  description of the frame.
+
+Both used seed 2301 and `remove_bg`. The prompts are in `gallery.yaml`.
+
+**Results.** Both are horizontal frames with mirror symmetry (2% of mirrored pixel pairs differ), straight sides, a
+flat panel and hard alpha, drawn on their native 1x grid. Gold is the mean hue and saturation of the gold pixels, as
+in round 2; d has 33 degrees and 0.70.
+
+| Frame | Look | Closeness to the mockup | Size, border, panel | Gold | Cost |
+| --- | --- | --- | --- | --- | --- |
+| rd-pro-edit | d redrawn crisper: the same crest, studs and bottom ornament, cut corners with larger gold scrollwork inside them; the gem turned grey-white | d's layout kept; the corner scrollwork is busier than the mockup's sprays | 245x172 (d's proportions), 3 px, `#0a121a` (the mockup's navy) | 35 degrees, 0.64, value 0.65 | 0.18 USD |
+| rd-pro-default | a clean, flat frame: sharp 45-degree cut corners with thin filigree in each corner, a smaller crest with an amber gem, small side studs and bottom ornament | the corners and the bright gold are the closest to the mockup in the whole spike; the crest and ornaments are simpler | 220x126 (about 1.75:1), 4 px, `#121421` (slightly lighter and more violet) | 40 degrees, 0.56, value 0.80 | 0.18 USD |
+
+**Agent's view:** rd-pro-edit is the faithful RD Pro version of d. rd-pro-default comes closer to the mockup's cut
+corners and bright gold, at the cost of a smaller crest and a slightly lighter panel. Either can still be cut into a
+nine-slice sprite, with the crest drawn separately, as round 1's previews showed.
+
+**Spent: 0.36 USD** (2 x 0.18). The balance went from 24.48 to 24.12 USD; the whole spike cost 0.90 USD.
 
 ## Pipeline notes
 
