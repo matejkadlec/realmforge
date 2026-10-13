@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Health healed every 5 seconds, in points, on top of vanilla's food regeneration (a proposal). No effect until
+# RLM-160.
+id: health_regeneration
+name: {en_us: Health Regeneration}
+kind: secondary
+max: 1000

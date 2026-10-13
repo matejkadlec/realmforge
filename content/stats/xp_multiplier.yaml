@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Multiplies the character XP a player gains, in percent: 100 is normal. Leveling makes it work (C2, RLM-23).
+id: xp_multiplier
+name: {en_us: XP Multiplier}
+kind: secondary
+default_percent: 100
+max_percent: 1000

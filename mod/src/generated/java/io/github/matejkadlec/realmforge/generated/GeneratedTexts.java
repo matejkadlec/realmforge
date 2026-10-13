@@ -8,26 +8,59 @@ public final class GeneratedTexts {
     /** {@code combat_text.realmforge.dodge} from {@code content/texts/combat_text.yaml}: "Dodge" */
     public static final String COMBAT_TEXT_DODGE = "combat_text.realmforge.dodge";
 
-    /** {@code gui.realmforge.character_sheet} from {@code content/texts/gui.yaml}: "Character" */
+    /** {@code gui.realmforge.block_reach} from {@code content/texts/gui.yaml}: "Block Reach" */
+    public static final String GUI_BLOCK_REACH = "gui.realmforge.block_reach";
+
+    /** {@code gui.realmforge.character_sheet} from {@code content/texts/gui.yaml}: "Character Sheet" */
     public static final String GUI_CHARACTER_SHEET = "gui.realmforge.character_sheet";
 
-    /** {@code gui.realmforge.combat_stats} from {@code content/texts/gui.yaml}: "Combat" */
-    public static final String GUI_COMBAT_STATS = "gui.realmforge.combat_stats";
+    /** {@code gui.realmforge.character_title} from {@code content/texts/gui.yaml}: "%1$s · Level %2$s" */
+    public static final String GUI_CHARACTER_TITLE = "gui.realmforge.character_title";
+
+    /** {@code gui.realmforge.defense} from {@code content/texts/gui.yaml}: "Defense" */
+    public static final String GUI_DEFENSE = "gui.realmforge.defense";
+
+    /** {@code gui.realmforge.entity_reach} from {@code content/texts/gui.yaml}: "Entity Reach" */
+    public static final String GUI_ENTITY_REACH = "gui.realmforge.entity_reach";
+
+    /** {@code gui.realmforge.mana} from {@code content/texts/gui.yaml}: "Mana" */
+    public static final String GUI_MANA = "gui.realmforge.mana";
+
+    /** {@code gui.realmforge.mining_speed} from {@code content/texts/gui.yaml}: "Mining Speed" */
+    public static final String GUI_MINING_SPEED = "gui.realmforge.mining_speed";
+
+    /** {@code gui.realmforge.offense} from {@code content/texts/gui.yaml}: "Offense" */
+    public static final String GUI_OFFENSE = "gui.realmforge.offense";
+
+    /** {@code gui.realmforge.other_stats} from {@code content/texts/gui.yaml}: "Other" */
+    public static final String GUI_OTHER_STATS = "gui.realmforge.other_stats";
 
     /** {@code gui.realmforge.primary_stats} from {@code content/texts/gui.yaml}: "Primary Stats" */
     public static final String GUI_PRIMARY_STATS = "gui.realmforge.primary_stats";
 
-    /** {@code gui.realmforge.secondary_stats} from {@code content/texts/gui.yaml}: "Secondary Stats" */
-    public static final String GUI_SECONDARY_STATS = "gui.realmforge.secondary_stats";
-
     /** {@code gui.realmforge.spell_schools} from {@code content/texts/gui.yaml}: "Spell Schools" */
     public static final String GUI_SPELL_SCHOOLS = "gui.realmforge.spell_schools";
+
+    /** {@code gui.realmforge.spells} from {@code content/texts/gui.yaml}: "Spells" */
+    public static final String GUI_SPELLS = "gui.realmforge.spells";
 
     /** {@code gui.realmforge.stat_bonus} from {@code content/texts/gui.yaml}: "%1$s %2$s" */
     public static final String GUI_STAT_BONUS = "gui.realmforge.stat_bonus";
 
     /** {@code gui.realmforge.stat_milestone} from {@code content/texts/gui.yaml}: "At %1$s: %2$s" */
     public static final String GUI_STAT_MILESTONE = "gui.realmforge.stat_milestone";
+
+    /** {@code gui.realmforge.swimming_speed} from {@code content/texts/gui.yaml}: "Swimming Speed" */
+    public static final String GUI_SWIMMING_SPEED = "gui.realmforge.swimming_speed";
+
+    /** {@code gui.realmforge.tab_combat} from {@code content/texts/gui.yaml}: "Combat" */
+    public static final String GUI_TAB_COMBAT = "gui.realmforge.tab_combat";
+
+    /** {@code gui.realmforge.tab_magic} from {@code content/texts/gui.yaml}: "Magic" */
+    public static final String GUI_TAB_MAGIC = "gui.realmforge.tab_magic";
+
+    /** {@code gui.realmforge.tab_stats} from {@code content/texts/gui.yaml}: "Stats" */
+    public static final String GUI_TAB_STATS = "gui.realmforge.tab_stats";
 
     /** {@code key.realmforge.character_sheet} from {@code content/texts/key.yaml}: "Character Sheet" */
     public static final String KEY_CHARACTER_SHEET = "key.realmforge.character_sheet";

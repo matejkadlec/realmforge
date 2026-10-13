@@ -488,7 +488,10 @@ def test_stats_register_points_and_shares(repo: RepoPaths) -> None:
         in java
     )
     assert "PRIMARY = List.of(DEXTERITY, INTELLECT, STRENGTH, VITALITY);" in java
-    assert "ALL = List.of(ARCANE_POWER, ARCANE_RESISTANCE, CRIT_CHANCE, CRIT_DAMAGE, DEXTERITY," in java
+    assert (
+        "ALL = List.of(ARCANE_POWER, ARCANE_RESISTANCE, ARMOR_PIERCE, ARMOR_PIERCE_PERCENT, CAST_TIME_REDUCTION,"
+        in java
+    )
 
 
 def test_stat_names_go_into_the_lang_file(repo: RepoPaths) -> None:

@@ -10,6 +10,6 @@ per_point:
 milestones:
   - points: 25
     modifiers:
-      - attribute: realmforge:haste
+      - attribute: realmforge:cooldown_reduction
         operation: add_value
         amount_percent: 5

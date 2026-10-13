@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Shorter cast times, in percent: 50 halves a cast. The spell engine applies it (C3a, RLM-24).
+id: cast_time_reduction
+name: {en_us: Cast Time Reduction}
+kind: secondary
+max_percent: 75

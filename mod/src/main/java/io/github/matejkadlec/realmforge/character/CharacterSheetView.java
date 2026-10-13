@@ -4,7 +4,9 @@ import io.github.matejkadlec.realmforge.combat.CombatRegistries;
 import io.github.matejkadlec.realmforge.combat.SpellSchool;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
+import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatRule;
+import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import io.github.matejkadlec.realmforge.stats.StatsRegistries;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -13,6 +15,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.ToDoubleFunction;
+import java.util.stream.Stream;
+import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.network.chat.Component;
@@ -22,23 +26,29 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.common.PercentageAttribute;
 
 /**
  * What the character sheet shows (RLM-136; architecture 18: a thin screen draws a view model computed in common code):
- * the primary stats with what they give, the secondary stats, the spell schools' power and resistance, and the vanilla
- * attributes a player cares about. Built from a player's synced attributes and the synced registries, so the client
+ * the player's name and level, then three tabs of two columns each (Matěj, 2026-10-13). Stats: the primary stats with
+ * what they give, and the other attributes. Combat: offense and defense. Magic: spells and mana, and the spell
+ * schools' power and resistance. Built from a player's synced attributes and the synced registries, so the client
  * screen and the GameTests read the same rows. Every label is a translation; values are formatted here.
  *
- * @param left the primary stats and the combat attributes
- * @param right the secondary stats and the spell schools
+ * @param title the player's name and level
+ * @param tabs the tabs in order
  */
-public record CharacterSheetView(List<Section> left, List<Section> right) {
+public record CharacterSheetView(Component title, List<Tab> tabs) {
     /** Text colours of the rows; the screen draws with them. */
     public static final int TITLE = 0xFFFFD24D;
     public static final int STAT = 0xFFFFFFFF;
     public static final int BONUS = 0xFF7FD97F;
     public static final int AHEAD = 0xFF8C8C8C;
+
+    /** A tab: its name and the sections of its two columns. */
+    public record Tab(Component name, List<Section> left, List<Section> right) {
+    }
 
     /** A titled group of rows. */
     public record Section(Component title, List<Row> rows) {
@@ -57,37 +67,61 @@ public record CharacterSheetView(List<Section> left, List<Section> right) {
     public record Row(String id, Component label, String value, boolean indented, int color) {
     }
 
-    /** The order of the primary stats on the sheet (the ticket's STR, DEX, VIT, INT); others follow in id order. */
+    /** An attribute on the sheet, under its own name or under one the sheet gives it ({@code label}, a text key). */
+    private record Entry(Holder<Attribute> attribute, @Nullable String label) {
+    }
+
+    /** The order of the primary stats on the sheet (STR, DEX, VIT, INT); others follow in id order. */
     private static final List<Holder<Attribute>> PRIMARY_ORDER = List.of(GeneratedStats.STRENGTH,
             GeneratedStats.DEXTERITY, GeneratedStats.VITALITY, GeneratedStats.INTELLECT);
 
-    /** The vanilla attributes a player cares about, with how each value reads. */
-    private static final List<Holder<Attribute>> COMBAT = List.of(Attributes.MAX_HEALTH, Attributes.ARMOR,
-            Attributes.ARMOR_TOUGHNESS, Attributes.ATTACK_DAMAGE, Attributes.ATTACK_SPEED, Attributes.MOVEMENT_SPEED);
+    private static final List<Entry> OTHER = List.of(entry(Attributes.LUCK),
+            entry(Attributes.BLOCK_BREAK_SPEED, GeneratedTexts.GUI_MINING_SPEED),
+            entry(Attributes.BLOCK_INTERACTION_RANGE, GeneratedTexts.GUI_BLOCK_REACH),
+            entry(Attributes.ENTITY_INTERACTION_RANGE, GeneratedTexts.GUI_ENTITY_REACH),
+            entry(Attributes.MOVEMENT_SPEED), entry(NeoForgeMod.SWIM_SPEED, GeneratedTexts.GUI_SWIMMING_SPEED),
+            entry(GeneratedStats.XP_MULTIPLIER));
+    private static final List<Entry> OFFENSE = List.of(entry(Attributes.ATTACK_DAMAGE), entry(Attributes.ATTACK_SPEED),
+            entry(GeneratedStats.CRIT_CHANCE), entry(GeneratedStats.CRIT_DAMAGE), entry(GeneratedStats.ARMOR_PIERCE),
+            entry(GeneratedStats.ARMOR_PIERCE_PERCENT), entry(GeneratedStats.PROTECTION_PIERCE),
+            entry(GeneratedStats.PROTECTION_PIERCE_PERCENT), entry(GeneratedStats.LIFESTEAL),
+            entry(GeneratedStats.OVERHEAL));
+    private static final List<Entry> DEFENSE = List.of(entry(Attributes.MAX_HEALTH),
+            entry(GeneratedStats.HEALTH_REGENERATION), entry(Attributes.ARMOR), entry(Attributes.ARMOR_TOUGHNESS),
+            entry(GeneratedStats.MAGIC_SHIELD), entry(GeneratedStats.DODGE_CHANCE));
+    private static final List<Entry> SPELLS = List.of(entry(GeneratedStats.SPELL_POWER),
+            entry(GeneratedStats.SPELL_RESISTANCE), entry(GeneratedStats.COOLDOWN_REDUCTION),
+            entry(GeneratedStats.CAST_TIME_REDUCTION));
+    private static final List<Entry> MANA = List.of(entry(GeneratedStats.MAX_MANA),
+            entry(GeneratedStats.MANA_REGENERATION));
+
+    /** Attributes that read as a percentage of the player's base: players walk at 0.1, the default is 0.7. */
+    private static final List<Holder<Attribute>> PERCENT_OF_BASE = List.of(Attributes.MOVEMENT_SPEED,
+            Attributes.BLOCK_BREAK_SPEED);
 
     /**
-     * Makes every vanilla attribute the sheet shows sync to the client, which draws the sheet from the player's own
-     * attributes. Vanilla syncs all of {@link #COMBAT} but attack damage, which only the server computes; our stats are
-     * syncable from their registration (architecture 8.1). Called once from {@link CharacterFeature}.
+     * Makes every attribute the sheet lists sync to the client, which draws the sheet from the player's own attributes.
+     * Vanilla syncs most of them but not attack damage, which only the server computes; our stats are syncable from
+     * their registration (architecture 8.1). Called once from {@link CharacterFeature} at common setup, when every
+     * attribute the sheet lists is registered (NeoForge's swim speed and ours are not at mod construction).
      */
     static void syncShownAttributes() {
-        for (Holder<Attribute> attribute : COMBAT) {
-            attribute.value().setSyncable(true);
-        }
+        listed().forEach(entry -> entry.attribute().value().setSyncable(true));
     }
 
-    /** The sheet of a player, from its attributes (synced to its own client) and the synced registries. */
+    /** The sheet of a player, from its attributes and level (synced to its own client) and the synced registries. */
     public static CharacterSheetView of(Player player) {
-        return build(player::getAttributeValue, player::getAttributeBaseValue, player.registryAccess());
+        int level = player.getExistingData(StatsAttachments.LEVEL).map(EntityLevel::value).orElse(EntityLevel.MIN);
+        Component title = Component.translatable(GeneratedTexts.GUI_CHARACTER_TITLE, player.getName(), level);
+        return build(title, player::getAttributeValue, player::getAttributeBaseValue, player.registryAccess());
     }
 
     /**
-     * The sheet for any source of attribute values and base values: both must answer for every stat and
-     * {@link #COMBAT}. Movement speed reads as a percent of its base: players walk at a base of 0.1, while the
-     * attribute's own default is 0.7.
+     * The sheet for any source of attribute values and base values: both must answer for every stat and every
+     * attribute the sheet lists.
      */
-    static CharacterSheetView build(ToDoubleFunction<Holder<Attribute>> value, ToDoubleFunction<Holder<Attribute>> base,
-            HolderLookup.Provider registries) {
+    static CharacterSheetView build(Component title, ToDoubleFunction<Holder<Attribute>> value,
+            ToDoubleFunction<Holder<Attribute>> base, HolderLookup.Provider registries) {
         List<StatRule> rules = new ArrayList<>();
         registries.lookupOrThrow(StatsRegistries.STAT_RULE).listElements().forEach(rule -> rules.add(rule.value()));
         List<SpellSchool> schools = new ArrayList<>();
@@ -97,14 +131,16 @@ public record CharacterSheetView(List<Section> left, List<Section> right) {
                 .forEach(school -> schools.add(school.value()));
 
         // By key: the schools' holders come from the attribute registry, ours from GeneratedStats.
-        Set<ResourceKey<Attribute>> schoolStats = new HashSet<>();
+        Set<ResourceKey<Attribute>> placed = new HashSet<>();
         schools.forEach(school -> {
-            school.power().flatMap(Holder::unwrapKey).ifPresent(schoolStats::add);
-            school.resistance().flatMap(Holder::unwrapKey).ifPresent(schoolStats::add);
+            school.power().flatMap(Holder::unwrapKey).ifPresent(placed::add);
+            school.resistance().flatMap(Holder::unwrapKey).ifPresent(placed::add);
         });
+        listed().forEach(entry -> placed.add(key(entry.attribute())));
 
         List<Row> primary = new ArrayList<>();
         for (Holder<Attribute> stat : primaryStats()) {
+            placed.add(key(stat));
             double points = value.applyAsDouble(stat);
             primary.add(statRow(stat, points, STAT));
             for (StatRule rule : rules) {
@@ -113,18 +149,11 @@ public record CharacterSheetView(List<Section> left, List<Section> right) {
                 }
             }
         }
-        List<Row> combat = new ArrayList<>();
-        for (Holder<Attribute> attribute : COMBAT) {
-            double current = value.applyAsDouble(attribute);
-            String shown = attribute.is(Attributes.MOVEMENT_SPEED)
-                    ? percentOf(current, base.applyAsDouble(attribute))
-                    : points(current);
-            combat.add(new Row(attribute.value().getDescriptionId(), name(attribute), shown, false, STAT));
-        }
-        List<Row> secondary = new ArrayList<>();
+        List<Row> other = rows(OTHER, value, base);
+        // A stat of ours that no section names still shows, under Other, so new content is never missing.
         for (Holder<Attribute> stat : GeneratedStats.ALL) {
-            if (!GeneratedStats.PRIMARY.contains(stat) && !schoolStats.contains(key(stat))) {
-                secondary.add(statRow(stat, value.applyAsDouble(stat), STAT));
+            if (!placed.contains(key(stat))) {
+                other.add(statRow(stat, value.applyAsDouble(stat), STAT));
             }
         }
         List<Row> schoolRows = new ArrayList<>();
@@ -133,17 +162,25 @@ public record CharacterSheetView(List<Section> left, List<Section> right) {
             school.resistance().ifPresent(stat -> schoolRows.add(statRow(stat, value.applyAsDouble(stat),
                     school.color())));
         }
-        return new CharacterSheetView(
-                List.of(section(GeneratedTexts.GUI_PRIMARY_STATS, primary), section(GeneratedTexts.GUI_COMBAT_STATS, combat)),
-                List.of(section(GeneratedTexts.GUI_SECONDARY_STATS, secondary),
-                        section(GeneratedTexts.GUI_SPELL_SCHOOLS, schoolRows)));
+        return new CharacterSheetView(title, List.of(
+                tab(GeneratedTexts.GUI_TAB_STATS, List.of(section(GeneratedTexts.GUI_PRIMARY_STATS, primary)),
+                        List.of(section(GeneratedTexts.GUI_OTHER_STATS, other))),
+                tab(GeneratedTexts.GUI_TAB_COMBAT,
+                        List.of(section(GeneratedTexts.GUI_OFFENSE, rows(OFFENSE, value, base))),
+                        List.of(section(GeneratedTexts.GUI_DEFENSE, rows(DEFENSE, value, base)))),
+                tab(GeneratedTexts.GUI_TAB_MAGIC,
+                        List.of(section(GeneratedTexts.GUI_SPELLS, rows(SPELLS, value, base)),
+                                section(GeneratedTexts.GUI_MANA, rows(MANA, value, base))),
+                        List.of(section(GeneratedTexts.GUI_SPELL_SCHOOLS, schoolRows)))));
     }
 
-    /** Every row of the sheet, left column first. */
+    /** Every row of the sheet: tab by tab, left column first. */
     public List<Row> rows() {
         List<Row> rows = new ArrayList<>();
-        for (List<Section> column : List.of(left, right)) {
-            column.forEach(section -> rows.addAll(section.rows()));
+        for (Tab tab : tabs) {
+            for (List<Section> column : List.of(tab.left(), tab.right())) {
+                column.forEach(section -> rows.addAll(section.rows()));
+            }
         }
         return rows;
     }
@@ -175,10 +212,30 @@ public record CharacterSheetView(List<Section> left, List<Section> right) {
         return (amount < 0 ? "-" : "+") + number;
     }
 
+    /** Every attribute the sections list by name (the primary stats and the schools' stats come from data). */
+    private static Stream<Entry> listed() {
+        return Stream.of(OTHER, OFFENSE, DEFENSE, SPELLS, MANA).flatMap(List::stream);
+    }
+
     private static List<Holder<Attribute>> primaryStats() {
         List<Holder<Attribute>> stats = new ArrayList<>(PRIMARY_ORDER);
         GeneratedStats.PRIMARY.stream().filter(stat -> !stats.contains(stat)).forEach(stats::add);
         return stats;
+    }
+
+    private static List<Row> rows(List<Entry> entries, ToDoubleFunction<Holder<Attribute>> value,
+            ToDoubleFunction<Holder<Attribute>> base) {
+        List<Row> rows = new ArrayList<>();
+        for (Entry entry : entries) {
+            Holder<Attribute> attribute = entry.attribute();
+            double current = value.applyAsDouble(attribute);
+            String shown = PERCENT_OF_BASE.stream().anyMatch(percent -> attribute.is(percent))
+                    ? percentOf(current, base.applyAsDouble(attribute))
+                    : formatted(attribute, current);
+            Component label = entry.label() != null ? Component.translatable(entry.label()) : name(attribute);
+            rows.add(new Row(attribute.value().getDescriptionId(), label, shown, false, STAT));
+        }
+        return rows;
     }
 
     /** What the rule gives at {@code points}: each per-point total that is not 0, then every milestone. */
@@ -211,8 +268,11 @@ public record CharacterSheetView(List<Section> left, List<Section> right) {
     }
 
     private static Row statRow(Holder<Attribute> stat, double value, int color) {
-        String shown = stat.value() instanceof PercentageAttribute ? share(value) : points(value);
-        return new Row(stat.value().getDescriptionId(), name(stat), shown, false, color);
+        return new Row(stat.value().getDescriptionId(), name(stat), formatted(stat, value), false, color);
+    }
+
+    private static String formatted(Holder<Attribute> attribute, double value) {
+        return attribute.value() instanceof PercentageAttribute ? share(value) : points(value);
     }
 
     private static ResourceKey<Attribute> key(Holder<Attribute> attribute) {
@@ -223,7 +283,19 @@ public record CharacterSheetView(List<Section> left, List<Section> right) {
         return Component.translatable(attribute.value().getDescriptionId());
     }
 
+    private static Entry entry(Holder<Attribute> attribute) {
+        return new Entry(attribute, null);
+    }
+
+    private static Entry entry(Holder<Attribute> attribute, String label) {
+        return new Entry(attribute, label);
+    }
+
     private static Section section(String titleKey, List<Row> rows) {
         return new Section(Component.translatable(titleKey), List.copyOf(rows));
+    }
+
+    private static Tab tab(String nameKey, List<Section> left, List<Section> right) {
+        return new Tab(Component.translatable(nameKey), left, right);
     }
 }

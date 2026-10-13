@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Shorter spell cooldowns, in percent: 50 halves a cooldown. Replaces Haste (Matěj, 2026-10-13); the spell engine
+# applies it (C3a, RLM-24). Capped at 75 % so no cooldown vanishes.
+id: cooldown_reduction
+name: {en_us: Cooldown Reduction}
+kind: secondary
+max_percent: 75

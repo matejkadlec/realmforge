@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Armor a hit ignores, in percent of the armor left after flat Armor Pierce. No effect until RLM-158.
+id: armor_pierce_percent
+name: {en_us: Armor Pierce %}
+kind: secondary
+max_percent: 100

@@ -3,16 +3,42 @@
 # %1$s and %2$s are filled in by the game.
 id: gui
 texts:
+  # The screen's title, for the narrator; the sheet itself shows character_title.
   character_sheet:
-    en_us: Character
+    en_us: Character Sheet
+  # The sheet's heading: "Steve · Level 12" (%1$s the player's name, %2$s the level).
+  character_title:
+    en_us: "%1$s · Level %2$s"
+  # The tabs, and the sections each shows in its two columns.
+  tab_stats:
+    en_us: Stats
+  tab_combat:
+    en_us: Combat
+  tab_magic:
+    en_us: Magic
   primary_stats:
     en_us: Primary Stats
-  secondary_stats:
-    en_us: Secondary Stats
-  combat_stats:
-    en_us: Combat
+  other_stats:
+    en_us: Other
+  offense:
+    en_us: Offense
+  defense:
+    en_us: Defense
+  spells:
+    en_us: Spells
+  mana:
+    en_us: Mana
   spell_schools:
     en_us: Spell Schools
+  # Vanilla attributes under the names the sheet gives them (Matěj, 2026-10-13).
+  mining_speed:
+    en_us: Mining Speed
+  block_reach:
+    en_us: Block Reach
+  entity_reach:
+    en_us: Entity Reach
+  swimming_speed:
+    en_us: Swimming Speed
   # A bonus a primary stat gives: "+25% Attack Damage" (%1$s the amount, %2$s the attribute).
   stat_bonus:
     en_us: "%1$s %2$s"

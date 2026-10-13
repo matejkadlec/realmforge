@@ -17,12 +17,13 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.common.PercentageAttribute;
 
 /**
- * RLM-136: the character sheet shows the player's attributes. The sheet's view model is common code
- * ({@link CharacterSheetView}), so the test builds it for a fake player on the server after {@code /qa stats} set
- * Strength, and compares it with the attributes the stat rules produced.
+ * RLM-136: the character sheet shows the player's name, level and attributes on its tabs, every stat of ours exactly
+ * once. The sheet's view model is common code ({@link CharacterSheetView}), so the test builds it for a fake player on
+ * the server after {@code /qa stats} set Strength, and compares it with the attributes the stat rules produced.
  */
 public final class CharacterSheetGameTests {
     private CharacterSheetGameTests() {
@@ -37,9 +38,25 @@ public final class CharacterSheetGameTests {
         StatsCommands.setBase(player, GeneratedStats.VITALITY, 10);
         CharacterSheetView view = CharacterSheetView.of(player);
 
+        helper.assertValueEqual(view.title().getString(), "qa-sheet · Level 1", "the sheet's heading");
+        helper.assertValueEqual(view.tabs().stream().map(tab -> tab.name().getString()).toList(),
+                List.of("Stats", "Combat", "Magic"), "the sheet's tabs");
         for (Holder<Attribute> stat : GeneratedStats.ALL) {
             assertValue(helper, view, stat, player.getAttributeValue(stat));
+            String id = stat.value().getDescriptionId();
+            helper.assertValueEqual(view.rows().stream().filter(row -> row.id().equals(id)).count(), 1L,
+                    stat.getRegisteredName() + " rows on the sheet");
         }
+        Row miningSpeed = row(helper, view, Attributes.BLOCK_BREAK_SPEED);
+        helper.assertValueEqual(miningSpeed.label().getString(), "Mining Speed", "the sheet's name for it");
+        helper.assertValueEqual(miningSpeed.value(), "100%", "mining speed reads as a percent of the player's base");
+        helper.assertValueEqual(row(helper, view, NeoForgeMod.SWIM_SPEED).value(), "100%", "swimming speed");
+        helper.assertValueEqual(row(helper, view, Attributes.BLOCK_INTERACTION_RANGE).value(), "4.5", "block reach");
+        helper.assertValueEqual(row(helper, view, GeneratedStats.XP_MULTIPLIER).value(), "100%", "XP multiplier");
+        // Intellect is 0, so its per-point line is left out and the milestone is its first line.
+        Row intellectMilestone = rowById(helper, view, GeneratedStats.INTELLECT.value().getDescriptionId() + "/0");
+        helper.assertValueEqual(intellectMilestone.label().getString(), "At 25: +5% Cooldown Reduction",
+                "Intellect's milestone, which gave Haste before");
         for (Holder<Attribute> attribute : List.of(Attributes.MAX_HEALTH, Attributes.ARMOR, Attributes.ATTACK_DAMAGE)) {
             assertValue(helper, view, attribute, player.getAttributeValue(attribute));
         }
