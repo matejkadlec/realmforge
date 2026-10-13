@@ -79,7 +79,7 @@ Dungeon rooms are structure templates in `content/rooms/` with a YAML sidecar ea
 ([architecture 15.4](../docs/architecture.md#154-rooms),
 [ADR 0028](../docs/decisions/0028-dungeon-rooms-generated-or-imported.md), [content/README.md](../content/README.md)).
 `rf validate` checks them and `rf gen` copies each one, normalized, to `data/realmforge/structure/rooms/<id>.nbt` in
-the jar.
+the jar, and the `LICENSE` and `NOTICE` of each third-party source with a room to `META-INF/third_party/<source>/`.
 
 **`rf rooms import SRC... --to DIR`** turns room files into rooms: vanilla structure templates (`.nbt`), Sponge
 schematics (`.schem`, versions 1 to 3, as WorldEdit saves them) and Litematica schematics (`.litematic`, versions 5

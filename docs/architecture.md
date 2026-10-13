@@ -1011,8 +1011,9 @@ Rooms are generated or imported; nobody has to build one by hand
   pools and keeps or drops entities ([tools/README](../tools/README.md#rooms)), then retagged into our slot types.
   Each source has its own folder, `content/rooms/third_party/<source>/`, with its `LICENSE` and a `NOTICE`. The
   folder is a license boundary, not a pool, so the sidecars name the pools. The jar keeps the folder (LGPL-3.0
-  rooms stay apart from our assets) and carries the notices under `META-INF/third_party/<source>/`. Vanilla
-  templates are referenced by id, never copied.
+  rooms stay apart from our assets) and carries the notices under `META-INF/third_party/<source>/`: `rf gen` copies
+  the `LICENSE` and `NOTICE` of every source with a room there. Vanilla templates are referenced by id, never
+  copied.
 - **Hand-built rooms** stay possible: built with structure blocks and saved as NBT with a sidecar like any other.
 - **Review:** the room gallery (A4e, `rf rooms gallery`) renders rooms headless through nucleation, with the client
   jar's models and textures read at runtime; Matěj keeps or rejects them in batches. `rf rooms review` records the

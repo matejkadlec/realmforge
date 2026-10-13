@@ -83,6 +83,16 @@ class RoomReview:
 
 
 @dataclass(frozen=True)
+class RoomNotice:
+    """A third-party source's ``LICENSE`` or ``NOTICE`` in ``content/rooms/third_party/<source>/``, which the jar
+    carries under ``META-INF/third_party/<source>/`` (ADR 0028)."""
+
+    source: str
+    name: str
+    raw: bytes
+
+
+@dataclass(frozen=True)
 class Content:
     """All content, sorted by id within each type."""
 
@@ -94,6 +104,7 @@ class Content:
     worldgen: tuple[WorldgenFile, ...]
     rooms: tuple[RoomEntry, ...] = ()
     room_reviews: tuple[RoomReview, ...] = ()
+    room_notices: tuple[RoomNotice, ...] = ()
 
     def entries(self, type_dir: str) -> tuple[Entry, ...]:
         """The entries of the YAML content type in ``content/<type_dir>/``."""
@@ -135,7 +146,7 @@ def load_content(paths: RepoPaths) -> Content:
         if entry is not None:
             loaded[type_dir].append(entry)
 
-    rooms, reviews = _load_rooms(room_files, paths, problems)
+    rooms, reviews, notices = _load_rooms(room_files, paths, problems)
     if problems:
         raise ValidationFailed(problems)
 
@@ -151,6 +162,7 @@ def load_content(paths: RepoPaths) -> Content:
         worldgen=tuple(sorted(worldgen, key=lambda f: (f.directory, f.id))),
         rooms=rooms,
         room_reviews=reviews,
+        room_notices=notices,
     )
 
 
@@ -200,13 +212,13 @@ def _load_worldgen(file: Path, rel: str, paths: RepoPaths, problems: list[Proble
 
 def _load_rooms(
     files: list[Path], paths: RepoPaths, problems: list[Problem]
-) -> tuple[tuple[RoomEntry, ...], tuple[RoomReview, ...]]:
+) -> tuple[tuple[RoomEntry, ...], tuple[RoomReview, ...], tuple[RoomNotice, ...]]:
     """Pair every template with its sidecar, read both, and read the review files."""
     root = paths.content / ROOMS_DIR
     templates: dict[str, Path] = {}
     sidecars: dict[str, Path] = {}
     reviews: list[RoomReview] = []
-    license_files: set[tuple[str, str]] = set()
+    license_files: dict[tuple[str, str], Path] = {}
     for file in files:
         rel = paths.rel(file)
         parts = file.relative_to(root).parts
@@ -221,7 +233,7 @@ def _load_rooms(
                     Problem(rel, "", f"{file.name} belongs directly in content/rooms/third_party/<source>/")
                 )
             else:
-                license_files.add((parts[1], file.name))
+                license_files[parts[1], file.name] = file
             continue
         if file.suffix not in (".nbt", ".yaml"):
             problems.append(
@@ -274,7 +286,10 @@ def _load_rooms(
                         f"third-party rooms need the source's {name} file next to them (ADR 0028)",
                     )
                 )
-    return tuple(rooms), tuple(sorted(reviews, key=lambda r: r.folder))
+    notices = tuple(
+        RoomNotice(source, name, file.read_bytes()) for (source, name), file in sorted(license_files.items())
+    )
+    return tuple(rooms), tuple(sorted(reviews, key=lambda r: r.folder)), notices
 
 
 def _load_review(file: Path, rel: str, problems: list[Problem]) -> dict[str, str] | None:

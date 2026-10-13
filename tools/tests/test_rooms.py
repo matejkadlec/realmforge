@@ -691,6 +691,18 @@ def test_valid_room_generates_its_structure(repo: RepoPaths) -> None:
     assert repo.schemas / "rooms.schema.json" in files
 
 
+def test_third_party_rooms_ship_their_notices(repo: RepoPaths) -> None:
+    folder = third_party(repo)
+    add_room(repo, "third_party/sample/hall")
+    third_party(repo, "unused")  # a source without rooms ships nothing
+    content, _ = load_and_validate(repo)
+    files = generate_all(content, repo)
+    meta = repo.mod_generated / "resources/META-INF/third_party"
+    assert files[meta / "sample" / "LICENSE"] == (folder / "LICENSE").read_bytes()
+    assert files[meta / "sample" / "NOTICE"] == (folder / "NOTICE").read_bytes()
+    assert not [path for path in files if path.is_relative_to(meta / "unused")]
+
+
 def test_room_needs_both_files(repo: RepoPaths) -> None:
     add_room(repo, "hall").with_suffix(".yaml").unlink()
     write(repo.content / "rooms" / "lonely.yaml", "weight: 1\n")

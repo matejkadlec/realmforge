@@ -48,7 +48,8 @@ Rules:
   room, its `source`. `uv run rf rooms import` writes both files ([tools/README](../tools/README.md#rooms)); nobody
   edits a template by hand. Validation checks the size (at most 48 blocks per axis), every block, block entity and
   entity id against the ID universe, and that jigsaws sit on the room's boundary, facing out. Imported rooms live in
-  `rooms/third_party/<source>/` next to the source's `LICENSE` and `NOTICE`, which validation requires. A
+  `rooms/third_party/<source>/` next to the source's `LICENSE` and `NOTICE`, which validation requires and `rf gen`
+  copies to the jar's `META-INF/third_party/<source>/`. A
   `review.yaml` in any folder records the room gallery's keep and reject decisions for the rooms below it.
 - Start each YAML file with the `yaml-language-server` schema comment (see `items/test_item.yaml`) for editor
   completion.
