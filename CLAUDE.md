@@ -152,10 +152,15 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
    26.1), and the 1.21.x to 26.1 porting primer at https://docs.neoforged.net/primer/docs/26.1/.
 7. **Dev-only code goes into `qa-mod/`**, never into the core mod. GameTests live there too.
 8. **No third-party jars in the repo.** The pack is packwiz metadata only. Never copy third-party code unless its
-   license allows it (Spell Engine is GPL-3.0-only, Explorer's Compass CC BY-NC-SA: no reuse). No vanilla
-   textures or recolors, not even as AI input.
+   license allows it (Spell Engine is GPL-3.0-only, Explorer's Compass CC BY-NC-SA: no reuse). Third-party rooms
+   are copied only under MIT, CC0 or LGPL-3.0, each source in its own folder with its license and notice; never
+   Stardust Labs content ([ADR 0028](docs/decisions/0028-dungeon-rooms-generated-or-imported.md)). No vanilla
+   texture files or recolors of them in our assets, and none as input for generating our textures. Vanilla blocks
+   in our structures, and renders or screenshots of them, are fine.
 9. **Licenses:** the mod (`mod/`, `qa-mod/`, `tools/`, everything in the jar) is MPL-2.0 for code and CC BY 4.0
-   for assets; the modpack (`pack/`) is All Rights Reserved ([ADR 0009](docs/decisions/0009-licensing.md)).
+   for assets, except imported third-party rooms, which keep their own licenses; the modpack (`pack/`) is All
+   Rights Reserved ([ADR 0009](docs/decisions/0009-licensing.md),
+   [ADR 0028](docs/decisions/0028-dungeon-rooms-generated-or-imported.md)).
 10. **Decisions get an ADR** in `docs/decisions/` (next free number, add it to the index).
 11. **Code follows [docs/architecture.md](docs/architecture.md):** feature packages with a `<Name>Feature` entry,
     one-way dependencies, client-only code only under `client/`, game definitions as datapack registries. To

@@ -30,7 +30,7 @@
   its ticket waits in the backlog, with a comment naming the PR, until the PR merges, so no agent starts work the
   plan does not hold yet. A change of direction also needs an ADR.
 - **Sizes** instead of dates: S fits one agent session, M takes one to three, L takes more and is split. Playtests,
-  hand-built rooms and art review depend on Matěj's time, so calendar estimates would be guesses.
+  room and art review depend on Matěj's time, so calendar estimates would be guesses.
 
 ## Milestones
 
@@ -217,8 +217,9 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   the boss entity and model, the phase name in the boss bar, arena rules, loot. The boss is tested on its own,
   before any dungeon references it. *Done when:* GameTests cover every phase change.
 - **W6 Two dungeon types** (RLM-36, L, after W4 and W5). Type A ends in the boss's lair; type B ends in a treasury with
-  traps and a vault, without a boss. Matěj builds the key rooms in creative; agents assemble variants and set
-  encounter and loot budgets.
+  traps and a vault, without a boss. Its rooms come from A4 (generated and imported,
+  [ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)); agents assemble variants and set encounter
+  and loot budgets.
 
 ### Phase 4: story, polish, release
 
@@ -244,7 +245,9 @@ Placeholders are generated until real art exists ([ADR 0007](decisions/0007-asse
 - **A2 Models and animations** (RLM-48) for the custom mobs and the boss (GeckoLib; Blockbench MCP, installed only with
   Matěj's approval). UV-mapped entity textures need his eye ([ADR 0007](decisions/0007-asset-pipeline.md)).
 - **A3 Sounds** (RLM-49): vanilla sounds remapped in `sounds.json`, a few new ones.
-- **A4 Rooms** (RLM-50): key rooms built by Matěj, variants by agents.
+- **A4 Rooms** (RLM-50): rooms generated from YAML room specs by our room generator, plus an imported baseline of
+  MIT, CC0 and LGPL-3.0 rooms with their notices; nobody builds rooms by hand, and Matěj reviews them in a gallery
+  ([ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)).
 
 ### Definition of done
 

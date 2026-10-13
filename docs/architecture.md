@@ -38,8 +38,8 @@
 - **Player state** lives in NeoForge data attachments that sync to the client automatically.
 - **Quests stay in FTB Quests**, bridged by advancements and statistics: a chapter's last quest grants an
   advancement, and that raises the level cap.
-- **Dungeons** are planned and laid out by pure, seed-driven Java, then built from hand-made NBT rooms into plots
-  of one instance dimension.
+- **Dungeons** are planned and laid out by pure, seed-driven Java, then built from generated or imported NBT rooms
+  into plots of one instance dimension.
 - **Networking:** one registration point, versioned by the mod version; client → server messages are intents that
   the server validates.
 
@@ -365,7 +365,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `loot/`, `recipes/`, tags | `data/realmforge/loot_table/`, `recipe/`, `tags/` | reloadable vanilla data |
 | `chapters/`, `quests/` | `data/realmforge/advancement/`; `pack/config/ftbquests/quests/` (SNBT, stable ids per ADR 0006) | advancements; the FTB Quests book |
 | `worldgen/<registry>/<id>.json` (JSON, [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)) | validated and copied unchanged to `data/realmforge/dimension/`, `dimension_type/`, `worldgen/<registry>/` | vanilla worldgen registries |
-| `rooms/` (NBT plus a YAML sidecar) | validated and copied to `data/realmforge/structure/` | structure templates |
+| `rooms/` (NBT plus a YAML sidecar, or a room spec in YAML; [15.4](#154-rooms)) | NBT validated and copied, specs generated into NBT, both to `data/realmforge/structure/` | structure templates |
 | item YAML with a weapon preset | `data/realmforge/weapon_attributes/<item>.json` (Better Combat format) | read by Better Combat |
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
 | `texts/` (exists) | lang keys `<group>.realmforge.<name>`, `GeneratedTexts` constants | translations |
@@ -911,7 +911,7 @@ loot: realmforge:boss/hollow_warden
 # content/dungeons/sunken_crypt.yaml (sketch; names are examples)
 id: sunken_crypt
 placement: instance                  # world_structure later (M4)
-theme: realmforge:crypt              # block palette: a processor list from content/worldgen/
+theme: realmforge:crypt              # block palette: a processor list (see below)
 rooms: realmforge:crypt              # room pool
 layout:
   main_path_rooms: [6, 9]
@@ -925,11 +925,24 @@ level: [8, 12]
 
 The ending is a rule of the type, so "not every dungeon ends with a boss" is just another ending type.
 
-A theme is a vanilla processor list (`worldgen/processor_list`, for example
-`content/worldgen/processor_list/crypt.json`), validated and copied like the other worldgen JSON
-([6.2](#62-what-each-content-type-becomes)), so it needs no registry of our own. Its rules swap the blocks rooms
-are built from for the dungeon's look; the builder applies it when placing rooms, and room validation reads the
-themes' rules to check that a room uses only blocks they can swap.
+A theme is a vanilla processor list (`worldgen/processor_list`), so it needs no registry of our own. Its rules swap
+the blocks rooms are built from for the dungeon's look; the builder applies it when placing rooms, and room
+validation reads the themes' rules to check that a room uses only blocks they can swap. A theme that swaps only
+blocks without states can be hand-written worldgen JSON (`content/worldgen/processor_list/crypt.json`, validated and
+copied like the other worldgen JSON, [6.2](#62-what-each-content-type-becomes)); stairs, slabs and other blocks with
+states need the generated rules below.
+
+**Pitfall: block states.** A vanilla `rule` processor writes its rule's fixed `output_state` (`RuleProcessor` places
+`ProcessorRule#getOutputState`), so a rule that swaps one kind of stairs for the theme's stairs loses their facing,
+half and shape, and a slab loses its type. Two ways keep them:
+
+- **One rule per block state** (a `blockstate_match` input and the same properties on the output), written by
+  `rf gen` from a theme's table of roles and blocks, so nobody writes hundreds of rules by hand. Vanilla only, and
+  every id stays inside the ID universe. This is the default: W4 adds the generator, whose output is then the
+  theme's processor list.
+- **Lithostitched's `lithostitched:block_swap`** (in the pack), which copies the properties
+  (`Block#withPropertiesOf`, checked in its 1.8.0 build for 26.1). It ties the themes to Lithostitched and names an
+  id outside the ID universe until the full-pack registry dump exists, so it is only the fallback.
 
 ### 15.3 Generation: pure first, then Minecraft
 
@@ -945,11 +958,28 @@ room reachable). A QA command renders a layout preview for review.
 
 ### 15.4 Rooms
 
-- Built by hand in creative with structure blocks and saved as NBT in `content/rooms/<pool>/`, each with a small
-  YAML sidecar (tags, weight). Connectors are vanilla jigsaw blocks, so the same rooms work in world structures
-  later. Rooms are the second exception to YAML-only content, after worldgen JSON (ADR 0014 amends
+Rooms are generated or imported; nobody has to build one by hand
+([ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)).
+
+- **Format:** structure NBT in `content/rooms/` with a small YAML sidecar (tags, pools, weight). Connectors are
+  vanilla jigsaw blocks, so the same rooms work in world structures later. Rooms are the second exception to
+  YAML-only content, after worldgen JSON (ADR 0014 amends
   [ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)).
-- Validation: size limits, connectors on the room's boundary, known markers, only blocks the themes can swap.
+- **Generated rooms** (A4d): room specs in YAML (kind, a footprint up to 16×16, height, connector sides, features,
+  a seed, blocks named by neutral roles that themes swap) become structure NBT through the room generator in
+  `rf gen`, with style rules for walls, floors, stairs and light, and jigsaws and markers from the connectors. The
+  NBT is generated output, never edited by hand.
+- **Imported rooms** (A4b, A4c): MIT, CC0 and LGPL-3.0 rooms from other mods, taken in by `rf rooms import`,
+  remapped to vanilla blocks or neutral roles and retagged into our slot types. Each source has its own folder,
+  `content/rooms/third_party/<source>/`, with its `LICENSE` and a `NOTICE`. The folder is a license boundary, not a
+  pool, so the sidecars name the pools. The jar keeps the folder (LGPL-3.0 rooms stay apart from our assets) and
+  carries the notices under `META-INF/third_party/<source>/`. Vanilla templates are referenced by id, never copied.
+- **Hand-built rooms** stay possible: built with structure blocks and saved as NBT with a sidecar like any other.
+- **Review:** the room gallery (A4e) renders rooms headless; Matěj keeps or rejects them in batches, and a kept
+  generated candidate's seed is frozen.
+- **Validation:** size limits, connectors on the room's boundary, known markers, only blocks the themes can swap
+  and only ids inside the ID universe (an imported room's own blocks are remapped). Generated rooms are also
+  checked for reachability between their connectors and for headroom.
 
 ### 15.5 Instances
 

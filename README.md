@@ -122,7 +122,9 @@ The repository contains two products with different licenses:
 
 - **The Realmforge mod** (`mod/`, `qa-mod/`, `tools/` and everything shipped in the `realmforge` jar): source code
   under the [Mozilla Public License 2.0](LICENSE), assets (textures, models, sounds, texts) under
-  [Creative Commons Attribution 4.0 International](LICENSE-ASSETS).
+  [Creative Commons Attribution 4.0 International](LICENSE-ASSETS). Dungeon rooms imported from other projects
+  keep their own licenses (MIT, CC0 or LGPL-3.0), each source in its own folder under `content/rooms/third_party/`
+  with its license and notice ([ADR 0028](docs/decisions/0028-dungeon-rooms-generated-or-imported.md)).
 - **The Realmforge modpack** (`pack/`: pack definition, configuration, quests): **All Rights Reserved**, no
   redistribution. See [pack/LICENSE](pack/LICENSE).
 

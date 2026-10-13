@@ -17,14 +17,14 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0004](0004-build-rpg-systems-in-house.md) | Build all RPG systems in-house | Accepted |
 | [0005](0005-content-pipeline-yaml-single-source-of-truth.md) | Content pipeline: YAML as the single source of truth | Accepted, amended by [0014](0014-core-mod-architecture.md) |
 | [0006](0006-quests-ftb-quests-generated-from-data.md) | Quests: FTB Quests generated from data | Accepted |
-| [0007](0007-asset-pipeline.md) | Asset pipeline | Accepted, refined by [0023](0023-texture-generator.md) |
+| [0007](0007-asset-pipeline.md) | Asset pipeline | Accepted, refined by [0023](0023-texture-generator.md), vanilla texture rule narrowed to texture files by [0028](0028-dungeon-rooms-generated-or-imported.md) |
 | [0008](0008-distribution-github-and-curseforge.md) | Distribution: GitHub Releases now, CurseForge later | Accepted |
-| [0009](0009-licensing.md) | Licensing | Accepted |
+| [0009](0009-licensing.md) | Licensing | Accepted, third-party rooms added by [0028](0028-dungeon-rooms-generated-or-imported.md) |
 | [0010](0010-testing-strategy.md) | Testing strategy | Accepted, amended by [0018](0018-pack-boot-tests.md) |
 | [0011](0011-repository-layout-and-workflow.md) | Repository layout and workflow | Accepted |
-| [0012](0012-procedural-dungeons-and-dimensions.md) | Procedural dungeons and dimensions | Accepted, refined by [0019](0019-dungeon-instances-in-plots.md), its Nether and End question resolved by [0025](0025-remove-the-nether-and-end.md) |
+| [0012](0012-procedural-dungeons-and-dimensions.md) | Procedural dungeons and dimensions | Accepted, refined by [0019](0019-dungeon-instances-in-plots.md), its Nether and End question resolved by [0025](0025-remove-the-nether-and-end.md), hand-built rooms replaced by [0028](0028-dungeon-rooms-generated-or-imported.md) |
 | [0013](0013-modpack-composition.md) | Modpack composition | Accepted (written separately), composition updated for 26.1.2 by [0026](0026-platform-minecraft-26-1-2-neoforge.md) |
-| [0014](0014-core-mod-architecture.md) | Core mod architecture | Accepted, decision 9 amended by [0027](0027-client-bound-payload-handlers-through-the-client-event.md) |
+| [0014](0014-core-mod-architecture.md) | Core mod architecture | Accepted, decision 9 amended by [0027](0027-client-bound-payload-handlers-through-the-client-event.md), decision 8 (hand-made rooms) by [0028](0028-dungeon-rooms-generated-or-imported.md) |
 | [0015](0015-merging-through-monitor-pr.md) | Merging through monitor-pr | Accepted (amends 0011), holds extended by [0016](0016-jira-batch-delivery.md) and [0017](0017-jira-as-the-source-of-task-status.md), `needs-approval` removed by [0021](0021-status-overview-and-plan-changes.md), `needs-playtest` removed by [0024](0024-no-github-labels.md) |
 | [0016](0016-jira-batch-delivery.md) | Jira batch delivery with flow1 and flow2 | Accepted (extends 0011), amended by [0017](0017-jira-as-the-source-of-task-status.md), [0021](0021-status-overview-and-plan-changes.md) and [0022](0022-playtest-before-the-pull-request.md) |
 | [0017](0017-jira-as-the-source-of-task-status.md) | Jira as the source of task status | Accepted (amends 0015 and 0016), amended by [0021](0021-status-overview-and-plan-changes.md) |
@@ -38,6 +38,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0025](0025-remove-the-nether-and-end.md) | Remove the Nether and End; the Overworld is the starting area | Accepted (resolves the open question of 0012) |
 | [0026](0026-platform-minecraft-26-1-2-neoforge.md) | Platform: Minecraft 26.1.2 on NeoForge | Accepted (supersedes 0003) |
 | [0027](0027-client-bound-payload-handlers-through-the-client-event.md) | Client-bound payload handlers through NeoForge's client event | Accepted (amends 0014) |
+| [0028](0028-dungeon-rooms-generated-or-imported.md) | Dungeon rooms are generated or imported, not built by hand | Accepted (amends 0007, 0009, 0012 and 0014) |
 
 ## Open questions (not decided)
 
