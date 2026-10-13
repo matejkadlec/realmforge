@@ -214,18 +214,27 @@ player arrives wherever the linked portal stands.
 
 ### Linking
 
-- **Into a realm:** the trip multiplies the portal's x and z by the realm's scale
+- **Into a realm:** the trip divides the x and z of the source portal's centre by the realm's scale
   ([The coordinate scale](#the-coordinate-scale)) and clamps them into the realm's world border, as
   `NetherPortalBlock#getPortalDestination` does with `DimensionType.getTeleportationScale` and
-  `WorldBorder#clampToBounds`. It then looks for a lit realm portal that leads back to the Overworld (setting return)
-  within 16 blocks of that position. When it finds one, the player arrives there; otherwise a portal is built there
+  `WorldBorder#clampToBounds`. It starts from the centre of the opening, not from the player, whose place in a
+  3-wide opening would shift the target by up to 16 blocks on the way back. It then looks for a lit realm portal
+  that leads back to the Overworld (setting return) within 128 ÷ scale blocks of that position: 8 at 1:16. When it
+  finds one, the player arrives there; otherwise a portal is built within the same radius
   ([Building a portal](#building-a-portal)).
-- **Back to the Overworld:** the same in reverse, within 128 blocks of the scaled-back position, looking for a lit
-  portal open onto the realm the player comes from.
-- **The same radii as vanilla's `PortalForcer#findClosestPortalPosition`** (16 blocks in the Nether, 128 in the
-  Overworld). So Overworld portals up to about 256 blocks apart (16 blocks × 16) lead to one realm portal, as
-  Overworld portals up to 128 blocks apart share one nether portal. Matěj asked for exactly that: Overworld portals
-  close to each other target the same realm portal.
+- **Back to the Overworld:** the same in reverse. The trip multiplies by the scale and looks within 128 blocks of
+  that position for a lit portal open onto the realm the player comes from, or builds one within 16 blocks.
+- **The radii follow vanilla's arithmetic.** Vanilla's `PortalForcer#findClosestPortalPosition` searches 16 blocks
+  in the Nether and 128 in the Overworld, and 16 × 8 = 128 is what makes a nether portal pair link back. A realm
+  side radius of 128 ÷ scale keeps that true at any scale:
+  - a portal a trip builds in a realm stands within 8 blocks of the scaled position, so the way back aims within
+    128 blocks of the Overworld portal it came from, inside the Overworld search;
+  - one a trip builds in the Overworld stands within 16 blocks of the scaled-back position, so the way back aims
+    within 1 block of the realm portal it came from.
+
+  So a pair a trip built always links back, both ways. Overworld portals up to about 128 blocks apart (8 × 16) lead
+  to one realm portal, as Overworld portals up to 128 blocks apart share one nether portal. Matěj asked for exactly
+  that: Overworld portals close to each other target the same realm portal.
 - **The search reads point-of-interest data, as vanilla's does:** the realm selector is a point of interest of our
   own (`Registries.POINT_OF_INTEREST_TYPE`, `PoiManager#getInSquare`). The search then keeps only selectors whose
   portal is lit and leads the right way. Portals are never linked by a saved pair, so breaking or switching a portal
@@ -233,10 +242,9 @@ player arrives wherever the linked portal stands.
 - **Between two realms:** a frame in realm A opened onto realm B with B's sigil links at the ratio of the two
   scales (1:1 when they are equal) to a return portal in B, or builds one. The way back from B leads to the
   Overworld, never to A, so chained trips cannot loop between realms (the "portal loops" AoA's changelogs fixed).
-- **Linking can miss, like the Nether's.** A portal built up to 16 blocks from the scaled position maps back up to
-  256 blocks from the Overworld portal it came from, beyond the 128-block search, and the way back then builds a
-  new Overworld portal. A player fixes such a pair as with nether portals: build the realm-side portal nearer the
-  scaled position, or the Overworld one nearer the scaled-back one. Waystones are the easy way around it.
+- **Portals players place themselves can still pair unevenly,** as nether portals do. Two Overworld portals within
+  about 128 blocks of each other lead to one realm portal, and it leads back to the one nearer its scaled-back
+  position. Waystones are the easy way around it.
 
 ### The coordinate scale
 
@@ -277,7 +285,8 @@ follows from the realm's level bands:
 When no portal leads the right way within the search radius, the trip builds one, as vanilla's
 `PortalForcer#createPortal` does for nether portals:
 
-- **The spot:** the one nearest the scaled position, searched in a spiral within 16 blocks horizontally, where the
+- **The spot:** the one nearest the scaled position, searched in a spiral within the search radius of that side (128
+  ÷ scale blocks in a realm, 8 at 1:16; 16 blocks in the Overworld, as vanilla's spiral), where the
   frame stands on solid floor with air in its opening and on one side in front of it. It must be inside the world
   border and within the `y` range of the dimension's realm entry (`arrival.y`, [Data](#data-contentrealms)), which
   keeps arrivals in the depth band of the realm's lowest levels. The source portal's height, clamped into that
@@ -524,9 +533,11 @@ dimension rules and access:
     with the sigil it showed before (RLM-133);
   - the sneak gesture with a shield in the off hand closes an Overworld portal, and opens a frame in a realm onto
     return (RLM-133);
-  - a trip from the Overworld builds a return portal at the scaled position in the realm; a second trip from a
-    portal within 256 blocks of the first arrives at that same realm portal; the way back arrives at the Overworld
-    portal near the scaled-back position, or builds one;
+  - a trip from the Overworld builds a return portal within 8 blocks of the scaled position in the realm, and the
+    first trip back through it arrives at the Overworld portal it came from; a second trip from a portal within 128
+    blocks of the first arrives at that same realm portal;
+  - a trip from a realm portal with no Overworld portal near its scaled-back position builds one there, and the trip
+    back arrives at the realm portal it came from;
   - a built portal never stands outside the world border or outside the realm's `y` range;
   - a water bucket emptied into a lit portal's opening, by a player and by a dispenser, and water flowing into it,
     leave its portal blocks in place;
