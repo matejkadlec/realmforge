@@ -5,7 +5,8 @@ generated seed candidates) from four views into ``.cache/rooms/gallery/<folder>/
 there. The page shows each room's size and sidecar, and a Keep and a Reject choice. Its "Copy decisions" button
 copies them as YAML; ``rf rooms review DIR`` merges that text into ``DIR/review.yaml``, the record that the import
 (A4c) and the generator (A4d) act on: rejected imports are dropped, a kept candidate's seed is frozen. The page
-starts from the decisions already in ``review.yaml``.
+starts from the decisions already in ``review.yaml``. A generated folder (the spike rooms) can be viewed but not
+reviewed: ``rf gen`` would delete its ``review.yaml``.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from realmforge_tools.art.gallery import PAGE_CSS, PAGE_FONTS
+from realmforge_tools.project import RepoPaths
 from realmforge_tools.rooms.render import CUT_HEIGHT, VIEWS, RoomRenderer
 from realmforge_tools.rooms.structure import AIR, Structure, StructureError, read_structure
 from realmforge_tools.schema.room import REVIEW_FILE, ReviewFile, RoomDef
@@ -117,9 +119,15 @@ def parse_decisions(text: str, where: str) -> dict[str, str]:
         raise GalleryError(f"{where}: {problems}") from e
 
 
-def merge_review(directory: Path, text: str) -> tuple[dict[str, str], int]:
+def merge_review(directory: Path, text: str, paths: RepoPaths) -> tuple[dict[str, str], int]:
     """Merge decisions (the page's YAML) into ``directory/review.yaml``. Returns all decisions and how many
-    changed. Every key must name a room in the folder."""
+    changed. Every key must name a room in the folder, and the folder must not be generated."""
+    folder = directory.resolve()
+    if any(folder.is_relative_to(root.resolve()) for root in paths.generated_roots()):
+        raise GalleryError(
+            f"{paths.rel(directory)} is generated: rf gen would delete a review.yaml there. View its rooms with "
+            "rf rooms gallery; review copies of them in another folder"
+        )
     decisions = parse_decisions(text, "the decisions")
     known = room_files(directory)
     unknown = sorted(key for key in decisions if key not in known)

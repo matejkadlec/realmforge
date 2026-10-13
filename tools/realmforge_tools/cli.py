@@ -206,7 +206,7 @@ def _rooms(args: argparse.Namespace, paths: RepoPaths) -> int:
             return _rooms_import(args, paths)
         if args.rooms_command == "review":
             text = args.source.read_text(encoding="utf-8") if args.source else sys.stdin.read()
-            decisions, changed = room_gallery.merge_review(args.directory, text)
+            decisions, changed = room_gallery.merge_review(args.directory, text, paths)
             kept = sum(1 for value in decisions.values() if value == "keep")
             print(
                 f"Wrote {paths.rel(args.directory / REVIEW_FILE)}: {changed} decision(s) changed, "
@@ -228,9 +228,13 @@ def _rooms_import(args: argparse.Namespace, paths: RepoPaths) -> int:
         print("No room files found (.nbt, .schem, .litematic).", file=sys.stderr)
         return 1
     for result in results:
-        structure = result.structure
-        size = " x ".join(map(str, structure.size))
-        if result.written:
+        if result.rejected_by is not None:
+            print(
+                f"SKIP {result.source}: {paths.rel(result.rejected_by)} rejects {paths.rel(result.template)}"
+            )
+            continue
+        if result.written and result.structure is not None:
+            size = " x ".join(map(str, result.structure.size))
             print(f"OK   {paths.rel(result.template)} ({size}, from {result.source.name})")
         else:
             print(f"FAIL {result.source}: not written, {len(result.problems)} problem(s)")
@@ -238,8 +242,13 @@ def _rooms_import(args: argparse.Namespace, paths: RepoPaths) -> int:
             print(f"     {note}")
         for problem in result.problems:
             print(f"     {problem}")
-    failed = sum(1 for r in results if not r.written)
-    print(f"Imported {len(results) - failed} of {len(results)} room(s).")
+    skipped = sum(1 for r in results if r.rejected_by is not None)
+    failed = sum(1 for r in results if not r.written and r.rejected_by is None)
+    imported = len(results) - skipped - failed
+    print(
+        f"Imported {imported} of {len(results)} room(s)"
+        f"{f', skipped {skipped} the review rejects' if skipped else ''}."
+    )
     return 1 if failed else 0
 
 

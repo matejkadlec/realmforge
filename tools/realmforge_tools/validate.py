@@ -98,12 +98,15 @@ def _check_rooms(content: Content, universe: IdUniverse) -> list[Problem]:
             )
         if source is not None and source.ours and third_party:
             problems.append(Problem(room.source, "source.ours", "a room in third_party/ is not ours"))
+    # A rejected room is dropped, and its decision stays, so the next import of its source skips it.
     room_ids = {room.id for room in content.rooms}
     for review in content.room_reviews:
         prefix = f"{review.folder}/" if review.folder else ""
-        for key in sorted(review.decisions):
-            if f"{prefix}{key}" not in room_ids:
-                problems.append(Problem(review.source, key, f"no room content/rooms/{prefix}{key}.nbt"))
+        for key, decision in sorted(review.decisions.items()):
+            if decision == "keep" and f"{prefix}{key}" not in room_ids:
+                problems.append(
+                    Problem(review.source, key, f"kept, but there is no room content/rooms/{prefix}{key}.nbt")
+                )
     return problems
 
 

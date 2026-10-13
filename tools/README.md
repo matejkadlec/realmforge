@@ -89,14 +89,20 @@ below it, keeping its subfolders. Each file becomes `DIR/<name>.nbt`, the normal
 sorted, stored deflate, so equal rooms give equal bytes), and `DIR/<name>.yaml`, a draft sidecar that records the
 source file, its format and its data version and leaves `pools` and `tags` empty for retagging (A4c). A re-import
 keeps the sidecar's pools, tags and weight. A room is written only when it validates; otherwise the command lists
-the problems and writes nothing for that room. Inside `content/rooms/`, third-party rooms must go to
+the problems and writes nothing for that room. A file that the gallery's review rejects is skipped (`SKIP` in the
+report): the `review.yaml` of the target folder decides, or, inside `content/rooms/`, that of a folder above it, and
+the nearest decision counts. A dropped room therefore stays dropped when its source is imported again; delete its
+decision to take it back in. Inside `content/rooms/`, third-party rooms must go to
 `third_party/<source>/`, next to the source's `LICENSE` and `NOTICE`; rooms we built ourselves (exported from a dev
 world, say) take `--ours`, which the sidecar records as `source.ours`, and go anywhere else. Validation holds every
 room with a `source` to the same rule.
 
-The template keeps the data version its source states, and the game upgrades it from there on load. An id the ID
-universe lacks, a source's own block or a vanilla block renamed since (`minecraft:grass` became
-`minecraft:short_grass`), is mapped in a rules file (`--rules`, YAML):
+The template keeps the data version its source states, and the game upgrades it from there on load. A file that
+states none (a Sponge v1 schematic, a template some tool wrote) is refused: the game would read it as version 500 and
+run every upgrade since on it, so a sign would come out blank. When the source is known to be saved with a modern
+version, the rules file's `data_version` gives those files one. An id the ID universe lacks, a source's own block or
+a vanilla block renamed since (`minecraft:grass` became `minecraft:short_grass`), is mapped in a rules file
+(`--rules`, YAML):
 
 ```yaml
 blocks:               # source block -> block state; a bare id keeps the source's properties, id[...] replaces them
@@ -111,6 +117,7 @@ pools:                # jigsaw pool -> ours
   stonevaults:rooms: realmforge:rooms/stone
 entities:
   keep: [minecraft:armor_stand]   # every other entity is dropped
+data_version: 4790    # for the files that state none, when the source is known to be saved with this version
 ```
 
 `blocks` also applies to the block a jigsaw leaves behind (its `final_state`), and validation checks that block's id
@@ -119,20 +126,23 @@ pools no rule mapped. The schematic readers live in `rooms/sources.py`: nucleati
 but it writes only the tight box around a room's non-air blocks, so air-only layers at the edge vanish and the
 blocks shift (RLM-119).
 
-**`rf rooms gallery [DIR]`** renders every `*.nbt` below `DIR` (default `content/rooms/`; any folder works, such as
-the spike rooms in `qa-mod/src/generated/resources/data/realmforge_qa/structure/spike/` or a folder of generated
-seed candidates) from four views: outside, cut `--cut` blocks above the bottom (default 5) from two corners, and a
-plan of the cut. It writes the PNGs and `index.html` to `.cache/rooms/gallery/<folder>/` (replaced on every run;
-`--out` picks another folder, which must not overlap the rooms' folder and is replaced only when it is empty or an
-earlier gallery, marked by a `.room-gallery` file). The renderer is
-[nucleation](https://github.com/Schem-at/Nucleation) (MIT, pinned in `pyproject.toml`), with block models and
-textures from the official client jar, which the first run downloads into `.cache/vanilla/<version>/`
-(sha1-verified) and which is never committed. It draws on Vulkan: without a GPU it needs Mesa's software driver
-lavapipe (package `mesa-vulkan-drivers`, [dev setup](../docs/dev-setup.md#1-tools-in-wsl-no-sudo-needed)). Three
-spike rooms take about 3 seconds, the first run about 5 (the jar download).
+**`rf rooms gallery [DIR]`** renders every `*.nbt` below `DIR` (default `content/rooms/`; any folder works, such as the
+spike rooms in `qa-mod/src/generated/resources/data/realmforge_qa/structure/spike/`, which can be viewed but not
+reviewed, or a folder of generated seed candidates) from four views: outside, cut `--cut` blocks above the bottom
+(default 5) from two corners, and a plan of the cut. It writes the PNGs and `index.html` to
+`.cache/rooms/gallery/<folder>/` (replaced on every run; `--out` picks another folder, which must not overlap the rooms'
+folder and is replaced only when it is empty or an earlier gallery, marked by a `.room-gallery` file). The renderer is
+[nucleation](https://github.com/Schem-at/Nucleation) (MIT, pinned in `pyproject.toml`), with block models and textures
+from the official client jar, which the first run downloads into `.cache/vanilla/<version>/` (sha1-verified) and which
+is never committed. It draws on Vulkan: without a GPU it needs Mesa's software driver lavapipe (package
+`mesa-vulkan-drivers`, [dev setup](../docs/dev-setup.md#1-tools-in-wsl-no-sudo-needed)); a cloud session installs it
+first ([dev setup: Cloud sessions](../docs/dev-setup.md#cloud-sessions)). Three spike rooms take about 3 seconds, the
+first run about 5 (the jar download), about 7 in a cloud session.
 
 On the page, choose Keep or Reject per room and copy the decisions (YAML, one `"<room>": keep|reject` per line, the
 name quoted) into the session. **`rf rooms review DIR`** merges them (standard input, or `--from FILE`) into
 `DIR/review.yaml`, the record the import (A4c) and the room generator (A4d) act on: rejected imports are dropped, a
-kept candidate's seed is frozen. The next gallery starts from those decisions; `rf validate` checks that every key
-names a room.
+kept candidate's seed is frozen. The next gallery starts from those decisions. `rf validate` checks that every
+`keep` names a room; a `reject` outlives its dropped room, so the next import of the source skips it. A generated
+folder, such as the spike rooms, has no review: `rf rooms review` refuses it, because `rf gen` would delete its
+`review.yaml`.

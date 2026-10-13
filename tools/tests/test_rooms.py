@@ -202,6 +202,19 @@ def test_garbage_is_not_a_template() -> None:
         read_structure(nbt.encode({"size": nbt.int_list(1, 1, 1)}))
 
 
+def corrupt(data: bytes) -> bytes:
+    """A template whose gzip header is fine but whose deflate stream is not: the stored block's length check (NLEN,
+    after the 10-byte gzip header and the block's first 3 bytes) is flipped, so zlib fails mid-stream."""
+    broken = bytearray(data)
+    broken[13] ^= 0xFF
+    return bytes(broken)
+
+
+def test_corrupt_gzip_body_is_a_structure_error() -> None:
+    with pytest.raises(StructureError, match="broken gzip data"):
+        read_structure(corrupt(write_structure(small_room())))
+
+
 # --- source formats ----------------------------------------------------------------------------------------------
 
 
@@ -235,6 +248,21 @@ def test_old_data_version_is_kept(tmp_path: Path) -> None:
     path = tmp_path / "old.schem"
     path.write_bytes(base64.b64decode(schematic_of(small_room(), data_version=3955).to_schematic_b64()))
     assert read_source(path).structure.data_version == 3955
+
+
+def sponge_v1(path: Path) -> Path:
+    """A Sponge v1 schematic, which has no DataVersion: a 1x2x1 stone block under a jigsaw-free air block."""
+    root = {
+        "Version": nbt.Int(1),
+        "Width": nbt.Short(1),
+        "Height": nbt.Short(2),
+        "Length": nbt.Short(1),
+        "Palette": {"minecraft:stone": nbt.Int(0), "minecraft:air": nbt.Int(1)},
+        "BlockData": nbt.ByteArray((0, 1)),
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(gzip_stored(nbt.encode(root, "Schematic")))
+    return path
 
 
 def test_sponge_reader_decodes_multi_byte_varints() -> None:
@@ -557,6 +585,20 @@ def test_unknown_jigsaw_final_state_is_a_problem(repo: RepoPaths) -> None:
     )
 
 
+def test_missing_data_version_is_a_problem(repo: RepoPaths) -> None:
+    (problem,) = check_structure(small_room(data_version=None), load_vanilla(repo))
+    assert problem[0] == "DataVersion" and problem[1].startswith("missing: the game would read the room as")
+
+
+def test_rules_data_version_fills_only_a_missing_one() -> None:
+    rules = RULES.model_copy(update={"data_version": DATA_VERSION})
+    filled, notes = importer.apply_rules(small_room(data_version=None), rules)
+    assert filled.data_version == DATA_VERSION
+    assert f"the file states no data version; took {DATA_VERSION} from the rules" in notes
+    kept, notes = importer.apply_rules(small_room(data_version=3955), rules)
+    assert kept.data_version == 3955 and not any("data version" in note for note in notes)
+
+
 def test_rules_file_is_strict(tmp_path: Path) -> None:
     rules = write(tmp_path / "rules.yaml", "block: {a:b: minecraft:stone}\n")
     with pytest.raises(importer.RoomImportError, match="block"):
@@ -687,6 +729,69 @@ def test_imported_rooms_outside_third_party_must_be_ours(repo: RepoPaths) -> Non
     )
 
 
+def test_import_refuses_a_room_without_a_data_version_unless_the_rules_give_one(
+    repo: RepoPaths, tmp_path: Path
+) -> None:
+    source = sponge_v1(tmp_path / "old.schem")
+    target = third_party(repo)
+    (result,) = importer.import_rooms([source], target, RULES, load_vanilla(repo), repo)
+    assert not result.written
+    assert any(p.startswith("DataVersion: missing") for p in result.problems)
+    assert not (target / "old.nbt").exists()
+
+    rules = RULES.model_copy(update={"data_version": DATA_VERSION})
+    (result,) = importer.import_rooms([source], target, rules, load_vanilla(repo), repo)
+    assert result.written, result.problems
+    assert read_structure((target / "old.nbt").read_bytes()).data_version == DATA_VERSION
+    assert f"  data_version: {DATA_VERSION}\n" in (target / "old.yaml").read_text(encoding="utf-8")
+    content, _ = load_and_validate(repo)
+    (room,) = content.rooms
+    assert room.model.source is not None and room.model.source.data_version == DATA_VERSION
+
+
+def test_rules_data_version_is_a_positive_int(tmp_path: Path) -> None:
+    rules = write(tmp_path / "rules.yaml", "data_version: 0\n")
+    with pytest.raises(importer.RoomImportError, match="data_version"):
+        importer.load_rules(rules)
+    assert importer.load_rules(write(rules, f"data_version: {DATA_VERSION}\n")).data_version == DATA_VERSION
+
+
+# --- review decisions at import ------------------------------------------------------------------------------------
+
+
+def test_import_skips_rooms_a_review_rejects(repo: RepoPaths, tmp_path: Path) -> None:
+    for name in ("hall", "corridor", "crypt"):
+        (tmp_path / "src" / f"{name}.nbt").parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / "src" / f"{name}.nbt").write_bytes(write_structure(small_room()))
+    target = third_party(repo)
+    write(target / "review.yaml", "hall: reject\ncrypt: keep\n")
+    # A review further up keys rooms by their path below its own folder; the nearest decision counts.
+    write(
+        repo.content / "rooms" / "third_party" / "review.yaml",
+        "sample/corridor: reject\nsample/crypt: reject\n",
+    )
+    results = {
+        r.source.stem: r
+        for r in importer.import_rooms([tmp_path / "src"], target, RULES, load_vanilla(repo), repo)
+    }
+    assert results["hall"].rejected_by == target / "review.yaml" and not results["hall"].written
+    assert results["hall"].structure is None
+    assert results["corridor"].rejected_by == repo.content / "rooms" / "third_party" / "review.yaml"
+    assert results["crypt"].written and results["crypt"].rejected_by is None
+    assert sorted(p.name for p in target.glob("*.nbt")) == ["crypt.nbt"]
+
+
+def test_import_reports_a_broken_review(repo: RepoPaths, tmp_path: Path) -> None:
+    source = tmp_path / "hall.nbt"
+    source.write_bytes(write_structure(small_room()))
+    target = third_party(repo)
+    write(target / "review.yaml", "hall: maybe\n")
+    with pytest.raises(
+        importer.RoomImportError, match=r"review\.yaml: hall: Input should be 'keep' or 'reject'"
+    ):
+        importer.import_rooms([source], target, RULES, load_vanilla(repo), repo)
+
+
 def test_import_refuses_two_sources_with_one_name(repo: RepoPaths, tmp_path: Path) -> None:
     for name in ("Hall.nbt", "hall.schem"):
         (tmp_path / name).write_bytes(b"")
@@ -750,10 +855,16 @@ def test_room_paths_are_snake_case(repo: RepoPaths, room_id: str) -> None:
 
 def test_sidecar_is_validated(repo: RepoPaths) -> None:
     add_room(repo, "hall", sidecar="weight: 0\npools: [halls]\ncolour: red\n")
+    add_room(
+        repo,
+        "old",
+        sidecar="source:\n  file: old.schem\n  format: schem\n  data_version: null\n  ours: true\n",
+    )
     found = problems(repo)
     assert any("content/rooms/hall.yaml: weight:" in p for p in found)
     assert any("content/rooms/hall.yaml: pools.0:" in p for p in found)
     assert any("content/rooms/hall.yaml: colour:" in p for p in found)
+    assert any("content/rooms/old.yaml: source.data_version:" in p for p in found)
 
 
 def test_third_party_rooms_need_license_and_notice(repo: RepoPaths) -> None:
@@ -780,6 +891,7 @@ def test_room_template_is_checked(repo: RepoPaths) -> None:
     )
     add_room(repo, "too_big", replace(room, size=(49, 4, 5)))
     add_room(repo, "too_new", replace(room, data_version=DATA_VERSION + 1))
+    add_room(repo, "no_version", replace(room, data_version=None))
     found = problems(repo)
     assert any(
         "bad_jigsaw.nbt: jigsaw 3 1 2: faces east but is not on the room's east face" in p for p in found
@@ -789,6 +901,14 @@ def test_room_template_is_checked(repo: RepoPaths) -> None:
     )
     assert any("too_big.nbt: size: 49 4 5" in p for p in found)
     assert any(f"too_new.nbt: DataVersion: {DATA_VERSION + 1} is newer" in p for p in found)
+    assert any("no_version.nbt: DataVersion: missing" in p for p in found)
+
+
+def test_corrupt_template_is_a_validation_problem(repo: RepoPaths) -> None:
+    template = add_room(repo, "corrupt")
+    template.write_bytes(corrupt(template.read_bytes()))
+    (problem,) = problems(repo)
+    assert problem.startswith("content/rooms/corrupt.nbt: not a usable structure template: broken gzip data")
 
 
 @pytest.mark.parametrize(
@@ -826,13 +946,23 @@ def test_unknown_block_in_an_old_room_hints_at_renames(repo: RepoPaths) -> None:
     assert "saved with data version 3955" in problem[1]
 
 
-def test_review_file_names_existing_rooms(repo: RepoPaths) -> None:
+def test_review_keeps_name_existing_rooms(repo: RepoPaths) -> None:
     add_room(repo, "stone/hall")
-    write(repo.content / "rooms" / "stone" / "review.yaml", "hall: keep\ncorridor: reject\n")
+    write(repo.content / "rooms" / "stone" / "review.yaml", "hall: keep\ncorridor: keep\n")
     write(repo.content / "rooms" / "review.yaml", "stone/hall: reject\n")
     assert problems(repo) == [
-        "content/rooms/stone/review.yaml: corridor: no room content/rooms/stone/corridor.nbt"
+        "content/rooms/stone/review.yaml: corridor: kept, but there is no room content/rooms/stone/corridor.nbt"
     ]
+
+
+def test_reject_decision_outlives_its_room(repo: RepoPaths) -> None:
+    hall = add_room(repo, "stone/hall")
+    write(repo.content / "rooms" / "stone" / "review.yaml", "hall: reject\n")
+    load_and_validate(repo)
+    hall.unlink()
+    hall.with_suffix(".yaml").unlink()  # the rejected import is dropped; its decision stays
+    content, _ = load_and_validate(repo)
+    assert content.rooms == () and content.room_reviews[0].decisions == {"hall": "reject"}
 
 
 def test_review_decisions_are_keep_or_reject(repo: RepoPaths) -> None:
