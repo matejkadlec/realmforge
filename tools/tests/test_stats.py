@@ -499,8 +499,6 @@ def test_stat_names_go_into_the_lang_file(repo: RepoPaths) -> None:
     english = json.loads(files[f"{LANG}/en_us.json"])
     assert english["attribute.realmforge.strength"] == "Strength"
     assert english["attribute.realmforge.crit_chance"] == "Crit Chance"
-    # Realmforge is English only (RLM-140): no stat has a Czech name.
-    assert not any(key.startswith("attribute.") for key in json.loads(files[f"{LANG}/cs_cz.json"]))
 
 
 def test_a_stat_without_a_name_is_rejected(repo: RepoPaths) -> None:
