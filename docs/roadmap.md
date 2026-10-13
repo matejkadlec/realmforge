@@ -199,9 +199,20 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   children keep the parent's level, that a mob added without `finalizeSpawn` (`GameTestHelper#spawn`) gets a
   level and its scaling, and that a converted mob (a piglin zombifying outside the Nether) keeps a level and
   scaling that belong together.
-- **W2 Dimension** (RLM-32, M, after W1 and C2). Worldgen JSON for the first dimension and its dimension rules; the
-  `realmforge:requirement_type` registry with its first types; access by portal or item, locked by a chapter 1
-  step. *Done when:* a GameTest shows access refused before the requirement and allowed after it.
+- **W2a Stone realm** (RLM-32, M, after W1 and C2). Worldgen JSON for the stone realm
+  ([realm design](design/realms.md#the-stone-realm)), its dimension type (the coordinate scale the realm portal
+  links by, beds that set no spawn) and its dimension rules; the `realmforge:requirement_type` registry with its
+  first types; `content/realms/` with the realm's unlock advancement, which its chapter 1 quest grants; access
+  refused on every way in without the unlock, mobs kept out, respawn always in the Overworld
+  ([realm portal design](design/realm-portal.md)). *Done when:* GameTests show a player teleported into the realm
+  refused before the unlock and allowed after it, a mob teleported in staying where it is, and a death in the realm
+  respawning in the Overworld.
+- **W2b Realm portal** (RLM-154, M, after W2a). Access through the realm portal
+  ([realm portal design](design/realm-portal.md)): the frame, the realm selector and the stone realm's sigil, a
+  chapter 1 quest reward; Nether-like linking in both directions at the realm's coordinate scale, to a portal near
+  the scaled position or one built there. *Done when:* GameTests show the portal refusing a player before the unlock
+  and passing them after it, and a trip into the realm and back that links to the portals at the scaled positions
+  or builds them.
 - **W3 Custom mobs** (RLM-33, M, after W1 and C3a; D11). 1-2 custom mob types for the dungeons (archetypes: melee and
   caster), GeckoLib models, loot tables without trash. *Done when:* GameTests check that they spawn with levels and
   drop valid loot.
