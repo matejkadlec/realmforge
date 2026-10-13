@@ -30,7 +30,7 @@
   its ticket waits in the backlog, with a comment naming the PR, until the PR merges, so no agent starts work the
   plan does not hold yet. A change of direction also needs an ADR.
 - **Sizes** instead of dates: S fits one agent session, M takes one to three, L takes more and is split. Playtests,
-  hand-built rooms and art review depend on Matěj's time, so calendar estimates would be guesses.
+  room and art review depend on Matěj's time, so calendar estimates would be guesses.
 
 ## Milestones
 
@@ -157,8 +157,9 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   the NeoForge damage events with the hurt-cooldown handling ([architecture 9.1](architecture.md#91-damage-pipeline));
   crit, dodge, resistances; our armor formula; minimal combat text; a QA training dummy with a DPS meter and a
   combat log file. *Done when:* JUnit covers the formulas, and GameTests hit the dummy, check the numbers, show
-  that school damage right after a melee hit is not swallowed, and show that a dodged hit leaves no damage container
-  behind ([architecture 9.1](architecture.md#91-damage-pipeline)).
+  that school damage right after a melee hit is not swallowed, measure a melee hit after a DoT tick inside the
+  hurt-cooldown window, and show that a dodged hit leaves no damage container behind
+  ([architecture 9.1](architecture.md#91-damage-pipeline)).
 
 ### Phase 2: character and abilities
 
@@ -195,8 +196,9 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   (named in its `dimension` field); levels at spawn for vanilla hostile mobs (and later ours); scaling from curves,
   with health refilled to the scaled maximum; Jade shows the level (optional). *Done when:* GameTests check the
   level by distance, the scaled maximum health, that a new mob's current health equals it, that a split slime's
-  children keep the parent's level, and that a mob added without `finalizeSpawn` (`GameTestHelper#spawn`) gets a
-  level and its scaling.
+  children keep the parent's level, that a mob added without `finalizeSpawn` (`GameTestHelper#spawn`) gets a
+  level and its scaling, and that a converted mob (a piglin zombifying outside the Nether) keeps a level and
+  scaling that belong together.
 - **W2 Dimension** (RLM-32, M, after W1 and C2). Worldgen JSON for the first dimension and its dimension rules; the
   `realmforge:requirement_type` registry with its first types; access by portal or item, locked by a chapter 1
   step. *Done when:* a GameTest shows access refused before the requirement and allowed after it.
@@ -208,21 +210,25 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   with fuzz tests; the builder with data markers and chunk tickets; `InstanceManager`; entry and exit; the rules
   inside (Adventure mode plus guards for non-player edits and for items with `can_break` or `can_place_on`,
   [architecture 15.5](architecture.md#155-instances)); QA commands to preview a layout and enter a dungeon. *Done
-  when:* GameTests build and enter an instance, and a bucket, flint and steel, an axe, a hoe, a tool with
-  `can_break`, placing and breaking all leave the room unchanged.
+  when:* GameTests build and enter an instance, and a bucket (a plain one, and water, lava and empty buckets with
+  `can_place_on`), flint and steel, an axe, a hoe, a tool with `can_break`, placing and breaking all leave the room
+  unchanged.
 - **W5 Boss** (RLM-35, L, after C3a and W3). `realmforge:boss`, `BossPhaseMachine`, abilities through the spell engine,
   the boss entity and model, the phase name in the boss bar, arena rules, loot. The boss is tested on its own,
   before any dungeon references it. *Done when:* GameTests cover every phase change.
 - **W6 Two dungeon types** (RLM-36, L, after W4 and W5). Type A ends in the boss's lair; type B ends in a treasury with
-  traps and a vault, without a boss. Matěj builds the key rooms in creative; agents assemble variants and set
-  encounter and loot budgets.
+  traps and a vault, without a boss. Its rooms come from A4 (generated and imported,
+  [ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)); agents assemble variants and set encounter
+  and loot budgets.
 
 ### Phase 4: story, polish, release
 
 - **Q1 Quest pipeline** (RLM-37, L, after C2). `content/quests/` (chapters exist since C2) to FTB Quests SNBT with
   stable ids, advancements, our criteria triggers and statistics, lang; `CommandReward`s with `permission_level: 2`
   for our commands; `packwiz refresh` after generation; quest validation (where, how, with what; boss levels from
-  data). Finishes the quest half of research spike 2.
+  data). Finishes the quest half of research spike 2. *Done when:* pytest checks the generated SNBT, including that
+  every chapter reward is a per-player, auto-claimed `AdvancementReward`
+  ([architecture 16](architecture.md#16-progression-and-quests)).
 - **Q2 Chapter 1** (RLM-38, M, after Q1 and W6). About 15 quests with lore set in Realmforge, rewards from the gear
   set; the last quest grants the chapter advancement.
 - **R1 World rules** (RLM-42, S, after F1; D6). Default gamerules for new worlds, griefing protection, Dark Vision.
@@ -239,7 +245,9 @@ Placeholders are generated until real art exists ([ADR 0007](decisions/0007-asse
 - **A2 Models and animations** (RLM-48) for the custom mobs and the boss (GeckoLib; Blockbench MCP, installed only with
   Matěj's approval). UV-mapped entity textures need his eye ([ADR 0007](decisions/0007-asset-pipeline.md)).
 - **A3 Sounds** (RLM-49): vanilla sounds remapped in `sounds.json`, a few new ones.
-- **A4 Rooms** (RLM-50): key rooms built by Matěj, variants by agents.
+- **A4 Rooms** (RLM-50): rooms generated from YAML room specs by our room generator, plus an imported baseline of
+  MIT, CC0 and LGPL-3.0 rooms with their notices; nobody builds rooms by hand, and Matěj reviews them in a gallery
+  ([ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)).
 
 ### Definition of done
 
@@ -323,7 +331,9 @@ No milestone yet:
 - **QA mod:** commands, the training dummy, the combat log and scenarios grow with the features.
 - **CI:** the "later" layers of [ADR 0010](decisions/0010-testing-strategy.md) arrive one by one: pack boot in M1,
   balance simulation and the nightly client test in M3, nightly performance profiles afterwards.
-- **Docs:** architecture, ADRs, this roadmap and CLAUDE.md stay current in the same PR as the change.
+- **Docs:** architecture, ADRs and CLAUDE.md stay current in the same PR as the change; this roadmap changes only
+  when the plan does ([ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md),
+  [ADR 0021](decisions/0021-status-overview-and-plan-changes.md)).
 - **Performance:** a spark profile before every release.
 
 ## Open decisions

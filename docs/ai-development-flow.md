@@ -322,7 +322,7 @@ For each unmet dependency of a selected ticket, in this order:
 
 Agents never implement a ticket labelled `decision`, or one waiting on Matěj. A ticket waits on him when it cannot
 be started or finished without something only he can give: a decision or a pick between options, an account,
-credentials or credits, approval to install a tool or MCP server, content he builds himself (rooms in creative),
+credentials or credits, approval to install a tool or MCP server, content he builds himself,
 or his own playthrough. The description usually says so ("Decision for Matěj", "Owner decision", "Needs Matěj",
 "Needs from Matěj"), and so does an unmet `Blocks` link to a decision ticket or to another waiting ticket. A review
 or playtest at the end of the work does not count: that is the playtest hold. A ticket whose roadmap task exists

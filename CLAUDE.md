@@ -17,6 +17,8 @@ modpack adds third-party QoL, performance and library mods.
 - **Decisions:** [docs/decisions/](docs/decisions/README.md) (ADRs). Background: [docs/research-notes.md](docs/research-notes.md).
 - **Research:** [docs/research/](docs/research/README.md): reference games (Craft to Exile 2, Advent of Ascension,
   Hytale) with Adopt / Adapt / Avoid recommendations by ID (`RE-9`, `DU-4`, …) that tickets cite.
+- **Design:** [docs/design/](docs/design/README.md): game design documents written from Matěj's decisions (the
+  realms, the realm portal, the in-game guide), each with its open questions for him.
 - **Architecture:** [docs/architecture.md](docs/architecture.md): how the core mod is built (feature packages,
   registries, data flow from YAML into the game, player state, stats, networking, client isolation). Read the
   sections for the system you touch before writing code.
@@ -117,7 +119,7 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 | `dev/` | dev client defaults: `options.txt`, seeded into `run/client` by `seedDevOptions` | yes |
 | `pack/` | packwiz modpack definition (metadata only, no jars) | via `packwiz` commands |
 | `art/` | asset sources: the project palette, generator candidates, prompts, Blockbench files | yes |
-| `docs/` | vision, architecture, roadmap, research notes, ADRs, dev setup | yes |
+| `docs/` | vision, architecture, roadmap, design documents, research, research notes, ADRs, dev setup | yes |
 | `.github/workflows/ci.yml` | CI | yes |
 | `git_clean_worktrees.sh` | Matěj's cleanup of merged branches, their worktrees and worktree residue ([README](README.md#git-worktree-cleanup)) | yes |
 | `tests/` | shell test suites: the worktree cleanup's safety regression suite, the Gradle queue's warm-up suite | yes |
@@ -150,10 +152,15 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
    26.1), and the 1.21.x to 26.1 porting primer at https://docs.neoforged.net/primer/docs/26.1/.
 7. **Dev-only code goes into `qa-mod/`**, never into the core mod. GameTests live there too.
 8. **No third-party jars in the repo.** The pack is packwiz metadata only. Never copy third-party code unless its
-   license allows it (Spell Engine is GPL-3.0-only, Explorer's Compass CC BY-NC-SA: no reuse). No vanilla
-   textures or recolors, not even as AI input.
+   license allows it (Spell Engine is GPL-3.0-only, Explorer's Compass CC BY-NC-SA: no reuse). Third-party rooms
+   are copied only under MIT, CC0 or LGPL-3.0, each source in its own folder with its license and notice; never
+   Stardust Labs content ([ADR 0028](docs/decisions/0028-dungeon-rooms-generated-or-imported.md)). No vanilla
+   texture files or recolors of them in our assets, and none as input for generating our textures. Vanilla blocks
+   in our structures, and renders or screenshots of them, are fine.
 9. **Licenses:** the mod (`mod/`, `qa-mod/`, `tools/`, everything in the jar) is MPL-2.0 for code and CC BY 4.0
-   for assets; the modpack (`pack/`) is All Rights Reserved ([ADR 0009](docs/decisions/0009-licensing.md)).
+   for assets, except imported third-party rooms, which keep their own licenses; the modpack (`pack/`) is All
+   Rights Reserved ([ADR 0009](docs/decisions/0009-licensing.md),
+   [ADR 0028](docs/decisions/0028-dungeon-rooms-generated-or-imported.md)).
 10. **Decisions get an ADR** in `docs/decisions/` (next free number, add it to the index).
 11. **Code follows [docs/architecture.md](docs/architecture.md):** feature packages with a `<Name>Feature` entry,
     one-way dependencies, client-only code only under `client/`, game definitions as datapack registries. To

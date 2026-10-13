@@ -50,7 +50,11 @@ for it and later chapters are listed below.
   (waystones make that easy).
 - **Levels 1–5 are played in the Overworld.** The stone realm is open from level 1 but strongly recommended from
   level 5; gathering what a player needs to survive there naturally brings them to about level 5. Mob levels by area
-  show the danger (W1), so the realm needs no hard level lock.
+  show the danger (W1), so the realm needs no hard level lock. It still opens through an early chapter 1 quest step
+  that a level-1 player can complete (W2's requirement; the Stone Sigil of the [realm portal spec](realm-portal.md)):
+  "open from level 1" means no level gate, not no gate. The item rule of
+  [Opening the next realm](#opening-the-next-realm) (RE-9) starts with the second realm, because the Overworld has
+  neither a realm ore nor a boss drop to craft the item from.
 - About 2 stat points and 1 skill point per level; spell limits per chapter as in D4 (RLM-54).
 - Each chapter ends in a short main quest chain whose last step opens the next band (PR-1); everything else is
   optional.
@@ -161,7 +165,7 @@ stone. Mining is its main profession. As the first realm it offers most of what 
   | Dungeon | Kind | Ending | Bosses |
   | --- | --- | --- | --- |
   | Catacombs, an open catacomb like the interior part of Mine Cells | instanced, procedural | a treasury | none, or minibosses |
-  | Stone arena with an altar | instanced | the boss, summoned at the altar | 1 |
+  | Stone arena with an altar, a procedural run whose end room is the altar arena | instanced, procedural | the boss, summoned at the altar | 1 |
   | Dwarf-like fortress in the rock | open-world structure | none (no completion) | 0–2 minibosses |
 
 - **The chain:** a mine NPC trades realm ores for the catacombs key; the catacombs' treasury holds the arena key at
@@ -250,8 +254,14 @@ For Matěj; each has a proposal so the design can go on.
    cover chapter 2. Proposal: the forest for chapter 3, with underwater in chapter 4.
 6. **The fire realm's chapter.** Proposal: chapter 5 or later, after the elytra in chapter 4, so its dragons can be
    strong.
-7. **Elytra or flying mounts first?** Your reason for elytra in chapter 4 ("a little better than a mount") differs
-   from the vision and the M6 outline, which want flying mounts better than elytra
-   ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)). Proposal: your newer rule wins (elytra a little
-   better than the fastest mount tier of RLM-101, so they come with or after it), and the vision's line and the M6
-   outline change to say so once you confirm.
+7. **Elytra or flying mounts first?** Asked once, in the mount decision RLM-115, question 4
+   ([Chococraft research](../research/chococraft.md#questions-the-decision-answers)), which ADR 0025's consequence
+   "Elytra and flying mounts" also waits for. Your answer there settles it here too, and goes into the vision and the
+   M6 outline as a plan change sourced to RLM-115. Proposal: your newer rule wins (elytra a little better than the
+   fastest mount tier, so they come with or after it).
+8. **Elytra between the M4 removal and chapter 4.** ADR 0025 ships the removal of the End and the new sources
+   together in M4, but the elytra's source is chapter 4. M4 brings chapters 2 and 3, and no milestone names chapter 4
+   yet, so from M4 until chapter 4 the elytra have no source and the "every item is obtainable" check flags them. Two
+   ways: an interim source in M4, or an intended gap that the check lists as one. Proposal: the intended gap, since
+   you want elytra late ("a little better than a mount") and an interim source would bring them early. Your answer
+   also goes into the M4 removal task.

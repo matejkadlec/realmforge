@@ -19,6 +19,8 @@ Later topic research, starting with the reference games Craft to Exile 2, Advent
 | GameTests (location unspecified) | In the dev-only QA mod `realmforge_qa`; the release jar has no test code | [0010](decisions/0010-testing-strategy.md) |
 | Communicate with the owner in Czech | English | [vision](vision.md#owner) |
 | Remove Nether and End "if you choose it" | Removed (decided 2026-10-12); a late fire realm replaces the Nether, and the items get new sources | [0025](decisions/0025-remove-the-nether-and-end.md) |
+| The owner builds key rooms in creative | Nobody builds rooms by hand (decided 2026-10-12): generated rooms plus an imported MIT, CC0 and LGPL-3.0 baseline with its notices | [0028](decisions/0028-dungeon-rooms-generated-or-imported.md) |
+| No vanilla textures, not even as AI input | No vanilla texture files or recolours in our assets, and none as input for generating our textures; vanilla blocks in our structures and renders of them are fine | [0028](decisions/0028-dungeon-rooms-generated-or-imported.md) |
 
 ## Inputs
 
@@ -371,7 +373,7 @@ Code, data and content volume: AI handles well. Fun, visual taste and final deci
 | Rendering, shaders, mixins | medium: most hallucinations and most expensive ports | keep to a minimum |
 | 16x16 textures | good with tools, but style varies | selection and touch-ups |
 | Models, UV textures, animations | geometry yes, nice texture and motion less so | review, occasional manual edits |
-| Hand-built rooms | assembling from parts yes, architectural beauty no | build key rooms in creative |
+| Hand-built rooms | assembling from parts yes, architectural beauty no | build key rooms in creative. **Superseded:** rooms are generated or imported, and the owner reviews them in a gallery, see [overrides](#owner-overrides) |
 | Performance | profiling via spark and optimization | test on the owner's PC |
 | Accounts, payments, publishing, legal choices | no | owner |
 
@@ -394,7 +396,7 @@ A dungeon type defines a theme palette, a room library, the graph shape (start, 
 - **Instanced dungeons:** our own Java generator lays rooms into a "plot" in an instance dimension. No jigsaw limits, full control over the graph.
 - **Plots instead of runtime dimensions:** Compact Machines and Mine Cells split one dimension into plots of 1,024 blocks. On 1.21.1 this is safer than creating dimensions at runtime: the Infiniverse library has an unfixed crash on unload on 1.21.x.
 - **Mineshafts** work on the same principle, just with an older generator written in code.
-- **Handcraft stays in the room library:** nice rooms are built in creative and the generator combines them.
+- **Handcraft stays in the room library:** nice rooms are built in creative and the generator combines them. **Superseded:** the library holds generated and imported rooms, see [overrides](#owner-overrides).
 
 **Not every dungeon ends with a boss.** The ending is a rule of the type. Archetypes: boss lair; treasury (traps and puzzles, vault at the end); puzzle temple; wave arena; escape or chase; mounted run you cannot dismount; ruin exploration (lore and profession materials).
 
