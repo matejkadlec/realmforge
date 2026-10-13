@@ -55,6 +55,8 @@
 | the Overworld | the starting world | the surface, home world |
 | sigil | the item that opens a realm | key, rune, stone (keys are dungeon keys) |
 | seal | a realm's lock | barrier, ward |
+| gate | a realm portal, in story texts | door, rift |
+| keystone | the realm selector, in story texts | switch, controller |
 | guardian | a realm's main-path boss in story texts | final boss |
 | shard | the guardian's drop for the next sigil, in story texts | core, heart |
 | the Void | what lies past the last realm | the abyss, the dark |
