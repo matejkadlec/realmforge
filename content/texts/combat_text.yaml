@@ -2,5 +2,6 @@
 # Floating combat text (combat_text.realmforge.<name>, client/hud/CombatTextHud): words shown instead of a number.
 id: combat_text
 texts:
-  dodge:
-    en_us: Dodge
+  # A dodged hit (Matěj, 2026-10-13: yellow, as big as the numbers).
+  miss:
+    en_us: Miss!

@@ -27,7 +27,7 @@
   "attribute.realmforge.strength": "Strength",
   "attribute.realmforge.vitality": "Vitality",
   "attribute.realmforge.xp_multiplier": "XP Multiplier",
-  "combat_text.realmforge.dodge": "Dodge",
+  "combat_text.realmforge.miss": "Miss!",
   "curve.realmforge.armor_halving.name": "Armor Halving",
   "curve.realmforge.armor_reduction_cap.name": "Armor Reduction Cap",
   "curve.realmforge.test_curve.name": "Test Curve",

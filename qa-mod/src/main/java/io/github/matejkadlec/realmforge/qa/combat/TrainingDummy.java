@@ -1,11 +1,16 @@
 package io.github.matejkadlec.realmforge.qa.combat;
 
+import com.mojang.math.Transformation;
+import io.github.matejkadlec.realmforge.character.CharacterSheetView;
 import io.github.matejkadlec.realmforge.combat.CombatEvent;
 import io.github.matejkadlec.realmforge.combat.DamageNumbers;
+import io.github.matejkadlec.realmforge.combat.DamagePipeline;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
+import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.OptionalDouble;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.ChatFormatting;
@@ -13,6 +18,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -20,11 +26,14 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
+import org.joml.Vector3f;
 
 /**
  * The QA training dummy (architecture 20): a husk that stands still, never dies and carries a DPS meter. Its name
@@ -33,7 +42,10 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
  * a hit.
  *
  * <p>Husks carry our stats in the dev game ({@link #addStats}), so the dummy's dodge chance and resistances can be set
- * with vanilla's {@code /attribute} command. Its armor comes from {@code /qa dummy <armor>}.
+ * with vanilla's {@code /attribute} command. Its armor comes from {@code /qa dummy <armor>}. Its label, a text display
+ * riding it, shows two lines (Matěj, 2026-10-13): the armor with the share of a hit it blocks at the nearest player's
+ * level, and below it the name with the DPS. Vanilla draws no name tag over an entity that carries a passenger, so the
+ * label carries the name too; it changes with every hit and every second.
  */
 public final class TrainingDummy {
     /** The entity tag that marks a training dummy. */
@@ -41,6 +53,12 @@ public final class TrainingDummy {
     static final double MAX_HEALTH = 1000;
     static final int SESSION_GAP_TICKS = 100;
     private static final String NAME = "Training Dummy";
+    /** The entity tag of the text display that labels a dummy's armor. */
+    static final String LABEL_TAG = "realmforge_qa.training_dummy_label";
+    /** How far the label sits above the dummy's head, in blocks: where its name tag would be. */
+    private static final float LABEL_LIFT = 0.35F;
+    /** How far a player may stand from a dummy and still be the level its label shows. */
+    private static final double LABEL_RANGE = 32;
 
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
 
@@ -52,6 +70,7 @@ public final class TrainingDummy {
         NeoForge.EVENT_BUS.addListener(CombatEvent.Hit.class, TrainingDummy::onHit);
         NeoForge.EVENT_BUS.addListener(CombatEvent.Dodge.class, TrainingDummy::onDodge);
         NeoForge.EVENT_BUS.addListener(LivingDeathEvent.class, TrainingDummy::onDeath);
+        NeoForge.EVENT_BUS.addListener(EntityTickEvent.Post.class, TrainingDummy::onTick);
     }
 
     /** Spawns a dummy at {@code position}, facing {@code yaw}, with {@code armor} points of armor. */
@@ -73,6 +92,37 @@ public final class TrainingDummy {
         level.addFreshEntity(dummy);
         showName(dummy, null);
         return dummy;
+    }
+
+    /** Removes the dummy and its label. */
+    public static void remove(LivingEntity dummy) {
+        dummy.getPassengers().forEach(Entity::discard);
+        dummy.discard();
+    }
+
+    /**
+     * The label's first line: the dummy's armor (and toughness, when it has any) and the share of a hit our armor
+     * formula blocks against an attacker at {@code attackerLevel}, such as "15 Armor (50% Damage Reduction)".
+     */
+    public static Component armorLine(LivingEntity dummy, int attackerLevel) {
+        double armor = dummy.getAttributeValue(Attributes.ARMOR);
+        double toughness = dummy.getAttributeValue(Attributes.ARMOR_TOUGHNESS);
+        OptionalDouble share = DamagePipeline.armorShare(dummy, attackerLevel);
+        String text = CharacterSheetView.points(armor) + " Armor"
+                + (toughness > 0 ? ", " + CharacterSheetView.points(toughness) + " Toughness" : "")
+                + " (" + CharacterSheetView.share(share.orElse(0)) + " Damage Reduction)";
+        return Component.literal(text);
+    }
+
+    /** The text display that labels the dummy, or none (a dummy from before the label). */
+    @Nullable
+    public static Display.TextDisplay labelEntity(LivingEntity dummy) {
+        for (Entity passenger : dummy.getPassengers()) {
+            if (passenger instanceof Display.TextDisplay text && passenger.entityTags().contains(LABEL_TAG)) {
+                return text;
+            }
+        }
+        return null;
     }
 
     public static boolean isDummy(Entity entity) {
@@ -102,6 +152,41 @@ public final class TrainingDummy {
         public double dps() {
             return total / ((lastTick - firstTick) / 20.0 + 1);
         }
+    }
+
+    private static void onTick(EntityTickEvent.Post event) {
+        if (event.getEntity() instanceof LivingEntity dummy && dummy.tickCount % 20 == 0 && isDummy(dummy)
+                && dummy.level() instanceof ServerLevel) {
+            updateLabel(dummy);
+        }
+    }
+
+    /**
+     * Shows the dummy's armor at the nearest player's level (level 1 when nobody is near), adding the label if needed.
+     */
+    static void updateLabel(LivingEntity dummy) {
+        if (!(dummy.level() instanceof ServerLevel level)) {
+            return;
+        }
+        Display.TextDisplay label = labelEntity(dummy);
+        if (label == null) {
+            label = EntityType.TEXT_DISPLAY.create(level, EntitySpawnReason.COMMAND);
+            if (label == null) {
+                return;
+            }
+            label.addTag(LABEL_TAG);
+            label.setBillboardConstraints(Display.BillboardConstraints.CENTER);
+            label.setLineWidth(400);
+            label.setTransformation(new Transformation(new Vector3f(0, LABEL_LIFT, 0), null, null, null));
+            label.snapTo(dummy.getX(), dummy.getY() + dummy.getBbHeight(), dummy.getZ());
+            level.addFreshEntity(label);
+            label.startRiding(dummy, true, false);
+        }
+        Player nearest = level.getNearestPlayer(dummy, LABEL_RANGE);
+        Component name = dummy.getCustomName() != null ? dummy.getCustomName() : Component.literal(NAME);
+        label.setText(Component.empty()
+                .append(armorLine(dummy, nearest != null ? DamagePipeline.level(nearest) : EntityLevel.MIN))
+                .append("\n").append(name));
     }
 
     private static void addStats(EntityAttributeModificationEvent event) {
@@ -164,5 +249,6 @@ public final class TrainingDummy {
         dummy.setCustomName(session == null
                 ? Component.literal(NAME)
                 : Component.literal(NAME + " | " + DamageNumbers.format(session.dps()) + " DPS"));
+        updateLabel(dummy);
     }
 }

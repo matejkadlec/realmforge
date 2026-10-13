@@ -20,6 +20,14 @@ class DamageNumbersTest {
     }
 
     @Test
+    void critsEndWithAnExclamationMarkAndHealsStartWithPlus() {
+        assertEquals("20!", DamageNumbers.label(20, true, false));
+        assertEquals("7.5", DamageNumbers.label(7.5, false, false));
+        assertEquals("+4", DamageNumbers.label(4, false, true));
+        assertEquals("+12!", DamageNumbers.label(12.2, true, true), "a crit heal, for spells to come");
+    }
+
+    @Test
     void wholeSmallNumbersDropTheDecimal() {
         assertEquals("7", DamageNumbers.format(7.0));
         assertEquals("10", DamageNumbers.format(9.96), "rounds up to the whole number");

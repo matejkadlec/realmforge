@@ -12,7 +12,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.phys.Vec3;
@@ -61,7 +60,7 @@ public final class DummyCommands {
 
     private static int remove(CommandContext<CommandSourceStack> context) {
         List<LivingEntity> dummies = dummies(context.getSource().getLevel());
-        dummies.forEach(dummy -> dummy.remove(Entity.RemovalReason.DISCARDED));
+        dummies.forEach(TrainingDummy::remove);
         context.getSource().sendSuccess(() -> Component.literal("Removed " + dummies.size() + " training dummies"),
                 true);
         return dummies.size();

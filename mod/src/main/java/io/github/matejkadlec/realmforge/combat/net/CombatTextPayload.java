@@ -7,22 +7,24 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 /**
- * Server to client: one floating combat text (architecture 9.1, 17.3), sent to the player who dealt a hit and to the
- * player who took it. The client shows it over the hit entity, or at the side of the screen for the player's own
- * damage taken ({@link #INCOMING}).
+ * Server to client: one floating combat text (architecture 9.1, 17.3). A hit or a miss goes to the player who dealt
+ * it, a heal to the players near the healed entity; the client shows it over that entity. A miss also goes to the
+ * player who dodged it, shown beside the crosshair ({@link #INCOMING}).
  *
- * @param entityId the entity that was hit
- * @param amount the damage dealt; unused for a dodge
- * @param color the text colour, opaque ARGB: the spell school's, or white for a melee hit
- * @param flags {@link #CRIT}, {@link #DODGE} and {@link #INCOMING}
+ * @param entityId the entity that was hit or healed
+ * @param amount the damage dealt or the health healed; unused for a miss
+ * @param color the text colour, opaque ARGB, chosen by the server ({@code combat/CombatText})
+ * @param flags {@link #CRIT}, {@link #MISS}, {@link #INCOMING} and {@link #HEAL}
  */
 public record CombatTextPayload(int entityId, float amount, int color, byte flags) implements CustomPacketPayload {
-    /** The hit was critical: shown bigger. */
+    /** The hit was critical: its number ends with "!". */
     public static final byte CRIT = 1;
-    /** The hit was dodged: the word "Dodge" instead of a number. */
-    public static final byte DODGE = 2;
-    /** The receiving player was hit. */
+    /** The hit was dodged: "Miss!" instead of a number. */
+    public static final byte MISS = 2;
+    /** The receiving player dodged the hit. */
     public static final byte INCOMING = 4;
+    /** Health healed, not damage: its number starts with "+". */
+    public static final byte HEAL = 8;
 
     public static final Type<CombatTextPayload> TYPE = new Type<>(Realmforge.id("combat_text"));
     public static final StreamCodec<ByteBuf, CombatTextPayload> STREAM_CODEC = StreamCodec.composite(
@@ -36,12 +38,16 @@ public record CombatTextPayload(int entityId, float amount, int color, byte flag
         return (flags & CRIT) != 0;
     }
 
-    public boolean dodge() {
-        return (flags & DODGE) != 0;
+    public boolean miss() {
+        return (flags & MISS) != 0;
     }
 
     public boolean incoming() {
         return (flags & INCOMING) != 0;
+    }
+
+    public boolean heal() {
+        return (flags & HEAL) != 0;
     }
 
     @Override

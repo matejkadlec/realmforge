@@ -5,8 +5,8 @@ package io.github.matejkadlec.realmforge.generated;
 
 /** Translation keys of the texts in {@code content/texts/}, so Java names a text without typing its key. */
 public final class GeneratedTexts {
-    /** {@code combat_text.realmforge.dodge} from {@code content/texts/combat_text.yaml}: "Dodge" */
-    public static final String COMBAT_TEXT_DODGE = "combat_text.realmforge.dodge";
+    /** {@code combat_text.realmforge.miss} from {@code content/texts/combat_text.yaml}: "Miss!" */
+    public static final String COMBAT_TEXT_MISS = "combat_text.realmforge.miss";
 
     /** {@code gui.realmforge.block_reach} from {@code content/texts/gui.yaml}: "Block Reach" */
     public static final String GUI_BLOCK_REACH = "gui.realmforge.block_reach";

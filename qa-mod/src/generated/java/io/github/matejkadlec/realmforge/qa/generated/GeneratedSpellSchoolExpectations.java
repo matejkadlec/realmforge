@@ -48,7 +48,7 @@ public final class GeneratedSpellSchoolExpectations {
                     "realmforge:physical",
                     "spell_school.realmforge.physical.name",
                     false,
-                    0xFFE6E6E6,
+                    0xFFFFAA00,
                     "realmforge:physical",
                     "realmforge.physical",
                     Optional.empty(),

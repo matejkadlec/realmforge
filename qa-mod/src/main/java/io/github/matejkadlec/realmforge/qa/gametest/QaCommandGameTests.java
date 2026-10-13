@@ -12,6 +12,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionSet;
+import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.AABB;
@@ -52,6 +53,10 @@ public final class QaCommandGameTests {
         helper.assertValueEqual(dummies.size(), 1, "dummies after /qa dummy 10");
         LivingEntity dummy = dummies.getFirst();
         helper.assertValueEqual(dummy.getAttributeValue(Attributes.ARMOR), 10.0, "the dummy's armor");
+        Display.TextDisplay label = TrainingDummy.labelEntity(dummy);
+        helper.assertTrue(label != null, "the dummy carries its armor label");
+        helper.assertValueEqual(label.getText().getString(), "10 Armor (40% Damage Reduction)\nTraining Dummy",
+                "the label at level 1, where 15 armor halves a hit, over the dummy's name");
         run(server, player, "attribute " + DUMMY + " realmforge:fire_resistance base set 0.5");
         helper.assertValueEqual(dummy.getAttributeValue(GeneratedStats.FIRE_RESISTANCE), 0.5, "the dummy's resistance");
         run(server, player, "damage " + DUMMY + " 10 realmforge:fire by @s");
@@ -66,6 +71,9 @@ public final class QaCommandGameTests {
         helper.assertValueEqual(player.getAttributeValue(GeneratedStats.CRIT_CHANCE), 0.05, "crit chance after reset");
         run(server, player, "qa dummy remove");
         helper.assertTrue(dummies(helper).isEmpty(), "/qa dummy remove removed the dummy");
+        AABB platform = new AABB(helper.absolutePos(BlockPos.ZERO)).inflate(8);
+        helper.assertTrue(helper.getLevel().getEntitiesOfClass(Display.TextDisplay.class, platform).isEmpty(),
+                "and its label");
         server.getPlayerList().remove(player);
         helper.succeed();
     }

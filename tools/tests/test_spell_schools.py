@@ -174,7 +174,7 @@ def test_school_entries_name_their_damage_type_and_stats(repo: RepoPaths) -> Non
     assert json.loads(files[f"{SCHOOL_DATA}/physical.json"]) == {
         "name": "spell_school.realmforge.physical.name",
         "kind": "physical",
-        "color": "#E6E6E6",
+        "color": "#FFAA00",
         "damage_type": "realmforge:physical",
     }
 
@@ -237,7 +237,7 @@ def test_keys_and_expectations_cover_every_school(repo: RepoPaths) -> None:
         '                    Optional.of("realmforge:fire_power"),\n'
         '                    Optional.of("realmforge:fire_resistance"))' in expectations
     )
-    assert "0xFFE6E6E6,\n" in expectations
+    assert "0xFFFFAA00,\n" in expectations
     assert "Optional.empty(),\n                    Optional.empty())" in expectations
 
 
