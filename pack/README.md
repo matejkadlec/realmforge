@@ -4,7 +4,8 @@ This directory is the [packwiz](https://packwiz.infra.link/) definition of the
 Realmforge modpack: Minecraft 26.1.2, NeoForge 26.1.2.116
 ([ADR 0026](../docs/decisions/0026-platform-minecraft-26-1-2-neoforge.md)).
 
-It holds metadata only: `pack.toml`, `index.toml` and `mods/*.pw.toml`.
+It holds metadata and configuration only: `pack.toml`, `index.toml`,
+`mods/*.pw.toml` and the config overrides in `config/` ([Configuration](#configuration)).
 No mod jars are stored here, and none should ever be committed. Players get the
 jars from Modrinth/CurseForge through packwiz-installer.
 
@@ -67,6 +68,39 @@ RLM-65 and RLM-124):
   boot or a playtest, report it to Matěj before choosing anything else; Biomes
   O' Plenty is not wanted as a replacement.
 - **FTB Teams 26.1.2.4** (CurseForge), which FTB Quests needs.
+
+## Configuration
+
+`config/` holds the pack's config overrides. packwiz-installer copies them into
+the instance's `config/` folder on every launch, on clients and servers alike,
+replacing the file a mod wrote itself. Each one is the file exactly as the game
+writes it, with only the values below changed, so NeoForge never rewrites it.
+To change one, boot the pack (`uv run rf pack-boot --side server`), copy the
+mod's file from `.cache/pack-boot/server/config/`, change the values, run
+`packwiz refresh`, and update this list.
+
+**Waystones** (`config/waystones-common.toml`, Waystones 26.1.2.16, RLM-132).
+Travel between realms goes through waystones, so warps stay cheap (research
+TR-1: CTE2 sets the XP cost to 0):
+
+- `rules.enableXpCosts = false`: no warp costs XP. The defaults charge 0.01 XP
+  points per block up to 27, and a flat 27 for a warp to another dimension
+  (`warpSettings` and `warpRequirements`), which would tax every trip between
+  realms.
+- `rules.allowEveryoneToManageGlobalWaystones = true`: every player may make
+  their own waystone global (listed for everyone) or keep it private. By
+  default only a player in creative mode may. Global or private is each
+  player's choice (Matěj, RLM-128, 2026-10-13), and only a waystone's owner may
+  edit it. `defaultVisibility` stays `ACTIVATION`: a new waystone is private
+  until its owner makes it global.
+
+Everything else keeps the defaults. Warp stones lose durability with each warp,
+and warp scrolls are used up. The only cooldown belongs to the inventory
+button, which is off (`inventoryButton = ""`). No rule refuses a warp to another
+dimension. Leashed mobs travel along (`transportLeashed`), pets do not
+(`transportPets`). The config allows warps into every dimension: refusing a warp
+into a realm the player has not unlocked is the core mod's job (realm portal
+spec, W2b).
 
 ## Optional mods
 

@@ -15,7 +15,8 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
  * and off with a key. The switch lives in {@link WorldAttachments#DARK_VISION}, because effects do not survive death:
  * the effect is reapplied on login and respawn. Nothing but the switch removes it: while the switch is on, every
  * removal of the effect is cancelled ({@link MobEffectEvent.Remove}), so milk, a totem of undying and
- * {@code /effect clear} leave it alone.
+ * {@code /effect clear} leave it alone, and every other night vision is refused ({@link MobEffectEvent.Applicable}),
+ * so a potion cannot make it visible.
  */
 public final class DarkVision {
     private DarkVision() {
@@ -84,6 +85,20 @@ public final class DarkVision {
         if (event.getEntity() instanceof ServerPlayer player && isEnabled(player)
                 && isDarkVision(event.getEffectInstance())) {
             event.setCanceled(true);
+        }
+    }
+
+    /**
+     * Keeps Dark Vision hidden while the switch is on. Night vision from anywhere else (a potion, a splash potion, a
+     * tipped arrow, suspicious stew, {@code /effect give}) would merge into it through {@code MobEffectInstance#update},
+     * which copies the newcomer's particles and icon onto the infinite effect. Dark Vision outlasts every other night
+     * vision, and a higher amplifier changes nothing for night vision, so the newcomer is refused instead.
+     */
+    static void onEffectApplicable(MobEffectEvent.Applicable event) {
+        if (event.getEntity() instanceof ServerPlayer player && isEnabled(player)
+                && event.getEffectInstance().is(MobEffects.NIGHT_VISION)
+                && isDarkVision(player.getEffect(MobEffects.NIGHT_VISION))) {
+            event.setResult(MobEffectEvent.Applicable.Result.DO_NOT_APPLY);
         }
     }
 

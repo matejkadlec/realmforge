@@ -33,6 +33,8 @@ import net.minecraft.world.entity.projectile.hurtingprojectile.WitherSkull;
 import net.minecraft.world.entity.vehicle.minecart.Minecart;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -230,6 +232,28 @@ public final class WorldRulesGameTests {
         helper.succeed();
     }
 
+    /**
+     * Night vision from anywhere else leaves Dark Vision hidden (no particles, no icon) while the switch is on; with
+     * the switch off, a potion works as usual.
+     */
+    @QaGameTest
+    public static void otherNightVisionLeavesDarkVisionHidden(GameTestHelper helper) {
+        ServerPlayer player = fakePlayer(helper);
+        DarkVision.setEnabled(player, true);
+        drinkNightVisionPotion(helper, player);
+        assertHasDarkVision(helper, player);
+        helper.assertFalse(player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 3600, 1)),
+                "a stronger night vision was applied over Dark Vision");
+        assertHasDarkVision(helper, player);
+
+        DarkVision.setEnabled(player, false);
+        drinkNightVisionPotion(helper, player);
+        MobEffectInstance potion = player.getEffect(MobEffects.NIGHT_VISION);
+        helper.assertTrue(potion != null && !potion.isInfiniteDuration() && potion.isVisible() && potion.showIcon(),
+                "the potion did not work with the switch off: " + potion);
+        helper.succeed();
+    }
+
     /** The switch is copied on death and saved with the player; the effect follows it after respawn and relog. */
     @QaGameTest
     public static void switchSurvivesDeathAndRelog(GameTestHelper helper) {
@@ -305,6 +329,11 @@ public final class WorldRulesGameTests {
         ItemStack milk = new ItemStack(Items.MILK_BUCKET);
         milk.get(DataComponents.CONSUMABLE).onConsumeEffects()
                 .forEach(effect -> effect.apply(helper.getLevel(), milk, player));
+    }
+
+    /** Drinks a Potion of Night Vision (3 minutes) through the item's consumable, as a player finishing the drink. */
+    private static void drinkNightVisionPotion(GameTestHelper helper, ServerPlayer player) {
+        PotionContents.createItemStack(Items.POTION, Potions.NIGHT_VISION).finishUsingItem(helper.getLevel(), player);
     }
 
     private static void assertHasDarkVision(GameTestHelper helper, Player player) {
