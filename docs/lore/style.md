@@ -73,6 +73,9 @@ for the story around it.
 - **Facts from data, never from prose** ([architecture 6.3](../architecture.md#63-conventions)): levels, damage,
   cooldowns, counts and drop chances go through the generator's placeholders (`{level_min}`), so a balance change
   never leaves a text wrong.
+- **Title Case** for names and titles follows the label rule in [content/README.md](../../content/README.md):
+  every word capitalized except articles, conjunctions and prepositions of up to three letters in the middle
+  (`Home With the Shards`, `Ring of the Deep`). Whole sentences stay in sentence case.
 - **American spelling in `en_us`,** as in vanilla: armor, color, gray. The docs keep their own spelling.
 - **Story texts use story words:** "the seal knows you now", not "realm unlocked". Messages and UI may use game
   terms (level, cooldown, quest).

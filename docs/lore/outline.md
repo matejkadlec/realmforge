@@ -263,7 +263,7 @@ of the systems M1 builds. The order, the counts and the rewards are Q2's to set.
 
 | # | Beat | Where | What the player does | Story |
 | --- | --- | --- | --- | --- |
-| 1 | A Letter from the Lodge | Overworld | opens the quest book; has chosen a class | Maren welcomes a new Wayfarer and explains the warm gate stones |
+| 1 | A Letter From the Lodge | Overworld | opens the quest book; has chosen a class | Maren welcomes a new Wayfarer and explains the warm gate stones |
 | 2 | The Wild Is Wide | Overworld | kills a few hostile mobs; gains levels | the Lodge wants to know the newcomer can handle themselves |
 | 3 | A Spark in the Hand | Overworld | casts class spells | Maren on the old crafts of fighting and casting |
 | 4 | What You Learn | Overworld | learns a talent | everyone in the Lodge has a specialty |
@@ -278,7 +278,7 @@ of the systems M1 builds. The order, the counts and the rewards are Q2's to set.
 | 13 | The Hewn Awake | the Undervault | defeats the realm's statues | the stone servants wake as the seal thins |
 | 14 | The Scribe in the Stone | the Undervault | enters the arena, receives the summoning item | the Sealbound explains the trial |
 | 15 | The Unbroken | the Undervault | summons and defeats the boss | the guardian's trial; its two shards drop, one for each twin seal ahead |
-| 16 | Home with the Shards | Overworld | brings the shards back | Maren reads the shards: two seals ahead, sun and frost. The chapter advancement raises the level cap |
+| 16 | Home With the Shards | Overworld | brings the shards back | Maren reads the shards: two seals ahead, sun and frost. The chapter advancement raises the level cap |
 
 - **Givers:** the quest book speaks in Maren's voice (her notes and letters), and in the Undervault in Torva's and
   the Scribe's. The beats need no NPC entity and no mine: the realm design leaves the NPC mines to later tasks, so
