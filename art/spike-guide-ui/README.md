@@ -28,7 +28,8 @@ filigree, and a light-blue line runs along the top edge.
 - `reference/frame-d-256.png`, `reference/frame-composite-256.png`: round 2's frame d and the composite at 256x184,
   the inputs of the RD Pro version ([RD Pro version](#rd-pro-version-rlm-134)).
 - `candidates/<subject>/<candidate>.png`: the generator output exactly as returned (`frame/`, `frame_r2/`,
-  `frame_pro/`, `icon_*/`), and the derived previews (`preview_nine_slice/`, `preview_stretched/`).
+  `frame_pro_edit/`, `frame_pro_default/`, `icon_*/`), and the derived previews (`preview_nine_slice/`,
+  `preview_stretched/`).
 - `candidates/gallery.yaml`: labels, prompts, seeds and the cost of every image.
 - `cleaned/icon_*.png`: the icons after `uv run rf art clean` (16x16, project palette).
 - Review page: built from `gallery.yaml` with the `rf art gallery` styles and published for Matěj as a private
