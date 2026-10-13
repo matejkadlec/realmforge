@@ -92,7 +92,7 @@ for the story around it.
 - **Pronounceable on first read.** One to three syllables per part, no accents in `en_us` names, and no
   apostrophes inside invented words (a plain English possessive, as in the Wayfarers' Lodge, is fine).
 - **One name per thing,** the same in every text. A name that changes is a bug.
-- **Places:** one English compound (the Undervault) or "the <adjective or noun> <noun>" (the Scribe in the Stone).
+- **Places:** one English compound (the Undervault) or `the <adjective or noun> <noun>` (the Void Cathedral).
 - **Never:**
   - names from other games: the list in the research report's
     [licence section](../research/reference-games.md#reference-games-at-a-glance), and anything from WoW, League of
