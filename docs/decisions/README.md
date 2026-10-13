@@ -24,7 +24,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0011](0011-repository-layout-and-workflow.md) | Repository layout and workflow | Accepted |
 | [0012](0012-procedural-dungeons-and-dimensions.md) | Procedural dungeons and dimensions | Accepted, refined by [0019](0019-dungeon-instances-in-plots.md), its Nether and End question resolved by [0025](0025-remove-the-nether-and-end.md) |
 | [0013](0013-modpack-composition.md) | Modpack composition | Accepted (written separately), composition updated for 26.1.2 by [0026](0026-platform-minecraft-26-1-2-neoforge.md) |
-| [0014](0014-core-mod-architecture.md) | Core mod architecture | Accepted |
+| [0014](0014-core-mod-architecture.md) | Core mod architecture | Accepted, decision 9 amended by [0027](0027-client-bound-payload-handlers-through-the-client-event.md) |
 | [0015](0015-merging-through-monitor-pr.md) | Merging through monitor-pr | Accepted (amends 0011), holds extended by [0016](0016-jira-batch-delivery.md) and [0017](0017-jira-as-the-source-of-task-status.md), `needs-approval` removed by [0021](0021-status-overview-and-plan-changes.md), `needs-playtest` removed by [0024](0024-no-github-labels.md) |
 | [0016](0016-jira-batch-delivery.md) | Jira batch delivery with flow1 and flow2 | Accepted (extends 0011), amended by [0017](0017-jira-as-the-source-of-task-status.md), [0021](0021-status-overview-and-plan-changes.md) and [0022](0022-playtest-before-the-pull-request.md) |
 | [0017](0017-jira-as-the-source-of-task-status.md) | Jira as the source of task status | Accepted (amends 0015 and 0016), amended by [0021](0021-status-overview-and-plan-changes.md) |
@@ -37,6 +37,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0024](0024-no-github-labels.md) | No GitHub labels: playtests run on qa1 and qa2 alone | Accepted (amends 0015 and 0022) |
 | [0025](0025-remove-the-nether-and-end.md) | Remove the Nether and End; the Overworld is the starting area | Accepted (resolves the open question of 0012) |
 | [0026](0026-platform-minecraft-26-1-2-neoforge.md) | Platform: Minecraft 26.1.2 on NeoForge | Accepted (supersedes 0003) |
+| [0027](0027-client-bound-payload-handlers-through-the-client-event.md) | Client-bound payload handlers through NeoForge's client event | Accepted (amends 0014) |
 
 ## Open questions (not decided)
 

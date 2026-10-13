@@ -2,7 +2,8 @@
 
 Date: 2026-10-11
 
-Status: Accepted
+Status: Accepted; decision 9 amended by [0027](0027-client-bound-payload-handlers-through-the-client-event.md) (client-bound
+payload handlers through NeoForge's client event)
 
 ## Context
 

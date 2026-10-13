@@ -13,7 +13,6 @@ import com.zigythebird.playeranimcore.api.firstPerson.FirstPersonMode;
 import com.zigythebird.playeranimcore.easing.EasingType;
 import com.zigythebird.playeranimcore.enums.PlayState;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
-import io.github.matejkadlec.realmforge.qa.castanim.QaCastAnimation;
 import io.github.matejkadlec.realmforge.qa.castanim.QaCastPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -23,6 +22,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
@@ -53,9 +53,9 @@ public final class QaCastAnimationClient {
 
     public static void register(IEventBus modEventBus) {
         modEventBus.addListener(QaCastAnimationClient::onClientSetup);
+        modEventBus.addListener(QaCastAnimationClient::onRegisterPayloadHandlers);
         NeoForge.EVENT_BUS.addListener(QaCastAnimationClient::onInteractionKey);
         NeoForge.EVENT_BUS.addListener(QaCastAnimationClient::onLoggingOut);
-        QaCastAnimation.installClientHandler(QaCastAnimationClient::handle);
         QaCastShots.registerIfRequested();
     }
 
@@ -67,6 +67,11 @@ public final class QaCastAnimationClient {
         // Every client player (every Avatar: mannequins too) gets a CastLayer in its animation stack when created.
         event.enqueueWork(() -> PlayerAnimationFactory.ANIMATION_DATA_FACTORY.registerFactory(
                 LAYER_ID, LAYER_PRIORITY, avatar -> new CastLayer()));
+    }
+
+    /** {@code QaCastAnimation} registers the payload without a handler (ADR 0027); this is its handler. */
+    private static void onRegisterPayloadHandlers(RegisterClientPayloadHandlersEvent event) {
+        event.register(QaCastPayload.TYPE, (payload, context) -> handle(payload));
     }
 
     /**

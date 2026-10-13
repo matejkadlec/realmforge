@@ -2,7 +2,6 @@ package io.github.matejkadlec.realmforge.network;
 
 import io.github.matejkadlec.realmforge.world.DarkVision;
 import io.github.matejkadlec.realmforge.world.net.ToggleDarkVisionPayload;
-import java.util.Objects;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -14,8 +13,6 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  * whose Realmforge version differs from the server's is refused when it connects, whatever changed on the wire.
  */
 public final class RealmforgeNetwork {
-    private static volatile ClientboundPayloadHandler clientHandler;
-
     private RealmforgeNetwork() {
     }
 
@@ -32,33 +29,14 @@ public final class RealmforgeNetwork {
 
     private static void registerPayloads(PayloadRegistrar registrar) {
         // Each feature's payloads from its net/ package go here (architecture 17.3). Handlers run on the main thread
-        // (the registrar's default). A client-bound handler is `(payload, context) -> clientHandler().onX(payload,
-        // context)`; a server-bound one hands the intent to the feature's system, which validates every field.
+        // (the registrar's default). A client-bound payload is registered without a handler, `playToClient(TYPE,
+        // STREAM_CODEC)`: its handler is client code, in client/network/ClientPayloadHandlers (ADR 0027). A
+        // server-bound handler hands the intent to the feature's system, which validates every field.
         registrar.playToServer(ToggleDarkVisionPayload.TYPE, ToggleDarkVisionPayload.STREAM_CODEC,
                 (payload, context) -> {
                     if (context.player() instanceof ServerPlayer player) {
                         DarkVision.toggle(player);
                     }
                 });
-    }
-
-    /** Installs the client side's handler; {@code RealmforgeClient} calls this once at startup. */
-    public static void installClientHandler(ClientboundPayloadHandler handler) {
-        Objects.requireNonNull(handler, "handler");
-        synchronized (RealmforgeNetwork.class) {
-            if (clientHandler != null) {
-                throw new IllegalStateException("The client payload handler is already installed");
-            }
-            clientHandler = handler;
-        }
-    }
-
-    /** The installed client handler; only client-bound payload handlers call this, and only on a client. */
-    static ClientboundPayloadHandler clientHandler() {
-        ClientboundPayloadHandler handler = clientHandler;
-        if (handler == null) {
-            throw new IllegalStateException("No client payload handler installed: client-bound payload on a server?");
-        }
-        return handler;
     }
 }

@@ -191,9 +191,11 @@ that compiles here.
   both.
 - **Networking is payload-based:** a `record` implementing `CustomPacketPayload` with a `Type` and a `StreamCodec`,
   registered in `RegisterPayloadHandlersEvent` via `PayloadRegistrar#playToClient/playToServer`; the client sends
-  with `ClientPacketDistributor.sendToServer`. Common code registers every payload, and client-bound handlers go
-  through an interface implemented in `client/` ([architecture 17.1](docs/architecture.md#171-rules)); 26.1's
-  client-only `RegisterClientPayloadHandlersEvent` is an open alternative.
+  with `ClientPacketDistributor.sendToServer`. Common code registers every payload, a client-bound one without a
+  handler (`playToClient(type, codec)`); its handler goes into the client-only `RegisterClientPayloadHandlersEvent`
+  under `client/`, and a client-bound payload without one stops the client at startup
+  ([ADR 0027](docs/decisions/0027-client-bound-payload-handlers-through-the-client-event.md),
+  [architecture 17.1](docs/architecture.md#171-rules)).
 - **Data attachments** (`AttachmentType`, registry `NeoForgeRegistries.Keys.ATTACHMENT_TYPES`) store per-entity
   or per-level data such as player stats; use them instead of capabilities or raw NBT. They save through a
   `MapCodec`: `.serialize(CODEC.fieldOf("value"))`. Declared with `.sync(...)`, they are sent on every `setData`;

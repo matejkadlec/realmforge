@@ -2,8 +2,7 @@ package io.github.matejkadlec.realmforge.client;
 
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.client.input.DarkVisionKey;
-import io.github.matejkadlec.realmforge.client.network.ClientPayloadHandler;
-import io.github.matejkadlec.realmforge.network.RealmforgeNetwork;
+import io.github.matejkadlec.realmforge.client.network.ClientPayloadHandlers;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -16,7 +15,7 @@ import net.neoforged.fml.common.Mod;
 @Mod(value = Realmforge.MOD_ID, dist = Dist.CLIENT)
 public final class RealmforgeClient {
     public RealmforgeClient(IEventBus modBus) {
-        RealmforgeNetwork.installClientHandler(new ClientPayloadHandler());
+        ClientPayloadHandlers.register(modBus);
         // Client registration events (HUD layers, key mappings, renderers, screens) are added to modBus here.
         DarkVisionKey.register(modBus);
     }
