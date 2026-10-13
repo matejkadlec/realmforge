@@ -1,18 +1,29 @@
-# Labels, prompts, seeds and costs for the guide UI spike (round 1: RLM-127, round 2: RLM-131; for the decision
-# RLM-116). Generated through the Retro Diffusion MCP server: round 1 on 2026-10-12 (0.42 USD), round 2 on
-# 2026-10-13 (frame_r2/, 0.12 USD).
+# Labels, prompts, seeds and costs for the guide UI spike (round 1: RLM-127, round 2: RLM-131, RD Pro: RLM-134; for
+# the decision RLM-116). Generated through the Retro Diffusion MCP server: round 1 on 2026-10-12 (0.42 USD), round 2
+# on 2026-10-13 (frame_r2/, 0.12 USD), the RD Pro version of round 2's frame d on 2026-10-13 (frame_pro_*/, 0.36 USD).
 # frame/ and icon_*/ hold the generator output exactly as returned. preview_*/ are derived from two frames (no
 # generation cost): see ../README.md for how they were cut. The schema is the one `rf art gallery` reads, but that
 # command cleans every candidate at one width and cannot render this mixed-size folder (README, "Pipeline notes").
 title: Guide UI art spike
 intro: >-
   A pixel-art version of the "modern fantasy hybrid" guide window (dark navy panel, thin gold ornate border,
-  decorated corners, a gold crest on the top edge). Round 2 (frame_r2, first) is four RD Fast frames guided by a
-  clean, symmetric frame built from the mockup's own parts, after Matěj rejected every round 1 frame. Round 1
-  follows: frames from RD Fast and RD Plus, two frames guided by a crop of the mockup's corner, nine-slice and
-  stretched previews, and five 16x16 category icons, which Matěj accepted. Pick a round 2 frame for the RD Pro
-  remake.
+  decorated corners, a gold crest on the top edge). First the RD Pro version of round 2's frame d, which Matěj
+  picked: one RD Pro edit of d and one RD Pro frame drawn from d and the mockup composite. Then round 2: four RD
+  Fast frames guided by a clean, symmetric frame built from the mockup's own parts. Then round 1: frames from RD
+  Fast and RD Plus, two frames guided by a crop of the mockup's corner, nine-slice and stretched previews, and five
+  16x16 category icons, which Matěj accepted. Outcome: Matěj found the RD Pro frames worse than RD Fast and picked
+  round 2's c (rd-fast-c) as the guide frame for now.
 candidates:
+  rd-pro-edit:
+    label: RD Pro edit of d
+    note: >-
+      rd_pro__edit, 256x184, input_image ../reference/frame-d-256.png, reference_images
+      ../reference/frame-composite-256.png, seed 2301, remove_bg; 0.18 USD
+  rd-pro-default:
+    label: RD Pro from d and the mockup
+    note: >-
+      rd_pro__default, 256x184, reference_images ../reference/frame-d-256.png and
+      ../reference/frame-composite-256.png, seed 2301, remove_bg; 0.18 USD
   rd-fast-a:
     label: RD Fast, round 2 a
     note: >-
@@ -59,6 +70,23 @@ candidates:
     label: RD Fast MC Item
     note: rd_fast__mc_item, 16x16, seed 2101, automatic transparency; 0.03 USD each
 subjects:
+  frame_pro_edit:
+    title: Window frame, RD Pro edit of round 2's d, 256x184
+    prompt: >-
+      Keep the exact same composition, size and layout of this game window frame. Redraw it as crisp, clean pixel
+      art: a thin bright gold beveled border line, sharp 45-degree cut corners decorated with fine gold filigree
+      flourishes like the reference, the pointed gold crest with a small blue crystal centered on the top edge, the
+      small gold ornament centered on the bottom edge, small gold diamond studs at the middle of the left and right
+      sides, and a flat very dark navy, almost black, empty panel with no text. Perfectly symmetrical, straight
+      edges, plain white background outside the frame.
+  frame_pro_default:
+    title: Window frame, RD Pro from round 2's d and the mockup composite, 256x184
+    prompt: >-
+      an empty wide horizontal fantasy RPG game window frame seen straight on, exactly like the reference images: a
+      flat very dark navy, almost black, empty rectangular panel framed by a thin bright gold beveled border line,
+      sharp 45-degree cut corners with fine gold filigree flourishes, a pointed gold crest with a small blue crystal
+      centered on the top edge, a small gold ornament centered on the bottom edge, small gold diamond studs at the
+      middle of the left and right sides; no text; perfectly symmetrical, straight edges, on a plain white background
   frame_r2:
     title: Window frame, round 2, 384x272 (guided by the mockup frame)
     prompt: >-

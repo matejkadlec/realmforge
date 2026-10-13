@@ -8,7 +8,7 @@ images before they are processed into game textures. Nothing here is loaded by t
 | --- | --- |
 | `palette/realmforge.gpl` | the project palette (GIMP palette; Aseprite and LibreSprite read it too). Every texture is snapped to it |
 | `spike5/` | spike 5: the same 10 textures from Retro Diffusion and PixelLab, and their review gallery ([README](spike5/README.md)) |
-| `spike-guide-ui/` | guide UI spike: window frames in two rounds and category icons from Retro Diffusion Fast and Plus, nine-slice previews ([README](spike-guide-ui/README.md)) |
+| `spike-guide-ui/` | guide UI spike: window frames (two RD Fast rounds and an RD Pro version) and category icons from Retro Diffusion, nine-slice previews ([README](spike-guide-ui/README.md)) |
 
 Texture pipeline ([ADR 0007](../docs/decisions/0007-asset-pipeline.md),
 [ADR 0023](../docs/decisions/0023-texture-generator.md)):
