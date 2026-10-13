@@ -19,6 +19,8 @@ modpack adds third-party QoL, performance and library mods.
   Hytale) with Adopt / Adapt / Avoid recommendations by ID (`RE-9`, `DU-4`, …) that tickets cite.
 - **Design:** [docs/design/](docs/design/README.md): game design documents written from Matěj's decisions (the
   realms, the realm portal, the in-game guide), each with its open questions for him.
+- **Lore:** [docs/lore/](docs/lore/README.md): the story outline (the Gatewrights, the Chain of Seals, the realms'
+  peoples, chapter 1's beats) and the style guide that every player-facing text follows.
 - **Architecture:** [docs/architecture.md](docs/architecture.md): how the core mod is built (feature packages,
   registries, data flow from YAML into the game, player state, stats, networking, client isolation). Read the
   sections for the system you touch before writing code.
@@ -119,7 +121,7 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 | `dev/` | dev client defaults: `options.txt`, seeded into `run/client` by `seedDevOptions` | yes |
 | `pack/` | packwiz modpack definition (metadata only, no jars) | via `packwiz` commands |
 | `art/` | asset sources: the project palette, generator candidates, prompts, Blockbench files | yes |
-| `docs/` | vision, architecture, roadmap, design documents, research, research notes, ADRs, dev setup | yes |
+| `docs/` | vision, architecture, roadmap, design documents, lore, research, research notes, ADRs, dev setup | yes |
 | `.github/workflows/ci.yml` | CI | yes |
 | `git_clean_worktrees.sh` | Matěj's cleanup of merged branches, their worktrees and worktree residue ([README](README.md#git-worktree-cleanup)) | yes |
 | `tests/` | shell test suites: the worktree cleanup's safety regression suite, the Gradle queue's warm-up suite | yes |
@@ -142,7 +144,8 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 4. **English everywhere in the repo**: code, comments, docs, commits, PRs, issues. Player-facing text is
    `LocalizedText`: `en_us` required, `cs_cz` optional.
 5. **The in-game world is called Realmforge.** Use this name whenever lore, quests, item or book texts, or
-   dialogs refer to the game world.
+   dialogs refer to the game world. Every player-facing text follows the
+   [lore style guide](docs/lore/style.md), and new story goes into the [lore outline](docs/lore/outline.md) first.
 6. **Never invent APIs.** Training data mixes Minecraft versions and loaders (Forge 1.20, Fabric, 1.21.1, 26.2+).
    Before using a Minecraft or NeoForge class or method, find it in `build/mc-sources/` (run
    `./gradlew :mod:extractMinecraftSources` once per checkout; it unpacks the game's and NeoForge's sources) and

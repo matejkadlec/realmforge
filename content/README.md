@@ -19,7 +19,8 @@ Rules:
   validated against the ID universe (`tools/id_universe/`) plus our own content. Lists of ids must not repeat
   an entry (e.g. the same creative tab twice crashes the game).
 - Player-facing texts are `LocalizedText`: `en_us` is required, `cs_cz` is optional. In lore and texts the
-  in-game world is always called **Realmforge**.
+  in-game world is always called **Realmforge**, and every text follows the
+  [lore style guide](../docs/lore/style.md).
 - **Labels use Title Case** (Matěj, 2026-10-13), for readability: names (items, stats, spells, mobs, realms),
   key mapping names, setting names, screen, button and tab titles, guide chapter and section names, and short
   status messages: `Dark Vision On`, `Toggle Dark Vision`, `Character Sheet`. Every word starts with a capital
