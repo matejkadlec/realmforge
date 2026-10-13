@@ -351,6 +351,29 @@ def test_modifier_ids_end_with_the_rule_path() -> None:
     assert model.modifier_id("at_25_1") == "realmforge:stat/realmforge/at_25_1/r"
 
 
+def test_a_cap_too_far_to_reach_adds_no_sample() -> None:
+    model = rule_model(
+        {
+            "per_point": [
+                {"attribute": "minecraft:armor", "operation": "add_value", "amount": 1e-200, "max": 1e200},
+                {"attribute": "minecraft:luck", "operation": "add_value", "amount": 1e-300, "max": 1e300},
+            ]
+        }
+    )
+    # Both thresholds (1e400, 1e600) overflow a double, which used to crash rf gen in math.ceil.
+    assert sample_values(model) == [0.0, 1.0, 12.5]
+
+
+def test_far_caps_still_generate(repo: RepoPaths) -> None:
+    rule(
+        repo,
+        "strength",
+        "stat: realmforge:strength\nper_point:\n"
+        "  - {attribute: minecraft:armor, operation: add_value, amount: 1.0e-200, max: 1.0e+200}\n",
+    )
+    assert "new StatRuleExpectation(" in generate(repo)[EXPECTATIONS].decode()
+
+
 def test_samples_cover_zero_both_sides_of_milestones_and_past_caps() -> None:
     model = rule_model(
         {

@@ -30,13 +30,16 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
 
 def sample_values(rule: StatRuleDef) -> list[float]:
     """Stat values at which the GameTest compares the game's bonuses with ``StatRuleDef.bonuses_at``: none, one
-    point, a fraction, both sides of every milestone, and past every cap."""
+    point, a fraction, both sides of every milestone, and past every cap a double can reach (a cap so far away that
+    its threshold overflows is left out)."""
     values = {0.0, 1.0, 12.5}
     for milestone in rule.milestones:
         values |= {float(milestone.points - 1), float(milestone.points)}
     for entry in rule.per_point:
         if entry.game_max is not None:
-            values.add(float(math.ceil(entry.game_max / entry.game_amount) + 10))
+            threshold = entry.game_max / entry.game_amount
+            if math.isfinite(threshold):
+                values.add(math.ceil(threshold) + 10.0)
     return sorted(values)
 
 
