@@ -34,8 +34,6 @@
   "gui.realmforge.character_sheet": "Character",
   "gui.realmforge.combat_stats": "Combat",
   "gui.realmforge.primary_stats": "Primary Stats",
-  "gui.realmforge.school_power": "Power",
-  "gui.realmforge.school_resistance": "Resistance",
   "gui.realmforge.secondary_stats": "Secondary Stats",
   "gui.realmforge.spell_schools": "Spell Schools",
   "gui.realmforge.stat_bonus": "%1$s %2$s",

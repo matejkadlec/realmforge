@@ -13,10 +13,6 @@ texts:
     en_us: Combat
   spell_schools:
     en_us: Spell Schools
-  school_power:
-    en_us: Power
-  school_resistance:
-    en_us: Resistance
   # A bonus a primary stat gives: "+25% Attack Damage" (%1$s the amount, %2$s the attribute).
   stat_bonus:
     en_us: "%1$s %2$s"

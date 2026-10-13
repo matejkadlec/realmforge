@@ -17,12 +17,6 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.primary_stats} from {@code content/texts/gui.yaml}: "Primary Stats" */
     public static final String GUI_PRIMARY_STATS = "gui.realmforge.primary_stats";
 
-    /** {@code gui.realmforge.school_power} from {@code content/texts/gui.yaml}: "Power" */
-    public static final String GUI_SCHOOL_POWER = "gui.realmforge.school_power";
-
-    /** {@code gui.realmforge.school_resistance} from {@code content/texts/gui.yaml}: "Resistance" */
-    public static final String GUI_SCHOOL_RESISTANCE = "gui.realmforge.school_resistance";
-
     /** {@code gui.realmforge.secondary_stats} from {@code content/texts/gui.yaml}: "Secondary Stats" */
     public static final String GUI_SECONDARY_STATS = "gui.realmforge.secondary_stats";
 
