@@ -36,6 +36,10 @@ FORMATS = {".nbt": "nbt", ".schem": "schem", ".litematic": "litematic"}
 # Keys Sponge and Litematica keep in block entity data for the block's position and type. A template stores the
 # position in the block entry and the type as ``id``, so they are dropped.
 _BLOCK_ENTITY_POSITION_KEYS = frozenset({"Id", "Pos", "x", "y", "z"})
+# Litematica schematic versions the reader understands. Version 5 is the first with Minecraft 1.13.2 block states;
+# older ones store 1.12 states (version 1 also wraps block entities in TileNBT and entities in EntityData), which
+# only Litematica itself converts. Version 7 is the newest (Litematica for 1.21).
+_LITEMATICA_VERSIONS = range(5, 8)
 _MASK_64 = (1 << 64) - 1
 
 
@@ -157,6 +161,19 @@ def structure_from_litematic(root: dict[str, Any]) -> SourceRoom:
     be negative (it then extends from its position towards smaller coordinates); positions no region covers stay
     empty, so the template leaves the world there as it is. Litematica stores block entities relative to a region's
     lowest corner and entities relative to its position."""
+    version = root.get("Version")
+    if not isinstance(version, nbt.Int):
+        raise StructureError("the schematic states no Litematica Version")
+    if version.value not in _LITEMATICA_VERSIONS:
+        first, last = _LITEMATICA_VERSIONS[0], _LITEMATICA_VERSIONS[-1]
+        older = (
+            "it stores Minecraft 1.12 block states; open it in a current Litematica and save it again"
+            if version.value < first
+            else "it is newer than this reader"
+        )
+        raise StructureError(
+            f"Litematica schematic version {version.value} is not supported ({first} to {last}): {older}"
+        )
     regions = root.get("Regions")
     if not isinstance(regions, dict) or not regions:
         raise StructureError("the schematic has no regions")

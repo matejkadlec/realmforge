@@ -82,8 +82,9 @@ Dungeon rooms are structure templates in `content/rooms/` with a YAML sidecar ea
 the jar.
 
 **`rf rooms import SRC... --to DIR`** turns room files into rooms: vanilla structure templates (`.nbt`), Sponge
-schematics (`.schem`, versions 1 to 3, as WorldEdit saves them) and Litematica schematics (`.litematic`; several
-regions merge into one room). A folder imports every room file below it, keeping its subfolders. Each file becomes
+schematics (`.schem`, versions 1 to 3, as WorldEdit saves them) and Litematica schematics (`.litematic`, versions 5
+to 7, Minecraft 1.13.2 and later; several regions merge into one room; an older file is refused, because it holds
+1.12 block states that only Litematica converts: open it there and save it again). A folder imports every room file below it, keeping its subfolders. Each file becomes
 `DIR/<name>.nbt`, the normalized template (blocks sorted, keys sorted, stored deflate, so equal rooms give equal
 bytes), and `DIR/<name>.yaml`, a draft sidecar that records the source file, its format and its data version and
 leaves `pools` and `tags` empty for retagging (A4c). A re-import keeps the sidecar's pools, tags and weight. A room

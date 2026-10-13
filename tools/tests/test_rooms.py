@@ -385,8 +385,37 @@ def test_litematic_with_short_block_states_is_refused(tmp_path: Path) -> None:
         "BlockStates": nbt.LongArray((0,)),
     }
     path = tmp_path / "short.litematic"
-    path.write_bytes(gzip_stored(nbt.encode({"Regions": {"r": region}})))
+    path.write_bytes(gzip_stored(nbt.encode({"Version": nbt.Int(7), "Regions": {"r": region}})))
     with pytest.raises(StructureError, match="shorter than the region"):
+        read_source(path)
+
+
+@pytest.mark.parametrize(
+    ("root", "message"),
+    [
+        (
+            {"Version": nbt.Int(1)},
+            "version 1 is not supported \\(5 to 7\\): it stores Minecraft 1.12 block states",
+        ),
+        ({"Version": nbt.Int(4)}, "version 4 is not supported"),
+        ({"Version": nbt.Int(8)}, "version 8 is not supported \\(5 to 7\\): it is newer than this reader"),
+        ({}, "states no Litematica Version"),
+    ],
+)
+def test_litematic_versions_outside_5_to_7_are_refused(tmp_path: Path, root: dict, message: str) -> None:
+    # Version 1 wraps block entities in TileNBT; reading it as a current file would drop their data silently.
+    region = {
+        "Position": _int_xyz(0, 0, 0),
+        "Size": _int_xyz(1, 1, 1),
+        "BlockStatePalette": nbt.NbtList(nbt.TAG_COMPOUND, ({"Name": "minecraft:chest"},)),
+        "BlockStates": nbt.LongArray((0,)),
+        "TileEntities": nbt.NbtList(
+            nbt.TAG_COMPOUND, ({**_int_xyz(0, 0, 0), "TileNBT": {"id": "minecraft:chest"}},)
+        ),
+    }
+    path = tmp_path / "old.litematic"
+    path.write_bytes(gzip_stored(nbt.encode({**root, "Regions": {"r": region}})))
+    with pytest.raises(StructureError, match=message):
         read_source(path)
 
 
