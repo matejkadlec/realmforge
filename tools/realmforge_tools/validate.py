@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import difflib
+import math
 from pathlib import PurePosixPath
 
 from realmforge_tools.content import Content, load_content
@@ -127,6 +128,18 @@ def _check_stat_rules(content: Content, universe: IdUniverse) -> list[Problem]:
                 )
             )
         rule_of_stat.setdefault(rule.stat, entry.source)
+        if stat is not None and stat.kind == "primary":
+            # A stat never exceeds its maximum, so an uncapped total stays finite up to there or never.
+            for n, per_point in enumerate(rule.per_point):
+                if per_point.game_max is None and not math.isfinite(per_point.game_amount * stat.game_max):
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            f"per_point.{n}",
+                            f"the amount overflows a double at {rule.stat}'s maximum ({stat.game_max:g} points); "
+                            "lower it or give it a cap",
+                        )
+                    )
 
         for path, modifier in rule.modifiers():
             location = f"{path}.attribute"

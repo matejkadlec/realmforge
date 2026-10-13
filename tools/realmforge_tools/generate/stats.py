@@ -28,10 +28,11 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     }
 
 
-def sample_values(rule: StatRuleDef) -> list[float]:
+def sample_values(rule: StatRuleDef, stat_max: float | None = None) -> list[float]:
     """Stat values at which the GameTest compares the game's bonuses with ``StatRuleDef.bonuses_at``: none, one
-    point, a fraction, both sides of every milestone, and past every cap a double can reach (a cap so far away that
-    its threshold overflows is left out)."""
+    point, a fraction, both sides of every milestone, and past every cap, as far as the stat reaches: up to its
+    maximum ``stat_max``, where validation keeps every total finite (a cap whose threshold overflows a double is left
+    out too)."""
     values = {0.0, 1.0, 12.5}
     for milestone in rule.milestones:
         values |= {float(milestone.points - 1), float(milestone.points)}
@@ -40,11 +41,15 @@ def sample_values(rule: StatRuleDef) -> list[float]:
             threshold = entry.game_max / entry.game_amount
             if math.isfinite(threshold):
                 values.add(math.ceil(threshold) + 10.0)
+    if stat_max is not None:
+        values = {value for value in values if value <= stat_max}
     return sorted(values)
 
 
 def _double(value: float) -> str:
     """A Java double literal; repr() gives the shortest text that reads back as the same double."""
+    if not math.isfinite(value):
+        raise ValueError(f"{value} has no Java double literal; validation should have refused the content")
     return repr(float(value))
 
 
@@ -120,9 +125,10 @@ def _stat_rows(content: Content) -> str:
 
 def _rule_rows(content: Content) -> str:
     rows = []
+    stat_max = {f"{MOD_ID}:{entry.model.id}": entry.model.game_max for entry in content.stats}
     for rule in (entry.model for entry in content.stat_rules):
         samples = []
-        for value in sample_values(rule):
+        for value in sample_values(rule, stat_max.get(rule.stat)):
             bonuses = ", ".join(
                 f"new Bonus({string_literal(id_)}, {string_literal(attribute)}, {string_literal(operation)}, "
                 f"{_double(amount)})"

@@ -387,6 +387,33 @@ def test_a_cap_too_far_to_reach_adds_no_sample() -> None:
     assert sample_values(model) == [0.0, 1.0, 12.5]
 
 
+def test_samples_stay_within_the_stats_maximum() -> None:
+    model = rule_model(
+        {
+            "per_point": [{"attribute": "minecraft:armor", "operation": "add_value", "amount": 1}],
+            "milestones": [
+                {
+                    "points": 50,
+                    "modifiers": [{"attribute": "minecraft:armor", "operation": "add_value", "amount": 1}],
+                }
+            ],
+        }
+    )
+    assert sample_values(model) == [0.0, 1.0, 12.5, 49.0, 50.0]
+    assert sample_values(model, 20.0) == [0.0, 1.0, 12.5]
+
+
+def test_an_uncapped_amount_must_stay_finite_at_the_stats_maximum(repo: RepoPaths) -> None:
+    rule(repo, "strength", per_point("minecraft:armor", "amount: 1.0e+308"))
+    assert_problem(repo, "per_point.0: the amount overflows a double at realmforge:strength's maximum")
+
+
+def test_a_capped_huge_amount_is_fine(repo: RepoPaths) -> None:
+    # The cap bounds the total, in the game (Math.min) and in the pipeline.
+    rule(repo, "strength", per_point("minecraft:armor", "amount: 1.0e+308, max: 5"))
+    assert "new StatRuleExpectation(" in generate(repo)[EXPECTATIONS].decode()
+
+
 def test_far_caps_still_generate(repo: RepoPaths) -> None:
     rule(
         repo,
