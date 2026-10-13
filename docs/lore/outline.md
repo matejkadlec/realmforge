@@ -8,9 +8,9 @@
 > the rules Matěj has decided and forces none he has not; where a line would, it waits under
 > [Open questions](#open-questions). Every name here is a proposal until Matěj approves the outline
 > (RLM-139). How texts use it: the [style guide](style.md). Where RLM-128 changed the portal spec (the unlock
-> comes from the realm's quest, travel links portals like the Nether's instead of arriving at a landing,
-> respawn is always in the Overworld), the spec and the realm design still describe the earlier proposal; they
-> record the decision when RLM-128 closes, which W2 (RLM-32) waits for.
+> comes from the realm's quest, portals link like the Nether's with scaled coordinates instead of arriving at a
+> landing, respawn is always in the Overworld), the spec and the realm design still describe the earlier
+> proposal; they record the decision when RLM-128 closes, which W2 (RLM-32) waits for.
 
 ## At a glance
 
@@ -297,6 +297,7 @@ Decided rules that a line of lore makes feel natural. Texts may use these lines;
 | Level cap per chapter, raised when the chapter is done (D2) | the seals bind strength as well as realms, so nobody could grow strong enough to break one by force; the bond loosens once every trial of a chapter is passed (both guardians of twin realms) |
 | Sigils are never used up; one sigil opens any number of portals (RLM-128) | a sigil is a key, not a toll |
 | Unlocks are per player; a sigil without the player's own unlock does nothing (RLM-128) | the seal knows a traveller by their deeds |
+| Portals link like the Nether's, with scaled coordinates, so arrivals stay near a realm's origin (RLM-128) | none needed: texts never explain where a portal leads inside a realm |
 | Only players travel through realm portals (RLM-128, "for now") | the gates pass a living traveller and what they carry, nothing that walks or drifts on its own |
 | The next sigil is crafted from the current realm (RE-9) | the guardian holds the shards of the seals after it |
 | No flying bosses (vision) | the forge-drakes' iron wings are too heavy to fly |
@@ -306,8 +307,6 @@ Decided rules that a line of lore makes feel natural. Texts may use these lines;
 
 The outline forces none of these; each is decided elsewhere, and the lore follows whatever is decided:
 
-- **Arrival in a realm** (RLM-128's open question: scaled coordinates, levels by sub-region, or a clamped arrival).
-  The lore says nothing about where a portal leads inside a realm or why some areas are more dangerous.
 - **The Void realm on the main path or after the story** (RLM-95). The finale assumes the main path; see
   [open question 3](#open-questions).
 - **The hub as a place.** Portals can stand anywhere in the Overworld (RLM-128), so the Lodge is a voice and a
