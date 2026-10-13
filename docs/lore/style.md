@@ -88,7 +88,8 @@ for the story around it.
 
 ### Name rules
 
-- **Pronounceable on first read.** One to three syllables per part, no apostrophes, no accents in `en_us` names.
+- **Pronounceable on first read.** One to three syllables per part, no accents in `en_us` names, and no
+  apostrophes inside invented words (a plain English possessive, as in the Wayfarers' Lodge, is fine).
 - **One name per thing,** the same in every text. A name that changes is a bug.
 - **Places:** one English compound (the Undervault) or "the <adjective or noun> <noun>" (the Scribe in the Stone).
 - **Never:**
