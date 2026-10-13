@@ -7,7 +7,10 @@
 > RE-18, RE-20). The story stays in the background: it gives quests, bosses and items a reason to exist. It explains
 > the rules Matěj has decided and forces none he has not; where a line would, it waits under
 > [Open questions](#open-questions). Every name here is a proposal until Matěj approves the outline
-> (RLM-139). How texts use it: the [style guide](style.md).
+> (RLM-139). How texts use it: the [style guide](style.md). Where RLM-128 changed the portal spec (the unlock
+> comes from the realm's quest, travel links portals like the Nether's instead of arriving at a landing,
+> respawn is always in the Overworld), the spec and the realm design still describe the earlier proposal; they
+> record the decision when RLM-128 closes, which W2 (RLM-32) waits for.
 
 ## At a glance
 
