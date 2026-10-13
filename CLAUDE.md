@@ -123,7 +123,7 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 | `qa-mod/` | dev-only mod `realmforge_qa` (GameTests, later debug tools); never released | `src/main` |
 | `qa-mod/src/generated/` | content expectations for GameTests, GameTest structures from `rf gen` | **no** |
 | `dev/` | dev client defaults: `options.txt`, seeded into `run/client` by `seedDevOptions` | yes |
-| `pack/` | packwiz modpack definition (metadata only, no jars) | via `packwiz` commands |
+| `pack/` | packwiz metadata and config overrides (`config/`), no jars | metadata via `packwiz` commands; `config/` by hand ([procedure](pack/README.md#configuration)), then `packwiz refresh` |
 | `art/` | asset sources: the project palette, generator candidates, prompts, Blockbench files | yes |
 | `docs/` | vision, architecture, roadmap, design documents, lore, research, research notes, ADRs, dev setup | yes |
 | `.github/workflows/ci.yml` | CI | yes |
@@ -159,12 +159,13 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
    Docs: https://docs.neoforged.net/docs/gettingstarted/ (the unversioned docs are 26.1's; make sure the page says
    26.1), and the 1.21.x to 26.1 porting primer at https://docs.neoforged.net/primer/docs/26.1/.
 7. **Dev-only code goes into `qa-mod/`**, never into the core mod. GameTests live there too.
-8. **No third-party jars in the repo.** The pack is packwiz metadata only. Never copy third-party code unless its
-   license allows it (Spell Engine is GPL-3.0-only, Explorer's Compass CC BY-NC-SA: no reuse). Third-party rooms
-   are copied only under MIT, CC0 or LGPL-3.0, each source in its own folder with its license and notice; never
-   Stardust Labs content ([ADR 0028](docs/decisions/0028-dungeon-rooms-generated-or-imported.md)). No vanilla
-   texture files or recolors of them in our assets, and none as input for generating our textures. Vanilla blocks
-   in our structures, and renders or screenshots of them, are fine.
+8. **No third-party jars in the repo.** The pack is packwiz metadata and config overrides (`config/`). Never copy
+   third-party code unless its license allows it (Spell Engine is GPL-3.0-only, Explorer's Compass CC BY-NC-SA: no
+   reuse). Third-party rooms are copied only under MIT, CC0 or LGPL-3.0, each source in its own folder with its
+   license and notice; never Stardust Labs content
+   ([ADR 0028](docs/decisions/0028-dungeon-rooms-generated-or-imported.md)). No vanilla texture files or recolors
+   of them in our assets, and none as input for generating our textures. Vanilla blocks in our structures, and
+   renders or screenshots of them, are fine.
 9. **Licenses:** the mod (`mod/`, `qa-mod/`, `tools/`, everything in the jar) is MPL-2.0 for code and CC BY 4.0
    for assets, except imported third-party rooms, which keep their own licenses; the modpack (`pack/`) is All
    Rights Reserved ([ADR 0009](docs/decisions/0009-licensing.md),
