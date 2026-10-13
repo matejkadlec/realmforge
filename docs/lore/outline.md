@@ -57,7 +57,7 @@ line is the **Chain of Seals**, and it is built into the seals themselves:
 | One **gate design** for every realm | one portal frame, with the realm selector as its keystone |
 | Each sealed realm's **guardian** holds a **shard** for each seal it opens (two when twin realms follow) | the main-path boss drops, at 100%, one material per realm it opens, two for chapter 2 (RE-9, [realm portal](../design/realm-portal.md)) |
 | A sigil is forged from a realm's own ore and the guardian's shard | the next sigil is crafted from the current realm's ore or gem and that drop |
-| The seal knows a traveller by their deeds, not by the sigil in their hand | per-player unlock through the realm's unlock quest; holding someone else's sigil does not let a player through (RLM-128) |
+| The seal knows a traveler by their deeds, not by the sigil in their hand | per-player unlock through the realm's unlock quest; holding someone else's sigil does not let a player through (RLM-128) |
 | **Twin seals:** some realms were forged as a pair, and the next seal needs both shards | a two-realm chapter: the next main-path sigil needs both realms' boss drops |
 | **Branch seals:** small realms hang off the chain like charms | optional side realms, whose sigil comes from a realm on the main path |
 | The Void lies past the end of the chain, however long it grows | the Void realm is always the last realm; a new realm joins the chain before it |
@@ -266,7 +266,7 @@ of the systems M1 builds. The order, the counts and the rewards are Q2's to set.
 | 1 | A Letter from the Lodge | Overworld | opens the quest book; has chosen a class | Maren welcomes a new Wayfarer and explains the warm gate stones |
 | 2 | The Wild Is Wide | Overworld | kills a few hostile mobs; gains levels | the Lodge wants to know the newcomer can handle themselves |
 | 3 | A Spark in the Hand | Overworld | casts class spells | Maren on the old crafts of fighting and casting |
-| 4 | What You Learn | Overworld | learns a talent | everyone in the Lodge has a speciality |
+| 4 | What You Learn | Overworld | learns a talent | everyone in the Lodge has a specialty |
 | 5 | Stone and Copper | Overworld | gathers stone bricks and copper | the Gatewrights built gates from plain stone; Maren has the plan |
 | 6 | Portal Stone | Overworld | crafts Portal Stone | the plan's first page |
 | 7 | The Keystone | Overworld | crafts the realm selector | the gate's heart: a stone that remembers where it leads |
@@ -294,13 +294,13 @@ Decided rules that a line of lore makes feel natural. Texts may use these lines;
 | Rule (source) | Lore |
 | --- | --- |
 | Respawn always at the bed in the Overworld or at world spawn, never in a realm (RLM-128) | Realmforge's oldest magic is the pull of home: the Gatewrights made sure nobody who falls beyond a seal is lost there |
-| Keep inventory on death (vision) | the pull of home brings back what the traveller carried, too |
-| "Return to last death" scroll (RLM-128) | a scroll that follows the thread the traveller's spirit left on the way home |
+| Keep inventory on death (vision) | the pull of home brings back what the traveler carried, too |
+| "Return to last death" scroll (RLM-128) | a scroll that follows the thread the traveler's spirit left on the way home |
 | Level cap per chapter, raised when the chapter is done (D2) | the seals bind strength as well as realms, so nobody could grow strong enough to break one by force; the bond loosens once every trial of a chapter is passed (both guardians of twin realms) |
 | Sigils are never used up; one sigil opens any number of portals (RLM-128) | a seal asks for its sigil every time and never takes it: a sigil is shown, not paid |
-| Unlocks are per player: without their own unlock, a player can neither open nor switch a portal to that realm with its sigil, nor pass through an open one (RLM-128) | the seal knows a traveller by their deeds |
+| Unlocks are per player: without their own unlock, a player can neither open nor switch a portal to that realm with its sigil, nor pass through an open one (RLM-128) | the seal knows a traveler by their deeds |
 | Portals link like the Nether's, with scaled coordinates, so arrivals stay near a realm's origin (RLM-128) | none needed: texts never explain where a portal leads inside a realm |
-| Only players travel through realm portals (RLM-128, "for now") | the gates pass a living traveller and what they carry, nothing that walks or drifts on its own |
+| Only players travel through realm portals (RLM-128, "for now") | the gates pass a living traveler and what they carry, nothing that walks or drifts on its own |
 | The next sigil is crafted from the current realm (RE-9) | the guardian holds the shards of the seals after it |
 | No flying bosses (vision) | the forge-drakes' iron wings are too heavy to fly |
 | Every realm has its own light (RE-18) | the Gatewrights forged light into every realm, the Brink's violet glow included |
