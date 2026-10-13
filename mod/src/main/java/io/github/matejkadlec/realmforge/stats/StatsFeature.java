@@ -5,6 +5,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.event.lifecycle.FMLConstructModEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
@@ -20,8 +21,8 @@ public final class StatsFeature {
 
     /** Registers the feature's registries and event listeners. Called once from {@code Realmforge}. */
     public static void register(IEventBus modBus) {
-        // Vanilla's attribute caps, raised before any entity exists (architecture 8.4).
-        AttributeCaps.raise();
+        // Vanilla's attribute caps, raised once every mod is constructed, before any entity exists (architecture 8.4).
+        modBus.addListener(FMLConstructModEvent.class, event -> event.enqueueWork(AttributeCaps::raise));
         // Attributes generated from content/stats/ (mod/src/generated, never edit by hand).
         GeneratedStats.register(modBus);
         StatsAttachments.register(modBus);

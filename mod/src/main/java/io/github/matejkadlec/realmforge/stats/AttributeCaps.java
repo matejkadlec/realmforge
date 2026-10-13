@@ -38,8 +38,11 @@ public final class AttributeCaps {
 
     /**
      * Raises the caps in {@link #RAISED}, never lowering one that another mod raised further. Called once from
-     * {@code StatsFeature} while the mod is constructed: vanilla registered its attributes before any mod, and no
-     * entity exists yet. It runs on the client and on the server alike, as each clamps attribute values itself.
+     * {@code StatsFeature} as deferred work of mod construction ({@code FMLConstructModEvent#enqueueWork}): FML
+     * constructs mods in parallel and runs the deferred work serially on the main thread after every constructor, so
+     * a cap another mod raised in its constructor is visible here, and two mods' checks cannot interleave. Vanilla
+     * registered its attributes before any mod, and no entity exists yet. It runs on the client and on the server
+     * alike, as each clamps attribute values itself.
      */
     static void raise() {
         for (Raised raised : RAISED) {
