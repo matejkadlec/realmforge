@@ -17,9 +17,9 @@
 - **Realmforge** is the world, and its name is its history: it was forged. Long ago its makers, the
   **Gatewrights**, split a world the **Void** was eating into separate **realms**, each forged around one element,
   and chained them in a line between the Overworld and the Void.
-- **The Chain of Seals** keeps that line: every realm is sealed, and the shard that forges each next realm's
-  **sigil** is held by the **guardian** of the realm before it. That is why the realms open one by one, in order,
-  and why the Void realm is always the last.
+- **The Chain of Seals** keeps that line: every realm beyond the Overworld is sealed. The first **sigil** is an old
+  relic the Lodge has kept; every later one is forged from a shard held by the **guardian** of the realm before it.
+  That is why the realms open one by one, in order, and why the Void realm is always the last.
 - **The player** is a newcomer whom the **Wayfarers' Lodge**, a society of explorers and scholars, sends to walk
   the chain: earn each realm's passage, pass each guardian's trial, carry each shard onwards.
 - **The finale (proposed, [open question 3](#open-questions))** waits in the Void realm, where the last seal has
@@ -47,14 +47,14 @@ The Gatewrights called their work, and the world it made, **Realmforge**.
 
 ### The Chain of Seals
 
-The Gatewrights sealed every realm and made one gate design to open them all. The order of the line is the
-**Chain of Seals**, and it is built into the seals themselves:
+The Gatewrights sealed every realm but the Overworld and made one gate design to open them all. The order of the
+line is the **Chain of Seals**, and it is built into the seals themselves:
 
 | Lore | What it is in the game |
 | --- | --- |
 | A realm's **seal** opens only to its **sigil** | the realm portal opens onto a realm when its sigil is used on the realm selector ([realm portal](../design/realm-portal.md)) |
 | One **gate design** for every realm | one portal frame, with the realm selector as its keystone |
-| Each realm's **guardian** holds a **shard** for each seal it opens (two when twin realms follow) | the main-path boss drops, at 100%, one material per realm it opens, two for chapter 2 (RE-9, [realm portal](../design/realm-portal.md)) |
+| Each sealed realm's **guardian** holds a **shard** for each seal it opens (two when twin realms follow) | the main-path boss drops, at 100%, one material per realm it opens, two for chapter 2 (RE-9, [realm portal](../design/realm-portal.md)) |
 | A sigil is forged from a realm's own ore and the guardian's shard | the next sigil is crafted from the current realm's ore or gem and that drop |
 | The seal knows a traveller by their deeds, not by the sigil in their hand | per-player unlock through the realm's unlock quest; holding someone else's sigil does not let a player through (RLM-128) |
 | **Twin seals:** some realms were forged as a pair, and the next seal needs both shards | a two-realm chapter: the next main-path sigil needs both realms' boss drops |
