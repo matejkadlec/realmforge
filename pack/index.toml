@@ -1,6 +1,10 @@
 hash-format = "sha256"
 
 [[files]]
+file = "config/waystones-common.toml"
+hash = "ed3365781af0dadc1f8d85883970be0bf0ce36c482b83fe36ec25e531a65b28e"
+
+[[files]]
 file = "mods/appleskin.pw.toml"
 hash = "465c5bb547d0b9f87b7573a64f09571d64d3ff43acf2e632f04bd0a6631faf77"
 metafile = true

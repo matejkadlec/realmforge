@@ -3,7 +3,7 @@
 Date: 2026-10-11
 
 Status: Accepted; composition updated 2026-10-12 for the port to Minecraft 26.1.2
-([0026](0026-platform-minecraft-26-1-2-neoforge.md), RLM-124)
+([0026](0026-platform-minecraft-26-1-2-neoforge.md), RLM-124); config overrides added 2026-10-13 (RLM-132)
 
 ## Context
 
@@ -11,7 +11,7 @@ The modpack wraps our core mod with third-party QoL, UI, performance and library
 
 ## Decision
 
-- **packwiz** defines the pack in `pack/` (metadata only). Players and Prism install it with packwiz-installer. Mods come from Modrinth where possible and from CurseForge when they are CurseForge-only.
+- **packwiz** defines the pack in `pack/` (metadata and config overrides only). Players and Prism install it with packwiz-installer. Mods come from Modrinth where possible and from CurseForge when they are CurseForge-only.
 - **Mods** (all with NeoForge 26.1.2 builds, checked on 2026-10-12; dependencies are pulled by packwiz):
   - QoL and UI: Jade, Jade Addons, JEI, JEED, Enchantment Descriptions, Mouse Tweaks, AppleSkin, Overflowing Bars, TrashSlot, Just Zoom, Neat, Toast Control, No Recipe Book, Yeetus Experimentus (added 2026-10-12 by RLM-84: skips the experimental-settings warning our data pack dimensions cause on every new world, [architecture 15.1](../architecture.md#151-dimensions)).
   - Map and travel: Xaero's Minimap, Xaero's World Map, Waystones.
@@ -30,6 +30,7 @@ The modpack wraps our core mod with third-party QoL, UI, performance and library
 - **Pinned render stack:** Sodium 0.9.2 + Iris 1.11.4 + Distant Horizons 3.3.3, all releases on 26.1.2 (1.21.1 had Sodium 0.6.13 + Iris 1.8.12, the stable pair of that version). These three change only together and only after a test with a DH-capable shaderpack.
 - **Release channels:** releases only, except Regions Unexplored 0.7.0-beta2 and FTB Teams 26.1.2.4, which have no 26.1.2 release (pack README).
 - **Sides are set per mod** in each `.pw.toml`: client for rendering and UI-only mods (Sodium, Iris, Distant Horizons, ImmediatelyFast, EntityCulling, Xaero's maps, Neat, Toast Control, No Recipe Book, Just Zoom, Mouse Tweaks, Overflowing Bars, JEED, Enchantment Descriptions, Yeetus Experimentus); both for everything that adds content, syncs data or is a library. Tree Harvester only runs on the server but is installed on both sides, because singleplayer runs an integrated server.
+- **Config overrides** go into `pack/config/`, each the mod's own file as the game writes it with only the pack's values changed, listed with their reasons in the [pack README](../../pack/README.md#configuration). The first one (2026-10-13, RLM-132) keeps waystone warps cheap: no warp costs XP (Waystones 26.1.2.16 charges up to 27 XP points by distance, and a flat 27 for a warp to another dimension), and every player may make their own waystone global.
 - `packwiz refresh` must leave the committed index unchanged (CI check).
 
 ## Consequences
