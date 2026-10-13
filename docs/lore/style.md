@@ -35,7 +35,8 @@
 | --- | --- | --- | --- |
 | Quest title | Title Case, like vanilla advancements; no end punctuation | 1–5 words | Raise the Gate |
 | Quest description | the giver's voice, then what to do; the task list comes from data | 1–3 sentences, at most 50 words | "The plan shows a frame of plain stone around one keystone. Stand it up somewhere you can find again." Maren |
-| Item, block or mob name | Title Case, like vanilla; no flavour in the name | 1–3 words | Portal Stone |
+| Item, block or mob type name | Title Case, like vanilla; no flavour in the name | 1–3 words | Portal Stone |
+| Character name (a unique NPC or boss) | a name, a title, or both ([Names](#names)) | 1–6 words | Torva Flintmark, the Scribe in the Stone |
 | Flavour line (item tooltip lore) | one sentence, no mechanics | at most 12 words | "Warm to the touch, though nothing near it burns." |
 | Mechanics in a tooltip | generated from data, never written in prose | - | - |
 | Realm arrival line | what the player sees, hears or smells | one sentence, at most 15 words | "Cold air rises from below, smelling of dust and old stone." |
