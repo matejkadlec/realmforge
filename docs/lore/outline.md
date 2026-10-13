@@ -298,7 +298,7 @@ Decided rules that a line of lore makes feel natural. Texts may use these lines;
 | "Return to last death" scroll (RLM-128) | a scroll that follows the thread the traveller's spirit left on the way home |
 | Level cap per chapter, raised when the chapter is done (D2) | the seals bind strength as well as realms, so nobody could grow strong enough to break one by force; the bond loosens once every trial of a chapter is passed (both guardians of twin realms) |
 | Sigils are never used up; one sigil opens any number of portals (RLM-128) | a seal asks for its sigil every time and never takes it: a sigil is shown, not paid |
-| Unlocks are per player; a sigil without the player's own unlock does nothing (RLM-128) | the seal knows a traveller by their deeds |
+| Unlocks are per player: without their own unlock, a player can neither open nor switch a portal to that realm with its sigil, nor pass through an open one (RLM-128) | the seal knows a traveller by their deeds |
 | Portals link like the Nether's, with scaled coordinates, so arrivals stay near a realm's origin (RLM-128) | none needed: texts never explain where a portal leads inside a realm |
 | Only players travel through realm portals (RLM-128, "for now") | the gates pass a living traveller and what they carry, nothing that walks or drifts on its own |
 | The next sigil is crafted from the current realm (RE-9) | the guardian holds the shards of the seals after it |
