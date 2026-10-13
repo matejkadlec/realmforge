@@ -36,8 +36,9 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  * <p>Health: loading a player applies the saved modifiers before its health, so health above the base maximum
  * survives a relog by itself. A respawn after death copies only base values and sets health before any of our
  * modifiers exist ({@code ServerPlayer#restoreFrom}), so the first-tick recompute refills health to the new maximum.
- * Leaving the End is no death: the health the old entity had is restored after the first-tick recompute, as vanilla
- * clamps it while the new entity's effects are still missing.
+ * Leaving the End is no death: vanilla copies the permanent modifiers and the health, but clamps the health while the
+ * transient equipment modifiers are still missing (another mod's gear with max health), so the health the old entity
+ * had is restored after the first-tick recompute.
  */
 public final class CharacterStats {
     /** Ticks between the checks for primary stats that changed without an event. */

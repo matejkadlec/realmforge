@@ -38,9 +38,11 @@ public final class QaGameTests {
     private static final List<Class<?>> HOLDERS = List.of(
             ContentCurveGameTests.class,
             ContentItemGameTests.class,
+            ContentStatGameTests.class,
             InstanceGameTests.class,
             PlayerStateGameTests.class,
             QaCastGameTests.class,
+            StatsGameTests.class,
             WorldRulesGameTests.class);
 
     private static final DeferredRegister<Consumer<GameTestHelper>> FUNCTIONS =
