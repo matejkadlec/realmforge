@@ -36,6 +36,11 @@ class RoomSource(StrictModel):
         description="The data version the source was saved with; the template keeps it, and the game upgrades "
         "the room from it when it loads. None when the file states none."
     )
+    ours: bool = Field(
+        default=False,
+        description="True for a room we built ourselves (exported from a dev world, say). Every other imported "
+        "room is third-party: it lives in third_party/<source>/ with the source's LICENSE and NOTICE.",
+    )
 
 
 class RoomDef(StrictModel):

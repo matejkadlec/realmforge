@@ -112,6 +112,11 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         help="YAML remap rules: blocks, block entities, jigsaw names and pools, entities",
     )
+    rooms_import.add_argument(
+        "--ours",
+        action="store_true",
+        help="the rooms are our own; without it, a folder in content/rooms/ must be third_party/<source>/",
+    )
     rooms_gallery = rooms_commands.add_parser(
         "gallery", help="render every room below DIR headless and write a page to keep or reject them"
     )
@@ -216,7 +221,9 @@ def _rooms(args: argparse.Namespace, paths: RepoPaths) -> int:
 
 def _rooms_import(args: argparse.Namespace, paths: RepoPaths) -> int:
     rules = importer.load_rules(args.rules)
-    results = importer.import_rooms(args.sources, args.target, rules, _room_universe(paths), paths)
+    results = importer.import_rooms(
+        args.sources, args.target, rules, _room_universe(paths), paths, ours=args.ours
+    )
     if not results:
         print("No room files found (.nbt, .schem, .litematic).", file=sys.stderr)
         return 1

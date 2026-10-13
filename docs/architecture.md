@@ -1014,7 +1014,9 @@ Rooms are generated or imported; nobody has to build one by hand
   rooms stay apart from our assets) and carries the notices under `META-INF/third_party/<source>/`: `rf gen` copies
   the `LICENSE` and `NOTICE` of every source with a room there. Vanilla templates are referenced by id, never
   copied.
-- **Hand-built rooms** stay possible: built with structure blocks and saved as NBT with a sidecar like any other.
+- **Hand-built rooms** stay possible: built with structure blocks and saved as NBT with a sidecar like any other,
+  or exported as a schematic and taken in by `rf rooms import --ours`, which marks the sidecar's `source` as ours.
+  Validation keeps every other imported room in `third_party/<source>/`, where its notices are required.
 - **Review:** the room gallery (A4e, `rf rooms gallery`) renders rooms headless through nucleation, with the client
   jar's models and textures read at runtime; Matěj keeps or rejects them in batches. `rf rooms review` records the
   decisions in a `review.yaml` in the reviewed folder: rejected imports are dropped, and a kept generated

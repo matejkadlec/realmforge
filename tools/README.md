@@ -89,7 +89,9 @@ to 7, Minecraft 1.13.2 and later; several regions merge into one room; an older 
 bytes), and `DIR/<name>.yaml`, a draft sidecar that records the source file, its format and its data version and
 leaves `pools` and `tags` empty for retagging (A4c). A re-import keeps the sidecar's pools, tags and weight. A room
 is written only when it validates; otherwise the command lists the problems and writes nothing for that room.
-Third-party rooms go to `content/rooms/third_party/<source>/`, next to the source's `LICENSE` and `NOTICE`.
+Inside `content/rooms/`, third-party rooms must go to `third_party/<source>/`, next to the source's `LICENSE` and
+`NOTICE`; rooms we built ourselves (exported from a dev world, say) take `--ours`, which the sidecar records as
+`source.ours`, and go anywhere else. Validation holds every room with a `source` to the same rule.
 
 The template keeps the data version its source states, and the game upgrades it from there on load. An id the ID
 universe lacks, a source's own block or a vanilla block renamed since (`minecraft:grass` became

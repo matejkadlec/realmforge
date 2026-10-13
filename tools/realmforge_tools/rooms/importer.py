@@ -46,7 +46,7 @@ from realmforge_tools.rooms.structure import (
     split_state_text,
     write_structure,
 )
-from realmforge_tools.schema.room import REVIEW_FILE, RoomDef, RoomSource
+from realmforge_tools.schema.room import REVIEW_FILE, ROOMS_DIR, RoomDef, RoomSource
 from realmforge_tools.yamlio import YamlLoadError, load_yaml
 
 _JIGSAW_NAMES = ("name", "target")
@@ -121,19 +121,45 @@ def room_name(relative: Path) -> Path:
 
 
 def import_rooms(
-    sources: list[Path], target: Path, rules: ImportRules, universe: IdUniverse, paths: RepoPaths
+    sources: list[Path],
+    target: Path,
+    rules: ImportRules,
+    universe: IdUniverse,
+    paths: RepoPaths,
+    *,
+    ours: bool = False,
 ) -> list[ImportedRoom]:
+    """Import every room file. Inside ``content/rooms/``, third-party rooms must go to ``third_party/<source>/``
+    (where validation requires the source's notices and ``rf gen`` ships them), and only rooms marked ``ours`` may
+    go anywhere else."""
+    check_target(target, paths, ours=ours)
     stems: dict[Path, Path] = {}
     for file, relative in source_files(sources):
         stem = target / room_name(relative)
         if stem in stems:
             raise RoomImportError(f"{file} and {stems[stem]} would both become {stem}.nbt")
         stems[stem] = file
-    return [import_room(file, stem, rules, universe, paths) for stem, file in stems.items()]
+    return [import_room(file, stem, rules, universe, paths, ours=ours) for stem, file in stems.items()]
+
+
+def check_target(target: Path, paths: RepoPaths, *, ours: bool) -> None:
+    rooms = (paths.content / ROOMS_DIR).resolve()
+    resolved = target.resolve()
+    if not resolved.is_relative_to(rooms):
+        return  # outside content/rooms/: nothing ships from there
+    parts = resolved.relative_to(rooms).parts
+    third_party = len(parts) >= 2 and parts[0] == "third_party"
+    if not ours and not third_party:
+        raise RoomImportError(
+            f"{target}: third-party rooms go to content/rooms/third_party/<source>/, next to the source's LICENSE "
+            "and NOTICE; pass --ours for rooms we built ourselves"
+        )
+    if ours and parts[:1] == ("third_party",):
+        raise RoomImportError(f"{target}: rooms of our own do not go into third_party/")
 
 
 def import_room(
-    file: Path, stem: Path, rules: ImportRules, universe: IdUniverse, paths: RepoPaths
+    file: Path, stem: Path, rules: ImportRules, universe: IdUniverse, paths: RepoPaths, *, ours: bool = False
 ) -> ImportedRoom:
     """Import one file as ``<stem>.nbt`` plus ``<stem>.yaml``."""
     template, sidecar = stem.with_suffix(".nbt"), stem.with_suffix(".yaml")
@@ -154,7 +180,9 @@ def import_room(
         pools=previous.pools if previous else [],
         tags=previous.tags if previous else [],
         weight=previous.weight if previous else 1,
-        source=RoomSource(file=file.name, format=source.format, data_version=structure.data_version),
+        source=RoomSource(
+            file=file.name, format=source.format, data_version=structure.data_version, ours=ours
+        ),
     )
     stem.parent.mkdir(parents=True, exist_ok=True)
     template.write_bytes(write_structure(structure))
@@ -247,6 +275,8 @@ def sidecar_text(room: RoomDef, sidecar: Path, paths: RepoPaths) -> str:
             f"  format: {source.format}",
             f"  data_version: {version}",
         ]
+        if source.ours:
+            lines.append("  ours: true")
     return "\n".join(lines) + "\n"
 
 

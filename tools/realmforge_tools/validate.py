@@ -84,6 +84,20 @@ def _check_rooms(content: Content, universe: IdUniverse) -> list[Problem]:
         for room in content.rooms
         for location, message in check_structure(room.structure, universe)
     ]
+    for room in content.rooms:
+        source = room.model.source
+        third_party = room.id.startswith("third_party/")
+        if source is not None and not source.ours and not third_party:
+            problems.append(
+                Problem(
+                    room.source,
+                    "source",
+                    "an imported room lives in content/rooms/third_party/<source>/ with its LICENSE and NOTICE; "
+                    "set `ours: true` only for a room we built ourselves",
+                )
+            )
+        if source is not None and source.ours and third_party:
+            problems.append(Problem(room.source, "source.ours", "a room in third_party/ is not ours"))
     room_ids = {room.id for room in content.rooms}
     for review in content.room_reviews:
         prefix = f"{review.folder}/" if review.folder else ""

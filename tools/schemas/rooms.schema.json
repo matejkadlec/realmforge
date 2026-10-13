@@ -30,6 +30,12 @@
           ],
           "title": "Format",
           "type": "string"
+        },
+        "ours": {
+          "default": false,
+          "description": "True for a room we built ourselves (exported from a dev world, say). Every other imported room is third-party: it lives in third_party/<source>/ with the source's LICENSE and NOTICE.",
+          "title": "Ours",
+          "type": "boolean"
         }
       },
       "required": [

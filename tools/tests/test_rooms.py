@@ -656,6 +656,37 @@ def test_reimport_keeps_pools_tags_and_weight(repo: RepoPaths, tmp_path: Path) -
     )
 
 
+def test_import_into_content_needs_third_party_or_ours(repo: RepoPaths, tmp_path: Path) -> None:
+    source = tmp_path / "hall.nbt"
+    source.write_bytes(write_structure(small_room()))
+    stone = repo.content / "rooms" / "stone"
+    with pytest.raises(importer.RoomImportError, match="third-party rooms go to content/rooms/third_party"):
+        importer.import_rooms([source], stone, RULES, load_vanilla(repo), repo)
+    assert not stone.exists()
+    with pytest.raises(importer.RoomImportError, match="do not go into third_party"):
+        importer.import_rooms([source], third_party(repo), RULES, load_vanilla(repo), repo, ours=True)
+    (result,) = importer.import_rooms([source], stone, RULES, load_vanilla(repo), repo, ours=True)
+    assert result.written
+    assert (stone / "hall.yaml").read_text(encoding="utf-8").endswith("  ours: true\n")
+    content, _ = load_and_validate(repo)
+    (room,) = content.rooms
+    assert room.model.source is not None and room.model.source.ours
+
+
+def test_imported_rooms_outside_third_party_must_be_ours(repo: RepoPaths) -> None:
+    sidecar = "source:\n  file: hall.schem\n  format: schem\n  data_version: 4790\n"
+    add_room(repo, "stone/hall", sidecar=sidecar)
+    third_party(repo)
+    add_room(repo, "third_party/sample/hall", sidecar=sidecar + "  ours: true\n")
+    found = problems(repo)
+    assert any(
+        p.startswith("content/rooms/stone/hall.yaml: source: an imported room lives in") for p in found
+    )
+    assert (
+        "content/rooms/third_party/sample/hall.yaml: source.ours: a room in third_party/ is not ours" in found
+    )
+
+
 def test_import_refuses_two_sources_with_one_name(repo: RepoPaths, tmp_path: Path) -> None:
     for name in ("Hall.nbt", "hall.schem"):
         (tmp_path / name).write_bytes(b"")
