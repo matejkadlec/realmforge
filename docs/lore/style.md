@@ -25,8 +25,9 @@
   so through data, not prose.
 - **The Lodge calls the player a Wayfarer**, a word for any of its travellers. The player is capable and curious,
   never "the chosen one".
-- **No fourth wall in story texts.** A tutorial hint may name a key or a screen ("Press J to open the guide"), but
-  keeps it to one plain line apart from the story.
+- **No fourth wall in story texts.** A tutorial hint may name a key or a screen, but keeps it to one plain line
+  apart from the story. It names a key through its key mapping (a keybind text component, which shows the
+  player's own binding), never as a literal letter: every key is rebindable, and defaults change.
 
 ## Text types
 
