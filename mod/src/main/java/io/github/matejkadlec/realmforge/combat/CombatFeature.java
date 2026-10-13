@@ -11,5 +11,6 @@ public final class CombatFeature {
     /** Registers the feature's registries and event listeners. Called once from {@code Realmforge}. */
     public static void register(IEventBus modBus) {
         modBus.addListener(DataPackRegistryEvent.NewRegistry.class, CombatRegistries::registerDataPackRegistries);
+        DamagePipeline.register();
     }
 }

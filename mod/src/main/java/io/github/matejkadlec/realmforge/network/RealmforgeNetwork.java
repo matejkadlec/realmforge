@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.network;
 
+import io.github.matejkadlec.realmforge.combat.net.CombatTextPayload;
 import io.github.matejkadlec.realmforge.world.DarkVision;
 import io.github.matejkadlec.realmforge.world.net.ToggleDarkVisionPayload;
 import net.minecraft.server.level.ServerPlayer;
@@ -38,5 +39,6 @@ public final class RealmforgeNetwork {
                         DarkVision.toggle(player);
                     }
                 });
+        registrar.playToClient(CombatTextPayload.TYPE, CombatTextPayload.STREAM_CODEC);
     }
 }
