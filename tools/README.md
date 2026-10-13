@@ -120,7 +120,8 @@ only the tight box around a room's non-air blocks, so air-only layers at the edg
 as the spike rooms in `qa-mod/src/generated/resources/data/realmforge_qa/structure/spike/` or a folder of
 generated seed candidates) from four views: outside, cut `--cut` blocks above the bottom (default 5) from two
 corners, and a plan of the cut. It writes the PNGs and `index.html` to `.cache/rooms/gallery/<folder>/`
-(replaced on every run). The renderer is [nucleation](https://github.com/Schem-at/Nucleation) (MIT, pinned in
+(replaced on every run; `--out` picks another folder, which must not overlap the rooms' folder and is replaced
+only when it is empty or an earlier gallery, marked by a `.room-gallery` file). The renderer is [nucleation](https://github.com/Schem-at/Nucleation) (MIT, pinned in
 `pyproject.toml`), with block models and textures from the official client jar, which the first run downloads into
 `.cache/vanilla/<version>/` (sha1-verified) and which is never committed. It draws on Vulkan: without a GPU it needs
 Mesa's software driver lavapipe (package `mesa-vulkan-drivers`,

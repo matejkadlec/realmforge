@@ -42,6 +42,7 @@ def test_build_renders_every_view_and_writes_the_page(tmp_path: Path) -> None:
     out = tmp_path / "out"
     (out / "stale.png").parent.mkdir(parents=True)
     (out / "stale.png").write_bytes(b"old")
+    (out / gallery.MARKER).write_text("", encoding="utf-8")  # an earlier gallery
     page, found = gallery.build(rooms, out, renderer, "Rooms", cut=4)  # type: ignore[arg-type]
     assert [room.key for room in found] == ["broken", "spike/corridor", "spike/start"]
     assert found[0].structure is None and found[0].error
@@ -54,6 +55,27 @@ def test_build_renders_every_view_and_writes_the_page(tmp_path: Path) -> None:
     assert "Cannot read the template" in text
     assert "tags: entrance" in text
     assert "15 x 7 x 15" in text
+
+
+@pytest.mark.parametrize("out", ["rooms", ".", "rooms/spike"])
+def test_build_refuses_an_output_that_overlaps_the_rooms(tmp_path: Path, out: str) -> None:
+    rooms = spike_folder(tmp_path / "rooms")
+    with pytest.raises(gallery.GalleryError, match="overlaps the rooms"):
+        gallery.build(rooms, tmp_path / out, FakeRenderer(), "Rooms")  # type: ignore[arg-type]
+    assert sorted(p.name for p in (rooms / "spike").iterdir()) == ["corridor.nbt", "start.nbt"]
+
+
+def test_build_replaces_only_an_earlier_gallery(tmp_path: Path) -> None:
+    rooms = spike_folder(tmp_path / "rooms")
+    other = tmp_path / "notes"
+    write(other / "keep.txt", "mine\n")
+    with pytest.raises(gallery.GalleryError, match="not an earlier room gallery"):
+        gallery.build(rooms, other, FakeRenderer(), "Rooms")  # type: ignore[arg-type]
+    assert (other / "keep.txt").exists()
+    out = tmp_path / "out"
+    gallery.build(rooms, out, FakeRenderer(), "Rooms")  # type: ignore[arg-type]
+    gallery.build(rooms, out, FakeRenderer(), "Rooms")  # type: ignore[arg-type]
+    assert (out / gallery.MARKER).exists() and (out / "index.html").exists()
 
 
 def test_page_starts_from_the_review_file_and_is_deterministic(tmp_path: Path) -> None:

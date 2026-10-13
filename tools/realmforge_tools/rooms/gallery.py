@@ -25,6 +25,8 @@ from realmforge_tools.schema.room import REVIEW_FILE, ReviewFile, RoomDef
 from realmforge_tools.yamlio import YamlLoadError, load_yaml, load_yaml_text
 
 DECISIONS = ("keep", "reject")
+# Written into every gallery folder; a later run replaces only a folder that has it (or an empty one).
+MARKER = ".room-gallery"
 
 
 class GalleryError(ValueError):
@@ -63,11 +65,15 @@ def collect(directory: Path) -> list[GalleryRoom]:
 def build(
     directory: Path, out_dir: Path, renderer: RoomRenderer, title: str, cut: int = CUT_HEIGHT
 ) -> tuple[Path, list[GalleryRoom]]:
-    """Render every room and write the page. ``out_dir`` is replaced: it holds only this gallery."""
+    """Render every room and write the page. ``out_dir`` is replaced: it holds only this gallery. It must not
+    overlap the rooms' folder, and an existing ``out_dir`` must be an earlier gallery (or empty), so the
+    replacement never deletes anything else."""
+    _check_out_dir(directory, out_dir)
     rooms = collect(directory)
     if out_dir.exists():
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True)
+    (out_dir / MARKER).write_text("rf rooms gallery output; replaced on every run\n", encoding="utf-8")
     for room in rooms:
         if room.structure is None:
             continue
@@ -76,6 +82,16 @@ def build(
     page = out_dir / "index.html"
     page.write_text(render_page(title, rooms, read_review(directory)), encoding="utf-8")
     return page, rooms
+
+
+def _check_out_dir(directory: Path, out_dir: Path) -> None:
+    rooms, out = directory.resolve(), out_dir.resolve()
+    if out == rooms or out.is_relative_to(rooms) or rooms.is_relative_to(out):
+        raise GalleryError(f"the output folder {out_dir} overlaps the rooms in {directory}; choose another")
+    if out.exists() and (not out.is_dir() or (any(out.iterdir()) and not (out / MARKER).exists())):
+        raise GalleryError(
+            f"{out_dir} exists and is not an earlier room gallery (no {MARKER}); choose an empty or new folder"
+        )
 
 
 def read_review(directory: Path) -> dict[str, str]:
