@@ -43,6 +43,9 @@ class StatDef(StrictModel):
             raise ValueError("a stat with max writes its default as default, not default_percent")
         if self.percent and self.kind == "primary":
             raise ValueError("a primary stat counts points: use max, not max_percent")
+        if self.game_max == 0:
+            # max_percent below about 5e-322 underflows to 0 as a fraction: a stat that could never leave 0.
+            raise ValueError("the maximum is too small: it is 0 in game units")
         if self.game_default > self.game_max:
             raise ValueError("the default must not be above the maximum")
         return self

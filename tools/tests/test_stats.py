@@ -101,6 +101,7 @@ def test_strength_gives_the_visions_ten_percent_for_ten_points() -> None:
         ),
         ("kind: primary\ndefault: -1\nmax: 10\n", "default: Input should be greater than or equal to 0"),
         ("kind: primary\nmax: 0\n", "max: Input should be greater than 0"),
+        ("kind: secondary\nmax_percent: 1.0e-323\n", "the maximum is too small: it is 0 in game units"),
         ("kind: tertiary\nmax: 10\n", "kind: Input should be 'primary' or 'secondary'"),
     ],
 )
