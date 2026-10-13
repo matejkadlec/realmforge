@@ -50,9 +50,9 @@ for it and later chapters are listed below.
   (waystones make that easy).
 - **Levels 1–5 are played in the Overworld.** The stone realm is open from level 1 but strongly recommended from
   level 5; gathering what a player needs to survive there naturally brings them to about level 5. Mob levels by area
-  show the danger (W1), so the realm needs no hard level lock. It still opens through an early chapter 1 quest step
-  that a level-1 player can complete (W2's requirement; the Stone Sigil of the [realm portal spec](realm-portal.md)):
-  "open from level 1" means no level gate, not no gate. The item rule of
+  show the danger (W1), so the realm needs no hard level lock. It still opens through an early chapter 1 quest
+  that a level-1 player can complete: the realm's unlock quest, which also gives the Stone Sigil
+  ([realm portal spec](realm-portal.md#access-and-unlocks)). "Open from level 1" means no level gate, not no gate. The item rule of
   [Opening the next realm](#opening-the-next-realm) (RE-9) starts with the second realm, because the Overworld has
   neither a realm ore nor a boss drop to craft the item from.
 - About 2 stat points and 1 skill point per level; spell limits per chapter as in D4 (RLM-54).
@@ -109,7 +109,8 @@ Puzzles are welcome under these rules (Matěj, 2026-10-12, replacing the earlier
   quest chain.
 - **The next realm's item comes from the realm the player leaves:** crafted from the current realm's ore or gem plus
   the guaranteed drop of its main-path boss, with the recipe shown in the quest log (RE-9). The item is never
-  consumed. The portal itself, the item per realm and the access rules are the
+  consumed. It opens the portal; the realm itself unlocks for each player through the realm's unlock quest (Matěj,
+  RLM-128). The portal itself, the item per realm and the access rules are the
   [realm portal spec](realm-portal.md)'s job (RLM-41).
 
 ### Travel
@@ -128,9 +129,11 @@ The layout of every realm assumes cheap travel; nobody walks 1,000–10,000 bloc
 
 - **The starting area for levels 1–5**, kept close to vanilla plus the pack's world mods. The Nether and End are
   removed ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)).
-- **The hub.** The [realm portal](realm-portal.md) stands in the Overworld, and every realm's way back leads there.
-  A waystone at the portal makes the hub the node between realms (TR-7), and the area around it gains NPCs and
-  services with each chapter (WF-8). With cheap waystones the hub costs no walking.
+- **The hub.** Every realm's way back leads to the Overworld. [Realm portals](realm-portal.md) link like the
+  Nether's (Matěj, RLM-128), so players build as many as they like, anywhere, and waystones they place make the
+  Overworld the node between realms (TR-7). With cheap waystones the hub costs no walking. A hub as a place, with
+  NPCs and services that grow each chapter (WF-8), is the lore outline's
+  [open question 5](../lore/outline.md#open-questions).
 
 ### The stone realm
 
@@ -140,8 +143,10 @@ stone. Mining is its main profession. As the first realm it offers most of what 
 
 - **Shape:** one huge enclosed cave world with a bedrock floor and ceiling and big walkable spaces, Stoneblock-like
   but never cramped. Several floor heights, ledges, chasms and multi-level halls instead of one flat walking layer
-  (RE-10). Sub-regions of rising level from the arrival point outwards (about 5–7, 7–9 and 9–10), with a crystal
-  grotto as one sub-zone (RE-11).
+  (RE-10). Sub-regions of rising level from the realm's origin outwards (about 5–7, 7–9 and 9–10), with a crystal
+  grotto as one sub-zone (RE-11). Portals arrive near the origin: they link at 1:16, so an Overworld portal within
+  10,000 blocks of the Overworld's origin arrives in the first band
+  ([realm portal spec](realm-portal.md#the-coordinate-scale)).
 - **Stone:** many custom stone types (no vanilla stone; variants in the spirit of diorite, granite and andesite)
   mixed on floor, walls and ceiling, with Y-range rules (this ore or gem only at Y 10–30, that stone only near the
   ceiling).
@@ -172,7 +177,7 @@ stone. Mining is its main profession. As the first realm it offers most of what 
   100%; inside the arena instance an NPC gives the item that summons the boss at the altar; the boss drops, at 100%,
   the material for the next realm's item (RE-9) and finishes the chapter's main chain. The mine NPC sells the keys
   again for repeat runs (LE-2).
-- **What M1 takes from this** (a proposal for the M1 tasks, not a plan change): W2's dimension is this realm's
+- **What M1 takes from this** (a proposal for the M1 tasks, not a plan change): W2a's dimension is this realm's
   worldgen (the stone types, floor and ceiling, the sub-regions); W3's 1–2 custom mobs (D11) are two animated statues
   (a melee and a caster archetype); W6's type A (ends in the boss's lair) is the stone arena and type B (ends in a
   treasury) the catacombs; W5's boss fights in the arena. The fortress waits for M4's world-structure dungeons, and
@@ -241,8 +246,9 @@ Themes Matěj described for later chapters, to pick from as the progression grow
 
 For Matěj; each has a proposal so the design can go on.
 
-1. **Respawn in a realm** (research question 1, RE-16). Proposal: at the portal the player arrived through, so a
-   death costs no long way back.
+1. **Respawn in a realm** (research question 1, RE-16). **Decided 2026-10-13 (Matěj, RLM-128): never in a
+   realm.** A player always respawns in the Overworld, at their bed or at the world spawn; a "Return to last death"
+   scroll (RLM-155) takes them back ([realm portal spec](realm-portal.md#respawn)).
 2. **Finished realms** (research question 2, RE-4): a harder "enraged" band once later chapters raise the cap, or
    their own levels forever? Proposal: their own levels until a later milestone shows players want to return.
 3. **One environmental rule per realm** (research question 15, RE-6), such as wind gusts on high ground or a
