@@ -116,6 +116,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "validate":
         print(
             f"Content OK: {len(content.items)} item(s), {len(content.curves)} curve(s), "
+            f"{len(content.stats)} stat(s), {len(content.stat_rules)} stat rule(s), "
             f"{len(content.worldgen)} worldgen file(s)."
         )
         return 0

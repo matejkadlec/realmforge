@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# More spell damage, in percent of the spell's own damage (F5 and the spell engine apply it).
+id: spell_power
+kind: secondary
+max_percent: 1000

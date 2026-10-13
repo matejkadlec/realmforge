@@ -348,7 +348,7 @@ decided, which wins over the proposal here.
 | D2 | RLM-52 | Level cap numbers | C2 | cap 10 during chapter 1, raised to 20 when it is finished |
 | D3 | RLM-53 | Character XP and vanilla XP | C2 | separate: character XP is never spent; vanilla XP stays the currency for enchanting and anvils until M5 decides its role |
 | D4 | RLM-54 | Spell key scheme | C3b | a separate spell bar with its own keys, leaving the item hotbar alone; spike 4 informs it |
-| D5 | RLM-55 | Primary stats | F4 | STR, DEX, INT and a stamina stat (health); one stat per play style plus survivability |
+| D5 | RLM-55 | Primary stats | F4 | **Decided 2026-10-11 (RLM-55): strength, dexterity, vitality and intellect.** Vitality is the health stat, not called stamina so it is never confused with a stamina resource. Dexterity gives bonuses every class uses: critical strike chance (spells too), attack speed and movement speed (small, capped). Dodge is no Dexterity bonus: it is kept for future classes such as the Rogue and the Hunter. Luck and defense stay out. F4 (RLM-20) set the first numbers in `content/stat_rules/` |
 | D6 | RLM-56 | Destructive mobs | R1 | targeted protection (no terrain damage) instead of `mobGriefing=false`, as the research notes recommend |
 | D7 | RLM-57 | Release numbering | R2 | M1 is v0.1.0. The vision describes v0.1 as "everything, cut down"; the research report called v0.1 a vertical slice; this roadmap follows the report and the M1 brief |
 | D8 | RLM-58 | Who enters an instance | spike 3 | **Decided 2026-10-11 (RLM-58): solo only in M1.** Every player who enters gets their own instance; entry is a temporary portal opened with a dungeon key (W4); parties come later through our own command-based party system (RLM-68), not FTB Teams |

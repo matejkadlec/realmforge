@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import difflib
+import math
 from pathlib import PurePosixPath
 
 from realmforge_tools.content import Content, load_content
@@ -15,19 +16,22 @@ from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
 
 ITEM_REGISTRY = "minecraft:item"
+ATTRIBUTE_REGISTRY = "minecraft:attribute"
 CREATIVE_TAB_REGISTRY = "minecraft:creative_mode_tab"
 DIMENSION_TYPE_REGISTRY = "minecraft:dimension_type"
 
 # YAML content type -> the registry its ids live in.
 REGISTRY_OF_TYPE: dict[str, str] = {
     "items": ITEM_REGISTRY,
+    "stats": ATTRIBUTE_REGISTRY,
     **{t.directory: f"{MOD_ID}:{t.registry}" for t in DATAPACK_TYPES},
 }
 
-# Translation key prefixes other content types generate (`item.realmforge.<id>`, `curve.realmforge.<id>.name`): a
-# text group with one of these ids could produce the same key as an entry of that type.
+# Translation key prefixes other content types generate (`item.realmforge.<id>`, `curve.realmforge.<id>.name`,
+# `attribute.realmforge.<id>`): a text group with one of these ids could produce the same key as an entry of that type.
 RESERVED_TEXT_GROUPS: dict[str, str] = {
     "item": "content/items/",
+    "attribute": "content/stats/",
     **{t.registry: f"content/{t.directory}/" for t in DATAPACK_TYPES},
 }
 
@@ -58,6 +62,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems: list[Problem] = []
     problems += _check_ids(content)
     problems += _check_references(content, universe)
+    problems += _check_stat_rules(content, universe)
     problems += _check_worldgen_references(content, universe)
     problems += _check_text_groups(content)
     return problems
@@ -95,6 +100,83 @@ def _check_references(content: Content, universe: IdUniverse) -> list[Problem]:
                         entry.source, f"creative_tabs.{i}", _unknown(tab, CREATIVE_TAB_REGISTRY, universe)
                     )
                 )
+    return problems
+
+
+def _check_stat_rules(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A rule reads one primary stat, which no other rule reads, and writes only secondary stats and vanilla
+    attributes (architecture 8.3). An add_value amount on one of our stats takes its unit, percent for a share; a
+    vanilla attribute takes either, as its unit is not catalogued (knockback resistance is a fraction)."""
+    problems: list[Problem] = []
+    stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
+    rule_of_stat: dict[str, str] = {}
+    for entry in content.stat_rules:
+        rule = entry.model
+        stat = stats.get(rule.stat)
+        if not universe.contains(ATTRIBUTE_REGISTRY, rule.stat):
+            problems.append(Problem(entry.source, "stat", _unknown(rule.stat, ATTRIBUTE_REGISTRY, universe)))
+        elif stat is None or stat.kind != "primary":
+            problems.append(
+                Problem(
+                    entry.source, "stat", f"{rule.stat} is not a primary stat (content/stats/, kind: primary)"
+                )
+            )
+        elif rule.stat in rule_of_stat:
+            problems.append(
+                Problem(
+                    entry.source, "stat", f"{rule.stat} already has a stat rule ({rule_of_stat[rule.stat]})"
+                )
+            )
+        rule_of_stat.setdefault(rule.stat, entry.source)
+        if stat is not None and stat.kind == "primary":
+            # A stat never exceeds its maximum, so an uncapped total stays finite up to there or never.
+            for n, per_point in enumerate(rule.per_point):
+                if per_point.game_max is None and not math.isfinite(per_point.game_amount * stat.game_max):
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            f"per_point.{n}",
+                            f"the amount overflows a double at {rule.stat}'s maximum ({stat.game_max:g} points); "
+                            "lower it or give it a cap",
+                        )
+                    )
+
+        for path, modifier in rule.modifiers():
+            location = f"{path}.attribute"
+            target = stats.get(modifier.attribute)
+            if not universe.contains(ATTRIBUTE_REGISTRY, modifier.attribute):
+                problems.append(
+                    Problem(
+                        entry.source, location, _unknown(modifier.attribute, ATTRIBUTE_REGISTRY, universe)
+                    )
+                )
+            elif target is not None and target.kind == "primary":
+                problems.append(
+                    Problem(
+                        entry.source,
+                        location,
+                        f"stat rules write secondary stats and vanilla attributes, not the primary stat "
+                        f"{modifier.attribute}",
+                    )
+                )
+            elif modifier.operation == "add_value" and target is not None:
+                share = target.percent
+                if share and not modifier.is_percent:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            f"{path}.amount",
+                            f"{modifier.attribute} is a share: write the amount as amount_percent",
+                        )
+                    )
+                elif not share and modifier.is_percent:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            f"{path}.amount_percent",
+                            f"{modifier.attribute} counts points: add_value takes amount, not amount_percent",
+                        )
+                    )
     return problems
 
 

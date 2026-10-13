@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Chance that a hit or a spell is critical (F5 rolls it, spells included: D5). WotLK starts everyone near 5 %.
+id: crit_chance
+kind: secondary
+default_percent: 5
+max_percent: 100

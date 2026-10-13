@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One of our attributes: a primary stat (strength, dexterity, vitality, intellect) that stat rules read, or a\nsecondary stat that stat rules and other sources write (crit chance, spell power, ...). Generates its\nregistration, added to every player. Its minimum is 0.\n\nA stat counts either points (``default``, ``max``) or a share (``default_percent``, ``max_percent``, written\nin percent and shown as a percentage in the game). Primary stats count points.",
+  "properties": {
+    "default": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Starting value in points (default 0).",
+      "title": "Default"
+    },
+    "default_percent": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Starting value in percent (default 0).",
+      "title": "Default Percent"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "kind": {
+      "description": "primary: read by stat rules (content/stat_rules/); secondary: written by them and other sources.",
+      "enum": [
+        "primary",
+        "secondary"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "max": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Highest value in points.",
+      "title": "Max"
+    },
+    "max_percent": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Highest value in percent.",
+      "title": "Max Percent"
+    }
+  },
+  "required": [
+    "id",
+    "kind"
+  ],
+  "title": "StatDef",
+  "type": "object"
+}

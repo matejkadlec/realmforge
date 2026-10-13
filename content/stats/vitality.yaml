@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Primary stat (D5, RLM-55): survivability. Called Vitality, not Stamina, so it is never confused with a stamina
+# resource. What it gives: content/stat_rules/vitality.yaml. Its name comes with RLM-136.
+id: vitality
+kind: primary
+max: 100000

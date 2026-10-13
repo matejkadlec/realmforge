@@ -1,0 +1,22 @@
+{
+  "stat": "realmforge:vitality",
+  "per_point": [
+    {
+      "attribute": "minecraft:max_health",
+      "operation": "add_value",
+      "amount": 1.0
+    }
+  ],
+  "milestones": [
+    {
+      "points": 25,
+      "modifiers": [
+        {
+          "attribute": "minecraft:max_health",
+          "operation": "add_multiplied_total",
+          "amount": 0.05
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../tools/schemas/stat_rules.schema.json
+# What Vitality gives (D5, RLM-55): health. A player starts with 20 (ten hearts), so 20 VIT doubles it. First numbers;
+# RLM-136 plays them with the character sheet.
+id: vitality
+stat: realmforge:vitality
+per_point:
+  - attribute: minecraft:max_health
+    operation: add_value
+    amount: 1
+milestones:
+  - points: 25
+    modifiers:
+      - attribute: minecraft:max_health
+        operation: add_multiplied_total
+        amount_percent: 5

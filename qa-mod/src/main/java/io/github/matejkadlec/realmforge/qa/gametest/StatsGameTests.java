@@ -1,0 +1,254 @@
+package io.github.matejkadlec.realmforge.qa.gametest;
+
+import com.mojang.authlib.GameProfile;
+import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.generated.GeneratedStats;
+import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations;
+import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.Bonus;
+import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.Sample;
+import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.StatRuleExpectation;
+import io.github.matejkadlec.realmforge.stats.CharacterStats;
+import io.github.matejkadlec.realmforge.stats.StatRules;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EquipmentSlotGroup;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+
+/**
+ * F4: the stat rules reach players (architecture 8.2, 8.3). Primary stats change the attributes their rule names,
+ * and bonus max health survives a relog, a respawn after death and leaving the End. Expected values come from the
+ * generated expectations ({@link GeneratedStatExpectations}), so the tests follow the content.
+ *
+ * <p>Players log in through {@link QaPlayers#login}. Their connection never ticks them, so a test plays a client
+ * tick with {@code ServerPlayer#doTick}, the call the network handler makes once per tick; the server never
+ * simulates a player's movement, so the players do not fall.
+ */
+public final class StatsGameTests {
+    private StatsGameTests() {
+    }
+
+    /** Done when of F4: Strength raises attack damage (and gives its milestone) as its stat rule says. */
+    @QaGameTest
+    public static void strengthRaisesAttackDamageAsConfigured(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-stats-strength"));
+        tick(player, 1);
+        double before = player.getAttributeValue(Attributes.ATTACK_DAMAGE);
+
+        Sample sample = highestSample(rule("realmforge:strength"));
+        setBase(player, GeneratedStats.STRENGTH, sample.value());
+        tick(player, CharacterStats.CHECK_INTERVAL);
+        helper.assertTrue(player.getAttributeValue(Attributes.ATTACK_DAMAGE) > before,
+                "attack damage rose with " + sample.value() + " Strength");
+        assertAttributes(helper, player, sample, "with " + sample.value() + " Strength");
+
+        setBase(player, GeneratedStats.STRENGTH, 0);
+        tick(player, CharacterStats.CHECK_INTERVAL);
+        helper.assertValueEqual(player.getAttributeValue(Attributes.ATTACK_DAMAGE), before, "attack damage at 0");
+        helper.assertFalse(hasStatModifiers(player), "no stat modifier is left at 0 Strength");
+        server.getPlayerList().remove(player);
+        helper.succeed();
+    }
+
+    /** Done when of F4: bonus max health and the health above the base maximum come back after a relog. */
+    @QaGameTest
+    public static void bonusMaxHealthSurvivesRelog(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-stats-relog");
+        ServerPlayer first = QaPlayers.login(server, profile);
+        float max = withVitality(helper, first);
+        first.setHealth(max);
+        server.getPlayerList().remove(first);
+
+        ServerPlayer again = QaPlayers.login(server, profile);
+        helper.assertValueEqual(again.getMaxHealth(), max, "max health after the relog, before its first tick");
+        helper.assertValueEqual(again.getHealth(), max, "health after the relog, before its first tick");
+        tick(again, 1);
+        helper.assertValueEqual(again.getMaxHealth(), max, "max health after the first tick");
+        helper.assertValueEqual(again.getHealth(), max, "health after the first tick");
+        server.getPlayerList().remove(again);
+        helper.succeed();
+    }
+
+    /** Done when of F4: after death, the respawned player gets its bonus max health back and full health. */
+    @QaGameTest
+    public static void bonusMaxHealthSurvivesRespawn(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer dead = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-stats-respawn"));
+        float max = withVitality(helper, dead);
+
+        ServerPlayer respawned = server.getPlayerList().respawn(dead, false, Entity.RemovalReason.KILLED);
+        helper.assertTrue(respawned != dead, "a respawn after death makes a new player entity");
+        helper.assertValueEqual(respawned.getAttributeBaseValue(GeneratedStats.VITALITY),
+                dead.getAttributeBaseValue(GeneratedStats.VITALITY), "vanilla copies the base Vitality");
+        tick(respawned, 1);
+        helper.assertValueEqual(respawned.getMaxHealth(), max, "max health after the respawn's first tick");
+        helper.assertValueEqual(respawned.getHealth(), max, "health is refilled to the new maximum");
+        server.getPlayerList().remove(respawned);
+        helper.succeed();
+    }
+
+    /**
+     * Leaving the End is no death: the player keeps the health it had. Vanilla copies the permanent modifiers (ours,
+     * effects') and the health, but equipment modifiers are transient and return only on the first tick, so a max
+     * health bonus from gear (another mod's: ours never adds max health) is missing when vanilla clamps the health.
+     * The first-tick recompute restores it.
+     */
+    @QaGameTest
+    public static void leavingTheEndKeepsHealthAboveTheBaseMaximum(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer leaving = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-stats-end"));
+        float withoutGear = withVitality(helper, leaving);
+        leaving.setItemSlot(EquipmentSlot.MAINHAND, stick(Attributes.MAX_HEALTH, 10));
+        tick(leaving, 1);
+        float max = leaving.getMaxHealth();
+        helper.assertTrue(max > withoutGear, "the gear raised max health");
+        leaving.setHealth(max);
+
+        ServerPlayer back = server.getPlayerList().respawn(leaving, true, Entity.RemovalReason.CHANGED_DIMENSION);
+        helper.assertTrue(back.getHealth() < max, "vanilla clamps the health while the gear is missing");
+        tick(back, 1);
+        helper.assertValueEqual(back.getMaxHealth(), max, "max health after leaving the End");
+        helper.assertValueEqual(back.getHealth(), max, "health after leaving the End");
+        server.getPlayerList().remove(back);
+        helper.succeed();
+    }
+
+    /**
+     * Architecture 8.2: equipment applies its modifiers only on the player's first tick, so a stat from gear counts
+     * from the tick it is equipped, and after a relog the saved bonus waits for that tick instead of being recomputed
+     * without the gear.
+     */
+    @QaGameTest
+    public static void strengthFromGearKeepsItsBonusAcrossRelogs(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-stats-gear");
+        StatRuleExpectation strength = rule("realmforge:strength");
+        Sample sample = highestSample(strength);
+
+        ServerPlayer first = QaPlayers.login(server, profile);
+        tick(first, 1);
+        first.setItemSlot(EquipmentSlot.MAINHAND, stick(GeneratedStats.STRENGTH, sample.value()));
+        tick(first, 1);
+        helper.assertValueEqual(first.getAttributeValue(GeneratedStats.STRENGTH), sample.value(), "Strength from gear");
+        assertAttributes(helper, first, sample, "right after equipping the gear");
+        server.getPlayerList().remove(first);
+
+        ServerPlayer again = QaPlayers.login(server, profile);
+        helper.assertValueEqual(again.getAttributeValue(GeneratedStats.STRENGTH), 0.0,
+                "the gear's Strength waits for the first tick");
+        assertAttributes(helper, again, sample, "after the relog, before its first tick (saved)");
+        tick(again, 1);
+        helper.assertValueEqual(again.getAttributeValue(GeneratedStats.STRENGTH), sample.value(),
+                "Strength from gear after the first tick");
+        assertAttributes(helper, again, sample, "after the relog's first tick");
+        server.getPlayerList().remove(again);
+        helper.succeed();
+    }
+
+    /** Gives the player the highest Vitality the expectations sample, waits for the recompute, returns max health. */
+    private static float withVitality(GameTestHelper helper, ServerPlayer player) {
+        tick(player, 1);
+        Sample sample = highestSample(rule("realmforge:vitality"));
+        setBase(player, GeneratedStats.VITALITY, sample.value());
+        tick(player, CharacterStats.CHECK_INTERVAL);
+        assertAttributes(helper, player, sample, "with " + sample.value() + " Vitality");
+        float max = player.getMaxHealth();
+        helper.assertTrue(max > 20, "Vitality raised max health above the base 20: " + max);
+        player.setHealth(max);
+        return max;
+    }
+
+    /** Every attribute the sample's bonuses touch has the value vanilla's formula gives for them. */
+    private static void assertAttributes(GameTestHelper helper, ServerPlayer player, Sample sample, String when) {
+        Set<String> attributes = new LinkedHashSet<>();
+        sample.bonuses().forEach(bonus -> attributes.add(bonus.attribute()));
+        helper.assertFalse(attributes.isEmpty(), "the sample at " + sample.value() + " gives bonuses");
+        for (String id : attributes) {
+            Holder<Attribute> attribute = ContentStatGameTests.attribute(id);
+            double want = expectedValue(player.getAttributeBaseValue(attribute), sample.bonuses(), id);
+            double got = player.getAttributeValue(attribute);
+            helper.assertTrue(ContentStatGameTests.close(got, want), id + " " + when + ": " + want + " expected, got "
+                    + got);
+        }
+    }
+
+    /** {@code AttributeInstance#calculateValue} for an attribute whose only modifiers are {@code bonuses}. */
+    private static double expectedValue(double base, List<Bonus> bonuses, String attribute) {
+        double value = base;
+        for (Bonus bonus : bonuses) {
+            if (bonus.attribute().equals(attribute) && bonus.operation().equals("add_value")) {
+                value += bonus.amount();
+            }
+        }
+        double result = value;
+        for (Bonus bonus : bonuses) {
+            if (bonus.attribute().equals(attribute) && bonus.operation().equals("add_multiplied_base")) {
+                result += value * bonus.amount();
+            }
+        }
+        for (Bonus bonus : bonuses) {
+            if (bonus.attribute().equals(attribute) && bonus.operation().equals("add_multiplied_total")) {
+                result *= 1 + bonus.amount();
+            }
+        }
+        return result;
+    }
+
+    private static StatRuleExpectation rule(String stat) {
+        return GeneratedStatExpectations.STAT_RULES.stream()
+                .filter(rule -> rule.stat().equals(stat))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("no stat rule reads " + stat));
+    }
+
+    /** The sample with the most points: past the rule's milestones and caps. */
+    private static Sample highestSample(StatRuleExpectation rule) {
+        return rule.samples().getLast();
+    }
+
+    private static void setBase(ServerPlayer player, Holder<Attribute> stat, double value) {
+        AttributeInstance instance = player.getAttribute(stat);
+        if (instance == null) {
+            throw new IllegalStateException("players lack " + stat.getRegisteredName());
+        }
+        instance.setBaseValue(value);
+    }
+
+    private static boolean hasStatModifiers(ServerPlayer player) {
+        return player.getAttributes().pack().stream()
+                .flatMap(packed -> packed.modifiers().stream())
+                .anyMatch(modifier -> StatRules.isStatModifier(modifier.id()));
+    }
+
+    /** A stick that adds {@code amount} to {@code attribute} in the main hand, like gear with a fixed stat. */
+    private static ItemStack stick(Holder<Attribute> attribute, double amount) {
+        ItemStack stick = new ItemStack(Items.STICK);
+        stick.set(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.builder()
+                .add(attribute, new AttributeModifier(Realmforge.id("qa/stick"), amount,
+                        AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                .build());
+        return stick;
+    }
+
+    private static void tick(ServerPlayer player, int ticks) {
+        for (int i = 0; i < ticks; i++) {
+            player.doTick();
+        }
+    }
+}
