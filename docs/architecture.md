@@ -257,7 +257,7 @@ How features cooperate without breaking the direction:
 | | `RegisterTicketControllersEvent` (mod) | chunk ticket controllers: instance plots ([15.5](#155-instances)) |
 | World creation | `LevelEvent.CreateSpawnPosition` (game; listened to, never cancelled) | the gamerules of a new world, once ([19.1](#191-world-defaults)) |
 | Server start | `RegisterCommandsEvent`, `ServerStartedEvent` (game) | commands |
-| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerEvent.PlayerRespawnEvent`, `PlayerEvent.PlayerChangedDimensionEvent` (game) | schedule a stat recompute for the player's first tick; keep health across respawns ([8.2](#82-where-modifiers-come-from)); keep or end the player's instance run ([15.5](#155-instances)); reapply Dark Vision ([19.1](#191-world-defaults)) |
+| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerEvent.PlayerRespawnEvent`, `PlayerEvent.PlayerChangedDimensionEvent`, `PlayerTickEvent.Post` (game) | recompute stats at the end of a new player entity's first tick and after a change; keep health across respawns ([8.2](#82-where-modifiers-come-from)); keep or end the player's instance run ([15.5](#155-instances)); reapply Dark Vision ([19.1](#191-world-defaults)) |
 | Play | damage, death, spawn, tick and advancement events (game) | sections 8-16 |
 | Client start | `RealmforgeClient` constructor; client registration events (mod) | [section 18](#18-client-code-rendering-gui-input) |
 
@@ -359,7 +359,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 
 | `content/` | Generated | Loaded as |
 | --- | --- | --- |
-| `items/` (exists), `blocks/`, `entities/`, `effects/`, `sounds/` | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
+| `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/`, `entities/`, `effects/`, `sounds/` | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
 | `races/`, `classes/`, `spells/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `bosses/`, `dungeons/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json`, the tag entries in `#minecraft:bypasses_cooldown` ([9.1](#91-damage-pipeline)), generated registrations of the school's power and resistance attributes | vanilla damage types, tags; static attributes |
 | `loot/`, `recipes/`, tags | `data/realmforge/loot_table/`, `recipe/`, `tags/` | reloadable vanilla data |
@@ -456,6 +456,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points | owner |
 | `realmforge:dark_vision` | `world` | players | whether Dark Vision is switched on (on by default) | not synced (the effect itself is) |
 | `realmforge:instance` | `dungeon` | players | the run's plot and the return point (spike 3); W4 adds the game mode to restore | not synced |
+| `realmforge:stat_tracker` | `stats` | players | when the stat modifiers were last recomputed and what a respawn owes the health ([8.2](#82-where-modifiers-come-from)); transient: not saved or copied | not synced |
 
 - Values are immutable records with a `Codec` for saving and a `StreamCodec` for syncing, declared with
   `AttachmentType.builder(...).serialize(codec.fieldOf("value")).copyOnDeath().sync(predicate, streamCodec)`:
@@ -506,14 +507,21 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 - **Vanilla, kept:** max health, armor, armor toughness, attack damage and speed, movement speed, knockback
   resistance, luck and the rest. Since 1.21.2 their ids have no prefixes (`minecraft:max_health`,
   `minecraft:block_interaction_range`; 1.21.1 had `minecraft:generic.max_health`).
-- **Primary stats (ours):** the vision's STR, DEX, INT and whatever else the M1 design settles on (for example a
-  stamina stat). They are attributes, so gear, buffs and talents modify them like anything else.
-- **Secondary stats (ours):** crit chance, crit damage, dodge, spell power, haste (cast and cooldown speed),
-  resource regeneration, healing power; per-school power and resistance come with the schools. NeoForge's
-  `PercentageAttribute` for percentages, `RangedAttribute` otherwise, `setSyncable(true)` for what the character
-  sheet shows.
-- Registered in `stats/` on `Registries.ATTRIBUTE`, added to players (and to mobs where needed, such as spell
-  power for casters) in `EntityAttributeModificationEvent`.
+- **Primary stats (ours, decision D5):** strength (STR), dexterity (DEX), vitality (VIT: health, not called
+  stamina so it is never confused with a stamina resource) and intellect (INT). They are attributes, so gear, buffs
+  and talents modify them like anything else. They start at 0: race, class, level, talents and gear raise them (C1
+  and later). Luck and defense stay out (D5).
+- **Secondary stats (ours):** crit chance (5 % to start with), crit damage (+50 %), dodge chance (no primary stat
+  gives it: D5 keeps it for future classes such as the Rogue), spell power, healing power and haste (cast and
+  cooldown speed); resource regeneration comes with resources (C3a), per-school power and resistance with the
+  schools (F5).
+- **Defined in `content/stats/`** (F4): each stat's kind (primary or secondary) and its range, in points (a
+  `RangedAttribute`) or as a share (`max_percent`: NeoForge's `PercentageAttribute`, holding a fraction). `rf gen`
+  writes their registrations into `generated/GeneratedStats` (owned by `stats`), with the description id
+  `attribute.realmforge.<id>` and `setSyncable(true)` for all of them, as the character sheet shows them. Their
+  names, and with them their lang entries, come with the character sheet (RLM-136).
+- `StatsFeature` adds every stat to players in `EntityAttributeModificationEvent`; mobs get the ones they need
+  with the features that use them (spell power for casters).
 - NeoForge also has a boolean `creative_flight` attribute (`NeoForgeMod.CREATIVE_FLIGHT`): the planned basis for
   Angel Wings-style spells and flying mounts.
 
@@ -529,17 +537,18 @@ would remove both bonuses.
 | --- | --- | --- | --- |
 | race, class and level | `stats/CharacterStats`, from `character`'s provider | `realmforge:race/<race>/<n>`, `realmforge:class/<class>/<n>` | saved, recomputed |
 | talents | `stats/CharacterStats`, from `talent`'s provider | `realmforge:talent/<tree>/<node>/<n>` | saved, recomputed |
-| derived from primary stats | `stats/CharacterStats`, from stat rules ([8.3](#83-derived-stats-and-milestones)) | `realmforge:stat/<rule>/<n>` | saved, recomputed |
+| derived from primary stats | `stats/CharacterStats`, from stat rules ([8.3](#83-derived-stats-and-milestones)) | `realmforge:stat/<rule>/<n>` per point, `realmforge:stat/<rule>/at_<points>/<n>` per milestone | saved, recomputed |
 | gear with fixed stats | vanilla, from the item's attribute modifiers | `realmforge:gear/<slot>/<n>` (generated) | while equipped |
 | affixes and gems (M2) | vanilla slots: `ItemAttributeModifierEvent` adds them to the stack's modifiers; curio slots (rings, trinkets): Curios' own modifier API, because Curios ignores vanilla equipment modifiers in its slots (*verify* in M2) | `realmforge:affix/<affix>/<slot>/<k>/<n>`: `<k>` counts repeats of the same affix or gem on one stack (two sockets with the same gem), and curio slots use their slot id and index as `<slot>` | while equipped |
 | status effects | vanilla, `MobEffect#addAttributeModifier` | the effect's | while active |
 | mob level | `mob`, at `FinalizeSpawnEvent` ([14.1](#141-mob-levels)) | `realmforge:mob_level/<n>` | saved with the mob, reapplied from its level and the current curves when it loads |
 
-"Saved, recomputed" means: `CharacterStats` writes these modifiers with `addOrReplacePermanentModifier` and rewrites
-the whole set (removing ids it no longer produces) whenever a source changes, and on the player's first tick after
-login or respawn. The
-data stays the source of truth, so a rebalanced talent applies at the next login without migrations. The
-modifiers are saved rather than transient because of how vanilla handles health:
+"Saved, recomputed" means: `CharacterStats` writes these modifiers as permanent ones and rewrites the whole set
+whenever a source changes, and on the player's first tick after login or respawn. `stats/RecomputedModifiers` does
+the rewrite for one source: it owns the ids its predicate accepts (stat rules: our `stat/` prefix), removes those it
+no longer produces, and replaces only the modifiers whose amount or operation changed. The data stays the source of
+truth, so a rebalanced talent applies at the next login without migrations. The modifiers are saved rather than
+transient because of how vanilla handles health:
 
 - **Loading a player** applies saved modifiers first, then health, and `setHealth` clamps to the max health at that
   moment (`LivingEntity#readAdditionalSaveData`). Transient bonuses would not exist yet, so health would be cut.
@@ -550,17 +559,36 @@ modifiers are saved rather than transient because of how vanilla handles health:
   waits for that first tick, so it sees the same gear the saved values were computed with.
 - **Respawning:** after a death, vanilla copies only base values and sets health before our modifiers exist
   (`ServerPlayer#restoreFrom`), so refill health to the new maximum after the first-tick recompute. Leaving the End
-  (`PlayerRespawnEvent#isEndConquered`) is not a death: restore the health captured in `PlayerEvent.Clone` instead.
+  (`PlayerEvent.Clone#isWasDeath` is false) is not a death: vanilla copies the permanent modifiers (ours, and
+  effects', which `MobEffect#addAttributeModifiers` adds as permanent ones) and the health, but clamps the health
+  while transient equipment modifiers are still missing (another mod's gear with max health). So restore the health
+  captured in `PlayerEvent.Clone` after the first-tick recompute instead.
+
+**In code (F4):** `CharacterStats` recomputes at the end of a player tick (`PlayerTickEvent.Post`), after vanilla
+applied the tick's equipment changes. Every new player entity (a login, a respawn) starts with a fresh
+`realmforge:stat_tracker`, a transient attachment that is neither saved, synced nor copied, so its first tick
+recomputes and then applies the health rule above. Other recomputes are in [8.3](#83-derived-stats-and-milestones).
+A GameTest player (`QaPlayers#login`) is never ticked by its connection, so the tests play a client tick with
+`ServerPlayer#doTick` ([20](#20-tests-per-layer)).
 
 ### 8.3 Derived stats and milestones
 
-- A `realmforge:stat_rule` entry says what one primary stat gives: per-point modifiers (the vision's
-  "10 STR = +10% attack damage" is 1% per point) and milestone bonuses at thresholds.
+- A `realmforge:stat_rule` entry (`content/stat_rules/`, `stats/StatRule`) says what one primary stat gives:
+  per-point modifiers (the vision's "10 STR = +10% attack damage" is 1% per point), each with an optional cap on its
+  total (`max_percent: 20` keeps DEX's movement speed small), and milestone bonuses once the stat reaches a number
+  of points. Every point counts, fractions included; a per-point total of 0 gives no modifier.
+- What the D5 stats give, with F4's first numbers in `content/stat_rules/` (RLM-136 plays them): STR attack damage,
+  DEX crit chance (spells too), attack speed and movement speed, VIT max health, INT spell power; each has one
+  milestone, at 25 points.
+- `stats/StatRules` is the pure part: the modifiers a stat value gives. The pipeline computes the same
+  (`StatRuleDef.bonuses_at`), and a GameTest compares the two at sample values.
 - Recompute when a primary stat may have changed: marked dirty by `LivingEquipmentChangeEvent`,
-  `MobEffectEvent.Added`, `MobEffectEvent.Remove`, `MobEffectEvent.Expired` and our own changes (level, talents),
-  plus a cheap check every 10 ticks that compares primary values with the last applied snapshot (covers curios and
-  other mods).
-- No cycles: rules read primary stats and write only secondary or vanilla attributes (a validation rule).
+  `MobEffectEvent.Added`, `MobEffectEvent.Remove`, `MobEffectEvent.Expired` and our own changes
+  (`CharacterStats#markDirty`: level, talents), plus a cheap check every 10 ticks that compares primary values with
+  the last applied snapshot (covers curios, other mods and commands).
+- No cycles: rules read primary stats and write only secondary or vanilla attributes, and each primary stat has at
+  most one rule (validation rules). An `add_value` amount is in the unit of its attribute: `amount_percent` for a
+  share, `amount` for points; multiplied operations always take `amount_percent`.
 
 ### 8.4 Caps
 
@@ -569,7 +597,7 @@ armor formula never blocks more than 80% (`CombatRules.getDamageAfterAbsorb`). T
 and health far beyond vanilla, so:
 
 - caps are raised in one place (`stats/AttributeCaps`), by an access transformer on `RangedAttribute#maxValue` or
-  a small mixin, whichever the M1 stats task proves to work;
+  a small mixin, whichever task F4c (RLM-137) proves to work; NeoForge reads both from `neoforge.mods.toml`;
 - armor mitigation uses our own level-aware formula ([9.1](#91-damage-pipeline)).
 
 ## 9. Combat
@@ -1261,7 +1289,10 @@ dimensions (`realmforge:instances`, later the M1 dimension) exist in GameTests o
 (`PlayerList#remove`, `PlayerList#placeNewPlayer`) with `QaPlayers#login`, as `InstanceGameTests` does to test
 reconnects; its connection goes through NeoForge's `NetworkRegistry#configureMockConnection`, so synced attachments
 can be sent to it. `PlayerList#respawn(player, false, ...)` stands in for a respawn after death, which copies the
-copy-on-death attachments (`PlayerStateGameTests`, and `WorldRulesGameTests` for Dark Vision).
+copy-on-death attachments (`PlayerStateGameTests`, and `WorldRulesGameTests` for Dark Vision), and
+`PlayerList#respawn(player, true, ...)` for leaving the End. The connection never ticks the player, so a test that
+needs player ticks plays them with `ServerPlayer#doTick`, the call the network handler makes once per tick
+(`StatsGameTests`).
 
 ## 21. Decisions and open questions
 
