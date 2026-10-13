@@ -5,6 +5,8 @@ Markers and the blocks themes may swap come with the dungeon framework (W4) and 
 
 from __future__ import annotations
 
+import math
+
 from realmforge_tools.id_universe import IdUniverse
 from realmforge_tools.project import DATA_VERSION
 from realmforge_tools.rooms.structure import JIGSAW, Pos, Structure, split_state_text
@@ -76,8 +78,12 @@ def check_structure(structure: Structure, universe: IdUniverse) -> list[tuple[st
             problems.append((where, "has no id"))
         elif not universe.contains(ENTITY_REGISTRY, entity.id):
             unknown.setdefault((ENTITY_REGISTRY, entity.id), []).append(entity.block_pos)
-        if not all(0 <= c < s for c, s in zip(entity.block_pos, size, strict=True)):
-            problems.append((where, f"lies outside the room's size {_fmt(size)}"))
+        # Vanilla places an entity at its exact position (pos); blockPos only travels along. An entity may sit on
+        # the room's far faces (an item frame on a wall), so both may reach the size itself.
+        inside = all(math.isfinite(c) and 0 <= c <= s for c, s in zip(entity.pos, size, strict=True))
+        if not inside or not all(0 <= c <= s for c, s in zip(entity.block_pos, size, strict=True)):
+            position = " ".join(f"{c:g}" for c in entity.pos)
+            problems.append((where, f"lies outside the room's size {_fmt(size)} (pos {position})"))
 
     for (registry, id_), positions in sorted(unknown.items()):
         count = f" ({len(positions)} times)" if len(positions) > 1 else ""

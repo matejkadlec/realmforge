@@ -760,6 +760,28 @@ def test_room_template_is_checked(repo: RepoPaths) -> None:
     assert any(f"too_new.nbt: DataVersion: {DATA_VERSION + 1} is newer" in p for p in found)
 
 
+@pytest.mark.parametrize(
+    ("pos", "block_pos", "inside"),
+    [
+        ((2.5, 1.0, 2.5), (2, 1, 2), True),
+        ((5.0, 1.0, 2.5), (5, 1, 2), True),  # on the far face, like an item frame on a wall
+        ((9.5, 1.0, 2.5), (2, 1, 2), False),  # vanilla places it at pos, whatever blockPos says
+        ((2.5, -0.5, 2.5), (2, 1, 2), False),
+        ((float("nan"), 1.0, 2.5), (2, 1, 2), False),
+        ((2.5, 1.0, float("inf")), (2, 1, 2), False),
+        ((2.5, 1.0, 2.5), (2, 9, 2), False),
+    ],
+)
+def test_entities_must_lie_inside_the_room(
+    repo: RepoPaths, pos: tuple, block_pos: tuple, inside: bool
+) -> None:
+    stand = StructureEntity(pos, block_pos, {"id": "minecraft:armor_stand"})
+    found = check_structure(small_room(entities=(stand,)), load_vanilla(repo))
+    assert (found == []) is inside
+    if not inside:
+        assert "lies outside the room's size 5 4 5" in found[0][1]
+
+
 def test_unknown_block_in_an_old_room_hints_at_renames(repo: RepoPaths) -> None:
     room = small_room(data_version=3955)
     room = replace(
