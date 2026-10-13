@@ -32,5 +32,6 @@ public final class WorldFeature {
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class, DarkVision::onLoggedIn);
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerRespawnEvent.class, DarkVision::onRespawn);
         NeoForge.EVENT_BUS.addListener(MobEffectEvent.Remove.class, DarkVision::onEffectRemove);
+        NeoForge.EVENT_BUS.addListener(MobEffectEvent.Applicable.class, DarkVision::onEffectApplicable);
     }
 }

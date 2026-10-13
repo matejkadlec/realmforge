@@ -1243,6 +1243,11 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
   `DarkVision` cancels it for Dark Vision while the switch is on, so only the switch removes it, `/effect clear`
   included. Switching on replaces a potion's night vision, which
   Dark Vision outlasts; switching off removes only infinite night vision, so a potion drunk while it is off stays.
+  While the switch is on, every other night vision is refused: `LivingEntity#addEffect` would merge it into Dark
+  Vision through `MobEffectInstance#update`, which copies the newcomer's particles and icon onto the infinite
+  effect, so `DarkVision` answers its `MobEffectEvent.Applicable` with `DO_NOT_APPLY` (a potion, a splash potion, a
+  tipped arrow, suspicious stew, `/effect give`, any amplifier: night vision has no stronger level, and Dark Vision
+  outlasts them all).
 
 ### 19.2 Configuration
 
