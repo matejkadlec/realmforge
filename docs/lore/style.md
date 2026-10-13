@@ -33,7 +33,7 @@
 
 | Type | Form | Length | Example |
 | --- | --- | --- | --- |
-| Quest title | Title Case, like vanilla advancements; no end punctuation | 1–4 words | Raise the Gate |
+| Quest title | Title Case, like vanilla advancements; no end punctuation | 1–5 words | Raise the Gate |
 | Quest description | the giver's voice, then what to do; the task list comes from data | 1–3 sentences, at most 50 words | "The plan shows a frame of plain stone around one keystone. Stand it up somewhere you can find again." Maren |
 | Item, block or mob name | Title Case, like vanilla; no flavour in the name | 1–3 words | Portal Stone |
 | Flavour line (item tooltip lore) | one sentence, no mechanics | at most 12 words | "Warm to the touch, though nothing near it burns." |
