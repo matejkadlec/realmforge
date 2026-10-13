@@ -272,7 +272,7 @@ of the systems M1 builds. The order, the counts and the rewards are Q2's to set.
 | 7 | The Keystone | Overworld | crafts the realm selector | the gate's heart: a stone that remembers where it leads |
 | 8 | Raise the Gate | Overworld | builds the frame | the first gate raised in an age |
 | 9 | The Stone Sigil | Overworld | finishes the unlock quest and receives the Stone Sigil | the Lodge's old relic turns out to be the first sigil; Maren cuts a copy for the player from it (and will again if it is lost); the seal will know the player now |
-| 10 | Below the World | the Undervault | enters the realm, finds a Cairnfolk mine | first arrival; the Cairnfolk are surprised to see anyone from above |
+| 10 | Below the World | the Undervault | enters the realm (and finds a Cairnfolk mine once mines exist) | first arrival; the Cairnfolk are surprised to see anyone from above |
 | 11 | Ore for the Cairnfolk | the Undervault | mines the realm's ores | Torva trades ore for the catacomb key |
 | 12 | The Catacombs | the Undervault | clears the catacombs to their treasury | the Gatewrights' dead and their riddles; the arena key lies in the treasury |
 | 13 | The Hewn Awake | the Undervault | defeats the realm's statues | the stone servants wake as the seal thins |
@@ -281,7 +281,9 @@ of the systems M1 builds. The order, the counts and the rewards are Q2's to set.
 | 16 | Home with the Shards | Overworld | brings the shards back | Maren reads the shards: two seals ahead, sun and frost. The chapter advancement raises the level cap |
 
 - **Givers:** the quest book speaks in Maren's voice (her notes and letters), and in the Undervault in Torva's and
-  the Scribe's. The beats need no NPC entity: where M1 has none, the same lines come from the quest book.
+  the Scribe's. The beats need no NPC entity and no mine: the realm design leaves the NPC mines to later tasks, so
+  where M1 has none, the same lines come from the quest book, beat 10 is the arrival itself, and beat 11 takes the
+  realm's ores from anywhere.
 - **The catacomb key** comes from Torva in the story. If M1 hands it out another way (a quest reward), beat 11
   becomes "Torva sends a key with the ore you brought" and stays true.
 - **Lost pages:** Gatewright inscriptions found along the way can be click-to-read quests that teach one system
