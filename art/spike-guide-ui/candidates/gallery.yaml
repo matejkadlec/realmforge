@@ -1,15 +1,38 @@
-# Labels, prompts, seeds and costs for the guide UI spike (RLM-127, for the decision RLM-116).
-# Generated on 2026-10-12 through the Retro Diffusion MCP server; 0.42 USD in total.
+# Labels, prompts, seeds and costs for the guide UI spike (round 1: RLM-127, round 2: RLM-131; for the decision
+# RLM-116). Generated through the Retro Diffusion MCP server: round 1 on 2026-10-12 (0.42 USD), round 2 on
+# 2026-10-13 (frame_r2/, 0.12 USD).
 # frame/ and icon_*/ hold the generator output exactly as returned. preview_*/ are derived from two frames (no
 # generation cost): see ../README.md for how they were cut. The schema is the one `rf art gallery` reads, but that
 # command cleans every candidate at one width and cannot render this mixed-size folder (README, "Pipeline notes").
 title: Guide UI art spike
 intro: >-
   A pixel-art version of the "modern fantasy hybrid" guide window (dark navy panel, thin gold ornate border,
-  decorated corners, a gold crest on the top edge) from RD Fast and RD Plus, the same prompt for every frame, plus
-  two frames guided by a crop of the mockup's corner, nine-slice and stretched previews of the two best frames, and
-  five 16x16 category icons. Pick a frame, and say whether the icons are usable or need another style.
+  decorated corners, a gold crest on the top edge). Round 2 (frame_r2, first) is four RD Fast frames guided by a
+  clean, symmetric frame built from the mockup's own parts, after Matěj rejected every round 1 frame. Round 1
+  follows: frames from RD Fast and RD Plus, two frames guided by a crop of the mockup's corner, nine-slice and
+  stretched previews, and five 16x16 category icons, which Matěj accepted. Pick a round 2 frame for the RD Pro
+  remake.
 candidates:
+  rd-fast-a:
+    label: RD Fast, round 2 a
+    note: >-
+      ui_element:rd_flux, 384x272, input_image ../reference/frame-composite.png, strength 0.45, seed 2201,
+      remove_bg; 0.03 USD
+  rd-fast-b:
+    label: RD Fast, round 2 b
+    note: >-
+      ui_element:rd_flux, 384x272, input_image ../reference/frame-composite.png, strength 0.6, seed 2201, remove_bg;
+      0.03 USD
+  rd-fast-c:
+    label: RD Fast, round 2 c
+    note: >-
+      ui_element:rd_flux, 384x272, input_image ../reference/frame-composite.png, strength 0.6, seed 2202, remove_bg;
+      0.03 USD
+  rd-fast-d:
+    label: RD Fast, round 2 d (mockup palette)
+    note: >-
+      ui_element:rd_flux, 384x272, input_image ../reference/frame-composite.png, input_palette
+      ../reference/frame-palette.png, strength 0.6, seed 2201, remove_bg; 0.03 USD
   rd-fast-2101:
     label: RD Fast, seed 2101
     note: ui_element:rd_flux (RD Fast UI Element), 256x256, remove_bg; 0.03 USD
@@ -36,8 +59,16 @@ candidates:
     label: RD Fast MC Item
     note: rd_fast__mc_item, 16x16, seed 2101, automatic transparency; 0.03 USD each
 subjects:
+  frame_r2:
+    title: Window frame, round 2, 384x272 (guided by the mockup frame)
+    prompt: >-
+      an empty wide horizontal fantasy RPG game window frame seen straight on: a very dark navy blue, almost black,
+      rectangular panel framed by a thin bright gold beveled border line, chamfered corners with fine gold filigree
+      flourishes, a pointed gold crest with a small blue crystal centered on the top edge, a small gold ornament
+      centered on the bottom edge, small gold diamond studs at the middle of the left and right sides; the panel is
+      plain and empty with no text; symmetrical, straight edges, on a plain white background
   frame:
-    title: Window frame, 256x256
+    title: Window frame, round 1, 256x256
     prompt: >-
       an empty fantasy RPG game window panel seen straight on, filling the image: a dark navy blue to charcoal
       rectangular panel framed by a thin ornate gold filigree border, decorated gold corner pieces, and a small gold
