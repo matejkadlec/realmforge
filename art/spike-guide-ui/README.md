@@ -173,7 +173,9 @@ in round 2; d has 33 degrees and 0.70.
 
 **Agent's view:** rd-pro-edit is the faithful RD Pro version of d. rd-pro-default comes closer to the mockup's cut
 corners and bright gold, at the cost of a smaller crest and a slightly lighter panel. Either can still be cut into a
-nine-slice sprite, with the crest drawn separately, as round 1's previews showed.
+nine-slice sprite, as round 1's previews showed, but every ornament in the middle of an edge (the crest, the bottom
+ornament and the side studs) becomes a separate sprite: the edge spans are tiled, so an ornament left in one would
+repeat.
 
 **Spent: 0.36 USD** (2 x 0.18). The balance went from 24.48 to 24.12 USD; the whole spike cost 0.90 USD.
 
