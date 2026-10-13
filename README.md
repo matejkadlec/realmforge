@@ -24,7 +24,7 @@ test item; there is no gameplay yet. Next is M1, a small playable vertical slice
 | `mod/`, `qa-mod/` | NeoForge mods (Gradle, ModDevGradle) |
 | `pack/` | packwiz modpack definition (metadata only, no jars) |
 | `art/` | asset sources |
-| `docs/` | vision, [architecture](docs/architecture.md), [roadmap](docs/roadmap.md), [design documents](docs/design/README.md), [decisions (ADRs)](docs/decisions/README.md), [research notes](docs/research-notes.md), [dev setup](docs/dev-setup.md) |
+| `docs/` | vision, [architecture](docs/architecture.md), [roadmap](docs/roadmap.md), [design documents](docs/design/README.md), [lore](docs/lore/README.md), [decisions (ADRs)](docs/decisions/README.md), [research notes](docs/research-notes.md), [dev setup](docs/dev-setup.md) |
 
 ## Quick start
 
