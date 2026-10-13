@@ -39,7 +39,7 @@
 | Flavour line (item tooltip lore) | one sentence, no mechanics | at most 12 words | "Warm to the touch, though nothing near it burns." |
 | Mechanics in a tooltip | generated from data, never written in prose | - | - |
 | Realm arrival line | what the player sees, hears or smells | one sentence, at most 15 words | "Cold air rises from below, smelling of dust and old stone." |
-| Guide entry | summary on one line; text about the place, not the plot; facts come from data ([guide](../design/guide.md)) | 2–5 sentences | - |
+| Guide entry | summary on one line; text about its subject (a realm, dungeon, boss or system), not the plot; facts come from data ([guide](../design/guide.md)) | 2–5 sentences | - |
 | Boss phase name (boss bar) | Title Case | 1–3 words | Stone Fury |
 | Book page, lost page, inscription | the writer's voice | at most 120 words a page | - |
 | NPC line | one idea a line | at most 25 words | "Ore first, questions after. That's how it works down here." Torva |
