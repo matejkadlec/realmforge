@@ -67,6 +67,27 @@ def test_nbt_truncated_array_is_rejected() -> None:
         nbt.decode(encoded[:-5])
 
 
+@pytest.mark.parametrize(
+    ("text", "java"),
+    [
+        ("plain", b"plain"),
+        ("p\u0159edm\u011bt", "p\u0159edm\u011bt".encode()),
+        ("a\0b", b"a\xc0\x80b"),
+        ("sign \U0001f600", b"sign \xed\xa0\xbd\xed\xb8\x80"),
+    ],
+)
+def test_nbt_strings_use_java_modified_utf8(text: str, java: bytes) -> None:
+    # Java writes NBT strings with DataOutput#writeUTF: NUL as C0 80, characters outside the BMP as surrogates.
+    encoded = nbt.encode({"text": text})
+    assert java in encoded
+    assert nbt.decode(encoded)[1] == {"text": text}
+
+
+def test_nbt_string_longer_than_65535_bytes_is_refused() -> None:
+    with pytest.raises(ValueError, match="65535"):
+        nbt.encode({"text": "x" * 65536})
+
+
 def test_nbt_rejects_plain_ints() -> None:
     with pytest.raises(TypeError):
         nbt.encode({"x": 1})

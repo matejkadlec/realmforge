@@ -123,9 +123,34 @@ def decode(data: bytes) -> tuple[str, dict[str, Any]]:
 
 
 def _string(value: str) -> bytes:
-    # Java's "modified UTF-8" equals UTF-8 for text without NUL and supplementary characters.
-    encoded = value.encode("utf-8")
+    encoded = encode_modified_utf8(value)
+    if len(encoded) > 0xFFFF:
+        raise ValueError(f"an NBT string holds at most 65535 bytes, this one {len(encoded)}")
     return struct.pack(">H", len(encoded)) + encoded
+
+
+def encode_modified_utf8(value: str) -> bytes:
+    """Java's "modified UTF-8" (``DataOutput#writeUTF``), which NBT strings use: UTF-8, except that NUL is two bytes
+    (``C0 80``) and a character outside the BMP is its UTF-16 surrogate pair, three bytes per surrogate."""
+    if "\0" not in value and all(ord(c) <= 0xFFFF for c in value):
+        return value.encode("utf-8")  # the same bytes as plain UTF-8
+    surrogates = "".join(c if ord(c) <= 0xFFFF else _surrogate_pair(ord(c)) for c in value)
+    return surrogates.encode("utf-8", "surrogatepass").replace(b"\x00", b"\xc0\x80")
+
+
+def _surrogate_pair(code: int) -> str:
+    code -= 0x10000
+    return chr(0xD800 + (code >> 10)) + chr(0xDC00 + (code & 0x3FF))
+
+
+def decode_modified_utf8(data: bytes) -> str:
+    """The inverse of ``encode_modified_utf8``; plain UTF-8 is accepted too."""
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError:
+        pass
+    text = data.replace(b"\xc0\x80", b"\x00").decode("utf-8", "surrogatepass")
+    return text.encode("utf-16-be", "surrogatepass").decode("utf-16-be", "surrogatepass")
 
 
 def _payload(value: Any) -> bytes:
@@ -168,7 +193,7 @@ class _Reader:
 
     def string(self) -> str:
         (length,) = struct.unpack(">H", self.take(2))
-        return self.take(length).decode("utf-8")
+        return decode_modified_utf8(self.take(length))
 
     def payload(self, kind: int) -> Any:
         if kind == TAG_COMPOUND:
