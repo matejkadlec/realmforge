@@ -71,7 +71,7 @@ public final class CombatGameTests {
 
     /** Done when of F5: school damage right after a melee hit lands in full, and leaves the window as it was. */
     @QaGameTest
-    public static void schoolDamageRightAfterAMeleeHitIsNotSwallowed(GameTestHelper helper) {
+    public static void schoolDamageRightAfterMeleeIsNotSwallowed(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Zombie zombie = attacker(helper);
         Husk husk = target(helper);
@@ -96,7 +96,7 @@ public final class CombatGameTests {
      * bigger, it is dropped. Without the restore it would have been compared with the tick and dealt 5.
      */
     @QaGameTest
-    public static void meleeAfterADotTickInTheWindowIsComparedWithTheMeleeHit(GameTestHelper helper) {
+    public static void meleeAfterDotTickInTheWindowIsComparedWithTheMeleeHit(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Zombie zombie = attacker(helper);
         Husk husk = target(helper);
