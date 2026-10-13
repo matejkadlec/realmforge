@@ -25,7 +25,7 @@ uv run ruff check && uv run ruff format --check
 | `realmforge_tools/content.py` | loads `content/` (step 1: schema) |
 | `realmforge_tools/validate.py` | own ids and references against the ID universe (steps 2-3) |
 | `realmforge_tools/id_universe.py`, `vanilla.py` | the ID universe and the vanilla extractor |
-| `realmforge_tools/generate/` | generators; `generate_all` + `sync` own the generated directories; `datapack.py` writes every type in `DATAPACK_TYPES` as datapack registry entries (translation keys, unit conversion); `texts.py` writes the `GeneratedTexts` key constants and `lang.py` every locale's lang file |
+| `realmforge_tools/generate/` | generators; `generate_all` + `sync` own the generated directories; `datapack.py` writes every type in `DATAPACK_TYPES` as datapack registry entries (translation keys, unit conversion); `spell_schools.py` writes the spell schools with their damage types and damage type tag entries; `texts.py` writes the `GeneratedTexts` key constants and `lang.py` every locale's lang file |
 | `realmforge_tools/formats/` | deterministic PNG, NBT, gzip/zlib and JSON writers; a PNG reader for generator output; an NBT reader (every tag type, the arrays included) |
 | `realmforge_tools/art/` | texture pipeline ([ADR 0023](../docs/decisions/0023-texture-generator.md)): palette, `rf art clean`, `rf art gallery` |
 | `realmforge_tools/rooms/` | dungeon rooms ([below](#rooms)): structure templates, the source readers, `rf rooms import`, the checks, the renderer and `rf rooms gallery` |

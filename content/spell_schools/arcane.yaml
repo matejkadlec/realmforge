@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/spell_schools.schema.json
+# One of the Mage's schools (D1), also its blink. Magic: bypasses armor; spell power and Arcane Power raise it,
+# Arcane Resistance lowers it.
+id: arcane
+name: {en_us: Arcane}
+kind: magic
+color: "#C77DFF"
+power: realmforge:arcane_power
+resistance: realmforge:arcane_resistance
+death_message: {en_us: "%1$s was torn apart by arcane power"}

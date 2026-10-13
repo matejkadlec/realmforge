@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Less Arcane damage taken, in percent (content/spell_schools/arcane.yaml). Capped at 75 % so nothing becomes
+# immune without a tell (research BM-18).
+id: arcane_resistance
+name: {en_us: Arcane Resistance}
+kind: secondary
+max_percent: 75

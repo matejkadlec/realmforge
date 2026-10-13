@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/spell_schools.schema.json
+# One of the Mage's schools (D1). Magic: bypasses armor; spell power and Frost Power raise it, Frost Resistance
+# lowers it.
+id: frost
+name: {en_us: Frost}
+kind: magic
+color: "#7FD4FF"
+power: realmforge:frost_power
+resistance: realmforge:frost_resistance
+death_message: {en_us: "%1$s froze solid"}

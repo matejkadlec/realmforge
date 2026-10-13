@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/spell_schools.schema.json
+# Weapon-borne abilities (the Warrior's, D1): armor reduces it and it can be dodged, like a melee hit, but it lands
+# through the hurt cooldown like every school. No power or resistance stat: attack damage and armor cover it.
+id: physical
+name: {en_us: Physical}
+kind: physical
+color: "#E6E6E6"
+death_message: {en_us: "%1$s was struck down"}

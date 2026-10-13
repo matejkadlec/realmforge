@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# More Fire damage, in percent, on top of spell power: F5's damage pipeline applies it to the school's hits
+# (content/spell_schools/fire.yaml).
+id: fire_power
+name: {en_us: Fire Power}
+kind: secondary
+max_percent: 1000

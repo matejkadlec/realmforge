@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# Floating combat text (combat_text.realmforge.<name>, client/hud/CombatTextHud): words shown instead of a number.
+id: combat_text
+texts:
+  dodge:
+    en_us: Dodge

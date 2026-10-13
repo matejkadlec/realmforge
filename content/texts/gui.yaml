@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# Screen texts (gui.realmforge.<name>): the character sheet (client/screen/CharacterSheetScreen). In the format texts
+# %1$s and %2$s are filled in by the game.
+id: gui
+texts:
+  character_sheet:
+    en_us: Character
+  primary_stats:
+    en_us: Primary Stats
+  secondary_stats:
+    en_us: Secondary Stats
+  combat_stats:
+    en_us: Combat
+  spell_schools:
+    en_us: Spell Schools
+  school_power:
+    en_us: Power
+  school_resistance:
+    en_us: Resistance
+  # A bonus a primary stat gives: "+25% Attack Damage" (%1$s the amount, %2$s the attribute).
+  stat_bonus:
+    en_us: "%1$s %2$s"
+  # A milestone of a primary stat: "At 25: +10% Crit Damage" (%1$s the points, %2$s the bonus).
+  stat_milestone:
+    en_us: "At %1$s: %2$s"

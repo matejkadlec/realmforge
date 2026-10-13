@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# More Arcane damage, in percent, on top of spell power: F5's damage pipeline applies it to the school's hits
+# (content/spell_schools/arcane.yaml).
+id: arcane_power
+name: {en_us: Arcane Power}
+kind: secondary
+max_percent: 1000

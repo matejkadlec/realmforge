@@ -45,7 +45,7 @@ def curve(points: str, extra: str = "") -> str:
 
 def test_repository_curves_are_valid() -> None:
     content, universe = load_and_validate(RepoPaths())
-    assert [e.model.id for e in content.curves] == ["test_curve"]
+    assert [e.model.id for e in content.curves] == ["armor_halving", "armor_reduction_cap", "test_curve"]
     assert universe.contains("realmforge:curve", "realmforge:test_curve")
 
 
@@ -127,7 +127,10 @@ def test_curve_outputs(repo: RepoPaths) -> None:
 
     keys = files[CURVE_KEYS].decode()
     assert 'public static final ResourceKey<Curve> TEST_CURVE = key("test_curve");' in keys
-    assert "public static final List<ResourceKey<Curve>> ALL = List.of(TEST_CURVE);" in keys
+    assert (
+        "public static final List<ResourceKey<Curve>> ALL = List.of(ARMOR_HALVING, ARMOR_REDUCTION_CAP, TEST_CURVE);"
+        in keys
+    )
 
     expectations = files[CURVE_EXPECTATIONS].decode()
     assert '"realmforge:test_curve",' in expectations
@@ -148,7 +151,8 @@ def test_curve_without_name_has_no_name_field_or_lang_entry(repo: RepoPaths) -> 
 
 
 def test_no_curves_still_compile(repo: RepoPaths) -> None:
-    (repo.content / "curves" / "test_curve.yaml").unlink()
+    for file in (repo.content / "curves").glob("*.yaml"):
+        file.unlink()
     files = generate(repo)
     assert "ALL = List.of();" in files[CURVE_KEYS].decode()
     assert "CURVES = List.of();" in files[CURVE_EXPECTATIONS].decode()

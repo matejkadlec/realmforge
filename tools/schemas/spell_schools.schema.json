@@ -1,0 +1,95 @@
+{
+  "$defs": {
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A spell school: the kind of damage a spell, an ability or a boss attack deals (architecture 9.1). Each school\nis a vanilla damage type ``realmforge:<id>``, in ``#minecraft:bypasses_cooldown`` so its hits are never\nswallowed by the hurt cooldown.\n\n``physical`` damage meets armor (our formula) and can be dodged; ``magic`` damage bypasses armor, spell power\nraises it and the school's resistance lowers it. ``power`` and ``resistance`` name secondary stats (shares in\n``content/stats/``) that raise the school's damage dealt and lower its damage taken.",
+  "properties": {
+    "color": {
+      "description": "Colour of its combat text and tooltips, \"#RRGGBB\".",
+      "pattern": "^#[0-9A-Fa-f]{6}$",
+      "title": "Color",
+      "type": "string"
+    },
+    "death_message": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "Death message when this school kills: \"%1$s burned to ashes\". %1$s is the victim; the game passes the killer only sometimes, so no other placeholder is allowed."
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "kind": {
+      "description": "physical: armor reduces it, it can be dodged; magic: bypasses armor, spell power raises it.",
+      "enum": [
+        "physical",
+        "magic"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "name": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "The school's name, shown in tooltips and on the character sheet."
+    },
+    "power": {
+      "anyOf": [
+        {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Secondary stat (a share) that raises this school's damage, e.g. realmforge:fire_power.",
+      "title": "Power"
+    },
+    "resistance": {
+      "anyOf": [
+        {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Secondary stat (a share) that lowers the damage taken from this school.",
+      "title": "Resistance"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "kind",
+    "color",
+    "death_message"
+  ],
+  "title": "SpellSchoolDef",
+  "type": "object"
+}

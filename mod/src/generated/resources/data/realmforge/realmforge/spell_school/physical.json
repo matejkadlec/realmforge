@@ -1,0 +1,6 @@
+{
+  "name": "spell_school.realmforge.physical.name",
+  "kind": "physical",
+  "color": "#E6E6E6",
+  "damage_type": "realmforge:physical"
+}

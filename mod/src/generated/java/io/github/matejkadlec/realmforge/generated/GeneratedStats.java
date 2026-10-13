@@ -21,6 +21,16 @@ public final class GeneratedStats {
     public static final DeferredRegister<Attribute> ATTRIBUTES =
             DeferredRegister.create(Registries.ATTRIBUTE, Realmforge.MOD_ID);
 
+    /** {@code realmforge:arcane_power} from {@code content/stats/arcane_power.yaml}: secondary, "Arcane Power". */
+    public static final DeferredHolder<Attribute, Attribute> ARCANE_POWER =
+            ATTRIBUTES.register("arcane_power",
+                    () -> new PercentageAttribute("attribute.realmforge.arcane_power", 0.0, 0.0, 10.0).setSyncable(true));
+
+    /** {@code realmforge:arcane_resistance} from {@code content/stats/arcane_resistance.yaml}: secondary, "Arcane Resistance". */
+    public static final DeferredHolder<Attribute, Attribute> ARCANE_RESISTANCE =
+            ATTRIBUTES.register("arcane_resistance",
+                    () -> new PercentageAttribute("attribute.realmforge.arcane_resistance", 0.0, 0.0, 0.75).setSyncable(true));
+
     /** {@code realmforge:crit_chance} from {@code content/stats/crit_chance.yaml}: secondary, "Crit Chance". */
     public static final DeferredHolder<Attribute, Attribute> CRIT_CHANCE =
             ATTRIBUTES.register("crit_chance",
@@ -40,6 +50,26 @@ public final class GeneratedStats {
     public static final DeferredHolder<Attribute, Attribute> DODGE_CHANCE =
             ATTRIBUTES.register("dodge_chance",
                     () -> new PercentageAttribute("attribute.realmforge.dodge_chance", 0.0, 0.0, 1.0).setSyncable(true));
+
+    /** {@code realmforge:fire_power} from {@code content/stats/fire_power.yaml}: secondary, "Fire Power". */
+    public static final DeferredHolder<Attribute, Attribute> FIRE_POWER =
+            ATTRIBUTES.register("fire_power",
+                    () -> new PercentageAttribute("attribute.realmforge.fire_power", 0.0, 0.0, 10.0).setSyncable(true));
+
+    /** {@code realmforge:fire_resistance} from {@code content/stats/fire_resistance.yaml}: secondary, "Fire Resistance". */
+    public static final DeferredHolder<Attribute, Attribute> FIRE_RESISTANCE =
+            ATTRIBUTES.register("fire_resistance",
+                    () -> new PercentageAttribute("attribute.realmforge.fire_resistance", 0.0, 0.0, 0.75).setSyncable(true));
+
+    /** {@code realmforge:frost_power} from {@code content/stats/frost_power.yaml}: secondary, "Frost Power". */
+    public static final DeferredHolder<Attribute, Attribute> FROST_POWER =
+            ATTRIBUTES.register("frost_power",
+                    () -> new PercentageAttribute("attribute.realmforge.frost_power", 0.0, 0.0, 10.0).setSyncable(true));
+
+    /** {@code realmforge:frost_resistance} from {@code content/stats/frost_resistance.yaml}: secondary, "Frost Resistance". */
+    public static final DeferredHolder<Attribute, Attribute> FROST_RESISTANCE =
+            ATTRIBUTES.register("frost_resistance",
+                    () -> new PercentageAttribute("attribute.realmforge.frost_resistance", 0.0, 0.0, 0.75).setSyncable(true));
 
     /** {@code realmforge:haste} from {@code content/stats/haste.yaml}: secondary, "Haste". */
     public static final DeferredHolder<Attribute, Attribute> HASTE =
@@ -75,7 +105,7 @@ public final class GeneratedStats {
     public static final List<DeferredHolder<Attribute, Attribute>> PRIMARY = List.of(DEXTERITY, INTELLECT, STRENGTH, VITALITY);
 
     /** Every stat above, in id order. */
-    public static final List<DeferredHolder<Attribute, Attribute>> ALL = List.of(CRIT_CHANCE, CRIT_DAMAGE, DEXTERITY, DODGE_CHANCE, HASTE, HEALING_POWER, INTELLECT, SPELL_POWER, STRENGTH, VITALITY);
+    public static final List<DeferredHolder<Attribute, Attribute>> ALL = List.of(ARCANE_POWER, ARCANE_RESISTANCE, CRIT_CHANCE, CRIT_DAMAGE, DEXTERITY, DODGE_CHANCE, FIRE_POWER, FIRE_RESISTANCE, FROST_POWER, FROST_RESISTANCE, HASTE, HEALING_POWER, INTELLECT, SPELL_POWER, STRENGTH, VITALITY);
 
     private GeneratedStats() {
     }

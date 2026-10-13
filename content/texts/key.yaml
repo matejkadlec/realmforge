@@ -4,3 +4,5 @@ id: key
 texts:
   dark_vision:
     en_us: Toggle Dark Vision
+  character_sheet:
+    en_us: Character Sheet

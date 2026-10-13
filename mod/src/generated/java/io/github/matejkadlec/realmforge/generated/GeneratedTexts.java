@@ -5,6 +5,39 @@ package io.github.matejkadlec.realmforge.generated;
 
 /** Translation keys of the texts in {@code content/texts/}, so Java names a text without typing its key. */
 public final class GeneratedTexts {
+    /** {@code combat_text.realmforge.dodge} from {@code content/texts/combat_text.yaml}: "Dodge" */
+    public static final String COMBAT_TEXT_DODGE = "combat_text.realmforge.dodge";
+
+    /** {@code gui.realmforge.character_sheet} from {@code content/texts/gui.yaml}: "Character" */
+    public static final String GUI_CHARACTER_SHEET = "gui.realmforge.character_sheet";
+
+    /** {@code gui.realmforge.combat_stats} from {@code content/texts/gui.yaml}: "Combat" */
+    public static final String GUI_COMBAT_STATS = "gui.realmforge.combat_stats";
+
+    /** {@code gui.realmforge.primary_stats} from {@code content/texts/gui.yaml}: "Primary Stats" */
+    public static final String GUI_PRIMARY_STATS = "gui.realmforge.primary_stats";
+
+    /** {@code gui.realmforge.school_power} from {@code content/texts/gui.yaml}: "Power" */
+    public static final String GUI_SCHOOL_POWER = "gui.realmforge.school_power";
+
+    /** {@code gui.realmforge.school_resistance} from {@code content/texts/gui.yaml}: "Resistance" */
+    public static final String GUI_SCHOOL_RESISTANCE = "gui.realmforge.school_resistance";
+
+    /** {@code gui.realmforge.secondary_stats} from {@code content/texts/gui.yaml}: "Secondary Stats" */
+    public static final String GUI_SECONDARY_STATS = "gui.realmforge.secondary_stats";
+
+    /** {@code gui.realmforge.spell_schools} from {@code content/texts/gui.yaml}: "Spell Schools" */
+    public static final String GUI_SPELL_SCHOOLS = "gui.realmforge.spell_schools";
+
+    /** {@code gui.realmforge.stat_bonus} from {@code content/texts/gui.yaml}: "%1$s %2$s" */
+    public static final String GUI_STAT_BONUS = "gui.realmforge.stat_bonus";
+
+    /** {@code gui.realmforge.stat_milestone} from {@code content/texts/gui.yaml}: "At %1$s: %2$s" */
+    public static final String GUI_STAT_MILESTONE = "gui.realmforge.stat_milestone";
+
+    /** {@code key.realmforge.character_sheet} from {@code content/texts/key.yaml}: "Character Sheet" */
+    public static final String KEY_CHARACTER_SHEET = "key.realmforge.character_sheet";
+
     /** {@code key.realmforge.dark_vision} from {@code content/texts/key.yaml}: "Toggle Dark Vision" */
     public static final String KEY_DARK_VISION = "key.realmforge.dark_vision";
 

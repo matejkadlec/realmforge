@@ -29,6 +29,20 @@ public final class GeneratedStatExpectations {
 
     public static final List<StatExpectation> STATS = List.of(
             new StatExpectation(
+                    "realmforge:arcane_power",
+                    "attribute.realmforge.arcane_power",
+                    false,
+                    true,
+                    0.0,
+                    10.0),
+            new StatExpectation(
+                    "realmforge:arcane_resistance",
+                    "attribute.realmforge.arcane_resistance",
+                    false,
+                    true,
+                    0.0,
+                    0.75),
+            new StatExpectation(
                     "realmforge:crit_chance",
                     "attribute.realmforge.crit_chance",
                     false,
@@ -56,6 +70,34 @@ public final class GeneratedStatExpectations {
                     true,
                     0.0,
                     1.0),
+            new StatExpectation(
+                    "realmforge:fire_power",
+                    "attribute.realmforge.fire_power",
+                    false,
+                    true,
+                    0.0,
+                    10.0),
+            new StatExpectation(
+                    "realmforge:fire_resistance",
+                    "attribute.realmforge.fire_resistance",
+                    false,
+                    true,
+                    0.0,
+                    0.75),
+            new StatExpectation(
+                    "realmforge:frost_power",
+                    "attribute.realmforge.frost_power",
+                    false,
+                    true,
+                    0.0,
+                    10.0),
+            new StatExpectation(
+                    "realmforge:frost_resistance",
+                    "attribute.realmforge.frost_resistance",
+                    false,
+                    true,
+                    0.0,
+                    0.75),
             new StatExpectation(
                     "realmforge:haste",
                     "attribute.realmforge.haste",

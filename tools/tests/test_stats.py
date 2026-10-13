@@ -488,7 +488,7 @@ def test_stats_register_points_and_shares(repo: RepoPaths) -> None:
         in java
     )
     assert "PRIMARY = List.of(DEXTERITY, INTELLECT, STRENGTH, VITALITY);" in java
-    assert "ALL = List.of(CRIT_CHANCE, CRIT_DAMAGE, DEXTERITY," in java
+    assert "ALL = List.of(ARCANE_POWER, ARCANE_RESISTANCE, CRIT_CHANCE, CRIT_DAMAGE, DEXTERITY," in java
 
 
 def test_stat_names_go_into_the_lang_file(repo: RepoPaths) -> None:
@@ -530,7 +530,8 @@ def test_expectations_hold_stats_and_rule_samples(repo: RepoPaths) -> None:
 
 
 def test_no_stats_or_rules_still_compile(repo: RepoPaths) -> None:
-    for folder in ("stats", "stat_rules"):
+    # Spell schools name their power and resistance stats, so they go too.
+    for folder in ("stats", "stat_rules", "spell_schools"):
         for file in (repo.content / folder).glob("*.yaml"):
             file.unlink()
     files = generate(repo)
