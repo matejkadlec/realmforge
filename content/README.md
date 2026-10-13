@@ -20,6 +20,13 @@ Rules:
   an entry (e.g. the same creative tab twice crashes the game).
 - Player-facing texts are `LocalizedText`: `en_us` is required, `cs_cz` is optional. In lore and texts the
   in-game world is always called **Realmforge**.
+- **Labels use Title Case** (Matěj, 2026-10-13), for readability: names (items, stats, spells, mobs, realms),
+  key mapping names, setting names, screen, button and tab titles, guide chapter and section names, and short
+  status messages: `Dark Vision On`, `Toggle Dark Vision`, `Character Sheet`. Every word starts with a capital
+  except articles, conjunctions and prepositions of up to three letters (`a`, `an`, `the`, `and`, `but`, `or`,
+  `of`, `in`, `on`, `at`, `to`, `for`, `by`) that are neither the first nor the last word: `Ring of the Deep`,
+  `Dark Vision On`. Whole sentences (tooltip explanations, quest, lore and dialog text, a chat line that reads as
+  a sentence) stay in sentence case.
 - `texts/` holds player-facing texts that belong to no other type (key mapping names, messages). The group id
   is the key prefix (`key`, `message`, ...) and must not be another type's prefix (`item`, `curve`); Java
   names a text through its `GeneratedTexts` constant (`KEY_DARK_VISION`), never by typing the key. A group id may
