@@ -56,7 +56,9 @@ neoForge {
             taskBefore seedDevOptions
             // Logs in with a real Minecraft account (covers1624's DevLogin, built into ModDevGradle) instead of
             // the offline `Dev` profile; the first launch prints a Microsoft login link in the console.
-            devLogin = true
+            // `-PofflineClient` starts as the offline `Dev` player instead, without the login prompt that an
+            // agent's screenshot run cannot answer: ./gradlew runClient -PofflineClient
+            devLogin = !providers.gradleProperty('offlineClient').isPresent()
         }
 
         server {

@@ -1,0 +1,97 @@
+{
+  "$defs": {
+    "RoomSource": {
+      "additionalProperties": false,
+      "description": "Where an imported room came from, written by ``rf rooms import``.",
+      "properties": {
+        "data_version": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The data version the source was saved with; the template keeps it, and the game upgrades the room from it when it loads. None when the file states none.",
+          "title": "Data Version"
+        },
+        "file": {
+          "description": "The source file's name.",
+          "title": "File",
+          "type": "string"
+        },
+        "format": {
+          "description": "The source file's format.",
+          "enum": [
+            "nbt",
+            "schem",
+            "litematic"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "ours": {
+          "default": false,
+          "description": "True for a room we built ourselves (exported from a dev world, say). Every other imported room is third-party: it lives in third_party/<source>/ with the source's LICENSE and NOTICE.",
+          "title": "Ours",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "file",
+        "format",
+        "data_version"
+      ],
+      "title": "RoomSource",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "How dungeons use a room. The template next to it holds the blocks.",
+  "properties": {
+    "pools": {
+      "description": "The template pools the room joins (e.g. realmforge:rooms/hallway). Empty for a room that is not used yet, such as a fresh import.",
+      "items": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        "type": "string"
+      },
+      "title": "Pools",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "source": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RoomSource"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Set for an imported room."
+    },
+    "tags": {
+      "description": "Slot types and other labels (entrance, hallway, crossing, dead_end, combat, treasure, ...).",
+      "items": {
+        "pattern": "^[a-z][a-z0-9_]*$",
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "weight": {
+      "default": 1,
+      "description": "Weight in its pools (vanilla allows 1 to 150).",
+      "maximum": 150,
+      "minimum": 1,
+      "title": "Weight",
+      "type": "integer"
+    }
+  },
+  "title": "RoomDef",
+  "type": "object"
+}

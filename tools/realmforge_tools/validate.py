@@ -11,6 +11,7 @@ from realmforge_tools.content import Content, load_content
 from realmforge_tools.id_universe import IdUniverse, load_vanilla
 from realmforge_tools.problems import Problem, ValidationFailed
 from realmforge_tools.project import MOD_ID, RepoPaths
+from realmforge_tools.rooms.check import check_structure
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES
 from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
@@ -19,6 +20,7 @@ ITEM_REGISTRY = "minecraft:item"
 ATTRIBUTE_REGISTRY = "minecraft:attribute"
 CREATIVE_TAB_REGISTRY = "minecraft:creative_mode_tab"
 DIMENSION_TYPE_REGISTRY = "minecraft:dimension_type"
+STRUCTURE_REGISTRY = "minecraft:structure"
 
 # YAML content type -> the registry its ids live in.
 REGISTRY_OF_TYPE: dict[str, str] = {
@@ -55,7 +57,14 @@ def universe_with_content(vanilla: IdUniverse, content: Content) -> IdUniverse:
             universe.add(registry, f"{MOD_ID}:{entry.model.id}")
     for file in content.worldgen:
         universe.add(WORLDGEN_REGISTRIES[file.directory], f"{MOD_ID}:{file.id}")
+    for room in content.rooms:
+        universe.add(STRUCTURE_REGISTRY, room_structure_id(room.id))
     return universe
+
+
+def room_structure_id(room_id: str) -> str:
+    """The structure id the jar gives a room (generate/rooms.py)."""
+    return f"{MOD_ID}:rooms/{room_id}"
 
 
 def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
@@ -65,6 +74,36 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_stat_rules(content, universe)
     problems += _check_worldgen_references(content, universe)
     problems += _check_text_groups(content)
+    problems += _check_rooms(content, universe)
+    return problems
+
+
+def _check_rooms(content: Content, universe: IdUniverse) -> list[Problem]:
+    problems = [
+        Problem(room.template, location, message)
+        for room in content.rooms
+        for location, message in check_structure(room.structure, universe)
+    ]
+    for room in content.rooms:
+        source = room.model.source
+        third_party = room.id.startswith("third_party/")
+        if source is not None and not source.ours and not third_party:
+            problems.append(
+                Problem(
+                    room.source,
+                    "source",
+                    "an imported room lives in content/rooms/third_party/<source>/ with its LICENSE and NOTICE; "
+                    "set `ours: true` only for a room we built ourselves",
+                )
+            )
+        if source is not None and source.ours and third_party:
+            problems.append(Problem(room.source, "source.ours", "a room in third_party/ is not ours"))
+    room_ids = {room.id for room in content.rooms}
+    for review in content.room_reviews:
+        prefix = f"{review.folder}/" if review.folder else ""
+        for key in sorted(review.decisions):
+            if f"{prefix}{key}" not in room_ids:
+                problems.append(Problem(review.source, key, f"no room content/rooms/{prefix}{key}.nbt"))
     return problems
 
 

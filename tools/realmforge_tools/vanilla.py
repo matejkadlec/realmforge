@@ -88,18 +88,28 @@ _IGNORED_PREFIXES = ("datapacks/",)
 
 def fetch_server_jar(version: str, cache_dir: Path) -> Path:
     """Download (or reuse) the official server jar for ``version``, verifying its sha1."""
+    return _fetch_jar(version, "server", cache_dir)
+
+
+def fetch_client_jar(version: str, cache_dir: Path) -> Path:
+    """Download (or reuse) the official client jar for ``version``, verifying its sha1. The room gallery reads
+    block models and textures from it at runtime; nothing from it is ever committed (ADR 0028)."""
+    return _fetch_jar(version, "client", cache_dir)
+
+
+def _fetch_jar(version: str, side: str, cache_dir: Path) -> Path:
     manifest = json.loads(_download(VERSION_MANIFEST_URL))
     entry = next((v for v in manifest["versions"] if v["id"] == version), None)
     if entry is None:
         raise ValueError(f"unknown Minecraft version {version}")
-    server = json.loads(_download(entry["url"]))["downloads"]["server"]
+    download = json.loads(_download(entry["url"]))["downloads"][side]
 
-    target = cache_dir / "server.jar"
-    if target.exists() and _sha1(target.read_bytes()) == server["sha1"]:
+    target = cache_dir / f"{side}.jar"
+    if target.exists() and _sha1(target.read_bytes()) == download["sha1"]:
         return target
-    data = _download(server["url"])
-    if _sha1(data) != server["sha1"]:
-        raise RuntimeError("server jar sha1 mismatch")
+    data = _download(download["url"])
+    if _sha1(data) != download["sha1"]:
+        raise RuntimeError(f"{side} jar sha1 mismatch")
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(data)
     return target

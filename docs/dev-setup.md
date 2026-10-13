@@ -20,6 +20,12 @@ the Windows-WSL file bridge makes Gradle many times slower.
 SDKMAN adds itself to `~/.bashrc`. Scripts and non-interactive shells need
 `source ~/.sdkman/bin/sdkman-init.sh` first.
 
+**The room gallery's renderer** (`uv run rf rooms gallery`, [tools/README](../tools/README.md#rooms)) draws on
+Vulkan, and in WSL without a GPU on Mesa's software driver lavapipe, from the package `mesa-vulkan-drivers`. Ubuntu
+on WSL usually has it already: `ls /usr/share/vulkan/icd.d/lvp_icd.json` finds it. Otherwise it is the one install
+here that needs sudo: `sudo apt install mesa-vulkan-drivers`. Without it the gallery stops with a message naming the
+package.
+
 **Which Java runs Gradle.** `gradlew` starts on whatever Java `JAVA_HOME` or `PATH` gives it (17 or newer). The
 Gradle daemon, which compiles the build scripts and runs the build, always runs on Java 25:
 `gradle/gradle-daemon-jvm.properties` (written by `./gradlew updateDaemonJvm --jvm-version=25`) makes Gradle pick an
@@ -63,6 +69,9 @@ WSL it is good only for "does it load" checks (3.3).
   account that owns Minecraft, and the game starts. DevLogin keeps the tokens in `~/.devlogin/accounts.json`
   (`%USERPROFILE%\.devlogin\accounts.json` on Windows) and reuses them; when they expire, the console asks again.
   The file holds login tokens: never commit, share or paste it. Deleting it logs you out.
+  `./gradlew runClient -PofflineClient` skips DevLogin and starts as the offline player `Dev`, without any prompt:
+  agents use it for their screenshot runs (3.3), because nobody answers the login prompt there. Without the
+  property the client logs in through DevLogin as before.
 - **Default options.** Before the client starts, `seedDevOptions` copies `dev/options.txt` into
   `run/client/options.txt`, but only while that file does not exist, so what you change in game persists. The
   defaults: GUI scale 2, master volume off, VSync off, field of view 110, FOV effects off, no accessibility
@@ -152,8 +161,9 @@ there while the game runs. The handoff gives the commands
   third-person views, and a still `side` camera 2.5 blocks to the player's right) at field of view 110 and 70, to
   `run/client/screenshots/<label>-<plain|bettercombat>-<view>-fov<n>-<camera>-hold.png`, plus the peak of the
   pulse (`-pulse.png`) looking level. It needs no mouse, so it works around the broken mouse look above; agents
-  use it to check the framing of cast animations (RLM-89, RLM-108). DevLogin still runs first: without a cached
-  login it waits for the console prompt.
+  use it to check the framing of cast animations (RLM-89, RLM-108). Agents add `-PofflineClient` (3.1):
+  `REALMFORGE_QA_CAST_SHOTS=<label> ./gradlew runClient -PofflineClient`. Without it DevLogin runs first, and
+  without a cached login it waits for the console prompt.
 - `./gradlew runServer` starts a dev dedicated server in `run/server`; accept the EULA once in
   `run/server/eula.txt`.
 

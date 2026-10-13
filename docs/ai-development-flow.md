@@ -551,8 +551,9 @@ Classify every candidate before selecting it, next to its [QA classification](#q
 - **Local-only:** the ticket cannot be finished without something only Matěj's machine has:
   - an MCP server or tool set up only there, such as Retro Diffusion for textures and icons
     ([dev setup](dev-setup.md#5-claude-code));
-  - a rendered game client: screenshots, a pose or effect the agent has to look at, or his Minecraft login
-    (DevLogin);
+  - a rendered game client: screenshots, a pose or effect the agent has to look at (an agent's screenshot run
+    starts it offline with `-PofflineClient`, [dev setup](dev-setup.md#33-in-wsl-quick-checks)), or his Minecraft
+    login (DevLogin);
   - his Windows side or Prism (`installToPrism`, the pack in his launcher);
   - private inputs in `.local/`;
   - this machine's git state: its worktrees and local branches;

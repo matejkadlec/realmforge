@@ -11,7 +11,18 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from realmforge_tools.content import Content
-from realmforge_tools.generate import curves, datapack, gametest, items, lang, schemas, stats, texts, worldgen
+from realmforge_tools.generate import (
+    curves,
+    datapack,
+    gametest,
+    items,
+    lang,
+    rooms,
+    schemas,
+    stats,
+    texts,
+    worldgen,
+)
 from realmforge_tools.project import RepoPaths
 
 
@@ -24,6 +35,7 @@ def generate_all(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         stats.generate,
         texts.generate,
         worldgen.generate,
+        rooms.generate,
         lang.generate,
         gametest.generate,
         schemas.generate,
