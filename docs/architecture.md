@@ -587,7 +587,9 @@ A GameTest player (`QaPlayers#login`) is never ticked by its connection, so the 
   (`CharacterStats#markDirty`: level, talents), plus a cheap check every 10 ticks that compares primary values with
   the last applied snapshot (covers curios, other mods and commands).
 - No cycles: rules read primary stats and write only secondary or vanilla attributes, and each primary stat has at
-  most one rule (validation rules). An `add_value` amount is in the unit of its attribute: `amount_percent` for a
+  most one rule (validation rules). `StatRule`'s codec also refuses a rule from any other data pack that reads no
+  primary stat or writes one: a rule raising a primary stat would read its own bonuses back as a changed input at
+  the next check and escalate them to the cap. An `add_value` amount is in the unit of its attribute: `amount_percent` for a
   share, `amount` for points; multiplied operations always take `amount_percent`.
 
 ### 8.4 Caps

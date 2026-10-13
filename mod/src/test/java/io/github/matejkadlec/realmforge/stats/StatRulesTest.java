@@ -9,6 +9,7 @@ import com.google.gson.JsonParser;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.Holder;
@@ -105,13 +106,13 @@ class StatRulesTest {
     @Test
     void codecReadsTheGeneratedFormat() {
         StatRule rule = decode("""
-                {"stat": "minecraft:luck",
+                {"stat": "realmforge:strength",
                  "per_point": [{"attribute": "minecraft:movement_speed", "operation": "add_multiplied_base",
                                 "amount": 0.002, "max": 0.2}],
                  "milestones": [{"points": 25, "modifiers": [
                      {"attribute": "minecraft:armor", "operation": "add_value", "amount": 2}]}]}
                 """).getOrThrow();
-        assertTrue(rule.stat().is(Attributes.LUCK));
+        assertTrue(rule.stat().is(GeneratedStats.STRENGTH.getKey()));
         assertEquals(1, rule.perPoint().size());
         assertTrue(rule.perPoint().getFirst().modifier().attribute().is(Attributes.MOVEMENT_SPEED));
         assertEquals(Operation.ADD_MULTIPLIED_BASE, rule.perPoint().getFirst().modifier().operation());
@@ -123,7 +124,7 @@ class StatRulesTest {
     @Test
     void codecReadsARuleWithOnlyMilestones() {
         StatRule rule = decode("""
-                {"stat": "minecraft:luck", "milestones": [{"points": 5, "modifiers": [
+                {"stat": "realmforge:strength", "milestones": [{"points": 5, "modifiers": [
                     {"attribute": "minecraft:armor", "operation": "add_value", "amount": 1}]}]}
                 """).getOrThrow();
         assertEquals(List.of(), rule.perPoint());
@@ -131,25 +132,49 @@ class StatRulesTest {
 
     @Test
     void codecRejectsBrokenRules() {
-        assertTrue(decode("{\"stat\": \"minecraft:luck\"}").isError(), "a rule that gives nothing");
+        assertTrue(decode("{\"stat\": \"realmforge:strength\"}").isError(), "a rule that gives nothing");
         assertTrue(decode("""
-                {"stat": "minecraft:luck", "milestones": [
+                {"stat": "realmforge:strength", "milestones": [
                     {"points": 10, "modifiers": [
                         {"attribute": "minecraft:armor", "operation": "add_value", "amount": 1}]},
                     {"points": 5, "modifiers": [
                         {"attribute": "minecraft:armor", "operation": "add_value", "amount": 1}]}]}
                 """).isError(), "milestones out of order");
         assertTrue(decode("""
-                {"stat": "minecraft:luck", "per_point": [
+                {"stat": "realmforge:strength", "per_point": [
                     {"attribute": "minecraft:armor", "operation": "add_value", "amount": -1, "max": 5}]}
                 """).isError(), "a cap on a negative amount");
         assertTrue(decode("""
-                {"stat": "minecraft:luck", "per_point": [
+                {"stat": "realmforge:strength", "per_point": [
                     {"attribute": "minecraft:no_such_attribute", "operation": "add_value", "amount": 1}]}
                 """).isError(), "an unknown attribute");
         assertTrue(decode("""
-                {"stat": "minecraft:luck", "milestones": [{"points": 5, "modifiers": []}]}
+                {"stat": "realmforge:strength", "milestones": [{"points": 5, "modifiers": []}]}
                 """).isError(), "a milestone that gives nothing");
+    }
+
+    @Test
+    void codecRejectsRulesThatCouldFeedEachOther() {
+        assertTrue(decode("""
+                {"stat": "minecraft:luck", "per_point": [
+                    {"attribute": "minecraft:armor", "operation": "add_value", "amount": 1}]}
+                """).isError(), "a rule must read a primary stat");
+        assertTrue(decode("""
+                {"stat": "realmforge:crit_chance", "per_point": [
+                    {"attribute": "minecraft:armor", "operation": "add_value", "amount": 1}]}
+                """).isError(), "a secondary stat is no primary stat");
+        assertTrue(decode("""
+                {"stat": "realmforge:strength", "per_point": [
+                    {"attribute": "realmforge:vitality", "operation": "add_value", "amount": 1}]}
+                """).isError(), "a per-point modifier must not write a primary stat");
+        assertTrue(decode("""
+                {"stat": "realmforge:strength", "per_point": [
+                    {"attribute": "realmforge:strength", "operation": "add_value", "amount": 1}]}
+                """).isError(), "nor the stat the rule reads");
+        assertTrue(decode("""
+                {"stat": "realmforge:strength", "milestones": [{"points": 5, "modifiers": [
+                    {"attribute": "realmforge:intellect", "operation": "add_value", "amount": 1}]}]}
+                """).isError(), "a milestone must not write a primary stat");
     }
 
     private static StatRule.PerPoint perPoint(int index) {
