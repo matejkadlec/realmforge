@@ -55,8 +55,16 @@ def test_stack_size_range(repo: RepoPaths) -> None:
 
 
 def test_english_name_is_required(repo: RepoPaths) -> None:
-    write(repo.content / "items" / "a.yaml", "id: a\nname:\n  cs_cz: Věc\n")
+    write(repo.content / "items" / "a.yaml", "id: a\nname: {}\n")
     assert any("items/a.yaml: name.en_us: Field required" in p for p in problems_for(repo))
+
+
+def test_other_locales_are_rejected(repo: RepoPaths) -> None:
+    write(
+        repo.content / "items" / "a.yaml",
+        VALID_ITEM.format(id="a").replace("  en_us: Thing\n", "  en_us: Thing\n  cs_cz: Věc\n"),
+    )
+    assert any("items/a.yaml: name.cs_cz: Extra inputs are not permitted" in p for p in problems_for(repo))
 
 
 def test_id_must_match_file_name(repo: RepoPaths) -> None:

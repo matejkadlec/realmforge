@@ -19,9 +19,13 @@ Rules:
 - References to other content use full ids (`minecraft:ingredients`, `realmforge:test_item`); every one is
   validated against the ID universe (`tools/id_universe/`) plus our own content. Lists of ids must not repeat
   an entry (e.g. the same creative tab twice crashes the game).
-- Player-facing texts are `LocalizedText`: `en_us` is required, `cs_cz` is optional. In lore and texts the
-  in-game world is always called **Realmforge**, and every text follows the
-  [lore style guide](../docs/lore/style.md).
+- Player-facing texts are `LocalizedText` with one locale, `en_us`, which is required: Realmforge is English
+  only (Matěj, 2026-10-13), so any other locale key (`cs_cz`, ...) is an error. In lore and texts the in-game
+  world is always called **Realmforge**, and every text follows the [lore style guide](../docs/lore/style.md).
+- **Community translations** need nothing from the pipeline: a translator ships a resource pack with
+  `assets/realmforge/lang/<locale>.json`, keyed by the same translation keys as the generated `en_us.json`. A
+  translation contributed to the mod is the same file under `mod/src/main/resources/`, which `rf gen` never
+  touches.
 - **Labels use Title Case** (Matěj, 2026-10-13), for readability: names (items, stats, spells, mobs, realms),
   key mapping names, setting names, screen, button and tab titles, guide chapter and section names, and short
   status messages: `Dark Vision On`, `Toggle Dark Vision`, `Character Sheet`. Every word starts with a capital

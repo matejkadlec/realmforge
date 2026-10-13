@@ -12,7 +12,7 @@ from realmforge_tools.project import MOD_ID, SUPPORTED_LOCALES, RepoPaths
 
 
 def collect(content: Content) -> dict[str, dict[str, str]]:
-    """locale -> {translation key -> text}. Locales without any text are omitted (except en_us)."""
+    """locale -> {translation key -> text}, one entry per supported locale."""
     by_locale: dict[str, dict[str, str]] = {locale: {} for locale in SUPPORTED_LOCALES}
     for entry in content.items:
         for locale, text in entry.model.name.translations().items():
@@ -20,7 +20,7 @@ def collect(content: Content) -> dict[str, dict[str, str]]:
     for key, localized in (datapack.translations(content) | texts.translations(content)).items():
         for locale, text in localized.translations().items():
             by_locale[locale][key] = text
-    return {locale: keys for locale, keys in by_locale.items() if keys or locale == "en_us"}
+    return by_locale
 
 
 def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:

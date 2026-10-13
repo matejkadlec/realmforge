@@ -124,7 +124,6 @@ def test_curve_outputs(repo: RepoPaths) -> None:
         "points": [{"level": 1, "value": 0.0}, {"level": 10, "value": 450.0}, {"level": 20, "value": 1200.5}],
     }
     assert json.loads(files[f"{LANG}/en_us.json"])["curve.realmforge.test_curve.name"] == "Test Curve"
-    assert json.loads(files[f"{LANG}/cs_cz.json"])["curve.realmforge.test_curve.name"] == "Testovací křivka"
 
     keys = files[CURVE_KEYS].decode()
     assert 'public static final ResourceKey<Curve> TEST_CURVE = key("test_curve");' in keys
@@ -182,7 +181,7 @@ def test_entry_data_converts_units_and_texts_recursively() -> None:
             "cooldown_seconds": 1.5,
             "crit_chance_percent": 5,
             "max_level": 3,
-            "effects": [{"duration_seconds": 4, "label": {"en_us": "Burning", "cs_cz": "Hoření"}}],
+            "effects": [{"duration_seconds": 4, "label": {"en_us": "Burning"}}],
         }
     )
     data, texts = entry_data(spell, "spell")
@@ -195,7 +194,7 @@ def test_entry_data_converts_units_and_texts_recursively() -> None:
     }
     assert {key: text.translations() for key, text in texts.items()} == {
         "spell.realmforge.firebolt.name": {"en_us": "Firebolt"},
-        "spell.realmforge.firebolt.effects.0.label": {"en_us": "Burning", "cs_cz": "Hoření"},
+        "spell.realmforge.firebolt.effects.0.label": {"en_us": "Burning"},
     }
 
 

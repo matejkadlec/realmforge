@@ -63,10 +63,9 @@ Percent = Annotated[float, Field(allow_inf_nan=False)]
 
 
 class LocalizedText(StrictModel):
-    """A player-facing text in every supported locale. en_us is required; missing locales fall back to it."""
+    """A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale."""
 
     en_us: NonEmptyText = Field(description="English (US). Required.")
-    cs_cz: NonEmptyText | None = Field(default=None, description="Czech. Optional.")
 
     def translations(self) -> dict[str, str]:
-        return {locale: text for locale, text in self.model_dump().items() if text is not None}
+        return self.model_dump()

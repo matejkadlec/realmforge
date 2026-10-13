@@ -9,6 +9,7 @@
 I'm a Python full-stack developer (Django, vanilla JS) with 5 years of experience, plus a bit of C/C++/C#, SQL, Linux and ETL. I have only minimal experience with Java and Minecraft modding. We vibe-code this project: AI does most of the work, I set the direction, review and playtest.
 
 Communication with me is in English. Everything in the repo (code, documentation, commit messages, issues) is in English.
+The game is English only too (decided 2026-10-13): there will never be Czech texts from me. If someone else makes a translation, it can ship as a resource pack keyed by the same translation keys ([content/README.md](../content/README.md)).
 
 ## What I want to build
 

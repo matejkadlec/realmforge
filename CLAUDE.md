@@ -145,8 +145,9 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 3. **Every id is validated.** References use full ids (`minecraft:stick`) and must exist in the ID universe
    (vanilla snapshot + our content). Referencing ids from other mods needs the full-pack registry dump (TODO:
    Registry Dump mod, [ADR 0005](docs/decisions/0005-content-pipeline-yaml-single-source-of-truth.md)).
-4. **English everywhere in the repo**: code, comments, docs, commits, PRs, issues. Player-facing text is
-   `LocalizedText`: `en_us` required, `cs_cz` optional.
+4. **English everywhere in the repo**: code, comments, docs, commits, PRs, issues. The game is English only
+   too: player-facing text is `LocalizedText` with `en_us` alone, and a community translation would ship as a
+   resource pack keyed by the same translation keys ([content/README.md](content/README.md)).
 5. **The in-game world is called Realmforge.** Use this name whenever lore, quests, item or book texts, or
    dialogs refer to the game world. Every player-facing text follows the
    [lore style guide](docs/lore/style.md), and new story goes into the [lore outline](docs/lore/outline.md) first.
@@ -438,7 +439,7 @@ queue when it matters. A last
 
 - `mod/src/generated/java/.../generated/GeneratedItems.java` (registration, creative tab entries), called from
   `item/ItemFeature.register`, which `Realmforge`'s constructor calls;
-- `mod/src/generated/resources/assets/realmforge/` models, `lang/en_us.json` + `cs_cz.json`, placeholder textures;
+- `mod/src/generated/resources/assets/realmforge/` models, `lang/en_us.json`, placeholder textures;
 - `qa-mod/src/generated/java/.../GeneratedItemExpectations.java`, which `ContentItemGameTests` checks in the game;
 - `tools/schemas/items.schema.json` for editor completion.
 
