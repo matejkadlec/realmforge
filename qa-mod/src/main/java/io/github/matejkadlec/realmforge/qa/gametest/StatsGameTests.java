@@ -3,10 +3,12 @@ package io.github.matejkadlec.realmforge.qa.gametest;
 import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
+import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.Bonus;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.Sample;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.StatRuleExpectation;
+import io.github.matejkadlec.realmforge.stats.AttributeCaps;
 import io.github.matejkadlec.realmforge.stats.CharacterStats;
 import io.github.matejkadlec.realmforge.stats.StatRules;
 import java.util.LinkedHashSet;
@@ -32,7 +34,8 @@ import net.minecraft.world.item.component.ItemAttributeModifiers;
 /**
  * F4: the stat rules reach players (architecture 8.2, 8.3). Primary stats change the attributes their rule names,
  * and bonus max health survives a relog, a respawn after death and leaving the End. Expected values come from the
- * generated expectations ({@link GeneratedStatExpectations}), so the tests follow the content.
+ * generated expectations ({@link GeneratedStatExpectations}), so the tests follow the content. F4c: attributes go
+ * past vanilla's caps (8.4).
  *
  * <p>Players log in through {@link QaPlayers#login}. Their connection never ticks them, so a test plays a client
  * tick with {@code ServerPlayer#doTick}, the call the network handler makes once per tick; the server never
@@ -159,6 +162,59 @@ public final class StatsGameTests {
         assertAttributes(helper, again, sample, "after the relog's first tick");
         server.getPlayerList().remove(again);
         helper.succeed();
+    }
+
+    /**
+     * Done when of F4c (architecture 8.4): attribute modifiers take max health, armor, armor toughness and attack
+     * damage past vanilla's caps (1024, 30, 20 and 2048), the values and the health come back after a relog, and the
+     * raised caps still clamp.
+     */
+    @QaGameTest
+    public static void attributesGoPastVanillasCaps(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-stats-caps");
+        ServerPlayer first = QaPlayers.login(server, profile);
+        tick(first, 1);
+        double health = first.getAttributeBaseValue(Attributes.MAX_HEALTH) + 5000;
+        double damage = first.getAttributeBaseValue(Attributes.ATTACK_DAMAGE) + 5000;
+        addModifier(first, Attributes.MAX_HEALTH, 5000);
+        addModifier(first, Attributes.ARMOR, 100);
+        addModifier(first, Attributes.ARMOR_TOUGHNESS, 50);
+        addModifier(first, Attributes.ATTACK_DAMAGE, 5000);
+        first.setHealth(first.getMaxHealth());
+        assertPastVanillasCaps(helper, first, health, damage, "with the modifiers");
+        server.getPlayerList().remove(first);
+
+        ServerPlayer again = QaPlayers.login(server, profile);
+        assertPastVanillasCaps(helper, again, health, damage, "after the relog, before its first tick");
+        tick(again, CharacterStats.CHECK_INTERVAL);
+        assertPastVanillasCaps(helper, again, health, damage, "after the relog's stat check");
+
+        addModifier(again, Attributes.ARMOR, 2 * AttributeCaps.max(Attributes.ARMOR));
+        helper.assertValueEqual(again.getAttributeValue(Attributes.ARMOR), AttributeCaps.max(Attributes.ARMOR),
+                "armor beyond the raised cap");
+        server.getPlayerList().remove(again);
+        helper.succeed();
+    }
+
+    private static void assertPastVanillasCaps(GameTestHelper helper, ServerPlayer player, double health,
+            double damage, String when) {
+        helper.assertTrue(health > 1024 && damage > 2048, "the expected values are past vanilla's caps");
+        helper.assertValueEqual(player.getMaxHealth(), (float) health, "max health " + when);
+        helper.assertValueEqual(player.getHealth(), (float) health, "health " + when);
+        helper.assertValueEqual(player.getArmorValue(), 100, "armor " + when);
+        helper.assertValueEqual(player.getAttributeValue(Attributes.ARMOR_TOUGHNESS), 50.0, "armor toughness " + when);
+        helper.assertValueEqual(player.getAttributeValue(Attributes.ATTACK_DAMAGE), damage, "attack damage " + when);
+    }
+
+    /** Adds {@code amount} to the attribute as a saved modifier of the QA mod, replacing an earlier one. */
+    private static void addModifier(ServerPlayer player, Holder<Attribute> attribute, double amount) {
+        AttributeInstance instance = player.getAttribute(attribute);
+        if (instance == null) {
+            throw new IllegalStateException("players lack " + attribute.getRegisteredName());
+        }
+        instance.addOrReplacePermanentModifier(new AttributeModifier(RealmforgeQa.id("attribute_caps"), amount,
+                AttributeModifier.Operation.ADD_VALUE));
     }
 
     /** Gives the player the highest Vitality the expectations sample, waits for the recompute, returns max health. */

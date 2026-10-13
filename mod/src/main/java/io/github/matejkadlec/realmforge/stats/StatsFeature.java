@@ -20,6 +20,8 @@ public final class StatsFeature {
 
     /** Registers the feature's registries and event listeners. Called once from {@code Realmforge}. */
     public static void register(IEventBus modBus) {
+        // Vanilla's attribute caps, raised before any entity exists (architecture 8.4).
+        AttributeCaps.raise();
         // Attributes generated from content/stats/ (mod/src/generated, never edit by hand).
         GeneratedStats.register(modBus);
         StatsAttachments.register(modBus);
