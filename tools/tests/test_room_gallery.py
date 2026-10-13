@@ -55,6 +55,7 @@ def test_build_renders_every_view_and_writes_the_page(tmp_path: Path) -> None:
     assert "Cannot read the template" in text
     assert "tags: entrance" in text
     assert "15 x 7 x 15" in text
+    assert "cut 4 blocks above the bottom" in text  # the cut the views used, not the default
 
 
 @pytest.mark.parametrize("out", ["rooms", ".", "rooms/spike"])

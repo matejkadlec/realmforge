@@ -81,7 +81,7 @@ def build(
         for view in VIEWS:
             renderer.render(room.structure, view, out_dir / room.key / f"{view.name}.png", cut)
     page = out_dir / "index.html"
-    page.write_text(render_page(title, rooms, read_review(directory)), encoding="utf-8")
+    page.write_text(render_page(title, rooms, read_review(directory), cut), encoding="utf-8")
     return page, rooms
 
 
@@ -152,7 +152,9 @@ def batch_id(rooms: list[GalleryRoom]) -> str:
     return digest.hexdigest()[:16]
 
 
-def render_page(title: str, rooms: list[GalleryRoom], decisions: dict[str, str]) -> str:
+def render_page(
+    title: str, rooms: list[GalleryRoom], decisions: dict[str, str], cut: int = CUT_HEIGHT
+) -> str:
     """The page. Deterministic: the same rooms and decisions give the same text."""
     esc = html.escape
     out = [
@@ -166,7 +168,8 @@ def render_page(title: str, rooms: list[GalleryRoom], decisions: dict[str, str])
         f"<h1>{esc(title)}</h1>",
         f'<p class="intro">{len(rooms)} room(s). Keep or reject each one, then copy your decisions into the '
         "session: <code>rf rooms review</code> records them. Views: outside, cut "
-        f"{CUT_HEIGHT} blocks above the bottom from two corners, and a plan of the cut.</p>",
+        f"{cut} blocks above the bottom (or below the top layer of a lower room) from two corners, and a plan of the "
+        "cut.</p>",
         "</header>",
         '<div class="rooms">',
     ]
