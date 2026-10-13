@@ -164,8 +164,11 @@ hoppers have nothing to take.
   `announce_to_chat` in vanilla's advancement display).
 - **The unlock quest** grants it through an `AdvancementReward` that is per player and claims itself
   (`team_reward: false`, `auto: "enabled"`), the rule every chapter reward follows
-  ([architecture 16](../architecture.md#16-progression-and-quests)). Its tasks are the player's own progress, never
-  "have the sigil", which a trade could complete:
+  ([architecture 16](../architecture.md#16-progression-and-quests)). FTB Quests keeps quest progress per FTB Teams
+  team, and every player is a team of their own until they join a party, so the unlock is per player. A player who
+  joins someone's FTB Teams party gets that team's realm unlocks, as they get its chapter advancements (at once
+  when online, otherwise at their next login). Its tasks are the player's own progress, never "have the sigil",
+  which a trade could complete:
   - **the stone realm's:** the early chapter 1 quest; it also rewards the Stone Sigil. Q2 writes it;
   - **a later main-path realm's:** the main-chain step after the boss or bosses whose drops its sigil takes, with a
     task such as defeating that boss (`realmforge:boss_defeated`). The chapter that adds the realm writes it.
@@ -183,7 +186,9 @@ hoppers have nothing to take.
   subtitle packets carry it.
 - **Every other way in is checked too,** so the advancement seals the realm whatever the path. In 26.1.2 every move
   into another level goes through `Entity#teleport(TeleportTransition)` (`ServerPlayer` overrides it), which posts
-  NeoForge's cancellable `EntityTravelToDimensionEvent` before it moves anything. That covers:
+  NeoForge's cancellable `EntityTravelToDimensionEvent` before it moves anything. The event also fires for a move
+  within one level (its target may be the entity's current dimension), so the realm rules act only when the target
+  differs from the dimension the entity is in. The event covers:
   - realm and vanilla portals;
   - `/tp` and `/execute in … run tp` (`TeleportCommand` calls `Entity#teleportTo(ServerLevel, …)`, which calls
     `teleport`);
@@ -191,10 +196,10 @@ hoppers have nothing to take.
   - other mods' teleports that use either method, waystone warps among them (*verify* the pack's Waystones
     version).
 
-  `world` cancels the event for a player whose target is a realm they have not unlocked, with the same message. A
-  warp to a waystone in a realm the player has not unlocked therefore never works (Matěj, RLM-128). A respawn does
-  not pass through the event (`PlayerList#respawn` creates the player in the target level directly), and a respawn
-  never puts a player in a realm ([Respawn](#respawn)).
+  `world` cancels the event for a player who is about to enter a realm they have not unlocked from another level,
+  with the same message. A warp to a waystone in a realm the player has not unlocked therefore never works (Matěj,
+  RLM-128). A respawn does not pass through the event (`PlayerList#respawn` creates the player in the target level
+  directly), and a respawn never puts a player in a realm ([Respawn](#respawn)).
 - **What a locked realm shows elsewhere:** a portal someone else opened onto it looks the same as for anyone (its
   colour, particles and sound), so a player sees where a friend went. The sigil's tooltip and the realm's hint say
   how to unlock it. A realm map with locked realms and their hints (RE-7) is a later view, in the guide (RLM-102,
@@ -357,9 +362,12 @@ without one; never in a realm. This answers the realm design's
 ## Multiplayer
 
 - **Unlocks are per player and permanent** (Matěj, RLM-128: "for now"). Each player completes the realm's unlock
-  quest, so a server where one player is in chapter 2 does not open chapter 2's realms to a newcomer. Shared quests
-  in a party come later, with low priority (RLM-156, on top of RLM-68's parties): when one member completes a quest,
-  the members who can complete it get it too, the unlock included.
+  quest, so a server where one player is in chapter 2 does not open chapter 2's realms to a newcomer. The exception
+  is FTB Teams, the team system FTB Quests runs on: its progress belongs to the team, so a newcomer who joins that
+  player's FTB Teams party gets the team's unlocks, as they get its chapter advancements
+  ([architecture 16](../architecture.md#16-progression-and-quests)). Shared quests in our own parties come later,
+  with low priority (RLM-156, on top of RLM-68's parties): when one member completes a quest, the members who can
+  complete it get it too, the unlock included.
 - **Sigils change hands freely,** but a friend's sigil opens nothing for a player without their own unlock.
 - **A player without access** in a portal someone else opened is refused as in
   [Access and unlocks](#access-and-unlocks), while their friends pass through.
@@ -372,7 +380,9 @@ without one; never in a realm. This answers the realm design's
 - **Other paths carry no mobs either** (RLM-133, rechecked for 26.1.2). Every move into another level goes through
   `Entity#teleport(TeleportTransition)`, which posts `EntityTravelToDimensionEvent` for every entity
   ([Access and unlocks](#access-and-unlocks) lists the paths). `world` cancels it for every entity that is not a
-  player when a realm is its source or its target. The Waystones mod takes leashed mobs along on a warp
+  player when the target is another level and a realm is the source or the target. A move within one realm passes:
+  `/tp` inside the realm, a leashed mob on a warp between two waystones in the same realm, a teleport spell. The
+  Waystones mod takes leashed mobs along on a warp
   (`transportLeashed = "ENABLED"` in the pack); *verify* that its version moves them with `Entity#teleport` or
   `Entity#teleportTo`, so the event stops them. If it does not, the pack sets `SAME_DIMENSION`, which leaves them
   behind on every warp to another dimension.
@@ -482,7 +492,7 @@ dimension rules and access:
   - `Realm` (record with `CODEC`) and its registry key;
   - `RealmAccess`, which asks `core`'s requirement API at the selector, at the portal and in its
     `EntityTravelToDimensionEvent` listener, which also stops every entity that is not a player from entering or
-    leaving a realm;
+    leaving a realm, and ignores a move within one level;
   - the respawn listener (`PlayerRespawnPositionEvent`);
   - `PortalFrame`, the frame check as plain Java over a block lookup: both axes, the missing positions;
   - `RealmPortalBlock`, implementing vanilla's `Portal` (`getPortalDestination`, `getPortalTransitionTime`,
@@ -523,7 +533,7 @@ dimension rules and access:
   - the selector refuses in the instance dimension;
   - an item, a mob and a mounted player do not travel through a portal; a mob moved into or out of a realm with
     `Entity#teleport(TeleportTransition)`, and one moved with `/tp` (`Entity#teleportTo`), stays where it is
-    (RLM-133);
+    (RLM-133), while a mob teleported within the realm moves;
   - a death in a realm respawns at the player's Overworld bed, or at the world spawn without one; a bed in a realm
     sets no spawn point and does not explode; a spawn point set in a realm by command still respawns the player in
     the Overworld.
