@@ -54,12 +54,14 @@ Rules:
   `rooms/` without the suffix (`third_party/stonevaults/hall_a`), in lowercase snake_case folders and names; the
   sidecar names the template `pools` the room joins, its `tags` (slot types), its `weight` and, for an imported
   room, its `source`. `uv run rf rooms import` writes both files ([tools/README](../tools/README.md#rooms)); nobody
-  edits a template by hand. Validation checks the size (at most 48 blocks per axis), every block, block entity and
-  entity id against the ID universe, and that jigsaws sit on the room's boundary, facing out. Imported rooms live in
+  edits a template by hand. Validation checks the size (at most 48 blocks per axis), the template's data version
+  (required, no newer than the game's), every block, block entity and entity id against the ID universe, and that
+  jigsaws sit on the room's boundary, facing out. Imported rooms live in
   `rooms/third_party/<source>/` next to the source's `LICENSE` and `NOTICE`, which validation requires and `rf gen`
   copies to the jar's `META-INF/third_party/<source>/`; an imported room elsewhere must be one we built
   ourselves, marked `source.ours: true` (`rf rooms import --ours`). A
-  `review.yaml` in any folder records the room gallery's keep and reject decisions for the rooms below it.
+  `review.yaml` in any folder records the room gallery's keep and reject decisions for the rooms below it: a kept
+  room must exist, a rejected one may be dropped (the import then skips it).
 - Start each YAML file with the `yaml-language-server` schema comment (see `items/test_item.yaml`) for editor
   completion.
 

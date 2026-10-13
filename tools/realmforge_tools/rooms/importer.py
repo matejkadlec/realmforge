@@ -3,7 +3,8 @@
 Each source file (``.nbt``, ``.schem``, ``.litematic``; a folder imports every one below it) becomes
 ``<target>/<name>.nbt``, the normalized template, and ``<target>/<name>.yaml``, a draft sidecar that records the
 source and leaves pools and tags for retagging (A4c). Re-importing keeps an existing sidecar's pools, tags and
-weight.
+weight. A file that a ``review.yaml`` rejects (the gallery's record, in the target folder or, inside
+``content/rooms/``, a folder above it) is skipped, so a dropped room does not come back.
 
 A rules file (``--rules``, YAML, the ``ImportRules`` model) adapts a source to our ids:
 
@@ -13,9 +14,12 @@ A rules file (``--rules``, YAML, the ``ImportRules`` model) adapts a source to o
 - ``block_entities``: a source block entity id -> ours; the data is kept under the new id.
 - ``connectors`` and ``pools``: jigsaw names (``name`` and ``target``) and jigsaw pools -> ours.
 - ``entities.keep``: entity ids to keep; every other entity is dropped.
+- ``data_version``: the data version of the files that state none (a Sponge v1 schematic, a template some tool
+  wrote), when the source is known to be saved with it.
 
 The template keeps the source's data version, and the game upgrades the room from it when it loads. An id that was
-renamed since that version is not in the ID universe: map it in ``blocks`` like a custom block.
+renamed since that version is not in the ID universe: map it in ``blocks`` like a custom block. A room without a
+data version is refused: the game would read it as version 500 and run every upgrade since on it.
 
 A room is written only when it validates (``rooms/check.py``); otherwise the import lists the problems, so the
 rules can be extended and the import run again.
@@ -46,7 +50,7 @@ from realmforge_tools.rooms.structure import (
     split_state_text,
     write_structure,
 )
-from realmforge_tools.schema.room import REVIEW_FILE, ROOMS_DIR, RoomDef, RoomSource
+from realmforge_tools.schema.room import REVIEW_FILE, ROOMS_DIR, ReviewFile, RoomDef, RoomSource
 from realmforge_tools.yamlio import YamlLoadError, load_yaml
 
 _JIGSAW_NAMES = ("name", "target")
@@ -71,6 +75,11 @@ class ImportRules(_Strict):
     connectors: dict[str, str] = Field(default_factory=dict)
     pools: dict[str, str] = Field(default_factory=dict)
     entities: EntityRules = Field(default_factory=EntityRules)
+    data_version: int | None = Field(
+        default=None,
+        ge=1,
+        description="The data version of the files that state none, for a source known to be saved with it.",
+    )
 
 
 @dataclass
@@ -78,10 +87,13 @@ class ImportedRoom:
     source: Path
     template: Path
     sidecar: Path
-    structure: Structure
+    structure: Structure | None
+    """None for a file the review rejects, which is not read."""
     written: bool
     notes: list[str] = field(default_factory=list)
     problems: list[str] = field(default_factory=list)
+    rejected_by: Path | None = None
+    """The ``review.yaml`` that rejects the room; the file is skipped."""
 
 
 def load_rules(path: Path | None) -> ImportRules:
@@ -139,7 +151,48 @@ def import_rooms(
         if stem in stems:
             raise RoomImportError(f"{file} and {stems[stem]} would both become {stem}.nbt")
         stems[stem] = file
-    return [import_room(file, stem, rules, universe, paths, ours=ours) for stem, file in stems.items()]
+    rejected = rejected_rooms(target, paths)
+    results: list[ImportedRoom] = []
+    for stem, file in stems.items():
+        review = rejected.get(stem.resolve())
+        if review is not None:
+            results.append(
+                ImportedRoom(
+                    file, stem.with_suffix(".nbt"), stem.with_suffix(".yaml"), None, False, rejected_by=review
+                )
+            )
+        else:
+            results.append(import_room(file, stem, rules, universe, paths, ours=ours))
+    return results
+
+
+def rejected_rooms(target: Path, paths: RepoPaths) -> dict[Path, Path]:
+    """The rooms below ``target`` that a review rejects: resolved path without suffix -> its ``review.yaml``. The
+    reviews are the target's own and, inside ``content/rooms/``, those of the folders above it up to
+    ``content/rooms/`` itself; each keys rooms by their path below its folder, and the nearest decision counts."""
+    folder = target.resolve()
+    rooms = (paths.content / ROOMS_DIR).resolve()
+    folders = [folder]
+    if folder.is_relative_to(rooms):
+        folders += [parent for parent in folder.parents if parent.is_relative_to(rooms)]
+    decisions: dict[Path, tuple[str, Path]] = {}
+    for reviewed in folders:
+        review = reviewed / REVIEW_FILE
+        if not review.is_file():
+            continue
+        for key, decision in _review_decisions(review).items():
+            decisions.setdefault(reviewed / key, (decision, review))
+    return {stem: review for stem, (decision, review) in decisions.items() if decision == "reject"}
+
+
+def _review_decisions(path: Path) -> dict[str, str]:
+    try:
+        return ReviewFile.model_validate(load_yaml(path) or {}).root
+    except YamlLoadError as e:
+        raise RoomImportError(f"{path}{f':{e.line}' if e.line else ''}: {e}") from e
+    except ValidationError as e:
+        problems = "; ".join(f"{'.'.join(map(str, err['loc']))}: {err['msg']}" for err in e.errors())
+        raise RoomImportError(f"{path}: {problems}") from e
 
 
 def check_target(target: Path, paths: RepoPaths, *, ours: bool) -> None:
@@ -217,6 +270,10 @@ def apply_rules(structure: Structure, rules: ImportRules) -> tuple[Structure, li
     kept = tuple(e for e in structure.entities if e.id in rules.entities.keep)
     dropped_entities = Counter(e.id or "?" for e in structure.entities if e.id not in rules.entities.keep)
 
+    data_version = structure.data_version
+    if data_version is None and rules.data_version is not None:
+        data_version = rules.data_version
+
     notes = [f"remapped {count} x {name} to {rules.blocks[name]}" for name, count in sorted(remapped.items())]
     notes += [
         f"dropped the block entity data of {count} x {name} (map its id in block_entities to keep it)"
@@ -225,7 +282,9 @@ def apply_rules(structure: Structure, rules: ImportRules) -> tuple[Structure, li
     notes += [f"dropped {count} x entity {id_}" for id_, count in sorted(dropped_entities.items())]
     if unmapped_jigsaw:
         notes.append(f"jigsaw names and pools left as they are: {', '.join(sorted(unmapped_jigsaw))}")
-    return replace(structure, blocks=tuple(blocks), entities=kept), notes
+    if data_version != structure.data_version:
+        notes.append(f"the file states no data version; took {data_version} from the rules")
+    return replace(structure, blocks=tuple(blocks), entities=kept, data_version=data_version), notes
 
 
 def _map_jigsaw(
@@ -268,12 +327,11 @@ def sidecar_text(room: RoomDef, sidecar: Path, paths: RepoPaths) -> str:
         f"weight: {room.weight}",
     ]
     if source is not None:
-        version = "null" if source.data_version is None else str(source.data_version)
         lines += [
             "source:",
             f"  file: {json.dumps(source.file, ensure_ascii=False)}",
             f"  format: {source.format}",
-            f"  data_version: {version}",
+            f"  data_version: {source.data_version}",
         ]
         if source.ours:
             lines.append("  ours: true")

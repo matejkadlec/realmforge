@@ -1001,7 +1001,8 @@ Rooms are generated or imported; nobody has to build one by hand
   `data/realmforge/structure/rooms/<id>.nbt`, so the game knows it as the structure `realmforge:rooms/<id>`
   (`tools/realmforge_tools/generate/rooms.py`). A template keeps the data version it was saved with, and vanilla
   upgrades it from there when it loads it (`TemplateSource#readStructure`), so imported rooms from older versions
-  stay as they were saved.
+  stay as they were saved. A template without one is refused: vanilla would read it as version 500 and run every
+  upgrade since on it.
 - **Generated rooms** (A4d): room specs in YAML (kind, a footprint up to 16×16, height, connector sides, features,
   a seed, blocks named by neutral roles that themes swap) become structure NBT through the room generator in
   `rf gen`, with style rules for walls, floors, stairs and light, and jigsaws and markers from the connectors. The
@@ -1020,13 +1021,15 @@ Rooms are generated or imported; nobody has to build one by hand
 - **Review:** the room gallery (A4e, `rf rooms gallery`) renders rooms headless through nucleation, with the client
   jar's models and textures read at runtime; Matěj keeps or rejects them in batches. `rf rooms review` records the
   decisions in a `review.yaml` in the reviewed folder: rejected imports are dropped, and a kept generated
-  candidate's seed is frozen.
+  candidate's seed is frozen. A reject decision stays after its room is dropped, and `rf rooms import` skips the
+  rooms a review rejects, so importing the source again does not bring them back. Generated folders are not
+  reviewed: `rf gen` would delete their `review.yaml`.
 - **Validation:** size limits (48 blocks per axis, a structure block's maximum), connectors on the room's boundary
-  facing out, known markers, only blocks the themes can swap and only ids inside the ID universe (an imported
-  room's own blocks are remapped), and `LICENSE` and `NOTICE` next to third-party rooms. `rooms/check.py` checks the
-  size, the ids and the connectors; markers come with the dungeon framework (W4) and the swappable blocks with the
-  themes of the room generator (A4d). Generated rooms are also checked for reachability between their connectors
-  and for headroom.
+  facing out, known markers, only blocks the themes can swap and only ids inside the ID universe (an imported room's own
+  blocks are remapped), and `LICENSE` and `NOTICE` next to third-party rooms. `rooms/check.py` checks the size, the data
+  version, the ids and the connectors; markers come with the dungeon framework (W4) and the swappable blocks with the
+  themes of the room generator (A4d). Generated rooms are also checked for reachability between their connectors and for
+  headroom.
 
 ### 15.5 Instances
 

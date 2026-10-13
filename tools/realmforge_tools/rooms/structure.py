@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import gzip
 import re
+import zlib
 from dataclasses import dataclass
 from typing import Any
 
@@ -105,7 +106,8 @@ class StructureEntity:
 class Structure:
     size: Pos
     data_version: int | None
-    """The version the template was saved with; None when the file has none (vanilla then assumes 500)."""
+    """The version the template was saved with; None when the file has none. Vanilla would then assume 500 and run
+    every upgrade since on the room, so ``check_structure`` refuses it."""
     blocks: tuple[StructureBlock, ...]
     entities: tuple[StructureEntity, ...] = ()
 
@@ -121,7 +123,7 @@ def decode_root(data: bytes) -> dict[str, Any]:
     if data[:2] == b"\x1f\x8b":
         try:
             data = gzip.decompress(data)
-        except (OSError, EOFError) as e:
+        except (OSError, EOFError, zlib.error) as e:
             raise StructureError(f"broken gzip data: {e}") from e
     try:
         return nbt.decode(data)[1]

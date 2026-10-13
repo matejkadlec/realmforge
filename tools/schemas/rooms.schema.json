@@ -5,16 +5,9 @@
       "description": "Where an imported room came from, written by ``rf rooms import``.",
       "properties": {
         "data_version": {
-          "anyOf": [
-            {
-              "type": "integer"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "The data version the source was saved with; the template keeps it, and the game upgrades the room from it when it loads. None when the file states none.",
-          "title": "Data Version"
+          "description": "The data version the source was saved with (for a file that states none, the import rules' data_version); the template keeps it, and the game upgrades the room from it when it loads.",
+          "title": "Data Version",
+          "type": "integer"
         },
         "file": {
           "description": "The source file's name.",

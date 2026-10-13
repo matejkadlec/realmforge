@@ -35,7 +35,16 @@ def check_structure(structure: Structure, universe: IdUniverse) -> list[tuple[st
     size = structure.size
     if any(not 1 <= axis <= MAX_SIZE for axis in size):
         problems.append(("size", f"{_fmt(size)} exceeds {MAX_SIZE} blocks per axis or is empty"))
-    if structure.data_version is not None and structure.data_version > DATA_VERSION:
+    if structure.data_version is None:
+        problems.append(
+            (
+                "DataVersion",
+                "missing: the game would read the room as saved with version 500 and run every upgrade since on "
+                "it (a sign loses its text); a source known to be modern gets one from the import rules' "
+                "data_version",
+            )
+        )
+    elif structure.data_version > DATA_VERSION:
         problems.append(
             ("DataVersion", f"{structure.data_version} is newer than the game's ({DATA_VERSION})")
         )

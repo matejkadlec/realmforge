@@ -32,9 +32,9 @@ class RoomSource(StrictModel):
 
     file: str = Field(description="The source file's name.")
     format: Literal["nbt", "schem", "litematic"] = Field(description="The source file's format.")
-    data_version: int | None = Field(
-        description="The data version the source was saved with; the template keeps it, and the game upgrades "
-        "the room from it when it loads. None when the file states none."
+    data_version: int = Field(
+        description="The data version the source was saved with (for a file that states none, the import rules' "
+        "data_version); the template keeps it, and the game upgrades the room from it when it loads."
     )
     ours: bool = Field(
         default=False,
