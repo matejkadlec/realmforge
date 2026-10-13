@@ -118,6 +118,19 @@ def test_the_client_allowlist_covers_headless_noise_only_on_the_client() -> None
     assert len(boot_problems(_outcome(log=CLIENT_LOG), ALLOWED_ERRORS["server"])) == 3
 
 
+CLOUD_SERVER_LOG = f"""\
+{FOUND_JAR}
+[13Oct2026 10:42:53.186] [Yggdrasil Key Fetcher/ERROR] [com.mojang.authlib.yggdrasil.YggdrasilServicesKeyInfo/]: Failed to request yggdrasil public key
+com.mojang.authlib.exceptions.MinecraftClientException: Failed to read from https://api.minecraftservices.com/publickeys due to api.minecraftservices.com
+Caused by: java.net.UnknownHostException: api.minecraftservices.com
+"""
+
+
+def test_the_server_allowlist_covers_the_key_fetch_a_cloud_session_cannot_make() -> None:
+    assert boot_problems(_outcome(log=CLOUD_SERVER_LOG), ALLOWED_ERRORS["server"]) == []
+    assert len(boot_problems(_outcome(log=CLOUD_SERVER_LOG), ALLOWED_ERRORS["client"])) == 1
+
+
 def test_the_client_runs_under_xvfb_when_it_exists(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(packboot.shutil, "which", lambda name: f"/usr/bin/{name}")
     assert packboot._headless(["game"]) == ["/usr/bin/xvfb-run", "-a", "-s", packboot.XVFB_SCREEN, "game"]

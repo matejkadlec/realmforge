@@ -17,10 +17,6 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 public final class QaCastAnimation {
     private static final int MAX_TICKS = 6000;
 
-    /** Installed by the client ({@code qa/client/castanim}); a dedicated server never receives the payload. */
-    private static QaCastClientHandler clientHandler = payload -> {
-    };
-
     private QaCastAnimation() {
     }
 
@@ -36,13 +32,12 @@ public final class QaCastAnimation {
         NeoForge.EVENT_BUS.addListener(QaCasts::onServerStopped);
     }
 
-    public static void installClientHandler(QaCastClientHandler handler) {
-        clientHandler = handler;
-    }
-
+    /**
+     * Client-bound and without a handler here (ADR 0027): the client registers it ({@code qa/client/castanim}), and a
+     * dedicated server only sends the payload.
+     */
     private static void registerPayloads(RegisterPayloadHandlersEvent event) {
-        event.registrar("1").playToClient(
-                QaCastPayload.TYPE, QaCastPayload.STREAM_CODEC, (payload, context) -> clientHandler.handle(payload));
+        event.registrar("1").playToClient(QaCastPayload.TYPE, QaCastPayload.STREAM_CODEC);
     }
 
     private static void registerCommands(RegisterCommandsEvent event) {

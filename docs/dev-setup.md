@@ -234,11 +234,23 @@ Cloud sessions do not have this server, so texture batches run in a local sessio
 ### Cloud sessions
 
 Cloud sessions (claude.ai/code, or a cloud session started from the desktop app) run in a fresh container with
-Java 21 and uv preinstalled; there is no SDKMAN and `JAVA_HOME` is already set. Since the port to 26.1.2 the build
-needs Java 25: Gradle downloads it for the daemon and the toolchains through the foojay resolver
-(`api.foojay.io`, then the JDK archive), which a cloud session has not tried yet. If the proxy refuses those hosts,
-the warm-up log names them; add them to the environment's network access. `rf ids vanilla` and `rf pack-boot` need
-`JAVA_HOME` pointed at that Java 25 (`~/.gradle/jdks/...`).
+Java 21, uv and Xvfb preinstalled; there is no SDKMAN and `JAVA_HOME` points at Java 21. Since the port to 26.1.2 the
+build needs Java 25, and the warm-up's first Gradle run (below) downloads it for the daemon and the toolchains
+through the foojay resolver: `api.foojay.io`, then the Temurin archive from `github.com`
+(`adoptium/temurin25-binaries`) and `release-assets.githubusercontent.com`, about 140 MB into `~/.gradle/jdks/` in
+some 20 seconds. The agent proxy allowed all three hosts when RLM-130 checked it (2026-10-13), and the build, the
+GameTests and both pack boots ran on that Java. Should an environment refuse one, the warm-up log and
+`curl -sS "$HTTPS_PROXY/__agentproxy/status"` name it; add it to the environment's network access. `rf ids vanilla`
+and `rf pack-boot` need `JAVA_HOME` pointed at that Java 25:
+
+```bash
+JAVA_HOME=$(ls -d ~/.gradle/jdks/*25*/ | head -1) uv run rf pack-boot
+```
+
+The pack boot works there on both sides (the client under Xvfb). Some hosts stay refused without failing it: the mods'
+update checks (`curseupdate.com`, `update.serilum.com`, `updates.blamejared.com`) and the NeoForge installer's mirror
+list (`mirrors.neoforged.net`). The dedicated server fetches Mojang's public key without any proxy
+(`Proxy.NO_PROXY`), which the container cannot resolve; the server's allowlist in `packboot.py` explains that line.
 
 `.claude/settings.json` runs `.claude/hooks/cloud-warmup.sh` at SessionStart: `--env` on every SessionStart, the
 warm-up only at `startup` and `resume` (not after `/clear`, compaction or a fork, so it never starts mid-session
@@ -257,7 +269,8 @@ are unaffected.
   decompile/recompile, `build/mc-sources/` and a first compile. The Gradle daemon keeps running for the agent's
   first build. Measured in a fresh clone with an empty Gradle home (October 2026): the first `./gradlew build`
   takes about 5 minutes cold; the warm-up takes about 4 minutes in the background, and the first build after it
-  about 45 seconds.
+  about 45 seconds. With the Java 25 download (2026-10-13) the warm-up took 4.6 minutes, and the first build a
+  minute, most of it the game assets its JUnit run downloads (435 MiB).
   - Maven Central sometimes answers bursts with `429 Too Many Requests` for a few minutes. After a 429 (or a
     502/503/504) the warm-up retries the Gradle step after 60 s and again after 120 s; any other failure ends it
     at once.

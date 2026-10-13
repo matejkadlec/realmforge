@@ -81,3 +81,7 @@ and changes how it runs:
 - **The server's allowlist** has one entry: Jade 26.1.10's "Failed to collect shearable blocks", a caught error
   that only costs its harvest tooltip the shears hint.
 
+Added 2026-10-13 (RLM-130): the server's allowlist has a second entry, "Failed to request yggdrasil public key". A
+dedicated server fetches Mojang's key without a proxy (`Proxy.NO_PROXY`), which fails in a cloud session's container,
+where only the agent proxy reaches the internet; the key only checks players' signatures, and a boot has no players.
+

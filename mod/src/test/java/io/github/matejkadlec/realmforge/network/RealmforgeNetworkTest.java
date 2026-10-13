@@ -1,6 +1,5 @@
 package io.github.matejkadlec.realmforge.network;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.matejkadlec.realmforge.Realmforge;
@@ -17,10 +16,5 @@ class RealmforgeNetworkTest {
         String version = RealmforgeNetwork.version(container);
         String minecraft = Pattern.quote(SharedConstants.getCurrentVersion().name());
         assertTrue(version.matches("\\d+\\.\\d+\\.\\d+\\+mc" + minecraft), version);
-    }
-
-    @Test
-    void installingNoClientHandlerIsRefused() {
-        assertThrows(NullPointerException.class, () -> RealmforgeNetwork.installClientHandler(null));
     }
 }

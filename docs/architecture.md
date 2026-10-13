@@ -1073,14 +1073,17 @@ depth limit.
   cooldown, resource, rate limit) and never trusts numbers from the client.
 - **Handlers run on the main thread** (the registrar's default, `HandlerThread.MAIN`) and hand over to the feature's
   system at once.
-- **Client-bound handlers live in `client/network/`.** NeoForge 21.1 had no client-side registration event for
-  payloads, so common code registers every payload. `network/` therefore declares an interface with one method per
-  client-bound payload (`ClientboundPayloadHandler`); `client/network/ClientPayloadHandler` implements it, and
-  `RealmforgeClient` installs the implementation at startup (`RealmforgeNetwork.installClientHandler`). The
-  registered handler is a lambda that calls the installed implementation. A dedicated server never installs one and
-  never receives client-bound payloads, and no class outside `client/` refers to a client class. NeoForge 26.1 adds
-  the client-only `RegisterClientPayloadHandlersEvent` (common code then registers `playToClient(type, codec)`
-  without a handler); the interface still works, and moving to the event is an open follow-up.
+- **Client-bound handlers live in `client/network/`**
+  ([ADR 0027](decisions/0027-client-bound-payload-handlers-through-the-client-event.md)). `RealmforgeNetwork`
+  registers a client-bound payload without a handler, `registrar.playToClient(TYPE, STREAM_CODEC)`, and
+  `client/network/ClientPayloadHandlers` registers its handler in NeoForge's client-only
+  `RegisterClientPayloadHandlersEvent` (mod bus; `RealmforgeClient` adds the listener). A dedicated server loads only
+  the payload's type and codec, and no common class refers to a client handler. NeoForge stops the client at startup
+  when a client-bound payload has no client handler ("Some clientbound payloads are missing client-side handlers"),
+  so a forgotten handler shows on the first launch, not on the first packet. A payload both sides handle registers
+  its server handler in common code (`playBidirectional(type, codec, serverHandler)`) and its client handler through
+  the event. The QA mod's test cast takes the same route (`castanim/QaCastAnimation`,
+  `client/castanim/QaCastAnimationClient`).
 
 ### 17.2 What syncs how
 
@@ -1107,7 +1110,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   FML constructs only on the client. It registers HUD layers (`RegisterGuiLayersEvent`: spell bar, cast bar,
   resource bar, combat text), key mappings (`RegisterKeyMappingsEvent`), entity renderers
   (`EntityRenderersEvent.RegisterRenderers`), particles (`RegisterParticleProvidersEvent`), menu screens
-  (`RegisterMenuScreensEvent`) and tooltip components (`RegisterClientTooltipComponentFactoriesEvent`).
+  (`RegisterMenuScreensEvent`), tooltip components (`RegisterClientTooltipComponentFactoriesEvent`) and the handlers
+  of client-bound payloads (`RegisterClientPayloadHandlersEvent`, [17.1](#171-rules)).
 - **Layout:** `client/hud`, `client/screen`, `client/input`, `client/render`, `client/tooltip`, `client/network`,
   `client/animation` (the PAL cast layer), and `client/compat/<mod>` for the client parts of
   integrations (JEI plugins, Jade tooltips).
