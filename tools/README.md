@@ -76,22 +76,23 @@ does not explain, on loot table validation warnings, and on a log without the "A
 ## Rooms
 
 Dungeon rooms are structure templates in `content/rooms/` with a YAML sidecar each
-([architecture 15.4](../docs/architecture.md#154-rooms),
-[ADR 0028](../docs/decisions/0028-dungeon-rooms-generated-or-imported.md), [content/README.md](../content/README.md)).
-`rf validate` checks them and `rf gen` copies each one, normalized, to `data/realmforge/structure/rooms/<id>.nbt` in
-the jar, and the `LICENSE` and `NOTICE` of each third-party source with a room to `META-INF/third_party/<source>/`.
+([architecture 15.4](../docs/architecture.md#154-rooms), [ADR 0028](../docs/decisions/0028-dungeon-rooms-generated-or-imported.md),
+[content/README.md](../content/README.md)). `rf validate` checks them and `rf gen` copies each one, normalized, to
+`data/realmforge/structure/rooms/<id>.nbt` in the jar, and the `LICENSE` and `NOTICE` of each third-party source
+with a room to `META-INF/third_party/<source>/`.
 
 **`rf rooms import SRC... --to DIR`** turns room files into rooms: vanilla structure templates (`.nbt`), Sponge
 schematics (`.schem`, versions 1 to 3, as WorldEdit saves them) and Litematica schematics (`.litematic`, versions 5
 to 7, Minecraft 1.13.2 and later; several regions merge into one room; an older file is refused, because it holds
-1.12 block states that only Litematica converts: open it there and save it again). A folder imports every room file below it, keeping its subfolders. Each file becomes
-`DIR/<name>.nbt`, the normalized template (blocks sorted, keys sorted, stored deflate, so equal rooms give equal
-bytes), and `DIR/<name>.yaml`, a draft sidecar that records the source file, its format and its data version and
-leaves `pools` and `tags` empty for retagging (A4c). A re-import keeps the sidecar's pools, tags and weight. A room
-is written only when it validates; otherwise the command lists the problems and writes nothing for that room.
-Inside `content/rooms/`, third-party rooms must go to `third_party/<source>/`, next to the source's `LICENSE` and
-`NOTICE`; rooms we built ourselves (exported from a dev world, say) take `--ours`, which the sidecar records as
-`source.ours`, and go anywhere else. Validation holds every room with a `source` to the same rule.
+1.12 block states that only Litematica converts: open it there and save it again). A folder imports every room file
+below it, keeping its subfolders. Each file becomes `DIR/<name>.nbt`, the normalized template (blocks sorted, keys
+sorted, stored deflate, so equal rooms give equal bytes), and `DIR/<name>.yaml`, a draft sidecar that records the
+source file, its format and its data version and leaves `pools` and `tags` empty for retagging (A4c). A re-import
+keeps the sidecar's pools, tags and weight. A room is written only when it validates; otherwise the command lists
+the problems and writes nothing for that room. Inside `content/rooms/`, third-party rooms must go to
+`third_party/<source>/`, next to the source's `LICENSE` and `NOTICE`; rooms we built ourselves (exported from a dev
+world, say) take `--ours`, which the sidecar records as `source.ours`, and go anywhere else. Validation holds every
+room with a `source` to the same rule.
 
 The template keeps the data version its source states, and the game upgrades it from there on load. An id the ID
 universe lacks, a source's own block or a vanilla block renamed since (`minecraft:grass` became
@@ -113,22 +114,22 @@ entities:
 ```
 
 `blocks` also applies to the block a jigsaw leaves behind (its `final_state`), and validation checks that block's id
-like any other. The import report names every remap, every dropped entity and block entity, and the jigsaw names
-and pools no rule mapped. The schematic readers live in `rooms/sources.py`: nucleation 0.10.24 reads both formats too, but it writes
-only the tight box around a room's non-air blocks, so air-only layers at the edge vanish and the blocks shift
-(RLM-119).
+like any other. The import report names every remap, every dropped entity and block entity, and the jigsaw names and
+pools no rule mapped. The schematic readers live in `rooms/sources.py`: nucleation 0.10.24 reads both formats too,
+but it writes only the tight box around a room's non-air blocks, so air-only layers at the edge vanish and the
+blocks shift (RLM-119).
 
-**`rf rooms gallery [DIR]`** renders every `*.nbt` below `DIR` (default `content/rooms/`; any folder works, such
-as the spike rooms in `qa-mod/src/generated/resources/data/realmforge_qa/structure/spike/` or a folder of
-generated seed candidates) from four views: outside, cut `--cut` blocks above the bottom (default 5) from two
-corners, and a plan of the cut. It writes the PNGs and `index.html` to `.cache/rooms/gallery/<folder>/`
-(replaced on every run; `--out` picks another folder, which must not overlap the rooms' folder and is replaced
-only when it is empty or an earlier gallery, marked by a `.room-gallery` file). The renderer is [nucleation](https://github.com/Schem-at/Nucleation) (MIT, pinned in
-`pyproject.toml`), with block models and textures from the official client jar, which the first run downloads into
-`.cache/vanilla/<version>/` (sha1-verified) and which is never committed. It draws on Vulkan: without a GPU it needs
-Mesa's software driver lavapipe (package `mesa-vulkan-drivers`,
-[dev setup](../docs/dev-setup.md#1-tools-in-wsl-no-sudo-needed)).
-Three spike rooms take about 3 seconds, the first run about 5 (the jar download).
+**`rf rooms gallery [DIR]`** renders every `*.nbt` below `DIR` (default `content/rooms/`; any folder works, such as
+the spike rooms in `qa-mod/src/generated/resources/data/realmforge_qa/structure/spike/` or a folder of generated
+seed candidates) from four views: outside, cut `--cut` blocks above the bottom (default 5) from two corners, and a
+plan of the cut. It writes the PNGs and `index.html` to `.cache/rooms/gallery/<folder>/` (replaced on every run;
+`--out` picks another folder, which must not overlap the rooms' folder and is replaced only when it is empty or an
+earlier gallery, marked by a `.room-gallery` file). The renderer is
+[nucleation](https://github.com/Schem-at/Nucleation) (MIT, pinned in `pyproject.toml`), with block models and
+textures from the official client jar, which the first run downloads into `.cache/vanilla/<version>/`
+(sha1-verified) and which is never committed. It draws on Vulkan: without a GPU it needs Mesa's software driver
+lavapipe (package `mesa-vulkan-drivers`, [dev setup](../docs/dev-setup.md#1-tools-in-wsl-no-sudo-needed)). Three
+spike rooms take about 3 seconds, the first run about 5 (the jar download).
 
 On the page, choose Keep or Reject per room and copy the decisions (YAML, one `"<room>": keep|reject` per line, the
 name quoted) into the session. **`rf rooms review DIR`** merges them (standard input, or `--from FILE`) into
