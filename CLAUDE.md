@@ -43,8 +43,10 @@ modpack adds third-party QoL, performance and library mods.
   never implement `decision` tickets or tickets waiting on Matěj.
 - **Status:** M0 (bootstrap) is done: build, CI, content pipeline, one test item (`realmforge:test_item`), modpack
   definition. M1, the playable vertical slice (proposed as v0.1.0, roadmap decision D7), is under way: CI boots the
-  whole pack on a server and a client (spike 6), and the core mod has its empty feature skeleton (F1). Before any
-  gameplay code the project moved from Minecraft 1.21.1 to 26.1.2 (RLM-65, RLM-123, RLM-124). No gameplay yet.
+  whole pack on a server and a client (spike 6). Before any gameplay code the project moved from Minecraft 1.21.1 to
+  26.1.2 (RLM-65, RLM-123, RLM-124). The core mod has its feature skeleton (F1), datapack registries (F2), player
+  state (F3), stats (F4) with their names and a character sheet (F4b), and the combat core (F5: spell schools, crit,
+  dodge, resistances, our armor formula, combat text, the QA training dummy). Races, classes and spells come next.
 
 ## Pinned versions
 
@@ -120,7 +122,7 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 | `tools/schemas/` | JSON Schemas for YAML editor completion, written by `rf gen` | **no** |
 | `mod/` | core mod `realmforge` (package `io.github.matejkadlec.realmforge`) | `src/main`, `src/test` |
 | `mod/src/generated/` | Java registrations, models, lang, textures from `rf gen` | **no** |
-| `qa-mod/` | dev-only mod `realmforge_qa` (GameTests, later debug tools); never released | `src/main` |
+| `qa-mod/` | dev-only mod `realmforge_qa`: GameTests and the `/qa` debug tools (training dummy, combat log, stats); never released | `src/main` |
 | `qa-mod/src/generated/` | content expectations for GameTests, GameTest structures from `rf gen` | **no** |
 | `dev/` | dev client defaults: `options.txt`, seeded into `run/client` by `seedDevOptions` | yes |
 | `pack/` | packwiz metadata and config overrides (`config/`), no jars | metadata via `packwiz` commands; `config/` by hand ([procedure](pack/README.md#configuration)), then `packwiz refresh` |
@@ -234,11 +236,11 @@ that compiles here.
   examples with `generic.` or `player.` are wrong.
 - **Hurt cooldown:** within 10 ticks of the last hit, a hit not bigger than it is dropped before
   `LivingDamageEvent` fires; a hit outside that window, or one that bypasses it, starts new invulnerability ticks.
-  Damage that must always land (spells, damage over time) uses damage types in `#minecraft:bypasses_cooldown` and
-  keeps the target's current window (`DamageContainer#setPostAttackInvulnerabilityTicks(target.invulnerableTime)`),
-  so it neither grants nor clears invulnerability. It still sets the `lastHurt` that later hits in the window are
-  measured against: a melee hit after a small spell or DoT tick lands almost in full, one after a bigger spell hit is
-  dropped; task F5 decides what to keep ([architecture 9.1](docs/architecture.md#91-damage-pipeline)).
+  Damage that must always land (spells, damage over time) is spell school damage: its damage types are in
+  `#minecraft:bypasses_cooldown`. `combat/DamagePipeline` keeps such a hit out of the window: the target keeps its
+  invulnerable time (`setInvulnerabilityTicks(max(1, invulnerableTime))`: 0 is refused) and its `lastHurt`, which
+  vanilla overwrites and an access transformer lets us restore, so melee hits in an open window are still compared
+  with the previous melee hit ([architecture 9.1](docs/architecture.md#91-damage-pipeline)).
 - **Cancelling `LivingIncomingDamageEvent` stops a hit cleanly:** `LivingEntity#hurtServer` pops the
   `DamageContainer` of a cancelled hit (NeoForge 21.1 leaked it) ([architecture 9.1](docs/architecture.md#91-damage-pipeline)).
 - **Effects have no cures:** milk and a totem clear every effect (`LivingEntity#removeAllEffects`); to keep one,
@@ -250,6 +252,13 @@ that compiles here.
   register the `DeferredRegister` on the mod event bus. Game events go to `NeoForge.EVENT_BUS`.
 - **Client-only code** (rendering, screens, `Minecraft.getInstance()`) must sit in classes only loaded on the
   client (e.g. `@Mod(value = MOD_ID, dist = Dist.CLIENT)`), or the dedicated server crashes.
+- **GUIs are render-state extraction:** HUD layers (`GuiLayer`) and screens (`Screen#extractRenderState`) get a
+  `GuiGraphicsExtractor` (`text`, `centeredText`, `fill`, `pose()`), not 1.21.1's `GuiGraphics`; text colours need
+  their alpha byte. A layer from `RegisterGuiLayersEvent` checks `options.hideGui` itself
+  ([architecture 18](docs/architecture.md#18-client-code-rendering-gui-input)).
+- **Access transformers** go in `src/main/resources/META-INF/accesstransformer.cfg` (ModDevGradle's default) and
+  under `[[accessTransformers]]` in `neoforge.mods.toml`, which FML applies when the game loads; the dev runs live in
+  `qa-mod/` and need the latter ([architecture 19.3](docs/architecture.md#193-mixins-and-access-transformers)).
 - **GameTests:** a `public static void` method taking a `GameTestHelper`, marked `@QaGameTest` (template, timeout),
   in a class listed in `QaGameTests`; it registers a test function and a test instance, named
   `realmforge_qa:<group>/<method>`. Templates are generated into `qa-mod/src/generated/resources/data/

@@ -29,7 +29,8 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *
  * <ol>
  *   <li>{@code CriticalHitEvent}: a player's full-strength melee attack crits on our crit chance and deals 1 + crit
- *   damage, instead of vanilla's jump crit; vanilla still plays the crit sound and particles.</li>
+ *   damage, instead of vanilla's jump crit; vanilla still plays the crit sound and particles, and a crit no longer
+ *   stops a sword's sweep (vanilla's jump crits never met one on the ground).</li>
  *   <li>{@code LivingIncomingDamageEvent}: a dodge cancels the hit (melee, projectiles and physical school hits; never
  *   magic, explosions or the world). A school hit gets spell power (magic), the school's power, a crit roll and the
  *   defender's resistance. Our armor formula replaces vanilla's through the armor reduction, except for damage in
@@ -91,6 +92,8 @@ public final class DamagePipeline {
         event.setDamageMultiplier(crit
                 ? (float) DamageCalculator.critMultiplier(stat(player, GeneratedStats.CRIT_DAMAGE))
                 : 1.0F);
+        // Vanilla's jump crits never happened on the ground, where sweeps do; ours do, so a crit keeps the sweep.
+        event.setDisableSweep(false);
         HitTracker.markMeleeCrit(player, event.getTarget(), crit);
     }
 
