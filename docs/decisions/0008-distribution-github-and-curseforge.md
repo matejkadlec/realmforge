@@ -2,7 +2,7 @@
 
 Date: 2026-10-11
 
-Status: Accepted
+Status: Accepted; config overrides noted 2026-10-13 (RLM-151)
 
 ## Context
 
@@ -24,6 +24,6 @@ The research report proposed GitHub and CurseForge together; the owner chose to 
 
 ## Consequences
 
-- No third-party jars are ever attached or committed; the modpack is packwiz metadata only.
+- No third-party jars are ever attached or committed; the modpack is packwiz metadata only (plus config overrides since 2026-10-13, [0013](0013-modpack-composition.md)).
 - When CurseForge publishing is added, the pack's mod sources and the CurseForge modpack rules have to be checked first.
 - Releases target the licenses in [0009](0009-licensing.md): the jar is open (MPL-2.0 / CC BY 4.0), the modpack is All Rights Reserved.

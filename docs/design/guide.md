@@ -61,8 +61,8 @@ id: catacombs
 category: dungeon                 # realm | dungeon | boss | basics
 chapter: realmforge:chapter_1     # the realmforge:chapter whose players can read it
 subject: realmforge:catacombs     # optional: the dungeon type, boss or dimension it describes
-title: {en_us: Catacombs, cs_cz: Katakomby}
-summary: {en_us: "Dungeon in the stone realm, levels {level_min}-{level_max}", cs_cz: "..."}
+title: {en_us: Catacombs}
+summary: {en_us: "Dungeon in the stone realm, levels {level_min}-{level_max}"}
 text:
   en_us: |
     An open crypt under the stone realm's mines...
@@ -81,7 +81,7 @@ requires: []                      # optional extra unlocks, same types as dimens
 - **Generated:** a synced datapack registry `realmforge:guide_entry`
   (`data/realmforge/realmforge/guide_entry/<id>.json`) with the category, chapter, subject, related entries, the
   computed facts and translation keys (`guide_entry.realmforge.<id>.title`, …); the texts go into the generated
-  `lang/en_us.json` and `cs_cz.json`.
+  `lang/en_us.json`.
 - **Validation** (Python): the chapter, subject, related entries and requirements exist; the subject fits the
   category; `requires` uses only requirement types the server recomputes on ([Unlock rule](#unlock-rule)); every
   placeholder resolves; every realm, dungeon type and boss has a guide entry once the guide ships.

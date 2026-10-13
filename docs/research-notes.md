@@ -18,6 +18,7 @@ Later topic research, starting with the reference games Craft to Exile 2, Advent
 | ID universe includes a full-pack registry dump | Vanilla reports now; the Registry Dump step is a TODO | [0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md) |
 | GameTests (location unspecified) | In the dev-only QA mod `realmforge_qa`; the release jar has no test code | [0010](decisions/0010-testing-strategy.md) |
 | Communicate with the owner in Czech | English | [vision](vision.md#owner) |
+| Lang files in `en_us`, possibly `cs_cz` | English only (decided 2026-10-13); a community translation would ship as a resource pack | [vision](vision.md#owner) |
 | Remove Nether and End "if you choose it" | Removed (decided 2026-10-12); a late fire realm replaces the Nether, and the items get new sources | [0025](decisions/0025-remove-the-nether-and-end.md) |
 | The owner builds key rooms in creative | Nobody builds rooms by hand (decided 2026-10-12): generated rooms plus an imported MIT, CC0 and LGPL-3.0 baseline with its notices | [0028](decisions/0028-dungeon-rooms-generated-or-imported.md) |
 | No vanilla textures, not even as AI input | No vanilla texture files or recolours in our assets, and none as input for generating our textures; vanilla blocks in our structures and renders of them are fine | [0028](decisions/0028-dungeon-rooms-generated-or-imported.md) |
@@ -210,7 +211,7 @@ Recommendation (accepted, [ADR 0005](decisions/0005-content-pipeline-yaml-single
 
 **What the pipeline generates:**
 
-- assets: item and block models, blockstates, lang (`en_us`, possibly `cs_cz`), mob icons for Xaero;
+- assets: item and block models, blockstates, lang (`en_us`, possibly `cs_cz`; **Superseded:** English only, see [vision](vision.md#owner)), mob icons for Xaero;
 - data: recipes, loot tables, tags, worldgen, advancements, our registries;
 - FTB Quests SNBT with IDs derived from the quest key, so regeneration never breaks saved player progress;
 - configs and datapack tweaks for third-party mods;

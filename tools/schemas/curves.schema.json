@@ -26,22 +26,8 @@
     },
     "LocalizedText": {
       "additionalProperties": false,
-      "description": "A player-facing text in every supported locale. en_us is required; missing locales fall back to it.",
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
       "properties": {
-        "cs_cz": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Czech. Optional.",
-          "title": "Cs Cz"
-        },
         "en_us": {
           "description": "English (US). Required.",
           "minLength": 1,

@@ -18,9 +18,8 @@ id: hint
 texts:
   first_steps:
     en_us: Press N
-    cs_cz: Stiskni N
-  english_only:
-    en_us: Only English
+  open_the_map:
+    en_us: Press M
 """
 
 
@@ -40,18 +39,14 @@ def test_texts_become_lang_keys_and_constants(repo: RepoPaths) -> None:
     files = generate(repo)
 
     en_us = json.loads(files[f"{LANG}/en_us.json"])
-    cs_cz = json.loads(files[f"{LANG}/cs_cz.json"])
     assert en_us["hint.realmforge.first_steps"] == "Press N"
-    assert cs_cz["hint.realmforge.first_steps"] == "Stiskni N"
-    assert en_us["hint.realmforge.english_only"] == "Only English"
-    # A missing locale is left out, so the game falls back to English.
-    assert "hint.realmforge.english_only" not in cs_cz
+    assert en_us["hint.realmforge.open_the_map"] == "Press M"
 
     java = files[GENERATED_TEXTS].decode()
     assert 'public static final String HINT_FIRST_STEPS = "hint.realmforge.first_steps";' in java
-    assert 'public static final String HINT_ENGLISH_ONLY = "hint.realmforge.english_only";' in java
+    assert 'public static final String HINT_OPEN_THE_MAP = "hint.realmforge.open_the_map";' in java
     # Constants are sorted by name within a group, so the output does not depend on YAML key order.
-    assert java.index("HINT_ENGLISH_ONLY") < java.index("HINT_FIRST_STEPS")
+    assert java.index("HINT_FIRST_STEPS") < java.index("HINT_OPEN_THE_MAP")
 
 
 def test_repository_texts_cover_the_dark_vision_key(repo: RepoPaths) -> None:
@@ -108,7 +103,11 @@ def test_java_constants_must_be_unique(repo: RepoPaths) -> None:
             "id: hint\ntexts:\n  Bad-Name:\n    en_us: X\n",
             "texts.Bad-Name.[key]: String should match pattern",
         ),
-        ("id: hint\ntexts:\n  a:\n    cs_cz: Jen česky\n", "texts.a.en_us: Field required"),
+        ("id: hint\ntexts:\n  a: {}\n", "texts.a.en_us: Field required"),
+        (
+            "id: hint\ntexts:\n  a:\n    en_us: X\n    cs_cz: Y\n",
+            "texts.a.cs_cz: Extra inputs are not permitted",
+        ),
         ("id: hint\n", "texts: Field required"),
         ("id: hint.\ntexts:\n  a:\n    en_us: X\n", "id: String should match pattern"),
         ("id: hint..x\ntexts:\n  a:\n    en_us: X\n", "id: String should match pattern"),

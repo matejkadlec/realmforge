@@ -54,7 +54,6 @@ def test_item_outputs(repo: RepoPaths) -> None:
     }
 
     assert json.loads(files[f"{ASSETS}/lang/en_us.json"])["item.realmforge.test_item"] == "Test Item"
-    assert json.loads(files[f"{ASSETS}/lang/cs_cz.json"])["item.realmforge.test_item"] == "Testovací předmět"
 
     expectations = files[EXPECTATIONS_JAVA].decode()
     assert '"realmforge:test_item",' in expectations
@@ -68,15 +67,9 @@ def test_default_stack_size_is_not_emitted(repo: RepoPaths) -> None:
     assert 'ITEMS.registerSimpleItem("plain");' in java
 
 
-def test_locale_without_texts_is_omitted(repo: RepoPaths) -> None:
-    (repo.content / "items" / "test_item.yaml").unlink()
-    (repo.content / "curves" / "test_curve.yaml").unlink()
-    for text_group in (repo.content / "texts").glob("*.yaml"):
-        text_group.unlink()
-    write(repo.content / "items" / "plain.yaml", "id: plain\nname:\n  en_us: Plain\n")
+def test_english_is_the_only_lang_file(repo: RepoPaths) -> None:
     files = generate(repo)
-    assert f"{ASSETS}/lang/en_us.json" in files
-    assert f"{ASSETS}/lang/cs_cz.json" not in files
+    assert [path for path in files if path.startswith(f"{ASSETS}/lang/")] == [f"{ASSETS}/lang/en_us.json"]
 
 
 def test_sync_writes_updates_and_removes_stale_files(repo: RepoPaths) -> None:

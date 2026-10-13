@@ -2,7 +2,7 @@
 
 Date: 2026-10-11
 
-Status: Accepted
+Status: Accepted; config overrides noted 2026-10-13 (RLM-151)
 
 ## Context
 
@@ -18,6 +18,7 @@ This supersedes the report's MIT/CC0 proposal.
 - **The modpack** (`pack/`: pack definition, configs, quests): **All Rights Reserved, no redistribution** (`pack/LICENSE`).
 - `neoforge.mods.toml` declares `license = "MPL-2.0 AND CC-BY-4.0"`.
 - No third-party mod jars in the repo; the pack holds packwiz metadata only, so third-party licenses (including ARR ones) are not affected.
+  - 2026-10-13 (RLM-151): the pack also ships config overrides in `pack/config/` ([0013](0013-modpack-composition.md)), each the mod's own generated config file with only the pack's values changed. Shipping config files is what every modpack does, and the jars themselves still come from their original sources, so third-party licenses stay unaffected.
 - Third-party code is never copied into our MPL-2.0 files unless its license allows it (Spell Engine is GPL-3.0-only, Explorer's Compass CC BY-NC-SA: no reuse; see [0004](0004-build-rpg-systems-in-house.md)).
 - No vanilla textures or derivatives in our assets ([0007](0007-asset-pipeline.md)).
 

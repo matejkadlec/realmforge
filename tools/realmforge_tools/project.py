@@ -14,8 +14,9 @@ MINECRAFT_VERSION = "26.1.2"
 # World data version of MINECRAFT_VERSION (written into generated NBT). Checked against the vanilla snapshot.
 DATA_VERSION = 4790
 
-# Locales we ship translations for. en_us is mandatory for every translatable text.
-SUPPORTED_LOCALES = ("en_us", "cs_cz")
+# Locales we ship translations for: English only (Matěj, 2026-10-13). A community translation plugs in as a resource
+# pack keyed by the same translation keys (content/README.md); the pipeline needs nothing for it.
+SUPPORTED_LOCALES = ("en_us",)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 

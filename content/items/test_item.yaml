@@ -4,7 +4,6 @@
 id: test_item
 name:
   en_us: Test Item
-  cs_cz: Testovací předmět
 max_stack_size: 16
 creative_tabs:
   - minecraft:ingredients

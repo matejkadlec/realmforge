@@ -670,7 +670,7 @@ at most one gate-critical batch is in flight in the whole repository. A change t
 regenerate: everything under `mod/src/generated/`, `qa-mod/src/generated/`, `tools/schemas/` and
 `tools/id_universe/`, plus `pack/index.toml` and `uv.lock`. Predict them from the content types and generators
 the batch touches (`tools/realmforge_tools/generate/`; every player-facing text lands in the generated
-`lang/en_us.json` and `lang/cs_cz.json`), and confirm with the diff after `uv run rf gen`. Never select a batch
+`lang/en_us.json`), and confirm with the diff after `uv run rf gen`. Never select a batch
 that regenerates a file an in-flight batch also regenerates, until that batch has merged. In practice this lets
 one batch with new player-facing content run at a time. When implementation shows the batch must regenerate such
 a file after all, that is scope growth (next paragraph): the overlapping part waits or is split out, and the batch
