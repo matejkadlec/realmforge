@@ -902,7 +902,8 @@ loot: realmforge:boss/hollow_warden
   Experimentus ([ADR 0013](decisions/0013-modpack-composition.md)) skips both screens and the warning for
   experimental data packs in the create screen; nothing changes on servers. The dev client loads the same build
   from `qa-mod/build.gradle`. We add no mixin of our own for it ([19.3](#193-mixins-and-access-transformers)).
-- The Nether and End stay an open question ([roadmap](roadmap.md#open-decisions)); M1 does not touch them.
+- The Nether and End are removed in M4 ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)); M1 does not touch
+  them.
 
 ### 15.2 Dungeon types
 
@@ -1237,6 +1238,8 @@ copy-on-death attachments (`PlayerStateGameTests`, and `WorldRulesGameTests` for
 The decisions this document makes are listed in [ADR 0014](decisions/0014-core-mod-architecture.md); changing one
 of them needs a new ADR. Everything else here may change with the code, in the same PR.
 
-Still open, for the owner (details and proposals in the [roadmap](roadmap.md#open-decisions)): character XP
-separate from vanilla XP, the spell key scheme, the final set of primary stats, how many custom mobs M1 gets,
-griefing protection, and the Nether and End. M2 decides how rarity works ([13](#13-items-gear-and-loot)).
+The owner decisions the plan depended on ([roadmap](roadmap.md#open-decisions), D1 to D11) are all made: each
+decision ticket's comments record what Matěj decided, and the task that needs one follows it. Griefing protection
+(D6) is built ([19.1](#191-world-defaults)), and the Nether and End (D10) are removed in M4
+([ADR 0025](decisions/0025-remove-the-nether-and-end.md)). Still open: M2 decides how rarity works
+([13](#13-items-gear-and-loot)).
