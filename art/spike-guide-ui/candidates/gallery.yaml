@@ -11,7 +11,8 @@ intro: >-
   picked: one RD Pro edit of d and one RD Pro frame drawn from d and the mockup composite. Then round 2: four RD
   Fast frames guided by a clean, symmetric frame built from the mockup's own parts. Then round 1: frames from RD
   Fast and RD Plus, two frames guided by a crop of the mockup's corner, nine-slice and stretched previews, and five
-  16x16 category icons, which Matěj accepted. Pick the RD Pro frame for the guide.
+  16x16 category icons, which Matěj accepted. Outcome: Matěj found the RD Pro frames worse than RD Fast and picked
+  round 2's c (rd-fast-c) as the guide frame for now.
 candidates:
   rd-pro-edit:
     label: RD Pro edit of d

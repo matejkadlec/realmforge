@@ -14,6 +14,11 @@ darker, and the gold reads as bronze or even wood. The RD Fast frame guided by t
 **Round 2 outcome (Matěj, 2026-10-13):** "go with d, make the pro version". The
 [RD Pro version](#rd-pro-version-rlm-134) (RLM-134) holds two RD Pro frames made from d.
 
+**Outcome (Matěj, 2026-10-13):** the RD Pro frames look worse than the RD Fast ones, and he likes c more than d:
+"for now let's go with 'RD Fast, round 2 c'". Round 2's frame c (`candidates/frame_r2/rd-fast-c.png`) is the guide
+frame for now. Its flaws, from round 2's results: the corners are filled brown wedges instead of the mockup's
+filigree, and a light-blue line runs along the top edge.
+
 - `reference/mockup.png`: Matěj's mockup (generated with ChatGPT). `reference/corner-crop.png`: its top-left
   window corner, cropped at (192, 58), 136x136, composited on white, scaled to 256x256 (bilinear) and snapped to the
   project palette. It was the `input_image` for the two corner-guided frames.
@@ -169,6 +174,9 @@ corners and bright gold, at the cost of a smaller crest and a slightly lighter p
 nine-slice sprite, with the crest drawn separately, as round 1's previews showed.
 
 **Spent: 0.36 USD** (2 x 0.18). The balance went from 24.48 to 24.12 USD; the whole spike cost 0.90 USD.
+
+**Outcome:** Matěj found both RD Pro frames worse than RD Fast and picked round 2's c for now
+([above](#guide-ui-spike-art-direction-with-retro-diffusion)).
 
 ## Pipeline notes
 
