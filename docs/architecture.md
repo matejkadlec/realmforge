@@ -537,7 +537,7 @@ would remove both bonuses.
 | --- | --- | --- | --- |
 | race, class and level | `stats/CharacterStats`, from `character`'s provider | `realmforge:race/<race>/<n>`, `realmforge:class/<class>/<n>` | saved, recomputed |
 | talents | `stats/CharacterStats`, from `talent`'s provider | `realmforge:talent/<tree>/<node>/<n>` | saved, recomputed |
-| derived from primary stats | `stats/CharacterStats`, from stat rules ([8.3](#83-derived-stats-and-milestones)) | `realmforge:stat/<rule>/<n>` per point, `realmforge:stat/<rule>/at_<points>/<n>` per milestone | saved, recomputed |
+| derived from primary stats | `stats/CharacterStats`, from stat rules ([8.3](#83-derived-stats-and-milestones)) | `realmforge:stat/<rule namespace>/<entry>/<rule path>`: `<entry>` is `<n>` per point, `at_<points>_<n>` per milestone; the rule's path comes last, as only it may contain slashes | saved, recomputed |
 | gear with fixed stats | vanilla, from the item's attribute modifiers | `realmforge:gear/<slot>/<n>` (generated) | while equipped |
 | affixes and gems (M2) | vanilla slots: `ItemAttributeModifierEvent` adds them to the stack's modifiers; curio slots (rings, trinkets): Curios' own modifier API, because Curios ignores vanilla equipment modifiers in its slots (*verify* in M2) | `realmforge:affix/<affix>/<slot>/<k>/<n>`: `<k>` counts repeats of the same affix or gem on one stack (two sockets with the same gem), and curio slots use their slot id and index as `<slot>` | while equipped |
 | status effects | vanilla, `MobEffect#addAttributeModifier` | the effect's | while active |

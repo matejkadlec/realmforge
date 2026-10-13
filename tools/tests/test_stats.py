@@ -73,9 +73,12 @@ def test_repository_stats_and_rules_are_valid() -> None:
 def test_strength_gives_the_visions_ten_percent_for_ten_points() -> None:
     content, _ = load_and_validate(RepoPaths())
     (strength,) = (e.model for e in content.stat_rules if e.model.id == "strength")
-    assert ("realmforge:stat/strength/0", "minecraft:attack_damage", "add_multiplied_base", 0.1) in (
-        strength.bonuses_at(10)
-    )
+    assert (
+        "realmforge:stat/realmforge/0/strength",
+        "minecraft:attack_damage",
+        "add_multiplied_base",
+        0.1,
+    ) in (strength.bonuses_at(10))
 
 
 # Stats: schema
@@ -289,11 +292,11 @@ def test_bonuses_scale_per_point_and_respect_the_cap() -> None:
         }
     )
     assert model.bonuses_at(3) == [
-        ("realmforge:stat/r/0", "minecraft:max_health", "add_value", 6.0),
-        ("realmforge:stat/r/1", "minecraft:movement_speed", "add_multiplied_base", 0.03),
+        ("realmforge:stat/realmforge/0/r", "minecraft:max_health", "add_value", 6.0),
+        ("realmforge:stat/realmforge/1/r", "minecraft:movement_speed", "add_multiplied_base", 0.03),
     ]
     assert model.bonuses_at(50)[1] == (
-        "realmforge:stat/r/1",
+        "realmforge:stat/realmforge/1/r",
         "minecraft:movement_speed",
         "add_multiplied_base",
         0.05,
@@ -330,12 +333,22 @@ def test_milestones_apply_from_their_points_on() -> None:
         }
     )
     assert model.bonuses_at(9.99) == []
-    assert model.bonuses_at(10) == [("realmforge:stat/r/at_10/0", "minecraft:armor", "add_value", 2.0)]
-    assert model.bonuses_at(25) == [
-        ("realmforge:stat/r/at_10/0", "minecraft:armor", "add_value", 2.0),
-        ("realmforge:stat/r/at_20/0", "minecraft:armor", "add_value", 3.0),
-        ("realmforge:stat/r/at_20/1", "realmforge:crit_chance", "add_value", 0.01),
+    assert model.bonuses_at(10) == [
+        ("realmforge:stat/realmforge/at_10_0/r", "minecraft:armor", "add_value", 2.0)
     ]
+    assert model.bonuses_at(25) == [
+        ("realmforge:stat/realmforge/at_10_0/r", "minecraft:armor", "add_value", 2.0),
+        ("realmforge:stat/realmforge/at_20_0/r", "minecraft:armor", "add_value", 3.0),
+        ("realmforge:stat/realmforge/at_20_1/r", "realmforge:crit_chance", "add_value", 0.01),
+    ]
+
+
+def test_modifier_ids_end_with_the_rule_path() -> None:
+    model = rule_model(
+        {"per_point": [{"attribute": "minecraft:armor", "operation": "add_value", "amount": 1}]}
+    )
+    assert model.modifier_id("0") == "realmforge:stat/realmforge/0/r"
+    assert model.modifier_id("at_25_1") == "realmforge:stat/realmforge/at_25_1/r"
 
 
 def test_samples_cover_zero_both_sides_of_milestones_and_past_caps() -> None:
@@ -417,10 +430,13 @@ def test_expectations_hold_stats_and_rule_samples(repo: RepoPaths) -> None:
         "                    true,\n                    0.05,\n                    1.0)" in java
     )
     assert (
-        'new Sample(12.5, List.of(new Bonus("realmforge:stat/vitality/0", "minecraft:max_health", "add_value", '
+        'new Sample(12.5, List.of(new Bonus("realmforge:stat/realmforge/0/vitality", "minecraft:max_health", "add_value", '
         "12.5)))" in java
     )
-    assert 'new Bonus("realmforge:stat/strength/at_25/0", "realmforge:crit_damage", "add_value", 0.1)' in java
+    assert (
+        'new Bonus("realmforge:stat/realmforge/at_25_0/strength", "realmforge:crit_damage", "add_value", 0.1)'
+        in java
+    )
     assert "new Sample(0.0, List.of())" in java
 
 

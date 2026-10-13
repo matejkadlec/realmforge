@@ -89,7 +89,7 @@ public final class CharacterStats {
         }
     }
 
-    /** Fired on the new entity of a respawn, after vanilla copied the old one's base values (and more, from the End). */
+    /** Fired on a respawn's new entity, after vanilla copied the old one's base values (and more, from the End). */
     static void onClone(PlayerEvent.Clone event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             Tracker tracker = tracker(player);

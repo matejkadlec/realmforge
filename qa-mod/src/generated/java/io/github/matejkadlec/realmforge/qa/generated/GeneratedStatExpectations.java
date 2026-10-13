@@ -105,38 +105,38 @@ public final class GeneratedStatExpectations {
                     "realmforge:dexterity",
                     List.of(
                             new Sample(0.0, List.of()),
-                            new Sample(1.0, List.of(new Bonus("realmforge:stat/dexterity/0", "realmforge:crit_chance", "add_value", 0.001), new Bonus("realmforge:stat/dexterity/1", "minecraft:attack_speed", "add_multiplied_base", 0.005), new Bonus("realmforge:stat/dexterity/2", "minecraft:movement_speed", "add_multiplied_base", 0.002))),
-                            new Sample(12.5, List.of(new Bonus("realmforge:stat/dexterity/0", "realmforge:crit_chance", "add_value", 0.0125), new Bonus("realmforge:stat/dexterity/1", "minecraft:attack_speed", "add_multiplied_base", 0.0625), new Bonus("realmforge:stat/dexterity/2", "minecraft:movement_speed", "add_multiplied_base", 0.025))),
-                            new Sample(24.0, List.of(new Bonus("realmforge:stat/dexterity/0", "realmforge:crit_chance", "add_value", 0.024), new Bonus("realmforge:stat/dexterity/1", "minecraft:attack_speed", "add_multiplied_base", 0.12), new Bonus("realmforge:stat/dexterity/2", "minecraft:movement_speed", "add_multiplied_base", 0.048))),
-                            new Sample(25.0, List.of(new Bonus("realmforge:stat/dexterity/0", "realmforge:crit_chance", "add_value", 0.025), new Bonus("realmforge:stat/dexterity/1", "minecraft:attack_speed", "add_multiplied_base", 0.125), new Bonus("realmforge:stat/dexterity/2", "minecraft:movement_speed", "add_multiplied_base", 0.05), new Bonus("realmforge:stat/dexterity/at_25/0", "realmforge:crit_chance", "add_value", 0.02))),
-                            new Sample(110.0, List.of(new Bonus("realmforge:stat/dexterity/0", "realmforge:crit_chance", "add_value", 0.11), new Bonus("realmforge:stat/dexterity/1", "minecraft:attack_speed", "add_multiplied_base", 0.55), new Bonus("realmforge:stat/dexterity/2", "minecraft:movement_speed", "add_multiplied_base", 0.2), new Bonus("realmforge:stat/dexterity/at_25/0", "realmforge:crit_chance", "add_value", 0.02))))),
+                            new Sample(1.0, List.of(new Bonus("realmforge:stat/realmforge/0/dexterity", "realmforge:crit_chance", "add_value", 0.001), new Bonus("realmforge:stat/realmforge/1/dexterity", "minecraft:attack_speed", "add_multiplied_base", 0.005), new Bonus("realmforge:stat/realmforge/2/dexterity", "minecraft:movement_speed", "add_multiplied_base", 0.002))),
+                            new Sample(12.5, List.of(new Bonus("realmforge:stat/realmforge/0/dexterity", "realmforge:crit_chance", "add_value", 0.0125), new Bonus("realmforge:stat/realmforge/1/dexterity", "minecraft:attack_speed", "add_multiplied_base", 0.0625), new Bonus("realmforge:stat/realmforge/2/dexterity", "minecraft:movement_speed", "add_multiplied_base", 0.025))),
+                            new Sample(24.0, List.of(new Bonus("realmforge:stat/realmforge/0/dexterity", "realmforge:crit_chance", "add_value", 0.024), new Bonus("realmforge:stat/realmforge/1/dexterity", "minecraft:attack_speed", "add_multiplied_base", 0.12), new Bonus("realmforge:stat/realmforge/2/dexterity", "minecraft:movement_speed", "add_multiplied_base", 0.048))),
+                            new Sample(25.0, List.of(new Bonus("realmforge:stat/realmforge/0/dexterity", "realmforge:crit_chance", "add_value", 0.025), new Bonus("realmforge:stat/realmforge/1/dexterity", "minecraft:attack_speed", "add_multiplied_base", 0.125), new Bonus("realmforge:stat/realmforge/2/dexterity", "minecraft:movement_speed", "add_multiplied_base", 0.05), new Bonus("realmforge:stat/realmforge/at_25_0/dexterity", "realmforge:crit_chance", "add_value", 0.02))),
+                            new Sample(110.0, List.of(new Bonus("realmforge:stat/realmforge/0/dexterity", "realmforge:crit_chance", "add_value", 0.11), new Bonus("realmforge:stat/realmforge/1/dexterity", "minecraft:attack_speed", "add_multiplied_base", 0.55), new Bonus("realmforge:stat/realmforge/2/dexterity", "minecraft:movement_speed", "add_multiplied_base", 0.2), new Bonus("realmforge:stat/realmforge/at_25_0/dexterity", "realmforge:crit_chance", "add_value", 0.02))))),
             new StatRuleExpectation(
                     "realmforge:intellect",
                     "realmforge:intellect",
                     List.of(
                             new Sample(0.0, List.of()),
-                            new Sample(1.0, List.of(new Bonus("realmforge:stat/intellect/0", "realmforge:spell_power", "add_value", 0.01))),
-                            new Sample(12.5, List.of(new Bonus("realmforge:stat/intellect/0", "realmforge:spell_power", "add_value", 0.125))),
-                            new Sample(24.0, List.of(new Bonus("realmforge:stat/intellect/0", "realmforge:spell_power", "add_value", 0.24))),
-                            new Sample(25.0, List.of(new Bonus("realmforge:stat/intellect/0", "realmforge:spell_power", "add_value", 0.25), new Bonus("realmforge:stat/intellect/at_25/0", "realmforge:haste", "add_value", 0.05))))),
+                            new Sample(1.0, List.of(new Bonus("realmforge:stat/realmforge/0/intellect", "realmforge:spell_power", "add_value", 0.01))),
+                            new Sample(12.5, List.of(new Bonus("realmforge:stat/realmforge/0/intellect", "realmforge:spell_power", "add_value", 0.125))),
+                            new Sample(24.0, List.of(new Bonus("realmforge:stat/realmforge/0/intellect", "realmforge:spell_power", "add_value", 0.24))),
+                            new Sample(25.0, List.of(new Bonus("realmforge:stat/realmforge/0/intellect", "realmforge:spell_power", "add_value", 0.25), new Bonus("realmforge:stat/realmforge/at_25_0/intellect", "realmforge:haste", "add_value", 0.05))))),
             new StatRuleExpectation(
                     "realmforge:strength",
                     "realmforge:strength",
                     List.of(
                             new Sample(0.0, List.of()),
-                            new Sample(1.0, List.of(new Bonus("realmforge:stat/strength/0", "minecraft:attack_damage", "add_multiplied_base", 0.01))),
-                            new Sample(12.5, List.of(new Bonus("realmforge:stat/strength/0", "minecraft:attack_damage", "add_multiplied_base", 0.125))),
-                            new Sample(24.0, List.of(new Bonus("realmforge:stat/strength/0", "minecraft:attack_damage", "add_multiplied_base", 0.24))),
-                            new Sample(25.0, List.of(new Bonus("realmforge:stat/strength/0", "minecraft:attack_damage", "add_multiplied_base", 0.25), new Bonus("realmforge:stat/strength/at_25/0", "realmforge:crit_damage", "add_value", 0.1))))),
+                            new Sample(1.0, List.of(new Bonus("realmforge:stat/realmforge/0/strength", "minecraft:attack_damage", "add_multiplied_base", 0.01))),
+                            new Sample(12.5, List.of(new Bonus("realmforge:stat/realmforge/0/strength", "minecraft:attack_damage", "add_multiplied_base", 0.125))),
+                            new Sample(24.0, List.of(new Bonus("realmforge:stat/realmforge/0/strength", "minecraft:attack_damage", "add_multiplied_base", 0.24))),
+                            new Sample(25.0, List.of(new Bonus("realmforge:stat/realmforge/0/strength", "minecraft:attack_damage", "add_multiplied_base", 0.25), new Bonus("realmforge:stat/realmforge/at_25_0/strength", "realmforge:crit_damage", "add_value", 0.1))))),
             new StatRuleExpectation(
                     "realmforge:vitality",
                     "realmforge:vitality",
                     List.of(
                             new Sample(0.0, List.of()),
-                            new Sample(1.0, List.of(new Bonus("realmforge:stat/vitality/0", "minecraft:max_health", "add_value", 1.0))),
-                            new Sample(12.5, List.of(new Bonus("realmforge:stat/vitality/0", "minecraft:max_health", "add_value", 12.5))),
-                            new Sample(24.0, List.of(new Bonus("realmforge:stat/vitality/0", "minecraft:max_health", "add_value", 24.0))),
-                            new Sample(25.0, List.of(new Bonus("realmforge:stat/vitality/0", "minecraft:max_health", "add_value", 25.0), new Bonus("realmforge:stat/vitality/at_25/0", "minecraft:max_health", "add_multiplied_total", 0.05))))));
+                            new Sample(1.0, List.of(new Bonus("realmforge:stat/realmforge/0/vitality", "minecraft:max_health", "add_value", 1.0))),
+                            new Sample(12.5, List.of(new Bonus("realmforge:stat/realmforge/0/vitality", "minecraft:max_health", "add_value", 12.5))),
+                            new Sample(24.0, List.of(new Bonus("realmforge:stat/realmforge/0/vitality", "minecraft:max_health", "add_value", 24.0))),
+                            new Sample(25.0, List.of(new Bonus("realmforge:stat/realmforge/0/vitality", "minecraft:max_health", "add_value", 25.0), new Bonus("realmforge:stat/realmforge/at_25_0/vitality", "minecraft:max_health", "add_multiplied_total", 0.05))))));
 
     private GeneratedStatExpectations() {
     }

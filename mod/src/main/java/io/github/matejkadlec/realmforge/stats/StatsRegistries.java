@@ -7,7 +7,7 @@ import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 
 /** Keys of the registries {@code stats} owns (architecture 5.2, 5.4). */
 public final class StatsRegistries {
-    /** {@code realmforge:stat_rule}: what each primary stat gives, from {@code content/stat_rules/}; synced to clients. */
+    /** {@code realmforge:stat_rule}: what each primary stat gives, from {@code content/stat_rules/}; synced. */
     public static final ResourceKey<Registry<StatRule>> STAT_RULE =
             ResourceKey.createRegistryKey(Realmforge.id("stat_rule"));
 

@@ -2,6 +2,7 @@ package io.github.matejkadlec.realmforge.stats;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.JsonParser;
@@ -19,6 +20,9 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import org.junit.jupiter.api.Test;
 
 class StatRulesTest {
+    private static final Operation ADD = Operation.ADD_VALUE;
+    private static final Operation BASE = Operation.ADD_MULTIPLIED_BASE;
+    private static final Operation TOTAL = Operation.ADD_MULTIPLIED_TOTAL;
     private static final Identifier STRENGTH = Realmforge.id("strength");
 
     private static final StatRule RULE = new StatRule(Attributes.LUCK,
@@ -35,8 +39,8 @@ class StatRulesTest {
     @Test
     void everyPointGivesItsAmount() {
         assertEquals(List.of(
-                        bonus("stat/strength/0", Attributes.ATTACK_DAMAGE, 0.2, Operation.ADD_MULTIPLIED_BASE),
-                        bonus("stat/strength/1", Attributes.MOVEMENT_SPEED, 0.04, Operation.ADD_MULTIPLIED_BASE)),
+                        bonus("stat/realmforge/0/strength", Attributes.ATTACK_DAMAGE, 0.2, BASE),
+                        bonus("stat/realmforge/1/strength", Attributes.MOVEMENT_SPEED, 0.04, BASE)),
                 StatRules.bonuses(STRENGTH, RULE, 20));
     }
 
@@ -60,30 +64,42 @@ class StatRulesTest {
 
         List<StatBonus> reached = StatRules.bonuses(STRENGTH, RULE, 25);
         assertEquals(List.of(
-                        bonus("stat/strength/0", Attributes.ATTACK_DAMAGE, 0.25, Operation.ADD_MULTIPLIED_BASE),
-                        bonus("stat/strength/1", Attributes.MOVEMENT_SPEED, 0.05, Operation.ADD_MULTIPLIED_BASE),
-                        bonus("stat/strength/at_25/0", Attributes.ARMOR, 2.0, Operation.ADD_VALUE),
-                        bonus("stat/strength/at_25/1", Attributes.MAX_HEALTH, 0.05, Operation.ADD_MULTIPLIED_TOTAL)),
+                        bonus("stat/realmforge/0/strength", Attributes.ATTACK_DAMAGE, 0.25, BASE),
+                        bonus("stat/realmforge/1/strength", Attributes.MOVEMENT_SPEED, 0.05, BASE),
+                        bonus("stat/realmforge/at_25_0/strength", Attributes.ARMOR, 2.0, ADD),
+                        bonus("stat/realmforge/at_25_1/strength", Attributes.MAX_HEALTH, 0.05, TOTAL)),
                 reached);
 
         List<StatBonus> both = StatRules.bonuses(STRENGTH, RULE, 60);
-        assertEquals(bonus("stat/strength/at_50/0", Attributes.ARMOR, 3.0, Operation.ADD_VALUE), both.getLast(),
+        assertEquals(bonus("stat/realmforge/at_50_0/strength", Attributes.ARMOR, 3.0, ADD), both.getLast(),
                 "both milestones, each with its own id");
         assertEquals(5, both.size());
     }
 
     @Test
-    void anotherNamespaceKeepsItsNamespaceInTheId() {
+    void idsNameTheRuleNamespaceTheEntryAndThenThePath() {
         Identifier rule = Identifier.fromNamespaceAndPath("othermod", "strength");
-        assertEquals(Realmforge.id("stat/othermod/strength/0"), StatRules.perPointId(rule, 0));
-        assertEquals(Realmforge.id("stat/othermod/strength/at_25/1"), StatRules.milestoneId(rule, 25, 1));
+        assertEquals(Realmforge.id("stat/othermod/0/strength"), StatRules.perPointId(rule, 0));
+        assertEquals(Realmforge.id("stat/othermod/at_25_1/strength"), StatRules.milestoneId(rule, 25, 1));
+    }
+
+    @Test
+    void rulesWhosePathsLookAlikeGetDifferentIds() {
+        Identifier foreign = Identifier.fromNamespaceAndPath("foo", "bar");
+        Identifier ours = Realmforge.id("foo/bar");
+        assertNotEquals(StatRules.perPointId(foreign, 0), StatRules.perPointId(ours, 0));
+        assertNotEquals(StatRules.milestoneId(foreign, 25, 0), StatRules.milestoneId(ours, 25, 0));
+        // A path may end like a milestone entry; the entry comes before the path, so it cannot collide.
+        Identifier x = Realmforge.id("x");
+        assertNotEquals(StatRules.perPointId(Realmforge.id("x/at_25"), 0), StatRules.milestoneId(x, 25, 0));
+        assertNotEquals(StatRules.perPointId(Realmforge.id("x/at_25_0"), 0), StatRules.milestoneId(x, 25, 0));
     }
 
     @Test
     void onlyOurStatPrefixIsOwned() {
-        assertTrue(StatRules.isStatModifier(Realmforge.id("stat/strength/0")));
+        assertTrue(StatRules.isStatModifier(Realmforge.id("stat/realmforge/0/strength")));
         assertFalse(StatRules.isStatModifier(Realmforge.id("race/human/0")), "another source of ours");
-        assertFalse(StatRules.isStatModifier(Identifier.fromNamespaceAndPath("othermod", "stat/strength/0")));
+        assertFalse(StatRules.isStatModifier(Identifier.fromNamespaceAndPath("othermod", "stat/othermod/0/x")));
     }
 
     @Test
@@ -118,8 +134,10 @@ class StatRulesTest {
         assertTrue(decode("{\"stat\": \"minecraft:luck\"}").isError(), "a rule that gives nothing");
         assertTrue(decode("""
                 {"stat": "minecraft:luck", "milestones": [
-                    {"points": 10, "modifiers": [{"attribute": "minecraft:armor", "operation": "add_value", "amount": 1}]},
-                    {"points": 5, "modifiers": [{"attribute": "minecraft:armor", "operation": "add_value", "amount": 1}]}]}
+                    {"points": 10, "modifiers": [
+                        {"attribute": "minecraft:armor", "operation": "add_value", "amount": 1}]},
+                    {"points": 5, "modifiers": [
+                        {"attribute": "minecraft:armor", "operation": "add_value", "amount": 1}]}]}
                 """).isError(), "milestones out of order");
         assertTrue(decode("""
                 {"stat": "minecraft:luck", "per_point": [
@@ -138,8 +156,8 @@ class StatRulesTest {
         return RULE.perPoint().get(index);
     }
 
-    private static StatBonus bonus(String path, Holder<Attribute> attribute, double amount, Operation operation) {
-        return new StatBonus(attribute, new AttributeModifier(Realmforge.id(path), amount, operation));
+    private static StatBonus bonus(String path, Holder<Attribute> attribute, double amount, Operation op) {
+        return new StatBonus(attribute, new AttributeModifier(Realmforge.id(path), amount, op));
     }
 
     private static DataResult<StatRule> decode(String json) {

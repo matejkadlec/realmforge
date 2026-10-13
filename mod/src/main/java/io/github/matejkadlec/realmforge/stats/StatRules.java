@@ -10,9 +10,10 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
  * Which attribute modifiers a stat value gives under a {@link StatRule} (architecture 8.3), without world access.
  * The pipeline computes the same in {@code StatRuleDef.bonuses_at}, and a GameTest compares the two.
  *
- * <p>Modifier ids are unique per rule and entry (architecture 8.2): {@code realmforge:stat/<rule>/<n>} for the n-th
- * per-point entry and {@code realmforge:stat/<rule>/at_<points>/<n>} for the n-th modifier of the milestone at
- * {@code points}. A rule outside our namespace keeps its namespace in the path ({@code stat/<namespace>/<path>/...}).
+ * <p>Modifier ids are unique per rule and entry (architecture 8.2): {@code realmforge:stat/<namespace>/<entry>/<path>}
+ * for the rule {@code <namespace>:<path>}, where the entry is {@code <n>} for the n-th per-point entry and
+ * {@code at_<points>_<n>} for the n-th modifier of the milestone at {@code points}. A rule's path may contain slashes,
+ * so it comes last, after the two segments that cannot: {@code realmforge:stat/realmforge/0/strength}.
  */
 public final class StatRules {
     /** The path prefix of every modifier stat rules write, in our namespace. */
@@ -49,12 +50,12 @@ public final class StatRules {
 
     /** The id of the modifier the n-th per-point entry of {@code rule} gives. */
     public static Identifier perPointId(Identifier rule, int n) {
-        return Realmforge.id(MODIFIER_PREFIX + rulePath(rule) + "/" + n);
+        return modifierId(rule, Integer.toString(n));
     }
 
     /** The id of the n-th modifier of the milestone at {@code points} of {@code rule}. */
     public static Identifier milestoneId(Identifier rule, int points, int n) {
-        return Realmforge.id(MODIFIER_PREFIX + rulePath(rule) + "/at_" + points + "/" + n);
+        return modifierId(rule, "at_" + points + "_" + n);
     }
 
     /** Whether {@code id} names a modifier that stat rules write, so a recompute may replace or remove it. */
@@ -62,9 +63,8 @@ public final class StatRules {
         return id.getNamespace().equals(Realmforge.MOD_ID) && id.getPath().startsWith(MODIFIER_PREFIX);
     }
 
-    private static String rulePath(Identifier rule) {
-        return rule.getNamespace().equals(Realmforge.MOD_ID) ? rule.getPath()
-                : rule.getNamespace() + "/" + rule.getPath();
+    private static Identifier modifierId(Identifier rule, String entry) {
+        return Realmforge.id(MODIFIER_PREFIX + rule.getNamespace() + "/" + entry + "/" + rule.getPath());
     }
 
     private static StatBonus bonus(Identifier id, StatRule.Modifier modifier, double amount) {

@@ -20,8 +20,10 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import org.junit.jupiter.api.Test;
 
 class RecomputedModifiersTest {
-    private static final AttributeModifier HEALTH = modifier("stat/vitality/0", 10.0, Operation.ADD_VALUE);
-    private static final AttributeModifier DAMAGE = modifier("stat/strength/0", 0.2, Operation.ADD_MULTIPLIED_BASE);
+    private static final Operation ADD = Operation.ADD_VALUE;
+    private static final Operation BASE = Operation.ADD_MULTIPLIED_BASE;
+    private static final AttributeModifier HEALTH = modifier("stat/realmforge/0/vitality", 10.0, ADD);
+    private static final AttributeModifier DAMAGE = modifier("stat/realmforge/0/strength", 0.2, BASE);
 
     @Test
     void wantedModifiersArePermanentSoTheyAreSaved() {
@@ -46,7 +48,7 @@ class RecomputedModifiersTest {
     void aChangedAmountReplacesTheModifier() {
         AttributeMap attributes = attributes();
         replace(attributes, bonus(Attributes.MAX_HEALTH, HEALTH));
-        AttributeModifier more = modifier("stat/vitality/0", 15.0, Operation.ADD_VALUE);
+        AttributeModifier more = modifier("stat/realmforge/0/vitality", 15.0, ADD);
         assertTrue(replace(attributes, bonus(Attributes.MAX_HEALTH, more)));
         assertEquals(Set.of(more), instance(attributes, Attributes.MAX_HEALTH).getPermanentModifiers());
         assertEquals(35.0, attributes.getValue(Attributes.MAX_HEALTH));
@@ -67,7 +69,7 @@ class RecomputedModifiersTest {
     void aModifierMovedToAnotherAttributeLeavesTheOldOne() {
         AttributeMap attributes = attributes();
         replace(attributes, bonus(Attributes.MAX_HEALTH, HEALTH));
-        replace(attributes, bonus(Attributes.ATTACK_DAMAGE, modifier("stat/vitality/0", 1.0, Operation.ADD_VALUE)));
+        replace(attributes, bonus(Attributes.ATTACK_DAMAGE, modifier("stat/realmforge/0/vitality", 1.0, ADD)));
         assertNull(instance(attributes, Attributes.MAX_HEALTH).getModifier(HEALTH.id()));
         assertEquals(2.0, attributes.getValue(Attributes.ATTACK_DAMAGE));
     }
@@ -75,9 +77,9 @@ class RecomputedModifiersTest {
     @Test
     void modifiersOfOtherSourcesStay() {
         AttributeMap attributes = attributes();
-        AttributeModifier race = modifier("race/human/0", 4.0, Operation.ADD_VALUE);
+        AttributeModifier race = modifier("race/human/0", 4.0, ADD);
         AttributeModifier gear = new AttributeModifier(Identifier.withDefaultNamespace("armor.chestplate"), 2.0,
-                Operation.ADD_VALUE);
+                ADD);
         instance(attributes, Attributes.MAX_HEALTH).addPermanentModifier(race);
         instance(attributes, Attributes.MAX_HEALTH).addTransientModifier(gear);
         replace(attributes, bonus(Attributes.MAX_HEALTH, HEALTH));
@@ -90,7 +92,7 @@ class RecomputedModifiersTest {
     @Test
     void anAttributeTheEntityLacksIsSkipped() {
         AttributeMap attributes = attributes();
-        assertFalse(replace(attributes, bonus(Attributes.LUCK, modifier("stat/luck/0", 1.0, Operation.ADD_VALUE))));
+        assertFalse(replace(attributes, bonus(Attributes.LUCK, modifier("stat/realmforge/0/luck", 1.0, ADD))));
         assertFalse(attributes.hasAttribute(Attributes.LUCK));
     }
 

@@ -131,22 +131,27 @@ class StatRuleDef(StrictModel):
             ]
         return found
 
+    def modifier_id(self, entry: str) -> str:
+        """The id of one modifier the rule gives: ``realmforge:stat/<namespace>/<entry>/<path>``, the entry being
+        ``<n>`` for the n-th per-point entry and ``at_<points>_<n>`` for the n-th modifier of a milestone. The rule's
+        path comes last, as only it may contain slashes (the game's ``StatRules`` builds the same)."""
+        return f"{MOD_ID}:stat/{MOD_ID}/{entry}/{self.id}"
+
     def bonuses_at(self, value: float) -> list[tuple[str, str, str, float]]:
         """The modifiers ``value`` points give, as (id, attribute, operation, amount): every per-point entry with a
         non-zero total, then every modifier of each milestone reached. The game's ``StatRules`` must give the same.
 
-        Ids follow architecture 8.2: ``realmforge:stat/<rule>/<n>`` for the n-th per-point entry and
-        ``realmforge:stat/<rule>/at_<points>/<n>`` for the n-th modifier of the milestone at ``points``."""
+        Ids follow architecture 8.2 (``modifier_id``)."""
         found: list[tuple[str, str, str, float]] = []
         for n, entry in enumerate(self.per_point):
             total = entry.total_at(value)
             if total != 0:
-                found.append((f"{MOD_ID}:stat/{self.id}/{n}", entry.attribute, entry.operation, total))
+                found.append((self.modifier_id(str(n)), entry.attribute, entry.operation, total))
         for milestone in self.milestones:
             if value >= milestone.points:
                 found += [
                     (
-                        f"{MOD_ID}:stat/{self.id}/at_{milestone.points}/{n}",
+                        self.modifier_id(f"at_{milestone.points}_{n}"),
                         modifier.attribute,
                         modifier.operation,
                         modifier.game_amount,
