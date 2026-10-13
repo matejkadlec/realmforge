@@ -79,6 +79,9 @@ class PerPointDef(StatModifierDef):
             raise ValueError("the amount is in points, so the cap is max")
         if self.game_max is not None and self.game_amount < 0:
             raise ValueError("a cap needs a positive amount")
+        if self.game_max == 0:
+            # max_percent below about 5e-322 underflows to 0 as a fraction, which the game refuses.
+            raise ValueError("the cap is too small: it is 0 in game units")
         return self
 
     @property

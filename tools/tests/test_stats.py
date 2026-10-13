@@ -175,6 +175,19 @@ def test_invalid_stats_are_rejected(repo: RepoPaths, body: str, expected: str) -
             "a cap needs a positive amount",
         ),
         (
+            {
+                "per_point": [
+                    {
+                        "attribute": "minecraft:luck",
+                        "operation": "add_value",
+                        "amount_percent": 1,
+                        "max_percent": 1e-323,
+                    }
+                ]
+            },
+            "the cap is too small: it is 0 in game units",
+        ),
+        (
             {"milestones": [{"points": 10, "modifiers": []}]},
             "List should have at least 1 item",
         ),
