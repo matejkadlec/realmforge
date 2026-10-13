@@ -91,6 +91,12 @@ ALLOWED_ERRORS: dict[str, tuple[tuple[str, str], ...]] = {
             "Jade 26.1.10 reads the loot table registry when a dedicated server loads its tags, which 26.1.2 does not"
             " offer there; Jade catches it and its harvest tooltip only lacks the shears hint",
         ),
+        (
+            r"^com\.mojang\.authlib\.yggdrasil\.YggdrasilServicesKeyInfo: Failed to request yggdrasil public key$",
+            "a dedicated server fetches Mojang's public key without a proxy (Proxy.NO_PROXY in"
+            " net.minecraft.server.Main), which a cloud session's container cannot resolve; the key only checks"
+            " players' profile and chat signatures, and a boot has no players",
+        ),
     ),
     "client": (
         (

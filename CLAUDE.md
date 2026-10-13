@@ -64,8 +64,8 @@ Java 25 comes from SDKMAN. Non-interactive shells don't read `~/.bashrc`, so run
 Gradle's foojay resolver downloads Java 25 into `~/.gradle/jdks` for the daemon and the toolchains when no Java 25 is
 installed, but `rf ids vanilla` and `rf pack-boot` start Java themselves and need `JAVA_HOME` (or `java` on `PATH`)
 at Java 25 ([dev setup](docs/dev-setup.md#1-tools-in-wsl-no-sudo-needed)). Cloud sessions have no SDKMAN: Java 21 is
-preinstalled, Gradle has to download Java 25 there (not tried in a cloud session yet, see dev setup), and a
-background SessionStart hook warms up uv and Gradle
+preinstalled, and a background SessionStart hook warms up uv and Gradle, whose first run downloads Java 25 into
+`~/.gradle/jdks` through the agent proxy; the two tools take it as `JAVA_HOME=$(ls -d ~/.gradle/jdks/*25*/ | head -1)`
 ([docs/dev-setup.md](docs/dev-setup.md#cloud-sessions)). Two Gradle runs in one project wait on each other's locks,
 and the second can fail with "Timeout waiting to lock". `.claude/scripts/gradle-queue.sh` therefore waits for the
 warm-up by itself; **in a cloud session, run `.claude/hooks/cloud-warmup.sh --wait` (Bash timeout 10 minutes)
