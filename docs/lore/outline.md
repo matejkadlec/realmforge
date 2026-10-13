@@ -18,8 +18,9 @@
   **Gatewrights**, split a world the **Void** was eating into separate **realms**, each forged around one element,
   and chained them in a line between the Overworld and the Void.
 - **The Chain of Seals** keeps that line: every realm beyond the Overworld is sealed. The first **sigil** is an old
-  relic the Lodge has kept; every later one is forged from a shard held by the **guardian** of the realm before it.
-  That is why the realms open one by one, in order, and why the Void realm is always the last.
+  relic the Lodge has kept; every later main-path sigil is forged from a shard held by the **guardian** of the realm
+  before it, and a side realm's sigil comes from wherever its design puts it. That is why the realms open one by
+  one, in order, and why the Void realm is always the last.
 - **The player** is a newcomer whom the **Wayfarers' Lodge**, a society of explorers and scholars, sends to walk
   the chain: earn each realm's passage, pass each guardian's trial, carry each shard onwards.
 - **The finale (proposed, [open question 3](#open-questions))** waits in the Void realm, where the last seal has
@@ -99,9 +100,9 @@ needs someone to carry it.
 - **The finale (proposal, [open question 3](#open-questions)):** in the Void Cathedral the player finds the First
   Wright, hollowed out by the Void after ages of holding the line. He no longer holds the last seal; he means to
   open it and forge the Void itself into a realm, which would unmake the rest. The player defeats him and, with the
-  sigils of every realm along the chain (sigils are never used up), forges the last seal anew. The chain holds, the
-  realms stay open to those who earned them, and the Lodge names the player the first Gatewright of a new age. Play
-  goes on after it: the realms, their dungeons and later the contracts stay.
+  sigils of the main path (sigils are never used up), forges the last seal anew. The chain holds, the realms stay
+  open to those who earned them, and the Lodge names the player the first Gatewright of a new age. Play goes on
+  after it: the realms, their dungeons and later the contracts stay.
 
 ## The realms
 
@@ -330,11 +331,11 @@ For Matěj; each has a proposal so writing can go on.
    Overworld kept as the Overworld. Alternative: plain descriptive names ("the Stone Realm"), as the portal spec's
    data sketch has.
 3. **The finale:** the First Wright, hollowed out by the Void, as the final antagonist in the Void Cathedral, and
-   the last seal forged from the sigils of the whole chain (proposed). This puts the Void realm on the main path,
+   the last seal forged from the sigils of the main path (proposed). This puts the Void realm on the main path,
    which is RLM-95's first question; if it becomes a post-story realm, the finale moves to the realm before it.
-   Forging the last seal from every realm's sigil is a gameplay idea, not a rule: RLM-95 decides it. Sigils are
-   never used up, so the player already holds them all and farms nothing again; the shards are crafted into the
-   sigils along the way.
+   Forging the last seal from every main-path sigil is a gameplay idea, not a rule: RLM-95 decides it. Side realms
+   stay optional, so their sigils are never part of it. Sigils are never used up, so the player already holds them
+   all and farms nothing again; the shards are crafted into the sigils along the way.
 4. **Lore for the level cap** ("the seals bind strength"; the bond loosens when a chapter's trials are all
    passed): use it in texts (proposed), or leave the cap a plain game rule.
 5. **The Lodge as a place:** a voice in the quest book for M1 (proposed), and a Lodge house in a village once the
