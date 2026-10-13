@@ -19,7 +19,8 @@
   the Void realm is always the last.
 - **The player** is a newcomer whom the **Wayfarers' Lodge**, a society of explorers and scholars, sends to walk
   the chain: earn each realm's passage, pass each guardian's trial, carry each shard onwards.
-- **The finale** waits in the Void realm, where the last seal has to be forged anew.
+- **The finale (proposed, [open question 3](#open-questions))** waits in the Void realm, where the last seal has
+  to be forged anew. If RLM-95 makes the Void realm a post-story realm, it moves to the realm before it.
 - **Every realm has two peoples:** a friendly one to trade and quest with, and a hostile one to fight (WF-3), plus one
   element that shows on its mobs and drops (RE-5).
 - **The tone is adventure, not dread:** an old, slightly mysterious world, told in ruins, inscriptions and short
