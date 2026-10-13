@@ -589,8 +589,10 @@ A GameTest player (`QaPlayers#login`) is never ticked by its connection, so the 
 - No cycles: rules read primary stats and write only secondary or vanilla attributes, and each primary stat has at
   most one rule (validation rules). `StatRule`'s codec also refuses a rule from any other data pack that reads no
   primary stat or writes one: a rule raising a primary stat would read its own bonuses back as a changed input at
-  the next check and escalate them to the cap. An `add_value` amount is in the unit of its attribute: `amount_percent` for a
-  share, `amount` for points; multiplied operations always take `amount_percent`.
+  the next check and escalate them to the cap. An `add_value` amount on one of our stats is in its unit
+  (`amount_percent` for a share, `amount` for points); a vanilla attribute takes either, as the pipeline does not
+  catalogue vanilla units (knockback resistance is a fraction). Multiplied operations always take
+  `amount_percent`.
 
 ### 8.4 Caps
 

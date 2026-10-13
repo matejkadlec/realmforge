@@ -32,9 +32,10 @@ Rules:
   minimum is 0, and a primary stat counts points. `stat_rules/` says what one primary stat gives, per point (with
   an optional cap, `max` or `max_percent` in the amount's unit) and at milestones
   ([8.3](../docs/architecture.md#83-derived-stats-and-milestones)). A rule reads a primary stat no other rule reads
-  and writes only secondary stats and vanilla attributes (`minecraft:attack_damage`); an `add_value` amount takes
-  the unit of its attribute (`amount_percent` for a share, `amount` for points), multiplied operations always
-  `amount_percent`.
+  and writes only secondary stats and vanilla attributes (`minecraft:attack_damage`). An `add_value` amount on one
+  of our stats takes its unit (`amount_percent` for a share, `amount` for points); on a vanilla attribute, whichever
+  fits it (`minecraft:knockback_resistance` is a fraction, so `amount_percent: 5` adds 5 %). Multiplied operations
+  always take `amount_percent`.
 - `worldgen/` is the one exception to YAML: Minecraft's own worldgen JSON (`dimension/`, `dimension_type/`,
   `biome/`, `noise_settings/`, ...), validated (location, id, JSON, dimension types, no clash with the core mod's
   own `realmforge:instances`) and copied byte for byte; the game decodes it when a world loads.

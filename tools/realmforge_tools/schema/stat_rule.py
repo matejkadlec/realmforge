@@ -22,18 +22,21 @@ MULTIPLIED: frozenset[str] = frozenset({"add_multiplied_base", "add_multiplied_t
 
 class StatModifierDef(StrictModel):
     """An attribute modifier a stat rule writes. ``add_value`` adds to the base; ``add_multiplied_base`` adds a share
-    of the base (weapons included); ``add_multiplied_total`` multiplies the result. Multiplied operations and shares
-    (stats with ``max_percent``) take ``amount_percent``; points take ``amount``."""
+    of the base (weapons included); ``add_multiplied_total`` multiplies the result. Multiplied operations take
+    ``amount_percent``. ``add_value`` on one of our stats takes its unit (``amount_percent`` for a share,
+    ``amount`` for points); on a vanilla attribute, whichever fits it (``amount_percent: 5`` adds 0.05 to the
+    fraction ``minecraft:knockback_resistance``)."""
 
     attribute: ResourceId = Field(description="The attribute it modifies, e.g. minecraft:attack_damage.")
     operation: Operation = Field(
         description="How the amount applies (vanilla's attribute modifier operations)."
     )
     amount: FiniteNumber | None = Field(
-        default=None, description="Amount in points, for add_value on points."
+        default=None, description="Amount in game units, for add_value on points."
     )
     amount_percent: FiniteNumber | None = Field(
-        default=None, description="Amount in percent, for multiplied operations and shares (5 means 5 %)."
+        default=None,
+        description="Amount in percent (5 means 5 %, the fraction 0.05), for multiplied operations and shares.",
     )
 
     @model_validator(mode="after")

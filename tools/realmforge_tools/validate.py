@@ -104,7 +104,8 @@ def _check_references(content: Content, universe: IdUniverse) -> list[Problem]:
 
 def _check_stat_rules(content: Content, universe: IdUniverse) -> list[Problem]:
     """A rule reads one primary stat, which no other rule reads, and writes only secondary stats and vanilla
-    attributes (architecture 8.3), with add_value amounts in the unit of the attribute: percent for a share."""
+    attributes (architecture 8.3). An add_value amount on one of our stats takes its unit, percent for a share; a
+    vanilla attribute takes either, as its unit is not catalogued (knockback resistance is a fraction)."""
     problems: list[Problem] = []
     stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
     rule_of_stat: dict[str, str] = {}
@@ -145,8 +146,8 @@ def _check_stat_rules(content: Content, universe: IdUniverse) -> list[Problem]:
                         f"{modifier.attribute}",
                     )
                 )
-            elif modifier.operation == "add_value":
-                share = target is not None and target.percent
+            elif modifier.operation == "add_value" and target is not None:
+                share = target.percent
                 if share and not modifier.is_percent:
                     problems.append(
                         Problem(

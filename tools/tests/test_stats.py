@@ -267,11 +267,20 @@ def test_add_value_on_a_share_is_in_percent(repo: RepoPaths) -> None:
     )
 
 
-def test_add_value_on_points_is_not_in_percent(repo: RepoPaths) -> None:
-    rule(repo, "strength", per_point("minecraft:max_health", "amount_percent: 1"))
+def test_add_value_on_our_points_is_not_in_percent(repo: RepoPaths) -> None:
+    stat(repo, "toughness", "kind: secondary\nmax: 100\n")
+    rule(repo, "strength", per_point("realmforge:toughness", "amount_percent: 1"))
     assert_problem(
-        repo, "per_point.0.amount_percent: minecraft:max_health counts points: add_value takes amount"
+        repo, "per_point.0.amount_percent: realmforge:toughness counts points: add_value takes amount"
     )
+
+
+@pytest.mark.parametrize("amount", ["amount_percent: 5", "amount: 0.05"])
+def test_add_value_on_a_vanilla_attribute_takes_either_unit(repo: RepoPaths, amount: str) -> None:
+    # The pipeline does not know vanilla units: knockback resistance is a fraction, max health counts points.
+    rule(repo, "strength", per_point("minecraft:knockback_resistance", amount))
+    files = generate(repo)
+    assert json.loads(files[f"{RULE_DATA}/strength.json"])["per_point"][0]["amount"] == 0.05
 
 
 # The reference bonuses (the GameTest compares the game's StatRules with these)
