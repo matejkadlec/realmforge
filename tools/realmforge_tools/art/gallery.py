@@ -112,8 +112,8 @@ def render(info: GalleryInfo, subjects: tuple[Subject, ...], palette: Palette) -
         f"<title>{esc(info.title)}</title>",
         '<meta charset="utf-8">',
         '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">',
-        _FONTS,
-        f"<style>{_CSS}</style>",
+        PAGE_FONTS,
+        f"<style>{PAGE_CSS}</style>",
         f'<main class="page" data-batch="{batch_id(subjects)}">',
         "<header>",
         f"<h1>{esc(info.title)}</h1>",
@@ -209,13 +209,14 @@ def _figure(caption: str, image: Image, tiled: bool = False) -> str:
     )
 
 
-_FONTS = (
+PAGE_FONTS = (
     '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500'
     '&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400&display=swap">'
 )
 
 # Layout: a header with the legend and palette, then one section per texture with a wrapping row of cards.
-_CSS = """
+# The room gallery (rooms/gallery.py) builds on the same page styles.
+PAGE_CSS = """
 :root {
   --bg: #eef1f4; --surface: #ffffff; --fg: #1c2330; --muted: #5b6676; --line: #d5dbe3;
   --accent: #2f6fb5; --slot: #8e939b; --slot-edge: #5d6168;

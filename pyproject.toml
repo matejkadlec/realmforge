@@ -6,6 +6,9 @@ readme = "tools/README.md"
 license = "MPL-2.0"
 requires-python = ">=3.12"
 dependencies = [
+    # Reads .schem and .litematic rooms and renders the room gallery (rf rooms). Pinned exactly: its API moves
+    # between minor versions, and its README does not match the released API (RLM-119).
+    "nucleation==0.10.24",
     "pydantic>=2.12,<3",
     "ruamel.yaml>=0.18,<0.20",
 ]

@@ -8,23 +8,33 @@ uv run rf pack-boot         boot the whole pack plus the core mod jar on a serve
 uv run rf gametest-log      exit 1 if the last GameTest run logged a data loading error (after runGameTestServer)
 uv run rf art clean SRC DST snap a generated texture to the 16x16 grid and the project palette
 uv run rf art gallery DIR   build the review gallery for the candidate textures in DIR
+uv run rf rooms import SRC --to DIR    import .nbt, .schem and .litematic rooms into DIR with draft sidecars
+uv run rf rooms gallery [DIR]          render the rooms in DIR (default content/rooms) for review (needs Vulkan)
+uv run rf rooms review DIR             merge decisions copied from the gallery into DIR/review.yaml
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
+import time
 from pathlib import Path
 
 from realmforge_tools import gamelog, packboot, vanilla
 from realmforge_tools.art import gallery
 from realmforge_tools.art.palette import DEFAULT_PALETTE, PaletteError, load_gpl
 from realmforge_tools.art.texture import DEFAULT_SIZE, Image, TextureError, clean
+from realmforge_tools.content import load_content
 from realmforge_tools.formats.png import PngError, decode_rgba
 from realmforge_tools.generate import generate_all, sync
+from realmforge_tools.id_universe import IdUniverse, load_vanilla
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import MINECRAFT_VERSION, RepoPaths
-from realmforge_tools.validate import load_and_validate
+from realmforge_tools.rooms import gallery as room_gallery
+from realmforge_tools.rooms import importer
+from realmforge_tools.rooms.render import CUT_HEIGHT, RenderError, RoomRenderer
+from realmforge_tools.schema.room import REVIEW_FILE, ROOMS_DIR
+from realmforge_tools.validate import load_and_validate, universe_with_content
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -82,6 +92,52 @@ def main(argv: list[str] | None = None) -> int:
             help=f"texture width in pixels (default: {DEFAULT_SIZE})",
         )
 
+    rooms = commands.add_parser("rooms", help="dungeon rooms: import, the review gallery, review decisions")
+    rooms_commands = rooms.add_subparsers(dest="rooms_command", required=True)
+    rooms_import = rooms_commands.add_parser(
+        "import", help="turn .nbt, .schem and .litematic files into rooms with draft sidecars"
+    )
+    rooms_import.add_argument(
+        "sources", type=Path, nargs="+", help="room files, or folders whose room files are all imported"
+    )
+    rooms_import.add_argument(
+        "--to",
+        type=Path,
+        required=True,
+        dest="target",
+        help="folder for the rooms, e.g. content/rooms/third_party/<source>",
+    )
+    rooms_import.add_argument(
+        "--rules",
+        type=Path,
+        help="YAML remap rules: blocks, block entities, jigsaw names and pools, entities",
+    )
+    rooms_gallery = rooms_commands.add_parser(
+        "gallery", help="render every room below DIR headless and write a page to keep or reject them"
+    )
+    rooms_gallery.add_argument(
+        "directory", type=Path, nargs="?", help=f"folder of .nbt rooms (default: content/{ROOMS_DIR})"
+    )
+    rooms_gallery.add_argument(
+        "--out",
+        type=Path,
+        help="output folder, replaced on every run (default: .cache/rooms/gallery/<folder>)",
+    )
+    rooms_gallery.add_argument(
+        "--cut",
+        type=int,
+        default=CUT_HEIGHT,
+        help=f"height of the cutaway views above the room's bottom (default: {CUT_HEIGHT})",
+    )
+    rooms_gallery.add_argument("--size", type=int, default=512, help="render size in pixels (default: 512)")
+    rooms_review = rooms_commands.add_parser(
+        "review", help=f"merge decisions copied from the gallery into DIR/{REVIEW_FILE}"
+    )
+    rooms_review.add_argument("directory", type=Path, help="the folder the gallery showed")
+    rooms_review.add_argument(
+        "--from", dest="source", type=Path, help="file holding the copied decisions (default: standard input)"
+    )
+
     gametest_log = commands.add_parser(
         "gametest-log",
         help="check the log of the last ./gradlew runGameTestServer; exit 1 on data loading errors",
@@ -93,6 +149,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "art":
         return _art(args, paths)
+
+    if args.command == "rooms":
+        return _rooms(args, paths)
 
     if args.command == "ids":
         target = vanilla.extract(args.version, paths)
@@ -117,7 +176,7 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"Content OK: {len(content.items)} item(s), {len(content.curves)} curve(s), "
             f"{len(content.stats)} stat(s), {len(content.stat_rules)} stat rule(s), "
-            f"{len(content.worldgen)} worldgen file(s)."
+            f"{len(content.worldgen)} worldgen file(s), {len(content.rooms)} room(s)."
         )
         return 0
 
@@ -134,6 +193,81 @@ def main(argv: list[str] | None = None) -> int:
         print(line)
     print("Generated files are up to date." if result.clean else f"Updated {len(result.lines())} file(s).")
     return 0
+
+
+def _rooms(args: argparse.Namespace, paths: RepoPaths) -> int:
+    try:
+        if args.rooms_command == "import":
+            return _rooms_import(args, paths)
+        if args.rooms_command == "review":
+            text = args.source.read_text(encoding="utf-8") if args.source else sys.stdin.read()
+            decisions, changed = room_gallery.merge_review(args.directory, text)
+            kept = sum(1 for value in decisions.values() if value == "keep")
+            print(
+                f"Wrote {paths.rel(args.directory / REVIEW_FILE)}: {changed} decision(s) changed, "
+                f"{kept} kept and {len(decisions) - kept} rejected in total"
+            )
+            return 0
+        return _rooms_gallery(args, paths)
+    except (OSError, importer.RoomImportError, room_gallery.GalleryError, RenderError) as e:
+        print(f"rf rooms {args.rooms_command}: {e}", file=sys.stderr)
+        return 1
+
+
+def _rooms_import(args: argparse.Namespace, paths: RepoPaths) -> int:
+    rules = importer.load_rules(args.rules)
+    results = importer.import_rooms(args.sources, args.target, rules, _room_universe(paths), paths)
+    if not results:
+        print("No room files found (.nbt, .schem, .litematic).", file=sys.stderr)
+        return 1
+    for result in results:
+        structure = result.structure
+        size = " x ".join(map(str, structure.size))
+        if result.written:
+            print(f"OK   {paths.rel(result.template)} ({size}, from {result.source.name})")
+        else:
+            print(f"FAIL {result.source}: not written, {len(result.problems)} problem(s)")
+        for note in result.notes:
+            print(f"     {note}")
+        for problem in result.problems:
+            print(f"     {problem}")
+    failed = sum(1 for r in results if not r.written)
+    print(f"Imported {len(results) - failed} of {len(results)} room(s).")
+    return 1 if failed else 0
+
+
+def _room_universe(paths: RepoPaths) -> IdUniverse:
+    """Vanilla plus our content; vanilla alone while content/ does not load."""
+    vanilla = load_vanilla(paths)
+    try:
+        return universe_with_content(vanilla, load_content(paths))
+    except ValidationFailed:
+        print(
+            "Note: content/ does not validate, so rooms are checked against vanilla ids only.",
+            file=sys.stderr,
+        )
+        return vanilla
+
+
+def _rooms_gallery(args: argparse.Namespace, paths: RepoPaths) -> int:
+    directory = args.directory or paths.content / ROOMS_DIR
+    if not directory.is_dir() or not room_gallery.room_files(directory):
+        print(f"No rooms (*.nbt) below {paths.rel(directory)}.", file=sys.stderr)
+        return 1
+    name = paths.rel(directory).strip("/").replace("/", "-") or directory.name
+    out_dir = args.out or paths.cache / "rooms" / "gallery" / name
+    started = time.monotonic()
+    client_jar = vanilla.fetch_client_jar(MINECRAFT_VERSION, paths.cache / "vanilla" / MINECRAFT_VERSION)
+    renderer = RoomRenderer(client_jar, args.size)
+    page, rooms = room_gallery.build(directory, out_dir, renderer, f"Rooms: {paths.rel(directory)}", args.cut)
+    unreadable = [room for room in rooms if room.structure is None]
+    print(
+        f"Wrote {paths.rel(page)} ({len(rooms)} room(s) in {time.monotonic() - started:.1f} s"
+        f"{f', {len(unreadable)} unreadable' if unreadable else ''})"
+    )
+    for room in unreadable:
+        print(f"  {room.key}: {room.error}", file=sys.stderr)
+    return 1 if unreadable else 0
 
 
 def _gametest_log(log: Path, paths: RepoPaths) -> int:

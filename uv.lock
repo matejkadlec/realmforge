@@ -30,6 +30,17 @@ wheels = [
 ]
 
 [[package]]
+name = "nucleation"
+version = "0.10.24"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/11/8e/96fc0ef85b6708d25f97922592872882e835b81ccf30e944cf926b67b263/nucleation-0.10.24.tar.gz", hash = "sha256:a04a349d46d46eed3c289c6b0f1328b21ae2a1c2f77e925531ca4a57ccca65a1", size = 2937838, upload-time = "2026-09-07T06:26:24.736Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/05/52/bfc44b00f75d7a42db70e83e898f2d077073a521c97f79755e347c1cabe4/nucleation-0.10.24-cp312-abi3-macosx_11_0_arm64.whl", hash = "sha256:a2b9df5466ecab23748ba06683bd726a370e38c82b552e08c30754b715d71241", size = 14180756, upload-time = "2026-09-07T06:26:17.294Z" },
+    { url = "https://files.pythonhosted.org/packages/a5/4c/caef7d02144e087c417c929fc0f23093a65b60524dfe9ae0c87f974534fb/nucleation-0.10.24-cp312-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:b5dc1699265601545fd36fcdd9235891196c6498b4bc34004193e67fac76e648", size = 17163278, upload-time = "2026-09-07T06:26:19.85Z" },
+    { url = "https://files.pythonhosted.org/packages/14/e1/e9bddbe31b6f6a9af416e5049cbca1bcf13a0bcd8843a45b57c21c12650d/nucleation-0.10.24-cp312-abi3-win_amd64.whl", hash = "sha256:dc2c09c815a776772ed8a4cddb689c585546afa9bb9c29df5e7aab998edd94ed", size = 12030206, upload-time = "2026-09-07T06:26:22.284Z" },
+]
+
+[[package]]
 name = "packaging"
 version = "26.3"
 source = { registry = "https://pypi.org/simple" }
@@ -198,6 +209,7 @@ name = "realmforge-tools"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
+    { name = "nucleation" },
     { name = "pydantic" },
     { name = "ruamel-yaml" },
 ]
@@ -210,6 +222,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "nucleation", specifier = "==0.10.24" },
     { name = "pydantic", specifier = ">=2.12,<3" },
     { name = "ruamel-yaml", specifier = ">=0.18,<0.20" },
 ]
