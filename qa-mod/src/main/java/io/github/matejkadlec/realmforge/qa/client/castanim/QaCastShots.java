@@ -12,7 +12,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.ArmorStand;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.LevelSettings;
 import net.minecraft.world.level.WorldDataConfiguration;
@@ -36,8 +35,9 @@ final class QaCastShots {
 
     /**
      * cast_test.json: the arms finish rising at tick 6, pulse at tick 14 and are back at the hold pose at tick 22,
-     * where the loop returns to tick 6. playerAnimator returns only after playing tick 22, so a loop takes 17 ticks
-     * (RLM-108; a 16-tick guess drifts one tick per loop and lands on the pulse after eight).
+     * where the loop returns to tick 6. PAL reads the playerAnimator file as it played there: once the animation
+     * reaches tick 22 it goes on from tick 5 ({@code returnTick - 1}, {@code PlayerAnimatorLoader}), so a loop takes
+     * 17 ticks (RLM-108; a 16-tick guess drifts one tick per loop and lands on the pulse after eight).
      */
     private static final int HOLD_TICK = 6;
     private static final int PULSE_TICK = 14;
@@ -133,8 +133,8 @@ final class QaCastShots {
                 ticksInWorld++;
                 keepStill(minecraft, minecraft.player, view);
                 if (ticksInWorld == 1) {
-                    minecraft.player.connection.sendCommand("gamerule doDaylightCycle false");
-                    minecraft.player.connection.sendCommand("gamerule doWeatherCycle false");
+                    minecraft.player.connection.sendCommand("gamerule advance_time false");
+                    minecraft.player.connection.sendCommand("gamerule advance_weather false");
                     minecraft.player.connection.sendCommand("time set noon");
                     minecraft.player.connection.sendCommand("weather clear");
                     // The side camera: at the player's right while they face south, facing east.
@@ -163,7 +163,7 @@ final class QaCastShots {
                         minecraft.options.setCameraType(shot.camera().type);
                         minecraft.setCameraEntity(shot.camera() == Camera.SIDE ? sideCamera(player) : player);
                     } else if (castTicks == shot.tick()) {
-                        Screenshot.grab(minecraft.gameDirectory, shot.name(), minecraft.getMainRenderTarget(),
+                        Screenshot.grab(minecraft.gameDirectory, shot.name(), minecraft.getMainRenderTarget(), 1,
                                 message -> RealmforgeQa.LOGGER.info("Cast screenshot: {}", message.getString()));
                     }
                 }
@@ -190,13 +190,14 @@ final class QaCastShots {
 
     private static void createWorld(Minecraft minecraft) {
         String name = "qa-cast-shots-" + System.currentTimeMillis();
-        LevelSettings settings = new LevelSettings(name, GameType.CREATIVE, false, Difficulty.PEACEFUL, true,
-                new GameRules(), WorldDataConfiguration.DEFAULT);
+        LevelSettings settings = new LevelSettings(name, GameType.CREATIVE,
+                new LevelSettings.DifficultySettings(Difficulty.PEACEFUL, false, false), true,
+                WorldDataConfiguration.DEFAULT);
         // createFreshLevel loads the world without the experimental-settings confirmation that the create-world
         // screen shows for our data pack dimensions, so no click is needed.
         minecraft.createWorldOpenFlows().createFreshLevel(name, settings, new WorldOptions(0L, false, false),
-                registries -> registries.registryOrThrow(Registries.WORLD_PRESET)
-                        .getHolderOrThrow(WorldPresets.FLAT).value().createWorldDimensions(),
+                registries -> registries.lookupOrThrow(Registries.WORLD_PRESET)
+                        .getOrThrow(WorldPresets.FLAT).value().createWorldDimensions(),
                 minecraft.screen);
     }
 

@@ -18,8 +18,10 @@ BANNED_PACKAGES = (
     "net.minecraft.client",
     "com.mojang.blaze3d",
     "net.neoforged.neoforge.client",
-    # playerAnimator (ADR 0020): its API works on client players and models only.
-    "dev.kosmx.playerAnim",
+    # Player Animation Library (ADR 0020): the QA mod needs it on the client only, and its API works on client
+    # players and models. Both its packages: the Minecraft side and the loader-independent core.
+    "com.zigythebird.playeranim",
+    "com.zigythebird.playeranimcore",
 )
 
 _BANNED = re.compile(

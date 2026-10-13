@@ -11,12 +11,12 @@ import io.github.matejkadlec.realmforge.spell.CombatState.Cast;
 import io.github.matejkadlec.realmforge.testing.RoundTrip;
 import java.util.Map;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 class CombatStateTest {
-    private static final ResourceLocation FIREBOLT = Realmforge.id("firebolt");
-    private static final ResourceLocation BLINK = Realmforge.id("blink");
+    private static final Identifier FIREBOLT = Realmforge.id("firebolt");
+    private static final Identifier BLINK = Realmforge.id("blink");
     private static final Cast CAST = new Cast(FIREBOLT, 12_000L, 30);
 
     @Test

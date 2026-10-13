@@ -36,7 +36,7 @@ def test_files_are_copied_byte_for_byte_into_their_registry_folders(repo: RepoPa
 
 
 def test_every_vanilla_datapack_worldgen_registry_has_a_directory(repo: RepoPaths) -> None:
-    # The data-driven worldgen registries of 1.21.1 (RegistryDataLoader.WORLDGEN_REGISTRIES); the rest of the
+    # The data-driven worldgen registries of 26.1.2 (RegistryDataLoader.WORLDGEN_REGISTRIES); the rest of the
     # minecraft:worldgen/* registries in the ID universe are static type registries (feature, carver, ...).
     datapack = {
         "biome",

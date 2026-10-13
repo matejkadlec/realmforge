@@ -9,10 +9,10 @@ from realmforge_tools.packboot import ALLOWED_ERRORS, BootOutcome, boot_problems
 from realmforge_tools.project import REPO_ROOT, RepoPaths
 from tests.conftest import write
 
-JAR = "realmforge-0.0.1+mc1.21.1.jar"
+JAR = "realmforge-0.0.1+mc26.1.2.jar"
 FOUND_JAR = (
-    f'[11Oct2026 21:20:29.596] [main/INFO] [net.neoforged.fml.loading.moddiscovery.ModDiscoverer/SCAN]: Found mod file "{JAR}"'
-    " [locator: {mods folder locator at /srv/mods}, reader: mod manifest]"
+    "[11Oct2026 21:20:29.596] [main/INFO] [net.neoforged.fml.loading.FMLLoader/]: Building game content classloader:\n"
+    f" - realmforge (jar(mods/{JAR}))"
 )
 CLEAN_LOG = f"""\
 [11Oct2026 21:20:29.023] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: ModLauncher running
@@ -43,7 +43,8 @@ def _outcome(**overrides) -> BootOutcome:
 
 def test_parse_log_groups_stack_traces_with_their_entry() -> None:
     entries = parse_log(ERROR_LOG)
-    assert [(e.line_number, e.level) for e in entries] == [(1, "INFO"), (2, "ERROR"), (6, "FATAL")]
+    assert [(e.line_number, e.level) for e in entries] == [(1, "INFO"), (3, "ERROR"), (7, "FATAL")]
+    assert entries[0].continuation == (f" - realmforge (jar(mods/{JAR}))",)
     assert entries[1].logger == "net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener/"
     assert entries[1].continuation == (
         "java.lang.IllegalStateException: Missing key cost",
@@ -63,10 +64,10 @@ def test_warnings_do_not_fail_a_boot() -> None:
 def test_error_and_fatal_lines_fail_a_boot_with_their_trace() -> None:
     problems = boot_problems(_outcome(log=ERROR_LOG), ())
     assert len(problems) == 2
-    assert problems[0].startswith("latest.log:2: [ERROR] net.minecraft.server.packs.resources.")
+    assert problems[0].startswith("latest.log:3: [ERROR] net.minecraft.server.packs.resources.")
     assert "Missing key cost" in problems[0]
     assert problems[1] == (
-        "latest.log:6: [FATAL] net.neoforged.fml.ModLoader: Failed to complete lifecycle event CONSTRUCT"
+        "latest.log:7: [FATAL] net.neoforged.fml.ModLoader: Failed to complete lifecycle event CONSTRUCT"
     )
 
 
@@ -87,7 +88,7 @@ def test_allowlisted_errors_pass() -> None:
         ({"report_written": False}, "no self-test report: the game never finished loading"),
         ({"crash_reports": ("crash-2026-10-11_21.20.41-server.txt",)}, "crash report: crash-2026"),
         ({"log": None}, "the game wrote no logs/latest.log"),
-        ({"mod_jar_name": "realmforge-9.9.9+mc1.21.1.jar"}, "the core mod jar realmforge-9.9.9"),
+        ({"mod_jar_name": "realmforge-9.9.9+mc26.1.2.jar"}, "the core mod jar realmforge-9.9.9"),
     ],
 )
 def test_a_broken_boot_is_reported(overrides: dict, expected: str) -> None:
@@ -139,8 +140,22 @@ def test_optional_mods_come_from_the_metafiles(tmp_path: Path) -> None:
     assert packboot.optional_mods(tmp_path) == [packboot.OptionalMod("A", "a.jar")]
 
 
-def test_quark_is_the_packs_optional_mod() -> None:
-    assert [m.name for m in packboot.optional_mods(REPO_ROOT / "pack")] == ["Quark"]
+def test_the_pack_has_no_optional_mods() -> None:
+    # Quark left with the 26.1.2 port (RLM-124); a new optional mod brings the boot without it back.
+    assert packboot.optional_mods(REPO_ROOT / "pack") == []
+
+
+@pytest.mark.parametrize(
+    ("output", "major"),
+    [
+        ('openjdk version "25.0.4.1" 2026-08-18 LTS\nOpenJDK Runtime Environment Temurin-25.0.4.1+1', 25),
+        ('openjdk version "21.0.12" 2026-07-15 LTS', 21),
+        ('java version "1.8.0_402"', 8),
+        ("no java here", None),
+    ],
+)
+def test_the_java_version_is_read_from_java_version(output: str, major: int | None) -> None:
+    assert packboot.java_major_version(output) == major
 
 
 def test_the_pinned_neoforge_matches_the_pack_and_the_build() -> None:
@@ -152,7 +167,7 @@ def test_the_pinned_neoforge_matches_the_pack_and_the_build() -> None:
 def test_the_default_jar_is_the_one_gradle_builds() -> None:
     jar = packboot.default_mod_jar(RepoPaths())
     assert jar.parent == REPO_ROOT / "mod" / "build" / "libs"
-    assert jar.name.startswith("realmforge-") and jar.name.endswith("+mc1.21.1.jar")
+    assert jar.name.startswith("realmforge-") and jar.name.endswith("+mc26.1.2.jar")
 
 
 def test_optional_mods_are_set_aside_and_restored(tmp_path: Path) -> None:

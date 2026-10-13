@@ -41,7 +41,7 @@ public final class DungeonFeature {
 
     private static void withManager(Player player, BiConsumer<InstanceManager, ServerPlayer> action) {
         if (player instanceof ServerPlayer serverPlayer) {
-            InstanceManager manager = InstanceManager.get(serverPlayer.server);
+            InstanceManager manager = InstanceManager.get(serverPlayer.level().getServer());
             if (manager != null) {
                 action.accept(manager, serverPlayer);
             }

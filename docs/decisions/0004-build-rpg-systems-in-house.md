@@ -11,7 +11,7 @@ The main value of Realmforge is that its systems (races, classes, leveling, stat
 ## Decision
 
 - **All RPG systems are built in-house** in the core mod.
-- **Third-party mods only for QoL, UI, performance and libraries**, plus four big mods taken unchanged: Better Combat, MineColonies, Distant Horizons, Iris. The pack only references them; nothing is forked.
+- **Third-party mods only for QoL, UI, performance and libraries**, plus four big mods taken unchanged: Better Combat, MineColonies, Distant Horizons, Iris. (MineColonies is paused on Minecraft 26.1.2 until it has a build there, [0026](0026-platform-minecraft-26-1-2-neoforge.md), RLM-125.) The pack only references them; nothing is forked.
 - **Libraries our code builds on:** GeckoLib 4 (models and animations), Curios (curio slots), Lithostitched (jigsaw depth, structure tweaks), TerraBlender (only if we add Overworld biomes), FTB Quests (quest book in v0.1, see [0006](0006-quests-ftb-quests-generated-from-data.md)).
 - **Frameworks are inspiration only**, never dependencies: Spell Engine (best spell data format), Apotheosis (affixes, gems, reforging), Pufferfish's Skills; likewise Iron's Spells 'n Spellbooks, Passive Skill Tree, AutoLeveling, Explorer's Compass, Dave's Potioneering, Dummmmmmy and the others listed in the vision.
 - Small UI mods missing on NeoForge 1.21.1 are built by us later (current list in [0013](0013-modpack-composition.md), modpack composition).

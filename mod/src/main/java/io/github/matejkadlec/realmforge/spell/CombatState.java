@@ -11,7 +11,7 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * The value of the {@code realmforge:combat} attachment on players and on mobs that cast (architecture 7 and 11): the
@@ -27,7 +27,7 @@ public final class CombatState {
     /** The saved shape: resource and cooldowns, never the current cast. */
     public static final Codec<CombatState> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codecs.NON_NEGATIVE_FLOAT.optionalFieldOf("resource", 0.0F).forGetter(CombatState::resource),
-            Codec.unboundedMap(ResourceLocation.CODEC, Codecs.NON_NEGATIVE_LONG).optionalFieldOf("cooldowns", Map.of())
+            Codec.unboundedMap(Identifier.CODEC, Codecs.NON_NEGATIVE_LONG).optionalFieldOf("cooldowns", Map.of())
                     .forGetter(CombatState::cooldowns),
             Codecs.NON_NEGATIVE_LONG.optionalFieldOf("global_cooldown_end", 0L)
                     .forGetter(CombatState::globalCooldownEnd)
@@ -37,15 +37,15 @@ public final class CombatState {
     /** The synced shape: everything, the current cast included, for the owner's own cast bar and cooldowns. */
     public static final StreamCodec<ByteBuf, CombatState> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.FLOAT, CombatState::resource,
-            ByteBufCodecs.<ByteBuf, ResourceLocation, Long, Map<ResourceLocation, Long>>map(HashMap::new,
-                    ResourceLocation.STREAM_CODEC, ByteBufCodecs.VAR_LONG), CombatState::cooldowns,
+            ByteBufCodecs.<ByteBuf, Identifier, Long, Map<Identifier, Long>>map(HashMap::new,
+                    Identifier.STREAM_CODEC, ByteBufCodecs.VAR_LONG), CombatState::cooldowns,
             ByteBufCodecs.VAR_LONG, CombatState::globalCooldownEnd,
             ByteBufCodecs.optional(Cast.STREAM_CODEC), CombatState::currentCast,
             (resource, cooldowns, globalCooldownEnd, cast) ->
                     new CombatState(resource, cooldowns, globalCooldownEnd, cast.orElse(null)));
 
     private float resource;
-    private final Map<ResourceLocation, Long> cooldowns;
+    private final Map<Identifier, Long> cooldowns;
     private long globalCooldownEnd;
     @Nullable
     private Cast currentCast;
@@ -55,7 +55,7 @@ public final class CombatState {
         this(0.0F, Map.of(), 0L, null);
     }
 
-    private CombatState(float resource, Map<ResourceLocation, Long> cooldowns, long globalCooldownEnd,
+    private CombatState(float resource, Map<Identifier, Long> cooldowns, long globalCooldownEnd,
             @Nullable Cast currentCast) {
         setResource(resource);
         this.cooldowns = new HashMap<>();
@@ -77,17 +77,17 @@ public final class CombatState {
     }
 
     /** Spell to the game time its cooldown ends; read-only. Ended cooldowns stay until {@link #clearEndedCooldowns}. */
-    public Map<ResourceLocation, Long> cooldowns() {
+    public Map<Identifier, Long> cooldowns() {
         return Map.copyOf(cooldowns);
     }
 
     /** Whether the spell's own cooldown still runs at game time {@code now}. */
-    public boolean isOnCooldown(ResourceLocation spell, long now) {
+    public boolean isOnCooldown(Identifier spell, long now) {
         Long end = cooldowns.get(spell);
         return end != null && now < end;
     }
 
-    public void setCooldownEnd(ResourceLocation spell, long endGameTime) {
+    public void setCooldownEnd(Identifier spell, long endGameTime) {
         Objects.requireNonNull(spell, "spell");
         if (endGameTime < 0) {
             throw new IllegalArgumentException("A cooldown ends at a game time of 0 or more: " + endGameTime);
@@ -152,9 +152,9 @@ public final class CombatState {
      * @param startGameTime the game time the cast started
      * @param durationTicks how long the cast or channel lasts, at least one tick
      */
-    public record Cast(ResourceLocation spell, long startGameTime, int durationTicks) {
+    public record Cast(Identifier spell, long startGameTime, int durationTicks) {
         public static final StreamCodec<ByteBuf, Cast> STREAM_CODEC = StreamCodec.composite(
-                ResourceLocation.STREAM_CODEC, Cast::spell,
+                Identifier.STREAM_CODEC, Cast::spell,
                 ByteBufCodecs.VAR_LONG, Cast::startGameTime,
                 ByteBufCodecs.VAR_INT, Cast::durationTicks,
                 Cast::new);

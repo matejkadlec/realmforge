@@ -2,7 +2,8 @@
 
 Date: 2026-10-11
 
-Status: Accepted
+Status: Superseded by [0026](0026-platform-minecraft-26-1-2-neoforge.md) (2026-10-12: the port to Minecraft 26.1.2
+came forward from 2027, RLM-65)
 
 ## Context
 

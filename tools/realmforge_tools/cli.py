@@ -3,8 +3,8 @@
 uv run rf validate          validate content/ (schema, ids, references)
 uv run rf gen               validate, then regenerate every generated file
 uv run rf gen --check       exit 1 if any generated file is out of date (writes nothing)
-uv run rf ids vanilla       re-extract the vanilla ID universe from the official server jar (needs Java 21)
-uv run rf pack-boot         boot the whole pack plus the core mod jar on a server and a client (needs Java 21)
+uv run rf ids vanilla       re-extract the vanilla ID universe from the official server jar (needs Java 25)
+uv run rf pack-boot         boot the whole pack plus the core mod jar on a server and a client (needs Java 25)
 uv run rf gametest-log      exit 1 if the last GameTest run logged a data loading error (after runGameTestServer)
 uv run rf art clean SRC DST snap a generated texture to the 16x16 grid and the project palette
 uv run rf art gallery DIR   build the review gallery for the candidate textures in DIR

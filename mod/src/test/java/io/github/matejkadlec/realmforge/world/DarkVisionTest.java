@@ -9,20 +9,17 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.neoforged.neoforge.common.EffectCures;
 import org.junit.jupiter.api.Test;
 
 class DarkVisionTest {
     @Test
-    void effectIsInfiniteHiddenAndCuredByNothing() {
+    void effectIsInfiniteAndHidden() {
         MobEffectInstance effect = DarkVision.effect();
         assertTrue(effect.is(MobEffects.NIGHT_VISION));
         assertTrue(effect.isInfiniteDuration());
         assertFalse(effect.isVisible(), "particles");
         assertFalse(effect.showIcon(), "icon");
         assertFalse(effect.isAmbient());
-        assertFalse(effect.getCures().contains(EffectCures.MILK));
-        assertFalse(effect.getCures().contains(EffectCures.PROTECTED_BY_TOTEM));
         assertTrue(DarkVision.isDarkVision(effect));
     }
 
@@ -31,15 +28,11 @@ class DarkVisionTest {
         assertFalse(DarkVision.isDarkVision(null));
         assertFalse(DarkVision.isDarkVision(new MobEffectInstance(MobEffects.NIGHT_VISION, 3600)), "a potion");
         assertFalse(DarkVision.isDarkVision(new MobEffectInstance(
-                MobEffects.NIGHT_VISION, MobEffectInstance.INFINITE_DURATION, 0, false, false, false)), "milk cures it");
-        MobEffectInstance visible = new MobEffectInstance(
-                MobEffects.NIGHT_VISION, MobEffectInstance.INFINITE_DURATION, 0, false, true, true);
-        visible.getCures().clear();
-        assertFalse(DarkVision.isDarkVision(visible), "particles and icon");
-        MobEffectInstance glowing = new MobEffectInstance(
-                MobEffects.GLOWING, MobEffectInstance.INFINITE_DURATION, 0, false, false, false);
-        glowing.getCures().clear();
-        assertFalse(DarkVision.isDarkVision(glowing), "another effect");
+                MobEffects.NIGHT_VISION, MobEffectInstance.INFINITE_DURATION, 1, false, false, false)), "amplifier");
+        assertFalse(DarkVision.isDarkVision(new MobEffectInstance(
+                MobEffects.NIGHT_VISION, MobEffectInstance.INFINITE_DURATION, 0, false, true, true)), "particles and icon");
+        assertFalse(DarkVision.isDarkVision(new MobEffectInstance(
+                MobEffects.GLOWING, MobEffectInstance.INFINITE_DURATION, 0, false, false, false)), "another effect");
     }
 
     @Test

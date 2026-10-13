@@ -6,7 +6,7 @@ import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.Vec3;
 
@@ -15,9 +15,9 @@ import net.minecraft.world.phys.Vec3;
  * A start room, then corridor and hall pairs; their openings meet at z = 6..8. W4 replaces this with the real planner.
  */
 public final class SpikeLayouts {
-    public static final ResourceLocation START = RealmforgeQa.id("spike/start");
-    public static final ResourceLocation CORRIDOR = RealmforgeQa.id("spike/corridor");
-    public static final ResourceLocation HALL = RealmforgeQa.id("spike/hall");
+    public static final Identifier START = RealmforgeQa.id("spike/start");
+    public static final Identifier CORRIDOR = RealmforgeQa.id("spike/corridor");
+    public static final Identifier HALL = RealmforgeQa.id("spike/hall");
     /** Rooms in the longest row that still fits a plot's reach (start plus four corridor and hall pairs). */
     public static final int MAX_ROOMS = 9;
     /** A block on the start room's floor, under the spawn point, that tests look for. */
@@ -60,7 +60,7 @@ public final class SpikeLayouts {
         return new InstanceLayout(placements, Vec3.atBottomCenterOf(spawn), turned ? 0.0F : -90.0F);
     }
 
-    private static RoomPlacement placement(ResourceLocation template, BlockPos offset, boolean turned) {
+    private static RoomPlacement placement(Identifier template, BlockPos offset, boolean turned) {
         return new RoomPlacement(template, turn(offset, turned), turned ? Rotation.CLOCKWISE_90 : Rotation.NONE);
     }
 

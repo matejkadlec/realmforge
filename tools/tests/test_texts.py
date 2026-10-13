@@ -57,9 +57,25 @@ def test_texts_become_lang_keys_and_constants(repo: RepoPaths) -> None:
 def test_repository_texts_cover_the_dark_vision_key(repo: RepoPaths) -> None:
     files = generate(repo)
     java = files[GENERATED_TEXTS].decode()
-    for constant in ("KEY_CATEGORY", "KEY_DARK_VISION", "MESSAGE_DARK_VISION_ON", "MESSAGE_DARK_VISION_OFF"):
+    for constant in (
+        "KEY_CATEGORY_MAIN",
+        "KEY_DARK_VISION",
+        "MESSAGE_DARK_VISION_ON",
+        "MESSAGE_DARK_VISION_OFF",
+    ):
         assert f"public static final String {constant} = " in java
-    assert json.loads(files[f"{LANG}/en_us.json"])["key.realmforge.dark_vision"] == "Toggle Dark Vision"
+    en_us = json.loads(files[f"{LANG}/en_us.json"])
+    assert en_us["key.realmforge.dark_vision"] == "Toggle Dark Vision"
+    # The key category realmforge:main reads its name from key.category.realmforge.main.
+    assert en_us["key.category.realmforge.main"] == "Realmforge"
+
+
+def test_dotted_group_prefixes_its_keys_and_joins_its_constants(repo: RepoPaths) -> None:
+    write(repo.content / "texts" / "hint.extra.yaml", "id: hint.extra\ntexts:\n  tip:\n    en_us: Tip\n")
+    files = generate(repo)
+    assert json.loads(files[f"{LANG}/en_us.json"])["hint.extra.realmforge.tip"] == "Tip"
+    java = files[GENERATED_TEXTS].decode()
+    assert 'public static final String HINT_EXTRA_TIP = "hint.extra.realmforge.tip";' in java
 
 
 def test_text_comment_cannot_close_the_javadoc(repo: RepoPaths) -> None:
@@ -94,6 +110,8 @@ def test_java_constants_must_be_unique(repo: RepoPaths) -> None:
         ),
         ("id: hint\ntexts:\n  a:\n    cs_cz: Jen česky\n", "texts.a.en_us: Field required"),
         ("id: hint\n", "texts: Field required"),
+        ("id: hint.\ntexts:\n  a:\n    en_us: X\n", "id: String should match pattern"),
+        ("id: hint..x\ntexts:\n  a:\n    en_us: X\n", "id: String should match pattern"),
     ],
 )
 def test_invalid_text_groups_are_rejected(repo: RepoPaths, yaml: str, expected: str) -> None:

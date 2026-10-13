@@ -7,12 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.testing.RoundTrip;
 import java.util.Map;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 class TalentAllocationTest {
-    private static final ResourceLocation FIRE = Realmforge.id("mage_fire");
-    private static final ResourceLocation ARMS = Realmforge.id("warrior_arms");
+    private static final Identifier FIRE = Realmforge.id("mage_fire");
+    private static final Identifier ARMS = Realmforge.id("warrior_arms");
     private static final TalentAllocation TALENTS = new TalentAllocation(
             Map.of(FIRE, Map.of("improved_firebolt", 5, "ignite", 2), ARMS, Map.of("deep_wounds", 1)), 3);
 

@@ -13,7 +13,10 @@ public final class Codecs {
             ? DataResult.success(value)
             : DataResult.error(() -> "Value must be non-negative: " + value));
 
-    /** A finite, non-negative {@code float}: resource amounts. 1.21.1's {@code ExtraCodecs} has no such codec. */
+    /**
+     * A finite, non-negative {@code float}: resource amounts. Accepts what {@code ExtraCodecs.NON_NEGATIVE_FLOAT} does,
+     * with an error that names both conditions.
+     */
     public static final Codec<Float> NON_NEGATIVE_FLOAT = Codec.FLOAT.validate(value -> value >= 0.0F
             && Float.isFinite(value)
             ? DataResult.success(value)

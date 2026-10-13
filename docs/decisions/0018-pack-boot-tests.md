@@ -2,7 +2,8 @@
 
 Date: 2026-10-11
 
-Status: Accepted (amends [0010](0010-testing-strategy.md))
+Status: Accepted (amends [0010](0010-testing-strategy.md)), adjusted 2026-10-12 for Minecraft 26.1.2
+([0026](0026-platform-minecraft-26-1-2-neoforge.md), see the note at the end)
 
 ## Context
 
@@ -62,3 +63,21 @@ What the spike measured on 2026-10-11 (WSL2, the pack of `master` at `a5afcd1`, 
   playtests in Prism remain the judge of rendering, shaders and frame rate.
 - Changing the NeoForge version means updating the pin in `packboot.py`; a pytest fails while it disagrees with
   `pack/pack.toml` or `gradle.properties`.
+
+## Note (2026-10-12, 26.1.2 port)
+
+The port to Minecraft 26.1.2 ([0026](0026-platform-minecraft-26-1-2-neoforge.md), RLM-124) keeps this decision
+and changes how it runs:
+
+- **The client install:** portablemc 4.4.1, still its newest release, cannot run the processors of NeoForge 26.1's
+  installer (they use an install variable it does not know). The NeoForge installer's own `--installClient` now puts
+  the NeoForge version into the launcher directory, and portablemc only adds the vanilla client, libraries and
+  assets and starts it.
+- **Java 25** runs both boots; the pack boot checks it before installing anything.
+- **Our jar is found** in FML 11's list of the game content classloader (` - realmforge (jar(mods/<jar>))`), since FML
+  no longer logs "Found mod file".
+- **One boot per side:** the pack has no optional mod since Quark left, so the boot without them is skipped; it
+  comes back with the next optional mod.
+- **The server's allowlist** has one entry: Jade 26.1.10's "Failed to collect shearable blocks", a caught error
+  that only costs its harvest tooltip the shears hint.
+

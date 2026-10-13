@@ -15,6 +15,6 @@ class RealmforgeTest {
     /** MDG's unit test support boots FML with the mod loaded, so registries are populated. */
     @Test
     void generatedTestItemIsRegistered() {
-        assertEquals(GeneratedItems.TEST_ITEM.get(), BuiltInRegistries.ITEM.get(Realmforge.id("test_item")));
+        assertEquals(GeneratedItems.TEST_ITEM.get(), BuiltInRegistries.ITEM.getValue(Realmforge.id("test_item")));
     }
 }

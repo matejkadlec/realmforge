@@ -183,8 +183,8 @@ severity badge such as `![P1 Badge](...)` followed by a bold title.
      - `pack/`: `cd pack && packwiz refresh`, then `git diff --exit-code pack/`.
    - Make one commit per root cause (Conventional Commits, staged by explicit path), so each reply can name its
      commit.
-   - There is no pre-push hook, so run the full local gate once before the push. Gradle needs Java 21:
-     run `source ~/.sdkman/bin/sdkman-init.sh` first where SDKMAN exists.
+   - There is no pre-push hook, so run the full local gate once before the push. Gradle needs Java 25 (it
+     downloads one when none is installed): run `source ~/.sdkman/bin/sdkman-init.sh` first where SDKMAN exists.
 
      ```bash
      uv run rf gen && git status --porcelain     # must show no changes

@@ -19,7 +19,7 @@ public final class WorldAttachments {
      */
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<Boolean>> DARK_VISION =
             ATTACHMENTS.register("dark_vision", () -> AttachmentType.builder(() -> Boolean.TRUE)
-                    .serialize(Codec.BOOL)
+                    .serialize(Codec.BOOL.fieldOf("value"))
                     .copyOnDeath()
                     .build());
 

@@ -5,6 +5,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityMobGriefingEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDestroyBlockEvent;
+import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.ExplosionEvent;
@@ -30,5 +31,6 @@ public final class WorldFeature {
 
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class, DarkVision::onLoggedIn);
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerRespawnEvent.class, DarkVision::onRespawn);
+        NeoForge.EVENT_BUS.addListener(MobEffectEvent.Remove.class, DarkVision::onEffectRemove);
     }
 }

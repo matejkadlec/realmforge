@@ -10,9 +10,9 @@ QA_MOD_ID = "realmforge_qa"
 JAVA_PACKAGE = "io.github.matejkadlec.realmforge"
 QA_JAVA_PACKAGE = f"{JAVA_PACKAGE}.qa"
 
-MINECRAFT_VERSION = "1.21.1"
+MINECRAFT_VERSION = "26.1.2"
 # World data version of MINECRAFT_VERSION (written into generated NBT). Checked against the vanilla snapshot.
-DATA_VERSION = 3955
+DATA_VERSION = 4790
 
 # Locales we ship translations for. en_us is mandatory for every translatable text.
 SUPPORTED_LOCALES = ("en_us", "cs_cz")

@@ -1,4 +1,5 @@
-"""Items: Java registrations, item models, placeholder textures, and the QA mod's expectations."""
+"""Items: Java registrations, item model definitions and models, placeholder textures, and the QA mod's
+expectations."""
 
 from __future__ import annotations
 
@@ -27,6 +28,10 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     assets = paths.mod_generated / "resources" / "assets" / MOD_ID
     for entry in content.items:
         item_id = entry.model.id
+        # The item model definition (assets/<ns>/items/) picks the model the item renders with; the model itself
+        # stays in models/item/.
+        definition = {"model": {"type": "minecraft:model", "model": f"{MOD_ID}:item/{item_id}"}}
+        files[assets / "items" / f"{item_id}.json"] = dump_json(definition)
         model = {"parent": "minecraft:item/generated", "textures": {"layer0": f"{MOD_ID}:item/{item_id}"}}
         files[assets / "models" / "item" / f"{item_id}.json"] = dump_json(model)
         files[assets / "textures" / "item" / f"{item_id}.png"] = placeholder_texture(f"{MOD_ID}:{item_id}")
@@ -43,14 +48,15 @@ def _registrations(content: Content, paths: RepoPaths) -> bytes:
     tabs: dict[str, list[str]] = {}
     for entry in content.items:
         item = entry.model
-        properties = "new Item.Properties()"
+        # The register call sets the item's id on the properties; the lambda only adds to them.
+        arguments = string_literal(item.id)
         if item.max_stack_size != VANILLA_DEFAULT_STACK_SIZE:
-            properties += f".stacksTo({item.max_stack_size})"
+            arguments += f", properties -> properties.stacksTo({item.max_stack_size})"
         constant = constant_name(item.id)
         fields.append(
             f"    /** {{@code {MOD_ID}:{item.id}}} from {{@code {entry.source}}}. */\n"
             f"    public static final DeferredItem<Item> {constant} =\n"
-            f"            ITEMS.registerSimpleItem({string_literal(item.id)}, {properties});\n"
+            f"            ITEMS.registerSimpleItem({arguments});\n"
         )
         for tab in item.creative_tabs:
             tabs.setdefault(tab, []).append(constant)
@@ -62,7 +68,9 @@ def _registrations(content: Content, paths: RepoPaths) -> bytes:
         for tab, constants in sorted(tabs.items())
     )
     switch = (
-        "        switch (event.getTabKey().location().toString()) {\n" + cases + "            default -> {\n"
+        "        switch (event.getTabKey().identifier().toString()) {\n"
+        + cases
+        + "            default -> {\n"
         "            }\n"
         "        }\n"
     )

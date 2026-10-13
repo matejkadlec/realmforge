@@ -1,0 +1,13 @@
+name = "Shogi"
+filename = "shogi-neoforge-26.1.2-26.1.2.12.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/bi4iCmsw/versions/kt43miwb/shogi-neoforge-26.1.2-26.1.2.12.jar"
+hash-format = "sha512"
+hash = "fdb1f5c812d9a5ed727574a918e63960e41c8cd1141bf910001982df7e496d717192a989149b43a58118c236498a8f574c206fbea719ef51c7ae0f37d00cb109"
+
+[update]
+[update.modrinth]
+mod-id = "bi4iCmsw"
+version = "kt43miwb"

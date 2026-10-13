@@ -16,7 +16,7 @@ public final class SpellAttachments {
     /** {@code realmforge:spellbook}: a player's known spells and spell bar. Owner-only sync; copied on death. */
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<Spellbook>> SPELLBOOK =
             ATTACHMENTS.register("spellbook", () -> AttachmentType.builder(() -> Spellbook.EMPTY)
-                    .serialize(Spellbook.CODEC)
+                    .serialize(Spellbook.CODEC.fieldOf("value"))
                     .copyOnDeath()
                     .sync(Attachments::toOwner, Spellbook.STREAM_CODEC)
                     .build());
@@ -28,7 +28,7 @@ public final class SpellAttachments {
      */
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<CombatState>> COMBAT =
             ATTACHMENTS.register("combat", () -> AttachmentType.builder(CombatState::new)
-                    .serialize(CombatState.CODEC)
+                    .serialize(CombatState.CODEC.fieldOf("value"))
                     .copyOnDeath()
                     .sync(Attachments::toOwner, CombatState.STREAM_CODEC)
                     .build());

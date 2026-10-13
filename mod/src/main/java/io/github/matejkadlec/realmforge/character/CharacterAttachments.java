@@ -18,7 +18,7 @@ public final class CharacterAttachments {
      */
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<CharacterData>> CHARACTER =
             ATTACHMENTS.register("character", () -> AttachmentType.builder(() -> CharacterData.NONE)
-                    .serialize(CharacterData.CODEC).copyOnDeath().sync(CharacterData.STREAM_CODEC).build());
+                    .serialize(CharacterData.CODEC.fieldOf("value")).copyOnDeath().sync(CharacterData.STREAM_CODEC).build());
 
     private CharacterAttachments() {
     }

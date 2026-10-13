@@ -2,16 +2,18 @@
 ``pack-boot-client``; ADR 0018).
 
 1. Install the game side: the NeoForge server from its sha256-pinned installer into ``.cache/pack-boot/server/``,
-   or a NeoForge client through the pinned portablemc launcher into ``.cache/pack-boot/client/`` (game directory)
-   and ``.cache/pack-boot/launcher/`` (versions, libraries, assets).
+   or a NeoForge client: the same installer puts the NeoForge version into ``.cache/pack-boot/launcher/``, and the
+   pinned portablemc launcher adds the vanilla client, libraries and assets there and starts the game in
+   ``.cache/pack-boot/client/`` (game directory). portablemc 4.4.1 cannot run the processors of NeoForge 26.1's
+   installer itself (they use an install variable it does not know), so it only starts the installed version.
 2. Install the pack's mods for that side with packwiz-installer (``-g -s server`` or ``-s client``), served from
    ``pack/`` by a local HTTP server, the way a server owner or a player installs it.
 3. Copy the core mod jar from ``mod/build/libs/`` into ``mods/``.
 4. Start the game with NeoForge's self test (``NEOFORGE_DEDICATED_SERVER_SELFTEST`` or ``NEOFORGE_CLIENT_SELFTEST``),
    which writes a report file and stops the game at the server's first tick or once the client's title screen
-   ticks. The client runs under Xvfb when ``xvfb-run`` exists. Each side boots twice: with the optional mods, which
-   packwiz-installer's command line always installs, and without them, the default choice for players
-   (pack/README.md, "Optional mods").
+   ticks. The client runs under Xvfb when ``xvfb-run`` exists. Each side boots twice when the pack has optional mods:
+   with them, which packwiz-installer's command line always installs, and without them, the default choice for
+   players (pack/README.md). Without optional mods the one boot covers both.
 5. Fail on a non-zero exit, a missing self-test report, a crash report, a core mod that was not loaded, or an
    ERROR or FATAL line in ``logs/latest.log`` that the side's allowlist does not cover. A game that keeps running
    after a fatal error (the client then waits on FML's error screen) is stopped instead of waiting for the timeout.
@@ -22,6 +24,7 @@ from __future__ import annotations
 import hashlib
 import http.server
 import os
+import re
 import shutil
 import signal
 import socket
@@ -39,7 +42,9 @@ from pathlib import Path
 from realmforge_tools.gamelog import parse_log, unexpected_errors
 from realmforge_tools.project import RepoPaths
 
-NEOFORGE_VERSION = "21.1.259"
+NEOFORGE_VERSION = "26.1.2.116"
+# Minecraft 26.1 runs on Java 25: the installer, the server and the client all need it (JAVA_HOME, or java on PATH).
+JAVA_VERSION = 25
 SIDES = ("server", "client")
 VARIANTS = ("with-optional", "without-optional")
 
@@ -57,7 +62,7 @@ NEOFORGE_INSTALLER = PinnedDownload(
         "https://maven.neoforged.net/releases/net/neoforged/neoforge/"
         f"{NEOFORGE_VERSION}/neoforge-{NEOFORGE_VERSION}-installer.jar"
     ),
-    sha256="bb971287ab44fc43f27da77ac34e263a3885d73fb842ceeb20ee5c517ff4378c",
+    sha256="dde01cf8d0fb1d9b936088e3f71f48ee2c37434d5b60046628ecbd0b01164dcb",
 )
 # packwiz-installer only runs through its bootstrap; --bootstrap-no-update keeps it on the pinned jar.
 PACKWIZ_INSTALLER_BOOTSTRAP = PinnedDownload(
@@ -71,13 +76,22 @@ PACKWIZ_INSTALLER = PinnedDownload(
     sha256="c9f646908d340d84773948a9a7d98bc1dae250d35e1016dc6e2b8459760b5598",
 )
 # A command-line Minecraft launcher (GPL-3.0-only), run through uvx as a separate tool, never imported or shipped.
-# It installs the vanilla client, NeoForge and the assets, and starts the game with an offline profile.
+# It installs the vanilla client and the assets for the NeoForge version the installer set up, and starts the game
+# with an offline profile. 4.4.1 is its newest release (December 2024).
 PORTABLEMC = "portablemc==4.4.1"
+# The version the NeoForge installer writes into the launcher's versions/ folder.
+NEOFORGE_CLIENT_VERSION = f"neoforge-{NEOFORGE_VERSION}"
 
 # Known harmless ERROR or FATAL lines, matched against "<logger>: <message>" of the line. Keep these short: every
 # entry needs a reason, and an entry that no longer matches anything should go.
 ALLOWED_ERRORS: dict[str, tuple[tuple[str, str], ...]] = {
-    "server": (),
+    "server": (
+        (
+            r"^snownee\.jade\.Jade: Failed to collect shearable blocks$",
+            "Jade 26.1.10 reads the loot table registry when a dedicated server loads its tags, which 26.1.2 does not"
+            " offer there; Jade catches it and its harvest tooltip only lacks the shears hint",
+        ),
+    ),
     "client": (
         (
             r"^xaero\.map\.WorldMap: io exception while checking versions",
@@ -138,7 +152,8 @@ def boot_problems(outcome: BootOutcome, allowed: tuple[tuple[str, str], ...]) ->
     if outcome.log is None:
         problems.append("the game wrote no logs/latest.log")
         return problems
-    if f'Found mod file "{outcome.mod_jar_name}"' not in outcome.log:
+    # FML lists every mod jar it puts on the game content classloader: " - realmforge (jar(mods/<jar>))".
+    if f"(jar(mods/{outcome.mod_jar_name}))" not in outcome.log:
         problems.append(f"the core mod jar {outcome.mod_jar_name} was not loaded")
     problems += [entry.describe() for entry in unexpected_errors(parse_log(outcome.log), allowed)]
     return problems
@@ -233,6 +248,13 @@ def run(
         raise PackBootError(
             f"pack.toml wants NeoForge {pack_version}, but packboot.py pins {NEOFORGE_VERSION}; update the pin"
         )
+    java = java_executable()
+    found = java_major_version(_java_version_output(java))
+    if found is None or found < JAVA_VERSION:
+        raise PackBootError(
+            f"NeoForge {NEOFORGE_VERSION} needs Java {JAVA_VERSION}, but {java} is Java {found or 'of unknown version'};"
+            f" point JAVA_HOME at a Java {JAVA_VERSION} runtime"
+        )
 
     work = _Workspace(paths.cache / "pack-boot")
     game = work.game(side)
@@ -244,7 +266,8 @@ def run(
     if side == "server":
         _install_server(work, log)
     else:
-        log(f"Installing the NeoForge {NEOFORGE_VERSION} client with portablemc ...")
+        _install_client(work, log)
+        log(f"Installing the vanilla client and assets for NeoForge {NEOFORGE_VERSION} with portablemc ...")
         _run_step(
             _client_command(work, dry=True),
             cwd=game,
@@ -262,9 +285,14 @@ def run(
 
     results = []
     for variant in variants:
+        if variant == "without-optional" and not optional and "with-optional" in variants:
+            continue  # the boot with the optional mods had none, so it was this one
         if variant == "with-optional":
-            label = f"{side} with optional mods" + (
-                f" ({', '.join(m.name for m in optional)})" if optional else ""
+            names = ", ".join(m.name for m in optional)
+            label = (
+                f"{side} with optional mods ({names})"
+                if optional
+                else f"{side} (the pack has no optional mods)"
             )
             aside: list[OptionalMod] = []
         elif variant == "without-optional":
@@ -387,6 +415,37 @@ def _install_server(work: _Workspace, log) -> None:
     )
 
 
+def _install_client(work: _Workspace, log) -> None:
+    """Runs the NeoForge installer's client install into the launcher directory, as the official launcher gets it."""
+    launcher = work.launcher
+    # The installer's last output: the patched client jar its processors write. A version JSON alone can be left
+    # over from an install that died halfway.
+    patched = (
+        launcher
+        / "libraries"
+        / "net"
+        / "neoforged"
+        / "minecraft-client-patched"
+        / NEOFORGE_VERSION
+        / f"minecraft-client-patched-{NEOFORGE_VERSION}.jar"
+    )
+    if patched.is_file():
+        return
+    log(f"Installing the NeoForge {NEOFORGE_VERSION} client ...")
+    launcher.mkdir(parents=True, exist_ok=True)
+    # The installer refuses a directory without the official launcher's profile file.
+    profiles = launcher / "launcher_profiles.json"
+    if not profiles.is_file():
+        profiles.write_text('{"profiles": {}}\n', encoding="utf-8")
+    installer = fetch(NEOFORGE_INSTALLER, work.downloads)
+    _run_step(
+        [java_executable(), "-jar", str(installer.resolve()), "--installClient", str(launcher.resolve())],
+        cwd=work.downloads,
+        log_file=work.reports("client") / "neoforge-installer.log",
+        what="the NeoForge client installer",
+    )
+
+
 def _install_pack(work: _Workspace, side: str, pack_dir: Path) -> None:
     bootstrap = fetch(PACKWIZ_INSTALLER_BOOTSTRAP, work.downloads)
     installer = fetch(PACKWIZ_INSTALLER, work.downloads)
@@ -429,7 +488,7 @@ def _client_command(work: _Workspace, *, dry: bool) -> list[str]:
         "--work-dir",
         str(work.game("client").resolve()),
         "start",
-        f"neoforge:{NEOFORGE_VERSION}",
+        NEOFORGE_CLIENT_VERSION,
         "--jvm",
         java_executable(),
         f"--jvm-args={CLIENT_HEAP}",
@@ -514,6 +573,24 @@ def fetch(download: PinnedDownload, cache_dir: Path) -> Path:
 def java_executable() -> str:
     java_home = os.environ.get("JAVA_HOME")
     return str(Path(java_home) / "bin" / "java") if java_home else "java"
+
+
+def java_major_version(version_output: str) -> int | None:
+    """The feature version in ``java -version`` output (``openjdk version "25.0.4.1" ...`` is 25), or None."""
+    match = re.search(r'version "(\d+)(?:\.(\d+))?', version_output)
+    if match is None:
+        return None
+    major = int(match.group(1))
+    # Java 8 and older report 1.<major>.
+    return int(match.group(2) or 0) if major == 1 else major
+
+
+def _java_version_output(java: str) -> str:
+    try:
+        result = subprocess.run([java, "-version"], capture_output=True, text=True, timeout=60, check=False)
+    except OSError as e:
+        raise PackBootError(f"cannot run {java}: {e}") from e
+    return result.stderr + result.stdout
 
 
 def _neoforge_args_file(server: Path) -> Path:

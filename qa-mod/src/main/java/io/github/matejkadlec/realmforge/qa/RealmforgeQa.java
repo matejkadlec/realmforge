@@ -3,8 +3,9 @@ package io.github.matejkadlec.realmforge.qa;
 import com.mojang.logging.LogUtils;
 import io.github.matejkadlec.realmforge.qa.castanim.QaCastAnimation;
 import io.github.matejkadlec.realmforge.qa.command.QaCommands;
+import io.github.matejkadlec.realmforge.qa.gametest.QaGameTests;
 import io.github.matejkadlec.realmforge.qa.instance.InstanceBench;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
@@ -21,6 +22,7 @@ public final class RealmforgeQa {
 
     public RealmforgeQa(IEventBus modEventBus) {
         QaCastAnimation.register(modEventBus);
+        QaGameTests.register(modEventBus);
         NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent.class, QaCommands::register);
         NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class,
                 event -> InstanceBench.onServerTick(event.getServer()));
@@ -28,7 +30,7 @@ public final class RealmforgeQa {
     }
 
     /** Returns {@code realmforge_qa:<path>}. */
-    public static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+    public static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(MOD_ID, path);
     }
 }

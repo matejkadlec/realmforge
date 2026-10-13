@@ -37,9 +37,9 @@
   "description": "A group of texts sharing the translation key prefix ``<id>.realmforge.``, for example ``key`` for key\nmapping names (``key.realmforge.dark_vision``) or ``message`` for chat and action bar messages.",
   "properties": {
     "id": {
-      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "description": "Lowercase snake_case words joined by dots; the key prefix. Must equal the file name.",
       "maxLength": 64,
-      "pattern": "^[a-z][a-z0-9_]*$",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$",
       "title": "Id",
       "type": "string"
     },

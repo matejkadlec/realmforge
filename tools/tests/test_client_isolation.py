@@ -47,15 +47,17 @@ def test_every_banned_package_is_caught_in_any_form() -> None:
 import static net.minecraft.client.Minecraft.getInstance;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
-import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess;
+import com.zigythebird.playeranim.api.PlayerAnimationAccess;
+import com.zigythebird.playeranimcore.bones.PlayerAnimBone;
 class A { Object m() { return net.minecraft.client.Minecraft.getInstance(); } }
 """
     assert banned_references(source) == [
         (2, "net.minecraft.client"),
         (3, "com.mojang.blaze3d"),
         (4, "net.neoforged.neoforge.client"),
-        (5, "dev.kosmx.playerAnim"),
-        (6, "net.minecraft.client"),
+        (5, "com.zigythebird.playeranim"),
+        (6, "com.zigythebird.playeranimcore"),
+        (7, "net.minecraft.client"),
     ]
 
 

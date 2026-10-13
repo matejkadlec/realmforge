@@ -14,10 +14,13 @@
 > decisions recorded in [ADR 0014](decisions/0014-core-mod-architecture.md) needs a new ADR
 > ([section 21](#21-decisions-and-open-questions)).
 >
-> **APIs.** Every Minecraft, NeoForge and FML API named here was checked against the pinned sources (Minecraft
-> 1.21.1, NeoForge 21.1.259) on 2026-10-11; the FTB Quests, Better Combat and playerAnimator facts against their
-> 1.21.1 jars (FTB Quests 2101.1.36, Better Combat 2.4.0, playerAnimator 2.0.4). Libraries we have not added yet
-> (GeckoLib, Curios, Jade, Xaero) are marked *verify*: check their API before first use (CLAUDE.md rule 6).
+> **APIs.** Every Minecraft, NeoForge and FML API named here was checked against the pinned sources: Minecraft
+> 1.21.1 and NeoForge 21.1.259 on 2026-10-11, and again for Minecraft 26.1.2 and NeoForge 26.1.2.116 with the port of
+> 2026-10-12 ([ADR 0026](decisions/0026-platform-minecraft-26-1-2-neoforge.md)). The FTB Quests and Better Combat
+> facts were checked against their 1.21.1 jars (FTB Quests 2101.1.36, Better Combat 2.4.0), Better Combat's disable
+> tag and Player Animation Library's API against their 26.1.2 builds (Better Combat 3.2.2, PAL 1.2.8). Libraries we
+> have not added yet (GeckoLib, Curios, Jade, Xaero) are marked *verify*: check their API before first use
+> (CLAUDE.md rule 6).
 
 ## At a glance
 
@@ -324,7 +327,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 
 - Each feature declares the keys of the registries it owns (`spell/SpellRegistries.SPELL`); `core` declares only
   its own (`curve`, `requirement_type`). Lookups go through the level's registries:
-  `level.registryAccess().registryOrThrow(SpellRegistries.SPELL)`.
+  `level.registryAccess().lookupOrThrow(SpellRegistries.SPELL)`.
 - Saved data (attachments, item components) stores `ResourceKey`s; runtime code resolves them to `Holder`s. A key
   whose entry no longer exists (content removed) is dropped with a warning in the log, never a crash.
 - Entries reference each other with `RegistryFixedCodec` (by id) or `RegistryFileCodec` (by id or inline), and
@@ -455,9 +458,10 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:instance` | `dungeon` | players | the run's plot and the return point (spike 3); W4 adds the game mode to restore | not synced |
 
 - Values are immutable records with a `Codec` for saving and a `StreamCodec` for syncing, declared with
-  `AttachmentType.builder(...).serialize(codec).copyOnDeath().sync(predicate, streamCodec)`. A change is
-  `player.setData(type, newValue)`; NeoForge 21.1.259 then sends the update to the players the predicate allows
-  (for example `(holder, to) -> holder == to` for owner-only data).
+  `AttachmentType.builder(...).serialize(codec.fieldOf("value")).copyOnDeath().sync(predicate, streamCodec)`:
+  NeoForge 26.1 saves an attachment through a `MapCodec`. A change is `player.setData(type, newValue)`; NeoForge
+  then sends the update to the players the predicate allows (for example `(holder, to) -> holder == to` for
+  owner-only data).
 - A synced attachment sends the same data to every player its predicate accepts (NeoForge encodes each update
   once), so data meant for different audiences needs separate attachments.
 - Combat state changes too often for that. It is a mutable object synced explicitly with `player.syncData(type)`,
@@ -465,7 +469,8 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   the server game time when they end, so they survive relogging and need no per-tick updates. The current cast is
   transient: the saved `Codec` leaves it out, so neither relogging nor the copy on death brings it back (NeoForge's
   default copy handler round-trips the saved codec), and death cancels it.
-- **The predicate filters updates only.** When a player starts tracking an entity, NeoForge 21.1.259 sends that
+- **The predicate filters updates only.** When a player starts tracking an entity, NeoForge (21.1.259 and 26.1.2.116
+  alike) sends that
   player every synced attachment on it without asking the predicate (`ServerEntity#sendPairingData` →
   `AttachmentSync.syncInitialEntityAttachments`). The sync handler's `write` is not told the recipient, so no
   handler can filter that first sync either. Other players' clients therefore hold a snapshot of the owner-only
@@ -486,7 +491,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   (`stats/StatsAttachments`, `character/CharacterAttachments`, `spell/SpellAttachments`,
   `talent/TalentAttachments`), registered from its `<Name>Feature`. The values are `stats/EntityLevel`,
   `character/CharacterData`, `spell/Spellbook`, `spell/CombatState` and `talent/TalentAllocation`; owner-only data
-  syncs with `core/Attachments#toOwner`. Races, classes, spells and talent trees are named by `ResourceLocation`
+  syncs with `core/Attachments#toOwner`. Races, classes, spells and talent trees are named by `Identifier`
   until their registries exist (C1, C3a, C5); a `ResourceKey` saves the same string, so saves stay readable. The
   cached level cap stays empty until C2 computes it. Every saved field is optional with a default, so an empty
   save reads as the default value.
@@ -499,8 +504,8 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 ### 8.1 The attribute set
 
 - **Vanilla, kept:** max health, armor, armor toughness, attack damage and speed, movement speed, knockback
-  resistance, luck and the rest. In 1.21.1 their ids keep their prefixes (`minecraft:generic.max_health`,
-  `minecraft:player.block_interaction_range`).
+  resistance, luck and the rest. Since 1.21.2 their ids have no prefixes (`minecraft:max_health`,
+  `minecraft:block_interaction_range`; 1.21.1 had `minecraft:generic.max_health`).
 - **Primary stats (ours):** the vision's STR, DEX, INT and whatever else the M1 design settles on (for example a
   stamina stat). They are attributes, so gear, buffs and talents modify them like anything else.
 - **Secondary stats (ours):** crit chance, crit damage, dodge, spell power, haste (cast and cooldown speed),
@@ -559,7 +564,7 @@ modifiers are saved rather than transient because of how vanilla handles health:
 
 ### 8.4 Caps
 
-Vanilla caps in 1.21.1 are armor 30, armor toughness 20, max health 1024 and attack damage 2048, and the vanilla
+Vanilla caps in 26.1.2 (as in 1.21.1) are armor 30, armor toughness 20, max health 1024 and attack damage 2048, and the vanilla
 armor formula never blocks more than 80% (`CombatRules.getDamageAfterAbsorb`). The vision wants armor, toughness
 and health far beyond vanilla, so:
 
@@ -587,9 +592,10 @@ and health far beyond vanilla, so:
    previous one is dropped without any further event, and a bigger one deals only the difference; a hit outside
    that window starts a new one. Spell, area and damage-over-time hits would be swallowed, and each would shield the
    target from the next sword swing. So the school damage types are in the `#minecraft:bypasses_cooldown` tag
-   (generated), and spell hits keep the target's current window (`setInvulnerabilityTicks(target.invulnerableTime)`),
-   so they neither grant nor clear invulnerability. They still set vanilla's protected `lastHurt`, the amount every
-   later hit in the window is measured against (`LivingEntity#hurt` takes the `else` branch for a hit that bypasses
+   (generated), and spell hits keep the target's current window
+   (`DamageContainer#setPostAttackInvulnerabilityTicks(target.invulnerableTime)`), so they neither grant nor clear
+   invulnerability. They still set vanilla's protected `lastHurt`, the amount every later hit in the window is
+   measured against (`LivingEntity#hurtServer` takes the `else` branch for a hit that bypasses
    the cooldown and stores `lastHurt = amount`). Inside an open window a melee hit is therefore compared with the
    last spell or damage-over-time hit, not with the hit that opened the window:
    - **after a small one it lands almost in full:** a zombie hits a player for 6 (the window opens, `lastHurt` 6), a
@@ -607,19 +613,11 @@ and health far beyond vanilla, so:
 5. **`LivingDamageEvent.Post`** reports what was actually taken from health: on-hit procs, combat text payloads,
    the QA combat log; threat later (with pets).
 
-**Never cancel `LivingIncomingDamageEvent`.** In NeoForge 21.1.259, `LivingEntity#hurt` pushes a `DamageContainer`
-onto the defender's `damageContainers` stack, posts the event, and returns on a cancelled event without popping the
-container; only the hurt-cooldown drop and the normal end pop it. Every cancel therefore leaves a container, with
-its `DamageSource`, attacker and projectile, on the defender until the entity object is discarded. Dodge and any
-other code that must stop a hit need another mechanism; task F5 picks one, and a GameTest shows that the stack does
-not grow. Candidates:
-
-- a listener with `priority = EventPriority.LOWEST` and `receiveCanceled = true` that pops the cancelled event's
-  container, through an access transformer on the protected `damageContainers` field
-  ([19.3](#193-mixins-and-access-transformers));
-- an `EntityInvulnerabilityCheckEvent` listener, which runs before the push. `isInvulnerableTo` is asked several
-  times per hit (`ServerPlayer#hurt`, `Player#hurt`, `LivingEntity#hurt`, `actuallyHurt`) and by other code, so a
-  dodge roll there must be made once per hit and reused.
+**Cancelling `LivingIncomingDamageEvent` stops a hit cleanly since NeoForge 26.1.** `LivingEntity#hurtServer`
+pushes a `DamageContainer` onto the defender's `damageContainers` stack, posts the event, and pops the container again
+when the event is cancelled (checked in 26.1.2.116). NeoForge 21.1.259 returned without popping it, so on 1.21.1 every
+cancel left a container on the defender; that is why this section used to forbid cancelling. Dodge can therefore
+cancel the event; task F5 still keeps a GameTest that shows the stack does not grow.
 
 All formulas live in a pure `DamageCalculator` (inputs: attacker and defender stat snapshots, spell and school, a
 random source), tested by JUnit. The Python balance simulation (M3) will use the same formulas; one JSON file of
@@ -633,7 +631,8 @@ weapons get Better Combat weapon attribute files generated from item YAML:
 
 Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md), spike 4):
 
-- **Animations:** both use playerAnimator, a required client-side dependency of the core mod. Our cast layer sits
+- **Animations:** both use Player Animation Library (PAL), a required client-side dependency of the core mod. Our
+  cast layer sits
   at priority 3000, above Better Combat's attack layer (2000) and idle poses (1 to 4), and animates only the body
   parts a cast needs ([11.6](#116-client-side)).
 - **No melee while casting:** during a cast-time or channelled spell the server cancels `AttackEntityEvent` (every
@@ -736,7 +735,7 @@ type only for genuinely new behaviour.
 The spell bar, cast bar and cooldown sweep are HUD layers; key mappings follow a default scheme decided in M1
 (proposal: a separate spell bar with its own keys, leaving the item hotbar alone); tooltips are built from data
 with live numbers; animations and particles start on `CastStartedPayload`. Cast animations are Emotecraft JSON
-files in `assets/realmforge/player_animations/`, played by `client/animation` on the caster's playerAnimator layer
+files in `assets/realmforge/player_animations/`, played by `client/animation` on the caster's PAL layer
 for the caster and every tracking player, with the third-person model's arms in first person
 ([ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)). The arms aim where the player looks, since
 the model's arms hang on a body that never pitches and trails the head by up to 50 degrees: in first person they
@@ -774,9 +773,9 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
   (`Item.Properties#rarity`).
 - **Rarity:** the vision wants five tiers, common to legendary; vanilla's `Rarity` has four (common to epic). M2
   picks one of two ways:
-  - extend vanilla `Rarity` with a fifth constant through NeoForge's enum extension (in NeoForge 21.1 `Rarity` is
+  - extend vanilla `Rarity` with a fifth constant through NeoForge's enum extension (in NeoForge 26.1 `Rarity` is
     an `IExtensibleEnum`): name colours then work wherever vanilla styles item names (tooltips, chat) and likely in
-    mods that reuse that styling (*verify* Jade and EMI), but vanilla raises the shown rarity of enchanted common,
+    mods that reuse that styling (*verify* Jade and JEI), but vanilla raises the shown rarity of enchanted common,
     uncommon and rare items (`ItemStack#getRarity`);
   - our own data component: full control and WoW-style colours, but we style item names ourselves and other mods
     do not see the tier.
@@ -785,12 +784,12 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
   on equip and lists them in tooltips; special affixes are procs. Sockets and gems are another component;
   reforging is a station with a menu.
 - **Loot:** loot tables generated from YAML, with our own loot functions (`Registries.LOOT_FUNCTION_TYPE`, for
-  example "roll affixes for the mob's level"), so EMI Loot and data packs see ordinary loot tables. "No trash loot"
+  example "roll affixes for the mob's level"), so other mods and data packs see ordinary loot tables. "No trash loot"
   is a validation rule: a denylist plus a minimum value per tier.
 - **Rewards:** quest choice rewards are pre-rolled stacks written into the quest files (ADR 0006). RNG item chests
   (M2) are items that roll a loot table when opened.
 - **Curios (M2)** supplies curio slots ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md)); *verify* its
-  1.21.1 API when adding it.
+  26.1.2 API when adding it.
 
 ## 14. Mobs and bosses
 
@@ -843,8 +842,8 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
 - Entity types are static. A small Java library of archetypes (base classes with AI goal sets, such as melee brute
   or ranged caster) plus YAML mobs that pick an archetype, attributes, spells, model and loot. A new archetype is
   Java; a new mob of an existing archetype is YAML.
-- Models and animations: GeckoLib 4 ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md); *verify* its 1.21.1
-  API and asset paths when adding it), renderers in `client/render/`.
+- Models and animations: GeckoLib ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md); *verify* its 26.1.2
+  build's API and asset paths when adding it), renderers in `client/render/`.
 - Minimap icons for Xaero's maps are generated files, no code ([ADR 0002](decisions/0002-hybrid-core-mod-and-modpack.md)).
 
 ### 14.3 Bosses
@@ -1021,7 +1020,7 @@ and `dungeon/instance/`.
 ### 15.6 World structures (M4)
 
 The same dungeon type format with `placement: world_structure`: the pipeline emits jigsaw `worldgen/structure`,
-`structure_set`, `template_pool` and `processor_list` files. Vanilla 1.21.1 limits jigsaw to depth 20
+`structure_set`, `template_pool` and `processor_list` files. Vanilla 26.1.2 limits jigsaw to depth 20
 (`JigsawStructure.MAX_DEPTH`) and 128 blocks from the start (`MAX_TOTAL_STRUCTURE_RANGE`); Lithostitched lifts the
 depth limit.
 
@@ -1074,12 +1073,14 @@ depth limit.
   cooldown, resource, rate limit) and never trusts numbers from the client.
 - **Handlers run on the main thread** (the registrar's default, `HandlerThread.MAIN`) and hand over to the feature's
   system at once.
-- **Client-bound handlers live in `client/network/`.** NeoForge 21.1 has no client-side registration event for
+- **Client-bound handlers live in `client/network/`.** NeoForge 21.1 had no client-side registration event for
   payloads, so common code registers every payload. `network/` therefore declares an interface with one method per
   client-bound payload (`ClientboundPayloadHandler`); `client/network/ClientPayloadHandler` implements it, and
   `RealmforgeClient` installs the implementation at startup (`RealmforgeNetwork.installClientHandler`). The
   registered handler is a lambda that calls the installed implementation. A dedicated server never installs one and
-  never receives client-bound payloads, and no class outside `client/` refers to a client class.
+  never receives client-bound payloads, and no class outside `client/` refers to a client class. NeoForge 26.1 adds
+  the client-only `RegisterClientPayloadHandlersEvent` (common code then registers `playToClient(type, codec)`
+  without a handler); the interface still works, and moving to the event is an open follow-up.
 
 ### 17.2 What syncs how
 
@@ -1108,14 +1109,15 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   (`EntityRenderersEvent.RegisterRenderers`), particles (`RegisterParticleProvidersEvent`), menu screens
   (`RegisterMenuScreensEvent`) and tooltip components (`RegisterClientTooltipComponentFactoriesEvent`).
 - **Layout:** `client/hud`, `client/screen`, `client/input`, `client/render`, `client/tooltip`, `client/network`,
-  `client/animation` (the playerAnimator cast layer), and `client/compat/<mod>` for the client parts of
-  integrations (JEI and EMI plugins, Jade tooltips).
+  `client/animation` (the PAL cast layer), and `client/compat/<mod>` for the client parts of
+  integrations (JEI plugins, Jade tooltips).
 - **The rule:** no class outside `client/` imports `net.minecraft.client.*`, `com.mojang.blaze3d.*`,
   `net.neoforged.neoforge.client.*` or a library's rendering classes. An automated import check enforces it
   (`tools/tests/test_client_isolation.py`, run by `uv run pytest`): it scans the main and generated sources of the
   core mod and of the QA mod (whose own `qa/client/` package is exempt) for those packages in imports and fully
-  qualified names. A library's rendering packages join its list with the library (so far playerAnimator's
-  `dev.kosmx.playerAnim`, [ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)). The GameTest
+  qualified names. A library's rendering packages join its list with the library (so far Player Animation
+  Library's `com.zigythebird.playeranim` and `com.zigythebird.playeranimcore`,
+  [ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)). The GameTest
   server in CI runs as a dedicated server and is a second line of defence, but only for code the tests run, and
   NeoForge's own client classes are mostly not marked client-only, so only the import check catches those.
 - **Thin screens:** screens and HUD layers draw from view models computed in common code (`CharacterSheetView`,
@@ -1169,9 +1171,10 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
   bar. The effect is vanilla night vision as an infinite, hidden effect (`MobEffectInstance.INFINITE_DURATION`, no
   particles, no icon); every player has it, switched on by default. The on/off state lives in the
   `realmforge:dark_vision` attachment (copied on death) because effects do not survive death: the effect is
-  reapplied on respawn and login. Milk and a totem of undying remove effects through NeoForge's cures
-  (`EffectCures.MILK`, `PROTECTED_BY_TOTEM`), so our instance has none (`MobEffectInstance#getCures`, saved with
-  the effect); only the switch and `/effect clear` remove it. Switching on replaces a potion's night vision, which
+  reapplied on respawn and login. Milk and a totem of undying clear every effect (`LivingEntity#removeAllEffects`;
+  NeoForge 26.1 has no effect cures any more), and each removal posts the cancellable `MobEffectEvent.Remove`:
+  `DarkVision` cancels it for Dark Vision while the switch is on, so only the switch removes it, `/effect clear`
+  included. Switching on replaces a potion's night vision, which
   Dark Vision outlasts; switching off removes only infinite night vision, so a potion drunk while it is off stays.
 
 ### 19.2 Configuration
@@ -1209,7 +1212,7 @@ tag, Xaero icons, FTB Quests files) need no code.
 | data against codecs | GameTest server start, data errors in its log (`uv run rf gametest-log`), generated expectations | every spell decodes; every generated loot table, recipe and advancement loads; ids and key fields match |
 | behaviour in a world | GameTests in `qa-mod` | firebolt damages a dummy by the expected amount; the level stops at the cap; the chapter advancement raises it; the boss enters phase 2 at 70%; an instance is built, entered and cleaned up |
 | client isolation | pytest import check (`tools/tests/test_client_isolation.py`); dedicated GameTest server | - |
-| whole pack | `uv run rf pack-boot`: the CI jobs `pack-boot` and `pack-boot-client` boot the pack plus our jar with NeoForge's self tests ([ADR 0018](decisions/0018-pack-boot-tests.md)) | server and client load with and without Quark; no unexplained ERROR line |
+| whole pack | `uv run rf pack-boot`: the CI jobs `pack-boot` and `pack-boot-client` boot the pack plus our jar with NeoForge's self tests ([ADR 0018](decisions/0018-pack-boot-tests.md)) | server and client load (with and without the optional mods, when the pack has any); no unexplained ERROR line |
 | balance | Python simulation (M3) | time to kill per class and level, boss phase survival, time to item |
 
 The QA mod grows with the features: `/qa` commands (level, class, talents, gear presets, boss at phase N, enter an

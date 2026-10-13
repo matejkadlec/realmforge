@@ -4,7 +4,6 @@ import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.core.CoreRegistries;
 import io.github.matejkadlec.realmforge.core.Curve;
 import io.github.matejkadlec.realmforge.generated.GeneratedCurves;
-import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedCurveExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedCurveExpectations.CurveExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedCurveExpectations.Point;
@@ -12,13 +11,10 @@ import io.github.matejkadlec.realmforge.qa.generated.GeneratedCurveExpectations.
 import java.util.Set;
 import java.util.TreeSet;
 import net.minecraft.core.Registry;
-import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.locale.Language;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
  * Checks that every curve in {@code content/curves/} reached the game's datapack registry {@code realmforge:curve}
@@ -27,20 +23,17 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
  * world load decodes each generated file with the type's codec, and the test compares the decoded entries with the
  * expectations.
  */
-@GameTestHolder(RealmforgeQa.MOD_ID)
-@PrefixGameTestTemplate(false)
 public final class ContentCurveGameTests {
-    private static final String PLATFORM = "platform_5x5";
     // The pipeline and the game compute the same formula in doubles; allow for rounding only.
     private static final double TOLERANCE = 1e-9;
 
     private ContentCurveGameTests() {
     }
 
-    @GameTest(template = PLATFORM)
+    @QaGameTest
     public static void contentCurvesAreLoadedAsWritten(GameTestHelper helper) {
         helper.assertFalse(GeneratedCurveExpectations.CURVES.isEmpty(), "no curve expectations were generated");
-        Registry<Curve> curves = helper.getLevel().registryAccess().registryOrThrow(CoreRegistries.CURVE);
+        Registry<Curve> curves = helper.getLevel().registryAccess().lookupOrThrow(CoreRegistries.CURVE);
 
         Set<String> expectedIds = new TreeSet<>();
         GeneratedCurveExpectations.CURVES.forEach(expected -> expectedIds.add(expected.id()));
@@ -51,7 +44,7 @@ public final class ContentCurveGameTests {
         helper.assertValueEqual(loadedIds, expectedIds, "curves in realmforge:curve");
 
         for (CurveExpectation expected : GeneratedCurveExpectations.CURVES) {
-            Curve curve = curves.get(ResourceLocation.parse(expected.id()));
+            Curve curve = curves.getValue(Identifier.parse(expected.id()));
             helper.assertTrue(curve != null, "curve is not loaded: " + expected.id());
             helper.assertValueEqual(curve.name(), expected.nameKey(), expected.id() + " name");
             expected.nameKey().ifPresent(key -> helper.assertTrue(Language.getInstance().has(key),
@@ -73,13 +66,13 @@ public final class ContentCurveGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = PLATFORM)
+    @QaGameTest
     public static void generatedCurveKeysResolve(GameTestHelper helper) {
-        Registry<Curve> curves = helper.getLevel().registryAccess().registryOrThrow(CoreRegistries.CURVE);
+        Registry<Curve> curves = helper.getLevel().registryAccess().lookupOrThrow(CoreRegistries.CURVE);
         helper.assertValueEqual(GeneratedCurves.ALL.size(), GeneratedCurveExpectations.CURVES.size(),
                 "generated curve keys");
         for (ResourceKey<Curve> key : GeneratedCurves.ALL) {
-            helper.assertTrue(curves.getHolder(key).isPresent(), "generated key does not resolve: " + key.location());
+            helper.assertTrue(curves.get(key).isPresent(), "generated key does not resolve: " + key.identifier());
         }
         helper.succeed();
     }

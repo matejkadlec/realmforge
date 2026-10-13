@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 /**
- * Gives the GameTest server the dimensions from data packs. Vanilla 1.21.1 builds the GameTest world from the flat
+ * Gives the GameTest server the dimensions from data packs. Vanilla builds the GameTest world from the flat
  * preset and an empty dimension registry ({@code GameTestServer#create}), so {@code realmforge:instances} and every
  * later dimension of ours would be missing in GameTests. A normal world bakes the preset with the data pack
  * dimensions ({@code Main}, {@code WorldOpenFlows}); this does the same. No event or API covers it, hence a mixin
@@ -27,6 +27,6 @@ abstract class GameTestServerMixin {
                             + "Lnet/minecraft/world/level/levelgen/WorldDimensions$Complete;"))
     private static Registry<LevelStem> realmforgeQa$bakeWithDataPackDimensions(
             Registry<LevelStem> empty, @Local(argsOnly = true) WorldLoader.DataLoadContext context) {
-        return context.datapackDimensions().registryOrThrow(Registries.LEVEL_STEM);
+        return context.datapackDimensions().lookupOrThrow(Registries.LEVEL_STEM);
     }
 }

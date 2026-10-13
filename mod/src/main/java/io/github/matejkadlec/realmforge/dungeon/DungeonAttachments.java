@@ -20,7 +20,7 @@ public final class DungeonAttachments {
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<InstanceVisit>> VISIT =
             ATTACHMENTS.register("instance", () -> AttachmentType.<InstanceVisit>builder(() -> {
                 throw new IllegalStateException("realmforge:instance has no default; read it with getExistingData");
-            }).serialize(InstanceVisit.CODEC).copyOnDeath().build());
+            }).serialize(InstanceVisit.CODEC.fieldOf("value")).copyOnDeath().build());
 
     private DungeonAttachments() {
     }

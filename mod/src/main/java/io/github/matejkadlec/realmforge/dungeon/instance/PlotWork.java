@@ -76,13 +76,13 @@ public final class PlotWork {
         return slices;
     }
 
-    /** Every chunk any of the boxes touches, as {@link ChunkPos#toLong()} values in first-seen order. */
+    /** Every chunk any of the boxes touches, as {@link ChunkPos#pack()} values in first-seen order. */
     public static LongSet chunks(List<BoundingBox> boxes) {
         LongSet chunks = new LongLinkedOpenHashSet();
         for (BoundingBox box : boxes) {
             for (int chunkZ = box.minZ() >> 4; chunkZ <= box.maxZ() >> 4; chunkZ++) {
                 for (int chunkX = box.minX() >> 4; chunkX <= box.maxX() >> 4; chunkX++) {
-                    chunks.add(ChunkPos.asLong(chunkX, chunkZ));
+                    chunks.add(ChunkPos.pack(chunkX, chunkZ));
                 }
             }
         }

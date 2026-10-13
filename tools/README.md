@@ -7,8 +7,8 @@ the project itself is defined in the root `pyproject.toml`.
 uv run rf validate        # validate content/ (schema, ids, references)
 uv run rf gen             # validate, then regenerate every generated file
 uv run rf gen --check     # exit 1 if any generated file is out of date
-uv run rf ids vanilla     # re-extract the vanilla ID universe (downloads the server jar, needs Java 21)
-uv run rf pack-boot       # boot the whole pack plus mod/build/libs' jar on a server and a client (needs Java 21)
+uv run rf ids vanilla     # re-extract the vanilla ID universe (downloads the server jar, needs Java 25)
+uv run rf pack-boot       # boot the whole pack plus mod/build/libs' jar on a server and a client (needs Java 25)
 uv run rf gametest-log    # after ./gradlew runGameTestServer: exit 1 on data loading errors in its log
 uv run rf art clean SRC DST   # snap a generated texture to the 16x16 grid and the project palette
 uv run rf art gallery DIR     # review gallery for DIR/<subject>/<candidate>.png (.cache/art/)
@@ -41,12 +41,16 @@ Generated directories (owned by `rf gen`, never edit by hand): `mod/src/generate
 core mod jar loads, on both sides, the way players and server owners install it. Build the jar first
 (`./gradlew :mod:jar`). It works in `.cache/pack-boot/`:
 
-1. installs the game: the NeoForge server from its installer (`server/`), or the client through the
-   [portablemc](https://github.com/mindstorm38/portablemc) launcher run by `uvx` (`client/` is the game directory,
-   `launcher/` holds the vanilla client, NeoForge, libraries and about 1 GB of assets);
+1. installs the game: the NeoForge server from its installer (`server/`), or the client: the same installer's
+   `--installClient` puts NeoForge into `launcher/`, and the [portablemc](https://github.com/mindstorm38/portablemc)
+   launcher, run by `uvx`, adds the vanilla client, libraries and about 1 GB of assets there and starts the game in
+   `client/` (the game directory). portablemc 4.4.1 cannot run the processors of NeoForge 26.1's installer itself
+   ([ADR 0018](../docs/decisions/0018-pack-boot-tests.md#note-2026-10-12-2612-port)). Every step runs on Java 25
+   (`JAVA_HOME` or `PATH`), which the tool checks first;
 2. installs the pack's mods for that side with packwiz-installer, serving `pack/` over a local HTTP server;
-3. copies the jar into `mods/` and boots with NeoForge's self test, once with the optional mods (Quark) and once
-   without; the client runs under Xvfb when `xvfb-run` exists (`sudo apt install xvfb`);
+3. copies the jar into `mods/` and boots with NeoForge's self test, once with the optional mods and once without
+   (once in all while the pack has none, as now); the client runs under Xvfb when `xvfb-run` exists
+   (`sudo apt install xvfb`);
 4. fails on a non-zero exit, a missing self-test report, a crash report, a jar that was not loaded, or an ERROR or
    FATAL log line that `ALLOWED_ERRORS` in `packboot.py` does not explain.
 

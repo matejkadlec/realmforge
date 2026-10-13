@@ -12,7 +12,7 @@ the Windows-WSL file bridge makes Gradle many times slower.
 
 | Tool | Install |
 | --- | --- |
-| Java 21 (Temurin) | [SDKMAN](https://sdkman.io): `curl -s "https://get.sdkman.io" \| bash`, then `sdk install java 21.0.12+1.1-tem` |
+| Java 25 (Temurin) | [SDKMAN](https://sdkman.io): `curl -s "https://get.sdkman.io" \| bash`, then `sdk install java 25.0.4-tem` (and `sdk default java 25.0.4-tem`) |
 | Python 3.12+ and uv | [uv](https://docs.astral.sh/uv/): `curl -LsSf https://astral.sh/uv/install.sh \| sh`; uv downloads the pinned Python itself |
 | git, GitHub CLI | usually preinstalled; `gh auth login` once |
 | packwiz | needs Go once: unpack the [Go tarball](https://go.dev/dl/) into `~/.local/share/go`, then `GOBIN=~/.local/bin ~/.local/share/go/bin/go install github.com/packwiz/packwiz@ef87d964f8cbd52b3b13ea42453ef322290e2b9e` |
@@ -21,11 +21,17 @@ SDKMAN adds itself to `~/.bashrc`. Scripts and non-interactive shells need
 `source ~/.sdkman/bin/sdkman-init.sh` first.
 
 **Which Java runs Gradle.** `gradlew` starts on whatever Java `JAVA_HOME` or `PATH` gives it (17 or newer). The
-Gradle daemon, which compiles the build scripts and runs the build, always runs on Java 21:
-`gradle/gradle-daemon-jvm.properties` (written by `./gradlew updateDaemonJvm --jvm-version=21`) makes Gradle pick an
-installed Java 21 or download Temurin 21 into `~/.gradle/jdks`. Without it, a newer default Java (26, say) fails
-before configuration with `Unsupported class file major version 70`, because Gradle 9.2.1 runs only on Java 17 to
-25. The mod's own toolchain (`java.toolchain` in `*/build.gradle`) is Java 21 as well.
+Gradle daemon, which compiles the build scripts and runs the build, always runs on Java 25:
+`gradle/gradle-daemon-jvm.properties` (written by `./gradlew updateDaemonJvm --jvm-version=25`) makes Gradle pick an
+installed Java 25 or download it into `~/.gradle/jdks` through the foojay resolver. Without it, a newer default Java
+(26, say) fails before configuration with `Unsupported class file major version 70`, because Gradle 9.2.1 runs only
+on Java 17 to 25. The mod's own toolchain (`java.toolchain` in `*/build.gradle`) is Java 25 as well: Minecraft 26.1
+runs on it ([ADR 0026](decisions/0026-platform-minecraft-26-1-2-neoforge.md)).
+
+**Which Java runs our tools.** `uv run rf ids vanilla` (the vanilla data generator) and `uv run rf pack-boot` (the
+NeoForge installer, the server and the client) start Java themselves, from `JAVA_HOME` or `PATH`, and need Java 25;
+the pack boot stops with a clear message on an older one. With SDKMAN's default at 25 that just works; Gradle's own
+download in `~/.gradle/jdks` also serves: `JAVA_HOME=$(ls -d ~/.gradle/jdks/*25*/ | head -1) uv run rf pack-boot`.
 
 ## 2. First build
 
@@ -44,7 +50,7 @@ decompiled Minecraft + NeoForge sources into `build/mc-sources/`.
 ## 3. The dev client (`runClient`)
 
 `./gradlew runClient` starts a dev client with the core mod and the QA mod, so the `/qa` commands work. Besides
-ours, only playerAnimator (a QA mod dependency) and Yeetus Experimentus are loaded. Its game directory is
+ours, only Player Animation Library (a QA mod dependency) and Yeetus Experimentus are loaded. Its game directory is
 `run/client` in the checkout (saves, options, logs). Playtests run it on Windows (3.2), where mouse look works; in
 WSL it is good only for "does it load" checks (3.3).
 
@@ -81,8 +87,8 @@ The Windows client has native graphics and working mouse look, and unlike Prism 
 It needs its own clone on the Windows file system. Never build the WSL checkout from Windows (`\\wsl$\...`), and
 never a Windows folder from WSL (`/mnt/c/...`).
 
-Once, in PowerShell, with [Git for Windows](https://git-scm.com/download/win) and a JDK installed (Temurin 21 from
-[adoptium.net](https://adoptium.net/); any Java 17 or newer starts Gradle, and the daemon finds or downloads Java 21
+Once, in PowerShell, with [Git for Windows](https://git-scm.com/download/win) and a JDK installed (Temurin 25 from
+[adoptium.net](https://adoptium.net/); any Java 17 or newer starts Gradle, and the daemon finds or downloads Java 25
 by itself, see [section 1](#1-tools-in-wsl-no-sudo-needed)):
 
 ```powershell
@@ -134,11 +140,11 @@ there while the game runs. The handoff gives the commands
   - `Failed to load library flite` with a stack trace: the narrator; WSL has no `libflite.so`.
   - `Error starting SoundSystem` and `Failed to open OpenAL device`, plus ALSA lines in the console: WSL has no
     audio device.
-  - `Ambiguity between arguments [teleport, ...]`: vanilla's command tree, logged in dev environments.
-  - `Missing sound for event: minecraft:item.goat_horn.play` (and `minecraft:entity.goat.screaming.horn_break`):
-    vanilla.
-  - `Assets URL ... uses unexpected schema`: the NeoForge dev environment.
-  - `Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2`: vanilla.
+  - `Ambiguity between arguments [teleport, ...]` (also `[time, ...]`, `[waypoint, ...]`): vanilla's command tree,
+    logged in dev environments.
+  - `neoforge:pipeline/item_cutout_unlit shader program does not use sampler Sampler2` (and
+    `item_translucent_unlit`): NeoForge's render pipelines.
+  - `Ignoring chat session from Dev due to missing Services public key`: only in the offline `Dev` profile.
 - **Cast screenshots without input.** `REALMFORGE_QA_CAST_SHOTS=<label> ./gradlew runClient` makes the QA mod
   create a superflat world from the title screen, run `/qa cast`, save the cast pose and quit, about 50 seconds
   after the title screen (`-PwithBetterCombat` adds the Better Combat set). It shoots six views (looking level,
@@ -157,8 +163,9 @@ The modpack lives in `pack/` as packwiz metadata. Prism downloads the mods itsel
 every launch, so the instance always matches the repository.
 
 1. Install [Prism Launcher](https://prismlauncher.org/) on Windows and sign in with your Microsoft account.
-2. **Add Instance** → Vanilla **1.21.1**, name it `Realmforge`. Then **Edit** → **Version** → **Install Loader** →
-   **NeoForge 21.1.259** (the exact version from `pack/pack.toml`).
+2. **Add Instance** → Vanilla **26.1.2**, name it `Realmforge`. Then **Edit** → **Version** → **Install Loader** →
+   **NeoForge 26.1.2.116** (the exact version from `pack/pack.toml`). An instance from before the port (1.21.1)
+   is best replaced by a new one: its old mod jars and configs do not fit 26.1.2.
 3. Download `packwiz-installer-bootstrap.jar` from
    [packwiz-installer-bootstrap releases](https://github.com/packwiz/packwiz-installer-bootstrap/releases) and put
    it into the instance's game folder (**Folder** button → `minecraft`, called `.minecraft` in older instances).
@@ -168,8 +175,7 @@ every launch, so the instance always matches the repository.
      `"$INST_JAVA" -jar packwiz-installer-bootstrap.jar http://localhost:8080/pack.toml`
    - from GitHub (what is on `master`):
      `"$INST_JAVA" -jar packwiz-installer-bootstrap.jar https://raw.githubusercontent.com/matejkadlec/realmforge/master/pack/pack.toml`
-5. Launch. The installer window lists the mods it downloads. On the first install it asks about optional mods:
-   **Quark** is optional and off by default.
+5. Launch. The installer window lists the mods it downloads. The pack has no optional mods at the moment.
 6. Install our own mod into the instance (from WSL). Put the instance's mods folder into
    `~/.gradle/gradle.properties` once:
 
@@ -184,7 +190,7 @@ every launch, so the instance always matches the repository.
 7. Shaders: put [Complementary Shaders](https://www.complementary.dev/shaders/) into the instance's
    `shaderpacks/` folder and enable it in Iris's video settings.
 
-Tip: Prism's **Edit** → **Settings** → **Java** can download a Java 21 runtime for the instance automatically.
+Tip: Prism's **Edit** → **Settings** → **Java** can download a Java 25 runtime for the instance automatically.
 
 ## 5. Claude Code
 
@@ -228,7 +234,11 @@ Cloud sessions do not have this server, so texture batches run in a local sessio
 ### Cloud sessions
 
 Cloud sessions (claude.ai/code, or a cloud session started from the desktop app) run in a fresh container with
-Java 21 and uv preinstalled; there is no SDKMAN and `JAVA_HOME` is already set.
+Java 21 and uv preinstalled; there is no SDKMAN and `JAVA_HOME` is already set. Since the port to 26.1.2 the build
+needs Java 25: Gradle downloads it for the daemon and the toolchains through the foojay resolver
+(`api.foojay.io`, then the JDK archive), which a cloud session has not tried yet. If the proxy refuses those hosts,
+the warm-up log names them; add them to the environment's network access. `rf ids vanilla` and `rf pack-boot` need
+`JAVA_HOME` pointed at that Java 25 (`~/.gradle/jdks/...`).
 
 `.claude/settings.json` runs `.claude/hooks/cloud-warmup.sh` at SessionStart: `--env` on every SessionStart, the
 warm-up only at `startup` and `resume` (not after `/clear`, compaction or a fork, so it never starts mid-session
@@ -262,7 +272,7 @@ are unaffected.
     before every run and starts Gradle only once the warm-up is no longer running; agents run it themselves before
     any Gradle command outside the queue and after a resume (rule in `CLAUDE.md`).
 - The environment's network access (environment settings → **Network access**) must allow the default package
-  managers plus `downloads.gradle.org`; NeoForge, Parchment and Mojang hosts were reachable without extra
+  managers plus `downloads.gradle.org`; NeoForge and Mojang hosts were reachable without extra
   entries. A blocked host fails with `403` / `CONNECT tunnel failed`; `curl -sS "$HTTPS_PROXY/__agentproxy/status"`
   lists the recent denials.
 - The environment's setup script (environment settings) provisions tools only. It runs before Claude Code launches
