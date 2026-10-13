@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import html
+import json
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -136,7 +137,8 @@ def review_text(decisions: dict[str, str]) -> str:
         "# Room gallery decisions (rf rooms gallery, then rf rooms review): keep or reject, by room path below",
         "# this folder. The import (A4c) drops rejected rooms; the generator (A4d) freezes a kept seed.",
     ]
-    lines += [f"{key}: {decisions[key]}" for key in sorted(decisions)]
+    # Keys are quoted (as JSON strings, which YAML reads): a room named "hall #2" or "null" stays a plain name.
+    lines += [f"{json.dumps(key, ensure_ascii=False)}: {decisions[key]}" for key in sorted(decisions)]
     return "\n".join(lines) + "\n"
 
 
@@ -261,7 +263,7 @@ _JS = """
       const value = picks[card.dataset.key];
       if (value) card.dataset.decision = value; else delete card.dataset.decision;
     }
-    const lines = Object.keys(picks).sort().map((k) => k + ": " + picks[k]);
+    const lines = Object.keys(picks).sort().map((k) => JSON.stringify(k) + ": " + picks[k]);
     text.textContent = lines.length ? lines.join("\\n") : "No decisions yet.";
     try { localStorage.setItem(KEY, JSON.stringify(picks)); } catch (e) { /* the text still shows */ }
   };

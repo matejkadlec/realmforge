@@ -128,7 +128,8 @@ Mesa's software driver lavapipe (package `mesa-vulkan-drivers`,
 [dev setup](../docs/dev-setup.md#1-tools-in-wsl-no-sudo-needed)).
 Three spike rooms take about 3 seconds, the first run about 5 (the jar download).
 
-On the page, choose Keep or Reject per room and copy the decisions (YAML, one `<room>: keep|reject` per line)
-into the session. **`rf rooms review DIR`** merges them (standard input, or `--from FILE`) into `DIR/review.yaml`,
-the record the import (A4c) and the room generator (A4d) act on: rejected imports are dropped, a kept candidate's
-seed is frozen. The next gallery starts from those decisions; `rf validate` checks that every key names a room.
+On the page, choose Keep or Reject per room and copy the decisions (YAML, one `"<room>": keep|reject` per line, the
+name quoted) into the session. **`rf rooms review DIR`** merges them (standard input, or `--from FILE`) into
+`DIR/review.yaml`, the record the import (A4c) and the room generator (A4d) act on: rejected imports are dropped, a
+kept candidate's seed is frozen. The next gallery starts from those decisions; `rf validate` checks that every key
+names a room.

@@ -102,8 +102,22 @@ def test_review_merges_decisions(tmp_path: Path) -> None:
     decisions, changed = gallery.merge_review(rooms, "spike/corridor: keep\nspike/start: keep\n")
     assert changed == 1
     text = (rooms / "review.yaml").read_text(encoding="utf-8")
-    assert text.endswith("spike/corridor: keep\nspike/start: keep\n")
+    assert text.endswith('"spike/corridor": keep\n"spike/start": keep\n')
     assert text.startswith("# Room gallery decisions")
+
+
+def test_review_keys_with_yaml_syntax_survive(tmp_path: Path) -> None:
+    # Any folder works, so room names are not always snake_case: these break as plain YAML keys.
+    names = ["hall #2", "null", "123", "a: b"]
+    for name in names:
+        (tmp_path / f"{name}.nbt").write_bytes(room_structure(SPIKE_ROOMS["start"]))
+    decisions = dict.fromkeys(names, "keep")
+    pasted = gallery.review_text(decisions)  # the same form the page's copy button writes
+    assert gallery.parse_decisions(pasted, "pasted") == decisions
+    assert gallery.merge_review(tmp_path, pasted)[0] == decisions
+    assert gallery.read_review(tmp_path) == decisions
+    page = gallery.render_page("Rooms", gallery.collect(tmp_path), {})
+    assert 'JSON.stringify(k) + ": "' in page
 
 
 @pytest.mark.parametrize(
