@@ -14,9 +14,9 @@
 - **Realmforge** is the world, and its name is its history: it was forged. Long ago its makers, the
   **Gatewrights**, split a world the **Void** was eating into separate **realms**, each forged around one element,
   and chained them in a line between the Overworld and the Void.
-- **The Chain of Seals** keeps that line: every realm is sealed, and the shard that forges the next realm's
-  **sigil** is held by the current realm's **guardian**. That is why the realms open one by one, in order, and why
-  the Void realm is always the last.
+- **The Chain of Seals** keeps that line: every realm is sealed, and the shard that forges each next realm's
+  **sigil** is held by the **guardian** of the realm before it. That is why the realms open one by one, in order,
+  and why the Void realm is always the last.
 - **The player** is a newcomer whom the **Wayfarers' Lodge**, a society of explorers and scholars, sends to walk
   the chain: earn each realm's passage, pass each guardian's trial, carry each shard onwards.
 - **The finale (proposed, [open question 3](#open-questions))** waits in the Void realm, where the last seal has
@@ -51,7 +51,7 @@ The Gatewrights sealed every realm and made one gate design to open them all. Th
 | --- | --- |
 | A realm's **seal** opens only to its **sigil** | the realm portal opens onto a realm when its sigil is used on the realm selector ([realm portal](../design/realm-portal.md)) |
 | One **gate design** for every realm | one portal frame, with the realm selector as its keystone |
-| Each realm's **guardian** holds the **shard** of the next seal | the main-path boss drops, at 100%, the material for the next realm's sigil (RE-9) |
+| Each realm's **guardian** holds a **shard** for each seal it opens (two when twin realms follow) | the main-path boss drops, at 100%, one material per realm it opens, two for chapter 2 (RE-9, [realm portal](../design/realm-portal.md)) |
 | A sigil is forged from a realm's own ore and the guardian's shard | the next sigil is crafted from the current realm's ore or gem and that drop |
 | The seal knows a traveller by their deeds, not by the sigil in their hand | per-player unlock through the realm's unlock quest; holding someone else's sigil does not let a player through (RLM-128) |
 | **Twin seals:** some realms were forged as a pair, and the next seal needs both shards | a two-realm chapter: the next main-path sigil needs both realms' boss drops |
@@ -89,7 +89,7 @@ needs someone to carry it.
   1. **Overworld (chapter 1, levels 1–5):** learn to fight and cast, build the first gate, earn passage into the
      first realm.
   2. **The stone realm (chapter 1, levels 5–10):** meet the Cairnfolk, open the Gatewrights' catacombs, pass the
-     first guardian's trial and carry its shard home.
+     first guardian's trial and carry its shards home.
   3. **The chain (chapters 2 and later):** each chapter opens the next realm or pair of realms. Each realm shows the
      Void a little closer: its guardian is harder to reason with and its threat a little stranger.
   4. **The Void realm (the last chapter):** the Brink, the realm nearest the Void, where the First Wright went.
@@ -139,9 +139,10 @@ grottos, the same crystal the Gatewrights used to steer light through their vaul
   still obey orders nobody is left to give, and as the seal thins they wake more often, and less kindly. One kind
   fights with its fists and hammers, another chants the old stone-songs (W3's melee and caster archetypes).
 - **The guardian, the Unbroken**, is a colossus of living stone that waits at an altar at the end of the arena
-  halls. It is a trial, not a villain: it fights anyone who would carry the shard further, so that nobody weak ever
-  carries it towards the Void. The **Scribe in the Stone**, a Sealbound Gatewright set into the arena wall, gives a
-  Wayfarer the means to wake it (the item that summons the boss at the altar).
+  halls. It is a trial, not a villain: it fights anyone who would carry its shards further, so that nobody weak ever
+  carries them towards the Void. It holds two, one for each of the twin realms ahead. The **Scribe in the Stone**,
+  a Sealbound Gatewright set into the arena wall, gives a Wayfarer the means to wake it (the item that summons the
+  boss at the altar).
 - **Lore carriers:** inscriptions on catacomb sarcophagi (the lore riddles of the realm design), the Scribe's
   words, and the Cairnfolk's tall tales.
 
@@ -157,8 +158,8 @@ the slag of those forges.
 - **The Gilded** are the Sun Court's servants, who covered themselves in gold to outlast the sealing. They did,
   after a fashion: sand-dry and gold-masked, they still guard the pyramids and raid the oases for what they think is
   theirs.
-- **The guardian** is a great sphinx in its own dungeon, which holds one of the twin shards. Its trial is the
-  realm's riddles as much as its claws.
+- **The guardian** is a great sphinx in its own dungeon, which holds one of the two shards the next seal needs.
+  Its trial is the realm's riddles as much as its claws.
 
 ### The tundra realm: the Rimefields
 
@@ -170,8 +171,8 @@ and it held: ships froze in the lakes mid-voyage and a sea-raiding people slept 
 - **The Thawed** are the raiders under the ice, waking as the seal thins. They are not dead, only very late, and
   they want their fortress, their ships and their sea back. Their nordic fortress and their frozen shipwrecks are
   the realm's dungeons.
-- **The guardian** is the queen of the Thawed in the ice castle, who holds the other twin shard. The two shards
-  together forge the next sigil.
+- **The guardian** is the queen of the Thawed in the ice castle, who holds the other shard that seal needs. The
+  two shards together forge the next sigil.
 
 ### The fire realm: the Forgefire
 
@@ -211,7 +212,7 @@ One line each, for when they are designed:
 - **Underwater:** a realm sunk on purpose, its city kept dry under a bubble that still holds.
 
 A new realm fits the chain when it has: one element (RE-5) and a look of its own (RE-20); a friendly and a hostile
-people; a guardian holding the next shard; and a reason the Gatewrights forged it.
+people; a guardian holding the shards of the seals after it; and a reason the Gatewrights forged it.
 
 ## Factions and recurring characters
 
@@ -271,8 +272,8 @@ of the systems M1 builds. The order, the counts and the rewards are Q2's to set.
 | 12 | The Catacombs | the Undervault | clears the catacombs to their treasury | the Gatewrights' dead and their riddles; the arena key lies in the treasury |
 | 13 | The Hewn Awake | the Undervault | defeats the realm's statues | the stone servants wake as the seal thins |
 | 14 | The Scribe in the Stone | the Undervault | enters the arena, receives the summoning item | the Sealbound explains the trial |
-| 15 | The Unbroken | the Undervault | summons and defeats the boss | the guardian's trial; its shard drops |
-| 16 | Home with the Shard | Overworld | brings the shard back | Maren reads the shard: two seals ahead, sun and frost. The chapter advancement raises the level cap |
+| 15 | The Unbroken | the Undervault | summons and defeats the boss | the guardian's trial; its two shards drop, one for each twin seal ahead |
+| 16 | Home with the Shards | Overworld | brings the shards back | Maren reads the shards: two seals ahead, sun and frost. The chapter advancement raises the level cap |
 
 - **Givers:** the quest book speaks in Maren's voice (her notes and letters), and in the Undervault in Torva's and
   the Scribe's. The beats need no NPC entity: where M1 has none, the same lines come from the quest book.
@@ -294,7 +295,7 @@ Decided rules that a line of lore makes feel natural. Texts may use these lines;
 | Sigils are never used up; one sigil opens any number of portals (RLM-128) | a sigil is a key, not a toll |
 | Unlocks are per player; a sigil without the player's own unlock does nothing (RLM-128) | the seal knows a traveller by their deeds |
 | Only players travel through realm portals (RLM-128, "for now") | the gates pass a living traveller and what they carry, nothing that walks or drifts on its own |
-| The next sigil is crafted from the current realm (RE-9) | the guardian holds the shard of the next seal |
+| The next sigil is crafted from the current realm (RE-9) | the guardian holds the shards of the seals after it |
 | No flying bosses (vision) | the forge-drakes' iron wings are too heavy to fly |
 | Every realm has its own light (RE-18) | the Gatewrights forged light into every realm, the Brink's violet glow included |
 
@@ -319,8 +320,8 @@ The outline forces none of these; each is decided elsewhere, and the lore follow
 For Matěj; each has a proposal so writing can go on.
 
 1. **Approve the outline:** the Gatewrights split the world into realms chained against the Void; sigils open
-   seals; each guardian is a trial that holds the next seal's shard; the Wayfarers' Lodge sends the player along
-   the chain.
+   seals; each guardian is a trial that holds the shards of the seals after it; the Wayfarers' Lodge sends the
+   player along the chain.
 2. **Names:** Realmforge, the Gatewrights, the Chain of Seals, the Wayfarers' Lodge, Maren Vell, Torva Flintmark,
    the Cairnfolk, the Hewn, the Unbroken, the Scribe in the Stone and the other peoples in the tables. Realm names:
    proposed the Undervault, the Sunwastes, the Rimefields, the Forgefire and the Brink for players, with the
