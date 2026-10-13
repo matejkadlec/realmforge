@@ -262,6 +262,21 @@ update checks (`curseupdate.com`, `update.serilum.com`, `updates.blamejared.com`
 list (`mirrors.neoforged.net`). The dedicated server fetches Mojang's public key without any proxy
 (`Proxy.NO_PROXY`), which the container cannot resolve; the server's allowlist in `packboot.py` explains that line.
 
+The room gallery (`uv run rf rooms gallery`, [tools/README](../tools/README.md#rooms)) needs Mesa's Vulkan software
+driver, which the cloud image lacks: it has the Vulkan loader (`libvulkan1`) but no `/usr/share/vulkan/icd.d/`. The
+session runs as root and installs the driver itself:
+
+```bash
+apt-get update && apt-get install -y mesa-vulkan-drivers
+```
+
+That took 11 seconds when RLM-141 checked it (2026-10-13): a 17.5 MB download from `archive.ubuntu.com` and
+`security.ubuntu.com`, the default package manager hosts. The first gallery run then downloaded the client jar from
+`piston-meta.mojang.com` and `piston-data.mojang.com`, which the agent proxy allowed, and rendered the three spike
+rooms in about 7 seconds, the download included. The container is new in every session, so a session that renders
+rooms installs the driver again. The warm-up leaves it out (98.5 MB on disk that most sessions never use); an
+environment whose sessions render rooms often can run the same command in its setup script (environment settings).
+
 `.claude/settings.json` runs `.claude/hooks/cloud-warmup.sh` at SessionStart: `--env` on every SessionStart, the
 warm-up only at `startup` and `resume` (not after `/clear`, compaction or a fork, so it never starts mid-session
 next to the agent's own Gradle runs). Both exit at once unless `CLAUDE_CODE_REMOTE` is `true`, so local sessions
