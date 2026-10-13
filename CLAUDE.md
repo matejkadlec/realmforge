@@ -85,6 +85,9 @@ uv run rf ids vanilla                     # re-extract the vanilla ID universe (
 uv run rf pack-boot                       # boot the whole pack + mod/build/libs jar on a server and a client
 uv run rf art clean SRC DST               # snap a generated texture to the grid and art/palette/realmforge.gpl
 uv run rf art gallery DIR                 # review gallery for DIR/<subject>/<candidate>.png -> .cache/art/
+uv run rf rooms import SRC --to DIR       # .nbt/.schem/.litematic -> rooms with draft sidecars (tools/README.md)
+uv run rf rooms gallery [DIR]             # render rooms (default content/rooms) -> .cache/rooms/gallery/ (Vulkan)
+uv run rf rooms review DIR                # merge decisions copied from the gallery into DIR/review.yaml
 
 ./gradlew build                           # compile both mods + JUnit
 ./gradlew runGameTestServer               # headless GameTests; exit code != 0 on failure
@@ -92,6 +95,7 @@ uv run rf gametest-log                    # after runGameTestServer: exit 1 on d
 ./gradlew runClient                       # dev client with core + QA mod, Matěj's account (DevLogin), run/client;
                                           # playtests run it from his Windows clone (docs/dev-setup.md, 3.2)
 ./gradlew runClient -PwithBetterCombat    # the same plus Better Combat (ADR 0020); /qa cast <ticks> in game
+./gradlew runClient -PofflineClient       # the offline `Dev` player, no login prompt: agents' screenshot runs
 ./gradlew runServer                       # dev dedicated server (run/server; accept run/server/eula.txt once)
 ./gradlew :mod:extractMinecraftSources    # decompiled MC + NeoForge sources -> build/mc-sources/
 ./gradlew :mod:installToPrism             # copy the jar into the Prism instance (see docs/dev-setup.md)

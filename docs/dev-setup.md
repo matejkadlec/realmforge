@@ -20,6 +20,12 @@ the Windows-WSL file bridge makes Gradle many times slower.
 SDKMAN adds itself to `~/.bashrc`. Scripts and non-interactive shells need
 `source ~/.sdkman/bin/sdkman-init.sh` first.
 
+**The room gallery's renderer** (`uv run rf rooms gallery`, [tools/README](../tools/README.md#rooms)) draws on
+Vulkan, and in WSL without a GPU on Mesa's software driver lavapipe, from the package `mesa-vulkan-drivers`. Ubuntu
+on WSL usually has it already: `ls /usr/share/vulkan/icd.d/lvp_icd.json` finds it. Otherwise it is the one install
+here that needs sudo: `sudo apt install mesa-vulkan-drivers`. Without it the gallery stops with a message naming the
+package.
+
 **Which Java runs Gradle.** `gradlew` starts on whatever Java `JAVA_HOME` or `PATH` gives it (17 or newer). The
 Gradle daemon, which compiles the build scripts and runs the build, always runs on Java 25:
 `gradle/gradle-daemon-jvm.properties` (written by `./gradlew updateDaemonJvm --jvm-version=25`) makes Gradle pick an

@@ -12,6 +12,9 @@ uv run rf pack-boot       # boot the whole pack plus mod/build/libs' jar on a se
 uv run rf gametest-log    # after ./gradlew runGameTestServer: exit 1 on data loading errors in its log
 uv run rf art clean SRC DST   # snap a generated texture to the 16x16 grid and the project palette
 uv run rf art gallery DIR     # review gallery for DIR/<subject>/<candidate>.png (.cache/art/)
+uv run rf rooms import SRC... --to DIR [--rules FILE]  # .nbt/.schem/.litematic -> rooms with draft sidecars
+uv run rf rooms gallery [DIR]  # render the rooms below DIR (default content/rooms) -> .cache/rooms/gallery/
+uv run rf rooms review DIR     # merge decisions pasted from the gallery (stdin or --from) into DIR/review.yaml
 uv run pytest             # tests
 uv run ruff check && uv run ruff format --check
 ```
@@ -23,8 +26,9 @@ uv run ruff check && uv run ruff format --check
 | `realmforge_tools/validate.py` | own ids and references against the ID universe (steps 2-3) |
 | `realmforge_tools/id_universe.py`, `vanilla.py` | the ID universe and the vanilla extractor |
 | `realmforge_tools/generate/` | generators; `generate_all` + `sync` own the generated directories; `datapack.py` writes every type in `DATAPACK_TYPES` as datapack registry entries (translation keys, unit conversion); `texts.py` writes the `GeneratedTexts` key constants and `lang.py` every locale's lang file |
-| `realmforge_tools/formats/` | deterministic PNG, NBT, gzip/zlib and JSON writers; a PNG reader for generator output |
+| `realmforge_tools/formats/` | deterministic PNG, NBT, gzip/zlib and JSON writers; a PNG reader for generator output; an NBT reader (every tag type, the arrays included) |
 | `realmforge_tools/art/` | texture pipeline ([ADR 0023](../docs/decisions/0023-texture-generator.md)): palette, `rf art clean`, `rf art gallery` |
+| `realmforge_tools/rooms/` | dungeon rooms ([below](#rooms)): structure templates, the source readers, `rf rooms import`, the checks, the renderer and `rf rooms gallery` |
 | `realmforge_tools/packboot.py` | `rf pack-boot`: installs and boots the pack with NeoForge's self tests ([below](#pack-boot)) |
 | `realmforge_tools/gamelog.py` | NeoForge log parsing shared by `rf pack-boot` and `rf gametest-log` ([below](#gametest-log)) |
 | `realmforge_tools/client_isolation.py` | the import check that keeps client classes under `client/` (architecture 18) |
@@ -68,3 +72,60 @@ the GameTests still pass. `uv run rf gametest-log` (CI's gradle job, after the G
 `run/gametest/logs/latest.log` and fails on every ERROR or FATAL line that `GAMETEST_ALLOWED_ERRORS` in `gamelog.py`
 does not explain, on loot table validation warnings, and on a log without the "All N required tests passed" line.
 `--log` checks another file.
+
+## Rooms
+
+Dungeon rooms are structure templates in `content/rooms/` with a YAML sidecar each
+([architecture 15.4](../docs/architecture.md#154-rooms),
+[ADR 0028](../docs/decisions/0028-dungeon-rooms-generated-or-imported.md), [content/README.md](../content/README.md)).
+`rf validate` checks them and `rf gen` copies each one, normalized, to `data/realmforge/structure/rooms/<id>.nbt` in
+the jar.
+
+**`rf rooms import SRC... --to DIR`** turns room files into rooms: vanilla structure templates (`.nbt`), Sponge
+schematics (`.schem`, versions 1 to 3, as WorldEdit saves them) and Litematica schematics (`.litematic`; several
+regions merge into one room). A folder imports every room file below it, keeping its subfolders. Each file becomes
+`DIR/<name>.nbt`, the normalized template (blocks sorted, keys sorted, stored deflate, so equal rooms give equal
+bytes), and `DIR/<name>.yaml`, a draft sidecar that records the source file, its format and its data version and
+leaves `pools` and `tags` empty for retagging (A4c). A re-import keeps the sidecar's pools, tags and weight. A room
+is written only when it validates; otherwise the command lists the problems and writes nothing for that room.
+Third-party rooms go to `content/rooms/third_party/<source>/`, next to the source's `LICENSE` and `NOTICE`.
+
+The template keeps the data version its source states, and the game upgrades it from there on load. An id the ID
+universe lacks, a source's own block or a vanilla block renamed since (`minecraft:grass` became
+`minecraft:short_grass`), is mapped in a rules file (`--rules`, YAML):
+
+```yaml
+blocks:               # source block -> block state; a bare id keeps the source's properties, id[...] replaces them
+  dungeonz:dungeon_bricks: minecraft:stone_bricks
+  dungeonz:dungeon_stairs: minecraft:stone_brick_stairs
+  dungeonz:pillar: minecraft:polished_andesite[]
+block_entities:       # source block entity -> ours, data kept; a remapped block's data is dropped otherwise
+  dungeonz:dungeon_chest: minecraft:chest
+connectors:           # jigsaw name and target -> our connector names
+  stonevaults:door: realmforge:door
+pools:                # jigsaw pool -> ours
+  stonevaults:rooms: realmforge:rooms/stone
+entities:
+  keep: [minecraft:armor_stand]   # every other entity is dropped
+```
+
+The import report names every remap, every dropped entity and block entity, and the jigsaw names and pools no rule
+mapped. The schematic readers live in `rooms/sources.py`: nucleation 0.10.24 reads both formats too, but it writes
+only the tight box around a room's non-air blocks, so air-only layers at the edge vanish and the blocks shift
+(RLM-119).
+
+**`rf rooms gallery [DIR]`** renders every `*.nbt` below `DIR` (default `content/rooms/`; any folder works, such
+as the spike rooms in `qa-mod/src/generated/resources/data/realmforge_qa/structure/spike/` or a folder of
+generated seed candidates) from four views: outside, cut `--cut` blocks above the bottom (default 5) from two
+corners, and a plan of the cut. It writes the PNGs and `index.html` to `.cache/rooms/gallery/<folder>/`
+(replaced on every run). The renderer is [nucleation](https://github.com/Schem-at/Nucleation) (MIT, pinned in
+`pyproject.toml`), with block models and textures from the official client jar, which the first run downloads into
+`.cache/vanilla/<version>/` (sha1-verified) and which is never committed. It draws on Vulkan: without a GPU it needs
+Mesa's software driver lavapipe (package `mesa-vulkan-drivers`,
+[dev setup](../docs/dev-setup.md#1-tools-in-wsl-no-sudo-needed)).
+Three spike rooms take about 3 seconds, the first run about 5 (the jar download).
+
+On the page, choose Keep or Reject per room and copy the decisions (YAML, one `<room>: keep|reject` per line)
+into the session. **`rf rooms review DIR`** merges them (standard input, or `--from FILE`) into `DIR/review.yaml`,
+the record the import (A4c) and the room generator (A4d) act on: rejected imports are dropped, a kept candidate's
+seed is frozen. The next gallery starts from those decisions; `rf validate` checks that every key names a room.

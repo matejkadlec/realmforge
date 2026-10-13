@@ -993,25 +993,37 @@ room reachable). A QA command renders a layout preview for review.
 Rooms are generated or imported; nobody has to build one by hand
 ([ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)).
 
-- **Format:** structure NBT in `content/rooms/` with a small YAML sidecar (tags, pools, weight). Connectors are
-  vanilla jigsaw blocks, so the same rooms work in world structures later. Rooms are the second exception to
-  YAML-only content, after worldgen JSON (ADR 0014 amends
-  [ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)).
+- **Format:** structure NBT in `content/rooms/` with a small YAML sidecar (tags, pools, weight, and the source of
+  an imported room). Connectors are vanilla jigsaw blocks, so the same rooms work in world structures later. Rooms
+  are the second exception to YAML-only content, after worldgen JSON (ADR 0014 amends
+  [ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)). A room's id is its path below
+  `content/rooms/` (`third_party/stonevaults/hall_a`); `rf gen` writes the template, normalized, to
+  `data/realmforge/structure/rooms/<id>.nbt`, so the game knows it as the structure `realmforge:rooms/<id>`
+  (`tools/realmforge_tools/generate/rooms.py`). A template keeps the data version it was saved with, and vanilla
+  upgrades it from there when it loads it (`TemplateSource#readStructure`), so imported rooms from older versions
+  stay as they were saved.
 - **Generated rooms** (A4d): room specs in YAML (kind, a footprint up to 16×16, height, connector sides, features,
   a seed, blocks named by neutral roles that themes swap) become structure NBT through the room generator in
   `rf gen`, with style rules for walls, floors, stairs and light, and jigsaws and markers from the connectors. The
   NBT is generated output, never edited by hand.
-- **Imported rooms** (A4b, A4c): MIT, CC0 and LGPL-3.0 rooms from other mods, taken in by `rf rooms import`,
-  remapped to vanilla blocks or neutral roles and retagged into our slot types. Each source has its own folder,
-  `content/rooms/third_party/<source>/`, with its `LICENSE` and a `NOTICE`. The folder is a license boundary, not a
-  pool, so the sidecars name the pools. The jar keeps the folder (LGPL-3.0 rooms stay apart from our assets) and
-  carries the notices under `META-INF/third_party/<source>/`. Vanilla templates are referenced by id, never copied.
+- **Imported rooms** (A4b, A4c): MIT, CC0 and LGPL-3.0 rooms from other mods, taken in by `rf rooms import` from
+  `.nbt`, `.schem` or `.litematic` files with a rules file that remaps blocks, block entities, jigsaw names and
+  pools and keeps or drops entities ([tools/README](../tools/README.md#rooms)), then retagged into our slot types.
+  Each source has its own folder, `content/rooms/third_party/<source>/`, with its `LICENSE` and a `NOTICE`. The
+  folder is a license boundary, not a pool, so the sidecars name the pools. The jar keeps the folder (LGPL-3.0
+  rooms stay apart from our assets) and carries the notices under `META-INF/third_party/<source>/`. Vanilla
+  templates are referenced by id, never copied.
 - **Hand-built rooms** stay possible: built with structure blocks and saved as NBT with a sidecar like any other.
-- **Review:** the room gallery (A4e) renders rooms headless; Matěj keeps or rejects them in batches, and a kept
-  generated candidate's seed is frozen.
-- **Validation:** size limits, connectors on the room's boundary, known markers, only blocks the themes can swap
-  and only ids inside the ID universe (an imported room's own blocks are remapped). Generated rooms are also
-  checked for reachability between their connectors and for headroom.
+- **Review:** the room gallery (A4e, `rf rooms gallery`) renders rooms headless through nucleation, with the client
+  jar's models and textures read at runtime; Matěj keeps or rejects them in batches. `rf rooms review` records the
+  decisions in a `review.yaml` in the reviewed folder: rejected imports are dropped, and a kept generated
+  candidate's seed is frozen.
+- **Validation:** size limits (48 blocks per axis, a structure block's maximum), connectors on the room's boundary
+  facing out, known markers, only blocks the themes can swap and only ids inside the ID universe (an imported
+  room's own blocks are remapped), and `LICENSE` and `NOTICE` next to third-party rooms. `rooms/check.py` checks the
+  size, the ids and the connectors; markers come with the dungeon framework (W4) and the swappable blocks with the
+  themes of the room generator (A4d). Generated rooms are also checked for reachability between their connectors
+  and for headroom.
 
 ### 15.5 Instances
 
