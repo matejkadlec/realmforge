@@ -21,6 +21,13 @@ public final class StatsAttachments {
             ATTACHMENTS.register("level", () -> AttachmentType.builder(() -> EntityLevel.DEFAULT)
                     .serialize(EntityLevel.CODEC.fieldOf("value")).copyOnDeath().sync(EntityLevel.STREAM_CODEC).build());
 
+    /**
+     * {@code realmforge:stat_tracker}: when {@link CharacterStats} last recomputed a player's stat modifiers and what
+     * it owes the player's health. Transient (not saved, synced or copied), so every new player entity starts fresh.
+     */
+    static final DeferredHolder<AttachmentType<?>, AttachmentType<CharacterStats.Tracker>> STAT_TRACKER =
+            ATTACHMENTS.register("stat_tracker", () -> AttachmentType.builder(CharacterStats.Tracker::new).build());
+
     private StatsAttachments() {
     }
 
