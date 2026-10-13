@@ -4,19 +4,27 @@ The guide UI spike (RLM-127, input for the guide decision RLM-116) asked whether
 produce a usable pixel-art version of the guide's "modern fantasy hybrid" look before anything is built: a dark
 navy/charcoal window, a thin gold ornate border with decorated corners, a gold crest centered on the top edge, and
 small gold line icons. It decides only the generator style. RD Pro was not tried: Matěj decides on Pro only if both
-Fast and Plus look bad. No ADR yet: Matěj picks from the shortlist below.
+Fast and Plus look bad. No ADR yet.
+
+**Round 1 outcome (Matěj, 2026-10-12):** the five RD Fast icons are fine. He rejected every frame: none looks close
+to the mockup, the corners are too fancy, the border is too thick, the panel is royal blue where the mockup is far
+darker, and the gold reads as bronze or even wood. The RD Fast frame guided by the mockup's corner came closest.
+[Round 2](#round-2-rlm-131) (RLM-131) answers that with four RD Fast frames; Plus and Pro were not tried. Matěj may
+pick one to remake with RD Pro.
 
 - `reference/mockup.png`: Matěj's mockup (generated with ChatGPT). `reference/corner-crop.png`: its top-left
   window corner, cropped at (192, 58), 136x136, composited on white, scaled to 256x256 (bilinear) and snapped to the
   project palette. It was the `input_image` for the two corner-guided frames.
-- `candidates/<subject>/<candidate>.png`: the generator output exactly as returned (`frame/`, `icon_*/`), and the
-  derived previews (`preview_nine_slice/`, `preview_stretched/`).
+- `reference/frame-composite.png`, `reference/frame-palette.png`: round 2's `input_image` (a symmetric frame built
+  from the mockup's own parts) and `input_palette` ([Round 2](#round-2-rlm-131)).
+- `candidates/<subject>/<candidate>.png`: the generator output exactly as returned (`frame/`, `frame_r2/`,
+  `icon_*/`), and the derived previews (`preview_nine_slice/`, `preview_stretched/`).
 - `candidates/gallery.yaml`: labels, prompts, seeds and the cost of every image.
 - `cleaned/icon_*.png`: the icons after `uv run rf art clean` (16x16, project palette).
 - Review page: built from `gallery.yaml` with the `rf art gallery` styles and published for Matěj as a private
   artifact. `rf art gallery` itself cannot render this folder ([Pipeline notes](#pipeline-notes)).
 
-## Method (2026-10-12)
+## Method (round 1, 2026-10-12)
 
 - **Window frame:** one prompt for all six frames (in `gallery.yaml`), 256x256, `remove_bg` on, the style's
   automatic prompt expansion left on.
@@ -44,7 +52,7 @@ Fast and Plus look bad. No ADR yet: Matěj picks from the shortlist below.
   mirrored pixel pairs whose colors differ visibly (OKLab distance above 0.05); edge straightness as the spread of
   the outermost opaque column over the middle 60% of each side; the color spread in the central 40% of the panel.
 
-## Results
+## Results (round 1)
 
 | Frame | Look | Closeness to the mockup | Straight edges and symmetry | Cost |
 | --- | --- | --- | --- | --- |
@@ -68,7 +76,7 @@ Fast and Plus look bad. No ADR yet: Matěj picks from the shortlist below.
 **Total spent: 0.42 of the 0.50 USD budget**: 13 images, 0.27 USD for the six frames, 0.15 USD for the five icons.
 The account balance went from 25.02 to 24.60 USD.
 
-## Shortlist
+## Round 1 shortlist
 
 1. **RD Fast, seed 2102:** the closest full frame to the brief: bright gold, decorated corners, a crest, a flat
    navy panel. Cut into a nine-slice sprite with a 40-pixel border and plain edge strips, it tiles cleanly. To fix:
@@ -82,6 +90,50 @@ The account balance went from 25.02 to 24.60 USD.
 The agent's view: RD Fast is enough for the frame. Plus brought no clear gain at twice the price, so neither tier
 looks bad enough to call for Pro. The icons need another approach: `rd_fast__mc_item` makes Minecraft items, not
 line art.
+
+## Round 2 (RLM-131)
+
+**Method (2026-10-13).** Every frame is RD Fast UI Element (`ui_element:rd_flux`) guided by one `input_image`, a
+clean frame built from the mockup instead of a crop of it:
+
+- **The composite** (`reference/frame-composite.png`) is assembled at the mockup's full size, whose window border
+  runs x 213-1459, y 83-884. The left half is built from the mockup's own parts, then mirrored about x 836, so the
+  close button, the sidebar's logo bump and every other one-sided detail are gone. The left half holds:
+  - the top and bottom edges, tiled from the mockup's column at x 650; the left edge, from its row at y 650;
+  - the top-left corner, moved up 11 pixels, because the mockup's sidebar edge sits 11 pixels below the content
+    edge the crest is on. Past x 300 its top line dims, so the straight strip takes over there;
+  - the bottom-left corner, the left diamond stud, and the left halves of the crest and the bottom ornament.
+- **The panel** is the mockup's own `#0a1119`. Every other dark pixel that is neither gold nor the gem gets the
+  same color, so the mockup's header and sidebar tones are gone.
+- **The input** is the composite scaled (area average) to fit 384x272 on white and reduced to 64 colors. The frame
+  takes up 367x264 of it, about 1.4:1 with the crest, and the border rectangle about 1.55:1. Its gold border is 3
+  pixels wide.
+- **The palette** (`reference/frame-palette.png`) has 17 colors: the panel navy, white (the background
+  `remove_bg` takes out), and 15 median-cut colors of the composite's gold, gem and shadow pixels.
+- **Four candidates**, 384x272, `remove_bg`, the same prompt (in `gallery.yaml`):
+  - a: strength 0.45, seed 2201;
+  - b: strength 0.6, seed 2201;
+  - c: strength 0.6, seed 2202;
+  - d: like b, plus the palette as `input_palette`.
+
+**Results.** All four are horizontal frames (about 366x263 on the 384x272 canvas). Each has a 3-pixel border and
+the mockup's near-black navy panel (`#0a1119` to `#0b121a`), and came back with hard alpha. They are close to
+mirror-symmetric: 0.9-1.8% of mirrored pixel pairs differ, against 12-20% in round 1. The 4-pixel spread on the
+sides is the diamond studs. All four rounded the mockup's 45-degree cut corners. Gold is the mean hue and saturation
+of the gold pixels; the composite has 34 degrees and 0.67.
+
+| Frame | Look | Closeness to the mockup | Symmetry | Gold | Cost |
+| --- | --- | --- | --- | --- | --- |
+| a (0.45) | thin gold line, rounded corners with one filigree curl, the crest close to the mockup's shape, side studs, the bottom ornament; the gem turned grey-white | close in shape; slightly bronze | 1.5% differ | 31 degrees, 0.60 | 0.03 USD |
+| b (0.6) | like a, with a sharper crest; the gem is white | further: the most copper of the four | 0.9% differ | 27 degrees, 0.60 | 0.03 USD |
+| c (0.6, other seed) | gold crest with a blue gem, but the corners became filled brown wedges, and a light-blue line runs along the top edge | medium: the crest is right, the corners are not | 1.5% differ | 34 degrees, 0.61 | 0.03 USD |
+| d (0.6, mockup palette) | the brightest gold, the blue gem kept, fine filigree curls at the corners, the panel exactly `#0a1119` | the closest: color, gem and corner flourishes | 1.8% differ | 33 degrees, 0.70 | 0.03 USD |
+
+**Agent's ranking:** d, a, c, b. d is the candidate for the RD Pro remake: the palette held the gold and the navy,
+which round 1 lost. a has the shape closest to the input. Both need their corners cut back to 45 degrees if they
+should match the mockup exactly; Pro could take the composite and the picked frame as its `reference_images`.
+
+**Spent: 0.12 USD** (4 x 0.03). The balance went from 24.60 to 24.48 USD; both rounds together cost 0.54 USD.
 
 ## Pipeline notes
 
