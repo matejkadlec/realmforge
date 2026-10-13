@@ -5,7 +5,7 @@
 # level 1, 15 armor (full iron) blocks 50 % and 28 (diamond with its toughness) 65 %. F5's first numbers, tuned in
 # playtests.
 id: armor_halving
-name: {en_us: "Armor that halves a hit, by attacker level"}
+name: {en_us: Armor Halving}
 points:
   - {level: 1, value: 15}
   - {level: 10, value: 30}
