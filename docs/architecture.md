@@ -174,6 +174,7 @@ io.github.matejkadlec.realmforge
 ├─ dungeon/           dungeon types, planner, layout, builder, instances
 ├─ command/           `/realmforge` operator commands (developer commands live in the QA mod)
 ├─ compat/            optional integrations, one subpackage per mod (client parts: client/compat/)
+├─ mixin/             mixins, the last resort (19.3): the accessor that raises attribute caps
 └─ client/            everything client-only, mirroring the features
    ├─ RealmforgeClient   client entry point
    └─ hud/  screen/  input/  render/  tooltip/  network/  compat/
@@ -600,9 +601,17 @@ Vanilla caps in 26.1.2 (as in 1.21.1) are armor 30, armor toughness 20, max heal
 armor formula never blocks more than 80% (`CombatRules.getDamageAfterAbsorb`). The vision wants armor, toughness
 and health far beyond vanilla, so:
 
-- caps are raised in one place (`stats/AttributeCaps`), by an access transformer on `RangedAttribute#maxValue` or
-  a small mixin, whichever task F4c (RLM-137) proves to work; NeoForge reads both from `neoforge.mods.toml`;
-- armor mitigation uses our own level-aware formula ([9.1](#91-damage-pipeline)).
+- `stats/AttributeCaps` raises those four caps to 100,000 (F4c), on the client and the server alike, as each clamps
+  attribute values itself: a limit against broken numbers, not a balance number. It runs as deferred work of mod
+  construction (`FMLConstructModEvent#enqueueWork`), which FML runs serially after every mod's constructor (the
+  constructors run in parallel), so it never lowers a cap another mod raised further. A `RangedAttribute`'s maximum
+  is a private final field, so the mechanism is a mixin accessor with `@Mutable` (`mixin/RangedAttributeAccessor`,
+  [19.3](#193-mixins-and-access-transformers)); an access transformer would work too.
+- `AttributeCaps.max` reads the cap of any attribute from the attribute itself, and `AttributeCaps.RAISED` lists the
+  raised ones. Our own stats take their caps from `content/stats/` (`max`, `max_percent`), so a stat with a hard cap,
+  such as tenacity (research SP-12), is a content entry, and code asks `AttributeCaps.max` for its cap.
+- Every other cap stays vanilla's: max absorption keeps 2048 even when max health goes past it.
+- Armor mitigation uses our own level-aware formula ([9.1](#91-damage-pipeline)).
 
 ## 9. Combat
 
@@ -1275,8 +1284,10 @@ numbers are content, so they are versioned, validated and tested.
 ### 19.3 Mixins and access transformers
 
 Last resort, only where no event or API exists. Each one sits in `mixin/` (or the access transformer file) with a
-comment saying why, and gets a test. The QA mod has one too, for tests only: `GameTestServerMixin` gives the GameTest
-world the data pack dimensions, which vanilla leaves out ([20](#20-tests-per-layer)).
+comment saying why, and gets a test. A mod lists its mixins in `<modid>.mixins.json`, which `neoforge.mods.toml`
+names under `[[mixins]]`. The core mod's one is `RangedAttributeAccessor`, which raises attribute caps
+([8.4](#84-caps)). The QA mod has one too, for tests only: `GameTestServerMixin` gives the GameTest world the data
+pack dimensions, which vanilla leaves out ([20](#20-tests-per-layer)).
 
 ### 19.4 Optional integrations
 

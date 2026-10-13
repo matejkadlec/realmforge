@@ -28,3 +28,7 @@ type = "required"
 versionRange = "${minecraft_version_range}"
 ordering = "NONE"
 side = "BOTH"
+
+# stats/AttributeCaps raises vanilla's attribute caps through a mixin accessor (architecture 8.4, 19.3).
+[[mixins]]
+config = "realmforge.mixins.json"
