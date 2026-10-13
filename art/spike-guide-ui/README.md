@@ -3,8 +3,9 @@
 The guide UI spike (RLM-127, input for the guide decision RLM-116) asked whether Retro Diffusion Fast or Plus can
 produce a usable pixel-art version of the guide's "modern fantasy hybrid" look before anything is built: a dark
 navy/charcoal window, a thin gold ornate border with decorated corners, a gold crest centered on the top edge, and
-small gold line icons. It decides only the generator style. RD Pro was not tried: Matěj decides on Pro only if both
-Fast and Plus look bad. No ADR yet.
+small gold line icons. It decides only the generator style. Rounds 1 and 2 used RD Fast and RD Plus only, because
+Matěj decides on RD Pro; he later asked for an RD Pro version of round 2's frame d
+([RD Pro version](#rd-pro-version-rlm-134)), which he found worse than RD Fast. No ADR yet.
 
 **Round 1 outcome (Matěj, 2026-10-12):** the five RD Fast icons are fine. He rejected every frame: none looks close
 to the mockup, the corners are too fancy, the border is too thick, the panel is royal blue where the mockup is far
