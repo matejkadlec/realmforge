@@ -82,7 +82,8 @@ The seals are thinning. Gatewright runes in the Overworld ruins have begun to gl
 gates have grown warm to the touch. Maren Vell, the Lodge's archivist, has read the warning the First Wright carved
 into those ruins: _when the gate stones grow warm, the chain is failing; someone must walk it and forge the last
 seal anew._ The Lodge has kept an old stone sigil for generations without knowing what it was. Now it knows, and it
-needs someone to carry it.
+needs someone to carry it. The gate plan also shows how to cut a copy from the relic, so a lost Stone Sigil can
+always be made again (the repeatable quest of the [realm portal spec](../design/realm-portal.md)).
 
 ## The player
 
@@ -270,7 +271,7 @@ of the systems M1 builds. The order, the counts and the rewards are Q2's to set.
 | 6 | Portal Stone | Overworld | crafts Portal Stone | the plan's first page |
 | 7 | The Keystone | Overworld | crafts the realm selector | the gate's heart: a stone that remembers where it leads |
 | 8 | Raise the Gate | Overworld | builds the frame | the first gate raised in an age |
-| 9 | The Stone Sigil | Overworld | finishes the unlock quest and receives the Stone Sigil | the Lodge's old relic turns out to be the first sigil; the seal will know the player now |
+| 9 | The Stone Sigil | Overworld | finishes the unlock quest and receives the Stone Sigil | the Lodge's old relic turns out to be the first sigil; Maren cuts a copy for the player from it (and will again if it is lost); the seal will know the player now |
 | 10 | Below the World | the Undervault | enters the realm, finds a Cairnfolk mine | first arrival; the Cairnfolk are surprised to see anyone from above |
 | 11 | Ore for the Cairnfolk | the Undervault | mines the realm's ores | Torva trades ore for the catacomb key |
 | 12 | The Catacombs | the Undervault | clears the catacombs to their treasury | the Gatewrights' dead and their riddles; the arena key lies in the treasury |
