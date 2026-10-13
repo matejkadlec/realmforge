@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from realmforge_tools.id_universe import IdUniverse
 from realmforge_tools.project import DATA_VERSION
-from realmforge_tools.rooms.structure import JIGSAW, Pos, Structure
+from realmforge_tools.rooms.structure import JIGSAW, Pos, Structure, split_state_text
 
 BLOCK_REGISTRY = "minecraft:block"
 BLOCK_ENTITY_REGISTRY = "minecraft:block_entity_type"
@@ -59,6 +59,16 @@ def check_structure(structure: Structure, universe: IdUniverse) -> list[tuple[st
             unknown.setdefault((BLOCK_ENTITY_REGISTRY, entity_id), []).append(block.pos)
         if block.state.name == JIGSAW:
             problems += _check_jigsaw(block.pos, block.state.get("orientation"), size)
+            final_state = (block.nbt or {}).get("final_state")
+            if isinstance(final_state, str):
+                name = split_state_text(final_state)[0]
+                if not universe.contains(BLOCK_REGISTRY, name):
+                    problems.append(
+                        (
+                            f"jigsaw {_fmt(block.pos)}",
+                            f"final_state names unknown block {name!r}, which the game cannot place{hint}",
+                        )
+                    )
 
     for entity in structure.entities:
         where = f"entity {entity.id or '?'} at {_fmt(entity.block_pos)}"

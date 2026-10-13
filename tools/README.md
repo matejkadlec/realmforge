@@ -110,8 +110,9 @@ entities:
   keep: [minecraft:armor_stand]   # every other entity is dropped
 ```
 
-The import report names every remap, every dropped entity and block entity, and the jigsaw names and pools no rule
-mapped. The schematic readers live in `rooms/sources.py`: nucleation 0.10.24 reads both formats too, but it writes
+`blocks` also applies to the block a jigsaw leaves behind (its `final_state`), and validation checks that block's id
+like any other. The import report names every remap, every dropped entity and block entity, and the jigsaw names
+and pools no rule mapped. The schematic readers live in `rooms/sources.py`: nucleation 0.10.24 reads both formats too, but it writes
 only the tight box around a room's non-air blocks, so air-only layers at the edge vanish and the blocks shift
 (RLM-119).
 

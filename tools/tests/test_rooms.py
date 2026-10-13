@@ -28,6 +28,7 @@ from realmforge_tools.rooms.structure import (
     StructureEntity,
     StructureError,
     read_structure,
+    split_state_text,
     write_structure,
 )
 from realmforge_tools.validate import load_and_validate
@@ -419,6 +420,22 @@ def test_litematic_versions_outside_5_to_7_are_refused(tmp_path: Path, root: dic
         read_source(path)
 
 
+@pytest.mark.parametrize(
+    ("text", "parts"),
+    [
+        ("minecraft:air", ("minecraft:air", "", "")),
+        ("minecraft:chest[facing=north]", ("minecraft:chest", "[facing=north]", "")),
+        (
+            'minecraft:chest[facing=north]{LootTable:"x"}',
+            ("minecraft:chest", "[facing=north]", '{LootTable:"x"}'),
+        ),
+        ('minecraft:barrel{LootTable:"x"}', ("minecraft:barrel", "", '{LootTable:"x"}')),
+    ],
+)
+def test_split_state_text(text: str, parts: tuple[str, str, str]) -> None:
+    assert split_state_text(text) == parts
+
+
 def test_unknown_format_is_refused(tmp_path: Path) -> None:
     path = write(tmp_path / "room.schematic", "x")
     with pytest.raises(StructureError, match="unknown room format"):
@@ -488,6 +505,56 @@ def test_jigsaw_names_and_entities_follow_the_rules() -> None:
     assert "dropped 1 x entity minecraft:zombie" in notes
     _, unmapped = importer.apply_rules(room, importer.ImportRules())
     assert "jigsaw names and pools left as they are: src:door, src:halls" in unmapped
+
+
+def test_jigsaw_final_state_follows_the_block_rules() -> None:
+    def room_with(final_state: str) -> Structure:
+        return small_room(
+            blocks=tuple(
+                replace(b, nbt={**b.nbt, "final_state": final_state})
+                if b.state.name == "minecraft:jigsaw"
+                else b
+                for b in small_room().blocks
+            )
+        )
+
+    rules = importer.ImportRules.model_validate(
+        {
+            "blocks": {
+                "src:fancy_stairs": "minecraft:stone_brick_stairs",
+                "src:pillar": "minecraft:stone_bricks[]",
+            }
+        }
+    )
+
+    def final_state(structure: Structure) -> str:
+        jigsaw = next(b for b in structure.blocks if b.state.name == "minecraft:jigsaw")
+        assert jigsaw.nbt is not None
+        return jigsaw.nbt["final_state"]
+
+    stairs, notes = importer.apply_rules(room_with("src:fancy_stairs[facing=north]{Lock:1b}"), rules)
+    assert final_state(stairs) == "minecraft:stone_brick_stairs[facing=north]{Lock:1b}"
+    assert "remapped 1 x src:fancy_stairs to minecraft:stone_brick_stairs" in notes
+    pillar, _ = importer.apply_rules(room_with("src:pillar[axis=y]"), rules)
+    assert final_state(pillar) == "minecraft:stone_bricks[]"
+    untouched, _ = importer.apply_rules(room_with("minecraft:air"), rules)
+    assert final_state(untouched) == "minecraft:air"
+
+
+def test_unknown_jigsaw_final_state_is_a_problem(repo: RepoPaths) -> None:
+    room = small_room(
+        blocks=tuple(
+            replace(b, nbt={**b.nbt, "final_state": "src:fancy_bricks[x=y]"})
+            if b.state.name == "minecraft:jigsaw"
+            else b
+            for b in small_room().blocks
+        )
+    )
+    (problem,) = check_structure(room, load_vanilla(repo))
+    assert problem == (
+        "jigsaw 4 1 2",
+        "final_state names unknown block 'src:fancy_bricks', which the game cannot place",
+    )
 
 
 def test_rules_file_is_strict(tmp_path: Path) -> None:

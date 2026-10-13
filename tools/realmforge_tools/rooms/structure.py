@@ -62,6 +62,19 @@ class BlockState:
         return dict(self.properties).get(key)
 
 
+def split_state_text(text: str) -> tuple[str, str, str]:
+    """``minecraft:chest[facing=north]{LootTable:"x"}`` -> (``minecraft:chest``, ``[facing=north]``,
+    ``{LootTable:"x"}``): the form a jigsaw's ``final_state`` takes (vanilla parses it with block entity data
+    allowed). Missing parts are empty strings."""
+    name_end = min((i for i in (text.find("["), text.find("{")) if i >= 0), default=len(text))
+    name, rest = text[:name_end], text[name_end:]
+    properties = ""
+    if rest.startswith("["):
+        close = rest.find("]")
+        properties, rest = (rest, "") if close < 0 else (rest[: close + 1], rest[close + 1 :])
+    return name.strip(), properties, rest
+
+
 @dataclass(frozen=True)
 class StructureBlock:
     pos: Pos

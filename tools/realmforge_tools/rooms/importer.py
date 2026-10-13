@@ -43,6 +43,7 @@ from realmforge_tools.rooms.structure import (
     Structure,
     StructureBlock,
     StructureError,
+    split_state_text,
     write_structure,
 )
 from realmforge_tools.schema.room import REVIEW_FILE, RoomDef, RoomSource
@@ -182,7 +183,7 @@ def apply_rules(structure: Structure, rules: ImportRules) -> tuple[Structure, li
             dropped_data[block.state.name] += 1
             data = None
         if state.name == JIGSAW and data is not None:
-            data = _map_jigsaw(data, rules, unmapped_jigsaw)
+            data = _map_jigsaw(data, rules, unmapped_jigsaw, remapped)
         blocks.append(StructureBlock(block.pos, state, data))
 
     kept = tuple(e for e in structure.entities if e.id in rules.entities.keep)
@@ -199,8 +200,19 @@ def apply_rules(structure: Structure, rules: ImportRules) -> tuple[Structure, li
     return replace(structure, blocks=tuple(blocks), entities=kept), notes
 
 
-def _map_jigsaw(data: dict[str, Any], rules: ImportRules, unmapped: set[str]) -> dict[str, Any]:
+def _map_jigsaw(
+    data: dict[str, Any], rules: ImportRules, unmapped: set[str], remapped: Counter[str]
+) -> dict[str, Any]:
+    """The jigsaw's names and pool through ``connectors`` and ``pools``, and the block it leaves behind
+    (``final_state``) through ``blocks``, like any other block."""
     mapped = dict(data)
+    final_state = mapped.get("final_state")
+    if isinstance(final_state, str):
+        name, properties, block_data = split_state_text(final_state)
+        if name in rules.blocks:
+            rule = rules.blocks[name]
+            mapped["final_state"] = rule + block_data if "[" in rule else rule + properties + block_data
+            remapped[name] += 1
     for key in _JIGSAW_NAMES:
         value = mapped.get(key)
         if isinstance(value, str):
