@@ -65,6 +65,17 @@ public record CharacterSheetView(List<Section> left, List<Section> right) {
     private static final List<Holder<Attribute>> COMBAT = List.of(Attributes.MAX_HEALTH, Attributes.ARMOR,
             Attributes.ARMOR_TOUGHNESS, Attributes.ATTACK_DAMAGE, Attributes.ATTACK_SPEED, Attributes.MOVEMENT_SPEED);
 
+    /**
+     * Makes every vanilla attribute the sheet shows sync to the client, which draws the sheet from the player's own
+     * attributes. Vanilla syncs all of {@link #COMBAT} but attack damage, which only the server computes; our stats are
+     * syncable from their registration (architecture 8.1). Called once from {@link CharacterFeature}.
+     */
+    static void syncShownAttributes() {
+        for (Holder<Attribute> attribute : COMBAT) {
+            attribute.value().setSyncable(true);
+        }
+    }
+
     /** The sheet of a player, from its attributes (synced to its own client) and the synced registries. */
     public static CharacterSheetView of(Player player) {
         return build(player::getAttributeValue, player::getAttributeBaseValue, player.registryAccess());

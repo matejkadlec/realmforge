@@ -234,6 +234,10 @@ that compiles here.
   `EnvironmentAttributes`; `fixed_time` became `has_fixed_time`, `effects` became `skybox`.
 - **Vanilla attribute ids have no prefixes** (`minecraft:max_health`, `minecraft:block_interaction_range`): 1.21.1
   examples with `generic.` or `player.` are wrong.
+- **Only syncable attributes reach the client:** the server sends an attribute's value and modifiers only when
+  `Attribute#isClientSyncable()`. Vanilla's attack damage and attack knockback are not syncable, so client code
+  reading them sees the bare base value. Our stats register with `setSyncable(true)`, and the character sheet makes
+  the vanilla ones it shows syncable ([architecture 8.1](docs/architecture.md#81-the-attribute-set)).
 - **Hurt cooldown:** within 10 ticks of the last hit, a hit not bigger than it is dropped before
   `LivingDamageEvent` fires; a hit outside that window, or one that bypasses it, starts new invulnerability ticks.
   Damage that must always land (spells, damage over time) is spell school damage: its damage types are in

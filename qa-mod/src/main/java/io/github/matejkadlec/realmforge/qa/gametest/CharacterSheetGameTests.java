@@ -6,8 +6,11 @@ import io.github.matejkadlec.realmforge.character.CharacterSheetView.Row;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -39,6 +42,17 @@ public final class CharacterSheetGameTests {
         }
         for (Holder<Attribute> attribute : List.of(Attributes.MAX_HEALTH, Attributes.ARMOR, Attributes.ATTACK_DAMAGE)) {
             assertValue(helper, view, attribute, player.getAttributeValue(attribute));
+        }
+        // The client draws the sheet from the player's own attributes, so every attribute on it must sync to the client;
+        // vanilla keeps attack damage on the server unless the sheet makes it syncable.
+        Set<String> shown = view.rows().stream().map(Row::id).collect(Collectors.toSet());
+        List<Holder.Reference<Attribute>> onSheet = BuiltInRegistries.ATTRIBUTE.listElements()
+                .filter(attribute -> shown.contains(attribute.value().getDescriptionId())).toList();
+        helper.assertTrue(onSheet.stream().anyMatch(attribute -> attribute.is(Attributes.ATTACK_DAMAGE)),
+                "the sheet shows attack damage");
+        for (Holder.Reference<Attribute> attribute : onSheet) {
+            helper.assertTrue(attribute.value().isClientSyncable(),
+                    attribute.getRegisteredName() + " is on the sheet, so it must sync to the client");
         }
         helper.assertValueEqual(row(helper, view, Attributes.MOVEMENT_SPEED).value(), "100%",
                 "movement speed reads as a percent of the player's base");

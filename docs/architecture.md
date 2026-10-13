@@ -507,7 +507,11 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 
 - **Vanilla, kept:** max health, armor, armor toughness, attack damage and speed, movement speed, knockback
   resistance, luck and the rest. Since 1.21.2 their ids have no prefixes (`minecraft:max_health`,
-  `minecraft:block_interaction_range`; 1.21.1 had `minecraft:generic.max_health`).
+  `minecraft:block_interaction_range`; 1.21.1 had `minecraft:generic.max_health`). The server sends a client only
+  the attributes marked syncable (`Attribute#isClientSyncable`). Vanilla marks max health, armor, toughness, attack
+  speed and movement speed, but not attack damage, so the client sees only its base value. The character sheet draws
+  from the player's own attributes, so `CharacterSheetView#syncShownAttributes` marks every vanilla attribute it
+  shows as syncable, attack damage included; a GameTest fails if an attribute on the sheet does not sync.
 - **Primary stats (ours, decision D5):** strength (STR), dexterity (DEX), vitality (VIT: health, not called
   stamina so it is never confused with a stamina resource) and intellect (INT). They are attributes, so gear, buffs
   and talents modify them like anything else. They start at 0: race, class, level, talents and gear raise them (C1
