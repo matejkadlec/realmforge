@@ -1,7 +1,8 @@
 """Minimal binary NBT encoder/decoder (Java Edition, big-endian), e.g. for structure templates.
 
-Python values map to tags as follows: ``dict`` -> Compound, ``str`` -> String, ``NbtList`` -> List and the
-wrapper classes below for numbers (NBT has several integer widths, so plain ``int`` is ambiguous and rejected).
+Python values map to tags as follows: ``dict`` -> Compound, ``str`` -> String, ``NbtList`` -> List, and the
+wrapper classes below for numbers (NBT has several integer widths, so plain ``int`` is ambiguous and rejected) and
+for the byte, int and long arrays (entity UUIDs, Sponge ``.schem`` block data, Litematica block states).
 """
 
 from __future__ import annotations
@@ -11,7 +12,7 @@ from dataclasses import dataclass
 from typing import Any
 
 TAG_END, TAG_BYTE, TAG_SHORT, TAG_INT, TAG_LONG, TAG_FLOAT, TAG_DOUBLE = range(7)
-TAG_STRING, TAG_LIST, TAG_COMPOUND = 8, 9, 10
+TAG_BYTE_ARRAY, TAG_STRING, TAG_LIST, TAG_COMPOUND, TAG_INT_ARRAY, TAG_LONG_ARRAY = range(7, 13)
 
 
 @dataclass(frozen=True)
@@ -45,6 +46,23 @@ class Double:
 
 
 @dataclass(frozen=True)
+class ByteArray:
+    """Signed bytes (-128..127), as Java stores them."""
+
+    values: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class IntArray:
+    values: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class LongArray:
+    values: tuple[int, ...]
+
+
+@dataclass(frozen=True)
 class NbtList:
     """A list tag. ``element_type`` is needed because an empty list still records its element type."""
 
@@ -62,6 +80,14 @@ _SCALARS: dict[type, tuple[int, str]] = {
 }
 _FORMATS = {tag: fmt for tag, fmt in _SCALARS.values()}
 _WRAPPERS = {tag: cls for cls, (tag, _) in _SCALARS.items()}
+# Array wrapper -> (tag, element code for struct). The payload is an int length, then the elements.
+_ARRAYS: dict[type, tuple[int, str]] = {
+    ByteArray: (TAG_BYTE_ARRAY, "b"),
+    IntArray: (TAG_INT_ARRAY, "i"),
+    LongArray: (TAG_LONG_ARRAY, "q"),
+}
+_ARRAY_CODES = {tag: code for tag, code in _ARRAYS.values()}
+_ARRAY_WRAPPERS = {tag: cls for cls, (tag, _) in _ARRAYS.items()}
 
 
 def int_list(*values: int) -> NbtList:
@@ -77,6 +103,8 @@ def tag_type(value: Any) -> int:
         return TAG_LIST
     if type(value) in _SCALARS:
         return _SCALARS[type(value)][0]
+    if type(value) in _ARRAYS:
+        return _ARRAYS[type(value)][0]
     raise TypeError(f"cannot encode {type(value).__name__} as NBT; use the wrapper classes")
 
 
@@ -117,6 +145,9 @@ def _payload(value: Any) -> bytes:
         return (
             bytes([element_type]) + struct.pack(">i", len(value.items)) + b"".join(map(_payload, value.items))
         )
+    if kind in _ARRAY_CODES:
+        count = len(value.values)
+        return struct.pack(f">i{count}{_ARRAY_CODES[kind]}", count, *value.values)
     return struct.pack(_FORMATS[kind], value.value)
 
 
@@ -156,4 +187,10 @@ class _Reader:
             fmt = _FORMATS[kind]
             (value,) = struct.unpack(fmt, self.take(struct.calcsize(fmt)))
             return _WRAPPERS[kind](value)
+        if kind in _ARRAY_CODES:
+            (count,) = struct.unpack(">i", self.take(4))
+            if count < 0:
+                raise ValueError("negative NBT array length")
+            fmt = f">{count}{_ARRAY_CODES[kind]}"
+            return _ARRAY_WRAPPERS[kind](struct.unpack(fmt, self.take(struct.calcsize(fmt))))
         raise ValueError(f"unsupported NBT tag type {kind}")
