@@ -12,7 +12,15 @@ from pydantic import BaseModel, ValidationError
 
 from realmforge_tools.problems import Problem, ValidationFailed
 from realmforge_tools.project import RepoPaths
-from realmforge_tools.schema import CONTENT_TYPES, WORLDGEN_DIR, CurveDef, ItemDef, TextGroupDef
+from realmforge_tools.schema import (
+    CONTENT_TYPES,
+    WORLDGEN_DIR,
+    CurveDef,
+    ItemDef,
+    StatDef,
+    StatRuleDef,
+    TextGroupDef,
+)
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES
 from realmforge_tools.yamlio import YamlLoadError, load_yaml
 
@@ -46,6 +54,8 @@ class Content:
 
     items: tuple[Entry[ItemDef], ...]
     curves: tuple[Entry[CurveDef], ...]
+    stats: tuple[Entry[StatDef], ...]
+    stat_rules: tuple[Entry[StatRuleDef], ...]
     texts: tuple[Entry[TextGroupDef], ...]
     worldgen: tuple[WorldgenFile, ...]
 
@@ -94,6 +104,8 @@ def load_content(paths: RepoPaths) -> Content:
     return Content(
         items=by_id(loaded["items"]),
         curves=by_id(loaded["curves"]),
+        stats=by_id(loaded["stats"]),
+        stat_rules=by_id(loaded["stat_rules"]),
         texts=by_id(loaded["texts"]),
         worldgen=tuple(sorted(worldgen, key=lambda f: (f.directory, f.id))),
     )

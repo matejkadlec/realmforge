@@ -1,0 +1,208 @@
+{
+  "$defs": {
+    "MilestoneDef": {
+      "additionalProperties": false,
+      "description": "A bonus the stat gives once it reaches ``points``, on top of the per-point bonuses.",
+      "properties": {
+        "modifiers": {
+          "description": "What the milestone gives.",
+          "items": {
+            "$ref": "#/$defs/StatModifierDef"
+          },
+          "minItems": 1,
+          "title": "Modifiers",
+          "type": "array"
+        },
+        "points": {
+          "description": "Stat value that reaches the milestone (1 or more).",
+          "maximum": 2147483647,
+          "minimum": 1,
+          "title": "Points",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "points",
+        "modifiers"
+      ],
+      "title": "MilestoneDef",
+      "type": "object"
+    },
+    "PerPointDef": {
+      "additionalProperties": false,
+      "description": "What every point of the stat gives. ``max`` (or ``max_percent``, in the unit of the amount) caps the total\nfrom all points; it needs a positive amount.",
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Amount in points, for add_value on points.",
+          "title": "Amount"
+        },
+        "amount_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Amount in percent, for multiplied operations and shares (5 means 5 %).",
+          "title": "Amount Percent"
+        },
+        "attribute": {
+          "description": "The attribute it modifies, e.g. minecraft:attack_damage.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Attribute",
+          "type": "string"
+        },
+        "max": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cap on the total, in points.",
+          "title": "Max"
+        },
+        "max_percent": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cap on the total, in percent.",
+          "title": "Max Percent"
+        },
+        "operation": {
+          "description": "How the amount applies (vanilla's attribute modifier operations).",
+          "enum": [
+            "add_value",
+            "add_multiplied_base",
+            "add_multiplied_total"
+          ],
+          "title": "Operation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "attribute",
+        "operation"
+      ],
+      "title": "PerPointDef",
+      "type": "object"
+    },
+    "StatModifierDef": {
+      "additionalProperties": false,
+      "description": "An attribute modifier a stat rule writes. ``add_value`` adds to the base; ``add_multiplied_base`` adds a share\nof the base (weapons included); ``add_multiplied_total`` multiplies the result. Multiplied operations and shares\n(stats with ``max_percent``) take ``amount_percent``; points take ``amount``.",
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Amount in points, for add_value on points.",
+          "title": "Amount"
+        },
+        "amount_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Amount in percent, for multiplied operations and shares (5 means 5 %).",
+          "title": "Amount Percent"
+        },
+        "attribute": {
+          "description": "The attribute it modifies, e.g. minecraft:attack_damage.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Attribute",
+          "type": "string"
+        },
+        "operation": {
+          "description": "How the amount applies (vanilla's attribute modifier operations).",
+          "enum": [
+            "add_value",
+            "add_multiplied_base",
+            "add_multiplied_total"
+          ],
+          "title": "Operation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "attribute",
+        "operation"
+      ],
+      "title": "StatModifierDef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "What one primary stat gives: per-point modifiers and milestone bonuses. Rules read a primary stat and write\nonly secondary stats and vanilla attributes, so they never feed each other.",
+  "properties": {
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "milestones": {
+      "description": "Bonuses at thresholds, in strictly increasing points order.",
+      "items": {
+        "$ref": "#/$defs/MilestoneDef"
+      },
+      "title": "Milestones",
+      "type": "array"
+    },
+    "per_point": {
+      "description": "Modifiers every point gives.",
+      "items": {
+        "$ref": "#/$defs/PerPointDef"
+      },
+      "title": "Per Point",
+      "type": "array"
+    },
+    "stat": {
+      "description": "The primary stat it reads, e.g. realmforge:strength.",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+      "title": "Stat",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "stat"
+  ],
+  "title": "StatRuleDef",
+  "type": "object"
+}

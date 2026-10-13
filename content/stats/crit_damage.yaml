@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Extra damage of a critical hit, on top of the normal hit (50 means a crit deals 150 %). F5 applies it.
+id: crit_damage
+kind: secondary
+default_percent: 50
+max_percent: 1000

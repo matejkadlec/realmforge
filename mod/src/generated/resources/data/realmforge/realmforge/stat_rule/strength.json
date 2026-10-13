@@ -1,0 +1,22 @@
+{
+  "stat": "realmforge:strength",
+  "per_point": [
+    {
+      "attribute": "minecraft:attack_damage",
+      "operation": "add_multiplied_base",
+      "amount": 0.01
+    }
+  ],
+  "milestones": [
+    {
+      "points": 25,
+      "modifiers": [
+        {
+          "attribute": "realmforge:crit_damage",
+          "operation": "add_value",
+          "amount": 0.1
+        }
+      ]
+    }
+  ]
+}

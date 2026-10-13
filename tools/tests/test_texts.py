@@ -85,7 +85,7 @@ def test_text_comment_cannot_close_the_javadoc(repo: RepoPaths) -> None:
     assert "a */ b" not in java
 
 
-@pytest.mark.parametrize("group", ["item", "curve"])
+@pytest.mark.parametrize("group", ["item", "curve", "attribute", "stat_rule"])
 def test_group_may_not_reuse_another_types_key_prefix(repo: RepoPaths, group: str) -> None:
     write(repo.content / "texts" / f"{group}.yaml", f"id: {group}\ntexts:\n  test_item:\n    en_us: Clash\n")
     assert any(

@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Chance to avoid a hit completely (F5). No primary stat gives it: D5 keeps dodge for future classes such as the
+# Rogue and the Hunter.
+id: dodge_chance
+kind: secondary
+max_percent: 100

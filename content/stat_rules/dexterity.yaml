@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../../tools/schemas/stat_rules.schema.json
+# What Dexterity gives (D5, RLM-55): general bonuses every class uses, since neither M1 class is built on it. Critical
+# strike chance (spells too), attack speed and movement speed; movement speed is small and capped. No dodge: D5 keeps
+# it for future classes. First numbers; RLM-136 plays them with the character sheet.
+id: dexterity
+stat: realmforge:dexterity
+per_point:
+  - attribute: realmforge:crit_chance
+    operation: add_value
+    amount_percent: 0.1
+  - attribute: minecraft:attack_speed
+    operation: add_multiplied_base
+    amount_percent: 0.5
+  - attribute: minecraft:movement_speed
+    operation: add_multiplied_base
+    amount_percent: 0.2
+    max_percent: 20
+milestones:
+  - points: 25
+    modifiers:
+      - attribute: realmforge:crit_chance
+        operation: add_value
+        amount_percent: 2
