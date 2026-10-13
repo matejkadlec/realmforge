@@ -45,8 +45,9 @@ modpack adds third-party QoL, performance and library mods.
   definition. M1, the playable vertical slice (proposed as v0.1.0, roadmap decision D7), is under way: CI boots the
   whole pack on a server and a client (spike 6). Before any gameplay code the project moved from Minecraft 1.21.1 to
   26.1.2 (RLM-65, RLM-123, RLM-124). The core mod has its feature skeleton (F1), datapack registries (F2), player
-  state (F3), stats (F4) with their names and a character sheet (F4b), and the combat core (F5: spell schools, crit,
-  dodge, resistances, our armor formula, combat text, the QA training dummy). Races, classes and spells come next.
+  state (F3), stats (F4) with their names, a character sheet (F4b) and raised attribute caps (F4c), and the combat
+  core (F5: spell schools, crit, dodge, resistances, our armor formula, combat text, the QA training dummy). Races,
+  classes and spells come next.
 
 ## Pinned versions
 
@@ -237,7 +238,8 @@ that compiles here.
 - **Only syncable attributes reach the client:** the server sends an attribute's value and modifiers only when
   `Attribute#isClientSyncable()`. Vanilla's attack damage and attack knockback are not syncable, so client code
   reading them sees the bare base value. Our stats register with `setSyncable(true)`, and the character sheet makes
-  the vanilla ones it shows syncable ([architecture 8.1](docs/architecture.md#81-the-attribute-set)).
+  the vanilla ones it shows syncable at common setup (`FMLCommonSetupEvent`): a `DeferredHolder`'s value is unbound
+  at mod construction, and `value()` then throws ([architecture 8.1](docs/architecture.md#81-the-attribute-set)).
 - **Hurt cooldown:** within 10 ticks of the last hit, a hit not bigger than it is dropped before
   `LivingDamageEvent` fires; a hit outside that window, or one that bypasses it, starts new invulnerability ticks.
   Damage that must always land (spells, damage over time) is spell school damage: its damage types are in

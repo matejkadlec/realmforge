@@ -54,7 +54,9 @@ Rules:
 - `spell_schools/` defines the kinds of damage ([architecture 9.1](../docs/architecture.md#91-damage-pipeline)):
   `physical` (armor reduces it, it can be dodged) or `magic` (bypasses armor; spell power raises it). `power` and
   `resistance` name secondary stats that are shares (`fire_power`, `fire_resistance`), each serving one school.
-  The death message names only the victim, `%1$s`: the game passes the killer only sometimes.
+  The death message names only the victim, `%1$s`: the game passes the killer only sometimes. `color` is the
+  floating combat text's colour of the school's hits; the Physical school's colour is every hit's that is not magic
+  (melee and ranged too), red on a crit.
 - `worldgen/` is the one exception to YAML: Minecraft's own worldgen JSON (`dimension/`, `dimension_type/`,
   `biome/`, `noise_settings/`, ...), validated (location, id, JSON, dimension types, no clash with the core mod's
   own `realmforge:instances`) and copied byte for byte; the game decodes it when a world loads.

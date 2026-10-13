@@ -511,16 +511,23 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   the attributes marked syncable (`Attribute#isClientSyncable`). Vanilla marks max health, armor, toughness, attack
   speed and movement speed, but not attack damage, so the client sees only its base value. The character sheet draws
   from the player's own attributes, so `CharacterSheetView#syncShownAttributes` marks every vanilla attribute it
-  shows as syncable, attack damage included; a GameTest fails if an attribute on the sheet does not sync.
+  shows as syncable, attack damage included; a GameTest fails if an attribute on the sheet does not sync. It runs at
+  common setup (`FMLCommonSetupEvent#enqueueWork`), once every attribute is registered: at mod construction a
+  `DeferredHolder` is still unbound.
 - **Primary stats (ours, decision D5):** strength (STR), dexterity (DEX), vitality (VIT: health, not called
   stamina so it is never confused with a stamina resource) and intellect (INT). They are attributes, so gear, buffs
   and talents modify them like anything else. They start at 0: race, class, level, talents and gear raise them (C1
   and later). Luck and defense stay out (D5).
 - **Secondary stats (ours):** crit chance (5 % to start with), crit damage (+50 %), dodge chance (no primary stat
-  gives it: D5 keeps it for future classes such as the Rogue), spell power, healing power and haste (cast and
-  cooldown speed), and each magic school's power and resistance (`fire_power`, `fire_resistance`, ...; F5, the
-  resistances capped at 75 % so nothing becomes immune without a tell, research BM-18); resource regeneration comes
-  with resources (C3a).
+  gives it: D5 keeps it for future classes such as the Rogue), spell power, and each magic school's power and
+  resistance (`fire_power`, `fire_resistance`, ...; F5, the resistances capped at 75 % so nothing becomes immune
+  without a tell, research BM-18). Matěj's playtest of F4b and F5 (2026-10-13) set the rest of the list, shown on the
+  character sheet before every one of them works: armor pierce and armor pierce % (`armor_pierce`,
+  `armor_pierce_percent`), lifesteal and overheal (RLM-158); protection pierce and protection pierce % (RLM-159,
+  waiting for his decision on what they pierce); spell resistance, health regeneration and magic shield (RLM-160);
+  max mana, mana regeneration, cooldown reduction (which replaced haste) and cast time reduction (C3a, RLM-24); and
+  the XP multiplier (100 % by default, C2, RLM-23). Healing power is gone: healing spells scale with spell power and
+  their school.
 - **Defined in `content/stats/`** (F4): each stat's kind (primary or secondary) and its range, in points (a
   `RangedAttribute`) or as a share (`max_percent`: NeoForge's `PercentageAttribute`, holding a fraction). `rf gen`
   writes their registrations into `generated/GeneratedStats` (owned by `stats`), with the description id
@@ -670,7 +677,10 @@ Built in F5 (RLM-21): `combat/DamagePipeline` on NeoForge's damage events, with 
 6. **`LivingDamageEvent.Post`** reports what was dealt: `combat` posts `CombatEvent.Hit` (school, crit, the
    original damage, what armor blocked, the damage dealt and taken from health) for higher features (procs in C3a
    and C5, threat later, the QA mod's combat log), and sends the combat text (`combat/net/CombatTextPayload`) to the
-   player who dealt the hit and the player who took it ([18](#18-client-code-rendering-gui-input)).
+   player who dealt the hit ([18](#18-client-code-rendering-gui-input)). The player who took it gets no number, the
+   health bar shows the damage, but the direction it came from (`combat/net/HitDirectionPayload`), as for a dodge,
+   which also shows "Miss!" to both players. A heal (`LivingHealEvent`, the last listener) sends the health it
+   restores to the players near the healed entity, from half a point up (Matěj, 2026-10-13).
 
 What one hit learns in an earlier event and needs in a later one (whether a melee hit crit, a school hit's
 `lastHurt`) waits in `combat/HitTracker`, per defender and matched by the damage source, because a hit the hurt
@@ -1214,7 +1224,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
 - Client → server: `CreateCharacter`, `CastSpell`, `CancelCast`, `SetSpellBarSlot`, `LearnTalent`,
   `ToggleDarkVision` (exists: `world/net/ToggleDarkVisionPayload`, sent by `client/input/DarkVisionKey`).
 - Server → client: `CastStarted`, `CastEnded`, `CombatText` (exists: `combat/net/CombatTextPayload`, shown by
-  `client/hud/CombatTextHud`), `DungeonStatus`.
+  `client/hud/CombatTextHud`), `HitDirection` (exists: `combat/net/HitDirectionPayload`, shown by
+  `client/hud/HitDirectionHud`), `DungeonStatus`.
 
 ## 18. Client code: rendering, GUI, input
 
@@ -1238,13 +1249,23 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   NeoForge's own client classes are mostly not marked client-only, so only the import check catches those.
 - **Thin screens:** screens and HUD layers draw from view models computed in common code (`CharacterSheetView`,
   `TalentTreeView`), so their logic is testable without rendering.
-- **What exists (F5, F4b):** the combat text layer (`client/hud/CombatTextHud`) draws each `CombatTextPayload` for a
-  moment: damage the player dealt floats over the entity hit, projected onto the screen with
-  `GameRenderer#projectPointToScreen`; damage the player took rises left of the crosshair in red; crits are bigger, a
-  dodge reads "Dodge". The character sheet (`client/screen/CharacterSheetScreen`, opened and closed by
-  `client/input/CharacterSheetKey`, K by default) draws `character/CharacterSheetView`: the primary stats with what
-  they give and their milestones, the secondary stats, the spell schools' power and resistance, and the vanilla
-  attributes a player cares about, from the player's synced attributes and the synced registries.
+- **What exists (F5, F4b, revised after Matěj's playtest of 2026-10-13):**
+  - The combat text layer (`client/hud/CombatTextHud`) draws each `CombatTextPayload` over the entity it is about,
+    projected onto the screen with `GameRenderer#projectPointToScreen`, popping in, rising and fading, at a random
+    small offset so hits close together do not cover each other. Every text is bold and the same size. A magic
+    school's hit takes the school's colour; every other hit (melee, ranged, the Physical school) takes the Physical
+    school's orange, red on a crit (`combat/CombatText` picks it). A crit's number ends with "!", a heal reads "+4"
+    in green, a dodged hit reads "Miss!" in yellow, and the player's own dodge shows it beside the crosshair. The
+    player sees no numbers for damage taken.
+  - The hit direction layer (`client/hud/HitDirectionHud`, after the MMM Indicators mod) draws a red arc around the
+    crosshair toward each recent attacker for 1.5 s, turning with the camera and following the attacker.
+  - The character sheet (`client/screen/CharacterSheetScreen`, opened and closed by `client/input/CharacterSheetKey`,
+    K by default) draws `character/CharacterSheetView`: the player's name and level, then three tabs of two columns
+    (a click, the keys 1 to 3, Tab or the arrow keys switch them). Stats: the primary stats with what they give and
+    their milestones, and the other attributes (luck, mining speed, reach, speed, swimming speed, the XP multiplier);
+    Combat: offense and defense; Magic: spells and mana, and the spell schools' power and resistance. A stat of ours
+    that no section names shows under Other. All of it comes from the player's synced attributes and level and the
+    synced registries; a pet tab waits for the pet system (RLM-161).
 - **Minecraft 26.1 draws GUIs by render-state extraction:** a HUD layer (`GuiLayer`) and a screen
   (`Screen#extractRenderState`) receive a `GuiGraphicsExtractor` (`text`, `centeredText`, `fill`, `pose()` for
   scaling). A layer registered through `RegisterGuiLayersEvent` checks `options.hideGui` itself.
@@ -1363,9 +1384,11 @@ that agents can read. So far:
   F3, which prints or clears the player state attachments ([7](#7-player-state));
 - `/qa stats set <stat> <value> [<players>]`, `/qa stats reset|show` (F4b: points for a primary stat, percent for a
   share) and `/qa level <level> [<entity>]` (the `realmforge:level` attachment, which the armor formula reads);
-- `/qa dummy [<armor>]` (F5): a training dummy three blocks ahead, a husk that stands still and never dies, whose name
-  shows the DPS of the current session (it ends after 5 s without a hit); the hitter sees each hit on the action
-  bar, `/qa dummy reset|remove`. Husks carry our stats in the dev game, so `/attribute @n[type=husk]
+- `/qa dummy [<armor>]` (F5): a training dummy three blocks ahead, a husk that stands still and never dies. Its
+  label, a text display riding it, shows its armor with the share of a hit it blocks at the nearest player's level
+  ("15 Armor (50% Damage Reduction)") over its name with the DPS of the current session (it ends after 5 s without a
+  hit); vanilla draws no name tag over an entity with a passenger, so the label carries both. The hitter sees each
+  hit on the action bar, `/qa dummy reset|remove`. Husks carry our stats in the dev game, so `/attribute @n[type=husk]
   realmforge:dodge_chance base set 0.5` sets a dummy's dodge chance or resistances;
 - the combat log, `logs/realmforge-combat.log` in the game directory (`run/client/`, `run/gametest/`, ...): one line
   per hit or dodge that involves a player or a dummy, with the damage type, school, crit, attacker level, the
