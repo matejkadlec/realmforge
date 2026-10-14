@@ -531,8 +531,8 @@ def test_expectations_hold_stats_and_rule_samples(repo: RepoPaths) -> None:
 
 
 def test_no_stats_or_rules_still_compile(repo: RepoPaths) -> None:
-    # Spell schools name their power and resistance stats, so they go too.
-    for folder in ("stats", "stat_rules", "spell_schools"):
+    # Spell schools name their power and resistance stats, and races and classes their modifiers' stats, so they go too.
+    for folder in ("stats", "stat_rules", "spell_schools", "races", "classes"):
         for file in (repo.content / folder).glob("*.yaml"):
             file.unlink()
     files = generate(repo)
