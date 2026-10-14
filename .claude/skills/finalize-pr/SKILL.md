@@ -1,6 +1,6 @@
 ---
 name: finalize-pr
-description: Carry one published pull request in matejkadlec/realmforge through its independent review to its merge. Each review pass runs up to 3 rounds, each with a fresh, read-only pr-reviewer subagent; this session verifies and fixes the findings and pushes once per pass. Then it resolves every review thread, fixes failing or stuck checks and conflicts with master, keeps the pull request's Jira tickets in step, and merges once a review of the exact head is clean, every required check is green and no playtest is waiting for Matěj. Runs after every pull request a session publishes or updates as its own task work, without exception. Use when the user types "finalize-pr 12", and right after publishing or updating a ready pull request.
+description: Carry one published pull request in matejkadlec/realmforge through its independent review to its merge. Each review pass runs up to 5 rounds, each with a fresh, read-only pr-reviewer subagent; this session verifies and fixes the findings and pushes once per pass. Then it resolves every review thread, fixes failing or stuck checks and conflicts with master, keeps the pull request's Jira tickets in step, and merges once a review of the exact head is clean, every required check is green and no playtest is waiting for Matěj. Runs after every pull request a session publishes or updates as its own task work, without exception. Use when the user types "finalize-pr 12", and right after publishing or updating a ready pull request.
 ---
 
 # finalize-pr: independent review, then the merge
@@ -163,10 +163,10 @@ reconcile alone: change nothing and go to "User needed". The synced SHA is that 
 
 ## Review pass
 
-A pass reviews the pull request's current head in up to **3 rounds** and ends with at most one push. Number the
-rounds across the whole pull request (the first pass has rounds 1 to 3, a later pass continues the count); the
-count drives "Late rounds". A pass starts with the sync above, and its first bundle's head SHA must equal the
-starting head it recorded.
+A pass reviews the pull request's current head in up to **5 rounds** and ends with at most one push. Number the
+rounds across the whole pull request (the first pass has rounds 1 to 5, a later pass continues the count); the
+count drives "Late rounds", which narrows rounds 4 and 5 of the first pass already. A pass starts with the sync
+above, and its first bundle's head SHA must equal the starting head it recorded.
 
 1. **Build the review bundle** in the session scratchpad directory (or a `mktemp -d` directory outside the
    repository), never inside the repository, for round `<k>`:
@@ -222,7 +222,7 @@ starting head it recorded.
      - a review returns no P1 and no P2;
      - a round applies no fix (a fresh reviewer over identical code settles nothing);
      - a review repeats a finding you rejected with a recorded reason (this is a Disagreement).
-   - Never start a fourth round in one pass. A fix applied after the pass's final review was never independently
+   - Never start a sixth round in one pass. A fix applied after the pass's final review was never independently
      reviewed: the pass finishes as Capped, never as Clean.
 
 6. **Deliver once.** If the pass ended with at least one committed fix:
@@ -262,7 +262,7 @@ starting head it recorded.
   review. A round whose findings were all rejected or tracked stops the loop with this state. When no Atlassian
   tool reaches Jira, an out-of-scope P1 or P2 listed under "Follow-ups not ticketed" counts as tracked. The pass
   leaves its final head **reviewed**.
-- **Capped.** Three rounds ran and the third still found a P1 or P2, or a fix landed after the final review. Say
+- **Capped.** Five rounds ran and the fifth still found a P1 or P2, or a fix landed after the final review. Say
   plainly that the head carries changes no reviewer has seen, list what the last review found and what you did
   about it, and go to "User needed". Matěj's explicit approval of that exact head makes it reviewed. When both
   apply, Capped outranks Disagreement, and the report also carries the disagreement record.

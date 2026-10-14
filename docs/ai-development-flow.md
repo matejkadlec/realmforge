@@ -950,7 +950,7 @@ monitored merge. An AI-only batch is published as soon as its gate passes. A pla
 
 [`finalize-pr`](../.claude/skills/finalize-pr/SKILL.md) carries the pull request through its review to its merge
 under [ADR 0029](decisions/0029-independent-claude-review-before-every-merge.md). ChatGPT Codex no longer reviews,
-so its fresh, read-only `pr-reviewer` subagent is the only code review: up to three rounds per pass, findings
+so its fresh, read-only `pr-reviewer` subagent is the only code review: up to five rounds per pass, findings
 verified and fixed by the session, one push per pass, and a pass for every new head. It closes every review
 thread, fixes failing or stuck checks and conflicts with `master`, and merges once a pass left the exact head
 Clean (or Matěj approved that head after a Capped or disputed pass), the checks are green and no hold applies.

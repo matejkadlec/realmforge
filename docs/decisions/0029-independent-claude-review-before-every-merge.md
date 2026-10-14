@@ -21,7 +21,7 @@ review. He may buy the lowest ChatGPT tier again for image generation, but not t
 ## Decision
 
 - **`finalize-pr` runs after every pull request** a session publishes or updates as its own task work, without
-  exception. Its fresh, read-only `pr-reviewer` subagent is the code review: up to three rounds per pass, each
+  exception. Its fresh, read-only `pr-reviewer` subagent is the code review: up to five rounds per pass, each
   with a new subagent; the session verifies every finding, fixes the confirmed P1 and P2 ones, tracks or drops
   P3s with a reason, and pushes once per pass. Each pass leaves a `🤖 Independent review` comment on the pull
   request, the GitHub-side record that Codex's reviews used to be.
@@ -44,8 +44,8 @@ review. He may buy the lowest ChatGPT tier again for image generation, but not t
 ## Consequences
 
 - No pull request merges unreviewed: the silent window is gone.
-- Reviews cost Claude usage instead of ChatGPT usage. The three-round cap per pass, the late-rounds churn rule and
-  the review kept across a clean merge of `master` bound it.
+- Reviews cost Claude usage instead of ChatGPT usage. The five-round cap per pass, the late-rounds churn rule (from
+  round 4 on) and the review kept across a clean merge of `master` bound it.
 - A Capped or disputed pass waits for the owner's approval of the exact head, where Codex's silent window used to
   merge without asking.
 - Bringing Codex back needs a new ADR: rename the two files back and restore the Codex steps in `finalize-pr`,
