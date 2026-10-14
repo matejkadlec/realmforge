@@ -1,6 +1,6 @@
 ---
 name: qa1
-description: Record Matěj's passed playtest of a batch in Pending User QA, publish its preserved branch as one ready pull request, move its tickets to Pending CR and carry the pull request to its merge with monitor-pr. Also confirms a reconfirmation on a published pull request. Only playtest batches use it. Use when the user says "qa1" or approves a playtest.
+description: Record Matěj's passed playtest of a batch in Pending User QA, publish its preserved branch as one ready pull request, move its tickets to Pending CR and carry the pull request through its independent review to its merge with finalize-pr. Also confirms a reconfirmation on a published pull request. Only playtest batches use it. Use when the user says "qa1" or approves a playtest.
 ---
 
 # qa1: playtest passed, publish
@@ -32,16 +32,16 @@ publishing; this skill may not weaken either. _qa1: playtest passed_ there holds
 4. **Publish** under _Publication_: push (leased as in step 2), open one ready pull request to `master` (a
    stacked batch: to its dependency branch, until that merges), and read the remote head back: it must be your
    final commit. The description carries the line
-   `Playtest passed: played <sha>, published <sha>`, the GitHub-side record `monitor-pr` falls back on when a
+   `Playtest passed: played <sha>, published <sha>`, the GitHub-side record `finalize-pr` falls back on when a
    Jira write fails.
 5. **Record and move:** on each ticket, the `🎮 Playtest passed` (the played head, the head it is published as,
    Matěj's words if he gave any)
    and the `🤖 Claude QA` summary (what was verified, the pull request, the head); then move every ticket of the
    batch from Pending User QA to Pending CR. Never leave a passed ticket in Pending User QA.
 6. **Hand off and monitor:** the status overview from `CLAUDE.md`, then in the same run, local or cloud,
-   [`monitor-pr`](../monitor-pr/SKILL.md) on the pull request until it merges or reaches one of its stops. The
+   [`finalize-pr`](../finalize-pr/SKILL.md) on the pull request until it merges or reaches one of its stops. The
    playtest was Matěj's last required step. This session has taken the batch over: its worktree and local branch
-   count as created by this session, so `monitor-pr` removes them after the merge.
+   count as created by this session, so `finalize-pr` removes them after the merge.
 
 **A pull request that waits for a reconfirmation** (_Reconfirmation_): `qa1` publishes nothing new. It passes only
 the head Matěj played, the one the latest `🎮 Playtest handoff` names: when the pull request moved on since then and
@@ -49,7 +49,7 @@ the new commits change gameplay (_QA classification_), it hands those back for a
 it first rewrites the pull request description's `Playtest passed: played <sha>, published <sha>` line to name that
 head (`gh api -X PATCH repos/matejkadlec/realmforge/pulls/<n> -F body=@<file>`), the record that survives a failed
 Jira write, then records the `🎮 Playtest passed` for that head on each ticket, moves the tickets to Pending CR, and
-the `monitor-pr` run continues to the merge. One `monitor-pr` run owns a pull request: when the answer comes in the
+the `finalize-pr` run continues to the merge. One `finalize-pr` run owns a pull request: when the answer comes in the
 session whose run waits for this playtest, that run carries on. In any other session, ask Matěj first whether that
-run has stopped; only then does `qa1` continue `monitor-pr` here, and otherwise it changes nothing and points him to
+run has stopped; only then does `qa1` continue `finalize-pr` here, and otherwise it changes nothing and points him to
 the waiting session.

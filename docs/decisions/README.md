@@ -25,7 +25,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0012](0012-procedural-dungeons-and-dimensions.md) | Procedural dungeons and dimensions | Accepted, refined by [0019](0019-dungeon-instances-in-plots.md), its Nether and End question resolved by [0025](0025-remove-the-nether-and-end.md), hand-built rooms replaced by [0028](0028-dungeon-rooms-generated-or-imported.md) |
 | [0013](0013-modpack-composition.md) | Modpack composition | Accepted (written separately), composition updated for 26.1.2 by [0026](0026-platform-minecraft-26-1-2-neoforge.md) |
 | [0014](0014-core-mod-architecture.md) | Core mod architecture | Accepted, decision 9 amended by [0027](0027-client-bound-payload-handlers-through-the-client-event.md), decision 8 (hand-made rooms) by [0028](0028-dungeon-rooms-generated-or-imported.md) |
-| [0015](0015-merging-through-monitor-pr.md) | Merging through monitor-pr | Accepted (amends 0011), holds extended by [0016](0016-jira-batch-delivery.md) and [0017](0017-jira-as-the-source-of-task-status.md), `needs-approval` removed by [0021](0021-status-overview-and-plan-changes.md), `needs-playtest` removed by [0024](0024-no-github-labels.md) |
+| [0015](0015-merging-through-monitor-pr.md) | Merging through monitor-pr | Superseded by [0029](0029-independent-claude-review-before-every-merge.md); was Accepted (amends 0011), holds extended by [0016](0016-jira-batch-delivery.md) and [0017](0017-jira-as-the-source-of-task-status.md), `needs-approval` removed by [0021](0021-status-overview-and-plan-changes.md), `needs-playtest` removed by [0024](0024-no-github-labels.md) |
 | [0016](0016-jira-batch-delivery.md) | Jira batch delivery with flow1 and flow2 | Accepted (extends 0011), amended by [0017](0017-jira-as-the-source-of-task-status.md), [0021](0021-status-overview-and-plan-changes.md) and [0022](0022-playtest-before-the-pull-request.md) |
 | [0017](0017-jira-as-the-source-of-task-status.md) | Jira as the source of task status | Accepted (amends 0015 and 0016), amended by [0021](0021-status-overview-and-plan-changes.md) |
 | [0018](0018-pack-boot-tests.md) | Pack boot tests: server and client self tests on every PR | Accepted (amends 0010), adjusted for 26.1.2 by [0026](0026-platform-minecraft-26-1-2-neoforge.md) |
@@ -39,6 +39,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0026](0026-platform-minecraft-26-1-2-neoforge.md) | Platform: Minecraft 26.1.2 on NeoForge | Accepted (supersedes 0003) |
 | [0027](0027-client-bound-payload-handlers-through-the-client-event.md) | Client-bound payload handlers through NeoForge's client event | Accepted (amends 0014) |
 | [0028](0028-dungeon-rooms-generated-or-imported.md) | Dungeon rooms are generated or imported, not built by hand | Accepted (amends 0007, 0009, 0012 and 0014) |
+| [0029](0029-independent-claude-review-before-every-merge.md) | Independent Claude review before every merge | Accepted (supersedes 0015) |
 
 ## Open questions (not decided)
 

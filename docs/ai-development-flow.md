@@ -12,9 +12,8 @@ into a ticket and deliver it), and Matěj's playtest answers `qa1` (passed: publ
 required: revise it) live in [`.claude/skills/`](../.claude/skills/). `flow1` and `flow2` take an optional
 [run location](#run-location), `cloud` (the default) or `local`. They are entry points into this document,
 not a second source of truth: every rule here also applies to direct work on a ticket. After publication
-the pull request skills take over: [`monitor-pr`](../.claude/skills/monitor-pr/SKILL.md),
-[`fix-pr`](../.claude/skills/fix-pr/SKILL.md), [`finalize-pr`](../.claude/skills/finalize-pr/SKILL.md) and
-[ADR 0015](decisions/0015-merging-through-monitor-pr.md).
+[`finalize-pr`](../.claude/skills/finalize-pr/SKILL.md) takes over: the independent review and the merge
+([ADR 0029](decisions/0029-independent-claude-review-before-every-merge.md)).
 
 The roadmap ([roadmap.md](roadmap.md)) stays the plan and the source of the task order; Jira is the queue that
 mirrors it, plus work outside the roadmap, and the only source of task status
@@ -68,9 +67,9 @@ mirrors it, plus work outside the roadmap, and the only source of task status
 
 ### Follow-up tickets
 
-Work a change leaves undone becomes an RLM ticket, never a GitHub issue: a review finding that `fix-pr` or
-`finalize-pr` tracks instead of fixing, a real finding outside the pull request's scope, and a larger follow-up
-found during implementation.
+Work a change leaves undone becomes an RLM ticket, never a GitHub issue: a review finding that `finalize-pr`
+tracks instead of fixing, a real finding outside the pull request's scope, and a larger follow-up found during
+implementation.
 
 1. **Search first** with `searchJiraIssuesUsingJql` (`project = RLM AND text ~ "<terms>"`, the candidate field set
    from [Reading a ticket](#reading-a-ticket)), and read each candidate with its comments. An equivalent ticket
@@ -78,8 +77,7 @@ found during implementation.
    - **not Done or Rejected:** cite it and add a comment with the new evidence (the pull request, the head, the
      scenario) instead of creating a duplicate;
    - **Rejected:** someone already decided against it, so create nothing and close the finding as declined
-     (`fix-pr` Declined, or Blocked for Matěj's ruling on a P0 or P1; `finalize-pr` Dropped or rejected), citing
-     the rejection reason.
+     (`finalize-pr` Dropped, or rejected for a P1 or P2, or a bot thread Declined), citing the rejection reason.
      A ticket rejected as a duplicate stands for its original: apply this rule to that one. Only a finding that
      names a concrete failure the rejection reason does not cover gets a new ticket, which cites the rejected one;
    - **Done** (the problem came back): create a new ticket (step 2) with a `Relates` link to it.
@@ -106,8 +104,7 @@ found during implementation.
 3. **Reference it** as `RLM-<n>` wherever the finding is closed (a thread reply `Tracked as RLM-<n>:`, a report).
 4. **Jira unreachable:** when no Atlassian tool reaches Jira in the session (neither the `atlassian` server
    nor the claude.ai connector), list the follow-up in the session's report for Matěj, never as a GitHub issue.
-   A skill that reports to another run (`fix-pr` or `finalize-pr` inside `monitor-pr`) lists it in that report,
-   `monitor-pr` carries it into its own, and the run's [status overview](../CLAUDE.md#status-overview) names it
+   `finalize-pr` lists it in its report, and the run's [status overview](../CLAUDE.md#status-overview) names it
    under "Blocked or other".
 
 ### GitHub issues
@@ -214,7 +211,7 @@ document that says "in flight" or "in-flight" means this.
 
 ### Reconciling merged tickets
 
-`monitor-pr` moves its pull request's tickets to Done after the merge, but a pull request merged after its run
+`finalize-pr` moves its pull request's tickets to Done after the merge, but a pull request merged after its run
 stopped (by Matěj, or by a later session) leaves its tickets in Pending CR or Pending User QA, and a Jira write
 that failed at publication and again after the merge leaves them In Progress. Every later intake would read them
 as in flight. `flow1` and `flow2` therefore run this pass first, before creating,
@@ -304,7 +301,7 @@ For each unmet dependency of a selected ticket, in this order:
    cannot be implemented. Leave it, and list it with the dependency.
 2. **[In flight](#in-flight) elsewhere:** it belongs to that batch. Defer the ticket. A stacked branch on the
    dependency's branch is allowed only when it is necessary and safe; its pull request targets that branch and
-   says so, and `monitor-pr` retargets it once the base has merged.
+   says so, and `finalize-pr` retargets it once the base has merged.
 3. **Otherwise** (To Do, Next, the Jira backlog or a future sprint): pull it into the batch. Put it into the
    active sprint when it is outside it (the sprint field), promote it from To Do to Next, and claim it with the
    rest of the batch. Check its own dependencies the same way, recursively.
@@ -341,7 +338,7 @@ merges.
 
 Each ticket's comments hold its evidence: the claim, the `🎮 Playtest handoff` and each `qa2` revision, the
 `🎮 Playtest passed` record of a `qa1`, the `🤖 Claude QA` summary that [publication](#publication) records (what
-was verified and how, the pull request, its head), and the updates `monitor-pr` records after its own pushes.
+was verified and how, the pull request, its head), and the updates `finalize-pr` records after its own pushes.
 Matěj reads the session's handoff first and opens a ticket only for detail.
 
 ## QA classification
@@ -368,8 +365,8 @@ they cannot be separated, the whole batch is a playtest batch. Pulled-in depende
 
 ### Playtest handoff
 
-A playtest batch opens **no pull request while it waits for Matěj's playtest**: Codex review, CI and the merge
-come after he passes it with `qa1`. Its branch is on `origin` from the claim on, so he plays it from there.
+A playtest batch opens **no pull request while it waits for Matěj's playtest**: the independent review, CI and
+the merge come after he passes it with `qa1`. Its branch is on `origin` from the claim on, so he plays it from there.
 
 1. Run the full gate ([Implementation and verification](#implementation-and-verification)) and commit the
    coherent work.
@@ -416,13 +413,13 @@ Matěj's `qa1` passes the playtest and authorizes publishing the batch. The
 5. **Record** on each ticket the `🎮 Playtest passed` (the played head, the head it was published as, his words if
    he gave any) and the `🤖 Claude QA` summary, then move the tickets from Pending User QA to Pending CR. That
    frees the batch's playtest slot.
-6. **Hand off and monitor:** the status overview, then `/monitor-pr <n>` in the same run, to the merge.
+6. **Hand off, review and merge:** the status overview, then `/finalize-pr <n>` in the same run, to the merge.
 
 For a pull request that waits for a [reconfirmation](#reconfirmation), `qa1` instead passes only the head Matěj
 played (the one the latest `🎮 Playtest handoff` names; gameplay commits added since then go back to him for
 another playtest), rewrites the description's `Playtest passed` line to name that head (the record that survives
 a failed Jira write), records the `🎮 Playtest passed` for that head on each ticket, moves the tickets to Pending
-CR, and the `monitor-pr` run continues to the merge. One `monitor-pr` run owns a pull request: an
+CR, and the `finalize-pr` run continues to the merge. One `finalize-pr` run owns a pull request: an
 answer in the session whose run waits for it continues that run; in any other session `qa1` first asks Matěj
 whether the waiting run has stopped, and acts only then.
 
@@ -436,7 +433,8 @@ Matěj's `qa2` with what is wrong sends the batch back for a revision on the sam
    `origin/<branch>` as for `qa1`. Read the tickets' comments for context the handoff did not repeat.
 3. **Fix** what he reported, run the affected checks and the full gate, and commit.
 4. **Push** the revision (`--force-with-lease` after a rebase) and read the remote head back. Open no pull request;
-   a reconfirmation's pull request simply gets the new head, and its `monitor-pr` run carries on.
+   a reconfirmation's pull request simply gets the new head, and its `finalize-pr` run carries on (the new head
+   gets its review pass).
 5. **Record** the revision on each affected ticket as a new `🎮 Playtest handoff` (what changed, the new head, a
    What to test limited to it), so its head is the one `qa1` passes next, and move the tickets back to Pending
    User QA. The batch keeps its playtest slot through the revision.
@@ -446,13 +444,13 @@ Matěj's `qa2` with what is wrong sends the batch back for a revision on the sam
 
 ### Reconfirmation
 
-A fix after `qa1` (a `fix-pr` commit, a thread fix, a check repair, a conflict resolution) can change what Matěj
+A fix after `qa1` (a review fix, a thread fix, a check repair, a conflict resolution) can change what Matěj
 played. When the commits the pull request added after the published head that Matěj passed change gameplay
-([QA classification](#qa-classification)), `monitor-pr` runs the same loop as before the pull request: it moves
+([QA classification](#qa-classification)), `finalize-pr` runs the same loop as before the pull request: it moves
 the tickets back to Pending User QA with a `🎮 Playtest handoff` limited to the change (what to retest and how),
 and waits for his `qa1` or `qa2`. Tickets in Pending User QA hold the merge. Commits that change nothing a player
 sees (docs, tests, a refactor its tests cover, a merge of `master` whose conflict resolutions touch nothing a
-player sees) need no new playtest. `monitor-pr` brings `master` into a branch Matěj has played by merging, never
+player sees) need no new playtest. `finalize-pr` brings `master` into a branch Matěj has played by merging, never
 by rebasing, so the played head stays in its history.
 
 ### Launch commands
@@ -473,7 +471,7 @@ Every manual-test handoff gives complete commands Matěj can paste, under "Launc
 
 - **WSL launches use a playtest checkout:** a detached worktree of the handed-off head at
   `../realmforge-worktrees/<dir>-playtest`, in which no agent builds. The batch's own worktree belongs to the
-  session working on it: a `qa2` revision, a `fix-pr` pass during a reconfirmation or a rebase there rewrites the
+  session working on it: a `qa2` revision, a review fix during a reconfirmation or a rebase there rewrites the
   classes and resources a running dev client loads, and changes the head he is judging. The batch branch is on
   `origin` from the claim on, so the same commands work for local and cloud batches. Create the checkout once per
   batch, with `<sha>` the handed-off head:
@@ -675,7 +673,7 @@ that regenerates a file an in-flight batch also regenerates, until that batch ha
 one batch with new player-facing content run at a time. When implementation shows the batch must regenerate such
 a file after all, that is scope growth (next paragraph): the overlapping part waits or is split out, and the batch
 is not published while the other batch owns the file. A conflict in a generated file is resolved by rebasing and
-regenerating (`monitor-pr` step 2), never by hand-merging it.
+regenerating (`finalize-pr`, step 2 of its loop), never by hand-merging it.
 
 Decide the domains, gate-critical files and generated files before the claim; the claim comment states them, so
 peers can count the batch. If the scope later grows into another domain, a shared-root file, a gate-critical file
@@ -892,7 +890,7 @@ sessions](#cloud-sessions)), and a failed or interrupted warm-up does not hold i
   Conventional Commits, never `.local/` or build output).
 - Before publishing, rebase onto the latest `origin/master` (a stacked batch: its dependency branch) when it
   moved, resolve conflicts (regenerate generated files with `uv run rf gen`), and rerun the affected checks.
-- After the merge, `monitor-pr` removes the batch's worktree and local branch. A playtest batch keeps its
+- After the merge, `finalize-pr` removes the batch's worktree and local branch. A playtest batch keeps its
   worktree from the handoff until then; the session that runs `qa1` takes the batch over, so it removes them.
 
 ## Publication
@@ -927,7 +925,7 @@ monitored merge. An AI-only batch is published as soon as its gate passes. A pla
    So its ticket:
 
    - is created in the backlog, not the active sprint, and is never claimed by this batch;
-   - stays out of the pull request title, which names only the batch's own tickets, so `monitor-pr` never moves it
+   - stays out of the pull request title, which names only the batch's own tickets, so `finalize-pr` never moves it
      to Pending CR or Done; the description names it with the plan change;
    - gets no `Blocks` link before the merge: its "after" order stands in its description and in the roadmap the
      pull request changes;
@@ -945,24 +943,24 @@ monitored merge. An AI-only batch is published as soon as its gate passes. A pla
 8. Hand off to Matěj with the [status overview](../CLAUDE.md#status-overview): the pull request number and URL,
    the branch, the head, the checks, the Jira state and any hold in its ledger. Name an action for him only when
    one is needed.
-9. In the same run, run `/monitor-pr <n>` on the pull request. The handoff is a progress report, not the end of
-   the run: a published pull request left unmonitored is unfinished work.
+9. In the same run, run `/finalize-pr <n>` on the pull request, every time. The handoff is a progress report, not
+   the end of the run: a published pull request left unreviewed or unmerged is unfinished work.
 
 ### After publication
 
-[`monitor-pr`](../.claude/skills/monitor-pr/SKILL.md) carries the pull request to its merge under
-[ADR 0015](decisions/0015-merging-through-monitor-pr.md): it runs `fix-pr` on Codex findings, closes every review
-thread, fixes failing or stuck checks and conflicts with `master`, falls back to `finalize-pr` when Codex hits its
-usage limit, and merges once everything is clean and no hold applies. The holds are a
-[reconfirmation](#reconfirmation) (a ticket in Pending User QA), a changes-requested review, a Codex finding
-outside a thread, and anything Matěj asked to hold. Its "Jira tickets" section keeps the tickets in
-step: a `🤖 Claude QA` update after each of its pushes, Pending User QA and back for a reconfirmation, Done after
-the merge.
+[`finalize-pr`](../.claude/skills/finalize-pr/SKILL.md) carries the pull request through its review to its merge
+under [ADR 0029](decisions/0029-independent-claude-review-before-every-merge.md). ChatGPT Codex no longer reviews,
+so its fresh, read-only `pr-reviewer` subagent is the only code review: up to five rounds per pass, findings
+verified and fixed by the session, one push per pass, and a pass for every new head. It closes every review
+thread, fixes failing or stuck checks and conflicts with `master`, and merges once a pass left the exact head
+Clean (or Matěj approved that head after a Capped or disputed pass), the checks are green and no hold applies.
+The holds are a [reconfirmation](#reconfirmation) (a ticket in Pending User QA), a changes-requested review, and
+anything Matěj asked to hold. Its "Jira tickets" section keeps the tickets in step: a `🤖 Claude QA` update
+after each of its pushes, Pending User QA and back for a reconfirmation, Done after the merge.
 
 Outside such a run (another session's pull request, or one whose run stopped), do not poll, fix, merge or update
-its tickets unless Matěj resumes or delegates that pull request (`/monitor-pr <n>`, `/fix-pr <n>`,
-`/finalize-pr <n>`). The one standing exception is the [reconciliation](#reconciling-merged-tickets) at the
-start of `flow1` and `flow2`.
+its tickets unless Matěj resumes or delegates that pull request (`/finalize-pr <n>`). The one standing
+exception is the [reconciliation](#reconciling-merged-tickets) at the start of `flow1` and `flow2`.
 
 ## Remediation and escalation
 
@@ -970,7 +968,7 @@ start of `flow1` and `flow2`.
   defect that needs separate tracking gets a linked ticket; the batch continues while its goal and scope stay the
   same.
 - **Escalate at once** when the next step needs something only Matěj can change: a decision, an account,
-  credentials or credits, a Jira, GitHub or Codex setting, approval to install a tool, his Windows side (Prism,
+  credentials or credits, a Jira or GitHub setting, approval to install a tool, his Windows side (Prism,
   drivers). Do every safe step first, then say what you observed, the exact action, where to do it, the non-secret
   values involved, and how you will verify it afterwards. Never ask for or accept a secret in the chat, Jira, git
   or a log.
@@ -1029,8 +1027,8 @@ Every response, and every stop, ends with the [status overview](../CLAUDE.md#sta
 ledger** groups, as this flow fills them:
 
 - **Merged into master**, including the tickets the reconciliation moved to Done;
-- **Pending CR**, with the exact state (`monitor-pr` waiting for Codex, a hold such as a changes-requested
-  review, or `owner action: ...` when the run stopped);
+- **Pending CR**, with the exact state (`finalize-pr` in a review pass or waiting for checks, a hold such as a
+  changes-requested review, or `owner action: ...` when the run stopped);
 - **Pending User QA** (playtest);
 - **Blocked or other**: decision tickets and tickets waiting on Matěj, one line each
   ([Tickets waiting on Matěj](#tickets-waiting-on-matěj)), plan changes proposed to him, stale or lost claims,
@@ -1059,7 +1057,7 @@ A Claude Code cloud session (`CLAUDE_CODE_REMOTE=true`) runs the same flow; only
   rely on Jira claim comments, remote branches and open pull requests.
 - **Jira** goes through the claude.ai Atlassian connector, with the same tools and field sets. The `atlassian`
   server from `.mcp.json` fails to start there (no `mcp-remote`), which is expected.
-- **GitHub:** the proxy refuses GraphQL; the pull request skills list the REST forms to use instead. `gh api`
+- **GitHub:** the proxy refuses GraphQL; `finalize-pr` lists the REST forms to use instead. `gh api`
   calls are authenticated (`gh api user` answers) even though `gh auth status` reports the token as invalid.
 - **Gradle:** the queue sees only the VM's own runs. Before it takes a slot, it waits while the SessionStart
   warm-up (`.claude/hooks/cloud-warmup.sh`) still runs Gradle in the clone, because a second Gradle run in the same

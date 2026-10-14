@@ -17,7 +17,7 @@
   tooling under RLM-1, the storyline under RLM-30).
 - **One task, or one coherent batch of tasks, per PR** ([ADR 0016](decisions/0016-jira-batch-delivery.md)).
   Large tasks are split into several PRs. A task is done when its "done when" holds, the checks in CLAUDE.md pass
-  and its PR has merged; `monitor-pr` then moves its ticket to Done.
+  and its PR has merged; `finalize-pr` then moves its ticket to Done.
 - **Agents** take the next unblocked task of the current milestone, spikes first, through its ticket in the
   active sprint: `flow1`, `flow2`, or the intake claim of the [AI development flow](ai-development-flow.md) for
   direct work, with the key in the branch name and the PR title. A task waiting on an open decision
