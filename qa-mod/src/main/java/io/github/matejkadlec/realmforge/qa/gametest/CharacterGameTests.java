@@ -189,20 +189,46 @@ public final class CharacterGameTests {
         helper.succeed();
     }
 
-    /** Once the player has a class, the character sheet's heading names it (Matěj, 2026-10-14). */
+    /**
+     * The character sheet's Origin tab names the race and the class, with their descriptions and what the race gives,
+     * and a subclass placeholder; the heading stays name and level (Matěj, 2026-10-14).
+     */
     @QaGameTest
-    public static void sheetHeadingNamesTheClass(GameTestHelper helper) {
+    public static void originTabShowsRaceAndClass(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         ServerPlayer player = login(helper, "qa-char-sheet");
-        helper.assertValueEqual(CharacterSheetView.of(player).title().getString(), "qa-char-sheet · Lv. 1",
-                "the heading without a class");
+        CharacterSheetView.Tab before = origin(helper, CharacterSheetView.of(player));
+        helper.assertValueEqual(before.left().getFirst().title().getString(), "Race: None", "no race yet");
+        helper.assertValueEqual(before.right().getFirst().title().getString(), "Class: None", "no class yet");
+
+        RaceExpectation race = firstRace();
         ClassExpectation playerClass = firstClass();
-        create(player, firstRace().id(), playerClass.id());
-        String className = Component.translatable(playerClass.nameKey()).getString();
-        helper.assertValueEqual(CharacterSheetView.of(player).title().getString(),
-                "qa-char-sheet · Lv. 1 " + className, "the heading with the class");
+        create(player, race.id(), playerClass.id());
+        CharacterSheetView view = CharacterSheetView.of(player);
+        helper.assertValueEqual(view.title().getString(), "qa-char-sheet · Lv. 1", "the heading is name and level");
+        CharacterSheetView.Tab origin = origin(helper, view);
+        CharacterSheetView.Section raceSection = origin.left().getFirst();
+        helper.assertValueEqual(raceSection.title().getString(),
+                "Race: " + Component.translatable(race.nameKey()).getString(), "the race");
+        helper.assertValueEqual(raceSection.rows().getFirst().label().getString(),
+                Component.translatable(race.descriptionKey()).getString(), "the race's description");
+        Race raceEntry = server.registryAccess().lookupOrThrow(CharacterRegistries.RACE).getValue(
+                Identifier.parse(race.id()));
+        helper.assertValueEqual(raceSection.rows().size(), 1 + raceEntry.modifiers().size(),
+                "the description, then a line for each modifier of the race");
+        CharacterSheetView.Section classSection = origin.right().getFirst();
+        helper.assertValueEqual(classSection.title().getString(),
+                "Class: " + Component.translatable(playerClass.nameKey()).getString(), "the class");
+        helper.assertValueEqual(classSection.rows().getFirst().label().getString(),
+                Component.translatable(playerClass.descriptionKey()).getString(), "the class's description");
+        helper.assertValueEqual(origin.right().get(1).title().getString(), "Subclass: WIP", "the subclass placeholder");
         server.getPlayerList().remove(player);
         helper.succeed();
+    }
+
+    private static CharacterSheetView.Tab origin(GameTestHelper helper, CharacterSheetView view) {
+        helper.assertValueEqual(view.tabs().getLast().name().getString(), "Origin", "the last tab");
+        return view.tabs().getLast();
     }
 
     /** The creation screen's view offers every race with the classes it allows, in the content's order. */

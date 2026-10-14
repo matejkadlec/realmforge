@@ -6,13 +6,10 @@ texts:
   # The screen's title, for the narrator; the sheet itself shows character_title.
   character_sheet:
     en_us: Character Sheet
-  # The sheet's heading: "Steve · Lv. 12" (%1$s the player's name, %2$s the level; Matěj, 2026-10-14).
+  # The sheet's heading: "Steve · Lv. 12" (%1$s the player's name, %2$s the level; Matěj, 2026-10-14). Race, class
+  # and subclass are on the Origin tab instead, which keeps the heading short.
   character_title:
     en_us: "%1$s · Lv. %2$s"
-  # The heading once the player has a class: "Steve · Lv. 12 Warrior" (%3$s the class; Matěj, 2026-10-14). A
-  # subclass will come before the class: "Steve · Lv. 25 Arms Warrior".
-  character_title_class:
-    en_us: "%1$s · Lv. %2$s %3$s"
   # The tabs, and the sections each shows in its two columns.
   tab_stats:
     en_us: Stats
@@ -20,6 +17,8 @@ texts:
     en_us: Combat
   tab_magic:
     en_us: Magic
+  tab_origin:
+    en_us: Origin
   primary_stats:
     en_us: Primary Stats
   other_stats:
@@ -30,8 +29,6 @@ texts:
     en_us: Defense
   spells:
     en_us: Spells
-  mana:
-    en_us: Mana
   spell_schools:
     en_us: Spell Schools
   # Vanilla attributes under the names the sheet gives them, on their rows and in the bonuses of the primary
@@ -73,3 +70,15 @@ texts:
     en_us: "%1$s (%2$s per Level)"
   create_character:
     en_us: Create Character
+  # The Origin tab's sections (Matěj, 2026-10-14): "Race: Human", "Class: Warrior" (%1$s the name, or none), and
+  # a placeholder for the subclass until subclasses exist (M3).
+  origin_race:
+    en_us: "Race: %1$s"
+  origin_class:
+    en_us: "Class: %1$s"
+  none:
+    en_us: None
+  subclass_wip:
+    en_us: "Subclass: WIP"
+  subclass_wip_description:
+    en_us: Lorem ipsum dolor sit amet, consectetur adipiscing elit.

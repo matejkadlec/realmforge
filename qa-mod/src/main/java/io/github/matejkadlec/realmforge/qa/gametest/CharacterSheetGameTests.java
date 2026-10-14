@@ -40,7 +40,7 @@ public final class CharacterSheetGameTests {
 
         helper.assertValueEqual(view.title().getString(), "qa-sheet · Lv. 1", "the sheet's heading");
         helper.assertValueEqual(view.tabs().stream().map(tab -> tab.name().getString()).toList(),
-                List.of("Stats", "Combat", "Magic"), "the sheet's tabs");
+                List.of("Stats", "Combat", "Magic", "Origin"), "the sheet's tabs");
         for (Holder<Attribute> stat : GeneratedStats.ALL) {
             assertValue(helper, view, stat, player.getAttributeValue(stat));
             String id = stat.value().getDescriptionId();

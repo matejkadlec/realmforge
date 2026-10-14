@@ -729,7 +729,8 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
 - **The server enforces creation too:** a client that skips the screen gains nothing. Until the character exists,
   the server refuses the player's gameplay payloads (casting, spell bar, talents) and awards no character XP, and
   every system that reads race or class handles a missing character instead of assuming one.
-- **A race** gives base modifiers, innate spells, optionally a size (`generic.scale`), and the allowed classes.
+- **A race** gives base modifiers, innate spells, optionally a size (`generic.scale`), and the allowed classes. Every
+  race gets one racial ability (Matěj, 2026-10-14), an innate spell, once the spell system exists (C4).
 - **A class** gives its resource type, stat growth per level, spells by level, talent trees and starting kit.
 - **Dual class:** the data model keeps a list of classes; the rules come in M3.
 - **Changing race or class:** a QA command in M1, an in-game way later.
@@ -1309,15 +1310,19 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   - The hit direction layer (`client/hud/HitDirectionHud`, after the MMM Indicators mod) draws a red arc around the
     crosshair toward each recent attacker for 1.5 s, turning with the camera and following the attacker.
   - The character sheet (`client/screen/CharacterSheetScreen`, opened and closed by `client/input/CharacterSheetKey`,
-    K by default) draws `character/CharacterSheetView`: the player's name and level, and their class once they have
-    one ("Steve · Lv. 12 Warrior"), then three
-    tabs of two columns (a click, the keys 1 to 3, Tab or the arrow keys switch them). The heading and the selected
-    tab are white, and gold marks only the section titles. Stats: the primary stats with what they give and their
-    milestones, and the other attributes (luck, mining speed, reach, movement speed, swimming speed, the XP
-    multiplier); Combat: offense and defense; Magic: spells and mana, and the spell schools' power and resistance.
-    The names the sheet gives vanilla attributes (Mining Speed, Movement Speed, ...) apply on their rows and in the
-    primary stats' bonuses. A stat of ours that no section names shows under Other. All of it comes from the
-    player's synced attributes and level and the synced registries; a pet tab waits for the pet system (RLM-161).
+    K by default) draws `character/CharacterSheetView`: the player's name and level, not bold ("Steve · Lv. 12"),
+    then four tabs of two columns (a click, the number keys, Tab or the arrow keys switch them). The heading and the
+    selected tab are white, and gold marks only the section titles. Stats: the primary stats with what they give and
+    their milestones, and the other attributes (luck, mining speed, reach, movement speed, swimming speed, the XP
+    multiplier); Combat: offense, and defense with spell resistance last; Magic: spells (max mana, mana regeneration,
+    spell power, cooldown and cast time reduction) and the spell schools' power and resistance; Origin (C1): the race
+    with its description and what it gives (its racial ability once spells exist), and the class with its description,
+    then a subclass placeholder until subclasses exist (M3). The names the sheet gives vanilla attributes (Mining
+    Speed, Movement Speed, ...) apply on their rows and in the primary stats' bonuses. A stat of ours that no section
+    names shows under Other. Values round for display only (Matěj, 2026-10-14): a percentage half up to a whole
+    number (100.6% reads 101%), any other number half up to one decimal (6.45 reads 6.5). All of it comes from the
+    player's synced attributes, level and character and the synced registries; a pet tab waits for the pet system
+    (RLM-161).
   - Character creation (`client/screen/CharacterCreationScreen`, C1) draws `character/CharacterCreationView`: the
     races on the left and the classes the chosen race allows on the right, as vanilla buttons with a gold outline on
     the chosen one, each with its description and what it gives at level 1 and per level ("+5 Strength (+1 per
