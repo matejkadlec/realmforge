@@ -11,7 +11,7 @@ from realmforge_tools.id_universe import load_vanilla
 from realmforge_tools.project import DATA_VERSION, RepoPaths
 from realmforge_tools.rooms.check import check_structure
 from realmforge_tools.rooms.dress import DressRules, dress, family
-from realmforge_tools.rooms.structure import BlockState, Pos, Structure, StructureBlock
+from realmforge_tools.rooms.structure import BlockState, Pos, Structure, StructureBlock, StructureEntity
 
 STONE_BRICKS = "minecraft:stone_bricks"
 COBBLESTONE = "minecraft:cobblestone"
@@ -215,3 +215,28 @@ def test_without_leaves_a_decoration_out_of_the_rooms_it_names() -> None:
     assert {pos: b for pos, b in others(without).items() if pos not in barrels} == others(with_barrels)
     assert {b.state.name for b in without.blocks if b.pos in barrels} == {"minecraft:air"}
     assert with_barrels.entities == without.entities
+
+
+def test_armor_stands_are_no_loot() -> None:
+    dressed, _ = dress(box_room(), RULES, name="locked", tags=["combat"])
+    (stand,) = [e for e in dressed.entities if e.id == "minecraft:armor_stand"]
+    assert stand.nbt["DisabledSlots"] == nbt.Int(0x3F3F3F)  # no slot can be taken, placed or swapped
+    assert stand.nbt["Invulnerable"] == nbt.Byte(1)
+
+
+def test_decorations_keep_off_the_rooms_own_entities() -> None:
+    room = box_room()
+    plain, _ = dress(room, RULES, name="frames", tags=["combat"])
+    decorations = {"minecraft:vine", "minecraft:cobweb", "minecraft:barrel", "minecraft:stone_brick_stairs"}
+    spots = [b.pos for b in plain.blocks if b.state.name in decorations]
+    # Hang a painting on each spot the dressing used: a block there would make it pop off.
+    paintings = tuple(
+        StructureEntity((x + 0.5, y + 0.5, z + 0.5), (x, y, z), {"id": "minecraft:painting"})
+        for x, y, z in spots
+    )
+    dressed, _ = dress(Structure(room.size, room.data_version, room.blocks, paintings), RULES, name="frames")
+    for painting in paintings:
+        x, y, z = painting.block_pos
+        near = {(x + dx, y + dy, z + dz) for dx in range(-2, 3) for dy in range(-2, 3) for dz in range(-2, 3)}
+        placed = [b.pos for b in dressed.blocks if b.state.name in decorations and b.pos in near]
+        assert not placed, (painting.block_pos, placed)

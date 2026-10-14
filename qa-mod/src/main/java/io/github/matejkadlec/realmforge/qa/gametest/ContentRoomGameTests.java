@@ -11,11 +11,14 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
@@ -24,6 +27,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlac
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Checks that the game loads every room in {@code content/rooms/} as written, using expectations generated from
@@ -31,7 +35,8 @@ import net.minecraft.world.phys.AABB;
  * data version it was saved with (Minecraft 1.17 for the oldest), so this is where a template the game cannot read
  * shows: it does not load at all (the manager swallows the error), or a block it does not know becomes air. A room
  * dressed with armor stands (tools/realmforge_tools/rooms/dress.py) is placed too: their armor is written in the
- * template's old format, so the stands must come out of the upgrade in full iron or full gold.
+ * template's old format, so the stands must come out of the upgrade in full iron or full gold, and with every slot
+ * locked: a player in adventure mode, as inside a dungeon, cannot take the armor.
  */
 public final class ContentRoomGameTests {
     // High above the test's platform, where the placed room touches no other test.
@@ -42,6 +47,8 @@ public final class ContentRoomGameTests {
             Items.GOLDEN_CHESTPLATE, Items.GOLDEN_HELMET);
     private static final List<EquipmentSlot> ARMOR = List.of(EquipmentSlot.FEET, EquipmentSlot.LEGS,
             EquipmentSlot.CHEST, EquipmentSlot.HEAD);
+    // Where a player's empty hand meets the stand's chestplate (ArmorStand#getClickedSlot).
+    private static final Vec3 CHEST_HEIGHT = new Vec3(0.0, 1.2, 0.0);
 
     private ContentRoomGameTests() {
     }
@@ -81,9 +88,15 @@ public final class ContentRoomGameTests {
         List<ArmorStand> stands = level.getEntitiesOfClass(ArmorStand.class, AABB.of(box));
         try {
             helper.assertValueEqual(stands.size(), expected.armorStands(), expected.id() + " armor stands");
+            Player player = helper.makeMockPlayer(GameType.ADVENTURE);
             for (ArmorStand stand : stands) {
                 helper.assertTrue(wears(stand, IRON) || wears(stand, GOLD),
                         expected.id() + ": an armor stand without a full iron or gold set");
+                stand.interact(player, InteractionHand.MAIN_HAND, CHEST_HEIGHT);
+                helper.assertTrue(wears(stand, IRON) || wears(stand, GOLD),
+                        expected.id() + ": a player took armor off an armor stand");
+                helper.assertTrue(player.getMainHandItem().isEmpty(), expected.id() + ": the player got armor");
+                helper.assertTrue(stand.isInvulnerable(), expected.id() + ": an armor stand that can be broken");
             }
         } finally {
             stands.forEach(Entity::discard);
