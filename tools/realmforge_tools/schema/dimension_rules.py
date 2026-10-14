@@ -12,6 +12,8 @@ from realmforge_tools.schema.common import ContentId, ResourceId, StrictModel
 # The game reads every number here as a Java int (world/MobLevelRule); the world is far smaller than that.
 JAVA_INT_MAX = 2**31 - 1
 JAVA_INT_MIN = -(2**31)
+# The largest jitter (world/MobLevelRule.MAX_JITTER), far beyond any band.
+MAX_JITTER = 1000
 
 
 class DepthDef(StrictModel):
@@ -42,7 +44,7 @@ class MobLevelRuleDef(StrictModel):
     jitter: int = Field(
         default=0,
         ge=0,
-        le=JAVA_INT_MAX,
+        le=MAX_JITTER,
         description="Each mob's level is up to this many levels higher or lower, at random (0: none).",
     )
     min_level: int = Field(ge=1, le=JAVA_INT_MAX, description="The lowest level in the dimension.")

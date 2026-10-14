@@ -52,7 +52,7 @@
         "jitter": {
           "default": 0,
           "description": "Each mob's level is up to this many levels higher or lower, at random (0: none).",
-          "maximum": 2147483647,
+          "maximum": 1000,
           "minimum": 0,
           "title": "Jitter",
           "type": "integer"
