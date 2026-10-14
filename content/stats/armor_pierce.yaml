@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=../../tools/schemas/stats.schema.json
-# Armor a hit ignores, in points, before the armor formula (architecture 9.1). No effect until RLM-158.
+# Armor a hit ignores, in points: it lowers the armor plus toughness a hit from this attacker meets, before the
+# armor formula and before Armor Pierce % (architecture 9.1), never below 0.
 id: armor_pierce
 name: {en_us: Armor Pierce}
 kind: secondary

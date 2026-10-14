@@ -36,14 +36,17 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *   stops a sword's sweep (vanilla's jump crits never met one on the ground).</li>
  *   <li>{@code LivingIncomingDamageEvent}: a dodge cancels the hit (melee, projectiles and physical school hits; never
  *   magic, explosions or the world). A school hit gets spell power (magic), the school's power, a crit roll and the
- *   defender's resistance. Our armor formula replaces vanilla's through the armor reduction, except for damage in
- *   {@code #minecraft:bypasses_armor}.</li>
+ *   defender's resistance (spell resistance added for magic). Our armor formula replaces vanilla's through the armor
+ *   reduction, with the attacker's armor pierce, except for damage in {@code #minecraft:bypasses_armor}. The
+ *   defender's magic shield joins the absorption reduction ({@link MagicShields}).</li>
  *   <li>Hurt cooldown: a school hit lands through it ({@code #minecraft:bypasses_cooldown}) and leaves the defender's
  *   window as it was: it grants no invulnerability of its own, and {@code lastHurt}, which vanilla overwrites, is
  *   restored afterwards, so melee hits in an open window are still compared with the previous melee hit, not with a
  *   spell or damage-over-time tick.</li>
- *   <li>{@code LivingDamageEvent.Post}: reports the hit ({@link CombatEvent.Hit}) and sends its combat text.</li>
- *   <li>{@code LivingHealEvent}, last: sends the combat text of the health a heal restores.</li>
+ *   <li>{@code LivingDamageEvent.Post}: reports the hit ({@link CombatEvent.Hit}), sends its combat text, and heals the
+ *   attacker of a melee or ranged hit by its lifesteal.</li>
+ *   <li>{@code LivingHealEvent}, last: turns healing beyond max health into overheal ({@link Overheal}) and sends the
+ *   combat text of the health a heal restores.</li>
  * </ol>
  */
 public final class DamagePipeline {
@@ -75,11 +78,20 @@ public final class DamagePipeline {
      * explosions and damage from the world cannot (architecture 9.1).
      */
     public static boolean dodgeable(DamageSource source, Optional<? extends Holder<SpellSchool>> school) {
+        if (school.isPresent()) {
+            return source.getEntity() != null && !source.is(DamageTypeTags.IS_EXPLOSION)
+                    && !school.get().value().magic();
+        }
+        return meleeOrRanged(source);
+    }
+
+    /**
+     * Whether the hit is a melee hit or a projectile from an attacker, not a school hit or an explosion: the hits
+     * lifesteal heals from (Matěj, 2026-10-14: melee and ranged hits, never spells).
+     */
+    public static boolean meleeOrRanged(DamageSource source) {
         if (source.getEntity() == null || source.is(DamageTypeTags.IS_EXPLOSION)) {
             return false;
-        }
-        if (school.isPresent()) {
-            return !school.get().value().magic();
         }
         return source.is(DamageTypes.MOB_ATTACK) || source.is(DamageTypes.MOB_ATTACK_NO_AGGRO)
                 || source.is(DamageTypeTags.IS_PLAYER_ATTACK) || source.is(DamageTypeTags.IS_PROJECTILE);
@@ -120,6 +132,10 @@ public final class DamagePipeline {
         }
         event.addReductionModifier(DamageContainer.Reduction.ARMOR,
                 (container, vanilla) -> armorReduction(defender, container, vanilla));
+        if (MagicShields.applies(defender)) {
+            event.addReductionModifier(DamageContainer.Reduction.ABSORPTION,
+                    (container, absorbed) -> MagicShields.absorb(defender, container, absorbed));
+        }
         if (school.isPresent()) {
             schoolHit(event, level, defender, source, school.get());
         } else if (HitTracker.takeMeleeCrit(source, defender)) {
@@ -144,6 +160,22 @@ public final class DamagePipeline {
                 event.getReduction(DamageContainer.Reduction.ARMOR), event.getInflictedDamage(),
                 event.getHealthDamage()));
         CombatText.hit(defender, source, school, crit, event.getInflictedDamage());
+        lifesteal(defender, source, event.getInflictedDamage());
+    }
+
+    /**
+     * Heals the attacker of a melee or ranged hit by its lifesteal share of the damage the hit dealt, after armor and
+     * resistance, absorption hearts and magic shield included; spells never heal this way (Matěj, 2026-10-14).
+     */
+    private static void lifesteal(LivingEntity defender, DamageSource source, float dealt) {
+        if (!(source.getEntity() instanceof LivingEntity attacker) || attacker == defender || !attacker.isAlive()
+                || !meleeOrRanged(source)) {
+            return;
+        }
+        double heal = DamageCalculator.lifesteal(dealt, stat(attacker, GeneratedStats.LIFESTEAL));
+        if (heal > 0) {
+            attacker.heal((float) heal);
+        }
     }
 
     /** Last of the heal listeners, so it sees the amount the heal restores; a cancelled heal never reaches it. */
@@ -152,6 +184,7 @@ public final class DamagePipeline {
         if (!(entity.level() instanceof ServerLevel) || entity.getHealth() <= 0) {
             return;
         }
+        Overheal.onHeal(entity, event.getAmount());
         float healed = Math.min(event.getAmount(), entity.getMaxHealth() - entity.getHealth());
         if (healed >= CombatText.MIN_HEAL) {
             CombatText.heal(entity, healed);
@@ -160,10 +193,20 @@ public final class DamagePipeline {
 
     /**
      * The share of a hit our armor formula blocks for {@code defender} against an attacker at {@code attackerLevel}
-     * (architecture 9.1): {@link DamageCalculator#armorReduction} with the armor curves at that level, or empty when
-     * a data pack removed them.
+     * without armor pierce (architecture 9.1), or empty when a data pack removed the armor curves.
      */
     public static OptionalDouble armorShare(LivingEntity defender, int attackerLevel) {
+        return armorShare(defender, attackerLevel, 0, 0);
+    }
+
+    /**
+     * The share of a hit our armor formula blocks for {@code defender} against an attacker at {@code attackerLevel}
+     * with {@code pierce} flat and {@code piercePercent} armor pierce (architecture 9.1):
+     * {@link DamageCalculator#armorReduction} with the armor curves at that level, or empty when a data pack removed
+     * them.
+     */
+    public static OptionalDouble armorShare(LivingEntity defender, int attackerLevel, double pierce,
+            double piercePercent) {
         Registry<Curve> curves = defender.registryAccess().lookupOrThrow(CoreRegistries.CURVE);
         Curve halving = curves.getValue(GeneratedCurves.ARMOR_HALVING);
         Curve cap = curves.getValue(GeneratedCurves.ARMOR_REDUCTION_CAP);
@@ -171,8 +214,8 @@ public final class DamagePipeline {
             return OptionalDouble.empty();
         }
         return OptionalDouble.of(DamageCalculator.armorReduction(defender.getAttributeValue(Attributes.ARMOR),
-                defender.getAttributeValue(Attributes.ARMOR_TOUGHNESS), halving.valueAt(attackerLevel),
-                cap.valueAt(attackerLevel)));
+                defender.getAttributeValue(Attributes.ARMOR_TOUGHNESS), pierce, piercePercent,
+                halving.valueAt(attackerLevel), cap.valueAt(attackerLevel)));
     }
 
     private static void schoolHit(LivingIncomingDamageEvent event, ServerLevel level, LivingEntity defender,
@@ -183,7 +226,9 @@ public final class DamagePipeline {
                         stat(living, GeneratedStats.CRIT_DAMAGE), stat(living, GeneratedStats.SPELL_POWER),
                         school.power().map(power -> stat(living, power)).orElse(0.0))
                 : DamageCalculator.Attacker.NONE;
-        double resistance = school.resistance().map(stat -> stat(defender, stat)).orElse(0.0);
+        double schoolResistance = school.resistance().map(stat -> stat(defender, stat)).orElse(0.0);
+        double resistance = DamageCalculator.resistance(schoolResistance,
+                stat(defender, GeneratedStats.SPELL_RESISTANCE), school.magic());
         DamageCalculator.SchoolHit hit = DamageCalculator.schoolHit(event.getAmount(), school.magic(), attacker,
                 resistance, level.getRandom());
         event.setAmount((float) hit.damage());
@@ -196,16 +241,20 @@ public final class DamagePipeline {
 
     /**
      * Our armor formula as NeoForge's armor reduction: the share {@link DamageCalculator#armorReduction} gives at the
-     * attacker's level (the defender's own when nobody attacked). Damage in {@code #minecraft:bypasses_armor} keeps
-     * vanilla's reduction, which is none; so does every hit when a data pack removed our armor curves.
+     * attacker's level (the defender's own when nobody attacked), against the armor the attacker's armor pierce
+     * leaves. Damage in {@code #minecraft:bypasses_armor} keeps vanilla's reduction, which is none; so does every hit
+     * when a data pack removed our armor curves.
      */
     private static float armorReduction(LivingEntity defender, DamageContainer container, float vanilla) {
         DamageSource source = container.getSource();
         if (source.is(DamageTypeTags.BYPASSES_ARMOR)) {
             return vanilla;
         }
-        int level = level(source.getEntity() instanceof LivingEntity attacker ? attacker : defender);
-        OptionalDouble share = armorShare(defender, level);
+        LivingEntity attacker = source.getEntity() instanceof LivingEntity living ? living : null;
+        OptionalDouble share = attacker != null
+                ? armorShare(defender, level(attacker), stat(attacker, GeneratedStats.ARMOR_PIERCE),
+                        stat(attacker, GeneratedStats.ARMOR_PIERCE_PERCENT))
+                : armorShare(defender, level(defender));
         return share.isPresent() ? (float) (container.getNewDamage() * share.getAsDouble()) : vanilla;
     }
 }

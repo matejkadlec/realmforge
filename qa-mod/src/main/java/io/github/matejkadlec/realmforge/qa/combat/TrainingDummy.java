@@ -44,8 +44,8 @@ import org.joml.Vector3f;
  *
  * <p>Husks carry our stats in the dev game ({@link #addStats}), so the dummy's dodge chance and resistances can be set
  * with vanilla's {@code /attribute} command. Its armor comes from {@code /qa dummy <armor>}. Its label, a text display
- * riding it, shows two lines (Matěj, 2026-10-13): the armor with the share of a hit it blocks at the nearest player's
- * level, and below it the name with the DPS. Vanilla draws no name tag over an entity that carries a passenger, so the
+ * riding it, shows two lines (Matěj, 2026-10-13): the armor with the share of a hit it blocks against the nearest
+ * player (that player's level and armor pierce), and below it the name with the DPS. Vanilla draws no name tag over an entity that carries a passenger, so the
  * label carries the name too; it changes with every hit and every second.
  *
  * <p>A husk is a hostile mob, which gets a level and its scaling when it joins the world (W1, architecture 14.1). A
@@ -108,12 +108,17 @@ public final class TrainingDummy {
 
     /**
      * The label's first line: the dummy's armor (and toughness, when it has any) and the share of a hit our armor
-     * formula blocks against an attacker at {@code attackerLevel}, such as "15 Armor (50% Damage Reduction)".
+     * formula blocks against {@code attacker}, at its level and with its armor pierce (level 1 and none without an
+     * attacker), such as "15 Armor (50% Damage Reduction)".
      */
-    public static Component armorLine(LivingEntity dummy, int attackerLevel) {
+    public static Component armorLine(LivingEntity dummy, @Nullable LivingEntity attacker) {
         double armor = dummy.getAttributeValue(Attributes.ARMOR);
         double toughness = dummy.getAttributeValue(Attributes.ARMOR_TOUGHNESS);
-        OptionalDouble share = DamagePipeline.armorShare(dummy, attackerLevel);
+        OptionalDouble share = attacker != null
+                ? DamagePipeline.armorShare(dummy, DamagePipeline.level(attacker),
+                        DamagePipeline.stat(attacker, GeneratedStats.ARMOR_PIERCE),
+                        DamagePipeline.stat(attacker, GeneratedStats.ARMOR_PIERCE_PERCENT))
+                : DamagePipeline.armorShare(dummy, EntityLevel.MIN);
         String text = CharacterSheetView.points(armor) + " Armor"
                 + (toughness > 0 ? ", " + CharacterSheetView.points(toughness) + " Toughness" : "")
                 + " (" + CharacterSheetView.share(share.orElse(0)) + " Damage Reduction)";
@@ -168,7 +173,8 @@ public final class TrainingDummy {
     }
 
     /**
-     * Shows the dummy's armor at the nearest player's level (level 1 when nobody is near), adding the label if needed.
+     * Shows the dummy's armor against the nearest player, at its level and with its armor pierce (level 1 and none
+     * when nobody is near), adding the label if needed.
      */
     static void updateLabel(LivingEntity dummy) {
         if (!(dummy.level() instanceof ServerLevel level)) {
@@ -191,7 +197,7 @@ public final class TrainingDummy {
         Player nearest = level.getNearestPlayer(dummy, LABEL_RANGE);
         Component name = dummy.getCustomName() != null ? dummy.getCustomName() : Component.literal(NAME);
         label.setText(Component.empty()
-                .append(armorLine(dummy, nearest != null ? DamagePipeline.level(nearest) : EntityLevel.MIN))
+                .append(armorLine(dummy, nearest))
                 .append("\n").append(name));
     }
 
