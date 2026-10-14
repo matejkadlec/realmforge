@@ -11,6 +11,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.world.chunk.RegisterTicketControllersEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 
 /** Dungeon types, planner, layout, builder and instances (architecture 15). */
 public final class DungeonFeature {
@@ -20,6 +21,7 @@ public final class DungeonFeature {
     /** Registers the feature's registries and event listeners. Called once from {@code Realmforge}. */
     public static void register(IEventBus modBus) {
         DungeonAttachments.register(modBus);
+        modBus.addListener(DataPackRegistryEvent.NewRegistry.class, DungeonRegistries::registerDataPackRegistries);
         modBus.addListener(RegisterTicketControllersEvent.class, event -> event.register(InstanceManager.TICKETS));
 
         // Inside the level tick, so the builder's time counts in the server's tick time (and /tick query, spark).

@@ -7,13 +7,15 @@ import difflib
 import math
 from pathlib import PurePosixPath
 
-from realmforge_tools.content import Content, load_content
+from realmforge_tools.content import Content, RoomEntry, load_content
 from realmforge_tools.id_universe import IdUniverse, load_vanilla
 from realmforge_tools.problems import Problem, ValidationFailed
 from realmforge_tools.project import MOD_ID, RepoPaths
-from realmforge_tools.rooms.check import check_structure
+from realmforge_tools.rooms.check import TEMPLATE_POOL_REGISTRY, check_structure
+from realmforge_tools.rooms.connectors import connectors, could_attach
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES
 from realmforge_tools.schema.character import STARTING_BREAD
+from realmforge_tools.schema.dungeon import DEAD_END_ROLES, PATH_ROLES, ROOM_ROLES, room_role
 from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
 
@@ -24,6 +26,7 @@ DAMAGE_TYPE_REGISTRY = "minecraft:damage_type"
 DIMENSION_REGISTRY = "minecraft:dimension"
 DIMENSION_TYPE_REGISTRY = "minecraft:dimension_type"
 SPELL_SCHOOL_REGISTRY = f"{MOD_ID}:spell_school"
+DUNGEON_TYPE_REGISTRY = f"{MOD_ID}:dungeon_type"
 STRUCTURE_REGISTRY = "minecraft:structure"
 
 # Vanilla's dimensions (the level stems of its world presets). The registry report behind the vanilla ID universe
@@ -35,6 +38,7 @@ REGISTRY_OF_TYPE: dict[str, str] = {
     "items": ITEM_REGISTRY,
     "stats": ATTRIBUTE_REGISTRY,
     "spell_schools": SPELL_SCHOOL_REGISTRY,
+    "dungeons": DUNGEON_TYPE_REGISTRY,
     **{t.directory: f"{MOD_ID}:{t.registry}" for t in DATAPACK_TYPES},
 }
 
@@ -46,6 +50,7 @@ RESERVED_TEXT_GROUPS: dict[str, str] = {
     "attribute": "content/stats/",
     "spell_school": "content/spell_schools/",
     "death.attack": "content/spell_schools/",
+    "dungeon_type": "content/dungeons/",
     **{t.registry: f"content/{t.directory}/" for t in DATAPACK_TYPES},
 }
 
@@ -75,6 +80,9 @@ def universe_with_content(vanilla: IdUniverse, content: Content) -> IdUniverse:
         universe.add(WORLDGEN_REGISTRIES[file.directory], f"{MOD_ID}:{file.id}")
     for room in content.rooms:
         universe.add(STRUCTURE_REGISTRY, room_structure_id(room.id))
+        # A room pool is a template pool too, for the jigsaws of world structures (M4), so a jigsaw may name one.
+        for pool in room.model.pools:
+            universe.add(TEMPLATE_POOL_REGISTRY, pool)
     return universe
 
 
@@ -94,6 +102,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_dimension_rules(content, universe)
     problems += _check_text_groups(content)
     problems += _check_rooms(content, universe)
+    problems += _check_dungeons(content)
     return problems
 
 
@@ -126,6 +135,92 @@ def _check_rooms(content: Content, universe: IdUniverse) -> list[Problem]:
                 problems.append(
                     Problem(review.source, key, f"kept, but there is no room content/rooms/{prefix}{key}.nbt")
                 )
+    return problems
+
+
+def _check_dungeons(content: Content) -> list[Problem]:
+    """A room in the pool of a dungeon type has exactly one role, and the pool holds what the type's layout needs: an
+    entrance, rooms to pass through, the room that ends the main path, a dead end for the branches and for the
+    connectors nothing else takes, rooms that take a branch when it must have one, and only rooms whose every
+    connector meets some connector of the pool (architecture 15.3). Whether a layout fits a plot is the planner's to
+    find; JUnit fuzzes it over the generated types."""
+    problems: list[Problem] = []
+    used_pools = {entry.model.pool for entry in content.dungeons}
+    pooled: dict[str, list[RoomEntry]] = {}
+    for room in content.rooms:
+        if not used_pools & set(room.model.pools):
+            continue
+        if room_role(room.model.tags) is None:
+            roles = [tag for tag in room.model.tags if tag in ROOM_ROLES]
+            problems.append(
+                Problem(
+                    room.source,
+                    "tags",
+                    f"a room in a dungeon type's pool has exactly one role tag ({', '.join(ROOM_ROLES)}); "
+                    f"this one has {', '.join(roles) if roles else 'none'}",
+                )
+            )
+            continue
+        for pool in room.model.pools:
+            pooled.setdefault(pool, []).append(room)
+
+    for entry in content.dungeons:
+        dungeon = entry.model
+        rooms = pooled.get(dungeon.pool, [])
+        if not rooms:
+            problems.append(Problem(entry.source, "pool", f"no room lists {dungeon.pool} in its pools"))
+            continue
+        shapes = [(room, room_role(room.model.tags), connectors(room.structure)) for room in rooms]
+        ending = dungeon.layout.ending
+        needs = (
+            (
+                "pool",
+                "entrance (role entrance, a connector)",
+                lambda role, n: role == "entrance" and n >= 1,
+            ),
+            (
+                "pool",
+                f"room to pass through (role {', '.join(PATH_ROLES)}; two connectors)",
+                lambda role, n: role in PATH_ROLES and n >= 2,
+            ),
+            (
+                "layout.ending",
+                f"room to end the main path (role {ending}, a connector)",
+                lambda role, n, ending=ending: role == ending and n >= 1,
+            ),
+            (
+                "pool",
+                f"dead end for the branches and open connectors (role {', '.join(DEAD_END_ROLES)}, one connector)",
+                lambda role, n: role in DEAD_END_ROLES and n == 1,
+            ),
+        )
+        for location, what, fits in needs:
+            if not any(fits(role, len(found)) for _, role, found in shapes):
+                problems.append(Problem(entry.source, location, f"pool {dungeon.pool} has no {what}"))
+        if dungeon.layout.branches[0] > 0 and not any(
+            role in PATH_ROLES and len(found) >= 3 for _, role, found in shapes
+        ):
+            problems.append(
+                Problem(
+                    entry.source,
+                    "layout.branches",
+                    f"every layout has a branch, but pool {dungeon.pool} has no room to pass through with a third "
+                    "connector to take it",
+                )
+            )
+        everything = [connector for _, _, found in shapes for connector in found]
+        for room, _, found in shapes:
+            for connector in found:
+                if not any(could_attach(connector, other) for other in everything):
+                    position = " ".join(str(c) for c in connector.pos)
+                    problems.append(
+                        Problem(
+                            room.source,
+                            "pools",
+                            f"its connector at {position} (facing {connector.front}, target {connector.target}) "
+                            f"meets no connector in pool {dungeon.pool}, so {entry.source} can never place it",
+                        )
+                    )
     return problems
 
 

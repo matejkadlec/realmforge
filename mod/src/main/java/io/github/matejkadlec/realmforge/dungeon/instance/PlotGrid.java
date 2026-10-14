@@ -39,6 +39,14 @@ public final class PlotGrid {
         return row * PER_ROW + column;
     }
 
+    /**
+     * Where a plot's rooms may lie, relative to its origin: within its reach and the dimension's height. A new box each
+     * time, as a {@link BoundingBox} can still be changed in place.
+     */
+    public static BoundingBox limits() {
+        return new BoundingBox(-MAX_REACH, -BASE_Y, -MAX_REACH, MAX_REACH, 255 - BASE_Y, MAX_REACH);
+    }
+
     /** Whether a box, relative to a plot's origin, stays within the plot's reach and the dimension's height. */
     public static boolean fits(BoundingBox relative) {
         return relative.minX() >= -MAX_REACH && relative.maxX() <= MAX_REACH

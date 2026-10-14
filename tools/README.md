@@ -120,8 +120,8 @@ block_entities:       # source block entity -> ours, data kept; a remapped block
   dungeonz:dungeon_chest: minecraft:chest
 connectors:           # jigsaw name and target -> our connector names
   stonevaults:door: realmforge:door
-pools:                # jigsaw pool -> ours
-  stonevaults:rooms: realmforge:rooms/stone
+pools:                # jigsaw pool -> a vanilla template pool or a room pool some sidecar lists
+  stonevaults:rooms: minecraft:empty
 jigsaws:
   interior: drop      # keep (default) | drop: a jigsaw inside the room (a prop, a mob) becomes its final_state
   normalize: false    # true: every connector realmforge:door (sides) or realmforge:shaft (up, down), pool empty
@@ -159,7 +159,8 @@ the walls (one at most in a hallway, none on stairs), all clear of the doorways 
 `without` leaves a decoration out of the rooms it names. No armor stands: placed by rule they looked out of place in
 Matěj's playtest. Choices are hashes of the room's path, so a re-import gives the same room.
 The import report names every remap, every dropped entity, block entity, interior jigsaw and loot table, and the
-jigsaw names and pools no rule mapped. The
+jigsaw names and pools no rule mapped; validation refuses a jigsaw pool that is neither a vanilla template pool nor a
+room pool some sidecar lists. The
 rules of the imported sources live in `art/rooms/<source>/rules.yaml` ([art/rooms](../art/rooms/README.md)). The
 schematic readers live in `rooms/sources.py`: nucleation 0.10.24 reads both formats too,
 but it writes only the tight box around a room's non-air blocks, so air-only layers at the edge vanish and the

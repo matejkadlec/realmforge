@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from realmforge_tools.schema.character import ClassDef, RaceDef
 from realmforge_tools.schema.curve import CurveDef
 from realmforge_tools.schema.dimension_rules import DimensionRulesDef
+from realmforge_tools.schema.dungeon import DungeonTypeDef
 from realmforge_tools.schema.item import ItemDef
 from realmforge_tools.schema.spell_school import SpellSchoolDef
 from realmforge_tools.schema.stat import StatDef
@@ -26,6 +27,7 @@ CONTENT_TYPES: dict[str, type] = {
     "races": RaceDef,
     "classes": ClassDef,
     "texts": TextGroupDef,
+    "dungeons": DungeonTypeDef,
 }
 
 # content/worldgen/ holds vanilla worldgen JSON instead of YAML; it is validated and copied (content.py, validate.py).
@@ -41,8 +43,9 @@ class DatapackType:
 
 
 # Content types generated into data/realmforge/realmforge/<registry>/<id>.json by generate/datapack.py. Spell schools
-# are a datapack registry too (realmforge:spell_school), but generate/spell_schools.py writes them with their damage
-# types (architecture 6.2).
+# and dungeon types are datapack registries too (realmforge:spell_school, realmforge:dungeon_type), but their own
+# generators write them: spell_schools.py with their damage types, dungeons.py with their pools' rooms resolved
+# (architecture 6.2).
 DATAPACK_TYPES: tuple[DatapackType, ...] = (
     DatapackType("curves", "curve"),
     DatapackType("stat_rules", "stat_rule"),
@@ -59,6 +62,7 @@ __all__ = [
     "CurveDef",
     "DatapackType",
     "DimensionRulesDef",
+    "DungeonTypeDef",
     "ItemDef",
     "RaceDef",
     "SpellSchoolDef",

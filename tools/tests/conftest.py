@@ -11,14 +11,15 @@ from realmforge_tools.project import REPO_ROOT, RepoPaths
 @pytest.fixture
 def repo(tmp_path: Path) -> RepoPaths:
     """A scratch checkout containing a copy of content/ and the vanilla ID universe. It leaves out content/rooms/,
-    megabytes of imported templates no test reads: a test that needs rooms adds its own."""
-    shutil.copytree(REPO_ROOT / "content", tmp_path / "content", ignore=_rooms)
+    megabytes of imported templates no test reads, and content/dungeons/, whose pools need those rooms: a test that
+    needs rooms or dungeon types adds its own."""
+    shutil.copytree(REPO_ROOT / "content", tmp_path / "content", ignore=_rooms_and_dungeons)
     shutil.copytree(REPO_ROOT / "tools/id_universe", tmp_path / "tools/id_universe")
     return RepoPaths(tmp_path)
 
 
-def _rooms(folder: str, names: list[str]) -> set[str]:
-    return {"rooms"} if Path(folder) == REPO_ROOT / "content" else set()
+def _rooms_and_dungeons(folder: str, names: list[str]) -> set[str]:
+    return {"rooms", "dungeons"} if Path(folder) == REPO_ROOT / "content" else set()
 
 
 def write(path: Path, text: str) -> Path:

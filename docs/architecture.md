@@ -301,7 +301,7 @@ How features cooperate without breaking the direction:
 | `realmforge:chapter` | `content/chapters/` | story chapter: order and the level cap after completion (what a chapter unlocks names the chapter through `chapter_completed`) | yes | M1 |
 | `realmforge:dimension_rules` | `content/dimensions/` | gameplay rules of one dimension, named in a `dimension` field (for example `minecraft:overworld`): mob levels, access requirement, flags. Validation allows one entry per dimension; the server indexes the entries by dimension | no | M1 |
 | `realmforge:boss` | `content/bosses/` | fixed level, attributes, phases, abilities (spells), arena, loot | no | M1 |
-| `realmforge:dungeon_type` | `content/dungeons/` | rule set: theme, room pools, layout rules, ending, budgets, level range | no | M1 |
+| `realmforge:dungeon_type` | `content/dungeons/` | rule set: the room pool it is built from, resolved into its rooms (template, size, role, weight, connectors), and its layout rules (W4a); theme, encounters, loot, level range and key join with the tasks that use them | no | M1 |
 | `realmforge:affix` | `content/affixes/` | rollable modifier: item categories (tags), tiers by rarity and level | yes | M2 |
 | `realmforge:gem` | `content/gems/` | socketable gem and its bonuses | yes | M2 |
 
@@ -365,6 +365,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/`, `entities/`, `effects/`, `sounds/` | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
 | `races/`, `classes/`, `spells/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `bosses/`, `dungeons/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
+| `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template | the planner ([15.3](#153-generation-pure-first-then-minecraft)) |
 | `loot/`, `recipes/`, tags | `data/realmforge/loot_table/`, `recipe/`, `tags/` | reloadable vanilla data |
 | `chapters/`, `quests/` | `data/realmforge/advancement/`; `pack/config/ftbquests/quests/` (SNBT, stable ids per ADR 0006) | advancements; the FTB Quests book |
 | `worldgen/<registry>/<id>.json` (JSON, [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)) | validated and copied unchanged to `data/realmforge/dimension/`, `dimension_type/`, `worldgen/<registry>/` | vanilla worldgen registries |
@@ -1032,20 +1033,39 @@ loot: realmforge:boss/hollow_warden
 
 ### 15.2 Dungeon types
 
+A dungeon type (`content/dungeons/<id>.yaml`, the registry `realmforge:dungeon_type`, W4a) names the room pool it is
+built from and the rules of its layout ([15.3](#153-generation-pure-first-then-minecraft)):
+
 ```yaml
-# content/dungeons/sunken_crypt.yaml (sketch; names are examples)
-id: sunken_crypt
+# content/dungeons/test_dungeon.yaml (exists)
+id: test_dungeon
+name: {en_us: Test Dungeon}
+pool: realmforge:stone_vault          # the rooms whose sidecar lists this pool
+layout:
+  main_path: [3, 6]                   # [min, max] rooms between the entrance and the ending
+  branches: [1, 2]                    # side branches off the main path's rooms
+  branch_rooms: [1, 2]                # rooms in each branch, its dead end included
+  ending: treasure                    # the role of the room that ends the main path: boss or treasure
+```
+
+`rf gen` resolves the pool into the entry: each room's template, size, role, weight and connectors, in room id order
+(`generate/dungeons.py`), so the game plans a layout without loading a template, and JUnit fuzzes the planner on the
+same files. Validation checks that the pool holds an entrance, rooms to pass through (two connectors, a third when
+the rules always want a branch), a room for the ending and a dead end, that every room in it has exactly one role tag,
+and that every connector of every room meets some connector of the pool. `realmforge:test_dungeon` is test content
+like `realmforge:test_item`: nothing in the game opens it, and W6 brings the real types. What later tasks add, as a
+sketch:
+
+```yaml
+# planned fields (names are examples)
 placement: instance                  # world_structure later (M4)
 theme: realmforge:crypt              # block palette: a processor list (see below)
-rooms: realmforge:crypt              # room pool
-layout:
-  main_path_rooms: [6, 9]
-  branches: {count: [1, 3], rooms: [1, 2]}
-  required_rooms: [treasure, trap]
-ending: {type: realmforge:boss_lair, boss: realmforge:hollow_warden}   # or realmforge:treasury, ...
-encounters: {budget_per_room: [2, 4], mobs: realmforge:crypt}
-loot: {chests: [2, 4], table: realmforge:dungeon/sunken_crypt}
+ending: {type: realmforge:boss_lair, boss: realmforge:hollow_warden}   # or realmforge:treasury, ... (W5, W6)
+encounters: {budget_per_room: [2, 4], mobs: realmforge:crypt}           # W6
+loot: {chests: [2, 4], table: realmforge:dungeon/sunken_crypt}          # W6
 level: [8, 12]
+open_minutes: 40                     # how long a portal to it stays open (W4d)
+key: realmforge:crypt_key            # the key that opens a portal to it (W4d)
 ```
 
 The ending is a rule of the type, so "not every dungeon ends with a boss" is just another ending type.
@@ -1078,8 +1098,36 @@ half and shape, and a slab loses its type. Two ways keep them:
    over ticks within a time budget.
 4. **Populate:** encounters and loot from the budgets.
 
-Steps 1 and 2 are deterministic; JUnit fuzzes them over thousands of seeds (constraints hold, no overlaps, every
-room reachable). A QA command renders a layout preview for review.
+Steps 1 and 2 exist since W4a (`dungeon/plan/`; `DungeonType#plan(seed)` → `DungeonPlan`):
+
+- **The graph** (`RoomGraph`) is a tree in placement order: the entrance, a main path of rooms a player passes
+  through (role `hallway`, `combat` or `stairs`), the ending (role `boss` or `treasure`), then the branches, each
+  hanging off a different room of the main path while there are enough and ending in a dead end. Lengths and counts
+  are drawn from the rules' ranges.
+- **The layout** (`DungeonPlanner`) places the nodes one by one, parent first, as a depth-first search: a room that
+  fits the node's slot (by role and connector count), in a random order where a heavier room tends to come first,
+  turned four ways about its origin corner, with one of its connectors taking a free connector of its parent by
+  vanilla's jigsaw rules (`JigsawBlock#canAttach`: opposite fronts, the source's `target` is the other's `name`, an
+  aligned vertical joint keeps its top). The new room's connector block sits right in front of the parent's, its box
+  must lie inside the plot's reach (`PlotGrid#limits`) and overlap no placed room, and a node with no such placement
+  sends the search back to the node before it. Once every node has a room, each connector still free meets a free
+  connector of a neighbour right in front of it (a loop) or gets a dead end (slot `cap`, role `hallway`, `combat`,
+  `stairs` or `treasure`); a connector neither closes sends the search back too. The positions and boxes come from
+  `StructureTemplate.transform`, the builder's own math.
+- **Attempts:** an attempt that runs out of steps (20,000 placements) gives up, and the next draws a new graph from
+  the same random source, up to 64; no layout in 64 attempts throws `PlanningException`. The entrance's origin
+  corner is the plot's origin, so every room offset is relative to it.
+- **Cost:** on the test dungeon (23 rooms, layouts of 8 to 17 rooms) planning took 3.5 ms at the median, 24 ms at
+  the 99th percentile and 44 ms at worst over 3,000 seeds, with at most 11 attempts. It reads no world, so W4b can
+  plan off the main thread if the entry path needs it.
+
+JUnit fuzzes steps 1 and 2 over thousands of seeds, on synthetic room sets and on the generated dungeon types
+(`DungeonPlannerTest`, `PlanChecks`): every rule holds, no rooms overlap, every room is reachable from the entrance,
+no connector stays open, and the same seed gives the same layout. `ContentDungeonTypeGameTests` checks in the game
+that every room's connectors are the jigsaw blocks the game reads from its template in every rotation, and
+`DungeonPlanGameTests` builds a layout of every type into a plot. `/qa dungeon plan <type> [<seed>]` names a layout's
+rooms by slot and writes a top-down map and a legend to the server log; `/qa dungeon build <type> [<seed>]` builds it
+into a plot with spike 3's builder for a fly-through ([20](#20-tests-per-layer)).
 
 ### 15.4 Rooms
 
@@ -1087,15 +1135,16 @@ Rooms are generated or imported; nobody has to build one by hand
 ([ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)).
 
 - **Format:** structure NBT in `content/rooms/` with a small YAML sidecar (tags, pools, weight, and the source of
-  an imported room). Connectors are vanilla jigsaw blocks, so the same rooms work in world structures later. Rooms
-  are the second exception to YAML-only content, after worldgen JSON (ADR 0014 amends
-  [ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)). A room's id is its path below
-  `content/rooms/` (`third_party/stonevaults/hall_a`); `rf gen` writes the template, normalized, to
-  `data/realmforge/structure/rooms/<id>.nbt`, so the game knows it as the structure `realmforge:rooms/<id>`
-  (`tools/realmforge_tools/generate/rooms.py`). A template keeps the data version it was saved with, and vanilla
-  upgrades it from there when it loads it (`TemplateSource#readStructure`), so imported rooms from older versions
-  stay as they were saved. A template without one is refused: vanilla would read it as version 500 and run every
-  upgrade since on it.
+  an imported room). A room joins the room pools its sidecar lists, and a dungeon type is built from one pool
+  ([15.2](#152-dungeon-types)); its role tag says which slots it can take. Connectors are vanilla jigsaw blocks,
+  so the same rooms work in world structures later. Rooms are the second exception to YAML-only content, after
+  worldgen JSON (ADR 0014 amends [ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)). A
+  room's id is its path below `content/rooms/` (`third_party/stonevaults/hall_a`); `rf gen` writes the template,
+  normalized, to `data/realmforge/structure/rooms/<id>.nbt`, so the game knows it as the structure
+  `realmforge:rooms/<id>` (`tools/realmforge_tools/generate/rooms.py`). A template keeps the data version it was
+  saved with, and vanilla upgrades it from there when it loads it (`TemplateSource#readStructure`), so imported
+  rooms from older versions stay as they were saved. A template without one is refused: vanilla would read it as
+  version 500 and run every upgrade since on it.
 - **Generated rooms** (A4d): room specs in YAML (kind, a footprint up to 16×16, height, connector sides, features,
   a seed, blocks named by neutral roles that themes swap) become structure NBT through the room generator in
   `rf gen`, with style rules for walls, floors, stairs and light, and jigsaws and markers from the connectors. The
@@ -1131,13 +1180,15 @@ Rooms are generated or imported; nobody has to build one by hand
   rooms a review rejects, so importing the source again does not bring them back. Generated folders are not
   reviewed: `rf gen` would delete their `review.yaml`.
 - **Validation:** size limits (48 blocks per axis, a structure block's maximum), connectors on the room's boundary
-  facing out, known markers, only blocks the themes can swap and only ids inside the ID universe (an imported room's own
-  blocks are remapped, and a container's loot table must exist), and `LICENSE` and `NOTICE` next to third-party rooms
-  (`COPYING` next to LGPL-3.0 ones). `rooms/check.py` checks the size, the data version, the ids, the loot tables and
-  the connectors; markers come with the dungeon framework (W4) and the swappable blocks with the themes of the room
-  generator (A4d). Generated rooms are also checked for reachability between their connectors and for headroom. In the
-  game, `ContentRoomGameTests` (QA mod) loads every room through the structure manager, which upgrades an imported
-  room from its data version, and compares its size, jigsaws and air blocks with `GeneratedRoomExpectations`.
+  facing out, known markers, only blocks the themes can swap and only ids inside the ID universe (an imported
+  room's own blocks are remapped, and a container's loot table must exist), and `LICENSE` and `NOTICE` next to
+  third-party rooms (`COPYING` next to LGPL-3.0 ones). `rooms/check.py` checks the size, the data version, the
+  ids, the loot tables, the connectors and each jigsaw's pool, which must be a vanilla template pool or a room
+  pool some sidecar lists (it becomes a template pool for world structures, M4); markers come with W4b and the
+  swappable blocks with the themes of the room generator (A4d). Generated rooms are also checked for reachability
+  between their connectors and for headroom. In the game, `ContentRoomGameTests` (QA mod) loads every room through
+  the structure manager, which upgrades an imported room from its data version, and compares its size, jigsaws and
+  air blocks with `GeneratedRoomExpectations`.
 
 ### 15.5 Instances
 
@@ -1155,11 +1206,12 @@ and `dungeon/instance/`.
   game mode.
 - **Entry:** an entrance in the world (W4: a temporary portal opened with a dungeon key, D8) → allocate a plot
   (`InstanceManager#open`, lowest free plot first) → build over ticks → teleport the online party members
-  (`ServerPlayer#teleportTo(ServerLevel, x, y, z, yaw, pitch)`). Until W4 the QA mod's `/qa instance enter` opens a
-  plot with three test rooms.
+  (`ServerPlayer#teleportTo(ServerLevel, x, y, z, yaw, pitch)`). Until W4b the QA mod's `/qa instance enter` opens a
+  plot with three test rooms, and `/qa dungeon build` builds a planned layout without entering it.
 - **Building over ticks:** placing a room and clearing a box are cut into units of one chunk column each
   (`PlotWork`; placing uses `StructurePlaceSettings#setBoundingBox`, known shapes and update flag 2 like structure
-  blocks). The builder runs units for up to 5 ms per tick, at least one, in `LevelTickEvent.Post` of the instance
+  blocks, and `JigsawReplacementProcessor`, so every connector becomes its final state as in vanilla's jigsaw
+  structures). The builder runs units for up to 5 ms per tick, at least one, in `LevelTickEvent.Post` of the instance
   level, so its time shows in the server's tick time. The unit list is a pure function of the saved plot, so a
   restart resumes at the saved step, and a unit whose chunk is still loading waits for a later tick instead of
   loading it on the main thread.
@@ -1462,6 +1514,9 @@ that agents can read. So far:
 
 - `/qa instance enter|leave|build|free|list|cleanup|bench` from spike 3, and `/qa state show|reset [<entity>]` from
   F3, which prints or clears the player state attachments ([7](#7-player-state));
+- `/qa dungeon plan|build <type> [<seed>]` (W4a): plan a layout of a dungeon type, with a top-down map and a legend
+  in the server log, or build it into a plot for a fly-through; without a seed a random one is drawn and named
+  ([15.3](#153-generation-pure-first-then-minecraft));
 - `/qa stats set <stat> <value> [<players>]`, `/qa stats reset|show` (F4b: points for a primary stat, percent for a
   share) and `/qa level <level> [<entity>]` (the `realmforge:level` attachment, which the armor formula reads; a
   hostile mob also gets the scaling of the level, W1, and a player's race and class bonuses follow it, C1);
