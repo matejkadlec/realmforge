@@ -247,12 +247,14 @@ RLM-115; the vanilla facts are checked against the 26.1.2 sources.
 - **Reference code:** Chococraft's whole riding and flight logic is about 60 lines (`AbstractChocobo#travel`), plus
   a dismount guard of about 15 (`RidingEventHandler`) and the rider-effect tick. It is MIT, so adapted parts keep
   its copyright and licence notice; its assets, its sound and its Final Fantasy names stay out.
-- **Flight:** keep the mount's gravity at zero while it flies (`setNoGravity`). A dedicated server without
-  `allow-flight` kicks a player who floats a ridden vehicle for about 80 ticks, unless the vehicle has no gravity
+- **Flight:** a dedicated server without `allow-flight` kicks a player who floats a ridden vehicle for about 80
+  ticks, unless the vehicle is a flying vehicle (`Entity#isFlyingVehicle()`) or has no gravity
   (`ServerGamePacketListenerImpl#getMaximumFlyingTicks` and `clientVehicleIsFloating`); singleplayer allows flight
-  (`MinecraftServer#allowFlight`). Chococraft never sets `noGravity`.
-- **Jump input:** the rider's jump state is the protected `LivingEntity#jumping`, which Chococraft widens; ours
-  needs an access transformer ([architecture 19.3](../architecture.md#193-mixins-and-access-transformers): a
-  comment saying why, and a test).
+  (`MinecraftServer#allowFlight`). Our flying tiers override `isFlyingVehicle()` or keep their gravity at zero
+  while they fly (`setNoGravity`). Chococraft does neither. 26.1.2's Happy Ghast (`HappyGhast`) is a vanilla
+  reference for a ridden flier: it overrides `isFlyingVehicle()` and steers by its rider's input.
+- **Jump input:** the mount reads its rider's jump through the public `LivingEntity#isJumping()` in
+  `getRiddenInput`, as the Happy Ghast does, so no access transformer is needed (Chococraft widens the protected
+  `jumping` field instead).
 - **Vanilla riding API** (26.1.2): `getControllingPassenger`, `travel`, `tickRidden`, `getRiddenInput`,
   `getRiddenSpeed`, `positionRider`, `getPassengerAttachmentPoint`.
