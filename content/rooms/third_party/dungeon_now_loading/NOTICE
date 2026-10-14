@@ -16,6 +16,9 @@ Changed by Realmforge (2026-10-14), with `rf rooms import` and the rules in
 art/rooms/dungeon_now_loading/rules.yaml of the Realmforge repository:
 - minecraft:chain renamed to minecraft:iron_chain and minecraft:grass to minecraft:short_grass, their
   names in current Minecraft;
+- the marker blocks its processor list generic_degradation replaces when the labyrinth generates set to
+  what it always or nearly always picks (red wool and black glass to stone, the other glass and carpets
+  to air);
 - Dungeon Now Loading's own blocks replaced by vanilla blocks that look alike (wall torches, banners,
   barrels, pointed dripstone for its spikes, spruce slabs for its wall platforms) or removed (pebbles,
   wall racks, and the blocks that run its mechanics);

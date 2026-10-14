@@ -17,6 +17,9 @@ Each room's YAML sidecar names its source file.
 Changed by Realmforge (2026-10-14), with `rf rooms import` and the rules in
 art/rooms/yungs_better_dungeons/rules.yaml of the Realmforge repository:
 - minecraft:chain renamed to minecraft:iron_chain, its name since Minecraft 1.21.9;
+- the marker blocks the mod's processors replace when a dungeon generates set to what they become:
+  magenta glass and purpur slabs to smooth stone legs, yellow glass to stone bricks, warped stairs to
+  cobblestone stairs, soul sand to coarse dirt;
 - jigsaws inside a room (props, cubbies, loot piles) replaced by the block they leave behind, and the
   connectors renamed realmforge:door (sides) and realmforge:shaft (up, down);
 - the containers' betterdungeons loot tables removed (vanilla ones stay);

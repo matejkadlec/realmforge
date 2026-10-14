@@ -19,6 +19,8 @@ crypt's bottom room. Each room's YAML sidecar names its source file.
 Changed by Realmforge (2026-10-14), with `rf rooms import` and the rules in
 art/rooms/moogs_voyager_structures/rules.yaml of the Realmforge repository:
 - structure blocks left from the authoring world removed;
+- the marker blocks the cathedral's processor list replaces set to what they become (crimson signs to
+  air, blue wool to dirt, redstone blocks to stone);
 - jigsaws inside a room replaced by the block they leave behind, and the connectors renamed
   realmforge:door (sides) and realmforge:shaft (up, down);
 - the containers' mvs loot tables removed (vanilla ones stay);

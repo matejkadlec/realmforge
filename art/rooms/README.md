@@ -24,6 +24,11 @@ Every jar comes from Modrinth; the version id and the start of the file's sha512
 Not imported: Moog's End Structures 2.1.1 (LGPL-3.0), which the research listed too. Its pieces are a ship's
 sections of up to 48 blocks per axis and surface buildings without connectors; none is a room.
 
+Some sources build with marker blocks that their processors replace when the structure generates (Dungeon Now
+Loading's red wool is the rock around a room, YUNG's magenta glass a leg). Our dungeons place the templates without
+those processors, so the rules map each marker to what the processor always, or nearly always, makes of it; random
+decay (mossy or cracked variants) is left to our themes.
+
 Each license was checked at the version imported (2026-10-14); the `NOTICE` says where it is stated, and where
 sources disagreed (Moog's Voyager Structures: LGPL-3.0 in the jar and repository, MIT on Modrinth; Dungeon Now
 Loading: CC0 in the jar, MIT on Modrinth, repository gone) the import follows the jar. None of the imported pieces

@@ -15,6 +15,17 @@ include:
 max_size: 32
 blocks:
   minecraft:chain: minecraft:iron_chain       # renamed in 1.21.9; the templates are from 1.21.1
+  # Markers the mod's processors replace when a dungeon generates (Common/.../world/processor/ in its repository):
+  minecraft:magenta_stained_glass: minecraft:smooth_stone[]       # a leg (ZombieDungeonLegProcessor)
+  minecraft:purpur_slab: minecraft:smooth_stone_slab              # a leg's top
+  minecraft:blue_stained_glass: minecraft:cobblestone[]           # a leg (SkeletonDungeonLegProcessor)
+  minecraft:yellow_stained_glass: minecraft:stone_bricks[]        # a ruined wall: bricks unless a cave opens there
+  minecraft:prismarine_brick_slab: minecraft:stone_brick_slab[type=top,waterlogged=false]
+  minecraft:warped_stairs: minecraft:cobblestone_stairs           # the main staircase (ZombieMainStairsProcessor)
+  minecraft:soul_sand: minecraft:coarse_dirt[]                    # NetherBlockProcessor, outside the Nether
+  minecraft:soul_soil: minecraft:coarse_dirt[]
+  minecraft:soul_campfire: minecraft:campfire
+  minecraft:soul_lantern: minecraft:lantern
 jigsaws:
   interior: drop      # props, cubbies and loot piles
   normalize: true

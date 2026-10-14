@@ -11,6 +11,10 @@ exclude:
 max_size: 32
 blocks:
   minecraft:structure_block: minecraft:air[]  # leftovers of the authoring world
+  # Markers the cathedral's processor list (data/mvs/worldgen/processor_list/cathedral.json) replaces:
+  minecraft:crimson_sign: minecraft:air[]
+  minecraft:blue_wool: minecraft:dirt[]
+  minecraft:redstone_block: minecraft:stone[]  # stone 9 times in 10
 jigsaws:
   interior: drop
   normalize: true
