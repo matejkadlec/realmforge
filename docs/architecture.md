@@ -1085,8 +1085,10 @@ Rooms are generated or imported; nobody has to build one by hand
   only pieces that are rooms, hallways or stairs of a dungeon, with a connector, at most 32 blocks per axis, and no
   copy of a vanilla template. On import, jigsaws inside a room (props, mobs, sub-pieces the source pulls in) become
   the block they leave behind, every connector is named `realmforge:door` (sides) or `realmforge:shaft` (up, down)
-  with the pool `minecraft:empty`, a source's own loot tables are dropped (the dungeon fills its chests, W4), only
-  decorative entities stay, and the sidecar gets draft slot tags from its connectors and its name
+  with the pool `minecraft:empty`, marker blocks the source's processors replace at generation (red wool for rock,
+  stained glass for legs) become what those processors make of them, since our dungeons place templates without
+  them, a source's own loot tables are dropped (the dungeon fills its chests, W4), only decorative entities stay,
+  and the sidecar gets draft slot tags from its connectors and its name
   ([content/README](../content/README.md)). Each source has its own folder, `content/rooms/third_party/<source>/`,
   with its `LICENSE`, a `NOTICE` and, for LGPL-3.0, `COPYING` (the GPL-3.0 text). The folder is a license
   boundary, not a pool, so the sidecars name the pools. The jar keeps the folder (LGPL-3.0 rooms stay apart from our
