@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/dimensions.schema.json
+# The Overworld is chapter 1's first band, levels 1 to 5 (realm design, "Chapters and levels"): level 1 at the
+# origin, one level more every 500 blocks out (the cap, 5, from 2,000 blocks on), one more for every 32 blocks below
+# y 0 (two at the bottom of the world), and each mob up to one level above or below that. W1's first numbers, tuned in
+# playtests. The scaling each level brings is in the mob_* curves.
+id: overworld
+dimension: minecraft:overworld
+mob_levels:
+  origin_level: 1
+  blocks_per_level: 500
+  depth: {below_y: 0, blocks_per_level: 32}
+  jitter: 1
+  min_level: 1
+  max_level: 5
