@@ -12,17 +12,13 @@ plainer a surface, the more variants it gets, so a corridor gets the most and a 
   below holds it.
 - **Decorations**, scaled by how plain the room was (the share of its variants it needed): vines hanging from the
   top of the walls (a strand per ``VINE_SLOTS`` free spots there), cobwebs where wall meets ceiling (one per
-  ``COBWEB_SLOTS``), barrels against the walls (a hallway gets one at most), and in rooms (not hallways or stairs)
-  armor stands on upside-down stone brick stairs, in full iron or full gold armor that players may take (Matěj's
-  call: loot, so nothing better than iron or gold). An armor stand stands only with its back to a real wall: the
-  column beside it, from its pedestal up to the ceiling, is made only of ``stand_against`` blocks, so never a throne,
-  a bookshelf or other inner structure. Doorways stay clear: nothing goes next to a connector, and no armor stand
-  within ``DOOR_CLEARANCE`` blocks of one; nothing takes the space of the room's own entities (a painting pops off
-  when a block fills its space). ``without`` leaves a decoration out of the rooms it names; barrels come last, so
-  leaving them out changes nothing else in a room.
+  ``COBWEB_SLOTS``) and barrels against the walls (a hallway gets one at most, stairs none). No armor stands: Matěj
+  tried them in the playtest (2026-10-14), and placed by rule they looked out of place (facing a wall, standing in
+  front of a throne). Doorways stay clear: nothing goes next to a connector; nothing takes the space of the room's
+  own entities (a painting pops off when a block fills its space). ``without`` leaves a decoration out of the rooms
+  it names; barrels come last, so leaving them out changes nothing else in a room.
 
-Everything is decided by hashes of the room's path and the positions, so the same import gives the same room. An
-armor stand's armor is written in the format of the template's data version, which the game upgrades from.
+Everything is decided by hashes of the room's path and the positions, so the same import gives the same room.
 """
 
 from __future__ import annotations
@@ -31,11 +27,10 @@ import hashlib
 from collections import Counter
 from dataclasses import dataclass, replace
 from fnmatch import fnmatchcase
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from realmforge_tools.formats import nbt
 from realmforge_tools.rooms.check import connector_face
 from realmforge_tools.rooms.structure import (
     JIGSAW,
@@ -43,7 +38,6 @@ from realmforge_tools.rooms.structure import (
     Pos,
     Structure,
     StructureBlock,
-    StructureEntity,
 )
 
 AIRS = frozenset({"minecraft:air", "minecraft:cave_air"})
@@ -51,8 +45,6 @@ AIRS = frozenset({"minecraft:air", "minecraft:cave_air"})
 FAMILY_SHARE = 0.05
 # Each variant added to a surface replaces this share of the surface's replaceable blocks.
 VARIANT_SHARE = 0.15
-# Armor stands keep this far (horizontally, in blocks) from every connector, other decorations one block.
-DOOR_CLEARANCE = 2
 # Free spots at the top of the walls per vine strand and per cobweb, in a room that needed all its variants.
 VINE_SLOTS = 6
 COBWEB_SLOTS = 8
@@ -65,22 +57,12 @@ _NOT_FULL = (
 )  # fmt: skip
 _SHAPES = ("_slab", "_stairs", "_wall", "_planks")
 _SIDES = {"north": (0, 0, -1), "south": (0, 0, 1), "west": (-1, 0, 0), "east": (1, 0, 0)}
-# An armor stand faces away from its wall: the yaw that looks south, west, north, east.
-_YAW = {"north": 0.0, "east": 90.0, "south": 180.0, "west": -90.0}
-_ARMOR = {
-    "iron": ("iron_boots", "iron_leggings", "iron_chestplate", "iron_helmet"),
-    "gold": ("golden_boots", "golden_leggings", "golden_chestplate", "golden_helmet"),
-}
 # Entities that hang on a wall and pop off when a block fills their space; paintings span up to 4 x 4 blocks.
 _HANGING = frozenset({"minecraft:painting", "minecraft:item_frame", "minecraft:glow_item_frame"})
 _HANGING_REACH = 2
-# Data versions where an entity's armor changed format: items became components (1.20.5), ArmorItems became
-# equipment (1.21.5).
-_ITEM_COMPONENTS = 3818
-_EQUIPMENT = 4301
 
 Surface = Literal["floor", "walls", "ceiling"]
-Decoration = Literal["armor_stands", "vines", "cobwebs", "barrels"]
+Decoration = Literal["vines", "cobwebs", "barrels"]
 
 
 class _Strict(BaseModel):
@@ -104,19 +86,9 @@ class DressRules(_Strict):
     without: dict[Decoration, list[str]] = Field(
         default_factory=dict, description="Rooms (fnmatch on their path) that do not get a decoration."
     )
-    stand_against: list[str] = Field(
-        default_factory=list,
-        description="The blocks of a real wall an armor stand may stand against, from its pedestal up to the "
-        "ceiling (default: the walls' replace and variants).",
-    )
 
     def excludes(self, name: str) -> bool:
         return any(fnmatchcase(name, pattern) for pattern in self.exclude)
-
-    def stand_walls(self) -> frozenset[str]:
-        if self.stand_against:
-            return frozenset(self.stand_against)
-        return frozenset([*self.walls.replace, *self.walls.variants]) if self.walls else frozenset()
 
     def decorations_for(self, name: str) -> list[Decoration]:
         """The decorations the room ``name`` gets: all of them but those ``without`` names it under."""
@@ -160,7 +132,7 @@ def dress(
     structure: Structure, rules: DressRules, *, name: str, tags: list[str] | None = None
 ) -> tuple[Structure, list[str]]:
     """The room with variety and decorations added, and what was added. ``name`` (the room's path below its
-    source) seeds every choice; ``tags`` (its slot tags) keep armor stands out of hallways and stairs."""
+    source) seeds every choice; ``tags`` (its slot tags) keep barrels out of stairs and down to one in a hallway."""
     room = _Room(
         structure.size,
         {block.pos: block for block in structure.blocks},
@@ -188,22 +160,10 @@ def dress(
             notes.append(f"dressed the {kind} with {', '.join(added)}")
     plainness = needed / possible if possible else 0.0
 
-    entities = list(structure.entities)
-    decorations = rules.decorations_for(name)
-    placed = _decorate(
-        room,
-        surfaces,
-        decorations,
-        rules.stand_walls(),
-        plainness,
-        name,
-        set(tags or []),
-        structure,
-        entities,
-    )
+    placed = _decorate(room, surfaces, rules.decorations_for(name), plainness, name, set(tags or []))
     if placed:
         notes.append(f"added {', '.join(placed)}")
-    return replace(structure, blocks=tuple(room.blocks.values()), entities=tuple(entities)), notes
+    return replace(structure, blocks=tuple(room.blocks.values())), notes
 
 
 def family(name: str) -> str:
@@ -266,12 +226,9 @@ def _decorate(
     room: _Room,
     surfaces: dict[Surface, list[Pos]],
     decorations: list[Decoration],
-    stand_walls: frozenset[str],
     plainness: float,
     name: str,
     tags: set[str],
-    structure: Structure,
-    entities: list[StructureEntity],
 ) -> list[str]:
     placed: list[str] = []
     floor_area = len(surfaces["floor"])
@@ -297,24 +254,6 @@ def _decorate(
             room.blocks[pos] = StructureBlock(pos, BlockState("minecraft:cobweb"))
         if webs:
             placed.append(f"{len(webs)} x cobweb")
-    is_room = not tags & {"hallway", "stairs"}
-    if "armor_stands" in decorations and is_room and floor_area >= 40:
-        stands = 1 + (floor_area >= 150)
-        slots = _stand_slots(room, stand_walls)
-        chosen: list[Pos] = []
-        for pos, side in sorted(slots, key=lambda slot: _value(name, "stands", slot[0])):
-            if len(chosen) == stands:
-                break
-            if not room.is_free(pos) or any(max(abs(pos[0] - c[0]), abs(pos[2] - c[2])) <= 1 for c in chosen):
-                continue
-            chosen.append(pos)
-            armor = "iron" if _value(name, "armor", pos) < 0.5 else "gold"
-            pedestal = BlockState.parse(
-                f"minecraft:stone_brick_stairs[facing={side},half=top,shape=straight,waterlogged=false]"
-            )
-            room.blocks[pos] = StructureBlock(pos, pedestal)
-            entities.append(_armor_stand(_up(pos, 1), side, armor, structure.data_version))
-            placed.append(f"armor stand ({armor})")
     if "barrels" in decorations and "stairs" not in tags:
         if "hallway" in tags:
             count = int(plainness >= 0.5 and _value(name, "barrel-chance", (0, 0, 0)) < 0.5)
@@ -327,30 +266,6 @@ def _decorate(
         if barrels:
             placed.append(f"{len(barrels)} x barrel")
     return placed
-
-
-def _stand_slots(room: _Room, walls: frozenset[str]) -> list[tuple[Pos, str]]:
-    """Where an armor stand may go: free air on a full floor block, with two free cells above it for the stand,
-    away from doorways, and with its back to a real wall: on that side, every block from its own height up to the
-    ceiling above it is one of ``walls``. A throne, a bookshelf or a crate stack is no wall."""
-    slots = []
-    for pos in sorted(room.blocks):
-        if not room.is_free(pos) or room.near_door(pos, DOOR_CLEARANCE) or not room.is_full(_up(pos, -1)):
-            continue
-        if not all(room.is_free(_up(pos, i)) for i in (1, 2)):
-            continue
-        ceiling = next(
-            (y for y in range(pos[1] + 3, room.size[1]) if not room.is_air(_up(pos, y - pos[1]))), None
-        )
-        if ceiling is None:
-            continue
-        for side in _SIDES:
-            beside = _beside(pos, side)
-            column = [(beside[0], y, beside[2]) for y in range(pos[1], ceiling)]
-            if all(room.name(cell) in walls for cell in column):
-                slots.append((pos, side))
-                break
-    return slots
 
 
 def _taken(structure: Structure) -> set[Pos]:
@@ -386,32 +301,6 @@ def _wall_slots(
                 slots.append((pos, side))
                 break
     return slots
-
-
-def _armor_stand(pos: Pos, wall: str, armor: str, data_version: int | None) -> StructureEntity:
-    """An armor stand at ``pos`` with its back to ``wall``, in the entity format of ``data_version``."""
-    items = [f"minecraft:{item}" for item in _ARMOR[armor]]  # feet, legs, chest, head
-    data: dict[str, Any] = {
-        "id": "minecraft:armor_stand",
-        "Rotation": nbt.NbtList(nbt.TAG_FLOAT, (nbt.Float(_YAW[wall]), nbt.Float(0.0))),
-    }
-    version = data_version or 0
-    if version >= _EQUIPMENT:
-        slots = ("feet", "legs", "chest", "head")
-        data["equipment"] = {
-            slot: {"id": item, "count": nbt.Int(1)} for slot, item in zip(slots, items, strict=True)
-        }
-    else:
-
-        def stack(item: str) -> dict[str, Any]:
-            if version >= _ITEM_COMPONENTS:
-                return {"id": item, "count": nbt.Int(1)}
-            return {"id": item, "Count": nbt.Byte(1)}
-
-        data["ArmorItems"] = nbt.NbtList(nbt.TAG_COMPOUND, tuple(stack(item) for item in items))
-        data["HandItems"] = nbt.NbtList(nbt.TAG_COMPOUND, ({}, {}))
-    x, y, z = pos
-    return StructureEntity((x + 0.5, float(y), z + 0.5), pos, data)
 
 
 def _vine_faces(side: str) -> tuple[tuple[str, str], ...]:

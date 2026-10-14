@@ -26,5 +26,5 @@ art/rooms/dungeon_now_loading/rules.yaml of the Realmforge repository:
   the connectors renamed realmforge:door (sides) and realmforge:shaft (up, down);
 - the containers' loot tables and every entity except item frames removed;
 - more block variety added (mossy, cracked and gravel variants on plain floors, walls and ceilings) and
-  decorations (vines, cobwebs, barrels, armor stands on stone brick stairs);
+  decorations (vines, cobwebs, barrels);
 - templates written back in a normalized form (blocks sorted, stored deflate).

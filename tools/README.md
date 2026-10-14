@@ -138,9 +138,8 @@ dress:                # variety and decorations for plain rooms (rooms/dress.py)
   floor: {target: 4, replace: [minecraft:cobblestone], variants: [minecraft:mossy_cobblestone, minecraft:gravel]}
   walls: {target: 4, replace: [minecraft:stone_bricks], variants: [minecraft:cracked_stone_bricks]}
   ceiling: {target: 3, replace: [minecraft:stone_bricks], variants: [minecraft:mossy_stone_bricks]}
-  decorations: [armor_stands, vines, cobwebs, barrels]
+  decorations: [vines, cobwebs, barrels]
   without: {barrels: [dungeon/rooms/library]}  # rooms that do not get a decoration
-  stand_against: [minecraft:stone_bricks]       # a real wall, from an armor stand's pedestal to the ceiling
 data_version: 4790    # for the files that state none, when the source is known to be saved with this version
 ```
 
@@ -155,12 +154,10 @@ source are rooms, so the import can run again; the report counts the files they 
 rooms variety: a surface (floor: air above, ceiling: air below, walls: air beside) with fewer block families than its
 `target` (a family is a material whatever its shape; it counts from 5 % of the surface) gets the next variants it
 lacks, each replacing 15 % of its `replace` blocks in patches, gravel only over a block. The plainer the room was,
-the more decorations it gets: vines from the top of the walls, cobwebs where wall meets ceiling, barrels against the
-walls, and outside hallways and stairs armor stands in full iron or gold (loot) on upside-down stone brick stairs,
-only with their back to a real wall (`stand_against` blocks from the pedestal up to the ceiling, never a throne or a
-bookshelf), all clear of the doorways and of the room's own entities; `without` leaves a decoration out of the rooms
-it names. Choices are hashes of the room's path, so
-a re-import gives the same room; an armor stand's armor is written in the format of the template's data version.
+the more decorations it gets: vines from the top of the walls, cobwebs where wall meets ceiling and barrels against
+the walls (one at most in a hallway, none on stairs), all clear of the doorways and of the room's own entities;
+`without` leaves a decoration out of the rooms it names. No armor stands: placed by rule they looked out of place in
+Matěj's playtest. Choices are hashes of the room's path, so a re-import gives the same room.
 The import report names every remap, every dropped entity, block entity, interior jigsaw and loot table, and the
 jigsaw names and pools no rule mapped. The
 rules of the imported sources live in `art/rooms/<source>/rules.yaml` ([art/rooms](../art/rooms/README.md)). The

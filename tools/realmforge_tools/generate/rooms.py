@@ -8,10 +8,10 @@ dungeon framework (W4). Each source in ``third_party/<source>/`` that has a room
 and (LGPL-3.0) ``COPYING`` copied byte for byte to ``META-INF/third_party/<source>/``, so the jar carries them next
 to its own licenses.
 
-``GeneratedRoomExpectations`` (QA mod) lists every room with its size, its jigsaws, its air blocks and its armor
-stands: ``ContentRoomGameTests`` loads each one through the game's structure manager, which upgrades an imported room
-from the data version it was saved with, and compares. A block the game cannot read becomes air, so the air count
-catches it; placing a room with armor stands shows that their armor survives the upgrade.
+``GeneratedRoomExpectations`` (QA mod) lists every room with its size, its jigsaws and its air blocks:
+``ContentRoomGameTests`` loads each one through the game's structure manager, which upgrades an imported room from
+the data version it was saved with, and compares. A block the game cannot read becomes air, so the air count catches
+it.
 """
 
 from __future__ import annotations
@@ -26,7 +26,6 @@ from realmforge_tools.rooms.structure import AIR, JIGSAW, write_structure
 from realmforge_tools.schema.room import ROOMS_DIR
 
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
-ARMOR_STAND = "minecraft:armor_stand"
 
 
 def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
@@ -50,11 +49,8 @@ def _expectations(content: Content) -> bytes:
         x, y, z = room.structure.size
         jigsaws = sum(1 for block in room.structure.blocks if block.state.name == JIGSAW)
         air = sum(1 for block in room.structure.blocks if block.state.name == AIR)
-        stands = sum(1 for entity in room.structure.entities if entity.id == ARMOR_STAND)
         structure_id = string_literal(f"{MOD_ID}:{ROOMS_DIR}/{room.id}")
-        rows.append(
-            f"            new RoomExpectation({structure_id}, {x}, {y}, {z}, {jigsaws}, {air}, {stands})"
-        )
+        rows.append(f"            new RoomExpectation({structure_id}, {x}, {y}, {z}, {jigsaws}, {air})")
     rooms_list = "List.of(\n" + ",\n".join(rows) + ")" if rows else "List.of()"
     source = (
         header(Path(__file__), "content/rooms/") + f"package {QA_GENERATED_PACKAGE};\n"
@@ -64,11 +60,10 @@ def _expectations(content: Content) -> bytes:
         "/** What {@code content/rooms/} holds, so a GameTest can check that the game loads every room as written. */\n"
         "public final class GeneratedRoomExpectations {\n"
         "    /**\n"
-        "     * One room: its structure id ({@code realmforge:rooms/<path>}), its size, the jigsaw blocks it holds, the\n"
-        "     * blocks that are air in the template and its armor stands.\n"
+        "     * One room: its structure id ({@code realmforge:rooms/<path>}), its size, the jigsaw blocks it holds and the\n"
+        "     * blocks that are air in the template.\n"
         "     */\n"
-        "    public record RoomExpectation(String id, int sizeX, int sizeY, int sizeZ, int jigsaws, int air,\n"
-        "            int armorStands) {\n"
+        "    public record RoomExpectation(String id, int sizeX, int sizeY, int sizeZ, int jigsaws, int air) {\n"
         "    }\n"
         "\n"
         f"    public static final List<RoomExpectation> ROOMS = {rooms_list};\n"

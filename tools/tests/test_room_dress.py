@@ -5,8 +5,8 @@ from __future__ import annotations
 from collections import Counter
 
 import pytest
+from pydantic import ValidationError
 
-from realmforge_tools.formats import nbt
 from realmforge_tools.id_universe import load_vanilla
 from realmforge_tools.project import DATA_VERSION, RepoPaths
 from realmforge_tools.rooms.check import check_structure
@@ -36,9 +36,7 @@ VARIANTS = {
         "variants": ["minecraft:cracked_stone_bricks", "minecraft:mossy_stone_bricks"],
     },
 }
-RULES = DressRules.model_validate(
-    {**VARIANTS, "decorations": ["armor_stands", "vines", "cobwebs", "barrels"]}
-)
+RULES = DressRules.model_validate({**VARIANTS, "decorations": ["vines", "cobwebs", "barrels"]})
 
 
 def box_room(
@@ -141,55 +139,20 @@ def test_decorations_keep_doorways_clear() -> None:
     room = box_room()
     doors = [b.pos for b in room.blocks if b.state.name == "minecraft:jigsaw"]
     dressed, _ = dress(room, RULES, name="doors")
-    decorations = {"minecraft:vine", "minecraft:cobweb", "minecraft:barrel", "minecraft:stone_brick_stairs"}
+    decorations = {"minecraft:vine", "minecraft:cobweb", "minecraft:barrel"}
     placed = [b for b in dressed.blocks if b.state.name in decorations]
     assert placed
     for block in placed:
-        clearance = 2 if block.state.name == "minecraft:stone_brick_stairs" else 1
-        assert all(max(abs(block.pos[0] - d[0]), abs(block.pos[2] - d[2])) > clearance for d in doors), block
+        assert all(max(abs(block.pos[0] - d[0]), abs(block.pos[2] - d[2])) > 1 for d in doors), block
 
 
-def test_rooms_get_armor_stands_on_pedestals_and_hallways_none() -> None:
-    dressed, notes = dress(box_room(), RULES, name="room", tags=["combat", "straight"])
-    (stand,) = [e for e in dressed.entities if e.id == "minecraft:armor_stand"]
-    pedestal = next(
-        b for b in dressed.blocks if b.pos == (stand.block_pos[0], stand.block_pos[1] - 1, stand.block_pos[2])
-    )
-    assert pedestal.state.name == "minecraft:stone_brick_stairs" and pedestal.state.get("half") == "top"
-    assert any("armor stand" in note for note in notes)
-    hallway, _ = dress(box_room(), RULES, name="room", tags=["hallway", "straight"])
-    assert not hallway.entities
-
-
-@pytest.mark.parametrize(
-    ("data_version", "check"),
-    [
-        (
-            2724,
-            lambda data: (
-                data["ArmorItems"].items[2] == {"id": "minecraft:iron_chestplate", "Count": nbt.Byte(1)}
-            ),
-        ),
-        (
-            3955,
-            lambda data: data["ArmorItems"].items[0] == {"id": "minecraft:iron_boots", "count": nbt.Int(1)},
-        ),
-        (
-            DATA_VERSION,
-            lambda data: data["equipment"]["head"] == {"id": "minecraft:iron_helmet", "count": nbt.Int(1)},
-        ),
-    ],
-)
-def test_armor_follows_the_templates_data_version(data_version: int, check) -> None:
-    room = box_room()
-    room = Structure(room.size, data_version, room.blocks)
-    # Find a name whose stand wears iron, so the checks can name the items.
-    for seed in range(50):
-        dressed, notes = dress(room, RULES, name=f"armor-{seed}", tags=["combat"])
-        if "armor stand (iron)" in notes[-1]:
-            break
-    (stand,) = [e for e in dressed.entities if e.id == "minecraft:armor_stand"]
-    assert check(stand.nbt)
+def test_dressing_adds_no_armor_stands() -> None:
+    # Matěj's call after the playtest (2026-10-14): armor stands placed by rule looked out of place, so the dressing
+    # has none, and the rules cannot ask for them.
+    dressed, _ = dress(box_room(), RULES, name="room", tags=["combat"])
+    assert dressed.entities == ()
+    with pytest.raises(ValidationError):
+        DressRules.model_validate({**VARIANTS, "decorations": ["armor_stands"]})
 
 
 def test_excluded_rooms_stay_as_they_are() -> None:
@@ -200,7 +163,7 @@ def test_excluded_rooms_stay_as_they_are() -> None:
 
 def test_without_leaves_a_decoration_out_of_the_rooms_it_names() -> None:
     rules = RULES.model_copy(update={"without": {"barrels": ["dungeon/rooms/*"]}})
-    assert rules.decorations_for("dungeon/rooms/library") == ["armor_stands", "vines", "cobwebs"]
+    assert rules.decorations_for("dungeon/rooms/library") == ["vines", "cobwebs"]
     assert "barrels" in rules.decorations_for("dungeon/lobby/lobby_01")
     room = box_room()
     with_barrels, _ = dress(room, RULES, name="dungeon/rooms/library", tags=["combat"])
@@ -217,64 +180,10 @@ def test_without_leaves_a_decoration_out_of_the_rooms_it_names() -> None:
     assert with_barrels.entities == without.entities
 
 
-def test_armor_stands_are_loot() -> None:
-    # Matěj's call (2026-10-14): players may take the armor, which is why it is iron or gold at most.
-    dressed, _ = dress(box_room(), RULES, name="loot", tags=["combat"])
-    (stand,) = [e for e in dressed.entities if e.id == "minecraft:armor_stand"]
-    assert "DisabledSlots" not in stand.nbt and "Invulnerable" not in stand.nbt
-
-
-def with_throne(room: Structure) -> Structure:
-    """The box room with a gold-block throne, two blocks high, standing free in its middle."""
-    x_mid, z_mid = room.size[0] // 2, room.size[2] // 2
-    throne = {
-        (x, y, z) for x in range(x_mid - 1, x_mid + 2) for y in (1, 2) for z in range(z_mid - 1, z_mid + 2)
-    }
-    blocks = tuple(
-        StructureBlock(b.pos, BlockState("minecraft:gold_block")) if b.pos in throne else b
-        for b in room.blocks
-    )
-    return Structure(room.size, room.data_version, blocks)
-
-
-def test_armor_stands_stand_only_against_a_real_wall() -> None:
-    room = with_throne(box_room())
-    for seed in range(40):
-        dressed, _ = dress(room, RULES, name=f"throne-{seed}", tags=["combat"])
-        blocks = {b.pos: b.state.name for b in dressed.blocks}
-        for stand in (e for e in dressed.entities if e.id == "minecraft:armor_stand"):
-            x, y, z = stand.block_pos
-            pedestal = (x, y - 1, z)
-            facing = next(b.state.get("facing") for b in dressed.blocks if b.pos == pedestal)
-            dx, dz = {"north": (0, -1), "south": (0, 1), "west": (-1, 0), "east": (1, 0)}[facing]
-            # The stand's back is to the room's stone brick wall, all the way up to the ceiling, never the throne.
-            column = [blocks[(x + dx, h, z + dz)] for h in range(y - 1, room.size[1] - 1)]
-            assert set(column) <= {
-                "minecraft:stone_bricks",
-                "minecraft:cracked_stone_bricks",
-                "minecraft:mossy_stone_bricks",
-                "minecraft:mossy_cobblestone",
-            }, (seed, column)
-
-
-def test_no_armor_stand_without_a_wall_of_the_listed_blocks() -> None:
-    rules = RULES.model_copy(update={"stand_against": ["minecraft:gold_block"]})
-    for seed in range(20):
-        dressed, _ = dress(with_throne(box_room()), rules, name=f"gold-{seed}", tags=["combat"])
-        # Gold is listed, but the throne reaches no ceiling: no column of it runs from a pedestal up to the ceiling.
-        assert not [e for e in dressed.entities if e.id == "minecraft:armor_stand"]
-
-
-def test_without_armor_stands_leaves_them_out() -> None:
-    rules = RULES.model_copy(update={"without": {"armor_stands": ["dungeon/rooms/*"]}})
-    dressed, _ = dress(box_room(), rules, name="dungeon/rooms/library", tags=["combat"])
-    assert not dressed.entities
-
-
 def test_decorations_keep_off_the_rooms_own_entities() -> None:
     room = box_room()
     plain, _ = dress(room, RULES, name="frames", tags=["combat"])
-    decorations = {"minecraft:vine", "minecraft:cobweb", "minecraft:barrel", "minecraft:stone_brick_stairs"}
+    decorations = {"minecraft:vine", "minecraft:cobweb", "minecraft:barrel"}
     spots = [b.pos for b in plain.blocks if b.state.name in decorations]
     # Hang a painting on each spot the dressing used: a block there would make it pop off.
     paintings = tuple(
