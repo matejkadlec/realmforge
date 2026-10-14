@@ -129,8 +129,10 @@ Puzzles are welcome under these rules (Matěj, 2026-10-12, replacing the earlier
 The layout of every realm assumes cheap travel; nobody walks 1,000–10,000 blocks to get somewhere.
 
 - Waystones are easy to get, sit at the hub and in settlements (TR-1, TR-7), and generate near main sites.
-- Early flight: wings or a flying mount early (Matěj's mount tiers in RLM-101 fly from chapter 2), or a long-range
-  teleport spell. Elytra come in chapter 4 ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)).
+- Early flight: a flying mount from chapter 2 (our own mounts, tiers 1 to 3 in M4, RLM-115), or a long-range
+  teleport spell. Elytra come from chapter 3's final boss, the step into chapter 4 (RLM-138,
+  [ADR 0025](../decisions/0025-remove-the-nether-and-end.md)): faster in the air than any mount, while a mount wins
+  on overall speed, utility and combat (RLM-115).
 - Dungeon portals and hubs are marked on the map once found (TR-11), and every quest target has a locator or a
   vendor fallback (PR-17).
 
@@ -301,8 +303,8 @@ mod has a dimension of that name.
   - Mobs and items that fall are gone, as in vanilla.
   - It is the realm's environmental rule ([open question 3](#open-questions)), and it needs no counter item because
     it costs nothing (RE-19).
-- **Flight** works here as anywhere (flying mounts from chapter 2, elytra from chapter 4). The bridges keep the realm
-  walkable for a player on foot, and the fall rule covers missteps and knockback.
+- **Flight** works here as anywhere (flying mounts from chapter 2, elytra from the end of chapter 3). The bridges
+  keep the realm walkable for a player on foot, and the fall rule covers missteps and knockback.
 - **Dungeons:**
 
   | Dungeon | Kind | Ending | Bosses |
@@ -380,19 +382,21 @@ For Matěj; each has a proposal so the design can go on.
    opens (DU-6).
 5. **The realm for chapter 3** (levels 20–30). The M4 outline brings chapters 2 and 3, while the desert and tundra
    cover chapter 2. Proposal: the forest for chapter 3, with underwater in chapter 4.
-6. **The fire realm's chapter.** Proposal: chapter 5 or later, after the elytra in chapter 4, so its dragons can be
-   strong.
+6. **The fire realm's chapter.** Proposal: chapter 5 or later, after the elytra (from chapter 3's final boss), so
+   its dragons can be strong.
 7. **Elytra or flying mounts first?** Asked once, in the mount decision RLM-115, question 4
    ([Chococraft research](../research/chococraft.md#questions-the-decision-answers)), which ADR 0025's consequence
-   "Elytra and flying mounts" also waits for. Your answer there settles it here too, and goes into the vision and the
-   M6 outline as a plan change sourced to RLM-115. Proposal: your newer rule wins (elytra a little better than the
-   fastest mount tier, so they come with or after it).
+   "Elytra and flying mounts" also waited for. **Decided 2026-10-13 (Matěj, RLM-115): elytra are faster in the air,
+   mounts win on everything else.** Elytra use up rockets and leave their wearer unable to fight; a mount uses
+   nothing, gives buffs and lets its rider fight from it, which is a new requirement for the mounts. The vision,
+   ADR 0025 and the M6 outline say the same
+   ([Chococraft research, decision](../research/chococraft.md#decision-rlm-115)).
 8. **Elytra between the M4 removal and chapter 4.** ADR 0025 ships the removal of the End and the new sources
-   together in M4, but the elytra's source is chapter 4. M4 brings chapters 2 and 3, and no milestone names chapter 4
-   yet, so from M4 until chapter 4 the elytra have no source and the "every item is obtainable" check flags them. Two
-   ways: an interim source in M4, or an intended gap that the check lists as one. Proposal: the intended gap, since
-   you want elytra late ("a little better than a mount") and an interim source would bring them early. Your answer
-   also goes into the M4 removal task.
+   together in M4, but the elytra's source was chapter 4, which no milestone names yet. **Decided 2026-10-13 (Matěj,
+   RLM-138): elytra stay unobtainable until the end of chapter 3, and chapter 3's final boss gives them**, as its
+   drop or in an item frame in its room (like the End ship). Chapter 3 arrives in M4, so the source ships with the
+   removal (the M4 outline in the [roadmap](../roadmap.md#m4-the-world-grows)), and the "every item is obtainable"
+   check lists elytra as a known exception only until that boss exists.
 9. **The Void realm** (RLM-95). Approve [its section](#the-void-realm): islands on a grid joined by bridges and
    chains, three sub-regions, the Chainkeepers and the Unforged, the guard towers, the broken gates and the Void
    Cathedral, and how your "always last" rule works when a realm is added before it. Proposal: as written.

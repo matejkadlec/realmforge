@@ -298,7 +298,21 @@ Outline: dimensions 2 and 3, the desert and tundra realms of chapter 2 (levels 1
 [ADR 0025](decisions/0025-remove-the-nether-and-end.md)); world-structure dungeons (jigsaw and
 Lithostitched); more dungeon endings (puzzle temple, wave arena, escape, mounted run, ruin exploration); our own
 structure locator; more mobs (friendly ones too) and bosses with lore and locator items; chapters 2 and 3; the
-start of the village, villager and trade overhaul.
+start of the village, villager and trade overhaul. Also:
+
+- **Elytra from chapter 3's final boss** (RLM-138): its drop, or an item frame in its room (like the End ship),
+  so elytra arrive at the step into chapter 4 and ship with the removal of the End. The "every item is
+  obtainable" check lists elytra as a known exception only until that boss exists
+  ([realm design, open question 8](design/realms.md#open-questions)).
+- **Mounts, first part** (RLM-115, [Chococraft research](research/chococraft.md#decision-rlm-115)): our own
+  mounts, not Chococraft. The `realmforge:mount` registry and its content type (`content/mounts/`), the player's
+  mount collection, summon and dismiss (a mount is summoned when used and cannot be lost), ground riding with
+  attacks from the mount, flight, and mount tiers 1 to 3. Each tier ships with the chapter that unlocks it, so tier
+  1 becomes the reward of a chapter 1 quest at the same time.
+- **The in-game guide** (RLM-116, [guide design](design/guide.md)): our own screen on `J` with nested tabs
+  (Realms, Dungeons, Bosses, Character, Basics), search and chapter locks; each realm lists its ores, each dungeon
+  its notable loot, each boss its full loot table with drop chances. It replaces EMI Loot and EMI Ores, which the
+  26.1.2 port removed, and its entries cover chapter 1's content too.
 
 ## M5: Professions and enchanting
 
@@ -310,8 +324,11 @@ effects (M2 has the simple ones); enchanting without RNG on data-driven enchantm
 ## M6: Companions and mounts
 
 Outline: the pet system (one pet, class exceptions, spells, skills that level up, talents, dialogues, a bond
-progression, resurrection); mounts summoned when used, ground mounts faster than Speed II, flying mounts better
-than elytra (through NeoForge's `creative_flight` attribute).
+progression, resurrection); mount tiers 4 to 6 and their extras (tier 5's rider ignores fire and lava damage, tier
+6's resists its chapter's debuff once the debuff and tenacity system exists), and an optional mount journal
+(RLM-115; the mount system and tiers 1 to 3 come in M4, and tier 4 moves with chapter 4 if that is planned
+earlier). Ground mounts beat a Speed II potion; elytra fly faster than any mount, while mounts win on overall
+speed, utility and combat (RLM-115).
 
 ## M7: Contracts
 

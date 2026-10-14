@@ -69,4 +69,5 @@ consumable decisions of 11–12 October 2026.
 - **[chococraft.md](chococraft.md)**: whether the Chococraft mod (0.11.12 for NeoForge 1.21.1) can carry Matěj's
   mount tiers, read from its jar and licence files: its ten hard-coded colours, flight, taming and breeding, what
   config and data can change, the tier table against it, ADR 0004 and architecture principle 8, and a proposal (our
-  own mounts) with the questions for Matěj's decision.
+  own mounts) with the questions for Matěj's decision. Decided (RLM-115): our own mounts, tiers 1 to 3 in M4, the
+  rest in M6, with notes for the mount tasks.

@@ -209,7 +209,7 @@ hoppers have nothing to take.
 - **What a locked realm shows elsewhere:** a portal someone else opened onto it looks the same as for anyone (its
   colour, particles and sound), so a player sees where a friend went. The sigil's tooltip and the realm's hint say
   how to unlock it. A realm map with locked realms and their hints (RE-7) is a later view, in the guide (RLM-102,
-  approval in RLM-116) or a screen of its own; M1 needs none.
+  approved for M4 in RLM-116) or a screen of its own; M1 needs none.
 - **No operator bypass:** a creative player needs the unlock like anyone else, so tests and playtests see the real
   rule. `/advancement grant @s only realmforge:realm/stone`, or a QA command, unlocks a realm for testing.
 
@@ -415,8 +415,8 @@ without one; never in a realm. This answers the realm design's
   whoever built the portals.
 - **Only players travel.** Vanilla already keeps a passenger out of portals (`Entity#canUsePortal` is false for a
   passenger), and the realm portal refuses every entity that is not a player, so a player on a horse must dismount.
-  WoW-style summoned mounts (M6) are dismissed and summoned again on the other side, and pets (later) follow their
-  owner through their own system, which adds its own exception.
+  WoW-style summoned mounts (M4, RLM-115) are dismissed and summoned again on the other side, and pets (later)
+  follow their owner through their own system, which adds its own exception.
 - **Other paths carry no mobs either** (RLM-133, rechecked for 26.1.2). Every move into another level goes through
   `Entity#teleport(TeleportTransition)`, which posts `EntityTravelToDimensionEvent` for every entity
   ([Access and unlocks](#access-and-unlocks) lists the paths). `world` cancels it for every entity that is not a

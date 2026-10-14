@@ -59,7 +59,7 @@ An RPG experience for Minecraft, open source on GitHub. I'm making it mainly for
     - I'd definitely let armor/armor toughness/HP go far beyond vanilla values
   - QoL: map, minimap, what-am-I-looking-at, JEI, waypoints, waystones, backpack ("Sophisticated Backpacks"), a simple mod for organizing items (for me clearly the best at this are "Tom's Simple Storage" + "Sophisticated Storage"), hearthstone?
   - mounts that make sense; again I really like WoW here, where the mount is summoned the moment you use it and is hidden otherwise, or, in newer versions, it's immortal and stays nearby
-    - mounts should be worth getting; better than Elytra/Angel Wings for flying mounts, better than a Speed II potion for ground mounts
+    - mounts should be worth getting; better than Elytra/Angel Wings for flying mounts, better than a Speed II potion for ground mounts (Status: decided on 2026-10-13: elytra fly faster in the air, while mounts win on overall speed, utility and combat, and their rider can fight from them; our own mounts, summoned when used and never lost, tiers 1 to 3 in M4; [Chococraft research, decision](research/chococraft.md#decision-rlm-115), RLM-115.)
   - decorative pets: not for now
   - better combat (the "Better Combat" mod is great)
   - all systems should more or less fit into each other and work together as one big ecosystem
