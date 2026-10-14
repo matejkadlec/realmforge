@@ -245,7 +245,9 @@ above, and its first bundle's head SHA must equal the starting head it recorded.
      Blocked; nothing is rewritten, because your commits descend from that head. Then read the remote head back
      (`gh pr view <n> --repo matejkadlec/realmforge --json headRefOid`) and confirm that it equals your final
      commit. A different head, even a descendant, is a remote head that moved under you: Blocked.
-   - A failed push or gate is a delivery blocker, not a completed fix. Keep the commits local and report them.
+   - A failed push or gate after committed fixes ends the pass as Blocked, whatever its last review found: no
+     head becomes reviewed, the starting head least of all, since it lacks the fixes. Keep the commits local,
+     report them, and go to "User needed".
 
 7. **Record the pass** in one pull request comment (`gh pr comment <n> --repo matejkadlec/realmforge
    --body-file <file>`), the GitHub-side record of the review: `🤖 Independent review`, the rounds and the head
@@ -416,10 +418,10 @@ the first of steps 2–8 that applies. If none applies yet, wait under step 1.
 3. **Failing check on a head not yet reviewed: fix it first** under step 6, so the review pass that follows
    covers the fix. This saves a pass; a check that fails after the review is step 6.
 
-4. **A head no pass has covered: run a review pass** ("Review pass") on it. A Clean pass makes the head it
-   pushed (or, without a push, the head it started from) the reviewed head. Capped, Disagreement and Blocked go to
-   "User needed", and their head gets no further pass: it waits there until Matěj approves it, rules on the
-   disagreement, or a new head arrives (a fix his ruling asks for brings one).
+4. **A head no pass has covered: run a review pass** ("Review pass") on it. A Clean pass makes its final head the
+   reviewed head: the head it pushed, or the head it started from when it committed no fix. Capped, Disagreement
+   and Blocked go to "User needed", and their head gets no further pass: it waits there until Matěj approves it,
+   rules on the disagreement, or a new head arrives (a fix his ruling asks for brings one).
 
 5. **Open threads: close them.**
 
