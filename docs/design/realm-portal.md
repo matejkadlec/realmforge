@@ -76,7 +76,7 @@ looks like a nether portal.
   checks the player's unlock first, then the frame:
   - **complete,** with the opening empty (air, or blocks such as grass that are replaced when something is placed
     there) or already filled with this frame's own portal blocks (a switch): the opening fills with portal blocks of
-    that realm, and the action bar says "The portal opens onto the Stone Realm";
+    that realm, and the action bar says "The portal opens onto the Undervault";
   - **incomplete:** nothing lights, the action bar says "The frame is incomplete", and particles mark every missing
     or wrong block for a few seconds, so the player sees what is left (the visible-progress rule of the
     [realm design](realms.md#puzzles-and-traps)).
@@ -102,9 +102,9 @@ hoppers have nothing to take.
 | Action on the selector | Result |
 | --- | --- |
 | right-click with a sigil of a realm the player has unlocked | opens the portal onto the sigil's realm, or switches it there at once; the sigil stays in the hand |
-| right-click with the sigil of the realm a lit portal already shows | nothing changes; "The portal already opens onto the Stone Realm" |
-| right-click with a sigil of a realm the player has not unlocked | refused, with the realm's hint: "You are not eligible to open a portal to the Stone Realm" |
-| right-click with the sigil of the realm the frame stands in | refused: "You are already in the Stone Realm" |
+| right-click with the sigil of the realm a lit portal already shows | nothing changes; "The portal already opens onto the Undervault" |
+| right-click with a sigil of a realm the player has not unlocked | refused, with the realm's hint: "You are not eligible to open a portal to the Undervault" |
+| right-click with the sigil of the realm the frame stands in | refused: "You are already in the Undervault" |
 | right-click with an empty hand | the action bar shows where the portal opens onto, or "The portal is closed" for a dark one |
 | sneak and right-click with an empty main hand, whatever the off hand holds | in the Overworld, closes the portal (setting none); inside a realm, opens it onto return, or switches it back to return |
 | break the selector | the portal closes, and the selector drops as an item without its setting |
@@ -162,7 +162,7 @@ hoppers have nothing to take.
   criterion is `minecraft:impossible`, like a chapter's advancement
   ([architecture 16](../architecture.md#16-progression-and-quests)), so nothing in play grants it but the realm's
   unlock quest. Holding, crafting, picking up or trading a sigil unlocks nothing. The advancement is hidden until
-  earned and shows a toast, "Realm unlocked: the Stone Realm"; it adds no chat line (`hidden`, `show_toast`,
+  earned and shows a toast, "Realm unlocked: the Undervault"; it adds no chat line (`hidden`, `show_toast`,
   `announce_to_chat` in vanilla's advancement display).
 - **The unlock quest** grants it through an `AdvancementReward` that is per player and claims itself
   (`team_reward: false`, `auto: "enabled"`), the rule every chapter reward follows
@@ -455,6 +455,10 @@ sound_pitch: 0.8                     # until A3 brings our own sounds
 arrival: {y: [20, 90], floor: realmforge:slate_bricks, pocket_radius: 3}   # where a built portal may stand
 ```
 
+- **The name in messages:** where the name stands alone (the arrival title, the sigil tooltip) it starts with "The",
+  but messages use it mid-sentence with a lower-case article ("The portal opens onto the Undervault"). The pydantic
+  model carries both forms, or the name without its article plus a template per use; either way no message
+  hard-codes a realm's name.
 - **The coordinate scale is not here:** it is the `coordinate_scale` of the realm's dimension type
   (`content/worldgen/dimension_type/stone.json`, `16.0`), next to its `bed_rule` and `respawn_anchor_works`
   attributes, because vanilla reads it from there.
