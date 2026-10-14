@@ -16,9 +16,11 @@ from realmforge_tools.rooms.structure import Structure, StructureError, read_str
 from realmforge_tools.schema import (
     CONTENT_TYPES,
     WORLDGEN_DIR,
+    ClassDef,
     CurveDef,
     DimensionRulesDef,
     ItemDef,
+    RaceDef,
     SpellSchoolDef,
     StatDef,
     StatRuleDef,
@@ -104,6 +106,8 @@ class Content:
     stat_rules: tuple[Entry[StatRuleDef], ...]
     spell_schools: tuple[Entry[SpellSchoolDef], ...]
     dimensions: tuple[Entry[DimensionRulesDef], ...]
+    races: tuple[Entry[RaceDef], ...]
+    classes: tuple[Entry[ClassDef], ...]
     texts: tuple[Entry[TextGroupDef], ...]
     worldgen: tuple[WorldgenFile, ...]
     rooms: tuple[RoomEntry, ...] = ()
@@ -164,6 +168,8 @@ def load_content(paths: RepoPaths) -> Content:
         stat_rules=by_id(loaded["stat_rules"]),
         spell_schools=by_id(loaded["spell_schools"]),
         dimensions=by_id(loaded["dimensions"]),
+        races=by_id(loaded["races"]),
+        classes=by_id(loaded["classes"]),
         texts=by_id(loaded["texts"]),
         worldgen=tuple(sorted(worldgen, key=lambda f: (f.directory, f.id))),
         rooms=rooms,

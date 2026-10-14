@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# Names of the resources a class's spells cost (resource.realmforge.<name>), the types of spell/SpellRegistries.
+id: resource
+texts:
+  mana:
+    en_us: Mana
+  rage:
+    en_us: Rage

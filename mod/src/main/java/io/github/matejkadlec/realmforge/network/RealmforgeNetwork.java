@@ -1,5 +1,7 @@
 package io.github.matejkadlec.realmforge.network;
 
+import io.github.matejkadlec.realmforge.character.CharacterCreation;
+import io.github.matejkadlec.realmforge.character.net.CreateCharacterPayload;
 import io.github.matejkadlec.realmforge.combat.net.CombatTextPayload;
 import io.github.matejkadlec.realmforge.combat.net.HitDirectionPayload;
 import io.github.matejkadlec.realmforge.world.DarkVision;
@@ -38,6 +40,12 @@ public final class RealmforgeNetwork {
                 (payload, context) -> {
                     if (context.player() instanceof ServerPlayer player) {
                         DarkVision.toggle(player);
+                    }
+                });
+        registrar.playToServer(CreateCharacterPayload.TYPE, CreateCharacterPayload.STREAM_CODEC,
+                (payload, context) -> {
+                    if (context.player() instanceof ServerPlayer player) {
+                        CharacterCreation.create(player, payload.race(), payload.playerClass());
                     }
                 });
         registrar.playToClient(CombatTextPayload.TYPE, CombatTextPayload.STREAM_CODEC);

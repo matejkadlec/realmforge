@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
@@ -17,8 +18,9 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /**
- * Applies the stat rules to players (architecture 8.2, 8.3): reads each rule's primary stat, writes the modifiers
- * {@link StatRules} gives as saved-but-recomputed modifiers ({@link RecomputedModifiers}), and keeps health right
+ * Applies the stat sources and the stat rules to players (architecture 8.2, 8.3): first the modifiers of every
+ * {@link StatSource} (race and class), then, from the primary stats those leave, each rule's modifiers that
+ * {@link StatRules} gives, all as saved-but-recomputed modifiers ({@link RecomputedModifiers}); and keeps health right
  * across logins and respawns.
  *
  * <p>When it recomputes, always at the end of a player tick ({@code PlayerTickEvent.Post}), after vanilla applied the
@@ -29,8 +31,8 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  *   would read lower stats than the saved modifiers were computed with;</li>
  *   <li>at the end of a tick in which the player's equipment or effects changed, or {@link #markDirty} was called
  *   (level, talents);</li>
- *   <li>every {@value #CHECK_INTERVAL} ticks, when a primary stat differs from the value the last recompute used
- *   (curios, other mods, commands).</li>
+ *   <li>every {@value #CHECK_INTERVAL} ticks, when a primary stat or the player's level differs from the value the
+ *   last recompute used (curios, other mods, commands such as {@code /qa level}).</li>
  * </ul>
  *
  * <p>Health: loading a player applies the saved modifiers before its health, so health above the base maximum
@@ -44,7 +46,15 @@ public final class CharacterStats {
     /** Ticks between the checks for primary stats that changed without an event. */
     public static final int CHECK_INTERVAL = 10;
 
+    /** The registered sources, applied in registration order. */
+    private static final List<StatSource> SOURCES = new CopyOnWriteArrayList<>();
+
     private CharacterStats() {
+    }
+
+    /** Adds a source of modifiers that every recompute applies. Called once per source at mod construction. */
+    public static void addSource(StatSource source) {
+        SOURCES.add(source);
     }
 
     /** Recomputes the player's stat modifiers at the end of its next tick: call it after changing a stat source. */
@@ -55,11 +65,15 @@ public final class CharacterStats {
     }
 
     /**
-     * Recomputes the player's stat modifiers now: every stat rule against the player's current primary stats.
-     * Returns whether any modifier changed. The event hooks call it when needed; tests and commands may call it
+     * Recomputes the player's stat modifiers now: every source's, then every stat rule against the primary stats they
+     * leave. Returns whether any modifier changed. The event hooks call it when needed; tests and commands may call it
      * directly.
      */
     public static boolean recompute(ServerPlayer player) {
+        boolean changed = false;
+        for (StatSource source : SOURCES) {
+            changed |= RecomputedModifiers.replace(player.getAttributes(), source::owns, source.bonuses(player));
+        }
         Registry<StatRule> rules = player.registryAccess().lookupOrThrow(StatsRegistries.STAT_RULE);
         List<StatBonus> wanted = new ArrayList<>();
         Map<Holder<Attribute>, Double> applied = new HashMap<>();
@@ -71,9 +85,10 @@ public final class CharacterStats {
         }
         Tracker tracker = tracker(player);
         tracker.applied = applied;
+        tracker.level = level(player);
         tracker.dirty = false;
         tracker.computed = true;
-        return RecomputedModifiers.replace(player.getAttributes(), StatRules::isStatModifier, wanted);
+        return RecomputedModifiers.replace(player.getAttributes(), StatRules::isStatModifier, wanted) | changed;
     }
 
     static void onPlayerTick(PlayerTickEvent.Post event) {
@@ -84,7 +99,8 @@ public final class CharacterStats {
         if (!tracker.computed) {
             recompute(player);
             applyHealthRule(player, tracker);
-        } else if (tracker.dirty || player.tickCount % CHECK_INTERVAL == 0 && primaryStatsChanged(player, tracker)) {
+        } else if (tracker.dirty || player.tickCount % CHECK_INTERVAL == 0
+                && (tracker.level != level(player) || primaryStatsChanged(player, tracker))) {
             recompute(player);
         }
     }
@@ -133,6 +149,10 @@ public final class CharacterStats {
         return false;
     }
 
+    private static int level(ServerPlayer player) {
+        return player.getExistingData(StatsAttachments.LEVEL).map(EntityLevel::value).orElse(EntityLevel.MIN);
+    }
+
     private static double statValue(LivingEntity entity, Holder<Attribute> stat) {
         return entity.getAttributes().hasAttribute(stat) ? entity.getAttributeValue(stat) : 0;
     }
@@ -151,5 +171,6 @@ public final class CharacterStats {
         private boolean refillHealth;
         private float restoredHealth = Float.NaN;
         private Map<Holder<Attribute>, Double> applied = Map.of();
+        private int level;
     }
 }

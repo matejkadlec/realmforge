@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# A placeholder in the Mage's starting kit (Matěj's playtest of C1, 2026-10-14): the real wands, from wood to
+# netherite, with their spell stats come later. It keeps its id when it becomes the real Stone Wand.
+id: stone_wand
+name:
+  en_us: Stone Wand (WIP)
+max_stack_size: 1
+creative_tabs:
+  - minecraft:combat

@@ -320,7 +320,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `realmforge:spell_effect_type` | damage, heal, apply_effect, remove_effect, projectile, area, teleport, dash, knockback; summon later | spells, so also boss abilities and procs |
 | `realmforge:targeting_type` | self, enemy, ally, ground point, direction; for NPCs current target, random player, farthest player, arena point | spells, boss abilities |
 | `realmforge:talent_effect_type` | attribute_modifier, spell_modifier, grant_spell, proc | talents; later glyphs and set bonuses |
-| `realmforge:resource_type` | mana, rage | classes |
+| `realmforge:resource_type` | mana, rage (C1: ids and names, `spell/ResourceTypes`; C3a gives them behaviour) | classes |
 | `realmforge:phase_trigger_type` | health_below, time_in_phase, adds_defeated | bosses |
 | `realmforge:dungeon_ending_type` | boss_lair, treasury; later puzzle, wave_arena, escape, mounted_run, exploration | dungeon types |
 | `realmforge:requirement_type` | level_at_least, chapter_completed, class_is, has_advancement | unlocks: dimensions, dungeons, items, talents |
@@ -496,9 +496,9 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   (`stats/StatsAttachments`, `character/CharacterAttachments`, `spell/SpellAttachments`,
   `talent/TalentAttachments`), registered from its `<Name>Feature`. The values are `stats/EntityLevel`,
   `character/CharacterData`, `spell/Spellbook`, `spell/CombatState` and `talent/TalentAllocation`; owner-only data
-  syncs with `core/Attachments#toOwner`. Races, classes, spells and talent trees are named by `Identifier`
-  until their registries exist (C1, C3a, C5); a `ResourceKey` saves the same string, so saves stay readable. The
-  cached level cap stays empty until C2 computes it. Every saved field is optional with a default, so an empty
+  syncs with `core/Attachments#toOwner`. Spells and talent trees are named by `Identifier` until their registries
+  exist (C3a, C5); races and classes are `ResourceKey`s since C1, which save the same string, so F3's saves stay
+  readable. The cached level cap stays empty until C2 computes it. Every saved field is optional with a default, so an empty
   save reads as the default value.
 - `level` is copied on death, and NeoForge copies the same attachments when a mob converts (a zombie drowns,
   `LivingConversionEvent.Post`), so the converted mob keeps its level, and `mob` gives it that level's scaling
@@ -552,7 +552,7 @@ would remove both bonuses.
 
 | Source | Applied by | Modifier id | Lifetime |
 | --- | --- | --- | --- |
-| race, class and level | `stats/CharacterStats`, from `character`'s provider | `realmforge:race/<race>/<n>`, `realmforge:class/<class>/<n>` | saved, recomputed |
+| race, class and level | `stats/CharacterStats`, from `character`'s `StatSource` (`character/CharacterBonuses`): each modifier's amount at level 1 plus its growth per level above it | `realmforge:race/<namespace>/<n>/<path>`, `realmforge:class/<namespace>/<n>/<path>` for the race or class `<namespace>:<path>` | saved, recomputed |
 | talents | `stats/CharacterStats`, from `talent`'s provider | `realmforge:talent/<tree>/<node>/<n>` | saved, recomputed |
 | derived from primary stats | `stats/CharacterStats`, from stat rules ([8.3](#83-derived-stats-and-milestones)) | `realmforge:stat/<rule namespace>/<entry>/<rule path>`: `<entry>` is `<n>` per point, `at_<points>_<n>` per milestone; the rule's path comes last, as only it may contain slashes | saved, recomputed |
 | gear with fixed stats | vanilla, from the item's attribute modifiers | `realmforge:gear/<slot>/<n>` (generated) | while equipped |
@@ -585,6 +585,8 @@ transient because of how vanilla handles health:
 applied the tick's equipment changes. Every new player entity (a login, a respawn) starts with a fresh
 `realmforge:stat_tracker`, a transient attachment that is neither saved, synced nor copied, so its first tick
 recomputes and then applies the health rule above. Other recomputes are in [8.3](#83-derived-stats-and-milestones).
+A recompute first applies every `stats/StatSource` that a higher feature registered (race and class since C1), then
+the stat rules, so a primary stat a race or class raises gives its derived bonuses in the same recompute.
 A GameTest player (`QaPlayers#login`) is never ticked by its connection, so the tests play a client tick with
 `ServerPlayer#doTick` ([20](#20-tests-per-layer)).
 
@@ -601,8 +603,8 @@ A GameTest player (`QaPlayers#login`) is never ticked by its connection, so the 
   (`StatRuleDef.bonuses_at`), and a GameTest compares the two at sample values.
 - Recompute when a primary stat may have changed: marked dirty by `LivingEquipmentChangeEvent`,
   `MobEffectEvent.Added`, `MobEffectEvent.Remove`, `MobEffectEvent.Expired` and our own changes
-  (`CharacterStats#markDirty`: level, talents), plus a cheap check every 10 ticks that compares primary values with
-  the last applied snapshot (covers curios, other mods and commands).
+  (`CharacterStats#markDirty`: level, talents), plus a cheap check every 10 ticks that compares primary values and
+  the level with the last applied snapshot (covers curios, other mods and commands such as `/qa level`).
 - No cycles: rules read primary stats and write only secondary or vanilla attributes, and each primary stat has at
   most one rule (validation rules). `StatRule`'s codec also refuses a rule from any other data pack that reads no
   primary stat or writes one: a rule raising a primary stat would read its own bonuses back as a changed input at
@@ -721,15 +723,33 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
 ### 10.1 Races and classes
 
 - **Creation:** while a player's `character` attachment has no race, the client shows the character creation screen,
-  which cannot be closed. `CreateCharacterPayload(race, class)` → the server checks the combination and that no
-  character exists yet → sets the attachment, gives the starting kit, recomputes stats.
+  which only creating a character closes (Esc opens the pause menu, and creation returns after it).
+  `CreateCharacterPayload(race, class)` → the server checks the combination and that no character exists yet → sets
+  the attachment, gives the starting kit, recomputes stats.
 - **The server enforces creation too:** a client that skips the screen gains nothing. Until the character exists,
   the server refuses the player's gameplay payloads (casting, spell bar, talents) and awards no character XP, and
   every system that reads race or class handles a missing character instead of assuming one.
-- **A race** gives base modifiers, innate spells, optionally a size (`generic.scale`), and the allowed classes.
+- **A race** gives base modifiers, innate spells, optionally a size (`generic.scale`), and the allowed classes. Every
+  race gets one racial ability (Matěj, 2026-10-14), an innate spell, once the spell system exists (C4).
 - **A class** gives its resource type, stat growth per level, spells by level, talent trees and starting kit.
 - **Dual class:** the data model keeps a list of classes; the rules come in M3.
 - **Changing race or class:** a QA command in M1, an in-game way later.
+- **In code (C1):** `character/Race` and `character/PlayerClass` are the entries of `realmforge:race` and
+  `realmforge:class` (`CharacterRegistries`, both synced). A race names its classes by id, so a missing class fails
+  the world load; a class names its resource (`realmforge:resource_type`, [5.3](#53-type-registries)). Their
+  modifiers (`CharacterModifier`: an amount at level 1 and a growth per level) reach the player through
+  `CharacterBonuses`, the `StatSource` that `stats` applies before the stat rules ([8.2](#82-where-modifiers-come-from));
+  the level is the `realmforge:level` attachment, whose change triggers a recompute at the next check.
+  `CharacterCreation` holds the rules: the player has no character yet, the race and the class exist, and the race
+  lists the class, checked in that order; then it sets the attachment, recomputes the stats, refills health to the
+  new maximum and gives the class's starting kit once (into the inventory, or dropped for the player alone when it
+  is full, as `/give` does). `Characters` is the public API (`exists`, `mainClass`). The client opens
+  `client/screen/CharacterCreationScreen` once a new player entity has existed for a second without a character (so
+  the synced attachment can arrive first), and closes it when the character arrives. Esc opens the pause menu
+  instead, so the player can still change options or quit, and back in the game creation opens again. It pauses
+  singleplayer like a menu (the server still handles payloads while paused). Its view model is
+  `CharacterCreationView`. M1 has one race, Human, and decision D1's classes, Warrior (rage) and Mage (mana)
+  ([content/README](../content/README.md)).
 
 ### 10.2 Leveling
 
@@ -1250,7 +1270,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
 
 ### 17.3 First payloads (M1)
 
-- Client → server: `CreateCharacter`, `CastSpell`, `CancelCast`, `SetSpellBarSlot`, `LearnTalent`,
+- Client → server: `CreateCharacter` (exists: `character/net/CreateCharacterPayload`, sent by
+  `client/screen/CharacterCreationScreen`), `CastSpell`, `CancelCast`, `SetSpellBarSlot`, `LearnTalent`,
   `ToggleDarkVision` (exists: `world/net/ToggleDarkVisionPayload`, sent by `client/input/DarkVisionKey`).
 - Server → client: `CastStarted`, `CastEnded`, `CombatText` (exists: `combat/net/CombatTextPayload`, shown by
   `client/hud/CombatTextHud`), `HitDirection` (exists: `combat/net/HitDirectionPayload`, shown by
@@ -1289,14 +1310,23 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   - The hit direction layer (`client/hud/HitDirectionHud`, after the MMM Indicators mod) draws a red arc around the
     crosshair toward each recent attacker for 1.5 s, turning with the camera and following the attacker.
   - The character sheet (`client/screen/CharacterSheetScreen`, opened and closed by `client/input/CharacterSheetKey`,
-    K by default) draws `character/CharacterSheetView`: the player's name and level ("Steve · Lv. 12"), then three
-    tabs of two columns (a click, the keys 1 to 3, Tab or the arrow keys switch them). The heading and the selected
-    tab are white, and gold marks only the section titles. Stats: the primary stats with what they give and their
-    milestones, and the other attributes (luck, mining speed, reach, movement speed, swimming speed, the XP
-    multiplier); Combat: offense and defense; Magic: spells and mana, and the spell schools' power and resistance.
-    The names the sheet gives vanilla attributes (Mining Speed, Movement Speed, ...) apply on their rows and in the
-    primary stats' bonuses. A stat of ours that no section names shows under Other. All of it comes from the
-    player's synced attributes and level and the synced registries; a pet tab waits for the pet system (RLM-161).
+    K by default) draws `character/CharacterSheetView`: the player's name and level in bold ("Steve · Lv. 12"),
+    then four tabs of two columns (a click, the number keys, Tab or the arrow keys switch them). The heading and the
+    selected tab are white, and gold marks only the section titles. Stats: the primary stats with what they give and
+    their milestones, and the other attributes (luck, mining speed, reach, movement speed, swimming speed, the XP
+    multiplier); Combat: offense, and defense with spell resistance last; Magic: spells (max mana, mana regeneration,
+    spell power, cooldown and cast time reduction) and the spell schools' power and resistance; Origin (C1): the race
+    with its description and what it gives (its racial ability once spells exist), and the class with its description,
+    then a subclass placeholder until subclasses exist (M3). The names the sheet gives vanilla attributes (Mining
+    Speed, Movement Speed, ...) apply on their rows and in the primary stats' bonuses. A stat of ours that no section
+    names shows under Other. Values round for display only (Matěj, 2026-10-14): a percentage half up to a whole
+    number (100.6% reads 101%), any other number half up to one decimal (6.45 reads 6.5). All of it comes from the
+    player's synced attributes, level and character and the synced registries; a pet tab waits for the pet system
+    (RLM-161).
+  - Character creation (`client/screen/CharacterCreationScreen`, C1) draws `character/CharacterCreationView`: the
+    races on the left and the classes the chosen race allows on the right, as vanilla buttons with a gold outline on
+    the chosen one, each with its description and what it gives at level 1 and per level ("+5 Strength (+1 per
+    Level)"); a class also its resource and starting kit. It opens and closes by itself ([10.1](#101-races-and-classes)).
 - **Minecraft 26.1 draws GUIs by render-state extraction:** a HUD layer (`GuiLayer`) and a screen
   (`Screen#extractRenderState`) receive a `GuiGraphicsExtractor` (`text`, `centeredText`, `fill`, `pose()` for
   scaling). A layer registered through `RegisterGuiLayersEvent` checks `options.hideGui` itself.
@@ -1415,10 +1445,13 @@ that agents can read. So far:
   F3, which prints or clears the player state attachments ([7](#7-player-state));
 - `/qa stats set <stat> <value> [<players>]`, `/qa stats reset|show` (F4b: points for a primary stat, percent for a
   share) and `/qa level <level> [<entity>]` (the `realmforge:level` attachment, which the armor formula reads; a
-  hostile mob also gets the scaling of the level, W1);
+  hostile mob also gets the scaling of the level, W1, and a player's race and class bonuses follow it, C1);
 - `/qa mob [<entity>]` (W1): a mob's level, health over its maximum with the multiple its level added, armor with the
   points its level added, and the damage multiple of its hits; without an argument, the nearest hostile mob within
   32 blocks. The training dummy joins at level 1, which adds nothing;
+- `/qa character show|reset [<player>]` and `/qa character create <race> <class> [<player>]` (C1): reset removes the
+  character, so the creation screen opens again (the starting kit's items stay); create applies the same rules as the
+  screen;
 - `/qa dummy [<armor>]` (F5): a training dummy three blocks ahead, a husk that stands still and never dies. Its
   label, a text display riding it, shows its armor with the share of a hit it blocks at the nearest player's level
   ("15 Armor (50% Damage Reduction)") over its name with the DPS of the current session (it ends after 5 s without a

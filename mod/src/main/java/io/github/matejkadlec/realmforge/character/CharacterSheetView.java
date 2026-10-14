@@ -8,11 +8,13 @@ import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatRule;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import io.github.matejkadlec.realmforge.stats.StatsRegistries;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
@@ -31,20 +33,27 @@ import net.neoforged.neoforge.common.PercentageAttribute;
 
 /**
  * What the character sheet shows (RLM-136; architecture 18: a thin screen draws a view model computed in common code):
- * the player's name and level, then three tabs of two columns each (Matěj, 2026-10-13). Stats: the primary stats with
- * what they give, and the other attributes. Combat: offense and defense. Magic: spells and mana, and the spell
- * schools' power and resistance. Built from a player's synced attributes and the synced registries, so the client
- * screen and the GameTests read the same rows. Every label is a translation; values are formatted here.
+ * the player's name and level, then four tabs of two columns each (Matěj, 2026-10-13 and 2026-10-14). Stats: the
+ * primary stats with what they give, and the other attributes. Combat: offense and defense. Magic: spells with mana,
+ * and the spell schools' power and resistance. Origin: the race (its description and what it gives) and the class (its
+ * description, then a placeholder for the subclass). Built from a player's synced attributes, character and the
+ * synced registries, so the client screen and the GameTests read the same rows. Every label is a translation; values
+ * are formatted here, rounded for display only: a percentage to a whole number, any other number to one decimal.
  *
  * @param title the player's name and level
  * @param tabs the tabs in order
  */
 public record CharacterSheetView(Component title, List<Tab> tabs) {
+    /** The id prefix of the Origin tab's rows, for tests: {@code origin/race/description}, ... */
+    public static final String ORIGIN = "origin/";
+
     /** Text colours the screen draws with: section titles, rows, reached bonuses and bonuses still ahead. */
     public static final int TITLE = 0xFFFFD24D;
     public static final int STAT = 0xFFFFFFFF;
     public static final int BONUS = 0xFF7FD97F;
     public static final int AHEAD = 0xFF8C8C8C;
+    /** Descriptions on the Origin tab. */
+    public static final int TEXT = 0xFFC8C8C8;
 
     /** A tab: its name and the sections of its two columns. */
     public record Tab(Component name, List<Section> left, List<Section> right) {
@@ -89,12 +98,12 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
             entry(GeneratedStats.OVERHEAL));
     private static final List<Entry> DEFENSE = List.of(entry(Attributes.MAX_HEALTH),
             entry(GeneratedStats.HEALTH_REGENERATION), entry(Attributes.ARMOR), entry(Attributes.ARMOR_TOUGHNESS),
-            entry(GeneratedStats.MAGIC_SHIELD), entry(GeneratedStats.DODGE_CHANCE));
-    private static final List<Entry> SPELLS = List.of(entry(GeneratedStats.SPELL_POWER),
-            entry(GeneratedStats.SPELL_RESISTANCE), entry(GeneratedStats.COOLDOWN_REDUCTION),
-            entry(GeneratedStats.CAST_TIME_REDUCTION));
-    private static final List<Entry> MANA = List.of(entry(GeneratedStats.MAX_MANA),
-            entry(GeneratedStats.MANA_REGENERATION));
+            entry(GeneratedStats.MAGIC_SHIELD), entry(GeneratedStats.DODGE_CHANCE),
+            entry(GeneratedStats.SPELL_RESISTANCE));
+    /** Mana first, then what shapes a spell (Matěj, 2026-10-14). */
+    private static final List<Entry> SPELLS = List.of(entry(GeneratedStats.MAX_MANA),
+            entry(GeneratedStats.MANA_REGENERATION), entry(GeneratedStats.SPELL_POWER),
+            entry(GeneratedStats.COOLDOWN_REDUCTION), entry(GeneratedStats.CAST_TIME_REDUCTION));
 
     /** Attributes that read as a percentage of the player's base: players walk at 0.1, the default is 0.7. */
     private static final List<Holder<Attribute>> PERCENT_OF_BASE = List.of(Attributes.MOVEMENT_SPEED,
@@ -110,19 +119,20 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
         listed().forEach(entry -> entry.attribute().value().setSyncable(true));
     }
 
-    /** The sheet of a player, from its attributes and level (synced to its own client) and the synced registries. */
+    /** The sheet of a player, from its attributes, level and character (synced to its own client) and the registries. */
     public static CharacterSheetView of(Player player) {
         int level = player.getExistingData(StatsAttachments.LEVEL).map(EntityLevel::value).orElse(EntityLevel.MIN);
         Component title = Component.translatable(GeneratedTexts.GUI_CHARACTER_TITLE, player.getName(), level);
-        return build(title, player::getAttributeValue, player::getAttributeBaseValue, player.registryAccess());
+        return build(title, player::getAttributeValue, player::getAttributeBaseValue, player.registryAccess(),
+                Characters.data(player));
     }
 
     /**
-     * The sheet for any source of attribute values and base values: both must answer for every stat and every
-     * attribute the sheet lists.
+     * The sheet for any source of attribute values and base values (both must answer for every stat and every
+     * attribute the sheet lists) and a character.
      */
     static CharacterSheetView build(Component title, ToDoubleFunction<Holder<Attribute>> value,
-            ToDoubleFunction<Holder<Attribute>> base, HolderLookup.Provider registries) {
+            ToDoubleFunction<Holder<Attribute>> base, HolderLookup.Provider registries, CharacterData character) {
         List<StatRule> rules = new ArrayList<>();
         registries.lookupOrThrow(StatsRegistries.STAT_RULE).listElements().forEach(rule -> rules.add(rule.value()));
         List<SpellSchool> schools = new ArrayList<>();
@@ -170,9 +180,46 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
                         List.of(section(GeneratedTexts.GUI_OFFENSE, rows(OFFENSE, value, base))),
                         List.of(section(GeneratedTexts.GUI_DEFENSE, rows(DEFENSE, value, base)))),
                 tab(GeneratedTexts.GUI_TAB_MAGIC,
-                        List.of(section(GeneratedTexts.GUI_SPELLS, rows(SPELLS, value, base)),
-                                section(GeneratedTexts.GUI_MANA, rows(MANA, value, base))),
-                        List.of(section(GeneratedTexts.GUI_SPELL_SCHOOLS, schoolRows)))));
+                        List.of(section(GeneratedTexts.GUI_SPELLS, rows(SPELLS, value, base))),
+                        List.of(section(GeneratedTexts.GUI_SPELL_SCHOOLS, schoolRows))),
+                origin(character, registries)));
+    }
+
+    /**
+     * The Origin tab (Matěj, 2026-10-14): the race on the left (its description and what it gives; its racial ability
+     * comes with the spell system), the class on the right (its description, then the subclass, a placeholder until
+     * subclasses exist). A race or class the player lacks, or whose entry is gone, reads as "None".
+     */
+    private static Tab origin(CharacterData character, HolderLookup.Provider registries) {
+        Optional<Race> race = character.race()
+                .flatMap(key -> registries.lookupOrThrow(CharacterRegistries.RACE).get(key)).map(Holder::value);
+        Optional<PlayerClass> playerClass = character.classes().stream().findFirst()
+                .flatMap(key -> registries.lookupOrThrow(CharacterRegistries.CLASS).get(key)).map(Holder::value);
+
+        List<Row> raceRows = new ArrayList<>();
+        race.ifPresent(entry -> {
+            raceRows.add(new Row(ORIGIN + "race/description", Component.translatable(entry.description()), "", false,
+                    TEXT));
+            List<Component> bonuses = CharacterCreationView.bonuses(entry.modifiers());
+            for (int n = 0; n < bonuses.size(); n++) {
+                raceRows.add(new Row(ORIGIN + "race/bonus/" + n, bonuses.get(n), "", false, BONUS));
+            }
+        });
+        List<Row> classRows = new ArrayList<>();
+        playerClass.ifPresent(entry -> classRows.add(new Row(ORIGIN + "class/description",
+                Component.translatable(entry.description()), "", false, TEXT)));
+        Section subclass = new Section(Component.translatable(GeneratedTexts.GUI_SUBCLASS_WIP),
+                List.of(new Row(ORIGIN + "subclass/description",
+                        Component.translatable(GeneratedTexts.GUI_SUBCLASS_WIP_DESCRIPTION), "", false, TEXT)));
+
+        Component none = Component.translatable(GeneratedTexts.GUI_NONE);
+        Section raceSection = new Section(Component.translatable(GeneratedTexts.GUI_ORIGIN_RACE,
+                race.<Component>map(entry -> Component.translatable(entry.name())).orElse(none)), List.copyOf(raceRows));
+        Section classSection = new Section(Component.translatable(GeneratedTexts.GUI_ORIGIN_CLASS,
+                playerClass.<Component>map(entry -> Component.translatable(entry.name())).orElse(none)),
+                List.copyOf(classRows));
+        return new Tab(Component.translatable(GeneratedTexts.GUI_TAB_ORIGIN), List.of(raceSection),
+                List.of(classSection, subclass));
     }
 
     /** Every row of the sheet: tab by tab, left column first. */
@@ -186,15 +233,27 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
         return rows;
     }
 
-    /** Points: a whole number, or one decimal ({@code 25}, {@code 12.5}, {@code 0.3}). */
+    /**
+     * Points, rounded half up to one decimal and shown without a trailing {@code .0}: {@code 25}, {@code 12.5},
+     * {@code 6.44} reads {@code 6.4} and {@code 6.45} {@code 6.5} (Matěj, 2026-10-14). The decimal the value prints as
+     * is what rounds, so a double just below {@code 6.45} still reads {@code 6.5}.
+     */
     public static String points(double value) {
-        String oneDecimal = String.format(Locale.ROOT, "%.1f", value);
-        return oneDecimal.endsWith(".0") ? oneDecimal.substring(0, oneDecimal.length() - 2) : oneDecimal;
+        if (!Double.isFinite(value)) {
+            return String.valueOf(value);
+        }
+        return plain(BigDecimal.valueOf(value).setScale(1, RoundingMode.HALF_UP));
     }
 
-    /** A share in percent: {@code 0.05} reads {@code 5%}, {@code 0.125} {@code 12.5%}. */
+    /**
+     * A share in percent, rounded half up to a whole number (Matěj, 2026-10-14): {@code 0.05} reads {@code 5%},
+     * {@code 1.005} {@code 101%} and {@code 1.004} {@code 100%}. Only the display rounds; the game keeps the value.
+     */
     public static String share(double value) {
-        return points(value * 100) + "%";
+        if (!Double.isFinite(value)) {
+            return value * 100 + "%";
+        }
+        return plain(BigDecimal.valueOf(value).movePointRight(2).setScale(0, RoundingMode.HALF_UP)) + "%";
     }
 
     /** A value as a percentage of a base: movement speed 0.105 of the base 0.1 reads {@code 105%}. */
@@ -215,7 +274,7 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
 
     /** Every attribute the sections list by name (the primary stats and the schools' stats come from data). */
     private static Stream<Entry> listed() {
-        return Stream.of(OTHER, OFFENSE, DEFENSE, SPELLS, MANA).flatMap(List::stream);
+        return Stream.of(OTHER, OFFENSE, DEFENSE, SPELLS).flatMap(List::stream);
     }
 
     private static List<Holder<Attribute>> primaryStats() {
@@ -283,7 +342,7 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
      * An attribute's name on the sheet, on its row and in the bonuses of the primary stats: the name a section gives
      * it (Movement Speed for vanilla's Speed), or its own.
      */
-    private static Component name(Holder<Attribute> attribute) {
+    static Component name(Holder<Attribute> attribute) {
         ResourceKey<Attribute> key = key(attribute);
         return listed().filter(entry -> entry.label() != null && key(entry.attribute()).equals(key)).findFirst()
                 .<Component>map(entry -> Component.translatable(entry.label()))
@@ -300,6 +359,12 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
 
     private static Section section(String titleKey, List<Row> rows) {
         return new Section(Component.translatable(titleKey), List.copyOf(rows));
+    }
+
+    /** A rounded number without trailing zeros or an exponent: {@code 20}, {@code 6.5}, {@code -2}. */
+    private static String plain(BigDecimal rounded) {
+        BigDecimal stripped = rounded.stripTrailingZeros();
+        return (stripped.signum() == 0 ? BigDecimal.ZERO : stripped).toPlainString();
     }
 
     private static Tab tab(String nameKey, List<Section> left, List<Section> right) {

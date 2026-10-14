@@ -14,6 +14,26 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class GeneratedItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Realmforge.MOD_ID);
 
+    /** {@code realmforge:apprentice_boots} from {@code content/items/apprentice_boots.yaml}. */
+    public static final DeferredItem<Item> APPRENTICE_BOOTS =
+            ITEMS.registerSimpleItem("apprentice_boots", properties -> properties.stacksTo(1));
+
+    /** {@code realmforge:apprentice_hat} from {@code content/items/apprentice_hat.yaml}. */
+    public static final DeferredItem<Item> APPRENTICE_HAT =
+            ITEMS.registerSimpleItem("apprentice_hat", properties -> properties.stacksTo(1));
+
+    /** {@code realmforge:apprentice_pants} from {@code content/items/apprentice_pants.yaml}. */
+    public static final DeferredItem<Item> APPRENTICE_PANTS =
+            ITEMS.registerSimpleItem("apprentice_pants", properties -> properties.stacksTo(1));
+
+    /** {@code realmforge:apprentice_robes} from {@code content/items/apprentice_robes.yaml}. */
+    public static final DeferredItem<Item> APPRENTICE_ROBES =
+            ITEMS.registerSimpleItem("apprentice_robes", properties -> properties.stacksTo(1));
+
+    /** {@code realmforge:stone_wand} from {@code content/items/stone_wand.yaml}. */
+    public static final DeferredItem<Item> STONE_WAND =
+            ITEMS.registerSimpleItem("stone_wand", properties -> properties.stacksTo(1));
+
     /** {@code realmforge:test_item} from {@code content/items/test_item.yaml}. */
     public static final DeferredItem<Item> TEST_ITEM =
             ITEMS.registerSimpleItem("test_item", properties -> properties.stacksTo(16));
@@ -29,6 +49,13 @@ public final class GeneratedItems {
 
     private static void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {
         switch (event.getTabKey().identifier().toString()) {
+            case "minecraft:combat" -> {
+                event.accept(APPRENTICE_BOOTS);
+                event.accept(APPRENTICE_HAT);
+                event.accept(APPRENTICE_PANTS);
+                event.accept(APPRENTICE_ROBES);
+                event.accept(STONE_WAND);
+            }
             case "minecraft:ingredients" -> {
                 event.accept(TEST_ITEM);
             }

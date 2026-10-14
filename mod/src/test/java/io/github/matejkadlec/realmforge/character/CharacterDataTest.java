@@ -10,11 +10,18 @@ import io.github.matejkadlec.realmforge.testing.RoundTrip;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.resources.ResourceKey;
 import org.junit.jupiter.api.Test;
 
 class CharacterDataTest {
-    private static final CharacterData CHARACTER = new CharacterData(Optional.of(Realmforge.id("human")),
-            List.of(Realmforge.id("warrior"), Realmforge.id("mage")), 123_456_789_012L, Optional.of(20));
+    private static final ResourceKey<Race> HUMAN = ResourceKey.create(CharacterRegistries.RACE, Realmforge.id("human"));
+    private static final ResourceKey<PlayerClass> WARRIOR =
+            ResourceKey.create(CharacterRegistries.CLASS, Realmforge.id("warrior"));
+    private static final ResourceKey<PlayerClass> MAGE =
+            ResourceKey.create(CharacterRegistries.CLASS, Realmforge.id("mage"));
+
+    private static final CharacterData CHARACTER = new CharacterData(Optional.of(HUMAN),
+            List.of(WARRIOR, MAGE), 123_456_789_012L, Optional.of(20));
 
     @Test
     void codecRoundTrips() {
@@ -39,7 +46,7 @@ class CharacterDataTest {
     void savedShapeReads() {
         CharacterData read = RoundTrip.parseSnbt(CharacterData.CODEC,
                 "{race: \"realmforge:human\", classes: [\"realmforge:warrior\"], total_xp: 450L}").getOrThrow();
-        assertEquals(new CharacterData(Optional.of(Realmforge.id("human")), List.of(Realmforge.id("warrior")), 450,
+        assertEquals(new CharacterData(Optional.of(HUMAN), List.of(WARRIOR), 450,
                 Optional.empty()), read);
     }
 
@@ -54,7 +61,7 @@ class CharacterDataTest {
     @Test
     void constructorEnforcesTheSameRules() {
         assertThrows(IllegalArgumentException.class, () -> new CharacterData(Optional.empty(),
-                List.of(Realmforge.id("mage"), Realmforge.id("mage")), 0, Optional.empty()));
+                List.of(MAGE, MAGE), 0, Optional.empty()));
         assertThrows(IllegalArgumentException.class,
                 () -> new CharacterData(Optional.empty(), List.of(), -1, Optional.empty()));
         assertThrows(IllegalArgumentException.class,
@@ -63,16 +70,24 @@ class CharacterDataTest {
 
     @Test
     void classesAreCopied() {
-        var classes = new ArrayList<>(List.of(Realmforge.id("warrior")));
-        CharacterData character = new CharacterData(Optional.of(Realmforge.id("human")), classes, 0,
+        var classes = new ArrayList<>(List.of(WARRIOR));
+        CharacterData character = new CharacterData(Optional.of(HUMAN), classes, 0,
                 Optional.empty());
-        classes.add(Realmforge.id("mage"));
-        assertEquals(List.of(Realmforge.id("warrior")), character.classes());
+        classes.add(MAGE);
+        assertEquals(List.of(WARRIOR), character.classes());
     }
 
     @Test
     void aCharacterExistsOnceItHasARace() {
         assertFalse(CharacterData.NONE.exists());
         assertTrue(CHARACTER.exists());
+    }
+
+    /** Creating a character sets the race and the one class, and keeps XP and the cached cap. */
+    @Test
+    void createSetsRaceAndClassAndKeepsTheRest() {
+        CharacterData before = new CharacterData(Optional.empty(), List.of(), 300, Optional.of(10));
+        assertEquals(new CharacterData(Optional.of(HUMAN), List.of(MAGE), 300, Optional.of(10)),
+                before.create(HUMAN, MAGE));
     }
 }

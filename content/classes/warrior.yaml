@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../tools/schemas/classes.schema.json
+# The M1 melee class (decision D1, RLM-51): strength and vitality, growing every level. Spells come in C4.
+id: warrior
+name:
+  en_us: Warrior
+description:
+  en_us: Fights up close with steel and a stubborn heart. Rage builds as you trade blows.
+resource: realmforge:rage
+modifiers:
+  - {attribute: realmforge:strength, operation: add_value, amount: 5, per_level: 1}
+  - {attribute: realmforge:vitality, operation: add_value, amount: 4, per_level: 1}
+  - {attribute: realmforge:dexterity, operation: add_value, amount: 2}
+starting_kit:
+  - {item: minecraft:stone_sword}
+  - {item: minecraft:shield}
+  - {item: minecraft:leather_helmet}
+  - {item: minecraft:leather_chestplate}
+  - {item: minecraft:leather_leggings}
+  - {item: minecraft:leather_boots}
+  - {item: minecraft:bread, count: 32}

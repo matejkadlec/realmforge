@@ -36,8 +36,10 @@ public final class QaGameTests {
     public static final String PLATFORM = "platform_5x5";
 
     private static final List<Class<?>> HOLDERS = List.of(
+            CharacterGameTests.class,
             CharacterSheetGameTests.class,
             CombatGameTests.class,
+            ContentCharacterGameTests.class,
             ContentCurveGameTests.class,
             ContentDimensionRuleGameTests.class,
             ContentItemGameTests.class,

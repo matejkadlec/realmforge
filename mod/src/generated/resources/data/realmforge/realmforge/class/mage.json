@@ -1,0 +1,60 @@
+{
+  "name": "class.realmforge.mage.name",
+  "description": "class.realmforge.mage.description",
+  "resource": "realmforge:mana",
+  "modifiers": [
+    {
+      "attribute": "realmforge:intellect",
+      "operation": "add_value",
+      "amount": 5.0,
+      "per_level": 1.0
+    },
+    {
+      "attribute": "realmforge:vitality",
+      "operation": "add_value",
+      "amount": 2.0,
+      "per_level": 0.5
+    },
+    {
+      "attribute": "realmforge:dexterity",
+      "operation": "add_value",
+      "amount": 1.0
+    },
+    {
+      "attribute": "realmforge:max_mana",
+      "operation": "add_value",
+      "amount": 100.0
+    },
+    {
+      "attribute": "realmforge:mana_regeneration",
+      "operation": "add_value",
+      "amount": 5.0
+    }
+  ],
+  "starting_kit": [
+    {
+      "item": "realmforge:stone_wand",
+      "count": 1
+    },
+    {
+      "item": "realmforge:apprentice_hat",
+      "count": 1
+    },
+    {
+      "item": "realmforge:apprentice_robes",
+      "count": 1
+    },
+    {
+      "item": "realmforge:apprentice_pants",
+      "count": 1
+    },
+    {
+      "item": "realmforge:apprentice_boots",
+      "count": 1
+    },
+    {
+      "item": "minecraft:bread",
+      "count": 32
+    }
+  ]
+}

@@ -1,0 +1,179 @@
+{
+  "$defs": {
+    "CharacterModifierDef": {
+      "additionalProperties": false,
+      "description": "An attribute modifier a race or class gives its player. The amount applies at level 1 and grows by\n``per_level`` for every level above it: ``amount + per_level * (level - 1)``. Units follow the stat rules:\nmultiplied operations take percent (``amount_percent``, ``per_level_percent``); ``add_value`` on one of our stats\ntakes its unit (percent for a share, points otherwise); a vanilla attribute takes either.",
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Amount at level 1, in game units.",
+          "title": "Amount"
+        },
+        "amount_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Amount at level 1 in percent (5 means 5 %, the fraction 0.05).",
+          "title": "Amount Percent"
+        },
+        "attribute": {
+          "description": "The attribute it modifies, e.g. realmforge:strength.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Attribute",
+          "type": "string"
+        },
+        "operation": {
+          "description": "How the amount applies (vanilla's attribute modifier operations).",
+          "enum": [
+            "add_value",
+            "add_multiplied_base",
+            "add_multiplied_total"
+          ],
+          "title": "Operation",
+          "type": "string"
+        },
+        "per_level": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added for every level above 1, in the unit of amount.",
+          "title": "Per Level"
+        },
+        "per_level_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added for every level above 1, in percent, like amount_percent.",
+          "title": "Per Level Percent"
+        }
+      },
+      "required": [
+        "attribute",
+        "operation"
+      ],
+      "title": "CharacterModifierDef",
+      "type": "object"
+    },
+    "KitItemDef": {
+      "additionalProperties": false,
+      "description": "One item of a class's starting kit.",
+      "properties": {
+        "count": {
+          "default": 1,
+          "description": "How many (1 to 64), split into full stacks.",
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "item": {
+          "description": "The item, e.g. minecraft:stone_sword.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Item",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item"
+      ],
+      "title": "KitItemDef",
+      "type": "object"
+    },
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A class: its resource, the stats it gives and how they grow per level, and its starting kit (architecture\n10.1). Spells by level and talent trees come with C4 and C5.",
+  "properties": {
+    "description": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "One or two sentences on character creation, in the lore style guide's voice."
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "modifiers": {
+      "description": "Attribute modifiers the class gives, with their growth per level.",
+      "items": {
+        "$ref": "#/$defs/CharacterModifierDef"
+      },
+      "title": "Modifiers",
+      "type": "array"
+    },
+    "name": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "The class's name, shown on character creation and the character sheet (Title Case)."
+    },
+    "resource": {
+      "description": "The resource its spells cost: realmforge:mana or realmforge:rage.",
+      "enum": [
+        "realmforge:mana",
+        "realmforge:rage"
+      ],
+      "title": "Resource",
+      "type": "string"
+    },
+    "starting_kit": {
+      "description": "Items a new character of this class receives once.",
+      "items": {
+        "$ref": "#/$defs/KitItemDef"
+      },
+      "title": "Starting Kit",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "description",
+    "resource"
+  ],
+  "title": "ClassDef",
+  "type": "object"
+}

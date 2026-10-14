@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../tools/schemas/races.schema.json
+# The one race of M1 (roadmap, M1 scope). A little of everything: one point in every primary stat.
+id: human
+name:
+  en_us: Human
+description:
+  en_us: Folk of the Overworld's roads and towns. At home anywhere, and good at a little of everything.
+classes:
+  - realmforge:warrior
+  - realmforge:mage
+modifiers:
+  - {attribute: realmforge:strength, operation: add_value, amount: 1}
+  - {attribute: realmforge:dexterity, operation: add_value, amount: 1}
+  - {attribute: realmforge:vitality, operation: add_value, amount: 1}
+  - {attribute: realmforge:intellect, operation: add_value, amount: 1}

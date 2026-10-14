@@ -1,0 +1,30 @@
+{
+  "name": "race.realmforge.human.name",
+  "description": "race.realmforge.human.description",
+  "classes": [
+    "realmforge:warrior",
+    "realmforge:mage"
+  ],
+  "modifiers": [
+    {
+      "attribute": "realmforge:strength",
+      "operation": "add_value",
+      "amount": 1.0
+    },
+    {
+      "attribute": "realmforge:dexterity",
+      "operation": "add_value",
+      "amount": 1.0
+    },
+    {
+      "attribute": "realmforge:vitality",
+      "operation": "add_value",
+      "amount": 1.0
+    },
+    {
+      "attribute": "realmforge:intellect",
+      "operation": "add_value",
+      "amount": 1.0
+    }
+  ]
+}

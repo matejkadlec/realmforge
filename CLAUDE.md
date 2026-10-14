@@ -47,8 +47,9 @@ modpack adds third-party QoL, performance and library mods.
   26.1.2 (RLM-65, RLM-123, RLM-124). The core mod has its feature skeleton (F1), datapack registries (F2), player
   state (F3), stats (F4) with their names, a character sheet (F4b) and raised attribute caps (F4c), and the combat
   core (F5: spell schools, crit, dodge, resistances, our armor formula, combat text, the QA training dummy), and
-  hostile mobs get levels from the dimension rules with health, damage and armor scaled by curves (W1). Races,
-  classes and spells come next.
+  hostile mobs get levels from the dimension rules with health, damage and armor scaled by curves (W1). A new player
+  creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits.
+  Leveling and spells come next.
 
 ## Pinned versions
 
