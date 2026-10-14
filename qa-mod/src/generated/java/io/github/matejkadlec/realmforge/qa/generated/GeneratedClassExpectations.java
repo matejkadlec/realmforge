@@ -30,7 +30,7 @@ public final class GeneratedClassExpectations {
                     "class.realmforge.mage.name",
                     "class.realmforge.mage.description",
                     "realmforge:mana",
-                    List.of(new KitItem("realmforge:stone_wand", 1), new KitItem("minecraft:bread", 32)),
+                    List.of(new KitItem("realmforge:stone_wand", 1), new KitItem("realmforge:apprentice_hat", 1), new KitItem("realmforge:apprentice_robes", 1), new KitItem("realmforge:apprentice_pants", 1), new KitItem("realmforge:apprentice_boots", 1), new KitItem("minecraft:bread", 32)),
                     List.of(
                             new Sample(1, List.of(new Bonus("realmforge:class/realmforge/0/mage", "realmforge:intellect", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/mage", "realmforge:vitality", "add_value", 2.0), new Bonus("realmforge:class/realmforge/2/mage", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:class/realmforge/3/mage", "realmforge:max_mana", "add_value", 100.0), new Bonus("realmforge:class/realmforge/4/mage", "realmforge:mana_regeneration", "add_value", 5.0))),
                             new Sample(2, List.of(new Bonus("realmforge:class/realmforge/0/mage", "realmforge:intellect", "add_value", 6.0), new Bonus("realmforge:class/realmforge/1/mage", "realmforge:vitality", "add_value", 2.5), new Bonus("realmforge:class/realmforge/2/mage", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:class/realmforge/3/mage", "realmforge:max_mana", "add_value", 100.0), new Bonus("realmforge:class/realmforge/4/mage", "realmforge:mana_regeneration", "add_value", 5.0))),

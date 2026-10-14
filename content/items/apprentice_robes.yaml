@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# A placeholder in the Mage's starting kit (Matěj, 2026-10-14): the Apprentice's Clothing set, the caster's
+# counterpart of the Warrior's Leather Armor. Its stats (Magic Shield, Spell Power, no armor) come with C4 (RLM-27);
+# it keeps its id then.
+id: apprentice_robes
+name:
+  en_us: Apprentice's Robes (WIP)
+max_stack_size: 1
+creative_tabs:
+  - minecraft:combat

@@ -1310,7 +1310,7 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   - The hit direction layer (`client/hud/HitDirectionHud`, after the MMM Indicators mod) draws a red arc around the
     crosshair toward each recent attacker for 1.5 s, turning with the camera and following the attacker.
   - The character sheet (`client/screen/CharacterSheetScreen`, opened and closed by `client/input/CharacterSheetKey`,
-    K by default) draws `character/CharacterSheetView`: the player's name and level, not bold ("Steve · Lv. 12"),
+    K by default) draws `character/CharacterSheetView`: the player's name and level in bold ("Steve · Lv. 12"),
     then four tabs of two columns (a click, the number keys, Tab or the arrow keys switch them). The heading and the
     selected tab are white, and gold marks only the section titles. Stats: the primary stats with what they give and
     their milestones, and the other attributes (luck, mining speed, reach, movement speed, swimming speed, the XP

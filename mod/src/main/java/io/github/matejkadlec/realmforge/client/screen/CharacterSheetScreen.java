@@ -20,7 +20,7 @@ import org.lwjgl.glfw.GLFW;
 
 /**
  * The character sheet (RLM-136, architecture 18): draws {@link CharacterSheetView} over the game, which keeps running.
- * The player's name and level head it on the left, not bold, the tabs on the right; a click, the number keys, Tab or
+ * The player's name and level head it on the left in bold, the tabs on the right; a click, the number keys, Tab or
  * the arrow keys switch tabs, and the sheet reopens on the last one. The heading and the selected tab are white, so
  * gold marks only the section titles (Matěj, 2026-10-14). Each tab has two columns. The values follow the player's
  * attributes every tick while the sheet is open. The panel is as tall as its tallest tab, so it keeps its size when the
@@ -121,7 +121,7 @@ public final class CharacterSheetScreen extends Screen {
         pose.translate(layout.x(), layout.y());
         pose.scale(layout.scale());
         graphics.fill(-PADDING, -PADDING, CONTENT_WIDTH + PADDING, layout.height() + PADDING, PANEL);
-        graphics.text(font, view.title(), 0, 0, HEADING);
+        graphics.text(font, view.title().copy().withStyle(ChatFormatting.BOLD), 0, 0, HEADING);
         for (int i = 0; i < view.tabs().size(); i++) {
             int color = i == selectedTab() ? HEADING : i == hovered ? TAB_HOVER : TAB_IDLE;
             graphics.text(font, view.tabs().get(i).name(), layout.tabX()[i], 0, color);
