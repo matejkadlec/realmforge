@@ -1,4 +1,5 @@
-"""Room validation on the template itself (architecture 15.4): size, ids inside the ID universe, connectors.
+"""Room validation on the template itself (architecture 15.4): size, ids inside the ID universe (blocks, block
+entities, entities, container loot tables), connectors.
 
 Markers and the blocks themes may swap come with the dungeon framework (W4) and the room generator (A4d).
 """
@@ -14,6 +15,9 @@ from realmforge_tools.rooms.structure import JIGSAW, Pos, Structure, split_state
 BLOCK_REGISTRY = "minecraft:block"
 BLOCK_ENTITY_REGISTRY = "minecraft:block_entity_type"
 ENTITY_REGISTRY = "minecraft:entity_type"
+LOOT_TABLE_REGISTRY = "minecraft:loot_table"
+# The block entity key that names a container's loot table (RandomizableContainer.LOOT_TABLE_TAG).
+LOOT_TABLE = "LootTable"
 
 # The most a structure block saves per axis (StructureBlockEntity.MAX_SIZE_PER_AXIS).
 MAX_SIZE = 48
@@ -57,6 +61,7 @@ def check_structure(structure: Structure, universe: IdUniverse) -> list[tuple[st
 
     seen: set[Pos] = set()
     unknown: dict[tuple[str, str], list[Pos]] = {}
+    unknown_loot: dict[str, list[Pos]] = {}
     for block in structure.blocks:
         if not all(0 <= c < s for c, s in zip(block.pos, size, strict=True)):
             problems.append((f"block {_fmt(block.pos)}", f"lies outside the room's size {_fmt(size)}"))
@@ -68,6 +73,9 @@ def check_structure(structure: Structure, universe: IdUniverse) -> list[tuple[st
         entity_id = block.block_entity_id
         if entity_id is not None and not universe.contains(BLOCK_ENTITY_REGISTRY, entity_id):
             unknown.setdefault((BLOCK_ENTITY_REGISTRY, entity_id), []).append(block.pos)
+        loot_table = (block.nbt or {}).get(LOOT_TABLE)
+        if isinstance(loot_table, str) and not universe.contains(LOOT_TABLE_REGISTRY, loot_table):
+            unknown_loot.setdefault(loot_table, []).append(block.pos)
         if block.state.name == JIGSAW:
             problems += _check_jigsaw(block.pos, block.state.get("orientation"), size)
             final_state = (block.nbt or {}).get("final_state")
@@ -99,17 +107,35 @@ def check_structure(structure: Structure, universe: IdUniverse) -> list[tuple[st
         problems.append(
             (f"at {_fmt(positions[0])}", f"unknown id {id_!r} in registry {registry}{count}{hint}")
         )
+    for loot_table, positions in sorted(unknown_loot.items()):
+        count = f" ({len(positions)} times)" if len(positions) > 1 else ""
+        problems.append(
+            (
+                f"at {_fmt(positions[0])}",
+                f"unknown loot table {loot_table!r}{count}: the container would stay empty; map it in the "
+                "import rules' loot_tables",
+            )
+        )
     return problems
+
+
+def connector_face(pos: Pos, orientation: str | None, size: Pos) -> str | None:
+    """The face a jigsaw is a connector on (``north``, ``up``, ...): the one it points to, when it sits on it.
+    None for a jigsaw inside the room or without a valid orientation."""
+    front = (orientation or "").split("_")[0]
+    face = _JIGSAW_FACES.get(front)
+    if face is None:
+        return None
+    axis, side = face
+    edge = 0 if side == "min" else size[axis] - 1
+    return front if pos[axis] == edge else None
 
 
 def _check_jigsaw(pos: Pos, orientation: str | None, size: Pos) -> list[tuple[str, str]]:
     front = (orientation or "").split("_")[0]
-    face = _JIGSAW_FACES.get(front)
-    if face is None:
+    if front not in _JIGSAW_FACES:
         return [(f"jigsaw {_fmt(pos)}", f"has no valid orientation ({orientation!r})")]
-    axis, side = face
-    edge = 0 if side == "min" else size[axis] - 1
-    if pos[axis] != edge:
+    if connector_face(pos, orientation, size) is None:
         return [
             (
                 f"jigsaw {_fmt(pos)}",

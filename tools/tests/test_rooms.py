@@ -20,6 +20,7 @@ from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import DATA_VERSION, RepoPaths
 from realmforge_tools.rooms import importer
 from realmforge_tools.rooms.check import check_structure
+from realmforge_tools.rooms.slots import slot_tags
 from realmforge_tools.rooms.sources import read_source, structure_from_sponge
 from realmforge_tools.rooms.structure import (
     BlockState,
@@ -599,6 +600,120 @@ def test_rules_data_version_fills_only_a_missing_one() -> None:
     assert kept.data_version == 3955 and not any("data version" in note for note in notes)
 
 
+def with_jigsaws(*jigsaws: tuple[tuple[int, int, int], str, str]) -> Structure:
+    """The small room with its jigsaw replaced by these (position, orientation, pool)."""
+    room = small_room()
+    blocks = [b for b in room.blocks if b.state.name != "minecraft:jigsaw"]
+    taken = {pos for pos, _, _ in jigsaws}
+    blocks = [b for b in blocks if b.pos not in taken]
+    for pos, orientation, pool in jigsaws:
+        data = {
+            "id": "minecraft:jigsaw",
+            "name": "src:door",
+            "target": "src:door",
+            "pool": pool,
+            "final_state": "src:fancy_bricks",
+            "joint": "aligned",
+        }
+        blocks.append(
+            StructureBlock(pos, BlockState.parse(f"minecraft:jigsaw[orientation={orientation}]"), data)
+        )
+    return replace(room, blocks=tuple(blocks))
+
+
+def test_interior_jigsaws_become_their_final_state_and_connectors_get_neutral_names() -> None:
+    room = with_jigsaws(
+        ((4, 1, 2), "east_up", "src:halls"),  # a connector on the east face
+        ((2, 3, 2), "up_north", "src:halls"),  # a shaft up through the ceiling
+        ((2, 1, 2), "up_north", "src:props"),  # inside: it pulls in a prop
+    )
+    rules = importer.ImportRules.model_validate(
+        {
+            "blocks": {"src:fancy_bricks": "minecraft:stone_bricks"},
+            "jigsaws": {"interior": "drop", "normalize": True},
+        }
+    )
+    structure, notes = importer.apply_rules(room, rules)
+    by_pos = {b.pos: b for b in structure.blocks}
+    assert str(by_pos[2, 1, 2].state) == "minecraft:stone_bricks" and by_pos[2, 1, 2].nbt is None
+    door, shaft = by_pos[4, 1, 2].nbt, by_pos[2, 3, 2].nbt
+    assert door is not None and shaft is not None
+    assert (door["name"], door["target"], door["pool"]) == (
+        "realmforge:door",
+        "realmforge:door",
+        "minecraft:empty",
+    )
+    assert (shaft["name"], shaft["target"]) == ("realmforge:shaft", "realmforge:shaft")
+    assert (
+        door["final_state"] == "minecraft:stone_bricks"
+    )  # the block rules still reach a connector's final_state
+    assert "replaced 1 x interior jigsaw (pool src:props) with its final_state" in notes
+    assert "named 2 connector(s) realmforge:door or realmforge:shaft" in notes
+    assert not any(note.startswith("jigsaw names and pools left") for note in notes)
+
+    kept, _ = importer.apply_rules(room, importer.ImportRules())  # by default nothing changes
+    assert sum(b.state.name == "minecraft:jigsaw" for b in kept.blocks) == 3
+
+
+def test_normalize_leaves_no_room_for_connector_rules() -> None:
+    with pytest.raises(ValueError, match="normalize names every connector itself"):
+        importer.ImportRules.model_validate(
+            {"jigsaws": {"normalize": True}, "connectors": {"src:door": "realmforge:door"}}
+        )
+
+
+def test_loot_tables_are_mapped_or_dropped() -> None:
+    def chest(table: str) -> dict:
+        return {"id": "minecraft:chest", "LootTable": table, "LootTableSeed": nbt.Long(7)}
+
+    room = small_room(
+        blocks=(
+            StructureBlock((0, 0, 0), BlockState("minecraft:chest"), chest("src:dungeon/common")),
+            StructureBlock((1, 0, 0), BlockState("minecraft:chest"), chest("src:dungeon/rare")),
+            StructureBlock((2, 0, 0), BlockState("minecraft:barrel"), chest("other:loot")),
+            StructureBlock(
+                (3, 0, 0), BlockState("minecraft:chest"), chest("minecraft:chests/simple_dungeon")
+            ),
+        )
+    )
+    rules = importer.ImportRules.model_validate(
+        {"loot_tables": {"src:dungeon/rare": "minecraft:chests/simple_dungeon", "src:*": None}}
+    )
+    structure, notes = importer.apply_rules(room, rules)
+    common, rare, other, vanilla = (b.nbt for b in structure.blocks)
+    assert common == {"id": "minecraft:chest"}  # the table and its seed are gone
+    assert rare == chest("minecraft:chests/simple_dungeon")  # an exact key wins over the namespace
+    assert other == chest("other:loot")  # unmapped: validation reports it
+    assert vanilla == chest("minecraft:chests/simple_dungeon")
+    assert "dropped the loot table of 1 x container (src:dungeon/common)" in notes
+    assert (
+        "mapped the loot table to minecraft:chests/simple_dungeon of 1 x container (src:dungeon/rare)"
+        in notes
+    )
+
+
+def test_unknown_loot_table_is_a_problem(repo: RepoPaths) -> None:
+    loot = {"id": "minecraft:chest", "LootTable": "src:dungeon/common"}
+    blocks = tuple(StructureBlock((x, 0, 0), BlockState("minecraft:chest"), loot) for x in range(2))
+    (problem,) = check_structure(small_room(blocks=blocks), load_vanilla(repo))
+    assert problem == (
+        "at 0 0 0",
+        "unknown loot table 'src:dungeon/common' (2 times): the container would stay empty; map it in the "
+        "import rules' loot_tables",
+    )
+
+
+def test_include_and_exclude_pick_the_files() -> None:
+    rules = importer.ImportRules.model_validate(
+        {"include": ["dungeon/*"], "exclude": ["*/props/*", "dungeon/broken.nbt"]}
+    )
+    assert not rules.excludes(Path("dungeon/rooms/hall.nbt"))  # * also matches /
+    assert rules.excludes(Path("dungeon/rooms/props/vase.nbt"))
+    assert rules.excludes(Path("dungeon/broken.nbt"))
+    assert rules.excludes(Path("igloo/hut.nbt"))  # not included
+    assert not importer.ImportRules().excludes(Path("igloo/hut.nbt"))  # no include: every file
+
+
 def test_rules_file_is_strict(tmp_path: Path) -> None:
     rules = write(tmp_path / "rules.yaml", "block: {a:b: minecraft:stone}\n")
     with pytest.raises(importer.RoomImportError, match="block"):
@@ -638,7 +753,8 @@ def test_each_format_imports_into_a_room_that_validates(repo: RepoPaths, tmp_pat
     assert schem.model.source is not None
     assert (schem.model.source.file, schem.model.source.format) == (samples["schem"].name, "schem")
     assert schem.model.source.data_version == DATA_VERSION
-    assert schem.model.pools == [] and schem.model.tags == []
+    # A new sidecar gets draft slot tags: one connector, no role word, so a combat dead end.
+    assert schem.model.pools == [] and schem.model.tags == ["combat", "dead_end"]
     sidecar = (target / "sample_schem.yaml").read_text(encoding="utf-8")
     assert sidecar.startswith("# yaml-language-server: $schema=../../../../tools/schemas/rooms.schema.json\n")
 
@@ -681,10 +797,11 @@ def test_reimport_keeps_pools_tags_and_weight(repo: RepoPaths, tmp_path: Path) -
     target = third_party(repo)
     importer.import_rooms([source], target, RULES, load_vanilla(repo), repo)
     sidecar = target / "hall.yaml"
+    text = sidecar.read_text(encoding="utf-8")
+    assert 'tags:\n  - "hallway"\n  - "dead_end"\n' in text  # drafted from the name and the connectors
     sidecar.write_text(
-        sidecar.read_text(encoding="utf-8")
-        .replace("pools: []", "pools:\n  - realmforge:rooms/halls")
-        .replace("tags: []", "tags: [hallway]")
+        text.replace("pools: []", "pools:\n  - realmforge:rooms/halls")
+        .replace('tags:\n  - "hallway"\n  - "dead_end"', "tags: [hallway]")
         .replace("weight: 1", "weight: 3"),
         encoding="utf-8",
     )
@@ -799,6 +916,83 @@ def test_import_refuses_two_sources_with_one_name(repo: RepoPaths, tmp_path: Pat
         importer.import_rooms([tmp_path], third_party(repo), RULES, load_vanilla(repo), repo)
 
 
+def test_import_skips_excluded_and_reports_corrupt_files(repo: RepoPaths, tmp_path: Path) -> None:
+    source = tmp_path / "src"
+    (source / "props").mkdir(parents=True)
+    for name in ("hall.nbt", "props/hall.nbt"):  # the excluded one would collide with hall otherwise
+        (source / name).write_bytes(write_structure(small_room()))
+    (source / "broken.nbt").write_bytes(corrupt(write_structure(small_room())))
+    target = third_party(repo)
+    rules = RULES.model_copy(update={"exclude": ["props/*"]})
+    results = {
+        r.source.relative_to(source).as_posix(): r
+        for r in importer.import_rooms([source], target, rules, load_vanilla(repo), repo)
+    }
+    assert results["props/hall.nbt"].excluded and not results["props/hall.nbt"].written
+    assert results["hall.nbt"].written
+    broken = results["broken.nbt"]
+    assert not broken.written and broken.structure is None
+    assert broken.problems[0].startswith("not a usable room file: broken gzip data")
+    assert sorted(p.name for p in target.glob("*.nbt")) == ["hall.nbt"]
+
+
+# --- draft slot tags ---------------------------------------------------------------------------------------------
+
+
+def jigsaw_room(size: tuple[int, int, int], *faces: str) -> Structure:
+    """An empty room of ``size`` with one connector in the middle of each face."""
+    x, y, z = size
+    spots = {
+        "north": ((x // 2, 1, 0), "north_up"),
+        "south": ((x // 2, 1, z - 1), "south_up"),
+        "west": ((0, 1, z // 2), "west_up"),
+        "east": ((x - 1, 1, z // 2), "east_up"),
+        "up": ((x // 2, y - 1, z // 2), "up_north"),
+        "down": ((x // 2, 0, z // 2), "down_north"),
+    }
+    blocks = tuple(
+        StructureBlock(
+            pos, BlockState.parse(f"minecraft:jigsaw[orientation={orientation}]"), {"id": "minecraft:jigsaw"}
+        )
+        for pos, orientation in (spots[face] for face in faces)
+    )
+    return Structure(size, DATA_VERSION, blocks)
+
+
+@pytest.mark.parametrize(
+    ("name", "size", "faces", "tags"),
+    [
+        ("library", (13, 6, 13), ("west",), ["combat", "dead_end"]),
+        ("library", (13, 6, 13), ("west", "east"), ["combat", "straight"]),
+        ("library", (13, 6, 13), ("north", "east"), ["combat", "curved"]),
+        ("library", (13, 6, 13), ("north", "east", "south"), ["combat", "t_junction"]),
+        ("library", (13, 6, 13), ("north", "east", "south", "west"), ["combat", "crossing"]),
+        ("corridor_4", (25, 5, 8), ("west", "east"), ["hallway", "straight"]),  # the role word
+        ("c1", (6, 5, 9), ("west", "east"), ["hallway", "straight"]),  # narrow and straight
+        ("c1", (6, 5, 9), ("west",), ["combat", "dead_end"]),  # narrow, but a dead end
+        ("treasure/egg", (13, 8, 13), ("west",), ["treasure", "dead_end"]),
+        ("dungeon_bossroom", (32, 23, 31), ("north",), ["boss", "dead_end"]),
+        ("boss_hallway", (7, 5, 20), ("north", "south"), ["boss", "straight"]),  # the first role wins
+        ("entrances/entrance_1", (7, 6, 7), ("down",), ["entrance", "vertical"]),
+        ("stairway/fall_01", (5, 16, 5), ("up", "down"), ["stairs", "vertical"]),
+        (
+            "lobby_01",
+            (13, 6, 13),
+            ("north", "east", "south", "west", "up"),
+            ["entrance", "crossing", "vertical"],
+        ),
+    ],
+)
+def test_slot_tags(name: str, size: tuple[int, int, int], faces: tuple[str, ...], tags: list[str]) -> None:
+    assert slot_tags(jigsaw_room(size, *faces), name) == tags
+
+
+def test_interior_jigsaws_are_no_connectors() -> None:
+    room = jigsaw_room((13, 6, 13), "west")
+    inside = StructureBlock((6, 1, 6), BlockState.parse("minecraft:jigsaw[orientation=up_north]"), {})
+    assert slot_tags(replace(room, blocks=(*room.blocks, inside)), "x") == ["combat", "dead_end"]
+
+
 # --- the rooms content type --------------------------------------------------------------------------------------
 
 
@@ -874,6 +1068,38 @@ def test_third_party_rooms_need_license_and_notice(repo: RepoPaths) -> None:
     assert any("third-party rooms need the source's NOTICE" in p for p in found)
     write(repo.content / "rooms" / "LICENSE", "x\n")
     assert any("LICENSE belongs directly in content/rooms/third_party/<source>/" in p for p in problems(repo))
+
+
+LGPL = (
+    "                   GNU LESSER GENERAL PUBLIC LICENSE\n                       Version 3, 29 June 2007\n"
+)
+GPL = "                    GNU GENERAL PUBLIC LICENSE\n                       Version 3, 29 June 2007\n"
+
+
+def test_lgpl_rooms_carry_the_gpl_text_as_copying(repo: RepoPaths) -> None:
+    folder = third_party(repo, "lgpl")
+    write(folder / "LICENSE", LGPL)
+    add_room(repo, "third_party/lgpl/hall")
+    assert problems(repo) == [
+        "content/rooms/third_party/lgpl/: an LGPL-3.0 source needs the GPL-3.0 text as COPYING (ADR 0028)"
+    ]
+    write(folder / "COPYING", LGPL)
+    assert problems(repo) == ["content/rooms/third_party/lgpl/COPYING: COPYING must hold the GPL-3.0 text"]
+    write(folder / "COPYING", GPL)
+    content, _ = load_and_validate(repo)
+    files = generate_all(content, repo)
+    assert files[repo.mod_generated / "resources/META-INF/third_party/lgpl/COPYING"] == GPL.encode()
+
+
+def test_only_lgpl_sources_carry_copying(repo: RepoPaths) -> None:
+    folder = third_party(repo)  # MIT
+    add_room(repo, "third_party/sample/hall")
+    write(folder / "COPYING", GPL)
+    assert problems(repo) == [
+        "content/rooms/third_party/sample/COPYING: only an LGPL-3.0 source (its LICENSE) carries COPYING"
+    ]
+    write(repo.content / "rooms" / "COPYING", GPL)
+    assert any("COPYING belongs directly in content/rooms/third_party/<source>/" in p for p in problems(repo))
 
 
 def test_room_template_is_checked(repo: RepoPaths) -> None:
