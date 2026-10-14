@@ -1,0 +1,34 @@
+{
+  "name": "class.realmforge.mage.name",
+  "description": "class.realmforge.mage.description",
+  "resource": "realmforge:mana",
+  "modifiers": [
+    {
+      "attribute": "realmforge:intellect",
+      "operation": "add_value",
+      "amount": 5.0,
+      "per_level": 1.0
+    },
+    {
+      "attribute": "realmforge:vitality",
+      "operation": "add_value",
+      "amount": 2.0,
+      "per_level": 0.5
+    },
+    {
+      "attribute": "realmforge:dexterity",
+      "operation": "add_value",
+      "amount": 1.0
+    }
+  ],
+  "starting_kit": [
+    {
+      "item": "minecraft:wooden_sword",
+      "count": 1
+    },
+    {
+      "item": "minecraft:bread",
+      "count": 8
+    }
+  ]
+}

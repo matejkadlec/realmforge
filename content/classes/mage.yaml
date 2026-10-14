@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../tools/schemas/classes.schema.json
+# The M1 caster (decision D1, RLM-51): intellect, growing every level. Its spells come in C4; until then it fights
+# with the wooden sword of its kit.
+id: mage
+name:
+  en_us: Mage
+description:
+  en_us: Strikes from afar with fire, frost and arcane power, drawn from a well of mana.
+resource: realmforge:mana
+modifiers:
+  - {attribute: realmforge:intellect, operation: add_value, amount: 5, per_level: 1}
+  - {attribute: realmforge:vitality, operation: add_value, amount: 2, per_level: 0.5}
+  - {attribute: realmforge:dexterity, operation: add_value, amount: 1}
+starting_kit:
+  - {item: minecraft:wooden_sword}
+  - {item: minecraft:bread, count: 8}

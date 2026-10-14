@@ -181,7 +181,8 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"Content OK: {len(content.items)} item(s), {len(content.curves)} curve(s), "
             f"{len(content.stats)} stat(s), {len(content.stat_rules)} stat rule(s), "
-            f"{len(content.dimensions)} dimension rule set(s), {len(content.worldgen)} worldgen file(s), "
+            f"{len(content.dimensions)} dimension rule set(s), {len(content.races)} race(s), "
+            f"{len(content.classes)} class(es), {len(content.worldgen)} worldgen file(s), "
             f"{len(content.rooms)} room(s)."
         )
         return 0

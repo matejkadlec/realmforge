@@ -6,6 +6,7 @@ wrong types are errors. JSON Schemas for editor completion are generated from th
 
 from dataclasses import dataclass
 
+from realmforge_tools.schema.character import ClassDef, RaceDef
 from realmforge_tools.schema.curve import CurveDef
 from realmforge_tools.schema.dimension_rules import DimensionRulesDef
 from realmforge_tools.schema.item import ItemDef
@@ -22,6 +23,8 @@ CONTENT_TYPES: dict[str, type] = {
     "stat_rules": StatRuleDef,
     "spell_schools": SpellSchoolDef,
     "dimensions": DimensionRulesDef,
+    "races": RaceDef,
+    "classes": ClassDef,
     "texts": TextGroupDef,
 }
 
@@ -44,16 +47,20 @@ DATAPACK_TYPES: tuple[DatapackType, ...] = (
     DatapackType("curves", "curve"),
     DatapackType("stat_rules", "stat_rule"),
     DatapackType("dimensions", "dimension_rules"),
+    DatapackType("races", "race"),
+    DatapackType("classes", "class"),
 )
 
 __all__ = [
     "CONTENT_TYPES",
     "DATAPACK_TYPES",
     "WORLDGEN_DIR",
+    "ClassDef",
     "CurveDef",
     "DatapackType",
     "DimensionRulesDef",
     "ItemDef",
+    "RaceDef",
     "SpellSchoolDef",
     "StatDef",
     "StatRuleDef",

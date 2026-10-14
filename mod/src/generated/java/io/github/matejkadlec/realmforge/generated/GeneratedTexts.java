@@ -11,17 +11,35 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.block_reach} from {@code content/texts/gui.yaml}: "Block Reach" */
     public static final String GUI_BLOCK_REACH = "gui.realmforge.block_reach";
 
+    /** {@code gui.realmforge.character_creation} from {@code content/texts/gui.yaml}: "Create Your Character" */
+    public static final String GUI_CHARACTER_CREATION = "gui.realmforge.character_creation";
+
     /** {@code gui.realmforge.character_sheet} from {@code content/texts/gui.yaml}: "Character Sheet" */
     public static final String GUI_CHARACTER_SHEET = "gui.realmforge.character_sheet";
 
     /** {@code gui.realmforge.character_title} from {@code content/texts/gui.yaml}: "%1$s · Lv. %2$s" */
     public static final String GUI_CHARACTER_TITLE = "gui.realmforge.character_title";
 
+    /** {@code gui.realmforge.character_title_class} from {@code content/texts/gui.yaml}: "%1$s · Lv. %2$s %3$s" */
+    public static final String GUI_CHARACTER_TITLE_CLASS = "gui.realmforge.character_title_class";
+
+    /** {@code gui.realmforge.class} from {@code content/texts/gui.yaml}: "Class" */
+    public static final String GUI_CLASS = "gui.realmforge.class";
+
+    /** {@code gui.realmforge.class_resource} from {@code content/texts/gui.yaml}: "Resource: %1$s" */
+    public static final String GUI_CLASS_RESOURCE = "gui.realmforge.class_resource";
+
+    /** {@code gui.realmforge.create_character} from {@code content/texts/gui.yaml}: "Create Character" */
+    public static final String GUI_CREATE_CHARACTER = "gui.realmforge.create_character";
+
     /** {@code gui.realmforge.defense} from {@code content/texts/gui.yaml}: "Defense" */
     public static final String GUI_DEFENSE = "gui.realmforge.defense";
 
     /** {@code gui.realmforge.entity_reach} from {@code content/texts/gui.yaml}: "Entity Reach" */
     public static final String GUI_ENTITY_REACH = "gui.realmforge.entity_reach";
+
+    /** {@code gui.realmforge.kit_item} from {@code content/texts/gui.yaml}: "%1$s ×%2$s" */
+    public static final String GUI_KIT_ITEM = "gui.realmforge.kit_item";
 
     /** {@code gui.realmforge.mana} from {@code content/texts/gui.yaml}: "Mana" */
     public static final String GUI_MANA = "gui.realmforge.mana";
@@ -41,14 +59,23 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.primary_stats} from {@code content/texts/gui.yaml}: "Primary Stats" */
     public static final String GUI_PRIMARY_STATS = "gui.realmforge.primary_stats";
 
+    /** {@code gui.realmforge.race} from {@code content/texts/gui.yaml}: "Race" */
+    public static final String GUI_RACE = "gui.realmforge.race";
+
     /** {@code gui.realmforge.spell_schools} from {@code content/texts/gui.yaml}: "Spell Schools" */
     public static final String GUI_SPELL_SCHOOLS = "gui.realmforge.spell_schools";
 
     /** {@code gui.realmforge.spells} from {@code content/texts/gui.yaml}: "Spells" */
     public static final String GUI_SPELLS = "gui.realmforge.spells";
 
+    /** {@code gui.realmforge.starting_kit} from {@code content/texts/gui.yaml}: "Starting Kit" */
+    public static final String GUI_STARTING_KIT = "gui.realmforge.starting_kit";
+
     /** {@code gui.realmforge.stat_bonus} from {@code content/texts/gui.yaml}: "%1$s %2$s" */
     public static final String GUI_STAT_BONUS = "gui.realmforge.stat_bonus";
+
+    /** {@code gui.realmforge.stat_growth} from {@code content/texts/gui.yaml}: "%1$s (%2$s per Level)" */
+    public static final String GUI_STAT_GROWTH = "gui.realmforge.stat_growth";
 
     /** {@code gui.realmforge.stat_milestone} from {@code content/texts/gui.yaml}: "At %1$s: %2$s" */
     public static final String GUI_STAT_MILESTONE = "gui.realmforge.stat_milestone";
@@ -79,6 +106,12 @@ public final class GeneratedTexts {
 
     /** {@code message.realmforge.dark_vision_on} from {@code content/texts/message.yaml}: "Dark Vision on" */
     public static final String MESSAGE_DARK_VISION_ON = "message.realmforge.dark_vision_on";
+
+    /** {@code resource.realmforge.mana} from {@code content/texts/resource.yaml}: "Mana" */
+    public static final String RESOURCE_MANA = "resource.realmforge.mana";
+
+    /** {@code resource.realmforge.rage} from {@code content/texts/resource.yaml}: "Rage" */
+    public static final String RESOURCE_RAGE = "resource.realmforge.rage";
 
     private GeneratedTexts() {
     }

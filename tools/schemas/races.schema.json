@@ -1,0 +1,149 @@
+{
+  "$defs": {
+    "CharacterModifierDef": {
+      "additionalProperties": false,
+      "description": "An attribute modifier a race or class gives its player. The amount applies at level 1 and grows by\n``per_level`` for every level above it: ``amount + per_level * (level - 1)``. Units follow the stat rules:\nmultiplied operations take percent (``amount_percent``, ``per_level_percent``); ``add_value`` on one of our stats\ntakes its unit (percent for a share, points otherwise); a vanilla attribute takes either.",
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Amount at level 1, in game units.",
+          "title": "Amount"
+        },
+        "amount_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Amount at level 1 in percent (5 means 5 %, the fraction 0.05).",
+          "title": "Amount Percent"
+        },
+        "attribute": {
+          "description": "The attribute it modifies, e.g. realmforge:strength.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Attribute",
+          "type": "string"
+        },
+        "operation": {
+          "description": "How the amount applies (vanilla's attribute modifier operations).",
+          "enum": [
+            "add_value",
+            "add_multiplied_base",
+            "add_multiplied_total"
+          ],
+          "title": "Operation",
+          "type": "string"
+        },
+        "per_level": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added for every level above 1, in the unit of amount.",
+          "title": "Per Level"
+        },
+        "per_level_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added for every level above 1, in percent, like amount_percent.",
+          "title": "Per Level Percent"
+        }
+      },
+      "required": [
+        "attribute",
+        "operation"
+      ],
+      "title": "CharacterModifierDef",
+      "type": "object"
+    },
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A playable race: the classes it may take and the modifiers it gives (architecture 10.1). Innate spells and a\nsize come with the spell system (C4) and later races.",
+  "properties": {
+    "classes": {
+      "description": "The classes this race may take, e.g. realmforge:warrior.",
+      "items": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Classes",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "description": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "One or two sentences on character creation, in the lore style guide's voice."
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "modifiers": {
+      "description": "Attribute modifiers the race gives, usually primary stats.",
+      "items": {
+        "$ref": "#/$defs/CharacterModifierDef"
+      },
+      "title": "Modifiers",
+      "type": "array"
+    },
+    "name": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "The race's name, shown on character creation (Title Case)."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "description",
+    "classes"
+  ],
+  "title": "RaceDef",
+  "type": "object"
+}

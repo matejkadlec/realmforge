@@ -1,0 +1,38 @@
+{
+  "name": "class.realmforge.warrior.name",
+  "description": "class.realmforge.warrior.description",
+  "resource": "realmforge:rage",
+  "modifiers": [
+    {
+      "attribute": "realmforge:strength",
+      "operation": "add_value",
+      "amount": 5.0,
+      "per_level": 1.0
+    },
+    {
+      "attribute": "realmforge:vitality",
+      "operation": "add_value",
+      "amount": 4.0,
+      "per_level": 1.0
+    },
+    {
+      "attribute": "realmforge:dexterity",
+      "operation": "add_value",
+      "amount": 2.0
+    }
+  ],
+  "starting_kit": [
+    {
+      "item": "minecraft:stone_sword",
+      "count": 1
+    },
+    {
+      "item": "minecraft:shield",
+      "count": 1
+    },
+    {
+      "item": "minecraft:bread",
+      "count": 8
+    }
+  ]
+}

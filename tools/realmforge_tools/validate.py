@@ -88,6 +88,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_references(content, universe)
     problems += _check_stat_rules(content, universe)
     problems += _check_spell_schools(content, universe)
+    problems += _check_characters(content, universe)
     problems += _check_worldgen_references(content, universe)
     problems += _check_dimension_rules(content, universe)
     problems += _check_text_groups(content)
@@ -269,6 +270,69 @@ def _check_spell_schools(content: Content, universe: IdUniverse) -> list[Problem
             if stat_id in used:
                 problems.append(Problem(entry.source, field, f"{stat_id} already serves {used[stat_id]}"))
             used.setdefault(stat_id, f"{entry.source} ({field})")
+    return problems
+
+
+def _check_characters(content: Content, universe: IdUniverse) -> list[Problem]:
+    """Races name classes that exist, and every class is open to some race, or no player could take it. Modifiers
+    name attributes that exist, in their unit as for stat rules (architecture 8.3); kit items exist."""
+    problems: list[Problem] = []
+    stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
+    class_registry = f"{MOD_ID}:class"
+    taken: set[str] = set()
+    for entry in content.races:
+        for n, class_id in enumerate(entry.model.classes):
+            taken.add(class_id)
+            if not universe.contains(class_registry, class_id):
+                problems.append(
+                    Problem(entry.source, f"classes.{n}", _unknown(class_id, class_registry, universe))
+                )
+    for entry in (*content.races, *content.classes):
+        for n, modifier in enumerate(entry.model.modifiers):
+            path = f"modifiers.{n}"
+            target = stats.get(modifier.attribute)
+            if not universe.contains(ATTRIBUTE_REGISTRY, modifier.attribute):
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"{path}.attribute",
+                        _unknown(modifier.attribute, ATTRIBUTE_REGISTRY, universe),
+                    )
+                )
+            elif modifier.operation == "add_value" and target is not None:
+                if target.percent and not modifier.is_percent:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            f"{path}.amount",
+                            f"{modifier.attribute} is a share: write the amount as amount_percent",
+                        )
+                    )
+                elif not target.percent and modifier.is_percent:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            f"{path}.amount_percent",
+                            f"{modifier.attribute} counts points: add_value takes amount, not amount_percent",
+                        )
+                    )
+    for entry in content.classes:
+        class_id = f"{MOD_ID}:{entry.model.id}"
+        if class_id not in taken:
+            problems.append(
+                Problem(
+                    entry.source, "id", f"no race lists {class_id} in its classes, so no player can take it"
+                )
+            )
+        for n, kit_item in enumerate(entry.model.starting_kit):
+            if not universe.contains(ITEM_REGISTRY, kit_item.item):
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"starting_kit.{n}.item",
+                        _unknown(kit_item.item, ITEM_REGISTRY, universe),
+                    )
+                )
     return problems
 
 

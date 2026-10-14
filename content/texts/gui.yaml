@@ -9,6 +9,10 @@ texts:
   # The sheet's heading: "Steve · Lv. 12" (%1$s the player's name, %2$s the level; Matěj, 2026-10-14).
   character_title:
     en_us: "%1$s · Lv. %2$s"
+  # The heading once the player has a class: "Steve · Lv. 12 Warrior" (%3$s the class; Matěj, 2026-10-14). A
+  # subclass will come before the class: "Steve · Lv. 25 Arms Warrior".
+  character_title_class:
+    en_us: "%1$s · Lv. %2$s %3$s"
   # The tabs, and the sections each shows in its two columns.
   tab_stats:
     en_us: Stats
@@ -48,3 +52,24 @@ texts:
   # A milestone of a primary stat: "At 25: +10% Crit Damage" (%1$s the points, %2$s the bonus).
   stat_milestone:
     en_us: "At %1$s: %2$s"
+  # Character creation (RLM-22): the screen's title, its two columns, the class's resource and starting kit, and the
+  # button that creates the character.
+  character_creation:
+    en_us: Create Your Character
+  race:
+    en_us: Race
+  class:
+    en_us: Class
+  # "Resource: Rage" (%1$s the resource's name).
+  class_resource:
+    en_us: "Resource: %1$s"
+  starting_kit:
+    en_us: Starting Kit
+  # An item of the starting kit: "Bread ×8" (%1$s the item, %2$s the count).
+  kit_item:
+    en_us: "%1$s ×%2$s"
+  # A bonus that grows with the level: "+5 Strength (+1 per Level)" (%1$s the bonus at level 1, %2$s the growth).
+  stat_growth:
+    en_us: "%1$s (%2$s per Level)"
+  create_character:
+    en_us: Create Character
