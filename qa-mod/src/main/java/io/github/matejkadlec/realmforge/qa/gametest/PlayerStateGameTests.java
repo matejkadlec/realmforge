@@ -119,11 +119,11 @@ public final class PlayerStateGameTests {
         helper.succeed();
     }
 
-    /** The entity level lives on mobs too: saved with the mob and read as level 1 when nobody set it. */
+    /** The entity level lives on mobs too, saved with the mob. A hostile mob gets one when it joins the world (W1). */
     @QaGameTest
     public static void mobLevelIsSavedWithTheMob(GameTestHelper helper) {
         Zombie zombie = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, new BlockPos(2, 1, 2));
-        helper.assertValueEqual(zombie.getData(StatsAttachments.LEVEL), EntityLevel.DEFAULT, "a mob without a level");
+        helper.assertTrue(zombie.hasData(StatsAttachments.LEVEL), "the zombie got a level when it joined");
         zombie.setData(StatsAttachments.LEVEL, LEVEL);
 
         ProblemReporter.Collector problems = new ProblemReporter.Collector();
@@ -141,7 +141,7 @@ public final class PlayerStateGameTests {
     /**
      * A converting mob keeps its level: NeoForge copies copy-on-death attachments on {@code LivingConversionEvent}.
      * The conversion is the one vanilla's {@code Zombie#convertToZombieType} makes when a zombie drowns, without its
-     * attribute rolls. W1 makes the converted mob's scaling follow the copied level.
+     * attribute rolls. {@code MobLevelGameTests} checks that the converted mob's scaling follows the copied level.
      */
     @QaGameTest
     public static void convertedMobKeepsItsLevel(GameTestHelper helper) {

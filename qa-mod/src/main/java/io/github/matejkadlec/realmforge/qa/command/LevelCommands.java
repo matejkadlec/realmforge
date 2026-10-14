@@ -5,6 +5,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import io.github.matejkadlec.realmforge.mob.MobLevels;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import net.minecraft.commands.CommandSourceStack;
@@ -13,11 +14,13 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 
 /**
  * {@code /qa level <level> [<entity>]}: sets the {@code realmforge:level} attachment of a player or mob, yourself by
- * default (architecture 7), before leveling (C2) and mob levels (W1) exist. Our armor formula reads the attacker's level
- * (architecture 9.1), so a higher attacker level lets the same armor block less.
+ * default (architecture 7), before leveling (C2) exists. A hostile mob also gets the scaling of its new level (W1,
+ * architecture 14.1), keeping its share of health: {@code /qa level 10 @n[type=zombie]}. Our armor formula reads the
+ * attacker's level (architecture 9.1), so a higher attacker level lets the same armor block less.
  */
 public final class LevelCommands {
     private static final SimpleCommandExceptionType NOT_LIVING =
@@ -39,7 +42,11 @@ public final class LevelCommands {
             throw NOT_LIVING.create();
         }
         int level = IntegerArgumentType.getInteger(context, "level");
-        entity.setData(StatsAttachments.LEVEL, new EntityLevel(level));
+        if (entity instanceof Mob mob) {
+            MobLevels.setLevel(mob, level);
+        } else {
+            entity.setData(StatsAttachments.LEVEL, new EntityLevel(level));
+        }
         context.getSource().sendSuccess(() -> Component.literal("Set the level of " + entity.getPlainTextName()
                 + " to " + level), true);
         return level;
