@@ -82,7 +82,7 @@ failure, read `.cache/warmup/log`; Gradle still downloads what it needs on deman
 
 ```bash
 uv sync                                   # Python environment (once, and after pyproject/uv.lock changes)
-uv run rf validate                        # validate content/ (~1 s)
+uv run rf validate                        # validate content/ (a few seconds, most of it reading the room templates)
 uv run rf gen                             # validate, then regenerate every generated file
 uv run rf gen --check                     # exit 1 if generated files are out of date
 uv run pytest                             # Python tests
@@ -128,7 +128,7 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 | `qa-mod/src/generated/` | content expectations for GameTests, GameTest structures from `rf gen` | **no** |
 | `dev/` | dev client defaults: `options.txt`, seeded into `run/client` by `seedDevOptions` | yes |
 | `pack/` | packwiz metadata and config overrides (`config/`), no jars | metadata via `packwiz` commands; `config/` by hand ([procedure](pack/README.md#configuration)), then `packwiz refresh` |
-| `art/` | asset sources: the project palette, generator candidates, prompts, Blockbench files | yes |
+| `art/` | asset sources: the project palette, generator candidates, prompts, Blockbench files, room import rules | yes |
 | `docs/` | vision, architecture, roadmap, design documents, lore, research, research notes, ADRs, dev setup | yes |
 | `.github/workflows/ci.yml` | CI | yes |
 | `git_clean_worktrees.sh` | Matěj's cleanup of merged branches, their worktrees and worktree residue ([README](README.md#git-worktree-cleanup)) | yes |
