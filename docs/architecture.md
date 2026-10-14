@@ -932,9 +932,11 @@ Built in W1 (RLM-31): `world/DimensionRules`, `world/MobLevelRule` and `mob/MobL
   `mob` reapplies the scaling from its stored level and the current curves, replacing its `realmforge:mob_level/`
   modifiers (removing any it no longer produces) and keeping its share of health. A release or data pack that changes
   a curve then reaches old mobs too.
-- XP (`character`), loot (`loot`) and the armor formula (`combat`) read the level from `realmforge:level`. A level
-  display (Jade, through a compat plugin, *verify* Jade's API) is not built yet; the dev game shows a mob's level,
-  health, armor and damage multiple with `/qa mob` ([20](#20-tests-per-layer)), the boss bar a boss's.
+- XP (`character`), loot (`loot`) and the armor formula (`combat`) read the level from `realmforge:level`. The level
+  shows with the mob's name and health bar, not apart from them (Matěj, 2026-10-14): through Neat, the pack's
+  health bar mod, if it can show it; otherwise through another health bar mod or a Neat add-on that can; otherwise
+  through health bars of our own (RLM-166, *verify* the chosen mod's API). Until then the dev game shows a mob's
+  level, health, armor and damage multiple with `/qa mob` ([20](#20-tests-per-layer)), the boss bar a boss's.
 
 ### 14.2 Custom mobs
 
