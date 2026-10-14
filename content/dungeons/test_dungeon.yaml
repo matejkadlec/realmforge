@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../tools/schemas/dungeons.schema.json
+# The dungeon framework's test type (W4a, RLM-178), test content like realmforge:test_item: a vault of the stone vault
+# rooms imported from Stonevaults. Nothing in the game opens it yet; `/qa dungeon plan` and `/qa dungeon build` show
+# its layouts. The real dungeon types come with W6.
+id: test_dungeon
+name:
+  en_us: Test Dungeon
+pool: realmforge:stone_vault
+layout:
+  main_path: [3, 6]
+  branches: [1, 2]
+  branch_rooms: [1, 2]
+  ending: treasure

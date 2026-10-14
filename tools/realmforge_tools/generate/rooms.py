@@ -3,10 +3,10 @@ notices of the third-party sources whose rooms ship, and the expectations a Game
 
 The jar's structure folders mirror ``content/rooms/`` (ADR 0028), so a room is the structure
 ``realmforge:rooms/<id>``. The template is written back normalized (``rooms/structure.py``): a room saved by a
-structure block and the same room imported give the same bytes. The sidecars feed the template pools of the
-dungeon framework (W4). Each source in ``third_party/<source>/`` that has a room gets its ``LICENSE``, ``NOTICE``
-and (LGPL-3.0) ``COPYING`` copied byte for byte to ``META-INF/third_party/<source>/``, so the jar carries them next
-to its own licenses.
+structure block and the same room imported give the same bytes. The sidecars' pools are the room pools that dungeon
+types are built from (``generate/dungeons.py``). Each source in ``third_party/<source>/`` that has a room gets its
+``LICENSE``, ``NOTICE`` and (LGPL-3.0) ``COPYING`` copied byte for byte to ``META-INF/third_party/<source>/``, so
+the jar carries them next to its own licenses.
 
 ``GeneratedRoomExpectations`` (QA mod) lists every room with its size, its jigsaws and its air blocks:
 ``ContentRoomGameTests`` loads each one through the game's structure manager, which upgrades an imported room from

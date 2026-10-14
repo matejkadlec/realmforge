@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=../../../../../../tools/schemas/rooms.schema.json
 # Imported by `rf rooms import`: draft tags from the connectors and the name, pools with the dungeons (W4).
-pools: []
+pools:
+  - "realmforge:stone_vault"
 tags:
   - "combat"
   - "t_junction"

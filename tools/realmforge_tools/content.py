@@ -19,6 +19,7 @@ from realmforge_tools.schema import (
     ClassDef,
     CurveDef,
     DimensionRulesDef,
+    DungeonTypeDef,
     ItemDef,
     RaceDef,
     SpellSchoolDef,
@@ -113,6 +114,7 @@ class Content:
     races: tuple[Entry[RaceDef], ...]
     classes: tuple[Entry[ClassDef], ...]
     texts: tuple[Entry[TextGroupDef], ...]
+    dungeons: tuple[Entry[DungeonTypeDef], ...]
     worldgen: tuple[WorldgenFile, ...]
     rooms: tuple[RoomEntry, ...] = ()
     room_reviews: tuple[RoomReview, ...] = ()
@@ -175,6 +177,7 @@ def load_content(paths: RepoPaths) -> Content:
         races=by_id(loaded["races"]),
         classes=by_id(loaded["classes"]),
         texts=by_id(loaded["texts"]),
+        dungeons=by_id(loaded["dungeons"]),
         worldgen=tuple(sorted(worldgen, key=lambda f: (f.directory, f.id))),
         rooms=rooms,
         room_reviews=reviews,

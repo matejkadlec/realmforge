@@ -1,0 +1,825 @@
+{
+  "name": "dungeon_type.realmforge.test_dungeon.name",
+  "pool": "realmforge:stone_vault",
+  "layout": {
+    "main_path": [
+      3,
+      6
+    ],
+    "branches": [
+      1,
+      2
+    ],
+    "branch_rooms": [
+      1,
+      2
+    ],
+    "ending": "treasure"
+  },
+  "rooms": [
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/entrances/entrance_1",
+      "size": [
+        7,
+        6,
+        7
+      ],
+      "role": "entrance",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            3,
+            0,
+            3
+          ],
+          "front": "down",
+          "top": "west",
+          "name": "realmforge:shaft",
+          "target": "realmforge:shaft",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/entrances/entrance_1_long",
+      "size": [
+        7,
+        6,
+        7
+      ],
+      "role": "entrance",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            3,
+            0,
+            3
+          ],
+          "front": "down",
+          "top": "west",
+          "name": "realmforge:shaft",
+          "target": "realmforge:shaft",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/lobby/lobby_01",
+      "size": [
+        13,
+        6,
+        13
+      ],
+      "role": "hallway",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            1,
+            6
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            6,
+            1,
+            0
+          ],
+          "front": "north",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            6,
+            1,
+            12
+          ],
+          "front": "south",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            12,
+            1,
+            6
+          ],
+          "front": "east",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            6,
+            5,
+            6
+          ],
+          "front": "up",
+          "top": "south",
+          "name": "realmforge:shaft",
+          "target": "realmforge:shaft",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/combination_lock",
+      "size": [
+        13,
+        6,
+        13
+      ],
+      "role": "combat",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            1,
+            6
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            12,
+            1,
+            6
+          ],
+          "front": "east",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/drowned_junction",
+      "size": [
+        13,
+        6,
+        13
+      ],
+      "role": "combat",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            2,
+            6
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            6,
+            2,
+            0
+          ],
+          "front": "north",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            6,
+            2,
+            12
+          ],
+          "front": "south",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/husk_temple",
+      "size": [
+        13,
+        6,
+        13
+      ],
+      "role": "combat",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            1,
+            6
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            12,
+            1,
+            6
+          ],
+          "front": "east",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/item_combination_lock",
+      "size": [
+        13,
+        6,
+        13
+      ],
+      "role": "combat",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            1,
+            6
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            12,
+            1,
+            9
+          ],
+          "front": "east",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/lava_parkour",
+      "size": [
+        13,
+        6,
+        13
+      ],
+      "role": "combat",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            2,
+            6
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            12,
+            2,
+            6
+          ],
+          "front": "east",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/lava_trap",
+      "size": [
+        13,
+        6,
+        13
+      ],
+      "role": "combat",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            1,
+            6
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            12,
+            1,
+            6
+          ],
+          "front": "east",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/library",
+      "size": [
+        13,
+        6,
+        13
+      ],
+      "role": "combat",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            1,
+            6
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            12,
+            1,
+            6
+          ],
+          "front": "east",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/nether_portal",
+      "size": [
+        16,
+        8,
+        13
+      ],
+      "role": "combat",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            1,
+            6
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            15,
+            1,
+            6
+          ],
+          "front": "east",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/pressure_plate_lock",
+      "size": [
+        13,
+        6,
+        13
+      ],
+      "role": "combat",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            2,
+            2,
+            0
+          ],
+          "front": "north",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            10,
+            2,
+            12
+          ],
+          "front": "south",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/skeleton_trap",
+      "size": [
+        13,
+        6,
+        13
+      ],
+      "role": "combat",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            2,
+            6
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            12,
+            2,
+            6
+          ],
+          "front": "east",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/stairs",
+      "size": [
+        10,
+        12,
+        5
+      ],
+      "role": "stairs",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            9,
+            1,
+            2
+          ],
+          "front": "east",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            0,
+            8,
+            2
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/tight_maze",
+      "size": [
+        13,
+        6,
+        13
+      ],
+      "role": "combat",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            1,
+            6
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            12,
+            1,
+            2
+          ],
+          "front": "east",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/tnt_plate_trap",
+      "size": [
+        13,
+        6,
+        13
+      ],
+      "role": "combat",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            2,
+            6
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            12,
+            2,
+            6
+          ],
+          "front": "east",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/zombie_three_way_temple",
+      "size": [
+        13,
+        6,
+        13
+      ],
+      "role": "combat",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            1,
+            6
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            12,
+            1,
+            6
+          ],
+          "front": "east",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/stairway/fall_01",
+      "size": [
+        5,
+        16,
+        5
+      ],
+      "role": "stairs",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            2,
+            0,
+            2
+          ],
+          "front": "down",
+          "top": "north",
+          "name": "realmforge:shaft",
+          "target": "realmforge:shaft",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            2,
+            15,
+            2
+          ],
+          "front": "up",
+          "top": "west",
+          "name": "realmforge:shaft",
+          "target": "realmforge:shaft",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/stairway/fall_long",
+      "size": [
+        5,
+        32,
+        5
+      ],
+      "role": "stairs",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            2,
+            0,
+            2
+          ],
+          "front": "down",
+          "top": "north",
+          "name": "realmforge:shaft",
+          "target": "realmforge:shaft",
+          "joint": "rollable"
+        },
+        {
+          "pos": [
+            2,
+            31,
+            2
+          ],
+          "front": "up",
+          "top": "west",
+          "name": "realmforge:shaft",
+          "target": "realmforge:shaft",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/treasure/egg",
+      "size": [
+        13,
+        8,
+        13
+      ],
+      "role": "treasure",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            2,
+            6
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/treasure/mooshroom_king",
+      "size": [
+        13,
+        6,
+        13
+      ],
+      "role": "treasure",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            1,
+            6
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/treasure/parrot",
+      "size": [
+        9,
+        6,
+        9
+      ],
+      "role": "treasure",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            2,
+            4
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    },
+    {
+      "template": "realmforge:rooms/third_party/stonevaults/dungeon/treasure/tiny_cap",
+      "size": [
+        3,
+        5,
+        5
+      ],
+      "role": "treasure",
+      "weight": 1,
+      "connectors": [
+        {
+          "pos": [
+            0,
+            1,
+            2
+          ],
+          "front": "west",
+          "top": "up",
+          "name": "realmforge:door",
+          "target": "realmforge:door",
+          "joint": "rollable"
+        }
+      ]
+    }
+  ]
+}

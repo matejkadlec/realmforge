@@ -1,0 +1,113 @@
+{
+  "$defs": {
+    "LayoutDef": {
+      "additionalProperties": false,
+      "description": "How the planner lays out a dungeon of this type (architecture 15.3): the entrance, a main path of rooms a\nplayer passes through, the room that ends it, and side branches off the main path, each ending in a dead end.\nThe planner closes every connector left over with a dead end, so a layout has more rooms than these counts.",
+      "properties": {
+        "branch_rooms": {
+          "description": "[min, max] rooms in each branch, its dead end included (1 to 8).",
+          "items": {
+            "maximum": 8,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Branch Rooms",
+          "type": "array"
+        },
+        "branches": {
+          "description": "[min, max] side branches off the main path (0 to 16).",
+          "items": {
+            "maximum": 16,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Branches",
+          "type": "array"
+        },
+        "ending": {
+          "description": "The role of the room that ends the main path: the boss's lair or a treasury.",
+          "enum": [
+            "boss",
+            "treasure"
+          ],
+          "title": "Ending",
+          "type": "string"
+        },
+        "main_path": {
+          "description": "[min, max] rooms between the entrance and the ending (1 to 32).",
+          "items": {
+            "maximum": 32,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Main Path",
+          "type": "array"
+        }
+      },
+      "required": [
+        "main_path",
+        "branches",
+        "branch_rooms",
+        "ending"
+      ],
+      "title": "LayoutDef",
+      "type": "object"
+    },
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A kind of dungeon: the room pool it is built from and the rules of its layout. Encounters, loot, its level\nrange, its theme and its key come with the tasks that use them.",
+  "properties": {
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "layout": {
+      "$ref": "#/$defs/LayoutDef"
+    },
+    "name": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "The dungeon's name, a label (Title Case)."
+    },
+    "pool": {
+      "description": "The room pool it is built from: the rooms whose sidecar lists this id in its pools.",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+      "title": "Pool",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "pool",
+    "layout"
+  ],
+  "title": "DungeonTypeDef",
+  "type": "object"
+}

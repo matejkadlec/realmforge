@@ -53,12 +53,13 @@ class RoomDef(StrictModel):
 
     pools: UniqueResourceIds = Field(
         default_factory=list,
-        description="The template pools the room joins (e.g. realmforge:rooms/hallway). Empty for a room that is "
-        "not used yet, such as a fresh import.",
+        description="The room pools the room joins (e.g. realmforge:stone_vault): a dungeon type is built from the "
+        "rooms of one pool. Empty for a room that is not used yet, such as a fresh import.",
     )
     tags: list[Tag] = Field(
         default_factory=list,
-        description="Slot types and other labels (entrance, hallway, crossing, dead_end, combat, treasure, ...).",
+        description="Slot types and other labels: one role (entrance, hallway, combat, stairs, treasure, boss), which a "
+        "room in a pool must have, the shape (dead_end, straight, curved, t_junction, crossing), vertical, ...",
     )
     weight: int = Field(default=1, ge=1, le=150, description="Weight in its pools (vanilla allows 1 to 150).")
     source: RoomSource | None = Field(default=None, description="Set for an imported room.")
