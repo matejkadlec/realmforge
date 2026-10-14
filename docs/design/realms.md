@@ -238,10 +238,13 @@ plain compound of two English words, which the [style guide](../lore/style.md#na
 mod has a dimension of that name.
 
 - **Place in the chain: always last** ([Realms](#realms)). Its sigil is crafted like every later main-path sigil
-  (RE-9), from an ore of the realm before it and that realm's guardian's guaranteed drop: the Forgefire's, once it
-  exists.
-  - **Built early:** Matěj may have it built before other realms. Then it follows the last realm that exists at the
-    time, and each realm added before it moves its sigil recipe and its level band down the chain.
+  (RE-9), from the chapter before it: an ore of that chapter's realm and its guardian's guaranteed drop (the
+  Forgefire's, once it exists). When that chapter has two realms, the recipe takes both guardians' drops, as the
+  [realm portal spec](realm-portal.md#realm-sigils) requires after every shared chapter, so finishing one branch
+  never opens the Void realm.
+  - **Built early:** Matěj may have it built before other realms. Then it follows the last chapter that exists at
+    the time (for example the desert and the tundra after M4, with both drops), and each realm added before it
+    moves its sigil recipe and its level band down the chain.
   - **Worlds that already reached it:** the unlock is permanent (RLM-128), so a player who has it keeps it. A realm
     added before it opens through its own quest, and the player can go back for it.
 - **Shape:** large floating islands over the Void, at different heights, joined by bridges of dark stone with chain
