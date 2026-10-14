@@ -29,16 +29,12 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
  * more heart rows, and raises those heights so later layers (the selected item's name) stay above it. Purple while it
  * fills toward the next level, gold once the level cap holds the player and the next level's XP is banked; the level
  * sits on its middle like vanilla's experience level. Vanilla's experience bar keeps its place: vanilla XP still pays
- * for enchanting (decision D3). Shown only for a player with a character.
+ * for enchanting (decision D3). Shown only for a player with a character. Its place: {@link XpBarLayout}.
  */
 public final class XpBarHud {
     private static final Identifier LAYER = Realmforge.id("xp_bar");
-    private static final int WIDTH = 182;
-    private static final int HEIGHT = 5;
-    /** The rows a status bar takes in a creative world, where no status row is drawn and vanilla's level sits. */
-    private static final int MIN_STACK = 49;
-    /** What the bar and its level text add to the stack of status rows. */
-    private static final int STACK = 14;
+    private static final int WIDTH = XpBarLayout.WIDTH;
+    private static final int HEIGHT = XpBarLayout.HEIGHT;
     private static final int BORDER = 0xFF000000;
     private static final int BACKGROUND = 0xFF2E1F45;
     private static final int FILL = 0xFF9D5CE6;
@@ -73,13 +69,13 @@ public final class XpBarHud {
         int level = Characters.level(player);
         XpBarView view = XpBarView.of(curve.get(), data.totalXp(), level, data.levelCap().orElse(Integer.MAX_VALUE));
         Gui gui = minecraft.gui;
-        int stack = Math.max(MIN_STACK, Math.max(gui.leftHeight, gui.rightHeight));
-        int left = (graphics.guiWidth() - WIDTH) / 2;
-        int top = graphics.guiHeight() - stack + 3;
-        drawBar(graphics, left, top, view);
-        drawLevel(graphics, minecraft.font, top - 7, view);
-        gui.leftHeight = stack + STACK;
-        gui.rightHeight = stack + STACK;
+        int stack = XpBarLayout.stack(gui.leftHeight, gui.rightHeight);
+        int top = XpBarLayout.barTop(graphics.guiHeight(), stack);
+        drawBar(graphics, (graphics.guiWidth() - WIDTH) / 2, top, view);
+        drawLevel(graphics, minecraft.font, XpBarLayout.textTop(top), view);
+        int raised = XpBarLayout.raisedStack(stack, minecraft.gameMode.canHurtPlayer());
+        gui.leftHeight = raised;
+        gui.rightHeight = raised;
     }
 
     private static void drawBar(GuiGraphicsExtractor graphics, int left, int top, XpBarView view) {
