@@ -314,7 +314,8 @@ Read each signal fresh from GitHub at every step, and never trust an earlier rea
   The head's *seen time* is when this run first read that head; it stands in for the push time until such a run
   exists.
 - **Review state.** Whether the head is reviewed ("Which head is reviewed"): a Clean pass of this run covers it,
-  or Matěj approved this exact head. A resumed run reads the latest `🤖 Independent review` comment on the pull
+  or Matěj approved this exact head. A head whose pass ended Capped, Disagreement or Blocked is not unreviewed: it
+  waits for Matěj (step 4 of "Loop"). A resumed run reads the latest `🤖 Independent review` comment on the pull
   request: its reviewed head counts only when it equals the current head or the exception applies.
 - **Review threads.** Every review thread, whoever opened it:
 
@@ -401,9 +402,10 @@ the first of steps 2–8 that applies. If none applies yet, wait under step 1.
 3. **Failing check on a head not yet reviewed: fix it first** under step 6, so the review pass that follows
    covers the fix. This saves a pass; a check that fails after the review is step 6.
 
-4. **Unreviewed head: run a review pass** ("Review pass") on the current head. A Clean pass makes the head it
+4. **A head no pass has covered: run a review pass** ("Review pass") on it. A Clean pass makes the head it
    pushed (or, without a push, the head it started from) the reviewed head. Capped, Disagreement and Blocked go to
-   "User needed".
+   "User needed", and their head gets no further pass: it waits there until Matěj approves it, rules on the
+   disagreement, or a new head arrives (a fix his ruling asks for brings one).
 
 5. **Open threads: close them.**
 
