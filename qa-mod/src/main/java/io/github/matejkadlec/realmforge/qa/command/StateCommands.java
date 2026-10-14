@@ -6,6 +6,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import io.github.matejkadlec.realmforge.character.CharacterAttachments;
 import io.github.matejkadlec.realmforge.spell.SpellAttachments;
+import io.github.matejkadlec.realmforge.stats.CharacterStats;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import io.github.matejkadlec.realmforge.talent.TalentAttachments;
 import java.util.List;
@@ -16,6 +17,7 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.attachment.AttachmentType;
 
 /**
@@ -51,7 +53,10 @@ public final class StateCommands {
                                 .executes(context -> reset(context, EntityArgument.getEntity(context, "entity")))));
     }
 
-    /** Removes every player state attachment from the entity and returns how many it had. */
+    /**
+     * Removes every player state attachment from the entity and returns how many it had. A player's stats recompute at
+     * the end of their next tick, so the race and class modifiers go with the character.
+     */
     public static int reset(LivingEntity entity) {
         int removed = 0;
         for (Entry entry : ATTACHMENTS) {
@@ -59,6 +64,9 @@ public final class StateCommands {
                 entity.removeData(entry.type().get());
                 removed++;
             }
+        }
+        if (entity instanceof Player player) {
+            CharacterStats.markDirty(player);
         }
         return removed;
     }
