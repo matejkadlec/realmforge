@@ -100,7 +100,7 @@ button, which is off (`inventoryButton = ""`). No rule refuses a warp to another
 dimension. Leashed mobs travel along (`transportLeashed`), pets do not
 (`transportPets`). The config allows warps into every dimension: refusing a warp
 into a realm the player has not unlocked is the core mod's job (realm portal
-spec, W2b).
+spec, W2a).
 
 ## Optional mods
 

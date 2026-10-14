@@ -13,7 +13,7 @@
 
 | Realm | Name | Chapter (levels) | Milestone | Identity | Signature content |
 | --- | --- | --- | --- | --- | --- |
-| [The Overworld](#the-overworld) | the Overworld | 1 (1–5) | M1 | home | the starting area and the hub with the realm portal |
+| [The Overworld](#the-overworld) | the Overworld | 1 (1–5) | M1 | home | the starting area; realm portals built anywhere |
 | [Stone realm](#the-stone-realm) | the Undervault | 1 (5–10) | M1 | earth and stone | an enclosed cave world, mines with friendly NPCs, catacombs, a boss arena |
 | [Desert realm](#the-desert-realm) | the Sunwastes | 2 (10–20) | M4 | sun and sand | dunes and big oases, pyramid and sphinx dungeons, ancient debris |
 | [Tundra realm](#the-tundra-realm) | the Rimefields | 2 (10–20) | M4 | frost | frozen lakes with something beneath, a nordic fortress, an ice castle |
