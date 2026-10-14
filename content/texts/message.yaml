@@ -3,6 +3,6 @@
 id: message
 texts:
   dark_vision_off:
-    en_us: Dark Vision off
+    en_us: Dark Vision Off
   dark_vision_on:
-    en_us: Dark Vision on
+    en_us: Dark Vision On

@@ -101,10 +101,10 @@ public final class GeneratedTexts {
     /** {@code key.category.realmforge.main} from {@code content/texts/key.category.yaml}: "Realmforge" */
     public static final String KEY_CATEGORY_MAIN = "key.category.realmforge.main";
 
-    /** {@code message.realmforge.dark_vision_off} from {@code content/texts/message.yaml}: "Dark Vision off" */
+    /** {@code message.realmforge.dark_vision_off} from {@code content/texts/message.yaml}: "Dark Vision Off" */
     public static final String MESSAGE_DARK_VISION_OFF = "message.realmforge.dark_vision_off";
 
-    /** {@code message.realmforge.dark_vision_on} from {@code content/texts/message.yaml}: "Dark Vision on" */
+    /** {@code message.realmforge.dark_vision_on} from {@code content/texts/message.yaml}: "Dark Vision On" */
     public static final String MESSAGE_DARK_VISION_ON = "message.realmforge.dark_vision_on";
 
     /** {@code resource.realmforge.mana} from {@code content/texts/resource.yaml}: "Mana" */
