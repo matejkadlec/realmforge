@@ -37,15 +37,17 @@ import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.EventHooks;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 
 /**
  * W1's Done when (architecture 14.1): a mob's level follows the Overworld's rule by distance and depth; a leveled mob
  * has its scaled maximum health and starts with full health; a split slime's children keep the parent's level; a mob
  * added without {@code finalizeSpawn} ({@code GameTestHelper#spawn}) gets a level and its scaling; a converted mob
  * keeps a level and the scaling that belongs to it. Also: a mob from world generation is leveled when it joins, passive
- * mobs get no level, a cured mob loses it, a leveled mob's hits grow with its level, and rescaling follows the curves
- * and keeps the share of health.
+ * mobs get no level, a cured mob loses it, a leveled mob's hits grow with its level, and a mob loaded from disk is
+ * rescaled to the current curves, keeping its share of health.
  *
  * <p>GameTests run far from the origin (anywhere within 15 million blocks) at y -59, so a mob on a test's platform is
  * at the Overworld's top levels; tests that need other positions spawn there in absolute coordinates.
@@ -227,8 +229,8 @@ public final class MobLevelGameTests {
     }
 
     /**
-     * Rescaling, as a mob loaded from disk gets it: modifiers from an older curve become the current curve's, and the
-     * mob keeps its share of health.
+     * A mob loaded from disk ({@code EntityJoinLevelEvent} with {@code loadedFromDisk}) is rescaled: modifiers from an
+     * older curve become the current curve's, and the mob keeps its share of health.
      */
     @QaGameTest
     public static void rescalingFollowsTheCurvesAndKeepsTheHealthShare(GameTestHelper helper) {
@@ -241,7 +243,7 @@ public final class MobLevelGameTests {
                 AttributeModifier.Operation.ADD_VALUE));
         zombie.setHealth(zombie.getMaxHealth() / 2);
 
-        MobLevels.applyScaling(zombie, level);
+        NeoForge.EVENT_BUS.post(new EntityJoinLevelEvent(zombie, helper.getLevel(), true));
         assertScaled(helper, zombie, level);
         helper.assertFalse(zombie.getAttribute(Attributes.ARMOR).hasModifier(
                 Identifier.fromNamespaceAndPath("realmforge", "mob_level/stale")), "a stale modifier of ours is gone");
