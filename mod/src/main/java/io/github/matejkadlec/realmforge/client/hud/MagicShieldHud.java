@@ -64,23 +64,44 @@ public final class MagicShieldHud {
         drawBorder(graphics, x, rowY, MagicShieldBar.border(tier));
     }
 
-    /** Fills the inner columns {@code from} (inclusive) to {@code to} (exclusive), from the left inside the border. */
+    /**
+     * Fills the inner columns {@code from} (inclusive) to {@code to} (exclusive), counted from the left inside the
+     * border. The first and last inner columns are shorter by a pixel at each end: those pixels belong to the
+     * rounded corners.
+     */
     private static void fillInside(GuiGraphicsExtractor graphics, int x, int y, int from, int to, int color) {
+        int width = MagicShieldBar.INNER_WIDTH;
+        int height = MagicShieldBar.ROW_HEIGHT;
+        if (from >= to) {
+            return;
+        }
+        if (from == 0) {
+            graphics.fill(x + 1, y + 2, x + 2, y + height - 2, color);
+            from = 1;
+        }
+        if (to == width) {
+            graphics.fill(x + width, y + 2, x + width + 1, y + height - 2, color);
+            to = width - 1;
+        }
         if (from < to) {
-            graphics.fill(x + 1 + from, y + 1, x + 1 + to, y + 1 + MagicShieldBar.INNER_HEIGHT, color);
+            graphics.fill(x + 1 + from, y + 1, x + 1 + to, y + height - 1, color);
         }
     }
 
     /**
-     * A 1-pixel border around the row with rounded corners: each straight edge stops a pixel short of the corner, so
-     * only the corner pixel itself stays outside the border.
+     * A 1-pixel border around the row with rounded corners: the straight edges stop 2 pixels short of each corner,
+     * and one pixel in from each corner closes the round, so the 3 corner pixels outside the border form an L.
      */
     private static void drawBorder(GuiGraphicsExtractor graphics, int x, int y, int color) {
         int right = x + MagicShieldBar.ROW_WIDTH;
         int bottom = y + MagicShieldBar.ROW_HEIGHT;
-        graphics.fill(x + 1, y, right - 1, y + 1, color);
-        graphics.fill(x + 1, bottom - 1, right - 1, bottom, color);
-        graphics.fill(x, y + 1, x + 1, bottom - 1, color);
-        graphics.fill(right - 1, y + 1, right, bottom - 1, color);
+        graphics.fill(x + 2, y, right - 2, y + 1, color);
+        graphics.fill(x + 2, bottom - 1, right - 2, bottom, color);
+        graphics.fill(x, y + 2, x + 1, bottom - 2, color);
+        graphics.fill(right - 1, y + 2, right, bottom - 2, color);
+        graphics.fill(x + 1, y + 1, x + 2, y + 2, color);
+        graphics.fill(right - 2, y + 1, right - 1, y + 2, color);
+        graphics.fill(x + 1, bottom - 2, x + 2, bottom - 1, color);
+        graphics.fill(right - 2, bottom - 2, right - 1, bottom - 1, color);
     }
 }

@@ -15,8 +15,6 @@ final class MagicShieldBar {
     static final int ROW_HEIGHT = 9;
     /** The pixels inside the border, across. */
     static final int INNER_WIDTH = ROW_WIDTH - 2;
-    /** The pixels inside the border, down. */
-    static final int INNER_HEIGHT = ROW_HEIGHT - 2;
     /** The shield points that fill the bar once. */
     static final int POINTS_PER_TIER = 10;
     /**
@@ -24,8 +22,8 @@ final class MagicShieldBar {
      * everything from 40 points up, and fills the bar from 50.
      */
     static final int[] TIER_COLORS = {0x40B0FF, 0x2050FF, 0x9030FF, 0xFF30FF, 0xFF3030};
-    /** The fill is faint, so the hearts under it stay easy to read: about 18 % opaque. */
-    private static final int FILL_ALPHA = 0x2D;
+    /** The fill is faint, so the hearts under it stay easy to read: 80 of 255, about 31 % opaque (Matěj). */
+    private static final int FILL_ALPHA = 80;
 
     private MagicShieldBar() {
     }

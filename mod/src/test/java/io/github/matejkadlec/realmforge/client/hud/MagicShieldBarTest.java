@@ -39,8 +39,8 @@ class MagicShieldBarTest {
 
     @Test
     void theColoursAreLightBlueBluePurpleMagentaRed() {
-        assertEquals(0x2D40B0FF, MagicShieldBar.fill(0), "light blue, faint");
-        assertEquals(0x2DFF3030, MagicShieldBar.fill(4), "red, faint");
+        assertEquals(0x5040B0FF, MagicShieldBar.fill(0), "light blue at alpha 80");
+        assertEquals(0x50FF3030, MagicShieldBar.fill(4), "red at alpha 80");
         assertEquals(0xFF9FD7FF, MagicShieldBar.border(0), "light blue halfway to white, opaque");
         assertEquals(0xFF8FA7FF, MagicShieldBar.border(1), "blue halfway to white");
         assertEquals(0xFFFF9797, MagicShieldBar.border(4), "red halfway to white");
