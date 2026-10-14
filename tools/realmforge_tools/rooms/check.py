@@ -1,7 +1,7 @@
 """Room validation on the template itself (architecture 15.4): size, ids inside the ID universe (blocks, block
-entities, entities, container loot tables), connectors.
+entities, entities, container loot tables, jigsaw pools), connectors.
 
-Markers and the blocks themes may swap come with the dungeon framework (W4) and the room generator (A4d).
+Markers and the blocks themes may swap come with the dungeon framework (W4b) and the room generator (A4d).
 """
 
 from __future__ import annotations
@@ -16,11 +16,15 @@ BLOCK_REGISTRY = "minecraft:block"
 BLOCK_ENTITY_REGISTRY = "minecraft:block_entity_type"
 ENTITY_REGISTRY = "minecraft:entity_type"
 LOOT_TABLE_REGISTRY = "minecraft:loot_table"
+TEMPLATE_POOL_REGISTRY = "minecraft:worldgen/template_pool"
 # The block entity key that names a container's loot table (RandomizableContainer.LOOT_TABLE_TAG).
 LOOT_TABLE = "LootTable"
 
 # The most a structure block saves per axis (StructureBlockEntity.MAX_SIZE_PER_AXIS).
 MAX_SIZE = 48
+
+# The pool a jigsaw names when its data names none (JigsawBlockEntity reads a missing pool as Pools.EMPTY).
+EMPTY_POOL = "minecraft:empty"
 
 # A jigsaw's front (the first part of its orientation) -> (axis, side) of the room's box it must sit on.
 _JIGSAW_FACES = {
@@ -78,6 +82,18 @@ def check_structure(structure: Structure, universe: IdUniverse) -> list[tuple[st
             unknown_loot.setdefault(loot_table, []).append(block.pos)
         if block.state.name == JIGSAW:
             problems += _check_jigsaw(block.pos, block.state.get("orientation"), size)
+            pool = (block.nbt or {}).get("pool")
+            pool_id = pool if isinstance(pool, str) and pool else EMPTY_POOL
+            if ":" not in pool_id:
+                pool_id = f"minecraft:{pool_id}"
+            if not universe.contains(TEMPLATE_POOL_REGISTRY, pool_id):
+                problems.append(
+                    (
+                        f"jigsaw {_fmt(block.pos)}",
+                        f"names template pool {pool_id!r}, which does not exist: the game would attach nothing "
+                        "there; map it in the import rules' pools",
+                    )
+                )
             final_state = (block.nbt or {}).get("final_state")
             if isinstance(final_state, str):
                 name = split_state_text(final_state)[0]

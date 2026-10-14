@@ -51,7 +51,7 @@ def small_room(**changes: object) -> Structure:
         "id": "minecraft:jigsaw",
         "name": "src:door",
         "target": "src:door",
-        "pool": "src:halls",
+        "pool": "minecraft:empty",
         "final_state": "minecraft:air",
         "joint": "aligned",
     }
@@ -233,7 +233,7 @@ def test_every_format_reads_the_same_room(tmp_path: Path, fmt: str) -> None:
     assert (
         jigsaw.nbt is not None
         and jigsaw.nbt["id"] == "minecraft:jigsaw"
-        and jigsaw.nbt["pool"] == "src:halls"
+        and jigsaw.nbt["pool"] == "minecraft:empty"
     )
     assert (
         not {"Id", "Pos", "x", "y", "z"} & jigsaw.nbt.keys()
@@ -521,7 +521,11 @@ def test_remapped_block_entities_keep_data_only_when_mapped() -> None:
 
 def test_jigsaw_names_and_entities_follow_the_rules() -> None:
     zombie = StructureEntity((1.5, 1.0, 1.5), (1, 1, 1), {"id": "minecraft:zombie"})
-    room = small_room(entities=(*small_room().entities, zombie))
+    blocks = tuple(
+        replace(b, nbt={**b.nbt, "pool": "src:halls"}) if b.state.name == "minecraft:jigsaw" else b
+        for b in small_room().blocks
+    )
+    room = small_room(blocks=blocks, entities=(*small_room().entities, zombie))
     structure, notes = importer.apply_rules(room, RULES)
     jigsaw = next(b for b in structure.blocks if b.state.name == "minecraft:jigsaw")
     assert jigsaw.nbt is not None
