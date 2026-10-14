@@ -46,7 +46,8 @@ modpack adds third-party QoL, performance and library mods.
   whole pack on a server and a client (spike 6). Before any gameplay code the project moved from Minecraft 1.21.1 to
   26.1.2 (RLM-65, RLM-123, RLM-124). The core mod has its feature skeleton (F1), datapack registries (F2), player
   state (F3), stats (F4) with their names, a character sheet (F4b) and raised attribute caps (F4c), and the combat
-  core (F5: spell schools, crit, dodge, resistances, our armor formula, combat text, the QA training dummy). Races,
+  core (F5: spell schools, crit, dodge, resistances, our armor formula, combat text, the QA training dummy), and
+  hostile mobs get levels from the dimension rules with health, damage and armor scaled by curves (W1). Races,
   classes and spells come next.
 
 ## Pinned versions
