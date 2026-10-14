@@ -4,19 +4,26 @@
 > fills them. Written on 2026-10-12 from Matěj's decisions of 2026-10-11 and 2026-10-12 (Jira RLM-40 and RLM-47) and
 > the reference-game research ([reference-games.md](../research/reference-games.md), cited by item ID such as
 > RE-9). It is a first version: Matěj expects to change it after playing, so it sets rules and direction, not every
-> detail. All realm, mob and place names here are working names. Plan: [roadmap](../roadmap.md); the Nether and
-> End: [ADR 0025](../decisions/0025-remove-the-nether-and-end.md).
+> detail. Realm names are the names players read, approved by Matěj with the [lore outline](../lore/outline.md)
+> (RLM-139); mob and place names are working names. The [Void realm](#the-void-realm) section is RLM-95's design,
+> which waits for his approval (RLM-164). Plan: [roadmap](../roadmap.md); the Nether and End:
+> [ADR 0025](../decisions/0025-remove-the-nether-and-end.md).
 
 ## At a glance
 
-| Realm | Working name | Chapter (levels) | Milestone | Identity | Signature content |
+| Realm | Name | Chapter (levels) | Milestone | Identity | Signature content |
 | --- | --- | --- | --- | --- | --- |
-| [The Overworld](#the-overworld) | - | 1 (1–5) | M1 | home | the starting area and the hub with the realm portal |
-| [Stone realm](#the-stone-realm) | "Stoneblock" | 1 (5–10) | M1 | earth and stone | an enclosed cave world, mines with friendly NPCs, catacombs, a boss arena |
-| [Desert realm](#the-desert-realm) | "Sahara" | 2 (10–20) | M4 | sun and sand | dunes and big oases, pyramid and sphinx dungeons, ancient debris |
-| [Tundra realm](#the-tundra-realm) | "Tundra" | 2 (10–20) | M4 | frost | frozen lakes with something beneath, a nordic fortress, an ice castle |
-| [Fire realm](#the-fire-realm) | - | late (open) | later | fire | lava rivers, volcanoes, grounded dragons |
-| [Void realm](#the-void-realm) | - | always the last | later | void | islands and bridges, the best craftable gear (RLM-95) |
+| [The Overworld](#the-overworld) | the Overworld | 1 (1–5) | M1 | home | the starting area and the hub with the realm portal |
+| [Stone realm](#the-stone-realm) | the Undervault | 1 (5–10) | M1 | earth and stone | an enclosed cave world, mines with friendly NPCs, catacombs, a boss arena |
+| [Desert realm](#the-desert-realm) | the Sunwastes | 2 (10–20) | M4 | sun and sand | dunes and big oases, pyramid and sphinx dungeons, ancient debris |
+| [Tundra realm](#the-tundra-realm) | the Rimefields | 2 (10–20) | M4 | frost | frozen lakes with something beneath, a nordic fortress, an ice castle |
+| [Fire realm](#the-fire-realm) | the Forgefire | late (open) | later | fire | lava rivers, volcanoes, grounded dragons |
+| [Void realm](#the-void-realm) | the Brink | always the last | later | void | islands joined by bridges and chains, guard towers, the Void Cathedral and the finale, malachite gear |
+
+**Names** (Matěj, RLM-139): the names players read, from the [lore outline](../lore/outline.md#the-realms). Where a
+player first meets one (the guide, the sigil tooltip, the arrival title), it carries a plain subtitle with its
+element, such as "The Undervault — Stone Realm" ([style guide](../lore/style.md#text-types)). This document keeps
+"stone realm", "desert realm" and so on as plain descriptions.
 
 Chapter 3 (levels 20–30) has no realm yet ([open question 5](#open-questions)); [candidates](#candidate-realms)
 for it and later chapters are listed below.
@@ -31,6 +38,10 @@ for it and later chapters are listed below.
 - **No fixed number of realms.** Start with 3–5. Not every realm has to be on the main path: some exist only for
   gear or a specific item, and progress may run through two realms at once (FTB Architect's Exodus is the reference).
   An optional side realm takes its level from the realms a player must visit to reach it (PR-15).
+- **The Void realm is always the last realm on the main path** (Matěj, RLM-95). A new main-path realm joins the
+  chain before it, never after it, so its chapter is always the last one and its level band the game's highest.
+  Its place is data, not code: adding a realm before it moves its level band (its `dimension_rules`) and its sigil's
+  recipe down the chain ([The Void realm](#the-void-realm)).
 - **Every realm feels full**, like a well-modded Overworld (Regions Unexplored, Better Villages, random structures
   and dungeons), never empty like the vanilla End: neutral mobs, animals, small structures, vegetation and landmarks.
   That is measured, not guessed (WF-1, WF-2):
@@ -131,13 +142,14 @@ The layout of every realm assumes cheap travel; nobody walks 1,000–10,000 bloc
   removed ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)).
 - **The hub.** Every realm's way back leads to the Overworld. [Realm portals](realm-portal.md) link like the
   Nether's (Matěj, RLM-128), so players build as many as they like, anywhere, and waystones they place make the
-  Overworld the node between realms (TR-7). With cheap waystones the hub costs no walking. A hub as a place, with
-  NPCs and services that grow each chapter (WF-8), is the lore outline's
-  [open question 5](../lore/outline.md#open-questions).
+  Overworld the node between realms (TR-7). With cheap waystones the hub costs no walking. As a place, the hub
+  waits (Matěj, RLM-139): in M1 the Wayfarers' Lodge is a voice in the quest book, and a Lodge house in a village,
+  with NPCs and services that grow each chapter (WF-8), may come with the M4 village overhaul
+  ([lore outline](../lore/outline.md#decisions)).
 
 ### The stone realm
 
-Working name "Stoneblock". Chapter 1 (open from level 1, recommended from 5), the realm of M1. Identity: earth and
+Name: **the Undervault**. Chapter 1 (open from level 1, recommended from 5), the realm of M1. Identity: earth and
 stone. Mining is its main profession. As the first realm it offers most of what the Nether offered
 ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)).
 
@@ -185,7 +197,7 @@ stone. Mining is its main profession. As the first realm it offers most of what 
 
 ### The desert realm
 
-Working name "Sahara". Chapter 2 (levels 10–20), M4, together with the tundra; both are needed for further progress.
+Name: **the Sunwastes**. Chapter 2 (levels 10–20), M4, together with the tundra; both are needed for further progress.
 Identity: sun and sand.
 
 - **Landscape:** dunes, sand mountains, big oases (sunken basins with water and fauna found nowhere else, RE-12),
@@ -197,7 +209,7 @@ Identity: sun and sand.
 
 ### The tundra realm
 
-Working name "Tundra". Chapter 2 (levels 10–20), M4, together with the desert. Identity: frost (no temperature
+Name: **the Rimefields**. Chapter 2 (levels 10–20), M4, together with the desert. Identity: frost (no temperature
 mechanic: the vision rules it out).
 
 - **Landscape:** big frozen lakes with something beneath them (under-ice content), ice spikes, frozen shipwrecks;
@@ -207,8 +219,8 @@ mechanic: the vision rules it out).
 
 ### The fire realm
 
-Replaces the Nether ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)) and comes deliberately late: it has
-dragons, and weak dragons make no sense.
+Name: **the Forgefire**. Replaces the Nether ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)) and comes
+deliberately late: it has dragons, and weak dragons make no sense.
 
 - **Landscape:** like an Overworld, but with lava rivers instead of water, volcanoes and dragons; passable, not as
   blocked as the Nether. A volcano the player climbs down into, with a dragon arena at the bottom (RE-14).
@@ -217,9 +229,118 @@ dragons, and weak dragons make no sense.
 
 ### The Void realm
 
-Always the last realm: whenever a new realm is added, the Void realm moves further down so that it stays the final
-one. Its theme, dungeons and gear (malachite, the best craftable gear) are designed in RLM-95, which adds its
-section here.
+Name: **the Brink**, shown as "The Brink — Void Realm" where a player first meets it. The last chapter, on the main
+path: the story's finale is here (Matěj, RLM-139). Identity: the Void. This section is RLM-95's design from Matěj's
+points of 2026-10-12, and its gameplay proposals wait for his approval in RLM-164
+([open questions 9–12](#open-questions)). The mood images he shared (a purple void world behind a portal arch, and
+two images of a void zone from WoW) are inspiration only: no names, art or assets of other games. "Void Realm" is a
+plain compound of two English words, which the [style guide](../lore/style.md#name-rules) allows, although a Hytale
+mod has a dimension of that name.
+
+- **Place in the chain: always last** ([Realms](#realms)). Its sigil is crafted like every later main-path sigil
+  (RE-9), from the chapter before it: an ore of that chapter's realm and its guardian's guaranteed drop (the
+  Forgefire's, once it exists). When that chapter has two realms, the recipe takes both guardians' drops, as the
+  [realm portal spec](realm-portal.md#realm-sigils) requires after every shared chapter, so finishing one branch
+  never opens the Void realm.
+  - **Built early:** Matěj may have it built before other realms. Then it follows the last chapter that exists at
+    the time (for example the desert and the tundra after M4, with both drops), and each realm added before it
+    moves its sigil recipe and its level band down the chain.
+  - **Worlds that already reached it:** the unlock is permanent (RLM-128), so a player who has it keeps it. A realm
+    added before it opens through its own quest, and the player can go back for it.
+- **Shape:** large floating islands over the Void, at different heights, joined by bridges of dark stone with chain
+  railings and held by great chains that hang down into the Void. Big islands close together (RE-15): about 100–300
+  blocks across, with gaps of about 10–30 blocks, and no mini islands or clouds.
+  - **Walkable:** every island is reachable on foot from the one a player arrives on, because bridges join each
+    island to at least one neighbour nearer the realm's origin. Ramps and stairs lead between heights; there is no
+    parkour.
+  - **How it could generate** (for the task that builds it, which checks the APIs in the 26.1.2 sources first): one
+    island per cell of a jittered grid. An island's centre and size then follow from the seed and its cell alone,
+    and either chunk can place the bridge between two neighbouring cells in any generation order (RE-22).
+    Probably a density function of our own for the islands, plus a structure for the bridges and chains.
+- **Sub-regions** of rising level outwards from the origin, as in the stone realm (RE-3), named by their distance
+  from it. Portals arrive in the first:
+  1. **the near islands:** violet groves (dark wood with purple and dark-purple leaves, purple grass), dusk meadows
+     with herds, and the Chainkeepers' link-houses;
+  2. **the middle islands:** crystal shelves of purple and indigo spires along the island rims, thickets of twisted
+     dark-blue growths with glowing orbs, and fields of floating rune obelisks;
+  3. **the far islands:** dead woods on grey-violet stone, malachite scars, and the island of the Void Cathedral,
+     farthest from where portals arrive.
+- **Light, sky and sound:**
+  - the Void below glows violet and lights the islands from beneath, and crystals and the growths' orbs glow;
+  - the sky is magenta and violet, with a pale moon; a day and night cycle keeps it from freezing (RE-17);
+  - it is never dark and never horror (RE-18), so Dark Vision stays a comfort;
+  - music and ambience come with the realm (RE-8): low choirs, the creak of the chains.
+- **Landmarks** (WF-1, WF-5): dark Roman-style Gatewright gates (arches) where bridges meet the islands; the great
+  chains, anchored on the island rims; rune obelisks floating above the guard towers, the link-houses and the
+  Cathedral, so a player sees from far away where something is.
+- **Materials:**
+  - **malachite,** green bands in dark-purple stone: the realm's ore. It grows where the Void touches forged stone
+    (the [lore](../lore/outline.md#the-void-realm-the-brink)): on island rims and undersides, and in the malachite
+    scars. Mining it means working along the edges, which the fall rule (below) keeps safe;
+  - the realm's purple crystal, for building and for the Cathedral's light-beam puzzle;
+  - dark wood from the violet groves;
+  - **voidglass** (working name), the guard tower captain's guaranteed drop, which malachite gear needs.
+- **Mobs:**
+  - **the Unforged** (hostile) copy the hostile peoples of earlier realms, such as a Hewn or a Gilded, with a violet
+    sheen and one detail out of place that is their tell: a mirrored swing, a blow that lands a beat late. Each
+    variant has one clear role (BM-11), and earlier realms' models with new textures keep them cheap (BM-15).
+    Their hits carry **unmaking**, a short, stacking loss of armour;
+  - **no flying hostile mob,** and none whose main attack is knockback: on islands, knockback is the worst attack
+    there is, as AoA's void realms show
+    ([research notes](../research/notes/aoa-dimensions-h-to-z.md));
+  - **passive and ambient life** (WF-2, WF-14): grazing herds on the dusk meadows (food and leather), glowing
+    drifters that float between the islands and light the gaps, and a timid, crystal-shelled critter that hides in
+    the crystal shelves;
+  - **the Chainkeepers** (friendly, WF-3): their link-houses stand where a great chain is anchored (WF-9), with
+    traders and quest-givers.
+- **The fall rule: the Void pulls you back.** A player who falls below the islands returns to the last solid ground
+  they stood on, with no damage, nothing lost and no fall damage on landing.
+  - A fall costs a few seconds, never the run. A player always respawns in the Overworld (RLM-128), so a death here
+    would cost the whole way back.
+  - It is the rescue DU-4 recommends for dungeon instances, so one rule can serve both.
+  - Mobs and items that fall are gone, as in vanilla.
+  - It is the realm's environmental rule ([open question 3](#open-questions)), and it needs no counter item because
+    it costs nothing (RE-19).
+- **Flight** works here as anywhere (flying mounts from chapter 2, elytra from chapter 4). The bridges keep the realm
+  walkable for a player on foot, and the fall rule covers missteps and knockback.
+- **Dungeons:**
+
+  | Dungeon | Kind | Ending | Bosses |
+  | --- | --- | --- | --- |
+  | Guard tower: the Unforged that climbed out of the Void hold it; small groups on its floors, stairs up, no parkour | open-world structure, a medium site | the captain at the top (no completion) | 1 miniboss |
+  | Broken gate: a ruined Gatewright gate the Unforged still pour through; optional | instanced, waves (DU-8) | the last wave; pays by the last wave reached (DU-9) | a captain in the last wave |
+  | The Void Cathedral, the finale | instanced; its entrance is the door of the Cathedral, a landmark on the far islands | the First Wright's lair | miniboss → miniboss → the First Wright |
+
+  Towers refill by the open-world respawn rule
+  ([research open question 6](../research/reference-games.md#open-questions-for-matěj)), so voidglass never runs
+  out. The broken gates give players who prefer fights to mining another source of malachite and voidglass.
+- **The chain** (the realm's main path):
+  1. the Chainkeepers trade supplies for malachite and point the way;
+  2. each guard tower's captain drops voidglass at 100%;
+  3. the Chainkeepers trade voidglass for the Cathedral's key, and sell the key again for repeat runs (LE-2);
+  4. in the Cathedral, two minibosses drop the keys to the nave (DU-7). One bigger light-beam puzzle with the
+     realm's crystal lies on the way ([Puzzles and traps](#puzzles-and-traps)), and a Sealbound Gatewright opens
+     the nave, as the Scribe in the Stone does in the stone realm;
+  5. the First Wright fights on the ground, in phases, with no flying phase (vision);
+  6. **the last seal** (proposed, [open question 10](#open-questions)): at the Cathedral's heart the player shows
+     every main-path sigil, which is never consumed ("a sigil is shown, not paid"), and forges the last seal. That
+     step finishes the main story; the realms, their dungeons and later the contracts stay.
+- **Malachite gear** (proposed, [open question 11](#open-questions)): the best craftable gear.
+  - **The set:** helmet, chestplate, leggings and boots, plus one weapon per play style that exists when the realm
+    is built: a sword, a bow once a ranged class exists, and a caster's weapon if casters use one by then. No
+    malachite tools: netherite stays the best tool tier.
+  - **Single pieces** are about as strong as the best boss drops of the chapter before, and the First Wright's drops
+    are better. A player who swaps in a boss piece gives up the full set's bonus, so a full set is the strongest
+    choice for most players and strongly endgame (Matěj).
+  - **Set bonus:** with 2 pieces, the wearer is immune to unmaking (the Void cannot unmake malachite); with 4, a
+    permanent damage reduction against every source. Numbers live in data and are tuned in playtests; set bonuses
+    use the talent effect types ([architecture 5.2](../architecture.md#52-our-datapack-registries)).
+  - **Cost:** malachite (mining), voidglass (fighting) and the Chainkeepers' forge (trading), so a full set takes
+    a few sessions of varied play, never one long grind (vision). How crafted gear rolls (fixed stats or affixes)
+    is M2's to decide, and malachite follows it.
+- **Portals built here:** the realm entry's `arrival.y` covers the islands' heights, so a portal built on the way
+  in stands on an island where one is near. Where none is, its frame stands on a small platform of the arrival
+  floor ([realm portal spec](realm-portal.md#building-a-portal)), and the player bridges across or goes back.
 
 ### Candidate realms
 
@@ -240,7 +361,8 @@ Themes Matěj described for later chapters, to pick from as the progression grow
 
 - **M1:** the Overworld (levels 1–5) and the stone realm (chapter 1).
 - **M4:** the desert and the tundra (dimensions 2 and 3, chapter 2), and the removal of the Nether and End.
-- **Later:** the fire realm, further realms from the candidates, and the Void realm as the last one.
+- **Later:** the fire realm, further realms from the candidates, and the Void realm as the last one. It may be
+  built earlier than other realms, and still stays last on the main path ([Realms](#realms)).
 
 ## Open questions
 
@@ -271,3 +393,16 @@ For Matěj; each has a proposal so the design can go on.
    ways: an interim source in M4, or an intended gap that the check lists as one. Proposal: the intended gap, since
    you want elytra late ("a little better than a mount") and an interim source would bring them early. Your answer
    also goes into the M4 removal task.
+9. **The Void realm** (RLM-95). Approve [its section](#the-void-realm): islands on a grid joined by bridges and
+   chains, three sub-regions, the Chainkeepers and the Unforged, the guard towers, the broken gates and the Void
+   Cathedral, and how your "always last" rule works when a realm is added before it. Proposal: as written.
+10. **The last seal from the main-path sigils.** The finale's last step asks the player to show every main-path
+    sigil, which is never consumed. Proposal: yes. It ties the chain together and costs nothing, since a player keeps
+    every sigil and can replace a lost one. Alternative: defeating the First Wright alone ends the story.
+11. **Malachite gear.** Proposal: four armour pieces and one weapon per play style, no tools; single pieces as
+    strong as the previous chapter's best boss drops and below the First Wright's; with 2 pieces immunity to
+    unmaking, with 4 a permanent damage reduction against every source. Alternative: every malachite piece better
+    than every boss drop.
+12. **The fall rule.** Proposal: the Void pulls a falling player back to their last solid ground at no cost.
+    Alternatives: the same with a cost in health that never kills, or vanilla's void damage (death and a respawn in
+    the Overworld).

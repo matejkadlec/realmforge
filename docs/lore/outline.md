@@ -6,10 +6,10 @@
 > the reference-game research ([reference-games.md](../research/reference-games.md): WF-3, WF-7, WF-8, WF-9, RE-5,
 > RE-18, RE-20). The story stays in the background: it gives quests, bosses and items a reason to exist. It explains
 > the rules Matěj has decided and forces none he has not; where a line would, it waits under
-> [Open questions](#open-questions). Every name here is a proposal until Matěj approves the outline
-> (RLM-139). How texts use it: the [style guide](style.md). The portal spec and the realm design record RLM-128's
-> decision: the unlock comes from the realm's quest, portals link like the Nether's with scaled coordinates, and
-> respawn is always in the Overworld.
+> [What the lore leaves open](#what-the-lore-leaves-open). Matěj approved the outline, its names and the style guide
+> on 2026-10-13 (RLM-139, [Decisions](#decisions)). How texts use it: the [style guide](style.md). The portal spec
+> and the realm design record RLM-128's decision: the unlock comes from the realm's quest, portals link like the
+> Nether's with scaled coordinates, and respawn is always in the Overworld.
 
 ## At a glance
 
@@ -22,8 +22,8 @@
   one, in order, and why the Void realm is always the last.
 - **The player** is a newcomer whom the **Wayfarers' Lodge**, a society of explorers and scholars, sends to walk
   the chain: earn each realm's passage, pass each guardian's trial, carry each shard onwards.
-- **The finale (proposed, [open question 3](#open-questions))** waits in the Void realm, where the last seal has
-  to be forged anew. If RLM-95 makes the Void realm a post-story realm, it moves to the realm before it.
+- **The finale** waits in the Void realm, where the last seal has to be forged anew, so the Void realm is on the
+  main path (Matěj, RLM-139).
 - **Every realm has two peoples:** a friendly one to trade and quest with, and a hostile one to fight (WF-3), plus one
   element that shows on its mobs and drops (RE-5).
 - **The tone is adventure, not dread:** an old, slightly mysterious world, told in ruins, inscriptions and short
@@ -97,20 +97,22 @@ always be made again (the repeatable quest of the [realm portal spec](../design/
   3. **The chain (chapters 2 and later):** each chapter opens the next realm or pair of realms. Each realm shows the
      Void a little closer: its guardian is harder to reason with and its threat a little stranger.
   4. **The Void realm (the last chapter):** the Brink, the realm nearest the Void, where the First Wright went.
-- **The finale (proposal, [open question 3](#open-questions)):** in the Void Cathedral the player finds the First
-  Wright, hollowed out by the Void after ages of holding the line. He no longer holds the last seal; he means to
-  open it and forge the Void itself into a realm, which would unmake the rest. The player defeats him and, with the
-  sigils of the main path (sigils are never used up), forges the last seal anew. The chain holds, the realms stay
-  open to those who earned them, and the Lodge names the player the first Gatewright of a new age. Play goes on
-  after it: the realms, their dungeons and later the contracts stay.
+- **The finale (Matěj, RLM-139):** in the Void Cathedral the player finds the First Wright, hollowed out by the
+  Void after ages of holding the line. He no longer holds the last seal; he means to open it and forge the Void
+  itself into a realm, which would unmake the rest. The player defeats him and forges the last seal anew from the
+  sigils of the main path (sigils are never used up), as the [Void realm design](../design/realms.md#the-void-realm)
+  proposes (Matěj decides it in RLM-164). The chain holds, the realms stay open to those who earned them, and the
+  Lodge names the player the first Gatewright of a new age. Play goes on after it: the realms, their dungeons and
+  later the contracts stay.
 
 ## The realms
 
-The realms of the [realm design](../design/realms.md), in chain order. Realm names are proposals for the names
-players read ([open question 2](#open-questions)); the design keeps its working names until they are approved.
+The realms of the [realm design](../design/realms.md), in chain order. Realm names are the names players read,
+approved by Matěj (RLM-139), and the design documents use them too. Where a player first meets one, it carries a
+plain subtitle with its element, such as "The Undervault — Stone Realm" ([style guide](style.md#text-types)).
 Colours are the portal colours of the [realm portal spec](../design/realm-portal.md).
 
-| Realm (design) | Proposed name | Chapter | Element | Friendly people | Hostile people | Guardian |
+| Realm (design) | Name | Chapter | Element | Friendly people | Hostile people | Guardian |
 | --- | --- | --- | --- | --- | --- | --- |
 | The Overworld | the Overworld | 1 (1–5) | home | the Wayfarers' Lodge | the wild's monsters (vanilla) | none: no seal |
 | Stone realm | the Undervault | 1 (5–10) | earth and stone | the Cairnfolk | the Hewn | the Unbroken, a stone colossus |
@@ -127,8 +129,8 @@ names are the realm design's.
 The heart of the world and the start of the chain, the one place the Gatewrights never sealed. It has no guardian
 and no sigil: every realm's way back leads here. The **Wayfarers' Lodge** has studied the Gatewright ruins here for
 generations, and its archivist starts the player's journey. The Overworld's danger is the ordinary wild (night
-monsters, caves), which is where a Wayfarer learns to fight. With each chapter the Lodge has more to offer as its
-members follow the player along the chain (WF-8), wherever the story shows it ([open question 5](#open-questions)).
+monsters, caves), which is where a Wayfarer learns to fight. In M1 the Lodge is a voice in the quest book; a Lodge
+house in a village may come with the M4 village overhaul and offer more with each chapter (WF-8; Matěj, RLM-139).
 
 ### The stone realm: the Undervault
 
@@ -193,18 +195,22 @@ through.
 ### The Void realm: the Brink
 
 The last realm the Gatewrights forged and the nearest to the Void, which broke it into islands. They bound the
-islands together with great chains and bridges, raised dark stone gates and a cathedral at its heart, and kept the
-last seal there. The Void here is not dark: it glows violet, under a pale moon, and the Brink's purple stone, dark
-wood and crystals catch that light (RE-18). Where the Void touches forged stone a green ore grows, malachite, the
-one thing in the chain the Void seems unable to unmake.
+islands together with great chains and bridges, raised dark stone gates and a cathedral on its farthest island,
+and kept the last seal there. The Void here is not dark: it glows violet, under a pale moon, and the Brink's purple
+stone, dark wood and crystals catch that light (RE-18). Where the Void touches forged stone a green ore grows,
+malachite, the one thing in the chain the Void seems unable to unmake.
 
-- **The Chainkeepers** are the last order on the islands, each keeping one link of the great chains. They are
-  solemn, few and very glad to see anyone.
+- **The Chainkeepers** are the last order on the islands, each keeping one link of the great chains from a
+  link-house where a chain is anchored. They are solemn, few and very glad to see anyone. They say the chains catch
+  whoever falls, and the Void gives them back (the realm design's fall rule).
 - **The Unforged** are things of the Void: half-made shapes that copy what they see of the realms and get it
-  slightly wrong. They are strange rather than gruesome.
+  slightly wrong. Each copies a people of an earlier realm, a Hewn or a Gilded, with one detail out of place. Where
+  they strike, the Void unmakes a little of what a Wayfarer wears, unless it is malachite. They are strange rather
+  than gruesome.
 - **The guardian** is the First Wright in the Void Cathedral (the finale above). The guard towers on the islands
-  hold the Unforged that have climbed out of the Void.
-- RLM-95 designs this realm; this paragraph follows Matěj's points there and changes with that design.
+  hold the Unforged that have climbed out of the Void, and at the broken gates they still pour through.
+- The [realm design](../design/realms.md#the-void-realm) designs this realm (RLM-95), and this paragraph follows
+  it; Matěj's approval of that design is RLM-164.
 
 ### Further realms
 
@@ -310,37 +316,45 @@ Decided rules that a line of lore makes feel natural. Texts may use these lines;
 
 The outline forces none of these; each is decided elsewhere, and the lore follows whatever is decided:
 
-- **The Void realm on the main path or after the story** (RLM-95). The finale assumes the main path; see
-  [open question 3](#open-questions).
-- **The hub as a place.** Portals can stand anywhere in the Overworld (RLM-128), so the Lodge is a voice and a
-  society, not a building, until something decides otherwise ([open question 5](#open-questions)).
+- **The Lodge house.** Portals can stand anywhere in the Overworld (RLM-128), so in M1 the Lodge is a voice in the
+  quest book and a society, not a building. A Lodge house in a village may come with the M4 village overhaul
+  (RLM-139), and the lore follows whatever that task builds.
 - **Friendly NPCs in M1.** The chapter 1 beats work with or without them.
 - **Boss mechanics, mob and item names** (W3, W5, A1). The outline gives the bosses and peoples an identity; the
   tasks that build them name and shape them, within the [style guide](style.md#names).
-- **Malachite's effects** (RLM-95). The lore says the Void cannot unmake it; if RLM-95 gives malachite gear other
-  effects than void resistance, that line changes.
+- **The Void realm's gameplay** ([realm design](../design/realms.md#the-void-realm), RLM-95, waiting for Matěj in
+  RLM-164): the last seal forged from the main-path sigils, malachite gear (the lore says the Void cannot unmake
+  malachite, which the proposed set bonus follows) and the fall rule. If he changes one, the lines that tell it
+  change with it.
+
+## Decisions
+
+Matěj's answers of 2026-10-13 and 2026-10-14 (RLM-139), which this version records:
+
+1. **The outline is approved:** the Gatewrights split the world into realms chained against the Void; sigils open
+   seals; each guardian is a trial that holds the shards of the seals after it; the Wayfarers' Lodge sends the
+   player along the chain. The [style guide](style.md) is approved too.
+2. **The names are approved as proposed:** Realmforge, the Gatewrights, the Chain of Seals, the Wayfarers' Lodge,
+   Maren Vell, Torva Flintmark, the Cairnfolk, the Hewn, the Unbroken, the Scribe in the Stone and the other
+   peoples in the tables.
+   - **Realm names:** the Undervault, the Sunwastes, the Rimefields, the Forgefire and the Brink; the Overworld
+     stays the Overworld. Where a player first meets a realm's name (the guide, the sigil tooltip, the arrival
+     title), it carries a plain subtitle with its element, such as "The Undervault — Stone Realm". The
+     [realm design](../design/realms.md) uses these names.
+   - **"Maren Vell" stays** (2026-10-14). Said aloud it is "Ma-ren Vell", not Marvel's "Mar-Vell", and "Vell"
+     echoes vellum, which suits an archivist.
+3. **The finale as proposed:** the First Wright, hollowed out by the Void, is the final antagonist in the Void
+   Cathedral, so the Void realm is on the main path. Forging the last seal from every main-path sigil is a
+   gameplay idea for the Void realm design: [RLM-95 proposes it](../design/realms.md#the-void-realm), and Matěj
+   decides it in RLM-164. Side realms stay optional, so their sigils are never part of it.
+4. **The level cap lore is used:** texts may say that the seals bind strength and that the bond loosens once every
+   trial of a chapter is passed. The rule itself is unchanged.
+5. **The Lodge is a voice in the quest book for M1;** a Lodge house in a village may come with the M4 village
+   overhaul.
+6. **No Czech texts, ever:** the game is English only ([vision](../vision.md)), so the style guide has no rules for
+   other languages.
 
 ## Open questions
 
-For Matěj; each has a proposal so writing can go on.
-
-1. **Approve the outline:** the Gatewrights split the world into realms chained against the Void; sigils open
-   seals; each guardian is a trial that holds the shards of the seals after it; the Wayfarers' Lodge sends the
-   player along the chain.
-2. **Names:** Realmforge, the Gatewrights, the Chain of Seals, the Wayfarers' Lodge, Maren Vell, Torva Flintmark,
-   the Cairnfolk, the Hewn, the Unbroken, the Scribe in the Stone and the other peoples in the tables. Realm names:
-   proposed the Undervault, the Sunwastes, the Rimefields, the Forgefire and the Brink for players, with the
-   Overworld kept as the Overworld. Alternative: plain descriptive names ("the Stone Realm"), as the portal spec's
-   data sketch has.
-3. **The finale:** the First Wright, hollowed out by the Void, as the final antagonist in the Void Cathedral, and
-   the last seal forged from the sigils of the main path (proposed). This puts the Void realm on the main path,
-   which is RLM-95's first question; if it becomes a post-story realm, the finale moves to the realm before it.
-   Forging the last seal from every main-path sigil is a gameplay idea, not a rule: RLM-95 decides it. Side realms
-   stay optional, so their sigils are never part of it. Sigils are never used up, so the player already holds them
-   all and farms nothing again; the shards are crafted into the sigils along the way.
-4. **Lore for the level cap** ("the seals bind strength"; the bond loosens when a chapter's trials are all
-   passed): use it in texts (proposed), or leave the cap a plain game rule.
-5. **The Lodge as a place:** a voice in the quest book for M1 (proposed), and a Lodge house in a village once the
-   village overhaul arrives (M4), growing each chapter (WF-8). Alternative: no building ever.
-6. **Czech texts:** address the player with "ty" (proposed) or "vy"; translate descriptive names (the Undervault)
-   or keep them in English ([style guide](style.md#czech-cs_cz)).
+None: Matěj answered every question of the first version (RLM-139). The Void realm's own questions are the
+[realm design's](../design/realms.md#open-questions).

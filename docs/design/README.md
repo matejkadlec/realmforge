@@ -11,4 +11,4 @@ names its Jira ticket, lists its open questions for Matěj, and changes when he 
 | --- | --- | --- |
 | [guide.md](guide.md) | The in-game guide: a searchable screen about the realms, dungeons, bosses and rewards, unlocked by chapter | RLM-102 |
 | [realm-portal.md](realm-portal.md) | The realm portal: frame, realm selector, sigils, per-player unlocks through quests, Nether-like linking with scaled coordinates, respawn in the Overworld, edge cases | RLM-41, RLM-128 |
-| [realms.md](realms.md) | The realms, their order and contents, chapters and levels, dungeon completion, puzzles and traps | RLM-40 |
+| [realms.md](realms.md) | The realms, their names, order and contents, chapters and levels, dungeon completion, puzzles and traps, the Void realm that always comes last | RLM-40, RLM-95 |
