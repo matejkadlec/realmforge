@@ -8,6 +8,6 @@ its open questions for Matěj, and changes when he decides something new.
 | Document | What it covers | Ticket |
 | --- | --- | --- |
 | [outline.md](outline.md) | The story: Realmforge, the Void and the Chain of Seals, the player's arc and the finale, one section per realm, factions and recurring characters, the beats of chapter 1 | RLM-43 |
-| [style.md](style.md) | Voice, text types and lengths, fixed terms, name rules per people, Czech texts, a checklist | RLM-43 |
+| [style.md](style.md) | Voice, text types and lengths (realm names with their subtitle included), fixed terms, name rules per people, English only, a checklist | RLM-43 |
 
-Approval of both: RLM-139.
+Matěj approved both on 2026-10-13 (RLM-139); the outline records his answers.

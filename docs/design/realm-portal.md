@@ -12,9 +12,10 @@
 > - a player always respawns in the Overworld.
 >
 > RLM-133 closed three gaps that the review of the first version found. Roadmap tasks W2a (the realm, RLM-32) and
-> W2b (the portal, RLM-154) build it ([What M1 takes from this](#what-m1-takes-from-this)). Block, item and realm
-> names are working names. APIs named here were checked against Minecraft 26.1.2 and NeoForge 26.1.2.116 on
-> 2026-10-13, except where marked *verify*.
+> W2b (the portal, RLM-154) build it ([What M1 takes from this](#what-m1-takes-from-this)). Block and item names
+> are working names; realm names are the approved ones of the [lore outline](../lore/outline.md#the-realms)
+> (RLM-139). APIs named here were checked against Minecraft 26.1.2 and NeoForge 26.1.2.116 on 2026-10-13, except
+> where marked *verify*.
 
 ## At a glance
 
@@ -123,9 +124,10 @@ hoppers have nothing to take.
 ## Realm sigils
 
 - **One per realm,** stacking to 1, never consumed (RE-1), fire resistant (`Item.Properties#fireResistant`), so lava
-  does not take it. One sigil opens any number of portals (Matěj, RLM-128). Its tooltip names the realm and says
-  "Never used up". It shows no levels: they live in the server-only `realmforge:dimension_rules`, and the arrival
-  title, which the server sends, shows them.
+  does not take it. One sigil opens any number of portals (Matěj, RLM-128). Its tooltip names the realm with its
+  element subtitle ("The Undervault — Stone Realm", Matěj, RLM-139) and says "Never used up". It shows no levels:
+  they live in the server-only `realmforge:dimension_rules`, and the arrival title, which the server sends, shows
+  them.
 - **A sigil is a key, not the unlock.** Every copy of a realm's sigil is the same item, whoever obtained it, and
   anyone may hold one (Matěj, RLM-128). A player needs a sigil to open or switch a portal, and their own unlock
   ([Access and unlocks](#access-and-unlocks)) to use it.
@@ -306,8 +308,8 @@ When no portal leads the right way within the search radius, the trip builds one
 - **The player arrives in front of the exit portal, facing away from it,** when one side of the opening has floor and
   two blocks of air. Otherwise they arrive in the opening, as a nether portal places them, and the portal cooldown
   vanilla sets after every trip (`Entity#setPortalCooldown`) keeps them from bouncing straight back.
-- **A title** shows the realm's name and levels for 2 seconds on every arrival in a realm; the player's first
-  arrival also shows its flavour line.
+- **A title** shows the realm's name with its element subtitle, and its levels, for 2 seconds on every arrival in a
+  realm (RLM-139); the player's first arrival also shows its flavour line.
 - **Chunk loading:** a trip loads only the chunks around the exit portal, for a short time, through vanilla's portal
   ticket (`TeleportTransition.PLACE_PORTAL_TICKET`, as for nether portals). Portals load nothing permanently, and
   since items and mobs never travel, no portal works as a chunk loader. Building a portal generates its chunks on the
@@ -441,7 +443,8 @@ without one; never in a realm. This answers the realm design's
 # content/realms/stone.yaml (sketch; names are examples, the pydantic model is the authority once written)
 id: stone
 dimension: realmforge:stone          # the realm's dimension (content/worldgen/dimension/stone.json)
-name: {en_us: The Stone Realm}
+name: {en_us: The Undervault}        # the approved name (RLM-139)
+subtitle: {en_us: Stone Realm}       # shown with the name in the guide, the sigil tooltip and the arrival title
 locked_hint: {en_us: "Unlocked by a chapter 1 quest."}
 flavour: {en_us: "Cold air rises from below, smelling of dust and old stone."}
 # W2b adds the portal's fields:

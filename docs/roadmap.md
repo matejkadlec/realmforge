@@ -74,7 +74,7 @@ add content to systems that already work instead of building them.
 | Talents | one tree per class, about 8-10 nodes in 3 tiers, including spell-modifying talents and one big-impact talent |
 | Leveling | levels 1-10 with a level cap; finishing chapter 1 raises the cap (proposal D2: 10, then 20) |
 | Stats | primary stats with derived bonuses and at least one milestone bonus; a character sheet |
-| Dimension | 1 custom dimension, the stone realm: a huge enclosed cave world (working name "Stoneblock", [realm design](design/realms.md#the-stone-realm)); data-driven worldgen, locked until a chapter 1 quest unlocks it |
+| Dimension | 1 custom dimension, the stone realm: a huge enclosed cave world (the Undervault, [realm design](design/realms.md#the-stone-realm)); data-driven worldgen, locked until a chapter 1 quest unlocks it |
 | Mobs | levels by location for vanilla hostile mobs, plus 1-2 custom mob types for the dungeons (proposal D11) |
 | Dungeons | 2 procedural, instanced dungeon types: one ends in the boss's lair, one in a treasury with no boss |
 | Boss | 1 boss with 3 phases, on the ground, no blindness or darkness |
