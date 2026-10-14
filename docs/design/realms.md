@@ -257,13 +257,14 @@ mod has a dimension of that name.
     island per cell of a jittered grid. An island's centre and size then follow from the seed and its cell alone,
     and either chunk can place the bridge between two neighbouring cells in any generation order (RE-22).
     Probably a density function of our own for the islands, plus a structure for the bridges and chains.
-- **Sub-regions** of rising level outwards from the origin, as in the stone realm (RE-3). Portals arrive in the
-  first:
-  1. **the outer islands:** violet groves (dark wood with purple and dark-purple leaves, purple grass), dusk meadows
+- **Sub-regions** of rising level outwards from the origin, as in the stone realm (RE-3), named by their distance
+  from it. Portals arrive in the first:
+  1. **the near islands:** violet groves (dark wood with purple and dark-purple leaves, purple grass), dusk meadows
      with herds, and the Chainkeepers' link-houses;
   2. **the middle islands:** crystal shelves of purple and indigo spires along the island rims, thickets of twisted
      dark-blue growths with glowing orbs, and fields of floating rune obelisks;
-  3. **the inner islands:** dead woods on grey-violet stone, malachite scars, and the island of the Void Cathedral.
+  3. **the far islands:** dead woods on grey-violet stone, malachite scars, and the island of the Void Cathedral,
+     farthest from where portals arrive.
 - **Light, sky and sound:**
   - the Void below glows violet and lights the islands from beneath, and crystals and the growths' orbs glow;
   - the sky is magenta and violet, with a pale moon; a day and night cycle keeps it from freezing (RE-17);
@@ -308,7 +309,7 @@ mod has a dimension of that name.
   | --- | --- | --- | --- |
   | Guard tower: the Unforged that climbed out of the Void hold it; small groups on its floors, stairs up, no parkour | open-world structure, a medium site | the captain at the top (no completion) | 1 miniboss |
   | Broken gate: a ruined Gatewright gate the Unforged still pour through; optional | instanced, waves (DU-8) | the last wave; pays by the last wave reached (DU-9) | a captain in the last wave |
-  | The Void Cathedral, the finale | instanced; its entrance is the door of the Cathedral, a landmark on the inner islands | the First Wright's lair | miniboss → miniboss → the First Wright |
+  | The Void Cathedral, the finale | instanced; its entrance is the door of the Cathedral, a landmark on the far islands | the First Wright's lair | miniboss → miniboss → the First Wright |
 
   Towers refill by the open-world respawn rule
   ([research open question 6](../research/reference-games.md#open-questions-for-matěj)), so voidglass never runs

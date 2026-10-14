@@ -195,10 +195,10 @@ through.
 ### The Void realm: the Brink
 
 The last realm the Gatewrights forged and the nearest to the Void, which broke it into islands. They bound the
-islands together with great chains and bridges, raised dark stone gates and a cathedral at its heart, and kept the
-last seal there. The Void here is not dark: it glows violet, under a pale moon, and the Brink's purple stone, dark
-wood and crystals catch that light (RE-18). Where the Void touches forged stone a green ore grows, malachite, the
-one thing in the chain the Void seems unable to unmake.
+islands together with great chains and bridges, raised dark stone gates and a cathedral on its farthest island,
+and kept the last seal there. The Void here is not dark: it glows violet, under a pale moon, and the Brink's purple
+stone, dark wood and crystals catch that light (RE-18). Where the Void touches forged stone a green ore grows,
+malachite, the one thing in the chain the Void seems unable to unmake.
 
 - **The Chainkeepers** are the last order on the islands, each keeping one link of the great chains from a
   link-house where a chain is anchored. They are solemn, few and very glad to see anyone. They say the chains catch
