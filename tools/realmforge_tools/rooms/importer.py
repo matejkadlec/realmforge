@@ -25,6 +25,7 @@ A rules file (``--rules``, YAML, the ``ImportRules`` model) adapts a source to o
   files without one) and no ``exclude``.
 - ``max_size``: a file whose room is bigger on any axis (a whole wing of the source's dungeon rather than a room) is
   left out like an excluded one.
+- ``dress``: block variety on the floor, walls and ceiling of plain rooms, and decorations (``rooms/dress.py``).
 - ``data_version``: the data version of the files that state none (a Sponge v1 schematic, a template some tool
   wrote), when the source is known to be saved with it.
 
@@ -54,6 +55,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 from realmforge_tools.id_universe import IdUniverse
 from realmforge_tools.project import RepoPaths
 from realmforge_tools.rooms.check import LOOT_TABLE, check_structure, connector_face
+from realmforge_tools.rooms.dress import DressRules, dress
 from realmforge_tools.rooms.slots import slot_tags
 from realmforge_tools.rooms.sources import FORMATS, read_source
 from realmforge_tools.rooms.structure import (
@@ -114,6 +116,7 @@ class ImportRules(_Strict):
     include: list[str] = Field(default_factory=list)
     exclude: list[str] = Field(default_factory=list)
     max_size: int | None = Field(default=None, ge=1, description="Leave out rooms bigger on any axis.")
+    dress: DressRules | None = None
     data_version: int | None = Field(
         default=None,
         ge=1,
@@ -302,6 +305,11 @@ def import_room(
     if rules.max_size is not None and max(source.structure.size) > rules.max_size:
         return ImportedRoom(file, template, sidecar, None, False, excluded=True)
     structure, notes = apply_rules(source.structure, rules)
+    previous = _existing_sidecar(sidecar)
+    tags = previous.tags if previous else slot_tags(structure, name or stem.name)
+    if rules.dress is not None and not rules.dress.excludes(name or stem.name):
+        structure, dressed = dress(structure, rules.dress, name=name or stem.name, tags=tags)
+        notes += dressed
     result = ImportedRoom(file, template, sidecar, structure, False, [*source.notes, *notes])
     if stem.name == REVIEW_FILE.removesuffix(".yaml"):
         result.problems.append("'review' is reserved for the gallery's review.yaml; rename the room")
@@ -309,10 +317,9 @@ def import_room(
     if result.problems:
         return result
 
-    previous = _existing_sidecar(sidecar)
     room = RoomDef(
         pools=previous.pools if previous else [],
-        tags=previous.tags if previous else slot_tags(structure, name or stem.name),
+        tags=tags,
         weight=previous.weight if previous else 1,
         source=RoomSource(
             file=file.name, format=source.format, data_version=structure.data_version, ours=ours
