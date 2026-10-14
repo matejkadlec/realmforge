@@ -208,7 +208,7 @@ Tip: Prism's **Edit** → **Settings** → **Java** can download a Java 25 runti
 `tools/`, and enables the MCP servers from `.mcp.json`. Personal settings go into `.claude/settings.local.json`
 (gitignored). `CLAUDE.md` is the entry point for every agent session.
 
-**Jira (Atlassian MCP).** The flow skills (`flow1`, `flow2`) and `monitor-pr` reach Jira (space Realmforge, key
+**Jira (Atlassian MCP).** The flow skills (`flow1`, `flow2`) and `finalize-pr` reach Jira (space Realmforge, key
 `RLM`) through the `atlassian` server in `.mcp.json`, which runs the `mcp-remote` proxy. Install it once (needs
 Node.js, for example through [nvm](https://github.com/nvm-sh/nvm)):
 

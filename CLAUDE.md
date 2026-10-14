@@ -34,7 +34,7 @@ modpack adds third-party QoL, performance and library mods.
   RLM-30 for the storyline, `Blocks` links for the roadmap's "after" order. Work on a ticket always goes through
   it: `flow1` takes a batch of tickets from the active sprint, `flow2` turns Matěj's task description into a
   ticket, and direct work uses the flow's intake claim; the key goes into the branch name and the PR title, and
-  `monitor-pr` moves the ticket to Done after the merge ([ADR 0016](docs/decisions/0016-jira-batch-delivery.md)).
+  `finalize-pr` moves the ticket to Done after the merge ([ADR 0016](docs/decisions/0016-jira-batch-delivery.md)).
   A batch that needs Matěj's playtest opens no PR while it waits for him: he answers `qa1` (passed: publish it)
   or `qa2` (changes required: revise it) ([ADR 0022](docs/decisions/0022-playtest-before-the-pull-request.md)).
   Follow-ups a change does not fix (review findings, gaps found on the way) become RLM tickets, not GitHub issues
@@ -133,7 +133,7 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 | `.github/workflows/ci.yml` | CI | yes |
 | `git_clean_worktrees.sh` | Matěj's cleanup of merged branches, their worktrees and worktree residue ([README](README.md#git-worktree-cleanup)) | yes |
 | `tests/` | shell test suites: the worktree cleanup's safety regression suite, the Gradle queue's warm-up suite | yes |
-| `.claude/` | Claude Code settings, content validation hook, cloud warm-up hook, Gradle queue script, flow skills (`flow1`, `flow2`, `qa1`, `qa2`), PR skills (`fix-pr`, `finalize-pr`, `monitor-pr`), `pr-reviewer` agent | yes |
+| `.claude/` | Claude Code settings, content validation hook, cloud warm-up hook, Gradle queue script, flow skills (`flow1`, `flow2`, `qa1`, `qa2`), PR skill `finalize-pr` (`fix-pr` and `monitor-pr` disabled: `SKILL.md.disabled`), `pr-reviewer` agent | yes |
 | `.mcp.json` | MCP servers for Claude Code: `atlassian` (Jira) | yes |
 | `.local/` | owner's private inputs; gitignored, **never commit** | - |
 | `.claude/worktrees/` | Claude Code session worktrees (desktop app, `claude --worktree`); gitignored | - |
@@ -340,9 +340,10 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
 
 - Open them ready for review (never drafts) against `master` with `gh pr create`. The description says what
   changed, why, and which checks passed. Never write `@codex` on a pull request (description, comments,
-  replies): any mention starts a Codex review or a Cloud task that can push to the branch.
+  replies): while the Codex connector is installed, a mention starts a Codex review or a Cloud task that can
+  push to the branch.
 - Work that changes gameplay (visuals, balance) is played before its PR exists: push the branch, tell Matěj what
-  to test and how, and stop. His `qa1` opens the PR and `monitor-pr` follows; his `qa2` with changes gets them
+  to test and how, and stop. His `qa1` opens the PR and `finalize-pr` follows; his `qa2` with changes gets them
   made and a new handoff, until `qa1` ([flow: Playtest handoff](docs/ai-development-flow.md#playtest-handoff)).
   Work that needs no playtest gets its PR straight away. PRs carry no GitHub labels
   ([ADR 0024](docs/decisions/0024-no-github-labels.md)).
@@ -351,9 +352,11 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
   names the plan change and that source. Propose any other plan change to him first, under "Blocked or other" in
   the [status overview](#status-overview) ([ADR 0021](docs/decisions/0021-status-overview-and-plan-changes.md)).
 - A PR from a Jira batch names its tickets in the title, e.g. `feat(spells): add the spell engine core (RLM-24)`.
-- After publishing or updating a ready pull request as your own task work, run `/monitor-pr <n>` on it straight
-  after, in the same run. Codex findings alone: `/fix-pr <n>`. Extra independent review: `/finalize-pr <n>`.
-  The skills live in `.claude/skills/`.
+- After publishing or updating a ready pull request as your own task work, run `/finalize-pr <n>` on it straight
+  after, in the same run, in every case. Its fresh `pr-reviewer` subagent is the only code review (ChatGPT Codex
+  no longer reviews), and it carries the pull request to its merge
+  ([ADR 0029](docs/decisions/0029-independent-claude-review-before-every-merge.md)). The skills live in
+  `.claude/skills/`.
 - Never merge with `--admin`, and never bypass the ruleset.
 - Renaming a CI job (its `name:` in `ci.yml`) breaks the merge gate: the `master` ruleset requires checks by job
   name, so every pull request would wait forever for the old name. Say so in the pull request description and
@@ -382,17 +385,18 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
    while other worktrees build (and, in a cloud session, for the warm-up).
 4. Keep `CLAUDE.md`, `docs/` and the relevant READMEs current in the same PR when commands, structure, rules or
    decisions change (the roadmap only when the plan changes). Stale docs mislead the next session.
-5. Open the PR against `master` with `gh pr create`, then run `/monitor-pr <n>`. Work that needs Matěj's
+5. Open the PR against `master` with `gh pr create`, then run `/finalize-pr <n>`. Work that needs Matěj's
    playtest opens no PR before his `qa1`: push the branch and hand it off instead
    ([flow: Playtest handoff](docs/ai-development-flow.md#playtest-handoff)). CI (`.github/workflows/ci.yml`)
    runs: content pipeline + generated-files check + the worktree cleanup and Gradle queue suites, Gradle build +
    JUnit + GameTests, vanilla ID universe reproducibility, packwiz index (these four are the required checks on
    `master`), and the full pack boot on a dedicated server and on a client
    ([ADR 0018](docs/decisions/0018-pack-boot-tests.md)).
-6. `monitor-pr` merges once Codex is done (its approval, a completed review whose findings are all closed, or
-   10 silent minutes), every review thread is resolved and the required checks are green, unless a fix after
-   Matěj's playtest changed gameplay: then he retests and answers `qa1` or `qa2` first
-   ([ADR 0015](docs/decisions/0015-merging-through-monitor-pr.md),
+6. `finalize-pr` merges once an independent `pr-reviewer` review of the exact head leaves no P1 or P2 open (or
+   Matěj approves that head after a capped or disputed review), every review thread is resolved and the
+   required checks are green, unless a fix after Matěj's playtest changed gameplay: then he retests and answers
+   `qa1` or `qa2` first
+   ([ADR 0029](docs/decisions/0029-independent-claude-review-before-every-merge.md),
    [ADR 0016](docs/decisions/0016-jira-batch-delivery.md),
    [ADR 0021](docs/decisions/0021-status-overview-and-plan-changes.md),
    [ADR 0022](docs/decisions/0022-playtest-before-the-pull-request.md),
@@ -422,21 +426,21 @@ merges). Four parts:
 4. **Batch ledger**, one bullet per group:
    - **Merged into master:** the pull requests merged in this run, and those whose tickets this run's
      reconciliation moved to Done, or "none";
-   - **Pending CR:** pull requests under review, each with its exact state (waiting for Codex, a hold,
-     `owner action: ...`);
+   - **Pending CR:** pull requests under review, each with its exact state (a review pass, waiting for checks, a
+     hold, `owner action: ...`);
    - **Pending User QA:** the tickets and branch waiting for this test (no pull request yet; for a
      reconfirmation, the pull request);
    - **Blocked or other:** everything else that needs his attention (below).
 
 Close with one line on how he answers. For a first playtest, in this session or any later one: `qa1` passes the
 test (the batch is then published), `qa2` with what is wrong asks for a revision. For a reconfirmation of a
-published pull request, in this session, whose `monitor-pr` run owns it: `qa1` passes it (the run continues to
+published pull request, in this session, whose `finalize-pr` run owns it: `qa1` passes it (the run continues to
 the merge), `qa2` asks for a revision.
 
 **Nothing waits for his test.** Three parts:
 
 - **Merged into master**, per merged pull request, as bullets: **What** (the tickets, the merge commit, and the
-  changes that matter as sub-bullets), **Review** (Codex or `finalize-pr`, and what it found or tracked),
+  changes that matter as sub-bullets), **Review** (the `finalize-pr` passes, and what they found or tracked),
   **Checks** (the required checks, and CI on `master` after the merge), **Jira** (where the tickets ended).
   It also lists the tickets this run's reconciliation moved to Done, each with its pull request. "None" when
   nothing merged.
