@@ -38,7 +38,7 @@ public final class CharacterSheetGameTests {
         StatsCommands.setBase(player, GeneratedStats.VITALITY, 10);
         CharacterSheetView view = CharacterSheetView.of(player);
 
-        helper.assertValueEqual(view.title().getString(), "qa-sheet · Level 1", "the sheet's heading");
+        helper.assertValueEqual(view.title().getString(), "qa-sheet · Lv. 1", "the sheet's heading");
         helper.assertValueEqual(view.tabs().stream().map(tab -> tab.name().getString()).toList(),
                 List.of("Stats", "Combat", "Magic"), "the sheet's tabs");
         for (Holder<Attribute> stat : GeneratedStats.ALL) {
@@ -71,7 +71,9 @@ public final class CharacterSheetGameTests {
             helper.assertTrue(attribute.value().isClientSyncable(),
                     attribute.getRegisteredName() + " is on the sheet, so it must sync to the client");
         }
-        helper.assertValueEqual(row(helper, view, Attributes.MOVEMENT_SPEED).value(), "100%",
+        Row movementSpeed = row(helper, view, Attributes.MOVEMENT_SPEED);
+        helper.assertValueEqual(movementSpeed.label().getString(), "Movement Speed", "the sheet's name for Speed");
+        helper.assertValueEqual(movementSpeed.value(), "100%",
                 "movement speed reads as a percent of the player's base");
         helper.assertValueEqual(row(helper, view, GeneratedStats.STRENGTH).value(), "25", "Strength");
         helper.assertValueEqual(row(helper, view, GeneratedStats.CRIT_CHANCE).value(), "5%", "the base crit chance");
@@ -86,8 +88,12 @@ public final class CharacterSheetGameTests {
         helper.assertValueEqual(vitalityMilestone.color(), CharacterSheetView.AHEAD, "Vitality's 25 is still ahead");
 
         StatsCommands.setBase(player, GeneratedStats.DEXTERITY, 25);
-        helper.assertValueEqual(row(helper, CharacterSheetView.of(player), Attributes.MOVEMENT_SPEED).value(), "105%",
+        CharacterSheetView dexterous = CharacterSheetView.of(player);
+        helper.assertValueEqual(row(helper, dexterous, Attributes.MOVEMENT_SPEED).value(), "105%",
                 "25 Dexterity's movement speed bonus");
+        // Dexterity's third bonus is movement speed, under the sheet's name for it.
+        helper.assertValueEqual(rowById(helper, dexterous, GeneratedStats.DEXTERITY.value().getDescriptionId() + "/2")
+                .label().getString(), "+5% Movement Speed", "Dexterity's movement speed bonus line");
 
         Row firePower = row(helper, view, GeneratedStats.FIRE_POWER);
         helper.assertValueEqual(firePower.label().getString(), "Fire Power", "school stats show their names");

@@ -21,9 +21,10 @@ import org.lwjgl.glfw.GLFW;
 /**
  * The character sheet (RLM-136, architecture 18): draws {@link CharacterSheetView} over the game, which keeps running.
  * The player's name and level head it on the left, the tabs on the right; a click, the keys 1 to 3, Tab or the arrow
- * keys switch tabs, and the sheet reopens on the last one. Each tab has two columns. The values follow the player's
- * attributes every tick while the sheet is open. The panel is as tall as its tallest tab, so it keeps its size when
- * the tab changes, and is drawn smaller when it does not fit the screen.
+ * keys switch tabs, and the sheet reopens on the last one. The heading and the selected tab are white, so gold marks
+ * only the section titles (Matěj, 2026-10-14). Each tab has two columns. The values follow the player's attributes
+ * every tick while the sheet is open. The panel is as tall as its tallest tab, so it keeps its size when the tab
+ * changes, and is drawn smaller when it does not fit the screen.
  */
 public final class CharacterSheetScreen extends Screen {
     private static final int COLUMN_WIDTH = 180;
@@ -37,8 +38,11 @@ public final class CharacterSheetScreen extends Screen {
     private static final int CONTENT_WIDTH = 2 * COLUMN_WIDTH + GAP;
     private static final int PANEL = 0xC0101010;
     private static final int RULE = 0x60FFFFFF;
+    /** The player's name and level, and the selected tab. */
+    private static final int HEADING = 0xFFFFFFFF;
     private static final int TAB_IDLE = 0xFFA0A0A0;
-    private static final int TAB_HOVER = 0xFFFFFFFF;
+    /** Between idle and selected, so a hovered tab does not look selected. */
+    private static final int TAB_HOVER = 0xFFC8C8C8;
 
     /** The tab the sheet shows, kept while the game runs so the sheet reopens on it. */
     private static int selectedTab;
@@ -117,13 +121,10 @@ public final class CharacterSheetScreen extends Screen {
         pose.translate(layout.x(), layout.y());
         pose.scale(layout.scale());
         graphics.fill(-PADDING, -PADDING, CONTENT_WIDTH + PADDING, layout.height() + PADDING, PANEL);
-        graphics.text(font, view.title().copy().withStyle(ChatFormatting.BOLD), 0, 0, CharacterSheetView.TITLE);
+        graphics.text(font, view.title().copy().withStyle(ChatFormatting.BOLD), 0, 0, HEADING);
         for (int i = 0; i < view.tabs().size(); i++) {
-            Component name = view.tabs().get(i).name();
-            boolean selected = i == selectedTab();
-            int color = selected ? CharacterSheetView.TITLE : i == hovered ? TAB_HOVER : TAB_IDLE;
-            graphics.text(font, selected ? name.copy().withStyle(ChatFormatting.UNDERLINE) : name,
-                    layout.tabX()[i], 0, color);
+            int color = i == selectedTab() ? HEADING : i == hovered ? TAB_HOVER : TAB_IDLE;
+            graphics.text(font, view.tabs().get(i).name(), layout.tabX()[i], 0, color);
         }
         graphics.fill(0, LINE + 1, CONTENT_WIDTH, LINE + 2, RULE);
         drawColumn(graphics, tab.left(), 0, HEADER);

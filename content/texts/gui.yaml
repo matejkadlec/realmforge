@@ -6,9 +6,9 @@ texts:
   # The screen's title, for the narrator; the sheet itself shows character_title.
   character_sheet:
     en_us: Character Sheet
-  # The sheet's heading: "Steve · Level 12" (%1$s the player's name, %2$s the level).
+  # The sheet's heading: "Steve · Lv. 12" (%1$s the player's name, %2$s the level; Matěj, 2026-10-14).
   character_title:
-    en_us: "%1$s · Level %2$s"
+    en_us: "%1$s · Lv. %2$s"
   # The tabs, and the sections each shows in its two columns.
   tab_stats:
     en_us: Stats
@@ -30,13 +30,16 @@ texts:
     en_us: Mana
   spell_schools:
     en_us: Spell Schools
-  # Vanilla attributes under the names the sheet gives them (Matěj, 2026-10-13).
+  # Vanilla attributes under the names the sheet gives them, on their rows and in the bonuses of the primary
+  # stats (Matěj, 2026-10-13 and 2026-10-14).
   mining_speed:
     en_us: Mining Speed
   block_reach:
     en_us: Block Reach
   entity_reach:
     en_us: Entity Reach
+  movement_speed:
+    en_us: Movement Speed
   swimming_speed:
     en_us: Swimming Speed
   # A bonus a primary stat gives: "+25% Attack Damage" (%1$s the amount, %2$s the attribute).

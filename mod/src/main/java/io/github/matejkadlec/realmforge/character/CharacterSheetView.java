@@ -40,7 +40,7 @@ import net.neoforged.neoforge.common.PercentageAttribute;
  * @param tabs the tabs in order
  */
 public record CharacterSheetView(Component title, List<Tab> tabs) {
-    /** Text colours of the rows; the screen draws with them. */
+    /** Text colours the screen draws with: section titles, rows, reached bonuses and bonuses still ahead. */
     public static final int TITLE = 0xFFFFD24D;
     public static final int STAT = 0xFFFFFFFF;
     public static final int BONUS = 0xFF7FD97F;
@@ -79,7 +79,8 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
             entry(Attributes.BLOCK_BREAK_SPEED, GeneratedTexts.GUI_MINING_SPEED),
             entry(Attributes.BLOCK_INTERACTION_RANGE, GeneratedTexts.GUI_BLOCK_REACH),
             entry(Attributes.ENTITY_INTERACTION_RANGE, GeneratedTexts.GUI_ENTITY_REACH),
-            entry(Attributes.MOVEMENT_SPEED), entry(NeoForgeMod.SWIM_SPEED, GeneratedTexts.GUI_SWIMMING_SPEED),
+            entry(Attributes.MOVEMENT_SPEED, GeneratedTexts.GUI_MOVEMENT_SPEED),
+            entry(NeoForgeMod.SWIM_SPEED, GeneratedTexts.GUI_SWIMMING_SPEED),
             entry(GeneratedStats.XP_MULTIPLIER));
     private static final List<Entry> OFFENSE = List.of(entry(Attributes.ATTACK_DAMAGE), entry(Attributes.ATTACK_SPEED),
             entry(GeneratedStats.CRIT_CHANCE), entry(GeneratedStats.CRIT_DAMAGE), entry(GeneratedStats.ARMOR_PIERCE),
@@ -232,8 +233,7 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
             String shown = PERCENT_OF_BASE.stream().anyMatch(percent -> attribute.is(percent))
                     ? percentOf(current, base.applyAsDouble(attribute))
                     : formatted(attribute, current);
-            Component label = entry.label() != null ? Component.translatable(entry.label()) : name(attribute);
-            rows.add(new Row(attribute.value().getDescriptionId(), label, shown, false, STAT));
+            rows.add(new Row(attribute.value().getDescriptionId(), name(attribute), shown, false, STAT));
         }
         return rows;
     }
@@ -279,8 +279,15 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
         return attribute.unwrapKey().orElseThrow(() -> new IllegalStateException("unregistered attribute"));
     }
 
+    /**
+     * An attribute's name on the sheet, on its row and in the bonuses of the primary stats: the name a section gives
+     * it (Movement Speed for vanilla's Speed), or its own.
+     */
     private static Component name(Holder<Attribute> attribute) {
-        return Component.translatable(attribute.value().getDescriptionId());
+        ResourceKey<Attribute> key = key(attribute);
+        return listed().filter(entry -> entry.label() != null && key(entry.attribute()).equals(key)).findFirst()
+                .<Component>map(entry -> Component.translatable(entry.label()))
+                .orElseGet(() -> Component.translatable(attribute.value().getDescriptionId()));
     }
 
     private static Entry entry(Holder<Attribute> attribute) {

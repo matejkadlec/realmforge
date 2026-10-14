@@ -1260,12 +1260,14 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   - The hit direction layer (`client/hud/HitDirectionHud`, after the MMM Indicators mod) draws a red arc around the
     crosshair toward each recent attacker for 1.5 s, turning with the camera and following the attacker.
   - The character sheet (`client/screen/CharacterSheetScreen`, opened and closed by `client/input/CharacterSheetKey`,
-    K by default) draws `character/CharacterSheetView`: the player's name and level, then three tabs of two columns
-    (a click, the keys 1 to 3, Tab or the arrow keys switch them). Stats: the primary stats with what they give and
-    their milestones, and the other attributes (luck, mining speed, reach, speed, swimming speed, the XP multiplier);
-    Combat: offense and defense; Magic: spells and mana, and the spell schools' power and resistance. A stat of ours
-    that no section names shows under Other. All of it comes from the player's synced attributes and level and the
-    synced registries; a pet tab waits for the pet system (RLM-161).
+    K by default) draws `character/CharacterSheetView`: the player's name and level ("Steve · Lv. 12"), then three
+    tabs of two columns (a click, the keys 1 to 3, Tab or the arrow keys switch them). The heading and the selected
+    tab are white, and gold marks only the section titles. Stats: the primary stats with what they give and their
+    milestones, and the other attributes (luck, mining speed, reach, movement speed, swimming speed, the XP
+    multiplier); Combat: offense and defense; Magic: spells and mana, and the spell schools' power and resistance.
+    The names the sheet gives vanilla attributes (Mining Speed, Movement Speed, ...) apply on their rows and in the
+    primary stats' bonuses. A stat of ours that no section names shows under Other. All of it comes from the
+    player's synced attributes and level and the synced registries; a pet tab waits for the pet system (RLM-161).
 - **Minecraft 26.1 draws GUIs by render-state extraction:** a HUD layer (`GuiLayer`) and a screen
   (`Screen#extractRenderState`) receive a `GuiGraphicsExtractor` (`text`, `centeredText`, `fill`, `pose()` for
   scaling). A layer registered through `RegisterGuiLayersEvent` checks `options.hideGui` itself.

@@ -14,7 +14,7 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.character_sheet} from {@code content/texts/gui.yaml}: "Character Sheet" */
     public static final String GUI_CHARACTER_SHEET = "gui.realmforge.character_sheet";
 
-    /** {@code gui.realmforge.character_title} from {@code content/texts/gui.yaml}: "%1$s · Level %2$s" */
+    /** {@code gui.realmforge.character_title} from {@code content/texts/gui.yaml}: "%1$s · Lv. %2$s" */
     public static final String GUI_CHARACTER_TITLE = "gui.realmforge.character_title";
 
     /** {@code gui.realmforge.defense} from {@code content/texts/gui.yaml}: "Defense" */
@@ -28,6 +28,9 @@ public final class GeneratedTexts {
 
     /** {@code gui.realmforge.mining_speed} from {@code content/texts/gui.yaml}: "Mining Speed" */
     public static final String GUI_MINING_SPEED = "gui.realmforge.mining_speed";
+
+    /** {@code gui.realmforge.movement_speed} from {@code content/texts/gui.yaml}: "Movement Speed" */
+    public static final String GUI_MOVEMENT_SPEED = "gui.realmforge.movement_speed";
 
     /** {@code gui.realmforge.offense} from {@code content/texts/gui.yaml}: "Offense" */
     public static final String GUI_OFFENSE = "gui.realmforge.offense";
