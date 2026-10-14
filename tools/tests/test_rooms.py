@@ -1042,7 +1042,10 @@ def test_rooms_get_expectations_for_the_game_test(repo: RepoPaths) -> None:
     add_room(repo, "stone/hall")  # 5 x 4 x 5: one jigsaw, 48 air blocks
     content, _ = load_and_validate(repo)
     files = generate_all(content, repo)
-    java = repo.qa_generated / "java/io/github/matejkadlec/realmforge/qa/generated/GeneratedRoomExpectations.java"
+    java = (
+        repo.qa_generated
+        / "java/io/github/matejkadlec/realmforge/qa/generated/GeneratedRoomExpectations.java"
+    )
     assert 'new RoomExpectation("realmforge:rooms/stone/hall", 5, 4, 5, 1, 48))' in files[java].decode()
 
 
