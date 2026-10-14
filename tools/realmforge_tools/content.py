@@ -18,6 +18,7 @@ from realmforge_tools.schema import (
     WORLDGEN_DIR,
     CurveDef,
     ItemDef,
+    SpellSchoolDef,
     StatDef,
     StatRuleDef,
     TextGroupDef,
@@ -100,6 +101,7 @@ class Content:
     curves: tuple[Entry[CurveDef], ...]
     stats: tuple[Entry[StatDef], ...]
     stat_rules: tuple[Entry[StatRuleDef], ...]
+    spell_schools: tuple[Entry[SpellSchoolDef], ...]
     texts: tuple[Entry[TextGroupDef], ...]
     worldgen: tuple[WorldgenFile, ...]
     rooms: tuple[RoomEntry, ...] = ()
@@ -158,6 +160,7 @@ def load_content(paths: RepoPaths) -> Content:
         curves=by_id(loaded["curves"]),
         stats=by_id(loaded["stats"]),
         stat_rules=by_id(loaded["stat_rules"]),
+        spell_schools=by_id(loaded["spell_schools"]),
         texts=by_id(loaded["texts"]),
         worldgen=tuple(sorted(worldgen, key=lambda f: (f.directory, f.id))),
         rooms=rooms,

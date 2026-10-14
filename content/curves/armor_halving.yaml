@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../tools/schemas/curves.schema.json
+# Our armor formula (architecture 9.1): a hit that armor reduces loses armor / (armor + K) of its damage, at most
+# armor_reduction_cap. K is this curve at the attacker's level (the defender's own level when nobody attacked), so
+# the same armor blocks less against a stronger attacker; armor toughness counts as armor. K armor halves a hit: at
+# level 1, 15 armor (full iron) blocks 50 % and 28 (diamond with its toughness) 65 %. F5's first numbers, tuned in
+# playtests.
+id: armor_halving
+name: {en_us: Armor Halving}
+points:
+  - {level: 1, value: 15}
+  - {level: 10, value: 30}
+  - {level: 20, value: 50}
+  - {level: 60, value: 150}

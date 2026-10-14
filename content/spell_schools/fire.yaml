@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/spell_schools.schema.json
+# One of the Mage's schools (D1). Magic: bypasses armor; spell power and Fire Power raise it, Fire Resistance
+# lowers it.
+id: fire
+name: {en_us: Fire}
+kind: magic
+color: "#FF7F1F"
+power: realmforge:fire_power
+resistance: realmforge:fire_resistance
+death_message: {en_us: "%1$s burned to ashes"}

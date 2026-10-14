@@ -11,11 +11,17 @@ import net.minecraft.resources.ResourceKey;
 
 /** Keys of the curves in {@code content/curves/}, so Java names a curve without typing its id. */
 public final class GeneratedCurves {
+    /** {@code realmforge:armor_halving} from {@code content/curves/armor_halving.yaml}. */
+    public static final ResourceKey<Curve> ARMOR_HALVING = key("armor_halving");
+
+    /** {@code realmforge:armor_reduction_cap} from {@code content/curves/armor_reduction_cap.yaml}. */
+    public static final ResourceKey<Curve> ARMOR_REDUCTION_CAP = key("armor_reduction_cap");
+
     /** {@code realmforge:test_curve} from {@code content/curves/test_curve.yaml}. */
     public static final ResourceKey<Curve> TEST_CURVE = key("test_curve");
 
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Curve>> ALL = List.of(TEST_CURVE);
+    public static final List<ResourceKey<Curve>> ALL = List.of(ARMOR_HALVING, ARMOR_REDUCTION_CAP, TEST_CURVE);
 
     private GeneratedCurves() {
     }

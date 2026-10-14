@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Heals the attacker by this share of the damage a hit deals, in percent. No effect until RLM-158.
+id: lifesteal
+name: {en_us: Lifesteal}
+kind: secondary
+max_percent: 100

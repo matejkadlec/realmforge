@@ -1,5 +1,0 @@
-# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
-# More healing from spells, in percent of the spell's own healing (the spell engine applies it).
-id: healing_power
-kind: secondary
-max_percent: 1000

@@ -1,7 +1,26 @@
 {
+  "$defs": {
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    }
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "One of our attributes: a primary stat (strength, dexterity, vitality, intellect) that stat rules read, or a\nsecondary stat that stat rules and other sources write (crit chance, spell power, ...). Generates its\nregistration, added to every player. Its minimum is 0.\n\nA stat counts either points (``default``, ``max``) or a share (``default_percent``, ``max_percent``, written\nin percent and shown as a percentage in the game). Primary stats count points.",
+  "description": "One of our attributes: a primary stat (strength, dexterity, vitality, intellect) that stat rules read, or a\nsecondary stat that stat rules and other sources write (crit chance, spell power, ...). Generates its\nregistration, added to every player. Its minimum is 0.\n\nA stat counts either points (``default``, ``max``) or a share (``default_percent``, ``max_percent``, written\nin percent and shown as a percentage in the game). Primary stats count points. Its name is the attribute's\ntranslation, ``attribute.realmforge.<id>``: the character sheet and item tooltips show it.",
   "properties": {
     "default": {
       "anyOf": [
@@ -74,10 +93,15 @@
       "default": null,
       "description": "Highest value in percent.",
       "title": "Max Percent"
+    },
+    "name": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "The stat's name, shown on the character sheet and in tooltips."
     }
   },
   "required": [
     "id",
+    "name",
     "kind"
   ],
   "title": "StatDef",

@@ -7,7 +7,7 @@ from typing import Annotated, Literal
 from pydantic import Field, model_validator
 
 from realmforge_tools.project import MOD_ID
-from realmforge_tools.schema.common import ContentId, StrictModel
+from realmforge_tools.schema.common import ContentId, LocalizedText, StrictModel
 
 NonNegative = Annotated[float, Field(ge=0, allow_inf_nan=False)]
 Positive = Annotated[float, Field(gt=0, allow_inf_nan=False)]
@@ -19,10 +19,12 @@ class StatDef(StrictModel):
     registration, added to every player. Its minimum is 0.
 
     A stat counts either points (``default``, ``max``) or a share (``default_percent``, ``max_percent``, written
-    in percent and shown as a percentage in the game). Primary stats count points.
+    in percent and shown as a percentage in the game). Primary stats count points. Its name is the attribute's
+    translation, ``attribute.realmforge.<id>``: the character sheet and item tooltips show it.
     """
 
     id: ContentId
+    name: LocalizedText = Field(description="The stat's name, shown on the character sheet and in tooltips.")
     kind: Literal["primary", "secondary"] = Field(
         description="primary: read by stat rules (content/stat_rules/); secondary: written by them and other sources."
     )

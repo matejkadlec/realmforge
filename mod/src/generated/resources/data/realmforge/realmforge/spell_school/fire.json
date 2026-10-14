@@ -1,0 +1,8 @@
+{
+  "name": "spell_school.realmforge.fire.name",
+  "kind": "magic",
+  "color": "#FF7F1F",
+  "damage_type": "realmforge:fire",
+  "power": "realmforge:fire_power",
+  "resistance": "realmforge:fire_resistance"
+}

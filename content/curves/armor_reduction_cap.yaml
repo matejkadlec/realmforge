@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/curves.schema.json
+# The most of a hit armor can block, as a fraction (0.75 = 75 %, WotLK's cap), by the attacker's level: one point
+# keeps it the same at every level. Part of our armor formula (armor_halving.yaml, architecture 9.1).
+id: armor_reduction_cap
+name: {en_us: Armor Reduction Cap}
+points:
+  - {level: 1, value: 0.75}

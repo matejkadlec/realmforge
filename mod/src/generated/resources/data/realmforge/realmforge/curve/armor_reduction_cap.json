@@ -1,0 +1,9 @@
+{
+  "name": "curve.realmforge.armor_reduction_cap.name",
+  "points": [
+    {
+      "level": 1,
+      "value": 0.75
+    }
+  ]
+}

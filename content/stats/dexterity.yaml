@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=../../tools/schemas/stats.schema.json
-# Primary stat (D5, RLM-55). What it gives: content/stat_rules/dexterity.yaml. Its name comes with RLM-136.
+# Primary stat (D5, RLM-55). What it gives: content/stat_rules/dexterity.yaml.
 id: dexterity
+name: {en_us: Dexterity}
 kind: primary
 max: 100000

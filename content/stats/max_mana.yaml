@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# The size of the mana pool, in points. The spell engine gives mana its behaviour (C3a, RLM-24); until then the
+# character sheet only shows it.
+id: max_mana
+name: {en_us: Max Mana}
+kind: secondary
+max: 100000

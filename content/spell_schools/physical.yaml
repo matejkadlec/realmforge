@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/spell_schools.schema.json
+# Weapon-borne abilities (the Warrior's, D1): armor reduces it and it can be dodged, like a melee hit, but it lands
+# through the hurt cooldown like every school. No power or resistance stat: attack damage and armor cover it. Its
+# colour is the floating combat text of every hit that is not magic (melee, ranged, physical school; Matěj,
+# 2026-10-13): orange, red on a crit, and a different orange from Fire.
+id: physical
+name: {en_us: Physical}
+kind: physical
+color: "#FFAA00"
+death_message: {en_us: "%1$s was struck down"}

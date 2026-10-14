@@ -15,6 +15,10 @@ description = '''
 An RPG overhaul inspired by World of Warcraft: Wrath of the Lich King.
 '''
 
+# Applied by FML when the game loads (architecture 19.3); ModDevGradle applies the same file for compiling.
+[[accessTransformers]]
+file = "META-INF/accesstransformer.cfg"
+
 [[dependencies.realmforge]]
 modId = "neoforge"
 type = "required"

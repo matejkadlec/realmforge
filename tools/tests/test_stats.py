@@ -42,7 +42,9 @@ def generate(repo: RepoPaths) -> dict[str, bytes]:
 
 
 def stat(repo: RepoPaths, name: str, body: str) -> None:
-    write(repo.content / "stats" / f"{name}.yaml", f"id: {name}\n{body}")
+    """Writes content/stats/<name>.yaml, named after its id unless ``body`` names it."""
+    named = body if body.startswith("name:") or "\nname:" in body else f"name: {{en_us: {name}}}\n{body}"
+    write(repo.content / "stats" / f"{name}.yaml", f"id: {name}\n{named}")
 
 
 def rule(repo: RepoPaths, name: str, body: str) -> None:
@@ -486,13 +488,28 @@ def test_stats_register_points_and_shares(repo: RepoPaths) -> None:
         in java
     )
     assert "PRIMARY = List.of(DEXTERITY, INTELLECT, STRENGTH, VITALITY);" in java
-    assert "ALL = List.of(CRIT_CHANCE, CRIT_DAMAGE, DEXTERITY," in java
+    assert (
+        "ALL = List.of(ARCANE_POWER, ARCANE_RESISTANCE, ARMOR_PIERCE, ARMOR_PIERCE_PERCENT, CAST_TIME_REDUCTION,"
+        in java
+    )
 
 
-def test_stats_have_no_lang_entries_yet(repo: RepoPaths) -> None:
-    # The names come with RLM-136; until then no stat writes the lang files.
+def test_stat_names_go_into_the_lang_file(repo: RepoPaths) -> None:
     files = generate(repo)
-    assert not any(key.startswith("attribute.") for key in json.loads(files[f"{LANG}/en_us.json"]))
+    english = json.loads(files[f"{LANG}/en_us.json"])
+    assert english["attribute.realmforge.strength"] == "Strength"
+    assert english["attribute.realmforge.crit_chance"] == "Crit Chance"
+
+
+def test_a_stat_without_a_name_is_rejected(repo: RepoPaths) -> None:
+    write(repo.content / "stats" / "luck_stat.yaml", "id: luck_stat\nkind: secondary\nmax: 10\n")
+    assert_problem(repo, "content/stats/luck_stat.yaml: name: Field required")
+
+
+def test_the_stat_name_is_in_its_registration_comment(repo: RepoPaths) -> None:
+    stat(repo, "luck_stat", 'name: {en_us: "Luck */ @Odd"}\nkind: secondary\nmax: 10\n')
+    java = generate(repo)[STATS_JAVA].decode()
+    assert '{@code content/stats/luck_stat.yaml}: secondary, "Luck *&#47; &#64;Odd". */' in java
 
 
 def test_expectations_hold_stats_and_rule_samples(repo: RepoPaths) -> None:
@@ -514,7 +531,8 @@ def test_expectations_hold_stats_and_rule_samples(repo: RepoPaths) -> None:
 
 
 def test_no_stats_or_rules_still_compile(repo: RepoPaths) -> None:
-    for folder in ("stats", "stat_rules"):
+    # Spell schools name their power and resistance stats, so they go too.
+    for folder in ("stats", "stat_rules", "spell_schools"):
         for file in (repo.content / folder).glob("*.yaml"):
             file.unlink()
     files = generate(repo)

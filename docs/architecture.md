@@ -161,13 +161,13 @@ io.github.matejkadlec.realmforge
 ├─ network/           payload registration (one place), versioned by the mod version
 ├─ progression/       chapters, criteria triggers, statistics: the bridge to quests
 ├─ stats/             attributes, entity levels, stat sources, derived stats, caps
-├─ combat/            damage pipeline, crit, dodge, resistances
+├─ combat/            spell schools, damage pipeline, crit, dodge, resistances, armor formula, combat text
 ├─ effect/            behaviour classes of our status effects
-├─ spell/             spells, schools, effect types, casting, cooldowns, resources, procs, spell entities
+├─ spell/             spells, effect types, casting, cooldowns, resources, procs, spell entities
 ├─ talent/            talent trees, points, spell modifiers; glyphs later
 ├─ item/              item behaviours, gear components; affixes and gems later
 ├─ loot/              loot functions and conditions, reward rolls
-├─ character/         races, classes, character data, leveling, level caps
+├─ character/         races, classes, character data, leveling, level caps, the character sheet's view
 ├─ world/             dimension rules and access, world defaults, Dark Vision, griefing protection
 ├─ mob/               mob levels and scaling, AI goal library, custom mobs
 ├─ boss/              boss definitions, phase machine, boss entity
@@ -291,7 +291,7 @@ How features cooperate without breaking the direction:
 | --- | --- | --- | --- | --- |
 | `realmforge:race` | `content/races/` | playable race: base modifiers, innate spells, allowed classes | yes | M1 |
 | `realmforge:class` | `content/classes/` | class: resource type, stat growth, spells by level, talent trees, starting kit | yes | M1 |
-| `realmforge:spell_school` | `content/spell_schools/` | school: damage type, colour, power and resistance attributes (the attributes themselves are generated static registrations, so a new school needs a game restart) | yes | M1 |
+| `realmforge:spell_school` | `content/spell_schools/` | school (owned by `combat`): kind (physical or magic), colour, its damage type, and the stats that are its power and resistance (attributes from `content/stats/`, static registrations, so a new school's stats need a game restart) | yes | M1 |
 | `realmforge:spell` | `content/spells/` | spell for players or NPCs: school, targeting, cost, cast, cooldown, typed effects, scaling | yes | M1 |
 | `realmforge:talent_tree` | `content/talents/` | WoW-style tree: nodes on a grid, ranks, prerequisites, typed effects per rank | yes | M1 |
 | `realmforge:stat_rule` | `content/stat_rules/` | what a primary stat gives: per-point modifiers, milestone bonuses | yes | M1 |
@@ -362,7 +362,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | --- | --- | --- |
 | `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/`, `entities/`, `effects/`, `sounds/` | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
 | `races/`, `classes/`, `spells/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `bosses/`, `dungeons/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
-| `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json`, the tag entries in `#minecraft:bypasses_cooldown` ([9.1](#91-damage-pipeline)), generated registrations of the school's power and resistance attributes | vanilla damage types, tags; static attributes |
+| `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
 | `loot/`, `recipes/`, tags | `data/realmforge/loot_table/`, `recipe/`, `tags/` | reloadable vanilla data |
 | `chapters/`, `quests/` | `data/realmforge/advancement/`; `pack/config/ftbquests/quests/` (SNBT, stable ids per ADR 0006) | advancements; the FTB Quests book |
 | `worldgen/<registry>/<id>.json` (JSON, [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)) | validated and copied unchanged to `data/realmforge/dimension/`, `dimension_type/`, `worldgen/<registry>/` | vanilla worldgen registries |
@@ -507,20 +507,33 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 
 - **Vanilla, kept:** max health, armor, armor toughness, attack damage and speed, movement speed, knockback
   resistance, luck and the rest. Since 1.21.2 their ids have no prefixes (`minecraft:max_health`,
-  `minecraft:block_interaction_range`; 1.21.1 had `minecraft:generic.max_health`).
+  `minecraft:block_interaction_range`; 1.21.1 had `minecraft:generic.max_health`). The server sends a client only
+  the attributes marked syncable (`Attribute#isClientSyncable`). Vanilla marks max health, armor, toughness, attack
+  speed and movement speed, but not attack damage, so the client sees only its base value. The character sheet draws
+  from the player's own attributes, so `CharacterSheetView#syncShownAttributes` marks every vanilla attribute it
+  shows as syncable, attack damage included; a GameTest fails if an attribute on the sheet does not sync. It runs at
+  common setup (`FMLCommonSetupEvent#enqueueWork`), once every attribute is registered: at mod construction a
+  `DeferredHolder` is still unbound.
 - **Primary stats (ours, decision D5):** strength (STR), dexterity (DEX), vitality (VIT: health, not called
   stamina so it is never confused with a stamina resource) and intellect (INT). They are attributes, so gear, buffs
   and talents modify them like anything else. They start at 0: race, class, level, talents and gear raise them (C1
   and later). Luck and defense stay out (D5).
 - **Secondary stats (ours):** crit chance (5 % to start with), crit damage (+50 %), dodge chance (no primary stat
-  gives it: D5 keeps it for future classes such as the Rogue), spell power, healing power and haste (cast and
-  cooldown speed); resource regeneration comes with resources (C3a), per-school power and resistance with the
-  schools (F5).
+  gives it: D5 keeps it for future classes such as the Rogue), spell power, and each magic school's power and
+  resistance (`fire_power`, `fire_resistance`, ...; F5, the resistances capped at 75 % so nothing becomes immune
+  without a tell, research BM-18). Matěj's playtest of F4b and F5 (2026-10-13) set the rest of the list, shown on the
+  character sheet before every one of them works: armor pierce and armor pierce % (`armor_pierce`,
+  `armor_pierce_percent`), lifesteal and overheal (RLM-158); protection pierce and protection pierce % (RLM-159,
+  waiting for his decision on what they pierce); spell resistance, health regeneration and magic shield (RLM-160);
+  max mana, mana regeneration, cooldown reduction (which replaced haste) and cast time reduction (C3a, RLM-24); and
+  the XP multiplier (100 % by default, C2, RLM-23). Healing power is gone: healing spells scale with spell power and
+  their school.
 - **Defined in `content/stats/`** (F4): each stat's kind (primary or secondary) and its range, in points (a
   `RangedAttribute`) or as a share (`max_percent`: NeoForge's `PercentageAttribute`, holding a fraction). `rf gen`
   writes their registrations into `generated/GeneratedStats` (owned by `stats`), with the description id
-  `attribute.realmforge.<id>` and `setSyncable(true)` for all of them, as the character sheet shows them. Their
-  names, and with them their lang entries, come with the character sheet (RLM-136).
+  `attribute.realmforge.<id>` and `setSyncable(true)` for all of them, as the character sheet shows them. Each
+  stat's `name` is the lang entry of that description id, shown on the character sheet
+  ([18](#18-client-code-rendering-gui-input)) and in tooltips.
 - `StatsFeature` adds every stat to players in `EntityAttributeModificationEvent`; mobs get the ones they need
   with the features that use them (spell power for casters).
 - NeoForge also has a boolean `creative_flight` attribute (`NeoForgeMod.CREATIVE_FLIGHT`): the planned basis for
@@ -617,52 +630,70 @@ and health far beyond vanilla, so:
 
 ### 9.1 Damage pipeline
 
-1. **Sources.** Melee goes through vanilla `Player#attack` (Better Combat only changes swings, combos and reach).
-   Spells call `hurt` with a `DamageSource` subclass defined in `combat/`, which carries the school's id, the
-   spell level and the attributes for the school's power and resistance, so `combat` needs no knowledge of spells.
-   Each school is a vanilla damage type (`data/realmforge/damage_type/<school>.json`), so death messages and damage
-   type tags keep working.
-2. **`LivingIncomingDamageEvent`**, before mitigation: attacker side (spell power and school bonus attributes, crit
-   roll) through `setAmount`; talents act through those attributes or are already part of the spell's damage
-   ([11.5](#115-resources-cooldowns-modifiers)). Defender side: dodge (never by cancelling the event, see below),
-   school resistance, and our armor formula in place of vanilla's through
-   `addReductionModifier(DamageContainer.Reduction.ARMOR, ...)`.
-   NeoForge runs that reduction for every hit, so our formula must itself skip damage in
-   `#minecraft:bypasses_armor`, as vanilla's does.
-3. **Vanilla's hurt cooldown** comes next. Within 10 ticks of the previous hit, a hit that is not bigger than the
-   previous one is dropped without any further event, and a bigger one deals only the difference; a hit outside
-   that window starts a new one. Spell, area and damage-over-time hits would be swallowed, and each would shield the
-   target from the next sword swing. So the school damage types are in the `#minecraft:bypasses_cooldown` tag
-   (generated), and spell hits keep the target's current window
-   (`DamageContainer#setPostAttackInvulnerabilityTicks(target.invulnerableTime)`), so they neither grant nor clear
-   invulnerability. They still set vanilla's protected `lastHurt`, the amount every later hit in the window is
-   measured against (`LivingEntity#hurtServer` takes the `else` branch for a hit that bypasses
-   the cooldown and stores `lastHurt = amount`). Inside an open window a melee hit is therefore compared with the
-   last spell or damage-over-time hit, not with the hit that opened the window:
-   - **after a small one it lands almost in full:** a zombie hits a player for 6 (the window opens, `lastHurt` 6), a
-     DoT ticks for 1 three ticks later (`lastHurt` 1, window kept), and a second zombie hitting for 6 at tick 6
-     deals 5 instead of vanilla's 0. Any DoT on a target largely removes its in-window protection against melee
-     from mobs, pets and party members;
-   - **after a bigger one it is dropped:** a spell hit for 20 inside an open window sets `lastHurt` 20, and a melee
-     hit for 8 in the same window deals 0, where vanilla would deal the difference from the previous melee hit.
+Built in F5 (RLM-21): `combat/DamagePipeline` on NeoForge's damage events, with every formula in the pure
+`combat/DamageCalculator` (JUnit). Logical server only.
 
-   Task F5 measures this with a GameTest (a melee hit after a DoT tick inside the window) and decides: keep it,
-   restore `lastHurt` after each spell hit (an access transformer, [19.3](#193-mixins-and-access-transformers)), or
-   another approach.
-4. The reductions apply: armor (our formula), enchantments, effects. **`LivingDamageEvent.Pre`** sees the damage
+1. **Spell schools.** A school (`realmforge:spell_school`, `content/spell_schools/`, owned by `combat`) is a kind of
+   damage: `physical` (armor reduces it, it can be dodged) or `magic` (bypasses armor, spell power raises it). Each
+   school is a vanilla damage type `realmforge:<school>` (death messages `death.attack.realmforge.<school>` keep
+   working), in `#minecraft:bypasses_cooldown`; magic schools are also in `#minecraft:bypasses_armor`. A hit belongs
+   to a school when its damage type is the school's (`combat/SpellSchools#of`), so `combat` needs no knowledge of
+   spells: the spell engine (C3a), abilities and bosses deal school damage with `SpellSchools#damage(registries,
+   school, direct, causing)`, and so does vanilla's `/damage <target> <amount> realmforge:fire by <attacker>`. M1 has
+   the Warrior's `physical` and the Mage's `fire`, `frost` and `arcane` (D1); the remaining schools come in M3. A
+   spell's own data (level, scaling) reaches the pipeline with C3a, which may subclass the damage source for it.
+2. **`CriticalHitEvent`**, for a player's melee attack: a full-strength attack crits on the player's crit chance and
+   deals 1 + crit damage, instead of vanilla's jump crit (a jump no longer matters). Vanilla still plays its crit
+   sound and particles, and a crit keeps a sword's sweep (vanilla's jump crits never happened on the ground).
+3. **`LivingIncomingDamageEvent`**, before mitigation:
+   - **Dodge** (the defender's dodge chance) cancels a melee hit, a projectile or a physical school hit from an
+     attacker; magic, explosions and damage from the world cannot be dodged. Cancelling stops a hit cleanly since
+     NeoForge 26.1 (below), and `CombatEvent.Dodge` reports it.
+   - **A school hit** gets the attacker side, damage × (1 + spell power, for magic only, + the school's power stat),
+     then the crit roll (crit chance and crit damage, as in melee), then the defender's resistance to the school:
+     × (1 − resistance), through `setAmount`. Talents act through those attributes or are already part of the spell's
+     damage ([11.5](#115-resources-cooldowns-modifiers)).
+   - **Our armor formula** replaces vanilla's through `addReductionModifier(DamageContainer.Reduction.ARMOR, ...)`:
+     with A = armor + armor toughness, armor blocks A / (A + K) of a hit, at most a cap, where K (the armor that
+     halves a hit) and the cap are the curves `realmforge:armor_halving` and `realmforge:armor_reduction_cap` at the
+     attacker's level (the defender's own when nobody attacked; [14.1](#141-mob-levels)). So the same armor blocks
+     less against a stronger attacker. NeoForge runs that reduction for every hit, so the formula keeps vanilla's
+     (zero) reduction for damage in `#minecraft:bypasses_armor`, and for every hit when a data pack removed the
+     curves. Vanilla still wears the armor down.
+4. **Vanilla's hurt cooldown** comes next. Within 10 ticks of the previous hit, a hit that is not bigger than the
+   previous one is dropped without any further event, and a bigger one deals only the difference; a hit outside
+   that window starts a new one. School hits bypass it (the tag), so spells, damage over time and abilities always
+   land. A bypassing hit takes vanilla's `else` branch of `LivingEntity#hurtServer`, which grants new invulnerability
+   ticks and sets the protected `lastHurt`, the amount later hits in the window are measured against. Left alone,
+   a DoT tick of 1 would let a second zombie's melee hit for 6 land as 5 instead of 0, and a spell hit for 20 would
+   swallow a melee hit for 8. **F5 keeps school hits out of the window entirely:** a school hit keeps the
+   defender's invulnerable time (`setInvulnerabilityTicks(max(1, invulnerableTime))`: NeoForge refuses 0, and 1
+   opens no window) and restores `lastHurt` after the hit, through an access transformer on `LivingEntity#lastHurt`
+   ([19.3](#193-mixins-and-access-transformers)). Melee hits in an open window are therefore compared with the
+   previous melee hit, as in vanilla. `CombatGameTests` measures it: melee 6, a fire tick of 1, then melee 6 again
+   deals 0 (it would deal 5 without the restore); and a fire hit right after a melee hit lands in full.
+5. The reductions apply: armor (our formula), enchantments, effects. **`LivingDamageEvent.Pre`** sees the damage
    before absorption hearts take their share.
-5. **`LivingDamageEvent.Post`** reports what was actually taken from health: on-hit procs, combat text payloads,
-   the QA combat log; threat later (with pets).
+6. **`LivingDamageEvent.Post`** reports what was dealt: `combat` posts `CombatEvent.Hit` (school, crit, the
+   original damage, what armor blocked, the damage dealt and taken from health) for higher features (procs in C3a
+   and C5, threat later, the QA mod's combat log), and sends the combat text (`combat/net/CombatTextPayload`) to the
+   player who dealt the hit ([18](#18-client-code-rendering-gui-input)). The player who took it gets no number, the
+   health bar shows the damage, but the direction it came from (`combat/net/HitDirectionPayload`), as for a dodge,
+   which also shows "Miss!" to both players. A heal (`LivingHealEvent`, the last listener) sends the health it
+   restores to the players near the healed entity, from half a point up (Matěj, 2026-10-13).
+
+What one hit learns in an earlier event and needs in a later one (whether a melee hit crit, a school hit's
+`lastHurt`) waits in `combat/HitTracker`, per defender and matched by the damage source, because a hit the hurt
+cooldown drops never reaches `Post` and one hit's events can nest inside another's.
 
 **Cancelling `LivingIncomingDamageEvent` stops a hit cleanly since NeoForge 26.1.** `LivingEntity#hurtServer`
 pushes a `DamageContainer` onto the defender's `damageContainers` stack, posts the event, and pops the container again
 when the event is cancelled (checked in 26.1.2.116). NeoForge 21.1.259 returned without popping it, so on 1.21.1 every
-cancel left a container on the defender; that is why this section used to forbid cancelling. Dodge can therefore
-cancel the event; task F5 still keeps a GameTest that shows the stack does not grow.
+cancel left a container on the defender; that is why this section used to forbid cancelling. A dodge cancels the
+event; `CombatGameTests` shows that twenty dodged hits leave the stack empty.
 
-All formulas live in a pure `DamageCalculator` (inputs: attacker and defender stat snapshots, spell and school, a
-random source), tested by JUnit. The Python balance simulation (M3) will use the same formulas; one JSON file of
-inputs and expected outputs, read by both pytest and JUnit, keeps the two implementations equal.
+The Python balance simulation (M3) will use the same formulas; one JSON file of inputs and expected outputs, read by
+both pytest and JUnit, will keep the two implementations equal.
 
 ### 9.2 Better Combat
 
@@ -1192,7 +1223,9 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
 
 - Client → server: `CreateCharacter`, `CastSpell`, `CancelCast`, `SetSpellBarSlot`, `LearnTalent`,
   `ToggleDarkVision` (exists: `world/net/ToggleDarkVisionPayload`, sent by `client/input/DarkVisionKey`).
-- Server → client: `CastStarted`, `CastEnded`, `CombatText`, `DungeonStatus`.
+- Server → client: `CastStarted`, `CastEnded`, `CombatText` (exists: `combat/net/CombatTextPayload`, shown by
+  `client/hud/CombatTextHud`), `HitDirection` (exists: `combat/net/HitDirectionPayload`, shown by
+  `client/hud/HitDirectionHud`), `DungeonStatus`.
 
 ## 18. Client code: rendering, GUI, input
 
@@ -1216,6 +1249,28 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   NeoForge's own client classes are mostly not marked client-only, so only the import check catches those.
 - **Thin screens:** screens and HUD layers draw from view models computed in common code (`CharacterSheetView`,
   `TalentTreeView`), so their logic is testable without rendering.
+- **What exists (F5, F4b, revised after Matěj's playtest of 2026-10-13):**
+  - The combat text layer (`client/hud/CombatTextHud`) draws each `CombatTextPayload` over the entity it is about,
+    projected onto the screen with `GameRenderer#projectPointToScreen`, popping in, rising and fading, at a random
+    small offset so hits close together do not cover each other. Every text is bold and the same size. A magic
+    school's hit takes the school's colour; every other hit (melee, ranged, the Physical school) takes the Physical
+    school's orange, red on a crit (`combat/CombatText` picks it). A crit's number ends with "!", a heal reads "+4"
+    in green, a dodged hit reads "Miss!" in yellow, and the player's own dodge shows it beside the crosshair. The
+    player sees no numbers for damage taken.
+  - The hit direction layer (`client/hud/HitDirectionHud`, after the MMM Indicators mod) draws a red arc around the
+    crosshair toward each recent attacker for 1.5 s, turning with the camera and following the attacker.
+  - The character sheet (`client/screen/CharacterSheetScreen`, opened and closed by `client/input/CharacterSheetKey`,
+    K by default) draws `character/CharacterSheetView`: the player's name and level ("Steve · Lv. 12"), then three
+    tabs of two columns (a click, the keys 1 to 3, Tab or the arrow keys switch them). The heading and the selected
+    tab are white, and gold marks only the section titles. Stats: the primary stats with what they give and their
+    milestones, and the other attributes (luck, mining speed, reach, movement speed, swimming speed, the XP
+    multiplier); Combat: offense and defense; Magic: spells and mana, and the spell schools' power and resistance.
+    The names the sheet gives vanilla attributes (Mining Speed, Movement Speed, ...) apply on their rows and in the
+    primary stats' bonuses. A stat of ours that no section names shows under Other. All of it comes from the
+    player's synced attributes and level and the synced registries; a pet tab waits for the pet system (RLM-161).
+- **Minecraft 26.1 draws GUIs by render-state extraction:** a HUD layer (`GuiLayer`) and a screen
+  (`Screen#extractRenderState`) receive a `GuiGraphicsExtractor` (`text`, `centeredText`, `fill`, `pose()` for
+  scaling). A layer registered through `RegisterGuiLayersEvent` checks `options.hideGui` itself.
 - **Little rendering code:** GeckoLib for animated entities, vanilla widgets for UI, no rendering mixins unless
   unavoidable, no shaders of our own (Iris and Complementary). Porting costs the most here
   ([ADR 0003](decisions/0003-platform-minecraft-1-21-1-neoforge.md)), so it stays small.
@@ -1289,6 +1344,13 @@ names under `[[mixins]]`. The core mod's one is `RangedAttributeAccessor`, which
 ([8.4](#84-caps)). The QA mod has one too, for tests only: `GameTestServerMixin` gives the GameTest world the data
 pack dimensions, which vanilla leaves out ([20](#20-tests-per-layer)).
 
+Access transformers live in `src/main/resources/META-INF/accesstransformer.cfg`, which ModDevGradle applies to the
+Minecraft jar a project compiles against (its default location), and which `neoforge.mods.toml` lists under
+`[[accessTransformers]]`, so FML applies it when the game loads: in a dev run (the runs live in `qa-mod/`, whose own
+jar lacks the core mod's transforms), on the GameTest server and in the pack. The core mod's one opens
+`LivingEntity#lastHurt` for the hurt cooldown ([9.1](#91-damage-pipeline)); the QA mod's opens `lastHurt` and
+`damageContainers` for `CombatGameTests`.
+
 ### 19.4 Optional integrations
 
 `compat/<modid>/` (client parts in `client/compat/<modid>/`) runs only when `ModList.get().isLoaded(modid)`, with
@@ -1318,8 +1380,21 @@ tag, Xaero icons, FTB Quests files) need no code.
 
 The QA mod grows with the features: `/qa` commands (level, class, talents, gear presets, boss at phase N, enter an
 instance with a given seed, reset cooldowns, god mode), a training dummy with a DPS meter, and a combat log file
-that agents can read. The first are `/qa instance enter|leave|build|free|list|cleanup|bench` from spike 3 and
-`/qa state show|reset [<entity>]` from F3, which prints or clears the player state attachments ([7](#7-player-state)).
+that agents can read. So far:
+
+- `/qa instance enter|leave|build|free|list|cleanup|bench` from spike 3, and `/qa state show|reset [<entity>]` from
+  F3, which prints or clears the player state attachments ([7](#7-player-state));
+- `/qa stats set <stat> <value> [<players>]`, `/qa stats reset|show` (F4b: points for a primary stat, percent for a
+  share) and `/qa level <level> [<entity>]` (the `realmforge:level` attachment, which the armor formula reads);
+- `/qa dummy [<armor>]` (F5): a training dummy three blocks ahead, a husk that stands still and never dies. Its
+  label, a text display riding it, shows its armor with the share of a hit it blocks at the nearest player's level
+  ("15 Armor (50% Damage Reduction)") over its name with the DPS of the current session (it ends after 5 s without a
+  hit); vanilla draws no name tag over an entity with a passenger, so the label carries both. The hitter sees each
+  hit on the action bar, `/qa dummy reset|remove`. Husks carry our stats in the dev game, so `/attribute @n[type=husk]
+  realmforge:dodge_chance base set 0.5` sets a dummy's dodge chance or resistances;
+- the combat log, `logs/realmforge-combat.log` in the game directory (`run/client/`, `run/gametest/`, ...): one line
+  per hit or dodge that involves a player or a dummy, with the damage type, school, crit, attacker level, the
+  original damage, what armor blocked, and the damage dealt and taken from health. A new server starts a new file.
 
 The vanilla GameTest server builds its world from the flat preset with an empty dimension registry, so our data pack
 dimensions (`realmforge:instances`, later the M1 dimension) exist in GameTests only through the QA mod's

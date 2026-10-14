@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# A pool of points that takes damage before health, mainly for casters (Matěj, 2026-10-13). No effect until RLM-160.
+id: magic_shield
+name: {en_us: Magic Shield}
+kind: secondary
+max: 10000

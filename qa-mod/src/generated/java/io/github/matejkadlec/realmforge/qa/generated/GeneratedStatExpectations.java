@@ -29,6 +29,48 @@ public final class GeneratedStatExpectations {
 
     public static final List<StatExpectation> STATS = List.of(
             new StatExpectation(
+                    "realmforge:arcane_power",
+                    "attribute.realmforge.arcane_power",
+                    false,
+                    true,
+                    0.0,
+                    10.0),
+            new StatExpectation(
+                    "realmforge:arcane_resistance",
+                    "attribute.realmforge.arcane_resistance",
+                    false,
+                    true,
+                    0.0,
+                    0.75),
+            new StatExpectation(
+                    "realmforge:armor_pierce",
+                    "attribute.realmforge.armor_pierce",
+                    false,
+                    false,
+                    0.0,
+                    1000.0),
+            new StatExpectation(
+                    "realmforge:armor_pierce_percent",
+                    "attribute.realmforge.armor_pierce_percent",
+                    false,
+                    true,
+                    0.0,
+                    1.0),
+            new StatExpectation(
+                    "realmforge:cast_time_reduction",
+                    "attribute.realmforge.cast_time_reduction",
+                    false,
+                    true,
+                    0.0,
+                    0.75),
+            new StatExpectation(
+                    "realmforge:cooldown_reduction",
+                    "attribute.realmforge.cooldown_reduction",
+                    false,
+                    true,
+                    0.0,
+                    0.75),
+            new StatExpectation(
                     "realmforge:crit_chance",
                     "attribute.realmforge.crit_chance",
                     false,
@@ -57,19 +99,40 @@ public final class GeneratedStatExpectations {
                     0.0,
                     1.0),
             new StatExpectation(
-                    "realmforge:haste",
-                    "attribute.realmforge.haste",
+                    "realmforge:fire_power",
+                    "attribute.realmforge.fire_power",
                     false,
                     true,
                     0.0,
                     10.0),
             new StatExpectation(
-                    "realmforge:healing_power",
-                    "attribute.realmforge.healing_power",
+                    "realmforge:fire_resistance",
+                    "attribute.realmforge.fire_resistance",
+                    false,
+                    true,
+                    0.0,
+                    0.75),
+            new StatExpectation(
+                    "realmforge:frost_power",
+                    "attribute.realmforge.frost_power",
                     false,
                     true,
                     0.0,
                     10.0),
+            new StatExpectation(
+                    "realmforge:frost_resistance",
+                    "attribute.realmforge.frost_resistance",
+                    false,
+                    true,
+                    0.0,
+                    0.75),
+            new StatExpectation(
+                    "realmforge:health_regeneration",
+                    "attribute.realmforge.health_regeneration",
+                    false,
+                    false,
+                    0.0,
+                    1000.0),
             new StatExpectation(
                     "realmforge:intellect",
                     "attribute.realmforge.intellect",
@@ -78,12 +141,68 @@ public final class GeneratedStatExpectations {
                     0.0,
                     100000.0),
             new StatExpectation(
+                    "realmforge:lifesteal",
+                    "attribute.realmforge.lifesteal",
+                    false,
+                    true,
+                    0.0,
+                    1.0),
+            new StatExpectation(
+                    "realmforge:magic_shield",
+                    "attribute.realmforge.magic_shield",
+                    false,
+                    false,
+                    0.0,
+                    10000.0),
+            new StatExpectation(
+                    "realmforge:mana_regeneration",
+                    "attribute.realmforge.mana_regeneration",
+                    false,
+                    false,
+                    0.0,
+                    10000.0),
+            new StatExpectation(
+                    "realmforge:max_mana",
+                    "attribute.realmforge.max_mana",
+                    false,
+                    false,
+                    0.0,
+                    100000.0),
+            new StatExpectation(
+                    "realmforge:overheal",
+                    "attribute.realmforge.overheal",
+                    false,
+                    true,
+                    0.0,
+                    1.0),
+            new StatExpectation(
+                    "realmforge:protection_pierce",
+                    "attribute.realmforge.protection_pierce",
+                    false,
+                    false,
+                    0.0,
+                    1000.0),
+            new StatExpectation(
+                    "realmforge:protection_pierce_percent",
+                    "attribute.realmforge.protection_pierce_percent",
+                    false,
+                    true,
+                    0.0,
+                    1.0),
+            new StatExpectation(
                     "realmforge:spell_power",
                     "attribute.realmforge.spell_power",
                     false,
                     true,
                     0.0,
                     10.0),
+            new StatExpectation(
+                    "realmforge:spell_resistance",
+                    "attribute.realmforge.spell_resistance",
+                    false,
+                    true,
+                    0.0,
+                    0.75),
             new StatExpectation(
                     "realmforge:strength",
                     "attribute.realmforge.strength",
@@ -97,7 +216,14 @@ public final class GeneratedStatExpectations {
                     true,
                     false,
                     0.0,
-                    100000.0));
+                    100000.0),
+            new StatExpectation(
+                    "realmforge:xp_multiplier",
+                    "attribute.realmforge.xp_multiplier",
+                    false,
+                    true,
+                    1.0,
+                    10.0));
 
     public static final List<StatRuleExpectation> STAT_RULES = List.of(
             new StatRuleExpectation(
@@ -118,7 +244,7 @@ public final class GeneratedStatExpectations {
                             new Sample(1.0, List.of(new Bonus("realmforge:stat/realmforge/0/intellect", "realmforge:spell_power", "add_value", 0.01))),
                             new Sample(12.5, List.of(new Bonus("realmforge:stat/realmforge/0/intellect", "realmforge:spell_power", "add_value", 0.125))),
                             new Sample(24.0, List.of(new Bonus("realmforge:stat/realmforge/0/intellect", "realmforge:spell_power", "add_value", 0.24))),
-                            new Sample(25.0, List.of(new Bonus("realmforge:stat/realmforge/0/intellect", "realmforge:spell_power", "add_value", 0.25), new Bonus("realmforge:stat/realmforge/at_25_0/intellect", "realmforge:haste", "add_value", 0.05))))),
+                            new Sample(25.0, List.of(new Bonus("realmforge:stat/realmforge/0/intellect", "realmforge:spell_power", "add_value", 0.25), new Bonus("realmforge:stat/realmforge/at_25_0/intellect", "realmforge:cooldown_reduction", "add_value", 0.05))))),
             new StatRuleExpectation(
                     "realmforge:strength",
                     "realmforge:strength",

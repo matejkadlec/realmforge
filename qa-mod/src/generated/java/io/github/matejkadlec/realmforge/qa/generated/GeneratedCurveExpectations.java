@@ -22,6 +22,16 @@ public final class GeneratedCurveExpectations {
 
     public static final List<CurveExpectation> CURVES = List.of(
             new CurveExpectation(
+                    "realmforge:armor_halving",
+                    Optional.of("curve.realmforge.armor_halving.name"),
+                    List.of(new Point(1, 15.0), new Point(10, 30.0), new Point(20, 50.0), new Point(60, 150.0)),
+                    List.of(new Sample(0.0, 15.0), new Sample(1.0, 15.0), new Sample(5.5, 22.5), new Sample(10.0, 30.0), new Sample(15.0, 40.0), new Sample(20.0, 50.0), new Sample(40.0, 100.0), new Sample(60.0, 150.0), new Sample(61.0, 150.0))),
+            new CurveExpectation(
+                    "realmforge:armor_reduction_cap",
+                    Optional.of("curve.realmforge.armor_reduction_cap.name"),
+                    List.of(new Point(1, 0.75)),
+                    List.of(new Sample(0.0, 0.75), new Sample(1.0, 0.75), new Sample(2.0, 0.75))),
+            new CurveExpectation(
                     "realmforge:test_curve",
                     Optional.of("curve.realmforge.test_curve.name"),
                     List.of(new Point(1, 0.0), new Point(10, 450.0), new Point(20, 1200.5)),

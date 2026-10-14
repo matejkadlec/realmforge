@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Mana regained over time, in points; the spell engine sets the rate's time unit (C3a, RLM-24).
+id: mana_regeneration
+name: {en_us: Mana Regeneration}
+kind: secondary
+max: 10000

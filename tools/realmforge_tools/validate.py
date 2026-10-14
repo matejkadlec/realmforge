@@ -19,21 +19,27 @@ from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
 ITEM_REGISTRY = "minecraft:item"
 ATTRIBUTE_REGISTRY = "minecraft:attribute"
 CREATIVE_TAB_REGISTRY = "minecraft:creative_mode_tab"
+DAMAGE_TYPE_REGISTRY = "minecraft:damage_type"
 DIMENSION_TYPE_REGISTRY = "minecraft:dimension_type"
+SPELL_SCHOOL_REGISTRY = f"{MOD_ID}:spell_school"
 STRUCTURE_REGISTRY = "minecraft:structure"
 
 # YAML content type -> the registry its ids live in.
 REGISTRY_OF_TYPE: dict[str, str] = {
     "items": ITEM_REGISTRY,
     "stats": ATTRIBUTE_REGISTRY,
+    "spell_schools": SPELL_SCHOOL_REGISTRY,
     **{t.directory: f"{MOD_ID}:{t.registry}" for t in DATAPACK_TYPES},
 }
 
 # Translation key prefixes other content types generate (`item.realmforge.<id>`, `curve.realmforge.<id>.name`,
-# `attribute.realmforge.<id>`): a text group with one of these ids could produce the same key as an entry of that type.
+# `attribute.realmforge.<id>`, a school's `death.attack.realmforge.<id>`): a text group with one of these ids could
+# produce the same key as an entry of that type.
 RESERVED_TEXT_GROUPS: dict[str, str] = {
     "item": "content/items/",
     "attribute": "content/stats/",
+    "spell_school": "content/spell_schools/",
+    "death.attack": "content/spell_schools/",
     **{t.registry: f"content/{t.directory}/" for t in DATAPACK_TYPES},
 }
 
@@ -55,6 +61,8 @@ def universe_with_content(vanilla: IdUniverse, content: Content) -> IdUniverse:
     for type_dir, registry in REGISTRY_OF_TYPE.items():
         for entry in content.entries(type_dir):
             universe.add(registry, f"{MOD_ID}:{entry.model.id}")
+    for entry in content.spell_schools:
+        universe.add(DAMAGE_TYPE_REGISTRY, entry.model.damage_type)
     for file in content.worldgen:
         universe.add(WORLDGEN_REGISTRIES[file.directory], f"{MOD_ID}:{file.id}")
     for room in content.rooms:
@@ -72,6 +80,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_ids(content)
     problems += _check_references(content, universe)
     problems += _check_stat_rules(content, universe)
+    problems += _check_spell_schools(content, universe)
     problems += _check_worldgen_references(content, universe)
     problems += _check_text_groups(content)
     problems += _check_rooms(content, universe)
@@ -219,6 +228,39 @@ def _check_stat_rules(content: Content, universe: IdUniverse) -> list[Problem]:
                             f"{modifier.attribute} counts points: add_value takes amount, not amount_percent",
                         )
                     )
+    return problems
+
+
+def _check_spell_schools(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A school's power and resistance are secondary stats that are shares (architecture 9.1), and no stat serves
+    two schools or two roles: the damage pipeline reads each as one school's bonus."""
+    problems: list[Problem] = []
+    stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
+    used: dict[str, str] = {}
+    for entry in content.spell_schools:
+        school = entry.model
+        for field in ("power", "resistance"):
+            stat_id = getattr(school, field)
+            if stat_id is None:
+                continue
+            stat = stats.get(stat_id)
+            if not universe.contains(ATTRIBUTE_REGISTRY, stat_id):
+                problems.append(Problem(entry.source, field, _unknown(stat_id, ATTRIBUTE_REGISTRY, universe)))
+            elif stat is None:
+                problems.append(
+                    Problem(entry.source, field, f"{stat_id} is not one of our stats (content/stats/)")
+                )
+            elif stat.kind != "secondary" or not stat.percent:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        field,
+                        f"{stat_id} must be a secondary stat that is a share (kind: secondary, max_percent)",
+                    )
+                )
+            if stat_id in used:
+                problems.append(Problem(entry.source, field, f"{stat_id} already serves {used[stat_id]}"))
+            used.setdefault(stat_id, f"{entry.source} ({field})")
     return problems
 
 
