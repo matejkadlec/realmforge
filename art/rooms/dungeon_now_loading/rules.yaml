@@ -58,3 +58,9 @@ dress:
     replace: [minecraft:stone_bricks, minecraft:cobblestone, minecraft:stone]
     variants: [minecraft:cracked_stone_bricks, minecraft:mossy_stone_bricks, minecraft:mossy_cobblestone]
   decorations: [armor_stands, vines, cobwebs, barrels]
+  without:
+    # No added barrels in these rooms (Matěj's review of the dressing, 2026-10-14); their own barrels stay.
+    barrels:
+      - labyrinth/rooms/checker
+      - labyrinth/rooms/silverfish_cell
+      - labyrinth/rooms/skeleton_platform

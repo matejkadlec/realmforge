@@ -139,6 +139,7 @@ dress:                # variety and decorations for plain rooms (rooms/dress.py)
   walls: {target: 4, replace: [minecraft:stone_bricks], variants: [minecraft:cracked_stone_bricks]}
   ceiling: {target: 3, replace: [minecraft:stone_bricks], variants: [minecraft:mossy_stone_bricks]}
   decorations: [armor_stands, vines, cobwebs, barrels]
+  without: {barrels: [dungeon/rooms/library]}  # rooms that do not get a decoration
 data_version: 4790    # for the files that state none, when the source is known to be saved with this version
 ```
 
@@ -155,9 +156,10 @@ rooms variety: a surface (floor: air above, ceiling: air below, walls: air besid
 lacks, each replacing 15 % of its `replace` blocks in patches, gravel only over a block. The plainer the room was,
 the more decorations it gets: vines from the top of the walls, cobwebs where wall meets ceiling, barrels against the
 walls, and outside hallways and stairs armor stands in full iron or gold on upside-down stone brick stairs, all clear
-of the doorways. Choices are hashes of the room's path, so a re-import gives the same room; an armor stand's armor
-is written in the format of the template's data version. The import report names every remap,
-every dropped entity, block entity, interior jigsaw and loot table, and the jigsaw names and pools no rule mapped. The
+of the doorways; `without` leaves a decoration out of the rooms it names. Choices are hashes of the room's path, so
+a re-import gives the same room; an armor stand's armor is written in the format of the template's data version.
+The import report names every remap, every dropped entity, block entity, interior jigsaw and loot table, and the
+jigsaw names and pools no rule mapped. The
 rules of the imported sources live in `art/rooms/<source>/rules.yaml` ([art/rooms](../art/rooms/README.md)). The
 schematic readers live in `rooms/sources.py`: nucleation 0.10.24 reads both formats too,
 but it writes only the tight box around a room's non-air blocks, so air-only layers at the edge vanish and the

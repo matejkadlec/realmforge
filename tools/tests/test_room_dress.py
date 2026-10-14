@@ -196,3 +196,22 @@ def test_excluded_rooms_stay_as_they_are() -> None:
     rules = RULES.model_copy(update={"exclude": ["dungeon/entrances/*"]})
     assert rules.excludes("dungeon/entrances/entrance_1")
     assert not rules.excludes("dungeon/rooms/library")
+
+
+def test_without_leaves_a_decoration_out_of_the_rooms_it_names() -> None:
+    rules = RULES.model_copy(update={"without": {"barrels": ["dungeon/rooms/*"]}})
+    assert rules.decorations_for("dungeon/rooms/library") == ["armor_stands", "vines", "cobwebs"]
+    assert "barrels" in rules.decorations_for("dungeon/lobby/lobby_01")
+    room = box_room()
+    with_barrels, _ = dress(room, RULES, name="dungeon/rooms/library", tags=["combat"])
+    without, _ = dress(room, rules, name="dungeon/rooms/library", tags=["combat"])
+    assert names(with_barrels)["minecraft:barrel"] > 0 and names(without)["minecraft:barrel"] == 0
+
+    # Barrels come last: every other block and entity of the room stays as it was.
+    def others(structure: Structure) -> dict[Pos, StructureBlock]:
+        return {b.pos: b for b in structure.blocks if b.state.name != "minecraft:barrel"}
+
+    barrels = {b.pos for b in with_barrels.blocks if b.state.name == "minecraft:barrel"}
+    assert {pos: b for pos, b in others(without).items() if pos not in barrels} == others(with_barrels)
+    assert {b.state.name for b in without.blocks if b.pos in barrels} == {"minecraft:air"}
+    assert with_barrels.entities == without.entities

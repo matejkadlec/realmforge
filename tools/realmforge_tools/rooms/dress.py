@@ -14,7 +14,8 @@ plainer a surface, the more variants it gets, so a corridor gets the most and a 
   top of the walls (a strand per ``VINE_SLOTS`` free spots there), cobwebs where wall meets ceiling (one per
   ``COBWEB_SLOTS``), barrels against the walls (a hallway gets one at most), and in rooms (not hallways or stairs)
   armor stands on upside-down stone brick stairs, in full iron or full gold armor. Doorways stay clear: nothing goes
-  next to a connector, and no armor stand within ``DOOR_CLEARANCE`` blocks of one.
+  next to a connector, and no armor stand within ``DOOR_CLEARANCE`` blocks of one. ``without`` leaves a decoration
+  out of the rooms it names; barrels come last, so leaving them out changes nothing else in a room.
 
 Everything is decided by hashes of the room's path and the positions, so the same import gives the same room. An
 armor stand's armor is written in the format of the template's data version, which the game upgrades from.
@@ -93,9 +94,20 @@ class DressRules(_Strict):
     walls: SurfaceRules | None = None
     ceiling: SurfaceRules | None = None
     decorations: list[Decoration] = Field(default_factory=list)
+    without: dict[Decoration, list[str]] = Field(
+        default_factory=dict, description="Rooms (fnmatch on their path) that do not get a decoration."
+    )
 
     def excludes(self, name: str) -> bool:
         return any(fnmatchcase(name, pattern) for pattern in self.exclude)
+
+    def decorations_for(self, name: str) -> list[Decoration]:
+        """The decorations the room ``name`` gets: all of them but those ``without`` names it under."""
+        return [
+            decoration
+            for decoration in self.decorations
+            if not any(fnmatchcase(name, pattern) for pattern in self.without.get(decoration, []))
+        ]
 
 
 @dataclass
@@ -153,9 +165,8 @@ def dress(
     plainness = needed / possible if possible else 0.0
 
     entities = list(structure.entities)
-    placed = _decorate(
-        room, surfaces, rules.decorations, plainness, name, set(tags or []), structure, entities
-    )
+    decorations = rules.decorations_for(name)
+    placed = _decorate(room, surfaces, decorations, plainness, name, set(tags or []), structure, entities)
     if placed:
         notes.append(f"added {', '.join(placed)}")
     return replace(structure, blocks=tuple(room.blocks.values()), entities=tuple(entities)), notes

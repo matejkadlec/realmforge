@@ -37,3 +37,33 @@ dress:
     replace: [minecraft:stone_bricks, minecraft:cobblestone, minecraft:stone]
     variants: [minecraft:cracked_stone_bricks, minecraft:mossy_stone_bricks, minecraft:mossy_cobblestone]
   decorations: [armor_stands, vines, cobwebs, barrels]
+  without:
+    # No added barrels in these rooms (Matěj's review of the dressing, 2026-10-14); their own barrels stay.
+    barrels:
+      - dungeon/rooms/combination_lock
+      - dungeon/rooms/drowned_junction
+      - dungeon/rooms/husk_temple
+      - dungeon/rooms/item_combination_lock
+      - dungeon/rooms/lava_parkour
+      - dungeon/rooms/lava_trap
+      - dungeon/rooms/nether_portal
+      - dungeon/rooms/stairs
+      - dungeon/stairway/fall_01
+      - dungeon/stairway/fall_long
+      - dungeon/treasure/tiny_cap
+      - pillager_dungeon/entrances/entrance_tower
+      - pillager_dungeon/entrances/entrance_tower_2
+      - pillager_dungeon/entrances/entrance_tower_2_long
+      - pillager_dungeon/entrances/entrance_tower_long
+      - pillager_dungeon/rooms/item_combination_lock
+      - pillager_dungeon/rooms/jail
+      - pillager_dungeon/rooms/jail_2
+      - pillager_dungeon/rooms/jail_3
+      - pillager_dungeon/rooms/library
+      - pillager_dungeon/rooms/nether_portal
+      - pillager_dungeon/rooms/stairs
+      - pillager_dungeon/rooms/storage
+      - pillager_dungeon/rooms/storage_2
+      - pillager_dungeon/rooms/temple
+      - pillager_dungeon/stairway/fall_01
+      - pillager_dungeon/stairway/fall_long
