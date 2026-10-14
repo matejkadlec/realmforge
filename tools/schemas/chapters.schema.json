@@ -1,0 +1,67 @@
+{
+  "$defs": {
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A chapter of the story: its place in the chain and the level caps it sets.",
+  "properties": {
+    "completed_level_cap": {
+      "description": "The level cap once the player completes the chapter; above level_cap.",
+      "maximum": 1000,
+      "minimum": 1,
+      "title": "Completed Level Cap",
+      "type": "integer"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "level_cap": {
+      "description": "The level cap while this is the player's current chapter: every chapter before it completed, this one not. The first chapter's is the cap of a new player.",
+      "maximum": 1000,
+      "minimum": 1,
+      "title": "Level Cap",
+      "type": "integer"
+    },
+    "name": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "The chapter's name, shown when a player completes it."
+    },
+    "order": {
+      "description": "Position in the story: 1 for the first chapter, then 2, 3.",
+      "maximum": 1000,
+      "minimum": 1,
+      "title": "Order",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "order",
+    "level_cap",
+    "completed_level_cap"
+  ],
+  "title": "ChapterDef",
+  "type": "object"
+}

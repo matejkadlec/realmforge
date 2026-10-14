@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../tools/schemas/curves.schema.json
+# The character XP a kill gives, by the victim's level (architecture 10.2), before kill_xp_below_player or
+# kill_xp_above_player and the player's XP multiplier: 10 for a level 1 mob, so ten kills take a new player to
+# level 2, and 32 for a level 10 mob, about 34 kills from level 10 to 11. Only hostile mobs give XP. C2's first
+# numbers, tuned in playtests.
+id: kill_xp
+name: {en_us: Kill XP}
+points:
+  - {level: 1, value: 10}
+  - {level: 10, value: 32}
+  - {level: 20, value: 57}
+  - {level: 60, value: 157}

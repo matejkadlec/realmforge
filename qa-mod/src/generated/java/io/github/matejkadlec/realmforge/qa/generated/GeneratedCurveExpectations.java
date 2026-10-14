@@ -32,6 +32,21 @@ public final class GeneratedCurveExpectations {
                     List.of(new Point(1, 0.75)),
                     List.of(new Sample(0.0, 0.75), new Sample(1.0, 0.75), new Sample(2.0, 0.75))),
             new CurveExpectation(
+                    "realmforge:kill_xp",
+                    Optional.of("curve.realmforge.kill_xp.name"),
+                    List.of(new Point(1, 10.0), new Point(10, 32.0), new Point(20, 57.0), new Point(60, 157.0)),
+                    List.of(new Sample(0.0, 10.0), new Sample(1.0, 10.0), new Sample(5.5, 21.0), new Sample(10.0, 32.0), new Sample(15.0, 44.5), new Sample(20.0, 57.0), new Sample(40.0, 107.0), new Sample(60.0, 157.0), new Sample(61.0, 157.0))),
+            new CurveExpectation(
+                    "realmforge:kill_xp_above_player",
+                    Optional.of("curve.realmforge.kill_xp_above_player.name"),
+                    List.of(new Point(0, 1.0), new Point(4, 1.2)),
+                    List.of(new Sample(-1.0, 1.0), new Sample(0.0, 1.0), new Sample(2.0, 1.1), new Sample(4.0, 1.2), new Sample(5.0, 1.2))),
+            new CurveExpectation(
+                    "realmforge:kill_xp_below_player",
+                    Optional.of("curve.realmforge.kill_xp_below_player.name"),
+                    List.of(new Point(0, 1.0), new Point(2, 1.0), new Point(7, 0.0)),
+                    List.of(new Sample(-1.0, 1.0), new Sample(0.0, 1.0), new Sample(1.0, 1.0), new Sample(2.0, 1.0), new Sample(4.5, 0.5), new Sample(7.0, 0.0), new Sample(8.0, 0.0))),
+            new CurveExpectation(
                     "realmforge:mob_armor",
                     Optional.of("curve.realmforge.mob_armor.name"),
                     List.of(new Point(1, 0.0), new Point(5, 2.0), new Point(10, 4.0), new Point(20, 8.0), new Point(60, 25.0)),
@@ -50,7 +65,12 @@ public final class GeneratedCurveExpectations {
                     "realmforge:test_curve",
                     Optional.of("curve.realmforge.test_curve.name"),
                     List.of(new Point(1, 0.0), new Point(10, 450.0), new Point(20, 1200.5)),
-                    List.of(new Sample(0.0, 0.0), new Sample(1.0, 0.0), new Sample(5.5, 225.0), new Sample(10.0, 450.0), new Sample(15.0, 825.25), new Sample(20.0, 1200.5), new Sample(21.0, 1200.5))));
+                    List.of(new Sample(0.0, 0.0), new Sample(1.0, 0.0), new Sample(5.5, 225.0), new Sample(10.0, 450.0), new Sample(15.0, 825.25), new Sample(20.0, 1200.5), new Sample(21.0, 1200.5))),
+            new CurveExpectation(
+                    "realmforge:xp_to_next_level",
+                    Optional.of("curve.realmforge.xp_to_next_level.name"),
+                    List.of(new Point(1, 100.0), new Point(5, 450.0), new Point(10, 1100.0), new Point(20, 3200.0), new Point(30, 6000.0), new Point(60, 20000.0)),
+                    List.of(new Sample(0.0, 100.0), new Sample(1.0, 100.0), new Sample(3.0, 275.0), new Sample(5.0, 450.0), new Sample(7.5, 775.0), new Sample(10.0, 1100.0), new Sample(15.0, 2150.0), new Sample(20.0, 3200.0), new Sample(25.0, 4600.0), new Sample(30.0, 6000.0), new Sample(45.0, 13000.0), new Sample(60.0, 20000.0), new Sample(61.0, 20000.0))));
 
     private GeneratedCurveExpectations() {
     }

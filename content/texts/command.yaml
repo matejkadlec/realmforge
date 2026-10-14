@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# Feedback of the /realmforge operator commands (command.realmforge.<name>), shown to the operator who runs them.
+id: command
+texts:
+  # /realmforge xp (C2, architecture 10.2). %1$s the XP, %2$s the player.
+  xp_added:
+    en_us: Gave %1$s character XP to %2$s
+  xp_set:
+    en_us: Set the character XP of %2$s to %1$s
+  # /realmforge xp query: %1$s the player, %2$s their character XP, %3$s their level, %4$s their level cap.
+  xp_query:
+    en_us: "%1$s has %2$s character XP: level %3$s, level cap %4$s"
+  # A player without a character gains no XP (architecture 10.1). %1$s the player.
+  xp_no_character:
+    en_us: "%1$s has no character yet, so they gain no character XP"

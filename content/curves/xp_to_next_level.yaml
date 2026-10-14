@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/curves.schema.json
+# The character XP that takes a player from a level to the next (architecture 10.2): 100 from level 1 to 2, 1,100
+# from 10 to 11. A player needs 4,476 XP in all for level 10, the cap during chapter 1 (D2), and 24,926 for level
+# 20. Every point is at least 1 (validation). C2's first numbers, tuned in playtests; research PR-10 suggests
+# deriving them later from target minutes per level, with quests giving a fixed share.
+id: xp_to_next_level
+name: {en_us: XP to Next Level}
+points:
+  - {level: 1, value: 100}
+  - {level: 5, value: 450}
+  - {level: 10, value: 1100}
+  - {level: 20, value: 3200}
+  - {level: 30, value: 6000}
+  - {level: 60, value: 20000}

@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/chapters.schema.json
+# The first chapter of the story: the Overworld and the stone realm, levels 1 to 10 (lore outline, "The player").
+# Decision D2 (RLM-52): the level cap is 10 during chapter 1 and rises to 20 when it is finished. The chapter's last
+# quest (Q2) grants the advancement realmforge:chapter/chapter_1, which raises the cap; until Q1 and Q2 exist,
+# /advancement grant @s only realmforge:chapter/chapter_1 does. The name is a placeholder until Q2 names the chapter.
+id: chapter_1
+name: {en_us: Chapter 1}
+order: 1
+level_cap: 10
+completed_level_cap: 20

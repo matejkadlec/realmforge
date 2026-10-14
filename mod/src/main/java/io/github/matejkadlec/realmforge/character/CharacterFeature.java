@@ -11,14 +11,15 @@ public final class CharacterFeature {
     }
 
     /**
-     * Registers the feature's registries and event listeners, and hands {@code stats} the race and class modifiers. At
-     * common setup, once every attribute is registered, it makes the attributes the character sheet shows sync to the
-     * client. Called once from {@code Realmforge}.
+     * Registers the feature's registries and event listeners (leveling's among them), and hands {@code stats} the race
+     * and class modifiers. At common setup, once every attribute is registered, it makes the attributes the character
+     * sheet shows sync to the client. Called once from {@code Realmforge}.
      */
     public static void register(IEventBus modBus) {
         CharacterAttachments.register(modBus);
         modBus.addListener(DataPackRegistryEvent.NewRegistry.class, CharacterRegistries::registerDataPackRegistries);
         CharacterStats.addSource(CharacterBonuses.SOURCE);
+        Leveling.register();
         modBus.addListener(FMLCommonSetupEvent.class,
                 event -> event.enqueueWork(CharacterSheetView::syncShownAttributes));
     }

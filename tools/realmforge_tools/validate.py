@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import difflib
 import math
+from itertools import pairwise
 from pathlib import PurePosixPath
 
 from realmforge_tools.content import Content, RoomEntry, load_content
@@ -16,6 +17,7 @@ from realmforge_tools.rooms.connectors import connectors, could_attach
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES
 from realmforge_tools.schema.character import STARTING_BREAD
 from realmforge_tools.schema.dungeon import DEAD_END_ROLES, PATH_ROLES, ROOM_ROLES, room_role
+from realmforge_tools.schema.leveling import LEVELING_CURVES
 from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
 
@@ -103,6 +105,8 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_text_groups(content)
     problems += _check_rooms(content, universe)
     problems += _check_dungeons(content)
+    problems += _check_chapters(content)
+    problems += _check_leveling_curves(content)
     return problems
 
 
@@ -506,6 +510,68 @@ def _check_dimension_rules(content: Content, universe: IdUniverse) -> list[Probl
                 Problem(entry.source, "dimension", f"{dimension} already has rules in {seen[dimension]}")
             )
         seen.setdefault(dimension, entry.source)
+    return problems
+
+
+def _check_chapters(content: Content) -> list[Problem]:
+    """There is a chapter, chapters are numbered 1, 2, 3 without gaps, and each one starts at the cap the one before
+    it ends with, so no level band is skipped or played twice (research PR-16; architecture 10.2)."""
+    problems: list[Problem] = []
+    if not content.chapters:
+        problems.append(
+            Problem(
+                "content/chapters/",
+                "",
+                "leveling needs a chapter: the first one's level_cap is a new player's cap",
+            )
+        )
+    ordered = sorted(content.chapters, key=lambda entry: (entry.model.order, entry.source))
+    for expected, entry in enumerate(ordered, start=1):
+        if entry.model.order != expected:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "order",
+                    f"chapters are numbered 1, 2, 3 without gaps or repeats; expected {expected}, "
+                    f"found {entry.model.order}",
+                )
+            )
+    for before, after in pairwise(ordered):
+        if after.model.level_cap != before.model.completed_level_cap:
+            problems.append(
+                Problem(
+                    after.source,
+                    "level_cap",
+                    f"{after.model.level_cap} must equal the completed_level_cap of the chapter before it "
+                    f"({before.model.completed_level_cap} in {before.source}), so no level band is skipped",
+                )
+            )
+    return problems
+
+
+def _check_leveling_curves(content: Content) -> list[Problem]:
+    """The curves leveling reads hold no value below their minimum: a level always costs XP, and no kill takes XP
+    away (schema/leveling.py). The game needs them all: Java names them through GeneratedCurves."""
+    problems: list[Problem] = []
+    curves = {entry.model.id: entry for entry in content.curves}
+    for curve_id, minimum in LEVELING_CURVES.items():
+        entry = curves.get(curve_id)
+        if entry is None:
+            problems.append(
+                Problem(
+                    f"content/curves/{curve_id}.yaml", "", "leveling needs this curve (architecture 10.2)"
+                )
+            )
+            continue
+        for n, point in enumerate(entry.model.points):
+            if point.value < minimum:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"points.{n}.value",
+                        f"{point.value} is below {minimum:g}, the least this curve may hold for leveling",
+                    )
+                )
     return problems
 
 

@@ -1,0 +1,29 @@
+{
+  "name": "curve.realmforge.xp_to_next_level.name",
+  "points": [
+    {
+      "level": 1,
+      "value": 100.0
+    },
+    {
+      "level": 5,
+      "value": 450.0
+    },
+    {
+      "level": 10,
+      "value": 1100.0
+    },
+    {
+      "level": 20,
+      "value": 3200.0
+    },
+    {
+      "level": 30,
+      "value": 6000.0
+    },
+    {
+      "level": 60,
+      "value": 20000.0
+    }
+  ]
+}

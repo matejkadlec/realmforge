@@ -8,6 +8,18 @@ public final class GeneratedTexts {
     /** {@code combat_text.realmforge.miss} from {@code content/texts/combat_text.yaml}: "Miss!" */
     public static final String COMBAT_TEXT_MISS = "combat_text.realmforge.miss";
 
+    /** {@code command.realmforge.xp_added} from {@code content/texts/command.yaml}: "Gave %1$s character XP to %2$s" */
+    public static final String COMMAND_XP_ADDED = "command.realmforge.xp_added";
+
+    /** {@code command.realmforge.xp_no_character} from {@code content/texts/command.yaml}: "%1$s has no character yet, so they gain no character XP" */
+    public static final String COMMAND_XP_NO_CHARACTER = "command.realmforge.xp_no_character";
+
+    /** {@code command.realmforge.xp_query} from {@code content/texts/command.yaml}: "%1$s has %2$s character XP: level %3$s, level cap %4$s" */
+    public static final String COMMAND_XP_QUERY = "command.realmforge.xp_query";
+
+    /** {@code command.realmforge.xp_set} from {@code content/texts/command.yaml}: "Set the character XP of %2$s to %1$s" */
+    public static final String COMMAND_XP_SET = "command.realmforge.xp_set";
+
     /** {@code gui.realmforge.block_reach} from {@code content/texts/gui.yaml}: "Block Reach" */
     public static final String GUI_BLOCK_REACH = "gui.realmforge.block_reach";
 
@@ -118,6 +130,21 @@ public final class GeneratedTexts {
 
     /** {@code message.realmforge.dark_vision_on} from {@code content/texts/message.yaml}: "Dark Vision On" */
     public static final String MESSAGE_DARK_VISION_ON = "message.realmforge.dark_vision_on";
+
+    /** {@code message.realmforge.level_cap_raised} from {@code content/texts/message.yaml}: "%1$s complete! Your level cap is now %2$s." */
+    public static final String MESSAGE_LEVEL_CAP_RAISED = "message.realmforge.level_cap_raised";
+
+    /** {@code message.realmforge.level_cap_reached} from {@code content/texts/message.yaml}: "Level %1$s is the cap for now. Complete %2$s to raise it; your XP keeps counting." */
+    public static final String MESSAGE_LEVEL_CAP_REACHED = "message.realmforge.level_cap_reached";
+
+    /** {@code message.realmforge.level_up} from {@code content/texts/message.yaml}: "Level Up!" */
+    public static final String MESSAGE_LEVEL_UP = "message.realmforge.level_up";
+
+    /** {@code message.realmforge.level_up_subtitle} from {@code content/texts/message.yaml}: "You are now level %1$s" */
+    public static final String MESSAGE_LEVEL_UP_SUBTITLE = "message.realmforge.level_up_subtitle";
+
+    /** {@code message.realmforge.xp_gained} from {@code content/texts/message.yaml}: "+%1$s XP" */
+    public static final String MESSAGE_XP_GAINED = "message.realmforge.xp_gained";
 
     /** {@code resource.realmforge.mana} from {@code content/texts/resource.yaml}: "Mana" */
     public static final String RESOURCE_MANA = "resource.realmforge.mana";
