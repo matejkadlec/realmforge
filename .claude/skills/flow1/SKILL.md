@@ -1,6 +1,6 @@
 ---
 name: flow1
-description: Autonomously select and deliver a coherent batch of 1-N tickets from the active RLM Jira sprint (Next first, then To Do), pulling unfinished dependencies into the batch and keeping Next filled by priority. Claims the tickets, implements the batch in its own git worktree and validates it. An AI-only batch is published as one ready pull request and carried to its merge with monitor-pr; a gameplay batch is pushed without a pull request and handed to Matěj for a playtest, which he answers with qa1 or qa2. Never implements decision tickets or tickets waiting on Matěj; lists them instead. Takes an optional run location: "flow1 cloud" (the default) selects only work a cloud session can do and stops when none is left; "flow1 local" selects work only a local session can do first, then goes by normal priority. Use when the user says "flow1", "flow1 cloud" or "flow1 local", or asks the agent to pick up and deliver sprint work.
+description: Autonomously select and deliver a coherent batch of 1-N tickets from the active RLM Jira sprint (Next first, then To Do), pulling unfinished dependencies into the batch and keeping Next filled by priority. Claims the tickets, implements the batch in its own git worktree and validates it. An AI-only batch is published as one ready pull request and carried through its independent review to its merge with finalize-pr; a gameplay batch is pushed without a pull request and handed to Matěj for a playtest, which he answers with qa1 or qa2. Never implements decision tickets or tickets waiting on Matěj; lists them instead. Takes an optional run location: "flow1 cloud" (the default) selects only work a cloud session can do and stops when none is left; "flow1 local" selects work only a local session can do first, then goes by normal priority. Use when the user says "flow1", "flow1 cloud" or "flow1 local", or asks the agent to pick up and deliver sprint work.
 ---
 
 # flow1: autonomous batch delivery
@@ -51,8 +51,8 @@ Name the mode in the batch announcement.
    `docs/roadmap.md` only as Matěj decided it), verify that the remote head is your final commit, record the
    `🤖 Claude QA` summary on each ticket, move the tickets to Pending CR, and hand off with the status overview from
    `CLAUDE.md`. The roadmap holds no status, so a finished task changes only its ticket.
-10. **AI-only batch: monitor to the merge, always.** Do not end the turn at the handoff: in the same run, local or
-    cloud, run [`monitor-pr`](../monitor-pr/SKILL.md) on that pull request until it merges or reaches one of its
+10. **AI-only batch: review and merge, always.** Do not end the turn at the handoff: in the same run, local or
+    cloud, run [`finalize-pr`](../finalize-pr/SKILL.md) on that pull request until it merges or reaches one of its
     stops (_After publication_). A batch is not delivered until its pull request has merged.
 11. **Playtest batch: hand off and stop** under _Playtest handoff_: push the branch and open **no pull request**,
     record the `🎮 Playtest handoff` on each ticket, move the tickets to Pending User QA, keep the branch and the

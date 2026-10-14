@@ -25,8 +25,9 @@ revising; this skill may not weaken either. _qa2: changes required_ there holds 
    the _Gradle queue_), then commit.
 5. **Push** the revision (`--force-with-lease` after a rebase) and read the remote head back. Open no pull request.
    A batch whose pull request waits for a reconfirmation (_Reconfirmation_) gets the new head on that pull
-   request, and its `monitor-pr` run carries on. Such a `qa2` belongs in the session whose `monitor-pr` run owns
-   the pull request; in any other session, ask Matěj first whether that run has stopped, as `qa1` does.
+   request, and its `finalize-pr` run carries on (the new head gets its review pass). Such a `qa2` belongs in the
+   session whose `finalize-pr` run owns the pull request; in any other session, ask Matěj first whether that run
+   has stopped, as `qa1` does.
 6. **Record and move:** on each affected ticket, a new `🎮 Playtest handoff` for the revision (what changed, the
    new head, a What to test limited to it), which makes the new head the one Matěj plays next; then move the
    tickets back to Pending User QA. The batch keeps its playtest slot through the revision.
