@@ -50,8 +50,8 @@ public record CharacterCreationView(List<RaceOption> races) {
     private static ClassOption playerClass(ResourceKey<PlayerClass> key, PlayerClass playerClass) {
         List<Component> kit = new ArrayList<>();
         for (KitItem item : playerClass.startingKit()) {
-            kit.add(Component.translatable(GeneratedTexts.GUI_KIT_ITEM, new ItemStack(item.item()).getHoverName(),
-                    item.count()));
+            Component name = new ItemStack(item.item()).getHoverName();
+            kit.add(item.count() == 1 ? name : Component.translatable(GeneratedTexts.GUI_KIT_ITEM, name, item.count()));
         }
         Component resource = Component.translatable(GeneratedTexts.GUI_CLASS_RESOURCE,
                 Component.translatable(playerClass.resource().value().name()));

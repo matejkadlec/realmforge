@@ -65,7 +65,7 @@ texts:
     en_us: "Resource: %1$s"
   starting_kit:
     en_us: Starting Kit
-  # An item of the starting kit: "Bread ×8" (%1$s the item, %2$s the count).
+  # An item of the starting kit that comes more than once: "Bread ×8" (%1$s the item, %2$s the count).
   kit_item:
     en_us: "%1$s ×%2$s"
   # A bonus that grows with the level: "+5 Strength (+1 per Level)" (%1$s the bonus at level 1, %2$s the growth).

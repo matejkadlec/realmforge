@@ -33,19 +33,27 @@ public final class CharacterCreation {
     /** The creation rules, without changing anything: what {@link #create} would do. */
     public static Result check(CharacterData current, HolderLookup.Provider registries, ResourceKey<Race> race,
             ResourceKey<PlayerClass> playerClass) {
+        Optional<Race> raceEntry = registries.lookupOrThrow(CharacterRegistries.RACE).get(race).map(Holder::value);
+        boolean classExists = registries.lookupOrThrow(CharacterRegistries.CLASS).get(playerClass).isPresent();
+        return check(current, raceEntry, classExists, playerClass);
+    }
+
+    /**
+     * The creation rules on entries already looked up: the player has no character yet, the race and the class exist
+     * (an empty race, {@code classExists} false), and the race allows the class, checked in that order.
+     */
+    public static Result check(CharacterData current, Optional<Race> race, boolean classExists,
+            ResourceKey<PlayerClass> playerClass) {
         if (current.exists()) {
             return Result.ALREADY_CREATED;
         }
-        Optional<Holder.Reference<Race>> raceEntry = registries.lookupOrThrow(CharacterRegistries.RACE).get(race);
-        if (raceEntry.isEmpty()) {
+        if (race.isEmpty()) {
             return Result.UNKNOWN_RACE;
         }
-        Optional<Holder.Reference<PlayerClass>> classEntry =
-                registries.lookupOrThrow(CharacterRegistries.CLASS).get(playerClass);
-        if (classEntry.isEmpty()) {
+        if (!classExists) {
             return Result.UNKNOWN_CLASS;
         }
-        return raceEntry.get().value().allows(playerClass) ? Result.CREATED : Result.CLASS_NOT_ALLOWED;
+        return race.get().allows(playerClass) ? Result.CREATED : Result.CLASS_NOT_ALLOWED;
     }
 
     /** Creates the player's character if the rules allow it, and returns what happened. */
