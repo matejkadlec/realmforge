@@ -19,3 +19,21 @@ loot_tables:
   stonevaults:*: null # the dungeon fills its chests (W4)
 entities:
   keep: [minecraft:painting, minecraft:item_frame, minecraft:glow_item_frame, minecraft:armor_stand]
+dress:
+  exclude: [dungeon/entrances/*]  # approved as they are
+  # Variety and decorations Matěj asked for in the gallery review (2026-10-14): the plainer a room, the more it
+  # gets (tools/realmforge_tools/rooms/dress.py). There is no cracked mossy stone brick block; mossy cobblestone
+  # takes its place.
+  floor:
+    target: 4
+    replace: [minecraft:cobblestone, minecraft:stone_bricks, minecraft:stone]
+    variants: [minecraft:mossy_cobblestone, minecraft:cracked_stone_bricks, minecraft:gravel]
+  walls:
+    target: 4
+    replace: [minecraft:stone_bricks, minecraft:cobblestone, minecraft:stone]
+    variants: [minecraft:cracked_stone_bricks, minecraft:mossy_stone_bricks, minecraft:mossy_cobblestone]
+  ceiling:
+    target: 3
+    replace: [minecraft:stone_bricks, minecraft:cobblestone, minecraft:stone]
+    variants: [minecraft:cracked_stone_bricks, minecraft:mossy_stone_bricks, minecraft:mossy_cobblestone]
+  decorations: [armor_stands, vines, cobwebs, barrels]

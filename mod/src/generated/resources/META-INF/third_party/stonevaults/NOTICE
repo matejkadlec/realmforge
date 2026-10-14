@@ -18,4 +18,6 @@ art/rooms/stonevaults/rules.yaml of the Realmforge repository:
 - jigsaws inside a room (mob and blocker stubs) replaced by the block they leave behind, and the
   connectors renamed realmforge:door (sides) and realmforge:shaft (up, down);
 - the containers' loot tables and every entity except paintings and item frames removed;
+- the rooms other than the entrances given more block variety (mossy, cracked and gravel variants on plain
+  floors, walls and ceilings) and decorations (vines, cobwebs, barrels, armor stands on stone brick stairs);
 - templates written back in a normalized form (blocks sorted, stored deflate).

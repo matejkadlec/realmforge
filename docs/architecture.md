@@ -1080,10 +1080,11 @@ Rooms are generated or imported; nobody has to build one by hand
   `.nbt`, `.schem` or `.litematic` files with a rules file that remaps blocks, block entities, jigsaw names and
   pools, container loot tables and entities and picks the files that are rooms
   ([tools/README](../tools/README.md#rooms)); the rules of each source live in `art/rooms/<source>/rules.yaml`
-  ([art/rooms](../art/rooms/README.md)). A4c imported 180 rooms from seven sources (Stonevaults, DungeonZ and its
-  Desert Dungeon addon, Dungeon Now Loading, YUNG's Better Dungeons, Moog's Voyager Structures, Mo' Structures):
-  only pieces that are rooms, hallways or stairs of a dungeon, with a connector, at most 32 blocks per axis, and no
-  copy of a vanilla template. On import, jigsaws inside a room (props, mobs, sub-pieces the source pulls in) become
+  ([art/rooms](../art/rooms/README.md)). A4c imported 122 rooms from five sources (Stonevaults, DungeonZ and its
+  Desert Dungeon addon, Dungeon Now Loading, Mo' Structures): only pieces that are rooms, hallways or stairs of a
+  dungeon, with a connector, at most 32 blocks per axis, and no copy of a vanilla template, and only what Matěj's
+  gallery review kept. The plainest sets are dressed on import (`rooms/dress.py`): mossy, cracked and gravel variants
+  on surfaces with too few materials, vines, cobwebs, barrels and armor stands, more the plainer the room. On import, jigsaws inside a room (props, mobs, sub-pieces the source pulls in) become
   the block they leave behind, every connector is named `realmforge:door` (sides) or `realmforge:shaft` (up, down)
   with the pool `minecraft:empty`, marker blocks the source's processors replace at generation (red wool for rock,
   stained glass for legs) become what those processors make of them, since our dungeons place templates without
@@ -1111,7 +1112,8 @@ Rooms are generated or imported; nobody has to build one by hand
   the connectors; markers come with the dungeon framework (W4) and the swappable blocks with the themes of the room
   generator (A4d). Generated rooms are also checked for reachability between their connectors and for headroom. In the
   game, `ContentRoomGameTests` (QA mod) loads every room through the structure manager, which upgrades an imported
-  room from its data version, and compares its size, jigsaws and air blocks with `GeneratedRoomExpectations`.
+  room from its data version, and compares its size, jigsaws and air blocks with `GeneratedRoomExpectations`; it
+  also places the smallest room with armor stands and checks that their armor survived the upgrade.
 
 ### 15.5 Instances
 

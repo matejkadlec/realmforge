@@ -128,8 +128,7 @@ The repository contains two products with different licenses:
   ([ADR 0028](docs/decisions/0028-dungeon-rooms-generated-or-imported.md)):
   - MIT: Stonevaults (TheGrimsey), DungeonZ (Globox_Z, Zura), Desert Dungeon (D1scoball, Globox_Z);
   - CC0 1.0: Dungeon Now Loading (Hexnowloading);
-  - LGPL-3.0: YUNG's Better Dungeons (YUNGNICKYOUNG, Acarii), Moog's Voyager Structures (FinnDog), Mo' Structures
-    (Frqnny).
+  - LGPL-3.0: Mo' Structures (Frqnny).
 - **The Realmforge modpack** (`pack/`: pack definition, configuration, quests): **All Rights Reserved**, no
   redistribution. See [pack/LICENSE](pack/LICENSE).
 

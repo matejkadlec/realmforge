@@ -4,8 +4,8 @@ The import rules of the third-party dungeon rooms in `content/rooms/third_party/
 ([ADR 0028](../../docs/decisions/0028-dungeon-rooms-generated-or-imported.md), A4c, RLM-120): one folder per source,
 each with the `rules.yaml` that `rf rooms import` reads ([tools/README](../../tools/README.md#rooms)). The rules
 record which pieces of a source are rooms (`include`, `exclude`, `max_size`) and how they become ours: renamed and
-custom blocks, jigsaws, loot tables, entities. Each source's `LICENSE` and `NOTICE` (and `COPYING` for LGPL-3.0) sit
-next to its rooms, not here.
+custom blocks, jigsaws, loot tables, entities, and for the plainest sets the variety and decorations of `dress`.
+Each source's `LICENSE` and `NOTICE` (and `COPYING` for LGPL-3.0) sit next to its rooms, not here.
 
 ## Sources
 
@@ -17,21 +17,32 @@ Every jar comes from Modrinth; the version id and the start of the file's sha512
 | `dungeonz` | DungeonZ 1.3.0+1.21.1 | MIT | `BOTC37SN` | `3783a778bd38306c` | `data/dungeonz/structure` |
 | `desert_dungeon` | Desert Dungeon (DungeonZ addon) 1.0.1 | MIT | `BHSd1fQe` | `08ac50635aac8036` | `data/dungeonz/structure` |
 | `dungeon_now_loading` | Dungeon Now Loading 2.2 (Forge 1.20.1) | CC0 1.0 | `ejP7ljqP` | `ea46ccef1705594a` | `data/dungeonnowloading/structures` |
-| `yungs_better_dungeons` | YUNG's Better Dungeons 26.1.2-NeoForge-6.1.1 | LGPL-3.0 | `e1qEvr8D` | `4e7a76ad46f8ca54` | `data/betterdungeons/structure` |
-| `moogs_voyager_structures` | Moog's Voyager Structures 5.1.3 (universal-1.21) | LGPL-3.0 | `PiFoSPXI` | `80e9e4a6543e8fc7` | `data/mvs/structure/1_21_0/cathedral`, then `1_21_9/cathedral` copied over it, as one folder `cathedral` |
 | `mo_structures` | Mo' Structures 1.6.0+1.21.8 (NeoForge) | LGPL-3.0 | `3ad5pb5R` | `bf6567162a7f1a2d` | `data/mostructures/structure` |
 
-Not imported: Moog's End Structures 2.1.1 (LGPL-3.0), which the research listed too. Its pieces are a ship's
-sections of up to 48 blocks per axis and surface buildings without connectors; none is a room.
+Not imported:
+
+- **Moog's End Structures** 2.1.1 (LGPL-3.0), which the research listed too: its pieces are a ship's sections of up
+  to 48 blocks per axis and surface buildings without connectors; none is a room.
+- **Rejected in Matěj's gallery review** (2026-10-14, RLM-120): YUNG's Better Dungeons 26.1.2-NeoForge-6.1.1
+  (LGPL-3.0; its zombie and skeleton dungeons are in nearly every modpack, so ours would look less unique, and the
+  skeleton dungeon is stone bricks throughout) and Moog's Voyager Structures 5.1.3 (LGPL-3.0; the crypt under its
+  cathedral did not look good). Their rules were removed; import them again only if Matěj changes his mind.
+- Single rooms the review rejected stay listed as `reject` in `content/rooms/third_party/review.yaml`, so importing
+  their source again skips them.
+
+The same review accepted Stonevaults' dungeons and Dungeon Now Loading's labyrinth only with more block variety:
+their rules `dress` them (`tools/realmforge_tools/rooms/dress.py`, [tools/README](../../tools/README.md#rooms)),
+giving the plainer surfaces mossy, cracked and gravel variants and adding vines, cobwebs, barrels and armor stands on
+pedestals, most of it to the corridors. Stonevaults' entrances, which the review accepted as they were, are left out.
 
 Some sources build with marker blocks that their processors replace when the structure generates (Dungeon Now
-Loading's red wool is the rock around a room, YUNG's magenta glass a leg). Our dungeons place the templates without
+Loading's red wool is the rock around a room). Our dungeons place the templates without
 those processors, so the rules map each marker to what the processor always, or nearly always, makes of it; random
 decay (mossy or cracked variants) is left to our themes.
 
 Each license was checked at the version imported (2026-10-14); the `NOTICE` says where it is stated, and where
-sources disagreed (Moog's Voyager Structures: LGPL-3.0 in the jar and repository, MIT on Modrinth; Dungeon Now
-Loading: CC0 in the jar, MIT on Modrinth, repository gone) the import follows the jar. None of the imported pieces
+sources disagreed (Dungeon Now Loading: CC0 in the jar, MIT on Modrinth, repository gone) the import follows the
+jar. None of the imported pieces
 copies a vanilla template: each was compared with 26.1.2's templates of the same footprint. The closest copies,
 Mo' Structures' abandoned village temples, are not imported.
 
