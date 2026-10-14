@@ -91,8 +91,8 @@ Rules:
   edits a template by hand. Validation checks the size (at most 48 blocks per axis), the template's data version
   (required, no newer than the game's), every block, block entity and entity id and every container's loot table
   against the ID universe, that jigsaws sit on the room's boundary, facing out, and that every jigsaw's pool is a
-  vanilla template pool (`minecraft:empty` when it names none) or a room pool some sidecar lists. Imported rooms live in
-  `rooms/third_party/<source>/` next to the source's `LICENSE` and `NOTICE` (and, for an LGPL-3.0 source,
+  vanilla template pool (`minecraft:empty` when it names none) or a room pool some sidecar lists. Imported rooms
+  live in `rooms/third_party/<source>/` next to the source's `LICENSE` and `NOTICE` (and, for an LGPL-3.0 source,
   `COPYING`, the GPL-3.0 text), which validation requires and `rf gen` copies to the jar's
   `META-INF/third_party/<source>/`; an imported room elsewhere must be one we built ourselves, marked
   `source.ours: true` (`rf rooms import --ours`). The import rules of each source are in
