@@ -155,11 +155,18 @@ on its behalf. Before each push, run `git fetch origin` again and confirm that t
 your work is based on, then push with `--force-with-lease=<branch>:<that sha>` so the push fails if it moved in
 between. A remote head that moved under you is new work to read first, never something to overwrite.
 
+**Sync before any work on the branch** (a review pass, a conflict resolution, a thread or check fix): run
+`git fetch origin` and compare the local branch with the pull request's current head. Fast-forward a clean local
+branch that is strictly behind (`git merge --ff-only`). A local branch that is ahead of the head or has diverged
+from it (for example with commits a Blocked pass left behind), or uncommitted changes, is not this run's to
+reconcile alone: change nothing and go to "User needed". The synced SHA is that work's starting head.
+
 ## Review pass
 
 A pass reviews the pull request's current head in up to **3 rounds** and ends with at most one push. Number the
 rounds across the whole pull request (the first pass has rounds 1 to 3, a later pass continues the count); the
-count drives "Late rounds".
+count drives "Late rounds". A pass starts with the sync above, and its first bundle's head SHA must equal the
+starting head it recorded.
 
 1. **Build the review bundle** in the session scratchpad directory (or a `mktemp -d` directory outside the
    repository), never inside the repository, for round `<k>`:
