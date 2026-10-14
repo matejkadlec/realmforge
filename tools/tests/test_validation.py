@@ -26,7 +26,7 @@ def problems_for(repo: RepoPaths) -> list[str]:
 
 def test_repository_content_is_valid() -> None:
     content, universe = load_and_validate(RepoPaths())
-    assert [e.model.id for e in content.items] == ["test_item"]
+    assert [e.model.id for e in content.items] == ["stone_wand", "test_item"]
     assert universe.contains("minecraft:item", "realmforge:test_item")
 
 

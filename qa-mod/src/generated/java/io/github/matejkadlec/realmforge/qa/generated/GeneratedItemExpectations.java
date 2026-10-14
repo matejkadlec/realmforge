@@ -13,6 +13,11 @@ public final class GeneratedItemExpectations {
 
     public static final List<ItemExpectation> ITEMS = List.of(
             new ItemExpectation(
+                    "realmforge:stone_wand",
+                    "item.realmforge.stone_wand",
+                    1,
+                    List.of("minecraft:combat")),
+            new ItemExpectation(
                     "realmforge:test_item",
                     "item.realmforge.test_item",
                     16,

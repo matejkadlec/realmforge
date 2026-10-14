@@ -30,17 +30,17 @@ public final class GeneratedClassExpectations {
                     "class.realmforge.mage.name",
                     "class.realmforge.mage.description",
                     "realmforge:mana",
-                    List.of(new KitItem("minecraft:wooden_sword", 1), new KitItem("minecraft:bread", 8)),
+                    List.of(new KitItem("realmforge:stone_wand", 1), new KitItem("minecraft:bread", 32)),
                     List.of(
-                            new Sample(1, List.of(new Bonus("realmforge:class/realmforge/0/mage", "realmforge:intellect", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/mage", "realmforge:vitality", "add_value", 2.0), new Bonus("realmforge:class/realmforge/2/mage", "realmforge:dexterity", "add_value", 1.0))),
-                            new Sample(2, List.of(new Bonus("realmforge:class/realmforge/0/mage", "realmforge:intellect", "add_value", 6.0), new Bonus("realmforge:class/realmforge/1/mage", "realmforge:vitality", "add_value", 2.5), new Bonus("realmforge:class/realmforge/2/mage", "realmforge:dexterity", "add_value", 1.0))),
-                            new Sample(10, List.of(new Bonus("realmforge:class/realmforge/0/mage", "realmforge:intellect", "add_value", 14.0), new Bonus("realmforge:class/realmforge/1/mage", "realmforge:vitality", "add_value", 6.5), new Bonus("realmforge:class/realmforge/2/mage", "realmforge:dexterity", "add_value", 1.0))))),
+                            new Sample(1, List.of(new Bonus("realmforge:class/realmforge/0/mage", "realmforge:intellect", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/mage", "realmforge:vitality", "add_value", 2.0), new Bonus("realmforge:class/realmforge/2/mage", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:class/realmforge/3/mage", "realmforge:max_mana", "add_value", 100.0), new Bonus("realmforge:class/realmforge/4/mage", "realmforge:mana_regeneration", "add_value", 5.0))),
+                            new Sample(2, List.of(new Bonus("realmforge:class/realmforge/0/mage", "realmforge:intellect", "add_value", 6.0), new Bonus("realmforge:class/realmforge/1/mage", "realmforge:vitality", "add_value", 2.5), new Bonus("realmforge:class/realmforge/2/mage", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:class/realmforge/3/mage", "realmforge:max_mana", "add_value", 100.0), new Bonus("realmforge:class/realmforge/4/mage", "realmforge:mana_regeneration", "add_value", 5.0))),
+                            new Sample(10, List.of(new Bonus("realmforge:class/realmforge/0/mage", "realmforge:intellect", "add_value", 14.0), new Bonus("realmforge:class/realmforge/1/mage", "realmforge:vitality", "add_value", 6.5), new Bonus("realmforge:class/realmforge/2/mage", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:class/realmforge/3/mage", "realmforge:max_mana", "add_value", 100.0), new Bonus("realmforge:class/realmforge/4/mage", "realmforge:mana_regeneration", "add_value", 5.0))))),
             new ClassExpectation(
                     "realmforge:warrior",
                     "class.realmforge.warrior.name",
                     "class.realmforge.warrior.description",
                     "realmforge:rage",
-                    List.of(new KitItem("minecraft:stone_sword", 1), new KitItem("minecraft:shield", 1), new KitItem("minecraft:bread", 8)),
+                    List.of(new KitItem("minecraft:stone_sword", 1), new KitItem("minecraft:shield", 1), new KitItem("minecraft:leather_helmet", 1), new KitItem("minecraft:leather_chestplate", 1), new KitItem("minecraft:leather_leggings", 1), new KitItem("minecraft:leather_boots", 1), new KitItem("minecraft:bread", 32)),
                     List.of(
                             new Sample(1, List.of(new Bonus("realmforge:class/realmforge/0/warrior", "realmforge:strength", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/warrior", "realmforge:vitality", "add_value", 4.0), new Bonus("realmforge:class/realmforge/2/warrior", "realmforge:dexterity", "add_value", 2.0))),
                             new Sample(2, List.of(new Bonus("realmforge:class/realmforge/0/warrior", "realmforge:strength", "add_value", 6.0), new Bonus("realmforge:class/realmforge/1/warrior", "realmforge:vitality", "add_value", 5.0), new Bonus("realmforge:class/realmforge/2/warrior", "realmforge:dexterity", "add_value", 2.0))),

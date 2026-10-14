@@ -71,7 +71,8 @@ Rules:
 - `races/` and `classes/` define who a player can be ([architecture 10.1](../docs/architecture.md#101-races-and-classes)).
   A race lists the classes it may take (each must exist, and every class must be open to some race) and gives
   `modifiers`; a class names its `resource` (`realmforge:mana` or `realmforge:rage`), gives `modifiers` and a
-  `starting_kit` (items with a `count` of 1 to 64, given once when the character is created). A modifier is the
+  `starting_kit` (items with a `count` of 1 to 64, given once when the character is created; every class's kit
+  holds Bread ×32, Matěj, 2026-10-14, which validation checks). A modifier is the
   stat rules' shape (`attribute`, `operation`, `amount` or `amount_percent`, in the same units) plus an optional
   growth for every level above 1 (`per_level` or `per_level_percent`, in the amount's unit): `amount: 5, per_level:
   1` gives 5 at level 1 and 14 at level 10. A race's or class's `name` is a label (Title Case); its `description`

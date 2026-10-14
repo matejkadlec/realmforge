@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=../../tools/schemas/classes.schema.json
-# The M1 caster (decision D1, RLM-51): intellect, growing every level. Its spells come in C4; until then it fights
-# with the wooden sword of its kit.
+# The M1 caster (decision D1, RLM-51): intellect, growing every level. A caster starts with 100 Max Mana and 5 Mana
+# Regeneration, 5 mana a second (Matěj, 2026-10-14). Its spells come in C4, its wand later; the kit holds a
+# placeholder until then.
 id: mage
 name:
   en_us: Mage
@@ -11,6 +12,8 @@ modifiers:
   - {attribute: realmforge:intellect, operation: add_value, amount: 5, per_level: 1}
   - {attribute: realmforge:vitality, operation: add_value, amount: 2, per_level: 0.5}
   - {attribute: realmforge:dexterity, operation: add_value, amount: 1}
+  - {attribute: realmforge:max_mana, operation: add_value, amount: 100}
+  - {attribute: realmforge:mana_regeneration, operation: add_value, amount: 5}
 starting_kit:
-  - {item: minecraft:wooden_sword}
-  - {item: minecraft:bread, count: 8}
+  - {item: realmforge:stone_wand}
+  - {item: minecraft:bread, count: 32}

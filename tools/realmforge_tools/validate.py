@@ -13,6 +13,7 @@ from realmforge_tools.problems import Problem, ValidationFailed
 from realmforge_tools.project import MOD_ID, RepoPaths
 from realmforge_tools.rooms.check import check_structure
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES
+from realmforge_tools.schema.character import STARTING_BREAD
 from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
 
@@ -275,7 +276,8 @@ def _check_spell_schools(content: Content, universe: IdUniverse) -> list[Problem
 
 def _check_characters(content: Content, universe: IdUniverse) -> list[Problem]:
     """Races name classes that exist, and every class is open to some race, or no player could take it. Modifiers
-    name attributes that exist, in their unit as for stat rules (architecture 8.3); kit items exist."""
+    name attributes that exist, in their unit as for stat rules (architecture 8.3); kit items exist, and every kit
+    holds the starting bread."""
     problems: list[Problem] = []
     stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
     class_registry = f"{MOD_ID}:class"
@@ -316,8 +318,18 @@ def _check_characters(content: Content, universe: IdUniverse) -> list[Problem]:
                             f"{modifier.attribute} counts points: add_value takes amount, not amount_percent",
                         )
                     )
+    bread, bread_count = STARTING_BREAD
     for entry in content.classes:
         class_id = f"{MOD_ID}:{entry.model.id}"
+        kit_bread = sum(item.count for item in entry.model.starting_kit if item.item == bread)
+        if kit_bread != bread_count:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "starting_kit",
+                    f"every class starts with {bread} x{bread_count} (Matěj, 2026-10-14); this kit has {kit_bread}",
+                )
+            )
         if class_id not in taken:
             problems.append(
                 Problem(

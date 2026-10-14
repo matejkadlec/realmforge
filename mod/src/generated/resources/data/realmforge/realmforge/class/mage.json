@@ -19,16 +19,26 @@
       "attribute": "realmforge:dexterity",
       "operation": "add_value",
       "amount": 1.0
+    },
+    {
+      "attribute": "realmforge:max_mana",
+      "operation": "add_value",
+      "amount": 100.0
+    },
+    {
+      "attribute": "realmforge:mana_regeneration",
+      "operation": "add_value",
+      "amount": 5.0
     }
   ],
   "starting_kit": [
     {
-      "item": "minecraft:wooden_sword",
+      "item": "realmforge:stone_wand",
       "count": 1
     },
     {
       "item": "minecraft:bread",
-      "count": 8
+      "count": 32
     }
   ]
 }

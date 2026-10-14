@@ -28,6 +28,7 @@ name: {en_us: Rogue}
 description: {en_us: Quick and quiet.}
 resource: realmforge:rage
 """
+BREAD = "  - {item: minecraft:bread, count: 32}\n"
 
 
 def problems_for(repo: RepoPaths) -> list[str]:
@@ -156,6 +157,21 @@ def test_kit_items_exist(repo: RepoPaths) -> None:
     assert_problem(repo, "starting_kit.0.item")
 
 
+def test_every_kit_holds_the_starting_bread(repo: RepoPaths) -> None:
+    write(repo.content / "races" / "elf.yaml", RACE.replace("[realmforge:warrior]", "[realmforge:rogue]"))
+    write(
+        repo.content / "classes" / "rogue.yaml",
+        CLASS + "starting_kit:\n  - {item: minecraft:bread, count: 8}\n",
+    )
+    assert_problem(repo, "every class starts with minecraft:bread x32")
+
+
+def test_starting_bread_may_come_in_several_entries(repo: RepoPaths) -> None:
+    write(repo.content / "races" / "elf.yaml", RACE.replace("[realmforge:warrior]", "[realmforge:rogue]"))
+    write(repo.content / "classes" / "rogue.yaml", CLASS + "starting_kit:\n" + BREAD.replace("32", "16") * 2)
+    load_and_validate(repo)
+
+
 def test_kit_counts_fit_a_stack(repo: RepoPaths) -> None:
     write(repo.content / "races" / "elf.yaml", RACE.replace("[realmforge:warrior]", "[realmforge:rogue]"))
     write(
@@ -192,7 +208,7 @@ def test_generated_data_and_lang(repo: RepoPaths) -> None:
         CLASS
         + "modifiers:\n"
         + "  - {attribute: realmforge:crit_chance, operation: add_value, amount_percent: 2, per_level_percent: 0.5}\n"
-        + "starting_kit:\n  - {item: minecraft:bread, count: 4}\n  - {item: minecraft:stick}\n",
+        + "starting_kit:\n  - {item: minecraft:bread, count: 32}\n  - {item: minecraft:stick}\n",
     )
     files = generate(repo)
     rogue = json.loads(files[f"{DATA}/class/rogue.json"])
@@ -208,7 +224,7 @@ def test_generated_data_and_lang(repo: RepoPaths) -> None:
                 "per_level": 0.005,
             }
         ],
-        "starting_kit": [{"item": "minecraft:bread", "count": 4}, {"item": "minecraft:stick", "count": 1}],
+        "starting_kit": [{"item": "minecraft:bread", "count": 32}, {"item": "minecraft:stick", "count": 1}],
     }
     elf = json.loads(files[f"{DATA}/race/elf.json"])
     assert elf["classes"] == ["realmforge:rogue"]
@@ -222,7 +238,7 @@ def test_expectations_list_the_bonuses_at_sample_levels() -> None:
     files = generate(RepoPaths())
     classes = files[f"{QA}/GeneratedClassExpectations.java"].decode()
     assert '"realmforge:warrior"' in classes and '"realmforge:rage"' in classes
-    assert 'new KitItem("minecraft:bread", 8)' in classes
+    assert 'new KitItem("minecraft:bread", 32)' in classes
     # Warrior strength: 5 at level 1, +1 per level.
     assert (
         'new Bonus("realmforge:class/realmforge/0/warrior", "realmforge:strength", "add_value", 14.0)'

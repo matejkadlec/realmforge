@@ -24,6 +24,9 @@ FiniteNumber = Annotated[float, Field(allow_inf_nan=False)]
 RESOURCE_TYPES: tuple[str, ...] = (f"{MOD_ID}:mana", f"{MOD_ID}:rage")
 ResourceType = Literal["realmforge:mana", "realmforge:rage"]
 
+# Every class's starting kit holds this much bread (Matěj, 2026-10-14: "for both classes and any future classes").
+STARTING_BREAD: tuple[str, int] = ("minecraft:bread", 32)
+
 # Levels at which the pipeline and the game must agree on the bonuses (a GameTest compares them).
 SAMPLE_LEVELS: tuple[int, ...] = (1, 2, 10)
 

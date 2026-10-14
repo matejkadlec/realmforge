@@ -31,8 +31,24 @@
       "count": 1
     },
     {
+      "item": "minecraft:leather_helmet",
+      "count": 1
+    },
+    {
+      "item": "minecraft:leather_chestplate",
+      "count": 1
+    },
+    {
+      "item": "minecraft:leather_leggings",
+      "count": 1
+    },
+    {
+      "item": "minecraft:leather_boots",
+      "count": 1
+    },
+    {
       "item": "minecraft:bread",
-      "count": 8
+      "count": 32
     }
   ]
 }

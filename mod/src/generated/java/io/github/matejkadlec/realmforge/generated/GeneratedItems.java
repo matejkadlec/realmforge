@@ -14,6 +14,10 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class GeneratedItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Realmforge.MOD_ID);
 
+    /** {@code realmforge:stone_wand} from {@code content/items/stone_wand.yaml}. */
+    public static final DeferredItem<Item> STONE_WAND =
+            ITEMS.registerSimpleItem("stone_wand", properties -> properties.stacksTo(1));
+
     /** {@code realmforge:test_item} from {@code content/items/test_item.yaml}. */
     public static final DeferredItem<Item> TEST_ITEM =
             ITEMS.registerSimpleItem("test_item", properties -> properties.stacksTo(16));
@@ -29,6 +33,9 @@ public final class GeneratedItems {
 
     private static void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {
         switch (event.getTabKey().identifier().toString()) {
+            case "minecraft:combat" -> {
+                event.accept(STONE_WAND);
+            }
             case "minecraft:ingredients" -> {
                 event.accept(TEST_ITEM);
             }

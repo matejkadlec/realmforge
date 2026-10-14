@@ -13,4 +13,8 @@ modifiers:
 starting_kit:
   - {item: minecraft:stone_sword}
   - {item: minecraft:shield}
-  - {item: minecraft:bread, count: 8}
+  - {item: minecraft:leather_helmet}
+  - {item: minecraft:leather_chestplate}
+  - {item: minecraft:leather_leggings}
+  - {item: minecraft:leather_boots}
+  - {item: minecraft:bread, count: 32}
