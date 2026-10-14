@@ -6,6 +6,7 @@ import io.github.matejkadlec.realmforge.client.hud.HitDirectionHud;
 import io.github.matejkadlec.realmforge.client.input.CharacterSheetKey;
 import io.github.matejkadlec.realmforge.client.input.DarkVisionKey;
 import io.github.matejkadlec.realmforge.client.network.ClientPayloadHandlers;
+import io.github.matejkadlec.realmforge.client.screen.CharacterCreationScreen;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -22,6 +23,7 @@ public final class RealmforgeClient {
         // Client registration events (HUD layers, key mappings, renderers, screens) are added to modBus here.
         DarkVisionKey.register(modBus);
         CharacterSheetKey.register(modBus);
+        CharacterCreationScreen.register(modBus);
         CombatTextHud.register(modBus);
         HitDirectionHud.register(modBus);
     }
