@@ -69,7 +69,7 @@ add content to systems that already work instead of building them.
 | Area | M1 content |
 | --- | --- |
 | Race | 1 |
-| Classes | 2: a melee class and a caster (proposal D1: warrior-like with rage, mage-like with mana) |
+| Classes | 2: a melee class and a caster (decision D1: Warrior with rage, Mage with mana) |
 | Spells | 4-5 per class, covering a self-buff, a debuff, single target, AoE and one special spell (such as a blink) |
 | Talents | one tree per class, about 8-10 nodes in 3 tiers, including spell-modifying talents and one big-impact talent |
 | Leveling | levels 1-10 with a level cap; finishing chapter 1 raises the cap (proposal D2: 10, then 20) |
@@ -355,7 +355,7 @@ decided, which wins over the proposal here.
 
 | # | Ticket | Decision | Needed by | Proposal |
 | --- | --- | --- | --- | --- |
-| D1 | RLM-51 | The two M1 classes | C1 | a warrior-like melee class (rage) and a mage-like caster (mana): the most different pair, which tests both Better Combat melee and casting |
+| D1 | RLM-51 | The two M1 classes | C1 | **Decided 2026-10-11 (RLM-51): Warrior (melee, rage) and Mage (caster, mana)**, as proposed: the most different pair, which tests both Better Combat melee and casting. Hunter was the alternative to Mage; it would leave the spell system untested and needs a pet (M6), so it is a candidate for a later class |
 | D2 | RLM-52 | Level cap numbers | C2 | cap 10 during chapter 1, raised to 20 when it is finished |
 | D3 | RLM-53 | Character XP and vanilla XP | C2 | separate: character XP is never spent; vanilla XP stays the currency for enchanting and anvils until M5 decides its role |
 | D4 | RLM-54 | Spell key scheme | C3b | a separate spell bar with its own keys, leaving the item hotbar alone; spike 4 informs it |
