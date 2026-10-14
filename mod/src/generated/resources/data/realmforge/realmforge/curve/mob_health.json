@@ -1,0 +1,25 @@
+{
+  "name": "curve.realmforge.mob_health.name",
+  "points": [
+    {
+      "level": 1,
+      "value": 1.0
+    },
+    {
+      "level": 5,
+      "value": 1.4
+    },
+    {
+      "level": 10,
+      "value": 2.0
+    },
+    {
+      "level": 20,
+      "value": 3.5
+    },
+    {
+      "level": 60,
+      "value": 12.0
+    }
+  ]
+}

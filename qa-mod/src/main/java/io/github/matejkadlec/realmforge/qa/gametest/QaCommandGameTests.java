@@ -3,8 +3,13 @@ package io.github.matejkadlec.realmforge.qa.gametest;
 import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
+import io.github.matejkadlec.realmforge.mob.MobLevels;
+import io.github.matejkadlec.realmforge.mob.MobScaling;
 import io.github.matejkadlec.realmforge.qa.combat.TrainingDummy;
+import io.github.matejkadlec.realmforge.qa.command.MobCommands;
 import java.util.List;
+import java.util.Locale;
+import java.util.OptionalInt;
 import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
@@ -13,8 +18,10 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.world.entity.Display;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -74,6 +81,29 @@ public final class QaCommandGameTests {
         AABB platform = new AABB(helper.absolutePos(BlockPos.ZERO)).inflate(8);
         helper.assertTrue(helper.getLevel().getEntitiesOfClass(Display.TextDisplay.class, platform).isEmpty(),
                 "and its label");
+        server.getPlayerList().remove(player);
+        helper.succeed();
+    }
+
+    /** W1's playtest: {@code /qa level} rescales a mob, {@code /qa mob} describes it. */
+    @QaGameTest
+    public static void mobCommandsSetAndShowAMobsLevel(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-mob-commands"));
+        player.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 0.5)), 0, 0);
+        Zombie zombie = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, new BlockPos(2, 1, 3));
+
+        run(server, player, "qa level 10 @n[type=zombie]");
+        helper.assertValueEqual(MobLevels.level(zombie), OptionalInt.of(10), "the zombie's level");
+        MobScaling scaling = MobScaling.at(helper.getLevel().registryAccess(), 10);
+        helper.assertTrue(Math.abs(zombie.getMaxHealth()
+                        - zombie.getAttribute(Attributes.MAX_HEALTH).getBaseValue() * scaling.health()) < 1e-4,
+                "level 10 scaled the zombie's maximum health");
+        String line = MobCommands.describe(zombie);
+        helper.assertTrue(line.startsWith("Zombie: Level 10, Health ") && line.contains(String.format(Locale.ROOT,
+                "(x%.2f)", scaling.health())), "/qa mob describes the zombie: " + line);
+        helper.assertValueEqual(MobCommands.describe(helper.spawn(EntityType.COW, new BlockPos(0, 1, 4))),
+                "Cow: No Level", "/qa mob on a cow");
         server.getPlayerList().remove(player);
         helper.succeed();
     }

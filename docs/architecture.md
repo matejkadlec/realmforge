@@ -100,7 +100,9 @@
    abilities are spells, so interrupts, dispels and crowd control work on bosses by design ("boss mechanics that
    tie in with the skills and talents" in the [vision](vision.md)).
 4. **One attribute model.** Every combat number is a vanilla or Realmforge attribute changed by modifiers with
-   stable ids, so all sources stack the same way and show up in tooltips.
+   stable ids, so all sources stack the same way and show up in tooltips. One exception: the damage multiple a mob's
+   level brings applies to each hit the mob causes, as arrows, explosions and thrown potions read no attribute
+   ([14.1](#141-mob-levels)).
 5. **Pure core, thin glue.** Formulas, generators, state machines and rule checks are plain Java with as few
    Minecraft types as possible, tested by JUnit in milliseconds. Event handlers only translate between Minecraft
    and that core.
@@ -458,6 +460,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:dark_vision` | `world` | players | whether Dark Vision is switched on (on by default) | not synced (the effect itself is) |
 | `realmforge:instance` | `dungeon` | players | the run's plot and the return point (spike 3); W4 adds the game mode to restore | not synced |
 | `realmforge:stat_tracker` | `stats` | players | when the stat modifiers were last recomputed and what a respawn owes the health ([8.2](#82-where-modifiers-come-from)); transient: not saved or copied | not synced |
+| `realmforge:pending_refill` | `mob` | mobs leveled as they spawn | a mark: refill the mob's health to its scaled maximum when it joins the level ([14.1](#141-mob-levels)); saved (a chunk-generation spawn waits in the chunk's data), not copied, removed at the join | not synced |
 
 - Values are immutable records with a `Codec` for saving and a `StreamCodec` for syncing, declared with
   `AttachmentType.builder(...).serialize(codec.fieldOf("value")).copyOnDeath().sync(predicate, streamCodec)`:
@@ -498,7 +501,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   cached level cap stays empty until C2 computes it. Every saved field is optional with a default, so an empty
   save reads as the default value.
 - `level` is copied on death, and NeoForge copies the same attachments when a mob converts (a zombie drowns,
-  `LivingConversionEvent.Post`), so the converted mob keeps its level; W1 makes its scaling follow
+  `LivingConversionEvent.Post`), so the converted mob keeps its level, and `mob` gives it that level's scaling
   ([14.1](#141-mob-levels)).
 
 ## 8. Stats and attributes
@@ -555,7 +558,7 @@ would remove both bonuses.
 | gear with fixed stats | vanilla, from the item's attribute modifiers | `realmforge:gear/<slot>/<n>` (generated) | while equipped |
 | affixes and gems (M2) | vanilla slots: `ItemAttributeModifierEvent` adds them to the stack's modifiers; curio slots (rings, trinkets): Curios' own modifier API, because Curios ignores vanilla equipment modifiers in its slots (*verify* in M2) | `realmforge:affix/<affix>/<slot>/<k>/<n>`: `<k>` counts repeats of the same affix or gem on one stack (two sockets with the same gem), and curio slots use their slot id and index as `<slot>` | while equipped |
 | status effects | vanilla, `MobEffect#addAttributeModifier` | the effect's | while active |
-| mob level | `mob`, at `FinalizeSpawnEvent` ([14.1](#141-mob-levels)) | `realmforge:mob_level/<n>` | saved with the mob, reapplied from its level and the current curves when it loads |
+| mob level | `mob`, when the mob gets its level ([14.1](#141-mob-levels)): health and armor (damage multiplies each hit instead) | `realmforge:mob_level/<attribute>` (`max_health`, `armor`) | saved with the mob, reapplied from its level and the current curves when it loads |
 
 "Saved, recomputed" means: `CharacterStats` writes these modifiers as permanent ones and rewrites the whole set
 whenever a source changes, and on the player's first tick after login or respawn. `stats/RecomputedModifiers` does
@@ -867,47 +870,73 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
 
 ### 14.1 Mob levels
 
-- `realmforge:dimension_rules` (owned by `world`) gives every dimension a level rule: by distance from the
-  dimension's origin and by depth, with some jitter, clamped to a range.
-- In `FinalizeSpawnEvent`, `mob` computes the level from the rules for the mob's dimension, writes it into
-  `realmforge:level` and applies scaling modifiers (health, damage, armor, from curves). Vanilla hostile mobs get
-  levels the same way as ours. Bosses take the fixed level from their definition.
+Built in W1 (RLM-31): `world/DimensionRules`, `world/MobLevelRule` and `mob/MobLevels`, with the scaling in
+`mob/MobScaling`.
+
+- **Which mobs:** every hostile mob, vanilla's and later ours: a `Mob` that carries vanilla's `Enemy` marker
+  (`MobLevels#getsLevel`). Animals, villagers and golems get none. Bosses take the fixed level from their definition
+  (W5).
+- **The rule:** `realmforge:dimension_rules` (owned by `world`, server only) gives a dimension an optional mob level
+  rule (`content/dimensions/`, [content README](../content/README.md)): the level at the dimension's origin (x 0,
+  z 0), one level more every `blocks_per_level` blocks of horizontal distance from it, one more for every
+  `depth.blocks_per_level` blocks below `depth.below_y`, then a random jitter of up to `jitter` levels either way,
+  all clamped to `min_level .. max_level`. `MobLevelRule` is plain Java, and the pipeline computes the same
+  (`MobLevelRuleDef.level_at`); a GameTest compares the two at sample positions. A dimension without a rule (the
+  Nether and End for now) gives no level, and its mobs read as level 1. The Overworld's first numbers: level 1 at
+  the origin, one more every 500 blocks up to 5, one more per 32 blocks below y 0, jitter 1.
+- **The scaling** (`MobScaling`) comes from three curves at the mob's level: `realmforge:mob_health` multiplies its
+  maximum health, `mob_armor` adds armor points, and `mob_damage` multiplies the damage of every hit it causes. The
+  first two are permanent attribute modifiers, `realmforge:mob_level/max_health` (on the base, as vanilla's leader
+  zombie bonus) and `realmforge:mob_level/armor` ([8.2](#82-where-modifiers-come-from)), saved with the mob. Damage
+  is a multiplier on `LivingIncomingDamageEvent` for every hit whose causing entity (`DamageSource#getEntity`) is a
+  leveled mob, so arrows, explosions and thrown potions grow with the level too; only melee reads the attack damage
+  attribute. The shipped curves add nothing at level 1, and a curve a data pack removed adds nothing.
+- **At spawn:** in `FinalizeSpawnEvent`, `mob` rolls the level from the rules of the mob's dimension at the spawn
+  position, writes it into `realmforge:level` and applies the scaling. A mob spawned with a new chunk
+  (`NaturalSpawner#spawnMobsForChunkGeneration`, structure pieces such as a monument's guardians) is finalized on a
+  world generation thread, in a `WorldGenRegion`; setting the synced level there would read the server's entity
+  tracking (`ChunkMap#getPlayersWatching`) from that thread, so the event only marks such a mob, and its join, on
+  the server thread, rolls the level and refills it.
 - **Health refill on join:** the constructor filled health from the unscaled maximum, and raising the maximum does
   not refill it. NeoForge posts `FinalizeSpawnEvent` before vanilla's `Mob#finalizeSpawn`, which can still raise
-  the maximum (the leader zombie bonus), so `mob` sets health to the maximum only when the mob joins the level
-  (`EntityJoinLevelEvent`), and only for a mob leveled in this spawn: never for one loaded from disk
-  (`loadedFromDisk`) or moving between dimensions.
-- Some spawns skip `finalizeSpawn` and with it this event: slime splits (`Slime#remove`), silverfish from infested
-  blocks, `GameTestHelper#spawn`. Split children copy the parent's level and scaling in `MobSplitEvent`
-  (`getParent`, `getChildren`). Any other mob that joins without a level (checked with `hasData`) goes through an
-  `EntityJoinLevelEvent` fallback that runs the same leveling as `FinalizeSpawnEvent`: the level from the rules,
-  the scaling modifiers, then the health refill. So the default level never passes for an assigned one, and no mob
-  carries a level without its scaling.
-- **Conversions** (`Mob#convertTo`: a zombie drowns, a skeleton turns into a stray, a piglin or hoglin zombifies)
-  add the new mob with `addFreshEntity`, so the fallback above levels and scales it from the rules, and players
-  nearby already receive that level when they start tracking it. Only then does the caller post
-  `LivingConversionEvent.Post`, where NeoForge (`AttachmentInternals.onLivingConvert`) copies the old mob's
-  copy-on-death attachments onto the new one, `realmforge:level` included ([7](#7-player-state)), without syncing
-  them (`IEntityExtension#copyAttachmentsFrom`). Left alone, XP, loot and armor would use the old mob's level while
-  health and damage stay scaled for the rules' level, and clients would keep showing the rules' level. So `mob`
-  listens to `LivingConversionEvent.Post` at `EventPriority.LOW`, after NeoForge's copy: a new mob of a kind that
-  gets levels keeps the level it holds after the copy (the old mob's, or the fallback's when the old mob had none),
-  gets its scaling reapplied from it (as for a mob loaded from disk, keeping its health fraction), and is synced
-  with `syncData`; one of a kind that does not (a zombie villager cured into a villager) loses the level through
-  `removeData`, which syncs. The two lightning conversions differ. `Pig#thunderHit` posts the event before it adds
-  the zombified piglin, so the listener finds no level there and leaves the mob to the join fallback.
-  `Villager#thunderHit` calls `finalizeSpawn` on the witch first, and NeoForge's method-redirector coremod (its
-  `finalize_spawn_targets.json` lists `Villager`) turns that call into `EventHooks.finalizeMobSpawn`: so
-  `FinalizeSpawnEvent` levels and scales the witch before the conversion event, the listener keeps that level
-  through its normal path, and the join fallback never runs for it. W1's GameTests convert a leveled mob (a piglin
-  summoned outside the Nether with `TimeInOverworld` 300 zombifies on its next tick) and check that its level and
-  scaled maximum health belong together.
+  the maximum (the leader zombie bonus), so the event marks the mob (`realmforge:pending_refill`,
+  [7](#7-player-state)) and `mob` sets its health to the maximum when it joins the level (`EntityJoinLevelEvent`),
+  removing the mark. A mob loaded from disk or moving between dimensions carries no mark and is never refilled. The
+  mark is saved because a mob spawned with a new chunk (`NaturalSpawner#spawnMobsForChunkGeneration`) waits in the
+  chunk's data until the chunk is added to the world, and joins only then.
+- **Rescaling keeps the share of health:** whenever `mob` changes a mob's scaling outside its spawn (a new level, a
+  loaded mob, a conversion), the mob keeps its share of its maximum health (`MobLevels#applyScaling`).
+- **Spawns without `finalizeSpawn`** skip the event: slime splits (`Slime#remove`), silverfish from infested
+  blocks, `GameTestHelper#spawn`. Split children copy the parent's level and get its scaling in `MobSplitEvent`
+  (`getParent`, `getChildren`). Any other mob that joins without a level (checked with `hasData`) is leveled in
+  `EntityJoinLevelEvent` the same way: the level from the rules and its scaling, keeping its share of health (a
+  fresh mob's is all of it). So the default level never passes for an assigned one, and no mob carries a level
+  without its scaling. A mob saved before W1 is leveled this way when it loads.
+- **Conversions** (`Mob#convertTo`: a zombie drowns, a skeleton turns into a stray, a piglin or hoglin zombifies, a
+  zombie villager is cured). In 26.1.2 every vanilla caller posts `LivingConversionEvent.Post` from the conversion's
+  callback, which `convertTo` runs before it adds the new mob with `addFreshEntity`. NeoForge's own listener
+  (`AttachmentInternals.onLivingConvert`, normal priority) copies the old mob's copy-on-death attachments onto the
+  new one, `realmforge:level` included ([7](#7-player-state)); `mob` listens at `EventPriority.LOW`, after the copy:
+  a new mob that gets a level keeps the level it now holds and gets that level's scaling, and is synced with
+  `syncData` (which reaches nobody before the add, and matters for a caller that adds first); a new mob of a kind
+  that gets none (a villager) loses the level through `removeData` and any scaling of ours. A new mob that holds no
+  level, because the old one had none (a pig struck by lightning), is left to the join fallback, which levels it
+  from the rules when the add follows. `Villager#thunderHit` calls `finalizeSpawn` on the witch first, and
+  NeoForge's method-redirector coremod (its `finalize_spawn_targets.json` lists `Villager`) turns that call into
+  `EventHooks.finalizeMobSpawn`: so `FinalizeSpawnEvent` levels and marks the witch, the villager has no level to
+  copy, the conversion listener keeps the witch's level, and its join refills it. Attributes are never copied by a
+  conversion (`ConversionType`), so the new mob starts with only the scaling `mob` gives it. W1's GameTests convert a
+  leveled piglin (summoned outside the Nether with its time there at 300 ticks, it zombifies on its next tick) and
+  check that the zombified piglin's level and scaling belong together.
 - **Saved mobs follow changed curves:** when a mob loads from disk (`EntityJoinLevelEvent` with `loadedFromDisk`),
-  `mob` reapplies the scaling from its stored level and the current curves, replacing its
-  `realmforge:mob_level/<n>` modifiers and keeping its health fraction. A release or data pack that changes a curve
-  then reaches old mobs too.
-- XP (`character`), loot (`loot`) and the armor formula (`combat`) read the level from `realmforge:level`. Jade
-  shows it through a compat plugin (*verify* Jade's API), the boss bar for bosses.
+  `mob` reapplies the scaling from its stored level and the current curves, replacing its `realmforge:mob_level/`
+  modifiers (removing any it no longer produces) and keeping its share of health. A release or data pack that changes
+  a curve then reaches old mobs too.
+- XP (`character`), loot (`loot`) and the armor formula (`combat`) read the level from `realmforge:level`. The level
+  shows with the mob's name and health bar, not apart from them (Matěj, 2026-10-14): through Neat, the pack's
+  health bar mod, if it can show it; otherwise through another health bar mod or a Neat add-on that can; otherwise
+  through health bars of our own (RLM-166, *verify* the chosen mod's API). Until then the dev game shows a mob's
+  level, health, armor and damage multiple with `/qa mob` ([20](#20-tests-per-layer)), the boss bar a boss's.
 
 ### 14.2 Custom mobs
 
@@ -1385,7 +1414,11 @@ that agents can read. So far:
 - `/qa instance enter|leave|build|free|list|cleanup|bench` from spike 3, and `/qa state show|reset [<entity>]` from
   F3, which prints or clears the player state attachments ([7](#7-player-state));
 - `/qa stats set <stat> <value> [<players>]`, `/qa stats reset|show` (F4b: points for a primary stat, percent for a
-  share) and `/qa level <level> [<entity>]` (the `realmforge:level` attachment, which the armor formula reads);
+  share) and `/qa level <level> [<entity>]` (the `realmforge:level` attachment, which the armor formula reads; a
+  hostile mob also gets the scaling of the level, W1);
+- `/qa mob [<entity>]` (W1): a mob's level, health over its maximum with the multiple its level added, armor with the
+  points its level added, and the damage multiple of its hits; without an argument, the nearest hostile mob within
+  32 blocks. The training dummy joins at level 1, which adds nothing;
 - `/qa dummy [<armor>]` (F5): a training dummy three blocks ahead, a husk that stands still and never dies. Its
   label, a text display riding it, shows its armor with the share of a hit it blocks at the nearest player's level
   ("15 Armor (50% Damage Reduction)") over its name with the DPS of the current session (it ends after 5 s without a

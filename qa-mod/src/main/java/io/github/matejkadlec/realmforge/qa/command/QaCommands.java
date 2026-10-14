@@ -5,8 +5,8 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 /**
  * The {@code /qa} developer commands (operators only): {@code /qa instance} for instances, {@code /qa state} for the
- * player state attachments, {@code /qa stats} and {@code /qa level} for stats and levels, {@code /qa dummy} for the
- * training dummy. Brigadier merges every registration of the {@code /qa} literal, so other QA tools register their own
+ * player state attachments, {@code /qa stats} and {@code /qa level} for stats and levels, {@code /qa mob} for a mob's
+ * level and scaling, {@code /qa dummy} for the training dummy. Brigadier merges every registration of the {@code /qa} literal, so other QA tools register their own
  * subtree under it (for example {@code /qa cast}).
  */
 public final class QaCommands {
@@ -20,6 +20,7 @@ public final class QaCommands {
                 .then(StateCommands.build())
                 .then(StatsCommands.build())
                 .then(LevelCommands.build())
+                .then(MobCommands.build())
                 .then(DummyCommands.build()));
     }
 }

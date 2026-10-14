@@ -17,11 +17,20 @@ public final class GeneratedCurves {
     /** {@code realmforge:armor_reduction_cap} from {@code content/curves/armor_reduction_cap.yaml}. */
     public static final ResourceKey<Curve> ARMOR_REDUCTION_CAP = key("armor_reduction_cap");
 
+    /** {@code realmforge:mob_armor} from {@code content/curves/mob_armor.yaml}. */
+    public static final ResourceKey<Curve> MOB_ARMOR = key("mob_armor");
+
+    /** {@code realmforge:mob_damage} from {@code content/curves/mob_damage.yaml}. */
+    public static final ResourceKey<Curve> MOB_DAMAGE = key("mob_damage");
+
+    /** {@code realmforge:mob_health} from {@code content/curves/mob_health.yaml}. */
+    public static final ResourceKey<Curve> MOB_HEALTH = key("mob_health");
+
     /** {@code realmforge:test_curve} from {@code content/curves/test_curve.yaml}. */
     public static final ResourceKey<Curve> TEST_CURVE = key("test_curve");
 
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Curve>> ALL = List.of(ARMOR_HALVING, ARMOR_REDUCTION_CAP, TEST_CURVE);
+    public static final List<ResourceKey<Curve>> ALL = List.of(ARMOR_HALVING, ARMOR_REDUCTION_CAP, MOB_ARMOR, MOB_DAMAGE, MOB_HEALTH, TEST_CURVE);
 
     private GeneratedCurves() {
     }

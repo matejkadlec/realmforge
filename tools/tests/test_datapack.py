@@ -45,7 +45,14 @@ def curve(points: str, extra: str = "") -> str:
 
 def test_repository_curves_are_valid() -> None:
     content, universe = load_and_validate(RepoPaths())
-    assert [e.model.id for e in content.curves] == ["armor_halving", "armor_reduction_cap", "test_curve"]
+    assert [e.model.id for e in content.curves] == [
+        "armor_halving",
+        "armor_reduction_cap",
+        "mob_armor",
+        "mob_damage",
+        "mob_health",
+        "test_curve",
+    ]
     assert universe.contains("realmforge:curve", "realmforge:test_curve")
 
 
@@ -128,8 +135,8 @@ def test_curve_outputs(repo: RepoPaths) -> None:
     keys = files[CURVE_KEYS].decode()
     assert 'public static final ResourceKey<Curve> TEST_CURVE = key("test_curve");' in keys
     assert (
-        "public static final List<ResourceKey<Curve>> ALL = List.of(ARMOR_HALVING, ARMOR_REDUCTION_CAP, TEST_CURVE);"
-        in keys
+        "public static final List<ResourceKey<Curve>> ALL = List.of(ARMOR_HALVING, ARMOR_REDUCTION_CAP, MOB_ARMOR, "
+        "MOB_DAMAGE, MOB_HEALTH, TEST_CURVE);" in keys
     )
 
     expectations = files[CURVE_EXPECTATIONS].decode()

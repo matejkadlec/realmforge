@@ -32,6 +32,21 @@ public final class GeneratedCurveExpectations {
                     List.of(new Point(1, 0.75)),
                     List.of(new Sample(0.0, 0.75), new Sample(1.0, 0.75), new Sample(2.0, 0.75))),
             new CurveExpectation(
+                    "realmforge:mob_armor",
+                    Optional.of("curve.realmforge.mob_armor.name"),
+                    List.of(new Point(1, 0.0), new Point(5, 2.0), new Point(10, 4.0), new Point(20, 8.0), new Point(60, 25.0)),
+                    List.of(new Sample(0.0, 0.0), new Sample(1.0, 0.0), new Sample(3.0, 1.0), new Sample(5.0, 2.0), new Sample(7.5, 3.0), new Sample(10.0, 4.0), new Sample(15.0, 6.0), new Sample(20.0, 8.0), new Sample(40.0, 16.5), new Sample(60.0, 25.0), new Sample(61.0, 25.0))),
+            new CurveExpectation(
+                    "realmforge:mob_damage",
+                    Optional.of("curve.realmforge.mob_damage.name"),
+                    List.of(new Point(1, 1.0), new Point(5, 1.2), new Point(10, 1.5), new Point(20, 2.2), new Point(60, 6.0)),
+                    List.of(new Sample(0.0, 1.0), new Sample(1.0, 1.0), new Sample(3.0, 1.1), new Sample(5.0, 1.2), new Sample(7.5, 1.35), new Sample(10.0, 1.5), new Sample(15.0, 1.85), new Sample(20.0, 2.2), new Sample(40.0, 4.1), new Sample(60.0, 6.0), new Sample(61.0, 6.0))),
+            new CurveExpectation(
+                    "realmforge:mob_health",
+                    Optional.of("curve.realmforge.mob_health.name"),
+                    List.of(new Point(1, 1.0), new Point(5, 1.4), new Point(10, 2.0), new Point(20, 3.5), new Point(60, 12.0)),
+                    List.of(new Sample(0.0, 1.0), new Sample(1.0, 1.0), new Sample(3.0, 1.2), new Sample(5.0, 1.4), new Sample(7.5, 1.7), new Sample(10.0, 2.0), new Sample(15.0, 2.75), new Sample(20.0, 3.5), new Sample(40.0, 7.75), new Sample(60.0, 12.0), new Sample(61.0, 12.0))),
+            new CurveExpectation(
                     "realmforge:test_curve",
                     Optional.of("curve.realmforge.test_curve.name"),
                     List.of(new Point(1, 0.0), new Point(10, 450.0), new Point(20, 1200.5)),

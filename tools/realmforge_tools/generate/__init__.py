@@ -14,6 +14,7 @@ from realmforge_tools.content import Content
 from realmforge_tools.generate import (
     curves,
     datapack,
+    dimension_rules,
     gametest,
     items,
     lang,
@@ -33,6 +34,7 @@ def generate_all(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         items.generate,
         datapack.generate,
         curves.generate,
+        dimension_rules.generate,
         stats.generate,
         spell_schools.generate,
         texts.generate,

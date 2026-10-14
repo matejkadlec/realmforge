@@ -7,6 +7,7 @@ import io.github.matejkadlec.realmforge.combat.DamageNumbers;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
+import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -46,6 +47,10 @@ import org.joml.Vector3f;
  * riding it, shows two lines (Matěj, 2026-10-13): the armor with the share of a hit it blocks at the nearest player's
  * level, and below it the name with the DPS. Vanilla draws no name tag over an entity that carries a passenger, so the
  * label carries the name too; it changes with every hit and every second.
+ *
+ * <p>A husk is a hostile mob, which gets a level and its scaling when it joins the world (W1, architecture 14.1). A
+ * dummy joins at level 1, which adds nothing, so its health and armor stay what it was given; {@code /qa level} still
+ * scales it like any hostile mob.
  */
 public final class TrainingDummy {
     /** The entity tag that marks a training dummy. */
@@ -89,6 +94,7 @@ public final class TrainingDummy {
         dummy.getAttributes().getInstance(Attributes.ARMOR).setBaseValue(armor);
         dummy.getAttributes().getInstance(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1);
         dummy.setHealth((float) MAX_HEALTH);
+        dummy.setData(StatsAttachments.LEVEL, EntityLevel.DEFAULT);
         level.addFreshEntity(dummy);
         showName(dummy, null);
         return dummy;

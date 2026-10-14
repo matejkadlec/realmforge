@@ -20,9 +20,14 @@ ITEM_REGISTRY = "minecraft:item"
 ATTRIBUTE_REGISTRY = "minecraft:attribute"
 CREATIVE_TAB_REGISTRY = "minecraft:creative_mode_tab"
 DAMAGE_TYPE_REGISTRY = "minecraft:damage_type"
+DIMENSION_REGISTRY = "minecraft:dimension"
 DIMENSION_TYPE_REGISTRY = "minecraft:dimension_type"
 SPELL_SCHOOL_REGISTRY = f"{MOD_ID}:spell_school"
 STRUCTURE_REGISTRY = "minecraft:structure"
+
+# Vanilla's dimensions (the level stems of its world presets). The registry report behind the vanilla ID universe
+# lists no minecraft:dimension registry, as a world's dimensions come from its preset, so they are named here.
+VANILLA_DIMENSIONS = ("minecraft:overworld", "minecraft:the_nether", "minecraft:the_end")
 
 # YAML content type -> the registry its ids live in.
 REGISTRY_OF_TYPE: dict[str, str] = {
@@ -58,6 +63,8 @@ def load_and_validate(paths: RepoPaths) -> tuple[Content, IdUniverse]:
 def universe_with_content(vanilla: IdUniverse, content: Content) -> IdUniverse:
     """The vanilla universe plus every id our content defines."""
     universe = copy.deepcopy(vanilla)
+    for dimension in VANILLA_DIMENSIONS:
+        universe.add(DIMENSION_REGISTRY, dimension)
     for type_dir, registry in REGISTRY_OF_TYPE.items():
         for entry in content.entries(type_dir):
             universe.add(registry, f"{MOD_ID}:{entry.model.id}")
@@ -82,6 +89,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_stat_rules(content, universe)
     problems += _check_spell_schools(content, universe)
     problems += _check_worldgen_references(content, universe)
+    problems += _check_dimension_rules(content, universe)
     problems += _check_text_groups(content)
     problems += _check_rooms(content, universe)
     return problems
@@ -308,6 +316,25 @@ def _check_worldgen_references(content: Content, universe: IdUniverse) -> list[P
             problems.append(
                 Problem(file.source, "type", _unknown(dimension_type, DIMENSION_TYPE_REGISTRY, universe))
             )
+    return problems
+
+
+def _check_dimension_rules(content: Content, universe: IdUniverse) -> list[Problem]:
+    """Each entry names a dimension that exists, and no two name the same one: the server indexes the rules by
+    dimension (architecture 5.2)."""
+    problems: list[Problem] = []
+    seen: dict[str, str] = {}
+    for entry in content.dimensions:
+        dimension = entry.model.dimension
+        if not universe.contains(DIMENSION_REGISTRY, dimension):
+            problems.append(
+                Problem(entry.source, "dimension", _unknown(dimension, DIMENSION_REGISTRY, universe))
+            )
+        if dimension in seen:
+            problems.append(
+                Problem(entry.source, "dimension", f"{dimension} already has rules in {seen[dimension]}")
+            )
+        seen.setdefault(dimension, entry.source)
     return problems
 
 

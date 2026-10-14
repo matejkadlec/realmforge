@@ -8,11 +8,12 @@ import io.github.matejkadlec.realmforge.core.Curve;
 import io.github.matejkadlec.realmforge.generated.GeneratedCurves;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpellSchools;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
+import io.github.matejkadlec.realmforge.mob.MobLevels;
+import io.github.matejkadlec.realmforge.mob.MobScaling;
 import io.github.matejkadlec.realmforge.qa.combat.CombatLog;
 import io.github.matejkadlec.realmforge.qa.combat.TrainingDummy;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
-import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.UUID;
@@ -48,7 +49,10 @@ public final class CombatGameTests {
     private CombatGameTests() {
     }
 
-    /** Our armor formula replaces vanilla's, at the attacker's level; damage that bypasses armor keeps it all. */
+    /**
+     * Our armor formula replaces vanilla's, at the attacker's level; damage that bypasses armor keeps it all. A
+     * leveled zombie's hit also grows with its level (W1), before the armor takes its share.
+     */
     @QaGameTest
     public static void armorReducesHitsByTheAttackersLevel(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
@@ -60,10 +64,11 @@ public final class CombatGameTests {
         assertDealt(helper, husk, level.damageSources().mobAttack(zombie), 10, 10 * (1 - blocked(helper, 20, 1)),
                 "a level 1 zombie against 15 armor and 5 toughness");
         settle(husk);
-        zombie.setData(StatsAttachments.LEVEL, new EntityLevel(20));
-        double atTwenty = 10 * (1 - blocked(helper, 20, 20));
-        helper.assertTrue(atTwenty > 10 * (1 - blocked(helper, 20, 1)), "a level 20 attacker meets less reduction");
-        assertDealt(helper, husk, level.damageSources().mobAttack(zombie), 10, atTwenty, "a level 20 zombie");
+        MobLevels.setLevel(zombie, 20);
+        helper.assertTrue(blocked(helper, 20, 20) < blocked(helper, 20, 1), "a level 20 attacker meets less reduction");
+        double hit = 10 * MobScaling.at(level.registryAccess(), 20).damage();
+        assertDealt(helper, husk, level.damageSources().mobAttack(zombie), 10, hit * (1 - blocked(helper, 20, 20)),
+                "a level 20 zombie");
         settle(husk);
         assertDealt(helper, husk, level.damageSources().magic(), 10, 10, "magic bypasses armor");
         helper.succeed();
@@ -236,16 +241,22 @@ public final class CombatGameTests {
         return SpellSchools.damage(helper.getLevel().registryAccess(), school, caster, caster);
     }
 
+    /** A zombie that stands still, at level 1, so its level neither scales its hits nor weakens the target's armor. */
     private static Zombie attacker(GameTestHelper helper) {
         Zombie zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(0, 1, 0));
         zombie.setNoAi(true);
+        MobLevels.setLevel(zombie, EntityLevel.MIN);
         return zombie;
     }
 
-    /** A husk that stands still with {@value #HEALTH} health, so no test kills it. */
+    /**
+     * A husk that stands still with {@value #HEALTH} health, so no test kills it, at level 1, so the armor its level
+     * would add is not there.
+     */
     private static Husk target(GameTestHelper helper) {
         Husk husk = helper.spawn(EntityType.HUSK, new BlockPos(2, 1, 2));
         husk.setNoAi(true);
+        MobLevels.setLevel(husk, EntityLevel.MIN);
         setBase(husk, Attributes.MAX_HEALTH, HEALTH);
         setBase(husk, Attributes.ARMOR, 0);
         setBase(husk, Attributes.KNOCKBACK_RESISTANCE, 1);

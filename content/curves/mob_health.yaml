@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/curves.schema.json
+# A leveled mob's maximum health, as a multiple of its vanilla maximum, by its level (architecture 14.1). 1 at level
+# 1 keeps vanilla; a zombie has 28 health at level 5 and 40 at level 10. W1's first numbers, tuned in playtests.
+id: mob_health
+name: {en_us: Mob Health}
+points:
+  - {level: 1, value: 1.0}
+  - {level: 5, value: 1.4}
+  - {level: 10, value: 2.0}
+  - {level: 20, value: 3.5}
+  - {level: 60, value: 12.0}

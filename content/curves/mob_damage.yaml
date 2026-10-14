@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../tools/schemas/curves.schema.json
+# The damage a leveled mob deals, as a multiple of what it would deal without a level, by its level (architecture
+# 14.1): every hit it causes, melee, arrows and explosions alike. 1 at level 1 keeps vanilla. W1's first numbers,
+# tuned in playtests.
+id: mob_damage
+name: {en_us: Mob Damage}
+points:
+  - {level: 1, value: 1.0}
+  - {level: 5, value: 1.2}
+  - {level: 10, value: 1.5}
+  - {level: 20, value: 2.2}
+  - {level: 60, value: 6.0}

@@ -1,0 +1,25 @@
+{
+  "name": "curve.realmforge.mob_damage.name",
+  "points": [
+    {
+      "level": 1,
+      "value": 1.0
+    },
+    {
+      "level": 5,
+      "value": 1.2
+    },
+    {
+      "level": 10,
+      "value": 1.5
+    },
+    {
+      "level": 20,
+      "value": 2.2
+    },
+    {
+      "level": 60,
+      "value": 6.0
+    }
+  ]
+}
