@@ -7,7 +7,7 @@ import net.minecraft.util.Mth;
  * What the magic shield's bar ({@link MagicShieldHud}) shows, without client classes, so JUnit covers it (Matěj,
  * 2026-10-14). The bar is the bottom row of hearts with a 1-pixel border, and every
  * {@value #POINTS_PER_TIER} points of shield fill it once, in a new colour, layered over the tier below, as Overflowing
- * Bars layers hearts: 25 points show blue over the left half and ocean over the rest.
+ * Bars layers hearts: 25 points show purple over the left half and blue over the rest.
  */
 final class MagicShieldBar {
     /** A row of ten hearts: nine pixels each, eight apart. */
@@ -15,22 +15,24 @@ final class MagicShieldBar {
     static final int ROW_HEIGHT = 9;
     /** The pixels inside the border, across. */
     static final int INNER_WIDTH = ROW_WIDTH - 2;
+    /** The pixels inside the border, down. */
+    static final int INNER_HEIGHT = ROW_HEIGHT - 2;
     /** The shield points that fill the bar once. */
     static final int POINTS_PER_TIER = 10;
     /**
-     * The tiers' colours, RGB, from the edge of the RGB colour wheel: cyan, ocean, blue, violet, magenta, raspberry.
-     * The last one covers everything from 50 points up.
+     * The tiers' colours, RGB (Matěj, 2026-10-14): light blue, blue, purple, magenta, red. The last one covers
+     * everything from 40 points up, and fills the bar from 50.
      */
-    static final int[] TIER_COLORS = {0x00FFFF, 0x007DFF, 0x0000FF, 0x7D00FF, 0xFF00FF, 0xFF007D};
-    /** The fill is translucent, so the hearts show through: about 45 %. */
-    private static final int FILL_ALPHA = 0x73;
+    static final int[] TIER_COLORS = {0x40B0FF, 0x2050FF, 0x9030FF, 0xFF30FF, 0xFF3030};
+    /** The fill is faint, so the hearts under it stay easy to read: about 18 % opaque. */
+    private static final int FILL_ALPHA = 0x2D;
 
     private MagicShieldBar() {
     }
 
     /**
-     * The tier the top layer of {@code points} is in: 0 (cyan) for up to 10 points, 1 (ocean) for up to 20, and so
-     * on, the last (raspberry) for everything above 50; -1 for an empty shield.
+     * The tier the top layer of {@code points} is in: 0 (light blue) for up to 10 points, 1 (blue) for up to 20, and
+     * so on, the last (red) for everything above 40; -1 for an empty shield.
      */
     static int tier(float points) {
         if (points <= 0) {

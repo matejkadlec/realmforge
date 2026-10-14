@@ -1436,14 +1436,14 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     player sees no numbers for damage taken.
   - The hit direction layer (`client/hud/HitDirectionHud`, after the MMM Indicators mod) draws a red arc around the
     crosshair toward each recent attacker for 1.5 s, turning with the camera and following the attacker.
-  - The magic shield layer (`client/hud/MagicShieldHud`, RLM-160; Matěj, 2026-10-14) draws a translucent bar over
-    the bottom row of hearts, inside a 1-pixel border with rounded corners (the straight edges stop 2 pixels short of
-    each corner, and one pixel closes the round). Every 10 shield points fill the bar once, in the next colour of the
-    RGB colour wheel's edge, layered over the tier below as Overflowing Bars layers hearts: cyan up to 10 points,
-    then ocean, blue, violet, magenta, and raspberry from 50 up; 25 points show blue over the left half and ocean over
-    the rest. The border takes the top tier's colour, halfway to white (`MagicShieldBar`). Nothing shows while the
-    shield is empty. A second layer, below vanilla's health layer, notes where that row goes (`Gui#leftHeight`), so
-    the bar follows layers that raise the left column.
+  - The magic shield layer (`client/hud/MagicShieldHud`, RLM-160; Matěj, 2026-10-14) draws a faint bar (about 18 %
+    opaque, so the hearts stay readable) over the bottom row of hearts, inside a 1-pixel border whose edges stop a
+    pixel short of each corner, which rounds the corners. Every 10 shield points fill the bar once, in the next
+    colour, layered over the tier below as Overflowing Bars layers hearts: light blue up to 10 points, then blue,
+    purple, magenta, and red from 40 up (full from 50); 25 points show purple over the left half and blue over the
+    rest. The border takes the top tier's colour, halfway to white (`MagicShieldBar`). Nothing shows while the shield
+    is empty. A second layer, below vanilla's health layer, notes where that row goes (`Gui#leftHeight`), so the bar
+    follows layers that raise the left column.
   - The character sheet (`client/screen/CharacterSheetScreen`, opened and closed by `client/input/CharacterSheetKey`,
     K by default) draws `character/CharacterSheetView`: the player's name and level in bold ("Steve · Lv. 12"),
     then four tabs of two columns (a click, the number keys, Tab or the arrow keys switch them). The heading and the
