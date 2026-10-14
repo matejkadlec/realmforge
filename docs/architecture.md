@@ -892,7 +892,11 @@ Built in W1 (RLM-31): `world/DimensionRules`, `world/MobLevelRule` and `mob/MobL
   leveled mob, so arrows, explosions and thrown potions grow with the level too; only melee reads the attack damage
   attribute. The shipped curves add nothing at level 1, and a curve a data pack removed adds nothing.
 - **At spawn:** in `FinalizeSpawnEvent`, `mob` rolls the level from the rules of the mob's dimension at the spawn
-  position, writes it into `realmforge:level` and applies the scaling.
+  position, writes it into `realmforge:level` and applies the scaling. A mob spawned with a new chunk
+  (`NaturalSpawner#spawnMobsForChunkGeneration`, structure pieces such as a monument's guardians) is finalized on a
+  world generation thread, in a `WorldGenRegion`; setting the synced level there would read the server's entity
+  tracking (`ChunkMap#getPlayersWatching`) from that thread, so the event only marks such a mob, and its join, on
+  the server thread, rolls the level and refills it.
 - **Health refill on join:** the constructor filled health from the unscaled maximum, and raising the maximum does
   not refill it. NeoForge posts `FinalizeSpawnEvent` before vanilla's `Mob#finalizeSpawn`, which can still raise
   the maximum (the leader zombie bonus), so the event marks the mob (`realmforge:pending_refill`,

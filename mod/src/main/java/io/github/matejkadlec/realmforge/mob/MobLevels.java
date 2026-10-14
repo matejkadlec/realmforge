@@ -30,7 +30,8 @@ import net.neoforged.neoforge.event.entity.living.MobSplitEvent;
  * <ul>
  *   <li>{@code FinalizeSpawnEvent} levels a spawning mob and marks it ({@link MobAttachments#PENDING_REFILL}); when it
  *   joins the level, its health is refilled to its maximum, as vanilla's {@code Mob#finalizeSpawn} runs after the
- *   event and may still raise that maximum (the leader zombie bonus).</li>
+ *   event and may still raise that maximum (the leader zombie bonus). A mob spawned with a new chunk is leveled at
+ *   its join instead.</li>
  *   <li>A slime's split children take the parent's level ({@code MobSplitEvent}).</li>
  *   <li>A mob that joins without a level, because its spawn skipped {@code finalizeSpawn} (silverfish from infested
  *   blocks, {@code GameTestHelper#spawn}) or it was saved before mob levels existed, is leveled from the rules then.</li>
@@ -94,15 +95,23 @@ public final class MobLevels {
         }
     }
 
-    /** Levels a spawning mob from the rules at its spawn position; its health is refilled when it joins. */
+    /**
+     * Levels a spawning mob from the rules at its spawn position and marks it, so its health is refilled when it
+     * joins. A mob spawned with a new chunk ({@code NaturalSpawner#spawnMobsForChunkGeneration}, structure pieces) is
+     * finalized on a world generation thread, where setting the synced level would read the server's entity tracking
+     * from that thread: it is only marked, and its join, on the server thread, levels it.
+     */
     static void onFinalizeSpawn(FinalizeSpawnEvent event) {
         Mob mob = event.getEntity();
         if (!getsLevel(mob)) {
             return;
         }
-        ServerLevel level = event.getLevel().getLevel();
-        OptionalInt rolled = levelAt(event.getLevel().registryAccess(), level.dimension(), event.getX(),
-                event.getY(), event.getZ(), mob.getRandom());
+        if (!(event.getLevel() instanceof ServerLevel level)) {
+            mob.setData(MobAttachments.PENDING_REFILL, Boolean.TRUE);
+            return;
+        }
+        OptionalInt rolled = levelAt(level.registryAccess(), level.dimension(), event.getX(), event.getY(),
+                event.getZ(), mob.getRandom());
         if (rolled.isPresent()) {
             setLevel(mob, rolled.getAsInt());
             mob.setData(MobAttachments.PENDING_REFILL, Boolean.TRUE);
@@ -110,24 +119,26 @@ public final class MobLevels {
     }
 
     /**
-     * Refills a mob leveled in its spawn, levels one that joins without a level (its share of health kept), and
-     * rescales one loaded from disk. A mob moving between dimensions keeps what it has.
+     * Levels a mob that joins without a level (keeping its share of health), rescales one loaded from disk, and
+     * refills a marked one, leveled in its spawn. A mob moving between dimensions keeps what it has.
      */
     static void onJoinLevel(EntityJoinLevelEvent event) {
         if (event.getLevel().isClientSide() || !(event.getEntity() instanceof Mob mob) || !getsLevel(mob)) {
             return;
         }
-        if (mob.hasData(MobAttachments.PENDING_REFILL)) {
+        boolean refill = mob.hasData(MobAttachments.PENDING_REFILL);
+        if (refill) {
             mob.removeData(MobAttachments.PENDING_REFILL);
-            mob.setHealth(mob.getMaxHealth());
-            return;
         }
         OptionalInt level = level(mob);
         if (level.isEmpty()) {
             levelAt(event.getLevel().registryAccess(), event.getLevel().dimension(), mob.getX(), mob.getY(),
                     mob.getZ(), mob.getRandom()).ifPresent(rolled -> setLevel(mob, rolled));
-        } else if (event.loadedFromDisk()) {
+        } else if (event.loadedFromDisk() && !refill) {
             applyScaling(mob, level.getAsInt());
+        }
+        if (refill) {
+            mob.setHealth(mob.getMaxHealth());
         }
     }
 

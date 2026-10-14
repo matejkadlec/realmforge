@@ -36,14 +36,16 @@ import net.minecraft.world.entity.monster.zombie.ZombieVillager;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.EventHooks;
 
 /**
  * W1's Done when (architecture 14.1): a mob's level follows the Overworld's rule by distance and depth; a leveled mob
  * has its scaled maximum health and starts with full health; a split slime's children keep the parent's level; a mob
  * added without {@code finalizeSpawn} ({@code GameTestHelper#spawn}) gets a level and its scaling; a converted mob
- * keeps a level and the scaling that belongs to it. Also: passive mobs get no level, a cured mob loses it, a leveled
- * mob's hits grow with its level, and rescaling follows the curves and keeps the share of health.
+ * keeps a level and the scaling that belongs to it. Also: a mob from world generation is leveled when it joins, passive
+ * mobs get no level, a cured mob loses it, a leveled mob's hits grow with its level, and rescaling follows the curves
+ * and keeps the share of health.
  *
  * <p>GameTests run far from the origin (anywhere within 15 million blocks) at y -59, so a mob on a test's platform is
  * at the Overworld's top levels; tests that need other positions spawn there in absolute coordinates.
@@ -92,6 +94,27 @@ public final class MobLevelGameTests {
             assertScaled(helper, zombie, assertLeveled(helper, zombie));
             assertClose(helper, zombie.getHealth(), zombie.getMaxHealth(), "a new zombie's health");
         }
+        helper.succeed();
+    }
+
+    /**
+     * A mob spawned with a new chunk is finalized on a world generation thread, where {@code FinalizeSpawnEvent} only
+     * marks it: when it joins the world, it gets its level and scaling there, and all of its health.
+     */
+    @QaGameTest
+    public static void markedMobIsLeveledAndRefilledWhenItJoins(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Zombie zombie = EntityType.ZOMBIE.create(level, EntitySpawnReason.LOAD);
+        helper.assertTrue(zombie != null, "a zombie can be created");
+        zombie.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
+        zombie.setPersistenceRequired();
+        zombie.setData(MobAttachments.PENDING_REFILL, Boolean.TRUE);
+        zombie.setHealth(5);
+        level.addFreshEntity(zombie);
+
+        assertScaled(helper, zombie, assertLeveled(helper, zombie));
+        assertClose(helper, zombie.getHealth(), zombie.getMaxHealth(), "the marked zombie's health");
+        helper.assertFalse(zombie.hasData(MobAttachments.PENDING_REFILL), "the mark is gone after the join");
         helper.succeed();
     }
 
