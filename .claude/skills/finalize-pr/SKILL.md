@@ -201,8 +201,17 @@ above, and its first bundle's head SHA must equal the starting head it recorded.
      session, a CI job, a player) nor a regression that an earlier round's fix introduced is rejected as churn,
      with that reason recorded. A valid P1 is always fixed.
 
-4. **Check and commit the round locally.** Run the targeted checks and commit the fix (one commit per root
-   cause, Conventional Commits, staged by explicit path):
+4. **Fix, check and commit the round locally.** Fix every confirmed P1 and P2:
+
+   - Make the smallest correct change that keeps the pull request's intended behavior.
+   - Findings that share a root cause get one shared fix.
+   - Add or adjust a focused regression test for every code fix, in the suite the changed code calls for:
+     pytest in `tools/tests/`, JUnit in `mod/src/test/`, or a GameTest in `qa-mod/`. A fix only to docs, skills
+     or other text that no test reads needs none.
+   - Keep the unrelated changes already on the branch, and refactor nothing beyond what the finding needs.
+
+   Then run the targeted checks and commit the fix (one commit per root cause, Conventional Commits, staged by
+   explicit path):
 
    - `content/` or `tools/`: `uv run rf gen` (no unexpected changes), `uv run ruff check`,
      `uv run ruff format --check`, `uv run pytest`;
@@ -285,9 +294,14 @@ older head until the next sync:
 
 ```bash
 git fetch origin
-git diff <base sha the review recorded> <reviewed head> | git patch-id --stable
-git diff $(git merge-base origin/master <current head>) <current head> | git patch-id --stable   # same id: kept
+git diff <base sha the review recorded> <reviewed head> | git patch-id --verbatim
+git diff $(git merge-base origin/master <current head>) <current head> | git patch-id --verbatim   # same id: kept
 ```
+
+`--verbatim` hashes the diff as it is: `--stable` alone strips whitespace first, so a whitespace-only change to the
+pull request's own lines (a dedented Python line, a re-indented YAML key, `"Realm forge"` to `"Realmforge"`)
+would keep the review. It implies the stable algorithm, and git refuses it together with `--stable`. A clean rebase
+or merge leaves the pull request's own lines byte-identical, so the exception still holds where it should.
 
 ## P3 disposition
 
@@ -449,6 +463,7 @@ the first of steps 2–8 that applies. If none applies yet, wait under step 1.
 
    - **A changes-requested review:** carry out what it asks, or reply with a proposal. Only its author can
      withdraw the request, so ask the user to re-review or dismiss it. The merge waits until then.
+   - Every thread fix, whoever asked for it, follows step 4 of "Review pass", its regression test included.
    - A push for a thread makes a new head, which needs its review pass (step 4).
 
 6. **Failing check: fix it and push.** Read the failing job's log (`gh run view <run id> --log-failed`; for the
@@ -461,9 +476,9 @@ the first of steps 2–8 that applies. If none applies yet, wait under step 1.
      generator, API or shared configuration can break untouched code. With that evidence, port an existing fix
      if one exists. Otherwise say what fails and why, and bring the base in (step 2) once it carries the fix.
      Re-read the latest CI on `master` at each check-in, because no pull request event announces it.
-   - **This pull request's failure:** root-cause it, fix it on the branch, run the targeted checks, and push
-     once. A described fix is not a fix, and a red head is never left waiting. The new head needs its review
-     pass (step 4).
+   - **This pull request's failure:** root-cause it, fix it on the branch under step 4 of "Review pass" (its
+     regression test included, unless the failing test already covers the fix), and push once. A described fix
+     is not a fix, and a red head is never left waiting. The new head needs its review pass (step 4).
    - "Flake" is not a cause. Re-run a job only when it died before any test ran, and at most once
      (`gh run rerun <run id> --failed`).
    - A run cancelled because a newer push superseded it belongs to the old head. A cancelled required check on
