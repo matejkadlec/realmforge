@@ -1100,10 +1100,10 @@ half and shape, and a slab loses its type. Two ways keep them:
 
 Steps 1 and 2 exist since W4a (`dungeon/plan/`; `DungeonType#plan(seed)` → `DungeonPlan`):
 
-- **The graph** (`RoomGraph`) is a tree in placement order: the entrance, a main path of rooms a player passes through
-  (role `hallway`, `combat` or `stairs`), the ending (role `boss` or `treasure`), then the branches, each hanging off a
-  different room of the main path while there are enough and ending in a dead end. Lengths and counts are drawn from
-  the rules' ranges.
+- **The graph** (`RoomGraph`) is a tree in placement order: the entrance, a main path of rooms a player passes
+  through (role `hallway`, `combat` or `stairs`), the ending (role `boss` or `treasure`), then the branches, each
+  hanging off a different room of the main path while there are enough and ending in a dead end. Lengths and counts
+  are drawn from the rules' ranges.
 - **The layout** (`DungeonPlanner`) places the nodes one by one, parent first, as a depth-first search: a room that
   fits the node's slot (by role and connector count), in a random order where a heavier room tends to come first,
   turned four ways about its origin corner, with one of its connectors taking a free connector of its parent by
@@ -1117,9 +1117,9 @@ Steps 1 and 2 exist since W4a (`dungeon/plan/`; `DungeonType#plan(seed)` → `Du
 - **Attempts:** an attempt that runs out of steps (20,000 placements) gives up, and the next draws a new graph from
   the same random source, up to 64; no layout in 64 attempts throws `PlanningException`. The entrance's origin
   corner is the plot's origin, so every room offset is relative to it.
-- **Cost:** on the test dungeon (23 rooms, layouts of 8 to 17 rooms) planning took 3.5 ms at the median, 24 ms at the
-  99th percentile and 44 ms at worst over 3,000 seeds, with at most 11 attempts. It reads no world, so W4b can plan
-  off the main thread if the entry path needs it.
+- **Cost:** on the test dungeon (23 rooms, layouts of 8 to 17 rooms) planning took 3.5 ms at the median, 24 ms at
+  the 99th percentile and 44 ms at worst over 3,000 seeds, with at most 11 attempts. It reads no world, so W4b can
+  plan off the main thread if the entry path needs it.
 
 JUnit fuzzes steps 1 and 2 over thousands of seeds, on synthetic room sets and on the generated dungeon types
 (`DungeonPlannerTest`, `PlanChecks`): every rule holds, no rooms overlap, every room is reachable from the entrance,
@@ -1136,15 +1136,15 @@ Rooms are generated or imported; nobody has to build one by hand
 
 - **Format:** structure NBT in `content/rooms/` with a small YAML sidecar (tags, pools, weight, and the source of
   an imported room). A room joins the room pools its sidecar lists, and a dungeon type is built from one pool
-  ([15.2](#152-dungeon-types)); its role tag says which slots it can take. Connectors are vanilla jigsaw blocks, so the same rooms work in world structures later. Rooms
-  are the second exception to YAML-only content, after worldgen JSON (ADR 0014 amends
-  [ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)). A room's id is its path below
-  `content/rooms/` (`third_party/stonevaults/hall_a`); `rf gen` writes the template, normalized, to
-  `data/realmforge/structure/rooms/<id>.nbt`, so the game knows it as the structure `realmforge:rooms/<id>`
-  (`tools/realmforge_tools/generate/rooms.py`). A template keeps the data version it was saved with, and vanilla
-  upgrades it from there when it loads it (`TemplateSource#readStructure`), so imported rooms from older versions
-  stay as they were saved. A template without one is refused: vanilla would read it as version 500 and run every
-  upgrade since on it.
+  ([15.2](#152-dungeon-types)); its role tag says which slots it can take. Connectors are vanilla jigsaw blocks,
+  so the same rooms work in world structures later. Rooms are the second exception to YAML-only content, after
+  worldgen JSON (ADR 0014 amends [ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)). A
+  room's id is its path below `content/rooms/` (`third_party/stonevaults/hall_a`); `rf gen` writes the template,
+  normalized, to `data/realmforge/structure/rooms/<id>.nbt`, so the game knows it as the structure
+  `realmforge:rooms/<id>` (`tools/realmforge_tools/generate/rooms.py`). A template keeps the data version it was
+  saved with, and vanilla upgrades it from there when it loads it (`TemplateSource#readStructure`), so imported
+  rooms from older versions stay as they were saved. A template without one is refused: vanilla would read it as
+  version 500 and run every upgrade since on it.
 - **Generated rooms** (A4d): room specs in YAML (kind, a footprint up to 16×16, height, connector sides, features,
   a seed, blocks named by neutral roles that themes swap) become structure NBT through the room generator in
   `rf gen`, with style rules for walls, floors, stairs and light, and jigsaws and markers from the connectors. The
@@ -1180,14 +1180,15 @@ Rooms are generated or imported; nobody has to build one by hand
   rooms a review rejects, so importing the source again does not bring them back. Generated folders are not
   reviewed: `rf gen` would delete their `review.yaml`.
 - **Validation:** size limits (48 blocks per axis, a structure block's maximum), connectors on the room's boundary
-  facing out, known markers, only blocks the themes can swap and only ids inside the ID universe (an imported room's own
-  blocks are remapped, and a container's loot table must exist), and `LICENSE` and `NOTICE` next to third-party rooms
-  (`COPYING` next to LGPL-3.0 ones). `rooms/check.py` checks the size, the data version, the ids, the loot tables,
-  the connectors and each jigsaw's pool, which must be a vanilla template pool or a room pool some sidecar lists (it
-  becomes a template pool for world structures, M4); markers come with W4b and the swappable blocks with the themes
-  of the room generator (A4d). Generated rooms are also checked for reachability between their connectors and for headroom. In the
-  game, `ContentRoomGameTests` (QA mod) loads every room through the structure manager, which upgrades an imported
-  room from its data version, and compares its size, jigsaws and air blocks with `GeneratedRoomExpectations`.
+  facing out, known markers, only blocks the themes can swap and only ids inside the ID universe (an imported
+  room's own blocks are remapped, and a container's loot table must exist), and `LICENSE` and `NOTICE` next to
+  third-party rooms (`COPYING` next to LGPL-3.0 ones). `rooms/check.py` checks the size, the data version, the
+  ids, the loot tables, the connectors and each jigsaw's pool, which must be a vanilla template pool or a room
+  pool some sidecar lists (it becomes a template pool for world structures, M4); markers come with W4b and the
+  swappable blocks with the themes of the room generator (A4d). Generated rooms are also checked for reachability
+  between their connectors and for headroom. In the game, `ContentRoomGameTests` (QA mod) loads every room through
+  the structure manager, which upgrades an imported room from its data version, and compares its size, jigsaws and
+  air blocks with `GeneratedRoomExpectations`.
 
 ### 15.5 Instances
 
