@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
 
 import pytest
 from pydantic import ValidationError
 
-from realmforge_tools.generate import generate_all
+from realmforge_tools.generate import curves, datapack, generate_all
 from realmforge_tools.generate.curves import sample_levels
 from realmforge_tools.generate.datapack import entry_data, game_field, percent_to_fraction, seconds_to_ticks
 from realmforge_tools.problems import ValidationFailed
@@ -48,10 +49,14 @@ def test_repository_curves_are_valid() -> None:
     assert [e.model.id for e in content.curves] == [
         "armor_halving",
         "armor_reduction_cap",
+        "kill_xp",
+        "kill_xp_above_player",
+        "kill_xp_below_player",
         "mob_armor",
         "mob_damage",
         "mob_health",
         "test_curve",
+        "xp_to_next_level",
     ]
     assert universe.contains("realmforge:curve", "realmforge:test_curve")
 
@@ -135,8 +140,9 @@ def test_curve_outputs(repo: RepoPaths) -> None:
     keys = files[CURVE_KEYS].decode()
     assert 'public static final ResourceKey<Curve> TEST_CURVE = key("test_curve");' in keys
     assert (
-        "public static final List<ResourceKey<Curve>> ALL = List.of(ARMOR_HALVING, ARMOR_REDUCTION_CAP, MOB_ARMOR, "
-        "MOB_DAMAGE, MOB_HEALTH, TEST_CURVE);" in keys
+        "public static final List<ResourceKey<Curve>> ALL = List.of(ARMOR_HALVING, ARMOR_REDUCTION_CAP, KILL_XP, "
+        "KILL_XP_ABOVE_PLAYER, KILL_XP_BELOW_PLAYER, MOB_ARMOR, MOB_DAMAGE, MOB_HEALTH, TEST_CURVE, XP_TO_NEXT_LEVEL);"
+        in keys
     )
 
     expectations = files[CURVE_EXPECTATIONS].decode()
@@ -158,9 +164,13 @@ def test_curve_without_name_has_no_name_field_or_lang_entry(repo: RepoPaths) -> 
 
 
 def test_no_curves_still_compile(repo: RepoPaths) -> None:
-    for file in (repo.content / "curves").glob("*.yaml"):
-        file.unlink()
-    files = generate(repo)
+    # Our content needs leveling's curves (validation), so the curve generators get content without any directly.
+    content, _ = load_and_validate(repo)
+    content = dataclasses.replace(content, curves=())
+    files = {
+        repo.rel(path): data
+        for path, data in (curves.generate(content, repo) | datapack.generate(content, repo)).items()
+    }
     assert "ALL = List.of();" in files[CURVE_KEYS].decode()
     assert "CURVES = List.of();" in files[CURVE_EXPECTATIONS].decode()
     assert not any(path.startswith(CURVE_DATA) for path in files)
