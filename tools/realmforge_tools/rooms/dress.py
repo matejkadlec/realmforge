@@ -13,11 +13,13 @@ plainer a surface, the more variants it gets, so a corridor gets the most and a 
 - **Decorations**, scaled by how plain the room was (the share of its variants it needed): vines hanging from the
   top of the walls (a strand per ``VINE_SLOTS`` free spots there), cobwebs where wall meets ceiling (one per
   ``COBWEB_SLOTS``), barrels against the walls (a hallway gets one at most), and in rooms (not hallways or stairs)
-  armor stands on upside-down stone brick stairs, in full iron or full gold armor. Doorways stay clear: nothing goes
-  next to a connector, and no armor stand within ``DOOR_CLEARANCE`` blocks of one; nothing takes the space of the
-  room's own entities (a painting pops off when a block fills its space). The armor stands have every slot locked
-  and are invulnerable, so their armor is no loot. ``without`` leaves a decoration out of the rooms it names;
-  barrels come last, so leaving them out changes nothing else in a room.
+  armor stands on upside-down stone brick stairs, in full iron or full gold armor that players may take (Matěj's
+  call: loot, so nothing better than iron or gold). An armor stand stands only with its back to a real wall: the
+  column beside it, from its pedestal up to the ceiling, is made only of ``stand_against`` blocks, so never a throne,
+  a bookshelf or other inner structure. Doorways stay clear: nothing goes next to a connector, and no armor stand
+  within ``DOOR_CLEARANCE`` blocks of one; nothing takes the space of the room's own entities (a painting pops off
+  when a block fills its space). ``without`` leaves a decoration out of the rooms it names; barrels come last, so
+  leaving them out changes nothing else in a room.
 
 Everything is decided by hashes of the room's path and the positions, so the same import gives the same room. An
 armor stand's armor is written in the format of the template's data version, which the game upgrades from.
@@ -69,8 +71,6 @@ _ARMOR = {
     "iron": ("iron_boots", "iron_leggings", "iron_chestplate", "iron_helmet"),
     "gold": ("golden_boots", "golden_leggings", "golden_chestplate", "golden_helmet"),
 }
-# ArmorStand#disabledSlots with every slot locked against taking, placing and swapping (bits 0-5, 8-13, 16-21).
-_ALL_SLOTS_LOCKED = 0x3F3F3F
 # Entities that hang on a wall and pop off when a block fills their space; paintings span up to 4 x 4 blocks.
 _HANGING = frozenset({"minecraft:painting", "minecraft:item_frame", "minecraft:glow_item_frame"})
 _HANGING_REACH = 2
@@ -104,9 +104,19 @@ class DressRules(_Strict):
     without: dict[Decoration, list[str]] = Field(
         default_factory=dict, description="Rooms (fnmatch on their path) that do not get a decoration."
     )
+    stand_against: list[str] = Field(
+        default_factory=list,
+        description="The blocks of a real wall an armor stand may stand against, from its pedestal up to the "
+        "ceiling (default: the walls' replace and variants).",
+    )
 
     def excludes(self, name: str) -> bool:
         return any(fnmatchcase(name, pattern) for pattern in self.exclude)
+
+    def stand_walls(self) -> frozenset[str]:
+        if self.stand_against:
+            return frozenset(self.stand_against)
+        return frozenset([*self.walls.replace, *self.walls.variants]) if self.walls else frozenset()
 
     def decorations_for(self, name: str) -> list[Decoration]:
         """The decorations the room ``name`` gets: all of them but those ``without`` names it under."""
@@ -180,7 +190,17 @@ def dress(
 
     entities = list(structure.entities)
     decorations = rules.decorations_for(name)
-    placed = _decorate(room, surfaces, decorations, plainness, name, set(tags or []), structure, entities)
+    placed = _decorate(
+        room,
+        surfaces,
+        decorations,
+        rules.stand_walls(),
+        plainness,
+        name,
+        set(tags or []),
+        structure,
+        entities,
+    )
     if placed:
         notes.append(f"added {', '.join(placed)}")
     return replace(structure, blocks=tuple(room.blocks.values()), entities=tuple(entities)), notes
@@ -246,6 +266,7 @@ def _decorate(
     room: _Room,
     surfaces: dict[Surface, list[Pos]],
     decorations: list[Decoration],
+    stand_walls: frozenset[str],
     plainness: float,
     name: str,
     tags: set[str],
@@ -279,14 +300,14 @@ def _decorate(
     is_room = not tags & {"hallway", "stairs"}
     if "armor_stands" in decorations and is_room and floor_area >= 40:
         stands = 1 + (floor_area >= 150)
-        slots = [
-            s
-            for s in _wall_slots(room, below="floor", clearance=DOOR_CLEARANCE)
-            if all(room.is_free(_up(s[0], i)) for i in (1, 2))
-        ]
-        for pos, side in sorted(slots, key=lambda slot: _value(name, "stands", slot[0]))[:stands]:
-            if not room.is_air(pos):
+        slots = _stand_slots(room, stand_walls)
+        chosen: list[Pos] = []
+        for pos, side in sorted(slots, key=lambda slot: _value(name, "stands", slot[0])):
+            if len(chosen) == stands:
+                break
+            if not room.is_free(pos) or any(max(abs(pos[0] - c[0]), abs(pos[2] - c[2])) <= 1 for c in chosen):
                 continue
+            chosen.append(pos)
             armor = "iron" if _value(name, "armor", pos) < 0.5 else "gold"
             pedestal = BlockState.parse(
                 f"minecraft:stone_brick_stairs[facing={side},half=top,shape=straight,waterlogged=false]"
@@ -306,6 +327,30 @@ def _decorate(
         if barrels:
             placed.append(f"{len(barrels)} x barrel")
     return placed
+
+
+def _stand_slots(room: _Room, walls: frozenset[str]) -> list[tuple[Pos, str]]:
+    """Where an armor stand may go: free air on a full floor block, with two free cells above it for the stand,
+    away from doorways, and with its back to a real wall: on that side, every block from its own height up to the
+    ceiling above it is one of ``walls``. A throne, a bookshelf or a crate stack is no wall."""
+    slots = []
+    for pos in sorted(room.blocks):
+        if not room.is_free(pos) or room.near_door(pos, DOOR_CLEARANCE) or not room.is_full(_up(pos, -1)):
+            continue
+        if not all(room.is_free(_up(pos, i)) for i in (1, 2)):
+            continue
+        ceiling = next(
+            (y for y in range(pos[1] + 3, room.size[1]) if not room.is_air(_up(pos, y - pos[1]))), None
+        )
+        if ceiling is None:
+            continue
+        for side in _SIDES:
+            beside = _beside(pos, side)
+            column = [(beside[0], y, beside[2]) for y in range(pos[1], ceiling)]
+            if all(room.name(cell) in walls for cell in column):
+                slots.append((pos, side))
+                break
+    return slots
 
 
 def _taken(structure: Structure) -> set[Pos]:
@@ -349,9 +394,6 @@ def _armor_stand(pos: Pos, wall: str, armor: str, data_version: int | None) -> S
     data: dict[str, Any] = {
         "id": "minecraft:armor_stand",
         "Rotation": nbt.NbtList(nbt.TAG_FLOAT, (nbt.Float(_YAW[wall]), nbt.Float(0.0))),
-        # Nobody takes the armor or breaks the stand (creative players aside): every slot locked, invulnerable.
-        "DisabledSlots": nbt.Int(_ALL_SLOTS_LOCKED),
-        "Invulnerable": nbt.Byte(1),
     }
     version = data_version or 0
     if version >= _EQUIPMENT:

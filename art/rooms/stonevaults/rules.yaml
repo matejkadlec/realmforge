@@ -37,9 +37,21 @@ dress:
     replace: [minecraft:stone_bricks, minecraft:cobblestone, minecraft:stone]
     variants: [minecraft:cracked_stone_bricks, minecraft:mossy_stone_bricks, minecraft:mossy_cobblestone]
   decorations: [armor_stands, vines, cobwebs, barrels]
+  # An armor stand stands only against a real wall: these blocks from its pedestal up to the ceiling (Matěj's
+  # review, 2026-10-14: never against a throne, a bookshelf or other inner structure).
+  stand_against:
+    - minecraft:stone_bricks
+    - minecraft:cracked_stone_bricks
+    - minecraft:mossy_stone_bricks
+    - minecraft:chiseled_stone_bricks
+    - minecraft:cobblestone
+    - minecraft:mossy_cobblestone
+    - minecraft:stone
+    - minecraft:smooth_stone
   without:
-    # No added barrels in these rooms (Matěj's review of the dressing, 2026-10-14); their own barrels stay.
-    barrels:
+    # No added barrels and no armor stands in these rooms (Matěj's review of the dressing, 2026-10-14); their own
+    # barrels stay.
+    barrels: &plain_rooms
       - dungeon/rooms/combination_lock
       - dungeon/rooms/drowned_junction
       - dungeon/rooms/husk_temple
@@ -67,3 +79,4 @@ dress:
       - pillager_dungeon/rooms/temple
       - pillager_dungeon/stairway/fall_01
       - pillager_dungeon/stairway/fall_long
+    armor_stands: *plain_rooms

@@ -1084,7 +1084,8 @@ Rooms are generated or imported; nobody has to build one by hand
   Desert Dungeon addon, Dungeon Now Loading, Mo' Structures): only pieces that are rooms, hallways or stairs of a
   dungeon, with a connector, at most 32 blocks per axis, and no copy of a vanilla template, and only what Matěj's
   gallery review kept. The plainest sets are dressed on import (`rooms/dress.py`): mossy, cracked and gravel variants
-  on surfaces with too few materials, vines, cobwebs, barrels and armor stands, more the plainer the room. On import, jigsaws inside a room (props, mobs, sub-pieces the source pulls in) become
+  on surfaces with too few materials, vines, cobwebs, barrels and armor stands (loot, against real walls only), more
+  the plainer the room. On import, jigsaws inside a room (props, mobs, sub-pieces the source pulls in) become
   the block they leave behind, every connector is named `realmforge:door` (sides) or `realmforge:shaft` (up, down)
   with the pool `minecraft:empty`, marker blocks the source's processors replace at generation (red wool for rock,
   stained glass for legs) become what those processors make of them, since our dungeons place templates without

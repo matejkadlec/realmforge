@@ -17,6 +17,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
@@ -35,8 +36,8 @@ import net.minecraft.world.phys.Vec3;
  * data version it was saved with (Minecraft 1.17 for the oldest), so this is where a template the game cannot read
  * shows: it does not load at all (the manager swallows the error), or a block it does not know becomes air. A room
  * dressed with armor stands (tools/realmforge_tools/rooms/dress.py) is placed too: their armor is written in the
- * template's old format, so the stands must come out of the upgrade in full iron or full gold, and with every slot
- * locked: a player in adventure mode, as inside a dungeon, cannot take the armor.
+ * template's old format, so the stands must come out of the upgrade in full iron or full gold, and their armor is loot:
+ * a player in adventure mode, as inside a dungeon, takes the chestplate.
  */
 public final class ContentRoomGameTests {
     // High above the test's platform, where the placed room touches no other test.
@@ -92,11 +93,13 @@ public final class ContentRoomGameTests {
             for (ArmorStand stand : stands) {
                 helper.assertTrue(wears(stand, IRON) || wears(stand, GOLD),
                         expected.id() + ": an armor stand without a full iron or gold set");
+                Item chestplate = stand.getItemBySlot(EquipmentSlot.CHEST).getItem();
                 stand.interact(player, InteractionHand.MAIN_HAND, CHEST_HEIGHT);
-                helper.assertTrue(wears(stand, IRON) || wears(stand, GOLD),
-                        expected.id() + ": a player took armor off an armor stand");
-                helper.assertTrue(player.getMainHandItem().isEmpty(), expected.id() + ": the player got armor");
-                helper.assertTrue(stand.isInvulnerable(), expected.id() + ": an armor stand that can be broken");
+                helper.assertTrue(player.getMainHandItem().getItem() == chestplate,
+                        expected.id() + ": a player cannot take an armor stand's chestplate");
+                helper.assertTrue(stand.getItemBySlot(EquipmentSlot.CHEST).isEmpty(),
+                        expected.id() + ": the chestplate stayed on the armor stand");
+                player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
             }
         } finally {
             stands.forEach(Entity::discard);
