@@ -135,8 +135,8 @@ Do this before the first review, and again whenever the run resumes in a new ses
    say it should stay a draft), and keep watching until it is ready. This skill merges only into `master`. A pull
    request whose `baseRefName` is another branch depends on unmerged work: review it against that base, then keep
    watching with check-ins about 30 minutes apart until that base has merged into `master`, retarget it
-   (`gh pr edit <n> --repo matejkadlec/realmforge --base master`; GitHub does this itself when it deletes the
-   merged base branch) and continue. Never merge into another feature branch. If the base's pull request closes
+   (`gh api -X PATCH repos/matejkadlec/realmforge/pulls/<n> -f base=master`, everywhere: `gh pr edit` fails on
+   GitHub's classic Projects deprecation; GitHub retargets by itself when it deletes the merged base branch) and continue. Never merge into another feature branch. If the base's pull request closes
    without merging, or its branch disappears without having merged, the wait cannot end: go to "User needed" and
    ask whether to retarget this pull request to `master` or close it.
 2. **Locate the worktree.** Run `git fetch origin`. Reuse the worktree that `git worktree list` holds for the
