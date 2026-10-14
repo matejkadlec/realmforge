@@ -4,6 +4,7 @@ import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.character.CharacterAttachments;
 import io.github.matejkadlec.realmforge.character.CharacterData;
+import io.github.matejkadlec.realmforge.character.CharacterRegistries;
 import io.github.matejkadlec.realmforge.qa.command.StateCommands;
 import io.github.matejkadlec.realmforge.spell.CombatState;
 import io.github.matejkadlec.realmforge.spell.SpellAttachments;
@@ -20,6 +21,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
@@ -44,8 +46,9 @@ public final class PlayerStateGameTests {
     private static final Identifier FROSTBOLT = Realmforge.id("frostbolt");
 
     private static final EntityLevel LEVEL = new EntityLevel(14);
-    private static final CharacterData CHARACTER = new CharacterData(Optional.of(Realmforge.id("human")),
-            List.of(Realmforge.id("mage")), 2_750L, Optional.of(20));
+    private static final CharacterData CHARACTER = new CharacterData(
+            Optional.of(ResourceKey.create(CharacterRegistries.RACE, Realmforge.id("human"))),
+            List.of(ResourceKey.create(CharacterRegistries.CLASS, Realmforge.id("mage"))), 2_750L, Optional.of(20));
     private static final Spellbook SPELLBOOK = new Spellbook(Map.of(FIREBOLT, 2, FROSTBOLT, 1),
             Map.of(0, FIREBOLT, 1, FROSTBOLT));
     private static final TalentAllocation TALENTS = new TalentAllocation(

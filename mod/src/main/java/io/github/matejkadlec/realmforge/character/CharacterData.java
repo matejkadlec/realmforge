@@ -10,37 +10,37 @@ import java.util.Objects;
 import java.util.Optional;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.ExtraCodecs;
 
 /**
  * The value of a player's {@code realmforge:character} attachment (architecture 7 and 10): race, classes (a list:
  * one in M1, room for dual class), total character XP and the cached level cap.
  *
- * <p>Races and classes are named by id until C1 adds their registries; a {@code ResourceKey} saves the same string,
- * so switching to keys keeps saved characters readable. {@link #NONE} is a player without a character: no race,
- * which is what makes the client show character creation.
+ * <p>Races and classes are saved as their ids, which is how F3 saved them before C1 added their registries, so
+ * those saves stay readable. A key whose entry no longer exists (content removed) stays saved and gives nothing.
+ * {@link #NONE} is a player without a character: no race, which is what makes the client show character creation.
  *
  * @param race     the chosen race, empty until the player creates a character
  * @param classes  the player's classes in the order they were taken, without repeats
  * @param totalXp  every point of character XP earned, also beyond the level cap (architecture 10.2)
  * @param levelCap the cap last computed from completed chapters, empty until {@code character} computes it
  */
-public record CharacterData(Optional<Identifier> race, List<Identifier> classes, long totalXp,
+public record CharacterData(Optional<ResourceKey<Race>> race, List<ResourceKey<PlayerClass>> classes, long totalXp,
         Optional<Integer> levelCap) {
     public static final CharacterData NONE = new CharacterData(Optional.empty(), List.of(), 0, Optional.empty());
 
     public static final Codec<CharacterData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Identifier.CODEC.optionalFieldOf("race").forGetter(CharacterData::race),
-            Codecs.distinctList(Identifier.CODEC).optionalFieldOf("classes", List.of())
+            ResourceKey.codec(CharacterRegistries.RACE).optionalFieldOf("race").forGetter(CharacterData::race),
+            Codecs.distinctList(ResourceKey.codec(CharacterRegistries.CLASS)).optionalFieldOf("classes", List.of())
                     .forGetter(CharacterData::classes),
             Codecs.NON_NEGATIVE_LONG.optionalFieldOf("total_xp", 0L).forGetter(CharacterData::totalXp),
             ExtraCodecs.POSITIVE_INT.optionalFieldOf("level_cap").forGetter(CharacterData::levelCap)
     ).apply(instance, CharacterData::new));
 
     public static final StreamCodec<ByteBuf, CharacterData> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.optional(Identifier.STREAM_CODEC), CharacterData::race,
-            Identifier.STREAM_CODEC.apply(ByteBufCodecs.list()), CharacterData::classes,
+            ByteBufCodecs.optional(ResourceKey.streamCodec(CharacterRegistries.RACE)), CharacterData::race,
+            ResourceKey.streamCodec(CharacterRegistries.CLASS).apply(ByteBufCodecs.list()), CharacterData::classes,
             ByteBufCodecs.VAR_LONG, CharacterData::totalXp,
             ByteBufCodecs.optional(ByteBufCodecs.VAR_INT), CharacterData::levelCap,
             CharacterData::new);
@@ -63,5 +63,10 @@ public record CharacterData(Optional<Identifier> race, List<Identifier> classes,
     /** Whether the player has created a character; until then the server refuses their gameplay (architecture 10.1). */
     public boolean exists() {
         return race.isPresent();
+    }
+
+    /** A new character of the race and class: everything else as before (no XP is lost by creating one). */
+    public CharacterData create(ResourceKey<Race> newRace, ResourceKey<PlayerClass> playerClass) {
+        return new CharacterData(Optional.of(newRace), List.of(playerClass), totalXp, levelCap);
     }
 }

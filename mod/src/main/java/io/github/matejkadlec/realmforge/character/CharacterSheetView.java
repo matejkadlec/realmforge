@@ -31,12 +31,12 @@ import net.neoforged.neoforge.common.PercentageAttribute;
 
 /**
  * What the character sheet shows (RLM-136; architecture 18: a thin screen draws a view model computed in common code):
- * the player's name and level, then three tabs of two columns each (Matěj, 2026-10-13). Stats: the primary stats with
- * what they give, and the other attributes. Combat: offense and defense. Magic: spells and mana, and the spell
- * schools' power and resistance. Built from a player's synced attributes and the synced registries, so the client
+ * the player's name, level and class, then three tabs of two columns each (Matěj, 2026-10-13). Stats: the primary
+ * stats with what they give, and the other attributes. Combat: offense and defense. Magic: spells and mana, and the
+ * spell schools' power and resistance. Built from a player's synced attributes and the synced registries, so the client
  * screen and the GameTests read the same rows. Every label is a translation; values are formatted here.
  *
- * @param title the player's name and level
+ * @param title the player's name and level, and their class once they have one
  * @param tabs the tabs in order
  */
 public record CharacterSheetView(Component title, List<Tab> tabs) {
@@ -110,10 +110,17 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
         listed().forEach(entry -> entry.attribute().value().setSyncable(true));
     }
 
-    /** The sheet of a player, from its attributes and level (synced to its own client) and the synced registries. */
+    /**
+     * The sheet of a player, from its attributes, level and character (synced to its own client) and the synced
+     * registries. Once the player has a class, the heading names it after the level: "Steve · Lv. 12 Warrior" (Matěj,
+     * 2026-10-14).
+     */
     public static CharacterSheetView of(Player player) {
         int level = player.getExistingData(StatsAttachments.LEVEL).map(EntityLevel::value).orElse(EntityLevel.MIN);
-        Component title = Component.translatable(GeneratedTexts.GUI_CHARACTER_TITLE, player.getName(), level);
+        Component title = Characters.mainClass(player)
+                .<Component>map(playerClass -> Component.translatable(GeneratedTexts.GUI_CHARACTER_TITLE_CLASS,
+                        player.getName(), level, Component.translatable(playerClass.value().name())))
+                .orElseGet(() -> Component.translatable(GeneratedTexts.GUI_CHARACTER_TITLE, player.getName(), level));
         return build(title, player::getAttributeValue, player::getAttributeBaseValue, player.registryAccess());
     }
 
@@ -283,7 +290,7 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
      * An attribute's name on the sheet, on its row and in the bonuses of the primary stats: the name a section gives
      * it (Movement Speed for vanilla's Speed), or its own.
      */
-    private static Component name(Holder<Attribute> attribute) {
+    static Component name(Holder<Attribute> attribute) {
         ResourceKey<Attribute> key = key(attribute);
         return listed().filter(entry -> entry.label() != null && key(entry.attribute()).equals(key)).findFirst()
                 .<Component>map(entry -> Component.translatable(entry.label()))
