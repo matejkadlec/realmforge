@@ -13,9 +13,23 @@ A rules file (``--rules``, YAML, the ``ImportRules`` model) adapts a source to o
   dropped unless ``block_entities`` maps its id.
 - ``block_entities``: a source block entity id -> ours; the data is kept under the new id.
 - ``connectors`` and ``pools``: jigsaw names (``name`` and ``target``) and jigsaw pools -> ours.
+- ``jigsaws``: ``interior: drop`` turns every jigsaw inside the room (one that pulls in a prop, a mob or another
+  sub-piece) into the block it leaves behind (its ``final_state``); ``normalize: true`` gives every connector (a
+  jigsaw on the boundary, pointing out) our neutral names: ``realmforge:door`` on the sides,
+  ``realmforge:shaft`` up and down, and the pool ``minecraft:empty``, since the sidecar names the pools.
+- ``loot_tables``: a container's loot table -> ours or a vanilla one, or ``null`` to drop the reference (the
+  container stays empty until the dungeon fills it). ``<namespace>:*`` matches every table of a namespace.
 - ``entities.keep``: entity ids to keep; every other entity is dropped.
+- ``include`` and ``exclude``: which files of a source folder are rooms, as ``fnmatch`` patterns on the path below
+  it (``dungeon/rooms/*.nbt``; ``*`` also matches ``/``). A file is imported when it matches an ``include`` (all
+  files without one) and no ``exclude``.
+- ``max_size``: a file whose room is bigger on any axis (a whole wing of the source's dungeon rather than a room) is
+  left out like an excluded one.
+- ``dress``: block variety on the floor, walls and ceiling of plain rooms, and decorations (``rooms/dress.py``).
 - ``data_version``: the data version of the files that state none (a Sponge v1 schematic, a template some tool
   wrote), when the source is known to be saved with it.
+
+A new sidecar gets draft slot tags (``rooms/slots.py``); a re-import keeps the sidecar's tags.
 
 The template keeps the source's data version, and the game upgrades the room from it when it loads. An id that was
 renamed since that version is not in the ID universe: map it in ``blocks`` like a custom block. A room without a
@@ -32,16 +46,20 @@ import os
 import re
 from collections import Counter
 from dataclasses import dataclass, field, replace
+from fnmatch import fnmatchcase
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from realmforge_tools.id_universe import IdUniverse
 from realmforge_tools.project import RepoPaths
-from realmforge_tools.rooms.check import check_structure
+from realmforge_tools.rooms.check import LOOT_TABLE, check_structure, connector_face
+from realmforge_tools.rooms.dress import DressRules, dress
+from realmforge_tools.rooms.slots import slot_tags
 from realmforge_tools.rooms.sources import FORMATS, read_source
 from realmforge_tools.rooms.structure import (
+    AIR,
     JIGSAW,
     BlockState,
     Structure,
@@ -55,6 +73,12 @@ from realmforge_tools.yamlio import YamlLoadError, load_yaml
 
 _JIGSAW_NAMES = ("name", "target")
 _UNSAFE = re.compile(r"[^a-z0-9_]+")
+# The neutral connector names ``jigsaws.normalize`` gives every connector, and the pool it leaves them.
+DOOR = "realmforge:door"
+SHAFT = "realmforge:shaft"
+EMPTY_POOL = "minecraft:empty"
+# The seed a container keeps next to its loot table (RandomizableContainer.LOOT_TABLE_SEED_TAG).
+_LOOT_TABLE_SEED = "LootTableSeed"
 
 
 class RoomImportError(ValueError):
@@ -69,17 +93,55 @@ class EntityRules(_Strict):
     keep: list[str] = Field(default_factory=list, description="Entity ids to keep; all others are dropped.")
 
 
+class JigsawRules(_Strict):
+    interior: Literal["keep", "drop"] = Field(
+        default="keep",
+        description="drop: a jigsaw inside the room (a prop, a mob, a sub-piece) becomes its final_state.",
+    )
+    normalize: bool = Field(
+        default=False,
+        description="Name every connector realmforge:door (sides) or realmforge:shaft (up, down), pool "
+        "minecraft:empty.",
+    )
+
+
 class ImportRules(_Strict):
     blocks: dict[str, str] = Field(default_factory=dict)
     block_entities: dict[str, str] = Field(default_factory=dict)
     connectors: dict[str, str] = Field(default_factory=dict)
     pools: dict[str, str] = Field(default_factory=dict)
+    jigsaws: JigsawRules = Field(default_factory=JigsawRules)
+    loot_tables: dict[str, str | None] = Field(default_factory=dict)
     entities: EntityRules = Field(default_factory=EntityRules)
+    include: list[str] = Field(default_factory=list)
+    exclude: list[str] = Field(default_factory=list)
+    max_size: int | None = Field(default=None, ge=1, description="Leave out rooms bigger on any axis.")
+    dress: DressRules | None = None
     data_version: int | None = Field(
         default=None,
         ge=1,
         description="The data version of the files that state none, for a source known to be saved with it.",
     )
+
+    @model_validator(mode="after")
+    def _normalize_replaces_names(self) -> ImportRules:
+        if self.jigsaws.normalize and (self.connectors or self.pools):
+            raise ValueError("jigsaws.normalize names every connector itself; leave connectors and pools out")
+        return self
+
+    def excludes(self, relative: Path) -> bool:
+        """Whether the file at ``relative`` below its source folder is left out."""
+        path = relative.as_posix()
+        if self.include and not any(fnmatchcase(path, pattern) for pattern in self.include):
+            return True
+        return any(fnmatchcase(path, pattern) for pattern in self.exclude)
+
+    def loot_table(self, table: str) -> tuple[bool, str | None]:
+        """(mapped, the table to write or None to drop it) for a container's loot table."""
+        for key in (table, f"{table.partition(':')[0]}:*"):
+            if key in self.loot_tables:
+                return True, self.loot_tables[key]
+        return False, table
 
 
 @dataclass
@@ -88,12 +150,14 @@ class ImportedRoom:
     template: Path
     sidecar: Path
     structure: Structure | None
-    """None for a file the review rejects, which is not read."""
+    """None for a file that is not read: the review rejects it, the rules leave it out, or it is corrupt."""
     written: bool
     notes: list[str] = field(default_factory=list)
     problems: list[str] = field(default_factory=list)
     rejected_by: Path | None = None
     """The ``review.yaml`` that rejects the room; the file is skipped."""
+    excluded: bool = False
+    """The rules (``include``, ``exclude``, ``max_size``) leave the file out; it is skipped."""
 
 
 def load_rules(path: Path | None) -> ImportRules:
@@ -146,24 +210,31 @@ def import_rooms(
     go anywhere else."""
     check_target(target, paths, ours=ours)
     stems: dict[Path, Path] = {}
+    results: list[ImportedRoom] = []
     for file, relative in source_files(sources):
         stem = target / room_name(relative)
+        if rules.excludes(relative):
+            results.append(_skipped(file, stem, excluded=True))
+            continue
         if stem in stems:
             raise RoomImportError(f"{file} and {stems[stem]} would both become {stem}.nbt")
         stems[stem] = file
     rejected = rejected_rooms(target, paths)
-    results: list[ImportedRoom] = []
     for stem, file in stems.items():
         review = rejected.get(stem.resolve())
         if review is not None:
-            results.append(
-                ImportedRoom(
-                    file, stem.with_suffix(".nbt"), stem.with_suffix(".yaml"), None, False, rejected_by=review
-                )
-            )
+            results.append(_skipped(file, stem, rejected_by=review))
         else:
-            results.append(import_room(file, stem, rules, universe, paths, ours=ours))
+            name = stem.relative_to(target).as_posix()
+            results.append(import_room(file, stem, rules, universe, paths, ours=ours, name=name))
     return results
+
+
+def _skipped(
+    file: Path, stem: Path, *, rejected_by: Path | None = None, excluded: bool = False
+) -> ImportedRoom:
+    template, sidecar = stem.with_suffix(".nbt"), stem.with_suffix(".yaml")
+    return ImportedRoom(file, template, sidecar, None, False, rejected_by=rejected_by, excluded=excluded)
 
 
 def rejected_rooms(target: Path, paths: RepoPaths) -> dict[Path, Path]:
@@ -212,15 +283,33 @@ def check_target(target: Path, paths: RepoPaths, *, ours: bool) -> None:
 
 
 def import_room(
-    file: Path, stem: Path, rules: ImportRules, universe: IdUniverse, paths: RepoPaths, *, ours: bool = False
+    file: Path,
+    stem: Path,
+    rules: ImportRules,
+    universe: IdUniverse,
+    paths: RepoPaths,
+    *,
+    ours: bool = False,
+    name: str | None = None,
 ) -> ImportedRoom:
-    """Import one file as ``<stem>.nbt`` plus ``<stem>.yaml``."""
+    """Import one file as ``<stem>.nbt`` plus ``<stem>.yaml``. ``name`` is the room's path below the import
+    target, which the draft slot tags read (default: the file's name)."""
     template, sidecar = stem.with_suffix(".nbt"), stem.with_suffix(".yaml")
     try:
         source = read_source(file)
-    except (StructureError, OSError) as e:
+    except OSError as e:
         raise RoomImportError(f"{file}: {e}") from e
+    except StructureError as e:
+        # A broken file in a source (some jars ship one) fails like any room; the rules can exclude it.
+        return ImportedRoom(file, template, sidecar, None, False, problems=[f"not a usable room file: {e}"])
+    if rules.max_size is not None and max(source.structure.size) > rules.max_size:
+        return ImportedRoom(file, template, sidecar, None, False, excluded=True)
     structure, notes = apply_rules(source.structure, rules)
+    previous = _existing_sidecar(sidecar)
+    tags = previous.tags if previous else slot_tags(structure, name or stem.name)
+    if rules.dress is not None and not rules.dress.excludes(name or stem.name):
+        structure, dressed = dress(structure, rules.dress, name=name or stem.name, tags=tags)
+        notes += dressed
     result = ImportedRoom(file, template, sidecar, structure, False, [*source.notes, *notes])
     if stem.name == REVIEW_FILE.removesuffix(".yaml"):
         result.problems.append("'review' is reserved for the gallery's review.yaml; rename the room")
@@ -228,10 +317,9 @@ def import_room(
     if result.problems:
         return result
 
-    previous = _existing_sidecar(sidecar)
     room = RoomDef(
         pools=previous.pools if previous else [],
-        tags=previous.tags if previous else [],
+        tags=tags,
         weight=previous.weight if previous else 1,
         source=RoomSource(
             file=file.name, format=source.format, data_version=structure.data_version, ours=ours
@@ -249,6 +337,9 @@ def apply_rules(structure: Structure, rules: ImportRules) -> tuple[Structure, li
     remapped: Counter[str] = Counter()
     dropped_data: Counter[str] = Counter()
     unmapped_jigsaw: set[str] = set()
+    dropped_jigsaws: Counter[str] = Counter()
+    normalized = 0
+    loot: Counter[tuple[str, str | None]] = Counter()
     blocks: list[StructureBlock] = []
     for block in structure.blocks:
         state, data = block.state, block.nbt
@@ -263,8 +354,20 @@ def apply_rules(structure: Structure, rules: ImportRules) -> tuple[Structure, li
         elif data is not None and state.name != block.state.name:
             dropped_data[block.state.name] += 1
             data = None
+        if data is not None and isinstance(data.get(LOOT_TABLE), str):
+            data = _map_loot_table(data, rules, loot)
         if state.name == JIGSAW and data is not None:
-            data = _map_jigsaw(data, rules, unmapped_jigsaw, remapped)
+            data = _map_final_state(data, rules, remapped)
+            face = connector_face(block.pos, state.get("orientation"), structure.size)
+            if face is None and rules.jigsaws.interior == "drop":
+                dropped_jigsaws[str(data.get("pool", "?"))] += 1
+                state, data = _final_block(data), None
+            elif face is not None and rules.jigsaws.normalize:
+                connector = SHAFT if face in ("up", "down") else DOOR
+                data = {**data, "name": connector, "target": connector, "pool": EMPTY_POOL}
+                normalized += 1
+            else:
+                data = _map_jigsaw_names(data, rules, unmapped_jigsaw)
         blocks.append(StructureBlock(block.pos, state, data))
 
     kept = tuple(e for e in structure.entities if e.id in rules.entities.keep)
@@ -279,6 +382,17 @@ def apply_rules(structure: Structure, rules: ImportRules) -> tuple[Structure, li
         f"dropped the block entity data of {count} x {name} (map its id in block_entities to keep it)"
         for name, count in sorted(dropped_data.items())
     ]
+    notes += [
+        f"replaced {count} x interior jigsaw (pool {pool}) with its final_state"
+        for pool, count in sorted(dropped_jigsaws.items())
+    ]
+    if normalized:
+        notes.append(f"named {normalized} connector(s) {DOOR} or {SHAFT}")
+    notes += [
+        f"{'dropped the loot table' if new is None else f'mapped the loot table to {new}'} of {count} x container"
+        f" ({old})"
+        for (old, new), count in sorted(loot.items(), key=lambda item: item[0][0])
+    ]
     notes += [f"dropped {count} x entity {id_}" for id_, count in sorted(dropped_entities.items())]
     if unmapped_jigsaw:
         notes.append(f"jigsaw names and pools left as they are: {', '.join(sorted(unmapped_jigsaw))}")
@@ -287,19 +401,44 @@ def apply_rules(structure: Structure, rules: ImportRules) -> tuple[Structure, li
     return replace(structure, blocks=tuple(blocks), entities=kept, data_version=data_version), notes
 
 
-def _map_jigsaw(
-    data: dict[str, Any], rules: ImportRules, unmapped: set[str], remapped: Counter[str]
+def _map_loot_table(
+    data: dict[str, Any], rules: ImportRules, loot: Counter[tuple[str, str | None]]
 ) -> dict[str, Any]:
-    """The jigsaw's names and pool through ``connectors`` and ``pools``, and the block it leaves behind
-    (``final_state``) through ``blocks``, like any other block."""
+    table = data[LOOT_TABLE]
+    mapped, new = rules.loot_table(table)
+    if not mapped:
+        return data  # validation reports a table outside the ID universe
+    loot[table, new] += 1
+    if new is None:
+        return {k: v for k, v in data.items() if k not in (LOOT_TABLE, _LOOT_TABLE_SEED)}
+    return {**data, LOOT_TABLE: new}
+
+
+def _map_final_state(data: dict[str, Any], rules: ImportRules, remapped: Counter[str]) -> dict[str, Any]:
+    """The block a jigsaw leaves behind (``final_state``) through ``blocks``, like any other block."""
+    final_state = data.get("final_state")
+    if not isinstance(final_state, str):
+        return data
+    name, properties, block_data = split_state_text(final_state)
+    if name not in rules.blocks:
+        return data
+    rule = rules.blocks[name]
+    remapped[name] += 1
+    return {**data, "final_state": rule + block_data if "[" in rule else rule + properties + block_data}
+
+
+def _final_block(data: dict[str, Any]) -> BlockState:
+    """The block a dropped jigsaw becomes: its ``final_state`` without block entity data (air without one)."""
+    final_state = data.get("final_state")
+    if not isinstance(final_state, str):
+        return BlockState(AIR)
+    name, properties, _ = split_state_text(final_state)
+    return BlockState.parse(name + properties)
+
+
+def _map_jigsaw_names(data: dict[str, Any], rules: ImportRules, unmapped: set[str]) -> dict[str, Any]:
+    """The jigsaw's names and pool through ``connectors`` and ``pools``."""
     mapped = dict(data)
-    final_state = mapped.get("final_state")
-    if isinstance(final_state, str):
-        name, properties, block_data = split_state_text(final_state)
-        if name in rules.blocks:
-            rule = rules.blocks[name]
-            mapped["final_state"] = rule + block_data if "[" in rule else rule + properties + block_data
-            remapped[name] += 1
     for key in _JIGSAW_NAMES:
         value = mapped.get(key)
         if isinstance(value, str):
@@ -321,7 +460,7 @@ def sidecar_text(room: RoomDef, sidecar: Path, paths: RepoPaths) -> str:
         lines.append(f"# yaml-language-server: $schema={schema}")
     source = room.source
     lines += [
-        "# Imported by `rf rooms import`; pools and tags come with retagging (A4c, architecture 15.4).",
+        "# Imported by `rf rooms import`: draft tags from the connectors and the name, pools with the dungeons (W4).",
         _yaml_list("pools", room.pools),
         _yaml_list("tags", room.tags),
         f"weight: {room.weight}",

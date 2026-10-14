@@ -110,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
     rooms_import.add_argument(
         "--rules",
         type=Path,
-        help="YAML remap rules: blocks, block entities, jigsaw names and pools, entities",
+        help="YAML import rules: blocks, block entities, jigsaws, loot tables, entities, the files to take",
     )
     rooms_import.add_argument(
         "--ours",
@@ -230,6 +230,8 @@ def _rooms_import(args: argparse.Namespace, paths: RepoPaths) -> int:
         print("No room files found (.nbt, .schem, .litematic).", file=sys.stderr)
         return 1
     for result in results:
+        if result.excluded:
+            continue
         if result.rejected_by is not None:
             print(
                 f"SKIP {result.source}: {paths.rel(result.rejected_by)} rejects {paths.rel(result.template)}"
@@ -244,12 +246,14 @@ def _rooms_import(args: argparse.Namespace, paths: RepoPaths) -> int:
             print(f"     {note}")
         for problem in result.problems:
             print(f"     {problem}")
+    excluded = sum(1 for r in results if r.excluded)
     skipped = sum(1 for r in results if r.rejected_by is not None)
-    failed = sum(1 for r in results if not r.written and r.rejected_by is None)
-    imported = len(results) - skipped - failed
+    failed = sum(1 for r in results if not r.written and r.rejected_by is None and not r.excluded)
+    imported = len(results) - excluded - skipped - failed
     print(
-        f"Imported {imported} of {len(results)} room(s)"
-        f"{f', skipped {skipped} the review rejects' if skipped else ''}."
+        f"Imported {imported} of {len(results) - excluded} room(s)"
+        f"{f', skipped {skipped} the review rejects' if skipped else ''}"
+        f"{f', left out {excluded} file(s) the rules exclude' if excluded else ''}."
     )
     return 1 if failed else 0
 

@@ -7,6 +7,7 @@ for the byte, int and long arrays (entity UUIDs, Sponge ``.schem`` block data, L
 
 from __future__ import annotations
 
+import functools
 import struct
 from dataclasses import dataclass
 from typing import Any
@@ -79,7 +80,10 @@ _SCALARS: dict[type, tuple[int, str]] = {
     Double: (TAG_DOUBLE, ">d"),
 }
 _FORMATS = {tag: fmt for tag, fmt in _SCALARS.values()}
+_STRUCTS = {tag: struct.Struct(fmt) for tag, fmt in _FORMATS.items()}
 _WRAPPERS = {tag: cls for cls, (tag, _) in _SCALARS.items()}
+_U16 = struct.Struct(">H")
+_I32 = struct.Struct(">i")
 # Array wrapper -> (tag, element code for struct). The payload is an int length, then the elements.
 _ARRAYS: dict[type, tuple[int, str]] = {
     ByteArray: (TAG_BYTE_ARRAY, "b"),
@@ -176,10 +180,26 @@ def _payload(value: Any) -> bytes:
     return struct.pack(_FORMATS[kind], value.value)
 
 
+@functools.lru_cache(maxsize=256)
+def _run(code: str, count: int) -> struct.Struct:
+    """A big-endian run of ``count`` values of the struct ``code``, cached: most lists are three ints long."""
+    return struct.Struct(f">{count}{code}")
+
+
 class _Reader:
+    """Reads tags from ``data``. Large templates hold millions of tags, so scalars are read with ``unpack_from`` and
+    a list of scalars (every block's ``pos``) in one call."""
+
     def __init__(self, data: bytes) -> None:
         self.data = data
         self.pos = 0
+
+    def _unpack(self, fmt: struct.Struct) -> tuple[Any, ...]:
+        if self.pos + fmt.size > len(self.data):
+            raise ValueError("truncated NBT data")
+        values = fmt.unpack_from(self.data, self.pos)
+        self.pos += fmt.size
+        return values
 
     def take(self, n: int) -> bytes:
         chunk = self.data[self.pos : self.pos + n]
@@ -189,10 +209,13 @@ class _Reader:
         return chunk
 
     def u8(self) -> int:
-        return self.take(1)[0]
+        if self.pos >= len(self.data):
+            raise ValueError("truncated NBT data")
+        self.pos += 1
+        return self.data[self.pos - 1]
 
     def string(self) -> str:
-        (length,) = struct.unpack(">H", self.take(2))
+        (length,) = self._unpack(_U16)
         return decode_modified_utf8(self.take(length))
 
     def payload(self, kind: int) -> Any:
@@ -206,16 +229,19 @@ class _Reader:
             return self.string()
         if kind == TAG_LIST:
             element_type = self.u8()
-            (count,) = struct.unpack(">i", self.take(4))
+            (count,) = self._unpack(_I32)
+            if element_type in _STRUCTS and count > 0:
+                wrapper = _WRAPPERS[element_type]
+                values = self._unpack(_run(_FORMATS[element_type][1:], count))
+                return NbtList(element_type, tuple(map(wrapper, values)))
             return NbtList(element_type, tuple(self.payload(element_type) for _ in range(count)))
-        if kind in _FORMATS:
-            fmt = _FORMATS[kind]
-            (value,) = struct.unpack(fmt, self.take(struct.calcsize(fmt)))
+        if kind in _STRUCTS:
+            (value,) = self._unpack(_STRUCTS[kind])
             return _WRAPPERS[kind](value)
         if kind in _ARRAY_CODES:
-            (count,) = struct.unpack(">i", self.take(4))
+            (count,) = self._unpack(_I32)
             if count < 0:
                 raise ValueError("negative NBT array length")
-            fmt = f">{count}{_ARRAY_CODES[kind]}"
-            return _ARRAY_WRAPPERS[kind](struct.unpack(fmt, self.take(struct.calcsize(fmt))))
+            values = self._unpack(_run(_ARRAY_CODES[kind], count))
+            return _ARRAY_WRAPPERS[kind](values)
         raise ValueError(f"unsupported NBT tag type {kind}")

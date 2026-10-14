@@ -1,0 +1,69 @@
+# Import rules for Stonevaults 2.0.0+26.1-neoforge (MIT), A4c (RLM-120). Source and command: ../README.md.
+# The rooms: the zombie and pillager dungeons' entrances, lobbies, rooms, stairways and treasure rooms. Left out: the
+# igloo and the mage tower (surface buildings), the illager pieces (a mob on a 1x3x1 jigsaw stub) and the zombie
+# temple's blockers (5x3x3 caps the temple pulls in).
+include:
+  - dungeon/*
+  - pillager_dungeon/*
+exclude:
+  - pillager_dungeon/illagers/*
+  - dungeon/rooms/zombie_three_way_temple/*
+max_size: 32
+blocks:
+  minecraft:chain: minecraft:iron_chain       # renamed in 1.21.9; the templates are from 1.17
+  minecraft:structure_block: minecraft:air[]  # leftovers of the authoring world (save blocks, data markers)
+jigsaws:
+  interior: drop      # mob and blocker stubs inside the rooms
+  normalize: true
+loot_tables:
+  stonevaults:*: null # the dungeon fills its chests (W4)
+entities:
+  keep: [minecraft:painting, minecraft:item_frame, minecraft:glow_item_frame, minecraft:armor_stand]
+dress:
+  exclude: [dungeon/entrances/*]  # approved as they are
+  # Variety and decorations Matěj asked for in the gallery review (2026-10-14): the plainer a room, the more it
+  # gets (tools/realmforge_tools/rooms/dress.py). There is no cracked mossy stone brick block; mossy cobblestone
+  # takes its place.
+  floor:
+    target: 4
+    replace: [minecraft:cobblestone, minecraft:stone_bricks, minecraft:stone]
+    variants: [minecraft:mossy_cobblestone, minecraft:cracked_stone_bricks, minecraft:gravel]
+  walls:
+    target: 4
+    replace: [minecraft:stone_bricks, minecraft:cobblestone, minecraft:stone]
+    variants: [minecraft:cracked_stone_bricks, minecraft:mossy_stone_bricks, minecraft:mossy_cobblestone]
+  ceiling:
+    target: 3
+    replace: [minecraft:stone_bricks, minecraft:cobblestone, minecraft:stone]
+    variants: [minecraft:cracked_stone_bricks, minecraft:mossy_stone_bricks, minecraft:mossy_cobblestone]
+  decorations: [vines, cobwebs, barrels]
+  without:
+    # No added barrels in these rooms (Matěj's review of the dressing, 2026-10-14); their own barrels stay.
+    barrels:
+      - dungeon/rooms/combination_lock
+      - dungeon/rooms/drowned_junction
+      - dungeon/rooms/husk_temple
+      - dungeon/rooms/item_combination_lock
+      - dungeon/rooms/lava_parkour
+      - dungeon/rooms/lava_trap
+      - dungeon/rooms/nether_portal
+      - dungeon/rooms/stairs
+      - dungeon/stairway/fall_01
+      - dungeon/stairway/fall_long
+      - dungeon/treasure/tiny_cap
+      - pillager_dungeon/entrances/entrance_tower
+      - pillager_dungeon/entrances/entrance_tower_2
+      - pillager_dungeon/entrances/entrance_tower_2_long
+      - pillager_dungeon/entrances/entrance_tower_long
+      - pillager_dungeon/rooms/item_combination_lock
+      - pillager_dungeon/rooms/jail
+      - pillager_dungeon/rooms/jail_2
+      - pillager_dungeon/rooms/jail_3
+      - pillager_dungeon/rooms/library
+      - pillager_dungeon/rooms/nether_portal
+      - pillager_dungeon/rooms/stairs
+      - pillager_dungeon/rooms/storage
+      - pillager_dungeon/rooms/storage_2
+      - pillager_dungeon/rooms/temple
+      - pillager_dungeon/stairway/fall_01
+      - pillager_dungeon/stairway/fall_long

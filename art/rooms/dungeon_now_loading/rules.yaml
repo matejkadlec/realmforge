@@ -1,0 +1,66 @@
+# Import rules for Dungeon Now Loading 2.2 for Forge 1.20.1 (CC0-1.0), A4c (RLM-120). Source and command:
+# ../README.md.
+# The rooms: the labyrinth's corridors and the labyrinth rooms within 32 blocks. Left out: the rooms bigger than
+# that (most of the labyrinth, its boss room), garhold_cage (a corrupt file in the jar), the Temple of Duality (its
+# chambers are puzzles run by Dungeon Now Loading's own blocks, which stop working once they are vanilla blocks, and
+# all but two are bigger than 32 blocks) and the pieces the rooms pull in (decorations, spawners, rewards).
+include:
+  - labyrinth/corridors/*
+  - labyrinth/rooms/*
+exclude:
+  - labyrinth/rooms/garhold_cage.nbt
+max_size: 32
+blocks:
+  minecraft:chain: minecraft:iron_chain       # renamed in 1.21.9; the templates are from 1.20.2
+  minecraft:grass: minecraft:short_grass      # renamed in 1.20.3
+  # Markers its processor list labyrinth/generic_degradation replaces when the labyrinth generates: the outcome it
+  # always or nearly always picks (its random cobwebs, pots and candles are left out).
+  minecraft:red_wool: minecraft:stone[]                 # the rock around a room
+  minecraft:black_stained_glass: minecraft:stone[]      # stone or ore
+  minecraft:gray_stained_glass: minecraft:air[]         # air, 1 in 10 a cobweb
+  minecraft:light_gray_stained_glass: minecraft:air[]   # air or a pot, candle, barrel
+  minecraft:white_stained_glass: minecraft:air[]
+  minecraft:red_carpet: minecraft:air[]
+  minecraft:light_gray_carpet: minecraft:air[]
+  # Dungeon Now Loading's own blocks, by look:
+  dungeonnowloading:dungeon_wall_torch: minecraft:wall_torch
+  dungeonnowloading:dungeon_banner_spawner_magenta: minecraft:magenta_wall_banner  # a banner that spawns mobs
+  dungeonnowloading:explosive_barrel: minecraft:barrel[facing=up,open=false]
+  dungeonnowloading:spikes: minecraft:pointed_dripstone[thickness=tip,vertical_direction=up,waterlogged=false]
+  dungeonnowloading:wooden_wall_platform: minecraft:spruce_slab[type=top,waterlogged=false]
+  dungeonnowloading:wooden_wall_rack: minecraft:air[]
+  dungeonnowloading:cobblestone_pebbles: minecraft:air[]
+  # its mechanics, which our dungeons do their own way:
+  dungeonnowloading:dungeon_director: minecraft:air[]
+  dungeonnowloading:durite_queller: minecraft:air[]
+  dungeonnowloading:stone_preserver: minecraft:air[]
+jigsaws:
+  interior: drop      # decorations, spawners and rewards
+  normalize: true
+loot_tables:
+  dungeonnowloading:*: null  # the dungeon fills its chests (W4)
+entities:
+  keep: [minecraft:painting, minecraft:item_frame, minecraft:glow_item_frame, minecraft:armor_stand]
+dress:
+  # Variety and decorations Matěj asked for in the gallery review (2026-10-14): the plainer a room, the more it
+  # gets (tools/realmforge_tools/rooms/dress.py). There is no cracked mossy stone brick block; mossy cobblestone
+  # takes its place.
+  floor:
+    target: 4
+    replace: [minecraft:cobblestone, minecraft:stone_bricks, minecraft:stone]
+    variants: [minecraft:mossy_cobblestone, minecraft:cracked_stone_bricks, minecraft:gravel]
+  walls:
+    target: 4
+    replace: [minecraft:stone_bricks, minecraft:cobblestone, minecraft:stone]
+    variants: [minecraft:cracked_stone_bricks, minecraft:mossy_stone_bricks, minecraft:mossy_cobblestone]
+  ceiling:
+    target: 3
+    replace: [minecraft:stone_bricks, minecraft:cobblestone, minecraft:stone]
+    variants: [minecraft:cracked_stone_bricks, minecraft:mossy_stone_bricks, minecraft:mossy_cobblestone]
+  decorations: [vines, cobwebs, barrels]
+  without:
+    # No added barrels in these rooms (Matěj's review of the dressing, 2026-10-14); their own barrels stay.
+    barrels:
+      - labyrinth/rooms/checker
+      - labyrinth/rooms/silverfish_cell
+      - labyrinth/rooms/skeleton_platform

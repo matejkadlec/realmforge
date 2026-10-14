@@ -1098,11 +1098,24 @@ Rooms are generated or imported; nobody has to build one by hand
   NBT is generated output, never edited by hand.
 - **Imported rooms** (A4b, A4c): MIT, CC0 and LGPL-3.0 rooms from other mods, taken in by `rf rooms import` from
   `.nbt`, `.schem` or `.litematic` files with a rules file that remaps blocks, block entities, jigsaw names and
-  pools and keeps or drops entities ([tools/README](../tools/README.md#rooms)), then retagged into our slot types.
-  Each source has its own folder, `content/rooms/third_party/<source>/`, with its `LICENSE` and a `NOTICE`. The
-  folder is a license boundary, not a pool, so the sidecars name the pools. The jar keeps the folder (LGPL-3.0
-  rooms stay apart from our assets) and carries the notices under `META-INF/third_party/<source>/`: `rf gen` copies
-  the `LICENSE` and `NOTICE` of every source with a room there. Vanilla templates are referenced by id, never
+  pools, container loot tables and entities and picks the files that are rooms
+  ([tools/README](../tools/README.md#rooms)); the rules of each source live in `art/rooms/<source>/rules.yaml`
+  ([art/rooms](../art/rooms/README.md)). A4c imported 122 rooms from five sources (Stonevaults, DungeonZ and its
+  Desert Dungeon addon, Dungeon Now Loading, Mo' Structures): only pieces that are rooms, hallways or stairs of a
+  dungeon, with a connector, at most 32 blocks per axis, and no copy of a vanilla template, and only what Matěj's
+  gallery review kept. The plainest sets are dressed on import (`rooms/dress.py`): mossy, cracked and gravel variants
+  on surfaces with too few materials, vines, cobwebs and barrels, more the plainer the room. On import, jigsaws
+  inside a room (props, mobs, sub-pieces the source pulls in) become the block they leave behind, every connector
+  is named `realmforge:door` (sides) or `realmforge:shaft` (up, down) with the pool `minecraft:empty`, marker blocks
+  the source's processors replace at generation (red wool for rock, stained glass for legs) become what those
+  processors make of them, since our dungeons place templates without
+  them, a source's own loot tables are dropped (the dungeon fills its chests, W4), only decorative entities stay,
+  and the sidecar gets draft slot tags from its connectors and its name
+  ([content/README](../content/README.md)). Each source has its own folder, `content/rooms/third_party/<source>/`,
+  with its `LICENSE`, a `NOTICE` and, for LGPL-3.0, `COPYING` (the GPL-3.0 text). The folder is a license
+  boundary, not a pool, so the sidecars name the pools. The jar keeps the folder (LGPL-3.0 rooms stay apart from our
+  assets) and carries the notices under `META-INF/third_party/<source>/`: `rf gen` copies them for every source
+  with a room there, and `mod_license` names the added licenses. Vanilla templates are referenced by id, never
   copied.
 - **Hand-built rooms** stay possible: built with structure blocks and saved as NBT with a sidecar like any other,
   or exported as a schematic and taken in by `rf rooms import --ours`, which marks the sidecar's `source` as ours.
@@ -1115,10 +1128,12 @@ Rooms are generated or imported; nobody has to build one by hand
   reviewed: `rf gen` would delete their `review.yaml`.
 - **Validation:** size limits (48 blocks per axis, a structure block's maximum), connectors on the room's boundary
   facing out, known markers, only blocks the themes can swap and only ids inside the ID universe (an imported room's own
-  blocks are remapped), and `LICENSE` and `NOTICE` next to third-party rooms. `rooms/check.py` checks the size, the data
-  version, the ids and the connectors; markers come with the dungeon framework (W4) and the swappable blocks with the
-  themes of the room generator (A4d). Generated rooms are also checked for reachability between their connectors and for
-  headroom.
+  blocks are remapped, and a container's loot table must exist), and `LICENSE` and `NOTICE` next to third-party rooms
+  (`COPYING` next to LGPL-3.0 ones). `rooms/check.py` checks the size, the data version, the ids, the loot tables and
+  the connectors; markers come with the dungeon framework (W4) and the swappable blocks with the themes of the room
+  generator (A4d). Generated rooms are also checked for reachability between their connectors and for headroom. In the
+  game, `ContentRoomGameTests` (QA mod) loads every room through the structure manager, which upgrades an imported
+  room from its data version, and compares its size, jigsaws and air blocks with `GeneratedRoomExpectations`.
 
 ### 15.5 Instances
 

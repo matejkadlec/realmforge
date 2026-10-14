@@ -27,6 +27,9 @@ from realmforge_tools.schema import (
     TextGroupDef,
 )
 from realmforge_tools.schema.room import (
+    GPL_FILE,
+    GPL_TITLE,
+    LGPL_TITLE,
     LICENSE_FILES,
     REVIEW_FILE,
     ROOM_SEGMENT,
@@ -88,8 +91,9 @@ class RoomReview:
 
 @dataclass(frozen=True)
 class RoomNotice:
-    """A third-party source's ``LICENSE`` or ``NOTICE`` in ``content/rooms/third_party/<source>/``, which the jar
-    carries under ``META-INF/third_party/<source>/`` (ADR 0028)."""
+    """A third-party source's ``LICENSE``, ``NOTICE`` or (LGPL-3.0) ``COPYING`` in
+    ``content/rooms/third_party/<source>/``, which the jar carries under ``META-INF/third_party/<source>/``
+    (ADR 0028)."""
 
     source: str
     name: str
@@ -239,7 +243,7 @@ def _load_rooms(
             if review is not None:
                 reviews.append(RoomReview(rel, "/".join(parts[:-1]), review))
             continue
-        if file.name in LICENSE_FILES:
+        if file.name in (*LICENSE_FILES, GPL_FILE):
             if len(parts) != 3 or parts[0] != "third_party":
                 problems.append(
                     Problem(rel, "", f"{file.name} belongs directly in content/rooms/third_party/<source>/")
@@ -298,10 +302,34 @@ def _load_rooms(
                         f"third-party rooms need the source's {name} file next to them (ADR 0028)",
                     )
                 )
+    for source in sorted({source for source, _ in license_files}):
+        problems += _gpl_problems(source, license_files, paths)
     notices = tuple(
         RoomNotice(source, name, file.read_bytes()) for (source, name), file in sorted(license_files.items())
     )
     return tuple(rooms), tuple(sorted(reviews, key=lambda r: r.folder)), notices
+
+
+def _gpl_problems(source: str, license_files: dict[tuple[str, str], Path], paths: RepoPaths) -> list[Problem]:
+    """An LGPL-3.0 source needs the GPL-3.0 text as ``COPYING``, which no other source has (ADR 0028)."""
+    folder = f"content/{ROOMS_DIR}/third_party/{source}/"
+    license_file, gpl_file = license_files.get((source, "LICENSE")), license_files.get((source, GPL_FILE))
+    lgpl = license_file is not None and _starts_with_title(license_file, LGPL_TITLE)
+    if lgpl and gpl_file is None:
+        return [Problem(folder, "", f"an LGPL-3.0 source needs the GPL-3.0 text as {GPL_FILE} (ADR 0028)")]
+    if gpl_file is not None and not lgpl:
+        return [Problem(paths.rel(gpl_file), "", f"only an LGPL-3.0 source (its LICENSE) carries {GPL_FILE}")]
+    if gpl_file is not None and not _starts_with_title(gpl_file, GPL_TITLE):
+        return [Problem(paths.rel(gpl_file), "", f"{GPL_FILE} must hold the GPL-3.0 text")]
+    return []
+
+
+def _starts_with_title(file: Path, title: str) -> bool:
+    """Whether the license text's first non-empty line is ``title`` (license files indent it)."""
+    for line in file.read_text(encoding="utf-8", errors="replace").splitlines():
+        if line.strip():
+            return line.strip() == title
+    return False
 
 
 def _load_review(file: Path, rel: str, problems: list[Problem]) -> dict[str, str] | None:

@@ -3,8 +3,8 @@
 Rooms are the second exception to YAML-only content, after worldgen JSON: the template is the room, and the
 sidecar says how dungeons use it. A room's id is its path below ``content/rooms/`` without the suffix
 (``third_party/stonevaults/hall_a``); the jar holds it as the structure ``realmforge:rooms/<id>``. Imported rooms
-live in ``third_party/<source>/`` with the source's ``LICENSE`` and ``NOTICE``
-([ADR 0028](../../../docs/decisions/0028-dungeon-rooms-generated-or-imported.md)).
+live in ``third_party/<source>/`` with the source's ``LICENSE`` and ``NOTICE``, and an LGPL-3.0 source also with
+``COPYING``, the GPL-3.0 text ([ADR 0028](../../../docs/decisions/0028-dungeon-rooms-generated-or-imported.md)).
 """
 
 from __future__ import annotations
@@ -20,6 +20,11 @@ ROOMS_DIR = "rooms"
 REVIEW_FILE = "review.yaml"
 # Files a third-party source's folder carries besides its rooms (ADR 0028).
 LICENSE_FILES = ("LICENSE", "NOTICE")
+# The GPL-3.0 text an LGPL-3.0 source carries next to its LICENSE, as LGPL-3.0 requires (ADR 0028, point 4).
+GPL_FILE = "COPYING"
+# A LICENSE that starts the LGPL-3.0 text, and a COPYING that starts the GPL-3.0 text.
+LGPL_TITLE = "GNU LESSER GENERAL PUBLIC LICENSE"
+GPL_TITLE = "GNU GENERAL PUBLIC LICENSE"
 
 # One path segment of a room id: lowercase snake_case, like our other ids.
 ROOM_SEGMENT = r"[a-z0-9][a-z0-9_]*"

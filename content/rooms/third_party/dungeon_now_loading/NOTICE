@@ -1,0 +1,30 @@
+Dungeon Now Loading rooms in Realmforge
+
+Source:    Dungeon Now Loading 2.2 for Forge 1.20.1 by Hexnowloading (HexNowLoadingYT)
+           https://modrinth.com/mod/dungeon-now-loading (Dungeon Now Loading-forge-1.20.1-2.2.jar)
+Copyright: Hexnowloading
+License:   CC0 1.0 Universal, the text in LICENSE (the jar's "LICENSE_Dungeon Now Loading"; its mods.toml
+           says "C0-1.0"). The Modrinth page says MIT, and the source repository it links,
+           github.com/hexnowloading/DungeonNowLoading, no longer exists (checked 2026-10-14). Realmforge
+           follows the license file shipped in the jar it copied the rooms from. These rooms stay under it.
+
+The structure templates in this folder are copied from data/dungeonnowloading/structures/ in that jar:
+the corridors of its labyrinth and the labyrinth rooms at most 32 blocks on an axis. Each room's YAML
+sidecar names its source file.
+
+Changed by Realmforge (2026-10-14), with `rf rooms import` and the rules in
+art/rooms/dungeon_now_loading/rules.yaml of the Realmforge repository:
+- minecraft:chain renamed to minecraft:iron_chain and minecraft:grass to minecraft:short_grass, their
+  names in current Minecraft;
+- the marker blocks its processor list generic_degradation replaces when the labyrinth generates set to
+  what it always or nearly always picks (red wool and black glass to stone, the other glass and carpets
+  to air);
+- Dungeon Now Loading's own blocks replaced by vanilla blocks that look alike (wall torches, banners,
+  barrels, pointed dripstone for its spikes, spruce slabs for its wall platforms) or removed (pebbles,
+  wall racks, and the blocks that run its mechanics);
+- jigsaws inside a room (decorations, spawners, rewards) replaced by the block they leave behind, and
+  the connectors renamed realmforge:door (sides) and realmforge:shaft (up, down);
+- the containers' loot tables and every entity except item frames removed;
+- more block variety added (mossy, cracked and gravel variants on plain floors, walls and ceilings) and
+  decorations (vines, cobwebs, barrels);
+- templates written back in a normalized form (blocks sorted, stored deflate).
