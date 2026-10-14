@@ -189,9 +189,9 @@ public final class CombatStatGameTests {
         assertHealth(helper, player, 16, "health took the other 4");
 
         ticks(player, MagicShields.REFILL_DELAY_TICKS - 2);
-        assertShield(helper, player, 0, "no refill before 5 seconds without damage");
+        assertShield(helper, player, 0, "no refill before the delay without damage has passed");
         ticks(player, 3);
-        assertShield(helper, player, 10, "refilled 5 seconds after the last damage");
+        assertShield(helper, player, 10, "refilled once the delay after the last damage has passed");
 
         player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200));
         assertAbsorption(helper, player, 4, "a golden apple's absorption");

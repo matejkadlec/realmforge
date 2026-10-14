@@ -21,8 +21,8 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  * empty whenever it takes anything.
  */
 public final class MagicShields {
-    /** How long after the last damage the shield refills: 5 seconds (proposal, settled in the playtest). */
-    public static final int REFILL_DELAY_TICKS = 100;
+    /** How long after the last damage the shield refills, all at once: 10 seconds (Matěj, 2026-10-14). */
+    public static final int REFILL_DELAY_TICKS = 200;
 
     private MagicShields() {
     }

@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../tools/schemas/stats.schema.json
 # A pool of points that takes damage before health, after absorption hearts, mainly for casters (Matěj,
-# 2026-10-13). It refills to full 5 seconds after the last damage; a bar over the hearts shows it (architecture 9.1).
+# 2026-10-13). It refills to full 10 seconds after the last damage; a bar over the hearts shows it (architecture 9.1).
 id: magic_shield
 name: {en_us: Magic Shield}
 kind: secondary

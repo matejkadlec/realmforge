@@ -730,12 +730,11 @@ the player's tick, every 20 ticks of its tick count.
 **Magic shield** (`combat/MagicShields`; Matěj, 2026-10-13: "a secondary healthbar, that is hit first, and only
 when empty the player begin to lose health; mainly for casters"): a pool of up to the magic shield stat's points in
 the transient `realmforge:magic_shield` attachment ([7](#7-player-state)). It takes damage after absorption hearts
-and before health (step 5), and refills to full 5 seconds (`MagicShields.REFILL_DELAY_TICKS`) after the last damage
-the player took, any damage, even with the pool empty; a new player entity starts full. The refill is a proposal
-for Matěj's playtest (at once after the delay, rather than gradually). The pool syncs to its owner on every change,
-and `client/hud/MagicShieldHud` draws it as a translucent blue bar over the bottom row of hearts
-([18](#18-client-code-rendering-gui-input)). Like absorption hearts, it takes any damage that reaches health (falls,
-drowning, starvation included).
+and before health (step 5), and refills to full, all at once, 10 seconds (`MagicShields.REFILL_DELAY_TICKS`) after
+the last damage the player took, any damage, even with the pool empty (Matěj's playtest, 2026-10-14); a new player
+entity starts full. The pool syncs to its owner on every change, and `client/hud/MagicShieldHud` draws it as a
+translucent bar over the bottom row of hearts, a new colour every 10 points ([18](#18-client-code-rendering-gui-input)).
+Like absorption hearts, it takes any damage that reaches health (falls, drowning, starvation included).
 
 `DamageCalculatorTest` covers the formulas; `CombatStatGameTests` plays each stat in a world: armor pierce against a
 training dummy with 15 armor, spell resistance and its cap on a husk, and a fake player for lifesteal (melee and a
@@ -1437,10 +1436,14 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     player sees no numbers for damage taken.
   - The hit direction layer (`client/hud/HitDirectionHud`, after the MMM Indicators mod) draws a red arc around the
     crosshair toward each recent attacker for 1.5 s, turning with the camera and following the attacker.
-  - The magic shield layer (`client/hud/MagicShieldHud`, RLM-160) draws a translucent blue bar over the bottom row of
-    hearts, as wide as the share of the shield left (`MagicShieldBar`), and nothing while the shield is empty. A
-    second layer, below vanilla's health layer, notes where that row goes (`Gui#leftHeight`), so the bar follows
-    layers that raise the left column.
+  - The magic shield layer (`client/hud/MagicShieldHud`, RLM-160; Matěj, 2026-10-14) draws a translucent bar over
+    the bottom row of hearts, inside a 1-pixel border with rounded corners (the straight edges stop 2 pixels short of
+    each corner, and one pixel closes the round). Every 10 shield points fill the bar once, in the next colour of the
+    RGB colour wheel's edge, layered over the tier below as Overflowing Bars layers hearts: cyan up to 10 points,
+    then ocean, blue, violet, magenta, and raspberry from 50 up; 25 points show blue over the left half and ocean over
+    the rest. The border takes the top tier's colour, halfway to white (`MagicShieldBar`). Nothing shows while the
+    shield is empty. A second layer, below vanilla's health layer, notes where that row goes (`Gui#leftHeight`), so
+    the bar follows layers that raise the left column.
   - The character sheet (`client/screen/CharacterSheetScreen`, opened and closed by `client/input/CharacterSheetKey`,
     K by default) draws `character/CharacterSheetView`: the player's name and level in bold ("Steve · Lv. 12"),
     then four tabs of two columns (a click, the number keys, Tab or the arrow keys switch them). The heading and the
