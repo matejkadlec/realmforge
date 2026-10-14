@@ -906,11 +906,15 @@ Built in W1 (RLM-31): `world/DimensionRules`, `world/MobLevelRule` and `mob/MobL
   the origin, one more every 500 blocks up to 5, one more per 32 blocks below y 0, jitter 1.
 - **The scaling** (`MobScaling`) comes from three curves at the mob's level: `realmforge:mob_health` multiplies its
   maximum health, `mob_armor` adds armor points, and `mob_damage` multiplies the damage of every hit it causes. The
-  first two are permanent attribute modifiers, `realmforge:mob_level/max_health` (on the base, as vanilla's leader
-  zombie bonus) and `realmforge:mob_level/armor` ([8.2](#82-where-modifiers-come-from)), saved with the mob. Damage
-  is a multiplier on `LivingIncomingDamageEvent` for every hit whose causing entity (`DamageSource#getEntity`) is a
-  leveled mob, so arrows, explosions and thrown potions grow with the level too; only melee reads the attack damage
-  attribute. The shipped curves add nothing at level 1, and a curve a data pack removed adds nothing.
+  first two are permanent attribute modifiers, `realmforge:mob_level/max_health` and `realmforge:mob_level/armor`
+  ([8.2](#82-where-modifiers-come-from)), saved with the mob. The health modifier is `ADD_MULTIPLIED_BASE`: it
+  multiplies the base plus every flat bonus, and other base multipliers add to its multiple instead of compounding
+  with it (+10 % on a mob at 1.4 times makes 1.5 times, not 1.54); `ADD_MULTIPLIED_TOTAL` modifiers multiply the
+  result. Whether the level's multiple should compound instead is settled with the first other source of a mob's
+  maximum health. Damage is a multiplier on `LivingIncomingDamageEvent` for every hit whose causing entity
+  (`DamageSource#getEntity`) is a leveled mob, so arrows, explosions and thrown potions grow with the level too; only
+  melee reads the attack damage attribute. The shipped curves add nothing at level 1, and a curve a data pack removed
+  adds nothing.
 - **At spawn:** in `FinalizeSpawnEvent`, `mob` rolls the level from the rules of the mob's dimension at the spawn
   position, writes it into `realmforge:level` and applies the scaling. A mob spawned with a new chunk
   (`NaturalSpawner#spawnMobsForChunkGeneration`, structure pieces such as a monument's guardians) is finalized on a

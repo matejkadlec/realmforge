@@ -56,8 +56,12 @@ public record MobScaling(double health, double damage, double armor) {
     }
 
     /**
-     * The permanent modifiers for health and armor: maximum health times {@link #health} (on the base, as vanilla's
-     * leader zombie bonus does), and {@link #armor} points. A part that changes nothing has no modifier.
+     * The permanent modifiers for health and armor: maximum health times {@link #health}, and {@link #armor} points. A
+     * part that changes nothing has no modifier.
+     *
+     * <p>The health modifier is {@code ADD_MULTIPLIED_BASE}: it multiplies the base plus every flat bonus, and other
+     * base multipliers add to its multiple instead of compounding with it (+10 % on a mob at 1.4 times makes 1.5 times,
+     * not 1.54). {@code ADD_MULTIPLIED_TOTAL} modifiers multiply the result.
      */
     public List<StatBonus> modifiers() {
         List<StatBonus> modifiers = new ArrayList<>(2);
