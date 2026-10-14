@@ -11,6 +11,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.templatesystem.JigsawReplacementProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.phys.AABB;
@@ -65,10 +66,14 @@ final class InstanceBuilder {
         return true;
     }
 
-    /** The settings a room is placed with; its box comes from the same settings. */
+    /**
+     * The settings a room is placed with; its box comes from the same settings. Its jigsaw blocks (connectors) become
+     * their final state, as in vanilla's jigsaw structures.
+     */
     static StructurePlaceSettings settings(RoomPlacement room) {
-        // Rooms are built by hand with correct block shapes, so placing skips the neighbour shape pass.
-        return new StructurePlaceSettings().setRotation(room.rotation()).setIgnoreEntities(true).setKnownShape(true);
+        // Rooms are built with correct block shapes, so placing skips the neighbour shape pass.
+        return new StructurePlaceSettings().setRotation(room.rotation()).setIgnoreEntities(true).setKnownShape(true)
+                .addProcessor(JigsawReplacementProcessor.INSTANCE);
     }
 
     static StructureTemplate template(ServerLevel level, RoomPlacement room) {
