@@ -5,7 +5,9 @@
 > from the NeoForge 1.21.1 jar (Chococraft 0.11.12, read with `javap` in a scratch directory; the jar is not in the
 > repository), its `neoforge.mods.toml`, its data files, the licence files of its source repository and Modrinth.
 > Mechanics only: no code, asset or name of Chococraft goes into Realmforge without its licence allowing it.
-> The choice between the options below is Matěj's (decision ticket RLM-115).
+> **Decided 2026-10-12 and 2026-10-13 (RLM-115): option B, our own mounts**, with the tier table as proposed, the
+> mount system and tiers 1 to 3 in M4, and elytra faster in the air while mounts win on everything else
+> ([Decision](#decision-rlm-115)).
 
 **In short.** Chococraft 0.11.12 runs on NeoForge 1.21.1 and needs only Architectury API, which the pack already
 has. Its code is MIT. Its chocobos, models, animations, flight, saddle bags and taming all exist, so a first
@@ -204,3 +206,53 @@ first flier can be measured in play.
    [reference games](reference-games.md#10-travel-and-qol-tr-cte2s-cheap-travel-hytales-gadgets-without-the-gates)).
 4. **Mounts against elytra:** the vision says flying mounts beat elytra; the decision on RLM-47 says elytra (own
    slot, chapter 4–5) are "a little better than a mount". Which one holds for tier 4?
+
+## Decision (RLM-115)
+
+Matěj decided on 2026-10-12 and 2026-10-13; the ticket's comments hold his words.
+
+1. **B, our own mounts.** A `realmforge:mount` registry from `content/mounts/`; a mount is summoned when used and
+   cannot be lost. Chococraft does not go into the pack.
+2. **The tier table** above is approved as proposed. Its numbers are starting points for balance.
+3. **Each tier ships with the chapter that unlocks it** (delegated to Claude by Matěj, 2026-10-13):
+   - **M4**, which brings chapters 2 and 3: the registry and content type, the player's mount collection, summon and
+     dismiss, ground riding with attacks from the mount, flight, and tiers 1 to 3. Tier 1 becomes the reward of a
+     chapter 1 quest at the same time.
+   - **M6:** tiers 4 to 6 with their extras (tier 6 needs the debuff and tenacity system) and the optional mount
+     journal. If chapter 4 is planned earlier than M6, tier 4 moves with it.
+   - Not M2: it brings no chapter, so its only part could be ground riding with tier 1, which helps little in M1's
+     cave realm. Flight, the riskiest part, is needed from chapter 2, so registry, riding and flight are built and
+     tested together once.
+4. **Mounts against elytra:**
+   - **Pure travel speed in the air:** elytra are faster.
+   - **Overall speed, utility and combat:** the mount wins clearly. Elytra use up rockets, and a player gliding on
+     them can hardly fight; a mount costs a summon but uses nothing, gives buffs, and its rider can fight.
+   - **New requirement:** the rider can attack from the mount, as from a vanilla horse.
+
+   This settles the same question in [ADR 0025](../decisions/0025-remove-the-nether-and-end.md) ("Elytra and flying
+   mounts"), the [realm design](../design/realms.md#open-questions) (open question 7) and the
+   [vision](../vision.md) (flying mounts against elytra). Elytra come from chapter 3's final boss (RLM-138).
+
+### Notes for the mount tasks
+
+From the Chococraft 0.11.12 source (branch `arch/1.21` of Mrbysco/ChocoCraft4), recorded with the decision on
+RLM-115; the vanilla facts are checked against the 26.1.2 sources.
+
+- **Size** (roadmap sizes): the registry and content type S; the mount collection, granting a mount from a quest
+  and the requirement check on summon S; the mount entity (no AI, never saved to the world) and ground riding M;
+  summon and dismiss (a spell with a cast time; the mount is gone on dismount, logout, teleport and death, and
+  refused where `dimension_rules` say so) S–M; flight M, the riskiest part, whose feel needs a playtest; the
+  extras of tiers 5 and 6 S each; art M–L, mostly Matěj's review time (one model per mount family with a texture
+  per tier is the cheap way). Roughly five to eight agent sessions of code, art on top.
+- **Reference code:** Chococraft's whole riding and flight logic is about 60 lines (`AbstractChocobo#travel`), plus
+  a dismount guard of about 15 (`RidingEventHandler`) and the rider-effect tick. It is MIT, so adapted parts keep
+  its copyright and licence notice; its assets, its sound and its Final Fantasy names stay out.
+- **Flight:** keep the mount's gravity at zero while it flies (`setNoGravity`). A dedicated server without
+  `allow-flight` kicks a player who floats a ridden vehicle for about 80 ticks, unless the vehicle has no gravity
+  (`ServerGamePacketListenerImpl#getMaximumFlyingTicks` and `clientVehicleIsFloating`); singleplayer allows flight
+  (`MinecraftServer#allowFlight`). Chococraft never sets `noGravity`.
+- **Jump input:** the rider's jump state is the protected `LivingEntity#jumping`, which Chococraft widens; ours
+  needs an access transformer ([architecture 19.3](../architecture.md#193-mixins-and-access-transformers): a
+  comment saying why, and a test).
+- **Vanilla riding API** (26.1.2): `getControllingPassenger`, `travel`, `tickRidden`, `getRiddenInput`,
+  `getRiddenSpeed`, `positionRider`, `getPassengerAttachmentPoint`.
