@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../../../tools/schemas/rooms.schema.json
+# Imported by `rf rooms import`: draft tags from the connectors and the name, pools with the dungeons (W4).
+pools: []
+tags:
+  - "hallway"
+  - "straight"
+weight: 1
+source:
+  file: "dungeon_main_hallway.nbt"
+  format: nbt
+  data_version: 3120

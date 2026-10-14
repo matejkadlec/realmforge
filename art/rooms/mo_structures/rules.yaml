@@ -1,0 +1,17 @@
+# Import rules for Mo' Structures 1.6.0+1.21.8 (LGPL-3.0), A4c (RLM-120). Source and command: ../README.md.
+# The rooms: the dungeon under the castle (cells, corridors, corners, stairs) and the sphinx's treasure chamber.
+# Left out: everything above ground (the castle itself, villages, towers, ships, the sphinx's body, the mine's
+# exterior), the abandoned village temples that copy vanilla's, and the decoration pieces.
+include:
+  - castle/dungeon/*
+  - sphinx/chamber.nbt
+max_size: 32
+blocks:
+  minecraft:chain: minecraft:iron_chain       # renamed in 1.21.9; the templates are from 1.18.2 and 1.21.8
+jigsaws:
+  interior: drop
+  normalize: true
+loot_tables:
+  mostructures:*: null  # the dungeon fills its chests (W4); vanilla tables stay
+entities:
+  keep: [minecraft:painting, minecraft:item_frame, minecraft:glow_item_frame, minecraft:armor_stand]

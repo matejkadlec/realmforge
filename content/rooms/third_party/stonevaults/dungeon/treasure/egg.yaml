@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../../../../../tools/schemas/rooms.schema.json
+# Imported by `rf rooms import`: draft tags from the connectors and the name, pools with the dungeons (W4).
+pools: []
+tags:
+  - "treasure"
+  - "dead_end"
+weight: 1
+source:
+  file: "egg.nbt"
+  format: nbt
+  data_version: 2724

@@ -1,0 +1,12 @@
+# Import rules for Desert Dungeon 1.0.1, a DungeonZ addon (MIT), A4c (RLM-120). Source and command: ../README.md.
+# The rooms: the desert dungeon. Left out: its overworld entrance (a portal into DungeonZ's dimension, no connector),
+# the parkour piece (no required parkour, research DU-23) and the pieces bigger than 32 blocks on an axis.
+exclude:
+  - desert_dungeon_overworld.nbt
+  - "*parkour*"
+max_size: 32
+jigsaws:
+  interior: drop
+  normalize: true
+entities:
+  keep: [minecraft:painting, minecraft:item_frame, minecraft:glow_item_frame, minecraft:armor_stand]

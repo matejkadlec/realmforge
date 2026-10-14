@@ -1,0 +1,21 @@
+# Import rules for Stonevaults 2.0.0+26.1-neoforge (MIT), A4c (RLM-120). Source and command: ../README.md.
+# The rooms: the zombie and pillager dungeons' entrances, lobbies, rooms, stairways and treasure rooms. Left out: the
+# igloo and the mage tower (surface buildings), the illager pieces (a mob on a 1x3x1 jigsaw stub) and the zombie
+# temple's blockers (5x3x3 caps the temple pulls in).
+include:
+  - dungeon/*
+  - pillager_dungeon/*
+exclude:
+  - pillager_dungeon/illagers/*
+  - dungeon/rooms/zombie_three_way_temple/*
+max_size: 32
+blocks:
+  minecraft:chain: minecraft:iron_chain       # renamed in 1.21.9; the templates are from 1.17
+  minecraft:structure_block: minecraft:air[]  # leftovers of the authoring world (save blocks, data markers)
+jigsaws:
+  interior: drop      # mob and blocker stubs inside the rooms
+  normalize: true
+loot_tables:
+  stonevaults:*: null # the dungeon fills its chests (W4)
+entities:
+  keep: [minecraft:painting, minecraft:item_frame, minecraft:glow_item_frame, minecraft:armor_stand]

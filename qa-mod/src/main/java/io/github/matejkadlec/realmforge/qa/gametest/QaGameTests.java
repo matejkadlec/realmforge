@@ -41,6 +41,7 @@ public final class QaGameTests {
             ContentCurveGameTests.class,
             ContentDimensionRuleGameTests.class,
             ContentItemGameTests.class,
+            ContentRoomGameTests.class,
             ContentSpellSchoolGameTests.class,
             ContentStatGameTests.class,
             InstanceGameTests.class,

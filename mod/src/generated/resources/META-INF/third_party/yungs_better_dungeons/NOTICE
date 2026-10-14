@@ -1,0 +1,23 @@
+YUNG's Better Dungeons rooms in Realmforge
+
+Source:    YUNG's Better Dungeons 26.1.2-NeoForge-6.1.1 by YUNGNICKYOUNG and Acarii
+           https://modrinth.com/mod/yungs-better-dungeons (YungsBetterDungeons-26.1.2-NeoForge-6.1.1.jar)
+           https://github.com/YUNG-GANG/YUNGs-Better-Dungeons (branch 26.1.2)
+Copyright: YUNGNICKYOUNG and Acarii
+License:   GNU Lesser General Public License v3.0, the text in LICENSE (the jar's LICENSE_YungsBetterDungeons,
+           the same as the repository's LICENSE); the GNU General Public License v3.0 it builds on is in
+           COPYING. These rooms, with Realmforge's changes, stay under the LGPL-3.0, apart from Realmforge's
+           own code and assets (ADR 0028). A structure template is its own source form: the files in this
+           folder are the source of the rooms in the Realmforge jar.
+
+The structure templates in this folder are copied from data/betterdungeons/structure/ in that jar: the
+start room, rooms and stairs of its zombie dungeon and the bridges and stairs of its skeleton dungeon.
+Each room's YAML sidecar names its source file.
+
+Changed by Realmforge (2026-10-14), with `rf rooms import` and the rules in
+art/rooms/yungs_better_dungeons/rules.yaml of the Realmforge repository:
+- minecraft:chain renamed to minecraft:iron_chain, its name since Minecraft 1.21.9;
+- jigsaws inside a room (props, cubbies, loot piles) replaced by the block they leave behind, and the
+  connectors renamed realmforge:door (sides) and realmforge:shaft (up, down);
+- the containers' betterdungeons loot tables removed (vanilla ones stay);
+- templates written back in a normalized form (blocks sorted, stored deflate).

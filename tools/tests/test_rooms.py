@@ -1038,6 +1038,14 @@ def test_valid_room_generates_its_structure(repo: RepoPaths) -> None:
     assert repo.schemas / "rooms.schema.json" in files
 
 
+def test_rooms_get_expectations_for_the_game_test(repo: RepoPaths) -> None:
+    add_room(repo, "stone/hall")  # 5 x 4 x 5: one jigsaw, 48 air blocks
+    content, _ = load_and_validate(repo)
+    files = generate_all(content, repo)
+    java = repo.qa_generated / "java/io/github/matejkadlec/realmforge/qa/generated/GeneratedRoomExpectations.java"
+    assert 'new RoomExpectation("realmforge:rooms/stone/hall", 5, 4, 5, 1, 48))' in files[java].decode()
+
+
 def test_third_party_rooms_ship_their_notices(repo: RepoPaths) -> None:
     folder = third_party(repo)
     add_room(repo, "third_party/sample/hall")

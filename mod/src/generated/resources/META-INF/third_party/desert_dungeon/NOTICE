@@ -1,0 +1,18 @@
+Desert Dungeon rooms in Realmforge
+
+Source:    Desert Dungeon 1.0.1, an addon for DungeonZ, by D1scoball and Globox_Z
+           https://modrinth.com/mod/desert-dungeon-dungeonz-addon (desert-dungeon-1.0.1.jar)
+Copyright: D1scoball and Globox_Z, 2024
+License:   MIT. Modrinth and the jar's fabric.mod.json declare it, but the jar ships no license text and
+           the addon has no public repository, so LICENSE is the standard MIT text with the authors that
+           fabric.mod.json names. These rooms stay under it.
+
+The structure templates in this folder are copied from data/dungeonz/structure/ in that jar: the rooms
+of its desert dungeon. Each room's YAML sidecar names its source file.
+
+Changed by Realmforge (2026-10-14), with `rf rooms import` and the rules in
+art/rooms/desert_dungeon/rules.yaml of the Realmforge repository:
+- left out: the overworld entrance, the parkour piece and the pieces bigger than 32 blocks on an axis;
+- jigsaws inside a room replaced by the block they leave behind, and the connectors renamed
+  realmforge:door (sides) and realmforge:shaft (up, down);
+- templates written back in a normalized form (blocks sorted, stored deflate).

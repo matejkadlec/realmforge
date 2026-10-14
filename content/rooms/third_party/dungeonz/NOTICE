@@ -1,0 +1,22 @@
+DungeonZ rooms in Realmforge
+
+Source:    DungeonZ 1.3.0+1.21.1 by Globox_Z and Zura
+           https://modrinth.com/mod/dungeonz (dungeonz-1.3.0.jar)
+           https://github.com/Globox1997/DungeonZ
+Copyright: Copyright (c) 2023 Globox_Z
+License:   MIT, the text in LICENSE (the jar's LICENSE_dungeonz; the repository and fabric.mod.json also say
+           MIT). These rooms stay under it.
+
+The structure templates in this folder are copied from data/dungeonz/structure/ in that jar: the rooms
+of its dark dungeon and temple dungeon. Each room's YAML sidecar names its source file.
+
+Changed by Realmforge (2026-10-14), with `rf rooms import` and the rules in
+art/rooms/dungeonz/rules.yaml of the Realmforge repository:
+- left out: the overworld entrances, the parkour pieces and the pieces bigger than 32 blocks on an axis;
+- minecraft:grass renamed to minecraft:short_grass and minecraft:chain to minecraft:iron_chain, their
+  names in current Minecraft;
+- DungeonZ's own spawner and portal blocks and the structure blocks left from the authoring world
+  removed;
+- jigsaws inside a room replaced by the block they leave behind, and the connectors renamed
+  realmforge:door (sides) and realmforge:shaft (up, down);
+- templates written back in a normalized form (blocks sorted, stored deflate).

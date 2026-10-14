@@ -1,0 +1,24 @@
+# Import rules for YUNG's Better Dungeons 26.1.2-NeoForge-6.1.1 (LGPL-3.0), A4c (RLM-120). Source and command:
+# ../README.md.
+# The rooms: the zombie dungeon (start, rooms, stairs) and the skeleton dungeon (bridges, stairs). Left out: the
+# small and nether dungeons and the skeleton dungeon's shell (closed rooms without a connector), the props, tombstones,
+# loot piles, cubbies and arches the rooms pull in, the crumbled stairs and the terminators (caps that close an unused
+# doorway, 1 to 3 blocks deep).
+include:
+  - zombie_dungeon/zombie_start.nbt
+  - zombie_dungeon/floor1/room/*
+  - zombie_dungeon/floor2/room/*
+  - zombie_dungeon/big_stairs/big_stairs_0.nbt
+  - skeleton_dungeon/bridges/*
+  - skeleton_dungeon/stair1/*
+  - skeleton_dungeon/stair2/*
+max_size: 32
+blocks:
+  minecraft:chain: minecraft:iron_chain       # renamed in 1.21.9; the templates are from 1.21.1
+jigsaws:
+  interior: drop      # props, cubbies and loot piles
+  normalize: true
+loot_tables:
+  betterdungeons:*: null  # the dungeon fills its chests (W4); vanilla tables stay
+entities:
+  keep: [minecraft:painting, minecraft:item_frame, minecraft:glow_item_frame, minecraft:armor_stand]

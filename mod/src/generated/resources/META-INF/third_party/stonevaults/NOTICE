@@ -1,0 +1,21 @@
+Stonevaults rooms in Realmforge
+
+Source:    Stonevaults 2.0.0+26.1-neoforge by TheGrimsey
+           https://modrinth.com/mod/stonevaults (stonevaults-2.0.0+26.1-neoforge.jar)
+           https://github.com/TheGrimsey/Stonevaults (tag v2.0.0)
+Copyright: Copyright (c) 2021 TheGrimsey
+License:   MIT, the text in LICENSE (the repository's LICENSE at v2.0.0; the jar's neoforge.mods.toml also
+           says MIT). These rooms stay under it.
+
+The structure templates in this folder are copied from data/stonevaults/structure/ in that jar: the
+pieces of its dungeon and pillager dungeon (entrances, lobbies, rooms, stairways, treasure rooms). Each
+room's YAML sidecar names its source file.
+
+Changed by Realmforge (2026-10-14), with `rf rooms import` and the rules in
+art/rooms/stonevaults/rules.yaml of the Realmforge repository:
+- minecraft:chain renamed to minecraft:iron_chain, its name since Minecraft 1.21.9;
+- structure blocks left from the authoring world removed;
+- jigsaws inside a room (mob and blocker stubs) replaced by the block they leave behind, and the
+  connectors renamed realmforge:door (sides) and realmforge:shaft (up, down);
+- the containers' loot tables and every entity except paintings and item frames removed;
+- templates written back in a normalized form (blocks sorted, stored deflate).
