@@ -250,9 +250,10 @@ starting head it recorded.
 7. **Record the pass** in one pull request comment (`gh pr comment <n> --repo matejkadlec/realmforge
    --body-file <file>`), the GitHub-side record of the review: `🤖 Independent review`, the rounds and the head
    each one reviewed, every finding with its severity and outcome (fixed in `<sha>`, rejected with the reason,
-   tracked as `RLM-<n>`, dropped with the reason), the finishing state, and the head it leaves reviewed. Keep it
-   short and factual, with no secrets and no Codex mention. Only the acting account's comment counts as this
-   record ("Review state"). A pass that pushed also updates the Jira tickets ("Jira tickets").
+   tracked as `RLM-<n>`, dropped with the reason), the finishing state, the head it leaves reviewed and the base
+   SHA its review recorded ("Which head is reviewed" needs both). Keep it short and factual, with no secrets and
+   no Codex mention. Only the acting account's comment counts as this record ("Review state"). A pass that
+   pushed also updates the Jira tickets ("Jira tickets").
 
 ### Finishing states
 
@@ -276,11 +277,14 @@ starting head it recorded.
 A review belongs to exactly the head it covered. Every later head needs a new pass before the merge, whatever
 brought it: a conflict resolution, a check repair, a thread fix, a `qa2` revision, someone else's push. A textually
 clean merge says nothing about how two changes interact. One exception: a head that only brought `master` in, by
-a rebase or a merge without conflict resolutions, keeps the review when the pull request's own diff is unchanged:
+a rebase or a merge without conflict resolutions, keeps the review when the pull request's own diff is unchanged.
+Hash the pull request's current head (the `headRefOid` just read), never the local `HEAD`, which still names an
+older head until the next sync:
 
 ```bash
+git fetch origin
 git diff <base sha the review recorded> <reviewed head> | git patch-id --stable
-git diff $(git merge-base origin/master HEAD) HEAD | git patch-id --stable   # the same id keeps the review
+git diff $(git merge-base origin/master <current head>) <current head> | git patch-id --stable   # same id: kept
 ```
 
 ## P3 disposition
