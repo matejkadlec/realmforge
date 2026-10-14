@@ -23,6 +23,8 @@ A rules file (``--rules``, YAML, the ``ImportRules`` model) adapts a source to o
 - ``include`` and ``exclude``: which files of a source folder are rooms, as ``fnmatch`` patterns on the path below
   it (``dungeon/rooms/*.nbt``; ``*`` also matches ``/``). A file is imported when it matches an ``include`` (all
   files without one) and no ``exclude``.
+- ``max_size``: a file whose room is bigger on any axis (a whole wing of the source's dungeon rather than a room) is
+  left out like an excluded one.
 - ``data_version``: the data version of the files that state none (a Sponge v1 schematic, a template some tool
   wrote), when the source is known to be saved with it.
 
@@ -111,6 +113,7 @@ class ImportRules(_Strict):
     entities: EntityRules = Field(default_factory=EntityRules)
     include: list[str] = Field(default_factory=list)
     exclude: list[str] = Field(default_factory=list)
+    max_size: int | None = Field(default=None, ge=1, description="Leave out rooms bigger on any axis.")
     data_version: int | None = Field(
         default=None,
         ge=1,
@@ -151,7 +154,7 @@ class ImportedRoom:
     rejected_by: Path | None = None
     """The ``review.yaml`` that rejects the room; the file is skipped."""
     excluded: bool = False
-    """The rules' ``include`` and ``exclude`` leave the file out; it is skipped."""
+    """The rules (``include``, ``exclude``, ``max_size``) leave the file out; it is skipped."""
 
 
 def load_rules(path: Path | None) -> ImportRules:
@@ -296,6 +299,8 @@ def import_room(
     except StructureError as e:
         # A broken file in a source (some jars ship one) fails like any room; the rules can exclude it.
         return ImportedRoom(file, template, sidecar, None, False, problems=[f"not a usable room file: {e}"])
+    if rules.max_size is not None and max(source.structure.size) > rules.max_size:
+        return ImportedRoom(file, template, sidecar, None, False, excluded=True)
     structure, notes = apply_rules(source.structure, rules)
     result = ImportedRoom(file, template, sidecar, structure, False, [*source.notes, *notes])
     if stem.name == REVIEW_FILE.removesuffix(".yaml"):
@@ -448,7 +453,7 @@ def sidecar_text(room: RoomDef, sidecar: Path, paths: RepoPaths) -> str:
         lines.append(f"# yaml-language-server: $schema={schema}")
     source = room.source
     lines += [
-        "# Imported by `rf rooms import`; pools and tags come with retagging (A4c, architecture 15.4).",
+        "# Imported by `rf rooms import`: draft tags from the connectors and the name, pools with the dungeons (W4).",
         _yaml_list("pools", room.pools),
         _yaml_list("tags", room.tags),
         f"weight: {room.weight}",

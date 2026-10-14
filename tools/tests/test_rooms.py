@@ -936,6 +936,20 @@ def test_import_skips_excluded_and_reports_corrupt_files(repo: RepoPaths, tmp_pa
     assert sorted(p.name for p in target.glob("*.nbt")) == ["hall.nbt"]
 
 
+def test_import_leaves_out_rooms_above_max_size(repo: RepoPaths, tmp_path: Path) -> None:
+    source = tmp_path / "hall.nbt"
+    source.write_bytes(write_structure(small_room()))  # 5 x 4 x 5
+    target = third_party(repo)
+    (result,) = importer.import_rooms(
+        [source], target, RULES.model_copy(update={"max_size": 4}), load_vanilla(repo), repo
+    )
+    assert result.excluded and not result.written and not (target / "hall.nbt").exists()
+    (result,) = importer.import_rooms(
+        [source], target, RULES.model_copy(update={"max_size": 5}), load_vanilla(repo), repo
+    )
+    assert result.written
+
+
 # --- draft slot tags ---------------------------------------------------------------------------------------------
 
 
@@ -968,8 +982,11 @@ def jigsaw_room(size: tuple[int, int, int], *faces: str) -> Structure:
         ("library", (13, 6, 13), ("north", "east", "south"), ["combat", "t_junction"]),
         ("library", (13, 6, 13), ("north", "east", "south", "west"), ["combat", "crossing"]),
         ("corridor_4", (25, 5, 8), ("west", "east"), ["hallway", "straight"]),  # the role word
-        ("c1", (6, 5, 9), ("west", "east"), ["hallway", "straight"]),  # narrow and straight
-        ("c1", (6, 5, 9), ("west",), ["combat", "dead_end"]),  # narrow, but a dead end
+        ("d1", (9, 5, 5), ("west", "east"), ["hallway", "straight"]),  # 5 wide across the passage
+        ("c1", (6, 5, 9), ("west", "east"), ["combat", "straight"]),  # 9 wide across it, though 6 long
+        ("c1", (6, 5, 9), ("north", "south"), ["hallway", "straight"]),
+        ("e1", (7, 5, 12), ("south", "east"), ["hallway", "curved"]),
+        ("d1", (5, 5, 5), ("west",), ["combat", "dead_end"]),  # narrow, but a dead end
         ("treasure/egg", (13, 8, 13), ("west",), ["treasure", "dead_end"]),
         ("dungeon_bossroom", (32, 23, 31), ("north",), ["boss", "dead_end"]),
         ("boss_hallway", (7, 5, 20), ("north", "south"), ["boss", "straight"]),  # the first role wins

@@ -129,6 +129,7 @@ entities:
   keep: [minecraft:armor_stand]   # every other entity is dropped
 include: [dungeon/*]  # fnmatch patterns on the path below a source folder (* also matches /); default: every file
 exclude: [dungeon/props/*, dungeon/broken.nbt]
+max_size: 32          # leave out rooms bigger on any axis (a whole wing of the source's dungeon)
 data_version: 4790    # for the files that state none, when the source is known to be saved with this version
 ```
 
@@ -138,8 +139,8 @@ in (a prop, a mob, a loot pile), which our dungeons do their own way, and valida
 `jigsaws.interior: drop` replaces it with its `final_state`. `jigsaws.normalize` gives every connector the neutral
 names our layout reads instead of the source's (it leaves no room for `connectors` and `pools`). A container's loot
 table must be in the ID universe, or the container would stay empty: `loot_tables` maps a source's tables to vanilla
-ones or drops them, so the dungeon fills the chest (W4). `include` and `exclude` record which files of a source are
-rooms, so the import can run again; the report counts the files they leave out. The import report names every remap,
+ones or drops them, so the dungeon fills the chest (W4). `include`, `exclude` and `max_size` record which files of a
+source are rooms, so the import can run again; the report counts the files they leave out. The import report names every remap,
 every dropped entity, block entity, interior jigsaw and loot table, and the jigsaw names and pools no rule mapped. The
 rules of the imported sources live in `art/rooms/<source>/rules.yaml` ([art/rooms](../art/rooms/README.md)). The
 schematic readers live in `rooms/sources.py`: nucleation 0.10.24 reads both formats too,

@@ -9,7 +9,8 @@ sidecar, and retagging by hand or in the gallery review corrects them; a re-impo
   ``crossing``. A connector up or down adds ``vertical``.
 - **Role**, from a word in the room's path (``treasure/egg``, ``boss_room``): ``boss``, ``treasure``,
   ``entrance``, ``stairs`` or ``hallway``. Without one, a straight or curved piece at most ``HALLWAY_WIDTH`` blocks
-  wide is a ``hallway`` and anything else a ``combat`` room.
+  wide (across a straight piece's passage; either way for a curved one) is a ``hallway`` and anything else a
+  ``combat`` room.
 """
 
 from __future__ import annotations
@@ -20,7 +21,7 @@ from realmforge_tools.rooms.check import connector_face
 from realmforge_tools.rooms.structure import JIGSAW, Structure
 
 # The widest a straight or curved piece without a role word may be and still count as a hallway.
-HALLWAY_WIDTH = 9
+HALLWAY_WIDTH = 7
 
 _SIDES = ("north", "east", "south", "west")
 _OPPOSITE = {"north": "south", "south": "north", "east": "west", "west": "east"}
@@ -54,14 +55,19 @@ def shape(faces: set[str]) -> str | None:
     return {1: "dead_end", 3: "t_junction", 4: "crossing"}[len(sides)]
 
 
-def role(name: str, piece_shape: str | None, size: tuple[int, int, int]) -> str:
+def role(name: str, faces: set[str], size: tuple[int, int, int]) -> str:
     words = _WORD.findall(name.lower())
     for tag, hints in _ROLES:
         if any(word.startswith(hint) for word in words for hint in hints):
             return tag
-    if piece_shape in ("straight", "curved") and min(size[0], size[2]) <= HALLWAY_WIDTH:
-        return "hallway"
-    return "combat"
+    piece_shape = shape(faces)
+    if piece_shape == "straight":
+        width = size[0] if "north" in faces else size[2]  # across the passage
+    elif piece_shape == "curved":
+        width = min(size[0], size[2])
+    else:
+        return "combat"
+    return "hallway" if width <= HALLWAY_WIDTH else "combat"
 
 
 def slot_tags(structure: Structure, name: str) -> list[str]:
@@ -69,7 +75,7 @@ def slot_tags(structure: Structure, name: str) -> list[str]:
     path below its source (``dungeon/treasure/egg``)."""
     faces = connector_faces(structure)
     piece_shape = shape(faces)
-    tags = [role(name, piece_shape, structure.size)]
+    tags = [role(name, faces, structure.size)]
     if piece_shape is not None:
         tags.append(piece_shape)
     if faces & {"up", "down"}:
