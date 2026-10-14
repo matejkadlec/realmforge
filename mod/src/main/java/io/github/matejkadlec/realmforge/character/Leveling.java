@@ -111,10 +111,15 @@ public final class Leveling {
     /**
      * Brings the player's level cap and level up to date with their chapters and XP. With {@code announce}, a level-up
      * shows its effects and a raised cap its message; logins update silently. Either way a changed level recomputes
-     * the stats and fires {@code realmforge:level_reached}.
+     * the stats and fires {@code realmforge:level_reached}. A player without a character is left alone: they gain no
+     * XP, and creating the character updates them ({@link CharacterCreation}).
      */
     public static Change update(ServerPlayer player, boolean announce) {
         CharacterData data = Characters.data(player);
+        if (!data.exists()) {
+            int level = Characters.level(player);
+            return new Change(level, level, data.levelCap().orElse(level), data.levelCap().orElse(level));
+        }
         int cap = Chapters.levelCap(player);
         int oldCap = data.levelCap().orElse(cap);
         int oldLevel = Characters.level(player);

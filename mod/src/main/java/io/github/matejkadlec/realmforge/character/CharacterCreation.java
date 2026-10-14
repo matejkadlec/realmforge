@@ -12,8 +12,9 @@ import net.minecraft.world.item.ItemStack;
 /**
  * Creates a player's character from {@code CreateCharacterPayload(race, class)} (architecture 10.1). The client's screen
  * only offers valid choices, but the server checks every request again: the player has no character yet, the race and
- * the class exist, and the race allows the class. Then it sets the {@code character} attachment, recomputes the stats
- * (race and class modifiers), refills health to the new maximum and gives the class's starting kit, once.
+ * the class exist, and the race allows the class. Then it sets the {@code character} attachment, brings the level and
+ * level cap up to date ({@link Leveling}), recomputes the stats (race and class modifiers), refills health to the new
+ * maximum and gives the class's starting kit, once.
  */
 public final class CharacterCreation {
     private CharacterCreation() {
@@ -66,6 +67,7 @@ public final class CharacterCreation {
             return result;
         }
         player.setData(CharacterAttachments.CHARACTER, current.create(race, playerClass));
+        Leveling.update(player, false);
         CharacterStats.recompute(player);
         player.setHealth(player.getMaxHealth());
         PlayerClass entry = player.registryAccess().lookupOrThrow(CharacterRegistries.CLASS).getOrThrow(playerClass)

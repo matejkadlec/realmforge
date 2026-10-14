@@ -10,6 +10,9 @@ texts:
   # and subclass are on the Origin tab instead, which keeps the heading short.
   character_title:
     en_us: "%1$s · Lv. %2$s"
+  # The XP bar above the health and food rows (C2): the character level at its middle (%1$s the level).
+  xp_bar_level:
+    en_us: Lv. %1$s
   # The tabs, and the sections each shows in its two columns.
   tab_stats:
     en_us: Stats

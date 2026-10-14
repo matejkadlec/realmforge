@@ -6,6 +6,8 @@ import io.github.matejkadlec.realmforge.character.CharacterAttachments;
 import io.github.matejkadlec.realmforge.character.CharacterData;
 import io.github.matejkadlec.realmforge.character.CharacterRegistries;
 import io.github.matejkadlec.realmforge.qa.command.StateCommands;
+import io.github.matejkadlec.realmforge.qa.generated.GeneratedChapterExpectations;
+import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectations;
 import io.github.matejkadlec.realmforge.spell.CombatState;
 import io.github.matejkadlec.realmforge.spell.SpellAttachments;
 import io.github.matejkadlec.realmforge.spell.Spellbook;
@@ -45,10 +47,19 @@ public final class PlayerStateGameTests {
     private static final Identifier FIREBOLT = Realmforge.id("firebolt");
     private static final Identifier FROSTBOLT = Realmforge.id("frostbolt");
 
+    /** A mob's level. */
     private static final EntityLevel LEVEL = new EntityLevel(14);
+    /**
+     * A player's level, XP and cached level cap that agree with leveling (C2), which derives the level from the XP
+     * and the cap from the chapters when the player logs in: exactly the XP of level 8 (or of the first chapter's cap,
+     * if that is lower), no chapter completed.
+     */
+    private static final int FIRST_CAP = GeneratedChapterExpectations.CHAPTERS.getFirst().levelCap();
+    private static final EntityLevel PLAYER_LEVEL = new EntityLevel(Math.min(8, FIRST_CAP));
     private static final CharacterData CHARACTER = new CharacterData(
             Optional.of(ResourceKey.create(CharacterRegistries.RACE, Realmforge.id("human"))),
-            List.of(ResourceKey.create(CharacterRegistries.CLASS, Realmforge.id("mage"))), 2_750L, Optional.of(20));
+            List.of(ResourceKey.create(CharacterRegistries.CLASS, Realmforge.id("mage"))),
+            GeneratedLevelingExpectations.LEVELS.get(PLAYER_LEVEL.value() - 1).toReach(), Optional.of(FIRST_CAP));
     private static final Spellbook SPELLBOOK = new Spellbook(Map.of(FIREBOLT, 2, FROSTBOLT, 1),
             Map.of(0, FIREBOLT, 1, FROSTBOLT));
     private static final TalentAllocation TALENTS = new TalentAllocation(
@@ -158,7 +169,7 @@ public final class PlayerStateGameTests {
     }
 
     private static void fill(LivingEntity entity) {
-        entity.setData(StatsAttachments.LEVEL, LEVEL);
+        entity.setData(StatsAttachments.LEVEL, PLAYER_LEVEL);
         entity.setData(CharacterAttachments.CHARACTER, CHARACTER);
         entity.setData(SpellAttachments.SPELLBOOK, SPELLBOOK);
         entity.setData(SpellAttachments.COMBAT, combat(true));
@@ -166,7 +177,7 @@ public final class PlayerStateGameTests {
     }
 
     private static void assertFilled(GameTestHelper helper, LivingEntity entity, String when) {
-        helper.assertValueEqual(entity.getData(StatsAttachments.LEVEL), LEVEL, "level " + when);
+        helper.assertValueEqual(entity.getData(StatsAttachments.LEVEL), PLAYER_LEVEL, "level " + when);
         helper.assertValueEqual(entity.getData(CharacterAttachments.CHARACTER), CHARACTER, "character " + when);
         helper.assertValueEqual(entity.getData(SpellAttachments.SPELLBOOK), SPELLBOOK, "spellbook " + when);
         helper.assertValueEqual(entity.getData(SpellAttachments.COMBAT), combat(false),

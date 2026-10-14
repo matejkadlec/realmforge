@@ -116,6 +116,9 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.tab_stats} from {@code content/texts/gui.yaml}: "Stats" */
     public static final String GUI_TAB_STATS = "gui.realmforge.tab_stats";
 
+    /** {@code gui.realmforge.xp_bar_level} from {@code content/texts/gui.yaml}: "Lv. %1$s" */
+    public static final String GUI_XP_BAR_LEVEL = "gui.realmforge.xp_bar_level";
+
     /** {@code key.realmforge.character_sheet} from {@code content/texts/key.yaml}: "Character Sheet" */
     public static final String KEY_CHARACTER_SHEET = "key.realmforge.character_sheet";
 
