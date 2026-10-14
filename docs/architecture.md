@@ -723,8 +723,9 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
 ### 10.1 Races and classes
 
 - **Creation:** while a player's `character` attachment has no race, the client shows the character creation screen,
-  which cannot be closed. `CreateCharacterPayload(race, class)` → the server checks the combination and that no
-  character exists yet → sets the attachment, gives the starting kit, recomputes stats.
+  which only creating a character closes (Esc opens the pause menu, and creation returns after it).
+  `CreateCharacterPayload(race, class)` → the server checks the combination and that no character exists yet → sets
+  the attachment, gives the starting kit, recomputes stats.
 - **The server enforces creation too:** a client that skips the screen gains nothing. Until the character exists,
   the server refuses the player's gameplay payloads (casting, spell bar, talents) and awards no character XP, and
   every system that reads race or class handles a missing character instead of assuming one.
@@ -743,8 +744,9 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
   new maximum and gives the class's starting kit once (into the inventory, or dropped for the player alone when it
   is full, as `/give` does). `Characters` is the public API (`exists`, `mainClass`). The client opens
   `client/screen/CharacterCreationScreen` once a new player entity has existed for a second without a character (so
-  the synced attachment can arrive first), and closes it when the character arrives; Esc does not close it, and it
-  pauses singleplayer like a menu (the server still handles payloads while paused). Its view model is
+  the synced attachment can arrive first), and closes it when the character arrives. Esc opens the pause menu
+  instead, so the player can still change options or quit, and back in the game creation opens again. It pauses
+  singleplayer like a menu (the server still handles payloads while paused). Its view model is
   `CharacterCreationView`. M1 has one race, Human, and decision D1's classes, Warrior (rage) and Mage (mana)
   ([content/README](../content/README.md)).
 

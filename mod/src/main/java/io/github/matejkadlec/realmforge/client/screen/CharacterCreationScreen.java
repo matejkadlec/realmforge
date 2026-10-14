@@ -23,11 +23,13 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
- * Character creation (RLM-22, architecture 10.1): while the local player has no character, this screen opens and cannot
- * be closed. It draws {@link CharacterCreationView}: the races on the left, the classes the chosen race allows on the
- * right, each with its description and what it gives; a class also its resource and starting kit. Create Character
- * sends {@link CreateCharacterPayload}, and the screen closes once the server's character attachment arrives. In
- * singleplayer it pauses the game, as a menu does; the server still handles the request while paused.
+ * Character creation (RLM-22, architecture 10.1): while the local player has no character, this screen opens, and only
+ * creating a character closes it for good: Esc opens the pause menu instead, so the player can still change options
+ * or quit, and back in the game the screen opens again. It draws {@link CharacterCreationView}: the races on the left,
+ * the classes the chosen race allows on the right, each with its description and what it gives; a class also its
+ * resource and starting kit. Create Character sends {@link CreateCharacterPayload}, and the screen closes once the
+ * server's character attachment arrives. In singleplayer it pauses the game, as a menu does; the server still handles
+ * the request while paused.
  */
 public final class CharacterCreationScreen extends Screen {
     private static final int COLUMN_WIDTH = 180;
@@ -126,9 +128,11 @@ public final class CharacterCreationScreen extends Screen {
         }
     }
 
+    /** Esc: the pause menu instead, as in game; {@link #openWhenNeeded} reopens creation once the player is back. */
     @Override
-    public boolean shouldCloseOnEsc() {
-        return false;
+    public void onClose() {
+        minecraft.setScreen(null);
+        minecraft.pauseGame(false);
     }
 
     @Override
