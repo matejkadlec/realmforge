@@ -2,7 +2,7 @@
 
 Date: 2026-10-11
 
-Status: Accepted
+Status: Accepted, amended by [0030](0030-adrs-bind-agents-not-the-owner.md) (ADRs bind agents, not the owner)
 
 ## Context
 
