@@ -199,14 +199,17 @@ public final class Leveling {
         if (chapter.isEmpty()) {
             return;
         }
-        Change change = update(player, true);
-        if (change.capRaised()) {
+        // The raised cap is announced before the level-up it brings, whose hint may name the next chapter.
+        CharacterData data = Characters.data(player);
+        int cap = Chapters.levelCap(player);
+        if (data.exists() && cap > data.levelCap().orElse(cap)) {
             player.registryAccess().lookupOrThrow(ProgressionRegistries.CHAPTER)
                     .get(chapter.get())
                     .ifPresent(entry -> player.sendSystemMessage(Component.translatable(
-                            GeneratedTexts.MESSAGE_LEVEL_CAP_RAISED, chapterName(entry.value()), change.cap())
+                            GeneratedTexts.MESSAGE_LEVEL_CAP_RAISED, chapterName(entry.value()), cap)
                             .withStyle(ChatFormatting.GOLD)));
         }
+        Change change = update(player, true);
         Realmforge.LOGGER.debug("{}'s chapter {} changed: level {} -> {}, cap {} -> {}", player.getPlainTextName(),
                 chapter.get().identifier(), change.oldLevel(), change.level(), change.oldCap(), change.cap());
     }

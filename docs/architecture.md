@@ -863,7 +863,8 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
     `AdvancementProgressEvent`, which follows every grant and revoke of a criterion, after the progress changed.
   - **`character/Leveling`** is the system: on login it brings the cap and level up to date quietly and fires
     `level_reached` with the level, so a new criterion catches up; a chapter's advancement updates them and, when
-    the cap rose, says so in chat ("Chapter 1 complete! Your level cap is now 18."). A kill of a hostile mob (a
+    the cap rose, says so in chat ("Chapter 1 complete! Your level cap is now 18.") before the level-up it brings,
+    whose hint may name the next chapter. A kill of a hostile mob (a
     vanilla `Enemy`; animals, villagers and golems give nothing) gives XP to the player with vanilla's kill credit:
     the one who dealt the killing blow, directly or by a projectile, else the one who hurt the victim in the last
     5 seconds or owns the pet that did (`LivingEntity#getLastHurtByPlayer`, as for experience orbs). It listens at
