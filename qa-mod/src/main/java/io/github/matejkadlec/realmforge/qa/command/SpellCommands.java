@@ -1,0 +1,165 @@
+package io.github.matejkadlec.realmforge.qa.command;
+
+import com.mojang.brigadier.arguments.DoubleArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import io.github.matejkadlec.realmforge.spell.CastResult;
+import io.github.matejkadlec.realmforge.spell.CombatState;
+import io.github.matejkadlec.realmforge.spell.ResourceType;
+import io.github.matejkadlec.realmforge.spell.ResourceTypes;
+import io.github.matejkadlec.realmforge.spell.Resources;
+import io.github.matejkadlec.realmforge.spell.Spell;
+import io.github.matejkadlec.realmforge.spell.SpellAttachments;
+import io.github.matejkadlec.realmforge.spell.SpellCaster;
+import io.github.matejkadlec.realmforge.spell.SpellRegistries;
+import io.github.matejkadlec.realmforge.spell.Spells;
+import java.util.List;
+import java.util.Optional;
+import javax.annotation.Nullable;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.IdentifierArgument;
+import net.minecraft.core.Holder;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.neoforged.neoforge.registries.DeferredHolder;
+
+/**
+ * {@code /qa spell} drives the spell engine before the spell bar exists (C3a-1, architecture 11), on the executing
+ * entity ({@code /execute as} makes a mob the caster):
+ * <ul>
+ *   <li>{@code /qa spell learn <spell> [<level>]} teaches the executing player a spell, at level 1 by default.</li>
+ *   <li>{@code /qa spell cast <spell> [<target>]} casts it at the target (none by default: a self or ally spell then
+ *   takes the caster) and says why when the cast is refused.</li>
+ *   <li>{@code /qa spell resource <mana|rage> <amount>} sets a resource pool, within its maximum.</li>
+ *   <li>{@code /qa spell reset} ends every cooldown, the global one included.</li>
+ *   <li>{@code /qa spell show} prints the known spells, the pools and the running cooldowns.</li>
+ * </ul>
+ */
+public final class SpellCommands {
+    private static final SuggestionProvider<CommandSourceStack> SPELLS = (context, builder) ->
+            SharedSuggestionProvider.suggestResource(context.getSource().getServer().registryAccess()
+                    .lookupOrThrow(SpellRegistries.SPELL).keySet(), builder);
+    private static final List<DeferredHolder<ResourceType, ResourceType>> RESOURCES =
+            List.of(ResourceTypes.MANA, ResourceTypes.RAGE);
+
+    private SpellCommands() {
+    }
+
+    static LiteralArgumentBuilder<CommandSourceStack> build() {
+        LiteralArgumentBuilder<CommandSourceStack> resource = Commands.literal("resource");
+        for (DeferredHolder<ResourceType, ResourceType> type : RESOURCES) {
+            resource.then(Commands.literal(type.getId().getPath())
+                    .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0))
+                            .executes(context -> setResource(context, type))));
+        }
+        return Commands.literal("spell")
+                .then(Commands.literal("learn")
+                        .then(Commands.argument("spell", IdentifierArgument.id()).suggests(SPELLS)
+                                .executes(context -> learn(context, 1))
+                                .then(Commands.argument("level", IntegerArgumentType.integer(1))
+                                        .executes(context -> learn(context,
+                                                IntegerArgumentType.getInteger(context, "level"))))))
+                .then(Commands.literal("cast")
+                        .then(Commands.argument("spell", IdentifierArgument.id()).suggests(SPELLS)
+                                .executes(context -> cast(context, null))
+                                .then(Commands.argument("target", EntityArgument.entity())
+                                        .executes(context -> cast(context,
+                                                EntityArgument.getEntity(context, "target"))))))
+                .then(resource)
+                .then(Commands.literal("reset").executes(SpellCommands::reset))
+                .then(Commands.literal("show").executes(SpellCommands::show));
+    }
+
+    private static ResourceKey<Spell> spell(CommandContext<CommandSourceStack> context) {
+        return ResourceKey.create(SpellRegistries.SPELL, IdentifierArgument.getId(context, "spell"));
+    }
+
+    private static LivingEntity caster(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        if (context.getSource().getEntityOrException() instanceof LivingEntity living) {
+            return living;
+        }
+        throw EntityArgument.NO_ENTITIES_FOUND.create();
+    }
+
+    private static int learn(CommandContext<CommandSourceStack> context, int level) throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ResourceKey<Spell> key = spell(context);
+        Optional<Holder.Reference<Spell>> spell = Spells.get(player.registryAccess(), key);
+        if (spell.isEmpty() || level > spell.get().value().maxLevel()) {
+            context.getSource().sendFailure(Component.literal(spell.isEmpty()
+                    ? "No spell " + key.identifier()
+                    : key.identifier() + " has levels 1 to " + spell.get().value().maxLevel()));
+            return 0;
+        }
+        Spells.learn(player, spell.get(), level);
+        context.getSource().sendSuccess(() -> Component.literal(player.getPlainTextName() + " knows "
+                + key.identifier() + " at level " + level), true);
+        return 1;
+    }
+
+    private static int cast(CommandContext<CommandSourceStack> context, @Nullable Entity target)
+            throws CommandSyntaxException {
+        LivingEntity caster = caster(context);
+        ResourceKey<Spell> key = spell(context);
+        LivingEntity aimed = target instanceof LivingEntity living ? living : null;
+        if (target != null && aimed == null) {
+            context.getSource().sendFailure(Component.literal("Spells target living entities only"));
+            return 0;
+        }
+        CastResult result = SpellCaster.cast(caster, key, aimed);
+        if (!result.success()) {
+            context.getSource().sendFailure(Component.literal(key.identifier() + " refused: "
+                    + result.failureOrNull().getSerializedName()));
+            return 0;
+        }
+        String at = result.target().map(hit -> hit.getPlainTextName()).orElse("?");
+        context.getSource().sendSuccess(() -> Component.literal(caster.getPlainTextName() + " cast "
+                + key.identifier() + " at " + at), false);
+        return 1;
+    }
+
+    private static int setResource(CommandContext<CommandSourceStack> context, Holder<ResourceType> type)
+            throws CommandSyntaxException {
+        LivingEntity holder = caster(context);
+        float set = Resources.set(holder, type, DoubleArgumentType.getDouble(context, "amount"));
+        context.getSource().sendSuccess(() -> Component.literal("Set " + type.getRegisteredName() + " of "
+                + holder.getPlainTextName() + " to " + set), true);
+        return 1;
+    }
+
+    private static int reset(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        LivingEntity caster = caster(context);
+        Spells.resetCooldowns(caster);
+        context.getSource().sendSuccess(() -> Component.literal("Ended the cooldowns of "
+                + caster.getPlainTextName()), true);
+        return 1;
+    }
+
+    private static int show(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        LivingEntity caster = caster(context);
+        CombatState state = caster.getData(SpellAttachments.COMBAT);
+        long now = caster.level().getGameTime();
+        StringBuilder text = new StringBuilder(caster.getPlainTextName());
+        if (caster instanceof ServerPlayer player) {
+            text.append("\nKnown: ").append(player.getData(SpellAttachments.SPELLBOOK).spells().entrySet().stream()
+                    .map(entry -> entry.getKey().identifier() + " " + entry.getValue()).sorted().toList());
+        }
+        text.append("\nPools: ").append(state.resources().entrySet().stream()
+                .map(entry -> entry.getKey().identifier() + " " + entry.getValue()).sorted().toList());
+        text.append("\nCooldowns (ticks left): ").append(state.cooldowns().entrySet().stream()
+                .filter(entry -> entry.getValue() > now)
+                .map(entry -> entry.getKey().identifier() + " " + (entry.getValue() - now)).sorted().toList());
+        text.append("\nGlobal cooldown (ticks left): ").append(Math.max(0, state.globalCooldownEnd() - now));
+        context.getSource().sendSuccess(() -> Component.literal(text.toString()), false);
+        return 1;
+    }
+}

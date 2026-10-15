@@ -48,6 +48,7 @@ public final class QaGameTests {
             ContentItemGameTests.class,
             ContentKillXpMultiplierGameTests.class,
             ContentRoomGameTests.class,
+            ContentSpellGameTests.class,
             ContentSpellSchoolGameTests.class,
             ContentStatGameTests.class,
             DungeonPlanGameTests.class,
@@ -57,6 +58,7 @@ public final class QaGameTests {
             PlayerStateGameTests.class,
             QaCastGameTests.class,
             QaCommandGameTests.class,
+            SpellGameTests.class,
             StatsGameTests.class,
             WorldRulesGameTests.class);
 
