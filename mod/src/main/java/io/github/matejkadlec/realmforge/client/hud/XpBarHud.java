@@ -27,7 +27,7 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
  * The character XP bar (C2, architecture 10.2, 18): as wide as the hotbar, above the health and food rows and every
  * other status row, which NeoForge stacks through {@code Gui#leftHeight} and {@code Gui#rightHeight}. It moves up with
  * more heart rows, and raises those heights so later layers (the selected item's name) stay above it. Purple while it
- * fills toward the next level, gold once the level cap holds the player and the next level's XP is banked; the level
+ * fills toward the next level, full and gold while the level cap holds the player, who then gains no XP; the level
  * sits on its middle like vanilla's experience level. Vanilla's experience bar keeps its place: vanilla XP still pays
  * for enchanting (decision D3). Shown only for a player with a character. Its place: {@link XpBarLayout}.
  */
@@ -83,9 +83,9 @@ public final class XpBarHud {
         graphics.fill(left + 1, top + 1, left + WIDTH - 1, top + HEIGHT - 1, BACKGROUND);
         int filled = Math.round(view.progress() * (WIDTH - 2));
         if (filled > 0) {
-            boolean banked = view.capped() && view.progress() >= 1;
-            graphics.fill(left + 1, top + 1, left + 1 + filled, top + HEIGHT - 1, banked ? CAPPED_FILL : FILL);
-            graphics.fill(left + 1, top + 1, left + 1 + filled, top + 2, banked ? CAPPED_HIGHLIGHT : FILL_HIGHLIGHT);
+            graphics.fill(left + 1, top + 1, left + 1 + filled, top + HEIGHT - 1, view.capped() ? CAPPED_FILL : FILL);
+            graphics.fill(left + 1, top + 1, left + 1 + filled, top + 2,
+                    view.capped() ? CAPPED_HIGHLIGHT : FILL_HIGHLIGHT);
         }
     }
 

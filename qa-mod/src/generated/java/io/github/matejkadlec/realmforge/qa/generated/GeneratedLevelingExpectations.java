@@ -14,8 +14,8 @@ public final class GeneratedLevelingExpectations {
     public record LevelXp(int level, long toNext, long toReach) {
     }
 
-    /** The level of a player with this much XP under this level cap. */
-    public record LevelSample(long totalXp, int cap, int level) {
+    /** The level of a player with this much XP under this level cap, and the XP the cap lets them hold. */
+    public record LevelSample(long totalXp, int cap, int level, long cappedXp) {
     }
 
     /**
@@ -59,36 +59,36 @@ public final class GeneratedLevelingExpectations {
             new LevelXp(31, 25350L, 305690L));
 
     public static final List<LevelSample> LEVEL_SAMPLES = List.of(
-            new LevelSample(0L, 10, 1),
-            new LevelSample(1499L, 10, 1),
-            new LevelSample(1500L, 10, 2),
-            new LevelSample(7719L, 10, 4),
-            new LevelSample(7720L, 10, 5),
-            new LevelSample(25959L, 10, 9),
-            new LevelSample(25960L, 10, 10),
-            new LevelSample(281689L, 10, 10),
-            new LevelSample(281690L, 10, 10),
-            new LevelSample(415890L, 10, 10),
-            new LevelSample(0L, 18, 1),
-            new LevelSample(1499L, 18, 1),
-            new LevelSample(1500L, 18, 2),
-            new LevelSample(7719L, 18, 4),
-            new LevelSample(7720L, 18, 5),
-            new LevelSample(25959L, 18, 9),
-            new LevelSample(25960L, 18, 10),
-            new LevelSample(281689L, 18, 18),
-            new LevelSample(281690L, 18, 18),
-            new LevelSample(415890L, 18, 18),
-            new LevelSample(0L, 30, 1),
-            new LevelSample(1499L, 30, 1),
-            new LevelSample(1500L, 30, 2),
-            new LevelSample(7719L, 30, 4),
-            new LevelSample(7720L, 30, 5),
-            new LevelSample(25959L, 30, 9),
-            new LevelSample(25960L, 30, 10),
-            new LevelSample(281689L, 30, 29),
-            new LevelSample(281690L, 30, 30),
-            new LevelSample(415890L, 30, 30));
+            new LevelSample(0L, 10, 1, 0L),
+            new LevelSample(1499L, 10, 1, 1499L),
+            new LevelSample(1500L, 10, 2, 1500L),
+            new LevelSample(7719L, 10, 4, 7719L),
+            new LevelSample(7720L, 10, 5, 7720L),
+            new LevelSample(25959L, 10, 9, 25959L),
+            new LevelSample(25960L, 10, 10, 25960L),
+            new LevelSample(281689L, 10, 10, 25960L),
+            new LevelSample(281690L, 10, 10, 25960L),
+            new LevelSample(415890L, 10, 10, 25960L),
+            new LevelSample(0L, 18, 1, 0L),
+            new LevelSample(1499L, 18, 1, 1499L),
+            new LevelSample(1500L, 18, 2, 1500L),
+            new LevelSample(7719L, 18, 4, 7719L),
+            new LevelSample(7720L, 18, 5, 7720L),
+            new LevelSample(25959L, 18, 9, 25959L),
+            new LevelSample(25960L, 18, 10, 25960L),
+            new LevelSample(281689L, 18, 18, 85890L),
+            new LevelSample(281690L, 18, 18, 85890L),
+            new LevelSample(415890L, 18, 18, 85890L),
+            new LevelSample(0L, 30, 1, 0L),
+            new LevelSample(1499L, 30, 1, 1499L),
+            new LevelSample(1500L, 30, 2, 1500L),
+            new LevelSample(7719L, 30, 4, 7719L),
+            new LevelSample(7720L, 30, 5, 7720L),
+            new LevelSample(25959L, 30, 9, 25959L),
+            new LevelSample(25960L, 30, 10, 25960L),
+            new LevelSample(281689L, 30, 29, 281689L),
+            new LevelSample(281690L, 30, 30, 281690L),
+            new LevelSample(415890L, 30, 30, 281690L));
 
     public static final List<KillSample> KILLS = List.of(
             new KillSample(1, 1, 1.0, 1.0, 50L),

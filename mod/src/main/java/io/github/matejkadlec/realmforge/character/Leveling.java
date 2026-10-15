@@ -48,7 +48,10 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
  *
  * <ul>
  *   <li>The level is {@link XpTable#levelFor} of the player's total XP under their level cap, written into the
- *   {@code realmforge:level} attachment that every system reads. XP beyond the cap keeps counting.</li>
+ *   {@code realmforge:level} attachment that every system reads.</li>
+ *   <li>XP stops at the cap (Matěj, 2026-10-15): the total never exceeds the XP of the cap's level
+ *   ({@link XpTable#capped}). A gain that crosses it counts only up to it, a player at the cap gains nothing, and a
+ *   raised cap starts them at 0 XP toward the next level. A lowered cap (a revoked chapter) cuts the total too.</li>
  *   <li>The level cap comes from the chapters the player completed ({@link Chapters#levelCap}), cached in the
  *   {@code character} attachment: recomputed when they log in and whenever a chapter's advancement is granted or
  *   revoked ({@code AdvancementProgressEvent}: a chapter's advancement has no display, and NeoForge posts
@@ -89,13 +92,17 @@ public final class Leveling {
 
     /**
      * Adds XP the player gained from a reward (a quest, {@code /realmforge xp add}), times their XP multiplier, and
-     * levels them up as far as it reaches. Returns the XP added: 0 for a player without a character.
+     * levels them up as far as it reaches. Returns the XP gained: 0 for a player without a character or at the level
+     * cap, and only the part up to the cap for a gain that crosses it.
      */
     static long reward(ServerPlayer player, long xp) {
         return add(player, Math.max(0, Math.round(xp * multiplier(player))));
     }
 
-    /** Sets the player's total character XP and their level from it, without level-up effects; false without a character. */
+    /**
+     * Sets the player's total character XP, at most the XP of their cap's level, and their level from it, without
+     * level-up effects; false without a character.
+     */
     static boolean setTotalXp(ServerPlayer player, long totalXp) {
         CharacterData data = Characters.data(player);
         if (!data.exists()) {
@@ -112,9 +119,10 @@ public final class Leveling {
     }
 
     /**
-     * Brings the player's level cap and level up to date with their chapters and XP. With {@code announce}, a level-up
-     * shows its effects and a raised cap its message; logins update silently. Either way a changed level recomputes
-     * the stats and fires {@code realmforge:level_reached}. A player without a character is left alone: they gain no
+     * Brings the player's level cap, XP and level up to date with their chapters: the XP is cut to the cap
+     * ({@link XpTable#capped}), which also cleans a save from before XP stopped at the cap. With {@code announce}, a
+     * level-up shows its effects and a raised cap its message; logins update silently. Either way a changed level
+     * recomputes the stats and fires {@code realmforge:level_reached}. A player without a character is left alone: they gain no
      * XP, and creating the character updates them ({@link CharacterCreation}).
      */
     public static Change update(ServerPlayer player, boolean announce) {
@@ -126,11 +134,11 @@ public final class Leveling {
         int cap = Chapters.levelCap(player);
         int oldCap = data.levelCap().orElse(cap);
         int oldLevel = Characters.level(player);
-        int level = curve(player.registryAccess(), GeneratedCurves.XP_TO_NEXT_LEVEL)
-                .map(curve -> XpTable.levelFor(curve, data.totalXp(), cap))
-                .orElse(oldLevel);
-        if (data.levelCap().orElse(-1) != cap) {
-            player.setData(CharacterAttachments.CHARACTER, data.withLevelCap(cap));
+        Optional<Curve> curve = curve(player.registryAccess(), GeneratedCurves.XP_TO_NEXT_LEVEL);
+        long totalXp = curve.map(xp -> XpTable.capped(xp, data.totalXp(), cap)).orElse(data.totalXp());
+        int level = curve.map(xp -> XpTable.levelFor(xp, totalXp, cap)).orElse(oldLevel);
+        if (data.levelCap().orElse(-1) != cap || totalXp != data.totalXp()) {
+            player.setData(CharacterAttachments.CHARACTER, data.withLevelCap(cap).withTotalXp(totalXp));
         }
         Change change = new Change(oldLevel, level, oldCap, cap);
         if (level != oldLevel) {
@@ -148,15 +156,19 @@ public final class Leveling {
         return change;
     }
 
-    /** Adds XP as it is, without the multiplier, and levels the player up; 0 for a player without a character. */
+    /**
+     * Adds XP as it is, without the multiplier, and levels the player up. Returns the XP gained, which {@link #update}
+     * cuts at the cap: 0 for a player without a character or at the cap.
+     */
     private static long add(ServerPlayer player, long xp) {
         CharacterData data = Characters.data(player);
         if (!data.exists() || xp <= 0) {
             return 0;
         }
-        player.setData(CharacterAttachments.CHARACTER, data.withTotalXp(XpTable.plus(data.totalXp(), xp)));
+        long before = data.totalXp();
+        player.setData(CharacterAttachments.CHARACTER, data.withTotalXp(XpTable.plus(before, xp)));
         update(player, true);
-        return xp;
+        return Math.max(0, Characters.data(player).totalXp() - before);
     }
 
     private static double multiplier(Player player) {

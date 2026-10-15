@@ -137,7 +137,7 @@ public final class GeneratedTexts {
     /** {@code message.realmforge.level_cap_raised} from {@code content/texts/message.yaml}: "%1$s complete! Your level cap is now %2$s." */
     public static final String MESSAGE_LEVEL_CAP_RAISED = "message.realmforge.level_cap_raised";
 
-    /** {@code message.realmforge.level_cap_reached} from {@code content/texts/message.yaml}: "Level %1$s is the cap for now. Complete %2$s to raise it; your XP keeps counting." */
+    /** {@code message.realmforge.level_cap_reached} from {@code content/texts/message.yaml}: "Level %1$s is the cap for now, so you gain no XP until you complete %2$s." */
     public static final String MESSAGE_LEVEL_CAP_REACHED = "message.realmforge.level_cap_reached";
 
     /** {@code message.realmforge.level_up} from {@code content/texts/message.yaml}: "Level Up!" */

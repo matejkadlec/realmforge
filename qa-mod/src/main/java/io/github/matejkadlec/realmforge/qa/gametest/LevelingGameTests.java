@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
 import com.mojang.authlib.GameProfile;
+import io.github.matejkadlec.realmforge.character.CharacterAttachments;
 import io.github.matejkadlec.realmforge.character.CharacterBonuses;
 import io.github.matejkadlec.realmforge.character.CharacterCreation;
 import io.github.matejkadlec.realmforge.character.CharacterCreation.Result;
@@ -53,7 +54,7 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * C2 (RLM-23): leveling in the game (architecture 10.2). The XP table, kill XP and level caps match the pipeline's
- * expectations; XP accumulates past the level cap and granting the chapter advancement raises the level; hostile kills
+ * expectations; XP stops at the level cap, and granting the chapter advancement raises the cap; hostile kills
  * give XP by the victim's level and its kill XP multiplier; players without a character gain none;
  * {@code realmforge:level_reached} completes advancements; {@code /realmforge xp} and {@code /qa level} work. Players
  * log in through {@link QaPlayers#login}.
@@ -78,6 +79,8 @@ public final class LevelingGameTests {
         for (LevelSample sample : GeneratedLevelingExpectations.LEVEL_SAMPLES) {
             helper.assertValueEqual(XpTable.levelFor(curve, sample.totalXp(), sample.cap()), sample.level(),
                     "the level of " + sample.totalXp() + " XP under cap " + sample.cap());
+            helper.assertValueEqual(XpTable.capped(curve, sample.totalXp(), sample.cap()), sample.cappedXp(),
+                    "the XP held of " + sample.totalXp() + " under cap " + sample.cap());
         }
         helper.succeed();
     }
@@ -97,23 +100,37 @@ public final class LevelingGameTests {
         helper.succeed();
     }
 
-    /** The ticket's "Done when": XP accumulates past the cap, and granting the chapter advancement raises the level. */
+    /**
+     * The ticket's "Done when" (Matěj, 2026-10-15): XP stops at the cap, and granting the chapter advancement raises
+     * the cap, from which XP counts toward the next level again.
+     */
     @QaGameTest
-    public static void xpAccumulatesPastTheCapAndTheChapterRaisesTheLevel(GameTestHelper helper) {
+    public static void xpStopsAtTheCapAndTheChapterRaisesIt(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
+        ServerLevel level = helper.getLevel();
         ServerPlayer player = loginWithCharacter(helper, "qa-lvl-cap");
         ChapterExpectation chapter = GeneratedChapterExpectations.CHAPTERS.getFirst();
         Curve curve = curve(helper, GeneratedCurves.XP_TO_NEXT_LEVEL);
         helper.assertValueEqual(Characters.data(player).levelCap().orElse(0), chapter.levelCap(),
                 "a new character's cap, cached at creation");
 
+        long capXp = XpTable.toReach(curve, chapter.levelCap());
         long beyond = XpTable.toReach(curve, chapter.completedLevelCap() + 5);
-        helper.assertValueEqual(Characters.rewardXp(player, beyond), beyond, "XP gained at 100 % XP multiplier");
-        helper.assertValueEqual(Characters.data(player).totalXp(), beyond, "every point counts, past the cap");
+        helper.assertValueEqual(Characters.rewardXp(player, beyond), capXp, "a reward counts only up to the cap");
+        helper.assertValueEqual(Characters.data(player).totalXp(), capXp, "the player holds the XP of the cap's level");
         helper.assertValueEqual(Characters.level(player), chapter.levelCap(), "the cap holds the level");
         assertClassBonusesAtLevel(helper, player);
-        Characters.rewardXp(player, 500);
-        helper.assertValueEqual(Characters.data(player).totalXp(), beyond + 500, "XP keeps counting at the cap");
+        helper.assertValueEqual(Characters.rewardXp(player, 500), 0L, "a reward at the cap gives nothing");
+        Zombie zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(1, 1, 1));
+        MobLevels.setLevel(zombie, chapter.levelCap());
+        kill(level, zombie, player);
+        helper.assertTrue(zombie.isDeadOrDying(), "the zombie died");
+        helper.assertValueEqual(Characters.data(player).totalXp(), capXp, "nor does a kill of the player's level");
+
+        // A save from before XP stopped at the cap: the next update (a login does one) cuts what it banked.
+        player.setData(CharacterAttachments.CHARACTER, Characters.data(player).withTotalXp(beyond));
+        Leveling.update(player, false);
+        helper.assertValueEqual(Characters.data(player).totalXp(), capXp, "banked XP is cut to the cap");
         helper.assertValueEqual(Characters.level(player), chapter.levelCap(), "and the level stays");
 
         AdvancementHolder advancement = server.getAdvancements().get(Identifier.parse(chapter.advancement()));
@@ -121,12 +138,16 @@ public final class LevelingGameTests {
         helper.assertTrue(Chapters.isCompleted(player, chapterKey(chapter)), "the chapter is completed");
         helper.assertValueEqual(Characters.data(player).levelCap().orElse(0), chapter.completedLevelCap(),
                 "the cap the chapter raises it to");
-        helper.assertValueEqual(Characters.level(player), chapter.completedLevelCap(),
-                "the banked XP levels the player up to the new cap at once");
+        helper.assertValueEqual(Characters.level(player), chapter.levelCap(), "a raised cap brings no level by itself");
+        helper.assertValueEqual(Characters.data(player).totalXp(), capXp, "nor any XP");
+        long toNext = XpTable.toNext(curve, chapter.levelCap());
+        helper.assertValueEqual(Characters.rewardXp(player, toNext), toNext, "XP counts again toward the next level");
+        helper.assertValueEqual(Characters.level(player), chapter.levelCap() + 1, "and reaches it");
         assertClassBonusesAtLevel(helper, player);
 
         helper.assertTrue(player.getAdvancements().revoke(advancement, "completed"), "the chapter advancement revoked");
         helper.assertValueEqual(Characters.level(player), chapter.levelCap(), "revoking it lowers the cap again");
+        helper.assertValueEqual(Characters.data(player).totalXp(), capXp, "and cuts the XP to it");
         server.getPlayerList().remove(player);
         helper.succeed();
     }
@@ -253,11 +274,17 @@ public final class LevelingGameTests {
         helper.assertValueEqual(Characters.data(player).totalXp(), 0L, "/realmforge xp set");
         helper.assertValueEqual(Characters.level(player), 1, "the level follows the XP down");
 
+        long capXp = XpTable.toReach(curve, chapter.levelCap());
+        run(server, player, "realmforge xp set @s " + XpTable.toReach(curve, chapter.completedLevelCap()));
+        helper.assertValueEqual(Characters.data(player).totalXp(), capXp, "/realmforge xp set stops at the cap");
+        run(server, player, "realmforge xp add @s 1000");
+        helper.assertValueEqual(Characters.data(player).totalXp(), capXp, "/realmforge xp add gives nothing there");
+        run(server, player, "realmforge xp set @s 0");
+
         int high = chapter.completedLevelCap();
         run(server, player, "qa level " + high);
-        helper.assertValueEqual(Characters.data(player).totalXp(), XpTable.toReach(curve, high),
-                "/qa level gives the XP of the level");
-        helper.assertValueEqual(Characters.level(player), chapter.levelCap(), "which the cap holds back");
+        helper.assertValueEqual(Characters.level(player), chapter.levelCap(), "/qa level above the cap stops at it");
+        helper.assertValueEqual(Characters.data(player).totalXp(), capXp, "with the XP of the cap's level");
         run(server, player, "qa level 5");
         helper.assertValueEqual(Characters.level(player), 5, "/qa level below the cap");
         server.getPlayerList().remove(player);

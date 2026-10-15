@@ -50,10 +50,20 @@ class XpTableTest {
     }
 
     @Test
-    void theCapHoldsTheLevelWhileXpKeepsCounting() {
+    void theCapHoldsTheLevel() {
         assertEquals(3, XpTable.levelFor(CURVE, 1_000_000, 3));
         assertEquals(1, XpTable.levelFor(CURVE, 1_000_000, 1));
         assertEquals(10, XpTable.levelFor(CURVE, 1_000_000, 10));
+    }
+
+    @Test
+    void xpStopsAtTheCapsLevel() {
+        assertEquals(299, XpTable.capped(CURVE, 299, 3));
+        assertEquals(300, XpTable.capped(CURVE, 300, 3));
+        assertEquals(300, XpTable.capped(CURVE, 1_000_000, 3));
+        assertEquals(0, XpTable.capped(CURVE, 1_000_000, 1));
+        // A raised cap counts the held XP from 0 toward the next level: no level comes with it.
+        assertEquals(3, XpTable.levelFor(CURVE, XpTable.capped(CURVE, 1_000_000, 3), 10));
     }
 
     @Test
@@ -61,6 +71,7 @@ class XpTableTest {
         Curve huge = new Curve(Optional.empty(), List.of(new Point(1, 1e300)));
         assertEquals(Long.MAX_VALUE, XpTable.toReach(huge, 5));
         assertEquals(1, XpTable.levelFor(huge, Long.MAX_VALUE - 1, 10));
+        assertEquals(Long.MAX_VALUE - 1, XpTable.capped(huge, Long.MAX_VALUE - 1, 10));
         assertEquals(Long.MAX_VALUE, XpTable.plus(Long.MAX_VALUE - 1, 5));
     }
 }

@@ -16,7 +16,14 @@ from realmforge_tools.project import RepoPaths
 from realmforge_tools.schema.chapter import ChapterDef, advancement_id, level_cap
 from realmforge_tools.schema.curve import CurveDef
 from realmforge_tools.schema.kill_xp_multiplier import KillXpMultiplierDef
-from realmforge_tools.schema.leveling import java_round, kill_xp, level_for, xp_to_next, xp_to_reach
+from realmforge_tools.schema.leveling import (
+    capped_xp,
+    java_round,
+    kill_xp,
+    level_for,
+    xp_to_next,
+    xp_to_reach,
+)
 from realmforge_tools.validate import load_and_validate
 from tests.conftest import write
 
@@ -158,6 +165,16 @@ def test_level_follows_xp_up_to_the_cap() -> None:
     assert level_for(xp, 1_000_000, 1) == 1
 
 
+def test_xp_stops_at_the_cap() -> None:
+    xp = curve((1, 100), (3, 300))
+    # The cap of level 3 lets a player hold 300 XP: the XP of level 3, none toward level 4.
+    assert [capped_xp(xp, total, 3) for total in (0, 299, 300, 301, 1_000_000)] == [0, 299, 300, 300, 300]
+    assert capped_xp(xp, 1_000_000, 1) == 0
+    # A raised cap lets the held XP count again, from 0 toward the next level: no level comes with it.
+    held = capped_xp(xp, 1_000_000, 3)
+    assert level_for(xp, held, 10) == 3
+
+
 def test_kill_xp_scales_with_the_level_difference_and_multiplier() -> None:
     base = curve((1, 10), (10, 100))
     below = curve((0, 1), (2, 1), (6, 0))
@@ -268,11 +285,14 @@ def test_leveling_expectations_match_the_reference_rules() -> None:
     xp = next(entry.model for entry in content.curves if entry.model.id == "xp_to_next_level")
     assert f"new LevelXp(10, {xp_to_next(xp, 10)}L, {xp_to_reach(xp, 10)}L)" in source
     assert f"new LevelXp(31, {xp_to_next(xp, 31)}L, {xp_to_reach(xp, 31)}L)" in source
-    for total, cap, level in level_samples(xp, [10, 18, 30]):
-        assert f"new LevelSample({total}L, {cap}, {level})" in source
+    for total, cap, level, held in level_samples(xp, [10, 18, 30]):
+        assert f"new LevelSample({total}L, {cap}, {level}, {held}L)" in source
     assert "new KillSample(1, 1, 1.0, 1.0, 50L)" in source
     beyond = xp_to_reach(xp, 35)
     assert [level_for(xp, beyond, cap) for cap in (10, 18, 30)] == [10, 18, 30]
+    # Matěj's report (2026-10-15): 60,000 XP at cap 10 is held as level 10's 25,960, and chapter 1 keeps level 10.
+    assert [capped_xp(xp, 60_000, 10), capped_xp(xp, beyond, 18)] == [25_960, 85_890]
+    assert level_for(xp, capped_xp(xp, 60_000, 10), 18) == 10
 
 
 # Kill XP multipliers

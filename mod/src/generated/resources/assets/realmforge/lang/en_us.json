@@ -106,7 +106,7 @@
   "message.realmforge.dark_vision_off": "Dark Vision Off",
   "message.realmforge.dark_vision_on": "Dark Vision On",
   "message.realmforge.level_cap_raised": "%1$s complete! Your level cap is now %2$s.",
-  "message.realmforge.level_cap_reached": "Level %1$s is the cap for now. Complete %2$s to raise it; your XP keeps counting.",
+  "message.realmforge.level_cap_reached": "Level %1$s is the cap for now, so you gain no XP until you complete %2$s.",
   "message.realmforge.level_up": "Level Up!",
   "message.realmforge.level_up_subtitle": "You are now level %1$s",
   "message.realmforge.xp_gained": "+%1$s XP",

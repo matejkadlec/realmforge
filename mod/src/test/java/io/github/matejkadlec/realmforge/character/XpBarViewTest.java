@@ -30,14 +30,19 @@ class XpBarViewTest {
     }
 
     @Test
-    void atTheCapTheBarBanksXpAndStaysFull() {
-        XpBarView halfway = XpBarView.of(CURVE, 400, 3, 3);
-        assertTrue(halfway.capped());
-        assertEquals(100, halfway.xpInLevel());
-        assertEquals(1F / 3, halfway.progress(), 1e-6);
-        XpBarView banked = XpBarView.of(CURVE, 5000, 3, 3);
-        assertEquals(4700, banked.xpInLevel());
-        assertEquals(1F, banked.progress());
+    void atTheCapTheBarIsFull() {
+        // XP stops at the cap: the player holds level 3's 300 XP, none toward level 4.
+        XpBarView capped = XpBarView.of(CURVE, 300, 3, 3);
+        assertTrue(capped.capped());
+        assertEquals(0, capped.xpInLevel());
+        assertEquals(1F, capped.progress());
+    }
+
+    @Test
+    void aRaisedCapStartsTheNextLevelEmpty() {
+        XpBarView raised = XpBarView.of(CURVE, 300, 3, 10);
+        assertFalse(raised.capped());
+        assertEquals(0F, raised.progress());
     }
 
     @Test

@@ -4,11 +4,11 @@ import io.github.matejkadlec.realmforge.core.Curve;
 
 /**
  * What the XP bar shows (architecture 10.2, 18): the player's level, the XP they have toward the next one, and
- * whether the level cap holds them. At the cap XP keeps counting, so the bar fills toward the next level and stays
- * full once the player has its XP; it then shows the banked XP that a raised cap turns into levels.
+ * whether the level cap holds them. XP stops at the cap, so a capped bar shows full: the player gains nothing until a
+ * chapter raises the cap, which starts them at 0 XP toward the next level.
  *
  * @param level the player's level
- * @param xpInLevel the XP gained since the level began, which may exceed {@code xpToNext} at the cap
+ * @param xpInLevel the XP gained since the level began
  * @param xpToNext the XP from this level to the next
  * @param capped whether the level cap holds the player at this level
  */
@@ -19,8 +19,11 @@ public record XpBarView(int level, long xpInLevel, long xpToNext, boolean capped
         return new XpBarView(level, xpInLevel, XpTable.toNext(curve, level), level >= cap);
     }
 
-    /** How full the bar is, from 0 to 1. */
+    /** How full the bar is, from 0 to 1: full at the cap. */
     public float progress() {
+        if (capped) {
+            return 1;
+        }
         return xpToNext <= 0 ? 0 : (float) Math.min(1.0, (double) xpInLevel / xpToNext);
     }
 }

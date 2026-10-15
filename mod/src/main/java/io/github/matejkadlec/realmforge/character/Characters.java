@@ -44,16 +44,16 @@ public final class Characters {
 
     /**
      * Gives the player character XP from a reward (a quest, {@code /realmforge xp add}), times their XP multiplier,
-     * and levels them up as far as it reaches, with the level-up's effects (architecture 10.2). Returns the XP they
-     * gained: 0 without a character.
+     * and levels them up as far as it reaches, with the level-up's effects (architecture 10.2). XP stops at the level
+     * cap. Returns the XP they gained: 0 without a character or at the cap.
      */
     public static long rewardXp(ServerPlayer player, long xp) {
         return Leveling.reward(player, xp);
     }
 
     /**
-     * Sets the player's total character XP and their level from it, quietly (operator and QA commands). False without
-     * a character, which gains no XP.
+     * Sets the player's total character XP, at most the XP of their cap's level, and their level from it, quietly
+     * (operator and QA commands). False without a character, which gains no XP.
      */
     public static boolean setTotalXp(ServerPlayer player, long totalXp) {
         return Leveling.setTotalXp(player, totalXp);

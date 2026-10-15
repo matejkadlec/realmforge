@@ -3,8 +3,9 @@ game, computed from the curves in ``content/curves/``, so the pipeline can write
 with the game's numbers.
 
 - ``xp_to_next_level`` at level L is the XP that takes a player from L to L + 1 (at least 1).
-- A player's level is the highest level whose XP the player has, at most the level cap; XP beyond the cap keeps
-  accumulating, so raising the cap levels the player up at once.
+- A player's level is the highest level whose XP the player has, at most the level cap.
+- XP stops at the cap (Matěj, 2026-10-15): a player holds at most the XP of the cap's level, so a gain past it is lost
+  and raising the cap starts the player at 0 XP toward the next level.
 - A kill gives ``kill_xp`` at the victim's level, times the victim's kill XP multiplier (its rank,
   ``content/kill_xp_multipliers/``, 1 by default), times ``kill_xp_below_player`` at the levels the victim is below
   the player (or ``kill_xp_above_player`` at the levels it is above), times the player's XP multiplier.
@@ -57,6 +58,11 @@ def level_for(curve: CurveDef, total_xp: int, cap: int) -> int:
             break
         level += 1
     return level
+
+
+def capped_xp(curve: CurveDef, total_xp: int, cap: int) -> int:
+    """The XP a player under ``cap`` holds of ``total_xp``: all of it, at most the XP of the cap's level."""
+    return min(total_xp, xp_to_reach(curve, cap))
 
 
 def kill_xp(

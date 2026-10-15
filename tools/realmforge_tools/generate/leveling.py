@@ -29,6 +29,7 @@ from realmforge_tools.schema.leveling import (
     KILL_XP_ABOVE_PLAYER,
     KILL_XP_BELOW_PLAYER,
     XP_TO_NEXT_LEVEL,
+    capped_xp,
     kill_xp,
     level_for,
     xp_to_next,
@@ -134,9 +135,9 @@ def _chapters(content: Content) -> bytes:
     return source.encode("utf-8")
 
 
-def level_samples(xp_curve: CurveDef, caps: list[int]) -> list[tuple[int, int, int]]:
+def level_samples(xp_curve: CurveDef, caps: list[int]) -> list[tuple[int, int, int, int]]:
     """XP totals around each level's threshold up to the highest cap, and far beyond it, under each cap: (total XP,
-    cap, level)."""
+    cap, level, the XP the cap lets the player hold)."""
     top = max(caps)
     totals = {0}
     for level in (2, 5, 10, top):
@@ -144,7 +145,9 @@ def level_samples(xp_curve: CurveDef, caps: list[int]) -> list[tuple[int, int, i
         totals.update({reach - 1, reach})
     totals.add(xp_to_reach(xp_curve, top + 5))
     return [
-        (total, cap, level_for(xp_curve, total, cap)) for cap in sorted(set(caps)) for total in sorted(totals)
+        (total, cap, level_for(xp_curve, total, cap), capped_xp(xp_curve, total, cap))
+        for cap in sorted(set(caps))
+        for total in sorted(totals)
     ]
 
 
@@ -157,8 +160,8 @@ def _leveling(chapters: list[ChapterDef], curves: dict[str, CurveDef]) -> bytes:
         for level in range(1, top + 2)
     ]
     samples = [
-        f"            new LevelSample({total}L, {cap}, {level})"
-        for total, cap, level in level_samples(xp_curve, caps)
+        f"            new LevelSample({total}L, {cap}, {level}, {held}L)"
+        for total, cap, level, held in level_samples(xp_curve, caps)
     ]
     base, below, above = curves[KILL_XP], curves[KILL_XP_BELOW_PLAYER], curves[KILL_XP_ABOVE_PLAYER]
     kills = [
@@ -182,8 +185,8 @@ def _leveling(chapters: list[ChapterDef], curves: dict[str, CurveDef]) -> bytes:
         "    public record LevelXp(int level, long toNext, long toReach) {\n"
         "    }\n"
         "\n"
-        "    /** The level of a player with this much XP under this level cap. */\n"
-        "    public record LevelSample(long totalXp, int cap, int level) {\n"
+        "    /** The level of a player with this much XP under this level cap, and the XP the cap lets them hold. */\n"
+        "    public record LevelSample(long totalXp, int cap, int level, long cappedXp) {\n"
         "    }\n"
         "\n"
         "    /**\n"

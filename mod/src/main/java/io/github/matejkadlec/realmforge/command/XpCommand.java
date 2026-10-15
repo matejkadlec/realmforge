@@ -19,8 +19,9 @@ import net.minecraft.server.level.ServerPlayer;
  * runs as a {@code CommandReward} at permission level 2.
  * <ul>
  *   <li>{@code /realmforge xp add <players> <xp>} gives XP as a reward: times each player's XP multiplier, with
- *   level-ups and their effects.</li>
- *   <li>{@code /realmforge xp set <players> <xp>} sets the total XP exactly, and the level from it, quietly.</li>
+ *   level-ups and their effects, up to the level cap, where XP stops; the reply says what each player gained.</li>
+ *   <li>{@code /realmforge xp set <players> <xp>} sets the total XP, at most the XP of the cap's level, and the level
+ *   from it, quietly; the reply says the total each player holds.</li>
  *   <li>{@code /realmforge xp query <player>} shows the total XP, the level and the level cap; it returns the XP.</li>
  * </ul>
  * Players without a character gain no XP (architecture 10.1); the command says so for each.
@@ -70,7 +71,8 @@ final class XpCommand {
                 noCharacter(context, player);
                 continue;
             }
-            context.getSource().sendSuccess(() -> Component.translatable(GeneratedTexts.COMMAND_XP_SET, xp,
+            long held = Characters.data(player).totalXp();
+            context.getSource().sendSuccess(() -> Component.translatable(GeneratedTexts.COMMAND_XP_SET, held,
                     player.getDisplayName()), true);
             changed++;
         }

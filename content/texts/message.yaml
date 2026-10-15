@@ -16,7 +16,7 @@ texts:
     en_us: You are now level %1$s
   # In chat when a level-up reaches the cap (%1$s the cap, %2$s the chapter that raises it).
   level_cap_reached:
-    en_us: Level %1$s is the cap for now. Complete %2$s to raise it; your XP keeps counting.
+    en_us: Level %1$s is the cap for now, so you gain no XP until you complete %2$s.
   # In chat when completing a chapter raises the cap (%1$s the chapter, %2$s the new cap).
   level_cap_raised:
     en_us: "%1$s complete! Your level cap is now %2$s."

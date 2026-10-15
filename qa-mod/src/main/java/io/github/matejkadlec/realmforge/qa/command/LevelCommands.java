@@ -23,8 +23,8 @@ import net.minecraft.world.entity.Mob;
  * {@code /qa level <level> [<entity>]}: the level of a player or mob, yourself by default (architecture 7).
  * <ul>
  *   <li>A player with a character gets exactly the character XP of that level (C2, architecture 10.2), quietly, so
- *   the level follows: up to the level cap, which keeps the XP banked. The reply names the cap when it holds the
- *   player below the level; {@code /advancement grant @s only realmforge:chapter/chapter_1} raises it.</li>
+ *   the level follows, up to the level cap, where XP stops. The reply names the cap when it holds the player below
+ *   the level; {@code /advancement grant @s only realmforge:chapter/chapter_1} raises it.</li>
  *   <li>A player without a character gains no XP, so the command sets their {@code realmforge:level} attachment, which
  *   creating a character or logging in again derives from XP once more.</li>
  *   <li>A hostile mob also gets the scaling of its new level (W1, architecture 14.1), keeping its share of health:
@@ -65,7 +65,7 @@ public final class LevelCommands {
         return level;
     }
 
-    /** Gives the player the XP of {@code level}; the cap may hold them lower. Returns the level they reached. */
+    /** Gives the player the XP of {@code level}; the cap may hold them, and their XP, lower. Returns their level. */
     private static int setCharacterLevel(CommandContext<CommandSourceStack> context, ServerPlayer player, int level) {
         Optional<Long> xp = Characters.xpToReach(player, level);
         if (xp.isEmpty()) {
@@ -74,11 +74,12 @@ public final class LevelCommands {
         }
         Characters.setTotalXp(player, xp.get());
         int reached = Characters.level(player);
+        long held = Characters.data(player).totalXp();
         String name = player.getPlainTextName();
         String message = reached == level
-                ? "Set the level of " + name + " to " + level + " (" + xp.get() + " character XP)"
-                : "Gave " + name + " the " + xp.get() + " character XP of level " + level + "; the level cap holds them"
-                        + " at " + reached + " until a chapter raises it";
+                ? "Set the level of " + name + " to " + level + " (" + held + " character XP)"
+                : "The level cap holds " + name + " at level " + reached + " (" + held + " character XP) until a"
+                        + " chapter raises it";
         context.getSource().sendSuccess(() -> Component.literal(message), true);
         return reached;
     }
