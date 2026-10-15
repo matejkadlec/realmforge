@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
 import com.mojang.authlib.GameProfile;
+import io.github.matejkadlec.realmforge.combat.DamageOverTime;
 import io.github.matejkadlec.realmforge.combat.SpellSchool;
 import io.github.matejkadlec.realmforge.combat.SpellSchools;
 import io.github.matejkadlec.realmforge.core.CoreRegistries;
@@ -20,6 +21,7 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -29,13 +31,21 @@ import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.AreaEffectCloud;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.illager.Pillager;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownSplashPotion;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForgeMod;
 
 /**
  * F5: the damage pipeline in a world (architecture 9.1), on pillagers that stand still and a zombie or a fake player
@@ -233,6 +243,52 @@ public final class CombatGameTests {
         MobEffects.INSTANT_HEALTH.value().applyInstantenousEffect(level, null, null, dummy, 0, 1);
         helper.assertTrue(close(dummy.getHealth(), 504), "healing healed the dummy: " + dummy.getHealth());
         TrainingDummy.remove(dummy);
+        helper.succeed();
+    }
+
+    /**
+     * Done when of RLM-186: the player who threw a splash potion of poison is recorded as its applier, and a poison
+     * tick, which has no attacker, is attributed to that player in dark green. A lingering cloud's owner applies
+     * wither the same way; an application by a mob forgets the player.
+     */
+    @QaGameTest
+    public static void aPoisonTickIsAttributedToThePlayerWhoThrewThePotion(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        MinecraftServer server = level.getServer();
+        ServerPlayer thrower = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-combat-poisoner"));
+        Pillager mob = target(helper);
+        ItemStack stack = PotionContents.createItemStack(Items.SPLASH_POTION, Potions.POISON);
+        ThrownSplashPotion potion = new ThrownSplashPotion(level, thrower, stack);
+        potion.setPos(mob.position());
+        potion.onHitAsPotion(level, stack, new EntityHitResult(mob));
+        helper.assertTrue(mob.hasEffect(MobEffects.POISON), "the splash potion poisoned the mob");
+
+        DamageSource poison = new DamageSource(
+                level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(NeoForgeMod.POISON_DAMAGE));
+        DamageOverTime.Tick tick = DamageOverTime.tick(mob, poison);
+        helper.assertTrue(tick != null && tick.applier() == thrower, "the thrower applied the poison: " + tick);
+        helper.assertValueEqual(tick.color(), DamageOverTime.POISON, "a poison tick's colour");
+        MobEffects.POISON.value().applyEffectTick(level, mob, 0);
+        helper.assertTrue(close(mob.getHealth(), HEALTH - 1), "the tick hurt the mob: " + mob.getHealth());
+        helper.assertTrue(DamageOverTime.tick(mob, level.damageSources().magic()) == null,
+                "magic damage is not a poison tick");
+        helper.assertTrue(DamageOverTime.tick(mob, level.damageSources().wither()) == null,
+                "a wither tick without the wither effect is attributed to nobody");
+
+        AreaEffectCloud cloud = new AreaEffectCloud(level, mob.getX(), mob.getY(), mob.getZ());
+        cloud.setOwner(thrower);
+        mob.addEffect(new MobEffectInstance(MobEffects.WITHER, 200), cloud);
+        tick = DamageOverTime.tick(mob, level.damageSources().wither());
+        helper.assertTrue(tick != null && tick.applier() == thrower, "the cloud's owner applied the wither: " + tick);
+        helper.assertValueEqual(tick.color(), DamageOverTime.WITHER, "a wither tick's colour");
+
+        mob.addEffect(new MobEffectInstance(MobEffects.POISON, 400), attacker(helper));
+        helper.assertTrue(DamageOverTime.tick(mob, poison) == null, "a zombie's poison is the latest application");
+        mob.removeEffect(MobEffects.WITHER);
+        mob.addEffect(new MobEffectInstance(MobEffects.WITHER, 200));
+        helper.assertTrue(DamageOverTime.tick(mob, level.damageSources().wither()) == null,
+                "a removed effect forgot its applier");
+        server.getPlayerList().remove(thrower);
         helper.succeed();
     }
 
