@@ -293,7 +293,7 @@ How features cooperate without breaking the direction:
 | Registry | Content | One entry | Synced | Milestone |
 | --- | --- | --- | --- | --- |
 | `realmforge:race` | `content/races/` | playable race: base modifiers, innate spells, allowed classes | yes | M1 |
-| `realmforge:class` | `content/classes/` | class: resource type, stat growth, spells by level, talent trees, starting kit | yes | M1 |
+| `realmforge:class` | `content/classes/` | class: resource type, starting stats, spells by level, talent trees, starting kit | yes | M1 |
 | `realmforge:spell_school` | `content/spell_schools/` | school (owned by `combat`): kind (physical or magic), colour, its damage type, and the stats that are its power and resistance (attributes from `content/stats/`, static registrations, so a new school's stats need a game restart) | yes | M1 |
 | `realmforge:spell` | `content/spells/` | spell for players or NPCs: school, what it scales with, targeting, cast, cost, cooldowns, crit rules, typed effects with values per spell level (C3a-1; names and texts come with C3b) | yes | M1 |
 | `realmforge:talent_tree` | `content/talents/` | WoW-style tree: nodes on a grid, ranks, prerequisites, typed effects per rank | yes | M1 |
@@ -454,7 +454,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | Attachment | Owner package | On | Holds | Synced to |
 | --- | --- | --- | --- | --- |
 | `realmforge:level` | `stats` | every living entity | the level: derived from XP and the cap for players, set at spawn for mobs, fixed for bosses | the player itself and everyone tracking the entity |
-| `realmforge:character` | `character` | players | race, classes (a list: one in M1, room for dual class), total character XP, cached level cap | the owner and nearby players (small, nothing secret) |
+| `realmforge:character` | `character` | players | race, classes (a list: one in M1, room for dual class), total character XP, cached level cap, the stat points spent on each primary stat | the owner and nearby players (small, nothing secret) |
 | `realmforge:spellbook` | `spell` | players | known spells and their levels, spell bar layout | owner |
 | `realmforge:combat` | `spell` | players and mobs that cast | resource pools (mana, rage), cooldowns, current cast | owner, throttled (players; clients never read a mob's copy) |
 | `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points | owner |
@@ -501,8 +501,10 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   syncs with `core/Attachments#toOwner`. Talent trees are named by `Identifier` until their registry exists (C5);
   races and classes are `ResourceKey`s since C1, and spells since C3a-1, which save the same string, so F3's saves
   stay readable. `CombatState` keeps one pool per resource type (`resources`, by the type's id), absent until the
-  type's pool first fills ([11.5](#115-resources-cooldowns-modifiers)). Leveling (C2, [10.2](#102-leveling)) caches the level cap there for players with a character. Every saved field is optional with a default, so an empty
-  save reads as the default value.
+  type's pool first fills ([11.5](#115-resources-cooldowns-modifiers)). Leveling (C2, [10.2](#102-leveling)) caches
+  the level cap there for players with a character, and stat points (RLM-196) save the points spent on each primary
+  stat by the stat's id; the unspent points are derived, never saved. Every saved field is optional with a default,
+  so an empty save reads as the default value.
 - `level` is copied on death, and NeoForge copies the same attachments when a mob converts (a zombie drowns,
   `LivingConversionEvent.Post`), so the converted mob keeps its level, and `mob` gives it that level's scaling
   ([14.1](#141-mob-levels)).
@@ -522,8 +524,8 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   `DeferredHolder` is still unbound.
 - **Primary stats (ours, decision D5):** strength (STR), dexterity (DEX), vitality (VIT: health, not called
   stamina so it is never confused with a stamina resource) and intellect (INT). They are attributes, so gear, buffs
-  and talents modify them like anything else. They start at 0: race, class, level, talents and gear raise them (C1
-  and later). Luck and defense stay out (D5).
+  and talents modify them like anything else. They start at 0: race, class, the stat points a player spends, talents
+  and gear raise them (C1 and later; levels give stat points, not stats: RLM-196). Luck and defense stay out (D5).
 - **Secondary stats (ours):** crit chance (5 % to start with), crit damage (+50 %), dodge chance (no primary stat
   gives it: D5 keeps it for future classes such as the Rogue), spell power, and each magic school's power and
   resistance (`fire_power`, `fire_resistance`, ...; F5, the resistances capped at 75 % so nothing becomes immune
@@ -559,7 +561,8 @@ would remove both bonuses.
 
 | Source | Applied by | Modifier id | Lifetime |
 | --- | --- | --- | --- |
-| race, class and level | `stats/CharacterStats`, from `character`'s `StatSource` (`character/CharacterBonuses`): each modifier's amount at level 1 plus its growth per level above it | `realmforge:race/<namespace>/<n>/<path>`, `realmforge:class/<namespace>/<n>/<path>` for the race or class `<namespace>:<path>` | saved, recomputed |
+| race and class | `stats/CharacterStats`, from `character`'s `StatSource` (`character/CharacterBonuses`): each modifier's amount, the same at every level | `realmforge:race/<namespace>/<n>/<path>`, `realmforge:class/<namespace>/<n>/<path>` for the race or class `<namespace>:<path>` | saved, recomputed |
+| spent stat points | `stats/CharacterStats`, from `character`'s `StatSource` (`character/StatPoints`, [10.2](#102-leveling)): one modifier per primary stat with points, adding them | `realmforge:stat_points/<namespace>/<path>` for the stat `<namespace>:<path>` | saved, recomputed |
 | talents | `stats/CharacterStats`, from `talent`'s provider | `realmforge:talent/<tree>/<node>/<n>` | saved, recomputed |
 | derived from primary stats | `stats/CharacterStats`, from stat rules ([8.3](#83-derived-stats-and-milestones)) | `realmforge:stat/<rule namespace>/<entry>/<rule path>`: `<entry>` is `<n>` per point, `at_<points>_<n>` per milestone; the rule's path comes last, as only it may contain slashes | saved, recomputed |
 | gear with fixed stats | vanilla, from the item's attribute modifiers | `realmforge:gear/<slot>/<n>` (generated) | while equipped |
@@ -592,8 +595,11 @@ transient because of how vanilla handles health:
 applied the tick's equipment changes. Every new player entity (a login, a respawn) starts with a fresh
 `realmforge:stat_tracker`, a transient attachment that is neither saved, synced nor copied, so its first tick
 recomputes and then applies the health rule above. Other recomputes are in [8.3](#83-derived-stats-and-milestones).
-A recompute first applies every `stats/StatSource` that a higher feature registered (race and class since C1), then
-the stat rules, so a primary stat a race or class raises gives its derived bonuses in the same recompute.
+A recompute first applies every `stats/StatSource` that a higher feature registered (race and class since C1, spent
+stat points since RLM-196), then the stat rules, so a primary stat a race, a class or a spent point raises gives its
+derived bonuses in the same recompute. A login brings the player's level up to date but leaves the recompute to the
+first tick too, even when the level changed (RLM-202): a recompute inside `PlayerLoggedInEvent` would read the
+primary stats without the gear's and lower max health, clamping the health for good.
 A GameTest player (`QaPlayers#login`) is never ticked by its connection, so the tests play a client tick with
 `ServerPlayer#doTick` ([20](#20-tests-per-layer)).
 
@@ -791,15 +797,17 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
   every system that reads race or class handles a missing character instead of assuming one.
 - **A race** gives base modifiers, innate spells, optionally a size (`generic.scale`), and the allowed classes. Every
   race gets one racial ability (Matěj, 2026-10-14), an innate spell, once the spell system exists (C4).
-- **A class** gives its resource type, stat growth per level, spells by level, talent trees and starting kit.
+- **A class** gives its resource type, starting stats, spells by level, talent trees and starting kit. Race and
+  class stats stay the same at every level: each level gives stat points the player spends instead
+  ([10.2](#102-leveling); Matěj, 2026-10-15, RLM-196: classes are for skills and abilities, not fixed stat
+  growth). Whether races and classes keep their starting stats is open; they keep them until Matěj decides.
 - **Dual class:** the data model keeps a list of classes; the rules come in M3.
 - **Changing race or class:** a QA command in M1, an in-game way later.
 - **In code (C1):** `character/Race` and `character/PlayerClass` are the entries of `realmforge:race` and
   `realmforge:class` (`CharacterRegistries`, both synced). A race names its classes by id, so a missing class fails
   the world load; a class names its resource (`realmforge:resource_type`, [5.3](#53-type-registries)). Their
-  modifiers (`CharacterModifier`: an amount at level 1 and a growth per level) reach the player through
-  `CharacterBonuses`, the `StatSource` that `stats` applies before the stat rules ([8.2](#82-where-modifiers-come-from));
-  the level is the `realmforge:level` attachment, whose change triggers a recompute at the next check.
+  modifiers (`CharacterModifier`: an amount, the same at every level) reach the player through `CharacterBonuses`,
+  the `StatSource` that `stats` applies before the stat rules ([8.2](#82-where-modifiers-come-from)).
   `CharacterCreation` holds the rules: the player has no character yet, the race and the class exist, and the race
   lists the class, checked in that order; then it sets the attachment, recomputes the stats, refills health to the
   new maximum and gives the class's starting kit once (into the inventory, or dropped for the player alone when it
@@ -840,8 +848,13 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
   victim's level relative to the player's (mobs far below give nothing) and by its kill XP multiplier (its rank); quests (`/realmforge xp`); dungeon
   completion and boss kills; later discoveries and professions. A player's XP multiplier (`xp_multiplier`, 100 % by
   default) scales every gain.
-- **Level-up:** recompute stats, grant talent points and teach class spells through their features' APIs (C4, C5),
-  toast and sound, fire the `realmforge:level_reached` trigger for advancements.
+- **Level-up:** earn stat points, recompute stats, grant talent points and teach class spells through their
+  features' APIs (C4, C5), toast and sound, fire the `realmforge:level_reached` trigger for advancements.
+- **Stat points** (Matěj, 2026-10-15, RLM-196): every level from 2 on earns primary stat points, one a level
+  (the curve `stat_points_per_level`), which the player spends on the character sheet, a point at a time, on any
+  primary stat: no class locks a stat away. A spent point is final until the player unlearns them all with a Clean
+  Slate, an item that is hard to get on purpose (Matěj wants it as a hard repeatable quest's reward, or an expensive
+  shop item once coins exist; the quest waits for Q1). Race and class stats no longer grow with the level.
 - **In code (C2, RLM-23):**
   - **The numbers** are four curves ([content README](../content/README.md)): `xp_to_next_level` (the XP from a
     level to the next, rounded half up, at least 1; one point per level 1-59 from the XP model), `kill_xp` (a kill's
@@ -879,10 +892,25 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
     character gain nothing ([10.1](#101-races-and-classes)) and leveling leaves them alone; creating the character
     brings their cap and level up to date. `Characters` is the public API: `level`, `rewardXp` (times the XP
     multiplier, with level-up effects), `setTotalXp` (exact, quiet) and `xpToReach`.
-  - **A level-up** recomputes the stats at once (race and class modifiers grow with the level), shows the title
-    "Level Up!" with "You are now level 5" beneath it (vanilla's title packets), plays the challenge fanfare to the
-    player alone, bursts totem particles that everyone nearby sees, and fires `realmforge:level_reached`. A level-up
-    that reaches the cap says in chat which chapter raises it. Talent points and class spells join with C4 and C5.
+  - **A level-up** recomputes the stats at once, shows the title "Level Up!" with "You are now level 5" beneath it
+    (vanilla's title packets), plays the challenge fanfare to the player alone, bursts totem particles that everyone
+    nearby sees, says in chat how many stat points are unspent and which key opens the sheet (a keybind component),
+    and fires `realmforge:level_reached`. A level-up that reaches the cap says in chat which chapter raises it.
+    Talent points and class spells join with C4 and C5. A login updates the level quietly and leaves the stat
+    recompute to the player's first tick ([8.2](#82-where-modifiers-come-from), RLM-202); every other update
+    (kills, rewards, commands, chapters) recomputes at once.
+  - **Stat points** (`character/StatPoints`, RLM-196): the points a player has earned are derived, never saved:
+    those of every level from 2 to theirs, each level's the curve `stat_points_per_level` rounded half up and at
+    least 0 (`tools/realmforge_tools/schema/leveling.py` computes the same, and a GameTest compares the two). The
+    `character` attachment saves only the points spent on each primary stat, so the unspent ones are the earned ones
+    less the spent ones. A character from before stat points existed therefore has every point of its levels
+    unspent, once, and a rebalanced curve applies at once. The sheet's `+` sends `SpendStatPointPayload(stat)`;
+    the server checks that the player has a character, that the stat is one of our primary stats and that a point is
+    unspent, then saves it and recomputes the stats. The spent points reach the player through their own
+    `StatSource`, one modifier per stat. An item in the tag `realmforge:use/unlearn_stat_points` (the Clean Slate;
+    an item's `use` in content writes the tag, [13](#13-items-gear-and-loot)) returns every spent point when
+    right-clicked and is used up; with nothing spent it fails and is kept. A level that falls below what was spent
+    (a command, a revoked chapter, a curve that gives fewer) returns every spent point, with a message.
   - **`/realmforge xp add|set|query`** (`command/XpCommand`, permission level 2): `add` gives XP as a reward (times
     the XP multiplier, with level-ups), `set` sets the total exactly and quietly, `query` shows XP, level and cap.
     FTB Quests' `CommandReward` runs `add` for quest rewards (Q1).
@@ -1018,6 +1046,12 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
 - **M1:** fixed-stat gear from YAML: generated items with vanilla attribute modifiers (`Item.Properties#attributes`,
   per-slot ids from [8.2](#82-where-modifiers-come-from)), Better Combat presets for weapons, and vanilla's rarity
   (`Item.Properties#rarity`).
+- **Item uses** (RLM-196): an item's `use` in content says what right-clicking it does, one item used up each time.
+  Each use is game code in the feature it belongs to, which finds its items through the item tag
+  `realmforge:use/<use>` that the pipeline writes; the code never names the items, so `character` needs no
+  dependency on `item`. A use and an item's `flavor` line are its tooltip: the vanilla lore component on the item's
+  default components, the use as a green "Use:" line from `content/texts/item_use.yaml`, the flavor line in vanilla's
+  lore style. The first use, `unlearn_stat_points`, is the Clean Slate's ([10.2](#102-leveling)).
 - **Rarity:** the vision wants five tiers, common to legendary; vanilla's `Rarity` has four (common to epic). M2
   picks one of two ways:
   - extend vanilla `Rarity` with a fifth constant through NeoForge's enum extension (in NeoForge 26.1 `Rarity` is
@@ -1547,7 +1581,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
 ### 17.3 First payloads (M1)
 
 - Client → server: `CreateCharacter` (exists: `character/net/CreateCharacterPayload`, sent by
-  `client/screen/CharacterCreationScreen`), `CastSpell`, `CancelCast`, `SetSpellBarSlot`, `LearnTalent`,
+  `client/screen/CharacterCreationScreen`), `SpendStatPoint` (exists: `character/net/SpendStatPointPayload`, sent by
+  `client/screen/CharacterSheetScreen`), `CastSpell`, `CancelCast`, `SetSpellBarSlot`, `LearnTalent`,
   `ToggleDarkVision` (exists: `world/net/ToggleDarkVisionPayload`, sent by `client/input/DarkVisionKey`).
 - Server → client: `CastStarted`, `CastEnded`, `CombatText` (exists: `combat/net/CombatTextPayload`, shown by
   `client/hud/CombatTextHud`), `HitDirection` (exists: `combat/net/HitDirectionPayload`, shown by
@@ -1605,9 +1640,11 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     then a subclass placeholder until subclasses exist (M3). The names the sheet gives vanilla attributes (Mining
     Speed, Movement Speed, ...) apply on their rows and in the primary stats' bonuses. A stat of ours that no section
     names shows under Other. Values round for display only (Matěj, 2026-10-14): a percentage half up to a whole
-    number (100.6% reads 101%), any other number half up to one decimal (6.45 reads 6.5). All of it comes from the
-    player's synced attributes, level and character and the synced registries; a pet tab waits for the pet system
-    (RLM-161).
+    number (100.6% reads 101%), any other number half up to one decimal (6.45 reads 6.5). For a player with a
+    character the Stats tab opens with their Unspent Stat Points, and while any are unspent a small `+` beside each
+    primary stat spends one on it (`SpendStatPointPayload`, RLM-196); hovering it names the stat. All of it comes
+    from the player's synced attributes, level and character and the synced registries; a pet tab waits for the pet
+    system (RLM-161).
   - The XP bar (`client/hud/XpBarHud`, C2) draws `character/XpBarView`: as wide as the hotbar, above the health and
     food rows and every other status row. NeoForge stacks those rows through `Gui#leftHeight` and `Gui#rightHeight`;
     the layer, registered above `VanillaGuiLayers.AIR_LEVEL`, reads them, so the bar rises with more heart rows, and
@@ -1618,8 +1655,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     enchanting (D3). It shows only for a player with a character, never in spectator mode.
   - Character creation (`client/screen/CharacterCreationScreen`, C1) draws `character/CharacterCreationView`: the
     races on the left and the classes the chosen race allows on the right, as vanilla buttons with a gold outline on
-    the chosen one, each with its description and what it gives at level 1 and per level ("+5 Strength (+1 per
-    Level)"); a class also its resource and starting kit. It opens and closes by itself ([10.1](#101-races-and-classes)).
+    the chosen one, each with its description and what it gives ("+5 Strength"); a class also its resource and
+    starting kit. It opens and closes by itself ([10.1](#101-races-and-classes)).
 - **Minecraft 26.1 draws GUIs by render-state extraction:** a HUD layer (`GuiLayer`) and a screen
   (`Screen#extractRenderState`) receive a `GuiGraphicsExtractor` (`text`, `centeredText`, `fill`, `pose()` for
   scaling). A layer registered through `RegisterGuiLayersEvent` checks `options.hideGui` itself.
