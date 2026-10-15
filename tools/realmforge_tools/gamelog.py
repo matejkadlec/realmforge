@@ -98,6 +98,12 @@ GAMETEST_ALLOWED_ERRORS: tuple[tuple[str, str], ...] = (
         r"^com\.mojang\.authlib\.yggdrasil\.YggdrasilServicesKeyInfo: Failed to request yggdrasil public key",
         "the server fetches Mojang's public keys over the network; sandboxes and some CI runners have no route",
     ),
+    (
+        r"^io\.github\.matejkadlec\.realmforge\.dungeon\.instance\.InstanceManager: Instance plot \d+ failed to "
+        r"build \(.*\): unknown room template realmforge_qa:gametest/gone; releasing it$",
+        "InstanceGameTests.aBuildWhoseTemplateIsGoneIsReleased removes that room template on purpose; any other failed "
+        "build stays an error",
+    ),
 )
 
 # WARN lines that are data errors: vanilla reports these only as warnings, but they mean broken content.

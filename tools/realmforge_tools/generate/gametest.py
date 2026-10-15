@@ -2,7 +2,9 @@
 
 Every GameTest needs a structure template; tests then place whatever blocks they need themselves. The spike rooms
 (``structure/spike/*.nbt``) are test fixtures for instanced dungeons (spike 3): small stone rooms with lanterns, a
-chest and openings that line up when placed in a row along x. They stand in for hand-built rooms until W4.
+chest and openings that line up when placed in a row along x, and a data marker of each kind but the chest's (W4b:
+the entrance where players arrive, a mob spawn in the corridor, the exit in the hall), so the builder's markers are
+tested on rooms whose blocks are known.
 """
 
 from __future__ import annotations
@@ -28,6 +30,7 @@ MOSSY_WALL = ("minecraft:mossy_stone_bricks", ())
 MARKER = ("minecraft:chiseled_stone_bricks", ())
 LANTERN = ("minecraft:lantern", (("hanging", "true"), ("waterlogged", "false")))
 CHEST = ("minecraft:chest", (("facing", "west"), ("type", "single"), ("waterlogged", "false")))
+DATA_MARKER = ("minecraft:structure_block", (("mode", "data"),))
 
 # A block state: name and sorted (property, value) pairs, as in a structure palette.
 State = tuple[str, tuple[tuple[str, str], ...]]
@@ -46,6 +49,8 @@ class Room:
     marker: tuple[int, int] | None = None
     chest: tuple[int, int] | None = None
     pillars: tuple[tuple[int, int], ...] = ()
+    # Data markers (rooms/check.py MARKERS): name and position, as structure blocks in data mode.
+    data_markers: tuple[tuple[str, tuple[int, int, int]], ...] = ()
 
 
 # The three spike rooms. Placed in a row along x (start, corridor, hall) with the corridor 4 and the hall -8 blocks
@@ -56,14 +61,18 @@ SPIKE_ROOMS: dict[str, Room] = {
         openings=(("east", 7),),
         lanterns=((4, 4), (10, 4), (4, 10), (10, 10)),
         marker=(7, 7),
+        data_markers=(("entrance", (7, 1, 7)),),
     ),
-    "corridor": Room(size=(25, 6, 7), open_x=True, lanterns=((6, 3), (18, 3))),
+    "corridor": Room(
+        size=(25, 6, 7), open_x=True, lanterns=((6, 3), (18, 3)), data_markers=(("mob", (12, 1, 3)),)
+    ),
     "hall": Room(
         size=(31, 13, 31),
         openings=(("west", 15), ("east", 15)),
         lanterns=((8, 8), (22, 8), (8, 22), (22, 22), (15, 15)),
         chest=(27, 15),
         pillars=((8, 8), (22, 8), (8, 22), (22, 22)),
+        data_markers=(("exit", (15, 1, 27)),),
     ),
 }
 
@@ -122,13 +131,17 @@ def room_blocks(room: Room) -> dict[tuple[int, int, int], State]:
         blocks[room.marker[0], 0, room.marker[1]] = MARKER
     if room.chest is not None:
         blocks[room.chest[0], 1, room.chest[1]] = CHEST
+    for _, pos in room.data_markers:
+        blocks[pos] = DATA_MARKER
     return blocks
 
 
 def room_structure(room: Room) -> bytes:
     """Gzipped structure NBT of a room. Like vanilla, full blocks come first, then the rest, then block entities;
-    the chest holds one bread, so clearing it must not drop items."""
+    the chest holds one bread, so clearing it must not drop items, and a data marker's structure block names its
+    marker in its metadata."""
     blocks = room_blocks(room)
+    marker_names = {pos: name for name, pos in room.data_markers}
     palette: list[State] = []
     for state in blocks.values():
         if state not in palette:
@@ -139,11 +152,13 @@ def room_structure(room: Room) -> bytes:
         if state == CHEST:
             bread = {"Slot": nbt.Byte(0), "id": "minecraft:bread", "count": nbt.Int(1)}
             result["nbt"] = {"id": "minecraft:chest", "Items": nbt.NbtList(nbt.TAG_COMPOUND, (bread,))}
+        if state == DATA_MARKER:
+            result["nbt"] = {"id": "minecraft:structure_block", "mode": "DATA", "metadata": marker_names[pos]}
         return result
 
     def order(item: tuple[tuple[int, int, int], State]) -> int:
         state = item[1]
-        return 2 if state == CHEST else 1 if state in (AIR, LANTERN) else 0
+        return 2 if state in (CHEST, DATA_MARKER) else 1 if state in (AIR, LANTERN) else 0
 
     entries = tuple(entry(pos, state) for pos, state in sorted(blocks.items(), key=order))
     root = {

@@ -6,6 +6,7 @@ import io.github.matejkadlec.realmforge.qa.combat.CombatLog;
 import io.github.matejkadlec.realmforge.qa.combat.TrainingDummy;
 import io.github.matejkadlec.realmforge.qa.command.QaCommands;
 import io.github.matejkadlec.realmforge.qa.gametest.QaGameTests;
+import io.github.matejkadlec.realmforge.qa.instance.GameTestChunkLoads;
 import io.github.matejkadlec.realmforge.qa.instance.InstanceBench;
 import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
@@ -28,6 +29,8 @@ public final class RealmforgeQa {
         TrainingDummy.register(modEventBus);
         CombatLog.register();
         NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent.class, QaCommands::register);
+        NeoForge.EVENT_BUS.addListener(ServerTickEvent.Pre.class,
+                event -> GameTestChunkLoads.beforeTick(event.getServer()));
         NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class,
                 event -> InstanceBench.onServerTick(event.getServer()));
         NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, event -> InstanceBench.onServerStopped());

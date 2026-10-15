@@ -4,7 +4,6 @@ import io.github.matejkadlec.realmforge.dungeon.instance.BuildReport;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
 import io.github.matejkadlec.realmforge.dungeon.instance.Plot;
-import io.github.matejkadlec.realmforge.dungeon.instance.PlotCleanup;
 import io.github.matejkadlec.realmforge.dungeon.instance.PlotState;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import java.io.IOException;
@@ -26,10 +25,11 @@ import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.storage.LevelResource;
 
 /**
- * {@code /qa instance bench}: builds and releases plots one after another with one cleanup strategy and reports
- * build and clear times, the server's tick times while the builder works, and how much the instance dimension grows
- * on disk. Runs alternate between a straight and a turned row of rooms, so a reused plot always gets new rooms in
- * new places. Ticked from the end of every server tick; one bench at a time.
+ * {@code /qa instance bench}: builds and releases plots one after another and reports build and clear times, the
+ * server's tick times while the builder works, and how much the instance dimension grows on disk. Runs alternate
+ * between a straight and a turned row of rooms, so a reused plot always gets new rooms in new places. Ticked from the
+ * end of every server tick; one bench at a time. It measures the cleanup the core mod keeps, clear then reuse; the
+ * other strategies spike 3 measured are gone, and their numbers stay in ADR 0019.
  */
 public final class InstanceBench {
     private static final int WARMUP_TICKS = 40;
@@ -39,7 +39,6 @@ public final class InstanceBench {
     private final CommandSourceStack source;
     private final int runs;
     private final int rooms;
-    private final PlotCleanup cleanup;
     private Phase phase = Phase.WARMUP;
     private int phaseTicks;
     private int run;
@@ -58,15 +57,14 @@ public final class InstanceBench {
 
     private enum Phase { WARMUP, OPEN, BUILDING, CLOSING, DONE }
 
-    private InstanceBench(CommandSourceStack source, int runs, int rooms, PlotCleanup cleanup) {
+    private InstanceBench(CommandSourceStack source, int runs, int rooms) {
         this.source = source;
         this.runs = runs;
         this.rooms = rooms;
-        this.cleanup = cleanup;
     }
 
     /** Starts a bench, or returns false while one is running. */
-    public static boolean start(CommandSourceStack source, int runs, int rooms, PlotCleanup cleanup) {
+    public static boolean start(CommandSourceStack source, int runs, int rooms) {
         if (running != null) {
             return false;
         }
@@ -74,8 +72,7 @@ public final class InstanceBench {
         if (manager == null) {
             throw new IllegalStateException("this world has no instance dimension");
         }
-        InstanceBench bench = new InstanceBench(source, runs, rooms, cleanup);
-        manager.setCleanup(cleanup);
+        InstanceBench bench = new InstanceBench(source, runs, rooms);
         bench.diskBefore = bench.flushAndMeasureDisk();
         bench.startTick = source.getServer().getTickCount();
         running = bench;
@@ -144,10 +141,7 @@ public final class InstanceBench {
                 if (plot.state() == PlotState.READY) {
                     manager.lastReport(plot.id()).ifPresent(builds::add);
                     manager.release(plot);
-                    next(plot.state() == PlotState.CLOSING ? Phase.CLOSING : Phase.OPEN);
-                    if (phase == Phase.OPEN) {
-                        finishRun();
-                    }
+                    next(Phase.CLOSING);
                 }
             }
             case CLOSING -> {
@@ -181,13 +175,11 @@ public final class InstanceBench {
     private void report(InstanceManager manager) {
         long diskAfter = flushAndMeasureDisk();
         List<String> lines = new ArrayList<>();
-        lines.add(String.format(Locale.ROOT, "instance bench: %d runs of %d rooms, cleanup %s, budget %.1f ms/tick",
-                runs, rooms, cleanup.getSerializedName(), InstanceManager.TICK_BUDGET_NANOS / 1e6));
-        lines.add("  open (tickets, chunk loads): " + millis(openNanos, Long::longValue));
+        lines.add(String.format(Locale.ROOT, "instance bench: %d runs of %d rooms, budget %.1f ms/tick",
+                runs, rooms, InstanceManager.TICK_BUDGET_NANOS / 1e6));
+        lines.add("  open (templates, markers, loaded chunks held): " + millis(openNanos, Long::longValue));
         lines.add("  build: " + millis(builds, BuildReport::totalNanos)
                 + "; ticks " + count(builds, BuildReport::ticks));
-        lines.add("    of which clearing the last run: " + millis(builds, BuildReport::clearNanos)
-                + "; blocks " + count(builds, BuildReport::blocksCleared));
         for (int room = 0; room < Math.min(rooms, 3); room++) {
             int index = room;
             lines.add("    room " + room + " (" + roomName(room) + "): "
@@ -206,9 +198,10 @@ public final class InstanceBench {
         lines.add(String.format(Locale.ROOT,
                 "  disk (instance dimension): %.1f KiB before, %.1f KiB after, %+.1f KiB per run",
                 diskBefore / 1024.0, diskAfter / 1024.0, (diskAfter - diskBefore) / 1024.0 / runs));
-        // Not derived from manager.plots(): never_reuse drops released plots from it.
-        lines.add(String.format(Locale.ROOT, "  plots in use: %d, highest plot id this bench used: %d",
-                manager.plots().size(), highestPlotId));
+        // A free plot stays known to the manager for reuse, so only the others are in use.
+        long inUse = manager.plots().stream().filter(known -> known.state() != PlotState.FREE).count();
+        lines.add(String.format(Locale.ROOT, "  plots in use: %d, highest plot id this bench used: %d", inUse,
+                highestPlotId));
         for (String line : lines) {
             RealmforgeQa.LOGGER.info(line);
             source.sendSuccess(() -> Component.literal(line), false);

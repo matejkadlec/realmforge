@@ -2,7 +2,6 @@ package io.github.matejkadlec.realmforge.qa.command;
 
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -10,23 +9,20 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceLayout;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
 import io.github.matejkadlec.realmforge.dungeon.instance.Plot;
-import io.github.matejkadlec.realmforge.dungeon.instance.PlotCleanup;
 import io.github.matejkadlec.realmforge.qa.instance.InstanceBench;
 import io.github.matejkadlec.realmforge.qa.instance.SpikeLayouts;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
  * {@code /qa instance ...}: spike 3's tools for instanced dungeons. {@code enter} builds the spike rooms in a plot
- * and moves you in, {@code leave} brings you back, {@code build} opens a plot without anyone (from the console too),
- * {@code free}, {@code list}, {@code cleanup} and {@code bench} (measurements, ADR 0019).
+ * and moves you in, {@code leave} brings you back (or drops a run still being built for you), {@code build} opens a
+ * plot without anyone (from the console too), {@code free}, {@code list} and {@code bench} (measurements, ADR 0019).
  */
 final class InstanceCommands {
     private static final SimpleCommandExceptionType NO_DIMENSION =
@@ -39,8 +35,6 @@ final class InstanceCommands {
             new SimpleCommandExceptionType(Component.literal("You are already in an instance run; leave it first"));
     private static final SimpleCommandExceptionType NO_PLOT =
             new SimpleCommandExceptionType(Component.literal("No such plot in use"));
-    private static final SimpleCommandExceptionType UNKNOWN_CLEANUP =
-            new SimpleCommandExceptionType(Component.literal("Unknown cleanup strategy"));
     private static final SimpleCommandExceptionType BENCH_RUNNING =
             new SimpleCommandExceptionType(Component.literal("A bench is already running"));
 
@@ -66,19 +60,10 @@ final class InstanceCommands {
                         .then(Commands.argument("plot", IntegerArgumentType.integer(0))
                                 .executes(InstanceCommands::free)))
                 .then(Commands.literal("list").executes(InstanceCommands::list))
-                .then(Commands.literal("cleanup")
-                        .executes(InstanceCommands::showCleanup)
-                        .then(Commands.argument("strategy", StringArgumentType.word())
-                                .suggests((context, builder) ->
-                                        SharedSuggestionProvider.suggest(cleanupNames(), builder))
-                                .executes(InstanceCommands::setCleanup)))
                 .then(Commands.literal("bench")
                         .then(Commands.argument("runs", IntegerArgumentType.integer(1, 1000))
                                 .then(Commands.argument("rooms", IntegerArgumentType.integer(1, SpikeLayouts.MAX_ROOMS))
-                                        .then(Commands.argument("strategy", StringArgumentType.word())
-                                                .suggests((context, builder) ->
-                                                        SharedSuggestionProvider.suggest(cleanupNames(), builder))
-                                                .executes(InstanceCommands::bench)))));
+                                        .executes(InstanceCommands::bench))));
     }
 
     private static int open(CommandContext<CommandSourceStack> context, int rooms, boolean turned, boolean enter)
@@ -108,7 +93,7 @@ final class InstanceCommands {
         if (!manager(context).leave(player)) {
             throw NOT_IN_RUN.create();
         }
-        context.getSource().sendSuccess(() -> Component.literal("Left the instance"), false);
+        context.getSource().sendSuccess(() -> Component.literal("Left the instance run"), false);
         return 1;
     }
 
@@ -117,37 +102,23 @@ final class InstanceCommands {
         Plot plot = manager.plot(IntegerArgumentType.getInteger(context, "plot")).orElseThrow(NO_PLOT::create);
         manager.release(plot);
         context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
-                "Released plot %d (%s), now %s", plot.id(), manager.cleanup().getSerializedName(),
-                plot.state().getSerializedName())), true);
+                "Released plot %d, now %s", plot.id(), plot.state().getSerializedName())), true);
         return 1;
     }
 
     private static int list(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         InstanceManager manager = manager(context);
         context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
-                "%d plots, cleanup %s", manager.plots().size(), manager.cleanup().getSerializedName())), false);
+                "%d plots", manager.plots().size())), false);
         for (Plot plot : manager.plots()) {
             String report = manager.lastReport(plot.id()).map(r -> "; last job " + r).orElse("");
             context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
-                    "  plot %d at %s: %s, %d rooms, party %d, %d chunks held, step %d%s", plot.id(),
-                    plot.origin().toShortString(), plot.state().getSerializedName(), plot.rooms().size(),
-                    plot.party().size(), plot.chunks().size(), plot.step(), report)), false);
+                    "  plot %d at %s: %s, %d rooms, %d markers, party %d, %d of %d chunks held, step %d%s",
+                    plot.id(), plot.origin().toShortString(), plot.state().getSerializedName(), plot.rooms().size(),
+                    plot.markers().size(), plot.party().size(), plot.chunks().size(), plot.wantedChunks().size(),
+                    plot.step(), report)), false);
         }
         return manager.plots().size();
-    }
-
-    private static int showCleanup(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        PlotCleanup cleanup = manager(context).cleanup();
-        context.getSource().sendSuccess(() -> Component.literal("Cleanup: " + cleanup.getSerializedName()), false);
-        return cleanup.ordinal();
-    }
-
-    private static int setCleanup(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        PlotCleanup cleanup = cleanup(context);
-        manager(context).setCleanup(cleanup);
-        context.getSource().sendSuccess(() -> Component.literal("Cleanup set to " + cleanup.getSerializedName()
-                + " until the server stops"), true);
-        return cleanup.ordinal();
     }
 
     private static int bench(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -157,7 +128,7 @@ final class InstanceCommands {
             throw EVEN_ROOMS.create();
         }
         manager(context);
-        if (!InstanceBench.start(context.getSource(), runs, rooms, cleanup(context))) {
+        if (!InstanceBench.start(context.getSource(), runs, rooms)) {
             throw BENCH_RUNNING.create();
         }
         context.getSource().sendSuccess(() -> Component.literal("Bench started; results follow here and in the log"),
@@ -179,17 +150,5 @@ final class InstanceCommands {
 
     private static boolean turned(CommandContext<CommandSourceStack> context) {
         return BoolArgumentType.getBool(context, "turned");
-    }
-
-    private static PlotCleanup cleanup(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        String name = StringArgumentType.getString(context, "strategy");
-        return Arrays.stream(PlotCleanup.values())
-                .filter(cleanup -> cleanup.getSerializedName().equals(name))
-                .findFirst()
-                .orElseThrow(UNKNOWN_CLEANUP::create);
-    }
-
-    private static List<String> cleanupNames() {
-        return Arrays.stream(PlotCleanup.values()).map(PlotCleanup::getSerializedName).toList();
     }
 }

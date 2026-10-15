@@ -30,7 +30,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0016](0016-jira-batch-delivery.md) | Jira batch delivery with flow1 and flow2 | Accepted (extends 0011), amended by [0017](0017-jira-as-the-source-of-task-status.md), [0021](0021-status-overview-and-plan-changes.md) and [0022](0022-playtest-before-the-pull-request.md) |
 | [0017](0017-jira-as-the-source-of-task-status.md) | Jira as the source of task status | Accepted (amends 0015 and 0016), amended by [0021](0021-status-overview-and-plan-changes.md) |
 | [0018](0018-pack-boot-tests.md) | Pack boot tests: server and client self tests on every PR | Accepted (amends 0010), adjusted for 26.1.2 by [0026](0026-platform-minecraft-26-1-2-neoforge.md) |
-| [0019](0019-dungeon-instances-in-plots.md) | Dungeon instances in plots | Accepted (refines 0012) |
+| [0019](0019-dungeon-instances-in-plots.md) | Dungeon instances in plots | Accepted (refines 0012), amended by [0031](0031-instance-builder-background-chunks-and-shared-budget.md) |
 | [0020](0020-cast-animations-and-melee-while-casting.md) | Cast animations through playerAnimator, no melee while casting | Accepted, amended by [0026](0026-platform-minecraft-26-1-2-neoforge.md) (Player Animation Library) |
 | [0021](0021-status-overview-and-plan-changes.md) | A status overview ends every response; plan changes without a label | Accepted (amends 0015, 0016 and 0017), amended by [0022](0022-playtest-before-the-pull-request.md) |
 | [0022](0022-playtest-before-the-pull-request.md) | Playtest before the pull request: qa1 and qa2 | Accepted (amends 0016 and 0021), amended by [0024](0024-no-github-labels.md) |
@@ -42,6 +42,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0028](0028-dungeon-rooms-generated-or-imported.md) | Dungeon rooms are generated or imported, not built by hand | Accepted (amends 0007, 0009, 0012 and 0014) |
 | [0029](0029-independent-claude-review-before-every-merge.md) | Independent Claude review before every merge | Accepted (supersedes 0015) |
 | [0030](0030-adrs-bind-agents-not-the-owner.md) | ADRs bind agents, not the owner | Accepted (amends 0001) |
+| [0031](0031-instance-builder-background-chunks-and-shared-budget.md) | Instance builder: background chunk loads, a shared budget, clear-only cleanup | Accepted (amends 0019) |
 
 ## Open questions (not decided)
 

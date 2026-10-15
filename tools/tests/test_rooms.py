@@ -19,7 +19,7 @@ from realmforge_tools.id_universe import load_vanilla
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import DATA_VERSION, RepoPaths
 from realmforge_tools.rooms import importer
-from realmforge_tools.rooms.check import check_structure
+from realmforge_tools.rooms.check import check_structure, fluid_edges, markers
 from realmforge_tools.rooms.slots import slot_tags
 from realmforge_tools.rooms.sources import read_source, structure_from_sponge
 from realmforge_tools.rooms.structure import (
@@ -162,6 +162,17 @@ def test_spike_room_reads_back() -> None:
     hall = read_structure(room_structure(SPIKE_ROOMS["hall"]))
     assert hall.size == SPIKE_ROOMS["hall"].size
     assert len(hall.blocks) == len(room_blocks(SPIKE_ROOMS["hall"]))
+
+
+def test_spike_rooms_hold_valid_data_markers(repo: RepoPaths) -> None:
+    rooms = {name: read_structure(room_structure(room)) for name, room in SPIKE_ROOMS.items()}
+    assert {name: markers(room) for name, room in rooms.items()} == {
+        "start": [("entrance", (7, 1, 7))],
+        "corridor": [("mob", (12, 1, 3))],
+        "hall": [("exit", (15, 1, 27))],
+    }
+    for room in rooms.values():
+        assert check_structure(room, load_vanilla(repo)) == []
 
 
 @pytest.mark.parametrize(
@@ -1234,3 +1245,56 @@ def test_rooms_join_the_structure_ids(repo: RepoPaths) -> None:
     add_room(repo, "stone/hall")
     _, universe = load_and_validate(repo)
     assert universe.contains("minecraft:structure", "realmforge:rooms/stone/hall")
+
+
+def marker(pos: tuple[int, int, int], name: str, mode: str = "DATA") -> StructureBlock:
+    """A structure block as a template saves it, in ``mode`` with ``name`` as its metadata."""
+    data = {"id": "minecraft:structure_block", "mode": mode, "metadata": name, "name": "", "author": "?"}
+    return StructureBlock(pos, BlockState("minecraft:structure_block", (("mode", mode.lower()),)), data)
+
+
+def with_blocks(*placed: StructureBlock) -> Structure:
+    """The small room with ``placed`` instead of the blocks at their positions."""
+    where = {block.pos for block in placed}
+    return small_room(blocks=tuple(b for b in small_room().blocks if b.pos not in where) + placed)
+
+
+def test_data_markers_must_name_known_markers(repo: RepoPaths) -> None:
+    room = with_blocks(
+        marker((2, 1, 2), "chest"),
+        marker((3, 1, 3), "loot"),
+        marker((2, 2, 2), "", mode="SAVE"),
+    )
+    problems = check_structure(room, load_vanilla(repo))
+    assert problems == [
+        ("data marker 3 1 3", "names 'loot', which is no marker: entrance, exit, mob, chest"),
+        (
+            "structure block 2 2 2",
+            "is in SAVE mode; a room holds structure blocks only as data markers (mode DATA) naming entrance, exit, "
+            "mob, chest",
+        ),
+    ]
+    assert markers(room) == [("chest", (2, 1, 2)), ("loot", (3, 1, 3))], "only data mode makes a marker"
+
+
+def test_a_room_has_one_entrance_marker_at_most(repo: RepoPaths) -> None:
+    one = with_blocks(marker((2, 1, 2), "entrance"), marker((3, 1, 3), "mob"))
+    assert check_structure(one, load_vanilla(repo)) == []
+    two = with_blocks(marker((2, 1, 2), "entrance"), marker((3, 1, 3), "entrance"))
+    assert check_structure(two, load_vanilla(repo)) == [
+        ("data marker 3 1 3", "the room holds 2 entrance markers; players arrive at one")
+    ]
+
+
+def test_fluids_count_at_the_sides_and_floor_but_not_the_roof() -> None:
+    water = BlockState("minecraft:water", (("level", "0"),))
+    room = with_blocks(
+        StructureBlock((0, 1, 2), water),  # west side
+        StructureBlock((2, 0, 2), BlockState("minecraft:lava", (("level", "0"),))),  # floor
+        StructureBlock((2, 3, 2), water),  # roof only: it cannot flow out
+        StructureBlock((2, 1, 2), water),  # inside
+        StructureBlock((3, 2, 4), BlockState.parse("minecraft:oak_stairs[facing=east,waterlogged=true]")),
+        StructureBlock((3, 1, 0), BlockState("minecraft:seagrass")),  # always holds water
+        StructureBlock((1, 2, 4), BlockState.parse("minecraft:oak_stairs[facing=east,waterlogged=false]")),
+    )
+    assert fluid_edges(room) == [(0, 1, 2), (2, 0, 2), (3, 1, 0), (3, 2, 4)]

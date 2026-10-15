@@ -5,14 +5,16 @@ import io.github.matejkadlec.realmforge.dungeon.instance.RoomPlacement;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Rotation;
-import net.minecraft.world.phys.Vec3;
 
 /**
  * The minimal planner of spike 3: the generated test rooms (tools/realmforge_tools/generate/gametest.py) in a row.
- * A start room, then corridor and hall pairs; their openings meet at z = 6..8. W4 replaces this with the real planner.
+ * A start room, then corridor and hall pairs; their openings meet at z = 6..8. Test fixtures with known blocks and a
+ * data marker in each room (the start room's entrance marker says where players arrive); dungeons come from the
+ * planner.
  */
 public final class SpikeLayouts {
     public static final Identifier START = RealmforgeQa.id("spike/start");
@@ -20,8 +22,15 @@ public final class SpikeLayouts {
     public static final Identifier HALL = RealmforgeQa.id("spike/hall");
     /** Rooms in the longest row that still fits a plot's reach (start plus four corridor and hall pairs). */
     public static final int MAX_ROOMS = 9;
-    /** A block on the start room's floor, under the spawn point, that tests look for. */
+    /** A block on the start room's floor, under its entrance marker, that tests look for. */
     public static final BlockPos MARKER = new BlockPos(7, 0, 7);
+    /** The start room's entrance marker, where players arrive, and the opening an arriving player looks at. */
+    public static final BlockPos ENTRANCE = MARKER.above();
+    private static final BlockPos OPENING = new BlockPos(14, 1, 7);
+    /** The corridor's mob marker, relative to the corridor's origin corner. */
+    public static final BlockPos CORRIDOR_MOB = new BlockPos(12, 1, 3);
+    /** The hall's exit marker, relative to the hall's origin corner. */
+    public static final BlockPos HALL_EXIT = new BlockPos(15, 1, 27);
     /** The chest in the first hall, which holds one bread. */
     public static final BlockPos FIRST_CHEST = new BlockPos(15 + 25 + 27, 1, -8 + 15);
 
@@ -55,9 +64,8 @@ public final class SpikeLayouts {
             placements.add(placement(HALL, new BlockPos(x, 0, -8), turned));
             x += HALL_LENGTH;
         }
-        BlockPos spawn = turn(MARKER.above(), turned);
-        // Facing along the row: east (-90) in a straight row, south (0) in a turned one.
-        return new InstanceLayout(placements, Vec3.atBottomCenterOf(spawn), turned ? 0.0F : -90.0F);
+        // Looking along the row: east in a straight row, south in a turned one.
+        return new InstanceLayout(placements, Optional.of(turn(OPENING, turned)));
     }
 
     private static RoomPlacement placement(Identifier template, BlockPos offset, boolean turned) {

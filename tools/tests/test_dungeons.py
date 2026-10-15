@@ -294,3 +294,32 @@ def test_could_attach_turns_rooms_as_needed() -> None:
     )
     assert not could_attach(hatch, door), "a connector takes only one named as its target"
     assert could_attach(door, hatch)
+
+
+def test_a_pooled_room_keeps_its_fluids_inside_and_its_entrance_marker_in_the_entrance(
+    repo: RepoPaths,
+) -> None:
+    crypt(repo)
+    water = StructureBlock((0, 1, 1), BlockState("minecraft:water", (("level", "0"),)))
+    entrance = StructureBlock(
+        (3, 1, 3),
+        BlockState("minecraft:structure_block", (("mode", "data"),)),
+        {"id": "minecraft:structure_block", "mode": "DATA", "metadata": "entrance"},
+    )
+    for room_id, tags, pools in (
+        ("crypt/flooded", ["hallway"], (POOL,)),
+        ("unused/flooded", ["hallway"], ("realmforge:unused",)),
+    ):
+        add_room(repo, room_id, tags, "north", "south", pools=pools)
+        path = repo.content / "rooms" / f"{room_id}.nbt"
+        room = room_structure((7, 5, 7), "north", "south")
+        path.write_bytes(
+            write_structure(Structure(room.size, room.data_version, (*room.blocks, water, entrance)))
+        )
+    found = sorted(problems_for(repo))
+    assert found == [
+        "content/rooms/crypt/flooded.nbt: data marker 3 1 3: an entrance marker in a room whose role is hallway: "
+        "players arrive only in the entrance room",
+        "content/rooms/crypt/flooded.nbt: fluid at 0 1 1: a fluid on the room's sides or floor flows out of its box, "
+        "where cleanup does not reach; a room in a dungeon type's pool keeps its fluids inside",
+    ], "a room no dungeon type builds is not checked"

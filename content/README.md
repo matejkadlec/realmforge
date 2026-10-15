@@ -142,6 +142,13 @@ Rules:
   `[hallway, straight]` and a treasure room at the end of a branch `[treasure, dead_end]`. Connectors of imported
   rooms are named `realmforge:door` on the sides and `realmforge:shaft` up and down. A room in the pool of a dungeon
   type must have exactly one role.
+- A room marks spots with **data markers**: structure blocks in data mode whose metadata names `entrance` (where
+  players arrive, one at most, only in an entrance room; without one they arrive at a free spot near the room's
+  middle), `exit` (W4d), `mob` or `chest` (W6)
+  ([architecture 15.3](../docs/architecture.md#153-generation-pure-first-then-minecraft)). The builder reads them
+  and never places them, and validation refuses any other structure block. A room in the pool of a dungeon type
+  keeps fluids (water, lava, waterlogged blocks, kelp, seagrass) off its sides and floor, where they would flow out
+  of its box past what cleanup clears.
 - `dungeons/` holds the kinds of dungeons ([architecture 15.2](../docs/architecture.md#152-dungeon-types)): a
   `name` (a label), the room `pool` the type is built from, and the `layout` the planner follows, each range
   written `[min, max]`: `main_path` (rooms between the entrance and the ending, 1 to 32), `branches` (side branches
@@ -153,7 +160,7 @@ Rules:
   role `hallway`, `combat`, `stairs` or `treasure`), and every connector of its rooms must meet one of the pool by the
   jigsaw rules (its `target` is the other's `name`; sides meet sides, up meets down). `rf gen` resolves the pool into
   the entry, so the game plans without loading a template. `test_dungeon` is test content (like `items/test_item`)
-  that only `/qa dungeon plan` and `/qa dungeon build` use; W6 brings the real dungeon types.
+  that only `/qa dungeon plan`, `build` and `enter` use; W6 brings the real dungeon types.
 - Start each YAML file with the `yaml-language-server` schema comment (see `items/test_item.yaml`) for editor
   completion.
 

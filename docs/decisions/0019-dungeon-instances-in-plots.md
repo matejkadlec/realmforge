@@ -2,7 +2,8 @@
 
 Date: 2026-10-11
 
-Status: Accepted (refines [0012](0012-procedural-dungeons-and-dimensions.md))
+Status: Accepted (refines [0012](0012-procedural-dungeons-and-dimensions.md)), amended by
+[0031](0031-instance-builder-background-chunks-and-shared-budget.md) (background chunk loads, a shared budget)
 
 ## Context
 

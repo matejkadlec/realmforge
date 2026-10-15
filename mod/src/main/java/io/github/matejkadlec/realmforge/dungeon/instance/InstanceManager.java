@@ -5,6 +5,9 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.dungeon.DungeonAttachments;
+import io.github.matejkadlec.realmforge.dungeon.DungeonRegistries;
+import io.github.matejkadlec.realmforge.dungeon.DungeonType;
+import io.github.matejkadlec.realmforge.dungeon.plan.DungeonRoom;
 import it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -15,23 +18,35 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.world.chunk.RegisterTicketControllersEvent;
 import net.neoforged.neoforge.common.world.chunk.TicketController;
 import net.neoforged.neoforge.common.world.chunk.TicketHelper;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import org.slf4j.Logger;
 
 /**
@@ -40,13 +55,25 @@ import org.slf4j.Logger;
  * that were building or closing when the server stopped resume where they were.
  */
 public final class InstanceManager extends SavedData {
-    /** Time the builder may spend per server tick, over all plots together; one unit always runs. */
+    /**
+     * Time the builder may spend per server tick, over all plots together. A plot being built gets one unit every
+     * tick even past it, and some unit always runs.
+     */
     public static final long TICK_BUDGET_NANOS = 5_000_000L;
     /** Holds every chunk of a plot that is building, playable or closing, also across restarts. */
     public static final TicketController TICKETS =
             new TicketController(Realmforge.id("instance_plots"), InstanceManager::validateTickets);
 
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final DeferredRegister<TicketType> TICKET_TYPES =
+            DeferredRegister.create(Registries.TICKET_TYPE, Realmforge.MOD_ID);
+    /**
+     * Loads a chunk a plot needs in the background until {@link #TICKETS} holds it: holding a chunk that is not
+     * loaded yet ({@code TicketController#forceChunk}) loads it on the main thread. Renewed every tick until then, and
+     * gone a second after the chunk loaded; not saved, as a restart asks again.
+     */
+    private static final DeferredHolder<TicketType, TicketType> LOADING = TICKET_TYPES.register("instance_loading",
+            () -> new TicketType(20L, TicketType.FLAG_LOADING));
     private static final Codec<InstanceManager> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.INT.fieldOf("next_id").forGetter(manager -> manager.nextId),
             Codec.INT.listOf().optionalFieldOf("free", List.of()).forGetter(manager -> List.copyOf(manager.free)),
@@ -65,7 +92,8 @@ public final class InstanceManager extends SavedData {
     private final IntSortedSet free = new IntAVLTreeSet();
     private final Int2ObjectSortedMap<Plot> plots = new Int2ObjectAVLTreeMap<>();
     private final Int2ObjectMap<BuildReport> reports = new Int2ObjectOpenHashMap<>();
-    private PlotCleanup cleanup = PlotCleanup.CLEAR;
+    /** The plot that ran the last unit; the next round of the tick budget starts after it. */
+    private int lastServed = -1;
     @Nullable
     private ServerLevel level;
 
@@ -76,6 +104,12 @@ public final class InstanceManager extends SavedData {
         this.nextId = nextId;
         this.free.addAll(free);
         plots.forEach(plot -> this.plots.put(plot.id(), plot));
+    }
+
+    /** Registers the chunk ticket type and the ticket controller plots load and hold their chunks with. */
+    public static void register(IEventBus modBus) {
+        TICKET_TYPES.register(modBus);
+        modBus.addListener(RegisterTicketControllersEvent.class, event -> event.register(TICKETS));
     }
 
     /** The manager of this server's instance dimension, or {@code null} when the dimension is missing. */
@@ -89,6 +123,38 @@ public final class InstanceManager extends SavedData {
         InstanceManager manager = level.getDataStorage().computeIfAbsent(TYPE);
         manager.level = level;
         return manager;
+    }
+
+    /**
+     * Loads the room templates of every dungeon type, so no run waits for one to load and upgrade from its data
+     * version (spike 3: up to 54 ms for a room). Called when the server starts, and after a reload, which empties the
+     * structure manager's cache ({@link #preloadAfterReload}).
+     */
+    public static void preloadTemplates(MinecraftServer server) {
+        long start = System.nanoTime();
+        Set<Identifier> templates = new LinkedHashSet<>();
+        int types = 0;
+        for (DungeonType type : server.registryAccess().lookupOrThrow(DungeonRegistries.DUNGEON_TYPE)) {
+            types++;
+            type.rooms().stream().map(DungeonRoom::template).forEach(templates::add);
+        }
+        StructureTemplateManager structures = server.getStructureManager();
+        for (Identifier template : templates) {
+            if (structures.get(template).isEmpty()) {
+                LOGGER.warn("Room template {} of a dungeon type does not load", template);
+            }
+        }
+        LOGGER.info("Loaded the {} room templates of {} dungeon types in {} ms", templates.size(), types,
+                (System.nanoTime() - start) / 1_000_000);
+    }
+
+    /**
+     * Loads the room templates again after a reload. The reload asks for this from inside its server task, before it
+     * empties the structure manager's cache ({@code MinecraftServer#reloadResources} posts the sync event first), so
+     * the loading is queued behind that task; outside a server task it runs at once.
+     */
+    public static void preloadAfterReload(MinecraftServer server) {
+        server.execute(() -> preloadTemplates(server));
     }
 
     // ---- Queries ----
@@ -115,33 +181,27 @@ public final class InstanceManager extends SavedData {
         return Optional.ofNullable(reports.get(plotId));
     }
 
-    public PlotCleanup cleanup() {
-        return cleanup;
-    }
-
-    /** Changes the cleanup strategy for plots released from now on (not saved; measurement only). */
-    public void setCleanup(PlotCleanup cleanup) {
-        this.cleanup = cleanup;
-    }
-
     // ---- Lifecycle ----
 
     /**
-     * Takes a plot and starts building {@code layout} in it over the next ticks. Online party members enter
-     * when it is built.
+     * Takes a plot and starts building {@code layout} in it over the next ticks, after its chunks have loaded in the
+     * background. Online party members enter when it is built.
      *
      * @throws IllegalArgumentException when a room template is unknown or a room reaches outside the plot
      */
     public Plot open(InstanceLayout layout, List<UUID> party) {
         ServerLevel level = level();
         List<BoundingBox> relativeRooms = new ArrayList<>();
-        for (RoomPlacement room : layout.rooms()) {
-            BoundingBox box = InstanceBuilder.template(level, room)
-                    .getBoundingBox(InstanceBuilder.settings(room), room.offset());
+        List<DataMarker> markers = new ArrayList<>();
+        for (int index = 0; index < layout.rooms().size(); index++) {
+            RoomPlacement room = layout.rooms().get(index);
+            StructureTemplate template = InstanceBuilder.template(level, room);
+            BoundingBox box = template.getBoundingBox(InstanceBuilder.settings(room), room.offset());
             if (!PlotGrid.fits(box)) {
                 throw new IllegalArgumentException("room " + room.template() + " reaches outside its plot: " + box);
             }
             relativeRooms.add(box);
+            markers.addAll(InstanceBuilder.markers(template, index, room));
         }
         Plot plot;
         if (free.isEmpty()) {
@@ -156,55 +216,58 @@ public final class InstanceManager extends SavedData {
         List<BoundingBox> rooms = relativeRooms.stream()
                 .map(box -> box.moved(origin.getX(), origin.getY(), origin.getZ()))
                 .toList();
-        plot.startBuilding(layout, rooms, party);
-        List<BoundingBox> touched = new ArrayList<>(plot.dirty());
-        touched.addAll(rooms);
-        holdChunks(plot, PlotWork.chunks(touched));
+        plot.startBuilding(layout, rooms, markers, party);
+        holdChunks(plot);
         setDirty();
         LOGGER.debug("Opened instance plot {} at {} for {}", plot.id(), origin, party);
         return plot;
     }
 
     /**
-     * Does up to {@link #TICK_BUDGET_NANOS} of building and clearing; called once per tick of the instance level.
-     * A plot whose next unit's chunks are still loading waits for a later tick.
+     * Holds the chunks that have loaded, then does up to {@link #TICK_BUDGET_NANOS} of building and clearing; called
+     * once per tick of the instance level. The budget goes round the plots one unit at a time, starting after the
+     * plot served last, but every plot being built runs a unit each tick first, so a run's build never waits for
+     * another plot's. A plot whose next unit's chunks are still loading waits for a later tick.
      */
     public void tick() {
         ServerLevel level = this.level;
         if (level == null) {
             return;
         }
-        long deadline = System.nanoTime() + TICK_BUDGET_NANOS;
         boolean changed = false;
-        boolean first = true;
-        for (Plot plot : List.copyOf(plots.values())) {
-            if (!plot.state().hasWork()) {
-                continue;
+        List<Plot> busy = new ArrayList<>();
+        List<Plot> later = new ArrayList<>();
+        for (Plot plot : plots.values()) {
+            if (plot.state() != PlotState.FREE) {
+                changed |= holdChunks(plot);
             }
-            List<PlotWork.Unit> units = plot.units();
-            while (plot.step() < units.size()) {
-                long start = System.nanoTime();
-                if (!first && start >= deadline) {
+            if (plot.state().hasWork()) {
+                (plot.id() > lastServed ? busy : later).add(plot);
+            }
+        }
+        busy.addAll(later);
+        long deadline = System.nanoTime() + TICK_BUDGET_NANOS;
+        boolean ran = false;
+        for (Plot plot : busy) {
+            if (plot.state() == PlotState.BUILDING && runUnit(level, plot)) {
+                ran = true;
+            }
+        }
+        boolean progress = true;
+        while (progress) {
+            progress = false;
+            for (Plot plot : busy) {
+                if (ran && System.nanoTime() >= deadline) {
                     setDirty();
                     return;
                 }
-                PlotWork.Unit unit = units.get(plot.step());
-                if (!InstanceBuilder.ready(level, unit)) {
-                    break;
+                if (plot.state().hasWork() && runUnit(level, plot)) {
+                    ran = true;
+                    progress = true;
                 }
-                first = false;
-                long cleared = InstanceBuilder.run(level, plot, unit);
-                int room = unit instanceof PlotWork.Place place ? place.room() : -1;
-                plot.recorder().unit(level.getGameTime(), room, System.nanoTime() - start, cleared);
-                plot.advance();
-                changed = true;
-            }
-            if (plot.step() >= units.size()) {
-                finishWork(plot);
-                changed = true;
             }
         }
-        if (changed) {
+        if (ran || changed) {
             setDirty();
         }
     }
@@ -225,28 +288,51 @@ public final class InstanceManager extends SavedData {
             player.setData(DungeonAttachments.VISIT, new InstanceVisit(plot.id(), player.level().dimension(),
                     player.position(), player.getYRot(), player.getXRot()));
         }
-        InstanceLayout layout = plot.layout().orElseThrow();
-        Vec3 spawn = Vec3.atLowerCornerOf(plot.origin()).add(layout.spawn());
-        player.teleportTo(level(), spawn.x, spawn.y, spawn.z, Set.of(), layout.spawnYaw(), 0.0F, true);
+        Vec3 relative = plot.spawn().orElseGet(() -> {
+            Vec3 found = findSpawn(plot);
+            plot.setSpawn(found);
+            return found;
+        });
+        Vec3 spawn = Vec3.atLowerCornerOf(plot.origin()).add(relative);
+        float yaw = plot.layout().orElseThrow().yawFrom(relative);
+        player.teleportTo(level(), spawn.x, spawn.y, spawn.z, Set.of(), yaw, 0.0F, true);
         plot.activate();
         setDirty();
         return true;
     }
 
-    /** Sends the player back to where they entered from and drops them from their run. */
+    /**
+     * Drops the player from their run: one they entered sends them back to where they came from, and one still
+     * being built (or built and not entered yet) is left without moving them. False when they belong to no run.
+     */
     public boolean leave(ServerPlayer player) {
         InstanceVisit visit = player.getExistingDataOrNull(DungeonAttachments.VISIT);
-        if (visit == null) {
+        if (visit != null) {
+            sendBack(player, visit);
+            leftRun(player.getUUID(), visit.plot());
+            return true;
+        }
+        Optional<Plot> pending = plotOf(player);
+        pending.ifPresent(plot -> leftRun(player.getUUID(), plot.id()));
+        return pending.isPresent();
+    }
+
+    /**
+     * Marks an active run's goal as done (W4d: when its final boss dies); its players stay until they leave or the
+     * plot closes. False for a plot that is not active.
+     */
+    public boolean complete(Plot plot) {
+        if (plot.state() != PlotState.ACTIVE) {
             return false;
         }
-        sendBack(player, visit);
-        leftRun(player.getUUID(), visit.plot());
+        plot.complete();
+        setDirty();
         return true;
     }
 
     /**
-     * Ends a plot's run: players still inside are sent back, then the plot is cleaned up by the current
-     * {@link PlotCleanup}.
+     * Ends a plot's run: players still inside are sent back, then its blocks, its rooms' margin included, are cleared
+     * over the next ticks before the plot is free for the next run. Nobody waits for that (spike 3, ADR 0019).
      */
     public void release(Plot plot) {
         if (plot.state() == PlotState.CLOSING || plot.state() == PlotState.FREE) {
@@ -260,18 +346,7 @@ public final class InstanceManager extends SavedData {
                 sendBack(player, visit);
             }
         }
-        switch (cleanup) {
-            case CLEAR -> plot.startClosing();
-            case OVERWRITE -> {
-                releaseChunks(plot);
-                plot.free(false);
-                free.add(plot.id());
-            }
-            case NEVER_REUSE -> {
-                releaseChunks(plot);
-                plots.remove(plot.id());
-            }
-        }
+        plot.startClosing();
         setDirty();
     }
 
@@ -321,12 +396,49 @@ public final class InstanceManager extends SavedData {
 
     // ---- Internals ----
 
+    /**
+     * Runs the plot's next unit, unless its chunks are still loading, and finishes the job after its last one.
+     * Returns whether the plot moved on. A unit that fails (a room template that no longer resolves after a restart,
+     * say) releases a plot being built and is skipped by a closing one, instead of failing every tick.
+     */
+    private boolean runUnit(ServerLevel level, Plot plot) {
+        List<PlotWork.Unit> units = plot.units();
+        if (plot.step() < units.size()) {
+            PlotWork.Unit unit = units.get(plot.step());
+            if (!InstanceBuilder.ready(level, unit)) {
+                return false;
+            }
+            long start = System.nanoTime();
+            try {
+                long cleared = InstanceBuilder.run(level, plot, unit);
+                int room = unit instanceof PlotWork.Place place ? place.room() : -1;
+                plot.recorder().unit(level.getGameTime(), room, System.nanoTime() - start, cleared);
+            } catch (RuntimeException e) {
+                lastServed = plot.id();
+                if (plot.state() == PlotState.BUILDING) {
+                    LOGGER.error("Instance plot {} failed to build ({}): {}; releasing it", plot.id(), unit, e.getMessage(), e);
+                    // The failed unit counts as run: it may have placed blocks, which closing must clear.
+                    plot.advance();
+                    release(plot);
+                    return true;
+                }
+                LOGGER.error("Instance plot {} failed to clear ({}): {}; skipping it", plot.id(), unit, e.getMessage(), e);
+            }
+            plot.advance();
+        }
+        lastServed = plot.id();
+        if (plot.step() >= units.size()) {
+            finishWork(plot);
+        }
+        return true;
+    }
+
     private void finishWork(Plot plot) {
         BuildReport report = plot.recorder().finish();
         reports.put(plot.id(), report);
         LOGGER.info("Instance {}", report);
         if (plot.state() == PlotState.BUILDING) {
-            plot.finishBuilding();
+            plot.finishBuilding(findSpawn(plot));
             MinecraftServer server = level().getServer();
             for (UUID member : plot.party()) {
                 ServerPlayer player = server.getPlayerList().getPlayer(member);
@@ -336,9 +448,45 @@ public final class InstanceManager extends SavedData {
             }
         } else {
             releaseChunks(plot);
-            plot.free(true);
+            plot.free();
             free.add(plot.id());
         }
+    }
+
+    /**
+     * Where players arrive in a built plot, relative to its origin: the entrance room's entrance marker, else the
+     * spot {@link SpawnFinder} picks in that room, else the middle of its roof.
+     */
+    private Vec3 findSpawn(Plot plot) {
+        BlockPos origin = plot.origin();
+        Optional<DataMarker> marker = plot.marker(DataMarker.Kind.ENTRANCE, 0);
+        if (marker.isPresent()) {
+            return Vec3.atBottomCenterOf(marker.get().pos());
+        }
+        ServerLevel level = level();
+        BoundingBox entrance = plot.rooms().getFirst();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        Optional<BlockPos> spot = SpawnFinder.find(entrance, new SpawnFinder.Blocks() {
+            @Override
+            public boolean floor(int x, int y, int z) {
+                pos.set(x, y, z);
+                return level.getBlockState(pos).isFaceSturdy(level, pos, Direction.UP);
+            }
+
+            @Override
+            public boolean open(int x, int y, int z) {
+                pos.set(x, y, z);
+                BlockState state = level.getBlockState(pos);
+                return state.getCollisionShape(level, pos).isEmpty() && state.getFluidState().isEmpty();
+            }
+        });
+        if (spot.isPresent()) {
+            return Vec3.atBottomCenterOf(spot.get().subtract(origin));
+        }
+        BlockPos roof = new BlockPos(entrance.getCenter().getX(), entrance.maxY() + 1, entrance.getCenter().getZ());
+        LOGGER.warn("Instance plot {}: its entrance room has no entrance marker and no floor to stand on; players "
+                + "arrive on its roof at {}", plot.id(), roof.toShortString());
+        return Vec3.atBottomCenterOf(roof.subtract(origin));
     }
 
     /** Drops the player from the plot's party; a run left with nobody, built or still building, is released. */
@@ -371,12 +519,33 @@ public final class InstanceManager extends SavedData {
                 spawn.yaw(), spawn.pitch(), true);
     }
 
-    private void holdChunks(Plot plot, LongSet chunks) {
-        releaseChunks(plot);
-        for (long chunk : chunks) {
-            TICKETS.forceChunk(level(), plot.origin(), ChunkPos.getX(chunk), ChunkPos.getZ(chunk), true, false);
-            plot.chunks().add(chunk);
+    /**
+     * Holds the plot's wanted chunks that have loaded, and asks for the others to load in the background. Holding a
+     * chunk loads it on the main thread when it is not loaded yet (spike 3: up to a second for a new plot cell), so a
+     * chunk is held only once it has loaded. Returns whether it took any.
+     */
+    private boolean holdChunks(Plot plot) {
+        LongSet wanted = plot.wantedChunks();
+        if (plot.chunks().containsAll(wanted)) {
+            return false;
         }
+        ServerLevel level = level();
+        boolean held = false;
+        for (long chunk : wanted) {
+            if (plot.chunks().contains(chunk)) {
+                continue;
+            }
+            int chunkX = ChunkPos.getX(chunk);
+            int chunkZ = ChunkPos.getZ(chunk);
+            if (level.getChunkSource().getChunkNow(chunkX, chunkZ) != null) {
+                TICKETS.forceChunk(level, plot.origin(), chunkX, chunkZ, true, false);
+                plot.chunks().add(chunk);
+                held = true;
+            } else {
+                level.getChunkSource().addTicketWithRadius(LOADING.value(), new ChunkPos(chunkX, chunkZ), 0);
+            }
+        }
+        return held;
     }
 
     private void releaseChunks(Plot plot) {

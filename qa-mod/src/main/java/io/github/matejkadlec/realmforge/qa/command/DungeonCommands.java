@@ -11,7 +11,6 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import io.github.matejkadlec.realmforge.dungeon.DungeonRegistries;
 import io.github.matejkadlec.realmforge.dungeon.DungeonType;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
-import io.github.matejkadlec.realmforge.dungeon.instance.InstanceLayout;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
 import io.github.matejkadlec.realmforge.dungeon.instance.Plot;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonPlan;
@@ -30,17 +29,20 @@ import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * {@code /qa dungeon ...}: dungeon types and their layouts (W4a, architecture 15.3). Without a seed, a random one is
- * drawn and named, so a layout can be planned again.
+ * {@code /qa dungeon ...}: dungeon types and their layouts (W4a, W4b, architecture 15.3 and 15.5). Without a seed, a
+ * random one is drawn and named, so a layout can be planned again.
  * <ul>
  *   <li>{@code /qa dungeon plan <type> [<seed>]} plans a layout and names its rooms by slot; the server log gets a
  *   top-down map and a legend.</li>
  *   <li>{@code /qa dungeon build <type> [<seed>]} plans a layout and builds it into a free plot for a fly-through, with
  *   a link that teleports you above its entrance; {@code /qa instance free <plot>} clears it again.</li>
+ *   <li>{@code /qa dungeon enter <type> [<seed>]} plans a layout, builds it for you and moves you in at its entrance
+ *   once it stands, as a dungeon portal will (W4d); {@code /qa instance leave} brings you back.</li>
  * </ul>
  */
 final class DungeonCommands {
@@ -55,6 +57,8 @@ final class DungeonCommands {
             new DynamicCommandExceptionType(message -> Component.literal("No layout: " + message));
     private static final SimpleCommandExceptionType NO_DIMENSION =
             new SimpleCommandExceptionType(Component.literal("This world has no realmforge:instances dimension"));
+    private static final SimpleCommandExceptionType ALREADY_IN_RUN =
+            new SimpleCommandExceptionType(Component.literal("You are already in an instance run; leave it first"));
 
     private DungeonCommands() {
     }
@@ -62,7 +66,8 @@ final class DungeonCommands {
     static LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("dungeon")
                 .then(Commands.literal("plan").then(typeAndSeed(DungeonCommands::plan)))
-                .then(Commands.literal("build").then(typeAndSeed(DungeonCommands::build)));
+                .then(Commands.literal("build").then(typeAndSeed(DungeonCommands::build)))
+                .then(Commands.literal("enter").then(typeAndSeed(DungeonCommands::enter)));
     }
 
     private interface Action {
@@ -91,13 +96,11 @@ final class DungeonCommands {
     private static int build(CommandContext<CommandSourceStack> context, long seed) throws CommandSyntaxException {
         Identifier id = IdentifierArgument.getId(context, "type");
         DungeonPlan plan = plan(context, id, seed);
-        InstanceManager manager = InstanceManager.get(context.getSource().getServer());
-        if (manager == null) {
-            throw NO_DIMENSION.create();
-        }
-        InstanceLayout layout = plan.toInstanceLayout();
-        Plot plot = manager.open(layout, List.of());
-        Vec3 above = Vec3.atLowerCornerOf(plot.origin()).add(layout.spawn());
+        InstanceManager manager = manager(context);
+        Plot plot = manager.open(plan.toInstanceLayout(), List.of());
+        BoundingBox entrance = plan.entrance().box();
+        Vec3 above = Vec3.atLowerCornerOf(plot.origin()).add(entrance.getCenter().getX() + 0.5, entrance.maxY() + 2,
+                entrance.getCenter().getZ() + 0.5);
         String teleport = String.format(Locale.ROOT, "/execute in %s run tp @s %.1f %.1f %.1f",
                 InstanceDimension.LEVEL.identifier(), above.x, above.y, above.z);
         Component link = Component.literal("[fly over it]").withStyle(style -> style
@@ -106,6 +109,29 @@ final class DungeonCommands {
                 "Building %s seed %d (%s) in plot %d at %s ", id, seed, summary(plan), plot.id(),
                 plot.origin().toShortString())).append(link), true);
         return plot.id();
+    }
+
+    private static int enter(CommandContext<CommandSourceStack> context, long seed) throws CommandSyntaxException {
+        Identifier id = IdentifierArgument.getId(context, "type");
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        InstanceManager manager = manager(context);
+        if (manager.plotOf(player).isPresent()) {
+            throw ALREADY_IN_RUN.create();
+        }
+        DungeonPlan plan = plan(context, id, seed);
+        Plot plot = manager.open(plan.toInstanceLayout(), List.of(player.getUUID()));
+        context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
+                "Building %s seed %d (%s) in plot %d; you enter when it is built", id, seed, summary(plan),
+                plot.id())), true);
+        return plot.id();
+    }
+
+    private static InstanceManager manager(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        InstanceManager manager = InstanceManager.get(context.getSource().getServer());
+        if (manager == null) {
+            throw NO_DIMENSION.create();
+        }
+        return manager;
     }
 
     private static DungeonPlan plan(CommandContext<CommandSourceStack> context, Identifier id, long seed)

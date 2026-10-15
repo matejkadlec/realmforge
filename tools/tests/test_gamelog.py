@@ -68,3 +68,15 @@ def test_cli_exit_codes(tmp_path: Path, capsys) -> None:
     assert main(["gametest-log", "--log", str(tmp_path / "missing.log")]) == 1
     output = capsys.readouterr().out
     assert "OK" in output and "FAIL" in output and "does not exist" in output
+
+
+def test_only_the_gone_template_tests_failed_build_is_allowed() -> None:
+    line = (
+        "[15Oct2026 22:15:38.106] [Server thread/ERROR] [io.github.matejkadlec.realmforge.dungeon.instance."
+        "InstanceManager/]: Instance plot 3 failed to build (Place[room=1, slice=BoundingBox{minX=3087, minY=64, "
+        "minZ=6, maxX=3087, maxY=65, maxZ=8}]): unknown room template TEMPLATE; releasing it\n"
+        "java.lang.IllegalArgumentException: unknown room template TEMPLATE\n"
+    )
+    assert gametest_problems(line.replace("TEMPLATE", "realmforge_qa:gametest/gone") + PASSED) == []
+    (problem,) = gametest_problems(line.replace("TEMPLATE", "realmforge:rooms/stone/hall") + PASSED)
+    assert "unknown room template realmforge:rooms/stone/hall" in problem
