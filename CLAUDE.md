@@ -179,7 +179,13 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
    for assets, except imported third-party rooms, which keep their own licenses; the modpack (`pack/`) is All
    Rights Reserved ([ADR 0009](docs/decisions/0009-licensing.md),
    [ADR 0028](docs/decisions/0028-dungeon-rooms-generated-or-imported.md)).
-10. **Decisions get an ADR** in `docs/decisions/` (next free number, add it to the index).
+10. **Decisions get an ADR** in `docs/decisions/` (next free number, add it to the index). Accepted ADRs are
+    never rewritten in place: a changed decision gets a new ADR that supersedes or amends the old one.
+    **ADRs bind agents, not Matěj** ([ADR 0030](docs/decisions/0030-adrs-bind-agents-not-the-owner.md)). Agents
+    follow accepted ADRs strictly in everything they decide on their own. When Matěj asks for a change that
+    conflicts with an ADR, never refuse or block on it: name the conflicting ADR and its main consequence once, in
+    one or two sentences. If he confirms (or already said it is decided), his request is the decision: make the
+    change and write the superseding or amending ADR in the same pull request.
 11. **Code follows [docs/architecture.md](docs/architecture.md):** feature packages with a `<Name>Feature` entry,
     one-way dependencies, client-only code only under `client/`, game definitions as datapack registries. To
     deviate, update the document in the same PR; changing a decision recorded in

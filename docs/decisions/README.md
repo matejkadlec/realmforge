@@ -5,13 +5,14 @@ This directory records Realmforge's significant decisions as short ADRs (Michael
 - One decision per file: `NNNN-kebab-case-title.md` with Date, Status, Context, Decision, Consequences.
 - New decisions get the next number and a row in the table below.
 - Accepted ADRs are not rewritten. A changed decision gets a new ADR, and the old one is marked `Superseded by NNNN`, never deleted.
+- ADRs bind agents, not Matěj ([0030](0030-adrs-bind-agents-not-the-owner.md)). Agents follow them strictly in what they decide on their own. When he asks for a change that conflicts with one, the agent names the ADR and its main consequence once, never refuses, and once he confirms, makes the change with its superseding or amending ADR in the same pull request.
 - Upgrading any pinned version (Minecraft, NeoForge, ModDevGradle, Gradle, Java) requires a new ADR.
 
 Background: [vision](../vision.md) (the owner's goals) and [research notes](../research-notes.md) (reasoning, comparisons, sources). How the decisions fit together in code: [architecture](../architecture.md); the plan: [roadmap](../roadmap.md).
 
 | # | Title | Status |
 | --- | --- | --- |
-| [0001](0001-record-architecture-decisions.md) | Record architecture decisions | Accepted |
+| [0001](0001-record-architecture-decisions.md) | Record architecture decisions | Accepted, amended by [0030](0030-adrs-bind-agents-not-the-owner.md) |
 | [0002](0002-hybrid-core-mod-and-modpack.md) | Hybrid: own core mod plus a modpack | Accepted |
 | [0003](0003-platform-minecraft-1-21-1-neoforge.md) | Platform: Minecraft 1.21.1 on NeoForge | Superseded by [0026](0026-platform-minecraft-26-1-2-neoforge.md) |
 | [0004](0004-build-rpg-systems-in-house.md) | Build all RPG systems in-house | Accepted |
@@ -40,6 +41,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0027](0027-client-bound-payload-handlers-through-the-client-event.md) | Client-bound payload handlers through NeoForge's client event | Accepted (amends 0014) |
 | [0028](0028-dungeon-rooms-generated-or-imported.md) | Dungeon rooms are generated or imported, not built by hand | Accepted (amends 0007, 0009, 0012 and 0014) |
 | [0029](0029-independent-claude-review-before-every-merge.md) | Independent Claude review before every merge | Accepted (supersedes 0015) |
+| [0030](0030-adrs-bind-agents-not-the-owner.md) | ADRs bind agents, not the owner | Accepted (amends 0001) |
 
 ## Open questions (not decided)
 
