@@ -170,8 +170,8 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
 - **C2 Leveling and the level cap** (RLM-23, M, after C1; D2, D3). The XP curve; XP from kills by the victim's level
   (`realmforge:level`, 1 for every mob until W1 assigns levels) and from `/realmforge xp`; the
   `realmforge:chapter` registry and the cap from chapter advancements; level-up effects; the `level_reached`
-  trigger; an XP bar. *Done when:* GameTests show XP accumulating past the cap and granting the chapter advancement
-  raising the level.
+  trigger; an XP bar. *Done when:* GameTests show XP stopping at the cap and granting the chapter advancement
+  raising the cap.
 - **C3a Spell engine** (RLM-24, L, after C2). `realmforge:spell` (schools exist since F5), effect and targeting types,
   `SpellCaster`, cooldowns and the global cooldown, the behaviour of mana and rage, procs, the projectile and area
   entities. *Done when:* GameTests cast every effect type, a cast whose resource runs out or whose target leaves

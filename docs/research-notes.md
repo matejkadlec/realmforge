@@ -30,7 +30,8 @@ The report builds on the [vision](vision.md) and the private artifact [Design No
 **Otherworld patterns we adopt:**
 
 - One story spine: quest chapters unlock content.
-- Level cap per chapter: XP keeps accumulating, the story cannot be out-leveled.
+- Level cap per chapter: the story cannot be out-leveled. Otherworld keeps counting XP above the cap; we stop it
+  there instead (Matěj, 2026-10-15, [architecture 10.2](architecture.md#102-leveling)).
 - Mob level by location (dimension, distance, depth); fixed boss levels, shown in the quest.
 - Loot by mob level: affix rarity grows with level.
 - Boss locator chain: lore item, compass, structure, kill, drop, next lore item.
@@ -153,7 +154,7 @@ All have NeoForge 26.1.2 builds. The pack only references them, nothing is forke
 | System | Main inspiration | Note |
 | --- | --- | --- |
 | Races, classes, dual class | WoW, Origins from Otherworld | own datapack registries |
-| Character leveling, chapter level caps | Otherworld (JustLeveling) | XP keeps accumulating above the cap |
+| Character leveling, chapter level caps | Otherworld (JustLeveling), WotLK | XP stops at the cap (Otherworld banks it) |
 | Mob level by location | AutoLeveling | fixed boss levels |
 | Stats, milestones (10 STR = +10% dmg), crit, dodge, spell power | Apothic Attributes (MIT), Spell Power | own attributes via the NeoForge API |
 | Spells, skills, spell schools | Spell Engine (best data format), Iron's Spells | spell type in Java, parameters in data |

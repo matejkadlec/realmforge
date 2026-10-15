@@ -88,9 +88,10 @@ Rules:
   A player completes a chapter by earning its advancement `realmforge:chapter/<id>` (generated, granted only by
   the chapter's last quest or a command). A chapter's cap is its last level (Matěj, 2026-10-15): `chapter_1` (the
   Overworld) 10 → 18, `chapter_2` (the Undervault) 18 → 30; the later chapters' caps are in
-  [architecture 10.2](../docs/architecture.md#102-leveling). Leveling also reads four curves, which validation
-  requires: `xp_to_next_level` (the XP from a level to the next, at least 1; one point per level from the XP model,
-  1,500 at level 1 and 98,650 at 59), `kill_xp` (a kill's XP by the victim's level, `45 + 5 × level`), and
+  [architecture 10.2](../docs/architecture.md#102-leveling). XP stops at the cap: a player holds at most the XP
+  of the cap's level, so completing a chapter raises the cap but brings no level by itself. Leveling also reads
+  four curves, which validation requires: `xp_to_next_level` (the XP from a level to the next, at least 1; one
+  point per level from the XP model, 1,500 at level 1 and 98,650 at 59), `kill_xp` (a kill's XP by the victim's level, `45 + 5 × level`), and
   `kill_xp_below_player` and `kill_xp_above_player` (the share of it a kill gives, by how many levels the victim is
   below or above the player; the curve's `level` is that difference, and neither curve goes below 0).
 - `kill_xp_multipliers/` gives the mobs of one entity type, named in `entity`, a kill XP `multiplier` (their rank: 1

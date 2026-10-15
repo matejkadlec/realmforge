@@ -813,9 +813,13 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
 - **Character XP is separate from vanilla experience** (decision D3, RLM-53). Vanilla XP stays the currency for
   enchanting and anvils until the enchanting overhaul (M5); character XP is never spent.
 - **Level is derived:** `level = min(cap, level_for(total_xp))`, with the XP table from `realmforge:curve`, and
-  stored in the `realmforge:level` attachment that every system reads. XP above the cap keeps accumulating (the
-  Otherworld pattern in the [research notes](research-notes.md#inputs)), so raising the cap levels the player up
-  at once.
+  stored in the `realmforge:level` attachment that every system reads.
+- **XP stops at the cap** (Matěj, 2026-10-15, as WotLK does at max level; not the Otherworld pattern of the
+  [research notes](research-notes.md#inputs), which banks it). A player holds at most the XP of their cap's level
+  (`XpTable#capped`). A gain that crosses the cap counts only up to it, and a player at the cap gains nothing, so
+  the next chapter's levels cannot be farmed in advance. A raised cap therefore brings no level by itself: the
+  player starts at 0 XP toward the next level. Every update cuts the total (a lowered cap after a revoked chapter,
+  a save from before this rule at login).
 - **Level cap:** the highest cap among completed chapters (a base cap before any), cached in the `character`
   attachment and recomputed when a chapter's advancement is granted or revoked and on login
   ([16](#16-progression-and-quests)). A chapter's cap is its last level, and its main questline raises it (Matěj,
@@ -1524,8 +1528,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     food rows and every other status row. NeoForge stacks those rows through `Gui#leftHeight` and `Gui#rightHeight`;
     the layer, registered above `VanillaGuiLayers.AIR_LEVEL`, reads them, so the bar rises with more heart rows, and
     raises them, so later layers (the selected item's name) stay above it. In creative, where no status row is
-    drawn, it keeps clear of vanilla's experience level. It fills purple toward the next level and turns gold once
-    the level cap holds the player and the next level's XP is banked; the level ("Lv. 5") sits on its middle,
+    drawn, it keeps clear of vanilla's experience level. It fills purple toward the next level and shows full and
+    gold while the level cap holds the player, who then gains no XP; the level ("Lv. 5") sits on its middle,
     outlined like vanilla's experience level. Vanilla's experience bar keeps its place, as vanilla XP still pays for
     enchanting (D3). It shows only for a player with a character, never in spectator mode.
   - Character creation (`client/screen/CharacterCreationScreen`, C1) draws `character/CharacterCreationView`: the
