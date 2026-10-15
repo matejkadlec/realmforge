@@ -28,11 +28,11 @@ import net.minecraft.world.phys.Vec3;
 /**
  * The commands a playtest handoff gives (the flow's "Reaching the state") reach their states: they run here through
  * the server's command dispatcher as typed, by a fake player with operator rights standing on the test platform. The
- * handoff selects the dummy with {@code @n[type=husk]}; here other tests' husks may stand nearby, so the selector also
- * names the dummy's tag.
+ * handoff selects the dummy with {@code @n[type=pillager]}; here other tests' pillagers may stand nearby, so the
+ * selector also names the dummy's tag.
  */
 public final class QaCommandGameTests {
-    private static final String DUMMY = "@n[type=husk,tag=" + TrainingDummy.TAG + "]";
+    private static final String DUMMY = "@n[type=pillager,tag=" + TrainingDummy.TAG + "]";
 
     private QaCommandGameTests() {
     }

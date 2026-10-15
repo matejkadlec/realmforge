@@ -25,22 +25,25 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.monster.illager.Pillager;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * F5: the damage pipeline in a world (architecture 9.1), on husks that stand still and a zombie or a fake player that
- * hits them. Expected numbers follow the content: the armor curves at the attacker's level, the stats set here. The
- * hits of one test land within one game tick, so a hurt cooldown window opened by the first stays open.
+ * F5: the damage pipeline in a world (architecture 9.1), on pillagers that stand still and a zombie or a fake player
+ * that hits them. Expected numbers follow the content: the armor curves at the attacker's level, the stats set here.
+ * The hits of one test land within one game tick, so a hurt cooldown window opened by the first stays open.
  *
- * <p>Husks carry our stats in the dev game (the QA mod's {@code TrainingDummy#addStats}), so a test sets their dodge
- * chance and resistances.
+ * <p>Pillagers carry our stats in the dev game (the QA mod's {@code TrainingDummy#addStats}), so a test sets their
+ * dodge chance and resistances.
  */
 public final class CombatGameTests {
     private static final double TOLERANCE = 1e-4;
@@ -57,20 +60,20 @@ public final class CombatGameTests {
     public static void armorReducesHitsByTheAttackersLevel(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Zombie zombie = attacker(helper);
-        Husk husk = target(helper);
-        setBase(husk, Attributes.ARMOR, 15);
-        setBase(husk, Attributes.ARMOR_TOUGHNESS, 5);
+        Pillager mob = target(helper);
+        setBase(mob, Attributes.ARMOR, 15);
+        setBase(mob, Attributes.ARMOR_TOUGHNESS, 5);
 
-        assertDealt(helper, husk, level.damageSources().mobAttack(zombie), 10, 10 * (1 - blocked(helper, 20, 1)),
+        assertDealt(helper, mob, level.damageSources().mobAttack(zombie), 10, 10 * (1 - blocked(helper, 20, 1)),
                 "a level 1 zombie against 15 armor and 5 toughness");
-        settle(husk);
+        settle(mob);
         MobLevels.setLevel(zombie, 20);
         helper.assertTrue(blocked(helper, 20, 20) < blocked(helper, 20, 1), "a level 20 attacker meets less reduction");
         double hit = 10 * MobScaling.at(level.registryAccess(), 20).damage();
-        assertDealt(helper, husk, level.damageSources().mobAttack(zombie), 10, hit * (1 - blocked(helper, 20, 20)),
+        assertDealt(helper, mob, level.damageSources().mobAttack(zombie), 10, hit * (1 - blocked(helper, 20, 20)),
                 "a level 20 zombie");
-        settle(husk);
-        assertDealt(helper, husk, level.damageSources().magic(), 10, 10, "magic bypasses armor");
+        settle(mob);
+        assertDealt(helper, mob, level.damageSources().magic(), 10, 10, "magic bypasses armor");
         helper.succeed();
     }
 
@@ -79,18 +82,18 @@ public final class CombatGameTests {
     public static void schoolDamageRightAfterMeleeIsNotSwallowed(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Zombie zombie = attacker(helper);
-        Husk husk = target(helper);
-        assertDealt(helper, husk, level.damageSources().mobAttack(zombie), 6, 6, "the melee hit");
-        int window = husk.invulnerableTime;
+        Pillager mob = target(helper);
+        assertDealt(helper, mob, level.damageSources().mobAttack(zombie), 6, 6, "the melee hit");
+        int window = mob.invulnerableTime;
         helper.assertTrue(window > 10, "the melee hit opened the hurt cooldown window: " + window);
 
-        assertDealt(helper, husk, school(helper, GeneratedSpellSchools.FIRE, zombie), 3, 3,
+        assertDealt(helper, mob, school(helper, GeneratedSpellSchools.FIRE, zombie), 3, 3,
                 "a smaller fire hit inside the window (vanilla would drop it)");
-        assertDealt(helper, husk, school(helper, GeneratedSpellSchools.FROST, zombie), 20, 20,
+        assertDealt(helper, mob, school(helper, GeneratedSpellSchools.FROST, zombie), 20, 20,
                 "a bigger frost hit lands in full, not just the difference");
-        helper.assertValueEqual(husk.invulnerableTime, window, "school hits keep the window");
-        helper.assertTrue(close(husk.lastHurt, 6), "school hits leave lastHurt at the melee hit: " + husk.lastHurt);
-        assertDealt(helper, husk, level.damageSources().mobAttack(zombie), 8, 2,
+        helper.assertValueEqual(mob.invulnerableTime, window, "school hits keep the window");
+        helper.assertTrue(close(mob.lastHurt, 6), "school hits leave lastHurt at the melee hit: " + mob.lastHurt);
+        assertDealt(helper, mob, level.damageSources().mobAttack(zombie), 8, 2,
                 "the next melee hit in the window deals its difference to the previous melee hit");
         helper.succeed();
     }
@@ -104,10 +107,10 @@ public final class CombatGameTests {
     public static void meleeAfterDotTickInTheWindowIsComparedWithTheMeleeHit(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Zombie zombie = attacker(helper);
-        Husk husk = target(helper);
-        assertDealt(helper, husk, level.damageSources().mobAttack(zombie), 6, 6, "the melee hit");
-        assertDealt(helper, husk, school(helper, GeneratedSpellSchools.FIRE, zombie), 1, 1, "the damage-over-time tick");
-        assertDealt(helper, husk, level.damageSources().mobAttack(zombie), 6, 0,
+        Pillager mob = target(helper);
+        assertDealt(helper, mob, level.damageSources().mobAttack(zombie), 6, 6, "the melee hit");
+        assertDealt(helper, mob, school(helper, GeneratedSpellSchools.FIRE, zombie), 1, 1, "the damage-over-time tick");
+        assertDealt(helper, mob, level.damageSources().mobAttack(zombie), 6, 0,
                 "a second melee hit for 6 in the window");
         helper.succeed();
     }
@@ -117,24 +120,24 @@ public final class CombatGameTests {
     public static void aDodgedHitLeavesNoDamageContainer(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Zombie zombie = attacker(helper);
-        Husk husk = target(helper);
-        setBase(husk, GeneratedStats.DODGE_CHANCE, 1);
-        helper.assertTrue(husk.damageContainers.isEmpty(), "no damage container before the hits");
+        Pillager mob = target(helper);
+        setBase(mob, GeneratedStats.DODGE_CHANCE, 1);
+        helper.assertTrue(mob.damageContainers.isEmpty(), "no damage container before the hits");
         for (int i = 0; i < 20; i++) {
-            helper.assertFalse(husk.hurtServer(level, level.damageSources().mobAttack(zombie), 5),
+            helper.assertFalse(mob.hurtServer(level, level.damageSources().mobAttack(zombie), 5),
                     "a dodged hit reports no damage");
         }
-        helper.assertTrue(close(husk.getHealth(), HEALTH), "dodged hits dealt nothing: " + husk.getHealth());
-        helper.assertTrue(husk.damageContainers.isEmpty(),
-                "dodged hits left " + husk.damageContainers.size() + " damage containers");
+        helper.assertTrue(close(mob.getHealth(), HEALTH), "dodged hits dealt nothing: " + mob.getHealth());
+        helper.assertTrue(mob.damageContainers.isEmpty(),
+                "dodged hits left " + mob.damageContainers.size() + " damage containers");
 
-        assertDealt(helper, husk, school(helper, GeneratedSpellSchools.ARCANE, zombie), 3, 3, "magic is not dodged");
-        settle(husk);
-        assertDealt(helper, husk, level.damageSources().explosion(zombie, zombie), 4, 4, "an explosion is not dodged");
-        settle(husk);
-        assertDealt(helper, husk, school(helper, GeneratedSpellSchools.PHYSICAL, zombie), 4, 0,
+        assertDealt(helper, mob, school(helper, GeneratedSpellSchools.ARCANE, zombie), 3, 3, "magic is not dodged");
+        settle(mob);
+        assertDealt(helper, mob, level.damageSources().explosion(zombie, zombie), 4, 4, "an explosion is not dodged");
+        settle(mob);
+        assertDealt(helper, mob, school(helper, GeneratedSpellSchools.PHYSICAL, zombie), 4, 0,
                 "a physical school hit is dodged");
-        helper.assertTrue(husk.damageContainers.isEmpty(), "no damage container after the hits");
+        helper.assertTrue(mob.damageContainers.isEmpty(), "no damage container after the hits");
         helper.succeed();
     }
 
@@ -143,15 +146,15 @@ public final class CombatGameTests {
     public static void playerMeleeCritsOnCritChance(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-combat-crit"));
-        Husk husk = target(helper);
+        Pillager mob = target(helper);
         double fist = player.getAttributeValue(Attributes.ATTACK_DAMAGE);
 
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
-        assertMelee(helper, player, husk, fist, "a hit at 0 % crit chance");
+        assertMelee(helper, player, mob, fist, "a hit at 0 % crit chance");
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 1);
-        assertMelee(helper, player, husk, fist * 1.5, "a crit at 100 % crit chance and the base 50 % crit damage");
+        assertMelee(helper, player, mob, fist * 1.5, "a crit at 100 % crit chance and the base 50 % crit damage");
         StatsCommands.setBase(player, GeneratedStats.CRIT_DAMAGE, 1);
-        assertMelee(helper, player, husk, fist * 2, "a crit at 100 % crit damage");
+        assertMelee(helper, player, mob, fist * 2, "a crit at 100 % crit damage");
         server.getPlayerList().remove(player);
         helper.succeed();
     }
@@ -164,17 +167,17 @@ public final class CombatGameTests {
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
         StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 0.5);
         StatsCommands.setBase(player, GeneratedStats.FIRE_POWER, 0.2);
-        Husk husk = target(helper);
-        setBase(husk, Attributes.ARMOR, 15);
-        setBase(husk, GeneratedStats.FIRE_RESISTANCE, 0.25);
+        Pillager mob = target(helper);
+        setBase(mob, Attributes.ARMOR, 15);
+        setBase(mob, GeneratedStats.FIRE_RESISTANCE, 0.25);
 
-        assertDealt(helper, husk, school(helper, GeneratedSpellSchools.FIRE, player), 10, 10 * 1.7 * 0.75,
+        assertDealt(helper, mob, school(helper, GeneratedSpellSchools.FIRE, player), 10, 10 * 1.7 * 0.75,
                 "fire: +50 % spell power, +20 % fire power, 25 % fire resistance, armor ignored");
-        settle(husk);
-        assertDealt(helper, husk, school(helper, GeneratedSpellSchools.FROST, player), 10, 10 * 1.5,
+        settle(mob);
+        assertDealt(helper, mob, school(helper, GeneratedSpellSchools.FROST, player), 10, 10 * 1.5,
                 "frost: spell power only");
-        settle(husk);
-        assertDealt(helper, husk, school(helper, GeneratedSpellSchools.PHYSICAL, player), 10,
+        settle(mob);
+        assertDealt(helper, mob, school(helper, GeneratedSpellSchools.PHYSICAL, player), 10,
                 10 * (1 - blocked(helper, 15, 1)), "physical: no spell power, armor applies");
         server.getPlayerList().remove(player);
         helper.succeed();
@@ -185,7 +188,7 @@ public final class CombatGameTests {
     public static void trainingDummyMetersAndLogsHits(GameTestHelper helper) throws IOException {
         ServerLevel level = helper.getLevel();
         Zombie zombie = attacker(helper);
-        Husk dummy = TrainingDummy.spawn(level, helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
+        Pillager dummy = TrainingDummy.spawn(level, helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
         dummy.hurtServer(level, level.damageSources().mobAttack(zombie), 30);
         helper.assertTrue(close(dummy.getHealth(), dummy.getMaxHealth()), "the dummy refilled after the hit");
         TrainingDummy.Session session = TrainingDummy.session(dummy);
@@ -200,6 +203,36 @@ public final class CombatGameTests {
         helper.assertTrue(log.contains("hit target=training_dummy attacker=Zombie type=minecraft:mob_attack"),
                 "the combat log has the zombie's hit on the dummy");
         dummy.discard();
+        helper.succeed();
+    }
+
+    /**
+     * Done when of RLM-187: the training dummy takes damage and healing the way a player does. Poison and harming
+     * hurt it (its meter counts them), healing heals it, and daylight never burns it.
+     */
+    @QaGameTest
+    public static void trainingDummyTakesPoisonHarmingAndHealingLikeAPlayer(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Pillager dummy = TrainingDummy.spawn(level, helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
+        helper.assertFalse(dummy.isInvertedHealAndHarm(), "the dummy is not undead");
+        helper.assertFalse(dummy.is(EntityTypeTags.BURN_IN_DAYLIGHT), "daylight does not burn the dummy");
+        helper.assertTrue(dummy.getMainHandItem().isEmpty(), "the dummy holds no crossbow");
+
+        helper.assertTrue(dummy.addEffect(new MobEffectInstance(MobEffects.POISON, 100)), "poison takes hold");
+        MobEffects.POISON.value().applyEffectTick(level, dummy, 0);
+        TrainingDummy.Session session = TrainingDummy.session(dummy);
+        helper.assertTrue(session != null && close(session.total(), 1), "a poison tick hurt the dummy: " + session);
+
+        TrainingDummy.reset(dummy);
+        settle(dummy);
+        MobEffects.INSTANT_DAMAGE.value().applyInstantenousEffect(level, null, null, dummy, 0, 1);
+        session = TrainingDummy.session(dummy);
+        helper.assertTrue(session != null && close(session.total(), 6), "harming hurt the dummy: " + session);
+
+        dummy.setHealth(500);
+        MobEffects.INSTANT_HEALTH.value().applyInstantenousEffect(level, null, null, dummy, 0, 1);
+        helper.assertTrue(close(dummy.getHealth(), 504), "healing healed the dummy: " + dummy.getHealth());
+        TrainingDummy.remove(dummy);
         helper.succeed();
     }
 
@@ -250,18 +283,18 @@ public final class CombatGameTests {
     }
 
     /**
-     * A husk that stands still with {@value #HEALTH} health, so no test kills it, at level 1, so the armor its level
-     * would add is not there.
+     * A pillager that stands still with {@value #HEALTH} health, so no test kills it, at level 1, so the armor its
+     * level would add is not there. It is not undead, so poison and harming hurt it and healing heals it.
      */
-    static Husk target(GameTestHelper helper) {
-        Husk husk = helper.spawn(EntityType.HUSK, new BlockPos(2, 1, 2));
-        husk.setNoAi(true);
-        MobLevels.setLevel(husk, EntityLevel.MIN);
-        setBase(husk, Attributes.MAX_HEALTH, HEALTH);
-        setBase(husk, Attributes.ARMOR, 0);
-        setBase(husk, Attributes.KNOCKBACK_RESISTANCE, 1);
-        husk.setHealth((float) HEALTH);
-        return husk;
+    static Pillager target(GameTestHelper helper) {
+        Pillager mob = helper.spawn(EntityType.PILLAGER, new BlockPos(2, 1, 2));
+        mob.setNoAi(true);
+        MobLevels.setLevel(mob, EntityLevel.MIN);
+        setBase(mob, Attributes.MAX_HEALTH, HEALTH);
+        setBase(mob, Attributes.ARMOR, 0);
+        setBase(mob, Attributes.KNOCKBACK_RESISTANCE, 1);
+        mob.setHealth((float) HEALTH);
+        return mob;
     }
 
     static void setBase(LivingEntity entity, Holder<Attribute> attribute, double value) {

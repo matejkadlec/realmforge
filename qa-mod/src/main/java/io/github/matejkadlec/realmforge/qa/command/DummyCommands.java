@@ -20,7 +20,7 @@ import net.minecraft.world.phys.Vec3;
  * {@code /qa dummy [<armor>]}: spawns a training dummy ({@link TrainingDummy}) three blocks in front of you, facing
  * you, with that much armor (0 by default). {@code /qa dummy reset} restarts the DPS meter of every dummy, {@code /qa
  * dummy remove} removes them all. Set a dummy's dodge chance or resistances with vanilla's {@code /attribute}, for
- * example {@code /attribute @n[type=husk] realmforge:fire_resistance base set 0.5}.
+ * example {@code /attribute @n[type=pillager] realmforge:fire_resistance base set 0.5}.
  */
 public final class DummyCommands {
     /** How far in front of the player a dummy appears. */

@@ -741,7 +741,7 @@ translucent bar over the bottom row of hearts, a new colour every 10 points ([18
 Like absorption hearts, it takes any damage that reaches health (falls, drowning, starvation included).
 
 `DamageCalculatorTest` covers the formulas; `CombatStatGameTests` plays each stat in a world: armor pierce against a
-training dummy with 15 armor, spell resistance and its cap on a husk, and a fake player for lifesteal (melee and a
+training dummy with 15 armor, spell resistance and its cap on a pillager, and a fake player for lifesteal (melee and a
 thrown hit heal, a fire hit does not), overheal (its cap, its expiry, damage taking it before a golden apple's
 absorption), health regeneration
 (its schedule, no overheal) and the magic shield (before health, after absorption hearts, `lastHurt` kept, the
@@ -1753,12 +1753,13 @@ that agents can read. So far:
 - `/qa character show|reset [<player>]` and `/qa character create <race> <class> [<player>]` (C1): reset removes the
   character, so the creation screen opens again (the starting kit's items stay); create applies the same rules as the
   screen;
-- `/qa dummy [<armor>]` (F5): a training dummy three blocks ahead, a husk that stands still and never dies. Its
-  label, a text display riding it, shows its armor with the share of a hit it blocks at the nearest player's level
+- `/qa dummy [<armor>]` (F5): a training dummy three blocks ahead, a pillager without a crossbow that stands still
+  and never dies. A pillager is not undead, so poison and harming hurt it, healing heals it, and daylight does not
+  burn it: it takes damage and healing the way a player does (RLM-187). Its label, a text display riding it, shows its armor with the share of a hit it blocks at the nearest player's level
   ("15 Armor (50% Damage Reduction)") over its name with the DPS of the current session (it ends after 5 s without a
   hit); vanilla draws no name tag over an entity with a passenger, so the label carries both. The hitter sees each
-  hit on the action bar, `/qa dummy reset|remove`. Husks carry our stats in the dev game, so `/attribute @n[type=husk]
-  realmforge:dodge_chance base set 0.5` sets a dummy's dodge chance or resistances;
+  hit on the action bar, `/qa dummy reset|remove`. Pillagers carry our stats in the dev game, so
+  `/attribute @n[type=pillager] realmforge:dodge_chance base set 0.5` sets a dummy's dodge chance or resistances;
 - `/qa spell learn <spell> [<level>]`, `/qa spell cast <spell> [<target>]`, `/qa spell resource <mana|rage>
   <amount>`, `/qa spell reset` and `/qa spell show` (C3a-1): teach the executing player a spell, cast it (as a mob
   with `/execute as`; a refusal names its reason), set a resource pool, end every cooldown, and print the known

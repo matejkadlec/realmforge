@@ -26,7 +26,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.monster.illager.Pillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
@@ -37,20 +37,25 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import org.joml.Vector3f;
 
 /**
- * The QA training dummy (architecture 20): a husk that stands still, never dies and carries a DPS meter. Its name
+ * The QA training dummy (architecture 20): a pillager that stands still, never dies and carries a DPS meter. Its name
  * shows the damage per second of the current session; the player hitting it sees each hit on the action bar; every
  * hit also goes to the combat log ({@link CombatLog}). A session ends after {@value #SESSION_GAP_TICKS} ticks without
  * a hit.
  *
- * <p>Husks carry our stats in the dev game ({@link #addStats}), so the dummy's dodge chance and resistances can be set
- * with vanilla's {@code /attribute} command. Its armor comes from {@code /qa dummy <armor>}. Its label, a text display
- * riding it, shows two lines (Matěj, 2026-10-13): the armor with the share of a hit it blocks against the nearest
- * player (that player's level and armor pierce), and below it the name with the DPS. Vanilla draws no name tag over an entity that carries a passenger, so the
- * label carries the name too; it changes with every hit and every second.
+ * <p>A pillager takes damage and healing the way a player does (Matěj, 2026-10-14): it is not undead, so poison and
+ * harming hurt it and healing heals it, and it never burns in daylight. Created without {@code finalizeSpawn}, it
+ * holds no crossbow, and it never joins a raid.
  *
- * <p>A husk is a hostile mob, which gets a level and its scaling when it joins the world (W1, architecture 14.1). A
- * dummy joins at level 1, which adds nothing, so its health and armor stay what it was given; {@code /qa level} still
- * scales it like any hostile mob.
+ * <p>Pillagers carry our stats in the dev game ({@link #addStats}), so the dummy's dodge chance and resistances can be
+ * set with vanilla's {@code /attribute} command. Its armor comes from {@code /qa dummy <armor>}. Its label, a text
+ * display riding it, shows two lines (Matěj, 2026-10-13): the armor with the share of a hit it blocks against the
+ * nearest player (that player's level and armor pierce), and below it the name with the DPS. Vanilla draws no name tag
+ * over an entity that carries a passenger, so the label carries the name too; it changes with every hit and every
+ * second.
+ *
+ * <p>A pillager is a hostile mob, which gets a level and its scaling when it joins the world (W1, architecture 14.1).
+ * A dummy joins at level 1, which adds nothing, so its health and armor stay what it was given; {@code /qa level}
+ * still scales it like any hostile mob.
  */
 public final class TrainingDummy {
     /** The entity tag that marks a training dummy. */
@@ -79,14 +84,15 @@ public final class TrainingDummy {
     }
 
     /** Spawns a dummy at {@code position}, facing {@code yaw}, with {@code armor} points of armor. */
-    public static Husk spawn(ServerLevel level, Vec3 position, float yaw, double armor) {
-        Husk dummy = EntityType.HUSK.create(level, EntitySpawnReason.COMMAND);
+    public static Pillager spawn(ServerLevel level, Vec3 position, float yaw, double armor) {
+        Pillager dummy = EntityType.PILLAGER.create(level, EntitySpawnReason.COMMAND);
         if (dummy == null) {
-            throw new IllegalStateException("husks cannot be created");
+            throw new IllegalStateException("pillagers cannot be created");
         }
         dummy.snapTo(position.x, position.y, position.z, yaw, 0);
         dummy.setYHeadRot(yaw);
         dummy.setNoAi(true);
+        dummy.setCanJoinRaid(false);
         dummy.setPersistenceRequired();
         dummy.addTag(TAG);
         dummy.setCustomNameVisible(true);
@@ -203,8 +209,8 @@ public final class TrainingDummy {
 
     private static void addStats(EntityAttributeModificationEvent event) {
         for (Holder<Attribute> stat : GeneratedStats.ALL) {
-            if (!event.has(EntityType.HUSK, stat)) {
-                event.add(EntityType.HUSK, stat);
+            if (!event.has(EntityType.PILLAGER, stat)) {
+                event.add(EntityType.PILLAGER, stat);
             }
         }
     }
