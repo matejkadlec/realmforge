@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3a-1): an arcane heal on the caster or an ally, two levels. Not gameplay content; the GameTests in the
+# QA mod cast it.
+id: test_mend
+school: realmforge:arcane
+scales_with: spell_power
+targeting: {type: realmforge:ally, range: 16}
+cast: {type: instant}
+cost: {resource: realmforge:mana, amount: 8}
+max_level: 2
+effects:
+  - {type: realmforge:heal, amount: 4, per_level: 1}

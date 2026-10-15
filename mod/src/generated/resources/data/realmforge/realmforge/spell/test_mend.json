@@ -1,0 +1,31 @@
+{
+  "school": "realmforge:arcane",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:ally",
+    "range": 16.0
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cost": {
+    "amount": 8.0,
+    "per_level": 0,
+    "resource": "realmforge:mana"
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 20,
+  "max_level": 2,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "effects": [
+    {
+      "amount": 4.0,
+      "per_level": 1.0,
+      "type": "realmforge:heal"
+    }
+  ]
+}

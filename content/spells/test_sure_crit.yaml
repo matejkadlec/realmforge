@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3a-1): a frost bolt that always crits, for twice its damage, through its own crit data (Matěj,
+# 2026-10-15: a spell may change its crit chance and multiplier). Not gameplay content; the GameTests cast it.
+id: test_sure_crit
+school: realmforge:frost
+scales_with: spell_power
+targeting: {type: realmforge:enemy, range: 16}
+cast: {type: instant}
+global_cooldown_seconds: 0
+crit: {multiplier_percent: 200, bonus_chance_percent: 100}
+effects:
+  - {type: realmforge:damage, amount: 5}

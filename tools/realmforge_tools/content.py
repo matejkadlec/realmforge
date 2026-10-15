@@ -24,6 +24,7 @@ from realmforge_tools.schema import (
     ItemDef,
     KillXpMultiplierDef,
     RaceDef,
+    SpellDef,
     SpellSchoolDef,
     StatDef,
     StatRuleDef,
@@ -119,6 +120,7 @@ class Content:
     dungeons: tuple[Entry[DungeonTypeDef], ...]
     chapters: tuple[Entry[ChapterDef], ...]
     kill_xp_multipliers: tuple[Entry[KillXpMultiplierDef], ...]
+    spells: tuple[Entry[SpellDef], ...]
     worldgen: tuple[WorldgenFile, ...]
     rooms: tuple[RoomEntry, ...] = ()
     room_reviews: tuple[RoomReview, ...] = ()
@@ -184,6 +186,7 @@ def load_content(paths: RepoPaths) -> Content:
         dungeons=by_id(loaded["dungeons"]),
         chapters=by_id(loaded["chapters"]),
         kill_xp_multipliers=by_id(loaded["kill_xp_multipliers"]),
+        spells=by_id(loaded["spells"]),
         worldgen=tuple(sorted(worldgen, key=lambda f: (f.directory, f.id))),
         rooms=rooms,
         room_reviews=reviews,

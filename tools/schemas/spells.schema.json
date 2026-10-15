@@ -1,0 +1,374 @@
+{
+  "$defs": {
+    "AllyTargetingDef": {
+      "additionalProperties": false,
+      "description": "The caster or one of its allies (for players: other players), in range and in line of sight. Without a\ntarget the spell takes the caster.",
+      "properties": {
+        "range": {
+          "description": "Range in blocks, at most 128.",
+          "exclusiveMinimum": 0,
+          "maximum": 128.0,
+          "title": "Range",
+          "type": "number"
+        },
+        "type": {
+          "const": "realmforge:ally",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "range"
+      ],
+      "title": "AllyTargetingDef",
+      "type": "object"
+    },
+    "CastDef": {
+      "additionalProperties": false,
+      "description": "How the spell is cast. Only ``instant`` so far; cast times and channels come with C3a-2 (RLM-210).",
+      "properties": {
+        "type": {
+          "const": "instant",
+          "description": "instant: the spell's effects run when it is cast.",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "CastDef",
+      "type": "object"
+    },
+    "CostDef": {
+      "additionalProperties": false,
+      "description": "What a cast costs: an amount of a resource (mana or rage), growing per spell level like the effects.",
+      "properties": {
+        "amount": {
+          "description": "The amount at spell level 1.",
+          "minimum": 0,
+          "title": "Amount",
+          "type": "number"
+        },
+        "per_level": {
+          "default": 0,
+          "description": "Added for every spell level above 1.",
+          "minimum": 0,
+          "title": "Per Level",
+          "type": "number"
+        },
+        "resource": {
+          "description": "The resource the cast costs.",
+          "enum": [
+            "realmforge:mana",
+            "realmforge:rage"
+          ],
+          "title": "Resource",
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount",
+        "resource"
+      ],
+      "title": "CostDef",
+      "type": "object"
+    },
+    "CritDef": {
+      "additionalProperties": false,
+      "description": "How the spell crits (Matěj, 2026-10-15). By default every spell can crit, on the caster's crit chance, and a\ncrit deals or heals 1 + the caster's crit damage (150 % with the base 50 %). Talents (C5) can change all three.",
+      "properties": {
+        "bonus_chance_percent": {
+          "default": 0,
+          "description": "Crit chance in percent added to the caster's own for this spell.",
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Bonus Chance Percent",
+          "type": "number"
+        },
+        "can_crit": {
+          "default": true,
+          "description": "Whether the spell can crit at all.",
+          "title": "Can Crit",
+          "type": "boolean"
+        },
+        "multiplier_percent": {
+          "anyOf": [
+            {
+              "minimum": 100,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A crit's own multiplier in percent (200 doubles), instead of 1 + the caster's crit damage.",
+          "title": "Multiplier Percent"
+        }
+      },
+      "title": "CritDef",
+      "type": "object"
+    },
+    "DamageEffectDef": {
+      "additionalProperties": false,
+      "description": "Damage of the spell's school to each target. A magic school's hit gets the caster's spell power and the\nschool's power in the damage pipeline (architecture 9.1); a physical ability adds a share of the caster's attack\ndamage instead (``attack_damage_percent``). Either way the hit can crit as the spell's ``crit`` says.",
+      "properties": {
+        "amount": {
+          "description": "The amount at spell level 1.",
+          "minimum": 0,
+          "title": "Amount",
+          "type": "number"
+        },
+        "attack_damage_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Share of the caster's attack damage added to the amount (100 adds all of it). Required for spells that scale with attack_damage, refused for spells that scale with spell_power.",
+          "title": "Attack Damage Percent"
+        },
+        "per_level": {
+          "default": 0,
+          "description": "Added for every spell level above 1.",
+          "minimum": 0,
+          "title": "Per Level",
+          "type": "number"
+        },
+        "type": {
+          "const": "realmforge:damage",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount",
+        "type"
+      ],
+      "title": "DamageEffectDef",
+      "type": "object"
+    },
+    "EnemyTargetingDef": {
+      "additionalProperties": false,
+      "description": "A living entity that is not the caster's ally, in range and in line of sight.",
+      "properties": {
+        "range": {
+          "description": "Range in blocks, at most 128.",
+          "exclusiveMinimum": 0,
+          "maximum": 128.0,
+          "title": "Range",
+          "type": "number"
+        },
+        "type": {
+          "const": "realmforge:enemy",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "range"
+      ],
+      "title": "EnemyTargetingDef",
+      "type": "object"
+    },
+    "HealEffectDef": {
+      "additionalProperties": false,
+      "description": "Healing of each target. A spell that scales with spell power heals times (1 + spell power + the school's power);\none that scales with attack damage adds a share of the caster's attack damage instead. Heals can crit too\n(Matěj, 2026-10-15).",
+      "properties": {
+        "amount": {
+          "description": "The amount at spell level 1.",
+          "minimum": 0,
+          "title": "Amount",
+          "type": "number"
+        },
+        "attack_damage_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Share of the caster's attack damage added to the amount (100 adds all of it). Only for spells that scale with attack_damage.",
+          "title": "Attack Damage Percent"
+        },
+        "per_level": {
+          "default": 0,
+          "description": "Added for every spell level above 1.",
+          "minimum": 0,
+          "title": "Per Level",
+          "type": "number"
+        },
+        "type": {
+          "const": "realmforge:heal",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount",
+        "type"
+      ],
+      "title": "HealEffectDef",
+      "type": "object"
+    },
+    "SelfTargetingDef": {
+      "additionalProperties": false,
+      "description": "The caster itself.",
+      "properties": {
+        "type": {
+          "const": "realmforge:self",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "SelfTargetingDef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A spell for players or NPCs: its school, what it scales with, its targeting, cast, cost, cooldowns, crit\nrules and typed effects, with numbers per spell level up to ``max_level`` (architecture 11.1).",
+  "properties": {
+    "cast": {
+      "$ref": "#/$defs/CastDef",
+      "description": "How it is cast: {type: instant}."
+    },
+    "cooldown_seconds": {
+      "default": 0,
+      "description": "The spell's own cooldown; Cooldown Reduction shortens it.",
+      "minimum": 0,
+      "title": "Cooldown Seconds",
+      "type": "number"
+    },
+    "cost": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CostDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "What a cast costs; leave out for a free spell."
+    },
+    "crit": {
+      "$ref": "#/$defs/CritDef",
+      "description": "How the spell crits; every spell can by default."
+    },
+    "effects": {
+      "description": "What the spell does, in order.",
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "realmforge:damage": "#/$defs/DamageEffectDef",
+            "realmforge:heal": "#/$defs/HealEffectDef"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/DamageEffectDef"
+          },
+          {
+            "$ref": "#/$defs/HealEffectDef"
+          }
+        ]
+      },
+      "minItems": 1,
+      "title": "Effects",
+      "type": "array"
+    },
+    "global_cooldown_seconds": {
+      "default": 1.0,
+      "description": "How long a cast blocks every other spell (research SP-11: 1 s); 0 for spells off the global cooldown.",
+      "minimum": 0,
+      "title": "Global Cooldown Seconds",
+      "type": "number"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "max_level": {
+      "default": 1,
+      "description": "Highest spell level (rank).",
+      "maximum": 100,
+      "minimum": 1,
+      "title": "Max Level",
+      "type": "integer"
+    },
+    "npc_only": {
+      "default": false,
+      "description": "For mob and boss spells that no player may cast.",
+      "title": "Npc Only",
+      "type": "boolean"
+    },
+    "scales_with": {
+      "description": "spell_power for magic schools, attack_damage for physical abilities (Matěj, 2026-10-15).",
+      "enum": [
+        "spell_power",
+        "attack_damage"
+      ],
+      "title": "Scales With",
+      "type": "string"
+    },
+    "school": {
+      "description": "The spell school whose damage it deals, e.g. realmforge:fire.",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+      "title": "School",
+      "type": "string"
+    },
+    "targeting": {
+      "description": "Who the spell can target.",
+      "discriminator": {
+        "mapping": {
+          "realmforge:ally": "#/$defs/AllyTargetingDef",
+          "realmforge:enemy": "#/$defs/EnemyTargetingDef",
+          "realmforge:self": "#/$defs/SelfTargetingDef"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SelfTargetingDef"
+        },
+        {
+          "$ref": "#/$defs/EnemyTargetingDef"
+        },
+        {
+          "$ref": "#/$defs/AllyTargetingDef"
+        }
+      ],
+      "title": "Targeting"
+    }
+  },
+  "required": [
+    "id",
+    "school",
+    "scales_with",
+    "targeting",
+    "cast",
+    "effects"
+  ],
+  "title": "SpellDef",
+  "type": "object"
+}

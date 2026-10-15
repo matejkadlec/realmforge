@@ -19,6 +19,7 @@ from realmforge_tools.schema.character import STARTING_BREAD
 from realmforge_tools.schema.dungeon import DEAD_END_ROLES, PATH_ROLES, ROOM_ROLES, room_role
 from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
+from realmforge_tools.schema.spell import ALLY, DAMAGE, ENEMY, HEAL, SCALING_OF_KIND, SELF
 from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
 
@@ -101,6 +102,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_references(content, universe)
     problems += _check_stat_rules(content, universe)
     problems += _check_spell_schools(content, universe)
+    problems += _check_spells(content, universe)
     problems += _check_characters(content, universe)
     problems += _check_worldgen_references(content, universe)
     problems += _check_dimension_rules(content, universe)
@@ -373,6 +375,69 @@ def _check_spell_schools(content: Content, universe: IdUniverse) -> list[Problem
             if stat_id in used:
                 problems.append(Problem(entry.source, field, f"{stat_id} already serves {used[stat_id]}"))
             used.setdefault(stat_id, f"{entry.source} ({field})")
+    return problems
+
+
+# Which targeting types an effect that acts on the spell's targets may use: damage hits enemies, heals mend the
+# caster or its allies.
+_EFFECT_TARGETING: dict[str, tuple[str, ...]] = {DAMAGE: (ENEMY,), HEAL: (SELF, ALLY)}
+
+
+def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A spell's school exists, and the stat it scales with fits the school's kind: off-class stats do nothing for a
+    class's abilities (Matěj, 2026-10-15), so magic scales with spell power and physical abilities with attack damage.
+    An attack damage ability names its share of attack damage on every damage effect, and a spell power one names
+    none. Damage hits enemies, heals mend the caster or its allies."""
+    problems: list[Problem] = []
+    schools = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spell_schools}
+    for entry in content.spells:
+        spell = entry.model
+        school = schools.get(spell.school)
+        if not universe.contains(SPELL_SCHOOL_REGISTRY, spell.school):
+            problems.append(
+                Problem(entry.source, "school", _unknown(spell.school, SPELL_SCHOOL_REGISTRY, universe))
+            )
+        elif school is not None and SCALING_OF_KIND[school.kind] != spell.scales_with:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "scales_with",
+                    f"{spell.school} is a {school.kind} school, so the spell scales with "
+                    f"{SCALING_OF_KIND[school.kind]}, not {spell.scales_with}",
+                )
+            )
+        for n, effect in enumerate(spell.effects):
+            path = f"effects.{n}"
+            if spell.scales_with == "spell_power" and effect.attack_damage_percent is not None:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"{path}.attack_damage_percent",
+                        "the spell scales with spell_power, so attack damage adds nothing to it",
+                    )
+                )
+            if (
+                spell.scales_with == "attack_damage"
+                and effect.type == DAMAGE
+                and effect.attack_damage_percent is None
+            ):
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"{path}.attack_damage_percent",
+                        "the spell scales with attack_damage: name the share of attack damage its damage adds",
+                    )
+                )
+            allowed = _EFFECT_TARGETING[effect.type]
+            if spell.targeting.type not in allowed:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"{path}.type",
+                        f"{effect.type} acts on the spell's targets, so the targeting is "
+                        f"{' or '.join(allowed)}, not {spell.targeting.type}",
+                    )
+                )
     return problems
 
 

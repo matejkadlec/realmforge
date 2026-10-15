@@ -184,7 +184,8 @@ def main(argv: list[str] | None = None) -> int:
             f"{len(content.dimensions)} dimension rule set(s), {len(content.races)} race(s), "
             f"{len(content.classes)} class(es), {len(content.worldgen)} worldgen file(s), "
             f"{len(content.rooms)} room(s), {len(content.dungeons)} dungeon type(s), "
-            f"{len(content.chapters)} chapter(s), {len(content.kill_xp_multipliers)} kill XP multiplier(s)."
+            f"{len(content.chapters)} chapter(s), {len(content.kill_xp_multipliers)} kill XP multiplier(s), "
+            f"{len(content.spells)} spell(s)."
         )
         return 0
 
