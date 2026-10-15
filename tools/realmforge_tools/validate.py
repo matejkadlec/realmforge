@@ -12,7 +12,13 @@ from realmforge_tools.content import Content, RoomEntry, load_content
 from realmforge_tools.id_universe import IdUniverse, load_vanilla
 from realmforge_tools.problems import Problem, ValidationFailed
 from realmforge_tools.project import MOD_ID, RepoPaths
-from realmforge_tools.rooms.check import TEMPLATE_POOL_REGISTRY, check_structure
+from realmforge_tools.rooms.check import (
+    ENTRANCE_MARKER,
+    TEMPLATE_POOL_REGISTRY,
+    check_structure,
+    fluid_edges,
+    markers,
+)
 from realmforge_tools.rooms.connectors import connectors, could_attach
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES
 from realmforge_tools.schema.character import STARTING_BREAD
@@ -151,8 +157,9 @@ def _check_dungeons(content: Content) -> list[Problem]:
     """A room in the pool of a dungeon type has exactly one role, and the pool holds what the type's layout needs: an
     entrance, rooms to pass through, the room that ends the main path, a dead end for the branches and for the
     connectors nothing else takes, rooms that take a branch when it must have one, and only rooms whose every
-    connector meets some connector of the pool (architecture 15.3). Whether a layout fits a plot is the planner's to
-    find; JUnit fuzzes it over the generated types."""
+    connector meets some connector of the pool (architecture 15.3). A room in such a pool also holds no fluid at its
+    edge, and an entrance marker only if it is an entrance (``_check_pooled_room``). Whether a layout fits a plot is
+    the planner's to find; JUnit fuzzes it over the generated types."""
     problems: list[Problem] = []
     used_pools = {entry.model.pool for entry in content.dungeons}
     pooled: dict[str, list[RoomEntry]] = {}
@@ -170,6 +177,7 @@ def _check_dungeons(content: Content) -> list[Problem]:
                 )
             )
             continue
+        problems += _check_pooled_room(room)
         for pool in room.model.pools:
             pooled.setdefault(pool, []).append(room)
 
@@ -230,6 +238,35 @@ def _check_dungeons(content: Content) -> list[Problem]:
                             f"meets no connector in pool {dungeon.pool}, so {entry.source} can never place it",
                         )
                     )
+    return problems
+
+
+def _check_pooled_room(room: RoomEntry) -> list[Problem]:
+    """What a room needs once a dungeon builds it into a plot: no fluid on its sides or floor, which would flow out of
+    its box past what cleanup clears (architecture 15.5), and an entrance marker only in the entrance, where players
+    arrive (the builder reads only the entrance room's)."""
+    problems: list[Problem] = []
+    edges = fluid_edges(room.structure)
+    if edges:
+        count = f" ({len(edges)} blocks)" if len(edges) > 1 else ""
+        problems.append(
+            Problem(
+                room.template,
+                f"fluid at {' '.join(str(c) for c in edges[0])}",
+                f"a fluid on the room's sides or floor{count} flows out of its box, where cleanup does not reach; "
+                "a room in a dungeon type's pool keeps its fluids inside",
+            )
+        )
+    role = room_role(room.model.tags)
+    for name, pos in markers(room.structure):
+        if name == ENTRANCE_MARKER and role != "entrance":
+            problems.append(
+                Problem(
+                    room.template,
+                    f"data marker {' '.join(str(c) for c in pos)}",
+                    f"an entrance marker in a room whose role is {role}: players arrive only in the entrance room",
+                )
+            )
     return problems
 
 

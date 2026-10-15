@@ -1,12 +1,14 @@
 """Room validation on the template itself (architecture 15.4): size, ids inside the ID universe (blocks, block
-entities, entities, container loot tables, jigsaw pools), connectors.
+entities, entities, container loot tables, jigsaw pools), connectors and data markers. ``validate.py`` adds the
+checks that need the room's sidecar: the entrance marker's room and fluids at the edge of a room in a dungeon's pool.
 
-Markers and the blocks themes may swap come with the dungeon framework (W4b) and the room generator (A4d).
+The blocks themes may swap come with the room generator (A4d).
 """
 
 from __future__ import annotations
 
 import math
+from typing import Any
 
 from realmforge_tools.id_universe import IdUniverse
 from realmforge_tools.project import DATA_VERSION
@@ -25,6 +27,28 @@ MAX_SIZE = 48
 
 # The pool a jigsaw names when its data names none (JigsawBlockEntity reads a missing pool as Pools.EMPTY).
 EMPTY_POOL = "minecraft:empty"
+
+STRUCTURE_BLOCK = "minecraft:structure_block"
+# The data markers a room may hold (architecture 15.3, step 3): structure blocks in data mode whose metadata names what
+# stands there. The builder records them and never places them; the names are DataMarker.Kind in the core mod.
+ENTRANCE_MARKER = "entrance"
+MARKERS = (ENTRANCE_MARKER, "exit", "mob", "chest")
+# The structure block mode of a data marker, as its block entity data names it (StructureMode.DATA).
+DATA_MODE = "DATA"
+
+# Blocks that are a fluid or always hold water (vanilla's LiquidBlock and LiquidBlockContainer blocks without a
+# waterlogged property); any block whose state says waterlogged=true holds water too.
+FLUID_BLOCKS = frozenset(
+    {
+        "minecraft:water",
+        "minecraft:lava",
+        "minecraft:bubble_column",
+        "minecraft:kelp",
+        "minecraft:kelp_plant",
+        "minecraft:seagrass",
+        "minecraft:tall_seagrass",
+    }
+)
 
 # A jigsaw's front (the first part of its orientation) -> (axis, side) of the room's box it must sit on.
 _JIGSAW_FACES = {
@@ -80,6 +104,8 @@ def check_structure(structure: Structure, universe: IdUniverse) -> list[tuple[st
         loot_table = (block.nbt or {}).get(LOOT_TABLE)
         if isinstance(loot_table, str) and not universe.contains(LOOT_TABLE_REGISTRY, loot_table):
             unknown_loot.setdefault(loot_table, []).append(block.pos)
+        if block.state.name == STRUCTURE_BLOCK:
+            problems += _check_marker(block.pos, block.nbt)
         if block.state.name == JIGSAW:
             problems += _check_jigsaw(block.pos, block.state.get("orientation"), size)
             pool = (block.nbt or {}).get("pool")
@@ -104,6 +130,15 @@ def check_structure(structure: Structure, universe: IdUniverse) -> list[tuple[st
                             f"final_state names unknown block {name!r}, which the game cannot place{hint}",
                         )
                     )
+
+    entrances = [pos for name, pos in markers(structure) if name == ENTRANCE_MARKER]
+    if len(entrances) > 1:
+        problems.append(
+            (
+                f"data marker {_fmt(entrances[1])}",
+                f"the room holds {len(entrances)} entrance markers; players arrive at one",
+            )
+        )
 
     for entity in structure.entities:
         where = f"entity {entity.id or '?'} at {_fmt(entity.block_pos)}"
@@ -135,6 +170,32 @@ def check_structure(structure: Structure, universe: IdUniverse) -> list[tuple[st
     return problems
 
 
+def markers(structure: Structure) -> list[tuple[str, Pos]]:
+    """The room's data markers as (name, position), in block order: structure blocks in data mode, whatever they
+    name (``check_structure`` reports unknown names)."""
+    found = []
+    for block in structure.blocks:
+        data = block.nbt or {}
+        if block.state.name == STRUCTURE_BLOCK and data.get("mode") == DATA_MODE:
+            name = data.get("metadata")
+            found.append((name if isinstance(name, str) else "", block.pos))
+    return found
+
+
+def fluid_edges(structure: Structure) -> list[Pos]:
+    """Positions on the room's sides or floor that hold a fluid. A fluid flows down and sideways, so from there it
+    leaves the room's box, past what cleanup clears (architecture 15.5); one on the roof stays inside."""
+    size_x, _, size_z = structure.size
+    edges = []
+    for block in structure.blocks:
+        if block.state.name not in FLUID_BLOCKS and block.state.get("waterlogged") != "true":
+            continue
+        x, y, z = block.pos
+        if y == 0 or x in (0, size_x - 1) or z in (0, size_z - 1):
+            edges.append(block.pos)
+    return sorted(edges)
+
+
 def connector_face(pos: Pos, orientation: str | None, size: Pos) -> str | None:
     """The face a jigsaw is a connector on (``north``, ``up``, ...): the one it points to, when it sits on it.
     None for a jigsaw inside the room or without a valid orientation."""
@@ -145,6 +206,24 @@ def connector_face(pos: Pos, orientation: str | None, size: Pos) -> str | None:
     axis, side = face
     edge = 0 if side == "min" else size[axis] - 1
     return front if pos[axis] == edge else None
+
+
+def _check_marker(pos: Pos, data: dict[str, Any] | None) -> list[tuple[str, str]]:
+    """A structure block in a room is a data marker: data mode, and metadata naming one of ``MARKERS``."""
+    data = data or {}
+    mode = data.get("mode")
+    if mode != DATA_MODE:
+        return [
+            (
+                f"structure block {_fmt(pos)}",
+                f"is in {mode or 'no'} mode; a room holds structure blocks only as data markers (mode {DATA_MODE}) "
+                f"naming {', '.join(MARKERS)}",
+            )
+        ]
+    name = data.get("metadata")
+    if name not in MARKERS:
+        return [(f"data marker {_fmt(pos)}", f"names {name!r}, which is no marker: {', '.join(MARKERS)}")]
+    return []
 
 
 def _check_jigsaw(pos: Pos, orientation: str | None, size: Pos) -> list[tuple[str, str]]:
