@@ -3,7 +3,8 @@
 A chapter of the story sets the level cap. A player's cap is the ``completed_level_cap`` of the chapters they have
 completed, the highest one, or, before they complete any, the first chapter's ``level_cap``. A chapter counts as
 completed once the player has its advancement ``realmforge:chapter/<id>``, which the chapter's last quest grants
-(Q1). Decision D2 (RLM-52): cap 10 during chapter 1, raised to 20 when it is finished.
+(Q1). A chapter's cap is its last level (Matěj, 2026-10-15, superseding D2's 10 then 20): 10 during chapter 1, 18
+after it, 30 after chapter 2 (architecture 10.2).
 """
 
 from __future__ import annotations

@@ -5,7 +5,8 @@ with the game's numbers.
 - ``xp_to_next_level`` at level L is the XP that takes a player from L to L + 1 (at least 1).
 - A player's level is the highest level whose XP the player has, at most the level cap; XP beyond the cap keeps
   accumulating, so raising the cap levels the player up at once.
-- A kill gives ``kill_xp`` at the victim's level, times ``kill_xp_below_player`` at the levels the victim is below
+- A kill gives ``kill_xp`` at the victim's level, times the victim's kill XP multiplier (its rank,
+  ``content/kill_xp_multipliers/``, 1 by default), times ``kill_xp_below_player`` at the levels the victim is below
   the player (or ``kill_xp_above_player`` at the levels it is above), times the player's XP multiplier.
 
 Rounding follows Java's ``Math.round``: half up.
@@ -59,9 +60,16 @@ def level_for(curve: CurveDef, total_xp: int, cap: int) -> int:
 
 
 def kill_xp(
-    base: CurveDef, below: CurveDef, above: CurveDef, victim_level: int, player_level: int, multiplier: float
+    base: CurveDef,
+    below: CurveDef,
+    above: CurveDef,
+    victim_level: int,
+    player_level: int,
+    rank: float,
+    multiplier: float,
 ) -> int:
-    """The XP a player of ``player_level`` gets for killing a mob of ``victim_level``, never negative."""
+    """The XP a player of ``player_level`` with XP ``multiplier`` gets for killing a mob of ``victim_level`` whose
+    kill XP multiplier is ``rank``, never negative. The factors multiply in this order, as in the game."""
     difference = victim_level - player_level
     factor = below.value_at(-difference) if difference < 0 else above.value_at(difference)
-    return max(0, java_round(base.value_at(victim_level) * factor * multiplier))
+    return max(0, java_round(base.value_at(victim_level) * rank * factor * multiplier))

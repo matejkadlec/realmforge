@@ -6,7 +6,7 @@ texts:
     en_us: Dark Vision Off
   dark_vision_on:
     en_us: Dark Vision On
-  # Leveling (C2, architecture 10.2). XP a kill gave, in the action bar: "+32 XP" (%1$s the XP).
+  # Leveling (C2, architecture 10.2). XP a kill gave, in the action bar: "+50 XP" (%1$s the XP).
   xp_gained:
     en_us: "+%1$s XP"
   # The title and subtitle a level-up shows (%1$s the new level).

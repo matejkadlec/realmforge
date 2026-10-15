@@ -1,10 +1,11 @@
 # yaml-language-server: $schema=../../tools/schemas/curves.schema.json
 # The share of kill_xp a kill gives when the victim's level is below the player's, by how many levels it is below
-# (the curve's "level" is that difference). Full XP up to 2 levels below, then 20 % less per level, and nothing from
-# 7 levels below: mobs far below give nothing (architecture 10.2). C2's first numbers.
+# (the curve's "level" is that difference): 90 % at 1 below, then 15 % less per level (75, 60, 45, 30, 15 %), and
+# nothing from 7 below, so mobs far below give nothing (architecture 10.2; XP model of 2026-10-15, RLM-192).
 id: kill_xp_below_player
 name: {en_us: Kill XP Below Player}
 points:
   - {level: 0, value: 1.0}
-  - {level: 2, value: 1.0}
+  - {level: 1, value: 0.9}
+  - {level: 6, value: 0.15}
   - {level: 7, value: 0.0}

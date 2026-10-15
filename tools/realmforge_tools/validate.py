@@ -17,11 +17,13 @@ from realmforge_tools.rooms.connectors import connectors, could_attach
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES
 from realmforge_tools.schema.character import STARTING_BREAD
 from realmforge_tools.schema.dungeon import DEAD_END_ROLES, PATH_ROLES, ROOM_ROLES, room_role
+from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
 from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
 
 ITEM_REGISTRY = "minecraft:item"
+ENTITY_TYPE_REGISTRY = "minecraft:entity_type"
 ATTRIBUTE_REGISTRY = "minecraft:attribute"
 CREATIVE_TAB_REGISTRY = "minecraft:creative_mode_tab"
 DAMAGE_TYPE_REGISTRY = "minecraft:damage_type"
@@ -107,6 +109,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_dungeons(content)
     problems += _check_chapters(content)
     problems += _check_leveling_curves(content)
+    problems += _check_kill_xp_multipliers(content, universe)
     return problems
 
 
@@ -572,6 +575,33 @@ def _check_leveling_curves(content: Content) -> list[Problem]:
                         f"{point.value} is below {minimum:g}, the least this curve may hold for leveling",
                     )
                 )
+    return problems
+
+
+def _check_kill_xp_multipliers(content: Content, universe: IdUniverse) -> list[Problem]:
+    """Each entry names an entity type that exists, no two name the same one, and only slimes and magma cubes give
+    by size (architecture 10.2)."""
+    problems: list[Problem] = []
+    seen: dict[str, str] = {}
+    for entry in content.kill_xp_multipliers:
+        entity = entry.model.entity
+        if not universe.contains(ENTITY_TYPE_REGISTRY, entity):
+            problems.append(Problem(entry.source, "entity", _unknown(entity, ENTITY_TYPE_REGISTRY, universe)))
+        if entity in seen:
+            problems.append(
+                Problem(
+                    entry.source, "entity", f"{entity} already has a kill XP multiplier in {seen[entity]}"
+                )
+            )
+        seen.setdefault(entity, entry.source)
+        if entry.model.by_size and entity not in SIZED_ENTITY_TYPES:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "by_size",
+                    f"only {' and '.join(SIZED_ENTITY_TYPES)} have a size; {entity} gives by multiplier alone",
+                )
+            )
     return problems
 
 

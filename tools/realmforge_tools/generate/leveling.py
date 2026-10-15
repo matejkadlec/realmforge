@@ -1,11 +1,13 @@
-"""Chapters and leveling: each chapter's advancement, and the QA mod's expectations for chapters and for character
-XP (the chapter data itself and its lang entries: datapack.py).
+"""Chapters, kill XP multipliers and leveling: each chapter's advancement, and the QA mod's expectations for chapters,
+kill XP multipliers and character XP (the chapter and multiplier data themselves and the chapters' lang entries:
+datapack.py).
 
 - ``data/realmforge/advancement/chapter/<id>.json``: the advancement that marks the chapter completed, with
   ``minecraft:impossible`` as its only criterion, so only a quest reward or a command grants it (architecture 16).
   It has no display, so it shows no toast and no tab; leveling announces the raised cap.
 - ``GeneratedChapterExpectations``: every chapter, and the level cap the pipeline computes for sample sets of
   completed chapters.
+- ``GeneratedKillXpMultiplierExpectations``: every kill XP multiplier, with its value at sample sizes.
 - ``GeneratedLevelingExpectations``: the XP per level, the levels of sample XP totals under sample caps, and the XP
   of sample kills, from the curves in ``content/curves/`` (schema/leveling.py).
 """
@@ -21,6 +23,7 @@ from realmforge_tools.generate.javagen import header, java_file_path, string_lit
 from realmforge_tools.project import MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.chapter import ChapterDef, advancement_id, level_cap
 from realmforge_tools.schema.curve import CurveDef
+from realmforge_tools.schema.kill_xp_multiplier import KillXpMultiplierDef
 from realmforge_tools.schema.leveling import (
     KILL_XP,
     KILL_XP_ABOVE_PLAYER,
@@ -34,9 +37,11 @@ from realmforge_tools.schema.leveling import (
 
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
 REGISTRY = "chapter"
-# The levels and multipliers the kill samples combine (victim against player).
+# The levels the kill samples combine (victim against player), and the (rank, XP multiplier) pairs they take.
 KILL_SAMPLE_LEVELS = (1, 3, 5, 10, 14, 20)
-KILL_SAMPLE_MULTIPLIERS = (1.0, 1.5)
+KILL_SAMPLE_FACTORS = ((1.0, 1.0), (1.0, 1.5), (0.25, 1.0), (1.5, 1.0), (10.0, 1.0))
+# The sizes the kill XP multiplier samples take (none: a mob without a size).
+SIZE_SAMPLES = (None, 1, 2, 4, 127)
 
 
 def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
@@ -46,6 +51,9 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         files[advancement_dir / f"{advancement_id(entry.model.id)}.json"] = dump_json(_advancement())
     qa_java = paths.qa_generated / "java"
     files[java_file_path(qa_java, QA_GENERATED_PACKAGE, "GeneratedChapterExpectations")] = _chapters(content)
+    files[java_file_path(qa_java, QA_GENERATED_PACKAGE, "GeneratedKillXpMultiplierExpectations")] = (
+        _kill_xp_multipliers([entry.model for entry in content.kill_xp_multipliers])
+    )
     curves = {entry.model.id: entry.model for entry in content.curves}
     files[java_file_path(qa_java, QA_GENERATED_PACKAGE, "GeneratedLevelingExpectations")] = _leveling(
         [entry.model for entry in content.chapters], curves
@@ -152,12 +160,13 @@ def _leveling(chapters: list[ChapterDef], curves: dict[str, CurveDef]) -> bytes:
         f"            new LevelSample({total}L, {cap}, {level})"
         for total, cap, level in level_samples(xp_curve, caps)
     ]
+    base, below, above = curves[KILL_XP], curves[KILL_XP_BELOW_PLAYER], curves[KILL_XP_ABOVE_PLAYER]
     kills = [
-        f"            new KillSample({victim}, {player}, {_double(multiplier)}, "
-        f"{kill_xp(curves[KILL_XP], curves[KILL_XP_BELOW_PLAYER], curves[KILL_XP_ABOVE_PLAYER], victim, player, multiplier)}L)"
+        f"            new KillSample({victim}, {player}, {_double(rank)}, {_double(multiplier)}, "
+        f"{kill_xp(base, below, above, victim, player, rank, multiplier)}L)"
         for victim in KILL_SAMPLE_LEVELS
         for player in KILL_SAMPLE_LEVELS
-        for multiplier in KILL_SAMPLE_MULTIPLIERS
+        for rank, multiplier in KILL_SAMPLE_FACTORS
     ]
     source = (
         header(Path(__file__), "content/curves/ and content/chapters/") + f"package {QA_GENERATED_PACKAGE};\n"
@@ -177,8 +186,11 @@ def _leveling(chapters: list[ChapterDef], curves: dict[str, CurveDef]) -> bytes:
         "    public record LevelSample(long totalXp, int cap, int level) {\n"
         "    }\n"
         "\n"
-        "    /** The XP a player of a level gets for a kill of a victim's level, with an XP multiplier (1.0 is 100 %). */\n"
-        "    public record KillSample(int victimLevel, int playerLevel, double multiplier, long xp) {\n"
+        "    /**\n"
+        "     * The XP a player of a level gets for a kill of a victim's level, with the victim's kill XP multiplier (its\n"
+        "     * rank) and the player's XP multiplier (1.0 is 100 %).\n"
+        "     */\n"
+        "    public record KillSample(int victimLevel, int playerLevel, double rank, double multiplier, long xp) {\n"
         "    }\n"
         "\n"
         f"    public static final List<LevelXp> LEVELS = {_list(levels)};\n"
@@ -188,6 +200,55 @@ def _leveling(chapters: list[ChapterDef], curves: dict[str, CurveDef]) -> bytes:
         f"    public static final List<KillSample> KILLS = {_list(kills)};\n"
         "\n"
         "    private GeneratedLevelingExpectations() {\n"
+        "    }\n"
+        "}\n"
+    )
+    return source.encode("utf-8")
+
+
+def _kill_xp_multipliers(entries: list[KillXpMultiplierDef]) -> bytes:
+    rows = []
+    for entry in entries:
+        sizes = ", ".join(
+            f"new SizeMultiplier({size.max_size}, {_double(size.multiplier)})" for size in entry.by_size
+        )
+        samples = ", ".join(
+            f"new Sample({-1 if size is None else size}, {_double(entry.multiplier_at(size))})"
+            for size in SIZE_SAMPLES
+        )
+        rows.append(
+            "            new KillXpMultiplierExpectation(\n"
+            f"                    {string_literal(f'{MOD_ID}:{entry.id}')}, {string_literal(entry.entity)}, "
+            f"{_double(entry.multiplier)},\n"
+            f"                    List.of({sizes}),\n"
+            f"                    List.of({samples}))"
+        )
+    source = (
+        header(Path(__file__), "content/kill_xp_multipliers/") + f"package {QA_GENERATED_PACKAGE};\n"
+        "\n"
+        "import java.util.List;\n"
+        "\n"
+        "/**\n"
+        " * What {@code content/kill_xp_multipliers/} says about every kill XP multiplier, so GameTests can check that the\n"
+        " * game agrees.\n"
+        " */\n"
+        "public final class GeneratedKillXpMultiplierExpectations {\n"
+        "    /** The multiplier for mobs of a size up to {@code maxSize}. */\n"
+        "    public record SizeMultiplier(int maxSize, double multiplier) {\n"
+        "    }\n"
+        "\n"
+        "    /** The multiplier the pipeline gives a mob of a size, -1 for a mob without one. */\n"
+        "    public record Sample(int size, double multiplier) {\n"
+        "    }\n"
+        "\n"
+        "    /** Expected state of one entry. Ids are full resource locations, e.g. {@code realmforge:witch}. */\n"
+        "    public record KillXpMultiplierExpectation(String id, String entity, double multiplier,\n"
+        "            List<SizeMultiplier> bySize, List<Sample> samples) {\n"
+        "    }\n"
+        "\n"
+        f"    public static final List<KillXpMultiplierExpectation> MULTIPLIERS = {_list(rows)};\n"
+        "\n"
+        "    private GeneratedKillXpMultiplierExpectations() {\n"
         "    }\n"
         "}\n"
     )

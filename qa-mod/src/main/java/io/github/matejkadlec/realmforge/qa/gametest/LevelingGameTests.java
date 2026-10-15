@@ -8,6 +8,8 @@ import io.github.matejkadlec.realmforge.character.CharacterData;
 import io.github.matejkadlec.realmforge.character.CharacterRegistries;
 import io.github.matejkadlec.realmforge.character.Characters;
 import io.github.matejkadlec.realmforge.character.KillXp;
+import io.github.matejkadlec.realmforge.character.KillXpMultiplier;
+import io.github.matejkadlec.realmforge.character.Leveling;
 import io.github.matejkadlec.realmforge.character.XpTable;
 import io.github.matejkadlec.realmforge.core.CoreRegistries;
 import io.github.matejkadlec.realmforge.core.Curve;
@@ -21,6 +23,7 @@ import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedChapterExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedChapterExpectations.ChapterExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedClassExpectations;
+import io.github.matejkadlec.realmforge.qa.generated.GeneratedKillXpMultiplierExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectations.KillSample;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectations.LevelSample;
@@ -43,14 +46,17 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.animal.pig.Pig;
+import net.minecraft.world.entity.monster.Slime;
+import net.minecraft.world.entity.monster.Witch;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.phys.Vec3;
 
 /**
  * C2 (RLM-23): leveling in the game (architecture 10.2). The XP table, kill XP and level caps match the pipeline's
  * expectations; XP accumulates past the level cap and granting the chapter advancement raises the level; hostile kills
- * give XP by the victim's level; players without a character gain none; {@code realmforge:level_reached} completes
- * advancements; {@code /realmforge xp} and {@code /qa level} work. Players log in through {@link QaPlayers#login}.
+ * give XP by the victim's level and its kill XP multiplier; players without a character gain none;
+ * {@code realmforge:level_reached} completes advancements; {@code /realmforge xp} and {@code /qa level} work. Players
+ * log in through {@link QaPlayers#login}.
  */
 public final class LevelingGameTests {
     /** {@code data/realmforge_qa/advancement/test/level_5.json}: done once the character reaches level 5. */
@@ -84,8 +90,9 @@ public final class LevelingGameTests {
         helper.assertFalse(GeneratedLevelingExpectations.KILLS.isEmpty(), "no kill expectations were generated");
         for (KillSample sample : GeneratedLevelingExpectations.KILLS) {
             helper.assertValueEqual(KillXp.of(base, below, above, sample.victimLevel(), sample.playerLevel(),
-                    sample.multiplier()), sample.xp(), "a level " + sample.playerLevel() + " player killing level "
-                    + sample.victimLevel() + " at " + sample.multiplier());
+                    sample.rank(), sample.multiplier()), sample.xp(), "a level " + sample.playerLevel()
+                    + " player killing a level " + sample.victimLevel() + " mob of rank " + sample.rank() + " at "
+                    + sample.multiplier());
         }
         helper.succeed();
     }
@@ -133,8 +140,10 @@ public final class LevelingGameTests {
         MobLevels.setLevel(zombie, 3);
         long expected = KillXp.of(curve(helper, GeneratedCurves.KILL_XP),
                 curve(helper, GeneratedCurves.KILL_XP_BELOW_PLAYER), curve(helper, GeneratedCurves.KILL_XP_ABOVE_PLAYER),
-                3, Characters.level(player), 1.0);
+                3, Characters.level(player), 1.0, 1.0);
         helper.assertTrue(expected > 0, "a level 3 zombie gives a level 1 player XP");
+        helper.assertValueEqual(Leveling.killXpMultiplier(level.registryAccess(), zombie), KillXpMultiplier.DEFAULT,
+                "a zombie has no kill XP multiplier of its own");
         kill(level, zombie, player);
         helper.assertTrue(zombie.isDeadOrDying(), "the zombie died");
         helper.assertValueEqual(Characters.data(player).totalXp(), expected, "XP for the level 3 zombie");
@@ -148,6 +157,40 @@ public final class LevelingGameTests {
         kill(level, another, newcomer);
         helper.assertValueEqual(Characters.data(newcomer), CharacterData.NONE, "no XP, and no data, without a character");
         server.getPlayerList().remove(newcomer);
+        server.getPlayerList().remove(player);
+        helper.succeed();
+    }
+
+    /** Kill XP multipliers (ranks) by entity type: a witch gives 1.5 times, a slime by its size. */
+    @QaGameTest
+    public static void killXpFollowsTheVictimsMultiplier(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = loginWithCharacter(helper, "qa-lvl-rank");
+        Witch witch = helper.spawn(EntityType.WITCH, new BlockPos(1, 1, 1));
+        MobLevels.setLevel(witch, 1);
+        long expected = killXp(helper, 1, Characters.level(player), multiplier("minecraft:witch", -1));
+        helper.assertTrue(expected > 0, "a witch gives XP");
+        kill(level, witch, player);
+        helper.assertValueEqual(Characters.data(player).totalXp(), expected, "XP for a level 1 witch");
+
+        Slime small = helper.spawn(EntityType.SLIME, new BlockPos(3, 1, 1));
+        small.setSize(1, true);
+        MobLevels.setLevel(small, 1);
+        helper.assertValueEqual(Leveling.killXpMultiplier(level.registryAccess(), small),
+                multiplier("minecraft:slime", 1), "a size 1 slime's multiplier");
+        kill(level, small, player);
+        helper.assertValueEqual(Characters.data(player).totalXp(), expected + killXp(helper, 1,
+                Characters.level(player), multiplier("minecraft:slime", 1)), "XP for a size 1 slime");
+
+        long before = Characters.data(player).totalXp();
+        Slime big = helper.spawn(EntityType.SLIME, new BlockPos(3, 1, 3));
+        big.setSize(2, true);
+        MobLevels.setLevel(big, 1);
+        kill(level, big, player);
+        long bigXp = killXp(helper, 1, Characters.level(player), multiplier("minecraft:slime", 2));
+        helper.assertTrue(bigXp > 0, "a size 2 slime gives XP");
+        helper.assertValueEqual(Characters.data(player).totalXp(), before + bigXp, "XP for a size 2 slime");
         server.getPlayerList().remove(player);
         helper.succeed();
     }
@@ -244,6 +287,25 @@ public final class LevelingGameTests {
             helper.assertValueEqual(instance.getModifier(bonus.modifier().id()).amount(), bonus.modifier().amount(),
                     bonus.modifier().id() + " at level " + Characters.level(player));
         }
+    }
+
+    /** The XP of a kill with the content's curves, at 100 % XP multiplier. */
+    private static long killXp(GameTestHelper helper, int victimLevel, int playerLevel, double rank) {
+        return KillXp.of(curve(helper, GeneratedCurves.KILL_XP), curve(helper, GeneratedCurves.KILL_XP_BELOW_PLAYER),
+                curve(helper, GeneratedCurves.KILL_XP_ABOVE_PLAYER), victimLevel, playerLevel, rank, 1.0);
+    }
+
+    /** The pipeline's multiplier for a mob of the entity type and size (-1: no size), from the expectations. */
+    private static double multiplier(String entity, int size) {
+        return GeneratedKillXpMultiplierExpectations.MULTIPLIERS.stream()
+                .filter(expected -> expected.entity().equals(entity))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("no kill XP multiplier for " + entity))
+                .samples().stream()
+                .filter(sample -> sample.size() == size)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("no sample at size " + size + " for " + entity))
+                .multiplier();
     }
 
     private static void kill(ServerLevel level, LivingEntity victim, ServerPlayer player) {

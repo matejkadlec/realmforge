@@ -14,6 +14,7 @@ import io.github.matejkadlec.realmforge.stats.CharacterStats;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import java.util.Optional;
+import java.util.OptionalInt;
 import javax.annotation.Nullable;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -32,6 +33,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
@@ -52,7 +54,8 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
  *   revoked ({@code AdvancementProgressEvent}: a chapter's advancement has no display, and NeoForge posts
  *   {@code AdvancementEarnEvent} only for advancements with one).</li>
  *   <li>A kill of a hostile mob ({@link Enemy}) gives the player who gets vanilla's kill credit the XP of
- *   {@link KillXp}, shown in the action bar. Players without a character gain no XP (architecture 10.1).</li>
+ *   {@link KillXp}, with the victim's {@link KillXpMultiplier}, shown in the action bar. Players without a character
+ *   gain no XP (architecture 10.1).</li>
  *   <li>A level-up recomputes the stats, shows a title, plays a fanfare to the player and bursts particles around
  *   them, and fires {@code realmforge:level_reached}, as does every login. Talent points and class spells join with
  *   C4 and C5.</li>
@@ -227,11 +230,25 @@ public final class Leveling {
             return;
         }
         long xp = add(player, KillXp.of(base.get(), below.get(), above.get(), victimLevel, Characters.level(player),
-                multiplier(player)));
+                killXpMultiplier(registries, victim), multiplier(player)));
         if (xp > 0) {
             player.sendOverlayMessage(Component.translatable(GeneratedTexts.MESSAGE_XP_GAINED, xp)
                     .withStyle(ChatFormatting.LIGHT_PURPLE));
         }
+    }
+
+    /**
+     * The victim's kill XP multiplier (its rank): its type's {@code realmforge:kill_xp_multiplier} entry, by size for a
+     * slime or magma cube, or {@link KillXpMultiplier#DEFAULT} when its type has none.
+     */
+    public static double killXpMultiplier(HolderLookup.Provider registries, LivingEntity victim) {
+        OptionalInt size = victim instanceof Slime slime ? OptionalInt.of(slime.getSize()) : OptionalInt.empty();
+        return registries.lookupOrThrow(CharacterRegistries.KILL_XP_MULTIPLIER).listElements()
+                .map(Holder::value)
+                .filter(entry -> entry.entity().value() == victim.getType())
+                .findFirst()
+                .map(entry -> entry.at(size))
+                .orElse(KillXpMultiplier.DEFAULT);
     }
 
     /**

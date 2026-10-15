@@ -1,0 +1,70 @@
+{
+  "$defs": {
+    "SizeMultiplierDef": {
+      "additionalProperties": false,
+      "description": "The multiplier of a sized mob (a slime) up to a size.",
+      "properties": {
+        "max_size": {
+          "description": "The largest size this multiplier applies to (1 or more).",
+          "maximum": 127,
+          "minimum": 1,
+          "title": "Max Size",
+          "type": "integer"
+        },
+        "multiplier": {
+          "description": "Kill XP multiplier for these sizes (0 gives nothing).",
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Multiplier",
+          "type": "number"
+        }
+      },
+      "required": [
+        "max_size",
+        "multiplier"
+      ],
+      "title": "SizeMultiplierDef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "How much kill XP the mobs of one entity type give, as a multiple of a normal mob's.",
+  "properties": {
+    "by_size": {
+      "description": "Slimes and magma cubes only: multipliers by size, in increasing max_size order; the first entry whose max_size the mob does not exceed applies, larger mobs take multiplier.",
+      "items": {
+        "$ref": "#/$defs/SizeMultiplierDef"
+      },
+      "title": "By Size",
+      "type": "array"
+    },
+    "entity": {
+      "description": "The entity type, e.g. minecraft:witch. At most one entry per type.",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+      "title": "Entity",
+      "type": "string"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "multiplier": {
+      "description": "Kill XP multiplier (1 is a normal mob, 0 gives nothing).",
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Multiplier",
+      "type": "number"
+    }
+  },
+  "required": [
+    "id",
+    "entity",
+    "multiplier"
+  ],
+  "title": "KillXpMultiplierDef",
+  "type": "object"
+}

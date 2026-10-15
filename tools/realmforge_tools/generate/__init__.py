@@ -12,7 +12,6 @@ from pathlib import Path
 
 from realmforge_tools.content import Content
 from realmforge_tools.generate import (
-    chapters,
     characters,
     curves,
     datapack,
@@ -21,6 +20,7 @@ from realmforge_tools.generate import (
     gametest,
     items,
     lang,
+    leveling,
     rooms,
     schemas,
     spell_schools,
@@ -39,7 +39,7 @@ def generate_all(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         curves.generate,
         dimension_rules.generate,
         characters.generate,
-        chapters.generate,
+        leveling.generate,
         stats.generate,
         spell_schools.generate,
         texts.generate,

@@ -14,11 +14,19 @@ public final class CharacterRegistries {
     public static final ResourceKey<Registry<PlayerClass>> CLASS =
             ResourceKey.createRegistryKey(Realmforge.id("class"));
 
+    /**
+     * {@code realmforge:kill_xp_multiplier}: how much kill XP the mobs of an entity type give, from
+     * {@code content/kill_xp_multipliers/}; server only.
+     */
+    public static final ResourceKey<Registry<KillXpMultiplier>> KILL_XP_MULTIPLIER =
+            ResourceKey.createRegistryKey(Realmforge.id("kill_xp_multiplier"));
+
     private CharacterRegistries() {
     }
 
     static void registerDataPackRegistries(DataPackRegistryEvent.NewRegistry event) {
         event.dataPackRegistry(CLASS, PlayerClass.CODEC, PlayerClass.CODEC);
         event.dataPackRegistry(RACE, Race.CODEC, Race.CODEC);
+        event.dataPackRegistry(KILL_XP_MULTIPLIER, KillXpMultiplier.CODEC);
     }
 }
