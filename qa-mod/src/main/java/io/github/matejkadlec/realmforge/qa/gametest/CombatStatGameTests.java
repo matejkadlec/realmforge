@@ -19,6 +19,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.illager.Pillager;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 
@@ -146,6 +148,56 @@ public final class CombatStatGameTests {
                 "the hit took them from the overheal: 1 left, got " + Overheal.amount(player));
         logout(player);
         helper.succeed();
+    }
+
+    /**
+     * Done when of RLM-195: when the Absorption effect ends, vanilla clamps the absorption to what is left of its
+     * maximum, the overheal's share; that drop is not damage, so the overheal stays.
+     */
+    @QaGameTest
+    public static void overhealStaysWhenTheAbsorptionEffectEnds(GameTestHelper helper) {
+        ServerPlayer player = player(helper, "qa-overheal-3");
+        StatsCommands.setBase(player, GeneratedStats.OVERHEAL, 0.25);
+        player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200));
+        player.heal(3);
+        assertAbsorption(helper, player, 7, "the golden apple's 4 and the overheal's 3");
+        player.removeEffect(MobEffects.ABSORPTION);
+        assertAbsorption(helper, player, 3, "the effect took its 4 with it");
+        helper.assertTrue(CombatGameTests.close(Overheal.amount(player), 3),
+                "the overheal's 3 stay: got " + Overheal.amount(player));
+        helper.runAfterDelay(2, () -> {
+            assertAbsorption(helper, player, 3, "a server tick later, the overheal's 3 are still there");
+            helper.assertTrue(CombatGameTests.close(Overheal.amount(player), 3),
+                    "the server tick kept the overheal: got " + Overheal.amount(player));
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Done when of RLM-195: a golden apple eaten while overhealed adds its 4 on top of the overheal, and they are left
+     * when the overheal expires. A fake player's effects never tick, so the apple's Regeneration heals nothing here.
+     */
+    @QaGameTest(timeoutTicks = Overheal.DURATION_TICKS + 40)
+    public static void aGoldenAppleEatenWhileOverhealedKeepsItsAbsorption(GameTestHelper helper) {
+        ServerPlayer player = player(helper, "qa-overheal-4");
+        StatsCommands.setBase(player, GeneratedStats.OVERHEAL, 0.25);
+        player.heal(10);
+        assertAbsorption(helper, player, 5, "the overheal's cap: 25 % of 20 max health");
+        new ItemStack(Items.GOLDEN_APPLE).finishUsingItem(helper.getLevel(), player);
+        helper.assertTrue(player.hasEffect(MobEffects.ABSORPTION), "the apple gave the Absorption effect");
+        helper.runAfterDelay(2, () -> {
+            assertAbsorption(helper, player, 9, "the server tick put the overheal's 5 on top of the apple's 4");
+            helper.assertTrue(CombatGameTests.close(Overheal.amount(player), 5),
+                    "the overheal is still 5: got " + Overheal.amount(player));
+        });
+        helper.runAfterDelay(Overheal.DURATION_TICKS + 5, () -> {
+            assertAbsorption(helper, player, 4, "the overheal expired and the apple's 4 are left");
+            helper.assertFalse(player.getAttribute(Attributes.MAX_ABSORPTION).hasModifier(Overheal.MODIFIER),
+                    "the overheal's max absorption modifier went with it");
+            logout(player);
+            helper.succeed();
+        });
     }
 
     /** Done when of RLM-160: health regeneration heals its points every second, never beyond max health. */

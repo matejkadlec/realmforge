@@ -721,10 +721,15 @@ health. Vanilla clamps absorption to `minecraft:max_absorption` (a golden apple'
 to it), so overheal makes room with a transient modifier `realmforge:overheal` of the same size. **It does not decay
 gradually; it expires** 10 seconds after the last heal that overflowed, like WotLK's absorb shields (Divine Aegis,
 Val'anyr's Protection of Ancient Kings), so it cannot be stocked up out of combat and carried into a fight, while
-steady healing in a fight (lifesteal) keeps it up. Damage eats it before other absorption (a golden apple's): each
-server tick, what the absorption lost since the last look comes off the overheal first, and its modifier shrinks with
-it. Its state is per entity and transient (a map with
-weak keys, checked each server tick); a player who logs in has absorption above the maximum clamped away, since the
+steady healing in a fight (lifesteal) keeps it up. **Overheal and other absorption (a golden apple's) stack**, each
+within its own cap, and damage eats the overheal first: each server tick, what the absorption lost since the last look
+comes off the overheal first, and its modifier shrinks with it. A drop that the other absorption's cap explains is not
+damage: when the Absorption effect ends (or milk clears it), vanilla clamps the absorption to what is left of the
+maximum, the overheal's share, and the overheal stays. When an Absorption effect starts while overhealed, vanilla
+raises the absorption only to the effect's amount (`AbsorptionMobEffect#onEffectStarted`, after
+`MobEffectEvent.Added`), so the next server tick puts the overheal back on top: 5 overheal and an apple's 4 make 9,
+and the apple's 4 are left when the overheal expires (RLM-195). Its state is per entity and transient (maps with weak
+keys, checked each server tick); a player who logs in has absorption above the maximum clamped away, since the
 modifier is not saved. Passive health regeneration never overheals.
 
 **Health regeneration** (`combat/HealthRegeneration`): a player with X health regeneration heals X health every
@@ -743,7 +748,7 @@ Like absorption hearts, it takes any damage that reaches health (falls, drowning
 `DamageCalculatorTest` covers the formulas; `CombatStatGameTests` plays each stat in a world: armor pierce against a
 training dummy with 15 armor, spell resistance and its cap on a pillager, and a fake player for lifesteal (melee and a
 thrown hit heal, a fire hit does not), overheal (its cap, its expiry, damage taking it before a golden apple's
-absorption), health regeneration
+absorption, the overheal kept when the Absorption effect ends, an apple eaten while overhealed), health regeneration
 (its schedule, no overheal) and the magic shield (before health, after absorption hearts, `lastHurt` kept, the
 refill).
 

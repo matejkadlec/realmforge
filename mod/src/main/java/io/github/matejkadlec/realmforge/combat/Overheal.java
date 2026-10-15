@@ -7,10 +7,13 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
@@ -20,10 +23,14 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
  * absorb shields (Divine Aegis, Val'anyr), so it cannot be stocked up before a fight. Logical server only.
  *
  * <p>Vanilla clamps absorption to the {@code minecraft:max_absorption} attribute, so the overheal's absorption comes
- * with a transient modifier ({@value #MODIFIER_PATH}) of the same size. Damage eats it before other absorption (a
- * golden apple's): each server tick, what the absorption lost since the last look comes off the overheal first, and
- * its modifier shrinks with it. When it expires, it is taken off the absorption with its modifier. Neither is saved: a player who logs in has the absorption above the maximum clamped
- * away.
+ * with a transient modifier ({@value #MODIFIER_PATH}) of the same size. Overheal and other absorption (a golden
+ * apple's) stack, each within its own cap, and damage eats the overheal first: each server tick, what the absorption
+ * lost since the last look comes off the overheal first, and its modifier shrinks with it. A drop that the other
+ * absorption's cap explains is not damage: when the Absorption effect ends (or milk clears it), vanilla clamps the
+ * absorption to what is left of the maximum, the overheal's share, and the overheal stays. When an Absorption effect
+ * starts while overhealed, vanilla raises the absorption only to the effect's amount, so the next server tick puts the
+ * overheal back on top of it (RLM-195). When the overheal expires, it is taken off the absorption with its modifier.
+ * Neither is saved: a player who logs in has the absorption above the maximum clamped away.
  */
 public final class Overheal {
     /** How long overheal's absorption lasts after the last heal that added to it: 10 seconds. */
@@ -33,16 +40,27 @@ public final class Overheal {
     public static final Identifier MODIFIER = Realmforge.id(MODIFIER_PATH);
 
     private static final Map<LivingEntity, Active> ACTIVE = new WeakHashMap<>();
+    /**
+     * Overhealed entities whose Absorption effect started this tick, with the other absorption they should have under
+     * the overheal: the other absorption before the effect, or the effect's amount if that is more.
+     */
+    private static final Map<LivingEntity, Float> STARTED = new WeakHashMap<>();
 
     /**
      * An entity's overheal absorption, the game time it expires at, and the entity's whole absorption when it was
      * last looked at, so that what damage took since then comes off the overheal first.
      */
     private record Active(float amount, long expiresAt, float absorption) {
-        /** What is left after the damage the entity's absorption took since the last look. */
+        /**
+         * What is left after the damage the entity's absorption took since the last look. Damage takes the overheal
+         * first, but the overheal keeps at least what the other absorption's cap cannot hold: a drop that only
+         * follows a lower cap (the Absorption effect ended) is not damage.
+         */
         Active follow(LivingEntity entity) {
             float now = entity.getAbsorptionAmount();
-            float left = Math.min(now, Math.max(0, amount - Math.max(0, absorption - now)));
+            float afterDamage = amount - Math.max(0, absorption - now);
+            float aboveOtherCap = now - (entity.getMaxAbsorption() - amount);
+            float left = Math.min(Math.min(now, amount), Math.max(0, Math.max(afterDamage, aboveOtherCap)));
             return new Active(left, expiresAt, now);
         }
     }
@@ -84,6 +102,11 @@ public final class Overheal {
             }
             Active before = entry.getValue();
             Active active = before.follow(entity);
+            Float started = STARTED.remove(entity);
+            if (started != null) {
+                entity.setAbsorptionAmount(active.amount() + started);
+                active = new Active(active.amount(), active.expiresAt(), entity.getAbsorptionAmount());
+            }
             if (active.amount() <= 0 || entity.level().getGameTime() >= active.expiresAt()) {
                 float other = entity.getAbsorptionAmount() - active.amount();
                 removeModifier(entity);
@@ -96,6 +119,22 @@ public final class Overheal {
             }
             entry.setValue(active);
         }
+        STARTED.clear();
+    }
+
+    /**
+     * Notes an Absorption effect that starts while the entity is overhealed. The event comes before the effect's
+     * {@code AbsorptionMobEffect#onEffectStarted}, which raises the absorption to at least 4 per effect level, so the
+     * next server tick ({@link #onServerTick}) puts the overheal back on top.
+     */
+    static void onEffectAdded(MobEffectEvent.Added event) {
+        LivingEntity entity = event.getEntity();
+        MobEffectInstance effect = event.getEffectInstance();
+        if (entity.level().isClientSide() || !effect.is(MobEffects.ABSORPTION) || !ACTIVE.containsKey(entity)) {
+            return;
+        }
+        float other = Math.max(entity.getAbsorptionAmount() - amount(entity), 4 * (1 + effect.getAmplifier()));
+        STARTED.merge(entity, other, Math::max);
     }
 
     /** Clamps a loaded player's absorption to its maximum: the overheal's modifier and its tracking are not saved. */
