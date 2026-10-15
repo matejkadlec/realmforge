@@ -11,12 +11,17 @@ import io.github.matejkadlec.realmforge.spell.CombatState.Cast;
 import io.github.matejkadlec.realmforge.testing.RoundTrip;
 import java.util.Map;
 import java.util.Optional;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import org.junit.jupiter.api.Test;
 
 class CombatStateTest {
-    private static final Identifier FIREBOLT = Realmforge.id("firebolt");
-    private static final Identifier BLINK = Realmforge.id("blink");
+    private static final ResourceKey<Spell> FIREBOLT =
+            ResourceKey.create(SpellRegistries.SPELL, Realmforge.id("firebolt"));
+    private static final ResourceKey<Spell> BLINK = ResourceKey.create(SpellRegistries.SPELL, Realmforge.id("blink"));
+    private static final ResourceKey<ResourceType> MANA =
+            ResourceKey.create(SpellRegistries.RESOURCE_TYPE, Realmforge.id("mana"));
+    private static final ResourceKey<ResourceType> RAGE =
+            ResourceKey.create(SpellRegistries.RESOURCE_TYPE, Realmforge.id("rage"));
     private static final Cast CAST = new Cast(FIREBOLT, 12_000L, 30);
 
     @Test
@@ -45,16 +50,17 @@ class CombatStateTest {
 
     @Test
     void savedShapeReads() {
-        CombatState read = RoundTrip.parseSnbt(CombatState.CODEC,
-                "{resource: 40.5f, cooldowns: {\"realmforge:blink\": 300L}, global_cooldown_end: 120L}").getOrThrow();
-        assertEquals(40.5F, read.resource());
+        CombatState read = RoundTrip.parseSnbt(CombatState.CODEC, "{resources: {\"realmforge:mana\": 40.5f}, "
+                + "cooldowns: {\"realmforge:blink\": 300L}, global_cooldown_end: 120L}").getOrThrow();
+        assertEquals(Map.of(MANA, 40.5F), read.resources());
         assertEquals(Map.of(BLINK, 300L), read.cooldowns());
         assertEquals(120L, read.globalCooldownEnd());
     }
 
     @Test
     void invalidSavesAreRefused() {
-        assertTrue(RoundTrip.parseSnbt(CombatState.CODEC, "{resource: -1.0f}").isError(), "negative resource");
+        assertTrue(RoundTrip.parseSnbt(CombatState.CODEC, "{resources: {\"realmforge:mana\": -1.0f}}").isError(),
+                "negative resource");
         assertTrue(RoundTrip.parseSnbt(CombatState.CODEC, "{cooldowns: {\"realmforge:blink\": -5L}}").isError(),
                 "a cooldown ending before time began");
         assertTrue(RoundTrip.parseSnbt(CombatState.CODEC, "{global_cooldown_end: -1L}").isError(), "negative GCD");
@@ -67,6 +73,34 @@ class CombatStateTest {
         assertTrue(state.isOnCooldown(BLINK, 299L));
         assertFalse(state.isOnCooldown(BLINK, 300L), "the cooldown is over at its end time");
         assertFalse(state.isOnCooldown(FIREBOLT, 0L), "a spell never cast has no cooldown");
+    }
+
+    @Test
+    void theGlobalCooldownRunsUntilItsEndTime() {
+        CombatState state = new CombatState();
+        assertFalse(state.isOnGlobalCooldown(0L), "it never ran");
+        state.setGlobalCooldownEnd(120L);
+        assertTrue(state.isOnGlobalCooldown(119L));
+        assertFalse(state.isOnGlobalCooldown(120L));
+    }
+
+    @Test
+    void clearingCooldownsEndsTheGlobalOneToo() {
+        CombatState state = sample();
+        state.clearCooldowns();
+        assertEquals(Map.of(), state.cooldowns());
+        assertEquals(0L, state.globalCooldownEnd());
+    }
+
+    @Test
+    void eachResourceTypeHasItsOwnPool() {
+        CombatState state = new CombatState();
+        assertFalse(state.hasResource(MANA), "no pool until one is filled");
+        assertEquals(0.0F, state.resource(MANA), "a missing pool reads as empty");
+        state.setResource(MANA, 80.0F);
+        state.setResource(RAGE, 0.0F);
+        assertTrue(state.hasResource(RAGE), "an empty pool is still a pool");
+        assertEquals(Map.of(MANA, 80.0F, RAGE, 0.0F), state.resources());
     }
 
     @Test
@@ -91,20 +125,21 @@ class CombatStateTest {
     @Test
     void invalidValuesAreRefused() {
         CombatState state = new CombatState();
-        assertThrows(IllegalArgumentException.class, () -> state.setResource(-0.5F));
-        assertThrows(IllegalArgumentException.class, () -> state.setResource(Float.NaN));
-        assertThrows(IllegalArgumentException.class, () -> state.setResource(Float.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class, () -> state.setResource(MANA, -0.5F));
+        assertThrows(IllegalArgumentException.class, () -> state.setResource(MANA, Float.NaN));
+        assertThrows(IllegalArgumentException.class, () -> state.setResource(MANA, Float.POSITIVE_INFINITY));
         assertThrows(IllegalArgumentException.class, () -> state.setCooldownEnd(BLINK, -1L));
         assertThrows(IllegalArgumentException.class, () -> state.setGlobalCooldownEnd(-1L));
         assertThrows(IllegalArgumentException.class, () -> new Cast(FIREBOLT, 0L, 0));
         assertThrows(IllegalArgumentException.class, () -> new Cast(FIREBOLT, -1L, 10));
     }
 
-    /** {@code cooldowns()} is a snapshot: changing it cannot bypass the checks or the sync. */
+    /** {@code cooldowns()} and {@code resources()} are snapshots: changing them bypasses neither checks nor sync. */
     @Test
-    void cooldownsAreReadOnly() {
+    void cooldownsAndPoolsAreReadOnly() {
         CombatState state = sample();
         assertThrows(UnsupportedOperationException.class, () -> state.cooldowns().put(BLINK, 1L));
+        assertThrows(UnsupportedOperationException.class, () -> state.resources().put(RAGE, 1.0F));
     }
 
     /** Each holder gets its own fresh state: the default supplier must never hand out a shared instance. */
@@ -112,13 +147,14 @@ class CombatStateTest {
     void freshStatesAreIndependent() {
         CombatState first = new CombatState();
         CombatState second = new CombatState();
-        first.setResource(10.0F);
+        first.setResource(MANA, 10.0F);
         assertNotEquals(first, second);
     }
 
     private static CombatState sample() {
         CombatState state = new CombatState();
-        state.setResource(73.25F);
+        state.setResource(MANA, 73.25F);
+        state.setResource(RAGE, 12.0F);
         state.setCooldownEnd(BLINK, 9_000L);
         state.setCooldownEnd(FIREBOLT, 12_100L);
         state.setGlobalCooldownEnd(12_030L);

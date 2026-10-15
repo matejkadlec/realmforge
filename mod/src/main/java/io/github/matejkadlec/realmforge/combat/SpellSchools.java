@@ -37,8 +37,20 @@ public final class SpellSchools {
      */
     public static DamageSource damage(RegistryAccess registries, ResourceKey<SpellSchool> school,
             @Nullable Entity direct, @Nullable Entity causing) {
+        return new DamageSource(damageType(registries, school), direct, causing);
+    }
+
+    /**
+     * A damage source of the school's type, as {@link #damage(RegistryAccess, ResourceKey, Entity, Entity)}, that
+     * crits by {@code crit}: a spell's crit data (architecture 11.1).
+     */
+    public static SchoolDamageSource damage(RegistryAccess registries, ResourceKey<SpellSchool> school,
+            @Nullable Entity direct, @Nullable Entity causing, CritRule crit) {
+        return new SchoolDamageSource(damageType(registries, school), direct, causing, crit);
+    }
+
+    private static Holder<DamageType> damageType(RegistryAccess registries, ResourceKey<SpellSchool> school) {
         SpellSchool value = registries.lookupOrThrow(CombatRegistries.SPELL_SCHOOL).getValueOrThrow(school);
-        Holder<DamageType> type = registries.lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(value.damageType());
-        return new DamageSource(type, direct, causing);
+        return registries.lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(value.damageType());
     }
 }

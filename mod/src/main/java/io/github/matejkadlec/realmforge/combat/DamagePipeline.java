@@ -35,8 +35,9 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *   damage, instead of vanilla's jump crit; vanilla still plays the crit sound and particles, and a crit no longer
  *   stops a sword's sweep (vanilla's jump crits never met one on the ground).</li>
  *   <li>{@code LivingIncomingDamageEvent}: a dodge cancels the hit (melee, projectiles and physical school hits; never
- *   magic, explosions or the world). A school hit gets spell power (magic), the school's power, a crit roll and the
- *   defender's resistance (spell resistance added for magic). Our armor formula replaces vanilla's through the armor
+ *   magic, explosions or the world). A school hit gets spell power (magic), the school's power, a crit roll (by the
+ *   spell's {@link CritRule} when a {@link SchoolDamageSource} brings one) and the defender's resistance (spell
+ *   resistance added for magic). Our armor formula replaces vanilla's through the armor
  *   reduction, with the attacker's armor pierce, except for damage in {@code #minecraft:bypasses_armor}. The
  *   defender's magic shield joins the absorption reduction ({@link MagicShields}).</li>
  *   <li>Hurt cooldown: a school hit lands through it ({@code #minecraft:bypasses_cooldown}) and leaves the defender's
@@ -230,7 +231,7 @@ public final class DamagePipeline {
         double resistance = DamageCalculator.resistance(schoolResistance,
                 stat(defender, GeneratedStats.SPELL_RESISTANCE), school.magic());
         DamageCalculator.SchoolHit hit = DamageCalculator.schoolHit(event.getAmount(), school.magic(), attacker,
-                resistance, level.getRandom());
+                resistance, SchoolDamageSource.critOf(source), level.getRandom());
         event.setAmount((float) hit.damage());
         // Keep the defender's window: the hit sets the invulnerable time to this (vanilla refuses 0, and 1 opens no
         // window), and Post restores the lastHurt vanilla overwrites.
