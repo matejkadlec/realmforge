@@ -97,6 +97,12 @@ ALLOWED_ERRORS: dict[str, tuple[tuple[str, str], ...]] = {
             " net.minecraft.server.Main), which a cloud session's container cannot resolve; the key only checks"
             " players' profile and chat signatures, and a boot has no players",
         ),
+        (
+            r"^com\.mojang\.authlib\.minecraft\.client\.MinecraftClient: Got an error with a html body connecting to"
+            r" https://api\.minecraftservices\.com/publickeys:",
+            "the same key fetch when Mojang's service answers with an error page instead of the keys (a CI run of"
+            " 2026-10-15); the server goes on without the key as above",
+        ),
     ),
     "client": (
         (
