@@ -2,6 +2,8 @@ package io.github.matejkadlec.realmforge.qa.gametest;
 
 import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.dungeon.DungeonAttachments;
+import io.github.matejkadlec.realmforge.dungeon.DungeonRegistries;
+import io.github.matejkadlec.realmforge.dungeon.DungeonType;
 import io.github.matejkadlec.realmforge.dungeon.instance.DataMarker;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceLayout;
@@ -9,10 +11,13 @@ import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
 import io.github.matejkadlec.realmforge.dungeon.instance.Plot;
 import io.github.matejkadlec.realmforge.dungeon.instance.PlotState;
 import io.github.matejkadlec.realmforge.dungeon.instance.RoomPlacement;
+import io.github.matejkadlec.realmforge.dungeon.plan.DungeonRoom;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.instance.InstanceBench;
 import io.github.matejkadlec.realmforge.qa.instance.SpikeLayouts;
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -315,6 +320,39 @@ public final class InstanceGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * W4b: a reload asks for the room templates from inside its server task and empties the structure manager's cache
+     * right after ({@code MinecraftServer#reloadResources}), so the templates must load once that task has finished,
+     * not at once, when the emptied cache would throw them away. Runs what the reload runs in a server task of its
+     * own, without reloading the server under the other tests.
+     */
+    @QaGameTest(timeoutTicks = TIMEOUT)
+    public static void roomTemplatesLoadAgainAfterAReload(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        StructureTemplateManager templates = server.getStructureManager();
+        Map<Identifier, ?> cache = templateCache(templates);
+        DungeonType type = server.registryAccess().lookupOrThrow(DungeonRegistries.DUNGEON_TYPE)
+                .getValue(Identifier.parse("realmforge:test_dungeon"));
+        helper.assertTrue(type != null, "realmforge:test_dungeon is not loaded");
+        List<Identifier> rooms = type.rooms().stream().map(DungeonRoom::template).distinct().toList();
+        // {ran, loaded inside the task}
+        boolean[] task = {false, false};
+        server.schedule(server.wrapRunnable(() -> {
+            templates.onResourceManagerReload(server.getResourceManager());
+            InstanceManager.preloadAfterReload(server);
+            task[1] = rooms.stream().anyMatch(cache::containsKey);
+            task[0] = true;
+        }));
+
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(task[0], "the reload's task has not run yet"))
+                .thenExecute(() -> helper.assertFalse(task[1],
+                        "the templates loaded inside the reload's task, where its emptied cache would lose them"))
+                .thenWaitUntil(() -> helper.assertTrue(rooms.stream().allMatch(cache::containsKey),
+                        "the room templates were loaded again after the task"))
+                .thenSucceed();
+    }
+
     /** The bench's median takes the middle sample, or the mean of the two middle ones for an even count. */
     @QaGameTest
     public static void benchMedianAveragesTheTwoMiddleSamples(GameTestHelper helper) {
@@ -330,6 +368,18 @@ public final class InstanceGameTests {
         helper.assertFalse(InstanceBench.sampled(41, 41), "the tick that ran the command");
         helper.assertTrue(InstanceBench.sampled(42, 41), "the next tick");
         helper.succeed();
+    }
+
+    /** The structure manager's cache of loaded templates (Minecraft ships unobfuscated, so the name is stable). */
+    @SuppressWarnings("unchecked")
+    private static Map<Identifier, ?> templateCache(StructureTemplateManager templates) {
+        try {
+            Field field = StructureTemplateManager.class.getDeclaredField("structureRepository");
+            field.setAccessible(true);
+            return (Map<Identifier, ?>) field.get(templates);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("cannot read the structure manager's template cache", e);
+        }
     }
 
     private static InstanceManager manager(GameTestHelper helper) {

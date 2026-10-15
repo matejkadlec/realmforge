@@ -127,8 +127,8 @@ public final class InstanceManager extends SavedData {
 
     /**
      * Loads the room templates of every dungeon type, so no run waits for one to load and upgrade from its data
-     * version (spike 3: up to 54 ms for a room). Called when the server starts and after a reload, which empties the
-     * structure manager's cache.
+     * version (spike 3: up to 54 ms for a room). Called when the server starts, and after a reload, which empties the
+     * structure manager's cache ({@link #preloadAfterReload}).
      */
     public static void preloadTemplates(MinecraftServer server) {
         long start = System.nanoTime();
@@ -146,6 +146,15 @@ public final class InstanceManager extends SavedData {
         }
         LOGGER.info("Loaded the {} room templates of {} dungeon types in {} ms", templates.size(), types,
                 (System.nanoTime() - start) / 1_000_000);
+    }
+
+    /**
+     * Loads the room templates again after a reload. The reload asks for this from inside its server task, before it
+     * empties the structure manager's cache ({@code MinecraftServer#reloadResources} posts the sync event first), so
+     * the loading is queued behind that task; outside a server task it runs at once.
+     */
+    public static void preloadAfterReload(MinecraftServer server) {
+        server.execute(() -> preloadTemplates(server));
     }
 
     // ---- Queries ----

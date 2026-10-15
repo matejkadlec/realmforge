@@ -34,12 +34,13 @@ public final class DungeonFeature {
                 }
             }
         });
-        // Room templates load before any run needs them; a reload empties the structure manager's cache.
+        // Room templates load before any run needs them; a reload empties the structure manager's cache after its sync
+        // event (no player: a reload, not a login), so the templates load again once the reload has finished.
         NeoForge.EVENT_BUS.addListener(ServerStartedEvent.class,
                 event -> InstanceManager.preloadTemplates(event.getServer()));
         NeoForge.EVENT_BUS.addListener(OnDatapackSyncEvent.class, event -> {
             if (event.getPlayer() == null) {
-                InstanceManager.preloadTemplates(event.getPlayerList().getServer());
+                InstanceManager.preloadAfterReload(event.getPlayerList().getServer());
             }
         });
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class,

@@ -1390,7 +1390,9 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   until W4d's portal; `/qa instance enter` builds the spike test rooms in a row.
 - **Room templates load when the server starts** and after a reload, which empties the structure manager's cache
   (`ServerStartedEvent`, `OnDatapackSyncEvent` without a player): every room of every dungeon type, so no run waits
-  for a template to load and upgrade from its data version (up to 54 ms each in spike 3).
+  for a template to load and upgrade from its data version (up to 54 ms each in spike 3). A reload posts its sync
+  event inside its server task before it empties the cache (`MinecraftServer#reloadResources`), so that loading is
+  queued behind the task (`InstanceManager#preloadAfterReload`).
 - **Building over ticks:** placing a room and clearing a box are cut into units of one chunk column each
   (`PlotWork`; placing uses `StructurePlaceSettings#setBoundingBox`, known shapes and update flag 2 like structure
   blocks, and `JigsawReplacementProcessor`, so every connector becomes its final state as in vanilla's jigsaw
