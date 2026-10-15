@@ -45,6 +45,9 @@ dependencies {
 
 tasks.named('test', Test) {
     useJUnitPlatform()
+    // Tests that check every generated file of a kind list them here (DungeonPlannerTest: every dungeon type). The
+    // folder is a resource folder of the main source set, so its files are already inputs of this task.
+    systemProperty 'realmforge.generatedResources', file('src/generated/resources').absolutePath
 }
 
 // Expands ${...} properties in src/main/templates (neoforge.mods.toml).

@@ -13,9 +13,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
@@ -34,8 +37,8 @@ import org.junit.jupiter.api.Test;
 class DungeonPlannerTest {
     private static final Identifier DOOR = Identifier.parse("realmforge:door");
     private static final Identifier SHAFT = Identifier.parse("realmforge:shaft");
-    /** Dungeon types {@code rf gen} writes from {@code content/dungeons/}. */
-    private static final List<String> GENERATED_TYPES = List.of("test_dungeon");
+    /** Where {@code rf gen} writes the dungeon types, inside the folder Gradle names (mod/build.gradle). */
+    private static final String DUNGEON_TYPES = "data/realmforge/realmforge/dungeon_type";
     private static final int SEEDS = 3000;
 
     private static final DungeonRoom ENTRANCE =
@@ -102,10 +105,15 @@ class DungeonPlannerTest {
         fuzz(FLAT, rules(1, 3, 0, 0, 1, 1, RoomRole.TREASURE));
     }
 
-    /** Done when of W4a: JUnit fuzzes the planner on the generated dungeon types. */
+    /**
+     * Done when of W4a: JUnit fuzzes the planner on the generated dungeon types, every one {@code rf gen} writes, so a
+     * new type in {@code content/dungeons/} is fuzzed without an edit here (RLM-183).
+     */
     @Test
     void generatedDungeonTypesKeepEveryRule() throws IOException {
-        for (String id : GENERATED_TYPES) {
+        List<String> ids = generatedTypes();
+        assertFalse(ids.isEmpty(), "no dungeon type in " + DUNGEON_TYPES + "; run `uv run rf gen`");
+        for (String id : ids) {
             DungeonType type = generated(id);
             BoundingBox limits = PlotGrid.limits();
             for (long seed = 0; seed < SEEDS; seed++) {
@@ -216,8 +224,25 @@ class DungeonPlannerTest {
         return DungeonPlanner.plan(rooms, rules, seed, PlotGrid.limits());
     }
 
+    /** The ids of the dungeon types {@code rf gen} wrote, in name order. */
+    static List<String> generatedTypes() throws IOException {
+        String root = System.getProperty("realmforge.generatedResources");
+        assertTrue(root != null, "realmforge.generatedResources is not set; run the tests through Gradle");
+        Path folder = Path.of(root).resolve(DUNGEON_TYPES);
+        if (!Files.isDirectory(folder)) {
+            return List.of();
+        }
+        try (Stream<Path> files = Files.list(folder)) {
+            return files.map(file -> file.getFileName().toString())
+                    .filter(name -> name.endsWith(".json"))
+                    .map(name -> name.substring(0, name.length() - ".json".length()))
+                    .sorted()
+                    .toList();
+        }
+    }
+
     static DungeonType generated(String id) throws IOException {
-        String path = "/data/realmforge/realmforge/dungeon_type/" + id + ".json";
+        String path = "/" + DUNGEON_TYPES + "/" + id + ".json";
         try (InputStream stream = DungeonPlannerTest.class.getResourceAsStream(path)) {
             assertTrue(stream != null, path + " is missing; run `uv run rf gen`");
             return DungeonType.CODEC.parse(JsonOps.INSTANCE,
