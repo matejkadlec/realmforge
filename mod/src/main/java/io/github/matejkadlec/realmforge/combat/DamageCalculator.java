@@ -10,7 +10,9 @@ import net.minecraft.util.RandomSource;
  *
  * <p>The formulas, kept short on purpose (research BM-20):
  * <ul>
- *   <li><b>Crit:</b> a roll against the attacker's crit chance; a crit multiplies the damage by 1 + crit damage.</li>
+ *   <li><b>Crit:</b> a roll against the attacker's crit chance; a crit multiplies the damage by 1 + crit damage. A
+ *   spell's hit or heal crits by its {@link CritRule}: it may not crit at all, add to the chance, or bring its own
+ *   multiplier (Matěj, 2026-10-15).</li>
  *   <li><b>Dodge:</b> a roll against the defender's dodge chance; a dodged hit deals nothing.</li>
  *   <li><b>School hit:</b> damage × (1 + spell power, for magic only, + the school's power), then the crit roll, then
  *   × (1 − the defender's resistance): the resistance to the school, plus spell resistance for a magic school, at
@@ -46,6 +48,12 @@ public final class DamageCalculator {
     public record SchoolHit(double damage, boolean crit) {
     }
 
+    /** A crit roll's outcome: whether it crit, and what the hit or heal is multiplied by (1 without a crit). */
+    public record Crit(boolean crit, double multiplier) {
+        /** No crit: × 1. */
+        public static final Crit NONE = new Crit(false, 1);
+    }
+
     /** Whether a hit is dodged: a roll against the defender's dodge chance. */
     public static boolean dodges(double dodgeChance, RandomSource random) {
         return rolls(dodgeChance, random);
@@ -62,18 +70,35 @@ public final class DamageCalculator {
     }
 
     /**
+     * A crit roll by {@code rule} for a caster with {@code critChance} and {@code critDamage}: a rule that cannot crit
+     * never rolls; otherwise the chance is the caster's plus the rule's bonus, and a crit multiplies by the rule's own
+     * multiplier or 1 + crit damage.
+     */
+    public static Crit crit(CritRule rule, double critChance, double critDamage, RandomSource random) {
+        return rule.canCrit() && crits(rule.chance(critChance), random)
+                ? new Crit(true, rule.multiplier(critDamage))
+                : Crit.NONE;
+    }
+
+    /**
      * A school hit: {@code damage} × (1 + spell power, for a magic school only, + the school's power), rolled for a
-     * crit, then reduced by the defender's resistance to the school. Never negative.
+     * crit by {@link CritRule#DEFAULT}, then reduced by the defender's resistance to the school. Never negative.
      */
     public static SchoolHit schoolHit(double damage, boolean magic, Attacker attacker, double resistance,
             RandomSource random) {
+        return schoolHit(damage, magic, attacker, resistance, CritRule.DEFAULT, random);
+    }
+
+    /**
+     * A school hit as {@link #schoolHit(double, boolean, Attacker, double, RandomSource)}, rolled for a crit by
+     * {@code rule}: a spell's crit data.
+     */
+    public static SchoolHit schoolHit(double damage, boolean magic, Attacker attacker, double resistance,
+            CritRule rule, RandomSource random) {
         double bonus = (magic ? attacker.spellPower() : 0) + attacker.schoolPower();
-        double dealt = damage * Math.max(0, 1 + bonus);
-        boolean crit = crits(attacker.critChance(), random);
-        if (crit) {
-            dealt *= critMultiplier(attacker.critDamage());
-        }
-        return new SchoolHit(afterResistance(dealt, resistance), crit);
+        Crit crit = crit(rule, attacker.critChance(), attacker.critDamage(), random);
+        double dealt = damage * Math.max(0, 1 + bonus) * crit.multiplier();
+        return new SchoolHit(afterResistance(dealt, resistance), crit.crit());
     }
 
     /**

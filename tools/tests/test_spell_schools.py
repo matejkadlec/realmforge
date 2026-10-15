@@ -207,6 +207,10 @@ def test_every_school_bypasses_the_cooldown_and_magic_bypasses_armor(repo: RepoP
 def test_no_magic_school_writes_no_armor_tag(repo: RepoPaths) -> None:
     for name in ("arcane", "fire", "frost"):
         (repo.content / "spell_schools" / f"{name}.yaml").unlink()
+    # The magic spells name these schools, so they go too.
+    for file in (repo.content / "spells").glob("*.yaml"):
+        if "realmforge:physical" not in file.read_text(encoding="utf-8"):
+            file.unlink()
     files = generate(repo)
     assert f"{TAGS}/bypasses_cooldown.json" in files
     assert f"{TAGS}/bypasses_armor.json" not in files
@@ -242,8 +246,10 @@ def test_keys_and_expectations_cover_every_school(repo: RepoPaths) -> None:
 
 
 def test_no_schools_still_compile(repo: RepoPaths) -> None:
-    for file in (repo.content / "spell_schools").glob("*.yaml"):
-        file.unlink()
+    # Spells name their school, so they go too.
+    for folder in ("spell_schools", "spells"):
+        for file in (repo.content / folder).glob("*.yaml"):
+            file.unlink()
     files = generate(repo)
     assert "ALL = List.of();" in files[KEYS_JAVA].decode()
     assert "SPELL_SCHOOLS = List.of();" in files[EXPECTATIONS].decode()

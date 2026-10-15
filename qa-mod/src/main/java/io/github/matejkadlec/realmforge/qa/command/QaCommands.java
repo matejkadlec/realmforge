@@ -7,8 +7,9 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
  * The {@code /qa} developer commands (operators only): {@code /qa instance} for instances, {@code /qa dungeon} for
  * dungeon types and their layouts, {@code /qa state} for the player state attachments, {@code /qa stats} and
  * {@code /qa level} for stats and levels, {@code /qa mob} for a mob's level and scaling, {@code /qa character} for
- * race and class, {@code /qa dummy} for the training dummy. Brigadier merges every registration of the {@code /qa}
- * literal, so other QA tools register their own subtree under it (for example {@code /qa cast}).
+ * race and class, {@code /qa dummy} for the training dummy, {@code /qa spell} for spells. Brigadier merges every
+ * registration of the {@code /qa} literal, so other QA tools register their own subtree under it (for example
+ * {@code /qa cast}).
  */
 public final class QaCommands {
     private QaCommands() {
@@ -24,6 +25,7 @@ public final class QaCommands {
                 .then(LevelCommands.build())
                 .then(MobCommands.build())
                 .then(CharacterCommands.build())
-                .then(DummyCommands.build()));
+                .then(DummyCommands.build())
+                .then(SpellCommands.build()));
     }
 }

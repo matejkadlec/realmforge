@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3a-1): a fire bolt at an enemy that costs mana, has its own cooldown and three levels. Not gameplay
+# content; the GameTests in the QA mod cast it.
+id: test_bolt
+school: realmforge:fire
+scales_with: spell_power
+targeting: {type: realmforge:enemy, range: 16}
+cast: {type: instant}
+cost: {resource: realmforge:mana, amount: 10, per_level: 5}
+cooldown_seconds: 3
+max_level: 3
+effects:
+  - {type: realmforge:damage, amount: 6, per_level: 2}

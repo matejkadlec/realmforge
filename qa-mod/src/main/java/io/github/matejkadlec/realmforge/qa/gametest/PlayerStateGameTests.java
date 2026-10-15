@@ -9,7 +9,10 @@ import io.github.matejkadlec.realmforge.qa.command.StateCommands;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedChapterExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectations;
 import io.github.matejkadlec.realmforge.spell.CombatState;
+import io.github.matejkadlec.realmforge.spell.ResourceTypes;
+import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.SpellAttachments;
+import io.github.matejkadlec.realmforge.spell.SpellRegistries;
 import io.github.matejkadlec.realmforge.spell.Spellbook;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
@@ -22,7 +25,6 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -44,8 +46,10 @@ import net.neoforged.neoforge.event.EventHooks;
  * server player of {@code GameTestHelper#makeMockServerPlayerInLevel} with a chosen profile.
  */
 public final class PlayerStateGameTests {
-    private static final Identifier FIREBOLT = Realmforge.id("firebolt");
-    private static final Identifier FROSTBOLT = Realmforge.id("frostbolt");
+    private static final ResourceKey<Spell> FIREBOLT =
+            ResourceKey.create(SpellRegistries.SPELL, Realmforge.id("firebolt"));
+    private static final ResourceKey<Spell> FROSTBOLT =
+            ResourceKey.create(SpellRegistries.SPELL, Realmforge.id("frostbolt"));
 
     /** A mob's level. */
     private static final EntityLevel LEVEL = new EntityLevel(14);
@@ -181,13 +185,14 @@ public final class PlayerStateGameTests {
         helper.assertValueEqual(entity.getData(CharacterAttachments.CHARACTER), CHARACTER, "character " + when);
         helper.assertValueEqual(entity.getData(SpellAttachments.SPELLBOOK), SPELLBOOK, "spellbook " + when);
         helper.assertValueEqual(entity.getData(SpellAttachments.COMBAT), combat(false),
-                "combat state (resource and cooldowns, no cast) " + when);
+                "combat state (resource pools and cooldowns, no cast) " + when);
         helper.assertValueEqual(entity.getData(TalentAttachments.TALENTS), TALENTS, "talents " + when);
     }
 
     private static CombatState combat(boolean casting) {
         CombatState state = new CombatState();
-        state.setResource(55.5F);
+        state.setResource(ResourceTypes.MANA.getKey(), 55.5F);
+        state.setResource(ResourceTypes.RAGE.getKey(), 12.0F);
         state.setCooldownEnd(FROSTBOLT, 4_000L);
         state.setGlobalCooldownEnd(3_020L);
         if (casting) {

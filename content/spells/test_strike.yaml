@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3a-1): a physical ability that costs rage, adds the caster's attack damage, never crits and is off the
+# global cooldown. Not gameplay content; the GameTests in the QA mod cast it.
+id: test_strike
+school: realmforge:physical
+scales_with: attack_damage
+targeting: {type: realmforge:enemy, range: 4}
+cast: {type: instant}
+cost: {resource: realmforge:rage, amount: 15}
+global_cooldown_seconds: 0
+crit: {can_crit: false}
+effects:
+  - {type: realmforge:damage, amount: 2, attack_damage_percent: 100}

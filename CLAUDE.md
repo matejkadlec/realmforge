@@ -50,8 +50,10 @@ modpack adds third-party QoL, performance and library mods.
   hostile mobs get levels from the dimension rules with health, damage and armor scaled by curves (W1). A new player
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits.
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
-  bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). Spells come
-  next.
+  bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell
+  engine has begun (C3a-1): spells as data in `content/spells/`, cast instantly by players and mobs through one
+  `SpellCaster` (reached through `/qa spell` until the spell bar exists), with mana pools, cooldowns and spell crits.
+  Cast times, spell entities, procs and the spell bar come next (C3a-2 to C3a-4, C3b).
 
 ## Pinned versions
 

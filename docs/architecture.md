@@ -295,7 +295,7 @@ How features cooperate without breaking the direction:
 | `realmforge:race` | `content/races/` | playable race: base modifiers, innate spells, allowed classes | yes | M1 |
 | `realmforge:class` | `content/classes/` | class: resource type, stat growth, spells by level, talent trees, starting kit | yes | M1 |
 | `realmforge:spell_school` | `content/spell_schools/` | school (owned by `combat`): kind (physical or magic), colour, its damage type, and the stats that are its power and resistance (attributes from `content/stats/`, static registrations, so a new school's stats need a game restart) | yes | M1 |
-| `realmforge:spell` | `content/spells/` | spell for players or NPCs: school, targeting, cost, cast, cooldown, typed effects, scaling | yes | M1 |
+| `realmforge:spell` | `content/spells/` | spell for players or NPCs: school, what it scales with, targeting, cast, cost, cooldowns, crit rules, typed effects with values per spell level (C3a-1; names and texts come with C3b) | yes | M1 |
 | `realmforge:talent_tree` | `content/talents/` | WoW-style tree: nodes on a grid, ranks, prerequisites, typed effects per rank | yes | M1 |
 | `realmforge:stat_rule` | `content/stat_rules/` | what a primary stat gives: per-point modifiers, milestone bonuses | yes | M1 |
 | `realmforge:curve` | `content/curves/` | named table of points (level → value), linearly interpolated: XP per level, mob scaling, item budgets | yes | M1 |
@@ -319,10 +319,10 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 
 | Registry | Types (first set) | Used by |
 | --- | --- | --- |
-| `realmforge:spell_effect_type` | damage, heal, apply_effect, remove_effect, projectile, area, teleport, dash, knockback; summon later | spells, so also boss abilities and procs |
-| `realmforge:targeting_type` | self, enemy, ally, ground point, direction; for NPCs current target, random player, farthest player, arena point | spells, boss abilities |
+| `realmforge:spell_effect_type` | damage, heal (C3a-1, `spell/SpellEffectTypes`); apply_effect, remove_effect, projectile, area, teleport, dash, knockback (C3a-3); summon later | spells, so also boss abilities and procs |
+| `realmforge:targeting_type` | self, enemy, ally (C3a-1, `spell/TargetingTypes`); ground point, direction (C3a-3); for NPCs current target, random player, farthest player (C3a-4), arena point (W5) | spells, boss abilities |
 | `realmforge:talent_effect_type` | attribute_modifier, spell_modifier, grant_spell, proc | talents; later glyphs and set bonuses |
-| `realmforge:resource_type` | mana, rage (C1: ids and names, `spell/ResourceTypes`; C3a gives them behaviour) | classes |
+| `realmforge:resource_type` | mana, rage (`spell/ResourceTypes`; C1 gave them ids and names, C3a-1 their pools, C3a-4 rage's gain and decay) | classes, spell costs |
 | `realmforge:phase_trigger_type` | health_below, time_in_phase, adds_defeated | bosses |
 | `realmforge:dungeon_ending_type` | boss_lair, treasury; later puzzle, wave_arena, escape, mounted_run, exploration | dungeon types |
 | `realmforge:requirement_type` | level_at_least, chapter_completed, class_is, has_advancement | unlocks: dimensions, dungeons, items, talents |
@@ -408,35 +408,33 @@ instance. After `rf gen` changes files in `pack/`, run `packwiz refresh` (CI che
 ### 6.4 Example: the life of a spell
 
 ```yaml
-# content/spells/firebolt.yaml (sketch; names are examples, the pydantic model is the authority once written)
+# content/spells/firebolt.yaml (the format of C3a-1, schema/spell.py; C3a-2 adds cast times and channels, C3a-3
+# projectiles and status effects, C3b the name and description with their {damage} placeholders)
 id: firebolt
-name: {en_us: Firebolt}
-description: {en_us: "Hurls a bolt of fire that deals {damage} fire damage."}
 school: realmforge:fire
-targeting: {type: enemy, range: 24}
-cast: {type: cast_time, seconds: 1.5}
+scales_with: spell_power                # magic; a physical ability scales with attack_damage
+targeting: {type: realmforge:enemy, range: 24}
+cast: {type: instant}
+cost: {resource: realmforge:mana, amount: 20, per_level: 2}
 cooldown_seconds: 0
-cost: {resource: realmforge:mana, amount: 20}
 max_level: 5
+crit: {multiplier_percent: 200}         # optional: every spell crits by default, for 1 + crit damage
 effects:
-  - type: realmforge:projectile
-    speed: 1.2
-    on_hit:
-      - {type: realmforge:damage, base: 12, per_level: 3, spell_power: 0.8}
-      - {type: realmforge:apply_effect, effect: realmforge:burning, duration_seconds: 4}
+  - {type: realmforge:damage, amount: 12, per_level: 3}
 ```
 
-1. `uv run rf validate` checks the schema, that `realmforge:fire` is a known school, that the effect and every
-   referenced status effect exist, and the semantic rules.
-2. `uv run rf gen` writes `data/realmforge/realmforge/spell/firebolt.json`, the `spell.realmforge.firebolt.*` lang
-   entries and a GameTest expectation.
+1. `uv run rf validate` checks the schema, that `realmforge:fire` is a known school, that the stat it scales with
+   fits the school's kind, and that its effects fit its targeting.
+2. `uv run rf gen` writes `data/realmforge/realmforge/spell/firebolt.json` in game units (ticks, fractions), a
+   `GeneratedSpells` key and a GameTest expectation; with C3b also the `spell.realmforge.firebolt.*` lang entries.
 3. `./gradlew build` packs them into the jar, whose resources act as the mod's built-in data pack.
 4. When a world loads, `Spell.CODEC` decodes the file and resolves its references; NeoForge syncs the registry to
    joining clients.
-5. The player presses a spell key. The client sends `CastSpellPayload`; `SpellCaster` validates it and runs the
-   effects; the damage goes through the combat pipeline; nearby clients get `CastStartedPayload` for the cast bar
-   and animation.
-6. A GameTest casts `firebolt` at a dummy and compares the damage with the expectation.
+5. The player presses a spell key (C3b; until then `/qa spell cast`). The client sends `CastSpellPayload`;
+   `SpellCaster` validates it and runs the effects; the damage goes through the combat pipeline; nearby clients get
+   `CastStartedPayload` for the cast bar and animation (C3a-2).
+6. A GameTest compares the decoded spell with the expectation (`ContentSpellGameTests`), and the spell GameTests
+   cast the test spells at husks and compare the damage (`SpellGameTests`).
 
 ### 6.5 Adding a content type
 
@@ -458,7 +456,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:level` | `stats` | every living entity | the level: derived from XP and the cap for players, set at spawn for mobs, fixed for bosses | the player itself and everyone tracking the entity |
 | `realmforge:character` | `character` | players | race, classes (a list: one in M1, room for dual class), total character XP, cached level cap | the owner and nearby players (small, nothing secret) |
 | `realmforge:spellbook` | `spell` | players | known spells and their levels, spell bar layout | owner |
-| `realmforge:combat` | `spell` | players and mobs that cast | resource (mana, rage), cooldowns, current cast | owner, throttled (players; clients never read a mob's copy) |
+| `realmforge:combat` | `spell` | players and mobs that cast | resource pools (mana, rage), cooldowns, current cast | owner, throttled (players; clients never read a mob's copy) |
 | `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points | owner |
 | `realmforge:dark_vision` | `world` | players | whether Dark Vision is switched on (on by default) | not synced (the effect itself is) |
 | `realmforge:instance` | `dungeon` | players | the run's plot and the return point (spike 3); W4 adds the game mode to restore | not synced |
@@ -500,9 +498,10 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   (`stats/StatsAttachments`, `character/CharacterAttachments`, `spell/SpellAttachments`,
   `talent/TalentAttachments`), registered from its `<Name>Feature`. The values are `stats/EntityLevel`,
   `character/CharacterData`, `spell/Spellbook`, `spell/CombatState` and `talent/TalentAllocation`; owner-only data
-  syncs with `core/Attachments#toOwner`. Spells and talent trees are named by `Identifier` until their registries
-  exist (C3a, C5); races and classes are `ResourceKey`s since C1, which save the same string, so F3's saves stay
-  readable. Leveling (C2, [10.2](#102-leveling)) caches the level cap there for players with a character. Every saved field is optional with a default, so an empty
+  syncs with `core/Attachments#toOwner`. Talent trees are named by `Identifier` until their registry exists (C5);
+  races and classes are `ResourceKey`s since C1, and spells since C3a-1, which save the same string, so F3's saves
+  stay readable. `CombatState` keeps one pool per resource type (`resources`, by the type's id), absent until the
+  type's pool first fills ([11.5](#115-resources-cooldowns-modifiers)). Leveling (C2, [10.2](#102-leveling)) caches the level cap there for players with a character. Every saved field is optional with a default, so an empty
   save reads as the default value.
 - `level` is copied on death, and NeoForge copies the same attachments when a mob converts (a zombie drowns,
   `LivingConversionEvent.Post`), so the converted mob keeps its level, and `mob` gives it that level's scaling
@@ -535,8 +534,9 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   share of max health that healing past it fills as absorption), spell resistance (a share, added to a magic
   school's resistance, the sum at most 75 %), health regeneration (points healed every second) and magic shield (a
   pool of points that takes damage before health). Not working yet: protection pierce and protection pierce %
-  (RLM-159, waiting for his decision on what they pierce); max mana, mana regeneration, cooldown reduction (which
-  replaced haste) and cast time reduction (C3a, RLM-24); and the XP multiplier (100 % by default, C2, RLM-23).
+  (RLM-159, waiting for his decision on what they pierce); cast time reduction (C3a-2, RLM-210); and the XP
+  multiplier (100 % by default, C2, RLM-23). Max mana, mana regeneration and cooldown reduction (which replaced haste)
+  work since C3a-1 ([11.5](#115-resources-cooldowns-modifiers)).
   Healing power is gone: healing spells scale with spell power and their school.
 - **Defined in `content/stats/`** (F4): each stat's kind (primary or secondary) and its range, in points (a
   `RangedAttribute`) or as a share (`max_percent`: NeoForge's `PercentageAttribute`, holding a fraction). `rf gen`
@@ -655,7 +655,9 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
    spells: the spell engine (C3a), abilities and bosses deal school damage with `SpellSchools#damage(registries,
    school, direct, causing)`, and so does vanilla's `/damage <target> <amount> realmforge:fire by <attacker>`. M1 has
    the Warrior's `physical` and the Mage's `fire`, `frost` and `arcane` (D1); the remaining schools come in M3. A
-   spell's own data (level, scaling) reaches the pipeline with C3a, which may subclass the damage source for it.
+   spell's crit rules reach the pipeline in `combat/SchoolDamageSource`, a damage source with a `combat/CritRule`
+   (C3a-1, `SpellSchools#damage(registries, school, direct, causing, crit)`); its level and scaling are already in
+   the amount the spell engine deals ([11.2](#112-casting-server-authoritative)).
 2. **`CriticalHitEvent`**, for a player's melee attack: a full-strength attack crits on the player's crit chance and
    deals 1 + crit damage, instead of vanilla's jump crit (a jump no longer matters). Vanilla still plays its crit
    sound and particles, and a crit keeps a sword's sweep (vanilla's jump crits never happened on the ground).
@@ -664,7 +666,8 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
      attacker; magic, explosions and damage from the world cannot be dodged. Cancelling stops a hit cleanly since
      NeoForge 26.1 (below), and `CombatEvent.Dodge` reports it.
    - **A school hit** gets the attacker side, damage × (1 + spell power, for magic only, + the school's power stat),
-     then the crit roll (crit chance and crit damage, as in melee), then the defender's resistance: × (1 −
+     then the crit roll (crit chance and crit damage, as in melee, or the spell's crit rule: no crit at all, a bonus
+     chance, its own multiplier; Matěj, 2026-10-15), then the defender's resistance: × (1 −
      resistance), through `setAmount`. The resistance is the defender's resistance to the school, plus its spell
      resistance when the school is magic, at most 75 % together (`DamageCalculator.RESISTANCE_CAP`, research BM-18);
      a physical school hit meets no spell resistance. Talents act through those attributes or are already part of
@@ -890,10 +893,20 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
 
 ### 11.1 Model
 
-A `realmforge:spell` entry ([sketch in 6.4](#64-example-the-life-of-a-spell)) has a school, targeting, cast type
-(instant, cast time, channel), cost, cooldown, range, typed effects, a maximum level with per-level scaling (the
-vision prefers spell levels or power over rarities), icon, animation and sound keys, and an `npc_only` flag for
-mob and boss spells.
+A `realmforge:spell` entry ([example in 6.4](#64-example-the-life-of-a-spell), `spell/Spell`) has a school, what it
+scales with, targeting (with the range), cast type (instant since C3a-1; cast time and channel with C3a-2), cost,
+its own cooldown and the global cooldown, crit rules, typed effects, a maximum level with values per level (the
+vision prefers spell levels or power over rarities; research SP-9), and an `npc_only` flag for mob and boss spells.
+Its name, description, icon, animation and sound keys come with the client side (C3b, C6).
+
+- **What it scales with** (Matěj, 2026-10-15): spell power for magic, attack damage for physical abilities (a
+  Warrior's Slam is a weapon move), later summon damage. Off-class stats do nothing for a class's abilities, so the
+  pipeline refuses a spell whose `scales_with` does not fit its school's kind. A magic school's damage gets spell
+  power and the school's power in the damage pipeline ([9.1](#91-damage-pipeline)); its heals get the same factor
+  from the spell engine. A physical ability's damage and heals add their share of the caster's attack damage.
+- **Crits** (Matěj, 2026-10-15): every spell can crit, heals too, on the caster's crit chance for 1 + the caster's
+  crit damage (150 % with the base 50 %), crit damage being shared with melee. A spell's `crit` data may switch
+  crits off, add a bonus chance, or set its own multiplier (`combat/CritRule`); talents (C5) will change all three.
 
 A player knows a spell through their class (by level), race, talents (`grant_spell`) or items (an item component
 lists spells granted while equipped or on use): the vision's "some from the race or class, some from items".
@@ -920,6 +933,18 @@ lists spells granted while equipped or on use): the vision's "some from the race
    own `combat` attachment ([7](#7-player-state)), and their cast bars, the telegraphs players react to, reach
    clients only through the cast payloads.
 
+**In code (C3a-1):** `spell/SpellCaster` casts instant spells for any living caster; a player at the level their
+spellbook knows, a mob at level 1. It refuses a cast, paying nothing and running nothing, with a `spell/CastFailure`
+(research SP-3; C3b turns each into a text), checked in this order: the caster is dead or a spectator, the spell
+does not exist, a player casts an `npc_only` spell or one their spellbook does not know, the spell's own cooldown
+runs, the global cooldown runs and the spell is on it, the targeting finds no valid target (`spell/Targets`: in range
+from the caster's eyes to the target's box, and in vanilla's line of sight), a player lacks the cost. Otherwise the
+cost and the cooldowns apply, then every effect runs on the target with an `EffectContext` (caster, spell, spell
+level, random source; the stat snapshot that effects running after the cast need joins with the spell entities,
+C3a-3, and the proc origin with procs, C3a-4). Allies (`Targets#allied`) are the caster, its team mates and tamed
+pets (vanilla's `isAlliedTo`), and for a player every other player, as M1 has no PvP; everything else is an enemy.
+Mobs pay no cost until C3a-4 decides NPC resources. `/qa spell` drives it until the spell bar exists.
+
 ### 11.3 Spell entities
 
 Registries freeze at startup, so variety lives in data: one generic projectile entity type and one generic area
@@ -940,7 +965,15 @@ type only for genuinely new behaviour.
 ### 11.5 Resources, cooldowns, modifiers
 
 - Resource kinds are Java types (`realmforge:resource_type`: mana regenerates, rage is gained in combat and
-  decays); a class picks one and sets its numbers in data.
+  decays); a class picks one and sets its numbers in data. **In code (C3a-1):** each type says how big a holder's
+  pool is and what it regains every second (`spell/ResourceType`), so `spell/Resources` needs no knowledge of the
+  holder's class: mana's pool is Max Mana big, fills the first time its maximum is above 0 and regains Mana
+  Regeneration every second (Matěj, 2026-10-14: a Mage starts with 100 and 5, from its class modifiers); rage's is
+  100 big and starts empty, its gain and decay coming with C3a-4. A pool keeps its amount while its maximum reads 0
+  (a respawned player before the first stat recompute) and drops to a lowered maximum otherwise.
+- **Cooldowns:** a spell's own cooldown, shortened by Cooldown Reduction (at most 75 %, its stat's cap), and the
+  global cooldown, 1 s by default (research SP-11), which a spell may shorten or switch off and which Cooldown
+  Reduction never touches. Both are stored as the game time they end.
 - Spell modifiers from talents (later glyphs and gear) are collected into a cached per-player view, invalidated
   when talents or gear change, and applied when a cast starts: cast time, cost, cooldown, damage, extra effects.
 
@@ -1674,6 +1707,10 @@ that agents can read. So far:
   hit); vanilla draws no name tag over an entity with a passenger, so the label carries both. The hitter sees each
   hit on the action bar, `/qa dummy reset|remove`. Husks carry our stats in the dev game, so `/attribute @n[type=husk]
   realmforge:dodge_chance base set 0.5` sets a dummy's dodge chance or resistances;
+- `/qa spell learn <spell> [<level>]`, `/qa spell cast <spell> [<target>]`, `/qa spell resource <mana|rage>
+  <amount>`, `/qa spell reset` and `/qa spell show` (C3a-1): teach the executing player a spell, cast it (as a mob
+  with `/execute as`; a refusal names its reason), set a resource pool, end every cooldown, and print the known
+  spells, the pools and the running cooldowns ([11.2](#112-casting-server-authoritative));
 - the combat log, `logs/realmforge-combat.log` in the game directory (`run/client/`, `run/gametest/`, ...): one line
   per hit or dodge that involves a player or a dummy, with the damage type, school, crit, attacker level, the
   original damage, what armor blocked, and the damage dealt and taken from health. A new server starts a new file.

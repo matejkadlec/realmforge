@@ -8,12 +8,12 @@ import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.testing.RoundTrip;
 import java.util.Map;
 import java.util.Optional;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import org.junit.jupiter.api.Test;
 
 class SpellbookTest {
-    private static final Identifier FIREBOLT = Realmforge.id("firebolt");
-    private static final Identifier FROSTBOLT = Realmforge.id("frostbolt");
+    private static final ResourceKey<Spell> FIREBOLT = key("firebolt");
+    private static final ResourceKey<Spell> FROSTBOLT = key("frostbolt");
     private static final Spellbook BOOK = new Spellbook(Map.of(FIREBOLT, 3, FROSTBOLT, 1),
             Map.of(0, FIREBOLT, 11, FROSTBOLT));
 
@@ -64,6 +64,19 @@ class SpellbookTest {
     @Test
     void levelOfAKnownSpell() {
         assertEquals(Optional.of(3), BOOK.level(FIREBOLT));
-        assertEquals(Optional.empty(), BOOK.level(Realmforge.id("unknown")));
+        assertEquals(Optional.empty(), BOOK.level(key("unknown")));
+    }
+
+    @Test
+    void learningASpellSetsItsLevelAndKeepsTheBar() {
+        Spellbook learned = BOOK.withSpell(FIREBOLT, 1).withSpell(key("blink"), 2);
+        assertEquals(Optional.of(1), learned.level(FIREBOLT), "learning again replaces the level");
+        assertEquals(Optional.of(2), learned.level(key("blink")));
+        assertEquals(BOOK.bar(), learned.bar());
+        assertThrows(IllegalArgumentException.class, () -> BOOK.withSpell(FIREBOLT, 0));
+    }
+
+    private static ResourceKey<Spell> key(String path) {
+        return ResourceKey.create(SpellRegistries.SPELL, Realmforge.id(path));
     }
 }
