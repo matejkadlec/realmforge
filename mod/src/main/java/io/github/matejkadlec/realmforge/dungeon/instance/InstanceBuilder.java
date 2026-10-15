@@ -1,7 +1,11 @@
 package io.github.matejkadlec.realmforge.dungeon.instance;
 
+import com.mojang.logging.LogUtils;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
@@ -10,14 +14,21 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.StructureMode;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.templatesystem.BlockIgnoreProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.JigsawReplacementProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.phys.AABB;
+import org.slf4j.Logger;
 
-/** Runs single {@link PlotWork.Unit}s against the instance level: placing room slices and clearing old blocks. */
+/**
+ * Runs single {@link PlotWork.Unit}s against the instance level: placing room slices and clearing old blocks. It also
+ * reads a room's data markers, which it never places.
+ */
 final class InstanceBuilder {
+    private static final Logger LOGGER = LogUtils.getLogger();
     /** Structure blocks and world generation place templates with the same flag. */
     private static final int PLACE_FLAGS = Block.UPDATE_CLIENTS;
     /**
@@ -37,7 +48,7 @@ final class InstanceBuilder {
                 discardEntities(level, discard.area());
                 yield 0;
             }
-            case PlotWork.Clear clear -> clear(level, clear.slice(), plot.keepWhileClearing());
+            case PlotWork.Clear clear -> clear(level, clear.slice());
             case PlotWork.Place place -> {
                 place(level, plot, place);
                 yield 0;
@@ -67,13 +78,39 @@ final class InstanceBuilder {
     }
 
     /**
-     * The settings a room is placed with; its box comes from the same settings. Its jigsaw blocks (connectors) become
-     * their final state, as in vanilla's jigsaw structures.
+     * The settings a room is placed with; its box and its markers come from the same settings. Its jigsaw blocks
+     * (connectors) become their final state, as in vanilla's jigsaw structures, and its data markers are left out, as
+     * vanilla's pool elements leave them out.
      */
     static StructurePlaceSettings settings(RoomPlacement room) {
         // Rooms are built with correct block shapes, so placing skips the neighbour shape pass.
         return new StructurePlaceSettings().setRotation(room.rotation()).setIgnoreEntities(true).setKnownShape(true)
-                .addProcessor(JigsawReplacementProcessor.INSTANCE);
+                .addProcessor(BlockIgnoreProcessor.STRUCTURE_BLOCK).addProcessor(JigsawReplacementProcessor.INSTANCE);
+    }
+
+    /**
+     * The data markers of room {@code index} as it is placed, positions relative to the plot's origin: its structure
+     * blocks in data mode, read the way vanilla's {@code SinglePoolElement#getDataMarkers} reads them. A marker whose
+     * name is unknown is logged and left out; content validation refuses those.
+     */
+    static List<DataMarker> markers(StructureTemplate template, int index, RoomPlacement room) {
+        List<DataMarker> markers = new ArrayList<>();
+        for (StructureTemplate.StructureBlockInfo info
+                : template.filterBlocks(room.offset(), settings(room), Blocks.STRUCTURE_BLOCK)) {
+            CompoundTag data = info.nbt();
+            if (data == null || data.read("mode", StructureMode.LEGACY_CODEC).orElse(null) != StructureMode.DATA) {
+                continue;
+            }
+            String name = data.getStringOr("metadata", "");
+            Optional<DataMarker.Kind> kind = DataMarker.Kind.byName(name);
+            if (kind.isPresent()) {
+                markers.add(new DataMarker(kind.get(), index, info.pos()));
+            } else {
+                LOGGER.warn("Room {} has a data marker named '{}' at {}, which is no marker; ignoring it",
+                        room.template(), name, info.pos().toShortString());
+            }
+        }
+        return markers;
     }
 
     static StructureTemplate template(ServerLevel level, RoomPlacement room) {
@@ -89,16 +126,13 @@ final class InstanceBuilder {
         template(level, room).placeInWorld(level, pos, pos, settings, random, PLACE_FLAGS);
     }
 
-    private static long clear(ServerLevel level, BoundingBox slice, List<BoundingBox> keep) {
+    private static long clear(ServerLevel level, BoundingBox slice) {
         long cleared = 0;
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         BlockState air = Blocks.AIR.defaultBlockState();
         for (int y = slice.maxY(); y >= slice.minY(); y--) {
             for (int z = slice.minZ(); z <= slice.maxZ(); z++) {
                 for (int x = slice.minX(); x <= slice.maxX(); x++) {
-                    if (PlotWork.anyContains(keep, x, y, z)) {
-                        continue;
-                    }
                     pos.set(x, y, z);
                     BlockState state = level.getBlockState(pos);
                     if (state.isAir()) {

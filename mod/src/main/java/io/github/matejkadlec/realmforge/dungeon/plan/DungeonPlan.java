@@ -3,9 +3,9 @@ package io.github.matejkadlec.realmforge.dungeon.plan;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceLayout;
 import io.github.matejkadlec.realmforge.dungeon.instance.RoomPlacement;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
-import net.minecraft.world.phys.Vec3;
 
 /**
  * A planned layout (architecture 15.3, steps 1 and 2): its rooms in placement order, the entrance first, and the
@@ -34,16 +34,18 @@ public record DungeonPlan(long seed, int attempt, List<PlannedRoom> rooms, List<
     }
 
     /**
-     * What the builder places: every room's template, offset and rotation. Until rooms carry an entrance marker
-     * (W4b), the spawn point is a fly-over spot two blocks above the entrance's roof.
+     * What the builder places: every room's template, offset and rotation, and the entrance's connector to the next
+     * room on the main path, which an arriving player looks at. Where players arrive comes from the entrance room
+     * (its entrance marker, or a spot the builder finds there).
      */
     public InstanceLayout toInstanceLayout() {
         List<RoomPlacement> placements = rooms.stream()
                 .map(room -> new RoomPlacement(room.room().template(), room.offset(), room.rotation()))
                 .toList();
-        BoundingBox entrance = entrance().box();
-        BlockPos center = entrance.getCenter();
-        return new InstanceLayout(placements, new Vec3(center.getX() + 0.5, entrance.maxY() + 2, center.getZ() + 0.5),
-                0.0F);
+        Optional<BlockPos> wayOn = links.stream()
+                .filter(link -> link.room() == 0 && link.otherRoom() == 1 || link.room() == 1 && link.otherRoom() == 0)
+                .findFirst()
+                .map(link -> entrance().connector(link.room() == 0 ? link.connector() : link.otherConnector()).pos());
+        return new InstanceLayout(placements, wayOn);
     }
 }

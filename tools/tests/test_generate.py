@@ -137,11 +137,13 @@ def test_spike_hall_chest_holds_an_item_and_lanterns_hang(repo: RepoPaths) -> No
     lantern = root["palette"].items[palette.index("minecraft:lantern")]
     assert lantern["Properties"] == {"hanging": "true", "waterlogged": "false"}
     with_nbt = [block for block in root["blocks"].items if "nbt" in block]
-    assert len(with_nbt) == 1
-    assert palette[with_nbt[0]["state"].value] == "minecraft:chest"
-    assert with_nbt[0]["nbt"]["Items"].items[0]["id"] == "minecraft:bread"
+    chest, marker = sorted(with_nbt, key=lambda block: palette[block["state"].value])
+    assert palette[chest["state"].value] == "minecraft:chest"
+    assert chest["nbt"]["Items"].items[0]["id"] == "minecraft:bread"
+    assert palette[marker["state"].value] == "minecraft:structure_block"
+    assert marker["nbt"] == {"id": "minecraft:structure_block", "mode": "DATA", "metadata": "exit"}
     # Block entities come last, as vanilla orders them, so their neighbours exist when they load.
-    assert root["blocks"].items[-1] is with_nbt[0]
+    assert root["blocks"].items[-2:] == tuple(with_nbt)
 
 
 def test_spike_room_openings_line_up_in_a_row() -> None:

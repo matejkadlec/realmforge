@@ -8,8 +8,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.common.world.chunk.RegisterTicketControllersEvent;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 
@@ -22,7 +23,7 @@ public final class DungeonFeature {
     public static void register(IEventBus modBus) {
         DungeonAttachments.register(modBus);
         modBus.addListener(DataPackRegistryEvent.NewRegistry.class, DungeonRegistries::registerDataPackRegistries);
-        modBus.addListener(RegisterTicketControllersEvent.class, event -> event.register(InstanceManager.TICKETS));
+        InstanceManager.register(modBus);
 
         // Inside the level tick, so the builder's time counts in the server's tick time (and /tick query, spark).
         NeoForge.EVENT_BUS.addListener(LevelTickEvent.Post.class, event -> {
@@ -31,6 +32,14 @@ public final class DungeonFeature {
                 if (manager != null) {
                     manager.tick();
                 }
+            }
+        });
+        // Room templates load before any run needs them; a reload empties the structure manager's cache.
+        NeoForge.EVENT_BUS.addListener(ServerStartedEvent.class,
+                event -> InstanceManager.preloadTemplates(event.getServer()));
+        NeoForge.EVENT_BUS.addListener(OnDatapackSyncEvent.class, event -> {
+            if (event.getPlayer() == null) {
+                InstanceManager.preloadTemplates(event.getPlayerList().getServer());
             }
         });
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class,

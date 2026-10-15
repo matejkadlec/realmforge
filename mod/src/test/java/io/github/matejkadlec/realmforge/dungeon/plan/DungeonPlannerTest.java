@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
@@ -123,6 +124,21 @@ class DungeonPlannerTest {
                     assertEquals(plan, type.plan(seed), id + " seed " + seed + " planned twice");
                 }
             }
+        }
+    }
+
+    /** An arriving player looks at the entrance's connector to the next room of the main path (W4b). */
+    @Test
+    void aLayoutLooksAtTheEntrancesWayOn() throws IOException {
+        DungeonType type = generated(generatedTypes().getFirst());
+        for (long seed = 0; seed < 50; seed++) {
+            DungeonPlan plan = type.plan(seed);
+            RoomLink wayOn = plan.links().stream()
+                    .filter(link -> Set.of(link.room(), link.otherRoom()).equals(Set.of(0, 1)))
+                    .findFirst().orElseThrow();
+            int connector = wayOn.room() == 0 ? wayOn.connector() : wayOn.otherConnector();
+            assertEquals(Optional.of(plan.entrance().connector(connector).pos()), plan.toInstanceLayout().lookAt(),
+                    "seed " + seed);
         }
     }
 

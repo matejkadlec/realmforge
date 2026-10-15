@@ -164,6 +164,17 @@ def test_spike_room_reads_back() -> None:
     assert len(hall.blocks) == len(room_blocks(SPIKE_ROOMS["hall"]))
 
 
+def test_spike_rooms_hold_valid_data_markers(repo: RepoPaths) -> None:
+    rooms = {name: read_structure(room_structure(room)) for name, room in SPIKE_ROOMS.items()}
+    assert {name: markers(room) for name, room in rooms.items()} == {
+        "start": [("entrance", (7, 1, 7))],
+        "corridor": [("mob", (12, 1, 3))],
+        "hall": [("exit", (15, 1, 27))],
+    }
+    for room in rooms.values():
+        assert check_structure(room, load_vanilla(repo)) == []
+
+
 @pytest.mark.parametrize(
     ("text", "state"),
     [

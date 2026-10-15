@@ -14,6 +14,13 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
  * same list is rebuilt and work resumes at the saved step.
  */
 public final class PlotWork {
+    /**
+     * How far cleanup reaches past a room's box, in blocks: far enough for what spreads past a wall while players are
+     * inside (fire, a vine, a creative operator's block beside a wall). Rooms keep fluids off their edges (room
+     * validation), so nothing flows further.
+     */
+    public static final int MARGIN = 4;
+
     private PlotWork() {
     }
 
@@ -27,7 +34,7 @@ public final class PlotWork {
     public record DiscardEntities(BoundingBox area) implements Unit {
     }
 
-    /** Set every block in {@code slice} to air, except inside the boxes the next rooms will overwrite anyway. */
+    /** Set every block in {@code slice} to air. */
     public record Clear(BoundingBox slice) implements Unit {
     }
 
@@ -61,6 +68,11 @@ public final class PlotWork {
         return units;
     }
 
+    /** The boxes grown by {@link #MARGIN} on every side: what cleanup clears after rooms stood in them. */
+    public static List<BoundingBox> withMargin(List<BoundingBox> rooms) {
+        return rooms.stream().map(box -> box.inflatedBy(MARGIN)).toList();
+    }
+
     /** The box cut along chunk borders into one piece per chunk column it touches, in x-then-z order. */
     public static List<BoundingBox> chunkSlices(BoundingBox box) {
         List<BoundingBox> slices = new ArrayList<>();
@@ -87,15 +99,5 @@ public final class PlotWork {
             }
         }
         return chunks;
-    }
-
-    /** Whether any of the boxes contains the position. */
-    public static boolean anyContains(List<BoundingBox> boxes, int x, int y, int z) {
-        for (BoundingBox box : boxes) {
-            if (box.isInside(x, y, z)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

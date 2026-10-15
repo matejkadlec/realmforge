@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import java.util.Locale;
 import net.minecraft.util.StringRepresentable;
 
-/** Lifecycle of a plot (architecture 15.5). W4 adds {@code completed} for a finished dungeon run. */
+/** Lifecycle of a plot (architecture 15.5). */
 public enum PlotState implements StringRepresentable {
     /** Rooms are being placed over several ticks; chunks are held by tickets. */
     BUILDING,
@@ -12,9 +12,11 @@ public enum PlotState implements StringRepresentable {
     READY,
     /** At least one party member has entered. */
     ACTIVE,
+    /** The run's goal is done (the final boss is dead, W4d); players stay until they leave or the plot closes. */
+    COMPLETED,
     /** Released; its blocks are being cleared over several ticks before the plot is reused. */
     CLOSING,
-    /** Unused; may still hold blocks from its last run when the cleanup strategy overwrites on reuse. */
+    /** Unused and empty, ready for the next run. */
     FREE;
 
     public static final Codec<PlotState> CODEC = StringRepresentable.fromEnum(PlotState::values);
@@ -31,6 +33,6 @@ public enum PlotState implements StringRepresentable {
 
     /** Whether players may be inside. */
     public boolean isPlayable() {
-        return this == READY || this == ACTIVE;
+        return this == READY || this == ACTIVE || this == COMPLETED;
     }
 }
