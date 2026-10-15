@@ -21,8 +21,8 @@ import net.minecraft.resources.Identifier;
 
 /**
  * Checks that every race in {@code content/races/} and every class in {@code content/classes/} reached their datapack
- * registries as the content says, and that their modifiers give the bonuses the pipeline computes at sample levels
- * ({@link GeneratedRaceExpectations}, {@link GeneratedClassExpectations}, the pattern of architecture 6.5).
+ * registries as the content says, and that their modifiers give the bonuses the pipeline computes, the same at every
+ * level ({@link GeneratedRaceExpectations}, {@link GeneratedClassExpectations}, the pattern of architecture 6.5).
  */
 public final class ContentCharacterGameTests {
     private ContentCharacterGameTests() {
@@ -44,12 +44,10 @@ public final class ContentCharacterGameTests {
             helper.assertValueEqual(race.description(), expected.descriptionKey(), expected.id() + " description");
             helper.assertValueEqual(race.classes().stream().map(c -> c.getRegisteredName()).toList(),
                     expected.classes(), expected.id() + " classes");
-            for (GeneratedRaceExpectations.Sample sample : expected.samples()) {
-                ContentStatGameTests.assertBonuses(helper, CharacterBonuses.bonuses(CharacterBonuses.RACE_PREFIX, id,
-                                race.modifiers(), sample.level()), sample.bonuses().stream()
-                                .map(b -> new Bonus(b.id(), b.attribute(), b.operation(), b.amount())).toList(),
-                        expected.id() + " at level " + sample.level());
-            }
+            ContentStatGameTests.assertBonuses(helper,
+                    CharacterBonuses.bonuses(CharacterBonuses.RACE_PREFIX, id, race.modifiers()),
+                    expected.bonuses().stream().map(b -> new Bonus(b.id(), b.attribute(), b.operation(), b.amount()))
+                            .toList(), expected.id() + " bonuses");
         }
         helper.succeed();
     }
@@ -75,12 +73,10 @@ public final class ContentCharacterGameTests {
             List<String> expectedKit = expected.startingKit().stream()
                     .map(item -> item.item() + " x" + item.count()).toList();
             helper.assertValueEqual(kit, expectedKit, expected.id() + " starting kit");
-            for (GeneratedClassExpectations.Sample sample : expected.samples()) {
-                ContentStatGameTests.assertBonuses(helper, CharacterBonuses.bonuses(CharacterBonuses.CLASS_PREFIX, id,
-                                playerClass.modifiers(), sample.level()), sample.bonuses().stream()
-                                .map(b -> new Bonus(b.id(), b.attribute(), b.operation(), b.amount())).toList(),
-                        expected.id() + " at level " + sample.level());
-            }
+            ContentStatGameTests.assertBonuses(helper,
+                    CharacterBonuses.bonuses(CharacterBonuses.CLASS_PREFIX, id, playerClass.modifiers()),
+                    expected.bonuses().stream().map(b -> new Bonus(b.id(), b.attribute(), b.operation(), b.amount()))
+                            .toList(), expected.id() + " bonuses");
         }
         helper.succeed();
     }

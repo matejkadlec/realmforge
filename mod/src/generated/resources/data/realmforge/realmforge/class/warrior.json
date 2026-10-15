@@ -6,14 +6,12 @@
     {
       "attribute": "realmforge:strength",
       "operation": "add_value",
-      "amount": 5.0,
-      "per_level": 1.0
+      "amount": 5.0
     },
     {
       "attribute": "realmforge:vitality",
       "operation": "add_value",
-      "amount": 4.0,
-      "per_level": 1.0
+      "amount": 4.0
     },
     {
       "attribute": "realmforge:dexterity",

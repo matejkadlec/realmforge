@@ -293,7 +293,7 @@ public final class StatsGameTests {
     }
 
     /** A stick that adds {@code amount} to {@code attribute} in the main hand, like gear with a fixed stat. */
-    private static ItemStack stick(Holder<Attribute> attribute, double amount) {
+    static ItemStack stick(Holder<Attribute> attribute, double amount) {
         ItemStack stick = new ItemStack(Items.STICK);
         stick.set(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.builder()
                 .add(attribute, new AttributeModifier(Realmforge.id("qa/stick"), amount,
@@ -302,7 +302,7 @@ public final class StatsGameTests {
         return stick;
     }
 
-    private static void tick(ServerPlayer player, int ticks) {
+    static void tick(ServerPlayer player, int ticks) {
         for (int i = 0; i < ticks; i++) {
             player.doTick();
         }

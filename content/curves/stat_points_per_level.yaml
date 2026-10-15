@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/curves.schema.json
+# The primary stat points a player gets on reaching a level (architecture 10.2), rounded half up: one a level from
+# level 2 on, to spend on the character sheet (Matěj, 2026-10-15, RLM-196). Level 1 gives none. Races and classes no
+# longer raise stats with the level; these points replace that growth.
+id: stat_points_per_level
+name: {en_us: Stat Points per Level}
+points:
+  - {level: 2, value: 1}

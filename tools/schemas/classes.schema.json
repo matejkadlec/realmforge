@@ -2,7 +2,7 @@
   "$defs": {
     "CharacterModifierDef": {
       "additionalProperties": false,
-      "description": "An attribute modifier a race or class gives its player. The amount applies at level 1 and grows by\n``per_level`` for every level above it: ``amount + per_level * (level - 1)``. Units follow the stat rules:\nmultiplied operations take percent (``amount_percent``, ``per_level_percent``); ``add_value`` on one of our stats\ntakes its unit (percent for a share, points otherwise); a vanilla attribute takes either.",
+      "description": "An attribute modifier a race or class gives its player, the same at every level: levels give stat points to\nspend instead (Matěj, 2026-10-15, RLM-196). Units follow the stat rules: multiplied operations take percent\n(``amount_percent``); ``add_value`` on one of our stats takes its unit (percent for a share, points otherwise); a\nvanilla attribute takes either.",
       "properties": {
         "amount": {
           "anyOf": [
@@ -14,7 +14,7 @@
             }
           ],
           "default": null,
-          "description": "Amount at level 1, in game units.",
+          "description": "The amount, in game units.",
           "title": "Amount"
         },
         "amount_percent": {
@@ -27,7 +27,7 @@
             }
           ],
           "default": null,
-          "description": "Amount at level 1 in percent (5 means 5 %, the fraction 0.05).",
+          "description": "The amount in percent (5 means 5 %, the fraction 0.05).",
           "title": "Amount Percent"
         },
         "attribute": {
@@ -45,32 +45,6 @@
           ],
           "title": "Operation",
           "type": "string"
-        },
-        "per_level": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Added for every level above 1, in the unit of amount.",
-          "title": "Per Level"
-        },
-        "per_level_percent": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Added for every level above 1, in percent, like amount_percent.",
-          "title": "Per Level Percent"
         }
       },
       "required": [
@@ -125,7 +99,7 @@
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "A class: its resource, the stats it gives and how they grow per level, and its starting kit (architecture\n10.1). Spells by level and talent trees come with C4 and C5.",
+  "description": "A class: its resource, the stats it gives and its starting kit (architecture 10.1). Spells by level and talent\ntrees come with C4 and C5.",
   "properties": {
     "description": {
       "$ref": "#/$defs/LocalizedText",
@@ -139,7 +113,7 @@
       "type": "string"
     },
     "modifiers": {
-      "description": "Attribute modifiers the class gives, with their growth per level.",
+      "description": "Attribute modifiers the class gives, the same at every level.",
       "items": {
         "$ref": "#/$defs/CharacterModifierDef"
       },

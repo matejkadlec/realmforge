@@ -5,11 +5,14 @@ import json
 import struct
 import zlib
 
+import pytest
+
 from realmforge_tools.formats import nbt
 from realmforge_tools.formats.png import PNG_SIGNATURE
 from realmforge_tools.generate import generate_all, sync
 from realmforge_tools.generate.gametest import AIR, SPIKE_ROOMS, room_blocks
 from realmforge_tools.generate.textures import placeholder_texture
+from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import DATA_VERSION, RepoPaths
 from realmforge_tools.validate import load_and_validate
 from tests.conftest import write
@@ -59,6 +62,43 @@ def test_item_outputs(repo: RepoPaths) -> None:
     assert '"realmforge:test_item",' in expectations
     assert '"item.realmforge.test_item",' in expectations
     assert 'List.of("minecraft:ingredients")' in expectations
+
+
+def test_item_use_and_flavor_become_tooltip_lines_and_a_use_tag(repo: RepoPaths) -> None:
+    write(
+        repo.content / "items" / "wiper.yaml",
+        "id: wiper\nname: {en_us: Wiper}\nuse: unlearn_stat_points\nflavor: {en_us: It smells of chalk.}\n",
+    )
+    files = generate(repo)
+    java = files[GENERATED_JAVA].decode()
+    wiper = java[java.index('registerSimpleItem("wiper"') :]
+    wiper = wiper[: wiper.index(";")]
+    assert ".component(DataComponents.LORE, new ItemLore(List.of(" in wiper
+    assert 'Component.translatable("item_use.realmforge.unlearn_stat_points")' in wiper
+    assert wiper.index("item_use.realmforge") < wiper.index('"item.realmforge.wiper.flavor"')
+    assert "import net.minecraft.world.item.component.ItemLore;" in java
+    lang = json.loads(files[f"{ASSETS}/lang/en_us.json"])
+    assert lang["item.realmforge.wiper.flavor"] == "It smells of chalk."
+    tag = json.loads(
+        files["mod/src/generated/resources/data/realmforge/tags/item/use/unlearn_stat_points.json"]
+    )
+    assert tag == {"values": ["realmforge:clean_slate", "realmforge:wiper"]}
+    assert '"realmforge:use/unlearn_stat_points")' in files[EXPECTATIONS_JAVA].decode()
+
+
+def test_items_without_lore_import_nothing_for_it(repo: RepoPaths) -> None:
+    (repo.content / "items" / "clean_slate.yaml").unlink()
+    files = generate(repo)
+    assert "ItemLore" not in files[GENERATED_JAVA].decode()
+    assert not any("/tags/item/use/" in path for path in files)
+
+
+def test_an_item_use_needs_its_tooltip_line(repo: RepoPaths) -> None:
+    (repo.content / "texts" / "item_use.yaml").unlink()
+    with pytest.raises(ValidationFailed) as excinfo:
+        load_and_validate(repo)
+    problems = [str(problem) for problem in excinfo.value.problems]
+    assert any("clean_slate.yaml" in p and "needs its tooltip line" in p for p in problems), problems
 
 
 def test_default_stack_size_is_not_emitted(repo: RepoPaths) -> None:

@@ -23,6 +23,7 @@ from realmforge_tools.rooms.connectors import connectors, could_attach
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES
 from realmforge_tools.schema.character import STARTING_BREAD
 from realmforge_tools.schema.dungeon import DEAD_END_ROLES, PATH_ROLES, ROOM_ROLES, room_role
+from realmforge_tools.schema.item import USE_TEXT_GROUP
 from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
 from realmforge_tools.schema.spell import ALLY, DAMAGE, ENEMY, HEAL, SCALING_OF_KIND, SELF
@@ -294,6 +295,9 @@ def _check_ids(content: Content) -> list[Problem]:
 
 def _check_references(content: Content, universe: IdUniverse) -> list[Problem]:
     problems: list[Problem] = []
+    use_texts = {
+        name for entry in content.texts if entry.model.id == USE_TEXT_GROUP for name in entry.model.texts
+    }
     for entry in content.items:
         for i, tab in enumerate(entry.model.creative_tabs):
             if not universe.contains(CREATIVE_TAB_REGISTRY, tab):
@@ -302,6 +306,15 @@ def _check_references(content: Content, universe: IdUniverse) -> list[Problem]:
                         entry.source, f"creative_tabs.{i}", _unknown(tab, CREATIVE_TAB_REGISTRY, universe)
                     )
                 )
+        use = entry.model.use
+        if use is not None and use not in use_texts:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "use",
+                    f"{use} needs its tooltip line: {use} in content/texts/{USE_TEXT_GROUP}.yaml",
+                )
+            )
     return problems
 
 

@@ -10,7 +10,7 @@ from pydantic import ValidationError
 from realmforge_tools.generate import generate_all
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import RepoPaths
-from realmforge_tools.schema.character import CharacterModifierDef, bonuses_at, modifier_id
+from realmforge_tools.schema.character import CharacterModifierDef, bonuses, modifier_id
 from realmforge_tools.validate import load_and_validate
 from tests.conftest import write
 
@@ -69,16 +69,9 @@ def test_repository_races_and_classes_are_valid() -> None:
 # Modifiers
 
 
-def test_amount_grows_per_level() -> None:
-    growing = modifier(amount=5, per_level=1)
-    assert [growing.amount_at(level) for level in (1, 2, 10)] == [5, 6, 14]
-    assert modifier(amount=3).amount_at(20) == 3
-
-
 def test_percent_amounts_are_fractions() -> None:
-    share = modifier(amount_percent=5, per_level_percent=0.5)
-    assert share.amount_at(1) == pytest.approx(0.05)
-    assert share.amount_at(3) == pytest.approx(0.06)
+    assert modifier(amount_percent=5).game_amount == pytest.approx(0.05)
+    assert modifier(amount=3).game_amount == 3
 
 
 @pytest.mark.parametrize(
@@ -86,11 +79,10 @@ def test_percent_amounts_are_fractions() -> None:
     [
         ({}, "exactly one of amount and amount_percent"),
         ({"amount": 1, "amount_percent": 1}, "exactly one of amount and amount_percent"),
-        ({"amount": 1, "per_level": 1, "per_level_percent": 1}, "at most one of per_level"),
-        ({"amount": 1, "per_level_percent": 1}, "the growth is per_level"),
-        ({"amount_percent": 1, "per_level": 1}, "the growth is per_level_percent"),
         ({"amount": 0}, "gives nothing"),
-        ({"amount": 0, "per_level": 0}, "gives nothing"),
+        # Levels give stat points to spend instead of growing race and class stats (RLM-196).
+        ({"amount": 1, "per_level": 1}, "Extra inputs are not permitted"),
+        ({"amount_percent": 1, "per_level_percent": 1}, "Extra inputs are not permitted"),
     ],
 )
 def test_modifier_shapes_are_refused(fields: dict[str, object], message: str) -> None:
@@ -104,11 +96,11 @@ def test_multiplied_operations_take_percent() -> None:
     assert modifier(operation="add_multiplied_total", amount_percent=10).game_amount == pytest.approx(0.1)
 
 
-def test_growth_alone_starts_at_zero_and_is_skipped_there() -> None:
-    growing = [modifier(amount=0, per_level=1)]
-    assert bonuses_at("class", "rogue", growing, 1) == []
-    assert bonuses_at("class", "rogue", growing, 3) == [
-        ("realmforge:class/realmforge/0/rogue", "realmforge:strength", "add_value", 2.0)
+def test_bonuses_are_every_modifier_in_order_in_game_units() -> None:
+    modifiers = [modifier(amount=5), modifier(attribute="realmforge:crit_chance", amount_percent=2)]
+    assert bonuses("class", "rogue", modifiers) == [
+        ("realmforge:class/realmforge/0/rogue", "realmforge:strength", "add_value", 5.0),
+        ("realmforge:class/realmforge/1/rogue", "realmforge:crit_chance", "add_value", 0.02),
     ]
 
 
@@ -207,7 +199,7 @@ def test_generated_data_and_lang(repo: RepoPaths) -> None:
         repo.content / "classes" / "rogue.yaml",
         CLASS
         + "modifiers:\n"
-        + "  - {attribute: realmforge:crit_chance, operation: add_value, amount_percent: 2, per_level_percent: 0.5}\n"
+        + "  - {attribute: realmforge:crit_chance, operation: add_value, amount_percent: 2}\n"
         + "starting_kit:\n  - {item: minecraft:bread, count: 32}\n  - {item: minecraft:stick}\n",
     )
     files = generate(repo)
@@ -221,7 +213,6 @@ def test_generated_data_and_lang(repo: RepoPaths) -> None:
                 "attribute": "realmforge:crit_chance",
                 "operation": "add_value",
                 "amount": 0.02,
-                "per_level": 0.005,
             }
         ],
         "starting_kit": [{"item": "minecraft:bread", "count": 32}, {"item": "minecraft:stick", "count": 1}],
@@ -234,15 +225,16 @@ def test_generated_data_and_lang(repo: RepoPaths) -> None:
     assert lang["class.realmforge.rogue.description"] == "Quick and quiet."
 
 
-def test_expectations_list_the_bonuses_at_sample_levels() -> None:
+def test_expectations_list_the_bonuses() -> None:
     files = generate(RepoPaths())
     classes = files[f"{QA}/GeneratedClassExpectations.java"].decode()
     assert '"realmforge:warrior"' in classes and '"realmforge:rage"' in classes
     assert 'new KitItem("minecraft:bread", 32)' in classes
-    # Warrior strength: 5 at level 1, +1 per level.
+    # Warrior strength: 5 at every level (RLM-196: no growth per level).
     assert (
-        'new Bonus("realmforge:class/realmforge/0/warrior", "realmforge:strength", "add_value", 14.0)'
+        'new Bonus("realmforge:class/realmforge/0/warrior", "realmforge:strength", "add_value", 5.0)'
         in classes
     )
+    assert "Sample" not in classes
     races = files[f"{QA}/GeneratedRaceExpectations.java"].decode()
     assert 'List.of("realmforge:warrior", "realmforge:mage")' in races

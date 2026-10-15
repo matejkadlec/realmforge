@@ -20,7 +20,7 @@
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "A simple item. Generates its registration, model, lang entries and (for now) a placeholder texture.",
+  "description": "A simple item. Generates its registration, model, lang entries and (for now) a placeholder texture; a use and a\nflavor line become its tooltip.",
   "properties": {
     "creative_tabs": {
       "description": "Creative mode tabs to list the item in, e.g. minecraft:ingredients. No duplicates.",
@@ -32,6 +32,18 @@
       "title": "Creative Tabs",
       "type": "array",
       "uniqueItems": true
+    },
+    "flavor": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LocalizedText"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "A flavor line in the tooltip: one sentence, no mechanics, at most 12 words (lore style guide)."
     },
     "id": {
       "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
@@ -51,6 +63,20 @@
     "name": {
       "$ref": "#/$defs/LocalizedText",
       "description": "Display name."
+    },
+    "use": {
+      "anyOf": [
+        {
+          "const": "unlearn_stat_points",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "What right-clicking the item does; one item is used up each time. unlearn_stat_points: every spent stat point is unspent again (RLM-196).",
+      "title": "Use"
     }
   },
   "required": [

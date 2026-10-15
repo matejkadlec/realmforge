@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# What right-clicking an item does, the green "Use:" line of its tooltip (item_use.realmforge.<use>): one per use in
+# tools/realmforge_tools/schema/item.py, shown on every item with that use. One item is used up each time.
+id: item_use
+texts:
+  # RLM-196: the Clean Slate.
+  unlearn_stat_points:
+    en_us: "Use: Unlearn every stat point you spent, to spend them again"

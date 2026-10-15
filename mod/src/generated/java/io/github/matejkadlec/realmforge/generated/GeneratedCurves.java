@@ -35,6 +35,9 @@ public final class GeneratedCurves {
     /** {@code realmforge:mob_health} from {@code content/curves/mob_health.yaml}. */
     public static final ResourceKey<Curve> MOB_HEALTH = key("mob_health");
 
+    /** {@code realmforge:stat_points_per_level} from {@code content/curves/stat_points_per_level.yaml}. */
+    public static final ResourceKey<Curve> STAT_POINTS_PER_LEVEL = key("stat_points_per_level");
+
     /** {@code realmforge:test_curve} from {@code content/curves/test_curve.yaml}. */
     public static final ResourceKey<Curve> TEST_CURVE = key("test_curve");
 
@@ -42,7 +45,7 @@ public final class GeneratedCurves {
     public static final ResourceKey<Curve> XP_TO_NEXT_LEVEL = key("xp_to_next_level");
 
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Curve>> ALL = List.of(ARMOR_HALVING, ARMOR_REDUCTION_CAP, KILL_XP, KILL_XP_ABOVE_PLAYER, KILL_XP_BELOW_PLAYER, MOB_ARMOR, MOB_DAMAGE, MOB_HEALTH, TEST_CURVE, XP_TO_NEXT_LEVEL);
+    public static final List<ResourceKey<Curve>> ALL = List.of(ARMOR_HALVING, ARMOR_REDUCTION_CAP, KILL_XP, KILL_XP_ABOVE_PLAYER, KILL_XP_BELOW_PLAYER, MOB_ARMOR, MOB_DAMAGE, MOB_HEALTH, STAT_POINTS_PER_LEVEL, TEST_CURVE, XP_TO_NEXT_LEVEL);
 
     private GeneratedCurves() {
     }

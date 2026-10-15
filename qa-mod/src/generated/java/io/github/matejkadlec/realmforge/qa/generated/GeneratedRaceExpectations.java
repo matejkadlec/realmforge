@@ -7,20 +7,19 @@ import java.util.List;
 
 /** What {@code content/races/} says about every race, so GameTests can check that the game agrees. */
 public final class GeneratedRaceExpectations {
-    /** One attribute modifier the entry gives; numbers are in game units (fractions for percentages). */
+    /**
+     * One attribute modifier the entry gives, the same at every level; numbers are in game units (fractions for
+     * percentages).
+     */
     public record Bonus(String id, String attribute, String operation, double amount) {
-    }
-
-    /** The bonuses the pipeline computes at a level, which the game must match, in this order. */
-    public record Sample(int level, List<Bonus> bonuses) {
     }
 
     /**
      * Expected state of one race. Ids are full resource locations, e.g. {@code realmforge:human}; the classes
-     * are the ones it may take, in the YAML's order.
+     * are the ones it may take, in the YAML's order; the bonuses are the ones the game must give, in this order.
      */
     public record RaceExpectation(String id, String nameKey, String descriptionKey, List<String> classes,
-            List<Sample> samples) {
+            List<Bonus> bonuses) {
     }
 
     public static final List<RaceExpectation> RACES = List.of(
@@ -29,10 +28,7 @@ public final class GeneratedRaceExpectations {
                     "race.realmforge.human.name",
                     "race.realmforge.human.description",
                     List.of("realmforge:warrior", "realmforge:mage"),
-                    List.of(
-                            new Sample(1, List.of(new Bonus("realmforge:race/realmforge/0/human", "realmforge:strength", "add_value", 1.0), new Bonus("realmforge:race/realmforge/1/human", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:race/realmforge/2/human", "realmforge:vitality", "add_value", 1.0), new Bonus("realmforge:race/realmforge/3/human", "realmforge:intellect", "add_value", 1.0))),
-                            new Sample(2, List.of(new Bonus("realmforge:race/realmforge/0/human", "realmforge:strength", "add_value", 1.0), new Bonus("realmforge:race/realmforge/1/human", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:race/realmforge/2/human", "realmforge:vitality", "add_value", 1.0), new Bonus("realmforge:race/realmforge/3/human", "realmforge:intellect", "add_value", 1.0))),
-                            new Sample(10, List.of(new Bonus("realmforge:race/realmforge/0/human", "realmforge:strength", "add_value", 1.0), new Bonus("realmforge:race/realmforge/1/human", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:race/realmforge/2/human", "realmforge:vitality", "add_value", 1.0), new Bonus("realmforge:race/realmforge/3/human", "realmforge:intellect", "add_value", 1.0))))));
+                    List.of(new Bonus("realmforge:race/realmforge/0/human", "realmforge:strength", "add_value", 1.0), new Bonus("realmforge:race/realmforge/1/human", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:race/realmforge/2/human", "realmforge:vitality", "add_value", 1.0), new Bonus("realmforge:race/realmforge/3/human", "realmforge:intellect", "add_value", 1.0))));
 
     private GeneratedRaceExpectations() {
     }

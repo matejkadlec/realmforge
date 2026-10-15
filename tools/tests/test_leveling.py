@@ -21,6 +21,8 @@ from realmforge_tools.schema.leveling import (
     java_round,
     kill_xp,
     level_for,
+    stat_points_at,
+    stat_points_to,
     xp_to_next,
     xp_to_reach,
 )
@@ -248,9 +250,33 @@ def test_leveling_curves_are_required_and_bounded(repo: RepoPaths) -> None:
     (repo.content / "curves/kill_xp.yaml").unlink()
     path = repo.content / "curves/xp_to_next_level.yaml"
     path.write_text(path.read_text(encoding="utf-8").replace("value: 1500}", "value: 0}"), encoding="utf-8")
+    points = repo.content / "curves/stat_points_per_level.yaml"
+    points.write_text(points.read_text(encoding="utf-8").replace("value: 1}", "value: -1}"), encoding="utf-8")
     problems = problems_for(repo)
     assert any("kill_xp.yaml" in p and "leveling needs this curve" in p for p in problems), problems
     assert any("xp_to_next_level.yaml" in p and "below 1" in p for p in problems), problems
+    assert any("stat_points_per_level.yaml" in p and "below 0" in p for p in problems), problems
+
+
+# Stat points (RLM-196)
+
+
+def test_repository_gives_one_stat_point_a_level_from_level_2() -> None:
+    content, _ = load_and_validate(RepoPaths())
+    points = next(entry.model for entry in content.curves if entry.model.id == "stat_points_per_level")
+    assert [stat_points_at(points, level) for level in (1, 2, 3, 60)] == [0, 1, 1, 1]
+    assert [stat_points_to(points, level) for level in (1, 2, 10, 18, 60)] == [0, 1, 9, 17, 59]
+
+
+def test_stat_points_round_half_up_and_are_never_negative() -> None:
+    curve = CurveDef.model_validate(
+        {
+            "id": "points",
+            "points": [{"level": 2, "value": 0.5}, {"level": 4, "value": 2.5}, {"level": 5, "value": -3}],
+        }
+    )
+    assert [stat_points_at(curve, level) for level in (1, 2, 3, 4, 5)] == [0, 1, 2, 3, 0]
+    assert stat_points_to(curve, 5) == 6
 
 
 # Generation
@@ -283,8 +309,10 @@ def test_leveling_expectations_match_the_reference_rules() -> None:
     files = {RepoPaths().rel(path): data for path, data in generate_all(content, RepoPaths()).items()}
     source = files[f"{QA}/GeneratedLevelingExpectations.java"].decode()
     xp = next(entry.model for entry in content.curves if entry.model.id == "xp_to_next_level")
-    assert f"new LevelXp(10, {xp_to_next(xp, 10)}L, {xp_to_reach(xp, 10)}L)" in source
-    assert f"new LevelXp(31, {xp_to_next(xp, 31)}L, {xp_to_reach(xp, 31)}L)" in source
+    assert f"new LevelXp(1, {xp_to_next(xp, 1)}L, 0L, 0)" in source
+    # One stat point a level from level 2 on (Matěj, 2026-10-15, RLM-196).
+    assert f"new LevelXp(10, {xp_to_next(xp, 10)}L, {xp_to_reach(xp, 10)}L, 9)" in source
+    assert f"new LevelXp(31, {xp_to_next(xp, 31)}L, {xp_to_reach(xp, 31)}L, 30)" in source
     for total, cap, level, held in level_samples(xp, [10, 18, 30]):
         assert f"new LevelSample({total}L, {cap}, {level}, {held}L)" in source
     assert "new KillSample(1, 1, 1.0, 1.0, 50L)" in source

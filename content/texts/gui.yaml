@@ -52,6 +52,12 @@ texts:
   # A milestone of a primary stat: "At 25: +10% Crit Damage" (%1$s the points, %2$s the bonus).
   stat_milestone:
     en_us: "At %1$s: %2$s"
+  # Stat points (RLM-196): the Stats tab's row of unspent points, and the hint on the + beside a primary stat, which
+  # spends one point on it (%1$s the stat).
+  stat_points:
+    en_us: Unspent Stat Points
+  spend_stat_point:
+    en_us: Spend a point on %1$s
   # Character creation (RLM-22): the screen's title, its two columns, the class's resource and starting kit, and the
   # button that creates the character.
   character_creation:
@@ -68,9 +74,6 @@ texts:
   # An item of the starting kit that comes more than once: "Bread ×8" (%1$s the item, %2$s the count).
   kit_item:
     en_us: "%1$s ×%2$s"
-  # A bonus that grows with the level: "+5 Strength (+1 per Level)" (%1$s the bonus at level 1, %2$s the growth).
-  stat_growth:
-    en_us: "%1$s (%2$s per Level)"
   create_character:
     en_us: Create Character
   # The Origin tab's sections (Matěj, 2026-10-14): "Race: Human", "Class: Warrior" (%1$s the name, or none), and

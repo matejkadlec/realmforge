@@ -4,8 +4,10 @@ import io.github.matejkadlec.realmforge.character.CharacterSheetView;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView.Row;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView.Section;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView.Tab;
+import io.github.matejkadlec.realmforge.character.net.SpendStatPointPayload;
 import io.github.matejkadlec.realmforge.client.input.CharacterSheetKey;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
+import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
 import net.minecraft.ChatFormatting;
@@ -13,8 +15,13 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.joml.Matrix3x2fStack;
 import org.lwjgl.glfw.GLFW;
 
@@ -24,7 +31,9 @@ import org.lwjgl.glfw.GLFW;
  * the arrow keys switch tabs, and the sheet reopens on the last one. The heading and the selected tab are white, so
  * gold marks only the section titles (Matěj, 2026-10-14). Each tab has two columns. The values follow the player's
  * attributes every tick while the sheet is open. The panel is as tall as its tallest tab, so it keeps its size when the
- * tab changes, and is drawn smaller when it does not fit the screen.
+ * tab changes, and is drawn smaller when it does not fit the screen. While stat points are unspent, a small {@code +}
+ * beside each primary stat spends one on it: a click sends {@link SpendStatPointPayload}, which the server checks, and
+ * the sheet shows the result on the next tick (RLM-196).
  */
 public final class CharacterSheetScreen extends Screen {
     private static final int COLUMN_WIDTH = 180;
@@ -43,12 +52,26 @@ public final class CharacterSheetScreen extends Screen {
     private static final int TAB_IDLE = 0xFFA0A0A0;
     /** Between idle and selected, so a hovered tab does not look selected. */
     private static final int TAB_HOVER = 0xFFC8C8C8;
+    /** The {@code +} that spends a stat point: a square beside the row's value, in the gap between the columns. */
+    private static final int SPEND_SIZE = 9;
+    private static final int SPEND_GAP = 3;
+    private static final int SPEND_FILL = 0xC0203820;
+    private static final int SPEND_FILL_HOVER = 0xE0306030;
 
     /** The tab the sheet shows, kept while the game runs so the sheet reopens on it. */
     private static int selectedTab;
 
     @Nullable
     private CharacterSheetView view;
+    /** The {@code +} squares drawn in the last frame, in panel units, so a click finds the one under the mouse. */
+    private final List<SpendButton> spendButtons = new ArrayList<>();
+
+    /** A {@code +} square: its top left corner in panel units, the stat it spends a point on, and the row's label. */
+    private record SpendButton(int x, int y, ResourceKey<Attribute> stat, Component label) {
+        boolean contains(double panelX, double panelY) {
+            return panelX >= x && panelX < x + SPEND_SIZE && panelY >= y && panelY < y + SPEND_SIZE;
+        }
+    }
 
     public CharacterSheetScreen() {
         super(Component.translatable(GeneratedTexts.GUI_CHARACTER_SHEET));
@@ -97,9 +120,16 @@ public final class CharacterSheetScreen extends Screen {
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (view != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            int tab = tabAt(layout(view), event.x(), event.y());
+            Layout layout = layout(view);
+            int tab = tabAt(layout, event.x(), event.y());
             if (tab >= 0) {
                 selectedTab = tab;
+                return true;
+            }
+            SpendButton spend = spendButtonAt(layout, event.x(), event.y());
+            if (spend != null) {
+                ClientPacketDistributor.sendToServer(new SpendStatPointPayload(spend.stat()));
+                minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
                 return true;
             }
         }
@@ -115,6 +145,9 @@ public final class CharacterSheetScreen extends Screen {
         Layout layout = layout(view);
         Tab tab = view.tabs().get(selectedTab());
         int hovered = tabAt(layout, mouseX, mouseY);
+        double panelX = (mouseX - layout.x()) / layout.scale();
+        double panelY = (mouseY - layout.y()) / layout.scale();
+        spendButtons.clear();
 
         Matrix3x2fStack pose = graphics.pose();
         pose.pushMatrix();
@@ -129,7 +162,21 @@ public final class CharacterSheetScreen extends Screen {
         graphics.fill(0, LINE + 1, CONTENT_WIDTH, LINE + 2, RULE);
         drawColumn(graphics, tab.left(), 0, HEADER);
         drawColumn(graphics, tab.right(), COLUMN_WIDTH + GAP, HEADER);
+        SpendButton hoveredSpend = null;
+        for (SpendButton spend : spendButtons) {
+            boolean over = spend.contains(panelX, panelY);
+            hoveredSpend = over ? spend : hoveredSpend;
+            graphics.fill(spend.x(), spend.y(), spend.x() + SPEND_SIZE, spend.y() + SPEND_SIZE,
+                    over ? SPEND_FILL_HOVER : SPEND_FILL);
+            graphics.outline(spend.x(), spend.y(), SPEND_SIZE, SPEND_SIZE, CharacterSheetView.BONUS);
+            graphics.centeredText(font, "+", spend.x() + SPEND_SIZE / 2 + 1, spend.y() + 1,
+                    over ? HEADING : CharacterSheetView.BONUS);
+        }
         pose.popMatrix();
+        if (hoveredSpend != null) {
+            graphics.setTooltipForNextFrame(Component.translatable(GeneratedTexts.GUI_SPEND_STAT_POINT,
+                    hoveredSpend.label()), mouseX, mouseY);
+        }
     }
 
     private void refresh() {
@@ -170,6 +217,14 @@ public final class CharacterSheetScreen extends Screen {
                 tabWidth);
     }
 
+    /** The {@code +} square under the screen position, from the last frame, or null. */
+    @Nullable
+    private SpendButton spendButtonAt(Layout layout, double screenX, double screenY) {
+        double x = (screenX - layout.x()) / layout.scale();
+        double y = (screenY - layout.y()) / layout.scale();
+        return spendButtons.stream().filter(spend -> spend.contains(x, y)).findFirst().orElse(null);
+    }
+
     /** The tab whose label is under the screen position, or -1. */
     private int tabAt(Layout layout, double screenX, double screenY) {
         double x = (screenX - layout.x()) / layout.scale();
@@ -200,6 +255,10 @@ public final class CharacterSheetScreen extends Screen {
                 if (!row.value().isEmpty()) {
                     graphics.text(font, row.value(), x + COLUMN_WIDTH - font.width(row.value()), y - LINE * lines.size(),
                             row.color());
+                }
+                if (row.spend() != null) {
+                    spendButtons.add(new SpendButton(x + COLUMN_WIDTH + SPEND_GAP, y - LINE * lines.size() - 1,
+                            row.spend(), row.label()));
                 }
             }
             y += SECTION_GAP;

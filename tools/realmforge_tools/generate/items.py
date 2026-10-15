@@ -1,5 +1,6 @@
-"""Items: Java registrations, item model definitions and models, placeholder textures, and the QA mod's
-expectations."""
+"""Items: Java registrations, item model definitions and models, placeholder textures, the item tags of item uses
+(``data/realmforge/tags/item/use/<use>.json``), and the QA mod's expectations. An item's use and flavor line become
+its tooltip: the vanilla lore component, set on the item's default components."""
 
 from __future__ import annotations
 
@@ -7,17 +8,33 @@ from pathlib import Path
 
 from realmforge_tools.content import Content
 from realmforge_tools.formats.jsonfmt import dump_json
+from realmforge_tools.generate.datapack import data_dir
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
 from realmforge_tools.generate.textures import placeholder_texture
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
+from realmforge_tools.schema.item import USE_TEXT_GROUP, ItemDef, use_tag
+from realmforge_tools.schema.text import text_key
 
 GENERATED_PACKAGE = f"{JAVA_PACKAGE}.generated"
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
 VANILLA_DEFAULT_STACK_SIZE = 64
+# What an item's tooltip lines need (_lore).
+LORE_IMPORTS = (
+    "java.util.List",
+    "net.minecraft.ChatFormatting",
+    "net.minecraft.core.component.DataComponents",
+    "net.minecraft.network.chat.Component",
+    "net.minecraft.world.item.component.ItemLore",
+)
 
 
 def translation_key(item_id: str) -> str:
     return f"item.{MOD_ID}.{item_id}"
+
+
+def flavor_key(item_id: str) -> str:
+    """The translation key of an item's flavor line."""
+    return f"{translation_key(item_id)}.flavor"
 
 
 def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
@@ -36,6 +53,14 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         files[assets / "models" / "item" / f"{item_id}.json"] = dump_json(model)
         files[assets / "textures" / "item" / f"{item_id}.png"] = placeholder_texture(f"{MOD_ID}:{item_id}")
 
+    uses: dict[str, list[str]] = {}
+    for entry in content.items:
+        if entry.model.use is not None:
+            uses.setdefault(entry.model.use, []).append(f"{MOD_ID}:{entry.model.id}")
+    for use, items in sorted(uses.items()):
+        path = use_tag(use).split(":", 1)[1]
+        files[data_dir(paths) / "tags" / "item" / f"{path}.json"] = dump_json({"values": sorted(items)})
+
     qa_java_root = paths.qa_generated / "java"
     files[java_file_path(qa_java_root, QA_GENERATED_PACKAGE, "GeneratedItemExpectations")] = _expectations(
         content, paths
@@ -46,12 +71,22 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
 def _registrations(content: Content, paths: RepoPaths) -> bytes:
     fields: list[str] = []
     tabs: dict[str, list[str]] = {}
+    imports = {"net.minecraft.world.item.Item"}
     for entry in content.items:
         item = entry.model
         # The register call sets the item's id on the properties; the lambda only adds to them.
         arguments = string_literal(item.id)
+        properties = ""
         if item.max_stack_size != VANILLA_DEFAULT_STACK_SIZE:
-            arguments += f", properties -> properties.stacksTo({item.max_stack_size})"
+            properties += f".stacksTo({item.max_stack_size})"
+        lore = _lore(item)
+        if lore:
+            imports.update(LORE_IMPORTS)
+            properties += (
+                f"\n                    .component(DataComponents.LORE, new ItemLore(List.of(\n{lore})))"
+            )
+        if properties:
+            arguments += f", properties -> properties{properties}"
         constant = constant_name(item.id)
         fields.append(
             f"    /** {{@code {MOD_ID}:{item.id}}} from {{@code {entry.source}}}. */\n"
@@ -79,8 +114,8 @@ def _registrations(content: Content, paths: RepoPaths) -> bytes:
         header(Path(__file__), "content/items/") + f"package {GENERATED_PACKAGE};\n"
         "\n"
         f"import {JAVA_PACKAGE}.Realmforge;\n"
-        "import net.minecraft.world.item.Item;\n"
-        "import net.neoforged.bus.api.IEventBus;\n"
+        + "".join(f"import {name};\n" for name in sorted(imports))
+        + "import net.neoforged.bus.api.IEventBus;\n"
         "import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;\n"
         "import net.neoforged.neoforge.registries.DeferredItem;\n"
         "import net.neoforged.neoforge.registries.DeferredRegister;\n"
@@ -106,6 +141,22 @@ def _registrations(content: Content, paths: RepoPaths) -> bytes:
     return source.encode("utf-8")
 
 
+def _lore(item: ItemDef) -> str:
+    """The item's tooltip lines as Java: its use in green, as a "Use:" line, then its flavor line in vanilla's lore
+    style (purple, italic). Empty when it has neither."""
+    indent = " " * 28
+    lines = []
+    if item.use is not None:
+        key = text_key(USE_TEXT_GROUP, item.use)
+        lines.append(
+            f"Component.translatable({string_literal(key)})\n"
+            f"{indent}        .withStyle(style -> style.withColor(ChatFormatting.GREEN).withItalic(false))"
+        )
+    if item.flavor is not None:
+        lines.append(f"Component.translatable({string_literal(flavor_key(item.id))})")
+    return ",\n".join(indent + line for line in lines)
+
+
 def _expectations(content: Content, paths: RepoPaths) -> bytes:
     rows = []
     for entry in content.items:
@@ -116,7 +167,8 @@ def _expectations(content: Content, paths: RepoPaths) -> bytes:
             f"                    {string_literal(f'{MOD_ID}:{item.id}')},\n"
             f"                    {string_literal(translation_key(item.id))},\n"
             f"                    {item.max_stack_size},\n"
-            f"                    List.of({tabs}))"
+            f"                    List.of({tabs}),\n"
+            f"                    {string_literal(use_tag(item.use) if item.use else '')})"
         )
     items_list = "List.of(\n" + ",\n".join(rows) + ")" if rows else "List.of()"
 
@@ -127,8 +179,12 @@ def _expectations(content: Content, paths: RepoPaths) -> bytes:
         "\n"
         "/** What {@code content/items/} says about every item, so GameTests can check that the game agrees. */\n"
         "public final class GeneratedItemExpectations {\n"
-        "    /** Expected state of one item. Ids are full resource locations, e.g. {@code realmforge:test_item}. */\n"
-        "    public record ItemExpectation(String id, String translationKey, int maxStackSize, List<String> creativeTabs) {\n"
+        "    /**\n"
+        "     * Expected state of one item. Ids are full resource locations, e.g. {@code realmforge:test_item}; the use\n"
+        "     * tag is the item tag of its use, empty for an item without one.\n"
+        "     */\n"
+        "    public record ItemExpectation(String id, String translationKey, int maxStackSize, List<String> creativeTabs,\n"
+        "            String useTag) {\n"
         "    }\n"
         "\n"
         f"    public static final List<ItemExpectation> ITEMS = {items_list};\n"

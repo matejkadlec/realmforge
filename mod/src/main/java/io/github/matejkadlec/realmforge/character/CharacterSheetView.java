@@ -36,9 +36,11 @@ import net.neoforged.neoforge.common.PercentageAttribute;
  * the player's name and level, then four tabs of two columns each (Matěj, 2026-10-13 and 2026-10-14). Stats: the
  * primary stats with what they give, and the other attributes. Combat: offense and defense. Magic: spells with mana,
  * and the spell schools' power and resistance. Origin: the race (its description and what it gives) and the class (its
- * description, then a placeholder for the subclass). Built from a player's synced attributes, character and the
- * synced registries, so the client screen and the GameTests read the same rows. Every label is a translation; values
- * are formatted here, rounded for display only: a percentage to a whole number, any other number to one decimal.
+ * description, then a placeholder for the subclass). A player with a character also sees their unspent stat points on
+ * the Stats tab, and while any are unspent each primary stat's row offers a {@code +} that spends one (RLM-196). Built
+ * from a player's synced attributes, character and level and the synced registries, so the client screen and the
+ * GameTests read the same rows. Every label is a translation; values are formatted here, rounded for display only: a
+ * percentage to a whole number, any other number to one decimal.
  *
  * @param title the player's name and level
  * @param tabs the tabs in order
@@ -46,6 +48,8 @@ import net.neoforged.neoforge.common.PercentageAttribute;
 public record CharacterSheetView(Component title, List<Tab> tabs) {
     /** The id prefix of the Origin tab's rows, for tests: {@code origin/race/description}, ... */
     public static final String ORIGIN = "origin/";
+    /** The id of the Stats tab's row of unspent stat points. */
+    public static final String STAT_POINTS = "stat_points";
 
     /** Text colours the screen draws with: section titles, rows, reached bonuses and bonuses still ahead. */
     public static final int TITLE = 0xFFFFD24D;
@@ -72,8 +76,14 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
      * @param value the formatted value on the right; empty for a line under a primary stat
      * @param indented whether the row is a line under a primary stat (what it gives)
      * @param color the text colour, opaque ARGB
+     * @param spend the primary stat a {@code +} beside the row spends a stat point on, or null when it offers none
      */
-    public record Row(String id, Component label, String value, boolean indented, int color) {
+    public record Row(String id, Component label, String value, boolean indented, int color,
+            @Nullable ResourceKey<Attribute> spend) {
+        /** A row that offers no {@code +}. */
+        public Row(String id, Component label, String value, boolean indented, int color) {
+            this(id, label, value, indented, color, null);
+        }
     }
 
     /** An attribute on the sheet, under its own name or under one the sheet gives it ({@code label}, a text key). */
@@ -124,15 +134,16 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
         int level = player.getExistingData(StatsAttachments.LEVEL).map(EntityLevel::value).orElse(EntityLevel.MIN);
         Component title = Component.translatable(GeneratedTexts.GUI_CHARACTER_TITLE, player.getName(), level);
         return build(title, player::getAttributeValue, player::getAttributeBaseValue, player.registryAccess(),
-                Characters.data(player));
+                Characters.data(player), StatPoints.unspent(player));
     }
 
     /**
      * The sheet for any source of attribute values and base values (both must answer for every stat and every
-     * attribute the sheet lists) and a character.
+     * attribute the sheet lists), a character and its unspent stat points.
      */
     static CharacterSheetView build(Component title, ToDoubleFunction<Holder<Attribute>> value,
-            ToDoubleFunction<Holder<Attribute>> base, HolderLookup.Provider registries, CharacterData character) {
+            ToDoubleFunction<Holder<Attribute>> base, HolderLookup.Provider registries, CharacterData character,
+            int unspentPoints) {
         List<StatRule> rules = new ArrayList<>();
         registries.lookupOrThrow(StatsRegistries.STAT_RULE).listElements().forEach(rule -> rules.add(rule.value()));
         List<SpellSchool> schools = new ArrayList<>();
@@ -150,10 +161,16 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
         listed().forEach(entry -> placed.add(key(entry.attribute())));
 
         List<Row> primary = new ArrayList<>();
+        if (character.exists()) {
+            primary.add(new Row(STAT_POINTS, Component.translatable(GeneratedTexts.GUI_STAT_POINTS),
+                    String.valueOf(unspentPoints), false, unspentPoints > 0 ? BONUS : STAT));
+        }
         for (Holder<Attribute> stat : primaryStats()) {
             placed.add(key(stat));
             double points = value.applyAsDouble(stat);
-            primary.add(statRow(stat, points, STAT));
+            boolean spendable = character.exists() && unspentPoints > 0 && StatPoints.isPrimaryStat(key(stat));
+            primary.add(new Row(stat.value().getDescriptionId(), name(stat), formatted(stat, points), false, STAT,
+                    spendable ? key(stat) : null));
             for (StatRule rule : rules) {
                 if (rule.stat().is(key(stat))) {
                     primary.addAll(ruleRows(stat, rule, points));
