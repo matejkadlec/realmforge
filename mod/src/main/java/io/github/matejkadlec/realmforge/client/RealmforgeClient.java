@@ -3,6 +3,7 @@ package io.github.matejkadlec.realmforge.client;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.client.hud.CombatTextHud;
 import io.github.matejkadlec.realmforge.client.hud.HitDirectionHud;
+import io.github.matejkadlec.realmforge.client.hud.MagicShieldHud;
 import io.github.matejkadlec.realmforge.client.input.CharacterSheetKey;
 import io.github.matejkadlec.realmforge.client.input.DarkVisionKey;
 import io.github.matejkadlec.realmforge.client.network.ClientPayloadHandlers;
@@ -26,5 +27,6 @@ public final class RealmforgeClient {
         CharacterCreationScreen.register(modBus);
         CombatTextHud.register(modBus);
         HitDirectionHud.register(modBus);
+        MagicShieldHud.register(modBus);
     }
 }

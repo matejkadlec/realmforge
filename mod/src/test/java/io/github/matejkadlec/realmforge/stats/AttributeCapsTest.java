@@ -21,10 +21,11 @@ class AttributeCapsTest {
             Attributes.ARMOR, 30.0,
             Attributes.ARMOR_TOUGHNESS, 20.0,
             Attributes.MAX_HEALTH, 1024.0,
-            Attributes.ATTACK_DAMAGE, 2048.0);
+            Attributes.ATTACK_DAMAGE, 2048.0,
+            Attributes.MAX_ABSORPTION, 2048.0);
 
     @Test
-    void theFourVanillaCapsAreRaised() {
+    void theFiveVanillaCapsAreRaised() {
         assertEquals(VANILLA.keySet(), AttributeCaps.RAISED.stream()
                 .map(AttributeCaps.Raised::attribute)
                 .collect(Collectors.toSet()));
@@ -46,8 +47,8 @@ class AttributeCapsTest {
 
     @Test
     void otherCapsStayAsTheyAre() {
-        assertEquals(2048.0, AttributeCaps.max(Attributes.MAX_ABSORPTION));
         assertEquals(1024.0, AttributeCaps.max(Attributes.MOVEMENT_SPEED));
+        assertEquals(5.0, AttributeCaps.max(Attributes.ATTACK_KNOCKBACK));
     }
 
     @Test

@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=../../tools/schemas/stats.schema.json
-# Healing beyond max health becomes absorption, up to this share of max health, in percent. No effect until RLM-158.
+# Healing beyond max health becomes absorption, up to this share of max health, in percent. It lasts 10 seconds
+# after the last heal that added to it, and damage takes it before other absorption (architecture 9.1).
 id: overheal
 name: {en_us: Overheal}
 kind: secondary

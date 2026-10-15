@@ -163,7 +163,8 @@ io.github.matejkadlec.realmforge
 ├─ network/           payload registration (one place), versioned by the mod version
 ├─ progression/       chapters, criteria triggers, statistics: the bridge to quests
 ├─ stats/             attributes, entity levels, stat sources, derived stats, caps
-├─ combat/            spell schools, damage pipeline, crit, dodge, resistances, armor formula, combat text
+├─ combat/            spell schools, damage pipeline, crit, dodge, resistances, armor formula and pierce,
+│                     lifesteal, overheal, health regeneration, magic shield, combat text
 ├─ effect/            behaviour classes of our status effects
 ├─ spell/             spells, effect types, casting, cooldowns, resources, procs, spell entities
 ├─ talent/            talent trees, points, spell modifiers; glyphs later
@@ -461,6 +462,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:dark_vision` | `world` | players | whether Dark Vision is switched on (on by default) | not synced (the effect itself is) |
 | `realmforge:instance` | `dungeon` | players | the run's plot and the return point (spike 3); W4 adds the game mode to restore | not synced |
 | `realmforge:stat_tracker` | `stats` | players | when the stat modifiers were last recomputed and what a respawn owes the health ([8.2](#82-where-modifiers-come-from)); transient: not saved or copied | not synced |
+| `realmforge:magic_shield` | `combat` | players (any entity with the stat) | the points left in the magic shield and the tick count from which it refills ([9.1](#91-damage-pipeline)); transient: not saved or copied, so a new player entity starts with a full shield | the owner, points only (the HUD bar) |
 | `realmforge:pending_refill` | `mob` | mobs leveled as they spawn | a mark: refill the mob's health to its scaled maximum when it joins the level ([14.1](#141-mob-levels)); saved (a chunk-generation spawn waits in the chunk's data), not copied, removed at the join | not synced |
 
 - Values are immutable records with a `Codec` for saving and a `StreamCodec` for syncing, declared with
@@ -526,12 +528,15 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   gives it: D5 keeps it for future classes such as the Rogue), spell power, and each magic school's power and
   resistance (`fire_power`, `fire_resistance`, ...; F5, the resistances capped at 75 % so nothing becomes immune
   without a tell, research BM-18). Matěj's playtest of F4b and F5 (2026-10-13) set the rest of the list, shown on the
-  character sheet before every one of them works: armor pierce and armor pierce % (`armor_pierce`,
-  `armor_pierce_percent`), lifesteal and overheal (RLM-158); protection pierce and protection pierce % (RLM-159,
-  waiting for his decision on what they pierce); spell resistance, health regeneration and magic shield (RLM-160);
-  max mana, mana regeneration, cooldown reduction (which replaced haste) and cast time reduction (C3a, RLM-24); and
-  the XP multiplier (100 % by default, C2, RLM-23). Healing power is gone: healing spells scale with spell power and
-  their school.
+  character sheet before every one of them works. Working in the damage pipeline ([9.1](#91-damage-pipeline);
+  RLM-158, RLM-160): armor pierce and armor pierce % (`armor_pierce` in points, `armor_pierce_percent` a share,
+  lowering the armor a hit meets), lifesteal (a share of a melee or ranged hit's damage healed back), overheal (a
+  share of max health that healing past it fills as absorption), spell resistance (a share, added to a magic
+  school's resistance, the sum at most 75 %), health regeneration (points healed every second) and magic shield (a
+  pool of points that takes damage before health). Not working yet: protection pierce and protection pierce %
+  (RLM-159, waiting for his decision on what they pierce); max mana, mana regeneration, cooldown reduction (which
+  replaced haste) and cast time reduction (C3a, RLM-24); and the XP multiplier (100 % by default, C2, RLM-23).
+  Healing power is gone: healing spells scale with spell power and their school.
 - **Defined in `content/stats/`** (F4): each stat's kind (primary or secondary) and its range, in points (a
   `RangedAttribute`) or as a share (`max_percent`: NeoForge's `PercentageAttribute`, holding a fraction). `rf gen`
   writes their registrations into `generated/GeneratedStats` (owned by `stats`), with the description id
@@ -616,11 +621,12 @@ A GameTest player (`QaPlayers#login`) is never ticked by its connection, so the 
 
 ### 8.4 Caps
 
-Vanilla caps in 26.1.2 (as in 1.21.1) are armor 30, armor toughness 20, max health 1024 and attack damage 2048, and the vanilla
-armor formula never blocks more than 80% (`CombatRules.getDamageAfterAbsorb`). The vision wants armor, toughness
-and health far beyond vanilla, so:
+Vanilla caps in 26.1.2 (as in 1.21.1) are armor 30, armor toughness 20, max health 1024, attack damage 2048 and max
+absorption 2048, and the vanilla armor formula never blocks more than 80% (`CombatRules.getDamageAfterAbsorb`). The
+vision wants armor, toughness and health far beyond vanilla, so:
 
-- `stats/AttributeCaps` raises those four caps to 100,000 (F4c), on the client and the server alike, as each clamps
+- `stats/AttributeCaps` raises those five caps to 100,000 (F4c; max absorption with RLM-158, so overheal's
+  absorption, a share of max health, follows max health past 2048), on the client and the server alike, as each clamps
   attribute values itself: a limit against broken numbers, not a balance number. It runs as deferred work of mod
   construction (`FMLConstructModEvent#enqueueWork`), which FML runs serially after every mod's constructor (the
   constructors run in parallel), so it never lowers a cap another mod raised further. A `RangedAttribute`'s maximum
@@ -629,14 +635,15 @@ and health far beyond vanilla, so:
 - `AttributeCaps.max` reads the cap of any attribute from the attribute itself, and `AttributeCaps.RAISED` lists the
   raised ones. Our own stats take their caps from `content/stats/` (`max`, `max_percent`), so a stat with a hard cap,
   such as tenacity (research SP-12), is a content entry, and code asks `AttributeCaps.max` for its cap.
-- Every other cap stays vanilla's: max absorption keeps 2048 even when max health goes past it.
+- Every other cap stays vanilla's.
 - Armor mitigation uses our own level-aware formula ([9.1](#91-damage-pipeline)).
 
 ## 9. Combat
 
 ### 9.1 Damage pipeline
 
-Built in F5 (RLM-21): `combat/DamagePipeline` on NeoForge's damage events, with every formula in the pure
+Built in F5 (RLM-21), with armor pierce, lifesteal and overheal (RLM-158) and spell resistance, health regeneration
+and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage events, with every formula in the pure
 `combat/DamageCalculator` (JUnit). Logical server only.
 
 1. **Spell schools.** A school (`realmforge:spell_school`, `content/spell_schools/`, owned by `combat`) is a kind of
@@ -656,16 +663,23 @@ Built in F5 (RLM-21): `combat/DamagePipeline` on NeoForge's damage events, with 
      attacker; magic, explosions and damage from the world cannot be dodged. Cancelling stops a hit cleanly since
      NeoForge 26.1 (below), and `CombatEvent.Dodge` reports it.
    - **A school hit** gets the attacker side, damage × (1 + spell power, for magic only, + the school's power stat),
-     then the crit roll (crit chance and crit damage, as in melee), then the defender's resistance to the school:
-     × (1 − resistance), through `setAmount`. Talents act through those attributes or are already part of the spell's
-     damage ([11.5](#115-resources-cooldowns-modifiers)).
+     then the crit roll (crit chance and crit damage, as in melee), then the defender's resistance: × (1 −
+     resistance), through `setAmount`. The resistance is the defender's resistance to the school, plus its spell
+     resistance when the school is magic, at most 75 % together (`DamageCalculator.RESISTANCE_CAP`, research BM-18);
+     a physical school hit meets no spell resistance. Talents act through those attributes or are already part of
+     the spell's damage ([11.5](#115-resources-cooldowns-modifiers)).
    - **Our armor formula** replaces vanilla's through `addReductionModifier(DamageContainer.Reduction.ARMOR, ...)`:
-     with A = armor + armor toughness, armor blocks A / (A + K) of a hit, at most a cap, where K (the armor that
-     halves a hit) and the cap are the curves `realmforge:armor_halving` and `realmforge:armor_reduction_cap` at the
-     attacker's level (the defender's own when nobody attacked; [14.1](#141-mob-levels)). So the same armor blocks
-     less against a stronger attacker. NeoForge runs that reduction for every hit, so the formula keeps vanilla's
-     (zero) reduction for damage in `#minecraft:bypasses_armor`, and for every hit when a data pack removed the
-     curves. Vanilla still wears the armor down.
+     with A = armor + armor toughness, less the attacker's armor pierce (its flat points first, then its percent of
+     what is left, never below 0), armor blocks A / (A + K) of a hit, at most a cap, where K (the armor that halves a
+     hit) and the cap are the curves `realmforge:armor_halving` and `realmforge:armor_reduction_cap` at the attacker's
+     level (the defender's own when nobody attacked; [14.1](#141-mob-levels)). So the same armor blocks less against
+     a stronger attacker. Armor pierce acts on every hit armor meets from that attacker: melee, projectiles (their
+     shooter's pierce) and physical school hits. NeoForge runs that reduction for every hit, so the formula keeps
+     vanilla's (zero) reduction for damage in `#minecraft:bypasses_armor`, and for every hit when a data pack removed
+     the curves. Vanilla still wears the armor down.
+   - **The magic shield** joins the absorption reduction
+     (`addReductionModifier(DamageContainer.Reduction.ABSORPTION, ...)`) of a defender that has the stat or points
+     left (step 5).
 4. **Vanilla's hurt cooldown** comes next. Within 10 ticks of the previous hit, a hit that is not bigger than the
    previous one is dropped without any further event, and a bigger one deals only the difference; a hit outside
    that window starts a new one. School hits bypass it (the tag), so spells, damage over time and abilities always
@@ -679,14 +693,55 @@ Built in F5 (RLM-21): `combat/DamagePipeline` on NeoForge's damage events, with 
    previous melee hit, as in vanilla. `CombatGameTests` measures it: melee 6, a fire tick of 1, then melee 6 again
    deals 0 (it would deal 5 without the restore); and a fire hit right after a melee hit lands in full.
 5. The reductions apply: armor (our formula), enchantments, effects. **`LivingDamageEvent.Pre`** sees the damage
-   before absorption hearts take their share.
+   before absorption hearts take their share. Then absorption hearts take what they can, the **magic shield** takes
+   what they left, up to its points (`combat/MagicShields`), and health takes the rest. The shield acts in the
+   absorption reduction, after `Pre`, so the hit's inflicted damage (what the combat text shows and what the hurt
+   cooldown measures the next hit against, `lastHurt`) stays the whole hit. NeoForge subtracts the whole absorption
+   reduction from the absorption hearts, which is right because the shield only takes something once they are
+   empty.
 6. **`LivingDamageEvent.Post`** reports what was dealt: `combat` posts `CombatEvent.Hit` (school, crit, the
    original damage, what armor blocked, the damage dealt and taken from health) for higher features (procs in C3a
    and C5, threat later, the QA mod's combat log), and sends the combat text (`combat/net/CombatTextPayload`) to the
    player who dealt the hit ([18](#18-client-code-rendering-gui-input)). The player who took it gets no number, the
    health bar shows the damage, but the direction it came from (`combat/net/HitDirectionPayload`), as for a dodge,
-   which also shows "Miss!" to both players. A heal (`LivingHealEvent`, the last listener) sends the health it
-   restores to the players near the healed entity, from half a point up (Matěj, 2026-10-13).
+   which also shows "Miss!" to both players. A melee or ranged hit (`DamagePipeline#meleeOrRanged`: a mob or player
+   attack, or a projectile, from an attacker; never a school hit or an explosion) then heals its attacker by the
+   attacker's **lifesteal** share of the inflicted damage, which counts what absorption hearts and the magic shield
+   took (Matěj, 2026-10-14: melee and ranged hits only, never spells).
+7. **`LivingHealEvent`**, the last listener: **overheal** turns the part of a heal beyond max health into absorption
+   (below), and the combat text shows the health the heal restores to the players near the healed entity, from half
+   a point up (Matěj, 2026-10-13).
+
+**Overheal** (`combat/Overheal`): healing beyond max health becomes absorption, up to the overheal share of max
+health. Vanilla clamps absorption to `minecraft:max_absorption` (a golden apple's Absorption effect adds a modifier
+to it), so overheal makes room with a transient modifier `realmforge:overheal` of the same size. **It does not decay
+gradually; it expires** 10 seconds after the last heal that overflowed, like WotLK's absorb shields (Divine Aegis,
+Val'anyr's Protection of Ancient Kings), so it cannot be stocked up out of combat and carried into a fight, while
+steady healing in a fight (lifesteal) keeps it up. Damage eats it before other absorption (a golden apple's): each
+server tick, what the absorption lost since the last look comes off the overheal first, and its modifier shrinks with
+it. Its state is per entity and transient (a map with
+weak keys, checked each server tick); a player who logs in has absorption above the maximum clamped away, since the
+modifier is not saved. Passive health regeneration never overheals.
+
+**Health regeneration** (`combat/HealthRegeneration`): a player with X health regeneration heals X health every
+second (X/2 hearts; Matěj, 2026-10-14), on top of vanilla's food regeneration, never beyond max health. It runs on
+the player's tick, every 20 ticks of its tick count.
+
+**Magic shield** (`combat/MagicShields`; Matěj, 2026-10-13: "a secondary healthbar, that is hit first, and only
+when empty the player begin to lose health; mainly for casters"): a pool of up to the magic shield stat's points in
+the transient `realmforge:magic_shield` attachment ([7](#7-player-state)). It takes damage after absorption hearts
+and before health (step 5), and refills to full, all at once, 10 seconds (`MagicShields.REFILL_DELAY_TICKS`) after
+the last damage the player took, any damage, even with the pool empty (Matěj's playtest, 2026-10-14); a new player
+entity starts full. The pool syncs to its owner on every change, and `client/hud/MagicShieldHud` draws it as a
+translucent bar over the bottom row of hearts, a new colour every 10 points ([18](#18-client-code-rendering-gui-input)).
+Like absorption hearts, it takes any damage that reaches health (falls, drowning, starvation included).
+
+`DamageCalculatorTest` covers the formulas; `CombatStatGameTests` plays each stat in a world: armor pierce against a
+training dummy with 15 armor, spell resistance and its cap on a husk, and a fake player for lifesteal (melee and a
+thrown hit heal, a fire hit does not), overheal (its cap, its expiry, damage taking it before a golden apple's
+absorption), health regeneration
+(its schedule, no overheal) and the magic shield (before health, after absorption hearts, `lastHurt` kept, the
+refill).
 
 What one hit learns in an earlier event and needs in a later one (whether a melee hit crit, a school hit's
 `lastHurt`) waits in `combat/HitTracker`, per defender and matched by the damage source, because a hit the hurt
@@ -1333,6 +1388,7 @@ depth limit.
 | datapack registries | NeoForge, at login, through each registry's network codec |
 | character, spellbook, talents | synced attachments, sent on every `setData` |
 | combat state | attachment synced explicitly and throttled |
+| magic shield | synced attachment, to the owner, on every change (a hit, a refill) |
 | entity level | synced attachment, to the player itself and everyone tracking the entity |
 | boss phase | the boss bar's title (`ServerBossEvent#setName`) |
 | events: cast started or ended, combat text, dungeon status | payloads, for example `PacketDistributor.sendToPlayersTrackingEntityAndSelf` |
@@ -1352,7 +1408,7 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
 
 - **Entry point:** `client/RealmforgeClient`, annotated `@Mod(value = Realmforge.MOD_ID, dist = Dist.CLIENT)`, which
   FML constructs only on the client. It registers HUD layers (`RegisterGuiLayersEvent`: spell bar, cast bar,
-  resource bar, combat text), key mappings (`RegisterKeyMappingsEvent`), entity renderers
+  resource bar, combat text, the magic shield's bar), key mappings (`RegisterKeyMappingsEvent`), entity renderers
   (`EntityRenderersEvent.RegisterRenderers`), particles (`RegisterParticleProvidersEvent`), menu screens
   (`RegisterMenuScreensEvent`), tooltip components (`RegisterClientTooltipComponentFactoriesEvent`) and the handlers
   of client-bound payloads (`RegisterClientPayloadHandlersEvent`, [17.1](#171-rules)).
@@ -1380,6 +1436,15 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     player sees no numbers for damage taken.
   - The hit direction layer (`client/hud/HitDirectionHud`, after the MMM Indicators mod) draws a red arc around the
     crosshair toward each recent attacker for 1.5 s, turning with the camera and following the attacker.
+  - The magic shield layer (`client/hud/MagicShieldHud`, RLM-160; Matěj, 2026-10-14) draws a faint bar (alpha 80 of
+    255, about 31 % opaque, so the hearts stay readable) over the bottom row of hearts, inside a 1-pixel border with
+    rounded corners: its straight edges stop 2 pixels short of each corner and one pixel closes the round, so the 3
+    corner pixels outside it form an L. Every 10 shield points fill the bar once, in the next colour, layered over
+    the tier below as Overflowing Bars layers hearts: light blue up to 10 points, then blue, purple, magenta, and red
+    from 40 up (full from 50); 25 points show purple over the left half and blue over the rest. The border takes the
+    top tier's colour, halfway to white (`MagicShieldBar`). Nothing shows while the shield is empty. A second layer,
+    below vanilla's health layer, notes where that row goes (`Gui#leftHeight`), so the bar follows layers that raise
+    the left column.
   - The character sheet (`client/screen/CharacterSheetScreen`, opened and closed by `client/input/CharacterSheetKey`,
     K by default) draws `character/CharacterSheetView`: the player's name and level in bold ("Steve · Lv. 12"),
     then four tabs of two columns (a click, the number keys, Tab or the arrow keys switch them). The heading and the
@@ -1479,7 +1544,7 @@ Minecraft jar a project compiles against (its default location), and which `neof
 `[[accessTransformers]]`, so FML applies it when the game loads: in a dev run (the runs live in `qa-mod/`, whose own
 jar lacks the core mod's transforms), on the GameTest server and in the pack. The core mod's one opens
 `LivingEntity#lastHurt` for the hurt cooldown ([9.1](#91-damage-pipeline)); the QA mod's opens `lastHurt` and
-`damageContainers` for `CombatGameTests`.
+`damageContainers` for `CombatGameTests` and `CombatStatGameTests`.
 
 ### 19.4 Optional integrations
 

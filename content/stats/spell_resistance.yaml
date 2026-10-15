@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../tools/schemas/stats.schema.json
 # Less damage from every magic school, in percent, added to the school's own resistance; the sum stops at 75 %
-# (research BM-18). No effect until RLM-160.
+# (research BM-18, architecture 9.1).
 id: spell_resistance
 name: {en_us: Spell Resistance}
 kind: secondary

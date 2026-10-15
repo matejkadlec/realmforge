@@ -204,14 +204,14 @@ public final class CombatGameTests {
     }
 
     /** The share armor blocks at an attacker level, from the content's curves (architecture 9.1). */
-    private static double blocked(GameTestHelper helper, double armor, int attackerLevel) {
+    static double blocked(GameTestHelper helper, double armor, int attackerLevel) {
         Registry<Curve> curves = helper.getLevel().registryAccess().lookupOrThrow(CoreRegistries.CURVE);
         double halving = curves.getValue(GeneratedCurves.ARMOR_HALVING).valueAt(attackerLevel);
         double cap = curves.getValue(GeneratedCurves.ARMOR_REDUCTION_CAP).valueAt(attackerLevel);
         return Math.min(cap, armor / (armor + halving));
     }
 
-    private static void assertDealt(GameTestHelper helper, LivingEntity target, DamageSource source, float damage,
+    static void assertDealt(GameTestHelper helper, LivingEntity target, DamageSource source, float damage,
             double expected, String what) {
         float before = target.getHealth();
         target.hurtServer(helper.getLevel(), source, damage);
@@ -233,16 +233,16 @@ public final class CombatGameTests {
     }
 
     /** Closes the target's hurt cooldown window, so the next hit counts in full. */
-    private static void settle(LivingEntity target) {
+    static void settle(LivingEntity target) {
         target.invulnerableTime = 0;
     }
 
-    private static DamageSource school(GameTestHelper helper, ResourceKey<SpellSchool> school, LivingEntity caster) {
+    static DamageSource school(GameTestHelper helper, ResourceKey<SpellSchool> school, LivingEntity caster) {
         return SpellSchools.damage(helper.getLevel().registryAccess(), school, caster, caster);
     }
 
     /** A zombie that stands still, at level 1, so its level neither scales its hits nor weakens the target's armor. */
-    private static Zombie attacker(GameTestHelper helper) {
+    static Zombie attacker(GameTestHelper helper) {
         Zombie zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(0, 1, 0));
         zombie.setNoAi(true);
         MobLevels.setLevel(zombie, EntityLevel.MIN);
@@ -253,7 +253,7 @@ public final class CombatGameTests {
      * A husk that stands still with {@value #HEALTH} health, so no test kills it, at level 1, so the armor its level
      * would add is not there.
      */
-    private static Husk target(GameTestHelper helper) {
+    static Husk target(GameTestHelper helper) {
         Husk husk = helper.spawn(EntityType.HUSK, new BlockPos(2, 1, 2));
         husk.setNoAi(true);
         MobLevels.setLevel(husk, EntityLevel.MIN);
@@ -264,7 +264,7 @@ public final class CombatGameTests {
         return husk;
     }
 
-    private static void setBase(LivingEntity entity, Holder<Attribute> attribute, double value) {
+    static void setBase(LivingEntity entity, Holder<Attribute> attribute, double value) {
         var instance = entity.getAttribute(attribute);
         if (instance == null) {
             throw new IllegalStateException(entity.getType() + " lacks " + attribute.getRegisteredName());
@@ -272,7 +272,7 @@ public final class CombatGameTests {
         instance.setBaseValue(value);
     }
 
-    private static boolean close(double got, double want) {
+    static boolean close(double got, double want) {
         return Math.abs(got - want) <= TOLERANCE;
     }
 }

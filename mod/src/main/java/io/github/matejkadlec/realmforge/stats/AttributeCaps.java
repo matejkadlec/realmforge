@@ -9,8 +9,9 @@ import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 
 /**
  * The upper limits of attributes (architecture 8.4). An attribute's value is clamped to its range
- * ({@code Attribute#sanitizeValue}), and vanilla's caps for armor (30), armor toughness (20), max health (1024) and
- * attack damage (2048) are far below the numbers Realmforge's gear, levels and bosses reach. {@link #raise} lifts them
+ * ({@code Attribute#sanitizeValue}), and vanilla's caps for armor (30), armor toughness (20), max health (1024),
+ * attack damage (2048) and max absorption (2048) are far below the numbers Realmforge's gear, levels and bosses
+ * reach. {@link #raise} lifts them
  * to the caps in {@link #RAISED} through the mixin accessor {@link RangedAttributeAccessor}; our own stats take their
  * caps from {@code content/stats/}. {@link #max} reads the cap of any attribute, so code that needs one (a stat with a
  * hard cap, a tooltip) asks here instead of copying a number.
@@ -31,7 +32,9 @@ public final class AttributeCaps {
             new Raised(Attributes.ARMOR, RAISED_MAX),
             new Raised(Attributes.ARMOR_TOUGHNESS, RAISED_MAX),
             new Raised(Attributes.MAX_HEALTH, RAISED_MAX),
-            new Raised(Attributes.ATTACK_DAMAGE, RAISED_MAX));
+            new Raised(Attributes.ATTACK_DAMAGE, RAISED_MAX),
+            // Overheal's absorption is a share of max health (architecture 9.1), so it follows max health past 2048.
+            new Raised(Attributes.MAX_ABSORPTION, RAISED_MAX));
 
     private AttributeCaps() {
     }
