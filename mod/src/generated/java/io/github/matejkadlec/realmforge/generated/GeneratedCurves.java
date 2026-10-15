@@ -17,6 +17,15 @@ public final class GeneratedCurves {
     /** {@code realmforge:armor_reduction_cap} from {@code content/curves/armor_reduction_cap.yaml}. */
     public static final ResourceKey<Curve> ARMOR_REDUCTION_CAP = key("armor_reduction_cap");
 
+    /** {@code realmforge:kill_xp} from {@code content/curves/kill_xp.yaml}. */
+    public static final ResourceKey<Curve> KILL_XP = key("kill_xp");
+
+    /** {@code realmforge:kill_xp_above_player} from {@code content/curves/kill_xp_above_player.yaml}. */
+    public static final ResourceKey<Curve> KILL_XP_ABOVE_PLAYER = key("kill_xp_above_player");
+
+    /** {@code realmforge:kill_xp_below_player} from {@code content/curves/kill_xp_below_player.yaml}. */
+    public static final ResourceKey<Curve> KILL_XP_BELOW_PLAYER = key("kill_xp_below_player");
+
     /** {@code realmforge:mob_armor} from {@code content/curves/mob_armor.yaml}. */
     public static final ResourceKey<Curve> MOB_ARMOR = key("mob_armor");
 
@@ -29,8 +38,11 @@ public final class GeneratedCurves {
     /** {@code realmforge:test_curve} from {@code content/curves/test_curve.yaml}. */
     public static final ResourceKey<Curve> TEST_CURVE = key("test_curve");
 
+    /** {@code realmforge:xp_to_next_level} from {@code content/curves/xp_to_next_level.yaml}. */
+    public static final ResourceKey<Curve> XP_TO_NEXT_LEVEL = key("xp_to_next_level");
+
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Curve>> ALL = List.of(ARMOR_HALVING, ARMOR_REDUCTION_CAP, MOB_ARMOR, MOB_DAMAGE, MOB_HEALTH, TEST_CURVE);
+    public static final List<ResourceKey<Curve>> ALL = List.of(ARMOR_HALVING, ARMOR_REDUCTION_CAP, KILL_XP, KILL_XP_ABOVE_PLAYER, KILL_XP_BELOW_PLAYER, MOB_ARMOR, MOB_DAMAGE, MOB_HEALTH, TEST_CURVE, XP_TO_NEXT_LEVEL);
 
     private GeneratedCurves() {
     }

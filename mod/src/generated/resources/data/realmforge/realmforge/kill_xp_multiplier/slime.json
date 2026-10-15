@@ -1,0 +1,10 @@
+{
+  "entity": "minecraft:slime",
+  "multiplier": 0.25,
+  "by_size": [
+    {
+      "max_size": 1,
+      "multiplier": 0.0
+    }
+  ]
+}

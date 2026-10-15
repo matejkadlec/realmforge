@@ -6,3 +6,17 @@ texts:
     en_us: Dark Vision Off
   dark_vision_on:
     en_us: Dark Vision On
+  # Leveling (C2, architecture 10.2). XP a kill gave, in the action bar: "+50 XP" (%1$s the XP).
+  xp_gained:
+    en_us: "+%1$s XP"
+  # The title and subtitle a level-up shows (%1$s the new level).
+  level_up:
+    en_us: Level Up!
+  level_up_subtitle:
+    en_us: You are now level %1$s
+  # In chat when a level-up reaches the cap (%1$s the cap, %2$s the chapter that raises it).
+  level_cap_reached:
+    en_us: Level %1$s is the cap for now, so you gain no XP until you complete %2$s.
+  # In chat when completing a chapter raises the cap (%1$s the chapter, %2$s the new cap).
+  level_cap_raised:
+    en_us: "%1$s complete! Your level cap is now %2$s."

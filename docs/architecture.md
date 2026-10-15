@@ -261,7 +261,7 @@ How features cooperate without breaking the direction:
 | | `RegisterTicketControllersEvent` (mod) | chunk ticket controllers: instance plots ([15.5](#155-instances)) |
 | World creation | `LevelEvent.CreateSpawnPosition` (game; listened to, never cancelled) | the gamerules of a new world, once ([19.1](#191-world-defaults)) |
 | Server start | `RegisterCommandsEvent`, `ServerStartedEvent` (game) | commands |
-| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerEvent.PlayerRespawnEvent`, `PlayerEvent.PlayerChangedDimensionEvent`, `PlayerTickEvent.Post` (game) | recompute stats at the end of a new player entity's first tick and after a change; keep health across respawns ([8.2](#82-where-modifiers-come-from)); keep or end the player's instance run ([15.5](#155-instances)); reapply Dark Vision ([19.1](#191-world-defaults)) |
+| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerEvent.PlayerRespawnEvent`, `PlayerEvent.PlayerChangedDimensionEvent`, `PlayerTickEvent.Post` (game) | recompute stats at the end of a new player entity's first tick and after a change; keep health across respawns ([8.2](#82-where-modifiers-come-from)); bring a character's level cap and level up to date at login ([10.2](#102-leveling)); keep or end the player's instance run ([15.5](#155-instances)); reapply Dark Vision ([19.1](#191-world-defaults)) |
 | Play | damage, death, spawn, tick and advancement events (game) | sections 8-16 |
 | Client start | `RealmforgeClient` constructor; client registration events (mod) | [section 18](#18-client-code-rendering-gui-input) |
 
@@ -299,7 +299,8 @@ How features cooperate without breaking the direction:
 | `realmforge:talent_tree` | `content/talents/` | WoW-style tree: nodes on a grid, ranks, prerequisites, typed effects per rank | yes | M1 |
 | `realmforge:stat_rule` | `content/stat_rules/` | what a primary stat gives: per-point modifiers, milestone bonuses | yes | M1 |
 | `realmforge:curve` | `content/curves/` | named table of points (level → value), linearly interpolated: XP per level, mob scaling, item budgets | yes | M1 |
-| `realmforge:chapter` | `content/chapters/` | story chapter: order and the level cap after completion (what a chapter unlocks names the chapter through `chapter_completed`) | yes | M1 |
+| `realmforge:chapter` | `content/chapters/` | story chapter (owned by `progression`, C2): order, the level cap while it is the player's current chapter and the one once it is completed; its advancement `realmforge:chapter/<id>` marks it completed (what a chapter unlocks names the chapter through `chapter_completed`) | yes | M1 |
+| `realmforge:kill_xp_multiplier` | `content/kill_xp_multipliers/` | how much kill XP the mobs of one entity type give (owned by `character`, C2), named in an `entity` field, by size for slimes and magma cubes; the XP model calls it the mob's rank. Validation allows one entry per entity type | no | M1 |
 | `realmforge:dimension_rules` | `content/dimensions/` | gameplay rules of one dimension, named in a `dimension` field (for example `minecraft:overworld`): mob levels, access requirement, flags. Validation allows one entry per dimension; the server indexes the entries by dimension | no | M1 |
 | `realmforge:boss` | `content/bosses/` | fixed level, attributes, phases, abilities (spells), arena, loot | no | M1 |
 | `realmforge:dungeon_type` | `content/dungeons/` | rule set: the room pool it is built from, resolved into its rooms (template, size, role, weight, connectors), and its layout rules (W4a); theme, encounters, loot, level range and key join with the tasks that use them | no | M1 |
@@ -501,7 +502,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   `character/CharacterData`, `spell/Spellbook`, `spell/CombatState` and `talent/TalentAllocation`; owner-only data
   syncs with `core/Attachments#toOwner`. Spells and talent trees are named by `Identifier` until their registries
   exist (C3a, C5); races and classes are `ResourceKey`s since C1, which save the same string, so F3's saves stay
-  readable. The cached level cap stays empty until C2 computes it. Every saved field is optional with a default, so an empty
+  readable. Leveling (C2, [10.2](#102-leveling)) caches the level cap there for players with a character. Every saved field is optional with a default, so an empty
   save reads as the default value.
 - `level` is copied on death, and NeoForge copies the same attachments when a mob converts (a zombie drowns,
   `LivingConversionEvent.Post`), so the converted mob keeps its level, and `mob` gives it that level's scaling
@@ -809,19 +810,81 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
 
 ### 10.2 Leveling
 
-- **Character XP is separate from vanilla experience** (proposal, see the roadmap's open decisions). Vanilla XP
-  stays the currency for enchanting and anvils until the enchanting overhaul; character XP is never spent.
+- **Character XP is separate from vanilla experience** (decision D3, RLM-53). Vanilla XP stays the currency for
+  enchanting and anvils until the enchanting overhaul (M5); character XP is never spent.
 - **Level is derived:** `level = min(cap, level_for(total_xp))`, with the XP table from `realmforge:curve`, and
-  stored in the `realmforge:level` attachment that every system reads. XP above the cap keeps accumulating (the
-  Otherworld pattern in the [research notes](research-notes.md#inputs)), so raising the cap levels the player up
-  at once.
+  stored in the `realmforge:level` attachment that every system reads.
+- **XP stops at the cap** (Matěj, 2026-10-15, as WotLK does at max level; not the Otherworld pattern of the
+  [research notes](research-notes.md#inputs), which banks it). A player holds at most the XP of their cap's level
+  (`XpTable#capped`). A gain that crosses the cap counts only up to it, and a player at the cap gains nothing, so
+  the next chapter's levels cannot be farmed in advance. A raised cap therefore brings no level by itself: the
+  player starts at 0 XP toward the next level. Every update cuts the total (a lowered cap after a revoked chapter,
+  a save from before this rule at login).
 - **Level cap:** the highest cap among completed chapters (a base cap before any), cached in the `character`
-  attachment and recomputed on `AdvancementEvent.AdvancementEarnEvent` and on login ([16](#16-progression-and-quests)).
+  attachment and recomputed when a chapter's advancement is granted or revoked and on login
+  ([16](#16-progression-and-quests)). A chapter's cap is its last level, and its main questline raises it (Matěj,
+  2026-10-15, superseding D2's 10 then 20; v1 realm layout RLM-188): chapter 1 (the Overworld, levels 1-10) 10 →
+  18, chapter 2 (the Undervault, levels 6-18) 18 → 30, chapter 3 30 → 40, chapter 4 40 → 44, chapter 5 44 → 52,
+  chapter 6 52 → 60, and chapter 7 60, the highest level. `content/chapters/` holds chapters 1 and 2 so far; the
+  last chapter raises no cap, so its entry will need `completed_level_cap` to be optional.
+- **The XP model** (Matěj, 2026-10-15; RLM-192 writes it up in `docs/design/leveling.md`) counts in kill-equivalents
+  (KE): one kill of a normal mob of the player's level, `45 + 5 × level` XP (50 at level 1, 345 at 60). A level
+  takes `KE(L) × (45 + 5L)` XP, with `KE(1) = 30` (about 5 minutes of farming at 6 kills a minute) and each level
+  1.07 times the KE of the one before below level 10, 1.05 times for 10-17, 1.035 times for 18-29 and 1.03 times
+  from 30: 1,500 XP from level 1 to 2, 25,960 in all for level 10, 85,890 for 18, 281,690 for 30 and 1,912,740 for
+  60. Quest XP (RLM-189), dungeon XP (RLM-190) and anti-farm rules (RLM-191) join later.
 - **XP sources** (amounts are data): kills, where `character` listens to `LivingDeathEvent` and scales the XP by the
-  victim's level relative to the player's (mobs far below give nothing); quests; dungeon completion and boss kills;
-  later discoveries and professions.
-- **Level-up:** recompute stats, grant talent points and teach class spells through their features' APIs, toast and
-  sound, fire the `realmforge:level_reached` trigger for advancements.
+  victim's level relative to the player's (mobs far below give nothing) and by its kill XP multiplier (its rank); quests (`/realmforge xp`); dungeon
+  completion and boss kills; later discoveries and professions. A player's XP multiplier (`xp_multiplier`, 100 % by
+  default) scales every gain.
+- **Level-up:** recompute stats, grant talent points and teach class spells through their features' APIs (C4, C5),
+  toast and sound, fire the `realmforge:level_reached` trigger for advancements.
+- **In code (C2, RLM-23):**
+  - **The numbers** are four curves ([content README](../content/README.md)): `xp_to_next_level` (the XP from a
+    level to the next, rounded half up, at least 1; one point per level 1-59 from the XP model), `kill_xp` (a kill's
+    XP by the victim's level, `45 + 5 × level`), and `kill_xp_below_player` (90 % at 1 level below, then 15 % less a
+    level, nothing from 7 below) and `kill_xp_above_player` (5 % more a level, up to +20 %), by how many levels the
+    victim is below or above the player. A kill gives `kill_xp × rank × level difference × XP multiplier`, in that
+    order, rounded half up. `character/XpTable` and `character/KillXp` are the pure rules, and
+    `tools/realmforge_tools/schema/leveling.py` computes the same; `LevelingGameTests` compares the two at the
+    generated samples.
+  - **Kill XP multipliers** (`character/KillXpMultiplier`, the server-only registry `realmforge:kill_xp_multiplier`
+    from `content/kill_xp_multipliers/`): the victim's entity type gives its rank, 1 when it has no entry. Vanilla's
+    first numbers (Matěj, 2026-10-15): 0 for a size 1 slime and 0.25 for a larger one, 0.1 for a silverfish,
+    endermite or vex, 0.5 for a cave spider, 1.5 for a witch, enderman, vindicator or breeze, 2.5 for an evoker, 4
+    for a ravager, 10 for an elder guardian or warden. A slime's or magma cube's size (`Slime#getSize`) picks its
+    `by_size` entry. Our own mobs and bosses take their rank the same way (RLM-190); the XP model's ranks run from 0
+    (passive) and 0.25 (minion) through 1 (normal), 1.5 (strong) and 2 (elite) to 5 (miniboss), 10 (dungeon boss)
+    and 20 (realm guardian).
+  - **Chapters** live in `progression`: `progression/Chapter` (the `realmforge:chapter` entry: `order`, `level_cap`
+    while it is the current chapter, `completed_level_cap` once completed), `LevelCaps` (the pure cap rule: the
+    highest `completed_level_cap` among completed chapters, never below the first chapter's `level_cap`; with no
+    chapter at all only the guard `LevelCaps.MAX_LEVEL`, 1000, holds) and `Chapters`, the public API (a chapter is
+    completed once the player has `<namespace>:chapter/<path>`). The pipeline generates each chapter's advancement:
+    `minecraft:impossible` as its only criterion and no display, so only the chapter's last quest or a command
+    grants it, and it shows no toast or tab. NeoForge posts `AdvancementEvent.AdvancementEarnEvent` only for
+    advancements with a display (`PlayerAdvancements#award`), so `character/Leveling` listens to
+    `AdvancementProgressEvent`, which follows every grant and revoke of a criterion, after the progress changed.
+  - **`character/Leveling`** is the system: on login it brings the cap and level up to date quietly and fires
+    `level_reached` with the level, so a new criterion catches up; a chapter's advancement updates them and, when
+    the cap rose, says so in chat ("Chapter 1 complete! Your level cap is now 18.") before the level-up it brings,
+    whose hint may name the next chapter. A kill of a hostile mob (a
+    vanilla `Enemy`; animals, villagers and golems give nothing) gives XP to the player with vanilla's kill credit:
+    the one who dealt the killing blow, directly or by a projectile, else the one who hurt the victim in the last
+    5 seconds or owns the pet that did (`LivingEntity#getLastHurtByPlayer`, as for experience orbs). It listens at
+    the lowest priority and not to cancelled deaths, and shows "+50 XP" in the action bar. Players without a
+    character gain nothing ([10.1](#101-races-and-classes)) and leveling leaves them alone; creating the character
+    brings their cap and level up to date. `Characters` is the public API: `level`, `rewardXp` (times the XP
+    multiplier, with level-up effects), `setTotalXp` (exact, quiet) and `xpToReach`.
+  - **A level-up** recomputes the stats at once (race and class modifiers grow with the level), shows the title
+    "Level Up!" with "You are now level 5" beneath it (vanilla's title packets), plays the challenge fanfare to the
+    player alone, bursts totem particles that everyone nearby sees, and fires `realmforge:level_reached`. A level-up
+    that reaches the cap says in chat which chapter raises it. Talent points and class spells join with C4 and C5.
+  - **`/realmforge xp add|set|query`** (`command/XpCommand`, permission level 2): `add` gives XP as a reward (times
+    the XP multiplier, with level-ups), `set` sets the total exactly and quietly, `query` shows XP, level and cap.
+    FTB Quests' `CommandReward` runs `add` for quest rewards (Q1).
+  - **The XP bar** ([18](#18-client-code-rendering-gui-input)) draws `character/XpBarView`.
+  - No XP is lost on death in M1 (research PR-7).
 
 ## 11. Spells and status effects
 
@@ -1328,7 +1391,7 @@ depth limit.
   through its standard reward and task types:
   - **Quests → our mod:** the last quest of a chapter has an `AdvancementReward` that grants
     `realmforge:chapter/<id>` (an advancement whose only criterion is `minecraft:impossible`, so nothing else grants
-    it). Our `AdvancementEarnEvent` listener raises the level cap. Character XP rewards use a `CommandReward` that
+    it). Leveling's `AdvancementProgressEvent` listener raises the level cap (C2, [10.2](#102-leveling)). Character XP rewards use a `CommandReward` that
     runs our operator command `/realmforge xp`, so the generator writes `permission_level: 2` (FTB Quests' default
     is 0).
   - **Every team member gets the chapter advancement** (checked in the FTB Quests 2101.1.36 jar, RLM-73). Quest
@@ -1345,7 +1408,9 @@ depth limit.
     [ADR 0014](decisions/0014-core-mod-architecture.md) stands. Q1's pytest checks that every generated chapter
     reward is per player and auto-claimed.
   - **Our mod → quests:** our criteria triggers (`Registries.TRIGGER_TYPE`) complete advancements generated from
-    content: `realmforge:level_reached`, `boss_defeated`, `dungeon_completed`, `spell_cast`, `talent_learned`.
+    content: `realmforge:level_reached` (exists since C2: `progression/LevelReachedTrigger`, fired with the
+    character level whenever it changes and on login; a criterion names `"level": {"min": 5}`, as the cap can lift a
+    player past an exact level), `boss_defeated`, `dungeon_completed`, `spell_cast`, `talent_learned`.
     Custom statistics (`Registries.CUSTOM_STAT`) count repeatable things such as dungeons cleared. FTB Quests'
     `AdvancementTask` and `StatTask` read them and are retroactive.
 - **Pipeline:** `content/chapters/` and `content/quests/` → advancements in the jar, FTB Quests SNBT in
@@ -1459,6 +1524,14 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     number (100.6% reads 101%), any other number half up to one decimal (6.45 reads 6.5). All of it comes from the
     player's synced attributes, level and character and the synced registries; a pet tab waits for the pet system
     (RLM-161).
+  - The XP bar (`client/hud/XpBarHud`, C2) draws `character/XpBarView`: as wide as the hotbar, above the health and
+    food rows and every other status row. NeoForge stacks those rows through `Gui#leftHeight` and `Gui#rightHeight`;
+    the layer, registered above `VanillaGuiLayers.AIR_LEVEL`, reads them, so the bar rises with more heart rows, and
+    raises them, so later layers (the selected item's name) stay above it. In creative, where no status row is
+    drawn, it keeps clear of vanilla's experience level. It fills purple toward the next level and shows full and
+    gold while the level cap holds the player, who then gains no XP; the level ("Lv. 5") sits on its middle,
+    outlined like vanilla's experience level. Vanilla's experience bar keeps its place, as vanilla XP still pays for
+    enchanting (D3). It shows only for a player with a character, never in spectator mode.
   - Character creation (`client/screen/CharacterCreationScreen`, C1) draws `character/CharacterCreationView`: the
     races on the left and the classes the chosen race allows on the right, as vanilla buttons with a gold outline on
     the chosen one, each with its description and what it gives at level 1 and per level ("+5 Strength (+1 per
@@ -1583,8 +1656,12 @@ that agents can read. So far:
   in the server log, or build it into a plot for a fly-through; without a seed a random one is drawn and named
   ([15.3](#153-generation-pure-first-then-minecraft));
 - `/qa stats set <stat> <value> [<players>]`, `/qa stats reset|show` (F4b: points for a primary stat, percent for a
-  share) and `/qa level <level> [<entity>]` (the `realmforge:level` attachment, which the armor formula reads; a
-  hostile mob also gets the scaling of the level, W1, and a player's race and class bonuses follow it, C1);
+  share) and `/qa level <level> [<entity>]` (a player with a character gets exactly the character XP of the level,
+  quietly, so the level follows up to the level cap, C2; another player or a mob gets the `realmforge:level`
+  attachment, which the armor formula reads; a hostile mob also gets the scaling of the level, W1, and a player's
+  race and class bonuses follow it, C1). The core mod's operator command `/realmforge xp add|set|query`
+  ([10.2](#102-leveling)) gives, sets or shows character XP, and vanilla's `/advancement grant @s only
+  realmforge:chapter/chapter_1` completes chapter 1;
 - `/qa mob [<entity>]` (W1): a mob's level, health over its maximum with the multiple its level added, armor with the
   points its level added, and the damage multiple of its hits; without an argument, the nearest hostile mob within
   32 blocks. The training dummy joins at level 1, which adds nothing;

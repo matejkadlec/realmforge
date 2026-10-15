@@ -85,3 +85,8 @@ Added 2026-10-13 (RLM-130): the server's allowlist has a second entry, "Failed t
 dedicated server fetches Mojang's key without a proxy (`Proxy.NO_PROXY`), which fails in a cloud session's container,
 where only the agent proxy reaches the internet; the key only checks players' signatures, and a boot has no players.
 
+Added 2026-10-15 (RLM-23): a third entry, authlib's "Got an error with a html body connecting to
+https://api.minecraftservices.com/publickeys". It is the same key fetch, failing because Mojang's service answered
+with an error page; it failed the server boot of a CI run, and the server goes on without the key as above. The
+pattern names only that URL, so an error page from any other Mojang service still fails the boot.
+

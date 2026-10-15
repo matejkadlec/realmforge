@@ -72,7 +72,7 @@ add content to systems that already work instead of building them.
 | Classes | 2: a melee class and a caster (decision D1: Warrior with rage, Mage with mana) |
 | Spells | 4-5 per class, covering a self-buff, a debuff, single target, AoE and one special spell (such as a blink) |
 | Talents | one tree per class, about 8-10 nodes in 3 tiers, including spell-modifying talents and one big-impact talent |
-| Leveling | levels 1-10 with a level cap; finishing chapter 1 raises the cap (proposal D2: 10, then 20) |
+| Leveling | levels 1-10 with a level cap; finishing chapter 1 raises the cap (D2: 10, then 18) |
 | Stats | primary stats with derived bonuses and at least one milestone bonus; a character sheet |
 | Dimension | 1 custom dimension, the stone realm: a huge enclosed cave world (the Undervault, [realm design](design/realms.md#the-stone-realm)); data-driven worldgen, locked until a chapter 1 quest unlocks it |
 | Mobs | levels by location for vanilla hostile mobs, plus 1-2 custom mob types for the dungeons (proposal D11) |
@@ -170,8 +170,8 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
 - **C2 Leveling and the level cap** (RLM-23, M, after C1; D2, D3). The XP curve; XP from kills by the victim's level
   (`realmforge:level`, 1 for every mob until W1 assigns levels) and from `/realmforge xp`; the
   `realmforge:chapter` registry and the cap from chapter advancements; level-up effects; the `level_reached`
-  trigger; an XP bar. *Done when:* GameTests show XP accumulating past the cap and granting the chapter advancement
-  raising the level.
+  trigger; an XP bar. *Done when:* GameTests show XP stopping at the cap and granting the chapter advancement
+  raising the cap.
 - **C3a Spell engine** (RLM-24, L, after C2). `realmforge:spell` (schools exist since F5), effect and targeting types,
   `SpellCaster`, cooldowns and the global cooldown, the behaviour of mana and rage, procs, the projectile and area
   entities. *Done when:* GameTests cast every effect type, a cast whose resource runs out or whose target leaves
@@ -373,7 +373,7 @@ decided, which wins over the proposal here.
 | # | Ticket | Decision | Needed by | Proposal |
 | --- | --- | --- | --- | --- |
 | D1 | RLM-51 | The two M1 classes | C1 | **Decided 2026-10-11 (RLM-51): Warrior (melee, rage) and Mage (caster, mana)**, as proposed: the most different pair, which tests both Better Combat melee and casting. Hunter was the alternative to Mage; it would leave the spell system untested and needs a pet (M6), so it is a candidate for a later class |
-| D2 | RLM-52 | Level cap numbers | C2 | cap 10 during chapter 1, raised to 20 when it is finished |
+| D2 | RLM-52 | Level cap numbers | C2 | each chapter's cap is its last level, raised by its main questline (Matěj, 2026-10-15, v1 layout RLM-188): 10, 18, 30, 40, 44, 52, 60, so chapter 1 raises 10 to 18 |
 | D3 | RLM-53 | Character XP and vanilla XP | C2 | separate: character XP is never spent; vanilla XP stays the currency for enchanting and anvils until M5 decides its role |
 | D4 | RLM-54 | Spell key scheme | C3b | a separate spell bar with its own keys, leaving the item hotbar alone; spike 4 informs it |
 | D5 | RLM-55 | Primary stats | F4 | **Decided 2026-10-11 (RLM-55): strength, dexterity, vitality and intellect.** Vitality is the health stat, not called stamina so it is never confused with a stamina resource. Dexterity gives bonuses every class uses: critical strike chance (spells too), attack speed and movement speed (small, capped). Dodge is no Dexterity bonus: it is kept for future classes such as the Rogue and the Hunter. Luck and defense stay out. F4 (RLM-20) set the first numbers in `content/stat_rules/` |

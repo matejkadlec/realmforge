@@ -65,6 +65,16 @@ public record CharacterData(Optional<ResourceKey<Race>> race, List<ResourceKey<P
         return race.isPresent();
     }
 
+    /** The same character with {@code xp} as its total character XP. */
+    public CharacterData withTotalXp(long xp) {
+        return new CharacterData(race, classes, xp, levelCap);
+    }
+
+    /** The same character with {@code cap} as its cached level cap. */
+    public CharacterData withLevelCap(int cap) {
+        return new CharacterData(race, classes, totalXp, Optional.of(cap));
+    }
+
     /** A new character of the race and class: everything else as before (no XP is lost by creating one). */
     public CharacterData create(ResourceKey<Race> newRace, ResourceKey<PlayerClass> playerClass) {
         return new CharacterData(Optional.of(newRace), List.of(playerClass), totalXp, levelCap);

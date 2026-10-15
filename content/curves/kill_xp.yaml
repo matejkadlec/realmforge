@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/curves.schema.json
+# The character XP a kill gives, by the victim's level (architecture 10.2): 45 + 5 x the level (WoW Classic's mob
+# formula), 50 at level 1 and 345 at level 60, the kill-equivalent (KE) the XP model of 2026-10-15 counts in (RLM-192).
+# A kill then gets the victim's kill XP multiplier (content/kill_xp_multipliers/), kill_xp_below_player or
+# kill_xp_above_player, and the player's XP multiplier. Only hostile mobs give XP.
+id: kill_xp
+name: {en_us: Kill XP}
+points:
+  - {level: 1, value: 50}
+  - {level: 60, value: 345}

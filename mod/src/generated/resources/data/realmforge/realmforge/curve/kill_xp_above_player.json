@@ -1,0 +1,13 @@
+{
+  "name": "curve.realmforge.kill_xp_above_player.name",
+  "points": [
+    {
+      "level": 0,
+      "value": 1.0
+    },
+    {
+      "level": 4,
+      "value": 1.2
+    }
+  ]
+}

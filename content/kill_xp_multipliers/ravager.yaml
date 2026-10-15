@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../tools/schemas/kill_xp_multipliers.schema.json
+# Kill XP of a ravager (Matěj, 2026-10-15; XP model RLM-192): a raid's beast.
+id: ravager
+entity: minecraft:ravager
+multiplier: 4

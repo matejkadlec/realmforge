@@ -131,6 +131,21 @@ def test_the_server_allowlist_covers_the_key_fetch_a_cloud_session_cannot_make()
     assert len(boot_problems(_outcome(log=CLOUD_SERVER_LOG), ALLOWED_ERRORS["client"])) == 1
 
 
+# Mojang's key service answered with an error page (CI, 2026-10-15): authlib logs the page's HTML.
+KEY_SERVICE_ERROR_PAGE_LOG = f"""\
+{FOUND_JAR}
+[15Oct2026 13:31:02.512] [Yggdrasil Key Fetcher/ERROR] [com.mojang.authlib.minecraft.client.MinecraftClient/]: Got an error with a html body connecting to https://api.minecraftservices.com/publickeys: <!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+"""
+
+
+def test_the_server_allowlist_covers_an_error_page_from_the_key_service() -> None:
+    assert boot_problems(_outcome(log=KEY_SERVICE_ERROR_PAGE_LOG), ALLOWED_ERRORS["server"]) == []
+    # Only that URL: an error page from any other Mojang service still fails the boot.
+    other = KEY_SERVICE_ERROR_PAGE_LOG.replace("/publickeys", "/minecraft/profile")
+    assert len(boot_problems(_outcome(log=other), ALLOWED_ERRORS["server"])) == 1
+
+
 def test_the_client_runs_under_xvfb_when_it_exists(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(packboot.shutil, "which", lambda name: f"/usr/bin/{name}")
     assert packboot._headless(["game"]) == ["/usr/bin/xvfb-run", "-a", "-s", packboot.XVFB_SCREEN, "game"]

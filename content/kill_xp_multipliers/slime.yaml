@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/kill_xp_multipliers.schema.json
+# Kill XP of a slime (Matěj, 2026-10-15; XP model RLM-192): a quarter of a normal mob's from size 2, as each splits
+# into smaller ones, and nothing for the smallest (size 1), which a split makes by the dozen.
+id: slime
+entity: minecraft:slime
+multiplier: 0.25
+by_size:
+  - {max_size: 1, multiplier: 0}

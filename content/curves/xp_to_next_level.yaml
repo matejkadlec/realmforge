@@ -1,0 +1,70 @@
+# yaml-language-server: $schema=../../tools/schemas/curves.schema.json
+# The character XP that takes a player from a level to the next (architecture 10.2), from the XP model of
+# 2026-10-15 (RLM-192): XP(L) = KE(L) x (45 + 5L), where 45 + 5L is one kill of a mob of the player's level
+# (kill_xp) and KE(L) the kills a level takes. KE(1) = 30, about 5 minutes of farming at 6 kills a minute; KE(L + 1) =
+# KE(L) x 1.07 below level 10, x 1.05 for 10-17, x 1.035 for 18-29 and x 1.03 from 30. Rounded half up to 10 below
+# 10,000 and to 50 from 10,000. A player needs 25,960 XP in all for level 10, 85,890 for 18, 281,690 for 30 and
+# 1,912,740 for 60. One point per level, generated from the formula (tools/tests/test_leveling.py recomputes it);
+# playtests that measure another farming rate move only KE(1).
+id: xp_to_next_level
+name: {en_us: XP to Next Level}
+points:
+  - {level: 1, value: 1500}
+  - {level: 2, value: 1770}
+  - {level: 3, value: 2060}
+  - {level: 4, value: 2390}
+  - {level: 5, value: 2750}
+  - {level: 6, value: 3160}
+  - {level: 7, value: 3600}
+  - {level: 8, value: 4090}
+  - {level: 9, value: 4640}
+  - {level: 10, value: 5240}
+  - {level: 11, value: 5790}
+  - {level: 12, value: 6380}
+  - {level: 13, value: 7020}
+  - {level: 14, value: 7710}
+  - {level: 15, value: 8450}
+  - {level: 16, value: 9240}
+  - {level: 17, value: 10100}
+  - {level: 18, value: 11000}
+  - {level: 19, value: 11800}
+  - {level: 20, value: 12650}
+  - {level: 21, value: 13550}
+  - {level: 22, value: 14500}
+  - {level: 23, value: 15500}
+  - {level: 24, value: 16550}
+  - {level: 25, value: 17600}
+  - {level: 26, value: 18800}
+  - {level: 27, value: 20000}
+  - {level: 28, value: 21250}
+  - {level: 29, value: 22600}
+  - {level: 30, value: 24000}
+  - {level: 31, value: 25350}
+  - {level: 32, value: 26800}
+  - {level: 33, value: 28250}
+  - {level: 34, value: 29800}
+  - {level: 35, value: 31400}
+  - {level: 36, value: 33100}
+  - {level: 37, value: 34850}
+  - {level: 38, value: 36650}
+  - {level: 39, value: 38550}
+  - {level: 40, value: 40550}
+  - {level: 41, value: 42600}
+  - {level: 42, value: 44750}
+  - {level: 43, value: 47000}
+  - {level: 44, value: 49350}
+  - {level: 45, value: 51800}
+  - {level: 46, value: 54350}
+  - {level: 47, value: 57000}
+  - {level: 48, value: 59750}
+  - {level: 49, value: 62600}
+  - {level: 50, value: 65600}
+  - {level: 51, value: 68700}
+  - {level: 52, value: 71950}
+  - {level: 53, value: 75350}
+  - {level: 54, value: 78850}
+  - {level: 55, value: 82500}
+  - {level: 56, value: 86300}
+  - {level: 57, value: 90250}
+  - {level: 58, value: 94400}
+  - {level: 59, value: 98650}
