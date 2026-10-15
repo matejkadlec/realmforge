@@ -1269,8 +1269,8 @@ Steps 1 and 2 exist since W4a (`dungeon/plan/`; `DungeonType#plan(seed)` → `Du
   the same random source, up to 64; no layout in 64 attempts throws `PlanningException`. The entrance's origin
   corner is the plot's origin, so every room offset is relative to it.
 - **Cost:** on the test dungeon (23 rooms, layouts of 8 to 17 rooms) planning took 3.5 ms at the median, 24 ms at
-  the 99th percentile and 44 ms at worst over 3,000 seeds, with at most 11 attempts. It reads no world, so W4b can
-  plan off the main thread if the entry path needs it.
+  the 99th percentile and 44 ms at worst over 3,000 seeds, with at most 11 attempts. It reads no world, so it can
+  move off the main thread if the portal's entry path (W4d) needs it.
 
 JUnit fuzzes steps 1 and 2 over thousands of seeds, on synthetic room sets and on the generated dungeon types
 (`DungeonPlannerTest`, `PlanChecks`): every rule holds, no rooms overlap, every room is reachable from the entrance,
@@ -1278,7 +1278,24 @@ no connector stays open, and the same seed gives the same layout. `ContentDungeo
 that every room's connectors are the jigsaw blocks the game reads from its template in every rotation, and
 `DungeonPlanGameTests` builds a layout of every type into a plot. `/qa dungeon plan <type> [<seed>]` names a layout's
 rooms by slot and writes a top-down map and a legend to the server log; `/qa dungeon build <type> [<seed>]` builds it
-into a plot with spike 3's builder for a fly-through ([20](#20-tests-per-layer)).
+into a plot for a fly-through, and `/qa dungeon enter <type> [<seed>]` builds it and moves you in at its entrance
+([15.5](#155-instances), [20](#20-tests-per-layer)).
+
+Step 3 exists since W4b ([15.5](#155-instances)), with the **data markers**: a room marks spots with structure blocks in
+data mode whose metadata names the marker (`DataMarker.Kind`):
+
+| Marker | Where | Used by |
+| --- | --- | --- |
+| `entrance` | where players arrive; one at most, in an entrance room only | W4b |
+| `exit` | where the way out stands | W4d |
+| `mob` | a spot the dungeon's encounters put a mob on | W6 |
+| `chest` | a spot the dungeon's loot puts a chest on | W6 |
+
+When a plot opens, the builder reads them from each room's template as vanilla's `SinglePoolElement#getDataMarkers`
+does (`StructureTemplate#filterBlocks` with the room's placement settings, so they turn with the room), and the plot
+keeps each one's kind, room and position relative to its origin. Placing a room leaves them out
+(`BlockIgnoreProcessor.STRUCTURE_BLOCK`), so none stands in the world. No content room holds a marker yet (none of the
+imported sources had any); the spike test rooms hold an entrance, a mob and an exit marker.
 
 ### 15.4 Rooms
 
@@ -1334,12 +1351,18 @@ Rooms are generated or imported; nobody has to build one by hand
   facing out, known markers, only blocks the themes can swap and only ids inside the ID universe (an imported
   room's own blocks are remapped, and a container's loot table must exist), and `LICENSE` and `NOTICE` next to
   third-party rooms (`COPYING` next to LGPL-3.0 ones). `rooms/check.py` checks the size, the data version, the
-  ids, the loot tables, the connectors and each jigsaw's pool, which must be a vanilla template pool or a room
-  pool some sidecar lists (it becomes a template pool for world structures, M4); markers come with W4b and the
-  swappable blocks with the themes of the room generator (A4d). Generated rooms are also checked for reachability
+  ids, the loot tables, the connectors, each jigsaw's pool, which must be a vanilla template pool or a room
+  pool some sidecar lists (it becomes a template pool for world structures, M4), and the data markers: every
+  structure block is one, in data mode, naming a marker of [15.3](#153-generation-pure-first-then-minecraft), with one
+  entrance marker at most. A room in a dungeon type's pool also holds no fluid on its sides or floor (water, lava, a
+  waterlogged block, kelp or seagrass): a fluid flows down and sideways out of the room's box, past what cleanup
+  clears ([15.5](#155-instances)); one on its roof stays inside. It holds an entrance marker only if it is an entrance
+  (`validate.py`). Eleven imported rooms have fluids at their edges and are in no pool. The swappable blocks come with
+  the themes of the room generator (A4d). Generated rooms are also checked for reachability
   between their connectors and for headroom. In the game, `ContentRoomGameTests` (QA mod) loads every room through
   the structure manager, which upgrades an imported room from its data version, and compares its size, jigsaws and
-  air blocks with `GeneratedRoomExpectations`.
+  air blocks with `GeneratedRoomExpectations`, and checks that every structure block in it is a data marker the
+  builder knows.
 
 ### 15.5 Instances
 
@@ -1350,28 +1373,48 @@ and `dungeon/instance/`.
 - `InstanceManager` keeps a `SavedData` (`realmforge_instances`) in the instance dimension
   (`DimensionDataStorage#computeIfAbsent`): a grid of plots 1,024 blocks apart (`PlotGrid`; Compact Machines uses the
   same spacing), filled row by row, each plot's rooms within 256 blocks of its origin at y 64. Each plot has its
-  state (building, ready, active, closing, free; W4 adds completed), layout (W4: dungeon type and seed), the boxes of
-  its rooms and of blocks still to clear, its work progress, its party and the chunks it holds. The party is a list
-  of players: solo in M1 (decision D8), parties later (RLM-68) without a data migration. Each player's run and
-  return point live in the player's `realmforge:instance` attachment ([7](#7-player-state)); W4 adds the previous
-  game mode.
-- **Entry:** an entrance in the world (W4: a temporary portal opened with a dungeon key, D8) → allocate a plot
-  (`InstanceManager#open`, lowest free plot first) → build over ticks → teleport the online party members
-  (`ServerPlayer#teleportTo(ServerLevel, x, y, z, yaw, pitch)`). Until W4b the QA mod's `/qa instance enter` opens a
-  plot with three test rooms, and `/qa dungeon build` builds a planned layout without entering it.
+  state (building, ready, active, completed, closing, free), layout (its rooms and the block an arriving player looks
+  at), its data markers, where players arrive, the boxes of its rooms and of blocks still to clear, its work
+  progress, its party and the chunks it holds. The party is a list of players: solo in M1 (decision D8), parties
+  later (RLM-68) without a data migration. Each player's run and return point live in the player's
+  `realmforge:instance` attachment ([7](#7-player-state)); W4 adds the previous game mode.
+- **Entry:** an entrance in the world (W4d: a temporary portal opened with a dungeon key, D8) → allocate a plot
+  (`InstanceManager#open`: the rooms' boxes and data markers from their templates, lowest free plot first) → load
+  its chunks in the background, then hold them → build over ticks → find where players arrive → teleport the online
+  party members there (`ServerPlayer#teleportTo(ServerLevel, x, y, z, yaw, pitch)`), looking at the layout's way on:
+  the entrance's connector to the next room of the main path (`InstanceLayout#lookAt`). Players arrive at the
+  entrance room's entrance marker; without one, `SpawnFinder` takes the spot nearest the middle of the entrance room
+  where a player stands on a sturdy floor with two free blocks (no collision, no fluid), the lowest of equally near
+  ones, and the middle of its roof when there is none. `/qa dungeon enter <type> [<seed>]` enters a planned dungeon
+  until W4d's portal; `/qa instance enter` builds the spike test rooms in a row.
+- **Room templates load when the server starts** and after a reload, which empties the structure manager's cache
+  (`ServerStartedEvent`, `OnDatapackSyncEvent` without a player): every room of every dungeon type, so no run waits
+  for a template to load and upgrade from its data version (up to 54 ms each in spike 3).
 - **Building over ticks:** placing a room and clearing a box are cut into units of one chunk column each
   (`PlotWork`; placing uses `StructurePlaceSettings#setBoundingBox`, known shapes and update flag 2 like structure
   blocks, and `JigsawReplacementProcessor`, so every connector becomes its final state as in vanilla's jigsaw
-  structures). The builder runs units for up to 5 ms per tick, at least one, in `LevelTickEvent.Post` of the instance
-  level, so its time shows in the server's tick time. The unit list is a pure function of the saved plot, so a
-  restart resumes at the saved step, and a unit whose chunk is still loading waits for a later tick instead of
-  loading it on the main thread.
-- **Chunk loading:** from opening until it is free, every chunk a plot touches is held by the NeoForge
-  `TicketController` `realmforge:instance_plots` (registered in `RegisterTicketControllersEvent`, owner: the plot's
-  origin, non-ticking). Its tickets survive restarts; its validation callback drops the tickets of plots that are
-  free or unknown when the level loads. `TicketController#forceChunk` loads the chunk synchronously, which makes
-  opening a plot block the main thread for 2-80 ms, and for 0.3-1 s the first time a plot cell is used (vanilla
-  generates and saves the neighbours of a forced chunk too, 3-4 MB per cell); W4 keeps that off the entry path.
+  structures). The builder runs in `LevelTickEvent.Post` of the instance level, so its time shows in the server's
+  tick time. Each tick, every plot being built runs one unit whatever the budget, then the rest of 5 ms goes round
+  the plots with work one unit at a time, starting after the plot served last; some unit always runs. Plots opened
+  together build side by side, and clearing a closed plot never holds back a run's build. The unit list is a pure
+  function of the saved plot, so a restart resumes at the saved step, and a unit whose chunk is still loading waits
+  for a later tick instead of loading it on the main thread. A unit that throws (a room template that no longer
+  resolves after a restart) releases a plot being built and is skipped by a closing one, and is logged, instead of
+  failing the tick on every start.
+- **Chunk loading:** from opening until it is free, every chunk a plot touches (its rooms with the cleanup margin)
+  is held by the NeoForge `TicketController` `realmforge:instance_plots` (registered in
+  `RegisterTicketControllersEvent`, owner: the plot's origin, non-ticking). Its tickets survive restarts; its
+  validation callback drops the tickets of plots that are free or unknown when the level loads.
+  `TicketController#forceChunk` loads a chunk that is not loaded yet on the main thread (spike 3: 2-80 ms per plot,
+  and 0.3-1 s the first time a plot cell is used, as vanilla generates and saves the neighbours of a forced chunk
+  too, 3-4 MB per cell). So a plot first asks for its chunks with a background ticket of our own
+  (`realmforge:instance_loading`: loading only, renewed every tick until the chunk has loaded and gone 20 ticks
+  later, not saved), and the controller holds each chunk only once it has loaded. After a restart, a plot asks again
+  for the chunks it does not hold, and a build released before any of its units ran loads none. The GameTest server
+  runs its ticks back to back, so the background loading of a new plot cell (seconds) would outlast the tests' tick
+  timeouts; there the QA mod loads the chunks plots wait for before each tick (`GameTestChunkLoads`).
+- **Completion:** a run whose goal is done (its final boss died; W4d adds the trigger, the message and the timer) is
+  `completed` (`InstanceManager#complete`): its players stay until they leave or the plot closes.
 - **Rules inside: nobody edits the rooms.** Survival players are switched to Adventure mode while inside (creative
   operators keep theirs); the previous game mode is saved in an attachment and restored when they leave (also on
   the next login after a crash).
@@ -1398,15 +1441,20 @@ and `dungeon/instance/`.
 - **Also inside:** respawn at the entrance, no natural spawns, leave through the exit portal or a command.
 - **Leaving and disconnects:** leaving by command or exit, respawning outside the dimension
   (`PlayerEvent.PlayerRespawnEvent`) or being teleported out (`PlayerEvent.PlayerChangedDimensionEvent`) leaves the
-  run; a run whose party is empty is released, built or still building. A disconnect keeps the run. On login
+  run; a run whose party is empty is released, built or still building. A party member who has not entered yet (the
+  run is still being built, or built and waiting) can leave it too (`InstanceManager#leave`, `/qa instance leave`),
+  and is never moved in. A disconnect keeps the run. On login
   (`PlayerEvent.PlayerLoggedInEvent`) a player inside the dimension stays if their run is still playable and is sent
   back to their return point otherwise; a player outside it drops out of a run they never entered (they disconnected
   while it was being built). W4 adds a timeout for party members who stay offline.
 - **Cleanup and plot reuse: clear, then reuse** (spike 3). When a run is released, its blocks are cleared over the
-  next ticks (containers emptied first so nothing drops, entities other than players removed), its chunks are
-  released and the plot becomes free for the next run; nobody waits for it. Overwriting on reuse doubled the next
-  run's build time, and never reusing plots grew the world by 3 MB per run; `/qa instance cleanup` still switches to
-  them for measurements.
+  next ticks (containers emptied first so nothing drops, entities other than players removed), its rooms and 4 blocks
+  around each (`PlotWork.MARGIN`) for what spreads past a wall while players are inside: fire, a vine, a creative
+  operator's block beside a wall. Room validation keeps fluids off the edges of the rooms dungeons build
+  ([15.4](#154-rooms)), so nothing flows further. Then its chunks are released and the plot becomes free for the next
+  run; nobody waits for it. Overwriting on reuse doubled the next run's build time, and never reusing plots grew the
+  world by 3 MB per run ([ADR 0019](decisions/0019-dungeon-instances-in-plots.md)); W4b removed both, and
+  `/qa instance bench` measures clear then reuse.
 - No dimensions are created at runtime (ADR 0012).
 
 ### 15.6 World structures (M4)
@@ -1683,11 +1731,12 @@ The QA mod grows with the features: `/qa` commands (level, class, talents, gear 
 instance with a given seed, reset cooldowns, god mode), a training dummy with a DPS meter, and a combat log file
 that agents can read. So far:
 
-- `/qa instance enter|leave|build|free|list|cleanup|bench` from spike 3, and `/qa state show|reset [<entity>]` from
+- `/qa instance enter|leave|build|free|list|bench` from spike 3, and `/qa state show|reset [<entity>]` from
   F3, which prints or clears the player state attachments ([7](#7-player-state));
-- `/qa dungeon plan|build <type> [<seed>]` (W4a): plan a layout of a dungeon type, with a top-down map and a legend
-  in the server log, or build it into a plot for a fly-through; without a seed a random one is drawn and named
-  ([15.3](#153-generation-pure-first-then-minecraft));
+- `/qa dungeon plan|build|enter <type> [<seed>]` (W4a, W4b): plan a layout of a dungeon type, with a top-down map
+  and a legend in the server log, build it into a plot for a fly-through, or build it and move in at its entrance as
+  the portal will (W4d); without a seed a random one is drawn and named ([15.3](#153-generation-pure-first-then-minecraft),
+  [15.5](#155-instances));
 - `/qa stats set <stat> <value> [<players>]`, `/qa stats reset|show` (F4b: points for a primary stat, percent for a
   share) and `/qa level <level> [<entity>]` (a player with a character gets exactly the character XP of the level,
   quietly, so the level follows up to the level cap, C2; another player or a mob gets the `realmforge:level`
