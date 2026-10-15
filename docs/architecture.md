@@ -1367,8 +1367,9 @@ Rooms are generated or imported; nobody has to build one by hand
 ### 15.5 Instances
 
 Spike 3 built this and measured it; the numbers and the reasons are in
-[ADR 0019](decisions/0019-dungeon-instances-in-plots.md). Code: `dungeon/DungeonFeature`, `dungeon/DungeonAttachments`
-and `dungeon/instance/`.
+[ADR 0019](decisions/0019-dungeon-instances-in-plots.md), and W4b's changes to it in
+[ADR 0031](decisions/0031-instance-builder-background-chunks-and-shared-budget.md). Code: `dungeon/DungeonFeature`,
+`dungeon/DungeonAttachments` and `dungeon/instance/`.
 
 - `InstanceManager` keeps a `SavedData` (`realmforge_instances`) in the instance dimension
   (`DimensionDataStorage#computeIfAbsent`): a grid of plots 1,024 blocks apart (`PlotGrid`; Compact Machines uses the
@@ -1735,8 +1736,8 @@ that agents can read. So far:
   F3, which prints or clears the player state attachments ([7](#7-player-state));
 - `/qa dungeon plan|build|enter <type> [<seed>]` (W4a, W4b): plan a layout of a dungeon type, with a top-down map
   and a legend in the server log, build it into a plot for a fly-through, or build it and move in at its entrance as
-  the portal will (W4d); without a seed a random one is drawn and named ([15.3](#153-generation-pure-first-then-minecraft),
-  [15.5](#155-instances));
+  the portal will (W4d); without a seed a random one is drawn and named
+  ([15.3](#153-generation-pure-first-then-minecraft), [15.5](#155-instances));
 - `/qa stats set <stat> <value> [<players>]`, `/qa stats reset|show` (F4b: points for a primary stat, percent for a
   share) and `/qa level <level> [<entity>]` (a player with a character gets exactly the character XP of the level,
   quietly, so the level follows up to the level cap, C2; another player or a mob gets the `realmforge:level`
