@@ -49,8 +49,9 @@ modpack adds third-party QoL, performance and library mods.
   core (F5: spell schools, crit, dodge, resistances, our armor formula, combat text, the QA training dummy), and
   hostile mobs get levels from the dimension rules with health, damage and armor scaled by curves (W1). A new player
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits.
-  Characters level up (C2): character XP from kills and `/realmforge xp`, an XP bar, and a level cap from chapter
-  advancements (10 during chapter 1, then 20). Spells come next.
+  Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
+  bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). Spells come
+  next.
 
 ## Pinned versions
 

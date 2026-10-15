@@ -300,6 +300,7 @@ How features cooperate without breaking the direction:
 | `realmforge:stat_rule` | `content/stat_rules/` | what a primary stat gives: per-point modifiers, milestone bonuses | yes | M1 |
 | `realmforge:curve` | `content/curves/` | named table of points (level → value), linearly interpolated: XP per level, mob scaling, item budgets | yes | M1 |
 | `realmforge:chapter` | `content/chapters/` | story chapter (owned by `progression`, C2): order, the level cap while it is the player's current chapter and the one once it is completed; its advancement `realmforge:chapter/<id>` marks it completed (what a chapter unlocks names the chapter through `chapter_completed`) | yes | M1 |
+| `realmforge:kill_xp_multiplier` | `content/kill_xp_multipliers/` | how much kill XP the mobs of one entity type give (owned by `character`, C2), named in an `entity` field, by size for slimes and magma cubes; the XP model calls it the mob's rank. Validation allows one entry per entity type | no | M1 |
 | `realmforge:dimension_rules` | `content/dimensions/` | gameplay rules of one dimension, named in a `dimension` field (for example `minecraft:overworld`): mob levels, access requirement, flags. Validation allows one entry per dimension; the server indexes the entries by dimension | no | M1 |
 | `realmforge:boss` | `content/bosses/` | fixed level, attributes, phases, abilities (spells), arena, loot | no | M1 |
 | `realmforge:dungeon_type` | `content/dungeons/` | rule set: the room pool it is built from, resolved into its rooms (template, size, role, weight, connectors), and its layout rules (W4a); theme, encounters, loot, level range and key join with the tasks that use them | no | M1 |
@@ -817,20 +818,40 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
   at once.
 - **Level cap:** the highest cap among completed chapters (a base cap before any), cached in the `character`
   attachment and recomputed when a chapter's advancement is granted or revoked and on login
-  ([16](#16-progression-and-quests)). Decision D2 (RLM-52): 10 during chapter 1, 20 once it is finished.
+  ([16](#16-progression-and-quests)). A chapter's cap is its last level, and its main questline raises it (Matěj,
+  2026-10-15, superseding D2's 10 then 20; v1 realm layout RLM-188): chapter 1 (the Overworld, levels 1-10) 10 →
+  18, chapter 2 (the Undervault, levels 6-18) 18 → 30, chapter 3 30 → 40, chapter 4 40 → 44, chapter 5 44 → 52,
+  chapter 6 52 → 60, and chapter 7 60, the highest level. `content/chapters/` holds chapters 1 and 2 so far; the
+  last chapter raises no cap, so its entry will need `completed_level_cap` to be optional.
+- **The XP model** (Matěj, 2026-10-15; RLM-192 writes it up in `docs/design/leveling.md`) counts in kill-equivalents
+  (KE): one kill of a normal mob of the player's level, `45 + 5 × level` XP (50 at level 1, 345 at 60). A level
+  takes `KE(L) × (45 + 5L)` XP, with `KE(1) = 30` (about 5 minutes of farming at 6 kills a minute) and each level
+  1.07 times the KE of the one before below level 10, 1.05 times for 10-17, 1.035 times for 18-29 and 1.03 times
+  from 30: 1,500 XP from level 1 to 2, 25,960 in all for level 10, 85,890 for 18, 281,690 for 30 and 1,912,740 for
+  60. Quest XP (RLM-189), dungeon XP (RLM-190) and anti-farm rules (RLM-191) join later.
 - **XP sources** (amounts are data): kills, where `character` listens to `LivingDeathEvent` and scales the XP by the
-  victim's level relative to the player's (mobs far below give nothing); quests (`/realmforge xp`); dungeon
+  victim's level relative to the player's (mobs far below give nothing) and by its kill XP multiplier (its rank); quests (`/realmforge xp`); dungeon
   completion and boss kills; later discoveries and professions. A player's XP multiplier (`xp_multiplier`, 100 % by
   default) scales every gain.
 - **Level-up:** recompute stats, grant talent points and teach class spells through their features' APIs (C4, C5),
   toast and sound, fire the `realmforge:level_reached` trigger for advancements.
 - **In code (C2, RLM-23):**
   - **The numbers** are four curves ([content README](../content/README.md)): `xp_to_next_level` (the XP from a
-    level to the next, rounded half up, at least 1), `kill_xp` (a kill's XP by the victim's level), and
-    `kill_xp_below_player` and `kill_xp_above_player` (the share a kill gives by how many levels the victim is below
-    or above the player). `character/XpTable` and `character/KillXp` are the pure rules, and
+    level to the next, rounded half up, at least 1; one point per level 1-59 from the XP model), `kill_xp` (a kill's
+    XP by the victim's level, `45 + 5 × level`), and `kill_xp_below_player` (90 % at 1 level below, then 15 % less a
+    level, nothing from 7 below) and `kill_xp_above_player` (5 % more a level, up to +20 %), by how many levels the
+    victim is below or above the player. A kill gives `kill_xp × rank × level difference × XP multiplier`, in that
+    order, rounded half up. `character/XpTable` and `character/KillXp` are the pure rules, and
     `tools/realmforge_tools/schema/leveling.py` computes the same; `LevelingGameTests` compares the two at the
     generated samples.
+  - **Kill XP multipliers** (`character/KillXpMultiplier`, the server-only registry `realmforge:kill_xp_multiplier`
+    from `content/kill_xp_multipliers/`): the victim's entity type gives its rank, 1 when it has no entry. Vanilla's
+    first numbers (Matěj, 2026-10-15): 0 for a size 1 slime and 0.25 for a larger one, 0.1 for a silverfish,
+    endermite or vex, 0.5 for a cave spider, 1.5 for a witch, enderman, vindicator or breeze, 2.5 for an evoker, 4
+    for a ravager, 10 for an elder guardian or warden. A slime's or magma cube's size (`Slime#getSize`) picks its
+    `by_size` entry. Our own mobs and bosses take their rank the same way (RLM-190); the XP model's ranks run from 0
+    (passive) and 0.25 (minion) through 1 (normal), 1.5 (strong) and 2 (elite) to 5 (miniboss), 10 (dungeon boss)
+    and 20 (realm guardian).
   - **Chapters** live in `progression`: `progression/Chapter` (the `realmforge:chapter` entry: `order`, `level_cap`
     while it is the current chapter, `completed_level_cap` once completed), `LevelCaps` (the pure cap rule: the
     highest `completed_level_cap` among completed chapters, never below the first chapter's `level_cap`; with no
@@ -842,11 +863,11 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
     `AdvancementProgressEvent`, which follows every grant and revoke of a criterion, after the progress changed.
   - **`character/Leveling`** is the system: on login it brings the cap and level up to date quietly and fires
     `level_reached` with the level, so a new criterion catches up; a chapter's advancement updates them and, when
-    the cap rose, says so in chat ("Chapter 1 complete! Your level cap is now 20."). A kill of a hostile mob (a
+    the cap rose, says so in chat ("Chapter 1 complete! Your level cap is now 18."). A kill of a hostile mob (a
     vanilla `Enemy`; animals, villagers and golems give nothing) gives XP to the player with vanilla's kill credit:
     the one who dealt the killing blow, directly or by a projectile, else the one who hurt the victim in the last
     5 seconds or owns the pet that did (`LivingEntity#getLastHurtByPlayer`, as for experience orbs). It listens at
-    the lowest priority and not to cancelled deaths, and shows "+32 XP" in the action bar. Players without a
+    the lowest priority and not to cancelled deaths, and shows "+50 XP" in the action bar. Players without a
     character gain nothing ([10.1](#101-races-and-classes)) and leveling leaves them alone; creating the character
     brings their cap and level up to date. `Characters` is the public API: `level`, `rewardXp` (times the XP
     multiplier, with level-up effects), `setTotalXp` (exact, quiet) and `xpToReach`.
