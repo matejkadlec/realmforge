@@ -23,6 +23,9 @@
   ([ADR 0006](../decisions/0006-quests-ftb-quests-generated-from-data.md)); quests point to guide entries, and the
   guide never shows quest progress.
 - **It follows the player's chapter.** In chapter 2 the player reads about chapters 1 and 2, not 3.
+- **It leaves some things to Olympus** (Matěj, RLM-188): from chapter 4 on, a realm entry may end with a hint such
+  as "… Olympus citizens could know more about this prehistoric realm.", and the campaign hints themselves come from
+  Olympus's NPCs ([realm design](realms.md#the-hub-realm)).
 - **English only**, like the rest of the game.
 
 ## Screen
@@ -31,17 +34,17 @@
 +------------------------------------------------------------------------------+
 | Realmforge Guide                                   [ search...           ] X |
 +---------------------------+--------------------------------------------------+
-| Realms Dungeons Bosses    | Catacombs                              Chapter 1 |
-| Character Basics          | Dungeon in the stone realm, levels 6-8           |
+| Realms Dungeons Bosses    | Catacombs                              Chapter 2 |
+| Character Basics          | Dungeon in Undervault, levels 9-12               |
 +---------------------------+--------------------------------------------------+
-| Chapter 1                 | An open crypt under the stone realm's mines...   |
-|   Stone realm             |                                                  |
-| > Catacombs               | Where      Stone realm, below the third mine     |
-|   The bone warden         | Entry      a dungeon key from the mine trader    |
-| Chapter 2                 | Bosses     The bone warden (level 8)            |
-|   Desert realm            | Loot       In this dungeon, you can find:        |
+| Chapter 1                 | An open crypt under Undervault's mines...        |
+|   Overworld               |                                                  |
+| Chapter 2                 | Where      Undervault, below the third mine      |
+|   Undervault              | Entry      a dungeon key from the mine trader    |
+| > Catacombs               | Bosses     The bone warden (level 12)            |
+|   The bone warden         | Loot       In this dungeon, you can find:        |
 |   ...                     |            [item] [item] [item] [item]           |
-| Chapter 3: locked         | Related    Stone realm, The bone warden          |
+| Chapter 3: locked         | Related    Undervault, The bone warden           |
 |                           |                                         [< Back] |
 +---------------------------+--------------------------------------------------+
 ```
@@ -98,7 +101,7 @@ name finds the entries that list it ("where does this drop?").
 What EMI Loot and EMI Ores showed now lives in the entries, generated like every other fact, so it follows the data:
 
 - **Realms: ores.** A realm entry lists the ores found in its dimension, generated from the dimension's ore
-  features (the Overworld's from vanilla's).
+  features (Overworld's from vanilla's).
 - **Dungeons: notable loot.** One line, "In this dungeon, you can find: {items}", not a loot table: the items that
   no other source gives (the pipeline's "every item obtainable" rule,
   [architecture 6.1](../architecture.md#61-stages), knows every source) plus the rare ones (below a drop chance the
@@ -116,13 +119,13 @@ Guide entries are content like everything else
 # content/guide/catacombs.yaml (sketch; names are examples)
 id: catacombs
 category: dungeon                 # realm | dungeon | boss | class | race | talent | stat | basics
-chapter: realmforge:chapter_1     # the realmforge:chapter whose players can read it
+chapter: realmforge:chapter_2     # the realmforge:chapter whose players can read it
 subject: realmforge:catacombs     # optional: the dungeon type, boss, dimension, class, race, talent tree or stat
 title: {en_us: Catacombs}
-summary: {en_us: "Dungeon in the stone realm, levels {level_min}-{level_max}"}
+summary: {en_us: "Dungeon in Undervault, levels {level_min}-{level_max}"}
 text:
   en_us: |
-    An open crypt under the stone realm's mines...
+    An open crypt under Undervault's mines...
 related: [realmforge:stone_realm, realmforge:bone_warden]
 keywords: {en_us: [crypt, undead]}
 requires: []                      # optional extra unlocks, same types as dimension access
@@ -197,10 +200,11 @@ entries with its content.
 
 ## Milestone
 
-**M4** (The world grows; Matěj, 2026-10-13), which brings chapters 2 and 3, realms 2 and 3 and more dungeons and
-bosses, so the unlock rule matters and there is content to look up. The entries for chapter 1's content are written
-in the same milestone. M1 (v0.1.0) has one realm, its dungeons and one boss, which the quest book describes; the
-guide there would widen the vertical slice. Q1 (the quest pipeline, M1) keeps quest descriptions as data, so a quest
+**M4** (The world grows; Matěj, 2026-10-13), which brings chapter 3 with its twin realms (Sunwastes and
+Everwinter) and more dungeons and bosses, so the unlock rule matters and there is content to look up. The entries
+for the content of chapters 1 and 2 (Overworld and Undervault, M1) are written in the same milestone. M1 (v0.1.0) has
+one sealed realm, its dungeons and one boss, which the quest book describes; the guide there would widen the
+vertical slice. Q1 (the quest pipeline, M1) keeps quest descriptions as data, so a quest
 can later point to a guide entry without rewriting it.
 
 ## Decisions

@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=../../tools/schemas/chapters.schema.json
-# The second chapter: the Undervault, the stone realm, levels 6 to 18 (v1 realm layout, RLM-188). Its cap is 18, the
+# The second chapter: Undervault, the stone realm, levels 6 to 18 (v1 realm layout, RLM-188). Its cap is 18, the
 # cap chapter 1 leaves, and its main questline raises it to 30 (Matěj, 2026-10-15). The advancement
 # realmforge:chapter/chapter_2 marks it completed. The name is a placeholder until its quests name the chapter.
 id: chapter_2

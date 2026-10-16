@@ -3,7 +3,8 @@
 > How every player-facing text in Realmforge reads (RLM-43): quests, item, block and mob names, tooltips, realm and
 > guide texts, books, inscriptions, dialogs and messages. These are the `LocalizedText` fields in `content/`
 > ([content/README.md](../../content/README.md)). The story behind them: the [lore outline](outline.md). Approved by
-> Matěj on 2026-10-13 (RLM-139).
+> Matěj on 2026-10-13 (RLM-139). Updated on 2026-10-16 (RLM-188): realm names take no article, and the rules that
+> limited names became recommendations.
 
 ## Voice
 
@@ -37,7 +38,7 @@
 | Quest description | the giver's voice, then what to do; the task list comes from data | 1–3 sentences, at most 50 words | "The plan shows a frame of plain stone around one keystone. Stand it up somewhere you can find again." Maren |
 | Item, block or mob type name | Title Case, like vanilla; no flavour in the name | 1–3 words | Portal Stone |
 | Character name (a unique NPC or boss) | a name, a title, or both ([Names](#names)) | 1–6 words | Torva Flintmark, the Scribe in the Stone |
-| Realm name | the realm's name from the [outline](outline.md#the-realms); where a player first meets it (the guide, the sigil tooltip, the arrival title), a plain subtitle with its element follows (Matěj, RLM-139) | name 1–3 words, subtitle 2 words | The Undervault — Stone Realm |
+| Realm name | the realm's name from the [outline](outline.md#the-realms), never with an article (Matěj, RLM-188); where a player first meets it (the guide, the sigil tooltip, the arrival title), a plain subtitle with its element follows (Matěj, RLM-139) | name 1–3 words, subtitle 2 words | Undervault — Stone Realm |
 | Flavour line (item tooltip lore) | one sentence, no mechanics | at most 12 words | "Warm to the touch, though nothing near it burns." |
 | Mechanics in a tooltip | generated from data, never written in prose | - | - |
 | Realm arrival line | what the player sees, hears or smells | one sentence, at most 15 words | "Cold air rises from below, smelling of dust and old stone." |
@@ -54,8 +55,8 @@
 | Use | For | Not |
 | --- | --- | --- |
 | Realmforge | the whole world | Minecraft, the server, this world |
-| realm (lower case); a realm's name in Title Case | a custom dimension | dimension, world, plane |
-| the Overworld | the starting world | the surface, home world |
+| realm (lower case); a realm's name in Title Case, without an article | a custom dimension | dimension, world, plane |
+| Overworld, without an article | the starting world | the surface, home world |
 | sigil | the item that opens a realm | key, rune, stone (keys are dungeon keys) |
 | seal | a realm's lock | barrier, ward |
 | gate | a realm portal, in story texts | door, rift |
@@ -82,12 +83,13 @@ for the story around it.
   terms (level, cooldown, quest).
 - **Third-party mods keep their names:** a Waystone is a Waystone, a Warp Scroll a Warp Scroll; never rename
   another mod's item.
-- **Vanilla things keep their vanilla names.** The lore may give one a line (ancient debris as the slag of the Sun
-  Court's forges), never a new name.
+- **Vanilla things keep their vanilla names.** The lore may give one a line (ancient debris as the Gatewrights'
+  forge-stock, fused under Undervault's floor), never a new name.
 - **The Nether and the End never appear in lore:** Realmforge has neither
   ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)).
-- **No real world:** no brands, real places, real people, religions, politics, modern slang, memes or emoji.
-- **No other games:** no names, quotes or in-jokes from other games, WoW included, even as a nod.
+- **Tone, not the real world:** no politics, modern slang, memes or emoji.
+- **No quoted text from other games,** WoW included, and no in-jokes, even as a nod. Names from other games are a
+  matter of [recommendation](#name-rules), not a rule.
 
 ## Names
 
@@ -96,16 +98,21 @@ for the story around it.
 - **Pronounceable on first read.** One to three syllables per part, no accents in `en_us` names, and no
   apostrophes inside invented words (a plain English possessive, as in the Wayfarers' Lodge, is fine).
 - **One name per thing,** the same in every text. A name that changes is a bug.
-- **Places:** one English compound (the Undervault) or `the <adjective or noun> <noun>` (the Void Cathedral).
-- **Never:**
-  - names from other games: the list in the research report's
-    [licence section](../research/reference-games.md#reference-games-at-a-glance), and anything from WoW, League of
-    Legends, Hytale, Advent of Ascension or Craft to Exile 2;
-  - vanilla mob or item names for something new (Warden, Vex, Ravager, Drowned, Deepslate), which would confuse
-    players;
-  - real places and people, brands and trademarks.
-- **Check a new name** before it goes into content: search the repository and the web for it together with "game"
-  or "mod". A name that is a common English word or a plain compound of two is safe.
+- **Places:** a realm's name has no article (Undervault, Unmade Isles); other places are one English compound or
+  `the <adjective or noun> <noun>` (the Void Cathedral).
+
+**Recommendations, not rules** (Matěj, 2026-10-15, RLM-188: "Original names are better, but not always"):
+
+- **Prefer original names.** A real place, a real word or a name another game also uses is fine when it fits:
+  Olympus, malachite and Everwinter stay.
+- **Don't reuse a vanilla mob or item name for something new** (Warden, Vex, Ravager, Drowned, Deepslate): players
+  confuse them.
+- **Avoid another game's distinctive invented names, characters and trademarks:** the ones in the research
+  report's [licence section](../research/reference-games.md#reference-games-at-a-glance), and the made-up names of
+  WoW, League of Legends, Hytale, Advent of Ascension or Craft to Exile 2. Common words they use are fine. Avoid
+  real people and brands too.
+- **A quick look helps:** searching a new name with "game" or "mod" shows whether another game made it famous. A hit
+  is a reason to think twice, not a ban.
 
 ### Per people
 
@@ -118,14 +125,14 @@ for the story around it.
 | The Wellkeepers | longer given names with open vowels, and the oasis they come from | - |
 | The Gilded | titles of a court long gone | - |
 | The Kettlefolk | homely nicknames and family names | - |
-| The Thawed | hard, old-sounding names; no real Norse gods or places | - |
+| The Thawed | hard, old-sounding names, rather than real Norse gods or places | - |
 | The Emberwrights | a given name and a craft name | - |
 | The Chainkeepers | named by the link they keep | the Keeper of the Ninth Link |
 | The Unforged | no names: what they look like | - |
 | Bosses and guardians | a title, or a name and a title | the Unbroken |
 
-Names are filled in as each realm's chapter is written. Matěj approved the outline's names (RLM-139); every new
-name follows the [name rules](#name-rules).
+Names are filled in as each realm's chapter is written. Matěj approved the outline's names (RLM-139, RLM-188); every
+new name follows the [name rules](#name-rules) and weighs their recommendations.
 
 ## English only
 
@@ -141,6 +148,7 @@ Before a text is committed:
 - [ ] The world is Realmforge, and every term is the one in [Fixed terms](#fixed-terms).
 - [ ] No number the data owns is in the prose.
 - [ ] Nothing assumes the player's race, class, gender or name.
-- [ ] Every new name passed the [name rules](#name-rules) and is used the same way everywhere.
+- [ ] Every new name follows the [name rules](#name-rules), weighs their recommendations, and is used the same way
+  everywhere.
 - [ ] It spoils nothing from a later chapter (the guide and the quest book lock by chapter).
 - [ ] It stays inside the [outline](outline.md); a new piece of story goes into the outline first.

@@ -94,8 +94,8 @@ Rules:
   player's cap), and a `completed_level_cap` above it, the cap once the player completes it; each chapter's
   `level_cap` equals the `completed_level_cap` of the one before it, so no level band is skipped (research PR-16).
   A player completes a chapter by earning its advancement `realmforge:chapter/<id>` (generated, granted only by
-  the chapter's last quest or a command). A chapter's cap is its last level (Matěj, 2026-10-15): `chapter_1` (the
-  Overworld) 10 → 18, `chapter_2` (the Undervault) 18 → 30; the later chapters' caps are in
+  the chapter's last quest or a command). A chapter's cap is its last level (Matěj, 2026-10-15): `chapter_1`
+  (Overworld) 10 → 18, `chapter_2` (Undervault) 18 → 30; the later chapters' caps are in
   [architecture 10.2](../docs/architecture.md#102-leveling). XP stops at the cap: a player holds at most the XP
   of the cap's level, so completing a chapter raises the cap but brings no level by itself. Leveling also reads
   five curves, which validation requires: `xp_to_next_level` (the XP from a level to the next, at least 1; one

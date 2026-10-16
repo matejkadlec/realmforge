@@ -844,11 +844,11 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
 - **Level cap:** the highest cap among completed chapters (a base cap before any), cached in the `character`
   attachment and recomputed when a chapter's advancement is granted or revoked and on login
   ([16](#16-progression-and-quests)). A chapter's cap is its last level, and its main questline raises it (Matěj,
-  2026-10-15, superseding D2's 10 then 20; v1 realm layout RLM-188): chapter 1 (the Overworld, levels 1-10) 10 →
-  18, chapter 2 (the Undervault, levels 6-18) 18 → 30, chapter 3 30 → 40, chapter 4 40 → 44, chapter 5 44 → 52,
+  2026-10-15, superseding D2's 10 then 20; v1 realm layout RLM-188): chapter 1 (Overworld, levels 1-10) 10 → 18,
+  chapter 2 (Undervault, levels 6-18) 18 → 30, chapter 3 30 → 40, chapter 4 40 → 44, chapter 5 44 → 52,
   chapter 6 52 → 60, and chapter 7 60, the highest level. `content/chapters/` holds chapters 1 and 2 so far; the
   last chapter raises no cap, so its entry will need `completed_level_cap` to be optional.
-- **The XP model** (Matěj, 2026-10-15; RLM-192 writes it up in `docs/design/leveling.md`) counts in kill-equivalents
+- **The XP model** (Matěj, 2026-10-15; [design/leveling.md](design/leveling.md), RLM-192) counts in kill-equivalents
   (KE): one kill of a normal mob of the player's level, `45 + 5 × level` XP (50 at level 1, 345 at 60). A level
   takes `KE(L) × (45 + 5L)` XP, with `KE(1) = 30` (about 5 minutes of farming at 6 kills a minute) and each level
   1.07 times the KE of the one before below level 10, 1.05 times for 10-17, 1.035 times for 18-29 and 1.03 times
@@ -1478,7 +1478,7 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   matching blocks, and commands, data packs or other mods can hand out such items, so block breaks
   (`BlockEvent.BreakEvent`) and placements (`BlockEvent.EntityPlaceEvent`) by players who are not in creative mode
   are cancelled there too. Buckets get past both events: `BucketItem#use` (`MobBucketItem` included) checks
-  `Level#mayInteract` (spawn protection, which covers only the Overworld, and the world border) and
+  `Level#mayInteract` (spawn protection, which covers only Overworld, and the world border) and
   `Player#mayUseItemAt`, which a matching `can_place_on` passes, then places or picks up the fluid with
   `Level#setBlock` and posts no block event, and `CommonHooks.onPlaceItemIntoWorld` captures no block snapshots for
   a `BucketItem`. So `PlayerInteractEvent.RightClickItem` is cancelled for a `BucketItem` used by a player who is

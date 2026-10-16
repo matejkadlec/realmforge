@@ -10,5 +10,6 @@ names its Jira ticket, lists its open questions for Matěj, and changes when he 
 | Document | What it covers | Ticket |
 | --- | --- | --- |
 | [guide.md](guide.md) | The in-game guide: a searchable screen about the realms, dungeons, bosses, their ores and loot, the character and the systems, unlocked by chapter; approved for M4 | RLM-102, RLM-116 |
-| [realm-portal.md](realm-portal.md) | The realm portal: frame, realm selector, sigils, per-player unlocks through quests, Nether-like linking with scaled coordinates, respawn in the Overworld, edge cases | RLM-41, RLM-128 |
-| [realms.md](realms.md) | The realms, their names, order and contents, chapters and levels, dungeon completion, puzzles and traps, the Void realm that always comes last | RLM-40, RLM-95 |
+| [leveling.md](leveling.md) | The XP and leveling model for v1: kill-equivalents, the XP curve, kill XP and ranks, quest, dungeon and exploration XP, time targets per chapter, the caps, the content budget per realm, anti-farm | RLM-192 |
+| [realm-portal.md](realm-portal.md) | The realm portal: frame, realm selector, sigils, per-player unlocks through quests, Nether-like linking with scaled coordinates, respawn in Overworld, edge cases | RLM-41, RLM-128 |
+| [realms.md](realms.md) | The realms, their names, level bands, order and contents, chapters and caps, realm tool tiers, dungeon completion, puzzles and traps, Olympus the hub, the Void realm that always comes last | RLM-40, RLM-95, RLM-188 |

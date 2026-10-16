@@ -36,13 +36,14 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0022](0022-playtest-before-the-pull-request.md) | Playtest before the pull request: qa1 and qa2 | Accepted (amends 0016 and 0021), amended by [0024](0024-no-github-labels.md) |
 | [0023](0023-texture-generator.md) | Texture generator: Retro Diffusion Fast, cleaned to the project palette | Accepted (refines 0007) |
 | [0024](0024-no-github-labels.md) | No GitHub labels: playtests run on qa1 and qa2 alone | Accepted (amends 0015 and 0022) |
-| [0025](0025-remove-the-nether-and-end.md) | Remove the Nether and End; the Overworld is the starting area | Accepted (resolves the open question of 0012) |
+| [0025](0025-remove-the-nether-and-end.md) | Remove the Nether and End; the Overworld is the starting area | Accepted (resolves the open question of 0012), amended by [0032](0032-v1-realm-layout-amends-the-nether-and-end-removal.md) |
 | [0026](0026-platform-minecraft-26-1-2-neoforge.md) | Platform: Minecraft 26.1.2 on NeoForge | Accepted (supersedes 0003) |
 | [0027](0027-client-bound-payload-handlers-through-the-client-event.md) | Client-bound payload handlers through NeoForge's client event | Accepted (amends 0014) |
 | [0028](0028-dungeon-rooms-generated-or-imported.md) | Dungeon rooms are generated or imported, not built by hand | Accepted (amends 0007, 0009, 0012 and 0014) |
 | [0029](0029-independent-claude-review-before-every-merge.md) | Independent Claude review before every merge | Accepted (supersedes 0015) |
 | [0030](0030-adrs-bind-agents-not-the-owner.md) | ADRs bind agents, not the owner | Accepted (amends 0001) |
 | [0031](0031-instance-builder-background-chunks-and-shared-budget.md) | Instance builder: background chunk loads, a shared budget, clear-only cleanup | Accepted (amends 0019) |
+| [0032](0032-v1-realm-layout-amends-the-nether-and-end-removal.md) | The v1 realm layout amends the Nether and End removal | Accepted (amends 0025) |
 
 ## Open questions (not decided)
 

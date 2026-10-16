@@ -9,14 +9,16 @@
 > [What the lore leaves open](#what-the-lore-leaves-open). Matěj approved the outline, its names and the style guide
 > on 2026-10-13 (RLM-139, [Decisions](#decisions)). How texts use it: the [style guide](style.md). The portal spec
 > and the realm design record RLM-128's decision: the unlock comes from the realm's quest, portals link like the
-> Nether's with scaled coordinates, and respawn is always in the Overworld.
+> Nether's with scaled coordinates, and respawn is always in Overworld. Updated on 2026-10-16 with the v1 realm layout
+> (RLM-188): the realm names Everwinter, Ashfire and Unmade Isles, the new realms Olympus, Prestoria and Quagmire, one
+> chapter per realm (the twins share one), and realm names without an article.
 
 ## At a glance
 
 - **Realmforge** is the world, and its name is its history: it was forged. Long ago its makers, the
   **Gatewrights**, split a world the **Void** was eating into separate **realms**, each forged around one element,
-  and chained them in a line between the Overworld and the Void.
-- **The Chain of Seals** keeps that line: every realm beyond the Overworld is sealed. The first **sigil** is an old
+  and chained them in a line between Overworld and the Void.
+- **The Chain of Seals** keeps that line: every realm beyond Overworld is sealed. The first **sigil** is an old
   relic the Lodge has kept; every later main-path sigil is forged from a shard held by the **guardian** of the realm
   before it, and a side realm's sigil comes from wherever its design puts it. That is why the realms open one by
   one, in order, and why the Void realm is always the last.
@@ -39,7 +41,7 @@ the world from the edges inwards.
 
 The greatest smiths and mages of that age called themselves the **Gatewrights**. They could not push the Void back,
 so they did something bolder: they hammered the world apart. Each piece became a **realm**, forged around one
-element (stone, sun, frost, fire and more), and every realm was set in a line between the heart of the world, the
+element (stone, sun, frost, fire and more), and every realm was set in a line between the heart of the world,
 **Overworld**, and the Void. A realm is a wall in front of the next one: whatever comes out of the Void has to break
 every realm in turn before it reaches home.
 
@@ -47,14 +49,14 @@ The Gatewrights called their work, and the world it made, **Realmforge**.
 
 ### The Chain of Seals
 
-The Gatewrights sealed every realm but the Overworld and made one gate design to open them all. The order of the
+The Gatewrights sealed every realm but Overworld and made one gate design to open them all. The order of the
 line is the **Chain of Seals**, and it is built into the seals themselves:
 
 | Lore | What it is in the game |
 | --- | --- |
 | A realm's **seal** opens only to its **sigil** | the realm portal opens onto a realm when its sigil is used on the realm selector ([realm portal](../design/realm-portal.md)) |
 | One **gate design** for every realm | one portal frame, with the realm selector as its keystone |
-| Each sealed realm's **guardian** holds a **shard** for each seal it opens (two when twin realms follow) | the main-path boss drops, at 100%, one material per realm it opens, two for chapter 2 (RE-9, [realm portal](../design/realm-portal.md)) |
+| Each sealed realm's **guardian** holds a **shard** for each seal it opens (two when twin realms follow) | the main-path boss drops, at 100%, one material per realm it opens, two for the twins of chapter 3 (RE-9, [realm portal](../design/realm-portal.md)) |
 | A sigil is forged from a realm's own ore and the guardian's shard | the next sigil is crafted from the current realm's ore or gem and that drop |
 | The seal knows a traveler by their deeds, not by the sigil in their hand | per-player unlock through the realm's unlock quest; holding someone else's sigil does not let a player through (RLM-128) |
 | **Twin seals:** some realms were forged as a pair, and the next seal needs both shards | a two-realm chapter: the next main-path sigil needs both realms' boss drops |
@@ -77,7 +79,7 @@ is a link nobody had counted, and the Void stays where it always was: past the l
 
 ### Why now
 
-The seals are thinning. Gatewright runes in the Overworld ruins have begun to glow, and the oldest stones of their
+The seals are thinning. Gatewright runes in Overworld's ruins have begun to glow, and the oldest stones of their
 gates have grown warm to the touch. Maren Vell, the Lodge's archivist, has read the warning the First Wright carved
 into those ruins: _when the gate stones grow warm, the chain is failing; someone must walk it and forge the last
 seal anew._ The Lodge has kept an old stone sigil for generations without knowing what it was. Now it knows, and it
@@ -86,17 +88,19 @@ always be made again (the repeatable quest of the [realm portal spec](../design/
 
 ## The player
 
-- **Role:** a newcomer to the Overworld's wild lands, capable and curious, whom the Lodge calls a **Wayfarer**. Not
+- **Role:** a newcomer to Overworld's wild lands, capable and curious, whom the Lodge calls a **Wayfarer**. Not
   a chosen one: the seals accept anyone who passes their trials, and that is the point of them. Texts never assume
   the player's race, class, gender or name ([style guide](style.md#the-player)).
 - **The arc:**
-  1. **Overworld (chapter 1, levels 1–5):** learn to fight and cast, build the first gate, earn passage into the
-     first realm.
-  2. **The stone realm (chapter 1, levels 5–10):** meet the Cairnfolk, open the Gatewrights' catacombs, pass the
-     first guardian's trial and carry its shards home.
-  3. **The chain (chapters 2 and later):** each chapter opens the next realm or pair of realms. Each realm shows the
-     Void a little closer: its guardian is harder to reason with and its threat a little stranger.
-  4. **The Void realm (the last chapter):** the Brink, the realm nearest the Void, where the First Wright went.
+  1. **Overworld (chapter 1, levels 1–10):** learn to fight and cast, build the first gate, earn passage into the
+     first sealed realm.
+  2. **Undervault (chapter 2, levels 6–18):** meet the Cairnfolk, open the Gatewrights' catacombs, pass the first
+     guardian's trial and carry its shards home.
+  3. **The chain (chapters 3 to 6):** each chapter opens the next realm, or the pair of twins (Sunwastes and
+     Everwinter, chapter 3). Each realm shows the Void a little closer: its guardian is harder to reason with and its
+     threat a little stranger. From level 30, Olympus hands out quests into the later realms.
+  4. **The Void realm (chapter 7, the last of v1):** Unmade Isles, the realm nearest the Void, where the First Wright
+     went.
 - **The finale (Matěj, RLM-139):** in the Void Cathedral the player finds the First Wright, hollowed out by the
   Void after ages of holding the line. He no longer holds the last seal; he means to open it and forge the Void
   itself into a realm, which would unmake the rest. The player defeats him and forges the last seal anew from the
@@ -108,38 +112,45 @@ always be made again (the repeatable quest of the [realm portal spec](../design/
 ## The realms
 
 The realms of the [realm design](../design/realms.md), in chain order. Realm names are the names players read,
-approved by Matěj (RLM-139), and the design documents use them too. Where a player first meets one, it carries a
-plain subtitle with its element, such as "The Undervault — Stone Realm" ([style guide](style.md#text-types)).
-Colours are the portal colours of the [realm portal spec](../design/realm-portal.md).
+approved by Matěj (RLM-139, RLM-188), and the design documents use them too. A realm name never takes an article
+(Matěj, 2026-10-15). Where a player first meets one, it carries a plain subtitle with its element, such as
+"Undervault — Stone Realm" ([style guide](style.md#text-types)). Colours are the portal colours of the
+[realm portal spec](../design/realm-portal.md).
 
-| Realm (design) | Name | Chapter | Element | Friendly people | Hostile people | Guardian |
+| Realm (design) | Name | Chapter (levels) | Element | Friendly people | Hostile people | Guardian |
 | --- | --- | --- | --- | --- | --- | --- |
-| The Overworld | the Overworld | 1 (1–5) | home | the Wayfarers' Lodge | the wild's monsters (vanilla) | none: no seal |
-| Stone realm | the Undervault | 1 (5–10) | earth and stone | the Cairnfolk | the Hewn | the Unbroken, a stone colossus |
-| Desert realm | the Sunwastes | 2 (10–20) | sun and sand | the Wellkeepers | the Gilded | a great sphinx (twin seal) |
-| Tundra realm | the Rimefields | 2 (10–20) | frost | the Kettlefolk | the Thawed | the Thawed's queen in the ice castle (twin seal) |
-| Fire realm | the Forgefire | late | fire | the Emberwrights | the forge-drakes | the eldest forge-drake |
-| Void realm | the Brink | always the last | void | the Chainkeepers | the Unforged | the First Wright (finale) |
+| Overworld | Overworld | 1 (1–10) | home | the Wayfarers' Lodge | the wild's monsters (vanilla) | none: no seal |
+| Stone realm | Undervault | 2 (6–18) | earth and stone | the Cairnfolk | the Hewn | the Unbroken, a stone colossus |
+| Desert realm | Sunwastes | 3 (16–24) | sun and sand | the Wellkeepers | the Gilded | a great sphinx (twin seal) |
+| Tundra realm | Everwinter | 3 (20–30) | frost | the Kettlefolk | the Thawed | the Thawed's queen in the ice castle (twin seal) |
+| Hub realm | Olympus | none (from 30) | the heavens | its citizens | none | none: a branch seal |
+| Prehistoric realm | Prestoria | 4 (26–40) | the ancient wild | open | the ancient beasts | open |
+| Swamp realm | Quagmire | 5 (36–44) | slime | open | the slimes | open |
+| Fire realm | Ashfire | 6 (40–52) | fire | the Emberwrights | the forge-drakes | the eldest forge-drake |
+| Void realm | Unmade Isles | 7 (48–60) | void | the Chainkeepers | the Unforged | the First Wright (finale) |
 
 Each paragraph below gives the realm's history, its peoples and its threat; the dungeons, mobs and materials it
 names are the realm design's.
 
-### The Overworld
+### Overworld
 
-The heart of the world and the start of the chain, the one place the Gatewrights never sealed. It has no guardian
-and no sigil: every realm's way back leads here. The **Wayfarers' Lodge** has studied the Gatewright ruins here for
-generations, and its archivist starts the player's journey. The Overworld's danger is the ordinary wild (night
-monsters, caves), which is where a Wayfarer learns to fight. In M1 the Lodge is a voice in the quest book; a Lodge
+The heart of the world and the start of the chain, the one place the Gatewrights never sealed. It has no seal and
+no sigil: every realm's way back leads here. The **Wayfarers' Lodge** has studied the Gatewright ruins here for
+generations, and its archivist starts the player's journey. Overworld's danger is the ordinary wild (night
+monsters, caves), which is where a Wayfarer learns to fight. Overworld gets dungeons, bosses and a final boss of its
+own in a later milestone, and that boss then stands before the way into Undervault (Matěj, 2026-10-16); the
+lore for it is written with them. In M1 the Lodge is a voice in the quest book; a Lodge
 house in a village may come with the M4 village overhaul and offer more with each chapter (WF-8; Matěj, RLM-139).
 
-### The stone realm: the Undervault
+### The stone realm: Undervault
 
-The first realm the Gatewrights forged and the nearest to home: a vault of stone under the world, where they kept
-their forge-stock and buried their dead. Its light comes from glowstone in the ceiling and crystal in the deep
+The first realm the Gatewrights forged and the nearest to home: a vault of stone under the world, one great cave
+where they kept their forge-stock and buried their dead. The ancient debris under its floor is that forge-stock,
+sunk into the rock and fused there over an age. Its light comes from glowstone in the ceiling and crystal in the deep
 grottos, the same crystal the Gatewrights used to steer light through their vaults (the light-beam puzzles).
 
-- **The Cairnfolk** are a sturdy, cheerful mining people who have lived in the Undervault since it was sealed, cut
-  off from the Overworld and in no hurry to leave it. They work the realm's mines, trade ore for anything new from
+- **The Cairnfolk** are a sturdy, cheerful mining people who have lived in Undervault since it was sealed, cut
+  off from Overworld and in no hurry to leave it. They work the realm's mines, trade ore for anything new from
   above, and keep the keys to the Gatewright catacombs, which they would rather someone else opened.
 - **The Hewn** are the Gatewrights' stone servants: statues carved to guard the catacombs and the forge-halls. They
   still obey orders nobody is left to give, and as the seal thins they wake more often, and less kindly. One kind
@@ -152,12 +163,11 @@ grottos, the same crystal the Gatewrights used to steer light through their vaul
 - **Lore carriers:** inscriptions on catacomb sarcophagi (the lore riddles of the realm design), the Scribe's
   words, and the Cairnfolk's tall tales.
 
-### The desert realm: the Sunwastes
+### The desert realm: Sunwastes
 
-The sun realm, one of a pair. The Gatewrights forged it and the Rimefields from one ingot and quenched them in two
+The sun realm, one of a pair. The Gatewrights forged it and Everwinter from one ingot and quenched them in two
 ways: this half was left in the sun. Its people, the Sun Court, built pyramids and a great sphinx as vaults for
-their treasures, and buried their own forges under the sand when the seal closed; the ancient debris found here is
-the slag of those forges.
+their treasures, and buried their own forges under the sand when the seal closed.
 
 - **The Wellkeepers** live in the big oases and in the few towns not yet empty. They know the dunes, guard the
   water and trade with anyone who respects it.
@@ -167,7 +177,7 @@ the slag of those forges.
 - **The guardian** is a great sphinx in its own dungeon, which holds one of the two shards the next seal needs.
   Its trial is the realm's riddles as much as its claws.
 
-### The tundra realm: the Rimefields
+### The tundra realm: Everwinter
 
 The frost realm, the other half of the pair: quenched in ice. The Gatewrights froze it to hold something still,
 and it held: ships froze in the lakes mid-voyage and a sea-raiding people slept under the ice for an age.
@@ -180,11 +190,30 @@ and it held: ships froze in the lakes mid-voyage and a sea-raiding people slept 
 - **The guardian** is the queen of the Thawed in the ice castle, who holds the other shard that seal needs. The
   two shards together forge the next sigil.
 
-### The fire realm: the Forgefire
+### The hub realm: Olympus
+
+A small realm the Gatewrights lifted into the heavens to keep it out of reach: a celestial city and palace above the
+chain, a branch seal rather than a link, with no guardian and no trial. Its citizens are the only named people who
+live in one place for good (Matěj: unique NPCs live only in Olympus); they know the later realms and send Wayfarers
+into them from level 30, and they remember what the guide leaves out. Nothing there can be built or broken, and the
+only ways out are the gate a traveler came through or a long fall. Its history, its people and how a Wayfarer first
+reaches it are written with the realm ([realm design](../design/realms.md#the-hub-realm)).
+
+### The prehistoric realm: Prestoria
+
+A realm the Gatewrights sealed around the oldest wild they found, so its beasts would outlive the age that bred
+them: dinosaurs. Its peoples and guardian are written with its chapter.
+
+### The swamp realm: Quagmire
+
+A sunken, steaming realm where the Gatewrights quenched their failed castings, which never cooled and never died:
+slime of many kinds, in swamps and in banks of slime. Its peoples and guardian are written with its chapter.
+
+### The fire realm: Ashfire
 
 The realm of the Gatewrights' great forge, deliberately late in the chain: what burns here is too strong for a
-newcomer. It looks like an Overworld with lava rivers instead of water, and volcanoes where the forge's fires broke
-through.
+newcomer. Its plains are black and red stone under burnt trees, with lava lakes, and volcanoes where the forge's
+fires broke through. It is not the Nether, and nothing in it is (Matěj, 2026-10-16).
 
 - **The Emberwrights** are smiths who still tend the forge's last fires, the nearest thing to Gatewrights left
   alive. They are proud, short-tempered and the best crafters in the chain.
@@ -192,11 +221,11 @@ through.
   iron too heavy to fly. That is why every dragon in Realmforge fights on the ground.
 - **The guardian** is the eldest forge-drake, in an arena at the bottom of a volcano.
 
-### The Void realm: the Brink
+### The Void realm: Unmade Isles
 
 The last realm the Gatewrights forged and the nearest to the Void, which broke it into islands. They bound the
 islands together with great chains and bridges, raised dark stone gates and a cathedral on its farthest island,
-and kept the last seal there. The Void here is not dark: it glows violet, under a pale moon, and the Brink's purple
+and kept the last seal there. The Void here is not dark: it glows violet, under a pale moon, and the isles' purple
 stone, dark wood and crystals catch that light (RE-18). Where the Void touches forged stone a green ore grows,
 malachite, the one thing in the chain the Void seems unable to unmake.
 
@@ -214,12 +243,9 @@ malachite, the one thing in the chain the Void seems unable to unmake.
 
 ### Further realms
 
-The chain grows with the [candidate realms](../design/realms.md#candidate-realms), each a link nobody had counted.
-One line each, for when they are designed:
-
-- **Sky islands:** a realm the Gatewrights lifted into the sky to keep it out of reach; a celestial palace at its top.
-- **Dense forest:** a realm grown rather than forged, around a giant tree the Gatewrights planted.
-- **Underwater:** a realm sunk on purpose, its city kept dry under a bubble that still holds.
+The chain can grow beyond v1 with the [candidate realms](../design/realms.md#candidate-realms), each a link nobody
+had counted. The dense forest and the underwater realm are dropped (Matěj, RLM-188), and the sky islands' celestial
+palace became Olympus.
 
 A new realm fits the chain when it has: one element (RE-5) and a look of its own (RE-20); a friendly and a hostile
 people; a guardian holding the shards of the seals after it; and a reason the Gatewrights forged it.
@@ -230,17 +256,17 @@ people; a guardian holding the shards of the seals after it; and a reason the Ga
 
 | Faction | Where | Stance | Gives quests about |
 | --- | --- | --- | --- |
-| The Wayfarers' Lodge | the Overworld, and with the player along the chain | friendly | the main chain, Gatewright lore, exploration; later contracts and guild ranks (M7) |
-| The Cairnfolk | the Undervault's mines | friendly | ore, mining, the catacomb keys, repeatable trades |
-| The Hewn | the Undervault's catacombs and halls | hostile | - |
-| The Wellkeepers | the Sunwastes' oases and towns | friendly | water, the dunes, the Gilded's raids |
-| The Gilded | the Sunwastes' pyramids | hostile | - |
-| The Kettlefolk | the Rimefields' hot-spring villages | friendly | fishing, the frozen lakes, the shipwrecks |
-| The Thawed | the Rimefields' fortress and ships | hostile | - |
-| The Emberwrights | the Forgefire's forges | friendly | crafting, the forge-drakes |
-| The forge-drakes | the Forgefire's volcanoes | hostile | - |
-| The Chainkeepers | the Brink's islands | friendly | the chains, the Cathedral, the last seal |
-| The Unforged | the Brink and the Void | hostile | - |
+| The Wayfarers' Lodge | Overworld, and with the player along the chain | friendly | the main chain, Gatewright lore, exploration; later contracts and guild ranks (M7) |
+| The Cairnfolk | Undervault's mines | friendly | ore, mining, the catacomb keys, repeatable trades |
+| The Hewn | Undervault's catacombs and halls | hostile | - |
+| The Wellkeepers | the oases and towns of Sunwastes | friendly | water, the dunes, the Gilded's raids |
+| The Gilded | the pyramids of Sunwastes | hostile | - |
+| The Kettlefolk | the hot-spring villages of Everwinter | friendly | fishing, the frozen lakes, the shipwrecks |
+| The Thawed | the fortress and ships of Everwinter | hostile | - |
+| The Emberwrights | the forges of Ashfire | friendly | crafting, the forge-drakes |
+| The forge-drakes | the volcanoes of Ashfire | hostile | - |
+| The Chainkeepers | the islands of Unmade Isles | friendly | the chains, the Cathedral, the last seal |
+| The Unforged | Unmade Isles and the Void | hostile | - |
 | The Sealbound | one in every sealed realm | friendly | the guardian's trial |
 
 The friendly peoples are the realms' quest-givers, traders and, once villages are reworked, their villagers. A
@@ -249,22 +275,27 @@ a chapter.
 
 ### Recurring characters
 
-- **Maren Vell**, archivist of the Wayfarers' Lodge: the player's mentor and the voice of chapter 1's quest book.
+- **Maren Vell**, archivist of the Wayfarers' Lodge: the player's mentor and the voice of the quest book.
   Scholarly, kind, a little dry; she reads Gatewright script better than anyone alive and has never been through a
   gate herself, which she minds more than she says.
 - **Torva Flintmark**, forewoman of the Cairnfolk mine nearest the arena: blunt, cheerful, keeps the catacomb keys
-  and sells them again for repeat runs (LE-2). The Cairnfolk's voice in chapter 1.
-- **The Scribe in the Stone**, the Undervault's Sealbound: a Gatewright set into the arena wall, slow to speak and
+  and sells them again for repeat runs (LE-2). The Cairnfolk's voice in chapter 2. Unique NPCs live only in Olympus
+  (Matěj, 2026-10-15), so in Undervault she speaks through the quest book; Claude's pick for Olympus's seller of
+  late-game dungeon keys is Torva, who has kept keys all her life ([realm design](../design/realms.md#the-hub-realm)).
+- **The Scribe in the Stone**, Undervault's Sealbound: a Gatewright set into the arena wall, slow to speak and
   formal. Every sealed realm has a Sealbound like him, so the player meets the same kind of figure before each
   guardian.
 - **The First Wright**, founder of the Gatewrights: heard throughout the chain in the inscriptions he left, met only
   at the end.
 
-## Chapter 1 for Q2
+## Chapters 1 and 2 for Q2
 
-Q2 writes about 15 quests for chapter 1 (roadmap: rewards from the gear set, the last quest grants the chapter
-advancement). These beats are the story they tell; each names what it teaches, so the quests can follow the order
-of the systems M1 builds. The order, the counts and the rewards are Q2's to set.
+M1 ships chapters 1 and 2 (RLM-188), and Q2 writes both: about 25–30 quests, the 16 beats below as the two main
+questlines plus side quests (roadmap: rewards from the gear set; each chapter's last quest grants its chapter
+advancement). Beats 1–9 are chapter 1, in Overworld (levels 1–10); beats 10–16 are chapter 2, in Undervault (levels
+6–18). These beats are the story they tell; each names what it teaches, so the quests can follow the order of the
+systems M1 builds. The order, the counts and the rewards are Q2's to set, against the quest XP of the
+[leveling model](../design/leveling.md#quests).
 
 | # | Beat | Where | What the player does | Story |
 | --- | --- | --- | --- | --- |
@@ -276,21 +307,23 @@ of the systems M1 builds. The order, the counts and the rewards are Q2's to set.
 | 6 | Portal Stone | Overworld | crafts Portal Stone | the plan's first page |
 | 7 | The Keystone | Overworld | crafts the realm selector | the gate's heart: a stone that remembers where it leads |
 | 8 | Raise the Gate | Overworld | builds the frame | the first gate raised in an age |
-| 9 | The Stone Sigil | Overworld | finishes the unlock quest and receives the Stone Sigil | the Lodge's old relic turns out to be the first sigil; Maren cuts a copy for the player from it (and will again if it is lost); the seal will know the player now |
-| 10 | Into the Undervault | the Undervault | enters the realm (and finds a Cairnfolk mine once mines exist) | first arrival; the Cairnfolk are surprised to see anyone from above |
-| 11 | Ore for the Cairnfolk | the Undervault | mines the realm's ores | Torva trades ore for the catacomb key |
-| 12 | The Catacombs | the Undervault | clears the catacombs to their treasury | the Gatewrights' dead and their riddles; the arena key lies in the treasury |
-| 13 | The Hewn Awake | the Undervault | defeats the realm's statues | the stone servants wake as the seal thins |
-| 14 | The Scribe in the Stone | the Undervault | enters the arena, receives the summoning item | the Sealbound explains the trial |
-| 15 | The Unbroken | the Undervault | summons and defeats the boss | the guardian's trial; its two shards drop, one for each twin seal ahead |
-| 16 | Home With the Shards | Overworld | brings the shards back | Maren reads the shards: two seals ahead, sun and frost. The chapter advancement raises the level cap |
+| 9 | The Stone Sigil | Overworld | finishes the unlock quest and receives the Stone Sigil; chapter 1's advancement raises the level cap | the Lodge's old relic turns out to be the first sigil; Maren cuts a copy for the player from it (and will again if it is lost); the seal will know the player now |
+| 10 | Into Undervault | Undervault | enters the realm (and finds a Cairnfolk mine once mines exist) | first arrival; the Cairnfolk are surprised to see anyone from above |
+| 11 | Ore for the Cairnfolk | Undervault | mines the realm's ores | Torva trades ore for the catacomb key |
+| 12 | The Catacombs | Undervault | clears the catacombs to their treasury | the Gatewrights' dead and their riddles; the arena key lies in the treasury |
+| 13 | The Hewn Awake | Undervault | defeats the realm's statues | the stone servants wake as the seal thins |
+| 14 | The Scribe in the Stone | Undervault | enters the arena, receives the summoning item | the Sealbound explains the trial |
+| 15 | The Unbroken | Undervault | summons and defeats the boss | the guardian's trial; its two shards drop, one for each twin seal ahead |
+| 16 | Home With the Shards | Overworld | brings the shards back | Maren reads the shards: two seals ahead, sun and frost. Chapter 2's advancement raises the level cap |
 
-- **Givers:** the quest book speaks in Maren's voice (her notes and letters), and in the Undervault in Torva's and
+- **Givers:** the quest book speaks in Maren's voice (her notes and letters), and in Undervault in Torva's and
   the Scribe's. The beats need no NPC entity and no mine: the realm design leaves the NPC mines to later tasks, so
   where M1 has none, the same lines come from the quest book, beat 10 is the arrival itself, and beat 11 takes the
   realm's ores from anywhere.
 - **The catacomb key** comes from Torva in the story. If M1 hands it out another way (a quest reward), beat 11
   becomes "Torva sends a key with the ore you brought" and stays true.
+- **Before the way in:** RLM-224's optional "Prepare" quest (recommended gear and items) stands between beats 9 and
+  10, until Overworld's final boss takes that place in a later milestone (Matěj, 2026-10-16).
 - **Lost pages:** Gatewright inscriptions found along the way can be click-to-read quests that teach one system
   each (PR-2, PR-11), in the First Wright's voice.
 
@@ -300,26 +333,28 @@ Decided rules that a line of lore makes feel natural. Texts may use these lines;
 
 | Rule (source) | Lore |
 | --- | --- |
-| Respawn always at the bed in the Overworld or at world spawn, never in a realm (RLM-128) | Realmforge's oldest magic is the pull of home: the Gatewrights made sure nobody who falls beyond a seal is lost there |
+| Respawn always at the bed in Overworld or at world spawn, never in a realm (RLM-128) | Realmforge's oldest magic is the pull of home: the Gatewrights made sure nobody who falls beyond a seal is lost there |
 | Keep inventory on death (vision) | the pull of home brings back what the traveler carried, too |
 | "Return to last death" scroll (RLM-128) | a scroll that follows the thread the traveler's spirit left on the way home |
-| Level cap per chapter, raised when the chapter is done (D2) | the seals bind strength as well as realms, so nobody could grow strong enough to break one by force; the bond loosens once every trial of a chapter is passed (both guardians of twin realms) |
+| Level cap per chapter, its last level, raised when the chapter is done (D2, RLM-188) | the seals bind strength as well as realms, so nobody could grow strong enough to break one by force; the bond loosens once every trial of a chapter is passed (both guardians of twin realms) |
 | Sigils are never used up; one sigil opens any number of portals (RLM-128) | a seal asks for its sigil every time and never takes it: a sigil is shown, not paid |
 | Unlocks are per player: without their own unlock, a player can neither open nor switch a portal to that realm with its sigil, nor pass through an open one (RLM-128) | the seal knows a traveler by their deeds |
 | Portals link like the Nether's, with scaled coordinates, so arrivals stay near a realm's origin (RLM-128) | none needed: texts never explain where a portal leads inside a realm |
 | Only players travel through realm portals (RLM-128, "for now") | the gates pass a living traveler and what they carry, nothing that walks or drifts on its own |
 | The next sigil is crafted from the current realm (RE-9) | the guardian holds the shards of the seals after it |
 | No flying bosses (vision) | the forge-drakes' iron wings are too heavy to fly |
-| Every realm has its own light (RE-18) | the Gatewrights forged light into every realm, the Brink's violet glow included |
+| Every realm has its own light (RE-18) | the Gatewrights forged light into every realm, the violet glow of Unmade Isles included |
 
 ## What the lore leaves open
 
 The outline forces none of these; each is decided elsewhere, and the lore follows whatever is decided:
 
-- **The Lodge house.** Portals can stand anywhere in the Overworld (RLM-128), so in M1 the Lodge is a voice in the
+- **The Lodge house.** Portals can stand anywhere in Overworld (RLM-128), so in M1 the Lodge is a voice in the
   quest book and a society, not a building. A Lodge house in a village may come with the M4 village overhaul
   (RLM-139), and the lore follows whatever that task builds.
-- **Friendly NPCs in M1.** The chapter 1 beats work with or without them.
+- **Friendly NPCs in M1.** There are none (Matěj, 2026-10-15), and the beats of chapters 1 and 2 work without them.
+- **Olympus, Prestoria and Quagmire.** Their lines above give each a reason to exist; their peoples, guardians and
+  history are written with their chapters, and Olympus's way in with its design.
 - **Boss mechanics, mob and item names** (W3, W5, A1). The outline gives the bosses and peoples an identity; the
   tasks that build them name and shape them, within the [style guide](style.md#names).
 - **The Void realm's gameplay** ([realm design](../design/realms.md#the-void-realm), RLM-95, waiting for Matěj in
@@ -337,9 +372,9 @@ Matěj's answers of 2026-10-13 and 2026-10-14 (RLM-139), which this version reco
 2. **The names are approved as proposed:** Realmforge, the Gatewrights, the Chain of Seals, the Wayfarers' Lodge,
    Maren Vell, Torva Flintmark, the Cairnfolk, the Hewn, the Unbroken, the Scribe in the Stone and the other
    peoples in the tables.
-   - **Realm names:** the Undervault, the Sunwastes, the Rimefields, the Forgefire and the Brink; the Overworld
-     stays the Overworld. Where a player first meets a realm's name (the guide, the sigil tooltip, the arrival
-     title), it carries a plain subtitle with its element, such as "The Undervault — Stone Realm". The
+   - **Realm names:** Undervault, Sunwastes, Rimefields, Forgefire and Brink; Overworld stays Overworld (three were
+     renamed on 2026-10-15, item 7). Where a player first meets a realm's name (the guide, the sigil tooltip, the
+     arrival title), it carries a plain subtitle with its element, such as "Undervault — Stone Realm". The
      [realm design](../design/realms.md) uses these names.
    - **"Maren Vell" stays** (2026-10-14). Said aloud it is "Ma-ren Vell", not Marvel's "Mar-Vell", and "Vell"
      echoes vellum, which suits an archivist.
@@ -353,6 +388,15 @@ Matěj's answers of 2026-10-13 and 2026-10-14 (RLM-139), which this version reco
    overhaul.
 6. **No Czech texts, ever:** the game is English only ([vision](../vision.md)), so the style guide has no rules for
    other languages.
+7. **The v1 realm layout** (Matěj, 2026-10-14 to 2026-10-16, RLM-188):
+   - **renames:** the Rimefields became **Everwinter**, the Forgefire **Ashfire**, and the Brink **Unmade Isles**;
+   - **no article:** a realm name never takes "the": Overworld, Undervault, Sunwastes, Everwinter, Olympus,
+     Prestoria, Quagmire, Ashfire, Unmade Isles;
+   - **new realms:** Olympus (the hub, from level 30), Prestoria (prehistoric) and Quagmire (swamp); the forest and
+     underwater realms are dropped;
+   - **chapters:** a realm is a chapter and the twins share one, so chapter 1 is Overworld (levels 1–10), chapter 2
+     Undervault (6–18), and so on to chapter 7, Unmade Isles (48–60). M1 ships chapters 1 and 2;
+   - **Ashfire is not the Nether** and is not inspired by it (2026-10-16).
 
 ## Open questions
 
