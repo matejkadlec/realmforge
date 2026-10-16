@@ -61,6 +61,25 @@ bash tests/test_git_clean_worktrees.sh       # its safety regression suite (CI r
 Requirements: Git 2.40 or newer, and `gh` authenticated for `matejkadlec/realmforge`. Every rule that needs a pull
 request fails closed without `gh`: the branch or folder is kept.
 
+**On Windows** (the playtest clone), `git_clean_worktrees.ps1` is the same cleanup in PowerShell: the same rules,
+options and messages, in Windows PowerShell 5.1 or PowerShell 7. Windows runs no unsigned script by default, so
+start it through `powershell -ExecutionPolicy Bypass -File` (or allow local scripts once with
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, after which `.\git_clean_worktrees.ps1` works). It never
+follows a junction or symlink, and compares paths without regard to case, as Windows does. Without `gh`
+(`winget install --id GitHub.cli`, then `gh auth login`) it still removes merged branches and branches whose
+commits are provably in `origin/master`, and keeps the ones only a merged pull request can vouch for.
+
+```powershell
+git switch master    # the current branch is always kept
+powershell -ExecutionPolicy Bypass -File .\git_clean_worktrees.ps1
+powershell -ExecutionPolicy Bypass -File .\git_clean_worktrees.ps1 --closed-prs
+powershell -ExecutionPolicy Bypass -File .\git_clean_worktrees.ps1 --rewritten-prs
+```
+
+The two scripts are kept in step: a change to one goes into the other, and the safety regression suite runs
+against both (`bash tests/test_git_clean_worktrees.sh git_clean_worktrees.ps1` tests the port and needs `pwsh`,
+PowerShell 7, which CI's runner has).
+
 - A branch whose commits were rewritten before they merged (a playtest branch that `qa1` rebased, a commit a
   later review fix in the same pull request changed) is no ancestor of `origin/master` although its work is
   there. It is removed like a merged branch when its remote branch is gone or already in `origin/master`, and

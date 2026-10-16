@@ -125,6 +125,20 @@ followed by `git reset --keep origin/<branch>`, which refuses to discard local e
 the same branch; [AI development flow](ai-development-flow.md#playtest-handoff)). A retest of a pull request that
 is already open (a reconfirmation) is answered in the session that asked for it.
 
+Every playtest leaves its branch in the clone, and the Claude desktop app adds its session branches and worktrees.
+`git_clean_worktrees.ps1`, the PowerShell port of the cleanup script, removes the merged ones from the clone's
+`master`:
+
+```powershell
+cd $HOME\projects\realmforge-win
+git switch master
+git pull --ff-only
+powershell -ExecutionPolicy Bypass -File .\git_clean_worktrees.ps1
+```
+
+What it keeps, its options and its requirements are in the
+[README](../README.md#git-worktree-cleanup).
+
 ### 3.3 In WSL (quick checks)
 
 Windows 11 shows Linux GUI apps through **WSLg**, so `./gradlew runClient` in WSL opens the game window on the
