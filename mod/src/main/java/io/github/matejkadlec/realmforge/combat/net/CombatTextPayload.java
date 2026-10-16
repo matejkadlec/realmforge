@@ -8,8 +8,9 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 /**
  * Server to client: one floating combat text (architecture 9.1, 17.3). A hit or a miss goes to the player who dealt
- * it, a heal to the players near the healed entity; the client shows it over that entity. A miss also goes to the
- * player who dodged it, shown beside the crosshair ({@link #INCOMING}).
+ * it, a tick of a damaging effect (poison, wither) to the player who applied the effect, a heal to the players near
+ * the healed entity; the client shows it over that entity and follows it. A miss also goes to the player who dodged
+ * it, shown beside the crosshair ({@link #INCOMING}).
  *
  * @param entityId the entity that was hit or healed
  * @param amount the damage dealt or the health healed; unused for a miss

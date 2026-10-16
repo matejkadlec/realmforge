@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
 import com.mojang.authlib.GameProfile;
+import io.github.matejkadlec.realmforge.combat.DamageOverTime;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.mob.MobLevels;
@@ -13,26 +14,36 @@ import java.util.OptionalInt;
 import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionSet;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.Potion;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForgeMod;
 
 /**
  * The commands a playtest handoff gives (the flow's "Reaching the state") reach their states: they run here through
  * the server's command dispatcher as typed, by a fake player with operator rights standing on the test platform. The
- * handoff selects the dummy with {@code @n[type=husk]}; here other tests' husks may stand nearby, so the selector also
- * names the dummy's tag.
+ * handoff selects the dummy with {@code @n[type=pillager]}; here other tests' pillagers may stand nearby, so the
+ * selector also names the dummy's tag.
  */
 public final class QaCommandGameTests {
-    private static final String DUMMY = "@n[type=husk,tag=" + TrainingDummy.TAG + "]";
+    private static final String DUMMY = "@n[type=pillager,tag=" + TrainingDummy.TAG + "]";
 
     private QaCommandGameTests() {
     }
@@ -85,6 +96,44 @@ public final class QaCommandGameTests {
         helper.succeed();
     }
 
+    /**
+     * RLM-185, RLM-186 and RLM-187's playtest: the dummy is a pillager, {@code /effect give} makes the player the
+     * applier of its poison and wither, and the splash potions and the bow the handoff gives arrive.
+     */
+    @QaGameTest
+    public static void combatTextPlaytestCommandsReachTheirStates(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-dot-commands"));
+        player.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 0.5)), 0, 0);
+
+        run(server, player, "qa dummy");
+        List<LivingEntity> dummies = dummies(helper);
+        helper.assertValueEqual(dummies.size(), 1, "dummies after /qa dummy");
+        LivingEntity dummy = dummies.getFirst();
+        helper.assertValueEqual(dummy.getType(), EntityType.PILLAGER, "the dummy's type");
+        run(server, player, "effect give " + DUMMY + " minecraft:poison 10");
+        run(server, player, "effect give " + DUMMY + " minecraft:wither 10");
+        DamageSource poison = new DamageSource(helper.getLevel().registryAccess()
+                .lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(NeoForgeMod.POISON_DAMAGE));
+        DamageOverTime.Tick tick = DamageOverTime.tick(dummy, poison);
+        helper.assertTrue(tick != null && tick.applier() == player, "/effect give made the player poison's applier");
+        tick = DamageOverTime.tick(dummy, helper.getLevel().damageSources().wither());
+        helper.assertTrue(tick != null && tick.applier() == player, "and wither's");
+
+        String splash = "give @s minecraft:splash_potion[minecraft:potion_contents={potion:\"minecraft:";
+        run(server, player, splash + "poison\"}]");
+        run(server, player, splash + "healing\"}] 4");
+        run(server, player, "give @s minecraft:bow");
+        run(server, player, "give @s minecraft:arrow 64");
+        helper.assertTrue(holds(player, Potions.POISON, 1), "a splash potion of poison");
+        helper.assertTrue(holds(player, Potions.HEALING, 4), "four splash potions of healing");
+        helper.assertValueEqual(player.getInventory().countItem(Items.BOW), 1, "the bow");
+        helper.assertValueEqual(player.getInventory().countItem(Items.ARROW), 64, "the arrows");
+        run(server, player, "qa dummy remove");
+        server.getPlayerList().remove(player);
+        helper.succeed();
+    }
+
     /** W1's playtest: {@code /qa level} rescales a mob, {@code /qa mob} describes it. */
     @QaGameTest
     public static void mobCommandsSetAndShowAMobsLevel(GameTestHelper helper) {
@@ -111,6 +160,18 @@ public final class QaCommandGameTests {
     private static void run(MinecraftServer server, ServerPlayer player, String command) {
         CommandSourceStack source = player.createCommandSourceStack().withPermission(PermissionSet.ALL_PERMISSIONS);
         server.getCommands().performPrefixedCommand(source, command);
+    }
+
+    /** Whether the player holds {@code count} splash potions of {@code potion}. */
+    private static boolean holds(ServerPlayer player, Holder<Potion> potion, int count) {
+        int held = 0;
+        for (ItemStack stack : player.getInventory()) {
+            PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
+            if (stack.is(Items.SPLASH_POTION) && contents != null && contents.is(potion)) {
+                held += stack.getCount();
+            }
+        }
+        return held == count;
     }
 
     /** The dummies on this test's platform. */

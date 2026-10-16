@@ -164,7 +164,7 @@ io.github.matejkadlec.realmforge
 ├─ progression/       chapters, criteria triggers, statistics: the bridge to quests
 ├─ stats/             attributes, entity levels, stat sources, derived stats, caps
 ├─ combat/            spell schools, damage pipeline, crit, dodge, resistances, armor formula and pierce,
-│                     lifesteal, overheal, health regeneration, magic shield, combat text
+│                     lifesteal, overheal, health regeneration, magic shield, combat text, damage over time
 ├─ effect/            behaviour classes of our status effects
 ├─ spell/             spells, effect types, casting, cooldowns, resources, procs, spell entities
 ├─ talent/            talent trees, points, spell modifiers; glyphs later
@@ -706,7 +706,12 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
 6. **`LivingDamageEvent.Post`** reports what was dealt: `combat` posts `CombatEvent.Hit` (school, crit, the
    original damage, what armor blocked, the damage dealt and taken from health) for higher features (procs in C3a
    and C5, threat later, the QA mod's combat log), and sends the combat text (`combat/net/CombatTextPayload`) to the
-   player who dealt the hit ([18](#18-client-code-rendering-gui-input)). The player who took it gets no number, the
+   player who dealt the hit ([18](#18-client-code-rendering-gui-input)). A tick of a damaging effect has no attacker:
+   `combat/DamageOverTime` remembers the player who applied each poison or wither (from `MobEffectEvent.Added`'s
+   source: the player, or the owner of the splash potion, tipped arrow or lingering cloud; the latest application
+   decides, and the entry goes when the effect ends or is removed), and the tick's number goes to that player in the
+   effect's colour, dark green for poison and ash grey for wither (RLM-186). Our own status effects (C3c) will add
+   their kinds to its list, so each effect's colour has one source. The player who took it gets no number, the
    health bar shows the damage, but the direction it came from (`combat/net/HitDirectionPayload`), as for a dodge,
    which also shows "Miss!" to both players. A melee or ranged hit (`DamagePipeline#meleeOrRanged`: a mob or player
    attack, or a projectile, from an attacker; never a school hit or an explosion) then heals its attacker by the
@@ -721,10 +726,15 @@ health. Vanilla clamps absorption to `minecraft:max_absorption` (a golden apple'
 to it), so overheal makes room with a transient modifier `realmforge:overheal` of the same size. **It does not decay
 gradually; it expires** 10 seconds after the last heal that overflowed, like WotLK's absorb shields (Divine Aegis,
 Val'anyr's Protection of Ancient Kings), so it cannot be stocked up out of combat and carried into a fight, while
-steady healing in a fight (lifesteal) keeps it up. Damage eats it before other absorption (a golden apple's): each
-server tick, what the absorption lost since the last look comes off the overheal first, and its modifier shrinks with
-it. Its state is per entity and transient (a map with
-weak keys, checked each server tick); a player who logs in has absorption above the maximum clamped away, since the
+steady healing in a fight (lifesteal) keeps it up. **Overheal and other absorption (a golden apple's) stack**, each
+within its own cap, and damage eats the overheal first: each server tick, what the absorption lost since the last look
+comes off the overheal first, and its modifier shrinks with it. A drop that the other absorption's cap explains is not
+damage: when the Absorption effect ends (or milk clears it), vanilla clamps the absorption to what is left of the
+maximum, the overheal's share, and the overheal stays. When an Absorption effect starts while overhealed, vanilla
+raises the absorption only to the effect's amount (`AbsorptionMobEffect#onEffectStarted`, after
+`MobEffectEvent.Added`), so the next server tick puts the overheal back on top: 5 overheal and an apple's 4 make 9,
+and the apple's 4 are left when the overheal expires (RLM-195). Its state is per entity and transient (maps with weak
+keys, checked each server tick); a player who logs in has absorption above the maximum clamped away, since the
 modifier is not saved. Passive health regeneration never overheals.
 
 **Health regeneration** (`combat/HealthRegeneration`): a player with X health regeneration heals X health every
@@ -741,9 +751,9 @@ translucent bar over the bottom row of hearts, a new colour every 10 points ([18
 Like absorption hearts, it takes any damage that reaches health (falls, drowning, starvation included).
 
 `DamageCalculatorTest` covers the formulas; `CombatStatGameTests` plays each stat in a world: armor pierce against a
-training dummy with 15 armor, spell resistance and its cap on a husk, and a fake player for lifesteal (melee and a
+training dummy with 15 armor, spell resistance and its cap on a pillager, and a fake player for lifesteal (melee and a
 thrown hit heal, a fire hit does not), overheal (its cap, its expiry, damage taking it before a golden apple's
-absorption), health regeneration
+absorption, the overheal kept when the Absorption effect ends, an apple eaten while overhealed), health regeneration
 (its schedule, no overheal) and the magic shield (before health, after absorption hearts, `lastHurt` kept, the
 refill).
 
@@ -1577,12 +1587,17 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   `TalentTreeView`), so their logic is testable without rendering.
 - **What exists (F5, F4b, revised after Matěj's playtest of 2026-10-13):**
   - The combat text layer (`client/hud/CombatTextHud`) draws each `CombatTextPayload` over the entity it is about,
-    projected onto the screen with `GameRenderer#projectPointToScreen`, popping in, rising and fading, at a random
-    small offset so hits close together do not cover each other. Every text is bold and the same size. A magic
-    school's hit takes the school's colour; every other hit (melee, ranged, the Physical school) takes the Physical
-    school's orange, red on a crit (`combat/CombatText` picks it). A crit's number ends with "!", a heal reads "+4"
-    in green, a dodged hit reads "Miss!" in yellow, and the player's own dodge shows it beside the crosshair. The
-    player sees no numbers for damage taken.
+    popping in, rising and fading. A text keeps its entity's id and follows the entity every frame (its interpolated
+    position) while the client has it, from where it was last seen once it is gone (dead, unloaded). It is projected
+    onto the screen with `GameRenderer#projectPointToScreen` every frame, and its size follows its distance from the
+    camera (`client/hud/CombatTextScale`: 1.75 times the font at 4 blocks, by the square root of the distance ratio,
+    within 0.65 and 2.5, so it keeps shrinking up to about 29 blocks; Matěj's playtest, 2026-10-14: RLM-185). Texts
+    spread at random around the entity in the world, up to 0.35 blocks sideways across the view and 0.25 upward, so
+    hits close together do not cover each other. Every text is bold. A magic school's hit takes the school's colour;
+    every other hit (melee, ranged, the Physical school) takes the Physical school's orange, red on a crit; a tick of
+    a damaging effect takes the effect's colour, dark green for poison (`combat/CombatText` picks it). A crit's
+    number ends with "!", a heal reads "+4" in green, a dodged hit reads "Miss!" in yellow, and the player's own
+    dodge shows it beside the crosshair, at a fixed size. The player sees no numbers for damage taken.
   - The hit direction layer (`client/hud/HitDirectionHud`, after the MMM Indicators mod) draws a red arc around the
     crosshair toward each recent attacker for 1.5 s, turning with the camera and following the attacker.
   - The magic shield layer (`client/hud/MagicShieldHud`, RLM-160; Matěj, 2026-10-14) draws a faint bar (alpha 80 of
@@ -1753,12 +1768,13 @@ that agents can read. So far:
 - `/qa character show|reset [<player>]` and `/qa character create <race> <class> [<player>]` (C1): reset removes the
   character, so the creation screen opens again (the starting kit's items stay); create applies the same rules as the
   screen;
-- `/qa dummy [<armor>]` (F5): a training dummy three blocks ahead, a husk that stands still and never dies. Its
-  label, a text display riding it, shows its armor with the share of a hit it blocks at the nearest player's level
+- `/qa dummy [<armor>]` (F5): a training dummy three blocks ahead, a pillager without a crossbow that stands still
+  and never dies. A pillager is not undead, so poison and harming hurt it, healing heals it, and daylight does not
+  burn it: it takes damage and healing the way a player does (RLM-187). Its label, a text display riding it, shows its armor with the share of a hit it blocks at the nearest player's level
   ("15 Armor (50% Damage Reduction)") over its name with the DPS of the current session (it ends after 5 s without a
   hit); vanilla draws no name tag over an entity with a passenger, so the label carries both. The hitter sees each
-  hit on the action bar, `/qa dummy reset|remove`. Husks carry our stats in the dev game, so `/attribute @n[type=husk]
-  realmforge:dodge_chance base set 0.5` sets a dummy's dodge chance or resistances;
+  hit on the action bar, `/qa dummy reset|remove`. Pillagers carry our stats in the dev game, so
+  `/attribute @n[type=pillager] realmforge:dodge_chance base set 0.5` sets a dummy's dodge chance or resistances;
 - `/qa spell learn <spell> [<level>]`, `/qa spell cast <spell> [<target>]`, `/qa spell resource <mana|rage>
   <amount>`, `/qa spell reset` and `/qa spell show` (C3a-1): teach the executing player a spell, cast it (as a mob
   with `/execute as`; a refusal names its reason), set a resource pool, end every cooldown, and print the known

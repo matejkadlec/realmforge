@@ -17,8 +17,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * 2026-10-13). A hit's number and a miss go to the player who dealt it, shown over the entity: a magic school's hit in
  * the school's colour, every other hit (melee, ranged, the Physical school) in the Physical school's orange, red on a
  * crit. The player who was attacked sees no number, the health bar shows the damage, but an arc points at the
- * attacker, and a dodge shows "Miss!" beside the crosshair. A heal shows in green over the healed entity, to the
- * players near it. Hits between mobs send nothing.
+ * attacker, and a dodge shows "Miss!" beside the crosshair. A tick of a damaging effect (poison, wither) has no
+ * attacker: it goes to the player who applied the effect, in the effect's colour ({@link DamageOverTime}). A heal
+ * shows in green over the healed entity, to the players near it. Hits between mobs send nothing.
  */
 final class CombatText {
     /** Hits that are not magic, when no Physical school is in the data (it is orange too). */
@@ -36,6 +37,14 @@ final class CombatText {
     static void hit(LivingEntity defender, DamageSource source, Optional<Holder<SpellSchool>> school, boolean crit,
             float amount) {
         if (amount <= 0) {
+            return;
+        }
+        DamageOverTime.Tick tick = DamageOverTime.tick(defender, source);
+        if (tick != null) {
+            if (tick.applier() != defender) {
+                PacketDistributor.sendToPlayer(tick.applier(),
+                        new CombatTextPayload(defender.getId(), amount, tick.color(), (byte) 0));
+            }
             return;
         }
         SpellSchool hitSchool = school.map(Holder::value).orElse(null);
