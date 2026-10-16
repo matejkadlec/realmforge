@@ -113,8 +113,11 @@ Rules:
   the `school` whose damage they deal; what they `scales_with`, `spell_power` for a magic school and `attack_damage`
   for a physical one (off-class stats do nothing for a class's abilities, Matěj, 2026-10-15); their `targeting`
   (`{type: realmforge:self}`, or `realmforge:enemy` or `realmforge:ally` with a `range` of at most 128 blocks; an
-  ally spell without a target takes the caster); `cast: {type: instant}` (cast times and channels come with C3a-2,
-  RLM-210); an optional `cost` (`resource` `realmforge:mana` or `realmforge:rage`, `amount` at level 1, `per_level`);
+  ally spell without a target takes the caster); `cast`: `{type: instant}`, `{type: cast_time, duration_seconds}`
+  (the effects, the cost and the cooldown come when the cast completes) or `{type: channel, duration_seconds,
+  interval_seconds}` (it pays and starts its cooldown when it begins, then runs its effects every interval; the
+  duration is a whole number of intervals), the timed ones with `castable_while_moving` (moving cancels them by
+  default) and `lock_on` (range and line of sight are not checked again before the effects); an optional `cost` (`resource` `realmforge:mana` or `realmforge:rage`, `amount` at level 1, `per_level`);
   `cooldown_seconds`; `global_cooldown_seconds` (1 by default, 0 for a spell off the global cooldown); `max_level`;
   the `crit` block (`can_crit`, `multiplier_percent` instead of 1 + the caster's crit damage, `bonus_chance_percent`
   added to the caster's crit chance; every spell can crit by default, heals too); `npc_only` for mob and boss
