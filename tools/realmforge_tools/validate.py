@@ -12,6 +12,7 @@ from realmforge_tools.content import Content, RoomEntry, load_content
 from realmforge_tools.id_universe import IdUniverse, load_vanilla
 from realmforge_tools.problems import Problem, ValidationFailed
 from realmforge_tools.project import MOD_ID, RepoPaths
+from realmforge_tools.rooms.cache import universe_digest
 from realmforge_tools.rooms.check import (
     ENTRANCE_MARKER,
     TEMPLATE_POOL_REGISTRY,
@@ -123,10 +124,12 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
 
 
 def _check_rooms(content: Content, universe: IdUniverse) -> list[Problem]:
+    # The problems depend on the ids the room may name, so the universe's digest is part of the cache kind.
+    kind = f"check-{universe_digest(universe)}"
     problems = [
         Problem(room.template, location, message)
         for room in content.rooms
-        for location, message in check_structure(room.structure, universe)
+        for location, message in room.derived(kind, lambda structure: check_structure(structure, universe))
     ]
     for room in content.rooms:
         source = room.model.source
@@ -188,7 +191,9 @@ def _check_dungeons(content: Content) -> list[Problem]:
         if not rooms:
             problems.append(Problem(entry.source, "pool", f"no room lists {dungeon.pool} in its pools"))
             continue
-        shapes = [(room, room_role(room.model.tags), connectors(room.structure)) for room in rooms]
+        shapes = [
+            (room, room_role(room.model.tags), room.derived("connectors", connectors)) for room in rooms
+        ]
         ending = dungeon.layout.ending
         needs = (
             (
@@ -247,7 +252,7 @@ def _check_pooled_room(room: RoomEntry) -> list[Problem]:
     its box past what cleanup clears (architecture 15.5), and an entrance marker only in the entrance, where players
     arrive (the builder reads only the entrance room's)."""
     problems: list[Problem] = []
-    edges = fluid_edges(room.structure)
+    edges = room.derived("fluid_edges", fluid_edges)
     if edges:
         count = f" ({len(edges)} blocks)" if len(edges) > 1 else ""
         problems.append(
@@ -259,7 +264,7 @@ def _check_pooled_room(room: RoomEntry) -> list[Problem]:
             )
         )
     role = room_role(room.model.tags)
-    for name, pos in markers(room.structure):
+    for name, pos in room.derived("markers", markers):
         if name == ENTRANCE_MARKER and role != "entrance":
             problems.append(
                 Problem(

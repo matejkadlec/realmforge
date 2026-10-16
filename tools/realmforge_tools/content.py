@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from functools import cached_property
+from operator import attrgetter
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +15,8 @@ from pydantic import BaseModel, ValidationError
 
 from realmforge_tools.problems import Problem, ValidationFailed
 from realmforge_tools.project import RepoPaths
-from realmforge_tools.rooms.structure import Structure, StructureError, read_structure
+from realmforge_tools.rooms.cache import RoomCache, template_key
+from realmforge_tools.rooms.structure import Pos, Structure, StructureError, read_structure
 from realmforge_tools.schema import (
     CONTENT_TYPES,
     WORLDGEN_DIR,
@@ -80,7 +84,27 @@ class RoomEntry:
     template: str
     """The template, repository-relative."""
     model: RoomDef
-    structure: Structure
+    key: str
+    """The template's cache key (``rooms/cache.py``); empty when the template was not read."""
+    load: Callable[[], Structure] = field(repr=False, compare=False)
+    cache: RoomCache = field(repr=False, compare=False)
+
+    @property
+    def size(self) -> Pos:
+        """The template's size, without decoding it when the cache knows it."""
+        return self.derived("size", attrgetter("size"))
+
+    @cached_property
+    def structure(self) -> Structure:
+        """The template's blocks and entities, decoded (or rebuilt from the cache) on first use."""
+        return self.load()
+
+    def derived[T](self, kind: str, compute: Callable[[Structure], T]) -> T:
+        """``compute(self.structure)``, cached under ``kind`` for this template: a warm cache answers without the
+        blocks. ``kind`` must name everything besides the structure that the value depends on."""
+        if not self.key:
+            return compute(self.structure)
+        return self.cache.derived(kind, self.key, lambda: compute(self.structure))
 
 
 @dataclass(frozen=True)
@@ -131,8 +155,12 @@ class Content:
         return getattr(self, type_dir)
 
 
-def load_content(paths: RepoPaths) -> Content:
-    """Load and schema-validate every file in ``content/``. Raises ValidationFailed listing all problems."""
+def load_content(paths: RepoPaths, *, read_templates: bool = True) -> Content:
+    """Load and schema-validate every file in ``content/``. Raises ValidationFailed listing all problems.
+
+    A room template is decoded only on a miss of the room cache (``rooms/cache.py``); a hit leaves the decoding to
+    the first use of ``RoomEntry.structure``. Without ``read_templates`` the templates are not even read, so a broken
+    one goes unreported: for callers that need only the rooms' ids and sidecars."""
     problems: list[Problem] = []
     loaded: dict[str, list[Entry]] = {name: [] for name in CONTENT_TYPES}
     worldgen: list[WorldgenFile] = []
@@ -166,7 +194,7 @@ def load_content(paths: RepoPaths) -> Content:
         if entry is not None:
             loaded[type_dir].append(entry)
 
-    rooms, reviews, notices = _load_rooms(room_files, paths, problems)
+    rooms, reviews, notices = _load_rooms(room_files, paths, problems, read_templates=read_templates)
     if problems:
         raise ValidationFailed(problems)
 
@@ -239,10 +267,11 @@ def _load_worldgen(file: Path, rel: str, paths: RepoPaths, problems: list[Proble
 
 
 def _load_rooms(
-    files: list[Path], paths: RepoPaths, problems: list[Problem]
+    files: list[Path], paths: RepoPaths, problems: list[Problem], *, read_templates: bool
 ) -> tuple[tuple[RoomEntry, ...], tuple[RoomReview, ...], tuple[RoomNotice, ...]]:
     """Pair every template with its sidecar, read both, and read the review files."""
     root = paths.content / ROOMS_DIR
+    cache = RoomCache(paths.cache / "rooms" / "parsed" if read_templates else None)
     templates: dict[str, Path] = {}
     sidecars: dict[str, Path] = {}
     reviews: list[RoomReview] = []
@@ -296,13 +325,13 @@ def _load_rooms(
             problems.append(Problem(paths.rel(template), "", "the room has no .yaml sidecar next to it"))
             continue
         entry = _load_entry(sidecar, paths.rel(sidecar), RoomDef, problems)
-        try:
-            structure = read_structure(template.read_bytes())
-        except StructureError as e:
-            problems.append(Problem(paths.rel(template), "", f"not a usable structure template: {e}"))
+        loaded = _load_template(template, cache, read_templates)
+        if isinstance(loaded, str):
+            problems.append(Problem(paths.rel(template), "", f"not a usable structure template: {loaded}"))
             continue
         if entry is not None:
-            rooms.append(RoomEntry(room_id, entry.source, paths.rel(template), entry.model, structure))
+            key, load = loaded
+            rooms.append(RoomEntry(room_id, entry.source, paths.rel(template), entry.model, key, load, cache))
     sources = sorted({room_id.split("/")[1] for room_id in templates if room_id.startswith("third_party/")})
     for source in sources:
         for name in LICENSE_FILES:
@@ -320,6 +349,27 @@ def _load_rooms(
         RoomNotice(source, name, file.read_bytes()) for (source, name), file in sorted(license_files.items())
     )
     return tuple(rooms), tuple(sorted(reviews, key=lambda r: r.folder)), notices
+
+
+def _load_template(template: Path, cache: RoomCache, read: bool) -> tuple[str, Callable[[], Structure]] | str:
+    """The template's cache key and how to get its structure, or why it is unusable. A template is decoded here only
+    when the cache lacks it (a cached one decoded before); one that is not read is decoded on first use."""
+
+    def decode() -> Structure:
+        return read_structure(template.read_bytes())
+
+    if not read:
+        return "", decode
+    data = template.read_bytes()
+    key = template_key(data)
+    if cache.has_structure(key):
+        return key, lambda: cache.structure(key) or decode()
+    try:
+        structure = read_structure(data)
+    except StructureError as e:
+        return str(e)
+    cache.put_structure(key, structure)
+    return key, lambda: structure
 
 
 def _gpl_problems(source: str, license_files: dict[tuple[str, str], Path], paths: RepoPaths) -> list[Problem]:

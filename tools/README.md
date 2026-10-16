@@ -81,8 +81,15 @@ Dungeon rooms are structure templates in `content/rooms/` with a YAML sidecar ea
 `data/realmforge/structure/rooms/<id>.nbt` in the jar, and the `LICENSE` and `NOTICE` (and, for an LGPL-3.0 source,
 `COPYING`, the GPL-3.0 text) of each third-party source with a room to `META-INF/third_party/<source>/`. It also lists
 every room with its size, jigsaws and air blocks in the QA mod's `GeneratedRoomExpectations`, which
-`ContentRoomGameTests` compares with the rooms the game loads. Reading the templates takes most of `rf validate`'s
-few seconds: the NBT reader is pure Python.
+`ContentRoomGameTests` compares with the rooms the game loads.
+
+Decoding the templates is slow (the NBT reader is pure Python), so `rooms/cache.py` keeps each decoded template and
+what is read from it (its size, connectors, normalized bytes, the problems `check_structure` finds) in
+`.cache/rooms/parsed/`, keyed by the sha256 of the template's bytes and of the code in `rooms/` and `formats/`. A
+warm cache answers `rf validate` and `rf gen` without decoding any room; a changed template, or a change to that
+code, misses and is decoded again (a few seconds when every room misses, as in CI or a new worktree). A value is
+cached only when the functions that compute it live in `rooms/` or `formats/`; for any other change to what is
+cached, bump `CACHE_VERSION`. Deleting `.cache/rooms/parsed/` is always safe.
 
 **`rf rooms import SRC... --to DIR`** turns room files into rooms: vanilla structure templates (`.nbt`), Sponge
 schematics (`.schem`, versions 1 to 3, as WorldEdit saves them) and Litematica schematics (`.litematic`, versions 5

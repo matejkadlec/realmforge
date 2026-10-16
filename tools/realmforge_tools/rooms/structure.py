@@ -174,6 +174,11 @@ def structure_from_nbt(root: dict[str, Any], *, first_palette: bool = False) -> 
     )
 
 
+def count_blocks(structure: Structure, name: str) -> int:
+    """How many of the structure's blocks are ``name`` (``minecraft:air``, say), whatever their properties."""
+    return sum(1 for block in structure.blocks if block.state.name == name)
+
+
 def write_structure(structure: Structure) -> bytes:
     """The normalized, gzipped template."""
     blocks = sorted(structure.blocks, key=lambda b: (b.pos[1], b.pos[0], b.pos[2]))
