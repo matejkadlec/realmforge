@@ -108,7 +108,7 @@ hoppers have nothing to take.
 | right-click with a sigil of a realm the player has unlocked | opens the portal onto the sigil's realm, or switches it there at once; the sigil stays in the hand |
 | right-click with the sigil of the realm a lit portal already shows | nothing changes; "The portal already opens onto Undervault" |
 | right-click with a sigil of a realm the player has not unlocked | refused, with the realm's hint: "You are not eligible to open a portal to Undervault" |
-| right-click with the sigil of the realm the frame stands in | refused: "You are already in Undervault" |
+| right-click with any sigil on a frame inside a realm | refused: "This portal leads only back to Overworld" (Matěj, RLM-188) |
 | right-click with an empty hand | the action bar shows where the portal opens onto, or "The portal is closed" for a dark one |
 | sneak and right-click with an empty main hand, whatever the off hand holds | in Overworld, closes the portal (setting none); inside a realm, opens it onto return, or switches it back to return |
 | break the selector | the portal closes, and the selector drops as an item without its setting; one a trip built drops nothing ([Building a portal](#building-a-portal)) |
@@ -262,9 +262,9 @@ player arrives wherever the linked portal stands.
 ### The coordinate scale
 
 A realm's dimension type sets vanilla's `coordinate_scale`; the Nether's is 8 and Overworld's 1.
-`DimensionType.getTeleportationScale(from, to)` divides the source's scale by the target's. A trip from the
-Overworld into a realm of scale 16 therefore multiplies x and z by 1/16, the way back by 16, and a trip between two
-realms of the same scale keeps them. The scale is data, so a playtest can change it without code.
+`DimensionType.getTeleportationScale(from, to)` divides the source's scale by the target's. A trip from
+Overworld into a realm of scale 16 therefore multiplies x and z by 1/16, and the way back by 16. Realm portals never
+link two realms (Matěj, RLM-188). The scale is data, so a playtest can change it without code.
 
 **Besides portals, only `/execute in` reads it** in 26.1.2. The command's `in` redirect (`ExecuteCommand`) calls
 `CommandSourceStack#withLevel`, which multiplies the source's x and z by `DimensionType.getTeleportationScale`, as
@@ -452,8 +452,9 @@ without one; never in a realm. This answers the realm design's
 
 ## Edge cases
 
-- **A frame inside a realm:** allowed. The sneak gesture opens it onto return (Overworld, at the scaled-back
-  position); a sigil opens it onto another realm ([Linking](#linking)). It cannot open onto the realm it stands in.
+- **A frame inside a realm:** allowed, and it opens only back to Overworld (Matěj, RLM-188): the sneak gesture
+  opens it onto return (Overworld, at the scaled-back position, [Linking](#linking)), and every sigil is refused
+  there ([The realm selector](#the-realm-selector)). A trip to another realm goes through Overworld.
 - **Instance dimensions and other dimensions:** a frame lights only in dimensions that have a realm entry: the
   Overworld and the realms. In `realmforge:instances`, in the Nether and End until M4 removes them, and in
   dimensions of other mods the selector refuses: "The portal cannot open here". Inside instances players are in
@@ -586,7 +587,8 @@ dimension rules and access:
 - **JUnit:**
   - the frame check (both axes; corners present or missing, which both light; a missing side block; a block in the
     opening; the selector off-centre; a frame too big or too small);
-  - the scaled position, both ways and between two realms, with the world border clamp and its rounding down;
+  - the scaled position, both ways, with the world border clamp and its rounding down;
+  - a sigil on a frame inside a realm is refused, and the sneak gesture still opens it onto return;
   - the build radius of each side, ⌊128 ÷ scale⌋ − 1 in a realm: from every Overworld x in one 16-block cell,
     a realm portal at either end of the radius aims back within 128 blocks;
   - the spot search for a built portal (a ceiling, a void, water, a full column, the `y` range), including a way
@@ -666,6 +668,9 @@ Matěj's answers of 2026-10-13 (RLM-128), which this version records:
    low priority.
 10. **Waystones:** crafted and placed by players, global or private by each player's choice; no waystone is placed
     at an arrival point, and a warp into a realm the player has not unlocked never works.
+11. **Portals inside a realm lead only back to Overworld** (Matěj, 2026-10-15, RLM-188 item 8): a portal opens onto
+    a realm only from Overworld, and a frame built inside a realm opens only onto return. This replaces the first
+    version's sigil that switched a frame inside a realm to another realm.
 
 ## Open questions
 

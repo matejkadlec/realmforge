@@ -53,9 +53,9 @@ Forgefire Ashfire, and the Brink Unmade Isles (RLM-164).
   chain before it, never after it, so its chapter is always the last one and its level band the game's highest.
   Its place is data, not code: adding a realm before it moves its level band (its `dimension_rules`) and its sigil's
   recipe down the chain ([The Void realm](#the-void-realm)).
-- **Portals start in Overworld** (Matěj, RLM-128 and RLM-188): a portal in Overworld opens onto any realm the player
-  has unlocked, and a portal built inside a realm opens only back to Overworld
-  ([realm portal spec](realm-portal.md#the-realm-selector)).
+- **Portals start in Overworld** (Matěj, RLM-188): a portal in Overworld opens onto any realm the player has
+  unlocked, and a portal built inside a realm opens only back to Overworld, so a trip between realms goes through
+  Overworld ([realm portal spec](realm-portal.md#edge-cases)).
 - **Every realm feels full**, like a well-modded Overworld (Regions Unexplored, Better Villages, random structures
   and dungeons), never empty like the vanilla End: neutral mobs, animals, small structures, vegetation and landmarks.
   That is measured, not guessed (WF-1, WF-2):
