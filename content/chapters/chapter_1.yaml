@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=../../tools/schemas/chapters.schema.json
-# The first chapter of the story: the Overworld, levels 1 to 10 (v1 realm layout, RLM-188). A chapter's cap is its
+# The first chapter of the story: Overworld, levels 1 to 10 (v1 realm layout, RLM-188). A chapter's cap is its
 # last level, and its main questline raises it (Matěj, 2026-10-15, superseding D2's 10 then 20): 10 during
 # chapter 1, 18 once it is finished. The chapter's last quest (Q2) grants the advancement
 # realmforge:chapter/chapter_1, which raises the cap; until Q1 and Q2 exist, /advancement grant @s only
