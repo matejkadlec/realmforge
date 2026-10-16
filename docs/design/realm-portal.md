@@ -9,15 +9,16 @@
 >
 > - portals link like the Nether's, with scaled coordinates, so there is no landing and no home point;
 > - a realm's unlock comes from its quest, not from holding its sigil;
-> - a player always respawns in the Overworld.
+> - a player always respawns in Overworld.
 >
 > RLM-133 closed three gaps that the review of the first version found, and RLM-157 the ones the review of the
-> second found: the realm-side build radius allows for rounding, frames a trip builds drop nothing, the Overworld
+> second found: the realm-side build radius allows for rounding, frames a trip builds drop nothing, Overworld
 > has an arrival height, and shoulder parrots stay out of realms. Roadmap tasks W2a (the realm, RLM-32) and
 > W2b (the portal, RLM-154) build it ([What M1 takes from this](#what-m1-takes-from-this)). Block and item names
 > are working names; realm names are the approved ones of the [lore outline](../lore/outline.md#the-realms)
-> (RLM-139). APIs named here were checked against Minecraft 26.1.2 and NeoForge 26.1.2.116 on 2026-10-13 and
-> 2026-10-14, except where marked *verify*.
+> (RLM-139, RLM-188), without an article. The v1 realm layout (RLM-188, 2026-10-16) moved the stone realm to
+> chapter 2 (levels 6–18) and its unlock to the end of chapter 1's main questline. APIs named here were checked
+> against Minecraft 26.1.2 and NeoForge 26.1.2.116 on 2026-10-13 and 2026-10-14, except where marked *verify*.
 
 ## At a glance
 
@@ -31,29 +32,30 @@
   realm with it nor pass through an open one.
 - **Portals link like the Nether's, in both directions** (Matěj, RLM-128). An Overworld portal leads to the realm
   portal near its scaled position in the realm, or builds one there, and the way back works the same in reverse.
-  Any number of portals can stand anywhere in the Overworld.
+  Any number of portals can stand anywhere in Overworld.
 - **Scaled coordinates keep arrivals near a realm's origin,** where its lowest levels are: the stone realm links at
-  1:16, so every Overworld portal within 10,000 blocks of the origin arrives in its first level band
+  1:16, so every Overworld portal within 20,000 blocks of the origin arrives in its first level band
   ([The coordinate scale](#the-coordinate-scale)).
-- **A player always respawns in the Overworld,** at their bed or at the world spawn, never in a realm. A
+- **A player always respawns in Overworld,** at their bed or at the world spawn, never in a realm. A
   "Return to last death" scroll (RLM-155) takes them back to where they died.
 - **Each realm has its own colour**, particles and sound, and a flavour line (RE-1).
 - **Only players travel** (Matěj: "for now"). Items, mobs and vehicles never pass a realm portal, and no other
-  entity is moved into or out of a realm, so there is no chunk-loading trick and no realm mob in the Overworld
+  entity is moved into or out of a realm, so there is no chunk-loading trick and no realm mob in Overworld
   ([Multiplayer](#multiplayer) names the one path the rule cannot see).
 
 | Realm | Sigil (working name) | How a player gets the sigil | What unlocks the realm | Portal colour |
 | --- | --- | --- | --- | --- |
-| The Overworld | none | - | always open | green `#5DBB63` |
-| Stone realm | Stone Sigil | reward of the early chapter 1 unlock quest; a repeatable quest replaces a lost one | that quest, which a level-1 player can finish | slate blue `#7A8FB0` |
-| Desert realm | Desert Sigil | crafted from a stone realm ore plus the stone realm boss's guaranteed drop (RE-9) | its main-chain quest after the stone realm boss | gold `#E8B84A` |
-| Tundra realm | Tundra Sigil | the same, with a different stone realm ore | its own quest after the same boss | ice white `#BFF4FF` |
-| Fire realm | Fire Sigil | from the realm before it, by the same rule | the quest after that realm's boss | red `#E0502C` |
-| Void realm | Void Sigil | from the realm before it, by the same rule (RLM-95) | the quest after that realm's boss | deep purple `#4B1F6F` |
+| Overworld | none | - | always open | green `#5DBB63` |
+| Stone realm (Undervault) | Stone Sigil | reward of chapter 1's last main quest, the realm's unlock quest; a repeatable quest replaces a lost one | that quest, at about level 6 | slate blue `#7A8FB0` |
+| Desert realm (Sunwastes) | Desert Sigil | crafted from a stone realm ore plus the stone realm boss's guaranteed drop (RE-9) | its main-chain quest after the stone realm boss | gold `#E8B84A` |
+| Tundra realm (Everwinter) | Tundra Sigil | the same, with a different stone realm ore | its own quest after the same boss | ice white `#BFF4FF` |
+| Fire realm (Ashfire) | Fire Sigil | from the realm before it, by the same rule | the quest after that realm's boss | red `#E0502C` |
+| Void realm (Unmade Isles) | Void Sigil | from the realm before it, by the same rule (RLM-95) | the quest after that realm's boss | deep purple `#4B1F6F` |
 
-Colours are proposals and live in data ([Data](#data-contentrealms)). Purple is kept for the Void realm, which comes
-after M4 removes the nether portals ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)), so no realm portal
-looks like a nether portal.
+Olympus, Prestoria and Quagmire ([realm design](realms.md#at-a-glance)) get their rows when they are designed; how a
+player first reaches Olympus is open there. Colours are proposals and live in data ([Data](#data-contentrealms)). Purple
+is kept for the Void realm, which comes after M4 removes the nether portals
+([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)), so no realm portal looks like a nether portal.
 
 ## The frame
 
@@ -65,20 +67,20 @@ looks like a nether portal.
   touches a portal block, and breaking any of them reaches the portal through a neighbour update
   ([Edge cases](#edge-cases)). One fixed size keeps the check simple and every portal recognisable; AoA used the
   same outline (RE-1).
-- **Materials, cheap and from the Overworld,** because the first frame is built before any realm is open, and AoA's
+- **Materials, cheap and from Overworld,** because the first frame is built before any realm is open, and AoA's
   players stalled on exactly this step (they ended up buying its runes from an NPC):
   - **Portal Stone:** 4 stone bricks around a copper ingot make 4. A tag of stone bricks
     (`#realmforge:portal_stone_bricks`) also takes the realms' own bricks, so a frame can be built inside a realm
     that has no vanilla stone;
   - **realm selector:** 4 Portal Stone, 4 gold ingots and a compass;
   - a whole frame takes 17 Portal Stone (13 in the frame, 4 in the selector), so 5 crafts: 20 stone bricks and 5
-    copper ingots, plus 4 gold ingots and a compass. That is a short mining trip for a level 1–5 player, and chapter
-    1's first quests walk through it. The numbers are proposals for Matěj's playtest.
+    copper ingots, plus 4 gold ingots and a compass. That is a short mining trip for a player in Overworld's early
+    levels, and chapter 1's quests walk through it. The numbers are proposals for Matěj's playtest.
 - **Lighting:** right-click the selector with a sigil ([The realm selector](#the-realm-selector)). The selector
   checks the player's unlock first, then the frame:
   - **complete,** with the opening empty (air, or blocks such as grass that are replaced when something is placed
     there) or already filled with this frame's own portal blocks (a switch): the opening fills with portal blocks of
-    that realm, and the action bar says "The portal opens onto the Undervault";
+    that realm, and the action bar says "The portal opens onto Undervault";
   - **incomplete:** nothing lights, the action bar says "The frame is incomplete", and particles mark every missing
     or wrong block for a few seconds, so the player sees what is left (the visible-progress rule of the
     [realm design](realms.md#puzzles-and-traps)).
@@ -94,7 +96,7 @@ the opening:
 
 - **none** while the opening is dark;
 - **a realm** while the portal is open onto it;
-- **return** while it is open onto the Overworld, the way back from a realm ([Travel](#travel)).
+- **return** while it is open onto Overworld, the way back from a realm ([Travel](#travel)).
 
 The setting becomes none whenever the opening goes dark: the sneak gesture closes it, or a broken frame block takes
 the portal blocks with it (they check their frame on neighbour updates) and resets a selector that still stands. So a
@@ -104,11 +106,11 @@ hoppers have nothing to take.
 | Action on the selector | Result |
 | --- | --- |
 | right-click with a sigil of a realm the player has unlocked | opens the portal onto the sigil's realm, or switches it there at once; the sigil stays in the hand |
-| right-click with the sigil of the realm a lit portal already shows | nothing changes; "The portal already opens onto the Undervault" |
-| right-click with a sigil of a realm the player has not unlocked | refused, with the realm's hint: "You are not eligible to open a portal to the Undervault" |
-| right-click with the sigil of the realm the frame stands in | refused: "You are already in the Undervault" |
+| right-click with the sigil of the realm a lit portal already shows | nothing changes; "The portal already opens onto Undervault" |
+| right-click with a sigil of a realm the player has not unlocked | refused, with the realm's hint: "You are not eligible to open a portal to Undervault" |
+| right-click with the sigil of the realm the frame stands in | refused: "You are already in Undervault" |
 | right-click with an empty hand | the action bar shows where the portal opens onto, or "The portal is closed" for a dark one |
-| sneak and right-click with an empty main hand, whatever the off hand holds | in the Overworld, closes the portal (setting none); inside a realm, opens it onto return, or switches it back to return |
+| sneak and right-click with an empty main hand, whatever the off hand holds | in Overworld, closes the portal (setting none); inside a realm, opens it onto return, or switches it back to return |
 | break the selector | the portal closes, and the selector drops as an item without its setting; one a trip built drops nothing ([Building a portal](#building-a-portal)) |
 
 - **Who may switch a portal:** anyone holding a sigil they are eligible to use (Matěj, RLM-128). Unlocks are per
@@ -127,16 +129,16 @@ hoppers have nothing to take.
 
 - **One per realm,** stacking to 1, never consumed (RE-1), fire resistant (`Item.Properties#fireResistant`), so lava
   does not take it. One sigil opens any number of portals (Matěj, RLM-128). Its tooltip names the realm with its
-  element subtitle ("The Undervault — Stone Realm", Matěj, RLM-139) and says "Never used up". It shows no levels:
+  element subtitle ("Undervault — Stone Realm", Matěj, RLM-139) and says "Never used up". It shows no levels:
   they live in the server-only `realmforge:dimension_rules`, and the arrival title, which the server sends, shows
   them.
 - **A sigil is a key, not the unlock.** Every copy of a realm's sigil is the same item, whoever obtained it, and
   anyone may hold one (Matěj, RLM-128). A player needs a sigil to open or switch a portal, and their own unlock
   ([Access and unlocks](#access-and-unlocks)) to use it.
 - **Where sigils come from** (RE-9, LE-1):
-  - **the Stone Sigil** is a reward of the stone realm's unlock quest, an early chapter 1 quest that a level-1 player
-    can finish (the roadmap's "locked until a chapter 1 quest unlocks it"; the stone realm is open from level 1 and
-    recommended from 5, [realm design](realms.md#chapters-and-levels)). The same quest grants the unlock;
+  - **the Stone Sigil** is a reward of the stone realm's unlock quest, the last quest of chapter 1's main questline
+    (the roadmap's "locked until chapter 1's main questline unlocks it"; Undervault opens at about level 6, with no
+    hard level lock, [realm design](realms.md#chapters-and-levels)). The same quest grants the unlock;
   - **a lost Stone Sigil** comes back through a repeatable quest that opens once that first quest is complete and
     gives a new sigil for a few copper ingots (FTB Quests' repeatable quests; Q1 checks the field). A player who lost
     the sigil before or after opening a portal is never stuck;
@@ -144,10 +146,10 @@ hoppers have nothing to take.
     guaranteed drop of that realm's main-path boss. The recipe is shown in the quest log, and crafting the sigil is
     a step of the chapter's main chain. Beating that boss is what "completing" a realm means; the realm itself has
     no completion flag ([realm design](realms.md#opening-the-next-realm));
-  - **when a chapter opens two realms** (chapter 2: the desert and the tundra), the boss drops one material per
-    realm it opens, two for chapter 2, every kill;
+  - **when the next chapter has two realms** (chapter 3: Sunwastes and Everwinter), the boss before them
+    (Undervault's) drops one material per realm it opens, two, every kill;
   - **when two realms share a chapter, the next main-path sigil needs both:** its recipe takes the guaranteed drop
-    of each realm's main-path boss (for the realm after chapter 2: the desert's and the tundra's), so finishing one
+    of each realm's main-path boss (for the realm after chapter 3: Sunwastes' and Everwinter's), so finishing one
     branch never opens the next realm. Both realms are needed for further progress
     ([realm design](realms.md#the-desert-realm));
   - **an optional side realm's sigil** comes from wherever its design puts it: a chest at 100% in an instanced
@@ -164,7 +166,7 @@ hoppers have nothing to take.
   criterion is `minecraft:impossible`, like a chapter's advancement
   ([architecture 16](../architecture.md#16-progression-and-quests)), so nothing in play grants it but the realm's
   unlock quest. Holding, crafting, picking up or trading a sigil unlocks nothing. The advancement is hidden until
-  earned and shows a toast, "Realm unlocked: the Undervault"; it adds no chat line (`hidden`, `show_toast`,
+  earned and shows a toast, "Realm unlocked: Undervault"; it adds no chat line (`hidden`, `show_toast`,
   `announce_to_chat` in vanilla's advancement display).
 - **The unlock quest** grants it through an `AdvancementReward` that is per player and claims itself
   (`team_reward: false`, `auto: "enabled"`), the rule every chapter reward follows
@@ -175,7 +177,8 @@ hoppers have nothing to take.
   other member, one who joins later included, at their next login. Whether that exception stays is an
   [open question](#open-questions). Its tasks are the player's own progress, never "have the sigil", which a trade
   could complete:
-  - **the stone realm's:** the early chapter 1 quest; it also rewards the Stone Sigil. Q2 writes it;
+  - **the stone realm's:** the last quest of chapter 1's main questline; it also rewards the Stone Sigil. Q2 writes
+    it;
   - **a later main-path realm's:** the main-chain step after the boss or bosses whose drops its sigil takes, with a
     task such as defeating that boss (`realmforge:boss_defeated`). The chapter that adds the realm writes it.
 - **The access requirement:** the realm dimension's entry in `realmforge:dimension_rules` holds it
@@ -225,13 +228,13 @@ player arrives wherever the linked portal stands.
   `NetherPortalBlock#getPortalDestination` does with `DimensionType.getTeleportationScale` and
   `WorldBorder#clampToBounds`. It starts from the centre of the opening, not from the player, whose place in a
   3-wide opening would shift the target by up to 16 blocks on the way back. It then looks for a lit realm portal
-  that leads back to the Overworld (setting return) within ⌊128 ÷ scale⌋ blocks of that position: 8 at 1:16. When
+  that leads back to Overworld (setting return) within ⌊128 ÷ scale⌋ blocks of that position: 8 at 1:16. When
   it finds one, the player arrives there; otherwise a portal is built within one block less, ⌊128 ÷ scale⌋ − 1: 7
   at 1:16 ([Building a portal](#building-a-portal); the rounding below needs that block).
-- **Back to the Overworld:** the same in reverse. The trip multiplies by the scale and looks within 128 blocks of
+- **Back to Overworld:** the same in reverse. The trip multiplies by the scale and looks within 128 blocks of
   that position for a lit portal open onto the realm the player comes from, or builds one within 16 blocks.
 - **The radii follow vanilla's arithmetic.** Vanilla's `PortalForcer#findClosestPortalPosition` searches 16 blocks
-  in the Nether and 128 in the Overworld, and 16 × 8 = 128 is what makes a nether portal pair link back. A realm
+  in the Nether and 128 in Overworld, and 16 × 8 = 128 is what makes a nether portal pair link back. A realm
   side radius derived from 128 ÷ scale keeps that true at any scale, once it allows for the rounding:
   `WorldBorder#clampToBounds` returns `BlockPos.containing`, which rounds the scaled position down. An Overworld
   portal centred at x 15 aims at realm x 0 (15 ÷ 16, rounded down); a realm portal built 8 blocks away, at x −8,
@@ -239,7 +242,7 @@ player arrives wherever the linked portal stands.
   - a portal a trip builds in a realm stands within 7 blocks of the rounded position, which lies less than one
     realm block below the exact one (at most 15 Overworld blocks), so the way back aims within 7 × 16 + 15 = 127
     blocks of the Overworld portal it came from, inside the Overworld search;
-  - one a trip builds in the Overworld stands within 16 blocks of the scaled-back position, so the way back aims
+  - one a trip builds in Overworld stands within 16 blocks of the scaled-back position, so the way back aims
     within 1 block of the realm portal it came from.
 
   So a pair a trip built always links back, both ways. Overworld portals up to about 128 blocks apart (8 × 16) lead
@@ -258,7 +261,7 @@ player arrives wherever the linked portal stands.
 
 ### The coordinate scale
 
-A realm's dimension type sets vanilla's `coordinate_scale`; the Nether's is 8 and the Overworld's 1.
+A realm's dimension type sets vanilla's `coordinate_scale`; the Nether's is 8 and Overworld's 1.
 `DimensionType.getTeleportationScale(from, to)` divides the source's scale by the target's. A trip from the
 Overworld into a realm of scale 16 therefore multiplies x and z by 1/16, the way back by 16, and a trip between two
 realms of the same scale keeps them. The scale is data, so a playtest can change it without code.
@@ -273,26 +276,29 @@ position after the level.
 **The stone realm uses 1:16, twice the Nether's ratio** (Matěj: "like the Nether's 1:8, or stronger"). The ratio
 follows from the realm's level bands:
 
-- **Bands:** the [realm design](realms.md#the-stone-realm) puts the stone realm's sub-regions at about levels 5–7,
-  7–9 and 9–10, rising from the realm's origin outwards.
+- **Bands:** the [realm design](realms.md#the-stone-realm) puts the stone realm's sub-regions at about levels 6–10,
+  10–14 and 14–18, rising from the realm's origin outwards (the v1 layout's band 6–18, RLM-188; the first version
+  had 5–7, 7–9 and 9–10).
 - **The level rule W2a writes** (a proposal, by distance only; the depth part and the jitter of
-  [architecture 14.1](../architecture.md#141-mob-levels) aside): level 5 at the origin, one level more every 320
-  blocks, capped at 10. The bands are then 5–7 within 640 blocks of the origin, 7–9 up to 1,280, and 9–10 beyond.
+  [architecture 14.1](../architecture.md#141-mob-levels) aside): level 6 at the origin, one level more every 320
+  blocks, capped at 18. The bands are then 6–10 within 1,280 blocks of the origin, 10–14 up to 2,560, and 14–18
+  beyond.
 - **The scale:** Overworld bases mostly stand within 10,000 blocks of the origin (the realm design's travel rule
-  leaves trips of 1,000–10,000 blocks to waystones). 10,000 ÷ 640 ≈ 16, so every Overworld portal within 10,000
-  blocks arrives in the first band.
+  leaves trips of 1,000–10,000 blocks to waystones). At 1:16 every Overworld portal within 20,000 blocks arrives in
+  the first band, near the band's bottom for the usual bases. 1:16 was picked for the first version's narrower
+  bands (10,000 ÷ 640 ≈ 16) and stays: it keeps arrivals at the realm's lowest levels.
 
 | Overworld portal, blocks from 0, 0 | Arrival in the stone realm, blocks from 0, 0 | Level there, about |
 | --- | --- | --- |
-| 1,000 | 63 | 5 |
-| 5,000 | 313 | 6 |
-| 10,000 | 625 | 7 |
-| 20,000 | 1,250 | 9 |
-| 30,000 | 1,875 | 10 (the cap) |
+| 1,000 | 63 | 6 |
+| 5,000 | 313 | 7 |
+| 10,000 | 625 | 8 |
+| 20,000 | 1,250 | 10 |
+| 30,000 | 1,875 | 12 |
 
-- **At the Nether's 1:8,** a portal at 5,000 would arrive at 625 (level 7, the edge of the first band) and one at
-  10,000 at 1,250 (level 9, deep in the second).
-- **The way back multiplies by 16:** a realm portal 1,000 blocks from the realm's origin leads to the Overworld
+- **At the Nether's 1:8,** a portal at 5,000 would arrive at 625 (level 8) and one at 10,000 at 1,250 (level 10,
+  the edge of the first band).
+- **The way back multiplies by 16:** a realm portal 1,000 blocks from the realm's origin leads to Overworld
   16,000 blocks out. That is how nether travel works too.
 - **A later realm** sets its own scale from its own bands, by the same arithmetic.
 
@@ -303,12 +309,12 @@ When no portal leads the right way within the search radius, the trip builds one
 
 - **The spot:** the one nearest the scaled position, searched in a spiral within the build radius of that side
   (⌊128 ÷ scale⌋ − 1 blocks in a realm, 7 at 1:16, one less than the search for the rounding in
-  [Linking](#linking); 16 blocks in the Overworld, as vanilla's spiral), where the frame stands on solid floor with
+  [Linking](#linking); 16 blocks in Overworld, as vanilla's spiral), where the frame stands on solid floor with
   air in its opening and on one side in front of it. It must be inside the world border and within the `y` range of
   the dimension's realm entry (`arrival.y`, [Data](#data-contentrealms)), which keeps arrivals in the depth band of
   the realm's lowest levels. The source portal's height, clamped into that range, decides between spots at the same
   distance.
-- **The Overworld's `y` range** is 64 to 310 (a proposal): the frame's bottom row stands at least one block above
+- **Overworld's `y` range** is 64 to 310 (a proposal): the frame's bottom row stands at least one block above
   sea level (63), so a way back over deep ocean, from a realm portal at y 30 say, finds no floor in the spiral and
   builds on a platform at the surface instead of carving a frame under the seabed. Vanilla's own fallback in
   `PortalForcer#createPortal` keeps y ≥ 70; 64 also lets a frame stand on beaches and plains, which lie between 63
@@ -318,7 +324,7 @@ When no portal leads the right way within the search radius, the trip builds one
   carved out at the scaled position, clamped into the `y` range: a floor of the entry's arrival block (`arrival.floor`)
   under and in front of it, and air around it. A safe pocket of `arrival.pocket_radius` blocks keeps out fluids and
   falling blocks (RE-6: 3 by default, larger for a realm that needs it, such as an underwater one).
-- **The new portal is lit:** in a realm its selector shows return, in the Overworld the realm the player came from.
+- **The new portal is lit:** in a realm its selector shows return, in Overworld the realm the player came from.
 - **It works like a frame a player built:** anyone may switch or close it, and breaking any of its blocks closes it
   ([Edge cases](#edge-cases)).
 - **Its blocks drop nothing.** Every frame a trip builds holds 13 Portal Stone and a selector, which cost 5 copper
@@ -327,8 +333,8 @@ When no portal leads the right way within the search radius, the trip builds one
   time: a farm. So Portal Stone and the realm selector carry a block state flag, `generated` (a working name),
   which a trip sets on the blocks it places and a player's placement never does, and their loot tables drop the
   block only without it (vanilla's `minecraft:block_state_property` condition). The floor blocks a carved spot gets
-  (`arrival.floor`) drop as usual: they are plain building blocks the realm or the Overworld has in plenty.
-- **The Overworld is no exception** (Matěj: the way back works "exactly like Nether → Overworld"): the way back
+  (`arrival.floor`) drop as usual: they are plain building blocks the realm or Overworld has in plenty.
+- **Overworld is no exception** (Matěj: the way back works "exactly like Nether → Overworld"): the way back
   builds a frame there when none is near. Its floor is the Overworld entry's arrival block, and its height comes
   from the Overworld entry's `y` range (above).
 
@@ -359,16 +365,16 @@ When no portal leads the right way within the search radius, the trip builds one
 
 ## Respawn
 
-Matěj's rule (RLM-128): **a player always respawns in the Overworld,** at their bed there, or at the world spawn
+Matěj's rule (RLM-128): **a player always respawns in Overworld,** at their bed there, or at the world spawn
 without one; never in a realm. This answers the realm design's
 [open question 1](realms.md#open-questions).
 
 - **Beds in a realm do nothing,** and they do not explode either, so a bed is no trap there. The realm's dimension
   type sets vanilla's `minecraft:gameplay/bed_rule` to `can_sleep: never`, `can_set_spawn: never`,
-  `explodes: false` and an `error_message` such as "Beds only work in the Overworld".
+  `explodes: false` and an `error_message` such as "Beds only work in Overworld".
   `ServerPlayer#startSleepInBed` then refuses with that message and sets no spawn point. The Nether's rule explodes
   instead.
-- **Respawn anchors do not work there** (`minecraft:gameplay/respawn_anchor_works: false`): as in the Overworld, a
+- **Respawn anchors do not work there** (`minecraft:gameplay/respawn_anchor_works: false`): as in Overworld, a
   charged anchor explodes when used.
 - **A spawn point in a realm set some other way** (`/spawnpoint`, another mod) is overridden. NeoForge's
   `PlayerRespawnPositionEvent`, which `PlayerList#respawn` posts, moves a respawn whose level is a realm to the
@@ -380,7 +386,7 @@ without one; never in a realm. This answers the realm design's
 ## Look and sound
 
 - **One portal block** for every realm, tinted with the colour of the realm its selector shows (return portals use
-  the Overworld's green). Its texture is one greyscale swirl, tinted on the client by a block tint source
+  Overworld's green). Its texture is one greyscale swirl, tinted on the client by a block tint source
   (`RegisterColorHandlersEvent.BlockTintSources`, a `BlockTintSource` whose `colorInWorld` reads the frame's
   selector). The selector's block entity sends its setting to clients, and the colours come from the synced realm
   registry ([Data](#data-contentrealms)); *verify* that the region the chunk mesher reads holds the selector's block
@@ -433,7 +439,7 @@ without one; never in a realm. This answers the realm design's
   - **the travel listener,** before it lets a player into or out of a realm (a portal, a teleport, a warp);
   - **the respawn listener,** for a player who died in a realm. Vanilla puts them down at death (`ServerPlayer#die`),
     but `removeEntitiesOnShoulder` does nothing within 20 ticks of a landing, and `ServerPlayer#restoreFrom` copies
-    what is left onto the respawned player in the Overworld.
+    what is left onto the respawned player in Overworld.
 
   Neither uses `removeEntitiesOnShoulder`, because of that 20-tick wait. A helper recreates each shoulder entity at
   the player's position, as `respawnEntityOnShoulder` does (`EntityType#create` from the saved tag, the owner set,
@@ -446,7 +452,7 @@ without one; never in a realm. This answers the realm design's
 
 ## Edge cases
 
-- **A frame inside a realm:** allowed. The sneak gesture opens it onto return (the Overworld, at the scaled-back
+- **A frame inside a realm:** allowed. The sneak gesture opens it onto return (Overworld, at the scaled-back
   position); a sigil opens it onto another realm ([Linking](#linking)). It cannot open onto the realm it stands in.
 - **Instance dimensions and other dimensions:** a frame lights only in dimensions that have a realm entry: the
   Overworld and the realms. In `realmforge:instances`, in the Nether and End until M4 removes them, and in
@@ -485,7 +491,7 @@ without one; never in a realm. This answers the realm design's
 # content/realms/stone.yaml (sketch; names are examples, the pydantic model is the authority once written)
 id: stone
 dimension: realmforge:stone          # the realm's dimension (content/worldgen/dimension/stone.json)
-name: {en_us: The Undervault}        # the approved name (RLM-139)
+name: {en_us: Undervault}            # the approved name (RLM-139), without an article (RLM-188)
 subtitle: {en_us: Stone Realm}       # shown with the name in the guide, the sigil tooltip and the arrival title
 locked_hint: {en_us: "Unlocked by a chapter 1 quest."}
 flavour: {en_us: "Cold air rises from below, smelling of dust and old stone."}
@@ -501,22 +507,21 @@ arrival: {y: [20, 90], floor: realmforge:slate_bricks, pocket_radius: 3}   # whe
 # content/realms/overworld.yaml (sketch): always open, so no sigil and no hint
 id: overworld
 dimension: minecraft:overworld
-name: {en_us: The Overworld}
+name: {en_us: Overworld}
 # W2b adds the portal's fields:
 colour: "#5DBB63"                    # return portals
 arrival: {y: [64, 310], floor: minecraft:stone_bricks, pocket_radius: 3}   # portals built on the way back
 ```
 
-- **The name in messages:** where the name stands alone (the arrival title, the sigil tooltip) it starts with "The",
-  but messages use it mid-sentence with a lower-case article ("The portal opens onto the Undervault"). The pydantic
-  model carries both forms, or the name without its article plus a template per use; either way no message
-  hard-codes a realm's name.
+- **The name in messages:** a realm's name takes no article (Matěj, RLM-188), so it reads the same alone (the
+  arrival title, the sigil tooltip) and mid-sentence ("The portal opens onto Undervault"). The pydantic model
+  carries one form and each message a template; no message hard-codes a realm's name.
 - **The coordinate scale is not here:** it is the `coordinate_scale` of the realm's dimension type
   (`content/worldgen/dimension_type/stone.json`, `16.0`), next to its `bed_rule` and `respawn_anchor_works`
   attributes, because vanilla reads it from there.
 - **`realmforge:realm`, a new datapack registry** owned by `world`
   ([architecture 5.2](../architecture.md#52-our-datapack-registries)), synced to clients, because they need the
-  colour and the name. The Overworld is an entry too (`overworld`: no sigil, an arrival `y` range and floor for
+  colour and the name. Overworld is an entry too (`overworld`: no sigil, an arrival `y` range and floor for
   portals built on the way back, [Building a portal](#building-a-portal)), which gives return portals their colour
   and gives a later realm map its root. The architecture lists only what is built: the task that builds the
   registry adds it to [architecture 5.2](../architecture.md#52-our-datapack-registries) and the content type to
@@ -536,7 +541,7 @@ arrival: {y: [64, 310], floor: minecraft:stone_bricks, pocket_radius: 3}   # por
     not carry;
   - one realm per dimension, and one realm per sigil: two realms on one sigil would leave the selector no single
     destination;
-  - every realm but the Overworld names a sigil, since a realm without one has no way onto a selector, and the
+  - every realm but Overworld names a sigil, since a realm without one has no way onto a selector, and the
     sigil stacks to 1;
   - the realm dimension's `dimension_rules` access requirement includes the unlock advancement;
   - the realm's dimension type sets a `coordinate_scale` above 1 and a `bed_rule` that sets no spawn.
@@ -598,7 +603,7 @@ dimension rules and access:
     with the sigil it showed before (RLM-133);
   - the sneak gesture with a shield in the off hand closes an Overworld portal, and opens a frame in a realm onto
     return (RLM-133);
-  - a trip from the Overworld builds a return portal within 7 blocks of the scaled position in the realm, and the
+  - a trip from Overworld builds a return portal within 7 blocks of the scaled position in the realm, and the
     first trip back through it arrives at the Overworld portal it came from, also from a portal the scale rounds
     down the most (centred at x 15) when the only free spot in the realm lies 7 blocks towards negative x; a second
     trip from a portal within 128 blocks of the first arrives at that same realm portal;
@@ -617,7 +622,7 @@ dimension rules and access:
     teleport out of one, and a death in one, also when it landed less than a second before;
   - a death in a realm respawns at the player's Overworld bed, or at the world spawn without one; a bed in a realm
     sets no spawn point and does not explode; a spawn point set in a realm by command still respawns the player in
-    the Overworld.
+    Overworld.
 
 ## What M1 takes from this
 
@@ -632,8 +637,8 @@ W2 is split in two (Matěj, RLM-128; the roadmap holds the plan):
   portal's fields in `content/realms/` (the Overworld entry's included) and the synced registry, the linking and
   building (trip-built frames drop nothing), the selector's gestures, the look and the sounds. It uses vanilla
   particles and sounds; textures are placeholders until the art pipeline makes them.
-- **Q2** (chapter 1) adds the stone realm's unlock quest, which rewards the unlock and the Stone Sigil, the quests
-  that walk through the frame, and the repeatable quest that replaces a lost sigil. Until then `/give`,
+- **Q2** (chapters 1 and 2) adds the stone realm's unlock quest, which rewards the unlock and the Stone Sigil, the
+  quests that walk through the frame, and the repeatable quest that replaces a lost sigil. Until then `/give`,
   `/advancement grant` and the QA mod stand in.
 - **Later:** the "Return to last death" scroll (RLM-155); the desert and tundra sigils with M4's realms; a tinted
   overlay; our own sounds (A3); a realm map; shared quests in a party (RLM-156).
@@ -656,7 +661,7 @@ Matěj's answers of 2026-10-13 (RLM-128), which this version records:
 7. **Travel works like the Nether, in both directions,** with scaled coordinates so arrivals stay near a realm's
    origin. The spec picks the ratio from the level bands (1:16 for the stone realm). There is no landing: the
    landing and the home point fit instanced dungeons, not realms.
-8. **Respawn:** always at the player's bed in the Overworld, or at the world spawn; never in a realm.
+8. **Respawn:** always at the player's bed in Overworld, or at the world spawn; never in a realm.
 9. **Only players travel,** and unlocks are per player and permanent, for now; shared party quests come later with
    low priority.
 10. **Waystones:** crafted and placed by players, global or private by each player's choice; no waystone is placed
@@ -665,7 +670,7 @@ Matěj's answers of 2026-10-13 (RLM-128), which this version records:
 ## Open questions
 
 Matěj answered every question of the first version (RLM-128). The numbers marked as proposals (the materials, the
-stone realm's level rule and its 1:16 scale, the Overworld's arrival `y` range) are checked in his playtests of W2a
+stone realm's level rule and its 1:16 scale, Overworld's arrival `y` range) are checked in his playtests of W2a
 and W2b. One question is open:
 
 1. **FTB Teams parties share realm unlocks.** FTB Quests keeps progress per FTB Teams team, so a player who joins

@@ -106,7 +106,7 @@ RLM-23 set in `content/kill_xp_multipliers/`:
 
 | Multiplier | Mobs |
 | --- | --- |
-| 10 | warden, elder guardian (the Overworld's bosses) |
+| 10 | warden, elder guardian (Overworld's bosses) |
 | 4 | ravager |
 | 2.5 | evoker |
 | 1.5 | breeze, enderman, vindicator, witch |

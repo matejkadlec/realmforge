@@ -37,7 +37,7 @@
 | Milestone | Epic | Theme | Release | Status |
 | --- | --- | --- | --- | --- |
 | [M0](#m0-bootstrap) | - | Bootstrap: build, CI, content pipeline, modpack | - | done |
-| [M1](#m1-vertical-slice-the-first-chapter) | RLM-6 | Vertical slice: the first chapter | v0.1.0 | next |
+| [M1](#m1-vertical-slice-the-first-two-chapters) | RLM-6 | Vertical slice: the first two chapters | v0.1.0 | next |
 | [M2](#m2-gear-and-loot) | RLM-7 | Gear and loot | v0.2.0 | outline |
 | [M3](#m3-classes-and-combat-depth) | RLM-8 | Classes and combat depth | v0.3.0 | outline |
 | [M4](#m4-the-world-grows) | RLM-9 | The world grows | v0.4.0 | outline |
@@ -59,10 +59,12 @@ Of the six technical spikes in the research report ([research notes, section 10]
 M0 finished spike 1 (skeleton) and most of spike 2 (pipeline: items and lang with ID validation). Quests remain
 and come with task Q1; recipes come with the first content that needs one. Spikes 3-6 open M1.
 
-## M1: Vertical slice, the first chapter
+## M1: Vertical slice, the first two chapters
 
 **Goal:** a small, complete, playable piece of Realmforge that uses every core system once, so later milestones
-add content to systems that already work instead of building them.
+add content to systems that already work instead of building them. It ships the first two chapters of the v1 realm
+layout (Matěj, RLM-188, [realm design](design/realms.md)): chapter 1 in Overworld (levels 1-10) and chapter 2 in
+Undervault (levels 6-18), about 12 hours for an average player by the [XP model](design/leveling.md).
 
 ### Scope
 
@@ -72,19 +74,21 @@ add content to systems that already work instead of building them.
 | Classes | 2: a melee class and a caster (decision D1: Warrior with rage, Mage with mana) |
 | Spells | 4-5 per class, covering a self-buff, a debuff, single target, AoE and one special spell (such as a blink) |
 | Talents | one tree per class, about 8-10 nodes in 3 tiers, including spell-modifying talents and one big-impact talent |
-| Leveling | levels 1-10 with a level cap; finishing chapter 1 raises the cap (D2: 10, then 18) |
+| Chapters | 2: Overworld (chapter 1, levels 1-10) and Undervault (chapter 2, levels 6-18); no Overworld dungeon or boss |
+| Leveling | levels 1-18 with a level cap: 10 in chapter 1, 18 once it is done, 30 once chapter 2 is done (D2; XP stops at the cap) |
 | Stats | primary stats with derived bonuses and at least one milestone bonus; a character sheet |
-| Dimension | 1 custom dimension, the stone realm: a huge enclosed cave world (the Undervault, [realm design](design/realms.md#the-stone-realm)); data-driven worldgen, locked until a chapter 1 quest unlocks it |
+| Dimension | 1 custom dimension, the stone realm: one giant cave with a single walkable floor (Undervault, [realm design](design/realms.md#the-stone-realm)); data-driven worldgen, locked until chapter 1's main questline unlocks it |
 | Mobs | levels by location for vanilla hostile mobs, plus 1-2 custom mob types for the dungeons (proposal D11) |
 | Dungeons | 2 procedural, instanced dungeon types: one ends in the boss's lair, one in a treasury with no boss |
 | Boss | 1 boss with 3 phases, on the ground, no blindness or darkness |
-| Quests | chapter 1, about 15 quests, generated into FTB Quests |
+| Quests | chapters 1 and 2, about 25-30 quests, generated into FTB Quests |
 | Gear | a small set of fixed-stat weapons and armor as rewards; no affixes yet |
 | World | default gamerules, Dark Vision toggle, griefing protection |
 
 **Not in M1:** a second race, more classes, dual class, glyphs, affixes, gems, reforging, professions, pets, mounts,
-villages, the enchanting overhaul, contracts, world-structure dungeons, changes to the Nether and End, and
-dungeon parties: instances are solo in M1 (decision D8); parties come later (RLM-68).
+villages, the enchanting overhaul, contracts, world-structure dungeons, Overworld's own dungeons and final boss
+(Matěj, 2026-10-16), realm tool tiers (RLM-194, M4), custom NPCs, changes to the Nether and End, and dungeon
+parties: instances are solo in M1 (decision D8); parties come later (RLM-68).
 
 **Order:** the spikes first, then foundations; character and world work can run in parallel after that; quests
 and the release come last. "After" in a task names what must be merged first.
@@ -200,13 +204,14 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   level and its scaling, and that a converted mob (a piglin zombifying outside the Nether) keeps a level and
   scaling that belong together.
 - **W2a Stone realm** (RLM-32, M, after W1 and C2). Worldgen JSON for the stone realm
-  ([realm design](design/realms.md#the-stone-realm)), its dimension type (the coordinate scale the realm portal
-  links by, beds that set no spawn) and its dimension rules; the `realmforge:requirement_type` registry with its
-  first types; `content/realms/` with the realm's unlock advancement, which its chapter 1 quest grants; access
-  refused on every way in without the unlock, mobs kept out, respawn always in the Overworld
+  ([realm design](design/realms.md#the-stone-realm): one giant cave with a single walkable floor, common stone of
+  about hardness 25, ancient debris below the floor, no weather; RLM-188), its dimension type (the coordinate scale
+  the realm portal links by, beds that set no spawn) and its dimension rules; the `realmforge:requirement_type`
+  registry with its first types; `content/realms/` with the realm's unlock advancement, which chapter 1's last main
+  quest grants; access refused on every way in without the unlock, mobs kept out, respawn always in Overworld
   ([realm portal design](design/realm-portal.md)). *Done when:* GameTests show a player teleported into the realm
   refused before the unlock and allowed after it, a mob teleported in staying where it is, and a death in the realm
-  respawning in the Overworld.
+  respawning in Overworld.
 - **W2b Realm portal** (RLM-154, M, after W2a). Access through the realm portal
   ([realm portal design](design/realm-portal.md)): the frame, the realm selector and the stone realm's sigil, a
   chapter 1 quest reward; Nether-like linking in both directions at the realm's coordinate scale, to a portal near
@@ -230,7 +235,8 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
 - **W6 Two dungeon types** (RLM-36, L, after W4 and W5). Type A ends in the boss's lair; type B ends in a treasury with
   traps and a vault, without a boss. Its rooms come from A4 (generated and imported,
   [ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)); agents assemble variants and set encounter
-  and loot budgets.
+  and loot budgets. Both types put the netherite upgrade smithing template into their loot, fairly often (Matěj,
+  RLM-188).
 
 ### Phase 4: story, polish, release
 
@@ -240,8 +246,9 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   data). Finishes the quest half of research spike 2. *Done when:* pytest checks the generated SNBT, including that
   every chapter reward is a per-player, auto-claimed `AdvancementReward`
   ([architecture 16](architecture.md#16-progression-and-quests)).
-- **Q2 Chapter 1** (RLM-38, M, after Q1 and W6). About 15 quests with lore set in Realmforge, rewards from the gear
-  set; the last quest grants the chapter advancement.
+- **Q2 Chapters 1 and 2** (RLM-38, M, after Q1 and W6). About 25-30 quests with lore set in Realmforge: the two main
+  questlines of the [lore outline's beats](lore/outline.md#chapters-1-and-2-for-q2) plus side quests, rewards from
+  the gear set; each chapter's last quest grants its chapter advancement (RLM-188).
 - **R1 World rules** (RLM-42, S, after F1; D6). Default gamerules for new worlds, griefing protection, Dark Vision.
 - **R2 Release pipeline** (RLM-44, M, after Q2; D7, D9). A workflow that builds the jar and the pack from a `v*` tag
   ([ADR 0008](decisions/0008-distribution-github-and-curseforge.md)), version 0.1.0, changelog, README.
@@ -265,9 +272,10 @@ Placeholders are generated until real art exists ([ADR 0007](decisions/0007-asse
 1. The full pack boots in CI (spike 6 job) and plays in Prism on Matěj's PC with acceptable performance (spark
    profile).
 2. In a new world a player can create a character (1 race, 2 classes); reach level 10 by killing mobs and
-   questing and stay there until chapter 1 is done; use every class spell and learn talents; enter the dimension
-   once a quest unlocks it; clear both dungeon types, one ending with the boss and one without; beat the boss
-   through all three phases; finish chapter 1 and see the level cap rise.
+   questing and stay there until chapter 1 is done; finish chapter 1 and see the level cap rise to 18; enter
+   Undervault once chapter 1's quest unlocks it; use every class spell and learn talents; reach level 18 and stay
+   there until chapter 2 is done; clear both dungeon types, one ending with the boss and one without; beat the boss
+   through all three phases; finish chapter 2 and see the level cap rise to 30.
 3. JUnit covers formulas, talent rules, the dungeon planner and layout, and the phase machine; GameTests cover
    spells, leveling and the cap, the chapter bridge, instances and boss phases; every CI job is green.
 4. `docs/architecture.md` and CLAUDE.md match the code; spike outcomes and changed decisions have ADRs.
@@ -293,12 +301,13 @@ balance simulation in CI and a nightly client test ([ADR 0010](decisions/0010-te
 
 ## M4: The world grows
 
-Outline: dimensions 2 and 3, the desert and tundra realms of chapter 2 (levels 10-20,
-[realm design](design/realms.md)); the Nether and End removed and their items given new sources (D10,
+Outline: dimensions 2 and 3, Sunwastes and Everwinter, the twin realms of chapter 3 (levels 16-30,
+[realm design](design/realms.md)); realm tool tiers (RLM-194, [realm design](design/realms.md#realm-tool-tiers));
+the Nether and End removed and their items given new sources (D10,
 [ADR 0025](decisions/0025-remove-the-nether-and-end.md)); world-structure dungeons (jigsaw and
 Lithostitched); more dungeon endings (puzzle temple, wave arena, escape, mounted run, ruin exploration); our own
-structure locator; more mobs (friendly ones too) and bosses with lore and locator items; chapters 2 and 3; the
-start of the village, villager and trade overhaul. Also:
+structure locator; more mobs (friendly ones too) and bosses with lore and locator items; chapter 3; the start of
+the village, villager and trade overhaul. Also:
 
 - **Elytra from chapter 3's final boss** (RLM-138): its drop, or an item frame in its room (like the End ship),
   so elytra arrive at the step into chapter 4 and ship with the removal of the End. The "every item is
@@ -381,5 +390,5 @@ decided, which wins over the proposal here.
 | D7 | RLM-57 | Release numbering | R2 | M1 is v0.1.0. The vision describes v0.1 as "everything, cut down"; the research report called v0.1 a vertical slice; this roadmap follows the report and the M1 brief |
 | D8 | RLM-58 | Who enters an instance | spike 3 | **Decided 2026-10-11 (RLM-58): solo only in M1.** Every player who enters gets their own instance; entry is a temporary portal opened with a dungeon key (W4); parties come later through our own command-based party system (RLM-68), not FTB Teams |
 | D9 | RLM-59 | License of `content/`, `art/` and `docs/` | R2 | an ADR before the first release ([ADR 0009](decisions/0009-licensing.md) left it open); the quest texts feed the All Rights Reserved pack |
-| D10 | RLM-47 | Nether and End: overhaul or remove | M4 planning | **Decided 2026-10-12 (RLM-47): remove both** ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)). Their items get new sources (quests, trades, realm drops); a late fire realm replaces the Nether; the Overworld is the starting area for levels 1-5 and the hub ([realm design](design/realms.md)). Carried out in M4 |
+| D10 | RLM-47 | Nether and End: overhaul or remove | M4 planning | **Decided 2026-10-12 (RLM-47): remove both** ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)). Their items get new sources (quests, trades, realm drops); Overworld is the starting area and the hub ([realm design](design/realms.md)). [ADR 0032](decisions/0032-v1-realm-layout-amends-the-nether-and-end-removal.md) amends it for the v1 layout (RLM-188): Overworld covers levels 1-10, Ashfire (the late fire realm) does not replace the Nether, and netherite comes from Undervault. Carried out in M4 |
 | D11 | RLM-60 | Custom mobs in M1 | W3 | 1-2 custom types (a melee and a caster archetype) plus leveled vanilla hostile mobs; every custom mob needs a model, animations and a UV texture that Matěj reviews, so more wait for M4 |
