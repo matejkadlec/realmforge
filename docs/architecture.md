@@ -1478,7 +1478,7 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   matching blocks, and commands, data packs or other mods can hand out such items, so block breaks
   (`BlockEvent.BreakEvent`) and placements (`BlockEvent.EntityPlaceEvent`) by players who are not in creative mode
   are cancelled there too. Buckets get past both events: `BucketItem#use` (`MobBucketItem` included) checks
-  `Level#mayInteract` (spawn protection, which covers only the Overworld, and the world border) and
+  `Level#mayInteract` (spawn protection, which covers only Overworld, and the world border) and
   `Player#mayUseItemAt`, which a matching `can_place_on` passes, then places or picks up the fluid with
   `Level#setBlock` and posts no block event, and `CommonHooks.onPlaceItemIntoWorld` captures no block snapshots for
   a `BucketItem`. So `PlayerInteractEvent.RightClickItem` is cancelled for a `BucketItem` used by a player who is

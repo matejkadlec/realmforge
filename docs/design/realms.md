@@ -87,7 +87,7 @@ Forgefire Ashfire, and the Brink Unmade Isles (RLM-164).
   questline, whose last step is the realm's unlock quest and also gives the Stone Sigil
   ([realm portal spec](realm-portal.md#access-and-unlocks)). Overworld's own final boss gates Undervault once it
   exists (Matěj, 2026-10-16; [Overworld](#the-overworld)). The item rule of
-  [Opening the next realm](#opening-the-next-realm) (RE-9) starts with the second realm, because the Overworld has
+  [Opening the next realm](#opening-the-next-realm) (RE-9) starts with the second realm, because Overworld has
   neither a realm ore nor a boss drop to craft the item from.
 - 1 stat point (Matěj, 2026-10-15, RLM-196) and about 1 skill point per level; spell limits per chapter as in D4
   (RLM-54).
