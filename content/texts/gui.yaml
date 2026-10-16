@@ -52,10 +52,11 @@ texts:
   # A milestone of a primary stat: "At 25: +10% Crit Damage" (%1$s the points, %2$s the bonus).
   stat_milestone:
     en_us: "At %1$s: %2$s"
-  # Stat points (RLM-196): the Stats tab's row of unspent points, and the hint on the + beside a primary stat, which
-  # spends one point on it (%1$s the stat).
-  stat_points:
-    en_us: Unspent Stat Points
+  # Stat points (RLM-196): the unspent points at the end of the Primary Stats title, "Unspent: 3" (%1$s the points;
+  # Matěj, 2026-10-16), and the first line of the tooltip on the + beside a primary stat, which spends one point on it
+  # (%1$s the stat); the lines below it say what the point gives.
+  unspent_stat_points:
+    en_us: "Unspent: %1$s"
   spend_stat_point:
     en_us: Spend a point on %1$s
   # Character creation (RLM-22): the screen's title, its two columns, the class's resource and starting kit, and the

@@ -95,9 +95,6 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.stat_milestone} from {@code content/texts/gui.yaml}: "At %1$s: %2$s" */
     public static final String GUI_STAT_MILESTONE = "gui.realmforge.stat_milestone";
 
-    /** {@code gui.realmforge.stat_points} from {@code content/texts/gui.yaml}: "Unspent Stat Points" */
-    public static final String GUI_STAT_POINTS = "gui.realmforge.stat_points";
-
     /** {@code gui.realmforge.subclass_wip} from {@code content/texts/gui.yaml}: "Subclass: WIP" */
     public static final String GUI_SUBCLASS_WIP = "gui.realmforge.subclass_wip";
 
@@ -118,6 +115,9 @@ public final class GeneratedTexts {
 
     /** {@code gui.realmforge.tab_stats} from {@code content/texts/gui.yaml}: "Stats" */
     public static final String GUI_TAB_STATS = "gui.realmforge.tab_stats";
+
+    /** {@code gui.realmforge.unspent_stat_points} from {@code content/texts/gui.yaml}: "Unspent: %1$s" */
+    public static final String GUI_UNSPENT_STAT_POINTS = "gui.realmforge.unspent_stat_points";
 
     /** {@code gui.realmforge.xp_bar_level} from {@code content/texts/gui.yaml}: "Lv. %1$s" */
     public static final String GUI_XP_BAR_LEVEL = "gui.realmforge.xp_bar_level";

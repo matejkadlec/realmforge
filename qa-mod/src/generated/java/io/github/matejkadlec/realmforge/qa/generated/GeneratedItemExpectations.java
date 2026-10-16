@@ -41,8 +41,8 @@ public final class GeneratedItemExpectations {
                     List.of("minecraft:combat"),
                     ""),
             new ItemExpectation(
-                    "realmforge:clean_slate",
-                    "item.realmforge.clean_slate",
+                    "realmforge:oblivion_scroll",
+                    "item.realmforge.oblivion_scroll",
                     16,
                     List.of("minecraft:tools_and_utilities"),
                     "realmforge:use/unlearn_stat_points"),

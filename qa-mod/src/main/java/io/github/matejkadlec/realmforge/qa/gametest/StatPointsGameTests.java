@@ -35,6 +35,8 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -51,7 +53,8 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * RLM-196: stat points (architecture 10.2). A level-up earns the points the curve gives; spending one raises that
- * primary stat and what it gives; the Clean Slate returns every point and is used up; a character from before stat
+ * primary stat and what it gives; the Scroll of Oblivion returns every point and is used up; a character from before
+ * stat
  * points existed gets the points of its levels once; a level that falls returns the points spent; levels no longer
  * raise race or class stats; the character sheet offers a {@code +} only while points are unspent. Players log in
  * through {@link QaPlayers#login}.
@@ -117,13 +120,13 @@ public final class StatPointsGameTests {
     }
 
     /**
-     * The Clean Slate, used through vanilla's right-click path: every spent point comes back, the stat-point modifiers
-     * go, one slate is used up; with nothing spent it fails and is kept.
+     * The Scroll of Oblivion, used through vanilla's right-click path: every spent point comes back, the stat-point
+     * modifiers go, one scroll is used up; with nothing spent it fails and is kept.
      */
     @QaGameTest
-    public static void theCleanSlateReturnsEveryPoint(GameTestHelper helper) {
+    public static void theScrollOfOblivionReturnsEveryPoint(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = loginWithCharacter(helper, "qa-points-slate");
+        ServerPlayer player = loginWithCharacter(helper, "qa-points-scroll");
         player.setGameMode(GameType.SURVIVAL);
         reachLevel(helper, server, player, 4);
         int earned = StatPoints.unspent(player);
@@ -132,19 +135,19 @@ public final class StatPointsGameTests {
         StatPoints.spend(player, key(GeneratedStats.INTELLECT));
         helper.assertValueEqual(StatPoints.unspent(player), earned - 2, "two points spent");
 
-        ItemStack slates = new ItemStack(GeneratedItems.CLEAN_SLATE.get(), 2);
-        helper.assertTrue(slates.is(StatPoints.UNLEARN_ITEMS), "the Clean Slate is in " + StatPoints.UNLEARN_ITEMS);
-        player.setItemInHand(InteractionHand.MAIN_HAND, slates);
-        InteractionResult used = player.gameMode.useItem(player, player.level(), slates, InteractionHand.MAIN_HAND);
-        helper.assertTrue(used instanceof InteractionResult.Success, "using the slate succeeds: " + used);
+        ItemStack scrolls = new ItemStack(GeneratedItems.OBLIVION_SCROLL.get(), 2);
+        helper.assertTrue(scrolls.is(StatPoints.UNLEARN_ITEMS), "the scroll is in " + StatPoints.UNLEARN_ITEMS);
+        player.setItemInHand(InteractionHand.MAIN_HAND, scrolls);
+        InteractionResult used = player.gameMode.useItem(player, player.level(), scrolls, InteractionHand.MAIN_HAND);
+        helper.assertTrue(used instanceof InteractionResult.Success, "using the scroll succeeds: " + used);
         helper.assertValueEqual(StatPoints.unspent(player), earned, "every point is unspent again");
         helper.assertValueEqual(Characters.data(player).statPoints(), Map.of(), "nothing is spent");
         helper.assertTrue(statPointModifiers(player).isEmpty(), "the spent points' modifiers are gone");
-        helper.assertValueEqual(player.getItemInHand(InteractionHand.MAIN_HAND).getCount(), 1, "one slate used up");
+        helper.assertValueEqual(player.getItemInHand(InteractionHand.MAIN_HAND).getCount(), 1, "one scroll used up");
 
         InteractionResult again = player.gameMode.useItem(player, player.level(),
                 player.getItemInHand(InteractionHand.MAIN_HAND), InteractionHand.MAIN_HAND);
-        helper.assertTrue(again instanceof InteractionResult.Fail, "with nothing spent the slate fails: " + again);
+        helper.assertTrue(again instanceof InteractionResult.Fail, "with nothing spent the scroll fails: " + again);
         helper.assertValueEqual(player.getItemInHand(InteractionHand.MAIN_HAND).getCount(), 1, "and is kept");
         server.getPlayerList().remove(player);
         helper.succeed();
@@ -223,40 +226,62 @@ public final class StatPointsGameTests {
     }
 
     /**
-     * The sheet's Stats tab shows the unspent points, and a {@code +} beside each primary stat only while some are
-     * unspent; a player without a character sees neither.
+     * The sheet's Primary Stats title ends with the unspent points, "Unspent:" white and the number yellow while any
+     * are left (Matěj, 2026-10-16); a {@code +} beside each primary stat only while some are unspent, saying what a point
+     * gives; a player without a character sees neither.
      */
     @QaGameTest
     public static void theSheetOffersPointsOnlyWhileSomeAreUnspent(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         ServerPlayer newcomer = login(helper, new GameProfile(UUID.randomUUID(), "qa-points-none"));
         CharacterSheetView none = CharacterSheetView.of(newcomer);
-        helper.assertTrue(none.rows().stream().noneMatch(row -> row.id().equals(CharacterSheetView.STAT_POINTS)),
-                "no stat points row without a character");
+        helper.assertTrue(primaryStats(helper, none).note() == null, "no unspent points without a character");
         helper.assertTrue(none.rows().stream().allMatch(row -> row.spend() == null), "and no + anywhere");
         server.getPlayerList().remove(newcomer);
 
         ServerPlayer player = loginWithCharacter(helper, "qa-points-sheet");
         reachLevel(helper, server, player, 2);
         CharacterSheetView view = CharacterSheetView.of(player);
-        Row points = row(helper, view, CharacterSheetView.STAT_POINTS);
-        helper.assertValueEqual(points.label().getString(), "Unspent Stat Points", "the row's label");
-        helper.assertValueEqual(points.value(), String.valueOf(expected(2)), "the unspent points");
+        Component note = primaryStats(helper, view).note();
+        helper.assertTrue(note != null, "the title ends with the unspent points");
+        helper.assertValueEqual(note.getString(), "Unspent: " + expected(2), "the note");
+        helper.assertValueEqual(numberColor(note), CharacterSheetView.TITLE & 0xFFFFFF, "a yellow number while > 0");
         for (Holder<Attribute> stat : GeneratedStats.PRIMARY) {
-            helper.assertValueEqual(row(helper, view, stat.value().getDescriptionId()).spend(), key(stat),
+            CharacterSheetView.Spend spend = row(helper, view, stat.value().getDescriptionId()).spend();
+            helper.assertTrue(spend != null && spend.stat().equals(key(stat)),
                     stat.getRegisteredName() + " offers a +");
+            helper.assertFalse(spend.gains().isEmpty(), stat.getRegisteredName() + "'s point gives something");
         }
         helper.assertTrue(view.rows().stream().filter(row -> row.spend() != null).count()
                 == GeneratedStats.PRIMARY.size(), "only the primary stats offer a +");
+        // Strength's rule: 1% attack damage a point (content/stat_rules/strength.yaml).
+        helper.assertValueEqual(row(helper, view, GeneratedStats.STRENGTH.value().getDescriptionId()).spend().gains()
+                .stream().map(Component::getString).toList(), List.of("+1% Attack Damage"),
+                "what a Strength point gives");
 
         while (StatPoints.unspent(player) > 0) {
             StatPoints.spend(player, key(GeneratedStats.STRENGTH));
         }
         CharacterSheetView spent = CharacterSheetView.of(player);
-        helper.assertValueEqual(row(helper, spent, CharacterSheetView.STAT_POINTS).value(), "0", "none left");
+        Component noneLeft = primaryStats(helper, spent).note();
+        helper.assertValueEqual(noneLeft.getString(), "Unspent: 0", "none left");
+        helper.assertValueEqual(numberColor(noneLeft), CharacterSheetView.STAT & 0xFFFFFF, "a white 0");
         helper.assertTrue(spent.rows().stream().allMatch(row -> row.spend() == null), "and no + left");
         server.getPlayerList().remove(player);
         helper.succeed();
+    }
+
+    private static CharacterSheetView.Section primaryStats(GameTestHelper helper, CharacterSheetView view) {
+        CharacterSheetView.Section section = view.tabs().getFirst().left().getFirst();
+        helper.assertValueEqual(section.title().getString(), "Primary Stats", "the Stats tab's first section");
+        return section;
+    }
+
+    /** The colour of the note's number, its translation's only argument. */
+    private static int numberColor(Component note) {
+        Object number = ((TranslatableContents) note.getContents()).getArgs()[0];
+        TextColor color = ((Component) number).getStyle().getColor();
+        return color == null ? -1 : color.getValue();
     }
 
     /** A character as a save of that shape reads. */

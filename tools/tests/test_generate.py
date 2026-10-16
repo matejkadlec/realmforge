@@ -82,12 +82,12 @@ def test_item_use_and_flavor_become_tooltip_lines_and_a_use_tag(repo: RepoPaths)
     tag = json.loads(
         files["mod/src/generated/resources/data/realmforge/tags/item/use/unlearn_stat_points.json"]
     )
-    assert tag == {"values": ["realmforge:clean_slate", "realmforge:wiper"]}
+    assert tag == {"values": ["realmforge:oblivion_scroll", "realmforge:wiper"]}
     assert '"realmforge:use/unlearn_stat_points")' in files[EXPECTATIONS_JAVA].decode()
 
 
 def test_items_without_lore_import_nothing_for_it(repo: RepoPaths) -> None:
-    (repo.content / "items" / "clean_slate.yaml").unlink()
+    (repo.content / "items" / "oblivion_scroll.yaml").unlink()
     files = generate(repo)
     assert "ItemLore" not in files[GENERATED_JAVA].decode()
     assert not any("/tags/item/use/" in path for path in files)
@@ -98,7 +98,7 @@ def test_an_item_use_needs_its_tooltip_line(repo: RepoPaths) -> None:
     with pytest.raises(ValidationFailed) as excinfo:
         load_and_validate(repo)
     problems = [str(problem) for problem in excinfo.value.problems]
-    assert any("clean_slate.yaml" in p and "needs its tooltip line" in p for p in problems), problems
+    assert any("oblivion_scroll.yaml" in p and "needs its tooltip line" in p for p in problems), problems
 
 
 def test_default_stack_size_is_not_emitted(repo: RepoPaths) -> None:

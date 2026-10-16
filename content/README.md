@@ -50,8 +50,8 @@ Rules:
   names.
 - `items/` may give an item a `use`, what right-clicking it does, one item used up each time
   ([architecture 13](../docs/architecture.md#13-items-gear-and-loot)): `unlearn_stat_points` returns every spent
-  stat point (the Clean Slate, RLM-196). The pipeline puts the item into the tag `realmforge:use/<use>`, which the
-  game's code for that use reads. An optional `flavor` is a one-sentence flavor line under it in the tooltip, with no
+  stat point (the Scroll of Oblivion, RLM-196). The pipeline puts the item into the tag `realmforge:use/<use>`,
+  which the game's code for that use reads. An optional `flavor` is a one-sentence flavor line under it in the tooltip, with no
   mechanics, at most 12 words ([lore style guide](../docs/lore/style.md)).
 - Human units in YAML, game units in data: a field named `<name>_seconds` is written as `<name>_ticks`, one named
   `<name>_percent` as the fraction `<name>` ([architecture 6.3](../docs/architecture.md#63-conventions)).

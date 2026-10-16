@@ -852,9 +852,12 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
   features' APIs (C4, C5), toast and sound, fire the `realmforge:level_reached` trigger for advancements.
 - **Stat points** (Matěj, 2026-10-15, RLM-196): every level from 2 on earns primary stat points, one a level
   (the curve `stat_points_per_level`), which the player spends on the character sheet, a point at a time, on any
-  primary stat: no class locks a stat away. A spent point is final until the player unlearns them all with a Clean
-  Slate, an item that is hard to get on purpose (Matěj wants it as a hard repeatable quest's reward, or an expensive
-  shop item once coins exist; the quest waits for Q1). Race and class stats no longer grow with the level.
+  primary stat: no class locks a stat away. A spent point is final until the player unlearns them all with a Scroll of
+  Oblivion, an item that is hard to get on purpose (Matěj wants it as a hard repeatable quest's reward, or an expensive
+  shop item once coins exist; the quest waits for Q1). Race and class stats no longer grow with the level. Two more
+  scrolls follow (Matěj, 2026-10-16): the Scroll of Respecialization returns every spell (talent) point, the Scroll
+  of Rebirth resets the whole character (race, class, spell and stat points); the three share one scroll texture in
+  purple-ish, yellow-ish and red-ish tones.
 - **In code (C2, RLM-23):**
   - **The numbers** are four curves ([content README](../content/README.md)): `xp_to_next_level` (the XP from a
     level to the next, rounded half up, at least 1; one point per level 1-59 from the XP model), `kill_xp` (a kill's
@@ -907,8 +910,8 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
     unspent, once, and a rebalanced curve applies at once. The sheet's `+` sends `SpendStatPointPayload(stat)`;
     the server checks that the player has a character, that the stat is one of our primary stats and that a point is
     unspent, then saves it and recomputes the stats. The spent points reach the player through their own
-    `StatSource`, one modifier per stat. An item in the tag `realmforge:use/unlearn_stat_points` (the Clean Slate;
-    an item's `use` in content writes the tag, [13](#13-items-gear-and-loot)) returns every spent point when
+    `StatSource`, one modifier per stat. An item in the tag `realmforge:use/unlearn_stat_points` (the Scroll of
+    Oblivion; an item's `use` in content writes the tag, [13](#13-items-gear-and-loot)) returns every spent point when
     right-clicked and is used up; with nothing spent it fails and is kept. A level that falls below what was spent
     (a command, a revoked chapter, a curve that gives fewer) returns every spent point, with a message.
   - **`/realmforge xp add|set|query`** (`command/XpCommand`, permission level 2): `add` gives XP as a reward (times
@@ -1051,7 +1054,7 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
   `realmforge:use/<use>` that the pipeline writes; the code never names the items, so `character` needs no
   dependency on `item`. A use and an item's `flavor` line are its tooltip: the vanilla lore component on the item's
   default components, the use as a green "Use:" line from `content/texts/item_use.yaml`, the flavor line in vanilla's
-  lore style. The first use, `unlearn_stat_points`, is the Clean Slate's ([10.2](#102-leveling)).
+  lore style. The first use, `unlearn_stat_points`, is the Scroll of Oblivion's ([10.2](#102-leveling)).
 - **Rarity:** the vision wants five tiers, common to legendary; vanilla's `Rarity` has four (common to epic). M2
   picks one of two ways:
   - extend vanilla `Rarity` with a fifth constant through NeoForge's enum extension (in NeoForge 26.1 `Rarity` is
@@ -1641,10 +1644,13 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     Speed, Movement Speed, ...) apply on their rows and in the primary stats' bonuses. A stat of ours that no section
     names shows under Other. Values round for display only (Matěj, 2026-10-14): a percentage half up to a whole
     number (100.6% reads 101%), any other number half up to one decimal (6.45 reads 6.5). For a player with a
-    character the Stats tab opens with their Unspent Stat Points, and while any are unspent a small `+` beside each
-    primary stat spends one on it (`SpendStatPointPayload`, RLM-196); hovering it names the stat. All of it comes
-    from the player's synced attributes, level and character and the synced registries; a pet tab waits for the pet
-    system (RLM-161).
+    character the Primary Stats title ends with "Unspent: 3", "Unspent:" white and the number yellow while any are
+    left (Matěj, 2026-10-16), and while any are unspent a small green `+` beside each primary stat spends one on it
+    (`SpendStatPointPayload`, RLM-196). Hovered, it says "Spend a point on Strength" and beneath it, in the section
+    titles' yellow and aligned right under the stat's name (`client/tooltip/RightAlignedLines`, a tooltip component),
+    what the point gives: each per-point bonus that still grows and the bonuses of a milestone it reaches, with one
+    decimal (whole percents would read Dexterity's 0.1% crit chance as 0%). All of it comes from the player's synced
+    attributes, level and character and the synced registries; a pet tab waits for the pet system (RLM-161).
   - The XP bar (`client/hud/XpBarHud`, C2) draws `character/XpBarView`: as wide as the hotbar, above the health and
     food rows and every other status row. NeoForge stacks those rows through `Gui#leftHeight` and `Gui#rightHeight`;
     the layer, registered above `VanillaGuiLayers.AIR_LEVEL`, reads them, so the bar rises with more heart rows, and

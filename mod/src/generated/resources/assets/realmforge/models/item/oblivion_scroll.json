@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "realmforge:item/clean_slate"
+    "layer0": "realmforge:item/oblivion_scroll"
   }
 }

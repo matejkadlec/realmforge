@@ -31,7 +31,7 @@ def test_repository_content_is_valid() -> None:
         "apprentice_hat",
         "apprentice_pants",
         "apprentice_robes",
-        "clean_slate",
+        "oblivion_scroll",
         "stone_wand",
         "test_item",
     ]

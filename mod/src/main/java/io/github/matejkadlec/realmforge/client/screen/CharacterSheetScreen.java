@@ -6,13 +6,16 @@ import io.github.matejkadlec.realmforge.character.CharacterSheetView.Section;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView.Tab;
 import io.github.matejkadlec.realmforge.character.net.SpendStatPointPayload;
 import io.github.matejkadlec.realmforge.client.input.CharacterSheetKey;
+import io.github.matejkadlec.realmforge.client.tooltip.RightAlignedLines;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -21,6 +24,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.joml.Matrix3x2fStack;
 import org.lwjgl.glfw.GLFW;
@@ -31,9 +35,10 @@ import org.lwjgl.glfw.GLFW;
  * the arrow keys switch tabs, and the sheet reopens on the last one. The heading and the selected tab are white, so
  * gold marks only the section titles (Matěj, 2026-10-14). Each tab has two columns. The values follow the player's
  * attributes every tick while the sheet is open. The panel is as tall as its tallest tab, so it keeps its size when the
- * tab changes, and is drawn smaller when it does not fit the screen. While stat points are unspent, a small {@code +}
- * beside each primary stat spends one on it: a click sends {@link SpendStatPointPayload}, which the server checks, and
- * the sheet shows the result on the next tick (RLM-196).
+ * tab changes, and is drawn smaller when it does not fit the screen. A section's note ends its title's line (the
+ * unspent stat points). While stat points are unspent, a small {@code +} beside each primary stat spends one on it: hovered, it
+ * says what the point gives, in the section titles' yellow, aligned right under the stat's name; a click sends
+ * {@link SpendStatPointPayload}, which the server checks, and the sheet shows the result on the next tick (RLM-196).
  */
 public final class CharacterSheetScreen extends Screen {
     private static final int COLUMN_WIDTH = 180;
@@ -66,8 +71,11 @@ public final class CharacterSheetScreen extends Screen {
     /** The {@code +} squares drawn in the last frame, in panel units, so a click finds the one under the mouse. */
     private final List<SpendButton> spendButtons = new ArrayList<>();
 
-    /** A {@code +} square: its top left corner in panel units, the stat it spends a point on, and the row's label. */
-    private record SpendButton(int x, int y, ResourceKey<Attribute> stat, Component label) {
+    /**
+     * A {@code +} square: its top left corner in panel units, the stat it spends a point on, the row's label and what
+     * the point gives.
+     */
+    private record SpendButton(int x, int y, ResourceKey<Attribute> stat, Component label, List<Component> gains) {
         boolean contains(double panelX, double panelY) {
             return panelX >= x && panelX < x + SPEND_SIZE && panelY >= y && panelY < y + SPEND_SIZE;
         }
@@ -174,8 +182,7 @@ public final class CharacterSheetScreen extends Screen {
         }
         pose.popMatrix();
         if (hoveredSpend != null) {
-            graphics.setTooltipForNextFrame(Component.translatable(GeneratedTexts.GUI_SPEND_STAT_POINT,
-                    hoveredSpend.label()), mouseX, mouseY);
+            spendTooltip(graphics, hoveredSpend, mouseX, mouseY);
         }
     }
 
@@ -217,6 +224,21 @@ public final class CharacterSheetScreen extends Screen {
                 tabWidth);
     }
 
+    /**
+     * "Spend a point on Strength", then what the point gives in the section titles' yellow, each line ending under the
+     * stat's name (Matěj, 2026-10-16).
+     */
+    private void spendTooltip(GuiGraphicsExtractor graphics, SpendButton spend, int mouseX, int mouseY) {
+        Component heading = Component.translatable(GeneratedTexts.GUI_SPEND_STAT_POINT, spend.label());
+        List<FormattedCharSequence> gains = spend.gains().stream()
+                .map(gain -> gain.copy().withColor(CharacterSheetView.TITLE & 0xFFFFFF).getVisualOrderText())
+                .toList();
+        Optional<TooltipComponent> lines = gains.isEmpty() ? Optional.empty()
+                : Optional.of(new RightAlignedLines(gains, font.width(heading)));
+        graphics.setTooltipForNextFrame(font, List.of(heading.getVisualOrderText()), lines,
+                DefaultTooltipPositioner.INSTANCE, mouseX, mouseY, false, null);
+    }
+
     /** The {@code +} square under the screen position, from the last frame, or null. */
     @Nullable
     private SpendButton spendButtonAt(Layout layout, double screenX, double screenY) {
@@ -244,6 +266,9 @@ public final class CharacterSheetScreen extends Screen {
         for (Section section : sections) {
             graphics.text(font, section.title().copy().withStyle(ChatFormatting.UNDERLINE), x, y,
                     CharacterSheetView.TITLE);
+            if (section.note() != null) {
+                graphics.text(font, section.note(), x + COLUMN_WIDTH - font.width(section.note()), y, HEADING);
+            }
             y += LINE + 2;
             for (Row row : section.rows()) {
                 int indent = row.indented() ? INDENT : 0;
@@ -258,7 +283,7 @@ public final class CharacterSheetScreen extends Screen {
                 }
                 if (row.spend() != null) {
                     spendButtons.add(new SpendButton(x + COLUMN_WIDTH + SPEND_GAP, y - LINE * lines.size() - 1,
-                            row.spend(), row.label()));
+                            row.spend().stat(), row.label(), row.spend().gains()));
                 }
             }
             y += SECTION_GAP;

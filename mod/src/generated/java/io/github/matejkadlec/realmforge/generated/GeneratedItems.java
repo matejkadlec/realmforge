@@ -35,13 +35,13 @@ public final class GeneratedItems {
     public static final DeferredItem<Item> APPRENTICE_ROBES =
             ITEMS.registerSimpleItem("apprentice_robes", properties -> properties.stacksTo(1));
 
-    /** {@code realmforge:clean_slate} from {@code content/items/clean_slate.yaml}. */
-    public static final DeferredItem<Item> CLEAN_SLATE =
-            ITEMS.registerSimpleItem("clean_slate", properties -> properties.stacksTo(16)
+    /** {@code realmforge:oblivion_scroll} from {@code content/items/oblivion_scroll.yaml}. */
+    public static final DeferredItem<Item> OBLIVION_SCROLL =
+            ITEMS.registerSimpleItem("oblivion_scroll", properties -> properties.stacksTo(16)
                     .component(DataComponents.LORE, new ItemLore(List.of(
                             Component.translatable("item_use.realmforge.unlearn_stat_points")
                                     .withStyle(style -> style.withColor(ChatFormatting.GREEN).withItalic(false)),
-                            Component.translatable("item.realmforge.clean_slate.flavor")))));
+                            Component.translatable("item.realmforge.oblivion_scroll.flavor")))));
 
     /** {@code realmforge:stone_wand} from {@code content/items/stone_wand.yaml}. */
     public static final DeferredItem<Item> STONE_WAND =
@@ -73,7 +73,7 @@ public final class GeneratedItems {
                 event.accept(TEST_ITEM);
             }
             case "minecraft:tools_and_utilities" -> {
-                event.accept(CLEAN_SLATE);
+                event.accept(OBLIVION_SCROLL);
             }
             default -> {
             }

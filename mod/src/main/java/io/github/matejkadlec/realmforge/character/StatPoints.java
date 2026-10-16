@@ -45,7 +45,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
  *   <li><b>Spending</b> ({@link #spend}) puts one point into a primary stat, from the sheet's {@code +} through
  *   {@code SpendStatPointPayload}; the server checks every request. A point is spent for good until the player
  *   unlearns them all.</li>
- *   <li><b>Unlearning</b> ({@link #unlearn}): an item in the tag {@link #UNLEARN_ITEMS} (the Clean Slate, whose
+ *   <li><b>Unlearning</b> ({@link #unlearn}): an item in the tag {@link #UNLEARN_ITEMS} (the Scroll of Oblivion, whose
  *   {@code use: unlearn_stat_points} the pipeline turns into that tag) returns every spent point and is used up. With
  *   nothing spent it does nothing and is kept.</li>
  *   <li><b>A level that falls</b> below what was spent (a command, a revoked chapter) returns every spent point

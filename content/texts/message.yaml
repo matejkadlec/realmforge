@@ -23,10 +23,10 @@ texts:
   # Stat points (RLM-196). After a level-up (%1$s the unspent points, %2$s the character sheet's key).
   stat_points_unspent:
     en_us: "Unspent stat points: %1$s. Press %2$s to spend them on your character sheet."
-  # The Clean Slate returned every spent point (%1$s the unspent points now).
+  # The Scroll of Oblivion returned every spent point (%1$s the unspent points now).
   stat_points_unlearned:
     en_us: "Your stat points are unspent again. Unspent stat points: %1$s."
-  # A Clean Slate used with no point spent: nothing happens, and the item is kept.
+  # A Scroll of Oblivion used with no point spent: nothing happens, and the item is kept.
   stat_points_none_spent:
     en_us: You have no spent stat points to unlearn.
   # The level fell below what the spent points need (a command, a revoked chapter), so they all return (%1$s the

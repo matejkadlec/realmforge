@@ -36,8 +36,9 @@ import net.neoforged.neoforge.common.PercentageAttribute;
  * the player's name and level, then four tabs of two columns each (Matěj, 2026-10-13 and 2026-10-14). Stats: the
  * primary stats with what they give, and the other attributes. Combat: offense and defense. Magic: spells with mana,
  * and the spell schools' power and resistance. Origin: the race (its description and what it gives) and the class (its
- * description, then a placeholder for the subclass). A player with a character also sees their unspent stat points on
- * the Stats tab, and while any are unspent each primary stat's row offers a {@code +} that spends one (RLM-196). Built
+ * description, then a placeholder for the subclass). A player with a character also sees their unspent stat points at
+ * the end of the Primary Stats title, and while any are unspent each primary stat's row offers a {@code +} that spends
+ * one, with what that point gives (RLM-196; Matěj, 2026-10-16). Built
  * from a player's synced attributes, character and level and the synced registries, so the client screen and the
  * GameTests read the same rows. Every label is a translation; values are formatted here, rounded for display only: a
  * percentage to a whole number, any other number to one decimal.
@@ -48,8 +49,6 @@ import net.neoforged.neoforge.common.PercentageAttribute;
 public record CharacterSheetView(Component title, List<Tab> tabs) {
     /** The id prefix of the Origin tab's rows, for tests: {@code origin/race/description}, ... */
     public static final String ORIGIN = "origin/";
-    /** The id of the Stats tab's row of unspent stat points. */
-    public static final String STAT_POINTS = "stat_points";
 
     /** Text colours the screen draws with: section titles, rows, reached bonuses and bonuses still ahead. */
     public static final int TITLE = 0xFFFFD24D;
@@ -63,8 +62,18 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
     public record Tab(Component name, List<Section> left, List<Section> right) {
     }
 
-    /** A titled group of rows. */
-    public record Section(Component title, List<Row> rows) {
+    /**
+     * A titled group of rows.
+     *
+     * @param title the section's title
+     * @param rows its rows
+     * @param note a short text at the end of the title's line, drawn white unless its parts carry a colour, or null
+     */
+    public record Section(Component title, List<Row> rows, @Nullable Component note) {
+        /** A section without a note. */
+        public Section(Component title, List<Row> rows) {
+            this(title, rows, null);
+        }
     }
 
     /**
@@ -76,13 +85,25 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
      * @param value the formatted value on the right; empty for a line under a primary stat
      * @param indented whether the row is a line under a primary stat (what it gives)
      * @param color the text colour, opaque ARGB
-     * @param spend the primary stat a {@code +} beside the row spends a stat point on, or null when it offers none
+     * @param spend what the {@code +} beside the row spends a stat point on, or null when it offers none
      */
-    public record Row(String id, Component label, String value, boolean indented, int color,
-            @Nullable ResourceKey<Attribute> spend) {
+    public record Row(String id, Component label, String value, boolean indented, int color, @Nullable Spend spend) {
         /** A row that offers no {@code +}. */
         public Row(String id, Component label, String value, boolean indented, int color) {
             this(id, label, value, indented, color, null);
+        }
+    }
+
+    /**
+     * The {@code +} beside a primary stat (RLM-196).
+     *
+     * @param stat the primary stat it spends a point on
+     * @param gains what one more point gives, a line each ("+1% Attack Damage"): each per-point bonus that grows, and
+     *     each bonus of a milestone the point reaches
+     */
+    public record Spend(ResourceKey<Attribute> stat, List<Component> gains) {
+        public Spend {
+            gains = List.copyOf(gains);
         }
     }
 
@@ -161,22 +182,22 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
         listed().forEach(entry -> placed.add(key(entry.attribute())));
 
         List<Row> primary = new ArrayList<>();
-        if (character.exists()) {
-            primary.add(new Row(STAT_POINTS, Component.translatable(GeneratedTexts.GUI_STAT_POINTS),
-                    String.valueOf(unspentPoints), false, unspentPoints > 0 ? BONUS : STAT));
-        }
         for (Holder<Attribute> stat : primaryStats()) {
             placed.add(key(stat));
             double points = value.applyAsDouble(stat);
+            List<StatRule> statRules = rules.stream().filter(rule -> rule.stat().is(key(stat))).toList();
             boolean spendable = character.exists() && unspentPoints > 0 && StatPoints.isPrimaryStat(key(stat));
             primary.add(new Row(stat.value().getDescriptionId(), name(stat), formatted(stat, points), false, STAT,
-                    spendable ? key(stat) : null));
-            for (StatRule rule : rules) {
-                if (rule.stat().is(key(stat))) {
-                    primary.addAll(ruleRows(stat, rule, points));
-                }
+                    spendable ? new Spend(key(stat), gains(statRules, points)) : null));
+            for (StatRule rule : statRules) {
+                primary.addAll(ruleRows(stat, rule, points));
             }
         }
+        // The unspent points at the end of the title (Matěj, 2026-10-16): "Unspent:" white, the number yellow while
+        // any are left.
+        Component unspent = character.exists() ? Component.translatable(GeneratedTexts.GUI_UNSPENT_STAT_POINTS,
+                Component.literal(String.valueOf(unspentPoints)).withColor((unspentPoints > 0 ? TITLE : STAT)
+                        & 0xFFFFFF)) : null;
         List<Row> other = rows(OTHER, value, base);
         // A stat of ours that no section names still shows, under Other, so new content is never missing.
         for (Holder<Attribute> stat : GeneratedStats.ALL) {
@@ -191,7 +212,8 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
                     school.color())));
         }
         return new CharacterSheetView(title, List.of(
-                tab(GeneratedTexts.GUI_TAB_STATS, List.of(section(GeneratedTexts.GUI_PRIMARY_STATS, primary)),
+                tab(GeneratedTexts.GUI_TAB_STATS, List.of(new Section(Component.translatable(
+                                GeneratedTexts.GUI_PRIMARY_STATS), List.copyOf(primary), unspent)),
                         List.of(section(GeneratedTexts.GUI_OTHER_STATS, other))),
                 tab(GeneratedTexts.GUI_TAB_COMBAT,
                         List.of(section(GeneratedTexts.GUI_OFFENSE, rows(OFFENSE, value, base))),
@@ -312,6 +334,45 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
             rows.add(new Row(attribute.value().getDescriptionId(), name(attribute), shown, false, STAT));
         }
         return rows;
+    }
+
+    /**
+     * What one more point gives under the stat's rules: each per-point bonus that grows (one that reached its cap
+     * does not), then the bonuses of each milestone the point reaches. Amounts read with one decimal, a share as a
+     * percentage too ({@link #gain}): a point gives little, and whole percents would read 0% (Dexterity's 0.1% crit).
+     */
+    static List<Component> gains(List<StatRule> rules, double points) {
+        List<Component> gains = new ArrayList<>();
+        for (StatRule rule : rules) {
+            for (StatRule.PerPoint entry : rule.perPoint()) {
+                double more = entry.totalAt(points + 1) - entry.totalAt(points);
+                if (Math.abs(more) > 1e-9) {
+                    gains.add(Component.translatable(GeneratedTexts.GUI_STAT_BONUS, gain(entry.modifier().attribute(),
+                            entry.modifier().operation(), more), name(entry.modifier().attribute())));
+                }
+            }
+            for (StatRule.Milestone milestone : rule.milestones()) {
+                if (points < milestone.points() && points + 1 >= milestone.points()) {
+                    milestone.modifiers().forEach(modifier -> gains.add(Component.translatable(
+                            GeneratedTexts.GUI_STAT_BONUS, gain(modifier.attribute(), modifier.operation(),
+                                    modifier.amount()), name(modifier.attribute()))));
+                }
+            }
+        }
+        return gains;
+    }
+
+    /**
+     * A small amount, signed, with one decimal: a share for multiplied operations and for adding to a share
+     * ({@code +0.1%}), points otherwise ({@code +1}).
+     */
+    public static String gain(Holder<Attribute> attribute, AttributeModifier.Operation operation, double amount) {
+        boolean percent = operation != AttributeModifier.Operation.ADD_VALUE
+                || attribute.value() instanceof PercentageAttribute;
+        String number = percent
+                ? plain(BigDecimal.valueOf(Math.abs(amount)).movePointRight(2).setScale(1, RoundingMode.HALF_UP)) + "%"
+                : points(Math.abs(amount));
+        return (amount < 0 ? "-" : "+") + number;
     }
 
     /** What the rule gives at {@code points}: each per-point total that is not 0, then every milestone. */
