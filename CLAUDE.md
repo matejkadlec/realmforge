@@ -87,7 +87,7 @@ failure, read `.cache/warmup/log`; Gradle still downloads what it needs on deman
 
 ```bash
 uv sync                                   # Python environment (once, and after pyproject/uv.lock changes)
-uv run rf validate                        # validate content/ (a few seconds, most of it reading the room templates)
+uv run rf validate                        # validate content/ (under a second; seconds when the room cache is cold)
 uv run rf gen                             # validate, then regenerate every generated file
 uv run rf gen --check                     # exit 1 if generated files are out of date
 uv run pytest                             # Python tests

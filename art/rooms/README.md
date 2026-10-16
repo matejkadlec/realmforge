@@ -34,7 +34,8 @@ The same review accepted Stonevaults' dungeons and Dungeon Now Loading's labyrin
 their rules `dress` them (`tools/realmforge_tools/rooms/dress.py`, [tools/README](../../tools/README.md#rooms)),
 giving the plainer surfaces mossy, cracked and gravel variants and adding vines, cobwebs and barrels, most of it to
 the corridors (armor stands were tried in the playtest and dropped: placed by rule, they looked out of place).
-Stonevaults' entrances, which the review accepted as they were, are left out.
+Stonevaults' dungeon entrances (`dungeon/entrances/*`), which the review accepted as they were, are left out; its
+pillager dungeon's entrances are dressed like its other rooms.
 
 Some sources build with marker blocks that their processors replace when the structure generates (Dungeon Now
 Loading's red wool is the rock around a room). Our dungeons place the templates without

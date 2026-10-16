@@ -24,7 +24,8 @@ art/rooms/dungeon_now_loading/rules.yaml of the Realmforge repository:
   wall racks, and the blocks that run its mechanics);
 - jigsaws inside a room (decorations, spawners, rewards) replaced by the block they leave behind, and
   the connectors renamed realmforge:door (sides) and realmforge:shaft (up, down);
-- the containers' loot tables and every entity except item frames removed;
+- the containers' loot tables and every entity except paintings, item frames, glow item frames and
+  armor stands removed;
 - more block variety added (mossy, cracked and gravel variants on plain floors, walls and ceilings) and
   decorations (vines, cobwebs, barrels);
 - templates written back in a normalized form (blocks sorted, stored deflate).

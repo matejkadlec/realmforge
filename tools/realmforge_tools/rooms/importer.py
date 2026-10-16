@@ -3,8 +3,8 @@
 Each source file (``.nbt``, ``.schem``, ``.litematic``; a folder imports every one below it) becomes
 ``<target>/<name>.nbt``, the normalized template, and ``<target>/<name>.yaml``, a draft sidecar that records the
 source and leaves pools and tags for retagging (A4c). Re-importing keeps an existing sidecar's pools, tags and
-weight. A file that a ``review.yaml`` rejects (the gallery's record, in the target folder or, inside
-``content/rooms/``, a folder above it) is skipped, so a dropped room does not come back.
+weight. A file that a ``review.yaml`` rejects (the gallery's record, in the target folder, a folder below it or,
+inside ``content/rooms/``, a folder above it; the nearest decides) is skipped, so a dropped room does not come back.
 
 A rules file (``--rules``, YAML, the ``ImportRules`` model) adapts a source to our ids:
 
@@ -239,13 +239,16 @@ def _skipped(
 
 def rejected_rooms(target: Path, paths: RepoPaths) -> dict[Path, Path]:
     """The rooms below ``target`` that a review rejects: resolved path without suffix -> its ``review.yaml``. The
-    reviews are the target's own and, inside ``content/rooms/``, those of the folders above it up to
-    ``content/rooms/`` itself; each keys rooms by their path below its folder, and the nearest decision counts."""
+    reviews are the target's own, those of the folders below it (the gallery reviews a subfolder on its own) and,
+    inside ``content/rooms/``, those of the folders above it up to ``content/rooms/`` itself; each keys rooms by their
+    path below its folder, and the nearest decision counts."""
     folder = target.resolve()
     rooms = (paths.content / ROOMS_DIR).resolve()
-    folders = [folder]
+    folders = [review.parent for review in folder.rglob(REVIEW_FILE)] if folder.is_dir() else []
     if folder.is_relative_to(rooms):
         folders += [parent for parent in folder.parents if parent.is_relative_to(rooms)]
+    # Deepest first: a review nearer to the room decides before one further up.
+    folders.sort(key=lambda reviewed: len(reviewed.parts), reverse=True)
     decisions: dict[Path, tuple[str, Path]] = {}
     for reviewed in folders:
         review = reviewed / REVIEW_FILE

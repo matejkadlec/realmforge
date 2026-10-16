@@ -261,10 +261,11 @@ def _rooms_import(args: argparse.Namespace, paths: RepoPaths) -> int:
 
 
 def _room_universe(paths: RepoPaths) -> IdUniverse:
-    """Vanilla plus our content; vanilla alone while content/ does not load."""
+    """Vanilla plus our content; vanilla alone while content/ does not load. The rooms add only their ids and pools,
+    so their templates are not read."""
     vanilla = load_vanilla(paths)
     try:
-        return universe_with_content(vanilla, load_content(paths))
+        return universe_with_content(vanilla, load_content(paths, read_templates=False))
     except ValidationFailed:
         print(
             "Note: content/ does not validate, so rooms are checked against vanilla ids only.",

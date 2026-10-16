@@ -99,6 +99,12 @@ GAMETEST_ALLOWED_ERRORS: tuple[tuple[str, str], ...] = (
         "the server fetches Mojang's public keys over the network; sandboxes and some CI runners have no route",
     ),
     (
+        r"^com\.mojang\.authlib\.minecraft\.client\.MinecraftClient: Got an error with a html body connecting to"
+        r" https://api\.minecraftservices\.com/publickeys:",
+        "the same key fetch when Mojang's service answers with an error page instead of the keys (as in"
+        " packboot.ALLOWED_ERRORS); an error page from any other Mojang URL stays an error",
+    ),
+    (
         r"^io\.github\.matejkadlec\.realmforge\.dungeon\.instance\.InstanceManager: Instance plot \d+ failed to "
         r"build \(.*\): unknown room template realmforge_qa:gametest/gone; releasing it$",
         "InstanceGameTests.aBuildWhoseTemplateIsGoneIsReleased removes that room template on purpose; any other failed "

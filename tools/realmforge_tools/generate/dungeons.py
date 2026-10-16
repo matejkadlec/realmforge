@@ -61,10 +61,10 @@ def dungeon_data(dungeon: DungeonTypeDef, content: Content) -> dict[str, Any]:
 def _room(room: RoomEntry) -> dict[str, Any]:
     return {
         "template": f"{MOD_ID}:{ROOMS_DIR}/{room.id}",
-        "size": list(room.structure.size),
+        "size": list(room.size),
         "role": room_role(room.model.tags),
         "weight": room.model.weight,
-        "connectors": [_connector(connector) for connector in connectors(room.structure)],
+        "connectors": [_connector(connector) for connector in room.derived("connectors", connectors)],
     }
 
 
@@ -133,11 +133,11 @@ def _expectations(content: Content) -> bytes:
 
 
 def _room_expectation(room: RoomEntry) -> str:
-    x, y, z = room.structure.size
+    x, y, z = room.size
     found = [
         f"new ConnectorExpectation({c.pos[0]}, {c.pos[1]}, {c.pos[2]}, {string_literal(c.front)}, "
         f"{string_literal(c.top)}, {string_literal(c.name)}, {string_literal(c.target)}, {string_literal(c.joint)})"
-        for c in connectors(room.structure)
+        for c in room.derived("connectors", connectors)
     ]
     connector_list = (
         "List.of(\n" + ",\n".join(f"                                    {c}" for c in found) + ")"

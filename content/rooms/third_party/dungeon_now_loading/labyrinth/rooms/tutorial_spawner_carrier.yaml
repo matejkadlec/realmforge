@@ -2,7 +2,7 @@
 # Imported by `rf rooms import`: draft tags from the connectors and the name, pools with the dungeons (W4).
 pools: []
 tags:
-  - "entrance"
+  - "combat"
   - "straight"
 weight: 1
 source:

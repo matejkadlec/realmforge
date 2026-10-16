@@ -80,3 +80,16 @@ def test_only_the_gone_template_tests_failed_build_is_allowed() -> None:
     assert gametest_problems(line.replace("TEMPLATE", "realmforge_qa:gametest/gone") + PASSED) == []
     (problem,) = gametest_problems(line.replace("TEMPLATE", "realmforge:rooms/stone/hall") + PASSED)
     assert "unknown room template realmforge:rooms/stone/hall" in problem
+
+
+def test_an_error_page_from_the_key_service_is_allowed_and_no_other() -> None:
+    line = (
+        "[15Oct2026 13:31:02.512] [Yggdrasil Key Fetcher/ERROR] [com.mojang.authlib.minecraft.client."
+        "MinecraftClient/]: Got an error with a html body connecting to https://api.minecraftservices.com"
+        "/publickeys: <!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' "
+        "'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>\n"
+        "<html xmlns='http://www.w3.org/1999/xhtml'>\n"
+    )
+    assert gametest_problems(line + PASSED) == []
+    (problem,) = gametest_problems(line.replace("/publickeys", "/minecraft/profile") + PASSED)
+    assert "/minecraft/profile" in problem

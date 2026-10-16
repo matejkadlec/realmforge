@@ -16,13 +16,14 @@ it.
 
 from __future__ import annotations
 
+from functools import partial
 from pathlib import Path
 
 from realmforge_tools.content import Content
 from realmforge_tools.generate.datapack import data_dir
 from realmforge_tools.generate.javagen import header, java_file_path, string_literal
 from realmforge_tools.project import MOD_ID, QA_JAVA_PACKAGE, RepoPaths
-from realmforge_tools.rooms.structure import AIR, JIGSAW, write_structure
+from realmforge_tools.rooms.structure import AIR, JIGSAW, count_blocks, write_structure
 from realmforge_tools.schema.room import ROOMS_DIR
 
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
@@ -30,7 +31,7 @@ QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
 
 def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     folder = data_dir(paths) / "structure" / ROOMS_DIR
-    files = {folder / f"{room.id}.nbt": write_structure(room.structure) for room in content.rooms}
+    files = {folder / f"{room.id}.nbt": room.derived("normalized", write_structure) for room in content.rooms}
     shipped = {room.id.split("/")[1] for room in content.rooms if room.id.startswith("third_party/")}
     notices = paths.mod_generated / "resources" / "META-INF" / "third_party"
     for notice in content.room_notices:
@@ -46,9 +47,9 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
 def _expectations(content: Content) -> bytes:
     rows = []
     for room in content.rooms:
-        x, y, z = room.structure.size
-        jigsaws = sum(1 for block in room.structure.blocks if block.state.name == JIGSAW)
-        air = sum(1 for block in room.structure.blocks if block.state.name == AIR)
+        x, y, z = room.size
+        jigsaws = room.derived("jigsaws", partial(count_blocks, name=JIGSAW))
+        air = room.derived("air", partial(count_blocks, name=AIR))
         structure_id = string_literal(f"{MOD_ID}:{ROOMS_DIR}/{room.id}")
         rows.append(f"            new RoomExpectation({structure_id}, {x}, {y}, {z}, {jigsaws}, {air})")
     rooms_list = "List.of(\n" + ",\n".join(rows) + ")" if rows else "List.of()"

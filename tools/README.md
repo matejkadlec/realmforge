@@ -81,8 +81,15 @@ Dungeon rooms are structure templates in `content/rooms/` with a YAML sidecar ea
 `data/realmforge/structure/rooms/<id>.nbt` in the jar, and the `LICENSE` and `NOTICE` (and, for an LGPL-3.0 source,
 `COPYING`, the GPL-3.0 text) of each third-party source with a room to `META-INF/third_party/<source>/`. It also lists
 every room with its size, jigsaws and air blocks in the QA mod's `GeneratedRoomExpectations`, which
-`ContentRoomGameTests` compares with the rooms the game loads. Reading the templates takes most of `rf validate`'s
-few seconds: the NBT reader is pure Python.
+`ContentRoomGameTests` compares with the rooms the game loads.
+
+Decoding the templates is slow (the NBT reader is pure Python), so `rooms/cache.py` keeps each decoded template and
+what is read from it (its size, connectors, normalized bytes, the problems `check_structure` finds) in
+`.cache/rooms/parsed/`, keyed by the sha256 of the template's bytes and of the code in `rooms/` and `formats/`. A
+warm cache answers `rf validate` and `rf gen` without decoding any room; a changed template, or a change to that
+code, misses and is decoded again (a few seconds when every room misses, as in CI or a new worktree). A value is
+cached only when the functions that compute it live in `rooms/` or `formats/`; for any other change to what is
+cached, bump `CACHE_VERSION`. Deleting `.cache/rooms/parsed/` is always safe.
 
 **`rf rooms import SRC... --to DIR`** turns room files into rooms: vanilla structure templates (`.nbt`), Sponge
 schematics (`.schem`, versions 1 to 3, as WorldEdit saves them) and Litematica schematics (`.litematic`, versions 5
@@ -93,12 +100,13 @@ sorted, stored deflate, so equal rooms give equal bytes), and `DIR/<name>.yaml`,
 source file, its format and its data version, leaves `pools` empty and drafts the slot `tags` (`rooms/slots.py`,
 [content/README.md](../content/README.md)): the shape from the faces with a connector (`dead_end`, `straight`,
 `curved`, `t_junction`, `crossing`, plus `vertical` for one up or down), the role from a word in the room's path
-(`boss`, `treasure`, `entrance`, `stairs`, `hallway`), else `hallway` for a straight or curved piece at most 9 blocks
-wide and `combat` for the rest. A re-import keeps the sidecar's pools, tags and weight. A room is written only when it
-validates; otherwise the command lists the problems and writes nothing for that room, and so does a source file that
-cannot be read (some jars ship a corrupt template; exclude it). A file that the gallery's review rejects is skipped
-(`SKIP` in the report): the `review.yaml` of the target folder decides, or, inside `content/rooms/`, that of a folder
-above it, and the nearest decision counts. A dropped room therefore stays dropped when its source is imported again;
+(`boss`, `treasure`, `entrance`, `stairs`, `hallway`), else `hallway` for a straight or curved piece at most 7 blocks
+wide (measured across the passage) and `combat` for the rest. A re-import keeps the sidecar's pools, tags and
+weight. A room is written only when it validates; otherwise the command lists the problems and writes nothing for that
+room, and so does a source file that cannot be read (some jars ship a corrupt template; exclude it). A file that the
+gallery's review rejects is skipped (`SKIP` in the report): the `review.yaml` of the target folder decides, or that of
+a folder below it (the gallery reviews a subfolder on its own) or, inside `content/rooms/`, above it, and the nearest
+decision counts. A dropped room therefore stays dropped when its source is imported again;
 delete its decision to take it back in. Inside `content/rooms/`, third-party rooms must go to `third_party/<source>/`,
 next to the source's `LICENSE` and `NOTICE`; rooms we built ourselves (exported from a dev world, say) take `--ours`,
 which the sidecar records as `source.ours`, and go anywhere else. Validation holds every room with a `source` to the
