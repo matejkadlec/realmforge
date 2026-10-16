@@ -97,8 +97,8 @@ source file, its format and its data version, leaves `pools` empty and drafts th
 wide and `combat` for the rest. A re-import keeps the sidecar's pools, tags and weight. A room is written only when it
 validates; otherwise the command lists the problems and writes nothing for that room, and so does a source file that
 cannot be read (some jars ship a corrupt template; exclude it). A file that the gallery's review rejects is skipped
-(`SKIP` in the report): the `review.yaml` of the target folder decides, or, inside `content/rooms/`, that of a folder
-above it, and the nearest decision counts. A dropped room therefore stays dropped when its source is imported again;
+(`SKIP` in the report): the `review.yaml` of the target folder decides, or that of a folder below it (the gallery
+reviews a subfolder on its own) or, inside `content/rooms/`, above it, and the nearest decision counts. A dropped room therefore stays dropped when its source is imported again;
 delete its decision to take it back in. Inside `content/rooms/`, third-party rooms must go to `third_party/<source>/`,
 next to the source's `LICENSE` and `NOTICE`; rooms we built ourselves (exported from a dev world, say) take `--ours`,
 which the sidecar records as `source.ours`, and go anywhere else. Validation holds every room with a `source` to the

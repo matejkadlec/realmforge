@@ -913,6 +913,26 @@ def test_import_skips_rooms_a_review_rejects(repo: RepoPaths, tmp_path: Path) ->
     assert sorted(p.name for p in target.glob("*.nbt")) == ["crypt.nbt"]
 
 
+def test_import_honours_a_review_below_its_target(repo: RepoPaths, tmp_path: Path) -> None:
+    # The source keeps its subfolders, and the gallery reviewed one of them on its own (RLM-163).
+    for name in ("hall_a", "hall_b", "hall_c"):
+        (tmp_path / "src" / "halls" / f"{name}.nbt").parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / "src" / "halls" / f"{name}.nbt").write_bytes(write_structure(small_room()))
+    target = third_party(repo)
+    halls = target / "halls"
+    write(halls / "review.yaml", "hall_a: reject\nhall_b: keep\n")
+    # The target's own review keys the same rooms by their longer path; the nearer review still decides.
+    write(target / "review.yaml", "halls/hall_b: reject\nhall_c: reject\nhalls/hall_c: reject\n")
+    results = {
+        r.source.stem: r
+        for r in importer.import_rooms([tmp_path / "src"], target, RULES, load_vanilla(repo), repo)
+    }
+    assert results["hall_a"].rejected_by == halls / "review.yaml" and not results["hall_a"].written
+    assert results["hall_b"].written and results["hall_b"].rejected_by is None
+    assert results["hall_c"].rejected_by == target / "review.yaml"
+    assert sorted(p.name for p in halls.glob("*.nbt")) == ["hall_b.nbt"]
+
+
 def test_import_reports_a_broken_review(repo: RepoPaths, tmp_path: Path) -> None:
     source = tmp_path / "hall.nbt"
     source.write_bytes(write_structure(small_room()))
