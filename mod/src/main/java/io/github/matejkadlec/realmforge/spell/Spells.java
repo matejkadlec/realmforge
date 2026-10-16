@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.spell;
 
+import io.github.matejkadlec.realmforge.spell.CombatState.Cast;
 import java.util.Optional;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
@@ -31,6 +32,19 @@ public final class Spells {
         }
         player.setData(SpellAttachments.SPELLBOOK,
                 player.getData(SpellAttachments.SPELLBOOK).withSpell(spell.key(), level));
+    }
+
+    /** {@code caster}'s cast-time or channelled spell in progress, if any. */
+    public static Optional<Cast> currentCast(LivingEntity caster) {
+        return Casting.current(caster);
+    }
+
+    /**
+     * Cancels {@code caster}'s cast-time or channelled spell in progress, if any (the spell bar's cancel, C3b): a cast
+     * time pays nothing, a channel keeps the ticks it ran. Returns whether a cast was running.
+     */
+    public static boolean cancelCast(LivingEntity caster) {
+        return Casting.cancel(caster);
     }
 
     /** Ends every cooldown of {@code caster}, the global one included, and syncs it. */

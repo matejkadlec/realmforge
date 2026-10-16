@@ -19,6 +19,7 @@ public final class SpellFeature {
         SpellEffectTypes.register(modBus);
         TargetingTypes.register(modBus);
         SpellAttachments.register(modBus);
+        Casting.register();
         // After the stats recompute of the same tick (StatsFeature registers first), so a pool sees its maximum.
         NeoForge.EVENT_BUS.addListener(PlayerTickEvent.Post.class, Resources::onPlayerTick);
     }

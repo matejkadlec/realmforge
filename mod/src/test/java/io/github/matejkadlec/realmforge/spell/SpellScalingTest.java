@@ -46,6 +46,28 @@ class SpellScalingTest {
     }
 
     @Test
+    void castTimeReductionShortensCastTimesToTheNearestTick() {
+        assertEquals(40, SpellScaling.castTicks(40, 0));
+        assertEquals(20, SpellScaling.castTicks(40, 0.5));
+        assertEquals(10, SpellScaling.castTicks(40, 0.75), "the stat's cap");
+        assertEquals(11, SpellScaling.castTicks(21, 0.5), "rounded to the nearest tick");
+        assertEquals(1, SpellScaling.castTicks(40, 1), "a cast time never drops below a tick");
+        assertEquals(1, SpellScaling.castTicks(1, 0.75), "nor does a one-tick cast");
+        assertEquals(40, SpellScaling.castTicks(40, -1), "a negative reduction lengthens nothing");
+        assertThrows(IllegalArgumentException.class, () -> SpellScaling.castTicks(0, 0.5), "an instant cast");
+    }
+
+    /** A channel keeps its tick count: Cast Time Reduction shortens its interval, and its duration follows. */
+    @Test
+    void aChannelKeepsItsTickCount() {
+        SpellCast drain = SpellCast.channel(60, 20, false, false);
+        assertEquals(3, drain.tickCount());
+        int interval = SpellScaling.castTicks(drain.intervalTicks(), 0.5);
+        assertEquals(10, interval);
+        assertEquals(30, interval * drain.tickCount(), "half the duration, the same three ticks");
+    }
+
+    @Test
     void poolsRegainTheirRegenerationWithinTheirMaximum() {
         assertEquals(55, SpellScaling.regenerate(50, 5, 100), EPSILON);
         assertEquals(100, SpellScaling.regenerate(98, 5, 100), EPSILON, "never above the maximum");

@@ -22,7 +22,7 @@ class CombatStateTest {
             ResourceKey.create(SpellRegistries.RESOURCE_TYPE, Realmforge.id("mana"));
     private static final ResourceKey<ResourceType> RAGE =
             ResourceKey.create(SpellRegistries.RESOURCE_TYPE, Realmforge.id("rage"));
-    private static final Cast CAST = new Cast(FIREBOLT, 12_000L, 30);
+    private static final Cast CAST = new Cast(FIREBOLT, 12_000L, 30, false);
 
     @Test
     void codecRoundTripsWithoutTheCurrentCast() {
@@ -55,6 +55,22 @@ class CombatStateTest {
         assertEquals(Map.of(MANA, 40.5F), read.resources());
         assertEquals(Map.of(BLINK, 300L), read.cooldowns());
         assertEquals(120L, read.globalCooldownEnd());
+        assertFalse(read.setBetterCombatTag(), "a save from before C3a-2 has no Better Combat flag");
+        assertTrue(RoundTrip.parseSnbt(CombatState.CODEC, "{set_better_combat_tag: 1b}").getOrThrow()
+                .setBetterCombatTag());
+    }
+
+    /** The flag that a cast set Better Combat's tag outlives a crash, so the next login can remove the tag. */
+    @Test
+    void theBetterCombatFlagIsSaved() {
+        CombatState state = new CombatState();
+        state.startCast(new Cast(BLINK, 40L, 60, true));
+        state.setSetBetterCombatTag(true);
+        CombatState saved = RoundTrip.nbt(CombatState.CODEC, state);
+        assertTrue(saved.setBetterCombatTag());
+        assertEquals(Optional.empty(), saved.currentCast());
+        assertEquals(Optional.of(new Cast(BLINK, 40L, 60, true)),
+                RoundTrip.stream(CombatState.STREAM_CODEC, state).currentCast(), "a channel syncs as a channel");
     }
 
     @Test
@@ -130,8 +146,8 @@ class CombatStateTest {
         assertThrows(IllegalArgumentException.class, () -> state.setResource(MANA, Float.POSITIVE_INFINITY));
         assertThrows(IllegalArgumentException.class, () -> state.setCooldownEnd(BLINK, -1L));
         assertThrows(IllegalArgumentException.class, () -> state.setGlobalCooldownEnd(-1L));
-        assertThrows(IllegalArgumentException.class, () -> new Cast(FIREBOLT, 0L, 0));
-        assertThrows(IllegalArgumentException.class, () -> new Cast(FIREBOLT, -1L, 10));
+        assertThrows(IllegalArgumentException.class, () -> new Cast(FIREBOLT, 0L, 0, false));
+        assertThrows(IllegalArgumentException.class, () -> new Cast(FIREBOLT, -1L, 10, true));
     }
 
     /** {@code cooldowns()} and {@code resources()} are snapshots: changing them bypasses neither checks nor sync. */
@@ -159,6 +175,7 @@ class CombatStateTest {
         state.setCooldownEnd(FIREBOLT, 12_100L);
         state.setGlobalCooldownEnd(12_030L);
         state.startCast(CAST);
+        state.setSetBetterCombatTag(true);
         return state;
     }
 }

@@ -14,11 +14,20 @@ public final class GeneratedSpells {
     /** {@code realmforge:test_bolt} from {@code content/spells/test_bolt.yaml}: fire, enemy, damage. */
     public static final ResourceKey<Spell> TEST_BOLT = key("test_bolt");
 
+    /** {@code realmforge:test_drain} from {@code content/spells/test_drain.yaml}: arcane, enemy, damage. */
+    public static final ResourceKey<Spell> TEST_DRAIN = key("test_drain");
+
+    /** {@code realmforge:test_homing_bolt} from {@code content/spells/test_homing_bolt.yaml}: frost, enemy, damage. */
+    public static final ResourceKey<Spell> TEST_HOMING_BOLT = key("test_homing_bolt");
+
     /** {@code realmforge:test_mend} from {@code content/spells/test_mend.yaml}: arcane, ally, heal. */
     public static final ResourceKey<Spell> TEST_MEND = key("test_mend");
 
     /** {@code realmforge:test_npc_bolt} from {@code content/spells/test_npc_bolt.yaml}: arcane, enemy, damage. */
     public static final ResourceKey<Spell> TEST_NPC_BOLT = key("test_npc_bolt");
+
+    /** {@code realmforge:test_slow_bolt} from {@code content/spells/test_slow_bolt.yaml}: fire, enemy, damage. */
+    public static final ResourceKey<Spell> TEST_SLOW_BOLT = key("test_slow_bolt");
 
     /** {@code realmforge:test_strike} from {@code content/spells/test_strike.yaml}: physical, enemy, damage. */
     public static final ResourceKey<Spell> TEST_STRIKE = key("test_strike");
@@ -27,7 +36,7 @@ public final class GeneratedSpells {
     public static final ResourceKey<Spell> TEST_SURE_CRIT = key("test_sure_crit");
 
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Spell>> ALL = List.of(TEST_BOLT, TEST_MEND, TEST_NPC_BOLT, TEST_STRIKE, TEST_SURE_CRIT);
+    public static final List<ResourceKey<Spell>> ALL = List.of(TEST_BOLT, TEST_DRAIN, TEST_HOMING_BOLT, TEST_MEND, TEST_NPC_BOLT, TEST_SLOW_BOLT, TEST_STRIKE, TEST_SURE_CRIT);
 
     private GeneratedSpells() {
     }

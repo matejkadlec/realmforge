@@ -6,6 +6,8 @@ import io.github.matejkadlec.realmforge.character.net.CreateCharacterPayload;
 import io.github.matejkadlec.realmforge.character.net.SpendStatPointPayload;
 import io.github.matejkadlec.realmforge.combat.net.CombatTextPayload;
 import io.github.matejkadlec.realmforge.combat.net.HitDirectionPayload;
+import io.github.matejkadlec.realmforge.spell.net.CastEndedPayload;
+import io.github.matejkadlec.realmforge.spell.net.CastStartedPayload;
 import io.github.matejkadlec.realmforge.world.DarkVision;
 import io.github.matejkadlec.realmforge.world.net.ToggleDarkVisionPayload;
 import net.minecraft.server.level.ServerPlayer;
@@ -58,5 +60,7 @@ public final class RealmforgeNetwork {
                 });
         registrar.playToClient(CombatTextPayload.TYPE, CombatTextPayload.STREAM_CODEC);
         registrar.playToClient(HitDirectionPayload.TYPE, HitDirectionPayload.STREAM_CODEC);
+        registrar.playToClient(CastStartedPayload.TYPE, CastStartedPayload.STREAM_CODEC);
+        registrar.playToClient(CastEndedPayload.TYPE, CastEndedPayload.STREAM_CODEC);
     }
 }

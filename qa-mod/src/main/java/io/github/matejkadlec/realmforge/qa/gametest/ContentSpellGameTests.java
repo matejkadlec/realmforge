@@ -50,6 +50,11 @@ public final class ContentSpellGameTests {
             helper.assertValueEqual(targetingType(spell.targeting()), expected.targeting(), id + " targeting");
             helper.assertValueEqual(range(spell.targeting()), expected.range(), id + " range");
             helper.assertValueEqual(spell.cast().type().getSerializedName(), expected.cast(), id + " cast");
+            helper.assertValueEqual(spell.cast().durationTicks(), expected.castDurationTicks(), id + " cast duration");
+            helper.assertValueEqual(spell.cast().intervalTicks(), expected.castIntervalTicks(), id + " cast interval");
+            helper.assertValueEqual(spell.cast().castableWhileMoving(), expected.castableWhileMoving(),
+                    id + " castable while moving");
+            helper.assertValueEqual(spell.cast().lockOn(), expected.lockOn(), id + " lock on");
             helper.assertValueEqual(spell.cost().map(cost -> cost.resource().getRegisteredName()),
                     expected.costResource(), id + " cost resource");
             helper.assertValueEqual(spell.cost().map(cost -> cost.amount()).orElse(0.0), expected.costAmount(),
