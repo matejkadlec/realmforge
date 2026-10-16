@@ -1,6 +1,0 @@
-# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
-# Armor a hit ignores, in percent of the armor (plus toughness) left after flat Armor Pierce (architecture 9.1).
-id: armor_pierce_percent
-name: {en_us: Armor Pierce %}
-kind: secondary
-max_percent: 100

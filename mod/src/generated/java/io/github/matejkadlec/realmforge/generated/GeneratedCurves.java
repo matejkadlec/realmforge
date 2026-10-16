@@ -11,12 +11,6 @@ import net.minecraft.resources.ResourceKey;
 
 /** Keys of the curves in {@code content/curves/}, so Java names a curve without typing its id. */
 public final class GeneratedCurves {
-    /** {@code realmforge:armor_halving} from {@code content/curves/armor_halving.yaml}. */
-    public static final ResourceKey<Curve> ARMOR_HALVING = key("armor_halving");
-
-    /** {@code realmforge:armor_reduction_cap} from {@code content/curves/armor_reduction_cap.yaml}. */
-    public static final ResourceKey<Curve> ARMOR_REDUCTION_CAP = key("armor_reduction_cap");
-
     /** {@code realmforge:kill_xp} from {@code content/curves/kill_xp.yaml}. */
     public static final ResourceKey<Curve> KILL_XP = key("kill_xp");
 
@@ -45,7 +39,7 @@ public final class GeneratedCurves {
     public static final ResourceKey<Curve> XP_TO_NEXT_LEVEL = key("xp_to_next_level");
 
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Curve>> ALL = List.of(ARMOR_HALVING, ARMOR_REDUCTION_CAP, KILL_XP, KILL_XP_ABOVE_PLAYER, KILL_XP_BELOW_PLAYER, MOB_ARMOR, MOB_DAMAGE, MOB_HEALTH, STAT_POINTS_PER_LEVEL, TEST_CURVE, XP_TO_NEXT_LEVEL);
+    public static final List<ResourceKey<Curve>> ALL = List.of(KILL_XP, KILL_XP_ABOVE_PLAYER, KILL_XP_BELOW_PLAYER, MOB_ARMOR, MOB_DAMAGE, MOB_HEALTH, STAT_POINTS_PER_LEVEL, TEST_CURVE, XP_TO_NEXT_LEVEL);
 
     private GeneratedCurves() {
     }

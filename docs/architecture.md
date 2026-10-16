@@ -163,7 +163,7 @@ io.github.matejkadlec.realmforge
 ├─ network/           payload registration (one place), versioned by the mod version
 ├─ progression/       chapters, criteria triggers, statistics: the bridge to quests
 ├─ stats/             attributes, entity levels, stat sources, derived stats, caps
-├─ combat/            spell schools, damage pipeline, crit, dodge, resistances, armor formula and pierce,
+├─ combat/            spell schools, damage pipeline, crit, dodge, resistances, armor formula, pierce and shred,
 │                     lifesteal, overheal, health regeneration, magic shield, combat text, damage over time
 ├─ effect/            behaviour classes of our status effects
 ├─ spell/             spells, effect types, casting, cooldowns, resources, procs, spell entities
@@ -532,8 +532,8 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   resistance (`fire_power`, `fire_resistance`, ...; F5, the resistances capped at 75 % so nothing becomes immune
   without a tell, research BM-18). Matěj's playtest of F4b and F5 (2026-10-13) set the rest of the list, shown on the
   character sheet before every one of them works. Working in the damage pipeline ([9.1](#91-damage-pipeline);
-  RLM-158, RLM-160): armor pierce and armor pierce % (`armor_pierce` in points, `armor_pierce_percent` a share,
-  lowering the armor a hit meets), lifesteal (a share of a melee or ranged hit's damage healed back), overheal (a
+  RLM-158, RLM-160): armor pierce and armor shred (`armor_pierce` in points, `armor_shred` a share, Apotheosis's
+  name for it, RLM-234; both lower the armor a hit meets, never its toughness), lifesteal (a share of a melee or ranged hit's damage healed back), overheal (a
   share of max health that healing past it fills as absorption), spell resistance (a share, added to a magic
   school's resistance, the sum at most 75 %), health regeneration (points healed every second) and magic shield (a
   pool of points that takes damage before health). Not working yet: protection pierce and protection pierce %
@@ -631,7 +631,10 @@ A GameTest player (`QaPlayers#login`) is never ticked by its connection, so the 
 
 Vanilla caps in 26.1.2 (as in 1.21.1) are armor 30, armor toughness 20, max health 1024, attack damage 2048 and max
 absorption 2048, and the vanilla armor formula never blocks more than 80% (`CombatRules.getDamageAfterAbsorb`). The
-vision wants armor, toughness and health far beyond vanilla, so:
+vision wanted armor, toughness and health far beyond vanilla; for armor and toughness Matěj corrected that on
+2026-10-16 (RLM-223): the best reachable armor and toughness is about netherite × 1.5 (30 armor, 18 toughness), and
+better armor gets effects instead. Whether the armor and toughness caps go back to vanilla's is open for him. So
+far:
 
 - `stats/AttributeCaps` raises those five caps to 100,000 (F4c; max absorption with RLM-158, so overheal's
   absorption, a share of max health, follows max health past 2048), on the client and the server alike, as each clamps
@@ -644,7 +647,7 @@ vision wants armor, toughness and health far beyond vanilla, so:
   raised ones. Our own stats take their caps from `content/stats/` (`max`, `max_percent`), so a stat with a hard cap,
   such as tenacity (research SP-12), is a content entry, and code asks `AttributeCaps.max` for its cap.
 - Every other cap stays vanilla's.
-- Armor mitigation uses our own level-aware formula ([9.1](#91-damage-pipeline)).
+- Armor mitigation is vanilla's formula, after our armor pierce and shred ([9.1](#91-damage-pipeline), RLM-223).
 
 ## 9. Combat
 
@@ -657,7 +660,11 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
 1. **Spell schools.** A school (`realmforge:spell_school`, `content/spell_schools/`, owned by `combat`) is a kind of
    damage: `physical` (armor reduces it, it can be dodged) or `magic` (bypasses armor, spell power raises it). Each
    school is a vanilla damage type `realmforge:<school>` (death messages `death.attack.realmforge.<school>` keep
-   working), in `#minecraft:bypasses_cooldown`; magic schools are also in `#minecraft:bypasses_armor`. A hit belongs
+   working), in `#minecraft:bypasses_cooldown` and `#minecraft:no_knockback`; magic schools are also in
+   `#minecraft:bypasses_armor`. **School hits carry no knockback** (RLM-214): vanilla pushes a target away from the
+   source on every hit outside `#minecraft:no_knockback`, which would let every bolt, physical ability and
+   damage-over-time tick push like a melee hit. A spell pushes only through its `realmforge:knockback` effect (C3a-3,
+   RLM-211); melee and projectile hits keep vanilla's knockback. A hit belongs
    to a school when its damage type is the school's (`combat/SpellSchools#of`), so `combat` needs no knowledge of
    spells: the spell engine (C3a), abilities and bosses deal school damage with `SpellSchools#damage(registries,
    school, direct, causing)`, and so does vanilla's `/damage <target> <amount> realmforge:fire by <attacker>`. M1 has
@@ -679,15 +686,19 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
      resistance when the school is magic, at most 75 % together (`DamageCalculator.RESISTANCE_CAP`, research BM-18);
      a physical school hit meets no spell resistance. Talents act through those attributes or are already part of
      the spell's damage ([11.5](#115-resources-cooldowns-modifiers)).
-   - **Our armor formula** replaces vanilla's through `addReductionModifier(DamageContainer.Reduction.ARMOR, ...)`:
-     with A = armor + armor toughness, less the attacker's armor pierce (its flat points first, then its percent of
-     what is left, never below 0), armor blocks A / (A + K) of a hit, at most a cap, where K (the armor that halves a
-     hit) and the cap are the curves `realmforge:armor_halving` and `realmforge:armor_reduction_cap` at the attacker's
-     level (the defender's own when nobody attacked; [14.1](#141-mob-levels)). So the same armor blocks less against
-     a stronger attacker. Armor pierce acts on every hit armor meets from that attacker: melee, projectiles (their
-     shooter's pierce) and physical school hits. NeoForge runs that reduction for every hit, so the formula keeps
-     vanilla's (zero) reduction for damage in `#minecraft:bypasses_armor`, and for every hit when a data pack removed
-     the curves. Vanilla still wears the armor down.
+   - **The armor formula is vanilla's** (`CombatRules.getDamageAfterAbsorb`, Matěj, 2026-10-16, RLM-223), applied
+     after our armor pierce through `addReductionModifier(DamageContainer.Reduction.ARMOR, ...)`. The armor a hit
+     meets is the defender's armor (whole points, as vanilla's `getArmorValue`) less the attacker's flat armor
+     pierce, then less its armor shred share of the rest, never below 0; armor toughness is never pierced and keeps
+     its vanilla role. With D the hit's damage: effective armor = clamp(armor − D / (2 + toughness / 4), armor / 5,
+     20), and the hit loses effective / 25 of its damage, then vanilla's armor-effectiveness enchantment hook
+     (Breach) adjusts that share. So armor counts most against small hits and toughness against big ones, at most
+     80 % blocked; the attacker's level reaches armor only through its hit size (mob damage grows with level,
+     [14.1](#141-mob-levels)). Armor pierce and shred act on every hit armor meets from that attacker: melee,
+     projectiles (their shooter's) and physical school hits. NeoForge runs that reduction for every hit, so the
+     formula keeps vanilla's (zero) reduction for damage in `#minecraft:bypasses_armor`. Vanilla still wears the
+     armor down. The formula is ours in code (`DamageCalculator#armorReduction`, JUnit-checked against vanilla's), so
+     a mod that replaces `CombatRules` (Apothic Attributes, RLM-205) does not change it.
    - **The magic shield** joins the absorption reduction
      (`addReductionModifier(DamageContainer.Reduction.ABSORPTION, ...)`) of a defender that has the stat or points
      left (step 5).
@@ -757,8 +768,9 @@ entity starts full. The pool syncs to its owner on every change, and `client/hud
 translucent bar over the bottom row of hearts, a new colour every 10 points ([18](#18-client-code-rendering-gui-input)).
 Like absorption hearts, it takes any damage that reaches health (falls, drowning, starvation included).
 
-`DamageCalculatorTest` covers the formulas; `CombatStatGameTests` plays each stat in a world: armor pierce against a
-training dummy with 15 armor, spell resistance and its cap on a pillager, and a fake player for lifesteal (melee and a
+`DamageCalculatorTest` covers the formulas, the armor formula against vanilla's `CombatRules` over a grid of damage,
+armor and toughness; `CombatStatGameTests` plays each stat in a world: armor pierce and shred against a training
+dummy with 15 armor, spell resistance and its cap on a pillager, and a fake player for lifesteal (melee and a
 thrown hit heal, a fire hit does not), overheal (its cap, its expiry, damage taking it before a golden apple's
 absorption, the overheal kept when the Absorption effect ends, an apple eaten while overhealed), health regeneration
 (its schedule, no overheal) and the magic shield (before health, after absorption hearts, `lastHurt` kept, the
@@ -965,6 +977,8 @@ Its name, description, icon, animation and sound keys come with the client side 
   pipeline refuses a spell whose `scales_with` does not fit its school's kind. A magic school's damage gets spell
   power and the school's power in the damage pipeline ([9.1](#91-damage-pipeline)); its heals get the same factor
   from the spell engine. A physical ability's damage and heals add their share of the caster's attack damage.
+- **Knockback:** a spell's damage is school damage, which never knocks back ([9.1](#91-damage-pipeline), RLM-214);
+  a spell pushes its target only through a `realmforge:knockback` effect (C3a-3).
 - **Crits** (Matěj, 2026-10-15): every spell can crit, heals too, on the caster's crit chance for 1 + the caster's
   crit damage (150 % with the base 50 %), crit damage being shared with melee. A spell's `crit` data may switch
   crits off, add a bonus chance, or set its own multiplier (`combat/CritRule`); talents (C5) will change all three.
@@ -1855,8 +1869,9 @@ that agents can read. So far:
   screen;
 - `/qa dummy [<armor>]` (F5): a training dummy three blocks ahead, a pillager without a crossbow that stands still
   and never dies. A pillager is not undead, so poison and harming hurt it, healing heals it, and daylight does not
-  burn it: it takes damage and healing the way a player does (RLM-187). Its label, a text display riding it, shows its armor with the share of a hit it blocks at the nearest player's level
-  ("15 Armor (50% Damage Reduction)") over its name with the DPS of the current session (it ends after 5 s without a
+  burn it: it takes damage and healing the way a player does (RLM-187). Its label, a text display riding it, shows
+  its armor with the share of a 10-damage hit it blocks against the nearest player's armor pierce and shred, as
+  vanilla's armor formula blocks less of a bigger hit ("15 Armor (40% vs a 10-damage hit)", RLM-223), over its name with the DPS of the current session (it ends after 5 s without a
   hit); vanilla draws no name tag over an entity with a passenger, so the label carries both. The hitter sees each
   hit on the action bar, `/qa dummy reset|remove`. Pillagers carry our stats in the dev game, so
   `/attribute @n[type=pillager] realmforge:dodge_chance base set 0.5` sets a dummy's dodge chance or resistances;

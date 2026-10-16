@@ -6,7 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.matejkadlec.realmforge.combat.DamageCalculator.Attacker;
 import io.github.matejkadlec.realmforge.combat.DamageCalculator.SchoolHit;
+import net.minecraft.core.Holder;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.damagesource.CombatRules;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import org.junit.jupiter.api.Test;
 
 class DamageCalculatorTest {
@@ -15,41 +19,48 @@ class DamageCalculatorTest {
     private static final Attacker NO_CRIT = new Attacker(0, 0.5, 0.2, 0.1);
 
     @Test
-    void armorThatEqualsTheHalvingValueBlocksHalf() {
-        assertEquals(0.5, DamageCalculator.armorReduction(15, 0, 15, 0.75), EPSILON);
+    void armorMatchesVanillasFormula() {
+        DamageSource source = new DamageSource(Holder.direct(new DamageType("generic", 0)));
+        for (float damage : new float[] {0.5F, 1, 4, 10, 33, 90, 500}) {
+            for (int armor = 0; armor <= 40; armor += 5) {
+                for (float toughness : new float[] {0, 2, 8, 12, 18, 30}) {
+                    // Without a weapon vanilla never reads the victim, so none is needed.
+                    float left = CombatRules.getDamageAfterAbsorb(null, damage, source, armor, toughness);
+                    assertEquals(1 - left / damage, DamageCalculator.armorReduction(damage, armor, toughness), 1e-6,
+                            damage + " damage against " + armor + " armor and " + toughness + " toughness");
+                }
+            }
+        }
     }
 
     @Test
-    void toughnessCountsAsArmor() {
-        assertEquals(DamageCalculator.armorReduction(28, 0, 15, 0.75),
-                DamageCalculator.armorReduction(20, 8, 15, 0.75), EPSILON);
-        assertEquals(28.0 / 43, DamageCalculator.armorReduction(20, 8, 15, 0.75), EPSILON);
+    void armorAndToughnessKeepTheirOwnRoles() {
+        assertEquals(0.4, DamageCalculator.armorReduction(10, 15, 0), EPSILON,
+                "15 − 10 / 2 effective armor, 4 % each");
+        assertTrue(DamageCalculator.armorReduction(33, 20, 0) < DamageCalculator.armorReduction(4, 20, 0),
+                "armor blocks less of a bigger hit");
+        assertTrue(DamageCalculator.armorReduction(33, 20, 12) > DamageCalculator.armorReduction(33, 20, 0),
+                "toughness keeps armor working against big hits");
+        assertEquals(DamageCalculator.armorReduction(1, 20, 0), DamageCalculator.armorReduction(1, 20, 18), 0.02,
+                "toughness barely matters against small hits");
+        assertEquals(0, DamageCalculator.armorReduction(10, 0, 18), "toughness alone blocks nothing");
     }
 
     @Test
-    void theCapHoldsForHugeArmor() {
-        assertEquals(0.75, DamageCalculator.armorReduction(10_000, 0, 15, 0.75), EPSILON);
+    void armorNeverBlocksMoreThan80Percent() {
+        assertEquals(0.8, DamageCalculator.armorReduction(1, 10_000, 0), EPSILON);
+        assertEquals(0.8, DamageCalculator.armorReduction(33, 30, 18), EPSILON, "netherite × 1.5 at a level 20 hit");
     }
 
     @Test
-    void aStrongerAttackerMeetsLessReduction() {
-        assertTrue(DamageCalculator.armorReduction(20, 0, 50, 0.75) < DamageCalculator.armorReduction(20, 0, 15, 0.75),
-                "a bigger halving value (a higher attacker level) lets armor block less");
+    void armorKeepsAFifthOfItselfAgainstHugeHits() {
+        assertEquals(15 * 0.2 / 25, DamageCalculator.armorReduction(1_000, 15, 0), EPSILON);
     }
 
     @Test
-    void noArmorOrNoHalvingValueBlocksNothing() {
-        assertEquals(0, DamageCalculator.armorReduction(0, 0, 15, 0.75));
-        assertEquals(0, DamageCalculator.armorReduction(-5, 0, 15, 0.75), "negative armor counts as none");
-        assertEquals(0, DamageCalculator.armorReduction(20, 0, 0, 0.75));
-        assertEquals(0, DamageCalculator.armorReduction(20, 0, -1, 0.75));
-    }
-
-    @Test
-    void theCapStaysAShare() {
-        assertEquals(10_000.0 / 10_001, DamageCalculator.armorReduction(10_000, 0, 1, 5), EPSILON,
-                "a cap above 1 counts as 1");
-        assertEquals(0, DamageCalculator.armorReduction(20, 0, 15, -1), "a negative cap blocks nothing");
+    void negativeArmorOrToughnessCountsAsNone() {
+        assertEquals(0, DamageCalculator.armorReduction(10, -5, 0));
+        assertEquals(DamageCalculator.armorReduction(10, 15, 0), DamageCalculator.armorReduction(10, 15, -4), EPSILON);
     }
 
     @Test
@@ -106,27 +117,30 @@ class DamageCalculatorTest {
     }
 
     @Test
-    void armorPierceTakesTheFlatPointsFirstThenThePercent() {
-        assertEquals(20, DamageCalculator.piercedArmor(15, 5, 0, 0), EPSILON, "no pierce: armor plus toughness");
-        assertEquals(15, DamageCalculator.piercedArmor(15, 5, 5, 0), EPSILON);
-        assertEquals(7.5, DamageCalculator.piercedArmor(15, 5, 5, 0.5), EPSILON, "half of the 15 left");
-        assertEquals(10, DamageCalculator.piercedArmor(15, 5, 0, 0.5), EPSILON);
+    void armorPierceTakesTheFlatPointsFirstThenTheShred() {
+        assertEquals(15, DamageCalculator.piercedArmor(15, 0, 0), EPSILON, "no pierce");
+        assertEquals(10, DamageCalculator.piercedArmor(15, 5, 0), EPSILON);
+        assertEquals(5, DamageCalculator.piercedArmor(15, 5, 0.5), EPSILON, "half of the 10 left");
+        assertEquals(7.5, DamageCalculator.piercedArmor(15, 0, 0.5), EPSILON);
     }
 
     @Test
     void armorPierceNeverLeavesNegativeArmor() {
-        assertEquals(0, DamageCalculator.piercedArmor(15, 0, 40, 0), "more pierce than armor");
-        assertEquals(0, DamageCalculator.piercedArmor(15, 0, 0, 2), "a percent above 1 counts as 1");
-        assertEquals(15, DamageCalculator.piercedArmor(15, 0, -5, -1), EPSILON, "negative pierce counts as none");
+        assertEquals(0, DamageCalculator.piercedArmor(15, 40, 0), "more pierce than armor");
+        assertEquals(0, DamageCalculator.piercedArmor(15, 0, 2), "a share above 1 counts as 1");
+        assertEquals(15, DamageCalculator.piercedArmor(15, -5, -1), EPSILON, "negative pierce counts as none");
+        assertEquals(0, DamageCalculator.piercedArmor(-5, 0, 0), "negative armor counts as none");
     }
 
     @Test
-    void piercedArmorBlocksLess() {
-        assertEquals(DamageCalculator.armorReduction(10, 0, 15, 0.75),
-                DamageCalculator.armorReduction(15, 0, 5, 0, 15, 0.75), EPSILON, "5 pierce against 15 armor");
-        assertEquals(0, DamageCalculator.armorReduction(15, 5, 20, 0, 15, 0.75), "all armor pierced");
-        assertEquals(DamageCalculator.armorReduction(15, 5, 15, 0.75),
-                DamageCalculator.armorReduction(15, 5, 0, 0, 15, 0.75), EPSILON, "no pierce changes nothing");
+    void piercedArmorBlocksLessAndToughnessIsNeverPierced() {
+        assertEquals(DamageCalculator.armorReduction(10, 10, 8),
+                DamageCalculator.armorReduction(10, 15, 8, 5, 0), EPSILON, "5 pierce against 15 armor, 8 toughness");
+        assertEquals(DamageCalculator.armorReduction(10, 5, 8),
+                DamageCalculator.armorReduction(10, 15, 8, 5, 0.5), EPSILON, "then 50 % shred of the 10 left");
+        assertEquals(0, DamageCalculator.armorReduction(10, 15, 8, 20, 0), "all armor pierced: toughness alone");
+        assertEquals(DamageCalculator.armorReduction(10, 15, 8),
+                DamageCalculator.armorReduction(10, 15, 8, 0, 0), EPSILON, "no pierce changes nothing");
     }
 
     @Test

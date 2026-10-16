@@ -56,7 +56,11 @@ An RPG experience for Minecraft, open source on GitHub. I'm making it mainly for
   - RNG item chests (as an item, not a block, although of course I also want loot chests in dungeons), also common-legendary, that roll a random item as a reward when opened
   - 500+ quests, questlines, for all sorts of things; crafting, killing mobs, bosses, farming, cooking, reforging, professions, ... with rewards; repeatable quests (more or less something like a shop, or turning in e.g. monster loot); quests available per chapter, i.e. locked until the previous chapter is completed
   - keep vanilla mechanics like armor, armor toughness, HP, hunger, XP (just change XP, and I'd heavily overhaul the whole of Enchanting; I don't like how RNG-based it is)
-    - I'd definitely let armor/armor toughness/HP go far beyond vanilla values
+    - I'd definitely let armor/armor toughness/HP go far beyond vanilla values (Status: corrected on 2026-10-16 for armor
+      and armor toughness: "far beyond" was figurative. The best reachable armor and toughness is about netherite × 1.5
+      (30 armor, 18 toughness), × 2 is already too much, and better armor gets effects instead of more armor and
+      toughness. Hits meet vanilla's armor formula, which keeps armor and toughness apart, RLM-223. HP is not part of
+      this correction.)
   - QoL: map, minimap, what-am-I-looking-at, JEI, waypoints, waystones, backpack ("Sophisticated Backpacks"), a simple mod for organizing items (for me clearly the best at this are "Tom's Simple Storage" + "Sophisticated Storage"), hearthstone?
   - mounts that make sense; again I really like WoW here, where the mount is summoned the moment you use it and is hidden otherwise, or, in newer versions, it's immortal and stays nearby
     - mounts should be worth getting; better than Elytra/Angel Wings for flying mounts, better than a Speed II potion for ground mounts (Status: decided on 2026-10-13: elytra fly faster in the air, while mounts win on overall speed, utility and combat, and their rider can fight from them; our own mounts, summoned when used and never lost, tiers 1 to 3 in M4; [Chococraft research, decision](research/chococraft.md#decision-rlm-115), RLM-115.)

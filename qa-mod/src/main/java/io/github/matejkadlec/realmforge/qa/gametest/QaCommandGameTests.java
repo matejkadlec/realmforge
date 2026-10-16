@@ -73,8 +73,8 @@ public final class QaCommandGameTests {
         helper.assertValueEqual(dummy.getAttributeValue(Attributes.ARMOR), 10.0, "the dummy's armor");
         Display.TextDisplay label = TrainingDummy.labelEntity(dummy);
         helper.assertTrue(label != null, "the dummy carries its armor label");
-        helper.assertValueEqual(label.getText().getString(), "10 Armor (40% Damage Reduction)\nTraining Dummy",
-                "the label at level 1, where 15 armor halves a hit, over the dummy's name");
+        helper.assertValueEqual(label.getText().getString(), "10 Armor (20% vs a 10-damage hit)\nTraining Dummy",
+                "the label against a 10-damage hit (10 − 10 / 2 effective armor, 4 % each), over the dummy's name");
         run(server, player, "attribute " + DUMMY + " realmforge:fire_resistance base set 0.5");
         helper.assertValueEqual(dummy.getAttributeValue(GeneratedStats.FIRE_RESISTANCE), 0.5, "the dummy's resistance");
         run(server, player, "damage " + DUMMY + " 10 realmforge:fire by @s");

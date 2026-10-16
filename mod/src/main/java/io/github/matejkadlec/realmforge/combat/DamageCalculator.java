@@ -17,10 +17,11 @@ import net.minecraft.util.RandomSource;
  *   <li><b>School hit:</b> damage × (1 + spell power, for magic only, + the school's power), then the crit roll, then
  *   × (1 − the defender's resistance): the resistance to the school, plus spell resistance for a magic school, at
  *   most 75 % together ({@link #RESISTANCE_CAP}).</li>
- *   <li><b>Armor:</b> with A = armor + armor toughness, less the attacker's armor pierce (the flat points first, then
- *   the percent of what is left), armor blocks A / (A + K) of a hit, at most the cap, where K and the cap come from the
- *   curves {@code realmforge:armor_halving} and {@code realmforge:armor_reduction_cap} at the attacker's level: K
- *   armor halves a hit.</li>
+ *   <li><b>Armor:</b> vanilla's formula ({@code CombatRules#getDamageAfterAbsorb}; Matěj, 2026-10-16), on the armor
+ *   the attacker's armor pierce leaves (the flat points first, then the armor shred share of what is left). With D the
+ *   hit's damage, effective armor = clamp(armor − D / (2 + toughness / 4), armor / 5, 20) blocks effective / 25 of
+ *   it: armor counts most against small hits, toughness against big ones, and nothing blocks more than 80 %.
+ *   Toughness is never pierced.</li>
  *   <li><b>Lifesteal:</b> a melee or ranged hit heals the attacker by its lifesteal share of the damage it dealt.</li>
  *   <li><b>Overheal:</b> healing beyond max health becomes absorption, up to the overheal share of max health.</li>
  *   <li><b>Health regeneration:</b> heals its points every second, never beyond max health.</li>
@@ -34,6 +35,12 @@ public final class DamageCalculator {
      * BM-18).
      */
     public static final double RESISTANCE_CAP = 0.75;
+    /** Vanilla's armor formula: the most effective armor counts for, in points ({@code CombatRules.MAX_ARMOR}). */
+    public static final double MAX_EFFECTIVE_ARMOR = 20;
+    /** Vanilla's armor formula: an effective armor point blocks 1/25 of a hit ({@code ARMOR_PROTECTION_DIVIDER}). */
+    public static final double ARMOR_DIVIDER = 25;
+    /** Vanilla's armor formula: the least effective armor, as a share of the armor ({@code MIN_ARMOR_RATIO}). */
+    private static final double MIN_ARMOR_RATIO = 0.2;
 
     private DamageCalculator() {
     }
@@ -116,37 +123,35 @@ public final class DamageCalculator {
     }
 
     /**
-     * The share of a hit armor blocks: with A = armor + armor toughness, A / (A + halving), at most {@code cap}.
-     * Without armor, or with a halving value that is not positive, armor blocks nothing.
-     *
-     * @param halving the armor that halves a hit at the attacker's level (curve {@code realmforge:armor_halving})
-     * @param cap the most armor may block, a share (curve {@code realmforge:armor_reduction_cap})
+     * The share of a {@code damage} hit that {@code armor} and {@code toughness} block, by vanilla's formula
+     * ({@code CombatRules#getDamageAfterAbsorb}): effective armor = clamp(armor − damage / (2 + toughness / 4),
+     * armor / 5, {@value #MAX_EFFECTIVE_ARMOR}), and each effective point blocks 1 / {@value #ARMOR_DIVIDER} of the
+     * hit. Negative armor and toughness count as 0. Vanilla's armor-effectiveness enchantments (Breach) adjust the
+     * share afterwards, in {@link DamagePipeline}.
      */
-    public static double armorReduction(double armor, double toughness, double halving, double cap) {
-        double effective = Math.max(0, armor) + Math.max(0, toughness);
-        if (effective <= 0 || halving <= 0) {
-            return 0;
-        }
-        return Math.min(Mth.clamp(cap, 0, 1), effective / (effective + halving));
+    public static double armorReduction(double damage, double armor, double toughness) {
+        double points = Math.max(0, armor);
+        double effective = Mth.clamp(points - damage / (2 + Math.max(0, toughness) / 4), points * MIN_ARMOR_RATIO,
+                MAX_EFFECTIVE_ARMOR);
+        return effective / ARMOR_DIVIDER;
     }
 
     /**
-     * The armor a hit meets after the attacker's armor pierce: armor + armor toughness, less the flat {@code pierce},
-     * then less {@code piercePercent} of what is left; never below 0. Negative values count as 0, and a percent
-     * above 1 as 1.
+     * The armor a hit meets after the attacker's armor pierce: armor less the flat {@code pierce}, then less the
+     * {@code shred} share of what is left; never below 0. Negative values count as 0, and a share above 1 as 1.
+     * Armor toughness is never pierced.
      */
-    public static double piercedArmor(double armor, double toughness, double pierce, double piercePercent) {
-        double effective = Math.max(0, armor) + Math.max(0, toughness);
-        return Math.max(0, effective - Math.max(0, pierce)) * (1 - Mth.clamp(piercePercent, 0, 1));
+    public static double piercedArmor(double armor, double pierce, double shred) {
+        return Math.max(0, Math.max(0, armor) - Math.max(0, pierce)) * (1 - Mth.clamp(shred, 0, 1));
     }
 
     /**
-     * The share of a hit armor blocks against an attacker with armor pierce: {@link #armorReduction} of the
-     * {@link #piercedArmor} the hit meets.
+     * The share of a {@code damage} hit armor blocks against an attacker with armor pierce and shred:
+     * {@link #armorReduction(double, double, double)} of the {@link #piercedArmor} the hit meets, with the defender's
+     * whole toughness.
      */
-    public static double armorReduction(double armor, double toughness, double pierce, double piercePercent,
-            double halving, double cap) {
-        return armorReduction(piercedArmor(armor, toughness, pierce, piercePercent), 0, halving, cap);
+    public static double armorReduction(double damage, double armor, double toughness, double pierce, double shred) {
+        return armorReduction(damage, piercedArmor(armor, pierce, shred), toughness);
     }
 
     /** What lifesteal heals: its {@code share} of the damage a hit dealt, the share kept between 0 and 1. */

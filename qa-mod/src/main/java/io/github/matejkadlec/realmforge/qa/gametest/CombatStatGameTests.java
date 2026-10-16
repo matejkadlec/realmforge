@@ -25,34 +25,39 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * RLM-158 and RLM-160: the combat stats that act on a hit or over time (architecture 9.1): armor pierce, spell
- * resistance, lifesteal, overheal, health regeneration and the magic shield. Fake players attack and take damage in
- * survival mode (the GameTest world is creative), at 0 % crit chance, with their food where vanilla's food
+ * RLM-158 and RLM-160: the combat stats that act on a hit or over time (architecture 9.1): armor pierce and shred,
+ * spell resistance, lifesteal, overheal, health regeneration and the magic shield. Fake players attack and take
+ * damage in survival mode (the GameTest world is creative), at 0 % crit chance, with their food where vanilla's food
  * regeneration stays out of the way (17 food, no saturation).
  */
 public final class CombatStatGameTests {
     private CombatStatGameTests() {
     }
 
-    /** Done when of RLM-158: armor pierce lowers the armor a hit meets, against a training dummy with 15 armor. */
+    /**
+     * Done when of RLM-158, with RLM-223's vanilla armor formula and RLM-234's name: armor pierce, then armor shred,
+     * lower the armor a hit meets, against a training dummy with 15 armor.
+     */
     @QaGameTest
-    public static void armorPierceLowersTheArmorAHitMeets(GameTestHelper helper) {
+    public static void armorPierceAndShredLowerTheArmorAHitMeets(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer player = player(helper, "qa-pierce");
         Pillager dummy = TrainingDummy.spawn(level, helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 15);
         DamageSource hit = level.damageSources().playerAttack(player);
 
-        assertMetered(helper, dummy, hit, 10 * (1 - CombatGameTests.blocked(helper, 15, 1)), "no armor pierce");
+        assertMetered(helper, dummy, hit, 10 * (1 - CombatGameTests.blocked(dummy, 10, 15, 0)), "no armor pierce");
+        helper.assertValueEqual(TrainingDummy.armorLine(dummy, player).getString(),
+                "15 Armor (40% vs a 10-damage hit)", "the dummy's label: 15 − 10 / 2 effective armor, 4 % each");
         StatsCommands.setBase(player, GeneratedStats.ARMOR_PIERCE, 5);
-        assertMetered(helper, dummy, hit, 10 * (1 - CombatGameTests.blocked(helper, 10, 1)),
+        assertMetered(helper, dummy, hit, 10 * (1 - CombatGameTests.blocked(dummy, 10, 10, 0)),
                 "5 armor pierce leaves 10 armor");
-        StatsCommands.setBase(player, GeneratedStats.ARMOR_PIERCE_PERCENT, 0.5);
-        assertMetered(helper, dummy, hit, 10 * (1 - CombatGameTests.blocked(helper, 5, 1)),
-                "then 50 % armor pierce takes half of the 10 left");
+        StatsCommands.setBase(player, GeneratedStats.ARMOR_SHRED, 0.5);
+        assertMetered(helper, dummy, hit, 10 * (1 - CombatGameTests.blocked(dummy, 10, 5, 0)),
+                "then 50 % armor shred takes half of the 10 left");
         StatsCommands.setBase(player, GeneratedStats.ARMOR_PIERCE, 20);
         assertMetered(helper, dummy, hit, 10, "more armor pierce than armor: the hit lands in full");
         helper.assertValueEqual(TrainingDummy.armorLine(dummy, player).getString(),
-                "15 Armor (0% Damage Reduction)", "the dummy's label counts the nearest player's armor pierce");
+                "15 Armor (0% vs a 10-damage hit)", "the dummy's label counts the nearest player's armor pierce");
         TrainingDummy.remove(dummy);
         logout(player);
         helper.succeed();

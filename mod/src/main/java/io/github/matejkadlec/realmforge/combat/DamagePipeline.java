@@ -1,23 +1,21 @@
 package io.github.matejkadlec.realmforge.combat;
 
-import io.github.matejkadlec.realmforge.core.CoreRegistries;
-import io.github.matejkadlec.realmforge.core.Curve;
-import io.github.matejkadlec.realmforge.generated.GeneratedCurves;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import java.util.Optional;
-import java.util.OptionalDouble;
 import net.minecraft.core.Holder;
-import net.minecraft.core.Registry;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
@@ -37,9 +35,9 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *   <li>{@code LivingIncomingDamageEvent}: a dodge cancels the hit (melee, projectiles and physical school hits; never
  *   magic, explosions or the world). A school hit gets spell power (magic), the school's power, a crit roll (by the
  *   spell's {@link CritRule} when a {@link SchoolDamageSource} brings one) and the defender's resistance (spell
- *   resistance added for magic). Our armor formula replaces vanilla's through the armor
- *   reduction, with the attacker's armor pierce, except for damage in {@code #minecraft:bypasses_armor}. The
- *   defender's magic shield joins the absorption reduction ({@link MagicShields}).</li>
+ *   resistance added for magic). The armor reduction becomes vanilla's formula on the armor the attacker's armor
+ *   pierce and shred leave, except for damage in {@code #minecraft:bypasses_armor}. The defender's magic shield joins
+ *   the absorption reduction ({@link MagicShields}).</li>
  *   <li>Hurt cooldown: a school hit lands through it ({@code #minecraft:bypasses_cooldown}) and leaves the defender's
  *   window as it was: it grants no invulnerability of its own, and {@code lastHurt}, which vanilla overwrites, is
  *   restored afterwards, so melee hits in an open window are still compared with the previous melee hit, not with a
@@ -193,30 +191,14 @@ public final class DamagePipeline {
     }
 
     /**
-     * The share of a hit our armor formula blocks for {@code defender} against an attacker at {@code attackerLevel}
-     * without armor pierce (architecture 9.1), or empty when a data pack removed the armor curves.
+     * The share of a {@code damage} hit the armor formula blocks for {@code defender} against an attacker with
+     * {@code pierce} flat armor pierce and {@code shred} armor shred (architecture 9.1): vanilla's formula on the
+     * defender's whole armor points (as vanilla's {@code getArmorValue}) less the pierce, and its armor toughness;
+     * without the weapon's enchantments.
      */
-    public static OptionalDouble armorShare(LivingEntity defender, int attackerLevel) {
-        return armorShare(defender, attackerLevel, 0, 0);
-    }
-
-    /**
-     * The share of a hit our armor formula blocks for {@code defender} against an attacker at {@code attackerLevel}
-     * with {@code pierce} flat and {@code piercePercent} armor pierce (architecture 9.1):
-     * {@link DamageCalculator#armorReduction} with the armor curves at that level, or empty when a data pack removed
-     * them.
-     */
-    public static OptionalDouble armorShare(LivingEntity defender, int attackerLevel, double pierce,
-            double piercePercent) {
-        Registry<Curve> curves = defender.registryAccess().lookupOrThrow(CoreRegistries.CURVE);
-        Curve halving = curves.getValue(GeneratedCurves.ARMOR_HALVING);
-        Curve cap = curves.getValue(GeneratedCurves.ARMOR_REDUCTION_CAP);
-        if (halving == null || cap == null) {
-            return OptionalDouble.empty();
-        }
-        return OptionalDouble.of(DamageCalculator.armorReduction(defender.getAttributeValue(Attributes.ARMOR),
-                defender.getAttributeValue(Attributes.ARMOR_TOUGHNESS), pierce, piercePercent,
-                halving.valueAt(attackerLevel), cap.valueAt(attackerLevel)));
+    public static double armorShare(LivingEntity defender, double damage, double pierce, double shred) {
+        return DamageCalculator.armorReduction(damage, defender.getArmorValue(),
+                defender.getAttributeValue(Attributes.ARMOR_TOUGHNESS), pierce, shred);
     }
 
     private static void schoolHit(LivingIncomingDamageEvent event, ServerLevel level, LivingEntity defender,
@@ -241,21 +223,28 @@ public final class DamagePipeline {
     }
 
     /**
-     * Our armor formula as NeoForge's armor reduction: the share {@link DamageCalculator#armorReduction} gives at the
-     * attacker's level (the defender's own when nobody attacked), against the armor the attacker's armor pierce
-     * leaves. Damage in {@code #minecraft:bypasses_armor} keeps vanilla's reduction, which is none; so does every hit
-     * when a data pack removed our armor curves.
+     * The armor formula as NeoForge's armor reduction: vanilla's formula ({@link #armorShare}) on the armor the
+     * attacker's armor pierce and shred leave, then vanilla's armor-effectiveness enchantment hook (Breach) on the
+     * weapon, as {@code CombatRules#getDamageAfterAbsorb} applies it. Computed here rather than through
+     * {@code CombatRules}, so a mod that replaces vanilla's formula there does not change ours. Damage in
+     * {@code #minecraft:bypasses_armor} keeps vanilla's reduction, which is none.
      */
     private static float armorReduction(LivingEntity defender, DamageContainer container, float vanilla) {
         DamageSource source = container.getSource();
         if (source.is(DamageTypeTags.BYPASSES_ARMOR)) {
             return vanilla;
         }
+        float damage = container.getNewDamage();
         LivingEntity attacker = source.getEntity() instanceof LivingEntity living ? living : null;
-        OptionalDouble share = attacker != null
-                ? armorShare(defender, level(attacker), stat(attacker, GeneratedStats.ARMOR_PIERCE),
-                        stat(attacker, GeneratedStats.ARMOR_PIERCE_PERCENT))
-                : armorShare(defender, level(defender));
-        return share.isPresent() ? (float) (container.getNewDamage() * share.getAsDouble()) : vanilla;
+        double share = attacker != null
+                ? armorShare(defender, damage, stat(attacker, GeneratedStats.ARMOR_PIERCE),
+                        stat(attacker, GeneratedStats.ARMOR_SHRED))
+                : armorShare(defender, damage, 0, 0);
+        ItemStack weapon = source.getWeaponItem();
+        if (weapon != null && defender.level() instanceof ServerLevel level) {
+            share = Mth.clamp(EnchantmentHelper.modifyArmorEffectiveness(level, weapon, defender, source,
+                    (float) share), 0, 1);
+        }
+        return (float) (damage * share);
     }
 }

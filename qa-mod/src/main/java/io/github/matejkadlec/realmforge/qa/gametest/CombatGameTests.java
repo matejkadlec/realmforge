@@ -4,9 +4,6 @@ import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.combat.DamageOverTime;
 import io.github.matejkadlec.realmforge.combat.SpellSchool;
 import io.github.matejkadlec.realmforge.combat.SpellSchools;
-import io.github.matejkadlec.realmforge.core.CoreRegistries;
-import io.github.matejkadlec.realmforge.core.Curve;
-import io.github.matejkadlec.realmforge.generated.GeneratedCurves;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpellSchools;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.mob.MobLevels;
@@ -20,7 +17,6 @@ import java.nio.file.Files;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
@@ -28,6 +24,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.world.damagesource.CombatRules;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -49,7 +46,7 @@ import net.neoforged.neoforge.common.NeoForgeMod;
 
 /**
  * F5: the damage pipeline in a world (architecture 9.1), on pillagers that stand still and a zombie or a fake player
- * that hits them. Expected numbers follow the content: the armor curves at the attacker's level, the stats set here.
+ * that hits them. Expected numbers follow vanilla's armor formula ({@link #blocked}) and the stats set here.
  * The hits of one test land within one game tick, so a hurt cooldown window opened by the first stays open.
  *
  * <p>Pillagers carry our stats in the dev game (the QA mod's {@code TrainingDummy#addStats}), so a test sets their
@@ -63,24 +60,29 @@ public final class CombatGameTests {
     }
 
     /**
-     * Our armor formula replaces vanilla's, at the attacker's level; damage that bypasses armor keeps it all. A
-     * leveled zombie's hit also grows with its level (W1), before the armor takes its share.
+     * RLM-223: hits meet vanilla's armor formula, with armor and toughness kept apart, so armor blocks less of a
+     * bigger hit; damage that bypasses armor keeps it all. A leveled zombie's hit grows with its level (W1) before
+     * the armor takes its share, which is how the attacker's level reaches armor.
      */
     @QaGameTest
-    public static void armorReducesHitsByTheAttackersLevel(GameTestHelper helper) {
+    public static void armorFollowsVanillasFormula(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Zombie zombie = attacker(helper);
         Pillager mob = target(helper);
         setBase(mob, Attributes.ARMOR, 15);
         setBase(mob, Attributes.ARMOR_TOUGHNESS, 5);
 
-        assertDealt(helper, mob, level.damageSources().mobAttack(zombie), 10, 10 * (1 - blocked(helper, 20, 1)),
+        assertDealt(helper, mob, level.damageSources().mobAttack(zombie), 10, 10 * (1 - blocked(mob, 10, 15, 5)),
                 "a level 1 zombie against 15 armor and 5 toughness");
+        helper.assertTrue(close(blocked(mob, 10, 15, 5), (15 - 10 / 3.25) / 25),
+                "vanilla's formula: 15 − 10 / (2 + 5 / 4) effective armor, 4 % each");
+        helper.assertTrue(blocked(mob, 10, 15, 5) != blocked(mob, 10, 20, 0),
+                "toughness is not armor: 15 armor and 5 toughness block another share than 20 armor");
         settle(mob);
         MobLevels.setLevel(zombie, 20);
-        helper.assertTrue(blocked(helper, 20, 20) < blocked(helper, 20, 1), "a level 20 attacker meets less reduction");
         double hit = 10 * MobScaling.at(level.registryAccess(), 20).damage();
-        assertDealt(helper, mob, level.damageSources().mobAttack(zombie), 10, hit * (1 - blocked(helper, 20, 20)),
+        helper.assertTrue(blocked(mob, hit, 15, 5) < blocked(mob, 10, 15, 5), "the bigger hit meets less reduction");
+        assertDealt(helper, mob, level.damageSources().mobAttack(zombie), 10, hit * (1 - blocked(mob, hit, 15, 5)),
                 "a level 20 zombie");
         settle(mob);
         assertDealt(helper, mob, level.damageSources().magic(), 10, 10, "magic bypasses armor");
@@ -188,7 +190,7 @@ public final class CombatGameTests {
                 "frost: spell power only");
         settle(mob);
         assertDealt(helper, mob, school(helper, GeneratedSpellSchools.PHYSICAL, player), 10,
-                10 * (1 - blocked(helper, 15, 1)), "physical: no spell power, armor applies");
+                10 * (1 - blocked(mob, 10, 15, 0)), "physical: no spell power, armor applies");
         server.getPlayerList().remove(player);
         helper.succeed();
     }
@@ -292,12 +294,14 @@ public final class CombatGameTests {
         helper.succeed();
     }
 
-    /** The share armor blocks at an attacker level, from the content's curves (architecture 9.1). */
-    static double blocked(GameTestHelper helper, double armor, int attackerLevel) {
-        Registry<Curve> curves = helper.getLevel().registryAccess().lookupOrThrow(CoreRegistries.CURVE);
-        double halving = curves.getValue(GeneratedCurves.ARMOR_HALVING).valueAt(attackerLevel);
-        double cap = curves.getValue(GeneratedCurves.ARMOR_REDUCTION_CAP).valueAt(attackerLevel);
-        return Math.min(cap, armor / (armor + halving));
+    /**
+     * The share of a {@code damage} hit that {@code armor} and {@code toughness} block, by vanilla's own
+     * {@code CombatRules#getDamageAfterAbsorb} (architecture 9.1), for a hit without a weapon.
+     */
+    static double blocked(LivingEntity target, double damage, double armor, double toughness) {
+        float left = CombatRules.getDamageAfterAbsorb(target, (float) damage, target.damageSources().generic(),
+                (float) armor, (float) toughness);
+        return 1 - left / damage;
     }
 
     static void assertDealt(GameTestHelper helper, LivingEntity target, DamageSource source, float damage,

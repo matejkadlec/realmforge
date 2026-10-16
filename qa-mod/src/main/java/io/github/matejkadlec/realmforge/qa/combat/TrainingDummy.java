@@ -11,7 +11,6 @@ import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.OptionalDouble;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.ChatFormatting;
@@ -48,8 +47,9 @@ import org.joml.Vector3f;
  *
  * <p>Pillagers carry our stats in the dev game ({@link #addStats}), so the dummy's dodge chance and resistances can be
  * set with vanilla's {@code /attribute} command. Its armor comes from {@code /qa dummy <armor>}. Its label, a text
- * display riding it, shows two lines (Matěj, 2026-10-13): the armor with the share of a hit it blocks against the
- * nearest player (that player's level and armor pierce), and below it the name with the DPS. Vanilla draws no name tag
+ * display riding it, shows two lines (Matěj, 2026-10-13): the armor with the share of a {@value #LABEL_HIT}-damage
+ * hit it blocks against the nearest player (that player's armor pierce and shred), as vanilla's armor formula blocks
+ * less of a bigger hit (RLM-223), and below it the name with the DPS. Vanilla draws no name tag
  * over an entity that carries a passenger, so the label carries the name too; it changes with every hit and every
  * second.
  *
@@ -63,6 +63,8 @@ public final class TrainingDummy {
     static final double MAX_HEALTH = 1000;
     static final int SESSION_GAP_TICKS = 100;
     private static final String NAME = "Training Dummy";
+    /** The damage of the hit the label's armor share is stated against: armor blocks less of a bigger hit. */
+    static final int LABEL_HIT = 10;
     /** The entity tag of the text display that labels a dummy's armor. */
     static final String LABEL_TAG = "realmforge_qa.training_dummy_label";
     /** How far the label sits above the dummy's head, in blocks: where its name tag would be. */
@@ -113,21 +115,21 @@ public final class TrainingDummy {
     }
 
     /**
-     * The label's first line: the dummy's armor (and toughness, when it has any) and the share of a hit our armor
-     * formula blocks against {@code attacker}, at its level and with its armor pierce (level 1 and none without an
-     * attacker), such as "15 Armor (50% Damage Reduction)".
+     * The label's first line: the dummy's armor (and toughness, when it has any) and the share of a
+     * {@value #LABEL_HIT}-damage hit the armor formula blocks against {@code attacker}, with its armor pierce and
+     * shred (none without an attacker), such as "15 Armor (40% vs a 10-damage hit)".
      */
     public static Component armorLine(LivingEntity dummy, @Nullable LivingEntity attacker) {
         double armor = dummy.getAttributeValue(Attributes.ARMOR);
         double toughness = dummy.getAttributeValue(Attributes.ARMOR_TOUGHNESS);
-        OptionalDouble share = attacker != null
-                ? DamagePipeline.armorShare(dummy, DamagePipeline.level(attacker),
+        double share = attacker != null
+                ? DamagePipeline.armorShare(dummy, LABEL_HIT,
                         DamagePipeline.stat(attacker, GeneratedStats.ARMOR_PIERCE),
-                        DamagePipeline.stat(attacker, GeneratedStats.ARMOR_PIERCE_PERCENT))
-                : DamagePipeline.armorShare(dummy, EntityLevel.MIN);
+                        DamagePipeline.stat(attacker, GeneratedStats.ARMOR_SHRED))
+                : DamagePipeline.armorShare(dummy, LABEL_HIT, 0, 0);
         String text = CharacterSheetView.points(armor) + " Armor"
                 + (toughness > 0 ? ", " + CharacterSheetView.points(toughness) + " Toughness" : "")
-                + " (" + CharacterSheetView.share(share.orElse(0)) + " Damage Reduction)";
+                + " (" + CharacterSheetView.share(share) + " vs a " + LABEL_HIT + "-damage hit)";
         return Component.literal(text);
     }
 
@@ -179,8 +181,8 @@ public final class TrainingDummy {
     }
 
     /**
-     * Shows the dummy's armor against the nearest player, at its level and with its armor pierce (level 1 and none
-     * when nobody is near), adding the label if needed.
+     * Shows the dummy's armor against the nearest player, with its armor pierce and shred (none when nobody is
+     * near), adding the label if needed.
      */
     static void updateLabel(LivingEntity dummy) {
         if (!(dummy.level() instanceof ServerLevel level)) {

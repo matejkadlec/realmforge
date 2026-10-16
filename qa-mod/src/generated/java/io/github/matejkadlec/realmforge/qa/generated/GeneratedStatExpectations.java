@@ -50,8 +50,8 @@ public final class GeneratedStatExpectations {
                     0.0,
                     1000.0),
             new StatExpectation(
-                    "realmforge:armor_pierce_percent",
-                    "attribute.realmforge.armor_pierce_percent",
+                    "realmforge:armor_shred",
+                    "attribute.realmforge.armor_shred",
                     false,
                     true,
                     0.0,

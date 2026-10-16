@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../tools/schemas/curves.schema.json
 # Armor points a leveled mob gets on top of its own, by its level (architecture 14.1). 0 at level 1 keeps vanilla.
-# Our armor formula then blocks armor / (armor + K) of a hit, K at the attacker's level (armor_halving.yaml). W1's
-# first numbers, tuned in playtests.
+# Hits then meet vanilla's armor formula (architecture 9.1): the bigger a hit, the less of it armor blocks. W1's
+# first numbers, tuned in playtests (RLM-204).
 id: mob_armor
 name: {en_us: Mob Armor}
 points:
