@@ -8,7 +8,8 @@ sidecar, and retagging by hand or in the gallery review corrects them; a re-impo
   ``dead_end``, two opposite sides ``straight``, two adjacent sides ``curved``, three ``t_junction``, four
   ``crossing``. A connector up or down adds ``vertical``.
 - **Role**, from a word in the room's path (``treasure/egg``, ``boss_room``): ``boss``, ``treasure``,
-  ``entrance``, ``stairs`` or ``hallway``. Without one, a straight or curved piece at most ``HALLWAY_WIDTH`` blocks
+  ``entrance``, ``stairs`` or ``hallway``. A hint matches the start of a word (``stair`` in ``stairway``), except
+  those in ``_WHOLE_WORDS`` (``spawn`` is an entrance, a ``spawner`` room is not). Without one, a straight or curved piece at most ``HALLWAY_WIDTH`` blocks
   wide (across a straight piece's passage; either way for a curved one) is a ``hallway`` and anything else a
   ``combat`` room.
 """
@@ -33,6 +34,8 @@ _ROLES = (
     ("stairs", ("stair", "fall", "drop", "shaft", "elevator")),
     ("hallway", ("hall", "corridor", "bridge", "passage", "tunnel")),
 )
+# Hints that match only a whole word: a "spawner" room holds a mob spawner and is no entrance.
+_WHOLE_WORDS = frozenset({"spawn"})
 _WORD = re.compile(r"[a-z]+")
 
 
@@ -58,7 +61,7 @@ def shape(faces: set[str]) -> str | None:
 def role(name: str, faces: set[str], size: tuple[int, int, int]) -> str:
     words = _WORD.findall(name.lower())
     for tag, hints in _ROLES:
-        if any(word.startswith(hint) for word in words for hint in hints):
+        if any(_matches(word, hint) for word in words for hint in hints):
             return tag
     piece_shape = shape(faces)
     if piece_shape == "straight":
@@ -68,6 +71,10 @@ def role(name: str, faces: set[str], size: tuple[int, int, int]) -> str:
     else:
         return "combat"
     return "hallway" if width <= HALLWAY_WIDTH else "combat"
+
+
+def _matches(word: str, hint: str) -> bool:
+    return word == hint if hint in _WHOLE_WORDS else word.startswith(hint)
 
 
 def slot_tags(structure: Structure, name: str) -> list[str]:

@@ -93,12 +93,13 @@ sorted, stored deflate, so equal rooms give equal bytes), and `DIR/<name>.yaml`,
 source file, its format and its data version, leaves `pools` empty and drafts the slot `tags` (`rooms/slots.py`,
 [content/README.md](../content/README.md)): the shape from the faces with a connector (`dead_end`, `straight`,
 `curved`, `t_junction`, `crossing`, plus `vertical` for one up or down), the role from a word in the room's path
-(`boss`, `treasure`, `entrance`, `stairs`, `hallway`), else `hallway` for a straight or curved piece at most 9 blocks
-wide and `combat` for the rest. A re-import keeps the sidecar's pools, tags and weight. A room is written only when it
-validates; otherwise the command lists the problems and writes nothing for that room, and so does a source file that
-cannot be read (some jars ship a corrupt template; exclude it). A file that the gallery's review rejects is skipped
-(`SKIP` in the report): the `review.yaml` of the target folder decides, or that of a folder below it (the gallery
-reviews a subfolder on its own) or, inside `content/rooms/`, above it, and the nearest decision counts. A dropped room therefore stays dropped when its source is imported again;
+(`boss`, `treasure`, `entrance`, `stairs`, `hallway`), else `hallway` for a straight or curved piece at most 7 blocks
+wide (measured across the passage) and `combat` for the rest. A re-import keeps the sidecar's pools, tags and
+weight. A room is written only when it validates; otherwise the command lists the problems and writes nothing for that
+room, and so does a source file that cannot be read (some jars ship a corrupt template; exclude it). A file that the
+gallery's review rejects is skipped (`SKIP` in the report): the `review.yaml` of the target folder decides, or that of
+a folder below it (the gallery reviews a subfolder on its own) or, inside `content/rooms/`, above it, and the nearest
+decision counts. A dropped room therefore stays dropped when its source is imported again;
 delete its decision to take it back in. Inside `content/rooms/`, third-party rooms must go to `third_party/<source>/`,
 next to the source's `LICENSE` and `NOTICE`; rooms we built ourselves (exported from a dev world, say) take `--ours`,
 which the sidecar records as `source.ours`, and go anywhere else. Validation holds every room with a `source` to the

@@ -1027,6 +1027,8 @@ def jigsaw_room(size: tuple[int, int, int], *faces: str) -> Structure:
         ("boss_hallway", (7, 5, 20), ("north", "south"), ["boss", "straight"]),  # the first role wins
         ("entrances/entrance_1", (7, 6, 7), ("down",), ["entrance", "vertical"]),
         ("stairway/fall_01", (5, 16, 5), ("up", "down"), ["stairs", "vertical"]),
+        ("player_spawn", (9, 5, 9), ("west",), ["entrance", "dead_end"]),  # "spawn" as a whole word
+        ("tutorial_spawner_carrier", (11, 6, 15), ("west", "east"), ["combat", "straight"]),  # no entrance
         (
             "lobby_01",
             (13, 6, 13),
