@@ -252,9 +252,9 @@ player arrives wherever the linked portal stands.
   own (`Registries.POINT_OF_INTEREST_TYPE`, `PoiManager#getInSquare`). The search then keeps only selectors whose
   portal is lit and leads the right way. Portals are never linked by a saved pair, so breaking or switching a portal
   needs no bookkeeping.
-- **Between two realms:** a frame in realm A opened onto realm B with B's sigil links at the ratio of the two
-  scales (1:1 when they are equal) to a return portal in B, or builds one. The way back from B leads to the
-  Overworld, never to A, so chained trips cannot loop between realms (the "portal loops" AoA's changelogs fixed).
+- **No portal links two realms** (Matěj, RLM-188): a frame inside a realm opens only onto return
+  ([Edge cases](#edge-cases)), so every trip between realms goes through Overworld and chained trips cannot loop
+  between realms (the "portal loops" AoA's changelogs fixed).
 - **Portals players place themselves can still pair unevenly,** as nether portals do. Two Overworld portals within
   about 128 blocks of each other lead to one realm portal, and it leads back to the one nearer its scaled-back
   position. Waystones are the easy way around it.
