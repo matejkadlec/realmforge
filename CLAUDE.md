@@ -116,6 +116,7 @@ cd pack && packwiz refresh                # after changing anything in pack/
 
 ./git_clean_worktrees.sh                  # Matěj only: merged branches, their worktrees, worktree residue (README)
 bash tests/test_git_clean_worktrees.sh    # its safety regression suite (CI runs it in the content job)
+bash tests/test_git_clean_worktrees.sh git_clean_worktrees.ps1  # the same suite against the PowerShell port (pwsh)
 bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up suite (CI runs it in the content job)
 ```
 
@@ -137,6 +138,7 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 | `docs/` | vision, architecture, roadmap, design documents, lore, research, research notes, ADRs, dev setup | yes |
 | `.github/workflows/ci.yml` | CI | yes |
 | `git_clean_worktrees.sh` | Matěj's cleanup of merged branches, their worktrees and worktree residue ([README](README.md#git-worktree-cleanup)) | yes |
+| `git_clean_worktrees.ps1` | its PowerShell port for the Windows clone: same rules, options and messages; change both together | yes |
 | `tests/` | shell test suites: the worktree cleanup's safety regression suite, the Gradle queue's warm-up suite | yes |
 | `.claude/` | Claude Code settings, content validation hook, cloud warm-up hook, Gradle queue script, flow skills (`flow1`, `flow2`, `qa1`, `qa2`), PR skill `finalize-pr` (`fix-pr` and `monitor-pr` disabled: `SKILL.md.disabled`), `pr-reviewer` agent | yes |
 | `.mcp.json` | MCP servers for Claude Code: `atlassian` (Jira) | yes |
@@ -344,8 +346,9 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
   `git worktree remove <path>` (never `--force` over uncommitted changes), `git branch -d <branch>`,
   `git worktree prune`. The remote branch is GitHub's job ("Automatically delete head branches").
 - Claude Code's own session worktrees live in `.claude/worktrees/<name>` (gitignored). Matěj's
-  `./git_clean_worktrees.sh` ([README](README.md#git-worktree-cleanup)) removes merged branches with their
-  worktrees and orphaned residue in both worktree homes; agents never run it on a real checkout.
+  `./git_clean_worktrees.sh` ([README](README.md#git-worktree-cleanup)), and its PowerShell port
+  `git_clean_worktrees.ps1` in his Windows clone, remove merged branches with their worktrees and orphaned residue
+  in both worktree homes; agents never run either on a real checkout.
 
 **Pull requests**
 
@@ -390,7 +393,8 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
    through the agent proxy and warm up uv and Gradle in the background (`.claude/hooks/cloud-warmup.sh`).
 3. **Before opening a PR, run and report:** `uv run rf gen` (no unexpected changes), `uv run ruff check`,
    `uv run ruff format --check`, `uv run pytest`, `./gradlew build`, `./gradlew runGameTestServer`,
-   `uv run rf gametest-log`, `bash tests/test_git_clean_worktrees.sh` when the cleanup script or its suite
+   `uv run rf gametest-log`, `bash tests/test_git_clean_worktrees.sh` and
+   `bash tests/test_git_clean_worktrees.sh git_clean_worktrees.ps1` when either cleanup script or their suite
    changed, and `bash tests/test_gradle_queue.sh` when the Gradle queue, the cloud warm-up hook or that suite
    changed. Agents run the two Gradle tasks through `.claude/scripts/gradle-queue.sh`, which waits for memory
    while other worktrees build (and, in a cloud session, for the warm-up).

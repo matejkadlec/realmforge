@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# The script under test: git_clean_worktrees.sh by default, or its PowerShell
+# port git_clean_worktrees.ps1, which the fixtures start through a shim under
+# the same name, so every test runs unchanged against either. The port needs
+# pwsh (PowerShell 7) on PATH, or its path in PWSH.
 SCRIPT_UNDER_TEST="${1:-$(cd "$(dirname "$0")/.." && pwd)/git_clean_worktrees.sh}"
+IMPLEMENTATION=sh
+if [[ "$SCRIPT_UNDER_TEST" == *.ps1 ]]; then
+  IMPLEMENTATION=ps1
+  command -v "${PWSH:-pwsh}" >/dev/null || { echo "FAIL: pwsh is needed to test $SCRIPT_UNDER_TEST" >&2; exit 1; }
+fi
 TEST_ROOT="$(mktemp -d)"
 
 cleanup() {
@@ -73,7 +82,15 @@ new_fixture() {
   git -C "$repo" config gc.auto 0
   git -C "$repo" config user.email "cleanup-test@example.test"
   git -C "$repo" config user.name "Cleanup Test"
-  cp "$SCRIPT_UNDER_TEST" "$repo/git_clean_worktrees.sh"
+  if [[ "$IMPLEMENTATION" == ps1 ]]; then
+    cp "$SCRIPT_UNDER_TEST" "$repo/git_clean_worktrees.ps1"
+    printf '%s\n' \
+      '#!/usr/bin/env bash' \
+      'exec "${PWSH:-pwsh}" -NoProfile -File "${0%/*}/git_clean_worktrees.ps1" "$@"' > "$repo/git_clean_worktrees.sh"
+    git -C "$repo" add git_clean_worktrees.ps1
+  else
+    cp "$SCRIPT_UNDER_TEST" "$repo/git_clean_worktrees.sh"
+  fi
   chmod +x "$repo/git_clean_worktrees.sh"
   git -C "$repo" add git_clean_worktrees.sh
   git -C "$repo" commit -m "Add cleanup helper" >/dev/null
@@ -248,14 +265,18 @@ test_generated_only_orphan_residue_cleanup_is_scoped() {
   printf 'cache\n' > "$flow_generated_residue/tools/__pycache__/module.pyc"
   empty_generated_residue="$session_worktrees/empty-generated-residue"
   mkdir -p "$empty_generated_residue/build"
+  # The two races hook the bash script's second `find`, which the PowerShell
+  # port does not run: it lists a folder once, through .NET.
   metadata_race_residue="$session_worktrees/metadata-race-generated-residue"
   metadata_race_artifact="$metadata_race_residue/build/tmp/output.txt"
-  mkdir -p "$(dirname "$metadata_race_artifact")"
-  printf 'generated but keep after worktree repair\n' > "$metadata_race_artifact"
   content_race_residue="$session_worktrees/content-race-generated-residue"
   content_race_artifact="$content_race_residue/build/tmp/output.txt"
-  mkdir -p "$(dirname "$content_race_artifact")"
-  printf 'generated but keep after content change\n' > "$content_race_artifact"
+  if [[ "$IMPLEMENTATION" == sh ]]; then
+    mkdir -p "$(dirname "$metadata_race_artifact")"
+    printf 'generated but keep after worktree repair\n' > "$metadata_race_artifact"
+    mkdir -p "$(dirname "$content_race_artifact")"
+    printf 'generated but keep after content change\n' > "$content_race_artifact"
+  fi
   unreadable_residue="$session_worktrees/unreadable-generated-residue"
   unreadable_artifact="$unreadable_residue/build/tmp/output.txt"
   mkdir -p "$(dirname "$unreadable_artifact")" "$unreadable_residue/restricted/nested"
@@ -309,11 +330,13 @@ test_generated_only_orphan_residue_cleanup_is_scoped() {
   assert_path_missing "$generated_residue"
   assert_path_missing "$flow_generated_residue"
   assert_path_missing "$empty_generated_residue"
-  assert_path_exists "$metadata_race_residue"
-  assert_path_exists "$metadata_race_artifact"
-  assert_path_exists "$content_race_residue"
-  assert_path_exists "$content_race_artifact"
-  assert_path_exists "$content_race_residue/important.txt"
+  if [[ "$IMPLEMENTATION" == sh ]]; then
+    assert_path_exists "$metadata_race_residue"
+    assert_path_exists "$metadata_race_artifact"
+    assert_path_exists "$content_race_residue"
+    assert_path_exists "$content_race_artifact"
+    assert_path_exists "$content_race_residue/important.txt"
+  fi
   [[ "$unreadable_artifact_was_preserved" == true ]] || \
     fail "Expected an incomplete orphan scan to preserve already inspected artifacts."
   assert_path_exists "$unreadable_residue"
@@ -1383,4 +1406,4 @@ test_closed_unmerged_worktree_matching_target_is_removed
 test_local_only_commits_and_dirty_worktrees_are_preserved
 test_recovery_current_master_and_unavailable_or_ambiguous_metadata_are_preserved
 
-echo "PASS: git_clean_worktrees.sh safety regression suite"
+echo "PASS: ${SCRIPT_UNDER_TEST##*/} safety regression suite"
