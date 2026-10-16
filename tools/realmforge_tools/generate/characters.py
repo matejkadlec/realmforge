@@ -9,7 +9,7 @@ from realmforge_tools.content import Content
 from realmforge_tools.generate.datapack import translation_key
 from realmforge_tools.generate.javagen import header, java_file_path, string_literal
 from realmforge_tools.project import MOD_ID, QA_JAVA_PACKAGE, RepoPaths
-from realmforge_tools.schema.character import SAMPLE_LEVELS, CharacterModifierDef, bonuses_at
+from realmforge_tools.schema.character import CharacterModifierDef, bonuses
 
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
 
@@ -31,16 +31,13 @@ def _strings(values: list[str]) -> str:
     return f"List.of({', '.join(string_literal(value) for value in values)})"
 
 
-def _samples(registry: Literal["race", "class"], entry_id: str, modifiers: list[CharacterModifierDef]) -> str:
-    samples = []
-    for level in SAMPLE_LEVELS:
-        bonuses = ", ".join(
-            f"new Bonus({string_literal(id_)}, {string_literal(attribute)}, {string_literal(operation)}, "
-            f"{_double(amount)})"
-            for id_, attribute, operation, amount in bonuses_at(registry, entry_id, modifiers, level)
-        )
-        samples.append(f"                            new Sample({level}, List.of({bonuses}))")
-    return "List.of(\n" + ",\n".join(samples) + ")"
+def _bonuses(registry: Literal["race", "class"], entry_id: str, modifiers: list[CharacterModifierDef]) -> str:
+    rows = ", ".join(
+        f"new Bonus({string_literal(id_)}, {string_literal(attribute)}, {string_literal(operation)}, "
+        f"{_double(amount)})"
+        for id_, attribute, operation, amount in bonuses(registry, entry_id, modifiers)
+    )
+    return f"List.of({rows})"
 
 
 def _list(rows: list[str]) -> str:
@@ -48,12 +45,11 @@ def _list(rows: list[str]) -> str:
 
 
 _BONUS_RECORDS = (
-    "    /** One attribute modifier the entry gives; numbers are in game units (fractions for percentages). */\n"
+    "    /**\n"
+    "     * One attribute modifier the entry gives, the same at every level; numbers are in game units (fractions for\n"
+    "     * percentages).\n"
+    "     */\n"
     "    public record Bonus(String id, String attribute, String operation, double amount) {\n"
-    "    }\n"
-    "\n"
-    "    /** The bonuses the pipeline computes at a level, which the game must match, in this order. */\n"
-    "    public record Sample(int level, List<Bonus> bonuses) {\n"
     "    }\n"
     "\n"
 )
@@ -68,7 +64,7 @@ def _races(content: Content) -> bytes:
             f"                    {string_literal(translation_key('race', race.id, 'name'))},\n"
             f"                    {string_literal(translation_key('race', race.id, 'description'))},\n"
             f"                    {_strings(list(race.classes))},\n"
-            f"                    {_samples('race', race.id, race.modifiers)})"
+            f"                    {_bonuses('race', race.id, race.modifiers)})"
         )
     source = (
         header(Path(__file__), "content/races/") + f"package {QA_GENERATED_PACKAGE};\n"
@@ -78,10 +74,10 @@ def _races(content: Content) -> bytes:
         "/** What {@code content/races/} says about every race, so GameTests can check that the game agrees. */\n"
         "public final class GeneratedRaceExpectations {\n" + _BONUS_RECORDS + "    /**\n"
         "     * Expected state of one race. Ids are full resource locations, e.g. {@code realmforge:human}; the classes\n"
-        "     * are the ones it may take, in the YAML's order.\n"
+        "     * are the ones it may take, in the YAML's order; the bonuses are the ones the game must give, in this order.\n"
         "     */\n"
         "    public record RaceExpectation(String id, String nameKey, String descriptionKey, List<String> classes,\n"
-        "            List<Sample> samples) {\n"
+        "            List<Bonus> bonuses) {\n"
         "    }\n"
         "\n"
         f"    public static final List<RaceExpectation> RACES = {_list(rows)};\n"
@@ -106,7 +102,7 @@ def _classes(content: Content) -> bytes:
             f"                    {string_literal(translation_key('class', player_class.id, 'description'))},\n"
             f"                    {string_literal(player_class.resource)},\n"
             f"                    List.of({kit}),\n"
-            f"                    {_samples('class', player_class.id, player_class.modifiers)})"
+            f"                    {_bonuses('class', player_class.id, player_class.modifiers)})"
         )
     source = (
         header(Path(__file__), "content/classes/") + f"package {QA_GENERATED_PACKAGE};\n"
@@ -120,9 +116,12 @@ def _classes(content: Content) -> bytes:
         "    public record KitItem(String item, int count) {\n"
         "    }\n"
         "\n"
-        "    /** Expected state of one class. Ids are full resource locations, e.g. {@code realmforge:warrior}. */\n"
+        "    /**\n"
+        "     * Expected state of one class. Ids are full resource locations, e.g. {@code realmforge:warrior}; the bonuses\n"
+        "     * are the ones the game must give, in this order.\n"
+        "     */\n"
         "    public record ClassExpectation(String id, String nameKey, String descriptionKey, String resource,\n"
-        "            List<KitItem> startingKit, List<Sample> samples) {\n"
+        "            List<KitItem> startingKit, List<Bonus> bonuses) {\n"
         "    }\n"
         "\n"
         f"    public static final List<ClassExpectation> CLASSES = {_list(rows)};\n"

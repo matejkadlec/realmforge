@@ -8,8 +8,8 @@ datapack.py).
 - ``GeneratedChapterExpectations``: every chapter, and the level cap the pipeline computes for sample sets of
   completed chapters.
 - ``GeneratedKillXpMultiplierExpectations``: every kill XP multiplier, with its value at sample sizes.
-- ``GeneratedLevelingExpectations``: the XP per level, the levels of sample XP totals under sample caps, and the XP
-  of sample kills, from the curves in ``content/curves/`` (schema/leveling.py).
+- ``GeneratedLevelingExpectations``: the XP and the stat points per level, the levels of sample XP totals under sample
+  caps, and the XP of sample kills, from the curves in ``content/curves/`` (schema/leveling.py).
 """
 
 from __future__ import annotations
@@ -28,10 +28,12 @@ from realmforge_tools.schema.leveling import (
     KILL_XP,
     KILL_XP_ABOVE_PLAYER,
     KILL_XP_BELOW_PLAYER,
+    STAT_POINTS_PER_LEVEL,
     XP_TO_NEXT_LEVEL,
     capped_xp,
     kill_xp,
     level_for,
+    stat_points_to,
     xp_to_next,
     xp_to_reach,
 )
@@ -152,11 +154,12 @@ def level_samples(xp_curve: CurveDef, caps: list[int]) -> list[tuple[int, int, i
 
 
 def _leveling(chapters: list[ChapterDef], curves: dict[str, CurveDef]) -> bytes:
-    xp_curve = curves[XP_TO_NEXT_LEVEL]
+    xp_curve, points_curve = curves[XP_TO_NEXT_LEVEL], curves[STAT_POINTS_PER_LEVEL]
     caps = sorted({cap for _, cap in cap_samples(chapters)})
     top = max(caps)
     levels = [
-        f"            new LevelXp({level}, {xp_to_next(xp_curve, level)}L, {xp_to_reach(xp_curve, level)}L)"
+        f"            new LevelXp({level}, {xp_to_next(xp_curve, level)}L, {xp_to_reach(xp_curve, level)}L, "
+        f"{stat_points_to(points_curve, level)})"
         for level in range(1, top + 2)
     ]
     samples = [
@@ -181,8 +184,11 @@ def _leveling(chapters: list[ChapterDef], curves: dict[str, CurveDef]) -> bytes:
         " * check that the game's leveling agrees.\n"
         " */\n"
         "public final class GeneratedLevelingExpectations {\n"
-        "    /** The XP from a level to the next, and the total XP a player needs for the level. */\n"
-        "    public record LevelXp(int level, long toNext, long toReach) {\n"
+        "    /**\n"
+        "     * The XP from a level to the next, the total XP a player needs for the level, and the primary stat points\n"
+        "     * a player of the level has earned.\n"
+        "     */\n"
+        "    public record LevelXp(int level, long toNext, long toReach, int statPoints) {\n"
         "    }\n"
         "\n"
         "    /** The level of a player with this much XP under this level cap, and the XP the cap lets them hold. */\n"

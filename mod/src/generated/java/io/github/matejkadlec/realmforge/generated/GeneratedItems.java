@@ -4,7 +4,12 @@
 package io.github.matejkadlec.realmforge.generated;
 
 import io.github.matejkadlec.realmforge.Realmforge;
+import java.util.List;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.component.ItemLore;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -29,6 +34,14 @@ public final class GeneratedItems {
     /** {@code realmforge:apprentice_robes} from {@code content/items/apprentice_robes.yaml}. */
     public static final DeferredItem<Item> APPRENTICE_ROBES =
             ITEMS.registerSimpleItem("apprentice_robes", properties -> properties.stacksTo(1));
+
+    /** {@code realmforge:oblivion_scroll} from {@code content/items/oblivion_scroll.yaml}. */
+    public static final DeferredItem<Item> OBLIVION_SCROLL =
+            ITEMS.registerSimpleItem("oblivion_scroll", properties -> properties.stacksTo(16)
+                    .component(DataComponents.LORE, new ItemLore(List.of(
+                            Component.translatable("item_use.realmforge.unlearn_stat_points")
+                                    .withStyle(style -> style.withColor(ChatFormatting.GREEN).withItalic(false)),
+                            Component.translatable("item.realmforge.oblivion_scroll.flavor")))));
 
     /** {@code realmforge:stone_wand} from {@code content/items/stone_wand.yaml}. */
     public static final DeferredItem<Item> STONE_WAND =
@@ -58,6 +71,9 @@ public final class GeneratedItems {
             }
             case "minecraft:ingredients" -> {
                 event.accept(TEST_ITEM);
+            }
+            case "minecraft:tools_and_utilities" -> {
+                event.accept(OBLIVION_SCROLL);
             }
             default -> {
             }

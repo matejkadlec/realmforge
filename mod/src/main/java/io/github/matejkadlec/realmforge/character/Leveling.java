@@ -59,9 +59,12 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
  *   <li>A kill of a hostile mob ({@link Enemy}) gives the player who gets vanilla's kill credit the XP of
  *   {@link KillXp}, with the victim's {@link KillXpMultiplier}, shown in the action bar. Players without a character
  *   gain no XP (architecture 10.1).</li>
- *   <li>A level-up recomputes the stats, shows a title, plays a fanfare to the player and bursts particles around
- *   them, and fires {@code realmforge:level_reached}, as does every login. Talent points and class spells join with
- *   C4 and C5.</li>
+ *   <li>A level-up earns stat points ({@link StatPoints}), recomputes the stats, shows a title, plays a fanfare to the
+ *   player and bursts particles around them, says in chat how many stat points are unspent, and fires
+ *   {@code realmforge:level_reached}, as does every login. A level that falls below the points spent returns them all.
+ *   Talent points and class spells join with C4 and C5.</li>
+ *   <li>A login leaves the stat recompute to the player's first tick (architecture 8.2): only then are the gear's
+ *   modifiers back, which the saved stat modifiers were computed with (RLM-202).</li>
  * </ul>
  */
 public final class Leveling {
@@ -121,11 +124,21 @@ public final class Leveling {
     /**
      * Brings the player's level cap, XP and level up to date with their chapters: the XP is cut to the cap
      * ({@link XpTable#capped}), which also cleans a save from before XP stopped at the cap. With {@code announce}, a
-     * level-up shows its effects and a raised cap its message; logins update silently. Either way a changed level
-     * recomputes the stats and fires {@code realmforge:level_reached}. A player without a character is left alone: they gain no
-     * XP, and creating the character updates them ({@link CharacterCreation}).
+     * level-up shows its effects and a raised cap its message; commands update silently. Either way a changed level
+     * returns the spent stat points it no longer earns ({@link StatPoints#fit}), recomputes the stats at once and fires
+     * {@code realmforge:level_reached}. A player without a character is left alone: they gain no XP, and creating the
+     * character updates them ({@link CharacterCreation}).
      */
     public static Change update(ServerPlayer player, boolean announce) {
+        return update(player, announce, false);
+    }
+
+    /**
+     * {@link #update}, and on {@code login} silently, leaving the stat recompute to the player's first tick: the gear's
+     * modifiers come back only then, and a recompute without them would rebuild the stat modifiers from lower primary
+     * stats and clamp the health (architecture 8.2, RLM-202).
+     */
+    private static Change update(ServerPlayer player, boolean announce, boolean login) {
         CharacterData data = Characters.data(player);
         if (!data.exists()) {
             int level = Characters.level(player);
@@ -143,10 +156,25 @@ public final class Leveling {
         Change change = new Change(oldLevel, level, oldCap, cap);
         if (level != oldLevel) {
             player.setData(StatsAttachments.LEVEL, new EntityLevel(level));
-            CharacterStats.recompute(player);
+        }
+        // Also with the level unchanged: the curve of stat points may give fewer since the last login.
+        boolean returned = StatPoints.fit(player);
+        if (level != oldLevel || returned) {
+            if (login) {
+                CharacterStats.markDirty(player);
+            } else {
+                CharacterStats.recompute(player);
+            }
+        }
+        if (level != oldLevel) {
             ProgressionTriggers.LEVEL_REACHED.get().trigger(player, level);
             if (announce && change.leveledUp()) {
                 celebrate(player, level);
+                int unspent = StatPoints.unspent(player);
+                if (unspent > 0) {
+                    player.sendSystemMessage(Component.translatable(GeneratedTexts.MESSAGE_STAT_POINTS_UNSPENT, unspent,
+                            Component.keybind(GeneratedTexts.KEY_CHARACTER_SHEET)).withStyle(ChatFormatting.YELLOW));
+                }
                 if (level == cap) {
                     Chapters.next(player).ifPresent(next -> player.sendSystemMessage(Component.translatable(
                             GeneratedTexts.MESSAGE_LEVEL_CAP_REACHED, cap, chapterName(next.value()))));
@@ -194,10 +222,13 @@ public final class Leveling {
                 0.4, 0.8, 0.4, 0.3);
     }
 
-    /** A login brings cap and level up to date silently, and tells the trigger the level, so new criteria catch up. */
+    /**
+     * A login brings cap and level up to date silently, leaving the stat recompute to the first tick, and tells the
+     * trigger the level, so new criteria catch up.
+     */
     private static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            update(player, false);
+            update(player, false, true);
             ProgressionTriggers.LEVEL_REACHED.get().trigger(player, Characters.level(player));
         }
     }

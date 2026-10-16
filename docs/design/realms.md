@@ -66,7 +66,8 @@ for it and later chapters are listed below.
   ([realm portal spec](realm-portal.md#access-and-unlocks)). "Open from level 1" means no level gate, not no gate. The item rule of
   [Opening the next realm](#opening-the-next-realm) (RE-9) starts with the second realm, because the Overworld has
   neither a realm ore nor a boss drop to craft the item from.
-- About 2 stat points and 1 skill point per level; spell limits per chapter as in D4 (RLM-54).
+- 1 stat point (Matěj, 2026-10-15, RLM-196) and about 1 skill point per level; spell limits per chapter as in D4
+  (RLM-54).
 - Each chapter ends in a short main quest chain whose last step opens the next band (PR-1); everything else is
   optional.
 

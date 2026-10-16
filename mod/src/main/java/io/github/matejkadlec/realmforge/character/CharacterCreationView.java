@@ -13,7 +13,7 @@ import net.minecraft.world.item.ItemStack;
 /**
  * What the character creation screen offers (RLM-22; architecture 18: a thin screen draws a view model computed in
  * common code): every race in id order, each with the classes it allows in its own order. Each option carries its
- * name, description and the bonuses it gives at level 1 ("+5 Strength (+1 per Level)"); a class also its resource and
+ * name, description and the bonuses it gives ("+5 Strength"), the same at every level; a class also its resource and
  * starting kit. Built from the synced registries, so the client screen and the GameTests read the same options.
  *
  * @param races the races to choose from; empty only when the data has none
@@ -60,15 +60,13 @@ public record CharacterCreationView(List<RaceOption> races) {
                 List.copyOf(kit));
     }
 
-    /** Each modifier at level 1, with its growth: "+5 Strength (+1 per Level)", or "+1 Dexterity". */
+    /** Each modifier: "+5 Strength", "+1 Dexterity". */
     static List<Component> bonuses(List<CharacterModifier> modifiers) {
         List<Component> lines = new ArrayList<>();
         for (CharacterModifier modifier : modifiers) {
-            Component bonus = Component.translatable(GeneratedTexts.GUI_STAT_BONUS,
+            lines.add(Component.translatable(GeneratedTexts.GUI_STAT_BONUS,
                     CharacterSheetView.signed(modifier.attribute(), modifier.operation(), modifier.amount()),
-                    CharacterSheetView.name(modifier.attribute()));
-            lines.add(modifier.perLevel() == 0 ? bonus : Component.translatable(GeneratedTexts.GUI_STAT_GROWTH, bonus,
-                    CharacterSheetView.signed(modifier.attribute(), modifier.operation(), modifier.perLevel())));
+                    CharacterSheetView.name(modifier.attribute())));
         }
         return List.copyOf(lines);
     }

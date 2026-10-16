@@ -83,14 +83,14 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.spells} from {@code content/texts/gui.yaml}: "Spells" */
     public static final String GUI_SPELLS = "gui.realmforge.spells";
 
+    /** {@code gui.realmforge.spend_stat_point} from {@code content/texts/gui.yaml}: "Spend a point on %1$s" */
+    public static final String GUI_SPEND_STAT_POINT = "gui.realmforge.spend_stat_point";
+
     /** {@code gui.realmforge.starting_kit} from {@code content/texts/gui.yaml}: "Starting Kit" */
     public static final String GUI_STARTING_KIT = "gui.realmforge.starting_kit";
 
     /** {@code gui.realmforge.stat_bonus} from {@code content/texts/gui.yaml}: "%1$s %2$s" */
     public static final String GUI_STAT_BONUS = "gui.realmforge.stat_bonus";
-
-    /** {@code gui.realmforge.stat_growth} from {@code content/texts/gui.yaml}: "%1$s (%2$s per Level)" */
-    public static final String GUI_STAT_GROWTH = "gui.realmforge.stat_growth";
 
     /** {@code gui.realmforge.stat_milestone} from {@code content/texts/gui.yaml}: "At %1$s: %2$s" */
     public static final String GUI_STAT_MILESTONE = "gui.realmforge.stat_milestone";
@@ -116,8 +116,14 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.tab_stats} from {@code content/texts/gui.yaml}: "Stats" */
     public static final String GUI_TAB_STATS = "gui.realmforge.tab_stats";
 
+    /** {@code gui.realmforge.unspent_stat_points} from {@code content/texts/gui.yaml}: "Unspent: %1$s" */
+    public static final String GUI_UNSPENT_STAT_POINTS = "gui.realmforge.unspent_stat_points";
+
     /** {@code gui.realmforge.xp_bar_level} from {@code content/texts/gui.yaml}: "Lv. %1$s" */
     public static final String GUI_XP_BAR_LEVEL = "gui.realmforge.xp_bar_level";
+
+    /** {@code item_use.realmforge.unlearn_stat_points} from {@code content/texts/item_use.yaml}: "Use: Unlearn every stat point you spent, to spend them again" */
+    public static final String ITEM_USE_UNLEARN_STAT_POINTS = "item_use.realmforge.unlearn_stat_points";
 
     /** {@code key.realmforge.character_sheet} from {@code content/texts/key.yaml}: "Character Sheet" */
     public static final String KEY_CHARACTER_SHEET = "key.realmforge.character_sheet";
@@ -145,6 +151,18 @@ public final class GeneratedTexts {
 
     /** {@code message.realmforge.level_up_subtitle} from {@code content/texts/message.yaml}: "You are now level %1$s" */
     public static final String MESSAGE_LEVEL_UP_SUBTITLE = "message.realmforge.level_up_subtitle";
+
+    /** {@code message.realmforge.stat_points_none_spent} from {@code content/texts/message.yaml}: "You have no spent stat points to unlearn." */
+    public static final String MESSAGE_STAT_POINTS_NONE_SPENT = "message.realmforge.stat_points_none_spent";
+
+    /** {@code message.realmforge.stat_points_returned} from {@code content/texts/message.yaml}: "Your level fell, so your stat points are unspent again. Unspent stat points: %1$s." */
+    public static final String MESSAGE_STAT_POINTS_RETURNED = "message.realmforge.stat_points_returned";
+
+    /** {@code message.realmforge.stat_points_unlearned} from {@code content/texts/message.yaml}: "Your stat points are unspent again. Unspent stat points: %1$s." */
+    public static final String MESSAGE_STAT_POINTS_UNLEARNED = "message.realmforge.stat_points_unlearned";
+
+    /** {@code message.realmforge.stat_points_unspent} from {@code content/texts/message.yaml}: "Unspent stat points: %1$s. Press %2$s to spend them on your character sheet." */
+    public static final String MESSAGE_STAT_POINTS_UNSPENT = "message.realmforge.stat_points_unspent";
 
     /** {@code message.realmforge.xp_gained} from {@code content/texts/message.yaml}: "+%1$s XP" */
     public static final String MESSAGE_XP_GAINED = "message.realmforge.xp_gained";

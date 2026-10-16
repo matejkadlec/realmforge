@@ -62,6 +62,11 @@ public final class GeneratedCurveExpectations {
                     List.of(new Point(1, 1.0), new Point(5, 1.4), new Point(10, 2.0), new Point(20, 3.5), new Point(60, 12.0)),
                     List.of(new Sample(0.0, 1.0), new Sample(1.0, 1.0), new Sample(3.0, 1.2), new Sample(5.0, 1.4), new Sample(7.5, 1.7), new Sample(10.0, 2.0), new Sample(15.0, 2.75), new Sample(20.0, 3.5), new Sample(40.0, 7.75), new Sample(60.0, 12.0), new Sample(61.0, 12.0))),
             new CurveExpectation(
+                    "realmforge:stat_points_per_level",
+                    Optional.of("curve.realmforge.stat_points_per_level.name"),
+                    List.of(new Point(2, 1.0)),
+                    List.of(new Sample(1.0, 1.0), new Sample(2.0, 1.0), new Sample(3.0, 1.0))),
+            new CurveExpectation(
                     "realmforge:test_curve",
                     Optional.of("curve.realmforge.test_curve.name"),
                     List.of(new Point(1, 0.0), new Point(10, 450.0), new Point(20, 1200.5)),

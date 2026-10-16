@@ -10,8 +10,11 @@ import java.util.List;
  * check that the game's leveling agrees.
  */
 public final class GeneratedLevelingExpectations {
-    /** The XP from a level to the next, and the total XP a player needs for the level. */
-    public record LevelXp(int level, long toNext, long toReach) {
+    /**
+     * The XP from a level to the next, the total XP a player needs for the level, and the primary stat points
+     * a player of the level has earned.
+     */
+    public record LevelXp(int level, long toNext, long toReach, int statPoints) {
     }
 
     /** The level of a player with this much XP under this level cap, and the XP the cap lets them hold. */
@@ -26,37 +29,37 @@ public final class GeneratedLevelingExpectations {
     }
 
     public static final List<LevelXp> LEVELS = List.of(
-            new LevelXp(1, 1500L, 0L),
-            new LevelXp(2, 1770L, 1500L),
-            new LevelXp(3, 2060L, 3270L),
-            new LevelXp(4, 2390L, 5330L),
-            new LevelXp(5, 2750L, 7720L),
-            new LevelXp(6, 3160L, 10470L),
-            new LevelXp(7, 3600L, 13630L),
-            new LevelXp(8, 4090L, 17230L),
-            new LevelXp(9, 4640L, 21320L),
-            new LevelXp(10, 5240L, 25960L),
-            new LevelXp(11, 5790L, 31200L),
-            new LevelXp(12, 6380L, 36990L),
-            new LevelXp(13, 7020L, 43370L),
-            new LevelXp(14, 7710L, 50390L),
-            new LevelXp(15, 8450L, 58100L),
-            new LevelXp(16, 9240L, 66550L),
-            new LevelXp(17, 10100L, 75790L),
-            new LevelXp(18, 11000L, 85890L),
-            new LevelXp(19, 11800L, 96890L),
-            new LevelXp(20, 12650L, 108690L),
-            new LevelXp(21, 13550L, 121340L),
-            new LevelXp(22, 14500L, 134890L),
-            new LevelXp(23, 15500L, 149390L),
-            new LevelXp(24, 16550L, 164890L),
-            new LevelXp(25, 17600L, 181440L),
-            new LevelXp(26, 18800L, 199040L),
-            new LevelXp(27, 20000L, 217840L),
-            new LevelXp(28, 21250L, 237840L),
-            new LevelXp(29, 22600L, 259090L),
-            new LevelXp(30, 24000L, 281690L),
-            new LevelXp(31, 25350L, 305690L));
+            new LevelXp(1, 1500L, 0L, 0),
+            new LevelXp(2, 1770L, 1500L, 1),
+            new LevelXp(3, 2060L, 3270L, 2),
+            new LevelXp(4, 2390L, 5330L, 3),
+            new LevelXp(5, 2750L, 7720L, 4),
+            new LevelXp(6, 3160L, 10470L, 5),
+            new LevelXp(7, 3600L, 13630L, 6),
+            new LevelXp(8, 4090L, 17230L, 7),
+            new LevelXp(9, 4640L, 21320L, 8),
+            new LevelXp(10, 5240L, 25960L, 9),
+            new LevelXp(11, 5790L, 31200L, 10),
+            new LevelXp(12, 6380L, 36990L, 11),
+            new LevelXp(13, 7020L, 43370L, 12),
+            new LevelXp(14, 7710L, 50390L, 13),
+            new LevelXp(15, 8450L, 58100L, 14),
+            new LevelXp(16, 9240L, 66550L, 15),
+            new LevelXp(17, 10100L, 75790L, 16),
+            new LevelXp(18, 11000L, 85890L, 17),
+            new LevelXp(19, 11800L, 96890L, 18),
+            new LevelXp(20, 12650L, 108690L, 19),
+            new LevelXp(21, 13550L, 121340L, 20),
+            new LevelXp(22, 14500L, 134890L, 21),
+            new LevelXp(23, 15500L, 149390L, 22),
+            new LevelXp(24, 16550L, 164890L, 23),
+            new LevelXp(25, 17600L, 181440L, 24),
+            new LevelXp(26, 18800L, 199040L, 25),
+            new LevelXp(27, 20000L, 217840L, 26),
+            new LevelXp(28, 21250L, 237840L, 27),
+            new LevelXp(29, 22600L, 259090L, 28),
+            new LevelXp(30, 24000L, 281690L, 29),
+            new LevelXp(31, 25350L, 305690L, 30));
 
     public static final List<LevelSample> LEVEL_SAMPLES = List.of(
             new LevelSample(0L, 10, 1, 0L),

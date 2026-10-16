@@ -59,6 +59,7 @@ public final class QaGameTests {
             QaCastGameTests.class,
             QaCommandGameTests.class,
             SpellGameTests.class,
+            StatPointsGameTests.class,
             StatsGameTests.class,
             WorldRulesGameTests.class);
 

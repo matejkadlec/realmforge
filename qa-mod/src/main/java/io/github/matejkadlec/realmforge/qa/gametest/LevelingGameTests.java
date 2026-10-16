@@ -30,7 +30,9 @@ import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectatio
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectations.LevelSample;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectations.LevelXp;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedRaceExpectations;
+import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatBonus;
+import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import java.util.UUID;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.CommandSourceStack;
@@ -44,6 +46,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.animal.pig.Pig;
@@ -56,8 +59,8 @@ import net.minecraft.world.phys.Vec3;
  * C2 (RLM-23): leveling in the game (architecture 10.2). The XP table, kill XP and level caps match the pipeline's
  * expectations; XP stops at the level cap, and granting the chapter advancement raises the cap; hostile kills
  * give XP by the victim's level and its kill XP multiplier; players without a character gain none;
- * {@code realmforge:level_reached} completes advancements; {@code /realmforge xp} and {@code /qa level} work. Players
- * log in through {@link QaPlayers#login}.
+ * {@code realmforge:level_reached} completes advancements; {@code /realmforge xp} and {@code /qa level} work; a login
+ * leaves the stat recompute to the first tick (RLM-202). Players log in through {@link QaPlayers#login}.
  */
 public final class LevelingGameTests {
     /** {@code data/realmforge_qa/advancement/test/level_5.json}: done once the character reaches level 5. */
@@ -291,23 +294,64 @@ public final class LevelingGameTests {
         helper.succeed();
     }
 
+    /**
+     * RLM-202 (architecture 8.2): a login whose saved level no longer matches the XP (a content update changed the XP
+     * curve or a chapter's cap) brings the level up to date but leaves the stat recompute to the first tick, when the
+     * gear's modifiers are back. Recomputing at the login would rebuild the stat rules' modifiers from Vitality without
+     * the gear, lower the max health and clamp the health, which the later recompute does not give back.
+     */
+    @QaGameTest
+    public static void aLoginWhoseLevelChangedLeavesTheRecomputeToTheFirstTick(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-lvl-relog");
+        ServerPlayer first = QaPlayers.login(server, profile);
+        createCharacter(helper, first);
+        StatsGameTests.tick(first, 1);
+        double vitality = first.getAttributeValue(GeneratedStats.VITALITY);
+        first.setItemSlot(EquipmentSlot.MAINHAND, StatsGameTests.stick(GeneratedStats.VITALITY, 20));
+        StatsGameTests.tick(first, 1);
+        helper.assertValueEqual(first.getAttributeValue(GeneratedStats.VITALITY), vitality + 20, "Vitality from gear");
+        float max = first.getMaxHealth();
+        first.setHealth(max);
+        // A saved level the XP no longer gives: the character has level 1's XP.
+        first.setData(StatsAttachments.LEVEL, new EntityLevel(3));
+        server.getPlayerList().remove(first);
+
+        ServerPlayer again = QaPlayers.login(server, profile);
+        helper.assertValueEqual(Characters.level(again), 1, "the login brought the level down to what the XP gives");
+        helper.assertValueEqual(again.getAttributeValue(GeneratedStats.VITALITY), vitality,
+                "the gear's Vitality waits for the first tick");
+        helper.assertValueEqual(again.getMaxHealth(), max, "the saved max health, computed with the gear, stands");
+        StatsGameTests.tick(again, 1);
+        helper.assertValueEqual(again.getAttributeValue(GeneratedStats.VITALITY), vitality + 20,
+                "the gear's Vitality after the first tick");
+        helper.assertValueEqual(again.getMaxHealth(), max, "the first tick's recompute, with the gear, keeps it");
+        helper.assertValueEqual(again.getHealth(), max, "and the health was never clamped");
+        server.getPlayerList().remove(again);
+        helper.succeed();
+    }
+
     /** A player who logs in, at the platform's middle, and creates a character of the first race and its first class. */
     private static ServerPlayer loginWithCharacter(GameTestHelper helper, String name) {
         ServerPlayer player = QaPlayers.login(helper.getLevel().getServer(), new GameProfile(UUID.randomUUID(), name));
+        createCharacter(helper, player);
+        return player;
+    }
+
+    /** Moves the player to the platform's middle and creates a character of the first race and its first class. */
+    private static void createCharacter(GameTestHelper helper, ServerPlayer player) {
         player.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
         var race = GeneratedRaceExpectations.RACES.getFirst();
         Result result = CharacterCreation.create(player,
                 ResourceKey.create(CharacterRegistries.RACE, Identifier.parse(race.id())),
                 ResourceKey.create(CharacterRegistries.CLASS, Identifier.parse(race.classes().getFirst())));
         helper.assertValueEqual(result, Result.CREATED, "character creation");
-        return player;
     }
 
-    /** The class and race modifiers on the player are the ones their current level gives. */
+    /** The class and race modifiers on the player are the ones they give, the same at every level. */
     private static void assertClassBonusesAtLevel(GameTestHelper helper, ServerPlayer player) {
         helper.assertFalse(GeneratedClassExpectations.CLASSES.isEmpty(), "classes exist");
-        for (StatBonus bonus : CharacterBonuses.of(Characters.data(player), Characters.level(player),
-                player.registryAccess())) {
+        for (StatBonus bonus : CharacterBonuses.of(Characters.data(player), player.registryAccess())) {
             AttributeInstance instance = player.getAttribute(bonus.attribute());
             helper.assertTrue(instance != null && instance.getModifier(bonus.modifier().id()) != null,
                     "modifier " + bonus.modifier().id() + " at level " + Characters.level(player));

@@ -55,6 +55,7 @@ def test_repository_curves_are_valid() -> None:
         "mob_armor",
         "mob_damage",
         "mob_health",
+        "stat_points_per_level",
         "test_curve",
         "xp_to_next_level",
     ]
@@ -141,8 +142,8 @@ def test_curve_outputs(repo: RepoPaths) -> None:
     assert 'public static final ResourceKey<Curve> TEST_CURVE = key("test_curve");' in keys
     assert (
         "public static final List<ResourceKey<Curve>> ALL = List.of(ARMOR_HALVING, ARMOR_REDUCTION_CAP, KILL_XP, "
-        "KILL_XP_ABOVE_PLAYER, KILL_XP_BELOW_PLAYER, MOB_ARMOR, MOB_DAMAGE, MOB_HEALTH, TEST_CURVE, XP_TO_NEXT_LEVEL);"
-        in keys
+        "KILL_XP_ABOVE_PLAYER, KILL_XP_BELOW_PLAYER, MOB_ARMOR, MOB_DAMAGE, MOB_HEALTH, STAT_POINTS_PER_LEVEL, "
+        "TEST_CURVE, XP_TO_NEXT_LEVEL);" in keys
     )
 
     expectations = files[CURVE_EXPECTATIONS].decode()

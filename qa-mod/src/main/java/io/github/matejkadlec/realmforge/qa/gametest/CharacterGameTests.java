@@ -89,7 +89,7 @@ public final class CharacterGameTests {
         helper.assertValueEqual(character.race().orElseThrow().identifier().toString(), race.id(), "race");
         helper.assertValueEqual(character.classes().stream().map(key -> key.identifier().toString()).toList(),
                 List.of(playerClass.id()), "classes");
-        assertStatsAtLevel(helper, player, race, playerClass, EntityLevel.MIN);
+        assertStats(helper, player, race, playerClass);
         helper.assertValueEqual(player.getHealth(), player.getMaxHealth(), "health refilled to the new maximum");
         for (KitItem item : playerClass.startingKit()) {
             helper.assertValueEqual(count(player, item(item.item())), item.count(), "starting kit: " + item.item());
@@ -145,20 +145,19 @@ public final class CharacterGameTests {
         helper.succeed();
     }
 
-    /** Class modifiers grow with the level: a level change recomputes them at the next check. */
+    /** Race and class modifiers stay the same when the level changes (RLM-196: levels give stat points instead). */
     @QaGameTest
-    public static void classBonusesFollowTheLevel(GameTestHelper helper) {
+    public static void classBonusesStayAtEveryLevel(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         ServerPlayer player = login(helper, "qa-char-level");
         RaceExpectation race = firstRace();
         ClassExpectation playerClass = firstClass();
         helper.assertValueEqual(create(player, race.id(), playerClass.id()), Result.CREATED, "creation");
-        int level = playerClass.samples().getLast().level();
-        player.setData(StatsAttachments.LEVEL, new EntityLevel(level));
+        player.setData(StatsAttachments.LEVEL, new EntityLevel(10));
         for (int tick = 0; tick < CharacterStats.CHECK_INTERVAL; tick++) {
             player.doTick();
         }
-        assertStatsAtLevel(helper, player, race, playerClass, level);
+        assertStats(helper, player, race, playerClass);
         server.getPlayerList().remove(player);
         helper.succeed();
     }
@@ -282,15 +281,14 @@ public final class CharacterGameTests {
         helper.succeed();
     }
 
-    /** The race and class modifiers on the player add up to what the pipeline computes for them at the level. */
-    private static void assertStatsAtLevel(GameTestHelper helper, ServerPlayer player, RaceExpectation race,
-            ClassExpectation playerClass, int level) {
+    /** The race and class modifiers on the player add up to what the pipeline computes for them, at any level. */
+    private static void assertStats(GameTestHelper helper, ServerPlayer player, RaceExpectation race,
+            ClassExpectation playerClass) {
         Map<String, Double> expected = new HashMap<>();
-        race.samples().stream().filter(sample -> sample.level() == level).findFirst().orElseThrow().bonuses()
-                .forEach(bonus -> expected.merge(bonus.attribute(), bonus.amount(), Double::sum));
-        playerClass.samples().stream().filter(sample -> sample.level() == level).findFirst().orElseThrow().bonuses()
-                .forEach(bonus -> expected.merge(bonus.attribute(), bonus.amount(), Double::sum));
-        helper.assertFalse(expected.isEmpty(), "race and class give something at level " + level);
+        race.bonuses().forEach(bonus -> expected.merge(bonus.attribute(), bonus.amount(), Double::sum));
+        playerClass.bonuses().forEach(bonus -> expected.merge(bonus.attribute(), bonus.amount(), Double::sum));
+        helper.assertFalse(expected.isEmpty(), "race and class give something");
+        int level = Characters.level(player);
         for (Map.Entry<String, Double> stat : expected.entrySet()) {
             double got = characterTotal(player, ContentStatGameTests.attribute(stat.getKey()));
             helper.assertTrue(ContentStatGameTests.close(got, stat.getValue()),

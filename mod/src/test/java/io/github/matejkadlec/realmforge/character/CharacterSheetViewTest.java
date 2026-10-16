@@ -3,6 +3,11 @@ package io.github.matejkadlec.realmforge.character;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
+import io.github.matejkadlec.realmforge.stats.StatRule;
+import java.util.List;
+import java.util.Optional;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import org.junit.jupiter.api.Test;
@@ -55,5 +60,41 @@ class CharacterSheetViewTest {
                 "adding to a share is a share, rounded to a whole percent");
         assertEquals("-5%", CharacterSheetView.signed(Attributes.MOVEMENT_SPEED, Operation.ADD_MULTIPLIED_BASE, -0.05));
         assertEquals("-2", CharacterSheetView.signed(Attributes.ARMOR, Operation.ADD_VALUE, -2));
+    }
+
+    /** RLM-196: what one point gives reads with one decimal, so Dexterity's 0.1% crit chance does not read 0%. */
+    @Test
+    void aPointsGainReadsWithOneDecimal() {
+        assertEquals("+0.1%", CharacterSheetView.gain(GeneratedStats.CRIT_CHANCE, Operation.ADD_VALUE, 0.001));
+        assertEquals("+0.5%", CharacterSheetView.gain(Attributes.ATTACK_SPEED, Operation.ADD_MULTIPLIED_BASE, 0.005));
+        assertEquals("+1%", CharacterSheetView.gain(Attributes.ATTACK_DAMAGE, Operation.ADD_MULTIPLIED_BASE, 0.01));
+        assertEquals("+1", CharacterSheetView.gain(Attributes.MAX_HEALTH, Operation.ADD_VALUE, 1));
+        assertEquals("-0.2", CharacterSheetView.gain(Attributes.ARMOR, Operation.ADD_VALUE, -0.2));
+    }
+
+    /**
+     * RLM-196: the {@code +}'s tooltip lists what the next point gives: each per-point bonus that still grows, then the
+     * bonuses of a milestone it reaches.
+     */
+    @Test
+    void gainsAreWhatTheNextPointGives() {
+        StatRule rule = new StatRule(Attributes.LUCK, List.of(
+                new StatRule.PerPoint(new StatRule.Modifier(Attributes.ATTACK_DAMAGE, Operation.ADD_MULTIPLIED_BASE,
+                        0.01), Optional.empty()),
+                new StatRule.PerPoint(new StatRule.Modifier(Attributes.MOVEMENT_SPEED, Operation.ADD_MULTIPLIED_BASE,
+                        0.002), Optional.of(0.2))),
+                List.of(new StatRule.Milestone(25, List.of(
+                        new StatRule.Modifier(Attributes.ARMOR, Operation.ADD_VALUE, 2.0)))));
+        assertEquals(List.of("+1%", "+0.2%"), amounts(CharacterSheetView.gains(List.of(rule), 3)));
+        assertEquals(List.of("+1%", "+0.2%", "+2"), amounts(CharacterSheetView.gains(List.of(rule), 24)),
+                "the 25th point reaches the milestone");
+        assertEquals(List.of("+1%"), amounts(CharacterSheetView.gains(List.of(rule), 100)),
+                "movement speed is at its cap");
+        assertEquals(List.of(), amounts(CharacterSheetView.gains(List.of(), 3)), "a stat without a rule gives nothing");
+    }
+
+    /** The amount of each "+1% Attack Damage" line: its translation's first argument. */
+    private static List<String> amounts(List<Component> gains) {
+        return gains.stream().map(gain -> (String) ((TranslatableContents) gain.getContents()).getArgs()[0]).toList();
     }
 }

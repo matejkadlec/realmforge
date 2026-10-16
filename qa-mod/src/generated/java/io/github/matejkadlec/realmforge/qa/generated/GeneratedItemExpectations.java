@@ -7,8 +7,12 @@ import java.util.List;
 
 /** What {@code content/items/} says about every item, so GameTests can check that the game agrees. */
 public final class GeneratedItemExpectations {
-    /** Expected state of one item. Ids are full resource locations, e.g. {@code realmforge:test_item}. */
-    public record ItemExpectation(String id, String translationKey, int maxStackSize, List<String> creativeTabs) {
+    /**
+     * Expected state of one item. Ids are full resource locations, e.g. {@code realmforge:test_item}; the use
+     * tag is the item tag of its use, empty for an item without one.
+     */
+    public record ItemExpectation(String id, String translationKey, int maxStackSize, List<String> creativeTabs,
+            String useTag) {
     }
 
     public static final List<ItemExpectation> ITEMS = List.of(
@@ -16,32 +20,44 @@ public final class GeneratedItemExpectations {
                     "realmforge:apprentice_boots",
                     "item.realmforge.apprentice_boots",
                     1,
-                    List.of("minecraft:combat")),
+                    List.of("minecraft:combat"),
+                    ""),
             new ItemExpectation(
                     "realmforge:apprentice_hat",
                     "item.realmforge.apprentice_hat",
                     1,
-                    List.of("minecraft:combat")),
+                    List.of("minecraft:combat"),
+                    ""),
             new ItemExpectation(
                     "realmforge:apprentice_pants",
                     "item.realmforge.apprentice_pants",
                     1,
-                    List.of("minecraft:combat")),
+                    List.of("minecraft:combat"),
+                    ""),
             new ItemExpectation(
                     "realmforge:apprentice_robes",
                     "item.realmforge.apprentice_robes",
                     1,
-                    List.of("minecraft:combat")),
+                    List.of("minecraft:combat"),
+                    ""),
+            new ItemExpectation(
+                    "realmforge:oblivion_scroll",
+                    "item.realmforge.oblivion_scroll",
+                    16,
+                    List.of("minecraft:tools_and_utilities"),
+                    "realmforge:use/unlearn_stat_points"),
             new ItemExpectation(
                     "realmforge:stone_wand",
                     "item.realmforge.stone_wand",
                     1,
-                    List.of("minecraft:combat")),
+                    List.of("minecraft:combat"),
+                    ""),
             new ItemExpectation(
                     "realmforge:test_item",
                     "item.realmforge.test_item",
                     16,
-                    List.of("minecraft:ingredients")));
+                    List.of("minecraft:ingredients"),
+                    ""));
 
     private GeneratedItemExpectations() {
     }
