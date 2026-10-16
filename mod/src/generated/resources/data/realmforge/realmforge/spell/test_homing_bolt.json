@@ -1,0 +1,29 @@
+{
+  "school": "realmforge:frost",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:enemy",
+    "range": 16.0
+  },
+  "cast": {
+    "castable_while_moving": true,
+    "lock_on": true,
+    "type": "cast_time",
+    "duration_ticks": 20
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 20,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "effects": [
+    {
+      "amount": 4.0,
+      "per_level": 0,
+      "type": "realmforge:damage"
+    }
+  ]
+}

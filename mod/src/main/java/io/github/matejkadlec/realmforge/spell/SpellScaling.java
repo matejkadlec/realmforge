@@ -11,6 +11,8 @@ import net.minecraft.util.Mth;
  *   amount. A magic spell's damage gets spell power and the school's power in the damage pipeline (architecture 9.1);
  *   its heals get the same factor here: × (1 + spell power + the school's power).</li>
  *   <li><b>Cooldowns:</b> Cooldown Reduction shortens a spell's own cooldown, never the global cooldown.</li>
+ *   <li><b>Cast times:</b> Cast Time Reduction shortens a cast time, and a channel's interval, so the channel keeps its
+ *   number of ticks.</li>
  *   <li><b>Resource pools:</b> every second a pool regains its regeneration, within 0 and its maximum.</li>
  * </ul>
  */
@@ -54,6 +56,18 @@ public final class SpellScaling {
             return 0;
         }
         return (int) Math.round(ticks * (1 - Mth.clamp(cooldownReduction, 0, 1)));
+    }
+
+    /**
+     * A cast time or a channel's interval after Cast Time Reduction, in whole ticks: {@code ticks} × (1 − reduction),
+     * rounded to the nearest tick and at least one. The reduction counts between 0 and 1; its stat caps it at 75 %
+     * ({@code content/stats/}). A channel's duration is its shortened interval times its tick count.
+     */
+    public static int castTicks(int ticks, double castTimeReduction) {
+        if (ticks < 1) {
+            throw new IllegalArgumentException("A cast time lasts a tick or more: " + ticks);
+        }
+        return Math.max(1, (int) Math.round(ticks * (1 - Mth.clamp(castTimeReduction, 0, 1))));
     }
 
     /**

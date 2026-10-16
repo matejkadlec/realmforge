@@ -1,4 +1,4 @@
-"""Spells (content/spells/): validation and generation (architecture 6.4, 11; C3a-1, RLM-209)."""
+"""Spells (content/spells/): validation and generation (architecture 6.4, 11; C3a-1, RLM-209; C3a-2, RLM-210)."""
 
 from __future__ import annotations
 
@@ -69,7 +69,16 @@ def spell_model(**fields: object) -> SpellDef:
 def test_repository_spells_are_the_engine_tests() -> None:
     content, universe = load_and_validate(RepoPaths())
     ids = {entry.model.id for entry in content.spells}
-    assert ids == {"test_bolt", "test_mend", "test_npc_bolt", "test_strike", "test_sure_crit"}
+    assert ids == {
+        "test_bolt",
+        "test_drain",
+        "test_homing_bolt",
+        "test_mend",
+        "test_npc_bolt",
+        "test_slow_bolt",
+        "test_strike",
+        "test_sure_crit",
+    }
     assert universe.contains("realmforge:spell", "realmforge:test_bolt")
 
 
@@ -95,7 +104,25 @@ def test_repository_spells_are_the_engine_tests() -> None:
         ({"targeting": {"type": "realmforge:enemy", "range": 200}}, "less than or equal to 128"),
         ({"targeting": {"type": "realmforge:enemy", "range": 0}}, "greater than 0"),
         ({"targeting": {"type": "realmforge:self", "range": 5}}, "Extra inputs are not permitted"),
-        ({"cast": {"type": "channel"}}, "Input should be 'instant'"),
+        ({"cast": {"type": "charge"}}, "does not match any of the expected tags"),
+        ({"cast": {"type": "instant", "lock_on": True}}, "Extra inputs are not permitted"),
+        ({"cast": {"type": "cast_time"}}, "duration_seconds\n  Field required"),
+        ({"cast": {"type": "cast_time", "duration_seconds": 0}}, "a cast time of 0 is an instant cast"),
+        ({"cast": {"type": "cast_time", "duration_seconds": 1.01}}, "not a whole number of game ticks"),
+        ({"cast": {"type": "cast_time", "duration_seconds": 2, "interval_seconds": 1}}, "Extra inputs"),
+        ({"cast": {"type": "channel", "duration_seconds": 3}}, "interval_seconds\n  Field required"),
+        (
+            {"cast": {"type": "channel", "duration_seconds": 3, "interval_seconds": 0}},
+            "ticks after an interval of more than 0",
+        ),
+        (
+            {"cast": {"type": "channel", "duration_seconds": 3, "interval_seconds": 2}},
+            "duration_seconds 3.0 is not a whole number of intervals of 2.0 s",
+        ),
+        (
+            {"cast": {"type": "channel", "duration_seconds": 0, "interval_seconds": 1}},
+            "duration_seconds 0.0 is not a whole number of intervals",
+        ),
         ({"cooldown_seconds": 0.01}, "not a whole number of game ticks"),
         ({"max_level": 0}, "greater than or equal to 1"),
         ({"crit": {"can_crit": False, "multiplier_percent": 200}}, "a spell that cannot crit takes no"),
@@ -119,6 +146,15 @@ def test_per_level_values_grow_from_level_one() -> None:
     assert [model.effects[0].amount_at(level) for level in (1, 2, 3)] == [6, 8, 10]
     assert model.cost is not None
     assert model.cost.amount_at(3) == 20
+
+
+def test_timed_casts() -> None:
+    cast_time = spell_model(cast={"type": "cast_time", "duration_seconds": 2.5}).cast
+    assert (cast_time.type, cast_time.castable_while_moving, cast_time.lock_on) == ("cast_time", False, False)
+    channel = spell_model(
+        cast={"type": "channel", "duration_seconds": 3, "interval_seconds": 0.5, "lock_on": True}
+    ).cast
+    assert (channel.type, channel.interval_seconds, channel.lock_on) == ("channel", 0.5, True)
 
 
 def test_defaults() -> None:
@@ -251,6 +287,29 @@ def test_spell_data_is_in_game_units(repo: RepoPaths) -> None:
     }
 
 
+def test_timed_casts_are_in_ticks(repo: RepoPaths) -> None:
+    files = generate(repo)
+    assert json.loads(files[f"{SPELL_DATA}/test_slow_bolt.json"])["cast"] == {
+        "castable_while_moving": False,
+        "lock_on": False,
+        "type": "cast_time",
+        "duration_ticks": 40,
+    }
+    assert json.loads(files[f"{SPELL_DATA}/test_drain.json"])["cast"] == {
+        "castable_while_moving": False,
+        "lock_on": False,
+        "type": "channel",
+        "duration_ticks": 60,
+        "interval_ticks": 20,
+    }
+    assert json.loads(files[f"{SPELL_DATA}/test_homing_bolt.json"])["cast"] == {
+        "castable_while_moving": True,
+        "lock_on": True,
+        "type": "cast_time",
+        "duration_ticks": 20,
+    }
+
+
 def test_attack_damage_is_a_fraction(repo: RepoPaths) -> None:
     effect = json.loads(generate(repo)[f"{SPELL_DATA}/test_strike.json"])["effects"][0]
     assert effect == {"amount": 2.0, "per_level": 0, "type": "realmforge:damage", "attack_damage": 1.0}
@@ -265,7 +324,10 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
     files = generate(repo)
     keys = files[KEYS_JAVA].decode()
     assert 'public static final ResourceKey<Spell> TEST_BOLT = key("test_bolt");' in keys
-    assert "ALL = List.of(TEST_BOLT, TEST_MEND, TEST_NPC_BOLT, TEST_STRIKE, TEST_SURE_CRIT);" in keys
+    assert (
+        "ALL = List.of(TEST_BOLT, TEST_DRAIN, TEST_HOMING_BOLT, TEST_MEND, TEST_NPC_BOLT, TEST_SLOW_BOLT, TEST_STRIKE, "
+        "TEST_SURE_CRIT);"
+    ) in keys
     expectations = files[EXPECTATIONS].decode()
     assert (
         "            new SpellExpectation(\n"
@@ -275,6 +337,10 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         '                    "realmforge:enemy",\n'
         "                    16.0,\n"
         '                    "instant",\n'
+        "                    0,\n"
+        "                    0,\n"
+        "                    false,\n"
+        "                    false,\n"
         '                    Optional.of("realmforge:mana"),\n'
         "                    10.0,\n"
         "                    5.0,\n"
@@ -290,3 +356,13 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
     ) in expectations
     assert 'new EffectExpectation("realmforge:damage", 2.0, 0.0, 1.0)' in expectations
     assert "Optional.of(2.0),\n                    1.0," in expectations
+    channel = expectations[expectations.index('"realmforge:test_drain"') :]
+    assert (
+        '"channel",\n                    60,\n                    20,\n                    false,\n'
+        in channel
+    )
+    homing = expectations[expectations.index('"realmforge:test_homing_bolt"') :]
+    assert (
+        '"cast_time",\n                    20,\n                    0,\n                    true,\n                    true,\n'
+        in (homing)
+    )

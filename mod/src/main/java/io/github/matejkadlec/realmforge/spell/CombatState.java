@@ -15,7 +15,7 @@ import net.minecraft.resources.ResourceKey;
 
 /**
  * The value of the {@code realmforge:combat} attachment on players and on mobs that cast (architecture 7 and 11): the
- * resource pools (mana, rage), the cooldowns and the current cast.
+ * resource pools (mana, rage), the cooldowns, the current cast, and whether a cast set Better Combat's disable tag.
  *
  * <p>Unlike the other attachment values it is mutable, because it changes too often to replace and sync on every
  * change: the owner mutates it in place and calls {@code syncData} at most a few times per second or on important
@@ -23,20 +23,28 @@ import net.minecraft.resources.ResourceKey;
  * without per-tick updates. The current cast is transient: {@link #CODEC} leaves it out, so neither relogging nor the
  * copy on death (which round-trips the saved codec) brings it back; only the client sync carries it.
  *
+ * <p>Better Combat's tag {@value #BETTER_COMBAT_DISABLED_TAG} is saved with the player, so the flag that a cast set it
+ * is saved too: an operator's own tag survives a cast, and a login removes a tag a crash left behind (ADR 0020,
+ * architecture 9.2; {@link Casting}).
+ *
  * <p>Each resource type has its own pool, absent until {@link Resources} first fills it, so {@code spell} needs no
  * knowledge of the holder's class: a pool's maximum comes from its type (mana: Max Mana).
  */
 public final class CombatState {
-    /** The saved shape: resource pools and cooldowns, never the current cast. */
+    /** Better Combat's entity tag that stops its swings for one player ({@code CombatFlags.DISABLED_TAG}). */
+    public static final String BETTER_COMBAT_DISABLED_TAG = "bettercombat_disabled";
+
+    /** The saved shape: resource pools, cooldowns and the Better Combat flag, never the current cast. */
     public static final Codec<CombatState> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.unboundedMap(ResourceKey.codec(SpellRegistries.RESOURCE_TYPE), Codecs.NON_NEGATIVE_FLOAT)
                     .optionalFieldOf("resources", Map.of()).forGetter(CombatState::resources),
             Codec.unboundedMap(ResourceKey.codec(SpellRegistries.SPELL), Codecs.NON_NEGATIVE_LONG)
                     .optionalFieldOf("cooldowns", Map.of()).forGetter(CombatState::cooldowns),
             Codecs.NON_NEGATIVE_LONG.optionalFieldOf("global_cooldown_end", 0L)
-                    .forGetter(CombatState::globalCooldownEnd)
-    ).apply(instance, (resources, cooldowns, globalCooldownEnd) ->
-            new CombatState(resources, cooldowns, globalCooldownEnd, null)));
+                    .forGetter(CombatState::globalCooldownEnd),
+            Codec.BOOL.optionalFieldOf("set_better_combat_tag", false).forGetter(CombatState::setBetterCombatTag)
+    ).apply(instance, (resources, cooldowns, globalCooldownEnd, setBetterCombatTag) ->
+            new CombatState(resources, cooldowns, globalCooldownEnd, null, setBetterCombatTag)));
 
     /** The synced shape: everything, the current cast included, for the owner's own cast bar and cooldowns. */
     public static final StreamCodec<ByteBuf, CombatState> STREAM_CODEC = StreamCodec.composite(
@@ -47,28 +55,31 @@ public final class CombatState {
                     ResourceKey.streamCodec(SpellRegistries.SPELL), ByteBufCodecs.VAR_LONG), CombatState::cooldowns,
             ByteBufCodecs.VAR_LONG, CombatState::globalCooldownEnd,
             ByteBufCodecs.optional(Cast.STREAM_CODEC), CombatState::currentCast,
-            (resources, cooldowns, globalCooldownEnd, cast) ->
-                    new CombatState(resources, cooldowns, globalCooldownEnd, cast.orElse(null)));
+            ByteBufCodecs.BOOL, CombatState::setBetterCombatTag,
+            (resources, cooldowns, globalCooldownEnd, cast, setBetterCombatTag) ->
+                    new CombatState(resources, cooldowns, globalCooldownEnd, cast.orElse(null), setBetterCombatTag));
 
     private final Map<ResourceKey<ResourceType>, Float> resources;
     private final Map<ResourceKey<Spell>, Long> cooldowns;
     private long globalCooldownEnd;
     @Nullable
     private Cast currentCast;
+    private boolean setBetterCombatTag;
 
     /** A fresh state: no resource pools, no cooldowns, not casting. Each holder gets its own instance. */
     public CombatState() {
-        this(Map.of(), Map.of(), 0L, null);
+        this(Map.of(), Map.of(), 0L, null, false);
     }
 
     private CombatState(Map<ResourceKey<ResourceType>, Float> resources, Map<ResourceKey<Spell>, Long> cooldowns,
-            long globalCooldownEnd, @Nullable Cast currentCast) {
+            long globalCooldownEnd, @Nullable Cast currentCast, boolean setBetterCombatTag) {
         this.resources = new HashMap<>();
         resources.forEach(this::setResource);
         this.cooldowns = new HashMap<>();
         cooldowns.forEach(this::setCooldownEnd);
         setGlobalCooldownEnd(globalCooldownEnd);
         this.currentCast = currentCast;
+        this.setBetterCombatTag = setBetterCombatTag;
     }
 
     /** Resource type to the amount in its pool; read-only. A type without a pool is absent. */
@@ -154,39 +165,53 @@ public final class CombatState {
         this.currentCast = null;
     }
 
+    /** Whether a cast, not an operator, added {@value #BETTER_COMBAT_DISABLED_TAG} to the holder. */
+    public boolean setBetterCombatTag() {
+        return setBetterCombatTag;
+    }
+
+    public void setSetBetterCombatTag(boolean setBetterCombatTag) {
+        this.setBetterCombatTag = setBetterCombatTag;
+    }
+
     @Override
     public boolean equals(Object other) {
         return other instanceof CombatState state
                 && resources.equals(state.resources)
                 && cooldowns.equals(state.cooldowns)
                 && globalCooldownEnd == state.globalCooldownEnd
-                && Objects.equals(currentCast, state.currentCast);
+                && Objects.equals(currentCast, state.currentCast)
+                && setBetterCombatTag == state.setBetterCombatTag;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(resources, cooldowns, globalCooldownEnd, currentCast);
+        return Objects.hash(resources, cooldowns, globalCooldownEnd, currentCast, setBetterCombatTag);
     }
 
     @Override
     public String toString() {
         return "CombatState[resources=" + resources + ", cooldowns=" + cooldowns + ", globalCooldownEnd="
-                + globalCooldownEnd + ", currentCast=" + currentCast + "]";
+                + globalCooldownEnd + ", currentCast=" + currentCast + ", setBetterCombatTag=" + setBetterCombatTag
+                + "]";
     }
 
     /**
      * A cast-time or channelled spell in progress (architecture 11.2): drawn by clients from its start and duration,
-     * so it needs no per-tick packets.
+     * so it needs no per-tick packets. The owner gets it with this attachment, every other player in
+     * {@code CastStartedPayload}.
      *
      * @param spell         the spell being cast
      * @param startGameTime the game time the cast started
-     * @param durationTicks how long the cast or channel lasts, at least one tick
+     * @param durationTicks how long the cast or channel lasts after Cast Time Reduction, at least one tick
+     * @param channel       whether it is a channel (a bar that empties) rather than a cast time (one that fills)
      */
-    public record Cast(ResourceKey<Spell> spell, long startGameTime, int durationTicks) {
+    public record Cast(ResourceKey<Spell> spell, long startGameTime, int durationTicks, boolean channel) {
         public static final StreamCodec<ByteBuf, Cast> STREAM_CODEC = StreamCodec.composite(
                 ResourceKey.streamCodec(SpellRegistries.SPELL), Cast::spell,
                 ByteBufCodecs.VAR_LONG, Cast::startGameTime,
                 ByteBufCodecs.VAR_INT, Cast::durationTicks,
+                ByteBufCodecs.BOOL, Cast::channel,
                 Cast::new);
 
         public Cast {

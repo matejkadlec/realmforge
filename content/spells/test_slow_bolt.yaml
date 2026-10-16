@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3a-2): a fire bolt with a 2 s cast time that costs mana when it completes; moving cancels it. Not
+# gameplay content; the GameTests in the QA mod cast it.
+id: test_slow_bolt
+school: realmforge:fire
+scales_with: spell_power
+targeting: {type: realmforge:enemy, range: 16}
+cast: {type: cast_time, duration_seconds: 2}
+cost: {resource: realmforge:mana, amount: 20}
+effects:
+  - {type: realmforge:damage, amount: 10}

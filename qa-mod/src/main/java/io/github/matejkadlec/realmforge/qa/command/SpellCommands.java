@@ -6,6 +6,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import io.github.matejkadlec.realmforge.qa.combat.CastLog;
 import io.github.matejkadlec.realmforge.spell.CastResult;
 import io.github.matejkadlec.realmforge.spell.CombatState;
 import io.github.matejkadlec.realmforge.spell.ResourceType;
@@ -38,10 +39,12 @@ import net.neoforged.neoforge.registries.DeferredHolder;
  * <ul>
  *   <li>{@code /qa spell learn <spell> [<level>]} teaches the executing player a spell, at level 1 by default.</li>
  *   <li>{@code /qa spell cast <spell> [<target>]} casts it at the target (none by default: a self or ally spell then
- *   takes the caster) and says why when the cast is refused.</li>
+ *   takes the caster) and says why when the cast is refused; a cast-time or channelled spell begins (C3a-2).</li>
+ *   <li>{@code /qa spell cancel} cancels the cast in progress, as the spell bar's cancel will (C3b).</li>
  *   <li>{@code /qa spell resource <mana|rage> <amount>} sets a resource pool, within its maximum.</li>
  *   <li>{@code /qa spell reset} ends every cooldown, the global one included.</li>
- *   <li>{@code /qa spell show} prints the known spells, the pools and the running cooldowns.</li>
+ *   <li>{@code /qa spell show} prints the known spells, the pools, the running cooldowns, the cast in progress and
+ *   how the last cast-time or channelled spell ended.</li>
  * </ul>
  */
 public final class SpellCommands {
@@ -74,6 +77,7 @@ public final class SpellCommands {
                                 .then(Commands.argument("target", EntityArgument.entity())
                                         .executes(context -> cast(context,
                                                 EntityArgument.getEntity(context, "target"))))))
+                .then(Commands.literal("cancel").executes(SpellCommands::cancel))
                 .then(resource)
                 .then(Commands.literal("reset").executes(SpellCommands::reset))
                 .then(Commands.literal("show").executes(SpellCommands::show));
@@ -122,8 +126,20 @@ public final class SpellCommands {
             return 0;
         }
         String at = result.target().map(hit -> hit.getPlainTextName()).orElse("?");
-        context.getSource().sendSuccess(() -> Component.literal(caster.getPlainTextName() + " cast "
+        String verb = result.begun() ? " began casting " : " cast ";
+        context.getSource().sendSuccess(() -> Component.literal(caster.getPlainTextName() + verb
                 + key.identifier() + " at " + at), false);
+        return 1;
+    }
+
+    private static int cancel(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        LivingEntity caster = caster(context);
+        if (!Spells.cancelCast(caster)) {
+            context.getSource().sendFailure(Component.literal(caster.getPlainTextName() + " is not casting"));
+            return 0;
+        }
+        context.getSource().sendSuccess(() -> Component.literal("Cancelled the cast of "
+                + caster.getPlainTextName()), true);
         return 1;
     }
 
@@ -159,6 +175,13 @@ public final class SpellCommands {
                 .filter(entry -> entry.getValue() > now)
                 .map(entry -> entry.getKey().identifier() + " " + (entry.getValue() - now)).sorted().toList());
         text.append("\nGlobal cooldown (ticks left): ").append(Math.max(0, state.globalCooldownEnd() - now));
+        text.append("\nCasting: ").append(state.currentCast()
+                .map(cast -> cast.spell().identifier() + (cast.channel() ? " (channel)" : "") + ", "
+                        + Math.max(0, cast.endGameTime() - now) + " of " + cast.durationTicks() + " ticks left")
+                .orElse("nothing"));
+        text.append("\nLast cast ended: ").append(CastLog.last(caster)
+                .map(ended -> ended.spell().identifier() + " " + ended.end().getSerializedName())
+                .orElse("none"));
         context.getSource().sendSuccess(() -> Component.literal(text.toString()), false);
         return 1;
     }

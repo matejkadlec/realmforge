@@ -76,6 +76,10 @@ def _optional_double(value: float | None) -> str:
     return f"Optional.of({_double(value)})" if value is not None else "Optional.empty()"
 
 
+def _bool(value: bool) -> str:
+    return "true" if value else "false"
+
+
 def _expectation(spell: SpellDef) -> str:
     effects = ",\n".join(
         "                            new EffectExpectation("
@@ -86,6 +90,9 @@ def _expectation(spell: SpellDef) -> str:
     cost = spell.cost
     crit = spell.crit
     multiplier = crit.multiplier_percent / 100 if crit.multiplier_percent is not None else None
+    cast = spell.cast
+    duration = seconds_to_ticks(getattr(cast, "duration_seconds", 0))
+    interval = seconds_to_ticks(getattr(cast, "interval_seconds", 0))
     return (
         "            new SpellExpectation(\n"
         f"                    {string_literal(f'{MOD_ID}:{spell.id}')},\n"
@@ -93,17 +100,21 @@ def _expectation(spell: SpellDef) -> str:
         f"                    {string_literal(spell.scales_with)},\n"
         f"                    {string_literal(spell.targeting.type)},\n"
         f"                    {_double(getattr(spell.targeting, 'range', 0.0))},\n"
-        f"                    {string_literal(spell.cast.type)},\n"
+        f"                    {string_literal(cast.type)},\n"
+        f"                    {duration},\n"
+        f"                    {interval},\n"
+        f"                    {_bool(getattr(cast, 'castable_while_moving', False))},\n"
+        f"                    {_bool(getattr(cast, 'lock_on', False))},\n"
         f"                    {_optional_string(cost.resource if cost is not None else None)},\n"
         f"                    {_double(cost.amount if cost is not None else 0.0)},\n"
         f"                    {_double(cost.per_level if cost is not None else 0.0)},\n"
         f"                    {seconds_to_ticks(spell.cooldown_seconds)},\n"
         f"                    {seconds_to_ticks(spell.global_cooldown_seconds)},\n"
         f"                    {spell.max_level},\n"
-        f"                    {'true' if crit.can_crit else 'false'},\n"
+        f"                    {_bool(crit.can_crit)},\n"
         f"                    {_optional_double(multiplier)},\n"
         f"                    {_double(crit.bonus_chance_percent / 100)},\n"
-        f"                    {'true' if spell.npc_only else 'false'},\n"
+        f"                    {_bool(spell.npc_only)},\n"
         "                    List.of(\n"
         f"{effects}))"
     )
@@ -129,11 +140,12 @@ def _expectations(content: Content) -> bytes:
         "\n"
         "    /**\n"
         "     * Expected state of one spell, in game units (ticks, fractions). Ids are full resource locations, e.g.\n"
-        "     * {@code realmforge:test_bolt}; {@code range} is 0 for a spell on the caster itself, and the cost's amounts\n"
-        "     * are 0 for a free spell.\n"
+        "     * {@code realmforge:test_bolt}; {@code range} is 0 for a spell on the caster itself, the cost's amounts are\n"
+        "     * 0 for a free spell, and the cast's duration and interval are 0 where its type has none.\n"
         "     */\n"
         "    public record SpellExpectation(String id, String school, String scalesWith, String targeting, double range,\n"
-        "            String cast, Optional<String> costResource, double costAmount, double costPerLevel, int cooldownTicks,\n"
+        "            String cast, int castDurationTicks, int castIntervalTicks, boolean castableWhileMoving, boolean lockOn,\n"
+        "            Optional<String> costResource, double costAmount, double costPerLevel, int cooldownTicks,\n"
         "            int globalCooldownTicks, int maxLevel, boolean canCrit, Optional<Double> critMultiplier,\n"
         "            double critBonusChance, boolean npcOnly, List<EffectExpectation> effects) {\n"
         "    }\n"

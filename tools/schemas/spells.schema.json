@@ -24,21 +24,81 @@
       "title": "AllyTargetingDef",
       "type": "object"
     },
-    "CastDef": {
+    "CastTimeCastDef": {
       "additionalProperties": false,
-      "description": "How the spell is cast. Only ``instant`` so far; cast times and channels come with C3a-2 (RLM-210).",
+      "description": "The spell takes ``duration_seconds`` to cast, which Cast Time Reduction shortens. At the end the cost and the\ntarget are checked again; the cost, its own cooldown and the effects follow. The global cooldown starts with the\ncast.",
       "properties": {
+        "castable_while_moving": {
+          "default": false,
+          "description": "Whether the caster may move during the cast; by default moving cancels it.",
+          "title": "Castable While Moving",
+          "type": "boolean"
+        },
+        "duration_seconds": {
+          "description": "The cast time, before Cast Time Reduction; more than 0.",
+          "minimum": 0,
+          "title": "Duration Seconds",
+          "type": "number"
+        },
+        "lock_on": {
+          "default": false,
+          "description": "Whether the spell keeps its target once cast: the target must still be alive and in the caster's dimension, but range and line of sight are not checked again.",
+          "title": "Lock On",
+          "type": "boolean"
+        },
         "type": {
-          "const": "instant",
-          "description": "instant: the spell's effects run when it is cast.",
+          "const": "cast_time",
           "title": "Type",
           "type": "string"
         }
       },
       "required": [
-        "type"
+        "type",
+        "duration_seconds"
       ],
-      "title": "CastDef",
+      "title": "CastTimeCastDef",
+      "type": "object"
+    },
+    "ChannelCastDef": {
+      "additionalProperties": false,
+      "description": "The spell pays its cost and starts its cooldowns when the channel begins, then runs its effects every\n``interval_seconds`` for ``duration_seconds``, checking the target before every tick. Cast Time Reduction shortens\nthe interval, so the channel keeps its number of ticks.",
+      "properties": {
+        "castable_while_moving": {
+          "default": false,
+          "description": "Whether the caster may move during the cast; by default moving cancels it.",
+          "title": "Castable While Moving",
+          "type": "boolean"
+        },
+        "duration_seconds": {
+          "description": "How long the channel lasts, before Cast Time Reduction: a whole number of intervals.",
+          "minimum": 0,
+          "title": "Duration Seconds",
+          "type": "number"
+        },
+        "interval_seconds": {
+          "description": "The time between two ticks of the effects; more than 0.",
+          "minimum": 0,
+          "title": "Interval Seconds",
+          "type": "number"
+        },
+        "lock_on": {
+          "default": false,
+          "description": "Whether the spell keeps its target once cast: the target must still be alive and in the caster's dimension, but range and line of sight are not checked again.",
+          "title": "Lock On",
+          "type": "boolean"
+        },
+        "type": {
+          "const": "channel",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "duration_seconds",
+        "interval_seconds"
+      ],
+      "title": "ChannelCastDef",
       "type": "object"
     },
     "CostDef": {
@@ -223,6 +283,22 @@
       "title": "HealEffectDef",
       "type": "object"
     },
+    "InstantCastDef": {
+      "additionalProperties": false,
+      "description": "The spell's effects run when it is cast.",
+      "properties": {
+        "type": {
+          "const": "instant",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "InstantCastDef",
+      "type": "object"
+    },
     "SelfTargetingDef": {
       "additionalProperties": false,
       "description": "The caster itself.",
@@ -245,8 +321,27 @@
   "description": "A spell for players or NPCs: its school, what it scales with, its targeting, cast, cost, cooldowns, crit\nrules and typed effects, with numbers per spell level up to ``max_level`` (architecture 11.1).",
   "properties": {
     "cast": {
-      "$ref": "#/$defs/CastDef",
-      "description": "How it is cast: {type: instant}."
+      "description": "How it is cast: {type: instant}, {type: cast_time, duration_seconds: 2} or {type: channel, duration_seconds: 3, interval_seconds: 1}.",
+      "discriminator": {
+        "mapping": {
+          "cast_time": "#/$defs/CastTimeCastDef",
+          "channel": "#/$defs/ChannelCastDef",
+          "instant": "#/$defs/InstantCastDef"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/InstantCastDef"
+        },
+        {
+          "$ref": "#/$defs/CastTimeCastDef"
+        },
+        {
+          "$ref": "#/$defs/ChannelCastDef"
+        }
+      ],
+      "title": "Cast"
     },
     "cooldown_seconds": {
       "default": 0,

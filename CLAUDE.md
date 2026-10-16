@@ -51,9 +51,11 @@ modpack adds third-party QoL, performance and library mods.
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits.
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell
-  engine has begun (C3a-1): spells as data in `content/spells/`, cast instantly by players and mobs through one
-  `SpellCaster` (reached through `/qa spell` until the spell bar exists), with mana pools, cooldowns and spell crits.
-  Cast times, spell entities, procs and the spell bar come next (C3a-2 to C3a-4, C3b).
+  engine has begun (C3a-1, C3a-2): spells as data in `content/spells/`, cast by players and mobs through one
+  `SpellCaster` (reached through `/qa spell` until the spell bar exists), with mana pools, cooldowns and spell crits,
+  instantly, with a cast time or as a channel, interrupted by moving, death, a dimension change or logout, with
+  no melee during a cast, and synced to clients as cast payloads. Spell entities, procs and the spell bar come next
+  (C3a-3, C3a-4, C3b).
 
 ## Pinned versions
 

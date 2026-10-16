@@ -15,6 +15,8 @@ public enum CastFailure implements StringRepresentable {
     NPC_ONLY("npc_only"),
     /** The player has not learned the spell. */
     NOT_KNOWN("not_known"),
+    /** A cast-time or channelled spell is still in progress. */
+    ALREADY_CASTING("already_casting"),
     /** The spell's own cooldown still runs. */
     ON_COOLDOWN("on_cooldown"),
     /** The global cooldown still runs, and the spell is on it. */

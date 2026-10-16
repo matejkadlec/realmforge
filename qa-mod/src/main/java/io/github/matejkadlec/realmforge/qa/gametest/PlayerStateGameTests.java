@@ -196,7 +196,7 @@ public final class PlayerStateGameTests {
         state.setCooldownEnd(FROSTBOLT, 4_000L);
         state.setGlobalCooldownEnd(3_020L);
         if (casting) {
-            state.startCast(new CombatState.Cast(FIREBOLT, 3_000L, 40));
+            state.startCast(new CombatState.Cast(FIREBOLT, 3_000L, 40, false));
         }
         return state;
     }

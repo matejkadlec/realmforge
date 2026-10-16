@@ -408,13 +408,13 @@ instance. After `rf gen` changes files in `pack/`, run `packwiz refresh` (CI che
 ### 6.4 Example: the life of a spell
 
 ```yaml
-# content/spells/firebolt.yaml (the format of C3a-1, schema/spell.py; C3a-2 adds cast times and channels, C3a-3
-# projectiles and status effects, C3b the name and description with their {damage} placeholders)
+# content/spells/firebolt.yaml (the format of C3a-1 and C3a-2, schema/spell.py; C3a-3 adds projectiles and status
+# effects, C3b the name and description with their {damage} placeholders)
 id: firebolt
 school: realmforge:fire
 scales_with: spell_power                # magic; a physical ability scales with attack_damage
 targeting: {type: realmforge:enemy, range: 24}
-cast: {type: instant}
+cast: {type: cast_time, duration_seconds: 2.5}  # or {type: instant}, or a channel (11.2)
 cost: {resource: realmforge:mana, amount: 20, per_level: 2}
 cooldown_seconds: 0
 max_level: 5
@@ -431,8 +431,9 @@ effects:
 4. When a world loads, `Spell.CODEC` decodes the file and resolves its references; NeoForge syncs the registry to
    joining clients.
 5. The player presses a spell key (C3b; until then `/qa spell cast`). The client sends `CastSpellPayload`;
-   `SpellCaster` validates it and runs the effects; the damage goes through the combat pipeline; nearby clients get
-   `CastStartedPayload` for the cast bar and animation (C3a-2).
+   `SpellCaster` validates it and begins the cast; the caster and nearby clients get `CastStartedPayload` for the cast
+   bar and animation, and when the cast completes (`spell/Casting`) the effects run and the damage goes through the
+   combat pipeline.
 6. A GameTest compares the decoded spell with the expectation (`ContentSpellGameTests`), and the spell GameTests
    cast the test spells at husks and compare the damage (`SpellGameTests`).
 
@@ -456,7 +457,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:level` | `stats` | every living entity | the level: derived from XP and the cap for players, set at spawn for mobs, fixed for bosses | the player itself and everyone tracking the entity |
 | `realmforge:character` | `character` | players | race, classes (a list: one in M1, room for dual class), total character XP, cached level cap, the stat points spent on each primary stat | the owner and nearby players (small, nothing secret) |
 | `realmforge:spellbook` | `spell` | players | known spells and their levels, spell bar layout | owner |
-| `realmforge:combat` | `spell` | players and mobs that cast | resource pools (mana, rage), cooldowns, current cast | owner, throttled (players; clients never read a mob's copy) |
+| `realmforge:combat` | `spell` | players and mobs that cast | resource pools (mana, rage), cooldowns, current cast (transient), whether a cast set Better Combat's disable tag | owner, throttled (players; clients never read a mob's copy) |
 | `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points | owner |
 | `realmforge:dark_vision` | `world` | players | whether Dark Vision is switched on (on by default) | not synced (the effect itself is) |
 | `realmforge:instance` | `dungeon` | players | the run's plot and the return point (spike 3); W4 adds the game mode to restore | not synced |
@@ -792,7 +793,10 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
   melee hit, Better Combat's included, goes through `Player#attack`) and sets Better Combat's entity tag
   `bettercombat_disabled`, which stops its swings and cancels the one in progress; the client cancels the attack
   key. The `combat` attachment records that a cast set the tag, so an operator's own tag survives and a login
-  removes one a crash left behind. A cast cancels a swing; an attack does not interrupt a cast.
+  removes one a crash left behind. A cast cancels a swing; an attack does not interrupt a cast. **In code (C3a-2):**
+  `spell/Casting` cancels the event and sets, records (`CombatState#setBetterCombatTag`, saved) and removes the tag;
+  `client/spell/ClientCasts` cancels the attack key, swing included, while the local player casts. Mobs' melee during
+  their casts is C3a-4's (NPC casting).
 
 ## 10. Character: races, classes, leveling
 
@@ -935,7 +939,7 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
 ### 11.1 Model
 
 A `realmforge:spell` entry ([example in 6.4](#64-example-the-life-of-a-spell), `spell/Spell`) has a school, what it
-scales with, targeting (with the range), cast type (instant since C3a-1; cast time and channel with C3a-2), cost,
+scales with, targeting (with the range), cast type (instant since C3a-1; cast time and channel since C3a-2), cost,
 its own cooldown and the global cooldown, crit rules, typed effects, a maximum level with values per level (the
 vision prefers spell levels or power over rarities; research SP-9), and an `npc_only` flag for mob and boss spells.
 Its name, description, icon, animation and sound keys come with the client side (C3b, C6).
@@ -965,7 +969,8 @@ lists spells granted while equipped or on use): the vision's "some from the race
 4. When a cast-time spell completes, the server checks the resource and the target again, because both can change
    during the cast: rage decays, effects drain mana, and the target can die, leave the caster's dimension, move out
    of range or go behind cover. If either check fails, the cast fails like an interrupt; a spell that should lock
-   on says so in its data. Otherwise the cost and cooldowns apply first, then every effect runs with an
+   on says so in its data. Otherwise the cost and the spell's own cooldown apply first (the global cooldown started
+   with the cast), then every effect runs with an
    `EffectContext` (caster, targets, position, spell level, stat snapshot, random source).
 5. A channel pays its cost and starts its cooldown when it begins, then runs its effects at the tick interval its
    data sets for as long as it lasts, checking the target before every tick as in step 4. Moving or an interrupt
@@ -985,6 +990,22 @@ level, random source; the stat snapshot that effects running after the cast need
 C3a-3, and the proc origin with procs, C3a-4). Allies (`Targets#allied`) are the caster, its team mates and tamed
 pets (vanilla's `isAlliedTo`), and for a player every other player, as M1 has no PvP; everything else is an enemy.
 Mobs pay no cost until C3a-4 decides NPC resources. `/qa spell` drives it until the spell bar exists.
+
+**In code (C3a-2):** a spell's `cast` (`spell/SpellCast`) is `instant`, `cast_time` (a duration) or `channel` (a
+duration that is a whole number of intervals), and the two timed types may set `castable_while_moving` and `lock_on`.
+`SpellCaster` refuses a cast while one is in progress (`already_casting`, checked before the cooldowns). After every
+other check a timed spell starts the global cooldown at once, as in WoW, so it runs during the cast; a channel also
+pays and starts its own cooldown then, a cast time only when it completes. `spell/Casting` keeps the casts in
+progress and ends them from the server tick (`ServerTickEvent.Post`): Cast Time Reduction (at most 75 %, its stat's
+cap) shortens a cast time, and a channel's interval, so a channel keeps its tick count (`SpellScaling#castTicks`,
+whole ticks, at least one). Moving more than 0.1 blocks from where the cast began, death, a dimension change, logging
+out, the caster's removal and a cancel (`Spells#cancelCast`, `/qa spell cancel`) interrupt it. At its end a cast time
+checks the cost and the target again (`SpellCaster#recheck`: alive, then the targeting's range, line of sight and
+enemy or ally; a spell that locks on only needs its target alive and in the caster's dimension), and a channel
+checks the target before every tick, run at the end of each interval. Every end is a `spell/CastEnd` (completed, an
+interrupt, or the failed check), sent to the caster and its trackers as `CastEndedPayload` and posted on the game bus
+as `CastEndedEvent`, which procs (C3a-4) will use and the QA mod logs for `/qa spell show` and the GameTests
+(`CastGameTests`). The effects run on the first server tick at or after the cast's end time.
 
 ### 11.3 Spell entities
 
@@ -1022,7 +1043,10 @@ type only for genuinely new behaviour.
 
 The spell bar, cast bar and cooldown sweep are HUD layers; key mappings follow a default scheme decided in M1
 (proposal: a separate spell bar with its own keys, leaving the item hotbar alone); tooltips are built from data
-with live numbers; animations and particles start on `CastStartedPayload`. Cast animations are Emotecraft JSON
+with live numbers; animations and particles start on `CastStartedPayload`. `client/spell/ClientCasts` (C3a-2) keeps
+every cast in progress the client was told of, the local player's and every tracked caster's, by entity id, from
+`CastStartedPayload` until `CastEndedPayload` (or until 20 ticks after its end, for a caster the player stopped
+tracking), so the cast bar and the animations read one store (`CurrentCasts#progress` for the bar). Cast animations are Emotecraft JSON
 files in `assets/realmforge/player_animations/`, played by `client/animation` on the caster's PAL layer
 for the caster and every tracking player, with the third-person model's arms in first person
 ([ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)). The arms aim where the player looks, since
@@ -1597,7 +1621,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   `client/screen/CharacterCreationScreen`), `SpendStatPoint` (exists: `character/net/SpendStatPointPayload`, sent by
   `client/screen/CharacterSheetScreen`), `CastSpell`, `CancelCast`, `SetSpellBarSlot`, `LearnTalent`,
   `ToggleDarkVision` (exists: `world/net/ToggleDarkVisionPayload`, sent by `client/input/DarkVisionKey`).
-- Server → client: `CastStarted`, `CastEnded`, `CombatText` (exists: `combat/net/CombatTextPayload`, shown by
+- Server → client: `CastStarted` and `CastEnded` (exist: `spell/net/CastStartedPayload` and `CastEndedPayload`, kept
+  by `client/spell/ClientCasts`), `CombatText` (exists: `combat/net/CombatTextPayload`, shown by
   `client/hud/CombatTextHud`), `HitDirection` (exists: `combat/net/HitDirectionPayload`, shown by
   `client/hud/HitDirectionHud`), `DungeonStatus`.
 
@@ -1610,8 +1635,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   (`RegisterMenuScreensEvent`), tooltip components (`RegisterClientTooltipComponentFactoriesEvent`) and the handlers
   of client-bound payloads (`RegisterClientPayloadHandlersEvent`, [17.1](#171-rules)).
 - **Layout:** `client/hud`, `client/screen`, `client/input`, `client/render`, `client/tooltip`, `client/network`,
-  `client/animation` (the PAL cast layer), and `client/compat/<mod>` for the client parts of
-  integrations (JEI plugins, Jade tooltips).
+  `client/spell` (the casts in progress, C3a-2), `client/animation` (the PAL cast layer), and `client/compat/<mod>`
+  for the client parts of integrations (JEI plugins, Jade tooltips).
 - **The rule:** no class outside `client/` imports `net.minecraft.client.*`, `com.mojang.blaze3d.*`,
   `net.neoforged.neoforge.client.*` or a library's rendering classes. An automated import check enforces it
   (`tools/tests/test_client_isolation.py`, run by `uv run pytest`): it scans the main and generated sources of the
@@ -1818,10 +1843,12 @@ that agents can read. So far:
   hit); vanilla draws no name tag over an entity with a passenger, so the label carries both. The hitter sees each
   hit on the action bar, `/qa dummy reset|remove`. Pillagers carry our stats in the dev game, so
   `/attribute @n[type=pillager] realmforge:dodge_chance base set 0.5` sets a dummy's dodge chance or resistances;
-- `/qa spell learn <spell> [<level>]`, `/qa spell cast <spell> [<target>]`, `/qa spell resource <mana|rage>
-  <amount>`, `/qa spell reset` and `/qa spell show` (C3a-1): teach the executing player a spell, cast it (as a mob
-  with `/execute as`; a refusal names its reason), set a resource pool, end every cooldown, and print the known
-  spells, the pools and the running cooldowns ([11.2](#112-casting-server-authoritative));
+- `/qa spell learn <spell> [<level>]`, `/qa spell cast <spell> [<target>]`, `/qa spell cancel`, `/qa spell resource
+  <mana|rage> <amount>`, `/qa spell reset` and `/qa spell show` (C3a-1, C3a-2): teach the executing player a spell,
+  cast it (as a mob with `/execute as`; a refusal names its reason; a cast-time or channelled spell begins), cancel
+  the cast in progress, set a resource pool, end every cooldown, and print the known spells, the pools, the running
+  cooldowns, the cast in progress and how the last cast-time or channelled spell ended
+  ([11.2](#112-casting-server-authoritative));
 - the combat log, `logs/realmforge-combat.log` in the game directory (`run/client/`, `run/gametest/`, ...): one line
   per hit or dodge that involves a player or a dummy, with the damage type, school, crit, attacker level, the
   original damage, what armor blocked, and the damage dealt and taken from health. A new server starts a new file.

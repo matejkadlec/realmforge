@@ -1,8 +1,8 @@
 """Spells: ``content/spells/<id>.yaml``, the datapack registry ``realmforge:spell`` (architecture 5.2, 6.4, 11).
 
 One engine casts them for players, mobs and bosses (C3a). The first part (C3a-1, RLM-209) has instant casts, the
-``damage`` and ``heal`` effect types and the ``self``, ``enemy`` and ``ally`` targeting types; cast times, channels,
-spell entities and the NPC targeting types join with the later parts. Names and descriptions come with the spell bar
+``damage`` and ``heal`` effect types and the ``self``, ``enemy`` and ``ally`` targeting types; the second (C3a-2,
+RLM-210) adds cast times and channels. Spell entities and the NPC targeting types join with the later parts. Names and descriptions come with the spell bar
 and its tooltips (C3b, RLM-25).
 """
 
@@ -100,10 +100,67 @@ class AllyTargetingDef(StrictModel):
 TargetingDef = Annotated[SelfTargetingDef | EnemyTargetingDef | AllyTargetingDef, Field(discriminator="type")]
 
 
-class CastDef(StrictModel):
-    """How the spell is cast. Only ``instant`` so far; cast times and channels come with C3a-2 (RLM-210)."""
+class InstantCastDef(StrictModel):
+    """The spell's effects run when it is cast."""
 
-    type: Literal["instant"] = Field(description="instant: the spell's effects run when it is cast.")
+    type: Literal["instant"]
+
+
+class _TimedCastDef(StrictModel):
+    """What cast-time spells and channels share: moving cancels them unless the spell allows it, and the target is
+    checked again before the effects run (architecture 11.2)."""
+
+    castable_while_moving: bool = Field(
+        default=False,
+        description="Whether the caster may move during the cast; by default moving cancels it.",
+    )
+    lock_on: bool = Field(
+        default=False,
+        description="Whether the spell keeps its target once cast: the target must still be alive and in the caster's "
+        "dimension, but range and line of sight are not checked again.",
+    )
+
+
+class CastTimeCastDef(_TimedCastDef):
+    """The spell takes ``duration_seconds`` to cast, which Cast Time Reduction shortens. At the end the cost and the
+    target are checked again; the cost, its own cooldown and the effects follow. The global cooldown starts with the
+    cast."""
+
+    type: Literal["cast_time"]
+    duration_seconds: Seconds = Field(description="The cast time, before Cast Time Reduction; more than 0.")
+
+    @model_validator(mode="after")
+    def _positive(self) -> CastTimeCastDef:
+        if self.duration_seconds <= 0:
+            raise ValueError("a cast time of 0 is an instant cast: use {type: instant}")
+        return self
+
+
+class ChannelCastDef(_TimedCastDef):
+    """The spell pays its cost and starts its cooldowns when the channel begins, then runs its effects every
+    ``interval_seconds`` for ``duration_seconds``, checking the target before every tick. Cast Time Reduction shortens
+    the interval, so the channel keeps its number of ticks."""
+
+    type: Literal["channel"]
+    duration_seconds: Seconds = Field(
+        description="How long the channel lasts, before Cast Time Reduction: a whole number of intervals."
+    )
+    interval_seconds: Seconds = Field(description="The time between two ticks of the effects; more than 0.")
+
+    @model_validator(mode="after")
+    def _ticks(self) -> ChannelCastDef:
+        if self.interval_seconds <= 0:
+            raise ValueError("a channel ticks after an interval of more than 0 seconds")
+        ticks = round(self.duration_seconds / self.interval_seconds)
+        if ticks < 1 or abs(ticks * self.interval_seconds - self.duration_seconds) > 1e-9:
+            raise ValueError(
+                f"duration_seconds {self.duration_seconds} is not a whole number of intervals of "
+                f"{self.interval_seconds} s"
+            )
+        return self
+
+
+CastDef = Annotated[InstantCastDef | CastTimeCastDef | ChannelCastDef, Field(discriminator="type")]
 
 
 class CostDef(_LeveledAmount):
@@ -154,7 +211,10 @@ class SpellDef(StrictModel):
         description="spell_power for magic schools, attack_damage for physical abilities (Matěj, 2026-10-15)."
     )
     targeting: TargetingDef = Field(description="Who the spell can target.")
-    cast: CastDef = Field(description="How it is cast: {type: instant}.")
+    cast: CastDef = Field(
+        description="How it is cast: {type: instant}, {type: cast_time, duration_seconds: 2} or "
+        "{type: channel, duration_seconds: 3, interval_seconds: 1}."
+    )
     cost: CostDef | None = Field(default=None, description="What a cast costs; leave out for a free spell.")
     cooldown_seconds: Seconds = Field(
         default=0, description="The spell's own cooldown; Cooldown Reduction shortens it."

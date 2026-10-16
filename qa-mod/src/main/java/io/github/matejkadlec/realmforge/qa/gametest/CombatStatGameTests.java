@@ -257,10 +257,13 @@ public final class CombatStatGameTests {
 
     /**
      * A fake player that can be hurt (survival mode, its client counted as loaded), at 0 % crit chance, with food that
-     * neither regenerates nor starves, after its first tick.
+     * neither regenerates nor starves, after its first tick. It stands on its own test's platform: a new fake player
+     * logs in at the world spawn, where the GameTest grid begins, and a tick inside another test's blocks would
+     * suffocate it for 1 damage.
      */
     private static ServerPlayer player(GameTestHelper helper, String name) {
         ServerPlayer player = QaPlayers.login(helper.getLevel().getServer(), new GameProfile(UUID.randomUUID(), name));
+        player.snapTo(helper.absoluteVec(new Vec3(0.5, 1, 0.5)), 0, 0);
         player.setGameMode(GameType.SURVIVAL);
         player.connection.markClientLoaded();
         player.getFoodData().setFoodLevel(17);

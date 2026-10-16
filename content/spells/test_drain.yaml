@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3a-2): an arcane channel that pays its mana and starts its cooldown when it begins, then hits every
+# second for 3 s; moving ends it. Not gameplay content; the GameTests in the QA mod cast it.
+id: test_drain
+school: realmforge:arcane
+scales_with: spell_power
+targeting: {type: realmforge:enemy, range: 16}
+cast: {type: channel, duration_seconds: 3, interval_seconds: 1}
+cost: {resource: realmforge:mana, amount: 15}
+cooldown_seconds: 5
+effects:
+  - {type: realmforge:damage, amount: 2}
