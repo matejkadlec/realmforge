@@ -43,9 +43,11 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         files[data_dir(paths) / MOD_ID / REGISTRY / f"{school.id}.json"] = dump_json(_entry(school))
         files[data / MOD_ID / "damage_type" / f"{school.id}.json"] = dump_json(_damage_type(school))
     tags = data / "minecraft" / "tags" / "damage_type"
-    # Every school's hits land through the hurt cooldown (architecture 9.1); magic ones skip vanilla's armor too.
+    # Every school's hits land through the hurt cooldown and push nobody: a spell knocks back only through its
+    # knockback effect (architecture 9.1, RLM-214). Magic ones skip vanilla's armor too.
     for tag, members in (
         ("bypasses_cooldown", schools),
+        ("no_knockback", schools),
         ("bypasses_armor", [school for school in schools if school.bypasses_armor]),
     ):
         if members:
