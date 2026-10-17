@@ -1308,15 +1308,67 @@ def test_a_room_has_one_entrance_marker_at_most(repo: RepoPaths) -> None:
     ]
 
 
+def walled_room(*placed: StructureBlock) -> Structure:
+    """The small room closed on every side: stone bricks on the floor, the ceiling and the four walls, air inside,
+    the jigsaw on its east face; ``placed`` replaces the blocks at their positions."""
+    room = small_room()
+    shell = [
+        StructureBlock(block.pos, STONE)
+        if block.state == AIR and (block.pos[0] in (0, 4) or block.pos[2] in (0, 4))
+        else block
+        for block in room.blocks
+    ]
+    where = {block.pos for block in placed}
+    return replace(room, blocks=tuple(b for b in shell if b.pos not in where) + placed)
+
+
 def test_fluids_count_at_the_sides_and_floor_but_not_the_roof() -> None:
     water = BlockState("minecraft:water", (("level", "0"),))
-    room = with_blocks(
+    room = walled_room(
         StructureBlock((0, 1, 2), water),  # west side
         StructureBlock((2, 0, 2), BlockState("minecraft:lava", (("level", "0"),))),  # floor
-        StructureBlock((2, 3, 2), water),  # roof only: it cannot flow out
-        StructureBlock((2, 1, 2), water),  # inside
         StructureBlock((3, 2, 4), BlockState.parse("minecraft:oak_stairs[facing=east,waterlogged=true]")),
         StructureBlock((3, 1, 0), BlockState("minecraft:seagrass")),  # always holds water
         StructureBlock((1, 2, 4), BlockState.parse("minecraft:oak_stairs[facing=east,waterlogged=false]")),
     )
     assert fluid_edges(room) == [(0, 1, 2), (2, 0, 2), (3, 1, 0), (3, 2, 4)]
+    roof = StructureBlock((2, 3, 2), water)  # it falls into the room, which holds it
+    inside = StructureBlock((2, 1, 2), water)
+    assert fluid_edges(walled_room(roof, inside)) == []
+
+
+def test_a_fluid_that_reaches_a_floor_hole_or_a_wall_gap_flows_out() -> None:
+    water = StructureBlock((2, 2, 2), BlockState("minecraft:water", (("level", "0"),)))
+    closed = walled_room(water)
+    assert fluid_edges(closed) == [], "a closed room keeps it, its connector included"
+    hole = StructureBlock((1, 0, 3), AIR)  # a drain in the floor, a block off the water's column
+    assert fluid_edges(walled_room(water, hole)) == [(2, 2, 2)]
+    gap = StructureBlock((0, 1, 3), BlockState("minecraft:torch"))  # a fluid washes a torch away
+    assert fluid_edges(walled_room(water, gap)) == [(2, 2, 2)]
+    for never_placed in (
+        marker((0, 1, 3), "mob"),
+        StructureBlock((0, 1, 3), BlockState("minecraft:structure_void")),
+    ):
+        assert fluid_edges(walled_room(water, never_placed)) == [(2, 2, 2)], "the builder never places it"
+    void = replace(closed, blocks=tuple(b for b in closed.blocks if b.pos != (2, 0, 1)))
+    assert fluid_edges(void) == [(2, 2, 2)], "a missing cell keeps whatever the plot holds there"
+
+
+def test_closed_blocks_hold_a_fluid_back() -> None:
+    water = StructureBlock((2, 2, 2), BlockState("minecraft:water", (("level", "0"),)))
+    for closing in (
+        "minecraft:oak_fence[east=false,north=false,south=false,waterlogged=false,west=false]",
+        "minecraft:oak_door[facing=west,half=lower,hinge=left,open=false,powered=false]",
+        "minecraft:ladder[facing=east,waterlogged=false]",
+        "minecraft:mossy_cobblestone",
+        "minecraft:deepslate_tiles",
+    ):
+        gap = StructureBlock((0, 1, 3), BlockState.parse(closing))
+        assert fluid_edges(walled_room(water, gap)) == [], closing
+
+
+def test_a_fluid_may_flow_out_through_a_connector_only() -> None:
+    water = StructureBlock((3, 1, 2), BlockState("minecraft:water", (("level", "0"),)))
+    assert fluid_edges(walled_room(water)) == [], "through the east connector into the next room"
+    beside = StructureBlock((4, 1, 3), AIR)  # a gap beside the connector is a gap in the wall
+    assert fluid_edges(walled_room(water, beside)) == [(3, 1, 2)]

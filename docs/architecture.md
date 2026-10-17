@@ -1458,10 +1458,17 @@ Rooms are generated or imported; nobody has to build one by hand
   ids, the loot tables, the connectors, each jigsaw's pool, which must be a vanilla template pool or a room
   pool some sidecar lists (it becomes a template pool for world structures, M4), and the data markers: every
   structure block is one, in data mode, naming a marker of [15.3](#153-generation-pure-first-then-minecraft), with one
-  entrance marker at most. A room in a dungeon type's pool also holds no fluid on its sides or floor (water, lava, a
-  waterlogged block, kelp or seagrass): a fluid flows down and sideways out of the room's box, past what cleanup
-  clears ([15.5](#155-instances)); one on its roof stays inside. It holds an entrance marker only if it is an entrance
-  (`validate.py`). Eleven imported rooms have fluids at their edges and are in no pool. The swappable blocks come with
+  entrance marker at most. A room in a dungeon type's pool also holds no fluid (water, lava, a waterlogged block,
+  kelp or seagrass) that can reach its sides or floor: a fluid flows down and sideways, and from there out of the
+  room's box, past what cleanup clears ([15.5](#155-instances)). `fluid_edges` follows each fluid down and sideways
+  through every cell a flowing fluid can enter (`FlowingFluid#canHoldFluid`), so a fluid beside a floor hole or a
+  wall gap fails too; leaving through a connector is fine, as the next room continues there (RLM-217). Python knows
+  only block names, so a cell stops the fluid only when it surely does: a waterloggable block (it takes water only
+  as a source), a door, a sign, a ladder, sugar cane, a portal, or a full block in `SOLID_BLOCKS` (a name or an
+  ending such as `_bricks`). Anything else lets it through, an unknown block and a missing cell included; a room that
+  fails on a solid block the list lacks gets the block added. A fluid on the roof of a closed room stays inside. A
+  pooled room holds an entrance marker only if it is an entrance (`validate.py`). Thirteen imported rooms have fluids
+  that can flow out and are in no pool. The swappable blocks come with
   the themes of the room generator (A4d). Generated rooms are also checked for reachability
   between their connectors and for headroom. In the game, `ContentRoomGameTests` (QA mod) loads every room through
   the structure manager, which upgrades an imported room from its data version, and compares its size, jigsaws and
@@ -1573,8 +1580,8 @@ Spike 3 built this and measured it; the numbers and the reasons are in
 - **Cleanup and plot reuse: clear, then reuse** (spike 3). When a run is released, its blocks are cleared over the
   next ticks (containers emptied first so nothing drops, entities other than players removed), its rooms and 4 blocks
   around each (`PlotWork.MARGIN`) for what spreads past a wall while players are inside: fire, a vine, a creative
-  operator's block beside a wall. Room validation keeps fluids off the edges of the rooms dungeons build
-  ([15.4](#154-rooms)), so nothing flows further. Then its chunks are released and the plot becomes free for the next
+  operator's block beside a wall. Room validation keeps fluids from reaching the sides and floors of the
+  rooms dungeons build ([15.4](#154-rooms)), so nothing flows further. Then its chunks are released and the plot becomes free for the next
   run; nobody waits for it. Overwriting on reuse doubled the next run's build time, and never reusing plots grew the
   world by 3 MB per run ([ADR 0019](decisions/0019-dungeon-instances-in-plots.md)); W4b removed both, and
   `/qa instance bench` measures clear then reuse.

@@ -320,6 +320,31 @@ def test_a_pooled_room_keeps_its_fluids_inside_and_its_entrance_marker_in_the_en
     assert found == [
         "content/rooms/crypt/flooded.nbt: data marker 3 1 3: an entrance marker in a room whose role is hallway: "
         "players arrive only in the entrance room",
-        "content/rooms/crypt/flooded.nbt: fluid at 0 1 1: a fluid on the room's sides or floor flows out of its box, "
-        "where cleanup does not reach; a room in a dungeon type's pool keeps its fluids inside",
+        "content/rooms/crypt/flooded.nbt: fluid at 0 1 1: a fluid that can reach the room's sides or floor flows "
+        "out of its box, where cleanup does not reach; a room in a dungeon type's pool keeps its fluids inside",
     ], "a room no dungeon type builds is not checked"
+
+
+def test_a_pooled_room_fails_on_a_fluid_that_flows_out_through_an_opening(repo: RepoPaths) -> None:
+    crypt(repo)
+    add_room(repo, "crypt/drain", ["hallway"], "north", "south")
+    room = room_structure((7, 5, 7), "north", "south")
+    stone = BlockState("minecraft:stone_bricks")
+    shell = [
+        StructureBlock((x, y, z), stone)
+        for x in range(7)
+        for y in range(5)
+        for z in range(7)
+        if (x in (0, 6) or y in (0, 4) or z in (0, 6)) and (x, y, z) not in {c.pos for c in room.blocks}
+    ]
+    water = StructureBlock((3, 2, 3), BlockState("minecraft:water", (("level", "0"),)))
+    drain = StructureBlock((5, 0, 5), BlockState("minecraft:air"))  # a hole in the floor
+    blocks = [b for b in shell if b.pos != drain.pos] + [*room.blocks, water, drain]
+    path = repo.content / "rooms" / "crypt" / "drain.nbt"
+    path.write_bytes(write_structure(Structure(room.size, room.data_version, tuple(blocks))))
+    assert sorted(problems_for(repo)) == [
+        "content/rooms/crypt/drain.nbt: fluid at 3 2 3: a fluid that can reach the room's sides or floor flows "
+        "out of its box, where cleanup does not reach; a room in a dungeon type's pool keeps its fluids inside",
+    ]
+    path.write_bytes(write_structure(Structure(room.size, room.data_version, (*shell, *room.blocks, water))))
+    load_and_validate(repo)  # closed, the room holds its water; its doorways lead into the next rooms

@@ -94,7 +94,7 @@ public final class GeneratedRoomExpectations {
             new RoomExpectation("realmforge:rooms/third_party/mo_structures/sphinx/chamber", 14, 12, 29, 1, 1664),
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/entrances/entrance_1", 7, 6, 7, 1, 169),
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/entrances/entrance_1_long", 7, 6, 7, 1, 169),
-            new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/lobby/lobby_01", 13, 6, 13, 5, 432),
+            new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/lobby/lobby_01", 13, 6, 13, 5, 433),
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/combination_lock", 13, 6, 13, 2, 91),
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/drowned_junction", 13, 6, 13, 3, 346),
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/husk_temple", 13, 6, 13, 2, 353),

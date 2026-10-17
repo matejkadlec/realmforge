@@ -159,8 +159,9 @@ Rules:
   middle), `exit` (W4d), `mob` or `chest` (W6)
   ([architecture 15.3](../docs/architecture.md#153-generation-pure-first-then-minecraft)). The builder reads them
   and never places them, and validation refuses any other structure block. A room in the pool of a dungeon type
-  keeps fluids (water, lava, waterlogged blocks, kelp, seagrass) off its sides and floor, where they would flow out
-  of its box past what cleanup clears.
+  keeps its fluids (water, lava, waterlogged blocks, kelp, seagrass) from reaching its sides and floor, through a
+  floor hole or a wall gap too, where they would flow out of its box past what cleanup clears; only its connectors
+  may let a fluid through, into the next room.
 - `dungeons/` holds the kinds of dungeons ([architecture 15.2](../docs/architecture.md#152-dungeon-types)): a
   `name` (a label), the room `pool` the type is built from, and the `layout` the planner follows, each range
   written `[min, max]`: `main_path` (rooms between the entrance and the ending, 1 to 32), `branches` (side branches
