@@ -7,5 +7,5 @@ footprint: [11, 11]
 height: 7
 connectors: [north]
 features: [pillars]
-seeds: []
+seeds: [1, 2, 4]
 rejected_seeds: []

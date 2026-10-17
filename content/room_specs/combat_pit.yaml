@@ -7,5 +7,5 @@ footprint: [13, 11]
 height: 7
 connectors: [north, south]
 features: [pit]
-seeds: []
+seeds: [1, 2, 3, 4]
 rejected_seeds: []

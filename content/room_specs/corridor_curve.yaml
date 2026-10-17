@@ -6,5 +6,5 @@ theme: realmforge:stone_vault
 footprint: [7, 7]
 height: 5
 connectors: [south, east]
-seeds: []
+seeds: [1, 2, 3, 4]
 rejected_seeds: []
