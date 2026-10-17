@@ -5,7 +5,9 @@ Date: 2026-10-12
 Status: Accepted (resolves the Nether and End question left open by
 [0012](0012-procedural-dungeons-and-dimensions.md)), amended by
 [0032](0032-v1-realm-layout-amends-the-nether-and-end-removal.md) (Overworld for levels 1–10, Ashfire no replacement
-for the Nether, netherite in Undervault)
+for the Nether, netherite in Undervault) and by
+[0033](0033-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md) (merchants sell the Nether and End
+materials, the Wither can be summoned again, no desert refining items)
 
 ## Context
 

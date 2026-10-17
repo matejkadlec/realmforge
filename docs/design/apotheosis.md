@@ -171,7 +171,8 @@ The Augmenting Table upgrades one affix for 2 sigils and 225 levels, and rerolls
 
 **Decided (Matěj, 2026-10-17): Apotheosis's recipes stay at their defaults**, with no recipe overrides, so they
 match JEI and the wikis. The approved swap of nether bricks for Undervault's stone bricks (2026-10-16) is dropped
-with it. The materials ADR 0025 left without a source come from:
+with it. The materials ADR 0025 left without a source come from these sources, which
+[ADR 0033](../decisions/0033-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md) records:
 
 | Material | Needed by | Source |
 | --- | --- | --- |
