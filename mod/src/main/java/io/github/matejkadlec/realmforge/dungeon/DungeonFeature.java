@@ -2,6 +2,7 @@ package io.github.matejkadlec.realmforge.dungeon;
 
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
+import io.github.matejkadlec.realmforge.dungeon.instance.InstanceRules;
 import java.util.function.BiConsumer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -10,6 +11,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerRespawnPositionEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
@@ -24,6 +26,7 @@ public final class DungeonFeature {
         DungeonAttachments.register(modBus);
         modBus.addListener(DataPackRegistryEvent.NewRegistry.class, DungeonRegistries::registerDataPackRegistries);
         InstanceManager.register(modBus);
+        InstanceRules.register();
 
         // Inside the level tick, so the builder's time counts in the server's tick time (and /tick query, spark).
         NeoForge.EVENT_BUS.addListener(LevelTickEvent.Post.class, event -> {
@@ -45,6 +48,13 @@ public final class DungeonFeature {
         });
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class,
                 event -> withManager(event.getEntity(), InstanceManager::onLogin));
+        // Before the respawn: a death inside a run respawns at its entrance (architecture 15.5).
+        NeoForge.EVENT_BUS.addListener(PlayerRespawnPositionEvent.class, event -> {
+            if (!event.isFromEndFight()) {
+                withManager(event.getEntity(), (manager, player) ->
+                        manager.respawnPoint(player).ifPresent(event::setTeleportTransition));
+            }
+        });
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerRespawnEvent.class,
                 event -> withManager(event.getEntity(), InstanceManager::onLeftDimension));
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerChangedDimensionEvent.class,

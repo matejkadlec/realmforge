@@ -37,6 +37,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 import net.minecraft.world.level.storage.LevelData;
@@ -273,29 +274,24 @@ public final class InstanceManager extends SavedData {
     }
 
     /**
-     * Moves a party member into a playable plot and remembers where they came from. A player already inside the
-     * plot keeps their first return point.
+     * Moves a party member into a playable plot, remembers where they came from and switches a survival player to
+     * Adventure mode. A player already inside the plot keeps their first return point.
      */
     public boolean enter(ServerPlayer player, Plot plot) {
         if (!plot.state().isPlayable() || !plot.party().contains(player.getUUID())) {
             return false;
         }
-        Optional<InstanceVisit> visit = player.getExistingData(DungeonAttachments.VISIT);
-        if (visit.isPresent() && visit.get().plot() != plot.id()) {
+        Optional<InstanceVisit> existing = player.getExistingData(DungeonAttachments.VISIT);
+        if (existing.isPresent() && existing.get().plot() != plot.id()) {
             return false;
         }
-        if (visit.isEmpty()) {
-            player.setData(DungeonAttachments.VISIT, new InstanceVisit(plot.id(), player.level().dimension(),
-                    player.position(), player.getYRot(), player.getXRot()));
-        }
-        Vec3 relative = plot.spawn().orElseGet(() -> {
-            Vec3 found = findSpawn(plot);
-            plot.setSpawn(found);
-            return found;
-        });
-        Vec3 spawn = Vec3.atLowerCornerOf(plot.origin()).add(relative);
-        float yaw = plot.layout().orElseThrow().yawFrom(relative);
-        player.teleportTo(level(), spawn.x, spawn.y, spawn.z, Set.of(), yaw, 0.0F, true);
+        InstanceVisit visit = existing.orElseGet(() -> new InstanceVisit(plot.id(), player.level().dimension(),
+                player.position(), player.getYRot(), player.getXRot(), Optional.empty()));
+        player.setData(DungeonAttachments.VISIT, visit);
+        TeleportTransition arrival = arrival(plot);
+        Vec3 spawn = arrival.position();
+        player.teleportTo(level(), spawn.x, spawn.y, spawn.z, Set.of(), arrival.yRot(), arrival.xRot(), true);
+        player.setData(DungeonAttachments.VISIT, InstanceRules.enterAdventure(player, visit));
         plot.activate();
         setDirty();
         return true;
@@ -331,8 +327,9 @@ public final class InstanceManager extends SavedData {
     }
 
     /**
-     * Ends a plot's run: players still inside are sent back, then its blocks, its rooms' margin included, are cleared
-     * over the next ticks before the plot is free for the next run. Nobody waits for that (spike 3, ADR 0019).
+     * Ends a plot's run: players still inside are sent back (a dead one when they respawn), then its blocks, its rooms'
+     * margin included, are cleared over the next ticks before the plot is free for the next run. Nobody waits for that
+     * (spike 3, ADR 0019).
      */
     public void release(Plot plot) {
         if (plot.state() == PlotState.CLOSING || plot.state() == PlotState.FREE) {
@@ -342,7 +339,8 @@ public final class InstanceManager extends SavedData {
         for (UUID member : plot.party()) {
             ServerPlayer player = server.getPlayerList().getPlayer(member);
             InstanceVisit visit = player == null ? null : player.getExistingDataOrNull(DungeonAttachments.VISIT);
-            if (visit != null && visit.plot() == plot.id()) {
+            // A dead player stays where they lie: their respawn takes them to their return point.
+            if (visit != null && visit.plot() == plot.id() && !player.isDeadOrDying()) {
                 sendBack(player, visit);
             }
         }
@@ -355,13 +353,14 @@ public final class InstanceManager extends SavedData {
     /**
      * After a login: a player inside the instance dimension stays only if their run still exists; anyone else is
      * sent back. A player outside it leaves the run they belong to: one they left while offline (they still hold
-     * a visit), or one they never entered because they disconnected while it was being built.
+     * a visit), or one they never entered because they disconnected while it was being built. Whoever leaves gets
+     * back the game mode entering took from them, also after a crash.
      */
     public void onLogin(ServerPlayer player) {
         InstanceVisit visit = player.getExistingDataOrNull(DungeonAttachments.VISIT);
         if (!InstanceDimension.isInstance(player.level())) {
             if (visit != null) {
-                player.removeData(DungeonAttachments.VISIT);
+                endVisit(player, visit);
                 leftRun(player.getUUID(), visit.plot());
             }
             for (Plot plot : List.copyOf(plots.values())) {
@@ -373,6 +372,8 @@ public final class InstanceManager extends SavedData {
         }
         Plot plot = visit == null ? null : plots.get(visit.plot());
         if (plot != null && plot.state().isPlayable() && plot.party().contains(player.getUUID())) {
+            // The server may force its default game mode at login.
+            player.setData(DungeonAttachments.VISIT, InstanceRules.enterAdventure(player, visit));
             return;
         }
         LOGGER.info("Sending {} out of the instance dimension: their run is gone",
@@ -385,13 +386,35 @@ public final class InstanceManager extends SavedData {
         }
     }
 
-    /** A player who holds a visit but is now outside the instance dimension (respawned, teleported) left the run. */
+    /**
+     * A player who holds a visit but is now outside the instance dimension (respawned, teleported) left the run, and
+     * gets back the game mode entering took from them.
+     */
     public void onLeftDimension(ServerPlayer player) {
         InstanceVisit visit = player.getExistingDataOrNull(DungeonAttachments.VISIT);
         if (visit != null && !InstanceDimension.isInstance(player.level())) {
-            player.removeData(DungeonAttachments.VISIT);
+            endVisit(player, visit);
             leftRun(player.getUUID(), visit.plot());
         }
+    }
+
+    /**
+     * Where a player who died in their run respawns: at its entrance, still inside, while the run is playable, and at
+     * their return point once it is gone (it was released while they lay dead). Empty for anyone else, who respawns
+     * as vanilla decides.
+     */
+    public Optional<TeleportTransition> respawnPoint(ServerPlayer player) {
+        InstanceVisit visit = player.getExistingDataOrNull(DungeonAttachments.VISIT);
+        if (visit == null || !InstanceDimension.isInstance(player.level())) {
+            return Optional.empty();
+        }
+        Plot plot = plots.get(visit.plot());
+        if (plot != null && plot.state().isPlayable() && plot.party().contains(player.getUUID())) {
+            return Optional.of(arrival(plot));
+        }
+        ServerLevel target = level().getServer().getLevel(visit.returnLevel());
+        return target == null ? Optional.empty() : Optional.of(new TeleportTransition(target, visit.returnPos(),
+                Vec3.ZERO, visit.returnYaw(), visit.returnPitch(), TeleportTransition.DO_NOTHING));
     }
 
     // ---- Internals ----
@@ -498,8 +521,29 @@ public final class InstanceManager extends SavedData {
         setDirty();
     }
 
-    private void sendBack(ServerPlayer player, InstanceVisit visit) {
+    /**
+     * Where players arrive in a playable plot, in the instance level: its spawn (found once), looking along the
+     * layout's way on.
+     */
+    private TeleportTransition arrival(Plot plot) {
+        Vec3 relative = plot.spawn().orElseGet(() -> {
+            Vec3 found = findSpawn(plot);
+            plot.setSpawn(found);
+            return found;
+        });
+        Vec3 spawn = Vec3.atLowerCornerOf(plot.origin()).add(relative);
+        float yaw = plot.layout().orElseThrow().yawFrom(relative);
+        return new TeleportTransition(level(), spawn, Vec3.ZERO, yaw, 0.0F, TeleportTransition.DO_NOTHING);
+    }
+
+    /** Forgets the player's visit and gives back the game mode entering took from them. */
+    private static void endVisit(ServerPlayer player, InstanceVisit visit) {
         player.removeData(DungeonAttachments.VISIT);
+        InstanceRules.restoreGameMode(player, visit);
+    }
+
+    private void sendBack(ServerPlayer player, InstanceVisit visit) {
+        endVisit(player, visit);
         ServerLevel target = player.level().getServer().getLevel(visit.returnLevel());
         if (target == null) {
             sendToSpawn(player);

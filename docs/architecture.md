@@ -261,7 +261,7 @@ How features cooperate without breaking the direction:
 | | `RegisterTicketControllersEvent` (mod) | chunk ticket controllers: instance plots ([15.5](#155-instances)) |
 | World creation | `LevelEvent.CreateSpawnPosition` (game; listened to, never cancelled) | the gamerules of a new world, once ([19.1](#191-world-defaults)) |
 | Server start | `RegisterCommandsEvent`, `ServerStartedEvent` (game) | commands |
-| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerEvent.PlayerRespawnEvent`, `PlayerEvent.PlayerChangedDimensionEvent`, `PlayerTickEvent.Post` (game) | recompute stats at the end of a new player entity's first tick and after a change; keep health across respawns ([8.2](#82-where-modifiers-come-from)); bring a character's level cap and level up to date at login ([10.2](#102-leveling)); keep or end the player's instance run ([15.5](#155-instances)); reapply Dark Vision ([19.1](#191-world-defaults)) |
+| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerRespawnPositionEvent`, `PlayerEvent.PlayerRespawnEvent`, `PlayerEvent.PlayerChangedDimensionEvent`, `PlayerTickEvent.Post` (game) | recompute stats at the end of a new player entity's first tick and after a change; keep health across respawns ([8.2](#82-where-modifiers-come-from)); bring a character's level cap and level up to date at login ([10.2](#102-leveling)); keep or end the player's instance run, and respawn a death inside it at its entrance ([15.5](#155-instances)); reapply Dark Vision ([19.1](#191-world-defaults)) |
 | Play | damage, death, spawn, tick and advancement events (game) | sections 8-16 |
 | Client start | `RealmforgeClient` constructor; client registration events (mod) | [section 18](#18-client-code-rendering-gui-input) |
 
@@ -460,7 +460,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:combat` | `spell` | players and mobs that cast | resource pools (mana, rage), cooldowns, current cast (transient), whether a cast set Better Combat's disable tag | owner, throttled (players; clients never read a mob's copy) |
 | `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points | owner |
 | `realmforge:dark_vision` | `world` | players | whether Dark Vision is switched on (on by default) | not synced (the effect itself is) |
-| `realmforge:instance` | `dungeon` | players | the run's plot and the return point (spike 3); W4 adds the game mode to restore | not synced |
+| `realmforge:instance` | `dungeon` | players | the run's plot, the return point (spike 3) and the game mode to give back when entering switched it to Adventure (W4c) | not synced |
 | `realmforge:stat_tracker` | `stats` | players | when the stat modifiers were last recomputed and what a respawn owes the health ([8.2](#82-where-modifiers-come-from)); transient: not saved or copied | not synced |
 | `realmforge:magic_shield` | `combat` | players (any entity with the stat) | the points left in the magic shield and the tick count from which it refills ([9.1](#91-damage-pipeline)); transient: not saved or copied, so a new player entity starts with a full shield | the owner, points only (the HUD bar) |
 | `realmforge:pending_refill` | `mob` | mobs leveled as they spawn | a mark: refill the mob's health to its scaled maximum when it joins the level ([14.1](#141-mob-levels)); saved (a chunk-generation spawn waits in the chunk's data), not copied, removed at the join | not synced |
@@ -1482,7 +1482,7 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   at), its data markers, where players arrive, the boxes of its rooms and of blocks still to clear, its work
   progress, its party and the chunks it holds. The party is a list of players: solo in M1 (decision D8), parties
   later (RLM-68) without a data migration. Each player's run and return point live in the player's
-  `realmforge:instance` attachment ([7](#7-player-state)); W4 adds the previous game mode.
+  `realmforge:instance` attachment ([7](#7-player-state)), with the game mode entering took from them (W4c).
 - **Entry:** an entrance in the world (W4d: a temporary portal opened with a dungeon key, D8) → allocate a plot
   (`InstanceManager#open`: the rooms' boxes and data markers from their templates, lowest free plot first) → load
   its chunks in the background, then hold them → build over ticks → find where players arrive → teleport the online
@@ -1522,19 +1522,25 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   timeouts; there the QA mod loads the chunks plots wait for before each tick (`GameTestChunkLoads`).
 - **Completion:** a run whose goal is done (its final boss died; W4d adds the trigger, the message and the timer) is
   `completed` (`InstanceManager#complete`): its players stay until they leave or the plot closes.
-- **Rules inside: nobody edits the rooms.** Survival players are switched to Adventure mode while inside (creative
-  operators keep theirs); the previous game mode is saved in an attachment and restored when they leave (also on
-  the next login after a crash).
+- **Rules inside: nobody edits the rooms** (W4c, `dungeon/instance/InstanceRules`). Survival players are switched to
+  Adventure mode when they enter (creative operators keep theirs, and so do players in Adventure or spectator mode);
+  their visit remembers survival, and leaving gives it back, unless something else changed the game mode since (an
+  operator's `/gamemode`). Every way out restores it: `leave`, the respawn and teleport below, and the next login
+  outside a live run, also after a crash. A login inside a live run switches a survival player to Adventure again,
+  in case the server forces its default game mode.
   Vanilla then refuses every player edit, including buckets, flint and steel and tool edits such as stripping or
   tilling (`Player#mayUseItemAt`, `ItemStack#useOn`), and the client predicts the refusal, so there are no ghost
-  blocks; doors, levers, chests and combat still work. Edits by anything else are cancelled inside the instance
+  blocks; doors, levers, chests and combat still work. Edits by anything else are stopped inside the instance
   dimension: entities placing blocks (`BlockEvent.EntityPlaceEvent`), fluids creating blocks
-  (`BlockEvent.FluidPlaceBlockEvent`), trampled farmland (`BlockEvent.FarmlandTrampleEvent`), mob griefing
-  (`EntityMobGriefingEvent`) and explosions (the block list of `ExplosionEvent.Detonate`). Adventure mode still
+  (`BlockEvent.FluidPlaceBlockEvent`: its caller ignores cancelling and places the event's new state, so the guard
+  sets that back to the block that was there), trampled farmland (`BlockEvent.FarmlandTrampleEvent`), mob griefing
+  (`EntityMobGriefingEvent`) and explosions (the block list of `ExplosionEvent.Detonate`, which the explosion's fire
+  uses too; it still hurts and pushes entities). Adventure mode still
   lets an item with the `can_break` or `can_place_on` component (`DataComponents.CAN_BREAK`, `CAN_PLACE_ON`) edit
   matching blocks, and commands, data packs or other mods can hand out such items, so block breaks
-  (`BlockEvent.BreakEvent`) and placements (`BlockEvent.EntityPlaceEvent`) by players who are not in creative mode
-  are cancelled there too. Buckets get past both events: `BucketItem#use` (`MobBucketItem` included) checks
+  (`BreakBlockEvent`, posted on both sides, so the client predicts it) and placements
+  (`BlockEvent.EntityPlaceEvent`) by players who are not in creative mode are cancelled there too. Buckets get past
+  both events: `BucketItem#use` (`MobBucketItem` included) checks
   `Level#mayInteract` (spawn protection, which covers only Overworld, and the world border) and
   `Player#mayUseItemAt`, which a matching `can_place_on` passes, then places or picks up the fluid with
   `Level#setBlock` and posts no block event, and `CommonHooks.onPlaceItemIntoWorld` captures no block snapshots for
@@ -1542,12 +1548,22 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   not in creative mode inside the dimension. `BucketItem` has no `useOn`, so a bucket reaches `use` only through
   that event, and `RightClickBlock` stays alone: doors, levers and chests keep working with a bucket in hand. The
   event fires on the client too (`MultiPlayerGameMode#useItem`), so the same listener stops the client's
-  prediction and no ghost fluid appears. W4's GameTests use a bucket (a plain one, and water, lava and empty
-  buckets with `can_place_on` matching a room block, placing and picking up), flint and steel, an axe, a hoe and a
-  tool with `can_break`, and place and break blocks inside an instance, and expect the room unchanged.
-- **Also inside:** respawn at the entrance, no natural spawns, leave through the exit portal or a command.
-- **Leaving and disconnects:** leaving by command or exit, respawning outside the dimension
-  (`PlayerEvent.PlayerRespawnEvent`) or being teleported out (`PlayerEvent.PlayerChangedDimensionEvent`) leaves the
+  prediction and no ghost fluid appears. `InstanceRulesGameTests` use a bucket (a plain one, and water, lava and
+  empty buckets with `can_place_on` matching a room block, placing and picking up), flint and steel, an axe, a hoe, a
+  tool with `can_break`, and place and break blocks inside an instance, and expect the room unchanged; an explosion
+  with fire, a fluid's block, a mob's placement and griefing, and trampling are checked inside and outside the
+  dimension.
+- **Respawn at the entrance** (W4c, Matěj's decision of 2026-10-11): `PlayerRespawnPositionEvent` (posted by
+  `PlayerList#respawn` before it makes the new player entity) moves a player who died in a playable run to its
+  arrival spot, still inside and in the same run, looking along the way on; the visit is copied on death, and the
+  respawned player keeps Adventure mode. Their bed or anchor stays their spawn point outside (vanilla still uses an
+  anchor charge when the anchor was the original respawn target, as `findRespawnPositionAndUseSpawnBlock` runs before
+  the event). A run released while its player lies dead does not move the body (`release` skips dead players): the
+  respawn takes them to their return point instead, which ends the visit. Leaving the End is no death and is left
+  alone.
+- **Also inside:** no natural spawns, leave through the exit portal or a command.
+- **Leaving and disconnects:** leaving by command or exit, respawning outside the dimension (at the return point
+  after the run was released, above; `PlayerEvent.PlayerRespawnEvent`) or being teleported out (`PlayerEvent.PlayerChangedDimensionEvent`) leaves the
   run; a run whose party is empty is released, built or still building. A party member who has not entered yet (the
   run is still being built, or built and waiting) can leave it too (`InstanceManager#leave`, `/qa instance leave`),
   and is never moved in. A disconnect keeps the run. On login
