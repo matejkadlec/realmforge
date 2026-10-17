@@ -699,7 +699,8 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
      projectiles (their shooter's) and physical school hits. NeoForge runs that reduction for every hit, so the
      formula keeps vanilla's (zero) reduction for damage in `#minecraft:bypasses_armor`. Vanilla still wears the
      armor down. The formula is ours in code (`DamageCalculator#armorReduction`, JUnit-checked against vanilla's), so
-     a mod that replaces `CombatRules` (Apothic Attributes, RLM-205) does not change it.
+     a mod that replaces `CombatRules` (Apothic Attributes, RLM-205) does not change it
+     ([ADR 0033](decisions/0033-vanilla-armor-formula-amends-our-own.md)).
    - **The magic shield** joins the absorption reduction
      (`addReductionModifier(DamageContainer.Reduction.ABSORPTION, ...)`) of a defender that has the stat or points
      left (step 5).
@@ -1210,7 +1211,8 @@ Built in W1 (RLM-31): `world/DimensionRules`, `world/MobLevelRule` and `mob/MobL
   `mob` reapplies the scaling from its stored level and the current curves, replacing its `realmforge:mob_level/`
   modifiers (removing any it no longer produces) and keeping its share of health. A release or data pack that changes
   a curve then reaches old mobs too.
-- XP (`character`), loot (`loot`) and the armor formula (`combat`) read the level from `realmforge:level`. The level
+- XP (`character`) and loot (`loot`) read the level from `realmforge:level`; armor reads no level, only the hit's
+  size, which mob scaling raises with the level ([9.1](#91-damage-pipeline)). The level
   shows with the mob's name and health bar, not apart from them (Matěj, 2026-10-14): through Neat, the pack's
   health bar mod, if it can show it; otherwise through another health bar mod or a Neat add-on that can; otherwise
   through health bars of our own (RLM-166, *verify* the chosen mod's API). Until then the dev game shows a mob's
@@ -1858,7 +1860,7 @@ that agents can read. So far:
 - `/qa stats set <stat> <value> [<players>]`, `/qa stats reset|show` (F4b: points for a primary stat, percent for a
   share) and `/qa level <level> [<entity>]` (a player with a character gets exactly the character XP of the level,
   quietly, so the level follows up to the level cap, C2; another player or a mob gets the `realmforge:level`
-  attachment, which the armor formula reads; a hostile mob also gets the scaling of the level, W1, and a player's
+  attachment, which XP and loot read; a hostile mob also gets the scaling of the level, W1, and a player's
   race and class bonuses follow it, C1). The core mod's operator command `/realmforge xp add|set|query`
   ([10.2](#102-leveling)) gives, sets or shows character XP, and vanilla's `/advancement grant @s only
   realmforge:chapter/chapter_1` completes chapter 1;
