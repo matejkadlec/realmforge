@@ -180,7 +180,12 @@ blocks shift (RLM-119).
 **`rf rooms gallery [DIR]`** renders every `*.nbt` below `DIR` (default `content/rooms/`; any folder works, such as the
 spike rooms in `qa-mod/src/generated/resources/data/realmforge_qa/structure/spike/`, which can be viewed but not
 reviewed, or a folder of generated seed candidates) from four views: outside, cut `--cut` blocks above the bottom
-(default 5) from two corners, and a plan of the cut. It writes the PNGs and `index.html` to
+(default 5) from two corners, and a plan of the cut. Every data marker shows with its label
+([ADR 0035](../docs/decisions/0035-room-galleries-show-every-marker-with-its-label.md)): the views draw it as a block in
+its label's colour (`MARKER_STYLES` in `rooms/render.py`: `entrance` lime, `mob` red, `chest` yellow, `exit` light
+blue, anything else magenta), also above the cut, each card lists the room's markers by label with their positions,
+and the page opens with a legend of the labels and the connectors. A new marker gets its style in the same change (a
+test holds `MARKERS` to it). It writes the PNGs and `index.html` to
 `.cache/rooms/gallery/<folder>/` (replaced on every run; `--out` picks another folder, which must not overlap the rooms'
 folder and is replaced only when it is empty or an earlier gallery, marked by a `.room-gallery` file). The renderer is
 [nucleation](https://github.com/Schem-at/Nucleation) (MIT, pinned in `pyproject.toml`), with block models and textures

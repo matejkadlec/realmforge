@@ -19,8 +19,9 @@ so a theme swap reaches every block the room is built of. The style rules:
   the game would apply on placement anyway.
 - **Light:** wall lights (and lanterns from the ceiling in big rooms) until no cell where a mob could spawn is dark
   (``rooms/walk.py``), spaced so that no two wall lights are closer than ``LIGHT_SPACING``.
-- **Markers:** an ``entrance`` marker in an entrance's middle, ``mob`` markers in combat rooms and arenas, ``chest``
-  markers in treasure rooms (architecture 15.3).
+- **Markers:** an ``entrance`` marker in an entrance's middle; ``mob`` markers in combat rooms and arenas, spread
+  evenly over the floor clear of the walls and the doorways (an arena with a balcony puts one on its deck);
+  ``chest`` markers in treasure rooms, in the niches or against the walls (architecture 15.3).
 
 A spec the generator cannot build (no place for a pillar, a balcony's stairs) raises ``RoomGeneratorError``.
 """
@@ -43,8 +44,9 @@ from realmforge_tools.schema.room_spec import RoomSpecDef, RoomThemeDef
 GENERATED_DIR = "generated"
 DOOR = "realmforge:door"
 EMPTY_POOL = "minecraft:empty"
-# The closest two wall lights may be (blocks apart on the larger axis).
+# The closest two wall lights, and two mob spots, may be (blocks apart on the larger axis).
 LIGHT_SPACING = 3
+MOB_SPACING = 3
 _DIRECTIONS = {"north": (0, -1), "south": (0, 1), "east": (1, 0), "west": (-1, 0)}
 _FACING_OF = {vector: side for side, vector in _DIRECTIONS.items()}
 _CLOCKWISE = {"north": "east", "east": "south", "south": "west", "west": "north"}
@@ -440,8 +442,8 @@ class _Builder:
                 elif not self.interior(nx, nz) and self.blocks[(nx, y + 1, nz)] == self.state("wall_body"):
                     self.put((nx, y + 1, nz), self.state("wall_body_cracked"))
 
-    def _near_door(self, x: int, z: int) -> bool:
-        return any(abs(x - door.pos[0]) + abs(z - door.pos[2]) <= 2 for door in self.doors)
+    def _near_door(self, x: int, z: int, reach: int = 2) -> bool:
+        return any(abs(x - door.pos[0]) + abs(z - door.pos[2]) <= reach for door in self.doors)
 
     def _markers(self) -> None:
         kind = self.spec.kind
@@ -459,12 +461,13 @@ class _Builder:
             self._marker("entrance", middle)
         elif kind in ("combat", "arena"):
             count = 4 if kind == "arena" else (3 if self.width * self.depth >= 120 else 2)
+            fixed: list[Pos] = []
             if kind == "arena" and self.deck:
-                deck = sorted(p for p in stands if (p[0], p[2]) in self.deck)
-                if deck:
-                    self._marker("mob", self.rng.choice(deck))
-                    count -= 1
-            for pos in self._spread(floor_cells, count):
+                balcony = self._balcony_spot(stands)
+                if balcony is not None:
+                    self._marker("mob", balcony)
+                    fixed.append(balcony)
+            for pos in self._mob_spots(stands, count - len(fixed), fixed):
                 self._marker("mob", pos)
         elif kind == "treasure":
             spots = [p for p in self.niches if p in stands] or [
@@ -473,12 +476,75 @@ class _Builder:
             for pos in self._spread(sorted(spots), 2 if self.width * self.depth >= 100 else 1):
                 self._marker("chest", pos)
 
-    def _spread(self, cells: list[Pos], count: int) -> list[Pos]:
-        """``count`` cells far from the doorways and from each other (farthest-point sampling)."""
+    def _balcony_spot(self, stands: set[Pos]) -> Pos | None:
+        """The standing cell on the balcony's deck (four blocks above the floor) nearest the deck's middle."""
+        deck_level = self.floor + 4
+        spots = sorted(p for p in stands if p[1] == deck_level and (p[0], p[2]) in self.deck)
+        if not spots:
+            return None
+        mx = sum(p[0] for p in spots) / len(spots)
+        mz = sum(p[2] for p in spots) / len(spots)
+        return min(spots, key=lambda p: ((p[0] - mx) ** 2 + (p[2] - mz) ** 2, p))
+
+    def _mob_spots(self, stands: set[Pos], count: int, fixed: list[Pos]) -> list[Pos]:
+        """``count`` mob spots spread evenly over the floor, so the fight fills the room instead of lining its walls.
+
+        The candidates are the standing cells of the floor (the pit's and its step included, the balcony's deck and
+        the floor under it not) with no wall within a block and no doorway within three. The spots start as
+        farthest-point picks (far from the doorways, the ``fixed`` spots and each other) and then move, a few rounds
+        of Lloyd's relaxation, to the middle of the share of the floor nearest each, so each spot ends in the middle
+        of its own part of the room, never closer than ``MOB_SPACING`` to another spot. A room too small for that
+        falls back to any standing floor cell away from the doorways."""
+        if count <= 0:
+            return []
+        floor_levels = (self.floor - 1, self.floor)
+        floor = [p for p in stands if p[1] in floor_levels and (p[0], p[2]) not in self.deck]
+        cells = sorted(
+            p for p in floor if self._clear_of_walls(p[0], p[2]) and not self._near_door(p[0], p[2], 3)
+        )
+        if len(cells) < count:
+            cells = sorted(p for p in floor if not self._near_door(p[0], p[2]))
+        if not cells:
+            return []
+        sites = self._spread(cells, count, [*fixed])
+        for _ in range(8):
+            shares: list[list[Pos]] = [[] for _ in sites]
+            for cell in cells:
+                nearest = min(
+                    range(len(sites) + len(fixed)),
+                    key=lambda i: (_flat_distance(cell, (sites + fixed)[i]), i),
+                )
+                if nearest < len(sites):
+                    shares[nearest].append(cell)
+            moved: list[Pos] = []
+            for site, share in zip(sites, shares, strict=True):
+                taken = moved + fixed
+                room = [p for p in share if all(_gap(p, other) >= MOB_SPACING for other in taken)]
+                if not room:
+                    moved.append(site)
+                    continue
+                mx = sum(p[0] for p in share) / len(share)
+                mz = sum(p[2] for p in share) / len(share)
+                moved.append(min(room, key=lambda p: ((p[0] - mx) ** 2 + (p[2] - mz) ** 2, p)))
+            if moved == sites:
+                break
+            sites = moved
+        return sites
+
+    def _clear_of_walls(self, x: int, z: int) -> bool:
+        """Whether no wall (the shell or a wall grown into the room for alcoves) is within a block of a column."""
+        return all(
+            self.interior(x + dx, z + dz) and (x + dx, z + dz) not in self.wall_columns
+            for dx in (-1, 0, 1)
+            for dz in (-1, 0, 1)
+        )
+
+    def _spread(self, cells: list[Pos], count: int, anchors: list[Pos] | None = None) -> list[Pos]:
+        """``count`` cells far from the doorways, the ``anchors`` and each other (farthest-point sampling)."""
         if not cells:
             return []
         chosen: list[Pos] = []
-        anchors = [door.pos for door in self.doors]
+        anchors = [door.pos for door in self.doors] + (anchors or [])
         for _ in range(min(count, len(cells))):
 
             def distance(p: Pos) -> tuple[int, float]:
@@ -610,6 +676,16 @@ class _Builder:
             StructureBlock(pos, state, self.data.get(pos)) for pos, state in sorted(self.blocks.items())
         )
         return Structure((self.width, self.height, self.depth), DATA_VERSION, blocks)
+
+
+def _gap(a: Pos, b: Pos) -> int:
+    """How far apart two cells are seen from above, on the larger axis."""
+    return max(abs(a[0] - b[0]), abs(a[2] - b[2]))
+
+
+def _flat_distance(a: Pos, b: Pos) -> int:
+    """The squared distance between two cells seen from above."""
+    return (a[0] - b[0]) ** 2 + (a[2] - b[2]) ** 2
 
 
 def _opposite(side: str) -> str:
