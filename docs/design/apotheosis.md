@@ -223,3 +223,8 @@ For Matěj; each has a proposal so the integration can go on.
 4. **Armor from both the curve and the augments.** Our level curve and the tier augments both add armor, and
    RLM-204 asked that no stat be counted twice. Proposal: keep both as Matěj asked, and retune the armor curve if
    the playtest shows mobs too tanky; the augments' armor stays within vanilla's formula since RLM-223.
+5. **The Wither flies**, and the [vision](../vision.md) wants no flying bosses
+   ([ADR 0033](../decisions/0033-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md)). Proposal:
+   an exception for the vanilla Wither, which a player summons by choice for nether stars; the vision's rule keeps
+   covering the bosses of our realms and dungeons. Alternatives: a Wither kept on the ground, or another nether
+   star source.

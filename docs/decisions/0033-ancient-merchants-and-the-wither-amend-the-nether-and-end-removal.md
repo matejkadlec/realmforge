@@ -74,5 +74,9 @@ Everything else in 0025 and 0032 stands:
   Apotheosis station that needs a Nether ingredient waits for the merchants.
 - **A summoned Wither is a boss that can be farmed.** It is levelled like other bosses (RLM-240), and its nether
   stars are the Augmenting Table's source.
+- **The vanilla Wither flies**, and the [vision](../vision.md) wants no flying bosses. Matěj's decision names the
+  Wither without settling this, so it is an open question for him: an exception for the vanilla Wither (the
+  vision's rule then covers our own bosses), a Wither kept on the ground, or another nether star source
+  ([Apotheosis design](../design/apotheosis.md#open-questions), question 5).
 - **Docs:** the [Apotheosis design](../design/apotheosis.md) and the [realm design](../design/realms.md) follow this
   ADR. Building the professions is RLM-241.
