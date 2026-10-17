@@ -28,8 +28,8 @@ The **Ancient Builder** and the **Ancient Specialist** (RLM-241) sell Nether and
 
 - They are ordinary professions with workstations of their own (Ancient Casting and Ancient Workbench).
 - Each has a fixed trade list. They have no villager levels, and their prices never scale with the player's level.
-- **Lore:** the First Wright destroyed the Nether and End long ago. These merchants still hold goods from the time
-  those worlds existed.
+- **Lore:** their backstory is RLM-241's, which takes it into the [lore outline](../lore/outline.md) first.
+  This ADR records only where the items come from.
 - **The Ancient Builder sells:** netherrack, nether bricks, basalt, blackstone, soul sand, soul soil, magma blocks,
   glowstone, nether quartz ore and crying obsidian.
 - **The Ancient Specialist sells:** crimson and warped nylium and fungi, nether wart, blaze rods, ender pearls,

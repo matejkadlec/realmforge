@@ -85,9 +85,9 @@ Forgefire Ashfire, and the Brink Unmade Isles (RLM-164).
   and the top of a band holds harder optional content a player comes back for.
 - **Levels 1–10 are Overworld's, and Undervault opens at about level 6.** The old "levels 1–5 in Overworld" is gone.
   Mob levels follow the player, never below a realm's entry level (Matěj, 2026-10-16, RLM-240;
-  [apotheosis.md](apotheosis.md#mob-levels-and-loot)), and a realm's portal checks its entry level and quest.
-  Undervault opens through chapter 1's main questline, whose last step is the realm's unlock quest and also gives
-  the Stone Sigil ([realm portal spec](realm-portal.md#access-and-unlocks)). Overworld's own final boss gates Undervault once it
+  [apotheosis.md](apotheosis.md#mob-levels-and-loot)), and the realm needs no hard level lock. Undervault opens
+  through chapter 1's main questline, whose last step is the realm's unlock quest and also gives the Stone Sigil
+  ([realm portal spec](realm-portal.md#access-and-unlocks)). Overworld's own final boss gates Undervault once it
   exists (Matěj, 2026-10-16; [Overworld](#the-overworld)). The item rule of
   [Opening the next realm](#opening-the-next-realm) (RE-9) starts with the second realm, because Overworld has
   neither a realm ore nor a boss drop to craft the item from.
