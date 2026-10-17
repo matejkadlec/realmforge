@@ -1,13 +1,17 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
+import io.github.matejkadlec.realmforge.character.StatPoints;
 import io.github.matejkadlec.realmforge.generated.GeneratedItems;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedItemExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedItemExpectations.ItemExpectation;
+import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
@@ -21,6 +25,9 @@ import net.minecraft.world.level.block.Blocks;
  * <p>Coordinates are relative to the template's corner: its stone floor is at y = 0.
  */
 public final class ContentItemGameTests {
+    /** The item tag of every item {@code use}, as the core mod reads it. */
+    private static final List<TagKey<Item>> USE_TAGS = List.of(StatPoints.UNLEARN_ITEMS);
+
     private ContentItemGameTests() {
     }
 
@@ -33,8 +40,22 @@ public final class ContentItemGameTests {
             Item item = BuiltInRegistries.ITEM.getValue(id);
             helper.assertValueEqual(new ItemStack(item).getMaxStackSize(), expected.maxStackSize(), id + " max stack size");
             helper.assertValueEqual(item.getDescriptionId(), expected.translationKey(), id + " translation key");
+            if (!expected.useTag().isEmpty()) {
+                assertUseTag(helper, id, item, Identifier.parse(expected.useTag()));
+            }
         }
         helper.succeed();
+    }
+
+    /**
+     * The item carries the tag of its use, and the core mod reads that tag: the generator's tag path and the mod's
+     * {@code TagKey} cannot drift apart without this failing.
+     */
+    private static void assertUseTag(GameTestHelper helper, Identifier id, Item item, Identifier tag) {
+        helper.assertTrue(USE_TAGS.stream().anyMatch(key -> key.location().equals(tag)),
+                id + " has the use tag " + tag + ", which the core mod does not read");
+        helper.assertTrue(new ItemStack(item).is(TagKey.create(Registries.ITEM, tag)),
+                id + " is not in its use tag " + tag);
     }
 
     @QaGameTest
