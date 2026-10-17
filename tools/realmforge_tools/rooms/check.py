@@ -2,7 +2,8 @@
 entities, entities, container loot tables, jigsaw pools), connectors and data markers. ``validate.py`` adds the
 checks that need the room's sidecar: the entrance marker's room and fluids that can flow out of a room in a dungeon's pool.
 
-The blocks themes may swap come with the room generator (A4d).
+Generated rooms (A4d) also get the walk and light checks of ``rooms/walk.py`` and are held to their theme's blocks
+(``validate.py``).
 """
 
 from __future__ import annotations

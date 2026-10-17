@@ -101,6 +101,7 @@ uv run rf art gallery DIR                 # review gallery for DIR/<subject>/<ca
 uv run rf rooms import SRC --to DIR       # .nbt/.schem/.litematic -> rooms with draft sidecars (tools/README.md)
 uv run rf rooms gallery [DIR]             # render rooms (default content/rooms) -> .cache/rooms/gallery/ (Vulkan)
 uv run rf rooms review DIR                # merge decisions copied from the gallery into DIR/review.yaml
+uv run rf rooms candidates [SPEC...]      # seed candidates of content/room_specs/ -> .cache/rooms/candidates/
 
 ./gradlew build                           # compile both mods + JUnit
 ./gradlew runGameTestServer               # headless GameTests; exit code != 0 on failure

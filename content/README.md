@@ -162,6 +162,24 @@ Rules:
   keeps its fluids (water, lava, waterlogged blocks, kelp, seagrass) from reaching its sides and floor, through a
   floor hole or a wall gap too, where they would flow out of its box past what cleanup clears; only its connectors
   may let a fluid through, into the next room.
+- `room_specs/` holds the rooms the room generator builds (A4d,
+  [architecture 15.4](../docs/architecture.md#154-rooms)): the `kind` (`entrance`; the hallways `corridor` with
+  two opposite connectors, `curve` with two adjacent, `t_junction` with three, `crossing` with four and `dead_end`
+  with one; `combat`; `treasure`; `arena`, the boss's room), the `theme` (`realmforge:<id>` of `room_themes/`), the
+  `footprint` (`[x, z]`, 5 to 16 blocks, walls included), the `height` (5 to 16, floor and ceiling included), the
+  `connectors` (the sides with a doorway), the `features` (`pillars`, `alcoves`, `pit`, `balcony`, `rubble`), and
+  the `pools` and `weight` of its rooms. A feature that does not fit is refused (a pit needs 9 × 9 and a height of
+  6, a balcony a height of 9 and a side without a doorway, alcoves such a side and 7 blocks, pillars 7 blocks).
+  `seeds` are the candidates the gallery review kept: each is a room `generated/<spec>/seed_<n>` in the jar, with
+  the tags of its kind and connectors. `rejected_seeds` are the ones it rejected. Both are written by
+  `rf rooms review` on the candidates folder, as flow lists on one line (`seeds: [2, 7]`); see
+  [tools/README](../tools/README.md#rooms). A generated room must let a player walk between its doorways with three
+  blocks of headroom and leave no cell dark where a mob could spawn, which validation checks.
+- `room_themes/` names, for each neutral role the room generator builds with (`floor`, `floor_variant`,
+  `floor_border`, `wall_base`, `wall_body`, `wall_body_cracked`, `wall_body_mossy`, `wall_cornice`, `ceiling`,
+  `pillar`, `stairs`, `slab`, `rubble`, `rubble_slab`, `wall_light`, `ceiling_light`), the block it is in this
+  theme: a full solid block, a stairs block, a slab, a wall torch or a lantern as the role needs, each role its own
+  block, so a theme swap (W4) can tell them apart. `stone_vault` is the one theme so far.
 - `dungeons/` holds the kinds of dungeons ([architecture 15.2](../docs/architecture.md#152-dungeon-types)): a
   `name` (a label), the room `pool` the type is built from, and the `layout` the planner follows, each range
   written `[min, max]`: `main_path` (rooms between the entrance and the ending, 1 to 32), `branches` (side branches
