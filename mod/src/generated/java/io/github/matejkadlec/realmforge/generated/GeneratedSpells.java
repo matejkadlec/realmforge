@@ -11,11 +11,26 @@ import net.minecraft.resources.ResourceKey;
 
 /** Keys of the spells in {@code content/spells/}, so Java names a spell without typing its id. */
 public final class GeneratedSpells {
+    /** {@code realmforge:test_blink} from {@code content/spells/test_blink.yaml}: arcane, direction, teleport. */
+    public static final ResourceKey<Spell> TEST_BLINK = key("test_blink");
+
     /** {@code realmforge:test_bolt} from {@code content/spells/test_bolt.yaml}: fire, enemy, damage. */
     public static final ResourceKey<Spell> TEST_BOLT = key("test_bolt");
 
+    /** {@code realmforge:test_charge} from {@code content/spells/test_charge.yaml}: physical, enemy, dash. */
+    public static final ResourceKey<Spell> TEST_CHARGE = key("test_charge");
+
+    /** {@code realmforge:test_chill} from {@code content/spells/test_chill.yaml}: frost, enemy, apply_effect. */
+    public static final ResourceKey<Spell> TEST_CHILL = key("test_chill");
+
+    /** {@code realmforge:test_cleanse} from {@code content/spells/test_cleanse.yaml}: arcane, ally, remove_effect. */
+    public static final ResourceKey<Spell> TEST_CLEANSE = key("test_cleanse");
+
     /** {@code realmforge:test_drain} from {@code content/spells/test_drain.yaml}: arcane, enemy, damage. */
     public static final ResourceKey<Spell> TEST_DRAIN = key("test_drain");
+
+    /** {@code realmforge:test_forward_missile} from {@code content/spells/test_forward_missile.yaml}: frost, direction, projectile. */
+    public static final ResourceKey<Spell> TEST_FORWARD_MISSILE = key("test_forward_missile");
 
     /** {@code realmforge:test_homing_bolt} from {@code content/spells/test_homing_bolt.yaml}: frost, enemy, damage. */
     public static final ResourceKey<Spell> TEST_HOMING_BOLT = key("test_homing_bolt");
@@ -23,8 +38,20 @@ public final class GeneratedSpells {
     /** {@code realmforge:test_mend} from {@code content/spells/test_mend.yaml}: arcane, ally, heal. */
     public static final ResourceKey<Spell> TEST_MEND = key("test_mend");
 
+    /** {@code realmforge:test_mending_ring} from {@code content/spells/test_mending_ring.yaml}: arcane, self, area. */
+    public static final ResourceKey<Spell> TEST_MENDING_RING = key("test_mending_ring");
+
+    /** {@code realmforge:test_missile} from {@code content/spells/test_missile.yaml}: fire, enemy, projectile. */
+    public static final ResourceKey<Spell> TEST_MISSILE = key("test_missile");
+
     /** {@code realmforge:test_npc_bolt} from {@code content/spells/test_npc_bolt.yaml}: arcane, enemy, damage. */
     public static final ResourceKey<Spell> TEST_NPC_BOLT = key("test_npc_bolt");
+
+    /** {@code realmforge:test_scorch} from {@code content/spells/test_scorch.yaml}: fire, ground_point, area. */
+    public static final ResourceKey<Spell> TEST_SCORCH = key("test_scorch");
+
+    /** {@code realmforge:test_shove} from {@code content/spells/test_shove.yaml}: physical, enemy, knockback. */
+    public static final ResourceKey<Spell> TEST_SHOVE = key("test_shove");
 
     /** {@code realmforge:test_slow_bolt} from {@code content/spells/test_slow_bolt.yaml}: fire, enemy, damage. */
     public static final ResourceKey<Spell> TEST_SLOW_BOLT = key("test_slow_bolt");
@@ -36,7 +63,7 @@ public final class GeneratedSpells {
     public static final ResourceKey<Spell> TEST_SURE_CRIT = key("test_sure_crit");
 
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Spell>> ALL = List.of(TEST_BOLT, TEST_DRAIN, TEST_HOMING_BOLT, TEST_MEND, TEST_NPC_BOLT, TEST_SLOW_BOLT, TEST_STRIKE, TEST_SURE_CRIT);
+    public static final List<ResourceKey<Spell>> ALL = List.of(TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_STRIKE, TEST_SURE_CRIT);
 
     private GeneratedSpells() {
     }

@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3a-3): a zone of fire at a ground point that deals 2 damage every second for 3 s to the enemies
+# within 2 blocks. Not gameplay content; the GameTests in the QA mod cast it.
+id: test_scorch
+school: realmforge:fire
+scales_with: spell_power
+targeting: {type: realmforge:ground_point, range: 16}
+cast: {type: instant}
+effects:
+  - type: realmforge:area
+    radius: 2
+    duration_seconds: 3
+    interval_seconds: 1
+    effects:
+      - {type: realmforge:damage, amount: 2}

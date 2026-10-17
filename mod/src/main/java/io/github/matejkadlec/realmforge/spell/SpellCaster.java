@@ -22,11 +22,11 @@ import net.minecraft.world.entity.player.Player;
  *   <li>a player casts an {@code npc_only} spell, or one their spellbook does not know;</li>
  *   <li>a cast-time or channelled spell of the caster is still in progress;</li>
  *   <li>the spell's own cooldown runs, or the global cooldown runs and the spell is on it;</li>
- *   <li>its targeting finds no valid target in range and in line of sight;</li>
+ *   <li>its targeting finds no valid target (an entity or a point) in range and in line of sight;</li>
  *   <li>a player has less of the spell's resource than it costs.</li>
  * </ol>
  * Otherwise an instant spell pays its cost, starts its cooldowns (Cooldown Reduction shortens the spell's own, never the
- * global one) and runs every effect on the target. A cast-time or channelled spell starts the global cooldown and
+ * global one) and runs every effect on the target ({@link SpellTarget}). A cast-time or channelled spell starts the global cooldown and
  * begins its cast ({@link Casting}): a cast time pays its cost and starts its own cooldown when it completes, a channel
  * when it begins. Mobs pay no cost: NPC resources are C3a-4's.
  */
@@ -38,10 +38,18 @@ public final class SpellCaster {
     }
 
     /**
-     * {@code caster} casts {@code spell} at {@code target} (null when nothing was aimed at). A player casts at the
-     * level their spellbook knows (at most the spell's {@code max_level}); a mob or boss at level 1.
+     * {@code caster} casts {@code spell} at the entity {@code target}, or at nothing when it is null, as
+     * {@link #cast(LivingEntity, ResourceKey, SpellAim)} does.
      */
     public static CastResult cast(LivingEntity caster, ResourceKey<Spell> spell, @Nullable LivingEntity target) {
+        return cast(caster, spell, SpellAim.at(target));
+    }
+
+    /**
+     * {@code caster} casts {@code spell} at what {@code aim} names. A player casts at the level their spellbook knows
+     * (at most the spell's {@code max_level}); a mob or boss at level 1.
+     */
+    public static CastResult cast(LivingEntity caster, ResourceKey<Spell> spell, SpellAim aim) {
         if (!canCast(caster)) {
             return CastResult.refused(CastFailure.CANNOT_CAST);
         }
@@ -61,15 +69,14 @@ public final class SpellCaster {
             }
             level = Math.min(known.get(), holder.get().value().maxLevel());
         }
-        return cast(caster, holder.get(), level, target);
+        return cast(caster, holder.get(), level, aim);
     }
 
     /**
-     * {@code caster} casts {@code spell} at {@code level} (1 to its {@code max_level}) at {@code target}, without the
-     * spellbook: mobs, bosses and, later, procs. A player still pays the cost.
+     * {@code caster} casts {@code spell} at {@code level} (1 to its {@code max_level}) at what {@code aim} names,
+     * without the spellbook: mobs, bosses and, later, procs. A player still pays the cost.
      */
-    public static CastResult cast(LivingEntity caster, Holder.Reference<Spell> spell, int level,
-            @Nullable LivingEntity target) {
+    public static CastResult cast(LivingEntity caster, Holder.Reference<Spell> spell, int level, SpellAim aim) {
         if (!(caster.level() instanceof ServerLevel serverLevel)) {
             throw new IllegalStateException("Spells are cast on the logical server only");
         }
@@ -88,12 +95,12 @@ public final class SpellCaster {
         if (value.globalCooldownTicks() > 0 && state.isOnGlobalCooldown(now)) {
             return CastResult.refused(CastFailure.ON_GLOBAL_COOLDOWN);
         }
-        Either<LivingEntity, CastFailure> resolved = value.targeting().resolve(caster, target);
+        Either<SpellTarget, CastFailure> resolved = value.targeting().resolve(caster, aim);
         Optional<CastFailure> missed = resolved.right();
         if (missed.isPresent()) {
             return CastResult.refused(missed.get());
         }
-        LivingEntity hit = resolved.left().orElseThrow();
+        SpellTarget hit = resolved.left().orElseThrow();
         if (!canPay(caster, value, level, state)) {
             return CastResult.refused(CastFailure.NOT_ENOUGH_RESOURCE);
         }
@@ -138,12 +145,14 @@ public final class SpellCaster {
 
     /**
      * Why {@code target} may no longer take the effects of {@code caster}'s spell, checked again before a cast time's
-     * effects and before every tick of a channel (architecture 11.2 steps 4 and 5): it died or is gone, or the spell's
-     * targeting refuses it now (out of range, behind blocks, no longer an enemy or ally). A spell that locks on only
-     * needs its target alive and in the caster's dimension.
+     * effects and before every tick of a channel (architecture 11.2 steps 4 and 5): an entity that died or is gone, or
+     * that the spell's targeting refuses now (out of range, behind blocks, no longer an enemy or ally). A spell that
+     * locks on only needs its target alive and in the caster's dimension. A ground point or a direction stays as it
+     * was resolved when the cast began.
      */
-    static Optional<CastFailure> recheck(LivingEntity caster, Spell spell, LivingEntity target) {
-        if (target == caster) {
+    static Optional<CastFailure> recheck(LivingEntity caster, Spell spell, SpellTarget spellTarget) {
+        LivingEntity target = spellTarget.entityOrNull();
+        if (target == null || target == caster) {
             return Optional.empty();
         }
         if (!target.isAlive() || target.isRemoved()) {
@@ -152,13 +161,13 @@ public final class SpellCaster {
         if (spell.cast().lockOn()) {
             return target.level() == caster.level() ? Optional.empty() : Optional.of(CastFailure.OUT_OF_RANGE);
         }
-        return spell.targeting().resolve(caster, target).right();
+        return spell.targeting().resolve(caster, SpellAim.at(target)).right();
     }
 
     /** Runs every effect of the spell on {@code target}, with the caster's stats as they are now. */
     static void runEffects(ServerLevel level, LivingEntity caster, Holder<Spell> spell, int spellLevel,
-            LivingEntity target) {
-        EffectContext context = new EffectContext(level, caster, spell, spellLevel, caster.getRandom());
+            SpellTarget target) {
+        EffectContext context = EffectContext.of(level, caster, spell, spellLevel);
         for (SpellEffect effect : spell.value().effects()) {
             effect.apply(context, target);
         }

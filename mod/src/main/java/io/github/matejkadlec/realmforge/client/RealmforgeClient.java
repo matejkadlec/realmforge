@@ -10,6 +10,7 @@ import io.github.matejkadlec.realmforge.client.input.DarkVisionKey;
 import io.github.matejkadlec.realmforge.client.network.ClientPayloadHandlers;
 import io.github.matejkadlec.realmforge.client.screen.CharacterCreationScreen;
 import io.github.matejkadlec.realmforge.client.spell.ClientCasts;
+import io.github.matejkadlec.realmforge.client.spell.SpellEntityRenderers;
 import io.github.matejkadlec.realmforge.client.tooltip.RightAlignedLines;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -34,5 +35,6 @@ public final class RealmforgeClient {
         XpBarHud.register(modBus);
         RightAlignedLines.register(modBus);
         ClientCasts.register();
+        SpellEntityRenderers.register(modBus);
     }
 }

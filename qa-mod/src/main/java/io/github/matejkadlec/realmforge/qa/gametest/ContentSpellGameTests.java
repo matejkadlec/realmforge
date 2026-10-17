@@ -6,13 +6,23 @@ import io.github.matejkadlec.realmforge.qa.generated.GeneratedSpellExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedSpellExpectations.EffectExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedSpellExpectations.SpellExpectation;
 import io.github.matejkadlec.realmforge.spell.AllyTargeting;
+import io.github.matejkadlec.realmforge.spell.ApplyEffectEffect;
+import io.github.matejkadlec.realmforge.spell.AreaEffect;
 import io.github.matejkadlec.realmforge.spell.DamageEffect;
+import io.github.matejkadlec.realmforge.spell.DashEffect;
+import io.github.matejkadlec.realmforge.spell.DirectionTargeting;
 import io.github.matejkadlec.realmforge.spell.EnemyTargeting;
+import io.github.matejkadlec.realmforge.spell.GroundPointTargeting;
 import io.github.matejkadlec.realmforge.spell.HealEffect;
+import io.github.matejkadlec.realmforge.spell.KnockbackEffect;
+import io.github.matejkadlec.realmforge.spell.ProjectileEffect;
+import io.github.matejkadlec.realmforge.spell.RemoveEffectEffect;
 import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.SpellEffect;
 import io.github.matejkadlec.realmforge.spell.SpellRegistries;
 import io.github.matejkadlec.realmforge.spell.SpellTargeting;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import net.minecraft.core.Registry;
@@ -94,17 +104,39 @@ public final class ContentSpellGameTests {
         return switch (targeting) {
             case EnemyTargeting enemy -> enemy.range();
             case AllyTargeting ally -> ally.range();
+            case GroundPointTargeting point -> point.range();
+            case DirectionTargeting direction -> direction.range();
             default -> 0.0;
         };
     }
 
+    /** An effect in the shape of its expectation: its numbers and names by their data field names. */
     private static EffectExpectation effect(SpellEffect effect) {
         String type = SpellRegistries.EFFECT_TYPES.getKey(effect.codec()).toString();
         return switch (effect) {
-            case DamageEffect damage -> new EffectExpectation(type, damage.amount(), damage.perLevel(),
-                    damage.attackDamage());
-            case HealEffect heal -> new EffectExpectation(type, heal.amount(), heal.perLevel(), heal.attackDamage());
-            default -> throw new IllegalStateException("no expectation shape for " + type);
+            case DamageEffect damage -> numbers(type, Map.of("amount", damage.amount(), "per_level",
+                    damage.perLevel(), "attack_damage", damage.attackDamage()));
+            case HealEffect heal -> numbers(type, Map.of("amount", heal.amount(), "per_level", heal.perLevel(),
+                    "attack_damage", heal.attackDamage()));
+            case ApplyEffectEffect apply -> new EffectExpectation(type, Map.of("duration_ticks",
+                    (double) apply.durationTicks(), "amplifier", (double) apply.amplifier()),
+                    Map.of("effect", apply.effect().getRegisteredName()), List.of());
+            case RemoveEffectEffect remove -> new EffectExpectation(type, Map.of(),
+                    Map.of("effect", remove.effect().getRegisteredName()), List.of());
+            case KnockbackEffect knockback -> numbers(type, Map.of("strength", knockback.strength()));
+            case DashEffect dash -> numbers(type, Map.of("strength", dash.strength()));
+            case ProjectileEffect projectile -> new EffectExpectation(type, Map.of("speed", projectile.speed(),
+                    "size", projectile.size(), "lifetime_ticks", (double) projectile.lifetimeTicks()), Map.of(),
+                    projectile.effects().stream().map(ContentSpellGameTests::effect).toList());
+            case AreaEffect area -> new EffectExpectation(type, Map.of("radius", area.radius(), "duration_ticks",
+                    (double) area.durationTicks(), "interval_ticks", (double) area.intervalTicks()),
+                    Map.of("affects", area.affects().getSerializedName()),
+                    area.effects().stream().map(ContentSpellGameTests::effect).toList());
+            default -> new EffectExpectation(type, Map.of(), Map.of(), List.of());
         };
+    }
+
+    private static EffectExpectation numbers(String type, Map<String, Double> numbers) {
+        return new EffectExpectation(type, numbers, Map.of(), List.of());
     }
 }

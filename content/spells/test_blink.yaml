@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3a-3): teleports the caster up to 4 blocks along its look, short of blocks. Not gameplay content; the
+# GameTests in the QA mod cast it.
+id: test_blink
+school: realmforge:arcane
+scales_with: spell_power
+targeting: {type: realmforge:direction, range: 4}
+cast: {type: instant}
+effects:
+  - {type: realmforge:teleport}

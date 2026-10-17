@@ -427,8 +427,8 @@ public final class SpellGameTests {
             @Nullable LivingEntity target, LivingEntity expectedTarget) {
         CastResult result = SpellCaster.cast(caster, spell, target);
         helper.assertTrue(result.success(), spell.identifier() + " was refused: " + result.failure());
-        helper.assertTrue(result.target().orElseThrow() == expectedTarget,
-                spell.identifier() + " hit " + result.target().orElseThrow());
+        helper.assertTrue(result.entity().orElse(null) == expectedTarget,
+                spell.identifier() + " hit " + result.target());
     }
 
     private static void assertRefused(GameTestHelper helper, LivingEntity caster, ResourceKey<Spell> spell,

@@ -11,8 +11,10 @@ import net.minecraft.util.StringRepresentable;
 public enum CastEnd implements StringRepresentable {
     /** The cast time is over and the effects ran, or the channel ran every tick. */
     COMPLETED("completed", false),
-    /** The caster moved, and the spell may not be cast while moving. */
+    /** The caster moved by itself, and the spell may not be cast while moving. */
     MOVED("moved", true),
+    /** A spell's knockback pushed the caster ({@code realmforge:knockback}), and the spell may not be cast while moving. */
+    KNOCKED_BACK("knocked_back", true),
     /** The caster cancelled it (the spell bar's cancel, C3b; {@code /qa spell cancel}), or it was removed. */
     CANCELLED("cancelled", true),
     /** The caster died. */

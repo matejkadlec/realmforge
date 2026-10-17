@@ -4,15 +4,18 @@
 package io.github.matejkadlec.realmforge.qa.generated;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /** What {@code content/spells/} says about every spell, so GameTests can check that the game agrees. */
 public final class GeneratedSpellExpectations {
     /**
-     * One effect as written in the YAML, in game units: {@code attackDamage} is the share of the caster's attack
-     * damage it adds (0 when it adds none).
+     * One effect as written in the YAML, in game units: its numbers and names by their data field names (e.g.
+     * {@code amount}, {@code duration_ticks}, {@code attack_damage} as a fraction, 0 when it adds none;
+     * {@code effect}, {@code affects}), and the effects a projectile or an area runs.
      */
-    public record EffectExpectation(String type, double amount, double perLevel, double attackDamage) {
+    public record EffectExpectation(String type, Map<String, Double> numbers, Map<String, String> names,
+            List<EffectExpectation> effects) {
     }
 
     /**
@@ -28,6 +31,29 @@ public final class GeneratedSpellExpectations {
     }
 
     public static final List<SpellExpectation> SPELLS = List.of(
+            new SpellExpectation(
+                    "realmforge:test_blink",
+                    "realmforge:arcane",
+                    "spell_power",
+                    "realmforge:direction",
+                    4.0,
+                    "instant",
+                    0,
+                    0,
+                    false,
+                    false,
+                    Optional.empty(),
+                    0.0,
+                    0.0,
+                    0,
+                    20,
+                    1,
+                    true,
+                    Optional.empty(),
+                    0.0,
+                    false,
+                    List.of(
+                            new EffectExpectation("realmforge:teleport", Map.of(), Map.of(), List.of()))),
             new SpellExpectation(
                     "realmforge:test_bolt",
                     "realmforge:fire",
@@ -50,7 +76,76 @@ public final class GeneratedSpellExpectations {
                     0.0,
                     false,
                     List.of(
-                            new EffectExpectation("realmforge:damage", 6.0, 2.0, 0.0))),
+                            new EffectExpectation("realmforge:damage", Map.of("amount", 6.0, "attack_damage", 0.0, "per_level", 2.0), Map.of(), List.of()))),
+            new SpellExpectation(
+                    "realmforge:test_charge",
+                    "realmforge:physical",
+                    "attack_damage",
+                    "realmforge:enemy",
+                    16.0,
+                    "instant",
+                    0,
+                    0,
+                    false,
+                    false,
+                    Optional.empty(),
+                    0.0,
+                    0.0,
+                    0,
+                    20,
+                    1,
+                    true,
+                    Optional.empty(),
+                    0.0,
+                    false,
+                    List.of(
+                            new EffectExpectation("realmforge:dash", Map.of("strength", 1.0), Map.of(), List.of()))),
+            new SpellExpectation(
+                    "realmforge:test_chill",
+                    "realmforge:frost",
+                    "spell_power",
+                    "realmforge:enemy",
+                    16.0,
+                    "instant",
+                    0,
+                    0,
+                    false,
+                    false,
+                    Optional.empty(),
+                    0.0,
+                    0.0,
+                    0,
+                    20,
+                    1,
+                    true,
+                    Optional.empty(),
+                    0.0,
+                    false,
+                    List.of(
+                            new EffectExpectation("realmforge:apply_effect", Map.of("amplifier", 1.0, "duration_ticks", 60.0), Map.of("effect", "minecraft:slowness"), List.of()))),
+            new SpellExpectation(
+                    "realmforge:test_cleanse",
+                    "realmforge:arcane",
+                    "spell_power",
+                    "realmforge:ally",
+                    16.0,
+                    "instant",
+                    0,
+                    0,
+                    false,
+                    false,
+                    Optional.empty(),
+                    0.0,
+                    0.0,
+                    0,
+                    20,
+                    1,
+                    true,
+                    Optional.empty(),
+                    0.0,
+                    false,
+                    List.of(
+                            new EffectExpectation("realmforge:remove_effect", Map.of(), Map.of("effect", "minecraft:slowness"), List.of()))),
             new SpellExpectation(
                     "realmforge:test_drain",
                     "realmforge:arcane",
@@ -73,7 +168,31 @@ public final class GeneratedSpellExpectations {
                     0.0,
                     false,
                     List.of(
-                            new EffectExpectation("realmforge:damage", 2.0, 0.0, 0.0))),
+                            new EffectExpectation("realmforge:damage", Map.of("amount", 2.0, "attack_damage", 0.0, "per_level", 0.0), Map.of(), List.of()))),
+            new SpellExpectation(
+                    "realmforge:test_forward_missile",
+                    "realmforge:frost",
+                    "spell_power",
+                    "realmforge:direction",
+                    32.0,
+                    "instant",
+                    0,
+                    0,
+                    false,
+                    false,
+                    Optional.empty(),
+                    0.0,
+                    0.0,
+                    0,
+                    20,
+                    1,
+                    true,
+                    Optional.empty(),
+                    0.0,
+                    false,
+                    List.of(
+                            new EffectExpectation("realmforge:projectile", Map.of("lifetime_ticks", 40.0, "size", 0.5, "speed", 20.0), Map.of(), List.of(
+                                    new EffectExpectation("realmforge:damage", Map.of("amount", 3.0, "attack_damage", 0.0, "per_level", 0.0), Map.of(), List.of()))))),
             new SpellExpectation(
                     "realmforge:test_homing_bolt",
                     "realmforge:frost",
@@ -96,7 +215,7 @@ public final class GeneratedSpellExpectations {
                     0.0,
                     false,
                     List.of(
-                            new EffectExpectation("realmforge:damage", 4.0, 0.0, 0.0))),
+                            new EffectExpectation("realmforge:damage", Map.of("amount", 4.0, "attack_damage", 0.0, "per_level", 0.0), Map.of(), List.of()))),
             new SpellExpectation(
                     "realmforge:test_mend",
                     "realmforge:arcane",
@@ -119,7 +238,56 @@ public final class GeneratedSpellExpectations {
                     0.0,
                     false,
                     List.of(
-                            new EffectExpectation("realmforge:heal", 4.0, 1.0, 0.0))),
+                            new EffectExpectation("realmforge:heal", Map.of("amount", 4.0, "attack_damage", 0.0, "per_level", 1.0), Map.of(), List.of()))),
+            new SpellExpectation(
+                    "realmforge:test_mending_ring",
+                    "realmforge:arcane",
+                    "spell_power",
+                    "realmforge:self",
+                    0.0,
+                    "instant",
+                    0,
+                    0,
+                    false,
+                    false,
+                    Optional.empty(),
+                    0.0,
+                    0.0,
+                    0,
+                    20,
+                    1,
+                    false,
+                    Optional.empty(),
+                    0.0,
+                    false,
+                    List.of(
+                            new EffectExpectation("realmforge:area", Map.of("duration_ticks", 40.0, "interval_ticks", 20.0, "radius", 3.0), Map.of("affects", "allies"), List.of(
+                                    new EffectExpectation("realmforge:heal", Map.of("amount", 2.0, "attack_damage", 0.0, "per_level", 0.0), Map.of(), List.of()))))),
+            new SpellExpectation(
+                    "realmforge:test_missile",
+                    "realmforge:fire",
+                    "spell_power",
+                    "realmforge:enemy",
+                    16.0,
+                    "instant",
+                    0,
+                    0,
+                    false,
+                    false,
+                    Optional.empty(),
+                    0.0,
+                    0.0,
+                    0,
+                    20,
+                    1,
+                    true,
+                    Optional.empty(),
+                    0.0,
+                    false,
+                    List.of(
+                            new EffectExpectation("realmforge:projectile", Map.of("lifetime_ticks", 40.0, "size", 0.5, "speed", 20.0), Map.of(), List.of(
+                                    new EffectExpectation("realmforge:damage", Map.of("amount", 5.0, "attack_damage", 0.0, "per_level", 0.0), Map.of(), List.of()),
+                                    new EffectExpectation("realmforge:apply_effect", Map.of("amplifier", 0.0, "duration_ticks", 60.0), Map.of("effect", "minecraft:slowness"), List.of()))))),
             new SpellExpectation(
                     "realmforge:test_npc_bolt",
                     "realmforge:arcane",
@@ -142,7 +310,54 @@ public final class GeneratedSpellExpectations {
                     0.0,
                     true,
                     List.of(
-                            new EffectExpectation("realmforge:damage", 3.0, 0.0, 0.0))),
+                            new EffectExpectation("realmforge:damage", Map.of("amount", 3.0, "attack_damage", 0.0, "per_level", 0.0), Map.of(), List.of()))),
+            new SpellExpectation(
+                    "realmforge:test_scorch",
+                    "realmforge:fire",
+                    "spell_power",
+                    "realmforge:ground_point",
+                    16.0,
+                    "instant",
+                    0,
+                    0,
+                    false,
+                    false,
+                    Optional.empty(),
+                    0.0,
+                    0.0,
+                    0,
+                    20,
+                    1,
+                    true,
+                    Optional.empty(),
+                    0.0,
+                    false,
+                    List.of(
+                            new EffectExpectation("realmforge:area", Map.of("duration_ticks", 60.0, "interval_ticks", 20.0, "radius", 2.0), Map.of("affects", "enemies"), List.of(
+                                    new EffectExpectation("realmforge:damage", Map.of("amount", 2.0, "attack_damage", 0.0, "per_level", 0.0), Map.of(), List.of()))))),
+            new SpellExpectation(
+                    "realmforge:test_shove",
+                    "realmforge:physical",
+                    "attack_damage",
+                    "realmforge:enemy",
+                    8.0,
+                    "instant",
+                    0,
+                    0,
+                    false,
+                    false,
+                    Optional.empty(),
+                    0.0,
+                    0.0,
+                    0,
+                    20,
+                    1,
+                    true,
+                    Optional.empty(),
+                    0.0,
+                    false,
+                    List.of(
+                            new EffectExpectation("realmforge:knockback", Map.of("strength", 1.0), Map.of(), List.of()))),
             new SpellExpectation(
                     "realmforge:test_slow_bolt",
                     "realmforge:fire",
@@ -165,7 +380,7 @@ public final class GeneratedSpellExpectations {
                     0.0,
                     false,
                     List.of(
-                            new EffectExpectation("realmforge:damage", 10.0, 0.0, 0.0))),
+                            new EffectExpectation("realmforge:damage", Map.of("amount", 10.0, "attack_damage", 0.0, "per_level", 0.0), Map.of(), List.of()))),
             new SpellExpectation(
                     "realmforge:test_strike",
                     "realmforge:physical",
@@ -188,7 +403,7 @@ public final class GeneratedSpellExpectations {
                     0.0,
                     false,
                     List.of(
-                            new EffectExpectation("realmforge:damage", 2.0, 0.0, 1.0))),
+                            new EffectExpectation("realmforge:damage", Map.of("amount", 2.0, "attack_damage", 1.0, "per_level", 0.0), Map.of(), List.of()))),
             new SpellExpectation(
                     "realmforge:test_sure_crit",
                     "realmforge:frost",
@@ -211,7 +426,7 @@ public final class GeneratedSpellExpectations {
                     1.0,
                     false,
                     List.of(
-                            new EffectExpectation("realmforge:damage", 5.0, 0.0, 0.0))));
+                            new EffectExpectation("realmforge:damage", Map.of("amount", 5.0, "attack_damage", 0.0, "per_level", 0.0), Map.of(), List.of()))));
 
     private GeneratedSpellExpectations() {
     }

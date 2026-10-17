@@ -8,6 +8,8 @@ import math
 from itertools import pairwise
 from pathlib import PurePosixPath
 
+from pydantic import BaseModel
+
 from realmforge_tools.content import Content, RoomEntry, load_content
 from realmforge_tools.id_universe import IdUniverse, load_vanilla
 from realmforge_tools.problems import Problem, ValidationFailed
@@ -27,7 +29,24 @@ from realmforge_tools.schema.dungeon import DEAD_END_ROLES, PATH_ROLES, ROOM_ROL
 from realmforge_tools.schema.item import USE_TEXT_GROUP
 from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
-from realmforge_tools.schema.spell import ALLY, DAMAGE, ENEMY, HEAL, SCALING_OF_KIND, SELF
+from realmforge_tools.schema.spell import (
+    ALLY,
+    APPLY_EFFECT,
+    AREA,
+    DAMAGE,
+    DASH,
+    DIRECTION,
+    ENEMY,
+    GROUND_POINT,
+    HEAL,
+    KNOCKBACK,
+    PROJECTILE,
+    REMOVE_EFFECT,
+    SCALING_OF_KIND,
+    SELF,
+    TELEPORT,
+    SpellDef,
+)
 from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
 
@@ -433,16 +452,30 @@ def _check_spell_schools(content: Content, universe: IdUniverse) -> list[Problem
     return problems
 
 
-# Which targeting types an effect that acts on the spell's targets may use: damage hits enemies, heals mend the
-# caster or its allies.
-_EFFECT_TARGETING: dict[str, tuple[str, ...]] = {DAMAGE: (ENEMY,), HEAL: (SELF, ALLY)}
+# Which targeting types each effect may use: damage and knockback hit enemies, heals mend the caster or its allies,
+# status effects go on anyone; a projectile flies at an enemy, a ground point or along a direction, an area lies at the
+# caster's feet, an enemy's or a ground point, a teleport needs a point to go to, and a dash rushes at an enemy, a
+# point or along a direction.
+_EFFECT_TARGETING: dict[str, tuple[str, ...]] = {
+    DAMAGE: (ENEMY,),
+    HEAL: (SELF, ALLY),
+    APPLY_EFFECT: (SELF, ENEMY, ALLY),
+    REMOVE_EFFECT: (SELF, ENEMY, ALLY),
+    KNOCKBACK: (ENEMY,),
+    PROJECTILE: (ENEMY, GROUND_POINT, DIRECTION),
+    AREA: (SELF, ENEMY, GROUND_POINT),
+    TELEPORT: (GROUND_POINT, DIRECTION),
+    DASH: (ENEMY, GROUND_POINT, DIRECTION),
+}
+MOB_EFFECT_REGISTRY = "minecraft:mob_effect"
 
 
 def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
     """A spell's school exists, and the stat it scales with fits the school's kind: off-class stats do nothing for a
     class's abilities (Matěj, 2026-10-15), so magic scales with spell power and physical abilities with attack damage.
     An attack damage ability names its share of attack damage on every damage effect, and a spell power one names
-    none. Damage hits enemies, heals mend the caster or its allies."""
+    none. Every effect fits the spell's targeting (damage hits enemies, heals mend the caster or its allies), and the
+    effects a projectile or an area runs fit whom it reaches. Status effects exist."""
     problems: list[Problem] = []
     schools = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spell_schools}
     for entry in content.spells:
@@ -463,36 +496,68 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
             )
         for n, effect in enumerate(spell.effects):
             path = f"effects.{n}"
-            if spell.scales_with == "spell_power" and effect.attack_damage_percent is not None:
-                problems.append(
-                    Problem(
-                        entry.source,
-                        f"{path}.attack_damage_percent",
-                        "the spell scales with spell_power, so attack damage adds nothing to it",
-                    )
-                )
-            if (
-                spell.scales_with == "attack_damage"
-                and effect.type == DAMAGE
-                and effect.attack_damage_percent is None
-            ):
-                problems.append(
-                    Problem(
-                        entry.source,
-                        f"{path}.attack_damage_percent",
-                        "the spell scales with attack_damage: name the share of attack damage its damage adds",
-                    )
-                )
+            problems += _check_effect(entry.source, path, effect, spell, universe)
             allowed = _EFFECT_TARGETING[effect.type]
             if spell.targeting.type not in allowed:
                 problems.append(
                     Problem(
                         entry.source,
                         f"{path}.type",
-                        f"{effect.type} acts on the spell's targets, so the targeting is "
-                        f"{' or '.join(allowed)}, not {spell.targeting.type}",
+                        f"{effect.type} acts on the spell's targets, so the targeting is {' or '.join(allowed)}, "
+                        f"not {spell.targeting.type}",
                     )
                 )
+            problems += _check_inner_effects(entry.source, path, effect, spell, universe)
+    return problems
+
+
+def _check_inner_effects(
+    source: str, path: str, effect: BaseModel, spell: SpellDef, universe: IdUniverse
+) -> list[Problem]:
+    """The effects a projectile runs on the enemy it hits, or an area on the enemies or allies inside it, fit them as
+    the spell's targeting would."""
+    if effect.type == PROJECTILE:
+        reached, what = ENEMY, "the enemy a projectile hits"
+    elif effect.type == AREA:
+        reached, what = (
+            (ENEMY, "an area's enemies") if effect.affects == "enemies" else (ALLY, "an area's allies")
+        )
+    else:
+        return []
+    problems: list[Problem] = []
+    for m, inner in enumerate(effect.effects):
+        inner_path = f"{path}.effects.{m}"
+        problems += _check_effect(source, inner_path, inner, spell, universe)
+        if reached not in _EFFECT_TARGETING[inner.type]:
+            problems.append(Problem(source, f"{inner_path}.type", f"{inner.type} cannot act on {what}"))
+    return problems
+
+
+def _check_effect(
+    source: str, path: str, effect: BaseModel, spell: SpellDef, universe: IdUniverse
+) -> list[Problem]:
+    """An effect's share of attack damage fits what the spell scales with, and its status effect exists."""
+    problems: list[Problem] = []
+    percent = getattr(effect, "attack_damage_percent", None)
+    if spell.scales_with == "spell_power" and percent is not None:
+        problems.append(
+            Problem(
+                source,
+                f"{path}.attack_damage_percent",
+                "the spell scales with spell_power, so attack damage adds nothing to it",
+            )
+        )
+    if spell.scales_with == "attack_damage" and effect.type == DAMAGE and percent is None:
+        problems.append(
+            Problem(
+                source,
+                f"{path}.attack_damage_percent",
+                "the spell scales with attack_damage: name the share of attack damage its damage adds",
+            )
+        )
+    status = getattr(effect, "effect", None)
+    if status is not None and not universe.contains(MOB_EFFECT_REGISTRY, status):
+        problems.append(Problem(source, f"{path}.effect", _unknown(status, MOB_EFFECT_REGISTRY, universe)))
     return problems
 
 

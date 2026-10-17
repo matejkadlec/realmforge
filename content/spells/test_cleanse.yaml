@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3a-3): removes Slowness from the caster or an ally. Not gameplay content; the GameTests in the QA mod
+# cast it.
+id: test_cleanse
+school: realmforge:arcane
+scales_with: spell_power
+targeting: {type: realmforge:ally, range: 16}
+cast: {type: instant}
+effects:
+  - {type: realmforge:remove_effect, effect: minecraft:slowness}
