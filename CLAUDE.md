@@ -51,11 +51,12 @@ our own core mod holds all RPG systems; the modpack adds third-party QoL, perfor
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits.
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell
-  engine has begun (C3a-1, C3a-2): spells as data in `content/spells/`, cast by players and mobs through one
+  engine has begun (C3a-1 to C3a-3): spells as data in `content/spells/`, cast by players and mobs through one
   `SpellCaster` (reached through `/qa spell` until the spell bar exists), with mana pools, cooldowns and spell crits,
-  instantly, with a cast time or as a channel, interrupted by moving, death, a dimension change or logout, with
-  no melee during a cast, and synced to clients as cast payloads. Spell entities, procs and the spell bar come next
-  (C3a-3, C3a-4, C3b).
+  instantly, with a cast time or as a channel, interrupted by moving by itself (not by a push), death, a dimension
+  change or logout, with no melee during a cast, and synced to clients as cast payloads; at an entity, a ground point
+  or a direction, with damage, heals, projectiles, areas, status effects, teleports, dashes and knockback. Procs and
+  the spell bar come next (C3a-4, C3b).
 
 ## Pinned versions
 

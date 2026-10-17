@@ -185,7 +185,7 @@ public final class CastGameTests {
      * without a key pressed, and both casts go on and complete.
      */
     @QaGameTest
-    public static void aCasterPushedByAHitKeepsItsCast(GameTestHelper helper) {
+    public static void aCasterPushedByMeleeKeepsItsCast(GameTestHelper helper) {
         Husk target = husk(helper, new BlockPos(0, 1, 4));
         Husk caster = helper.spawnWithNoFreeWill(EntityType.HUSK, new BlockPos(2, 1, 1));
         MobLevels.setLevel(caster, EntityLevel.MIN);

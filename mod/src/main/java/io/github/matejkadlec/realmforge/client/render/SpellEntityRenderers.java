@@ -1,4 +1,4 @@
-package io.github.matejkadlec.realmforge.client.spell;
+package io.github.matejkadlec.realmforge.client.render;
 
 import io.github.matejkadlec.realmforge.spell.SpellEntities;
 import net.minecraft.client.renderer.entity.NoopRenderer;
