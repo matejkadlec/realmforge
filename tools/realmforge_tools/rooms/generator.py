@@ -17,11 +17,15 @@ so a theme swap reaches every block the room is built of. The style rules:
   facing the wall, or a ledge of top slabs), corbels under pillar capitals, the steps around a pit and up to a
   balcony, the balcony's deck of top slabs. Stair shapes at corners follow vanilla's rule (``StairBlock``), which
   the game would apply on placement anyway.
-- **Light:** wall lights (and lanterns from the ceiling in big rooms) until no cell where a mob could spawn is dark
-  (``rooms/walk.py``), spaced so that no two wall lights are closer than ``LIGHT_SPACING``.
-- **Markers:** an ``entrance`` marker in an entrance's middle; ``mob`` markers in combat rooms and arenas, spread
-  evenly over the floor clear of the walls and the doorways (an arena with a balcony puts one on its deck);
-  ``chest`` markers in treasure rooms, in the niches or against the walls (architecture 15.3).
+- **Light:** wall lights and lanterns in patterns (``rooms/lights.py``, ADR 0036) that leave no cell dark where a
+  mob could spawn (``rooms/walk.py``).
+- **Markers:** an ``entrance`` marker in an entrance's middle; ``mob`` markers in combat rooms and arenas, on full
+  blocks of the floor (ground mobs: never on a step or the balcony), spread evenly clear of the walls and the
+  doorways; ``TREASURE_CHESTS`` ``chest`` markers in a treasure room, mirrored across the doorway's line where the
+  niches allow, in the niches or against the walls (architecture 15.3).
+
+Markers and lights come last and draw the seed's last numbers, so a change to them leaves the rest of a kept room
+as it was.
 
 A spec the generator cannot build (no place for a pillar, a balcony's stairs) raises ``RoomGeneratorError``.
 """
@@ -33,10 +37,11 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 
 from realmforge_tools.project import DATA_VERSION
-from realmforge_tools.rooms.check import STRUCTURE_BLOCK, is_solid
+from realmforge_tools.rooms.check import STRUCTURE_BLOCK
+from realmforge_tools.rooms.lights import NoLightPattern, plan_lights
 from realmforge_tools.rooms.slots import shape as connector_shape
 from realmforge_tools.rooms.structure import AIR, JIGSAW, BlockState, Pos, Structure, StructureBlock
-from realmforge_tools.rooms.walk import LIGHT_SOURCES, Cells, light_levels, walkable
+from realmforge_tools.rooms.walk import Cells, walkable
 from realmforge_tools.schema.room_spec import RoomSpecDef, RoomThemeDef
 
 # The folder below content/rooms/ (and the jar's structure/rooms/) that generated rooms take; content/rooms/ may not
@@ -44,9 +49,12 @@ from realmforge_tools.schema.room_spec import RoomSpecDef, RoomThemeDef
 GENERATED_DIR = "generated"
 DOOR = "realmforge:door"
 EMPTY_POOL = "minecraft:empty"
-# The closest two wall lights, and two mob spots, may be (blocks apart on the larger axis).
-LIGHT_SPACING = 3
+# The closest two mob spots may be (blocks apart on the larger axis).
 MOB_SPACING = 3
+# The chest spots of a treasure room: a fixed number, so every treasure room gives the same.
+TREASURE_CHESTS = 5
+# The roles a mob or a chest may stand on: full blocks of the floor.
+_FLOOR_ROLES = ("floor", "floor_variant", "floor_border")
 _DIRECTIONS = {"north": (0, -1), "south": (0, 1), "east": (1, 0), "west": (-1, 0)}
 _FACING_OF = {vector: side for side, vector in _DIRECTIONS.items()}
 _CLOCKWISE = {"north": "east", "east": "south", "south": "west", "west": "north"}
@@ -107,6 +115,7 @@ class _Builder:
         self.niches: list[Pos] = []
         self.wall_columns: set[tuple[int, int]] = set()  # interior columns a wall with alcoves has grown into
         self.balcony_side: str | None = None
+        self.pillars: list[tuple[int, int]] = []
         self.markers: list[tuple[str, Pos]] = []
 
     # --- blocks -----------------------------------------------------------------------------------------------
@@ -361,6 +370,7 @@ class _Builder:
                 "no place for a pillar outside the paths between the doorways and the features"
             )
         corbels = self.top >= self.floor + 3 and rng.random() < 0.7
+        self.pillars = placed
         for x, z in placed:
             self.taken.add((x, z))
             self.put((x, self.floor, z), self.state("wall_base"))
@@ -461,44 +471,92 @@ class _Builder:
             self._marker("entrance", middle)
         elif kind in ("combat", "arena"):
             count = 4 if kind == "arena" else (3 if self.width * self.depth >= 120 else 2)
-            fixed: list[Pos] = []
-            if kind == "arena" and self.deck:
-                balcony = self._balcony_spot(stands)
-                if balcony is not None:
-                    self._marker("mob", balcony)
-                    fixed.append(balcony)
-            for pos in self._mob_spots(stands, count - len(fixed), fixed):
+            for pos in self._mob_spots(stands, count):
                 self._marker("mob", pos)
         elif kind == "treasure":
-            spots = [p for p in self.niches if p in stands] or [
-                p for p in floor_cells if self.ring(p[0], p[2]) and (p[0], p[2]) not in self.paths
-            ]
-            for pos in self._spread(sorted(spots), 2 if self.width * self.depth >= 100 else 1):
+            for pos in self._chest_spots(stands):
                 self._marker("chest", pos)
 
-    def _balcony_spot(self, stands: set[Pos]) -> Pos | None:
-        """The standing cell on the balcony's deck (four blocks above the floor) nearest the deck's middle."""
-        deck_level = self.floor + 4
-        spots = sorted(p for p in stands if p[1] == deck_level and (p[0], p[2]) in self.deck)
-        if not spots:
-            return None
-        mx = sum(p[0] for p in spots) / len(spots)
-        mz = sum(p[2] for p in spots) / len(spots)
-        return min(spots, key=lambda p: ((p[0] - mx) ** 2 + (p[2] - mz) ** 2, p))
+    def _on_floor(self, pos: Pos) -> bool:
+        """Whether a standing cell stands on a full block of the floor (the main floor or the pit's), not on a
+        step, a slab, rubble or the balcony."""
+        x, y, z = pos
+        floor_blocks = {self.theme.block(role) for role in _FLOOR_ROLES}
+        return (
+            y in (self.floor - 1, self.floor)
+            and (x, z) not in self.deck
+            and self.blocks[(x, y - 1, z)].name in floor_blocks
+        )
 
-    def _mob_spots(self, stands: set[Pos], count: int, fixed: list[Pos]) -> list[Pos]:
+    def _chest_spots(self, stands: set[Pos]) -> list[Pos]:
+        """``TREASURE_CHESTS`` chest spots, mirrored across the line from the (first) doorway to the far wall: in
+        the niches first, then against the walls, never in the path from the doorway, farthest from the doorway
+        first, and not side by side while there is room."""
+        door = self.doors[0]
+        along_x = door.side in ("north", "south")
+        axis = (self.width - 1) / 2 if along_x else (self.depth - 1) / 2
+
+        def mirror(p: Pos) -> Pos:
+            x, y, z = p
+            return (round(2 * axis - x), y, z) if along_x else (x, y, round(2 * axis - z))
+
+        def usable(p: Pos) -> bool:
+            return p in stands and self._on_floor(p) and not self._near_door(p[0], p[2], 3)
+
+        niches = {p for p in self.niches if usable(p)}
+        walls = {
+            (x, self.floor, z)
+            for x, z in self.columns()
+            if self.ring(x, z) and (x, z) not in self.paths and usable((x, self.floor, z))
+        }
+        candidates = sorted(niches | walls)
+
+        def rank(p: Pos) -> tuple[int, int, Pos]:
+            far = abs(p[0] - door.pos[0]) + abs(p[2] - door.pos[2])
+            return (0 if p in niches else 1, -far, p)
+
+        chosen: list[Pos] = []
+
+        def fits(p: Pos, loose: bool) -> bool:
+            return p not in chosen and (loose or all(_gap(p, c) > 1 for c in chosen))
+
+        for loose in (False, True):
+            if len(chosen) >= TREASURE_CHESTS:
+                break
+            if TREASURE_CHESTS % 2 and len(chosen) % 2 == 0:
+                for p in sorted((p for p in candidates if mirror(p) == p), key=rank):
+                    if fits(p, loose):
+                        chosen.append(p)
+                        break
+            for p in sorted((p for p in candidates if mirror(p) != p and mirror(p) in candidates), key=rank):
+                twin = mirror(p)
+                if len(chosen) + 2 > TREASURE_CHESTS:
+                    break
+                if fits(p, loose) and fits(twin, loose) and (loose or _gap(p, twin) > 1):
+                    chosen += [p, twin]
+        for p in sorted(candidates, key=rank):  # a room without enough mirrored places fills up with any
+            if len(chosen) >= TREASURE_CHESTS:
+                break
+            if p not in chosen:
+                chosen.append(p)
+        if len(chosen) < TREASURE_CHESTS:
+            raise RoomGeneratorError(
+                f"a treasure room needs {TREASURE_CHESTS} chest spots and has {len(chosen)}"
+            )
+        return chosen
+
+    def _mob_spots(self, stands: set[Pos], count: int) -> list[Pos]:
         """``count`` mob spots spread evenly over the floor, so the fight fills the room instead of lining its walls.
 
-        The candidates are the standing cells of the floor (the pit's and its step included, the balcony's deck and
-        the floor under it not) with no wall within a block and no doorway within three. The spots start as
-        farthest-point picks (far from the doorways, the ``fixed`` spots and each other) and then move, a few rounds
+        The candidates are the standing cells on a full block of the floor (the pit's included; no step, no balcony,
+        not under it) with no wall within a block and no doorway within three, so every mob stands on the ground. The
+        spots start as farthest-point picks (far from the doorways and each other) and then move, a few rounds
         of Lloyd's relaxation, to the middle of the share of the floor nearest each, so each spot ends in the middle
         of its own part of the room, never closer than ``MOB_SPACING`` to another spot. A room too small for that
         falls back to any standing floor cell away from the doorways."""
         if count <= 0:
             return []
-        floor_levels = (self.floor - 1, self.floor)
-        floor = [p for p in stands if p[1] in floor_levels and (p[0], p[2]) not in self.deck]
+        floor = [p for p in stands if self._on_floor(p)]
         cells = sorted(
             p for p in floor if self._clear_of_walls(p[0], p[2]) and not self._near_door(p[0], p[2], 3)
         )
@@ -506,20 +564,15 @@ class _Builder:
             cells = sorted(p for p in floor if not self._near_door(p[0], p[2]))
         if not cells:
             return []
-        sites = self._spread(cells, count, [*fixed])
+        sites = self._spread(cells, count)
         for _ in range(8):
             shares: list[list[Pos]] = [[] for _ in sites]
             for cell in cells:
-                nearest = min(
-                    range(len(sites) + len(fixed)),
-                    key=lambda i: (_flat_distance(cell, (sites + fixed)[i]), i),
-                )
-                if nearest < len(sites):
-                    shares[nearest].append(cell)
+                nearest = min(range(len(sites)), key=lambda i: (_flat_distance(cell, sites[i]), i))
+                shares[nearest].append(cell)
             moved: list[Pos] = []
             for site, share in zip(sites, shares, strict=True):
-                taken = moved + fixed
-                room = [p for p in share if all(_gap(p, other) >= MOB_SPACING for other in taken)]
+                room = [p for p in share if all(_gap(p, other) >= MOB_SPACING for other in moved)]
                 if not room:
                     moved.append(site)
                     continue
@@ -561,71 +614,11 @@ class _Builder:
         self.markers.append((name, pos))
 
     def _lights(self) -> None:
-        """Wall lights at a cell above a floor next to a wall, and in a big room lanterns from the ceiling, until no
-        cell where a mob could spawn is dark."""
-        rng = self.rng
-        torch = self.theme.block("wall_light")
-        inner_w, inner_d = self.width - 2, self.depth - 2
-        if self.spec.role != "hallway" and min(inner_w, inner_d) >= 9 and self.top >= self.floor + 3:
-            cx, cz = (self.width - 1) // 2, (self.depth - 1) // 2
-            spots = (
-                [(cx, cz)]
-                if rng.random() < 0.5 or max(inner_w, inner_d) < 12
-                else (
-                    [(cx - inner_w // 4, cz), (cx + inner_w // 4, cz)]
-                    if inner_w >= inner_d
-                    else [(cx, cz - inner_d // 4), (cx, cz + inner_d // 4)]
-                )
-            )
-            for x, z in spots:
-                pos = (x, self.top, z)
-                if self.air(pos) and (x, z) not in self.deck:
-                    self.put(pos, self.state("ceiling_light", hanging="true", waterlogged="false"))
-        cells = self._cells()
-        levels = light_levels(cells)
-        candidates = self._torch_spots(cells)
-        rng.shuffle(candidates)
-        placed: list[Pos] = []
-        level_of = LIGHT_SOURCES.get(torch, 14)
-        dark = {p for p in cells.positions() if cells.spawnable(p) and levels.get(p, 0) == 0}
-        reach_of: dict[Pos, set[Pos]] = {}
-        while dark:
-            best, best_count = None, 0
-            for pos, _ in candidates:
-                if any(
-                    max(abs(pos[0] - p[0]), abs(pos[1] - p[1]), abs(pos[2] - p[2])) < LIGHT_SPACING
-                    for p in placed
-                ):
-                    continue
-                if pos not in reach_of:
-                    reach_of[pos] = set(light_levels(cells, [(pos, level_of)]))
-                count = len(reach_of[pos] & dark)
-                if count > best_count:
-                    best, best_count = pos, count
-            if best is None:
-                break  # validation reports what stays dark
-            facing = dict(candidates)[best]
-            self.put(best, self.state("wall_light", facing=facing))
-            cells.names[best] = torch
-            placed.append(best)
-            dark -= reach_of[best]
-
-    def _torch_spots(self, cells: Cells) -> list[tuple[Pos, str]]:
-        """Cells one above a standing cell, beside a full block to hang a wall light on, with the light's facing
-        (away from the block). Never in a doorway."""
-        spots = []
-        for x, y, z in sorted(walkable(cells)):
-            if not self.interior(x, z):
-                continue
-            pos = (x, y + 1, z)
-            if cells.name(pos) != AIR:
-                continue
-            for side, (dx, dz) in sorted(_DIRECTIONS.items()):
-                wall = (x + dx, y + 1, z + dz)
-                if cells.inside(wall) and is_solid(cells.name(wall)):
-                    spots.append((pos, _opposite(side)))
-                    break
-        return spots
+        """Wall lights and lanterns as patterns (``rooms/lights.py``)."""
+        try:
+            plan_lights(self)
+        except NoLightPattern as e:
+            raise RoomGeneratorError(str(e)) from e
 
     def _shape_stairs(self) -> None:
         """Each stair's shape from its neighbours, as ``StairBlock#getStairsShape`` works it out."""
@@ -701,7 +694,7 @@ def candidate_seeds(spec: RoomSpecDef, count: int) -> list[int]:
     decided = set(spec.seeds) | set(spec.rejected_seeds)
     seeds: list[int] = []
     seed = 1
-    while len(seeds) < count:
+    while len(seeds) < max(count, 0):
         if seed not in decided:
             seeds.append(seed)
         seed += 1

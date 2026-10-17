@@ -212,7 +212,9 @@ generator, changed. Validation runs `rooms/walk.py` on each: its doorways reach 
 headroom, and no cell where a mob could spawn is dark. **`rf rooms candidates [SPEC...]`** (`--count`, 4 by default;
 `--out`) builds the next seeds of each spec that no review decided on (neither kept nor rejected, from 1 up) into
 `.cache/rooms/candidates/<spec>/seed_<n>.nbt` with a sidecar, and leaves out, with the reason, a candidate that
-validation would refuse. It replaces that folder on every run. Review them like any other folder:
+validation would refuse. It replaces that folder on every run. `--kept` builds the specs' kept seeds too (with
+`--count 0` only those), so a change to the generator can be reviewed on the rooms it changes; a reject decision on
+a kept room moves it to `rejected_seeds`. Review them like any other folder:
 
 ```bash
 uv run rf rooms candidates                                  # every spec; or name some

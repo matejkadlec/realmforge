@@ -1441,7 +1441,7 @@ data mode whose metadata names the marker (`DataMarker.Kind`):
 | `entrance` | where players arrive; one at most, in an entrance room only | W4b |
 | `exit` | where the way out stands | W4d |
 | `mob` | a spot the dungeon's encounters put a mob on | W6 |
-| `chest` | a spot the dungeon's loot puts a chest on | W6 |
+| `chest` | a spot the dungeon's loot puts a chest on, facing the room's middle ([ADR 0036](decisions/0036-room-lights-and-decorations-form-patterns.md)) | W6 |
 
 When a plot opens, the builder reads them from each room's template as vanilla's `SinglePoolElement#getDataMarkers`
 does (`StructureTemplate#filterBlocks` with the room's placement settings, so they turn with the room), and the plot
@@ -1479,11 +1479,16 @@ Rooms are generated or imported; nobody has to build one by hand
   imported rooms', so the two kinds join; three-wide paths from every doorway to the middle that pillars, rubble,
   niches and stairs keep clear of; profiles with their facing worked out (a moulding of upside-down stairs or top
   slabs under the ceiling, corbels under pillar capitals, the step around a pit, stairs up to a balcony's deck of
-  top slabs, corner shapes by vanilla's `StairBlock` rule); wall lights at least three blocks apart, and lanterns
-  in big rooms, until no cell where a mob could spawn is dark; and markers by kind: an `entrance` in the entrance's
-  middle; `mob` in combat rooms and arenas, spread evenly over the floor (the middle of each spot's share of it, at
-  least three blocks apart, a block clear of the walls and three of the doorways), plus one on an arena's balcony
-  deck; `chest` in treasure rooms, in the niches or against the walls. The features are `pillars`, `alcoves` (niches in the walls without
+  top slabs, corner shapes by vanilla's `StairBlock` rule); lights in patterns that leave no cell dark where a mob
+  could spawn (`rooms/lights.py`, [ADR 0036](decisions/0036-room-lights-and-decorations-form-patterns.md)): wall
+  lights all at one height, two free blocks from a wall's ends and three apart, balanced on opposite walls, only on
+  pilasters and pillars where a room has them, flanking all doorways or none, lanterns in big rooms, preferring
+  combinations the room's symmetry maps onto themselves; and markers by kind: an `entrance` in the entrance's
+  middle; `mob` in combat rooms and arenas, on full blocks of the floor (ground mobs, never on a step or the
+  balcony), spread evenly (the middle of each spot's share of the floor, at least three blocks apart, a block clear
+  of the walls and three of the doorways); five `chest` spots in a treasure room, mirrored across the doorway's line
+  where the niches allow, in the niches or against the walls. Markers and lights are built last, so changing them
+  leaves the rest of a kept room as it was. The features are `pillars`, `alcoves` (niches in the walls without
   a doorway), `pit` (a sunken middle one block deep; the floor is then two blocks thick), `balcony` and `rubble`.
   The seed picks the variations (floor pattern, patches, moulding, pillar layout, niche rhythm, rubble, lights,
   markers), and the same spec, theme and seed always give the same room. A change to the generator therefore
