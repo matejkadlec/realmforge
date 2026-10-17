@@ -197,3 +197,27 @@ kept candidate's seed is frozen. The next gallery starts from those decisions. `
 `keep` names a room; a `reject` outlives its dropped room, so the next import of the source skips it. A generated
 folder, such as the spike rooms, has no review: `rf rooms review` refuses it, because `rf gen` would delete its
 `review.yaml`.
+
+**Generated rooms** (A4d) come from the room specs in `content/room_specs/` and the themes in
+`content/room_themes/` ([content/README.md](../content/README.md)). The room generator (`rooms/generator.py`) builds
+a spec with a seed; `rf gen` builds every kept seed (the spec's `seeds`) into
+`data/realmforge/structure/rooms/generated/<spec>/seed_<n>.nbt`, and the room cache keeps each built room under a
+digest of the spec, its theme and the seed, so validation builds a spec again only when one of them, or the
+generator, changed. Validation runs `rooms/walk.py` on each: its doorways reach each other with three blocks of
+headroom, and no cell where a mob could spawn is dark. **`rf rooms candidates [SPEC...]`** (`--count`, 4 by default;
+`--out`) builds the next seeds of each spec that no review decided on (neither kept nor rejected, from 1 up) into
+`.cache/rooms/candidates/<spec>/seed_<n>.nbt` with a sidecar, and leaves out, with the reason, a candidate that
+validation would refuse. It replaces that folder on every run. Review them like any other folder:
+
+```bash
+uv run rf rooms candidates                                  # every spec; or name some
+uv run rf rooms gallery .cache/rooms/candidates --cut 4     # --cut 4 shows the rooms below their cornice
+uv run rf rooms review .cache/rooms/candidates --from decisions.yaml
+uv run rf gen                                               # writes the kept rooms
+```
+
+`rf rooms review` on the candidates folder (marked by `.room-candidates`) also freezes its decisions into the specs:
+a kept seed joins `seeds`, a rejected one `rejected_seeds`, and only those two lines of the spec change (written as
+flow lists, `seeds: [2, 7]`; a spec that writes either as a block list is refused). The generator is deterministic,
+so a change to it changes every kept room: `rf gen --check` shows which, and a change a player would see goes back to
+the gallery.
