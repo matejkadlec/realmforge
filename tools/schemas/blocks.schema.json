@@ -1,0 +1,143 @@
+{
+  "$defs": {
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A simple full block that drops itself, with its block item.",
+  "properties": {
+    "blast_resistance": {
+      "default": 6.0,
+      "description": "How well the block withstands explosions: stone 6, obsidian 1200.",
+      "maximum": 3600000,
+      "minimum": 0,
+      "title": "Blast Resistance",
+      "type": "number"
+    },
+    "creative_tabs": {
+      "description": "Creative mode tabs to list the block's item in, e.g. minecraft:natural_blocks. No duplicates.",
+      "items": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        "type": "string"
+      },
+      "title": "Creative Tabs",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "hardness": {
+      "description": "How long the block takes to mine: stone 1.5, deepslate 3, obsidian 50.",
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Hardness",
+      "type": "number"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "map_color": {
+      "default": "stone",
+      "description": "Its colour on maps.",
+      "enum": [
+        "stone",
+        "deepslate",
+        "color_gray",
+        "color_light_gray",
+        "color_black",
+        "terracotta_white",
+        "sand"
+      ],
+      "title": "Map Color",
+      "type": "string"
+    },
+    "name": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "Display name."
+    },
+    "requires_tool": {
+      "default": false,
+      "description": "Drops nothing unless mined with the right tool, as stone needs a pickaxe. Needs a tool.",
+      "title": "Requires Tool",
+      "type": "boolean"
+    },
+    "sound": {
+      "default": "stone",
+      "description": "What breaking, placing and walking on it sound like.",
+      "enum": [
+        "stone",
+        "deepslate",
+        "tuff",
+        "calcite",
+        "basalt",
+        "dripstone_block",
+        "polished_deepslate"
+      ],
+      "title": "Sound",
+      "type": "string"
+    },
+    "tool": {
+      "anyOf": [
+        {
+          "enum": [
+            "pickaxe",
+            "axe",
+            "shovel",
+            "hoe"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The tool that mines it at full speed (minecraft:mineable/<tool>); none: by hand.",
+      "title": "Tool"
+    },
+    "tool_tier": {
+      "anyOf": [
+        {
+          "enum": [
+            "stone",
+            "iron",
+            "diamond"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional: the lowest tier of that tool that gets the drops (minecraft:needs_<tier>_tool).",
+      "title": "Tool Tier"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "hardness"
+  ],
+  "title": "BlockDef",
+  "type": "object"
+}

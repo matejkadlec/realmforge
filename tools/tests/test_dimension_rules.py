@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 
 import pytest
 
@@ -64,18 +65,19 @@ def rule(**overrides: object) -> MobLevelRuleDef:
 def test_repository_dimension_rules_are_valid() -> None:
     content, universe = load_and_validate(RepoPaths())
     assert [(e.model.id, e.model.dimension) for e in content.dimensions] == [
-        ("overworld", "minecraft:overworld")
+        ("overworld", "minecraft:overworld"),
+        ("stone", "realmforge:stone"),
     ]
     assert universe.contains("realmforge:dimension_rules", "realmforge:overworld")
 
 
 def test_rules_may_name_our_own_dimensions(repo: RepoPaths) -> None:
-    write(repo.content / "worldgen" / "dimension" / "stone.json", '{"type": "minecraft:overworld"}')
+    write(repo.content / "worldgen" / "dimension" / "deep.json", '{"type": "minecraft:overworld"}')
     write(repo.mod_resources / "data" / "realmforge" / "dimension" / "instances.json", "{}")
-    write(repo.content / "dimensions" / "stone.yaml", rules("stone", "realmforge:stone"))
+    write(repo.content / "dimensions" / "deep.yaml", rules("deep", "realmforge:deep"))
     write(repo.content / "dimensions" / "instances.yaml", rules("instances", "realmforge:instances", ""))
     content, _ = load_and_validate(repo)
-    assert {e.model.dimension for e in content.dimensions} >= {"realmforge:stone", "realmforge:instances"}
+    assert {e.model.dimension for e in content.dimensions} >= {"realmforge:deep", "realmforge:instances"}
 
 
 def test_unknown_dimension_is_reported_with_a_suggestion(repo: RepoPaths) -> None:
@@ -201,13 +203,64 @@ def test_rules_without_mob_levels(repo: RepoPaths) -> None:
     files = generate(repo)
     assert json.loads(files[f"{DATA}/the_end.json"]) == {"dimension": "minecraft:the_end"}
     assert (
-        '"minecraft:the_end",\n                    Optional.empty(),\n                    List.of())'
+        '"minecraft:the_end",\n                    Optional.empty(),\n                    List.of(),\n                    List.of())'
         in files[EXPECTATIONS].decode()
     )
 
 
 def test_no_rules_still_compile(repo: RepoPaths) -> None:
-    (repo.content / "dimensions" / "overworld.yaml").unlink()
+    for path in (repo.content / "dimensions").glob("*.yaml"):
+        path.unlink()
+    # A realm needs its dimension's rules.
+    shutil.rmtree(repo.content / "realms")
     files = generate(repo)
     assert "DIMENSION_RULES = List.of();" in files[EXPECTATIONS].decode()
     assert not any(path.startswith(DATA) for path in files)
+
+
+# Access
+
+
+def test_the_stone_realms_rules_require_its_unlock(repo: RepoPaths) -> None:
+    files = generate(repo)
+    data = json.loads(files[f"{DATA}/stone.json"])
+    assert data["access"] == [{"type": "realmforge:has_advancement", "advancement": "realmforge:realm/stone"}]
+    assert "access" not in json.loads(files[f"{DATA}/overworld.json"])
+    assert (
+        '"{\\n  \\"advancement\\": \\"realmforge:realm/stone\\",\\n  '
+        '\\"type\\": \\"realmforge:has_advancement\\"\\n}"'
+    ) in files[EXPECTATIONS].decode()
+
+
+@pytest.mark.parametrize(
+    ("requirement", "expected"),
+    [
+        (
+            "{type: realmforge:has_advancement, advancement: realmforge:realm/nowhere}",
+            "access.0.advancement: unknown id 'realmforge:realm/nowhere' in registry minecraft:advancement",
+        ),
+        (
+            "{type: realmforge:chapter_completed, chapter: realmforge:chapter_9}",
+            "access.0.chapter: unknown id 'realmforge:chapter_9' in registry realmforge:chapter",
+        ),
+        ("{type: realmforge:level_at_least, level: 0}", "Input should be greater than or equal to 1"),
+        ("{type: realmforge:has_level, level: 3}", "does not match any of the expected tags"),
+    ],
+)
+def test_bad_access_requirements_are_reported(repo: RepoPaths, requirement: str, expected: str) -> None:
+    body = f"access:\n  - {requirement}\n"
+    write(repo.content / "dimensions" / "the_end.yaml", rules("the_end", "minecraft:the_end", body))
+    assert any(expected in p for p in problems_for(repo)), problems_for(repo)
+
+
+def test_known_advancements_and_chapters_pass(repo: RepoPaths) -> None:
+    body = (
+        "access:\n"
+        "  - {type: realmforge:has_advancement, advancement: minecraft:story/enter_the_nether}\n"
+        "  - {type: realmforge:chapter_completed, chapter: realmforge:chapter_1}\n"
+        "  - {type: realmforge:level_at_least, level: 10}\n"
+    )
+    write(repo.content / "dimensions" / "the_end.yaml", rules("the_end", "minecraft:the_end", body))
+    content, _ = load_and_validate(repo)
+    (end,) = [e.model for e in content.dimensions if e.model.id == "the_end"]
+    assert end.access is not None and len(end.access) == 3
