@@ -235,6 +235,39 @@ def test_markers_follow_the_kind() -> None:
     assert markers(hallway) == []
 
 
+def test_mob_spots_spread_over_the_floor_clear_of_the_walls() -> None:
+    for room_spec in (
+        spec(footprint=[13, 13], features=["pillars", "rubble"]),
+        spec(kind="arena", footprint=[16, 16], height=10, connectors=["south"], features=["pit", "balcony"]),
+        spec(footprint=[13, 11], height=7, connectors=["north", "south"], features=["pit"]),
+    ):
+        for seed in range(1, 9):
+            structure = generate_room(room_spec, THEME, seed)
+            width, _, depth = structure.size
+            floor = [pos for name, pos in markers(structure) if name == "mob" and pos[1] <= room_spec.floor]
+            assert floor, (room_spec.kind, seed)
+            for i, (x, _, z) in enumerate(floor):
+                assert 2 <= x <= width - 3 and 2 <= z <= depth - 3, (room_spec.kind, seed, x, z)
+                for ox, _, oz in floor[i + 1 :]:
+                    assert max(abs(x - ox), abs(z - oz)) >= 3, (room_spec.kind, seed)
+
+
+def test_an_arenas_balcony_gets_one_mob_spot_on_its_deck() -> None:
+    room_spec = spec(
+        kind="arena", footprint=[16, 16], height=10, connectors=["south"], features=["pit", "balcony"]
+    )
+    for seed in range(1, 9):
+        structure = generate_room(room_spec, THEME, seed)
+        blocks = at(structure)
+        mob = [pos for name, pos in markers(structure) if name == "mob"]
+        on_deck = [pos for pos in mob if pos[1] == room_spec.floor + 4]
+        assert len(mob) == 4 and len(on_deck) == 1, seed
+        x, y, z = on_deck[0]
+        assert blocks[(x, y - 1, z)].state.name == THEME.blocks.slab, seed  # standing on the deck
+        under = [pos for pos in mob if pos[1] <= room_spec.floor and (pos[0], pos[2]) == (x, z)]
+        assert not under, seed
+
+
 def test_lights_cover_every_spawnable_cell_and_keep_their_spacing() -> None:
     structure = generate_room(spec(footprint=[16, 16], connectors=["north"]), THEME, 4)
     cells = Cells.of(structure)

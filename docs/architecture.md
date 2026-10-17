@@ -1435,8 +1435,10 @@ Rooms are generated or imported; nobody has to build one by hand
   niches and stairs keep clear of; profiles with their facing worked out (a moulding of upside-down stairs or top
   slabs under the ceiling, corbels under pillar capitals, the step around a pit, stairs up to a balcony's deck of
   top slabs, corner shapes by vanilla's `StairBlock` rule); wall lights at least three blocks apart, and lanterns
-  in big rooms, until no cell where a mob could spawn is dark; and markers by kind (`entrance`, `mob` in combat
-  rooms and arenas, `chest` in treasure rooms). The features are `pillars`, `alcoves` (niches in the walls without
+  in big rooms, until no cell where a mob could spawn is dark; and markers by kind: an `entrance` in the entrance's
+  middle; `mob` in combat rooms and arenas, spread evenly over the floor (the middle of each spot's share of it, at
+  least three blocks apart, a block clear of the walls and three of the doorways), plus one on an arena's balcony
+  deck; `chest` in treasure rooms, in the niches or against the walls. The features are `pillars`, `alcoves` (niches in the walls without
   a doorway), `pit` (a sunken middle one block deep; the floor is then two blocks thick), `balcony` and `rubble`.
   The seed picks the variations (floor pattern, patches, moulding, pillar layout, niche rhythm, rubble, lights,
   markers), and the same spec, theme and seed always give the same room. A change to the generator therefore
@@ -1466,7 +1468,10 @@ Rooms are generated or imported; nobody has to build one by hand
   or exported as a schematic and taken in by `rf rooms import --ours`, which marks the sidecar's `source` as ours.
   Validation keeps every other imported room in `third_party/<source>/`, where its notices are required.
 - **Review:** the room gallery (A4e, `rf rooms gallery`) renders rooms headless through nucleation, with the client
-  jar's models and textures read at runtime; Matěj keeps or rejects them in batches. `rf rooms review` records the
+  jar's models and textures read at runtime; Matěj keeps or rejects them in batches. Every data marker shows with
+  its label, drawn in its label's colour (also above a cutaway's cut) and listed on the room's card under a legend,
+  because where a room puts its markers is reviewed like its blocks
+  ([ADR 0035](decisions/0035-room-galleries-show-every-marker-with-its-label.md)). `rf rooms review` records the
   decisions in a `review.yaml` in the reviewed folder: rejected imports are dropped. A reject decision stays after
   its room is dropped, and `rf rooms import` skips the rooms a review rejects, so importing the source again does
   not bring them back. Generated rooms are reviewed as candidates: `rf rooms candidates` builds the next seeds of
