@@ -2,7 +2,6 @@ package io.github.matejkadlec.realmforge.spell;
 
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.MapCodec;
-import javax.annotation.Nullable;
 import net.minecraft.world.entity.LivingEntity;
 
 /** {@code realmforge:self}: the caster itself, whatever it aimed at. */
@@ -17,7 +16,7 @@ public enum SelfTargeting implements SpellTargeting {
     }
 
     @Override
-    public Either<LivingEntity, CastFailure> resolve(LivingEntity caster, @Nullable LivingEntity requested) {
-        return Either.left(caster);
+    public Either<SpellTarget, CastFailure> resolve(LivingEntity caster, SpellAim aim) {
+        return Either.left(SpellTarget.of(caster, caster));
     }
 }

@@ -24,6 +24,128 @@
       "title": "AllyTargetingDef",
       "type": "object"
     },
+    "ApplyEffectEffectDef": {
+      "additionalProperties": false,
+      "description": "Gives each target a status effect: a vanilla one (``minecraft:slowness``) until our own come with C3c\n(RLM-26). Combat effects keep their own short time scale (research SP-8), so at most 60 seconds.",
+      "properties": {
+        "amplifier": {
+          "default": 0,
+          "description": "Its strength above the first: 0 is Slowness I, 1 is Slowness II.",
+          "maximum": 9,
+          "minimum": 0,
+          "title": "Amplifier",
+          "type": "integer"
+        },
+        "duration_seconds": {
+          "description": "How long it lasts; more than 0, at most 60.",
+          "minimum": 0,
+          "title": "Duration Seconds",
+          "type": "number"
+        },
+        "effect": {
+          "description": "The status effect, e.g. minecraft:slowness.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Effect",
+          "type": "string"
+        },
+        "type": {
+          "const": "realmforge:apply_effect",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "effect",
+        "duration_seconds"
+      ],
+      "title": "ApplyEffectEffectDef",
+      "type": "object"
+    },
+    "AreaEffectDef": {
+      "additionalProperties": false,
+      "description": "Places a ground zone at the target (the caster's feet, an enemy's or a ground point) that runs its own\n``effects`` on every enemy (or ally) inside it at the end of every interval, for ``duration_seconds``\n(architecture 11.3).",
+      "properties": {
+        "affects": {
+          "default": "enemies",
+          "description": "Whom its effects act on: the caster's enemies or its allies.",
+          "enum": [
+            "enemies",
+            "allies"
+          ],
+          "title": "Affects",
+          "type": "string"
+        },
+        "duration_seconds": {
+          "description": "How long it lasts: a whole number of intervals, at most 60 s.",
+          "minimum": 0,
+          "title": "Duration Seconds",
+          "type": "number"
+        },
+        "effects": {
+          "description": "What it does to each entity inside at every interval, in order.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "realmforge:apply_effect": "#/$defs/ApplyEffectEffectDef",
+                "realmforge:damage": "#/$defs/DamageEffectDef",
+                "realmforge:heal": "#/$defs/HealEffectDef",
+                "realmforge:knockback": "#/$defs/KnockbackEffectDef",
+                "realmforge:remove_effect": "#/$defs/RemoveEffectEffectDef"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DamageEffectDef"
+              },
+              {
+                "$ref": "#/$defs/HealEffectDef"
+              },
+              {
+                "$ref": "#/$defs/ApplyEffectEffectDef"
+              },
+              {
+                "$ref": "#/$defs/RemoveEffectEffectDef"
+              },
+              {
+                "$ref": "#/$defs/KnockbackEffectDef"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Effects",
+          "type": "array"
+        },
+        "interval_seconds": {
+          "description": "The time between two runs of its effects; more than 0.",
+          "minimum": 0,
+          "title": "Interval Seconds",
+          "type": "number"
+        },
+        "radius": {
+          "description": "In blocks, at most 16.",
+          "exclusiveMinimum": 0,
+          "maximum": 16.0,
+          "title": "Radius",
+          "type": "number"
+        },
+        "type": {
+          "const": "realmforge:area",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "radius",
+        "duration_seconds",
+        "interval_seconds",
+        "effects"
+      ],
+      "title": "AreaEffectDef",
+      "type": "object"
+    },
     "CastTimeCastDef": {
       "additionalProperties": false,
       "description": "The spell takes ``duration_seconds`` to cast, which Cast Time Reduction shortens. At the end the cost and the\ntarget are checked again; the cost, its own cooldown and the effects follow. The global cooldown starts with the\ncast.",
@@ -215,6 +337,54 @@
       "title": "DamageEffectDef",
       "type": "object"
     },
+    "DashEffectDef": {
+      "additionalProperties": false,
+      "description": "Throws the caster toward the target (an enemy, a ground point or along a direction) with a burst of speed,\nwhich friction then slows as for any push.",
+      "properties": {
+        "strength": {
+          "description": "The burst's speed in blocks per tick (1 carries about 2 blocks on the ground), at most 5.",
+          "exclusiveMinimum": 0,
+          "maximum": 5.0,
+          "title": "Strength",
+          "type": "number"
+        },
+        "type": {
+          "const": "realmforge:dash",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "strength"
+      ],
+      "title": "DashEffectDef",
+      "type": "object"
+    },
+    "DirectionTargetingDef": {
+      "additionalProperties": false,
+      "description": "A direction from the caster's eyes: toward what the cast aims at, or else where the caster looks. Its point is\n``range`` blocks along it, or the first block in the way (a teleport's destination).",
+      "properties": {
+        "range": {
+          "description": "Range in blocks, at most 128.",
+          "exclusiveMinimum": 0,
+          "maximum": 128.0,
+          "title": "Range",
+          "type": "number"
+        },
+        "type": {
+          "const": "realmforge:direction",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "range"
+      ],
+      "title": "DirectionTargetingDef",
+      "type": "object"
+    },
     "EnemyTargetingDef": {
       "additionalProperties": false,
       "description": "A living entity that is not the caster's ally, in range and in line of sight.",
@@ -237,6 +407,30 @@
         "range"
       ],
       "title": "EnemyTargetingDef",
+      "type": "object"
+    },
+    "GroundPointTargetingDef": {
+      "additionalProperties": false,
+      "description": "A point within range and in line of sight: the one the cast aims at, or else the first block the caster looks\nat. No entity: effects that act on one run through a projectile or an area.",
+      "properties": {
+        "range": {
+          "description": "Range in blocks, at most 128.",
+          "exclusiveMinimum": 0,
+          "maximum": 128.0,
+          "title": "Range",
+          "type": "number"
+        },
+        "type": {
+          "const": "realmforge:ground_point",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "range"
+      ],
+      "title": "GroundPointTargetingDef",
       "type": "object"
     },
     "HealEffectDef": {
@@ -299,6 +493,128 @@
       "title": "InstantCastDef",
       "type": "object"
     },
+    "KnockbackEffectDef": {
+      "additionalProperties": false,
+      "description": "Pushes each target away along the spell's direction (from the caster, the projectile's flight or the area's\nmiddle) and interrupts its cast, unless that may be cast while moving. Knockback Resistance weakens it. The only\nway a spell pushes: its damage never knocks back (architecture 9.1).",
+      "properties": {
+        "strength": {
+          "description": "As vanilla's knockback: a melee hit pushes with 0.4, at most 5.",
+          "exclusiveMinimum": 0,
+          "maximum": 5.0,
+          "title": "Strength",
+          "type": "number"
+        },
+        "type": {
+          "const": "realmforge:knockback",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "strength"
+      ],
+      "title": "KnockbackEffectDef",
+      "type": "object"
+    },
+    "ProjectileEffectDef": {
+      "additionalProperties": false,
+      "description": "Launches a projectile from the caster's eyes toward the target (an enemy, a ground point or along a\ndirection). It flies straight, hits the first enemy in its way and runs its own ``effects`` on it; a block or the\nend of its lifetime ends it without them (architecture 11.3).",
+      "properties": {
+        "effects": {
+          "description": "What it does to the enemy it hits, in order.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "realmforge:apply_effect": "#/$defs/ApplyEffectEffectDef",
+                "realmforge:damage": "#/$defs/DamageEffectDef",
+                "realmforge:heal": "#/$defs/HealEffectDef",
+                "realmforge:knockback": "#/$defs/KnockbackEffectDef",
+                "realmforge:remove_effect": "#/$defs/RemoveEffectEffectDef"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DamageEffectDef"
+              },
+              {
+                "$ref": "#/$defs/HealEffectDef"
+              },
+              {
+                "$ref": "#/$defs/ApplyEffectEffectDef"
+              },
+              {
+                "$ref": "#/$defs/RemoveEffectEffectDef"
+              },
+              {
+                "$ref": "#/$defs/KnockbackEffectDef"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Effects",
+          "type": "array"
+        },
+        "lifetime_seconds": {
+          "default": 5,
+          "description": "How long it flies before it fizzles; more than 0, at most 10.",
+          "minimum": 0,
+          "title": "Lifetime Seconds",
+          "type": "number"
+        },
+        "size": {
+          "default": 0.5,
+          "description": "Width and height of its hitbox in blocks, at most 4.",
+          "exclusiveMinimum": 0,
+          "maximum": 4.0,
+          "title": "Size",
+          "type": "number"
+        },
+        "speed": {
+          "description": "Blocks per second, at most 100.",
+          "exclusiveMinimum": 0,
+          "maximum": 100.0,
+          "title": "Speed",
+          "type": "number"
+        },
+        "type": {
+          "const": "realmforge:projectile",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "speed",
+        "effects"
+      ],
+      "title": "ProjectileEffectDef",
+      "type": "object"
+    },
+    "RemoveEffectEffectDef": {
+      "additionalProperties": false,
+      "description": "Removes a status effect from each target, if it has it.",
+      "properties": {
+        "effect": {
+          "description": "The status effect, e.g. minecraft:slowness.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Effect",
+          "type": "string"
+        },
+        "type": {
+          "const": "realmforge:remove_effect",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "effect"
+      ],
+      "title": "RemoveEffectEffectDef",
+      "type": "object"
+    },
     "SelfTargetingDef": {
       "additionalProperties": false,
       "description": "The caster itself.",
@@ -313,6 +629,22 @@
         "type"
       ],
       "title": "SelfTargetingDef",
+      "type": "object"
+    },
+    "TeleportEffectDef": {
+      "additionalProperties": false,
+      "description": "Moves the caster at once to the target: a ground point, or as far along a direction as its range allows. It\nstops short of blocks, and does not move when no free spot is found on the way.",
+      "properties": {
+        "type": {
+          "const": "realmforge:teleport",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "TeleportEffectDef",
       "type": "object"
     }
   },
@@ -371,8 +703,15 @@
       "items": {
         "discriminator": {
           "mapping": {
+            "realmforge:apply_effect": "#/$defs/ApplyEffectEffectDef",
+            "realmforge:area": "#/$defs/AreaEffectDef",
             "realmforge:damage": "#/$defs/DamageEffectDef",
-            "realmforge:heal": "#/$defs/HealEffectDef"
+            "realmforge:dash": "#/$defs/DashEffectDef",
+            "realmforge:heal": "#/$defs/HealEffectDef",
+            "realmforge:knockback": "#/$defs/KnockbackEffectDef",
+            "realmforge:projectile": "#/$defs/ProjectileEffectDef",
+            "realmforge:remove_effect": "#/$defs/RemoveEffectEffectDef",
+            "realmforge:teleport": "#/$defs/TeleportEffectDef"
           },
           "propertyName": "type"
         },
@@ -382,6 +721,27 @@
           },
           {
             "$ref": "#/$defs/HealEffectDef"
+          },
+          {
+            "$ref": "#/$defs/ApplyEffectEffectDef"
+          },
+          {
+            "$ref": "#/$defs/RemoveEffectEffectDef"
+          },
+          {
+            "$ref": "#/$defs/KnockbackEffectDef"
+          },
+          {
+            "$ref": "#/$defs/ProjectileEffectDef"
+          },
+          {
+            "$ref": "#/$defs/AreaEffectDef"
+          },
+          {
+            "$ref": "#/$defs/TeleportEffectDef"
+          },
+          {
+            "$ref": "#/$defs/DashEffectDef"
           }
         ]
       },
@@ -437,7 +797,9 @@
       "discriminator": {
         "mapping": {
           "realmforge:ally": "#/$defs/AllyTargetingDef",
+          "realmforge:direction": "#/$defs/DirectionTargetingDef",
           "realmforge:enemy": "#/$defs/EnemyTargetingDef",
+          "realmforge:ground_point": "#/$defs/GroundPointTargetingDef",
           "realmforge:self": "#/$defs/SelfTargetingDef"
         },
         "propertyName": "type"
@@ -451,6 +813,12 @@
         },
         {
           "$ref": "#/$defs/AllyTargetingDef"
+        },
+        {
+          "$ref": "#/$defs/GroundPointTargetingDef"
+        },
+        {
+          "$ref": "#/$defs/DirectionTargetingDef"
         }
       ],
       "title": "Targeting"

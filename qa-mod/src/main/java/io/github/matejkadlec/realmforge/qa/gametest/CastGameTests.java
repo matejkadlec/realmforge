@@ -36,6 +36,7 @@ import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.entity.monster.zombie.Zombie;
@@ -51,7 +52,7 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class CastGameTests {
     private static final double TOLERANCE = 1e-4;
-    private static final double HEALTH = 1000;
+    static final double HEALTH = 1000;
 
     private CastGameTests() {
     }
@@ -168,12 +169,84 @@ public final class CastGameTests {
         helper.runAfterDelay(30, () -> assertHealth(helper, husk, HEALTH - 2, "one tick after a second"));
         helper.runAfterDelay(45, () -> {
             assertHealth(helper, husk, HEALTH - 4, "two ticks after two seconds");
-            player.snapTo(helper.absoluteVec(new Vec3(1.5, 1, 0.5)), 0, 0);
+            walk(helper, player, new Vec3(1.5, 1, 0.5));
         });
         helper.runAfterDelay(75, () -> {
             assertEnded(helper, player, GeneratedSpells.TEST_DRAIN, CastEnd.MOVED);
             assertHealth(helper, husk, HEALTH - 4, "moving stopped the third tick; the first two stay");
             assertPool(helper, player, 85, "and the cost is not refunded");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Being pushed is not moving (RLM-243): a melee hit's knockback moves a casting mob, and a player its client moved
+     * without a key pressed, and both casts go on and complete.
+     */
+    @QaGameTest
+    public static void aCasterPushedByMeleeKeepsItsCast(GameTestHelper helper) {
+        Husk target = husk(helper, new BlockPos(0, 1, 4));
+        Husk caster = helper.spawnWithNoFreeWill(EntityType.HUSK, new BlockPos(2, 1, 1));
+        MobLevels.setLevel(caster, EntityLevel.MIN);
+        CombatGameTests.setBase(caster, Attributes.MAX_HEALTH, HEALTH);
+        CombatGameTests.setBase(caster, Attributes.KNOCKBACK_RESISTANCE, 0);
+        caster.setHealth((float) HEALTH);
+        Husk attacker = helper.spawnWithNoFreeWill(EntityType.HUSK, new BlockPos(2, 1, 0));
+        MobLevels.setLevel(attacker, EntityLevel.MIN);
+        assertBegun(helper, caster, GeneratedSpells.TEST_SLOW_BOLT, target);
+        Vec3 start = caster.position();
+        helper.assertTrue(attacker.doHurtTarget(helper.getLevel(), caster), "the attacker's melee hit missed");
+
+        ServerPlayer player = caster(helper, "qa-cast-pushed");
+        learn(helper, player, GeneratedSpells.TEST_SLOW_BOLT);
+        assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, target);
+        // A player's client moves the player: the server only sees where to, and no key pressed.
+        player.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 0.9)), 0, 0);
+
+        helper.runAfterDelay(10, () -> {
+            helper.assertTrue(caster.position().distanceTo(start) > 3 * Casting.MOVE_TOLERANCE,
+                    "the knockback moved the husk: " + caster.position().distanceTo(start) + " blocks");
+            helper.assertTrue(Casting.isCasting(caster), "the pushed husk lost its cast");
+            helper.assertTrue(Casting.isCasting(player), "the pushed player lost its cast");
+        });
+        helper.runAfterDelay(50, () -> {
+            assertEnded(helper, caster, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.COMPLETED);
+            assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.COMPLETED);
+            assertHealth(helper, target, HEALTH - 20, "both casts landed");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Moving by itself loses the cast (RLM-243): a player pressing a movement key while its client moves it, and a mob
+     * that walks.
+     */
+    @QaGameTest
+    public static void aCasterThatMovesByItselfLosesItsCast(GameTestHelper helper) {
+        Husk target = husk(helper, new BlockPos(0, 1, 4));
+        ServerPlayer player = caster(helper, "qa-cast-walker");
+        learn(helper, player, GeneratedSpells.TEST_SLOW_BOLT);
+        assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, target);
+        walk(helper, player, new Vec3(2.5, 1, 1.5));
+
+        Husk husk = helper.spawnWithNoFreeWill(EntityType.HUSK, new BlockPos(4, 1, 0));
+        MobLevels.setLevel(husk, EntityLevel.MIN);
+        assertBegun(helper, husk, GeneratedSpells.TEST_SLOW_BOLT, target);
+        // Its navigation walks it, as its AI would, setting its movement input every tick; like GameTestHelper#walkTo,
+        // only once it stands on the ground.
+        Vec3 goal = helper.absoluteVec(new Vec3(4.5, 1, 3.5));
+        helper.runAfterDelay(2, () -> helper.assertTrue(husk.getNavigation().moveTo(goal.x, goal.y, goal.z, 1.0),
+                "the husk found no path"));
+
+        helper.runAfterDelay(35, () -> {
+            assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.MOVED);
+            helper.assertTrue(husk.position().distanceTo(goal) < 2.5, "the husk did not walk: at "
+                    + helper.relativeVec(husk.position()) + ", zza " + husk.zza + ", casting " + Casting.isCasting(husk)
+                    + ", path " + husk.getNavigation().getPath() + ", done " + husk.getNavigation().isDone());
+            assertEnded(helper, husk, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.MOVED);
+            assertHealth(helper, target, HEALTH, "neither cast landed");
             logout(player);
             helper.succeed();
         });
@@ -330,7 +403,7 @@ public final class CastGameTests {
     }
 
     /** A fake player at the platform's south edge, in survival, at 0 % crit chance, with a full pool of 100 mana. */
-    private static ServerPlayer caster(GameTestHelper helper, String name) {
+    static ServerPlayer caster(GameTestHelper helper, String name) {
         return caster(helper, new GameProfile(UUID.randomUUID(), name));
     }
 
@@ -345,7 +418,7 @@ public final class CastGameTests {
     }
 
     /** A husk that stands still with {@value #HEALTH} health, no armor and level 1. */
-    private static Husk husk(GameTestHelper helper, BlockPos pos) {
+    static Husk husk(GameTestHelper helper, BlockPos pos) {
         Husk husk = helper.spawn(EntityType.HUSK, pos);
         husk.setNoAi(true);
         MobLevels.setLevel(husk, EntityLevel.MIN);
@@ -356,30 +429,30 @@ public final class CastGameTests {
         return husk;
     }
 
-    private static void learn(GameTestHelper helper, ServerPlayer player, ResourceKey<Spell> spell) {
+    static void learn(GameTestHelper helper, ServerPlayer player, ResourceKey<Spell> spell) {
         Holder.Reference<Spell> holder = Spells.get(helper.getLevel().registryAccess(), spell)
                 .orElseThrow(() -> new IllegalStateException("no spell " + spell.identifier()));
         Spells.learn(player, holder, 1);
     }
 
-    private static void assertBegun(GameTestHelper helper, LivingEntity caster, ResourceKey<Spell> spell,
+    static void assertBegun(GameTestHelper helper, LivingEntity caster, ResourceKey<Spell> spell,
             LivingEntity target) {
         CastResult result = SpellCaster.cast(caster, spell, target);
         helper.assertTrue(result.success(), spell.identifier() + " was refused: " + result.failure());
         helper.assertTrue(result.begun(), spell.identifier() + " ran at once instead of beginning a cast");
-        helper.assertTrue(result.target().orElseThrow() == target,
-                spell.identifier() + " aimed at " + result.target().orElseThrow());
+        helper.assertTrue(result.entity().orElse(null) == target,
+                spell.identifier() + " aimed at " + result.target());
         helper.assertTrue(Casting.isCasting(caster), spell.identifier() + " is not in progress");
     }
 
-    private static void assertEnded(GameTestHelper helper, LivingEntity caster, ResourceKey<Spell> spell,
+    static void assertEnded(GameTestHelper helper, LivingEntity caster, ResourceKey<Spell> spell,
             CastEnd expected) {
         helper.assertFalse(Casting.isCasting(caster), spell.identifier() + " is still in progress");
         helper.assertValueEqual(CastLog.last(caster), Optional.of(new CastLog.Ended(spell, expected)),
                 caster.getPlainTextName() + "'s last cast");
     }
 
-    private static void assertHealth(GameTestHelper helper, LivingEntity entity, double expected, String what) {
+    static void assertHealth(GameTestHelper helper, LivingEntity entity, double expected, String what) {
         helper.assertTrue(Math.abs(entity.getHealth() - expected) <= TOLERANCE, what + ": health " + expected
                 + " expected, got " + entity.getHealth());
     }
@@ -388,6 +461,12 @@ public final class CastGameTests {
         float amount = Resources.amount(player, ResourceTypes.MANA);
         helper.assertTrue(Math.abs(amount - expected) <= TOLERANCE, what + ": mana " + expected + " expected, got "
                 + amount);
+    }
+
+    /** {@code player} walks to {@code pos}: its client presses forward and moves it there. */
+    static void walk(GameTestHelper helper, ServerPlayer player, Vec3 pos) {
+        player.setLastClientInput(new Input(true, false, false, false, false, false, false));
+        player.snapTo(helper.absoluteVec(pos), player.getYRot(), player.getXRot());
     }
 
     private static boolean hasBetterCombatTag(ServerPlayer player) {
@@ -399,7 +478,7 @@ public final class CastGameTests {
         server.getCommands().performPrefixedCommand(source, command);
     }
 
-    private static void logout(ServerPlayer player) {
+    static void logout(ServerPlayer player) {
         player.level().getServer().getPlayerList().remove(player);
     }
 }

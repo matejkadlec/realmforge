@@ -408,8 +408,8 @@ instance. After `rf gen` changes files in `pack/`, run `packwiz refresh` (CI che
 ### 6.4 Example: the life of a spell
 
 ```yaml
-# content/spells/firebolt.yaml (the format of C3a-1 and C3a-2, schema/spell.py; C3a-3 adds projectiles and status
-# effects, C3b the name and description with their {damage} placeholders)
+# content/spells/firebolt.yaml (the format of C3a, schema/spell.py; projectiles, areas, status effects and movement in
+# 11.3; C3b adds the name and description with their {damage} placeholders)
 id: firebolt
 school: realmforge:fire
 scales_with: spell_power                # magic; a physical ability scales with attack_damage
@@ -1002,8 +1002,9 @@ lists spells granted while equipped or on use): the vision's "some from the race
    during the cast: rage decays, effects drain mana, and the target can die, leave the caster's dimension, move out
    of range or go behind cover. If either check fails, the cast fails like an interrupt; a spell that should lock
    on says so in its data. Otherwise the cost and the spell's own cooldown apply first (the global cooldown started
-   with the cast), then every effect runs with an
-   `EffectContext` (caster, targets, position, spell level, stat snapshot, random source).
+   with the cast), then every effect runs on the target with an `EffectContext` (caster, the entity that delivers it,
+   spell, spell level, random source). Effects read the caster's stats as they run, those that a projectile or an
+   area runs later included ([11.3](#113-spell-entities)).
 5. A channel pays its cost and starts its cooldown when it begins, then runs its effects at the tick interval its
    data sets for as long as it lasts, checking the target before every tick as in step 4. Moving or an interrupt
    ends it early, and the ticks already run stay applied.
@@ -1018,8 +1019,7 @@ does not exist, a player casts an `npc_only` spell or one their spellbook does n
 runs, the global cooldown runs and the spell is on it, the targeting finds no valid target (`spell/Targets`: in range
 from the caster's eyes to the target's box, and in vanilla's line of sight), a player lacks the cost. Otherwise the
 cost and the cooldowns apply, then every effect runs on the target with an `EffectContext` (caster, spell, spell
-level, random source; the stat snapshot that effects running after the cast need joins with the spell entities,
-C3a-3, and the proc origin with procs, C3a-4). Allies (`Targets#allied`) are the caster, its team mates and tamed
+level, random source; C3a-3 adds the entity that delivers it, and procs, C3a-4, the proc origin). Allies (`Targets#allied`) are the caster, its team mates and tamed
 pets (vanilla's `isAlliedTo`), and for a player every other player, as M1 has no PvP; everything else is an enemy.
 Mobs pay no cost until C3a-4 decides NPC resources. `/qa spell` drives it until the spell bar exists.
 
@@ -1039,11 +1039,56 @@ interrupt, or the failed check), sent to the caster and its trackers as `CastEnd
 as `CastEndedEvent`, which procs (C3a-4) will use and the QA mod logs for `/qa spell show` and the GameTests
 (`CastGameTests`). The effects run on the first server tick at or after the cast's end time.
 
+**In code (C3a-3, RLM-211 and RLM-243):** a cast aims at an entity, a point or nothing (`spell/SpellAim`, what the
+spell bar's payload will carry), and its targeting resolves that into a `spell/SpellTarget`: an entity (`self`,
+`enemy`, `ally`), a point (`ground_point`) or a direction (`direction`), each with a position and a direction from
+the caster's eyes. A ground point is the point aimed at, the feet of the entity aimed at, or else the first block the
+caster looks at within range, and must be in range and in sight (`Targets#canSee`); a direction points at what was
+aimed at, or else where the caster looks, and its position is its range along it or the first block in the way. Only
+an entity target is checked again before a cast time's effects and a channel's ticks, and seen afresh then
+(`SpellTarget#now`), so a projectile flies at where the target stands at the end of the cast; a point or a direction
+stays as it began. **What counts as moving** (RLM-243): only the caster's own movement, a player pressing a movement or the
+jump key (`ServerPlayer#getLastClientInput`, the keys its client last sent) or a mob walking or strafing (its
+movement input, which its move control sets every tick it walks), while the caster is more than 0.1 blocks from
+where the cast began (`Casting#movesByItself`). Being pushed is not moving: a melee hit's knockback, crowding mobs
+or a water current move the cast's start point along instead, so a Mage hit by a zombie keeps casting. A spell's
+`realmforge:knockback` interrupts the target's cast explicitly (`CastEnd.KNOCKED_BACK`), unless it may be cast while
+moving. `CastGameTests` covers both, and `SpellEffectGameTests` the knockback.
+
 ### 11.3 Spell entities
 
 Registries freeze at startup, so variety lives in data: one generic projectile entity type and one generic area
 entity type (persistent ground zones), configured by the spell (speed, size, visuals, effects on hit). A new entity
 type only for genuinely new behaviour.
+
+**In code (C3a-3, RLM-211):** `spell/SpellEntities` registers `realmforge:spell_projectile` and
+`realmforge:spell_area`; the spell's effects create them.
+
+- **`realmforge:projectile`** (`ProjectileEffect`, `SpellProjectile`): launched from the caster's eyes along the
+  target's direction at its `speed` (blocks per second), straight, without gravity or drag, with a hitbox of its
+  `size`. It hits the first enemy of the caster in its way (never the caster, an ally or a spectator) and runs its own
+  effects on it, then is gone; a block or the end of its `lifetime_ticks` ends it without them.
+- **`realmforge:area`** (`AreaEffect`, `SpellArea`): a zone at the target's position (the caster's feet, an enemy's,
+  a ground point) with a `radius`, which at the end of every `interval_ticks` runs its own effects on every enemy (or,
+  with `affects: allies`, ally) standing within the radius of its middle, from half a block below it to 3 blocks
+  above, for `duration_ticks` (a whole number of intervals).
+- Both deliver their effects themselves: the hit's direct entity is the projectile or the area, its causing entity
+  the caster, so kill credit and the hit direction work as for an arrow. Their effects read the caster's stats when
+  they land; no snapshot is taken at the cast, as nothing (talents, procs) needs one yet. A spell entity ends when its
+  caster leaves its level (logs out, changes dimension, a mob that died and was removed).
+- **Never saved:** they carry a live cast (the caster, the spell), so a chunk that unloads or a server that stops
+  drops them (`shouldBeSaved` is false), they use no portal, and commands cannot summon them. Only their size is
+  synced; the client moves them and draws particles (a trail, a ring) with no-op renderers
+  (`client/render/SpellEntityRenderers`) until C6 (RLM-29) gives spells their visuals. Their entity type names have
+  no translation yet (RLM-259).
+- **The other effect types:** `apply_effect` (a status effect from the caster, vanilla's until C3c, at most a minute:
+  research SP-8) and `remove_effect` act on an entity; `teleport` moves the caster to the target's position (a ground
+  point, the end of a direction's ray with its feet where its eyes would be, an entity's feet), stepping back toward
+  the caster until its box is free, or not at all; `dash` throws the caster toward the target, or along a direction,
+  with a burst of speed in blocks per tick; `knockback` pushes its target along the spell's direction (away from the
+  caster, along a projectile's flight, out from an area's middle) with vanilla's knockback, which Knockback Resistance
+  weakens, and interrupts its cast. A player moves itself, so a dash or a knockback reaches it as a velocity its
+  client applies; the server moves mobs. `SpellEffectGameTests` casts every type.
 
 ### 11.4 Status effects
 
@@ -1690,9 +1735,9 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   (`EntityRenderersEvent.RegisterRenderers`), particles (`RegisterParticleProvidersEvent`), menu screens
   (`RegisterMenuScreensEvent`), tooltip components (`RegisterClientTooltipComponentFactoriesEvent`) and the handlers
   of client-bound payloads (`RegisterClientPayloadHandlersEvent`, [17.1](#171-rules)).
-- **Layout:** `client/hud`, `client/screen`, `client/input`, `client/render`, `client/tooltip`, `client/network`,
-  `client/spell` (the casts in progress, C3a-2), `client/animation` (the PAL cast layer), and `client/compat/<mod>`
-  for the client parts of integrations (JEI plugins, Jade tooltips).
+- **Layout:** `client/hud`, `client/screen`, `client/input`, `client/render` (the spell entities' renderers, C3a-3),
+  `client/tooltip`, `client/network`, `client/spell` (the casts in progress, C3a-2), `client/animation` (the PAL cast
+  layer), and `client/compat/<mod>` for the client parts of integrations (JEI plugins, Jade tooltips).
 - **The rule:** no class outside `client/` imports `net.minecraft.client.*`, `com.mojang.blaze3d.*`,
   `net.neoforged.neoforge.client.*` or a library's rendering classes. An automated import check enforces it
   (`tools/tests/test_client_isolation.py`, run by `uv run pytest`): it scans the main and generated sources of the

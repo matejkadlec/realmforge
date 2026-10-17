@@ -18,7 +18,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  * @param perLevel added for every spell level above 1
  * @param attackDamage the share of the caster's attack damage added (1 adds all of it), 0 for magic
  */
-public record HealEffect(double amount, double perLevel, double attackDamage) implements SpellEffect {
+public record HealEffect(double amount, double perLevel, double attackDamage) implements EntityEffect {
     public static final MapCodec<HealEffect> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                     Codec.doubleRange(0, Double.MAX_VALUE).fieldOf("amount").forGetter(HealEffect::amount),
                     Codec.doubleRange(0, Double.MAX_VALUE).optionalFieldOf("per_level", 0.0)
@@ -33,7 +33,7 @@ public record HealEffect(double amount, double perLevel, double attackDamage) im
     }
 
     @Override
-    public void apply(EffectContext context, LivingEntity target) {
+    public void applyTo(EffectContext context, LivingEntity target, SpellTarget spellTarget) {
         Spell spell = context.spell().value();
         double base = SpellScaling.base(amount, perLevel, context.spellLevel(), attackDamage,
                 context.casterStat(Attributes.ATTACK_DAMAGE));

@@ -10,10 +10,10 @@ import net.minecraft.world.entity.LivingEntity;
  * come later, {@link Casting}), or refused with a reason.
  *
  * @param failure why the cast was refused; empty when it was cast or begun
- * @param target the entity the spell's effects ran on, or will run on; empty when it was refused
+ * @param target what the spell's effects ran on, or will run on; empty when it was refused
  * @param begun whether a cast time or channel began, so the effects have not run yet
  */
-public record CastResult(Optional<CastFailure> failure, Optional<LivingEntity> target, boolean begun) {
+public record CastResult(Optional<CastFailure> failure, Optional<SpellTarget> target, boolean begun) {
     public CastResult {
         if (failure.isPresent() == target.isPresent()) {
             throw new IllegalArgumentException("A cast either fails or has a target: " + failure + ", " + target);
@@ -24,12 +24,12 @@ public record CastResult(Optional<CastFailure> failure, Optional<LivingEntity> t
     }
 
     /** An instant spell, whose effects ran on {@code target}. */
-    public static CastResult cast(LivingEntity target) {
+    public static CastResult cast(SpellTarget target) {
         return new CastResult(Optional.empty(), Optional.of(Objects.requireNonNull(target, "target")), false);
     }
 
     /** A cast time or channel that began at {@code target}; its effects run later. */
-    public static CastResult begun(LivingEntity target) {
+    public static CastResult begun(SpellTarget target) {
         return new CastResult(Optional.empty(), Optional.of(Objects.requireNonNull(target, "target")), true);
     }
 
@@ -40,6 +40,11 @@ public record CastResult(Optional<CastFailure> failure, Optional<LivingEntity> t
     /** Whether the spell was cast or its cast began. */
     public boolean success() {
         return failure.isEmpty();
+    }
+
+    /** The entity the cast acts on, if its target is one. */
+    public Optional<LivingEntity> entity() {
+        return target.flatMap(SpellTarget::entity);
     }
 
     /** The reason the cast was refused, or null when it was cast. */

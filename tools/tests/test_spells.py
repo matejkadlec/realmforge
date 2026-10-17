@@ -70,12 +70,22 @@ def test_repository_spells_are_the_engine_tests() -> None:
     content, universe = load_and_validate(RepoPaths())
     ids = {entry.model.id for entry in content.spells}
     assert ids == {
+        "test_blink",
         "test_bolt",
+        "test_charge",
+        "test_chill",
+        "test_cleanse",
         "test_drain",
+        "test_forward_missile",
         "test_homing_bolt",
         "test_mend",
+        "test_mending_ring",
+        "test_missile",
         "test_npc_bolt",
+        "test_scorch",
+        "test_shove",
         "test_slow_bolt",
+        "test_slow_missile",
         "test_strike",
         "test_sure_crit",
     }
@@ -325,8 +335,9 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
     keys = files[KEYS_JAVA].decode()
     assert 'public static final ResourceKey<Spell> TEST_BOLT = key("test_bolt");' in keys
     assert (
-        "ALL = List.of(TEST_BOLT, TEST_DRAIN, TEST_HOMING_BOLT, TEST_MEND, TEST_NPC_BOLT, TEST_SLOW_BOLT, TEST_STRIKE, "
-        "TEST_SURE_CRIT);"
+        "ALL = List.of(TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, "
+        "TEST_HOMING_BOLT, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_SCORCH, TEST_SHOVE, "
+        "TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT);"
     ) in keys
     expectations = files[EXPECTATIONS].decode()
     assert (
@@ -352,9 +363,12 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "                    0.0,\n"
         "                    false,\n"
         "                    List.of(\n"
-        '                            new EffectExpectation("realmforge:damage", 6.0, 2.0, 0.0)))'
+        '                            new EffectExpectation("realmforge:damage", '
+        'Map.of("amount", 6.0, "attack_damage", 0.0, "per_level", 2.0), Map.of(), List.of())))'
     ) in expectations
-    assert 'new EffectExpectation("realmforge:damage", 2.0, 0.0, 1.0)' in expectations
+    assert (
+        'new EffectExpectation("realmforge:damage", Map.of("amount", 2.0, "attack_damage", 1.0, "per_level", 0.0)'
+    ) in expectations
     assert "Optional.of(2.0),\n                    1.0," in expectations
     channel = expectations[expectations.index('"realmforge:test_drain"') :]
     assert (
@@ -366,3 +380,277 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         '"cast_time",\n                    20,\n                    0,\n                    true,\n                    true,\n'
         in (homing)
     )
+
+
+# C3a-3: spell entities, status effects, movement, knockback, ground points and directions
+
+PROJECTILE = "{type: realmforge:projectile, speed: 20, effects: [{type: realmforge:damage, amount: 4}]}"
+AREA = (
+    "{type: realmforge:area, radius: 3, duration_seconds: 4, interval_seconds: 1, "
+    "effects: [{type: realmforge:damage, amount: 2}]}"
+)
+
+
+@pytest.mark.parametrize(
+    ("effect", "expected"),
+    [
+        (
+            {"type": "realmforge:apply_effect", "effect": "minecraft:slowness", "duration_seconds": 0},
+            "duration_seconds is more than 0 and at most 60",
+        ),
+        (
+            {"type": "realmforge:apply_effect", "effect": "minecraft:slowness", "duration_seconds": 90},
+            "research SP-8",
+        ),
+        (
+            {
+                "type": "realmforge:apply_effect",
+                "effect": "minecraft:slowness",
+                "duration_seconds": 3,
+                "amplifier": 10,
+            },
+            "less than or equal to 9",
+        ),
+        ({"type": "realmforge:knockback", "strength": 0}, "greater than 0"),
+        ({"type": "realmforge:dash", "strength": 6}, "less than or equal to 5"),
+        ({"type": "realmforge:teleport", "distance": 5}, "Extra inputs are not permitted"),
+        ({"type": "realmforge:projectile", "speed": 20, "effects": []}, "at least 1 item"),
+        (
+            {
+                "type": "realmforge:projectile",
+                "speed": 20,
+                "lifetime_seconds": 20,
+                "effects": [{"type": "realmforge:damage", "amount": 1}],
+            },
+            "lifetime_seconds is more than 0 and at most 10",
+        ),
+        (
+            {
+                "type": "realmforge:projectile",
+                "speed": 20,
+                "effects": [{"type": "realmforge:projectile", "speed": 5, "effects": []}],
+            },
+            "does not match any of the expected tags",
+        ),
+        (
+            {
+                "type": "realmforge:area",
+                "radius": 3,
+                "duration_seconds": 3,
+                "interval_seconds": 2,
+                "effects": [{"type": "realmforge:damage", "amount": 1}],
+            },
+            "duration_seconds 3.0 is not a whole number of intervals of 2.0 s",
+        ),
+        (
+            {
+                "type": "realmforge:area",
+                "radius": 20,
+                "duration_seconds": 3,
+                "interval_seconds": 1,
+                "effects": [{"type": "realmforge:damage", "amount": 1}],
+            },
+            "less than or equal to 16",
+        ),
+        (
+            {
+                "type": "realmforge:area",
+                "radius": 3,
+                "duration_seconds": 3,
+                "interval_seconds": 1,
+                "affects": "everyone",
+                "effects": [{"type": "realmforge:damage", "amount": 1}],
+            },
+            "'enemies' or 'allies'",
+        ),
+    ],
+)
+def test_invalid_c3a3_effects_are_rejected(effect: dict, expected: str) -> None:
+    with pytest.raises(ValueError, match=expected):
+        spell_model(effects=[effect])
+
+
+def test_inner_effects_count_for_per_level() -> None:
+    with pytest.raises(ValueError, match=r"per_level never applies with max_level 1 \(effects.0.effects.0\)"):
+        spell_model(
+            effects=[
+                {
+                    "type": "realmforge:projectile",
+                    "speed": 20,
+                    "effects": [{"type": "realmforge:damage", "amount": 1, "per_level": 1}],
+                }
+            ]
+        )
+
+
+@pytest.mark.parametrize(
+    ("targeting", "effect", "allowed"),
+    [
+        (
+            "{type: realmforge:self}",
+            PROJECTILE,
+            "realmforge:enemy or realmforge:ground_point or realmforge:direction",
+        ),
+        (
+            "{type: realmforge:direction, range: 8}",
+            AREA,
+            "realmforge:self or realmforge:enemy or realmforge:ground_point",
+        ),
+        ("{type: realmforge:enemy, range: 8}", "{type: realmforge:teleport}", "realmforge:ground_point or"),
+        ("{type: realmforge:self}", "{type: realmforge:dash, strength: 1}", "realmforge:enemy or"),
+        (
+            "{type: realmforge:ally, range: 8}",
+            "{type: realmforge:knockback, strength: 1}",
+            "realmforge:enemy",
+        ),
+        (
+            "{type: realmforge:ground_point, range: 8}",
+            "{type: realmforge:damage, amount: 3}",
+            "realmforge:enemy",
+        ),
+        (
+            "{type: realmforge:direction, range: 8}",
+            "{type: realmforge:apply_effect, effect: minecraft:slowness, duration_seconds: 2}",
+            "realmforge:self or realmforge:enemy or realmforge:ally",
+        ),
+    ],
+)
+def test_c3a3_effects_fit_the_targeting(repo: RepoPaths, targeting: str, effect: str, allowed: str) -> None:
+    spell(
+        repo,
+        "odd",
+        "school: realmforge:arcane\n"
+        "scales_with: spell_power\n"
+        f"targeting: {targeting}\n"
+        "cast: {type: instant}\n"
+        f"effects:\n  - {effect}\n",
+    )
+    assert_problem(repo, f"so the targeting is {allowed}")
+
+
+@pytest.mark.parametrize(
+    ("effect", "path", "expected"),
+    [
+        (
+            "{type: realmforge:projectile, speed: 20, effects: [{type: realmforge:heal, amount: 3}]}",
+            "effects.0.effects.0.type",
+            "realmforge:heal cannot act on the enemy a projectile hits",
+        ),
+        (
+            "{type: realmforge:area, radius: 3, duration_seconds: 2, interval_seconds: 1, affects: allies, "
+            "effects: [{type: realmforge:damage, amount: 3}]}",
+            "effects.0.effects.0.type",
+            "realmforge:damage cannot act on an area's allies",
+        ),
+        (
+            "{type: realmforge:area, radius: 3, duration_seconds: 2, interval_seconds: 1, "
+            "effects: [{type: realmforge:knockback, strength: 1}, {type: realmforge:heal, amount: 1}]}",
+            "effects.0.effects.1.type",
+            "realmforge:heal cannot act on an area's enemies",
+        ),
+        (
+            "{type: realmforge:projectile, speed: 20, effects: [{type: realmforge:remove_effect, effect: "
+            "minecraft:not_an_effect}]}",
+            "effects.0.effects.0.effect",
+            "minecraft:not_an_effect",
+        ),
+        (
+            "{type: realmforge:projectile, speed: 20, effects: [{type: realmforge:damage, amount: 3, "
+            "attack_damage_percent: 50}]}",
+            "effects.0.effects.0.attack_damage_percent",
+            "the spell scales with spell_power",
+        ),
+    ],
+)
+def test_inner_effects_fit_what_they_reach(repo: RepoPaths, effect: str, path: str, expected: str) -> None:
+    spell(
+        repo,
+        "odd",
+        "school: realmforge:arcane\n"
+        "scales_with: spell_power\n"
+        "targeting: {type: realmforge:ground_point, range: 16}\n"
+        "cast: {type: instant}\n"
+        f"effects:\n  - {effect}\n",
+    )
+    assert_problem(repo, f"{path}: ")
+    assert_problem(repo, expected)
+
+
+def test_an_area_for_allies_may_heal(repo: RepoPaths) -> None:
+    spell(
+        repo,
+        "sanctuary",
+        "school: realmforge:arcane\n"
+        "scales_with: spell_power\n"
+        "targeting: {type: realmforge:self}\n"
+        "cast: {type: instant}\n"
+        "effects:\n"
+        "  - {type: realmforge:area, radius: 3, duration_seconds: 2, interval_seconds: 1, affects: allies, "
+        "effects: [{type: realmforge:heal, amount: 2}, {type: realmforge:remove_effect, effect: minecraft:poison}]}\n",
+    )
+    content, _ = load_and_validate(repo)
+    assert any(entry.model.id == "sanctuary" for entry in content.spells)
+
+
+def test_status_effects_must_exist(repo: RepoPaths) -> None:
+    spell(
+        repo,
+        "hex",
+        "school: realmforge:arcane\n"
+        "scales_with: spell_power\n"
+        "targeting: {type: realmforge:enemy, range: 16}\n"
+        "cast: {type: instant}\n"
+        "effects:\n"
+        "  - {type: realmforge:apply_effect, effect: minecraft:slowness_x, duration_seconds: 2}\n",
+    )
+    assert_problem(repo, "effects.0.effect: ")
+    assert_problem(repo, "minecraft:slowness_x")
+
+
+def test_spell_entities_are_in_game_units(repo: RepoPaths) -> None:
+    files = generate(repo)
+    missile = json.loads(files[f"{SPELL_DATA}/test_missile.json"])
+    assert missile["effects"] == [
+        {
+            "type": "realmforge:projectile",
+            "speed": 20.0,
+            "size": 0.5,
+            "lifetime_ticks": 40,
+            "effects": [
+                {"amount": 5.0, "per_level": 0, "type": "realmforge:damage"},
+                {
+                    "type": "realmforge:apply_effect",
+                    "effect": "minecraft:slowness",
+                    "duration_ticks": 60,
+                    "amplifier": 0,
+                },
+            ],
+        }
+    ]
+    scorch = json.loads(files[f"{SPELL_DATA}/test_scorch.json"])
+    assert scorch["targeting"] == {"type": "realmforge:ground_point", "range": 16.0}
+    assert scorch["effects"][0] | {"effects": None} == {
+        "type": "realmforge:area",
+        "radius": 2.0,
+        "duration_ticks": 60,
+        "interval_ticks": 20,
+        "affects": "enemies",
+        "effects": None,
+    }
+    blink = json.loads(files[f"{SPELL_DATA}/test_blink.json"])
+    assert blink["targeting"] == {"type": "realmforge:direction", "range": 4.0}
+    assert blink["effects"] == [{"type": "realmforge:teleport"}]
+
+
+def test_expectations_of_spell_entities_hold_their_effects(repo: RepoPaths) -> None:
+    expectations = generate(repo)[EXPECTATIONS].decode()
+    assert (
+        'new EffectExpectation("realmforge:projectile", Map.of("lifetime_ticks", 40.0, "size", 0.5, "speed", 20.0), '
+        "Map.of(), List.of(\n"
+    ) in expectations
+    assert (
+        'new EffectExpectation("realmforge:apply_effect", Map.of("amplifier", 0.0, "duration_ticks", 60.0), '
+        'Map.of("effect", "minecraft:slowness"), List.of())'
+    ) in expectations
+    assert 'Map.of("affects", "allies")' in expectations
+    assert 'new EffectExpectation("realmforge:teleport", Map.of(), Map.of(), List.of())' in expectations

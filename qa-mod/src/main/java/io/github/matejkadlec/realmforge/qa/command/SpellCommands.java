@@ -13,24 +13,28 @@ import io.github.matejkadlec.realmforge.spell.ResourceType;
 import io.github.matejkadlec.realmforge.spell.ResourceTypes;
 import io.github.matejkadlec.realmforge.spell.Resources;
 import io.github.matejkadlec.realmforge.spell.Spell;
+import io.github.matejkadlec.realmforge.spell.SpellAim;
 import io.github.matejkadlec.realmforge.spell.SpellAttachments;
 import io.github.matejkadlec.realmforge.spell.SpellCaster;
 import io.github.matejkadlec.realmforge.spell.SpellRegistries;
+import io.github.matejkadlec.realmforge.spell.SpellTarget;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.IdentifierArgument;
+import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 /**
@@ -39,7 +43,10 @@ import net.neoforged.neoforge.registries.DeferredHolder;
  * <ul>
  *   <li>{@code /qa spell learn <spell> [<level>]} teaches the executing player a spell, at level 1 by default.</li>
  *   <li>{@code /qa spell cast <spell> [<target>]} casts it at the target (none by default: a self or ally spell then
- *   takes the caster) and says why when the cast is refused; a cast-time or channelled spell begins (C3a-2).</li>
+ *   takes the caster, a ground point or a direction follows where the caster looks) and says why when the cast is
+ *   refused; a cast-time or channelled spell begins (C3a-2).</li>
+ *   <li>{@code /qa spell cast_at <spell> <pos>} casts it at a point: a ground point there, or a direction toward it
+ *   (C3a-3).</li>
  *   <li>{@code /qa spell cancel} cancels the cast in progress, as the spell bar's cancel will (C3b).</li>
  *   <li>{@code /qa spell resource <mana|rage> <amount>} sets a resource pool, within its maximum.</li>
  *   <li>{@code /qa spell reset} ends every cooldown, the global one included.</li>
@@ -73,10 +80,15 @@ public final class SpellCommands {
                                                 IntegerArgumentType.getInteger(context, "level"))))))
                 .then(Commands.literal("cast")
                         .then(Commands.argument("spell", IdentifierArgument.id()).suggests(SPELLS)
-                                .executes(context -> cast(context, null))
+                                .executes(context -> cast(context, SpellAim.NONE))
                                 .then(Commands.argument("target", EntityArgument.entity())
-                                        .executes(context -> cast(context,
+                                        .executes(context -> castAt(context,
                                                 EntityArgument.getEntity(context, "target"))))))
+                .then(Commands.literal("cast_at")
+                        .then(Commands.argument("spell", IdentifierArgument.id()).suggests(SPELLS)
+                                .then(Commands.argument("pos", Vec3Argument.vec3())
+                                        .executes(context -> cast(context,
+                                                SpellAim.at(Vec3Argument.getVec3(context, "pos")))))))
                 .then(Commands.literal("cancel").executes(SpellCommands::cancel))
                 .then(resource)
                 .then(Commands.literal("reset").executes(SpellCommands::reset))
@@ -110,26 +122,39 @@ public final class SpellCommands {
         return 1;
     }
 
-    private static int cast(CommandContext<CommandSourceStack> context, @Nullable Entity target)
+    private static int castAt(CommandContext<CommandSourceStack> context, Entity target)
             throws CommandSyntaxException {
-        LivingEntity caster = caster(context);
-        ResourceKey<Spell> key = spell(context);
-        LivingEntity aimed = target instanceof LivingEntity living ? living : null;
-        if (target != null && aimed == null) {
+        if (!(target instanceof LivingEntity living)) {
             context.getSource().sendFailure(Component.literal("Spells target living entities only"));
             return 0;
         }
-        CastResult result = SpellCaster.cast(caster, key, aimed);
+        return cast(context, SpellAim.at(living));
+    }
+
+    private static int cast(CommandContext<CommandSourceStack> context, SpellAim aim) throws CommandSyntaxException {
+        LivingEntity caster = caster(context);
+        ResourceKey<Spell> key = spell(context);
+        CastResult result = SpellCaster.cast(caster, key, aim);
         if (!result.success()) {
             context.getSource().sendFailure(Component.literal(key.identifier() + " refused: "
                     + result.failureOrNull().getSerializedName()));
             return 0;
         }
-        String at = result.target().map(hit -> hit.getPlainTextName()).orElse("?");
+        String at = result.target().map(SpellCommands::describe).orElse("?");
         String verb = result.begun() ? " began casting " : " cast ";
         context.getSource().sendSuccess(() -> Component.literal(caster.getPlainTextName() + verb
                 + key.identifier() + " at " + at), false);
         return 1;
+    }
+
+    /** An entity target by its name, a point or a direction by where it lands. */
+    private static String describe(SpellTarget target) {
+        if (target.entity().isPresent()) {
+            return target.entity().get().getPlainTextName();
+        }
+        Vec3 at = target.position();
+        return String.format(Locale.ROOT, "%s (%.1f, %.1f, %.1f)",
+                target.kind() == SpellTarget.Kind.POINT ? "the point" : "the direction to", at.x, at.y, at.z);
     }
 
     private static int cancel(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

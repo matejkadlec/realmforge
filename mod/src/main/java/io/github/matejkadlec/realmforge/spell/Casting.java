@@ -14,6 +14,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
@@ -35,9 +36,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   the spell level, where the cast began, the ticks run).</li>
  *   <li><b>Cast Time Reduction</b> shortens a cast time, and a channel's interval, so a channel keeps its tick
  *   count.</li>
- *   <li><b>Interrupts:</b> moving more than {@value #MOVE_TOLERANCE} blocks from where the cast began (unless the
- *   spell may be cast while moving), death, a dimension change, logging out, the caster's removal and a cancel
- *   ({@link #cancel}) end it without more effects.</li>
+ *   <li><b>Interrupts:</b> moving more than {@value #MOVE_TOLERANCE} blocks from where the cast began by itself
+ *   (unless the spell may be cast while moving), a spell's knockback, death, a dimension change, logging out, the
+ *   caster's removal and a cancel ({@link #cancel}) end it without more effects.</li>
+ *   <li><b>What counts as moving</b> (RLM-243): the caster's own movement, a player pressing a movement or the jump
+ *   key (the client's last input), a mob walking or strafing (its movement input). Being pushed is not moving: a
+ *   melee hit's knockback, crowding mobs, a water current move the cast's start point along instead. A spell's
+ *   {@code realmforge:knockback} interrupts the cast explicitly ({@link #knockedBack}).</li>
  *   <li><b>A cast time</b> completes after its duration: the cost and the target are checked again ({@link
  *   SpellCaster#recheck}), and a failed check ends it like an interrupt, without the cost, the cooldown or the effects.
  *   Otherwise it pays, starts its cooldown and runs its effects.</li>
@@ -53,7 +58,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * </ul>
  */
 public final class Casting {
-    /** How far, in blocks, a caster may drift from where its cast began before the cast counts as moved. */
+    /** How far, in blocks, a caster may move by itself from where its cast began before the cast counts as moved. */
     public static final double MOVE_TOLERANCE = 0.1;
 
     /** Every cast in progress, by caster. Server thread only. */
@@ -78,7 +83,7 @@ public final class Casting {
      * Begins {@code caster}'s cast of {@code spell} at {@code target}, at game time {@code now}, after {@link
      * SpellCaster}'s checks passed and the global cooldown (and for a channel the cost and cooldown) applied.
      */
-    static void begin(LivingEntity caster, Holder.Reference<Spell> spell, int level, LivingEntity target, long now) {
+    static void begin(LivingEntity caster, Holder.Reference<Spell> spell, int level, SpellTarget target, long now) {
         SpellCast spellCast = spell.value().cast();
         double reduction = DamagePipeline.stat(caster, GeneratedStats.CAST_TIME_REDUCTION);
         boolean channel = spellCast.type() == SpellCast.Type.CHANNEL;
@@ -96,6 +101,17 @@ public final class Casting {
         RUNNING.put(caster, new Running(caster, spell, level, target, (ServerLevel) caster.level(), caster.position(),
                 cast, interval));
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new CastStartedPayload(caster.getId(), cast));
+    }
+
+    /**
+     * Ends {@code caster}'s cast in progress as {@link CastEnd#KNOCKED_BACK}, unless its spell may be cast while
+     * moving: a spell's knockback pushed it ({@link KnockbackEffect}).
+     */
+    static void knockedBack(LivingEntity caster) {
+        Running running = RUNNING.get(caster);
+        if (running != null && !running.spell().value().cast().castableWhileMoving()) {
+            end(caster, CastEnd.KNOCKED_BACK);
+        }
     }
 
     /** {@code caster}'s cast in progress, if any: what its client and the cast bar see. */
@@ -152,7 +168,7 @@ public final class Casting {
                 }
                 running.ticksRun++;
                 SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(),
-                        running.target());
+                        running.target().now(caster));
                 if (RUNNING.get(caster) != running) {
                     return;
                 }
@@ -177,13 +193,15 @@ public final class Casting {
         }
         SpellCaster.pay(caster, spell, running.spell().key(), running.spellLevel(), state, now);
         end(caster, CastEnd.COMPLETED);
-        SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(), running.target());
+        SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(),
+                running.target().now(caster));
     }
 
     /**
-     * What ended the cast from the caster's side, if anything: death, removal, a dimension change, moving. A player's
-     * dimension change also ends it at once ({@code PlayerChangedDimensionEvent}), even when the player comes back
-     * within the tick; a mob that changes dimension is removed and replaced.
+     * What ended the cast from the caster's side, if anything: death, removal, a dimension change, moving by itself. A
+     * player's dimension change also ends it at once ({@code PlayerChangedDimensionEvent}), even when the player comes
+     * back within the tick; a mob that changes dimension is removed and replaced. A caster that was pushed beyond the
+     * tolerance takes the cast's start point along.
      */
     private static Optional<CastEnd> interruption(Running running) {
         LivingEntity caster = running.caster();
@@ -201,9 +219,25 @@ public final class Casting {
         }
         if (!running.spell().value().cast().castableWhileMoving()
                 && caster.position().distanceToSqr(running.start()) > MOVE_TOLERANCE * MOVE_TOLERANCE) {
-            return Optional.of(CastEnd.MOVED);
+            if (movesByItself(caster)) {
+                return Optional.of(CastEnd.MOVED);
+            }
+            running.start = caster.position();
         }
         return Optional.empty();
+    }
+
+    /**
+     * Whether {@code caster} moves by its own will (RLM-243): a player presses a movement or the jump key (the last
+     * input its client sent), a mob walks or strafes (the movement input its move control sets). Being pushed or
+     * carried moves neither.
+     */
+    public static boolean movesByItself(LivingEntity caster) {
+        if (caster instanceof ServerPlayer player) {
+            Input input = player.getLastClientInput();
+            return input.forward() || input.backward() || input.left() || input.right() || input.jump();
+        }
+        return caster.zza != 0 || caster.xxa != 0 || caster.isJumping();
     }
 
     /**
@@ -279,15 +313,16 @@ public final class Casting {
         private final LivingEntity caster;
         private final Holder.Reference<Spell> spell;
         private final int spellLevel;
-        private final LivingEntity target;
+        private final SpellTarget target;
         private final ServerLevel level;
-        private final Vec3 start;
+        /** Where the cast began, moved along while the caster is pushed. */
+        private Vec3 start;
         private final Cast cast;
         private final int interval;
         /** How many of a channel's ticks have run. */
         private int ticksRun;
 
-        private Running(LivingEntity caster, Holder.Reference<Spell> spell, int spellLevel, LivingEntity target,
+        private Running(LivingEntity caster, Holder.Reference<Spell> spell, int spellLevel, SpellTarget target,
                 ServerLevel level, Vec3 start, Cast cast, int interval) {
             this.caster = caster;
             this.spell = spell;
@@ -311,7 +346,7 @@ public final class Casting {
             return spellLevel;
         }
 
-        LivingEntity target() {
+        SpellTarget target() {
             return target;
         }
 
@@ -320,7 +355,7 @@ public final class Casting {
             return level;
         }
 
-        /** Where the caster stood when the cast began. */
+        /** Where the caster stood when the cast began, or where it was last pushed to. */
         Vec3 start() {
             return start;
         }

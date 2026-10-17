@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3a-3): a projectile at an enemy that deals 5 fire damage and slows it when it hits. Not gameplay
+# content; the GameTests in the QA mod cast it.
+id: test_missile
+school: realmforge:fire
+scales_with: spell_power
+targeting: {type: realmforge:enemy, range: 16}
+cast: {type: instant}
+effects:
+  - type: realmforge:projectile
+    speed: 20
+    size: 0.5
+    lifetime_seconds: 2
+    effects:
+      - {type: realmforge:damage, amount: 5}
+      - {type: realmforge:apply_effect, effect: minecraft:slowness, duration_seconds: 3}

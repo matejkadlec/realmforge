@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3a-3): throws the caster toward an enemy. Not gameplay content; the GameTests in the QA mod cast it.
+id: test_charge
+school: realmforge:physical
+scales_with: attack_damage
+targeting: {type: realmforge:enemy, range: 16}
+cast: {type: instant}
+effects:
+  - {type: realmforge:dash, strength: 1}

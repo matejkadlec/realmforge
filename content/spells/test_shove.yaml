@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3a-3): pushes an enemy away and interrupts its cast. Not gameplay content; the GameTests in the QA mod
+# cast it.
+id: test_shove
+school: realmforge:physical
+scales_with: attack_damage
+targeting: {type: realmforge:enemy, range: 8}
+cast: {type: instant}
+effects:
+  - {type: realmforge:knockback, strength: 1}

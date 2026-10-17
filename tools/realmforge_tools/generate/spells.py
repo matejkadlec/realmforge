@@ -5,11 +5,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from pydantic import BaseModel
+
 from realmforge_tools.content import Content
-from realmforge_tools.generate.datapack import seconds_to_ticks
+from realmforge_tools.generate.datapack import game_field, seconds_to_ticks
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
-from realmforge_tools.schema.spell import SpellDef
+from realmforge_tools.schema.spell import DAMAGE, HEAL, SpellDef
 
 GENERATED_PACKAGE = f"{JAVA_PACKAGE}.generated"
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
@@ -80,13 +82,41 @@ def _bool(value: bool) -> str:
     return "true" if value else "false"
 
 
-def _expectation(spell: SpellDef) -> str:
-    effects = ",\n".join(
-        "                            new EffectExpectation("
-        f"{string_literal(effect.type)}, {_double(effect.amount)}, {_double(effect.per_level)}, "
-        f"{_double((effect.attack_damage_percent or 0) / 100)})"
-        for effect in spell.effects
+def _effect(effect: BaseModel, indent: str) -> str:
+    """One effect as an ``EffectExpectation``: its numbers and names by their game field names (``duration_ticks``,
+    ``attack_damage`` as a fraction), and the effects it runs itself (a projectile's, an area's)."""
+    numbers: dict[str, float] = {}
+    names: dict[str, str] = {}
+    inner: list[BaseModel] = []
+    for name in type(effect).model_fields:
+        value = getattr(effect, name)
+        if name == "type":
+            continue
+        if name == "effects":
+            inner = value
+        elif isinstance(value, str):
+            names[name] = value
+        elif isinstance(value, int | float) and not isinstance(value, bool):
+            field, converted = game_field(name, value)
+            numbers[field] = converted
+    if effect.type in (DAMAGE, HEAL):
+        # The codec reads a missing share as 0.
+        numbers.setdefault("attack_damage", 0.0)
+    number_map = ", ".join(f"{string_literal(key)}, {_double(numbers[key])}" for key in sorted(numbers))
+    name_map = ", ".join(f"{string_literal(key)}, {string_literal(names[key])}" for key in sorted(names))
+    nested = (
+        "List.of(\n" + ",\n".join(_effect(e, indent + "        ") for e in inner) + ")"
+        if inner
+        else "List.of()"
     )
+    return (
+        f"{indent}new EffectExpectation({string_literal(effect.type)}, Map.of({number_map}), Map.of({name_map}), "
+        f"{nested})"
+    )
+
+
+def _expectation(spell: SpellDef) -> str:
+    effects = ",\n".join(_effect(effect, "                            ") for effect in spell.effects)
     cost = spell.cost
     crit = spell.crit
     multiplier = crit.multiplier_percent / 100 if crit.multiplier_percent is not None else None
@@ -127,15 +157,18 @@ def _expectations(content: Content) -> bytes:
         header(Path(__file__), SOURCES) + f"package {QA_GENERATED_PACKAGE};\n"
         "\n"
         "import java.util.List;\n"
+        "import java.util.Map;\n"
         "import java.util.Optional;\n"
         "\n"
         "/** What {@code content/spells/} says about every spell, so GameTests can check that the game agrees. */\n"
         "public final class GeneratedSpellExpectations {\n"
         "    /**\n"
-        "     * One effect as written in the YAML, in game units: {@code attackDamage} is the share of the caster's attack\n"
-        "     * damage it adds (0 when it adds none).\n"
+        "     * One effect as written in the YAML, in game units: its numbers and names by their data field names (e.g.\n"
+        "     * {@code amount}, {@code duration_ticks}, {@code attack_damage} as a fraction, 0 when it adds none;\n"
+        "     * {@code effect}, {@code affects}), and the effects a projectile or an area runs.\n"
         "     */\n"
-        "    public record EffectExpectation(String type, double amount, double perLevel, double attackDamage) {\n"
+        "    public record EffectExpectation(String type, Map<String, Double> numbers, Map<String, String> names,\n"
+        "            List<EffectExpectation> effects) {\n"
         "    }\n"
         "\n"
         "    /**\n"

@@ -4,7 +4,6 @@ import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import javax.annotation.Nullable;
 import net.minecraft.world.entity.LivingEntity;
 
 /**
@@ -24,14 +23,15 @@ public record EnemyTargeting(double range) implements SpellTargeting {
     }
 
     @Override
-    public Either<LivingEntity, CastFailure> resolve(LivingEntity caster, @Nullable LivingEntity requested) {
+    public Either<SpellTarget, CastFailure> resolve(LivingEntity caster, SpellAim aim) {
+        LivingEntity requested = aim.entity().orElse(null);
         if (requested == null) {
             return Either.right(CastFailure.NO_TARGET);
         }
         if (requested == caster || Targets.allied(caster, requested) || !requested.canBeSeenAsEnemy()) {
             return Either.right(CastFailure.INVALID_TARGET);
         }
-        return Targets.reach(caster, requested, range).<Either<LivingEntity, CastFailure>>map(Either::right)
-                .orElseGet(() -> Either.left(requested));
+        return Targets.reach(caster, requested, range).<Either<SpellTarget, CastFailure>>map(Either::right)
+                .orElseGet(() -> Either.left(SpellTarget.of(caster, requested)));
     }
 }

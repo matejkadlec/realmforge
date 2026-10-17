@@ -8,6 +8,7 @@ import io.github.matejkadlec.realmforge.client.hud.XpBarHud;
 import io.github.matejkadlec.realmforge.client.input.CharacterSheetKey;
 import io.github.matejkadlec.realmforge.client.input.DarkVisionKey;
 import io.github.matejkadlec.realmforge.client.network.ClientPayloadHandlers;
+import io.github.matejkadlec.realmforge.client.render.SpellEntityRenderers;
 import io.github.matejkadlec.realmforge.client.screen.CharacterCreationScreen;
 import io.github.matejkadlec.realmforge.client.spell.ClientCasts;
 import io.github.matejkadlec.realmforge.client.tooltip.RightAlignedLines;
@@ -34,5 +35,6 @@ public final class RealmforgeClient {
         XpBarHud.register(modBus);
         RightAlignedLines.register(modBus);
         ClientCasts.register();
+        SpellEntityRenderers.register(modBus);
     }
 }

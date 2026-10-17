@@ -1,0 +1,37 @@
+{
+  "school": "realmforge:fire",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:enemy",
+    "range": 16.0
+  },
+  "cast": {
+    "castable_while_moving": false,
+    "lock_on": false,
+    "type": "cast_time",
+    "duration_ticks": 20
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 20,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "effects": [
+    {
+      "type": "realmforge:projectile",
+      "speed": 20.0,
+      "size": 0.5,
+      "lifetime_ticks": 40,
+      "effects": [
+        {
+          "amount": 4.0,
+          "per_level": 0,
+          "type": "realmforge:damage"
+        }
+      ]
+    }
+  ]
+}

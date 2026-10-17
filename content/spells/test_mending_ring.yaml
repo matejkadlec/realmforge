@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3a-3): a zone at the caster's feet that heals its allies within 3 blocks by 2 every second for 2 s.
+# Not gameplay content; the GameTests in the QA mod cast it.
+id: test_mending_ring
+school: realmforge:arcane
+scales_with: spell_power
+targeting: {type: realmforge:self}
+cast: {type: instant}
+crit: {can_crit: false}
+effects:
+  - type: realmforge:area
+    radius: 3
+    duration_seconds: 2
+    interval_seconds: 1
+    affects: allies
+    effects:
+      - {type: realmforge:heal, amount: 2}

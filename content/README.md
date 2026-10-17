@@ -112,19 +112,31 @@ Rules:
 - `spells/` holds the spells of players, mobs and bosses ([architecture 11](../docs/architecture.md#11-spells-and-status-effects)):
   the `school` whose damage they deal; what they `scales_with`, `spell_power` for a magic school and `attack_damage`
   for a physical one (off-class stats do nothing for a class's abilities, Matěj, 2026-10-15); their `targeting`
-  (`{type: realmforge:self}`, or `realmforge:enemy` or `realmforge:ally` with a `range` of at most 128 blocks; an
-  ally spell without a target takes the caster); `cast`: `{type: instant}`, `{type: cast_time, duration_seconds}`
+  (`{type: realmforge:self}`, or `realmforge:enemy`, `realmforge:ally`, `realmforge:ground_point` or
+  `realmforge:direction` with a `range` of at most 128 blocks; an ally spell without a target takes the caster, a
+  ground point without one the first block the caster looks at, a direction where it looks); `cast`: `{type: instant}`, `{type: cast_time, duration_seconds}`
   (the effects, the cost and the cooldown come when the cast completes) or `{type: channel, duration_seconds,
   interval_seconds}` (it pays and starts its cooldown when it begins, then runs its effects every interval; the
   duration is a whole number of intervals), the timed ones with `castable_while_moving` (moving cancels them by
-  default) and `lock_on` (range and line of sight are not checked again before the effects); an optional `cost` (`resource` `realmforge:mana` or `realmforge:rage`, `amount` at level 1, `per_level`);
+  default; only the caster's own movement counts, a player's movement or jump key or a mob walking, never a push
+  such as a melee hit's knockback, RLM-243) and `lock_on` (range and line of sight are not checked again before the effects); an optional `cost` (`resource` `realmforge:mana` or `realmforge:rage`, `amount` at level 1, `per_level`);
   `cooldown_seconds`; `global_cooldown_seconds` (1 by default, 0 for a spell off the global cooldown); `max_level`;
   the `crit` block (`can_crit`, `multiplier_percent` instead of 1 + the caster's crit damage, `bonus_chance_percent`
   added to the caster's crit chance; every spell can crit by default, heals too); `npc_only` for mob and boss
   spells; and the `effects`, in order: `realmforge:damage` (a hit of the school on an enemy) and `realmforge:heal`
   (on the caster or an ally), each with `amount` at level 1 and `per_level`, and `attack_damage_percent` (the share
-  of the caster's attack damage added) on an attack damage spell, where its damage effects need one. A `per_level`
-  needs a `max_level` above 1. Spells carry no name or description yet: those come with the spell bar and its
+  of the caster's attack damage added) on an attack damage spell, where its damage effects need one;
+  `realmforge:apply_effect` (`effect`, a status effect id such as `minecraft:slowness`, `duration_seconds` up to 60,
+  `amplifier`) and `realmforge:remove_effect` (`effect`) on any entity target; `realmforge:knockback` (`strength`,
+  0.4 is a melee hit's) on an enemy, which also interrupts its cast; `realmforge:projectile` (`speed` in blocks per
+  second, `size`, `lifetime_seconds`, and its own `effects` on the first enemy it hits) at an enemy, a ground point or
+  along a direction; `realmforge:area` (`radius`, `duration_seconds`, `interval_seconds`, `affects: enemies` or
+  `allies`, and its own `effects` on each of them inside at every interval) at the caster's feet, an enemy's or a
+  ground point; `realmforge:teleport` (the caster to a ground point, or along a direction as far as its range and
+  blocks allow); and `realmforge:dash` (`strength`, a burst of speed in blocks per tick toward an enemy, a ground
+  point or along a direction). The effects of a projectile or an area must fit whom they reach: no heal on a
+  projectile, no damage in an area for allies ([architecture 11.3](../docs/architecture.md#113-spell-entities)). A
+  `per_level` needs a `max_level` above 1, on the effects of a projectile or an area too. Spells carry no name or description yet: those come with the spell bar and its
   tooltips (C3b, RLM-25). The `test_*` spells are engine tests (like `items/test_item`), not gameplay content.
 - `worldgen/` is the one exception to YAML: Minecraft's own worldgen JSON (`dimension/`, `dimension_type/`,
   `biome/`, `noise_settings/`, ...), validated (location, id, JSON, dimension types, no clash with the core mod's

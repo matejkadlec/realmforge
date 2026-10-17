@@ -45,6 +45,7 @@ class CastResultTest {
         assertEquals(CastEnd.INVALID_TARGET, CastEnd.of(CastFailure.INVALID_TARGET));
         assertFalse(CastEnd.OUT_OF_RANGE.interrupt());
         assertTrue(CastEnd.MOVED.interrupt());
+        assertTrue(CastEnd.KNOCKED_BACK.interrupt());
         assertTrue(CastEnd.COMPLETED.completed());
         assertFalse(CastEnd.COMPLETED.interrupt());
     }

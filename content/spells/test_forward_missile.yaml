@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3a-3): a frost projectile along the caster's look that deals 3 damage to the first enemy in its way.
+# Not gameplay content; the GameTests in the QA mod cast it.
+id: test_forward_missile
+school: realmforge:frost
+scales_with: spell_power
+targeting: {type: realmforge:direction, range: 32}
+cast: {type: instant}
+effects:
+  - type: realmforge:projectile
+    speed: 20
+    lifetime_seconds: 2
+    effects:
+      - {type: realmforge:damage, amount: 3}

@@ -18,6 +18,7 @@ public final class SpellFeature {
         ResourceTypes.register(modBus);
         SpellEffectTypes.register(modBus);
         TargetingTypes.register(modBus);
+        SpellEntities.register(modBus);
         SpellAttachments.register(modBus);
         Casting.register();
         // After the stats recompute of the same tick (StatsFeature registers first), so a pool sees its maximum.

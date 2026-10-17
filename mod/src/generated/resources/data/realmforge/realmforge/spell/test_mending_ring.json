@@ -1,0 +1,34 @@
+{
+  "school": "realmforge:arcane",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:self"
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 20,
+  "max_level": 1,
+  "crit": {
+    "can_crit": false,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "effects": [
+    {
+      "type": "realmforge:area",
+      "radius": 3.0,
+      "duration_ticks": 40,
+      "interval_ticks": 20,
+      "affects": "allies",
+      "effects": [
+        {
+          "amount": 2.0,
+          "per_level": 0,
+          "type": "realmforge:heal"
+        }
+      ]
+    }
+  ]
+}
