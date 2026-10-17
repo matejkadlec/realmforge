@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/room_specs.schema.json
+# A wider corridor with niches in its walls.
+id: corridor_niches
+kind: corridor
+theme: realmforge:stone_vault
+footprint: [7, 13]
+height: 6
+connectors: [north, south]
+features: [alcoves, rubble]
+seeds: []
+rejected_seeds: []

@@ -388,10 +388,15 @@ def _holds_flowing_fluid(block: StructureBlock) -> bool:
     name = state.name
     if name in (STRUCTURE_BLOCK, STRUCTURE_VOID):  # never placed: the cell keeps whatever the plot holds
         return True
-    if state.get("waterlogged") is not None or name in _CLOSED_BLOCKS or name in SOLID_BLOCKS:
+    if state.get("waterlogged") is not None or name in _CLOSED_BLOCKS or is_solid(name):
         return False
-    path = name.partition(":")[2]
-    return not path.endswith(_CLOSED_SUFFIXES) and not path.endswith(_SOLID_SUFFIXES)
+    return not name.partition(":")[2].endswith(_CLOSED_SUFFIXES)
+
+
+def is_solid(name: str) -> bool:
+    """Whether a block is surely a full solid block: in ``SOLID_BLOCKS``, or named like one (``_bricks``,
+    ``_planks``, ...)."""
+    return name in SOLID_BLOCKS or name.partition(":")[2].endswith(_SOLID_SUFFIXES)
 
 
 def connector_face(pos: Pos, orientation: str | None, size: Pos) -> str | None:

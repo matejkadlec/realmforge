@@ -14,8 +14,15 @@ from typing import Any
 from pydantic import BaseModel, ValidationError
 
 from realmforge_tools.problems import Problem, ValidationFailed
-from realmforge_tools.project import RepoPaths
+from realmforge_tools.project import MOD_ID, RepoPaths
 from realmforge_tools.rooms.cache import RoomCache, template_key
+from realmforge_tools.rooms.generator import (
+    GENERATED_DIR,
+    RoomGeneratorError,
+    generate_room,
+    room_id,
+    spec_tags,
+)
 from realmforge_tools.rooms.structure import Pos, Structure, StructureError, read_structure
 from realmforge_tools.schema import (
     CONTENT_TYPES,
@@ -28,6 +35,8 @@ from realmforge_tools.schema import (
     ItemDef,
     KillXpMultiplierDef,
     RaceDef,
+    RoomSpecDef,
+    RoomThemeDef,
     SpellDef,
     SpellSchoolDef,
     StatDef,
@@ -145,6 +154,8 @@ class Content:
     chapters: tuple[Entry[ChapterDef], ...]
     kill_xp_multipliers: tuple[Entry[KillXpMultiplierDef], ...]
     spells: tuple[Entry[SpellDef], ...]
+    room_specs: tuple[Entry[RoomSpecDef], ...]
+    room_themes: tuple[Entry[RoomThemeDef], ...]
     worldgen: tuple[WorldgenFile, ...]
     rooms: tuple[RoomEntry, ...] = ()
     room_reviews: tuple[RoomReview, ...] = ()
@@ -194,7 +205,9 @@ def load_content(paths: RepoPaths, *, read_templates: bool = True) -> Content:
         if entry is not None:
             loaded[type_dir].append(entry)
 
-    rooms, reviews, notices = _load_rooms(room_files, paths, problems, read_templates=read_templates)
+    cache = RoomCache(paths.cache / "rooms" / "parsed" if read_templates else None)
+    rooms, reviews, notices = _load_rooms(room_files, paths, problems, cache, read_templates=read_templates)
+    rooms += _generated_rooms(loaded["room_specs"], loaded["room_themes"], problems, cache)
     if problems:
         raise ValidationFailed(problems)
 
@@ -215,6 +228,8 @@ def load_content(paths: RepoPaths, *, read_templates: bool = True) -> Content:
         chapters=by_id(loaded["chapters"]),
         kill_xp_multipliers=by_id(loaded["kill_xp_multipliers"]),
         spells=by_id(loaded["spells"]),
+        room_specs=by_id(loaded["room_specs"]),
+        room_themes=by_id(loaded["room_themes"]),
         worldgen=tuple(sorted(worldgen, key=lambda f: (f.directory, f.id))),
         rooms=rooms,
         room_reviews=reviews,
@@ -267,11 +282,10 @@ def _load_worldgen(file: Path, rel: str, paths: RepoPaths, problems: list[Proble
 
 
 def _load_rooms(
-    files: list[Path], paths: RepoPaths, problems: list[Problem], *, read_templates: bool
+    files: list[Path], paths: RepoPaths, problems: list[Problem], cache: RoomCache, *, read_templates: bool
 ) -> tuple[tuple[RoomEntry, ...], tuple[RoomReview, ...], tuple[RoomNotice, ...]]:
     """Pair every template with its sidecar, read both, and read the review files."""
     root = paths.content / ROOMS_DIR
-    cache = RoomCache(paths.cache / "rooms" / "parsed" if read_templates else None)
     templates: dict[str, Path] = {}
     sidecars: dict[str, Path] = {}
     reviews: list[RoomReview] = []
@@ -302,6 +316,16 @@ def _load_rooms(
             )
             continue
         room_id = file.relative_to(root).with_suffix("").as_posix()
+        if parts[0] == GENERATED_DIR:
+            problems.append(
+                Problem(
+                    rel,
+                    "",
+                    f"content/rooms/{GENERATED_DIR}/ is reserved for the rooms of content/room_specs/, which rf gen "
+                    "writes to the jar",
+                )
+            )
+            continue
         if not _ROOM_PATH.match(room_id) or file.stem == REVIEW_FILE.removesuffix(".yaml"):
             problems.append(
                 Problem(
@@ -349,6 +373,62 @@ def _load_rooms(
         RoomNotice(source, name, file.read_bytes()) for (source, name), file in sorted(license_files.items())
     )
     return tuple(rooms), tuple(sorted(reviews, key=lambda r: r.folder)), notices
+
+
+def _generated_rooms(
+    specs: list[Entry[RoomSpecDef]],
+    themes: list[Entry[RoomThemeDef]],
+    problems: list[Problem],
+    cache: RoomCache,
+) -> tuple[RoomEntry, ...]:
+    """A room for every kept seed of every spec (A4d), built by the room generator. A spec whose theme does not
+    exist builds nothing (validation reports the theme). The cache keeps each built room under a key of what it is
+    built from, so an unchanged spec is not built again."""
+    by_id = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in themes}
+    rooms: list[RoomEntry] = []
+    for entry in sorted(specs, key=lambda e: e.model.id):
+        spec, theme = entry.model, by_id.get(entry.model.theme)
+        if theme is None:
+            continue
+        model = RoomDef(pools=spec.pools, tags=spec_tags(spec), weight=spec.weight)
+        for seed in sorted(spec.seeds):
+            loaded = _built_room(spec, theme, seed, cache)
+            if isinstance(loaded, str):
+                problems.append(
+                    Problem(entry.source, "seeds", f"seed {seed}: the generator cannot build it: {loaded}")
+                )
+                continue
+            key, load = loaded
+            rooms.append(
+                RoomEntry(room_id(spec.id, seed), entry.source, entry.source, model, key, load, cache)
+            )
+    return tuple(rooms)
+
+
+def _built_room(
+    spec: RoomSpecDef, theme: RoomThemeDef, seed: int, cache: RoomCache
+) -> tuple[str, Callable[[], Structure]] | str:
+    """The cache key of a spec's room for ``seed`` and how to get its structure, or why the generator cannot build
+    it. The key covers everything the room is built from: the spec without the fields that only say how dungeons
+    use its rooms, the theme and the seed (and, through ``template_key``, the generator's code)."""
+    source = [
+        spec.model_dump(mode="json", exclude={"seeds", "rejected_seeds", "pools", "weight"}),
+        theme.model_dump(mode="json"),
+        seed,
+    ]
+    key = template_key(json.dumps(source, sort_keys=True).encode())
+
+    def build() -> Structure:
+        return generate_room(spec, theme, seed)
+
+    if cache.has_structure(key):
+        return key, lambda: cache.structure(key) or build()
+    try:
+        structure = build()
+    except RoomGeneratorError as e:
+        return str(e)
+    cache.put_structure(key, structure)
+    return key, lambda: structure
 
 
 def _load_template(template: Path, cache: RoomCache, read: bool) -> tuple[str, Callable[[], Structure]] | str:

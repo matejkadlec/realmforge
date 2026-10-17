@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/room_specs.schema.json
+# A fight around a sunken middle.
+id: combat_pit
+kind: combat
+theme: realmforge:stone_vault
+footprint: [13, 11]
+height: 7
+connectors: [north, south]
+features: [pit]
+seeds: []
+rejected_seeds: []

@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/room_specs.schema.json
+# The first room of a dungeon, where players arrive (its entrance marker): a pillared hall with one way on.
+id: entrance_hall
+kind: entrance
+theme: realmforge:stone_vault
+footprint: [11, 11]
+height: 7
+connectors: [north]
+features: [pillars]
+seeds: []
+rejected_seeds: []

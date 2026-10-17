@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../tools/schemas/room_themes.schema.json
+# The stone vault: stone bricks with cracked and mossy patches, a cobblestone base and a chiseled cornice, the look of
+# the imported Stonevaults rooms (realmforge:stone_vault). The room generator builds every room with it (A4d); other
+# themes swap its blocks role by role (W4, architecture 15.2).
+id: stone_vault
+blocks:
+  floor: minecraft:polished_andesite
+  floor_variant: minecraft:andesite
+  floor_border: minecraft:smooth_stone
+  wall_base: minecraft:cobblestone
+  wall_body: minecraft:stone_bricks
+  wall_body_cracked: minecraft:cracked_stone_bricks
+  wall_body_mossy: minecraft:mossy_stone_bricks
+  wall_cornice: minecraft:chiseled_stone_bricks
+  ceiling: minecraft:stone
+  pillar: minecraft:tuff_bricks
+  stairs: minecraft:stone_brick_stairs
+  slab: minecraft:stone_brick_slab
+  rubble: minecraft:mossy_cobblestone
+  rubble_slab: minecraft:cobblestone_slab
+  wall_light: minecraft:wall_torch
+  ceiling_light: minecraft:lantern

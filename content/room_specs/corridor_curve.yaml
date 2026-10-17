@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/room_specs.schema.json
+# A corridor that turns a corner.
+id: corridor_curve
+kind: curve
+theme: realmforge:stone_vault
+footprint: [7, 7]
+height: 5
+connectors: [south, east]
+seeds: []
+rejected_seeds: []

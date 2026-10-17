@@ -20,15 +20,19 @@ from realmforge_tools.rooms.check import (
     TEMPLATE_POOL_REGISTRY,
     check_structure,
     fluid_edges,
+    is_solid,
     markers,
 )
 from realmforge_tools.rooms.connectors import connectors, could_attach
+from realmforge_tools.rooms.generator import GENERATED_DIR, theme_blocks, unknown_blocks
+from realmforge_tools.rooms.walk import walk_problems
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES
 from realmforge_tools.schema.character import STARTING_BREAD
 from realmforge_tools.schema.dungeon import DEAD_END_ROLES, PATH_ROLES, ROOM_ROLES, room_role
 from realmforge_tools.schema.item import USE_TEXT_GROUP
 from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
+from realmforge_tools.schema.room_spec import FULL, LANTERN, SLAB, STAIRS, THEME_ROLES, WALL_TORCH
 from realmforge_tools.schema.spell import (
     ALLY,
     APPLY_EFFECT,
@@ -60,6 +64,7 @@ DIMENSION_TYPE_REGISTRY = "minecraft:dimension_type"
 SPELL_SCHOOL_REGISTRY = f"{MOD_ID}:spell_school"
 DUNGEON_TYPE_REGISTRY = f"{MOD_ID}:dungeon_type"
 STRUCTURE_REGISTRY = "minecraft:structure"
+BLOCK_REGISTRY = "minecraft:block"
 
 # Vanilla's dimensions (the level stems of its world presets). The registry report behind the vanilla ID universe
 # lists no minecraft:dimension registry, as a world's dimensions come from its preset, so they are named here.
@@ -134,6 +139,8 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_worldgen_references(content, universe)
     problems += _check_dimension_rules(content, universe)
     problems += _check_text_groups(content)
+    problems += _check_room_themes(content, universe)
+    problems += _check_room_specs(content)
     problems += _check_rooms(content, universe)
     problems += _check_dungeons(content)
     problems += _check_chapters(content)
@@ -146,10 +153,11 @@ def _check_rooms(content: Content, universe: IdUniverse) -> list[Problem]:
     # The problems depend on the ids the room may name, so the universe's digest is part of the cache kind.
     kind = f"check-{universe_digest(universe)}"
     problems = [
-        Problem(room.template, location, message)
+        Problem(room.template, _room_location(room, location), message)
         for room in content.rooms
         for location, message in room.derived(kind, lambda structure: check_structure(structure, universe))
     ]
+    problems += _check_generated_rooms(content)
     for room in content.rooms:
         source = room.model.source
         third_party = room.id.startswith("third_party/")
@@ -173,6 +181,68 @@ def _check_rooms(content: Content, universe: IdUniverse) -> list[Problem]:
                 problems.append(
                     Problem(review.source, key, f"kept, but there is no room content/rooms/{prefix}{key}.nbt")
                 )
+    return problems
+
+
+def _room_location(room: RoomEntry, location: str) -> str:
+    """Where a problem in a room is: a generated room's problems are reported on its spec, so they name the seed."""
+    if room.id.startswith(f"{GENERATED_DIR}/"):
+        seed = room.id.rsplit("_", 1)[1]
+        return f"seed {seed}: {location}" if location else f"seed {seed}"
+    return location
+
+
+def _check_room_themes(content: Content, universe: IdUniverse) -> list[Problem]:
+    """Every block of a theme exists and is what its role needs: a full block, stairs, a slab, a wall torch, a
+    lantern (``schema/room_spec.py``)."""
+    needs = {
+        FULL: (is_solid, "a full solid block"),
+        STAIRS: (lambda name: name.endswith("_stairs"), "a stairs block"),
+        SLAB: (lambda name: name.endswith("_slab"), "a slab"),
+        WALL_TORCH: (lambda name: name.endswith("wall_torch"), "a wall torch"),
+        LANTERN: (lambda name: name.endswith("lantern"), "a lantern"),
+    }
+    problems: list[Problem] = []
+    for entry in content.room_themes:
+        for role, need in THEME_ROLES.items():
+            block = entry.model.block(role)
+            check, what = needs[need]
+            if not universe.contains(BLOCK_REGISTRY, block):
+                problems.append(Problem(entry.source, f"blocks.{role}", f"unknown block {block!r}"))
+            elif not check(block):
+                problems.append(Problem(entry.source, f"blocks.{role}", f"{block} is not {what}"))
+    return problems
+
+
+def _check_room_specs(content: Content) -> list[Problem]:
+    themes = {f"{MOD_ID}:{entry.model.id}" for entry in content.room_themes}
+    return [
+        Problem(entry.source, "theme", f"no theme {entry.model.theme!r} in content/room_themes/")
+        for entry in content.room_specs
+        if entry.model.theme not in themes
+    ]
+
+
+def _check_generated_rooms(content: Content) -> list[Problem]:
+    """A generated room can be played (``rooms/walk.py``: its doorways reach each other with headroom, and no mob
+    spawns in the dark) and is built only of its theme's blocks, so a theme swap reaches all of them."""
+    specs = {entry.model.id: entry.model for entry in content.room_specs}
+    themes = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.room_themes}
+    problems: list[Problem] = []
+    for room in content.rooms:
+        if not room.id.startswith(f"{GENERATED_DIR}/"):
+            continue
+        for location, message in room.derived("walk", walk_problems):
+            problems.append(Problem(room.source, _room_location(room, location), message))
+        theme = themes[specs[room.id.split("/")[1]].theme]
+        for name in room.derived(f"blocks-{theme.id}", lambda s, t=theme: unknown_blocks(s, theme_blocks(t))):
+            problems.append(
+                Problem(
+                    room.source,
+                    _room_location(room, ""),
+                    f"holds {name}, which theme {theme.id} has no role for",
+                )
+            )
     return problems
 
 
