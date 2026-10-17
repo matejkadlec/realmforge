@@ -243,8 +243,9 @@ it offers most of what the Nether offered ([ADR 0025](../decisions/0025-remove-t
 - **Light and life:** glowstone near the ceiling, as in the Nether; grassy pockets where things grow; special oases
   with water.
 - **Materials:**
-  - at least 3 new ores or gems for gear, weapons, curios and refining, one of them the crystal the light-beam
-    puzzles use;
+  - at least 3 new ores or gems for gear, weapons and curios, one of them the crystal the light-beam puzzles use
+    (no refining or reforging materials: Apotheosis's salvaging supplies those,
+    [apotheosis.md](apotheosis.md#the-materials-loop), RLM-199);
   - **gem ores** (Matěj, 2026-10-15): Ruby and Sapphire, in veins of at most 3. Eight gems around one base item
     (3×3) craft an upgrade for netherite armour: defense, offense or utility, at most one per piece and no set
     bonuses, so players combine them freely. **Topaz** is for curios. All three also go into other recipes of
@@ -252,7 +253,7 @@ it offers most of what the Nether offered ([ADR 0025](../decisions/0025-remove-t
   - **ancient debris** (Matěj, 2026-10-15): netherite is Undervault's tier, so the debris generates here, only below
     the walkable floor's Y, never in walls or ceilings;
   - **high-tier ores** that drop only for a pickaxe from a higher realm ([Realm tool tiers](#realm-tool-tiers)), so
-    players come back to mine; probably materials for curios, reforging and the like, not gear;
+    players come back to mine; probably materials for curios and the like, not gear;
   - quartz set in stone (quartz early, because other mods expect it);
   - glowstone near the ceiling;
   - patches of soul sand with nether wart, or a mob that drops nether wart;
@@ -294,7 +295,8 @@ Identity: sun and sand.
   abandoned towns that are empty or hold friendly NPCs.
 - **Dungeons:** a pyramid, a sphinx, an abandoned desert town or village.
 - **Materials:** structures full of suspicious sand and red sand whose reworked brushing loot holds a little trash,
-  desert-themed gems for refining and enchanted books. Ancient debris and netherite scrap moved to Undervault (Matěj,
+  desert-themed gems and enchanted books (no longer for refining: reforging takes Apotheosis's own materials,
+  [apotheosis.md](apotheosis.md#the-materials-loop), RLM-199). Ancient debris and netherite scrap moved to Undervault (Matěj,
   2026-10-15, [ADR 0032](../decisions/0032-v1-realm-layout-amends-the-nether-and-end-removal.md)); what Sunwastes
   gets instead is open ([open question 16](#open-questions)). Its tools are the first of the twins' two tiers.
 

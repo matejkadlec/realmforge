@@ -9,6 +9,7 @@ names its Jira ticket, lists its open questions for Matěj, and changes when he 
 
 | Document | What it covers | Ticket |
 | --- | --- | --- |
+| [apotheosis.md](apotheosis.md) | Apotheosis in Realmforge: the player's world tier and the realms that unlock it, the defaults that stay (rarity weights, purities, chest and mob loot, tier augments), mob levels and loot, the mob difficulty layers, reforging's materials loop, costs and its recipes without the Nether and End | RLM-199, RLM-204 |
 | [guide.md](guide.md) | The in-game guide: a searchable screen about the realms, dungeons, bosses, their ores and loot, the character and the systems, unlocked by chapter; approved for M4 | RLM-102, RLM-116 |
 | [leveling.md](leveling.md) | The XP and leveling model for v1: kill-equivalents, the XP curve, kill XP and ranks, quest, dungeon and exploration XP, time targets per chapter, the caps, the content budget per realm, anti-farm | RLM-192 |
 | [realm-portal.md](realm-portal.md) | The realm portal: frame, realm selector, sigils, per-player unlocks through quests, Nether-like linking with scaled coordinates, respawn in Overworld, edge cases | RLM-41, RLM-128 |
