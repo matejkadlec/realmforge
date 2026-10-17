@@ -54,6 +54,7 @@ public final class QaGameTests {
             ContentStatGameTests.class,
             DungeonPlanGameTests.class,
             InstanceGameTests.class,
+            InstanceRulesGameTests.class,
             LevelingGameTests.class,
             MobLevelGameTests.class,
             PlayerStateGameTests.class,
