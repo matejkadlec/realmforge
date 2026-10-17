@@ -172,7 +172,7 @@ The Augmenting Table upgrades one affix for 2 sigils and 225 levels, and rerolls
 **Decided (Matěj, 2026-10-17): Apotheosis's recipes stay at their defaults**, with no recipe overrides, so they
 match JEI and the wikis. The approved swap of nether bricks for Undervault's stone bricks (2026-10-16) is dropped
 with it. The materials ADR 0025 left without a source come from these sources, which
-[ADR 0033](../decisions/0033-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md) records:
+[ADR 0034](../decisions/0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md) records:
 
 | Material | Needed by | Source |
 | --- | --- | --- |
@@ -224,7 +224,7 @@ For Matěj; each has a proposal so the integration can go on.
    RLM-204 asked that no stat be counted twice. Proposal: keep both as Matěj asked, and retune the armor curve if
    the playtest shows mobs too tanky; the augments' armor stays within vanilla's formula since RLM-223.
 5. **The Wither flies**, and the [vision](../vision.md) wants no flying bosses
-   ([ADR 0033](../decisions/0033-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md)). Proposal:
+   ([ADR 0034](../decisions/0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md)). Proposal:
    an exception for the vanilla Wither, which a player summons by choice for nether stars; the vision's rule keeps
    covering the bosses of our realms and dungeons. Alternatives: a Wither kept on the ground, or another nether
    star source.

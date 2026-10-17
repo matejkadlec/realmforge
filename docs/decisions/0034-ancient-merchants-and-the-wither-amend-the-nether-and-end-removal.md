@@ -1,4 +1,4 @@
-# 0033. Ancient merchants and the Wither amend the Nether and End removal
+# 0034. Ancient merchants and the Wither amend the Nether and End removal
 
 Date: 2026-10-17
 

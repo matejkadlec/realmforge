@@ -259,7 +259,7 @@ it offers most of what the Nether offered ([ADR 0025](../decisions/0025-remove-t
   - quartz set in stone (quartz early, because other mods expect it);
   - glowstone near the ceiling;
   - no nether wart: the Ancient Specialist sells it (RLM-241,
-    [ADR 0033](../decisions/0033-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md));
+    [ADR 0034](../decisions/0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md));
   - ore bands in the walls and pillars of the walkable floor, and a treasure ore with its own loot table (PF-5).
 - **Mobs:** stone-looking mobs and animated statues, each variant with one clear role (BM-11); a rock mob that climbs
   and a timid critter that flees into the rock; animals too, such as a "Stoneshroom" stone cow; shulkers with grey as
