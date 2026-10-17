@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/room_specs.schema.json
+# A plain straight corridor, the commonest piece between rooms.
+id: corridor_straight
+kind: corridor
+theme: realmforge:stone_vault
+footprint: [5, 11]
+height: 5
+connectors: [north, south]
+features: [rubble]
+seeds: []
+rejected_seeds: []

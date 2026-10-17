@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A room for the room generator. Every kept seed becomes a room that dungeons can use like an imported one.",
+  "properties": {
+    "connectors": {
+      "description": "The sides with a doorway (three blocks wide and high, in the middle of the side), each with a connector named realmforge:door, like the imported rooms'.",
+      "items": {
+        "enum": [
+          "north",
+          "east",
+          "south",
+          "west"
+        ],
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Connectors",
+      "type": "array"
+    },
+    "features": {
+      "description": "pillars, alcoves (niches in the walls without a doorway), pit (a sunken middle one block deep), balcony (a deck along a wall without a doorway, reached by stairs), rubble.",
+      "items": {
+        "enum": [
+          "pillars",
+          "alcoves",
+          "pit",
+          "balcony",
+          "rubble"
+        ],
+        "type": "string"
+      },
+      "title": "Features",
+      "type": "array"
+    },
+    "footprint": {
+      "description": "[x, z]: width (west to east) and depth (north to south), walls included, 5 to 16 blocks.",
+      "items": {
+        "maximum": 16,
+        "minimum": 5,
+        "type": "integer"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Footprint",
+      "type": "array"
+    },
+    "height": {
+      "description": "Blocks from the bottom of the floor to the top of the ceiling, 5 to 16.",
+      "maximum": 16,
+      "minimum": 5,
+      "title": "Height",
+      "type": "integer"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "kind": {
+      "description": "entrance; the hallways corridor (two opposite connectors), curve (two adjacent), t_junction (three), crossing (four) and dead_end (one); combat, treasure and arena (the boss's room).",
+      "enum": [
+        "entrance",
+        "corridor",
+        "curve",
+        "t_junction",
+        "crossing",
+        "dead_end",
+        "combat",
+        "treasure",
+        "arena"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "pools": {
+      "description": "The room pools its rooms join (e.g. realmforge:stone_vault).",
+      "items": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        "type": "string"
+      },
+      "title": "Pools",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "rejected_seeds": {
+      "description": "The seeds the gallery review rejected, so rf rooms candidates shows new ones.",
+      "items": {
+        "maximum": 2147483647,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "title": "Rejected Seeds",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "seeds": {
+      "description": "The seeds the gallery review kept, each a room: realmforge:rooms/generated/<id>/seed_<n>. rf rooms review writes them.",
+      "items": {
+        "maximum": 2147483647,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "title": "Seeds",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "theme": {
+      "description": "The theme it is built with: realmforge:<id> of content/room_themes/.",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+      "title": "Theme",
+      "type": "string"
+    },
+    "weight": {
+      "default": 1,
+      "description": "Weight of each of its rooms in their pools.",
+      "maximum": 150,
+      "minimum": 1,
+      "title": "Weight",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "kind",
+    "theme",
+    "footprint",
+    "height",
+    "connectors"
+  ],
+  "title": "RoomSpecDef",
+  "type": "object"
+}

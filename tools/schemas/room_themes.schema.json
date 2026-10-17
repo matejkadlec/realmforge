@@ -1,0 +1,147 @@
+{
+  "$defs": {
+    "ThemeBlocks": {
+      "additionalProperties": false,
+      "description": "The block of each role. Each role has a block of its own.",
+      "properties": {
+        "ceiling": {
+          "description": "The ceiling (a full block).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Ceiling",
+          "type": "string"
+        },
+        "ceiling_light": {
+          "description": "Lights hanging from the ceiling (a lantern).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Ceiling Light",
+          "type": "string"
+        },
+        "floor": {
+          "description": "The floor (a full block).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Floor",
+          "type": "string"
+        },
+        "floor_border": {
+          "description": "The floor along the walls and in the doorways (a full block).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Floor Border",
+          "type": "string"
+        },
+        "floor_variant": {
+          "description": "Patches and patterns in the floor (a full block).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Floor Variant",
+          "type": "string"
+        },
+        "pillar": {
+          "description": "The shafts of pillars (a full block).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Pillar",
+          "type": "string"
+        },
+        "rubble": {
+          "description": "Rubble piles (a full block).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Rubble",
+          "type": "string"
+        },
+        "rubble_slab": {
+          "description": "Low rubble (a slab).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Rubble Slab",
+          "type": "string"
+        },
+        "slab": {
+          "description": "Profiles: ledges and the balcony's deck (a slab).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Slab",
+          "type": "string"
+        },
+        "stairs": {
+          "description": "Profiles: mouldings, corbels, steps (a stairs block).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Stairs",
+          "type": "string"
+        },
+        "wall_base": {
+          "description": "The bottom row of the walls and the pillars (a full block).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Wall Base",
+          "type": "string"
+        },
+        "wall_body": {
+          "description": "The walls between base and cornice (a full block).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Wall Body",
+          "type": "string"
+        },
+        "wall_body_cracked": {
+          "description": "Cracked patches in the wall body (a full block).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Wall Body Cracked",
+          "type": "string"
+        },
+        "wall_body_mossy": {
+          "description": "Mossy patches in the wall body (a full block).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Wall Body Mossy",
+          "type": "string"
+        },
+        "wall_cornice": {
+          "description": "The top row of the walls, under the ceiling (a full block).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Wall Cornice",
+          "type": "string"
+        },
+        "wall_light": {
+          "description": "Lights on the walls (a wall torch, e.g. minecraft:wall_torch).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Wall Light",
+          "type": "string"
+        }
+      },
+      "required": [
+        "floor",
+        "floor_variant",
+        "floor_border",
+        "wall_base",
+        "wall_body",
+        "wall_body_cracked",
+        "wall_body_mossy",
+        "wall_cornice",
+        "ceiling",
+        "pillar",
+        "stairs",
+        "slab",
+        "rubble",
+        "rubble_slab",
+        "wall_light",
+        "ceiling_light"
+      ],
+      "title": "ThemeBlocks",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A theme: the block of every role the room generator builds with. W4 turns themes into processor lists that\nswap one theme's blocks for another's (architecture 15.2).",
+  "properties": {
+    "blocks": {
+      "$ref": "#/$defs/ThemeBlocks"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "blocks"
+  ],
+  "title": "RoomThemeDef",
+  "type": "object"
+}
