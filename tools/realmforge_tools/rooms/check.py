@@ -12,7 +12,14 @@ from typing import Any
 
 from realmforge_tools.id_universe import IdUniverse
 from realmforge_tools.project import DATA_VERSION
-from realmforge_tools.rooms.structure import JIGSAW, Pos, Structure, StructureBlock, split_state_text
+from realmforge_tools.rooms.structure import (
+    JIGSAW,
+    STRUCTURE_VOID,
+    Pos,
+    Structure,
+    StructureBlock,
+    split_state_text,
+)
 
 BLOCK_REGISTRY = "minecraft:block"
 BLOCK_ENTITY_REGISTRY = "minecraft:block_entity_type"
@@ -379,6 +386,8 @@ def _holds_flowing_fluid(block: StructureBlock) -> bool:
     block missing from the list gets the block added there."""
     state = block.state
     name = state.name
+    if name in (STRUCTURE_BLOCK, STRUCTURE_VOID):  # never placed: the cell keeps whatever the plot holds
+        return True
     if state.get("waterlogged") is not None or name in _CLOSED_BLOCKS or name in SOLID_BLOCKS:
         return False
     path = name.partition(":")[2]

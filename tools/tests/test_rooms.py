@@ -1345,6 +1345,11 @@ def test_a_fluid_that_reaches_a_floor_hole_or_a_wall_gap_flows_out() -> None:
     assert fluid_edges(walled_room(water, hole)) == [(2, 2, 2)]
     gap = StructureBlock((0, 1, 3), BlockState("minecraft:torch"))  # a fluid washes a torch away
     assert fluid_edges(walled_room(water, gap)) == [(2, 2, 2)]
+    for never_placed in (
+        marker((0, 1, 3), "mob"),
+        StructureBlock((0, 1, 3), BlockState("minecraft:structure_void")),
+    ):
+        assert fluid_edges(walled_room(water, never_placed)) == [(2, 2, 2)], "the builder never places it"
     void = replace(closed, blocks=tuple(b for b in closed.blocks if b.pos != (2, 0, 1)))
     assert fluid_edges(void) == [(2, 2, 2)], "a missing cell keeps whatever the plot holds there"
 
