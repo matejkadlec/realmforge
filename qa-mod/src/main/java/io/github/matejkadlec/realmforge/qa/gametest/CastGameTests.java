@@ -408,8 +408,7 @@ public final class CastGameTests {
     }
 
     private static ServerPlayer caster(GameTestHelper helper, GameProfile profile) {
-        ServerPlayer player = QaPlayers.login(helper.getLevel().getServer(), profile);
-        player.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 0.5)), 0, 0);
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, profile, new Vec3(2.5, 1, 0.5));
         player.setGameMode(GameType.SURVIVAL);
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
         StatsCommands.setBase(player, GeneratedStats.MAX_MANA, 100);

@@ -601,7 +601,7 @@ stat points since RLM-196), then the stat rules, so a primary stat a race, a cla
 derived bonuses in the same recompute. A login brings the player's level up to date but leaves the recompute to the
 first tick too, even when the level changed (RLM-202): a recompute inside `PlayerLoggedInEvent` would read the
 primary stats without the gear's and lower max health, clamping the health for good.
-A GameTest player (`QaPlayers#login`) is never ticked by its connection, so the tests play a client tick with
+A GameTest player (`QaPlayers#loginOnPlatform`) is never ticked by its connection, so the tests play a client tick with
 `ServerPlayer#doTick` ([20](#20-tests-per-layer)).
 
 ### 8.3 Derived stats and milestones
@@ -1965,7 +1965,11 @@ can be sent to it. `PlayerList#respawn(player, false, ...)` stands in for a resp
 copy-on-death attachments (`PlayerStateGameTests`, and `WorldRulesGameTests` for Dark Vision), and
 `PlayerList#respawn(player, true, ...)` for leaving the End. The connection never ticks the player, so a test that
 needs player ticks plays them with `ServerPlayer#doTick`, the call the network handler makes once per tick
-(`StatsGameTests`).
+(`StatsGameTests`). A new player logs in at the world spawn, where the GameTest server starts its grid of tests, so a
+tick there can put it inside another test's blocks and suffocate it: tests log new players in with
+`QaPlayers#loginOnPlatform`, which puts them on their own test's platform, and move a player a respawn puts back at
+the spawn with `QaPlayers#onPlatform` before they tick it (RLM-242). `QaPlayers#login` alone is for a returning player,
+who loads where it left, and for a test that teleports the player itself right after.
 
 ## 21. Decisions and open questions
 

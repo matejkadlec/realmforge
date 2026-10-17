@@ -49,7 +49,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.phys.Vec3;
 
 /**
  * RLM-196: stat points (architecture 10.2). A level-up earns the points the curve gives; spending one raises that
@@ -344,9 +343,7 @@ public final class StatPointsGameTests {
     }
 
     private static ServerPlayer login(GameTestHelper helper, GameProfile profile) {
-        ServerPlayer player = QaPlayers.login(helper.getLevel().getServer(), profile);
-        player.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
-        return player;
+        return QaPlayers.loginOnPlatform(helper, profile);
     }
 
     /** A player who logs in and creates a character of the first race and its first class. */

@@ -1,6 +1,5 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
-import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.character.CharacterAttachments;
 import io.github.matejkadlec.realmforge.character.CharacterBonuses;
@@ -27,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
@@ -47,7 +45,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.phys.Vec3;
 
 /**
  * C1 (RLM-22): a new player must create a character, and the server enforces the creation rules (architecture 10.1).
@@ -315,9 +312,7 @@ public final class CharacterGameTests {
     }
 
     private static ServerPlayer login(GameTestHelper helper, String name) {
-        ServerPlayer player = QaPlayers.login(helper.getLevel().getServer(), new GameProfile(UUID.randomUUID(), name));
-        player.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
-        return player;
+        return QaPlayers.loginOnPlatform(helper, name);
     }
 
     private static Result create(ServerPlayer player, String race, String playerClass) {

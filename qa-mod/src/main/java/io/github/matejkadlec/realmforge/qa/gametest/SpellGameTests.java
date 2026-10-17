@@ -1,6 +1,5 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
-import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.character.CharacterCreation;
 import io.github.matejkadlec.realmforge.character.CharacterRegistries;
@@ -21,7 +20,6 @@ import io.github.matejkadlec.realmforge.spell.SpellRegistries;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import java.util.Optional;
-import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
@@ -391,9 +389,7 @@ public final class SpellGameTests {
 
     /** A fake player at the platform's south edge, in survival, at 0 % crit chance. */
     private static ServerPlayer caster(GameTestHelper helper, String name) {
-        MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), name));
-        player.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 0.5)), 0, 0);
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, name, new Vec3(2.5, 1, 0.5));
         player.setGameMode(GameType.SURVIVAL);
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
         return player;

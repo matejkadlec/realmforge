@@ -1,6 +1,5 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
-import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.combat.DamageOverTime;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
@@ -11,7 +10,6 @@ import io.github.matejkadlec.realmforge.qa.command.MobCommands;
 import java.util.List;
 import java.util.Locale;
 import java.util.OptionalInt;
-import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -52,9 +50,8 @@ public final class QaCommandGameTests {
     @QaGameTest
     public static void playtestCommandsReachTheirStates(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-commands"));
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-commands", new Vec3(2.5, 1, 0.5));
         // On the platform's north edge, facing south (yaw 0), so the dummy appears on the platform.
-        player.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 0.5)), 0, 0);
         double fist = player.getAttributeValue(Attributes.ATTACK_DAMAGE);
 
         run(server, player, "qa stats set strength 25");
@@ -103,8 +100,7 @@ public final class QaCommandGameTests {
     @QaGameTest
     public static void combatTextPlaytestCommandsReachTheirStates(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-dot-commands"));
-        player.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 0.5)), 0, 0);
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-dot-commands", new Vec3(2.5, 1, 0.5));
 
         run(server, player, "qa dummy");
         List<LivingEntity> dummies = dummies(helper);
@@ -138,8 +134,7 @@ public final class QaCommandGameTests {
     @QaGameTest
     public static void mobCommandsSetAndShowAMobsLevel(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-mob-commands"));
-        player.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 0.5)), 0, 0);
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-mob-commands", new Vec3(2.5, 1, 0.5));
         Zombie zombie = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, new BlockPos(2, 1, 3));
 
         run(server, player, "qa level 10 @n[type=zombie]");

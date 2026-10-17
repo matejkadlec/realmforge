@@ -77,7 +77,7 @@ public final class PlayerStateGameTests {
     public static void playerStateSurvivesSaveAndLoad(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-state-save");
-        ServerPlayer first = QaPlayers.login(server, profile);
+        ServerPlayer first = QaPlayers.loginOnPlatform(helper, profile);
         fill(first);
         server.getPlayerList().remove(first);
 
@@ -91,7 +91,7 @@ public final class PlayerStateGameTests {
     @QaGameTest
     public static void playerStateIsCopiedOnDeath(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer dead = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-state-death"));
+        ServerPlayer dead = QaPlayers.loginOnPlatform(helper, "qa-state-death");
         fill(dead);
         helper.assertTrue(dead.getData(SpellAttachments.COMBAT).currentCast().isPresent(), "the player was casting");
 
@@ -106,7 +106,7 @@ public final class PlayerStateGameTests {
     @QaGameTest
     public static void newPlayerReadsTheDefaults(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-state-new"));
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-state-new");
         for (StateCommands.Entry entry : StateCommands.ATTACHMENTS) {
             helper.assertFalse(player.hasData(entry.type().get()), "a new player has no " + entry.name());
         }
@@ -124,7 +124,7 @@ public final class PlayerStateGameTests {
     @QaGameTest
     public static void stateResetRemovesEveryAttachment(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-state-reset"));
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-state-reset");
         fill(player);
         helper.assertValueEqual(StateCommands.reset(player), StateCommands.ATTACHMENTS.size(), "attachments removed");
         for (StateCommands.Entry entry : StateCommands.ATTACHMENTS) {

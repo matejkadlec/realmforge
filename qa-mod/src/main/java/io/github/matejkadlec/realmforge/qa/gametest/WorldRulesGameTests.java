@@ -189,7 +189,7 @@ public final class WorldRulesGameTests {
     @QaGameTest
     public static void darkVisionIsOnAfterTheFirstLogin(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-dark-vision"));
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-dark-vision");
         try {
             helper.assertTrue(DarkVision.isEnabled(player), "Dark Vision is off by default");
             assertHasDarkVision(helper, player);
@@ -259,7 +259,7 @@ public final class WorldRulesGameTests {
     public static void switchSurvivesDeathAndRelog(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-dark-relog");
-        ServerPlayer player = QaPlayers.login(server, profile);
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, profile);
         try {
             DarkVision.setEnabled(player, false);
             player = server.getPlayerList().respawn(player, false, Entity.RemovalReason.KILLED);

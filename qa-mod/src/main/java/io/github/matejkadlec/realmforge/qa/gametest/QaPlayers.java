@@ -6,6 +6,8 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
+import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.Connection;
 import net.minecraft.network.ConnectionProtocol;
 import net.minecraft.network.protocol.PacketFlow;
@@ -29,8 +31,18 @@ import net.neoforged.neoforge.network.registration.NetworkPayloadSetup;
 import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import org.slf4j.Logger;
 
-/** Fake players for GameTests. */
+/**
+ * Fake players for GameTests. A new fake player logs in at the world spawn, where the GameTest server starts its grid
+ * of tests, so another test's blocks can stand there and a tick ({@code ServerPlayer#doTick}) would suffocate it.
+ * Tests therefore log new players in with {@link #loginOnPlatform}, which puts them on their own test's platform, and
+ * move a player that a respawn puts back at the world spawn with {@link #onPlatform} before they tick it.
+ * {@link #login} alone is for a returning player, who loads where it left, and for a test that moves the player
+ * itself right after.
+ */
 final class QaPlayers {
+    /** The middle of the 5×5 platform, one block above its stone floor. */
+    static final Vec3 PLATFORM_MIDDLE = new Vec3(2.5, 1, 2.5);
+
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private QaPlayers() {
@@ -68,6 +80,40 @@ final class QaPlayers {
             server.getPlayerList().placeNewPlayer(connection, player, cookie);
             return player;
         }
+    }
+
+    /** A new player named {@code name} (a random id), at the platform's middle. */
+    static ServerPlayer loginOnPlatform(GameTestHelper helper, String name) {
+        return loginOnPlatform(helper, name, PLATFORM_MIDDLE);
+    }
+
+    /** A new player named {@code name} (a random id), at {@code relative} on the test's platform. */
+    static ServerPlayer loginOnPlatform(GameTestHelper helper, String name, Vec3 relative) {
+        return loginOnPlatform(helper, new GameProfile(UUID.randomUUID(), name), relative);
+    }
+
+    /** {@link #loginOnPlatform(GameTestHelper, GameProfile, Vec3)} at the platform's middle. */
+    static ServerPlayer loginOnPlatform(GameTestHelper helper, GameProfile profile) {
+        return loginOnPlatform(helper, profile, PLATFORM_MIDDLE);
+    }
+
+    /**
+     * Logs a new fake player in ({@link #login}) and puts it at {@code relative} on the test's platform, facing south.
+     */
+    static ServerPlayer loginOnPlatform(GameTestHelper helper, GameProfile profile, Vec3 relative) {
+        return onPlatform(helper, login(helper.getLevel().getServer(), profile), relative);
+    }
+
+    /** {@link #onPlatform(GameTestHelper, ServerPlayer, Vec3)} at the platform's middle. */
+    static ServerPlayer onPlatform(GameTestHelper helper, ServerPlayer player) {
+        return onPlatform(helper, player, PLATFORM_MIDDLE);
+    }
+
+    /** Puts a player of the test's level at {@code relative} on the test's platform, facing south. */
+    static ServerPlayer onPlatform(GameTestHelper helper, ServerPlayer player, Vec3 relative) {
+        helper.assertTrue(player.level() == helper.getLevel(), "the player is in the test's level");
+        player.snapTo(helper.absoluteVec(relative), 0, 0);
+        return player;
     }
 
     /** Takes the config file channel out of the mock connection's payload setup (internal NeoForge API, dev only). */

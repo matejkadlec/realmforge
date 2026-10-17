@@ -176,7 +176,7 @@ public final class LevelingGameTests {
         kill(level, pig, player);
         helper.assertValueEqual(Characters.data(player).totalXp(), expected, "a pig is no enemy and gives nothing");
 
-        ServerPlayer newcomer = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-lvl-nochar"));
+        ServerPlayer newcomer = QaPlayers.loginOnPlatform(helper, "qa-lvl-nochar");
         Zombie another = helper.spawn(EntityType.ZOMBIE, new BlockPos(3, 1, 1));
         kill(level, another, newcomer);
         helper.assertValueEqual(Characters.data(newcomer), CharacterData.NONE, "no XP, and no data, without a character");
@@ -222,7 +222,7 @@ public final class LevelingGameTests {
     @QaGameTest
     public static void playersWithoutACharacterGainNoXp(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-lvl-none"));
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-lvl-none");
         helper.assertValueEqual(Characters.rewardXp(player, 1000), 0L, "a reward");
         helper.assertFalse(Characters.setTotalXp(player, 1000), "setting the XP");
         run(server, player, "realmforge xp add @s 1000");
@@ -304,7 +304,7 @@ public final class LevelingGameTests {
     public static void aLoginWhoseLevelChangedLeavesTheRecomputeToTheFirstTick(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-lvl-relog");
-        ServerPlayer first = QaPlayers.login(server, profile);
+        ServerPlayer first = QaPlayers.loginOnPlatform(helper, profile);
         createCharacter(helper, first);
         StatsGameTests.tick(first, 1);
         double vitality = first.getAttributeValue(GeneratedStats.VITALITY);
@@ -333,7 +333,7 @@ public final class LevelingGameTests {
 
     /** A player who logs in, at the platform's middle, and creates a character of the first race and its first class. */
     private static ServerPlayer loginWithCharacter(GameTestHelper helper, String name) {
-        ServerPlayer player = QaPlayers.login(helper.getLevel().getServer(), new GameProfile(UUID.randomUUID(), name));
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, name);
         createCharacter(helper, player);
         return player;
     }
