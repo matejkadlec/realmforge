@@ -1,0 +1,11 @@
+{
+  "type": "realmforge:stone",
+  "generator": {
+    "type": "minecraft:noise",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "realmforge:undervault"
+    },
+    "settings": "realmforge:stone"
+  }
+}

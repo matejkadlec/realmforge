@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
+# Undervault's softest stone, near the ceiling, where the glowstone hangs (W2a, RLM-32): hardness 12 (Matěj,
+# 2026-10-15), the hardness of the realm's gem ores to come.
+id: siltstone
+name:
+  en_us: Siltstone
+hardness: 12
+blast_resistance: 6
+tool: pickaxe
+requires_tool: true
+sound: calcite
+map_color: terracotta_white
+creative_tabs:
+  - minecraft:natural_blocks

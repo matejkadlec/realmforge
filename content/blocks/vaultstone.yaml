@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
+# Undervault's common stone, most of its floor, walls and ceiling (W2a, RLM-32). Slow on purpose (Matěj,
+# 2026-10-15): hardness 20, so a diamond pickaxe with Efficiency IV takes about 1.2 s a block (obsidian, 50: 3 s), an
+# unenchanted iron pickaxe about 5 s. Any pickaxe gets the drop.
+id: vaultstone
+name:
+  en_us: Vaultstone
+hardness: 20
+blast_resistance: 6
+tool: pickaxe
+requires_tool: true
+sound: stone
+map_color: stone
+creative_tabs:
+  - minecraft:natural_blocks

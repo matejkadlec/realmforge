@@ -1,12 +1,24 @@
 package io.github.matejkadlec.realmforge.character;
 
+import com.mojang.serialization.MapCodec;
+import io.github.matejkadlec.realmforge.core.Requirement;
+import io.github.matejkadlec.realmforge.core.RequirementTypes;
 import io.github.matejkadlec.realmforge.stats.CharacterStats;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
 /** Races, classes, character data, leveling, level caps and stat points (architecture 10). */
 public final class CharacterFeature {
+    private static final DeferredRegister<MapCodec<? extends Requirement>> REQUIREMENT_TYPES =
+            RequirementTypes.deferredRegister();
+
+    static {
+        // realmforge:level_at_least (architecture 5.3).
+        REQUIREMENT_TYPES.register("level_at_least", () -> LevelAtLeast.MAP_CODEC);
+    }
+
     private CharacterFeature() {
     }
 
@@ -18,6 +30,7 @@ public final class CharacterFeature {
      */
     public static void register(IEventBus modBus) {
         CharacterAttachments.register(modBus);
+        REQUIREMENT_TYPES.register(modBus);
         modBus.addListener(DataPackRegistryEvent.NewRegistry.class, CharacterRegistries::registerDataPackRegistries);
         CharacterStats.addSource(CharacterBonuses.SOURCE);
         CharacterStats.addSource(StatPoints.SOURCE);

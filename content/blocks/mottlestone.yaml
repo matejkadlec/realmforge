@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
+# A speckled Undervault stone in large patches on the floor and in the walls (W2a, RLM-32), in the spirit of diorite
+# and granite: hardness 18 (Matěj, 2026-10-15).
+id: mottlestone
+name:
+  en_us: Mottlestone
+hardness: 18
+blast_resistance: 6
+tool: pickaxe
+requires_tool: true
+sound: tuff
+map_color: color_light_gray
+creative_tabs:
+  - minecraft:natural_blocks

@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../tools/schemas/realms.schema.json
+# Undervault, the stone realm: chapter 2, levels 6-18 (realm design, "The stone realm"; realm portal spec). Its
+# unlock is the advancement realmforge:realm/stone, which chapter 1's last main quest grants (Q2); until then
+# `/advancement grant @s only realmforge:realm/stone`. W2b adds the portal's fields.
+id: stone
+dimension: realmforge:stone
+name:
+  en_us: Undervault
+subtitle:
+  en_us: Stone Realm
+locked_hint:
+  en_us: Unlocked by a chapter 1 quest.
+flavour:
+  en_us: Cold air rises from below, smelling of dust and old stone.
+icon: realmforge:vaultstone

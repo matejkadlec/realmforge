@@ -26,10 +26,10 @@ public final class GeneratedDimensionRuleExpectations {
 
     /**
      * Expected state of one entry. Ids are full resource locations: the entry's, e.g. {@code realmforge:overworld},
-     * and the dimension's, e.g. {@code minecraft:overworld}.
+     * and the dimension's, e.g. {@code minecraft:overworld}. Each access requirement is the JSON the data holds.
      */
     public record DimensionRulesExpectation(String id, String dimension, Optional<MobLevelRule> mobLevels,
-            List<Sample> samples) {
+            List<Sample> samples, List<String> access) {
     }
 
     public static final List<DimensionRulesExpectation> DIMENSION_RULES = List.of(
@@ -54,7 +54,29 @@ public final class GeneratedDimensionRuleExpectations {
                             new Sample(0.0, -0.5, 0.0, 1, 1, 2),
                             new Sample(0.0, -32.0, 0.0, 2, 1, 3),
                             new Sample(0.0, -64.5, 0.0, 3, 2, 4),
-                            new Sample(30000000.0, 16.0, 0.0, 5, 5, 5))));
+                            new Sample(30000000.0, 16.0, 0.0, 5, 5, 5)),
+                    List.of()),
+            new DimensionRulesExpectation(
+                    "realmforge:stone",
+                    "realmforge:stone",
+                    Optional.of(new MobLevelRule(6, 320, Optional.empty(), 1, 6, 18)),
+                    List.of(
+                            new Sample(0.0, 64.0, 0.0, 6, 6, 7),
+                            new Sample(319.5, 64.0, 0.0, 6, 6, 7),
+                            new Sample(0.0, 64.0, -320.0, 7, 6, 8),
+                            new Sample(639.5, 64.0, 0.0, 7, 6, 8),
+                            new Sample(0.0, 64.0, -640.0, 8, 7, 9),
+                            new Sample(959.5, 64.0, 0.0, 8, 7, 9),
+                            new Sample(0.0, 64.0, -960.0, 9, 8, 10),
+                            new Sample(1279.5, 64.0, 0.0, 9, 8, 10),
+                            new Sample(0.0, 64.0, -1280.0, 10, 9, 11),
+                            new Sample(1599.5, 64.0, 0.0, 10, 9, 11),
+                            new Sample(0.0, 64.0, -1600.0, 11, 10, 12),
+                            new Sample(1919.5, 64.0, 0.0, 11, 10, 12),
+                            new Sample(0.0, 64.0, -1920.0, 12, 11, 13),
+                            new Sample(320.0, 64.0, 320.0, 7, 6, 8),
+                            new Sample(30000000.0, 64.0, 0.0, 18, 18, 18)),
+                    List.of("{\n  \"advancement\": \"realmforge:realm/stone\",\n  \"type\": \"realmforge:has_advancement\"\n}")));
 
     private GeneratedDimensionRuleExpectations() {
     }

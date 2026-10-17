@@ -5,6 +5,9 @@ package io.github.matejkadlec.realmforge.generated;
 
 /** Translation keys of the texts in {@code content/texts/}, so Java names a text without typing its key. */
 public final class GeneratedTexts {
+    /** {@code advancement.realmforge.realm_unlocked} from {@code content/texts/advancement.yaml}: "Realm unlocked: %1$s" */
+    public static final String ADVANCEMENT_REALM_UNLOCKED = "advancement.realmforge.realm_unlocked";
+
     /** {@code combat_text.realmforge.miss} from {@code content/texts/combat_text.yaml}: "Miss!" */
     public static final String COMBAT_TEXT_MISS = "combat_text.realmforge.miss";
 
@@ -134,6 +137,9 @@ public final class GeneratedTexts {
     /** {@code key.category.realmforge.main} from {@code content/texts/key.category.yaml}: "Realmforge" */
     public static final String KEY_CATEGORY_MAIN = "key.category.realmforge.main";
 
+    /** {@code message.realmforge.bed_only_overworld} from {@code content/texts/message.yaml}: "Beds only work in Overworld" */
+    public static final String MESSAGE_BED_ONLY_OVERWORLD = "message.realmforge.bed_only_overworld";
+
     /** {@code message.realmforge.dark_vision_off} from {@code content/texts/message.yaml}: "Dark Vision Off" */
     public static final String MESSAGE_DARK_VISION_OFF = "message.realmforge.dark_vision_off";
 
@@ -151,6 +157,9 @@ public final class GeneratedTexts {
 
     /** {@code message.realmforge.level_up_subtitle} from {@code content/texts/message.yaml}: "You are now level %1$s" */
     public static final String MESSAGE_LEVEL_UP_SUBTITLE = "message.realmforge.level_up_subtitle";
+
+    /** {@code message.realmforge.realm_not_eligible} from {@code content/texts/message.yaml}: "You are not eligible to pass through the portal." */
+    public static final String MESSAGE_REALM_NOT_ELIGIBLE = "message.realmforge.realm_not_eligible";
 
     /** {@code message.realmforge.stat_points_none_spent} from {@code content/texts/message.yaml}: "You have no spent stat points to unlearn." */
     public static final String MESSAGE_STAT_POINTS_NONE_SPENT = "message.realmforge.stat_points_none_spent";

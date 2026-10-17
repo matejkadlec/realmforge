@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../tools/schemas/dimensions.schema.json
+# Undervault, the stone realm (W2a, RLM-32): chapter 2, levels 6 to 18 (RLM-188). The realm portal spec's level rule
+# ("The coordinate scale"): level 6 at the origin, one more every 320 blocks out, capped at 18, so the sub-bands are
+# 6-10 within 1,280 blocks, 10-14 up to 2,560 and 14-18 beyond. Portals link at 1:16 (the dimension type's
+# coordinate_scale), so an Overworld portal within 10,000 blocks of the origin arrives within 625 blocks: level 8 at
+# most, in the first sub-band. No depth rule: the realm has one walkable floor. The numbers are proposals for Matěj's
+# playtest; RLM-240 replaces the distance rule with levels that follow the player, floored at 6.
+id: stone
+dimension: realmforge:stone
+mob_levels:
+  origin_level: 6
+  blocks_per_level: 320
+  jitter: 1
+  min_level: 6
+  max_level: 18
+# Sealed until the player's own unlock (realm portal spec, "Access and unlocks"): chapter 1's last main quest grants
+# it (Q2); `/advancement grant @s only realmforge:realm/stone` until then.
+access:
+  - type: realmforge:has_advancement
+    advancement: realmforge:realm/stone
