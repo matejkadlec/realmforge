@@ -5,9 +5,9 @@ must be written into the repo (this file, `docs/`, git history).
 
 ## Project
 
-Realmforge is an RPG mod and modpack for Minecraft 26.1.2 (NeoForge) inspired by World of Warcraft: Wrath of the
-Lich King ("WoW" always means WotLK, never retail). It is a hybrid: our own core mod holds all RPG systems; the
-modpack adds third-party QoL, performance and library mods.
+Realmforge is an RPG mod and modpack for Minecraft 26.1.2 (NeoForge) inspired by World of Warcraft ("WoW" means
+Classic, TBC and WotLK alike, Classic the main reference; never Cataclysm or later, never retail). It is a hybrid:
+our own core mod holds all RPG systems; the modpack adds third-party QoL, performance and library mods.
 
 - **Owner:** Matěj, a Python full-stack (Django) developer with little Java and modding experience. The project is
   vibe-coded: agents do most of the work, Matěj sets direction, reviews and playtests. **Communicate in English.**

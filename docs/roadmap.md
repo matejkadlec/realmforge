@@ -85,10 +85,11 @@ Undervault (levels 6-18), about 12 hours for an average player by the [XP model]
 | Gear | a small set of fixed-stat weapons and armor as rewards; no affixes yet |
 | World | default gamerules, Dark Vision toggle, griefing protection |
 
-**Not in M1:** a second race, more classes, dual class, glyphs, affixes, gems, reforging, professions, pets, mounts,
-villages, the enchanting overhaul, contracts, world-structure dungeons, Overworld's own dungeons and final boss
-(Matěj, 2026-10-16), realm tool tiers (RLM-194, M4), custom NPCs, changes to the Nether and End, and dungeon
-parties: instances are solo in M1 (decision D8); parties come later (RLM-68).
+**Not in M1:** a second race, more classes, each class's other two specializations and dual spec (M1 has one
+specialization per class; RLM-218), glyphs, affixes, gems, reforging, professions, pets, mounts, villages, the
+enchanting overhaul, contracts, world-structure dungeons, Overworld's own dungeons and final boss (Matěj,
+2026-10-16), realm tool tiers (RLM-194, M4), custom NPCs, changes to the Nether and End, and dungeon parties:
+instances are solo in M1 (decision D8); parties come later (RLM-68).
 
 **Order:** the spikes first, then foundations; character and world work can run in parallel after that; quests
 and the release come last. "After" in a task names what must be merged first.
@@ -187,7 +188,10 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   healing over time; source tracking for dispels.
 - **C4 Class kits** (RLM-27, M, after C3b and C3c). 4-5 spells per class; starting gear with fixed stats, generated
   with per-slot modifier ids and the rule that gear never adds max health directly
-  ([architecture 8.2](architecture.md#82-where-modifiers-come-from)); a first balance pass on the training dummy.
+  ([architecture 8.2](architecture.md#82-where-modifiers-come-from)); the Human's racial passive and active (Sword
+  Specialization with the `#realmforge:sword_like` item tag and its tooltip lines, Will To Survive on the spell bar's
+  G key; [architecture 10.1](architecture.md#101-races-and-classes), RLM-219); a first balance pass on the training
+  dummy.
 - **C5 Talents** (RLM-28, M, after C4). The registry, effect types, `TalentRules`, the talent screen, a respec command,
   one tree per class. *Done when:* JUnit property tests pass, a GameTest shows a talent changing a cast, and one
   shows that neither a proc's hit nor the ticks of a damage-over-time effect it applied trigger procs.
@@ -296,7 +300,9 @@ references other mods' items.
 ## M3: Classes and combat depth
 
 Outline: more classes toward the vision's play styles (melee, ranged, mage, battle mage, summoner); a second race;
-the remaining spell schools; glyphs; dual class; interrupts, dispels and crowd control on bosses; threat; the
+the remaining spell schools; glyphs; the other two specialization spell trees of each class, toward three per class
+in v1 (Matěj, 2026-10-16), and dual spec, a secondary specialization from a level threshold (proposed: 20; RLM-218);
+interrupts, dispels and crowd control on bosses; threat; the
 balance simulation in CI and a nightly client test ([ADR 0010](decisions/0010-testing-strategy.md)).
 
 ## M4: The world grows
