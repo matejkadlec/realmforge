@@ -47,6 +47,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0033](0033-vanilla-armor-formula-amends-our-own.md) | Vanilla's armor formula amends "our own formula" | Accepted (amends 0014) |
 | [0034](0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md) | Ancient merchants and the Wither amend the Nether and End removal | Accepted (amends 0025) |
 | [0035](0035-room-galleries-show-every-marker-with-its-label.md) | Room galleries show every marker with its label | Accepted |
+| [0036](0036-room-lights-and-decorations-form-patterns.md) | Room lights and decorations form patterns | Accepted |
 
 ## Open questions (not decided)
 

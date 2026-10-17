@@ -158,6 +158,11 @@ def main(argv: list[str] | None = None) -> int:
         help=f"candidates per spec (default: {room_candidates.DEFAULT_COUNT})",
     )
     rooms_candidates.add_argument(
+        "--kept",
+        action="store_true",
+        help="also build the kept seeds, to review a generator change on them (with --count 0: only those)",
+    )
+    rooms_candidates.add_argument(
         "--out", type=Path, help="output folder, replaced on every run (default: .cache/rooms/candidates)"
     )
 
@@ -258,8 +263,8 @@ def _rooms(args: argparse.Namespace, paths: RepoPaths) -> int:
 
 
 def _rooms_candidates(args: argparse.Namespace, paths: RepoPaths) -> int:
-    if args.count < 1:
-        print("rf rooms candidates: --count must be at least 1", file=sys.stderr)
+    if args.count < (0 if args.kept else 1):
+        print("rf rooms candidates: --count must be at least 1 (0 with --kept)", file=sys.stderr)
         return 1
     try:
         content, universe = load_and_validate(paths)
@@ -272,7 +277,9 @@ def _rooms_candidates(args: argparse.Namespace, paths: RepoPaths) -> int:
             print(f"  {problem}", file=sys.stderr)
         return 1
     out_dir = args.out or paths.cache / "rooms" / "candidates"
-    results = room_candidates.write_candidates(content, universe, out_dir, args.count, args.specs or None)
+    results = room_candidates.write_candidates(
+        content, universe, out_dir, args.count, args.specs or None, kept=args.kept
+    )
     for result in results:
         print(f"{result.spec}: seeds {result.written or 'none'}")
         for seed, reason in result.refused:

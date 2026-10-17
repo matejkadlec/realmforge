@@ -18,7 +18,7 @@ from realmforge_tools.rooms.check import check_structure, markers
 from realmforge_tools.rooms.connectors import connectors, could_attach
 from realmforge_tools.rooms.generator import (
     DOOR,
-    LIGHT_SPACING,
+    TREASURE_CHESTS,
     RoomGeneratorError,
     candidate_seeds,
     generate_room,
@@ -27,6 +27,7 @@ from realmforge_tools.rooms.generator import (
     theme_blocks,
     unknown_blocks,
 )
+from realmforge_tools.rooms.lights import BETWEEN_GAP, END_GAP
 from realmforge_tools.rooms.structure import (
     AIR,
     BlockState,
@@ -222,7 +223,7 @@ def test_balcony_has_a_deck_of_top_slabs_and_stairs_up() -> None:
     reached = reach(cells, door, walkable(cells))
     assert any(pos[1] == 5 for pos in reached), "the deck is reachable from the doorway"
     mob = [pos for name, pos in markers(structure) if name == "mob"]
-    assert len(mob) == 4 and any(pos[1] == 5 for pos in mob)
+    assert len(mob) == 4 and all(pos[1] <= room_spec.floor for pos in mob)  # ground mobs: none on the deck
 
 
 def test_markers_follow_the_kind() -> None:
@@ -230,7 +231,8 @@ def test_markers_follow_the_kind() -> None:
     assert [name for name, _ in markers(entrance)] == ["entrance"]
     treasure = generate_room(spec(kind="treasure", connectors=["south"], features=["alcoves"]), THEME, 1)
     chests = [pos for name, pos in markers(treasure) if name == "chest"]
-    assert chests and all(pos[2] == 1 or pos[0] in (1, 9) for pos in chests)  # in the niches along the walls
+    assert len(chests) == TREASURE_CHESTS
+    assert all(pos[2] == 1 or pos[0] in (1, 9) for pos in chests)  # in the niches along the walls
     hallway = generate_room(spec(kind="corridor", connectors=["north", "south"], footprint=[5, 9]), THEME, 1)
     assert markers(hallway) == []
 
@@ -252,36 +254,134 @@ def test_mob_spots_spread_over_the_floor_clear_of_the_walls() -> None:
                     assert max(abs(x - ox), abs(z - oz)) >= 3, (room_spec.kind, seed)
 
 
-def test_an_arenas_balcony_gets_one_mob_spot_on_its_deck() -> None:
+def test_mob_spots_stand_on_full_blocks_of_the_floor() -> None:
     room_spec = spec(
         kind="arena", footprint=[16, 16], height=10, connectors=["south"], features=["pit", "balcony"]
     )
+    floor_blocks = {THEME.blocks.floor, THEME.blocks.floor_variant, THEME.blocks.floor_border}
     for seed in range(1, 9):
         structure = generate_room(room_spec, THEME, seed)
         blocks = at(structure)
         mob = [pos for name, pos in markers(structure) if name == "mob"]
-        on_deck = [pos for pos in mob if pos[1] == room_spec.floor + 4]
-        assert len(mob) == 4 and len(on_deck) == 1, seed
-        x, y, z = on_deck[0]
-        assert blocks[(x, y - 1, z)].state.name == THEME.blocks.slab, seed  # standing on the deck
-        under = [pos for pos in mob if pos[1] <= room_spec.floor and (pos[0], pos[2]) == (x, z)]
-        assert not under, seed
+        assert len(mob) == 4, seed
+        for x, y, z in mob:
+            assert blocks[(x, y - 1, z)].state.name in floor_blocks, (seed, x, y, z)  # no step, no deck
 
 
-def test_lights_cover_every_spawnable_cell_and_keep_their_spacing() -> None:
-    structure = generate_room(spec(footprint=[16, 16], connectors=["north"]), THEME, 4)
-    cells = Cells.of(structure)
-    assert dark_cells(cells) == []
-    torches = [b for b in structure.blocks if b.state.name == THEME.blocks.wall_light]
-    assert torches
-    for i, torch in enumerate(torches):
-        dx, dz = {"north": (0, 1), "south": (0, -1), "east": (-1, 0), "west": (1, 0)}[
-            torch.state.get("facing")
-        ]
-        behind = (torch.pos[0] + dx, torch.pos[1], torch.pos[2] + dz)
-        assert cells.holds(behind), f"the light at {torch.pos} hangs on nothing"
-        for other in torches[i + 1 :]:
-            assert max(abs(a - b) for a, b in zip(torch.pos, other.pos, strict=True)) >= LIGHT_SPACING
+# --- lights as patterns (ADR 0036) -------------------------------------------------------------------------
+
+
+def wall_lights(structure: Structure) -> list[StructureBlock]:
+    return [b for b in structure.blocks if b.state.name == THEME.blocks.wall_light]
+
+
+def behind(light: StructureBlock) -> tuple[int, int, int]:
+    dx, dz = {"north": (0, 1), "south": (0, -1), "east": (-1, 0), "west": (1, 0)}[light.state.get("facing")]
+    return (light.pos[0] + dx, light.pos[1], light.pos[2] + dz)
+
+
+@pytest.mark.parametrize("path", SPECS, ids=[path.stem for path in SPECS])
+def test_lights_hang_level_spaced_and_never_over_a_marker(path: Path) -> None:
+    room_spec = content_spec(path)
+    for seed in range(1, 5):
+        structure = generate_room(room_spec, THEME, seed)
+        blocks, cells = at(structure), Cells.of(structure)
+        assert dark_cells(cells) == [], seed
+        lights = wall_lights(structure)
+        marked = {(x, z) for _, (x, _, z) in markers(structure)}
+        for light in lights:
+            assert light.pos[1] == room_spec.floor + 1, (seed, light.pos)  # all at one height
+            assert cells.holds(behind(light)), (seed, light.pos)
+            assert (light.pos[0], light.pos[2]) not in marked, (seed, light.pos)
+        on_walls = [li for li in lights if blocks[behind(li)].state.name != THEME.blocks.pillar]
+        for a in on_walls:
+            for b in on_walls:
+                same_wall = a.state.get("facing") == b.state.get("facing") and (
+                    a.pos[0] == b.pos[0]
+                    if a.state.get("facing") in ("east", "west")
+                    else a.pos[2] == b.pos[2]
+                )
+                if a is not b and same_wall:
+                    assert max(abs(a.pos[0] - b.pos[0]), abs(a.pos[2] - b.pos[2])) > BETWEEN_GAP, seed
+        if room_spec.kind != "dead_end":
+            assert len(lights) != 1 or room_spec.kind == "t_junction", (seed, "a lone light")
+
+
+def test_corridor_lights_keep_off_the_ends_and_balance_the_walls() -> None:
+    room_spec = spec(kind="corridor", connectors=["north", "south"], footprint=[5, 13], height=5)
+    for seed in range(1, 9):
+        lights = wall_lights(generate_room(room_spec, THEME, seed))
+        west = [li for li in lights if li.state.get("facing") == "east"]
+        east = [li for li in lights if li.state.get("facing") == "west"]
+        assert len(west) + len(east) == len(lights), seed
+        assert min(len(west), len(east)) >= 1 and abs(len(west) - len(east)) <= 1, seed
+        for light in lights:
+            assert 1 + END_GAP <= light.pos[2] <= 11 - END_GAP, (
+                seed,
+                light.pos,
+            )  # two free blocks to each end
+
+
+def test_walls_with_alcoves_carry_lights_only_on_pilasters() -> None:
+    room_spec = spec(
+        kind="corridor", connectors=["north", "south"], footprint=[7, 13], height=6, features=["alcoves"]
+    )
+    for seed in range(1, 9):
+        structure = generate_room(room_spec, THEME, seed)
+        blocks = at(structure)
+        for light in wall_lights(structure):
+            x, y, z = behind(light)
+            assert x in (1, 5), (
+                seed,
+                light.pos,
+            )  # the wall grown into the room, not the shell behind a niche
+            assert blocks[(x, y - 1, z)].state.name != AIR, (seed, light.pos)  # a pilaster, not a niche
+
+
+def test_pillar_rooms_light_their_pillars_in_a_pattern() -> None:
+    room_spec = spec(
+        kind="crossing",
+        connectors=["north", "east", "south", "west"],
+        footprint=[9, 9],
+        height=6,
+        features=["pillars"],
+    )
+    seen = set()
+    for seed in range(1, 13):
+        structure = generate_room(room_spec, THEME, seed)
+        blocks = at(structure)
+        lights = wall_lights(structure)
+        assert all(blocks[behind(li)].state.name == THEME.blocks.pillar for li in lights), seed
+        facings = sorted(li.state.get("facing") for li in lights)
+        seen.add(len(lights))
+        if len(lights) == 4 and len(set(facings)) == 4:
+            continue  # the pinwheel: one per pillar, each facing another side
+        per_pillar = Counter(behind(li) for li in lights)
+        assert set(per_pillar.values()) == {2}, (
+            seed
+        )  # two per pillar, toward the middle (all or an opposite pair)
+        for light in lights:
+            px, _, pz = behind(light)
+            assert abs(light.pos[0] - 4) + abs(light.pos[2] - 4) < abs(px - 4) + abs(pz - 4), seed
+    assert seen <= {4, 8}
+
+
+def test_doorways_are_flanked_all_or_none() -> None:
+    room_spec = spec(kind="t_junction", connectors=["east", "south", "west"], footprint=[9, 9], height=6)
+    flanks = {"west": [(1, 2), (1, 6)], "east": [(7, 2), (7, 6)], "south": [(2, 7), (6, 7)]}
+    for seed in range(1, 9):
+        lit = {(li.pos[0], li.pos[2]) for li in wall_lights(generate_room(room_spec, THEME, seed))}
+        flanked = [all(cell in lit for cell in cells) for cells in flanks.values()]
+        partly = [any(cell in lit for cell in cells) for cells in flanks.values()]
+        assert flanked == partly, seed  # a doorway has both its lights or none
+        assert all(flanked) or not any(flanked), seed  # three doorways: all or none
+
+
+def test_a_curve_lights_both_walls_alike() -> None:
+    room_spec = spec(kind="curve", connectors=["south", "east"], footprint=[7, 7], height=5)
+    for seed in range(1, 5):
+        lit = {(li.pos[0], li.pos[2]) for li in wall_lights(generate_room(room_spec, THEME, seed))}
+        assert lit == {(z, x) for x, z in lit}, seed  # mirrored across the diagonal that swaps the doorways
 
 
 def test_paths_stay_clear_of_pillars_and_rubble() -> None:
@@ -509,3 +609,21 @@ def test_freeze_refuses_bad_keys_and_block_lists_and_writes_nothing(repo: RepoPa
         freeze({"plain/2": "keep"}, repo)
     with pytest.raises(CandidatesError, match="no room spec ghost"):
         freeze({"ghost/seed_1": "keep"}, repo)
+
+
+def test_candidates_can_bring_the_kept_rooms_for_another_look(repo: RepoPaths, tmp_path: Path) -> None:
+    for path in (repo.content / "room_specs").glob("*.yaml"):
+        path.unlink()
+    write_spec(
+        repo,
+        "nook",
+        "kind: dead_end\nfootprint: [5, 7]\nheight: 5\nconnectors: [north]\nseeds: [2, 3]\nrejected_seeds: [1]\n",
+    )
+    content, universe = load_and_validate(repo)
+    out = tmp_path / "candidates"
+    results = write_candidates(content, universe, out, 0, kept=True)
+    assert [(r.spec, r.written) for r in results] == [("nook", [2, 3])]
+    results = write_candidates(content, universe, out, 1, kept=True)
+    assert [(r.spec, r.written) for r in results] == [("nook", [2, 3, 4])]
+    frozen = freeze({"nook/seed_3": "reject"}, repo)  # a second look can drop a kept room
+    assert [(f.spec, f.kept, f.rejected) for f in frozen] == [("nook", (), (3,))]

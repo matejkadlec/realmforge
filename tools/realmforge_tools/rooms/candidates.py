@@ -55,10 +55,17 @@ class SpecCandidates:
 
 
 def write_candidates(
-    content: Content, universe: IdUniverse, out_dir: Path, count: int, spec_ids: list[str] | None = None
+    content: Content,
+    universe: IdUniverse,
+    out_dir: Path,
+    count: int,
+    spec_ids: list[str] | None = None,
+    *,
+    kept: bool = False,
 ) -> list[SpecCandidates]:
     """Build the candidates into ``out_dir``, which is replaced: it must be new, empty or an earlier candidates
-    folder."""
+    folder. With ``kept`` the specs' kept seeds come too, so a change to the generator can be reviewed on the rooms
+    it changes; a reject decision on one moves it to ``rejected_seeds``."""
     specs = {entry.model.id: entry.model for entry in content.room_specs}
     unknown = sorted(set(spec_ids or ()) - specs.keys())
     if unknown:
@@ -80,7 +87,8 @@ def write_candidates(
     for spec_id in spec_ids or sorted(specs):
         spec = specs[spec_id]
         result = SpecCandidates(spec_id)
-        for seed in candidate_seeds(spec, count):
+        seeds = (sorted(spec.seeds) if kept else []) + candidate_seeds(spec, count)
+        for seed in seeds:
             try:
                 structure = generate_room(spec, themes[spec.theme], seed)
             except RoomGeneratorError as e:
