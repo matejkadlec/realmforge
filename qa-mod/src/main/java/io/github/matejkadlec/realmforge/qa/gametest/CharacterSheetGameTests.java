@@ -1,13 +1,11 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
-import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView.Row;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -32,7 +30,7 @@ public final class CharacterSheetGameTests {
     @QaGameTest
     public static void sheetShowsThePlayersAttributes(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-sheet"));
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-sheet");
         player.doTick();
         StatsCommands.setBase(player, GeneratedStats.STRENGTH, 25);
         StatsCommands.setBase(player, GeneratedStats.VITALITY, 10);

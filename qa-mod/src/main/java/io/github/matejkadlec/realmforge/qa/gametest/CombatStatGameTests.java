@@ -1,6 +1,5 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
-import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.combat.HealthRegeneration;
 import io.github.matejkadlec.realmforge.combat.MagicShields;
 import io.github.matejkadlec.realmforge.combat.Overheal;
@@ -8,7 +7,6 @@ import io.github.matejkadlec.realmforge.generated.GeneratedSpellSchools;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.qa.combat.TrainingDummy;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
-import java.util.UUID;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -262,13 +260,10 @@ public final class CombatStatGameTests {
 
     /**
      * A fake player that can be hurt (survival mode, its client counted as loaded), at 0 % crit chance, with food that
-     * neither regenerates nor starves, after its first tick. It stands on its own test's platform: a new fake player
-     * logs in at the world spawn, where the GameTest grid begins, and a tick inside another test's blocks would
-     * suffocate it for 1 damage.
+     * neither regenerates nor starves, after its first tick, on its own test's platform ({@link QaPlayers}).
      */
     private static ServerPlayer player(GameTestHelper helper, String name) {
-        ServerPlayer player = QaPlayers.login(helper.getLevel().getServer(), new GameProfile(UUID.randomUUID(), name));
-        player.snapTo(helper.absoluteVec(new Vec3(0.5, 1, 0.5)), 0, 0);
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, name, new Vec3(0.5, 1, 0.5));
         player.setGameMode(GameType.SURVIVAL);
         player.connection.markClientLoaded();
         player.getFoodData().setFoodLevel(17);

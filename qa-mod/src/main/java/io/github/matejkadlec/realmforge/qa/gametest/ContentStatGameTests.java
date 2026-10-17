@@ -1,6 +1,5 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
-import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations;
@@ -15,7 +14,6 @@ import io.github.matejkadlec.realmforge.stats.StatsRegistries;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.UUID;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -53,7 +51,7 @@ public final class ContentStatGameTests {
         helper.assertValueEqual(GeneratedStats.ALL.size(), expectedIds.size(), "GeneratedStats.ALL");
 
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-stats-registered"));
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-stats-registered");
         for (StatExpectation expected : GeneratedStatExpectations.STATS) {
             Holder<Attribute> holder = attribute(expected.id());
             helper.assertTrue(holder.value() instanceof RangedAttribute, expected.id() + " is a ranged attribute");

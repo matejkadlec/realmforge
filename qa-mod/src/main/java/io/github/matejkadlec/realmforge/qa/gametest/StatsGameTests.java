@@ -37,9 +37,10 @@ import net.minecraft.world.item.component.ItemAttributeModifiers;
  * generated expectations ({@link GeneratedStatExpectations}), so the tests follow the content. F4c: attributes go
  * past vanilla's caps (8.4).
  *
- * <p>Players log in through {@link QaPlayers#login}. Their connection never ticks them, so a test plays a client
- * tick with {@code ServerPlayer#doTick}, the call the network handler makes once per tick; the server never
- * simulates a player's movement, so the players do not fall.
+ * <p>Players log in on their test's platform ({@link QaPlayers#loginOnPlatform}), and a respawned one is moved back
+ * onto it before it ticks. Their connection never ticks them, so a test plays a client tick with
+ * {@code ServerPlayer#doTick}, the call the network handler makes once per tick; the server never simulates a
+ * player's movement, so the players do not fall.
  */
 public final class StatsGameTests {
     private StatsGameTests() {
@@ -49,7 +50,7 @@ public final class StatsGameTests {
     @QaGameTest
     public static void strengthRaisesAttackDamageAsConfigured(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-stats-strength"));
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-stats-strength");
         tick(player, 1);
         double before = player.getAttributeValue(Attributes.ATTACK_DAMAGE);
 
@@ -73,7 +74,7 @@ public final class StatsGameTests {
     public static void bonusMaxHealthSurvivesRelog(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-stats-relog");
-        ServerPlayer first = QaPlayers.login(server, profile);
+        ServerPlayer first = QaPlayers.loginOnPlatform(helper, profile);
         float max = withVitality(helper, first);
         first.setHealth(max);
         server.getPlayerList().remove(first);
@@ -92,10 +93,11 @@ public final class StatsGameTests {
     @QaGameTest
     public static void bonusMaxHealthSurvivesRespawn(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer dead = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-stats-respawn"));
+        ServerPlayer dead = QaPlayers.loginOnPlatform(helper, "qa-stats-respawn");
         float max = withVitality(helper, dead);
 
-        ServerPlayer respawned = server.getPlayerList().respawn(dead, false, Entity.RemovalReason.KILLED);
+        ServerPlayer respawned =
+                QaPlayers.onPlatform(helper, server.getPlayerList().respawn(dead, false, Entity.RemovalReason.KILLED));
         helper.assertTrue(respawned != dead, "a respawn after death makes a new player entity");
         helper.assertValueEqual(respawned.getAttributeBaseValue(GeneratedStats.VITALITY),
                 dead.getAttributeBaseValue(GeneratedStats.VITALITY), "vanilla copies the base Vitality");
@@ -115,7 +117,7 @@ public final class StatsGameTests {
     @QaGameTest
     public static void leavingTheEndKeepsHealthAboveTheBaseMaximum(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer leaving = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-stats-end"));
+        ServerPlayer leaving = QaPlayers.loginOnPlatform(helper, "qa-stats-end");
         float withoutGear = withVitality(helper, leaving);
         leaving.setItemSlot(EquipmentSlot.MAINHAND, stick(Attributes.MAX_HEALTH, 10));
         tick(leaving, 1);
@@ -123,7 +125,8 @@ public final class StatsGameTests {
         helper.assertTrue(max > withoutGear, "the gear raised max health");
         leaving.setHealth(max);
 
-        ServerPlayer back = server.getPlayerList().respawn(leaving, true, Entity.RemovalReason.CHANGED_DIMENSION);
+        ServerPlayer back = QaPlayers.onPlatform(helper,
+                server.getPlayerList().respawn(leaving, true, Entity.RemovalReason.CHANGED_DIMENSION));
         helper.assertTrue(back.getHealth() < max, "vanilla clamps the health while the gear is missing");
         tick(back, 1);
         helper.assertValueEqual(back.getMaxHealth(), max, "max health after leaving the End");
@@ -144,7 +147,7 @@ public final class StatsGameTests {
         StatRuleExpectation strength = rule("realmforge:strength");
         Sample sample = highestSample(strength);
 
-        ServerPlayer first = QaPlayers.login(server, profile);
+        ServerPlayer first = QaPlayers.loginOnPlatform(helper, profile);
         tick(first, 1);
         first.setItemSlot(EquipmentSlot.MAINHAND, stick(GeneratedStats.STRENGTH, sample.value()));
         tick(first, 1);
@@ -173,7 +176,7 @@ public final class StatsGameTests {
     public static void attributesGoPastVanillasCaps(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-stats-caps");
-        ServerPlayer first = QaPlayers.login(server, profile);
+        ServerPlayer first = QaPlayers.loginOnPlatform(helper, profile);
         tick(first, 1);
         double health = first.getAttributeBaseValue(Attributes.MAX_HEALTH) + 5000;
         double damage = first.getAttributeBaseValue(Attributes.ATTACK_DAMAGE) + 5000;

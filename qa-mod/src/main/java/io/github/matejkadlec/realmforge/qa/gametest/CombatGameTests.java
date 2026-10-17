@@ -1,6 +1,5 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
-import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.combat.DamageOverTime;
 import io.github.matejkadlec.realmforge.combat.SpellSchool;
 import io.github.matejkadlec.realmforge.combat.SpellSchools;
@@ -14,7 +13,6 @@ import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -55,6 +53,8 @@ import net.neoforged.neoforge.common.NeoForgeMod;
 public final class CombatGameTests {
     private static final double TOLERANCE = 1e-4;
     private static final double HEALTH = 1000;
+    /** Where a player stands: the platform's north edge, facing the target in its middle. */
+    private static final Vec3 EDGE = new Vec3(2.5, 1, 0.5);
 
     private CombatGameTests() {
     }
@@ -157,7 +157,7 @@ public final class CombatGameTests {
     @QaGameTest
     public static void playerMeleeCritsOnCritChance(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-combat-crit"));
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-combat-crit", EDGE);
         Pillager mob = target(helper);
         double fist = player.getAttributeValue(Attributes.ATTACK_DAMAGE);
 
@@ -175,7 +175,7 @@ public final class CombatGameTests {
     @QaGameTest
     public static void schoolHitsGetPowerAndResistance(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-combat-school"));
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-combat-school", EDGE);
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
         StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 0.5);
         StatsCommands.setBase(player, GeneratedStats.FIRE_POWER, 0.2);
@@ -257,7 +257,7 @@ public final class CombatGameTests {
     public static void aPoisonTickIsAttributedToThePlayerWhoThrewThePotion(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         MinecraftServer server = level.getServer();
-        ServerPlayer thrower = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-combat-poisoner"));
+        ServerPlayer thrower = QaPlayers.loginOnPlatform(helper, "qa-combat-poisoner", EDGE);
         Pillager mob = target(helper);
         ItemStack stack = PotionContents.createItemStack(Items.SPLASH_POTION, Potions.POISON);
         ThrownSplashPotion potion = new ThrownSplashPotion(level, thrower, stack);

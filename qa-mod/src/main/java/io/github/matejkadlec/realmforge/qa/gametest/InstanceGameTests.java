@@ -301,7 +301,7 @@ public final class InstanceGameTests {
         MinecraftServer server = helper.getLevel().getServer();
         InstanceManager manager = manager(helper);
         GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-early-leave");
-        ServerPlayer first = QaPlayers.login(server, profile);
+        ServerPlayer first = QaPlayers.loginOnPlatform(helper, profile);
         Plot plot = manager.open(SpikeLayouts.spike(), List.of(profile.id()));
         server.getPlayerList().remove(first);
 
