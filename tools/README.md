@@ -85,11 +85,14 @@ every room with its size, jigsaws and air blocks in the QA mod's `GeneratedRoomE
 
 Decoding the templates is slow (the NBT reader is pure Python), so `rooms/cache.py` keeps each decoded template and
 what is read from it (its size, connectors, normalized bytes, the problems `check_structure` finds) in
-`.cache/rooms/parsed/`, keyed by the sha256 of the template's bytes and of the code in `rooms/` and `formats/`. A
-warm cache answers `rf validate` and `rf gen` without decoding any room; a changed template, or a change to that
-code, misses and is decoded again (a few seconds when every room misses, as in CI or a new worktree). A value is
-cached only when the functions that compute it live in `rooms/` or `formats/`; for any other change to what is
-cached, bump `CACHE_VERSION`. Deleting `.cache/rooms/parsed/` is always safe.
+`.cache/rooms/parsed/<version>/`, keyed by the sha256 of the template's bytes. The version folder is named after
+a digest of the code in `rooms/`, `formats/` and `id_universe.py` and of the game's `DATA_VERSION`, and the check
+results also carry the ID universe's digest (`check-<digest>/`). A warm cache answers `rf validate` and `rf gen`
+without decoding any room; a changed template, a change to that code or to `DATA_VERSION` misses and is decoded
+again (a few seconds when every room misses, as in CI or a new worktree). Nothing piles up: a run's first write
+deletes the other versions' folders, and its first check result the other universes' (RLM-238). A value is cached
+only when the functions that compute it live in that code and read no other constant than `DATA_VERSION`; for any
+other change to what is cached, bump `CACHE_VERSION`. Deleting `.cache/rooms/parsed/` is always safe.
 
 **`rf rooms import SRC... --to DIR`** turns room files into rooms: vanilla structure templates (`.nbt`), Sponge
 schematics (`.schem`, versions 1 to 3, as WorldEdit saves them) and Litematica schematics (`.litematic`, versions 5
