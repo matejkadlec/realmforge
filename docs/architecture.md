@@ -633,8 +633,9 @@ Vanilla caps in 26.1.2 (as in 1.21.1) are armor 30, armor toughness 20, max heal
 absorption 2048, and the vanilla armor formula never blocks more than 80% (`CombatRules.getDamageAfterAbsorb`). The
 vision wanted armor, toughness and health far beyond vanilla; for armor and toughness Matěj corrected that on
 2026-10-16 (RLM-223): the best reachable armor and toughness is about netherite × 1.5 (30 armor, 18 toughness), and
-better armor gets effects instead. Whether the armor and toughness caps go back to vanilla's is open for him. So
-far:
+better armor gets effects instead. The raised armor and toughness caps stay (Matěj, 2026-10-16): the practical
+ceiling is the best armor set with the most armor affixes plus armor curios, which nobody reaches, so a hard cap adds
+nothing. So:
 
 - `stats/AttributeCaps` raises those five caps to 100,000 (F4c; max absorption with RLM-158, so overheal's
   absorption, a share of max health, follows max health past 2048), on the client and the server alike, as each clamps
