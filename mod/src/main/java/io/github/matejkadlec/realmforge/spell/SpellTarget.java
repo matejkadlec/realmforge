@@ -53,6 +53,15 @@ public record SpellTarget(Kind kind, Optional<LivingEntity> entity, Vec3 positio
         return new SpellTarget(Kind.DIRECTION, Optional.empty(), end, direction);
     }
 
+    /**
+     * This target as {@code caster} sees it now: an entity target is seen afresh (where it and the caster stand now),
+     * so a cast time's effects and a channel's ticks go where the target is when they run, however far either moved
+     * during the cast. A point or a direction stays as it was resolved when the cast began.
+     */
+    public SpellTarget now(LivingEntity caster) {
+        return entity.map(target -> of(caster, target)).orElse(this);
+    }
+
     /** The entity, or null for a point or a direction. */
     @Nullable
     public LivingEntity entityOrNull() {

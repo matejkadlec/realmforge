@@ -78,6 +78,27 @@ public final class SpellEffectGameTests {
         });
     }
 
+    /**
+     * A cast-time projectile flies at its target where it stands when the cast completes, not where it stood when
+     * the cast began.
+     */
+    @QaGameTest
+    public static void aCastTimeProjectileFliesAtWhereItsTargetIsAtTheEnd(GameTestHelper helper) {
+        ServerPlayer player = caster(helper, "qa-effect-slow-missile");
+        Husk husk = husk(helper, new BlockPos(2, 1, 4));
+        learn(helper, player, GeneratedSpells.TEST_SLOW_MISSILE);
+        CastResult result = SpellCaster.cast(player, GeneratedSpells.TEST_SLOW_MISSILE, husk);
+        helper.assertTrue(result.begun(), "test_slow_missile did not begin: " + result);
+        // The husk steps 2 blocks aside during the cast: the line to where it stood misses it by far.
+        husk.snapTo(helper.absoluteVec(new Vec3(0.5, 1, 4.5)), 0, 0);
+        helper.runAfterDelay(45, () -> {
+            assertEnded(helper, player, GeneratedSpells.TEST_SLOW_MISSILE, CastEnd.COMPLETED);
+            assertHealth(helper, husk, HEALTH - 4, "the projectile hit the husk where it stood at the end");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
     /** A projectile along a direction hits the first enemy in its way, without a target aimed at. */
     @QaGameTest
     public static void aProjectileAlongADirectionHitsTheEnemyInItsWay(GameTestHelper helper) {

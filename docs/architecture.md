@@ -1045,8 +1045,9 @@ spell bar's payload will carry), and its targeting resolves that into a `spell/S
 the caster's eyes. A ground point is the point aimed at, the feet of the entity aimed at, or else the first block the
 caster looks at within range, and must be in range and in sight (`Targets#canSee`); a direction points at what was
 aimed at, or else where the caster looks, and its position is its range along it or the first block in the way. Only
-an entity target is checked again before a cast time's effects and a channel's ticks; a point or a direction stays as
-it began. **What counts as moving** (RLM-243): only the caster's own movement, a player pressing a movement or the
+an entity target is checked again before a cast time's effects and a channel's ticks, and seen afresh then
+(`SpellTarget#now`), so a projectile flies at where the target stands at the end of the cast; a point or a direction
+stays as it began. **What counts as moving** (RLM-243): only the caster's own movement, a player pressing a movement or the
 jump key (`ServerPlayer#getLastClientInput`, the keys its client last sent) or a mob walking or strafing (its
 movement input, which its move control sets every tick it walks), while the caster is more than 0.1 blocks from
 where the cast began (`Casting#movesByItself`). Being pushed is not moving: a melee hit's knockback, crowding mobs

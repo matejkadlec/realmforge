@@ -382,6 +382,30 @@ public final class GeneratedSpellExpectations {
                     List.of(
                             new EffectExpectation("realmforge:damage", Map.of("amount", 10.0, "attack_damage", 0.0, "per_level", 0.0), Map.of(), List.of()))),
             new SpellExpectation(
+                    "realmforge:test_slow_missile",
+                    "realmforge:fire",
+                    "spell_power",
+                    "realmforge:enemy",
+                    16.0,
+                    "cast_time",
+                    20,
+                    0,
+                    false,
+                    false,
+                    Optional.empty(),
+                    0.0,
+                    0.0,
+                    0,
+                    20,
+                    1,
+                    true,
+                    Optional.empty(),
+                    0.0,
+                    false,
+                    List.of(
+                            new EffectExpectation("realmforge:projectile", Map.of("lifetime_ticks", 40.0, "size", 0.5, "speed", 20.0), Map.of(), List.of(
+                                    new EffectExpectation("realmforge:damage", Map.of("amount", 4.0, "attack_damage", 0.0, "per_level", 0.0), Map.of(), List.of()))))),
+            new SpellExpectation(
                     "realmforge:test_strike",
                     "realmforge:physical",
                     "attack_damage",

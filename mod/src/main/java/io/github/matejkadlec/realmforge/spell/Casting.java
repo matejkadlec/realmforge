@@ -168,7 +168,7 @@ public final class Casting {
                 }
                 running.ticksRun++;
                 SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(),
-                        running.target());
+                        running.target().now(caster));
                 if (RUNNING.get(caster) != running) {
                     return;
                 }
@@ -193,7 +193,8 @@ public final class Casting {
         }
         SpellCaster.pay(caster, spell, running.spell().key(), running.spellLevel(), state, now);
         end(caster, CastEnd.COMPLETED);
-        SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(), running.target());
+        SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(),
+                running.target().now(caster));
     }
 
     /**

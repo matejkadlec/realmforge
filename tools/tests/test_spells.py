@@ -85,6 +85,7 @@ def test_repository_spells_are_the_engine_tests() -> None:
         "test_scorch",
         "test_shove",
         "test_slow_bolt",
+        "test_slow_missile",
         "test_strike",
         "test_sure_crit",
     }
@@ -336,7 +337,7 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
     assert (
         "ALL = List.of(TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, "
         "TEST_HOMING_BOLT, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_SCORCH, TEST_SHOVE, "
-        "TEST_SLOW_BOLT, TEST_STRIKE, TEST_SURE_CRIT);"
+        "TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT);"
     ) in keys
     expectations = files[EXPECTATIONS].decode()
     assert (

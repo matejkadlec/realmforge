@@ -56,6 +56,9 @@ public final class GeneratedSpells {
     /** {@code realmforge:test_slow_bolt} from {@code content/spells/test_slow_bolt.yaml}: fire, enemy, damage. */
     public static final ResourceKey<Spell> TEST_SLOW_BOLT = key("test_slow_bolt");
 
+    /** {@code realmforge:test_slow_missile} from {@code content/spells/test_slow_missile.yaml}: fire, enemy, projectile. */
+    public static final ResourceKey<Spell> TEST_SLOW_MISSILE = key("test_slow_missile");
+
     /** {@code realmforge:test_strike} from {@code content/spells/test_strike.yaml}: physical, enemy, damage. */
     public static final ResourceKey<Spell> TEST_STRIKE = key("test_strike");
 
@@ -63,7 +66,7 @@ public final class GeneratedSpells {
     public static final ResourceKey<Spell> TEST_SURE_CRIT = key("test_sure_crit");
 
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Spell>> ALL = List.of(TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_STRIKE, TEST_SURE_CRIT);
+    public static final List<ResourceKey<Spell>> ALL = List.of(TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT);
 
     private GeneratedSpells() {
     }
