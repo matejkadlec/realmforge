@@ -1,5 +1,28 @@
 {
   "$defs": {
+    "ChapterCompletedDef": {
+      "additionalProperties": false,
+      "description": "The player has completed a chapter: they have its advancement ``realmforge:chapter/<id>``.",
+      "properties": {
+        "chapter": {
+          "description": "The chapter, e.g. realmforge:chapter_1 (content/chapters/).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Chapter",
+          "type": "string"
+        },
+        "type": {
+          "const": "realmforge:chapter_completed",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "chapter"
+      ],
+      "title": "ChapterCompletedDef",
+      "type": "object"
+    },
     "DepthDef": {
       "additionalProperties": false,
       "description": "Deeper is stronger: below ``below_y``, a mob is one level higher for every ``blocks_per_level`` blocks.",
@@ -24,6 +47,53 @@
         "blocks_per_level"
       ],
       "title": "DepthDef",
+      "type": "object"
+    },
+    "HasAdvancementDef": {
+      "additionalProperties": false,
+      "description": "The player has earned an advancement: a realm's unlock, ``realmforge:realm/<realm>``, for example.",
+      "properties": {
+        "advancement": {
+          "description": "The advancement, e.g. realmforge:realm/stone.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Advancement",
+          "type": "string"
+        },
+        "type": {
+          "const": "realmforge:has_advancement",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "advancement"
+      ],
+      "title": "HasAdvancementDef",
+      "type": "object"
+    },
+    "LevelAtLeastDef": {
+      "additionalProperties": false,
+      "description": "The player's character level is at least ``level``.",
+      "properties": {
+        "level": {
+          "description": "The lowest character level that passes.",
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Level",
+          "type": "integer"
+        },
+        "type": {
+          "const": "realmforge:level_at_least",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "level"
+      ],
+      "title": "LevelAtLeastDef",
       "type": "object"
     },
     "MobLevelRuleDef": {
@@ -91,8 +161,43 @@
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "The gameplay rules of one dimension, which the ``dimension`` field names: the rule for mob levels so far;\nthe access requirement and flags follow with the realms (W2a). At most one entry per dimension.",
+  "description": "The gameplay rules of one dimension, which the ``dimension`` field names: the rule for mob levels and what a\nplayer needs to enter it. At most one entry per dimension.",
   "properties": {
+    "access": {
+      "anyOf": [
+        {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "realmforge:chapter_completed": "#/$defs/ChapterCompletedDef",
+                "realmforge:has_advancement": "#/$defs/HasAdvancementDef",
+                "realmforge:level_at_least": "#/$defs/LevelAtLeastDef"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/HasAdvancementDef"
+              },
+              {
+                "$ref": "#/$defs/LevelAtLeastDef"
+              },
+              {
+                "$ref": "#/$defs/ChapterCompletedDef"
+              }
+            ]
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional: what a player needs to enter the dimension, every requirement at once; refused on every way in (a portal, a command, a warp). A realm's rules name its unlock advancement (realm portal spec).",
+      "title": "Access"
+    },
     "dimension": {
       "description": "The dimension these rules are for, e.g. minecraft:overworld.",
       "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",

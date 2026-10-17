@@ -8,6 +8,7 @@ import math
 from pydantic import Field, model_validator
 
 from realmforge_tools.schema.common import ContentId, ResourceId, StrictModel
+from realmforge_tools.schema.requirement import RequirementDef
 
 # The game reads every number here as a Java int (world/MobLevelRule); the world is far smaller than that.
 JAVA_INT_MAX = 2**31 - 1
@@ -76,12 +77,20 @@ class MobLevelRuleDef(StrictModel):
 
 
 class DimensionRulesDef(StrictModel):
-    """The gameplay rules of one dimension, which the ``dimension`` field names: the rule for mob levels so far;
-    the access requirement and flags follow with the realms (W2a). At most one entry per dimension."""
+    """The gameplay rules of one dimension, which the ``dimension`` field names: the rule for mob levels and what a
+    player needs to enter it. At most one entry per dimension."""
 
     id: ContentId
     dimension: ResourceId = Field(description="The dimension these rules are for, e.g. minecraft:overworld.")
     mob_levels: MobLevelRuleDef | None = Field(
         default=None,
         description="Optional: the level of mobs spawning there. Without it, mobs have no level.",
+    )
+    access: list[RequirementDef] | None = Field(
+        default=None,
+        min_length=1,
+        description=(
+            "Optional: what a player needs to enter the dimension, every requirement at once; refused on every way "
+            "in (a portal, a command, a warp). A realm's rules name its unlock advancement (realm portal spec)."
+        ),
     )

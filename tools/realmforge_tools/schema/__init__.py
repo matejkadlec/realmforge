@@ -6,6 +6,7 @@ wrong types are errors. JSON Schemas for editor completion are generated from th
 
 from dataclasses import dataclass
 
+from realmforge_tools.schema.block import BlockDef
 from realmforge_tools.schema.chapter import ChapterDef
 from realmforge_tools.schema.character import ClassDef, RaceDef
 from realmforge_tools.schema.curve import CurveDef
@@ -13,6 +14,7 @@ from realmforge_tools.schema.dimension_rules import DimensionRulesDef
 from realmforge_tools.schema.dungeon import DungeonTypeDef
 from realmforge_tools.schema.item import ItemDef
 from realmforge_tools.schema.kill_xp_multiplier import KillXpMultiplierDef
+from realmforge_tools.schema.realm import RealmDef
 from realmforge_tools.schema.spell import SpellDef
 from realmforge_tools.schema.spell_school import SpellSchoolDef
 from realmforge_tools.schema.stat import StatDef
@@ -22,6 +24,7 @@ from realmforge_tools.schema.text import TextGroupDef
 # content/<directory> -> model. One YAML file per entry; the file name (without .yaml) must equal the id.
 CONTENT_TYPES: dict[str, type] = {
     "items": ItemDef,
+    "blocks": BlockDef,
     "curves": CurveDef,
     "stats": StatDef,
     "stat_rules": StatRuleDef,
@@ -34,6 +37,7 @@ CONTENT_TYPES: dict[str, type] = {
     "chapters": ChapterDef,
     "kill_xp_multipliers": KillXpMultiplierDef,
     "spells": SpellDef,
+    "realms": RealmDef,
 }
 
 # content/worldgen/ holds vanilla worldgen JSON instead of YAML; it is validated and copied (content.py, validate.py).
@@ -61,12 +65,14 @@ DATAPACK_TYPES: tuple[DatapackType, ...] = (
     DatapackType("chapters", "chapter"),
     DatapackType("kill_xp_multipliers", "kill_xp_multiplier"),
     DatapackType("spells", "spell"),
+    DatapackType("realms", "realm"),
 )
 
 __all__ = [
     "CONTENT_TYPES",
     "DATAPACK_TYPES",
     "WORLDGEN_DIR",
+    "BlockDef",
     "ChapterDef",
     "ClassDef",
     "CurveDef",
@@ -76,6 +82,7 @@ __all__ = [
     "ItemDef",
     "KillXpMultiplierDef",
     "RaceDef",
+    "RealmDef",
     "SpellDef",
     "SpellSchoolDef",
     "StatDef",

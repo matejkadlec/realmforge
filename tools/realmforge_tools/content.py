@@ -20,6 +20,7 @@ from realmforge_tools.rooms.structure import Pos, Structure, StructureError, rea
 from realmforge_tools.schema import (
     CONTENT_TYPES,
     WORLDGEN_DIR,
+    BlockDef,
     ChapterDef,
     ClassDef,
     CurveDef,
@@ -28,6 +29,7 @@ from realmforge_tools.schema import (
     ItemDef,
     KillXpMultiplierDef,
     RaceDef,
+    RealmDef,
     SpellDef,
     SpellSchoolDef,
     StatDef,
@@ -133,6 +135,7 @@ class Content:
     """All content, sorted by id within each type."""
 
     items: tuple[Entry[ItemDef], ...]
+    blocks: tuple[Entry[BlockDef], ...]
     curves: tuple[Entry[CurveDef], ...]
     stats: tuple[Entry[StatDef], ...]
     stat_rules: tuple[Entry[StatRuleDef], ...]
@@ -145,6 +148,7 @@ class Content:
     chapters: tuple[Entry[ChapterDef], ...]
     kill_xp_multipliers: tuple[Entry[KillXpMultiplierDef], ...]
     spells: tuple[Entry[SpellDef], ...]
+    realms: tuple[Entry[RealmDef], ...]
     worldgen: tuple[WorldgenFile, ...]
     rooms: tuple[RoomEntry, ...] = ()
     room_reviews: tuple[RoomReview, ...] = ()
@@ -203,6 +207,7 @@ def load_content(paths: RepoPaths, *, read_templates: bool = True) -> Content:
 
     return Content(
         items=by_id(loaded["items"]),
+        blocks=by_id(loaded["blocks"]),
         curves=by_id(loaded["curves"]),
         stats=by_id(loaded["stats"]),
         stat_rules=by_id(loaded["stat_rules"]),
@@ -215,6 +220,7 @@ def load_content(paths: RepoPaths, *, read_templates: bool = True) -> Content:
         chapters=by_id(loaded["chapters"]),
         kill_xp_multipliers=by_id(loaded["kill_xp_multipliers"]),
         spells=by_id(loaded["spells"]),
+        realms=by_id(loaded["realms"]),
         worldgen=tuple(sorted(worldgen, key=lambda f: (f.directory, f.id))),
         rooms=rooms,
         room_reviews=reviews,

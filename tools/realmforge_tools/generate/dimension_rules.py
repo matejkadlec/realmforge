@@ -5,9 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from realmforge_tools.content import Content
+from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.generate.javagen import header, java_file_path, string_literal
 from realmforge_tools.project import MOD_ID, QA_JAVA_PACKAGE, RepoPaths
-from realmforge_tools.schema.dimension_rules import MobLevelRuleDef
+from realmforge_tools.schema.dimension_rules import DimensionRulesDef, MobLevelRuleDef
 
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
 SOURCES = "content/dimensions/"
@@ -75,6 +76,15 @@ def _samples(rule: MobLevelRuleDef | None) -> str:
     return "List.of(\n                            " + ",\n                            ".join(samples) + ")"
 
 
+def _access(rules: DimensionRulesDef) -> str:
+    """The access requirements as the JSON the data holds, one string each, so the GameTest decodes them."""
+    requirements = [
+        string_literal(dump_json(requirement.model_dump(), sort_keys=True).decode().strip())
+        for requirement in rules.access or []
+    ]
+    return f"List.of({', '.join(requirements)})"
+
+
 def _expectations(content: Content) -> bytes:
     rows = []
     for entry in content.dimensions:
@@ -84,7 +94,8 @@ def _expectations(content: Content) -> bytes:
             f"                    {string_literal(f'{MOD_ID}:{rules.id}')},\n"
             f"                    {string_literal(rules.dimension)},\n"
             f"                    {_rule(rules.mob_levels)},\n"
-            f"                    {_samples(rules.mob_levels)})"
+            f"                    {_samples(rules.mob_levels)},\n"
+            f"                    {_access(rules)})"
         )
     entries = "List.of(\n" + ",\n".join(rows) + ")" if rows else "List.of()"
     source = (
@@ -113,10 +124,10 @@ def _expectations(content: Content) -> bytes:
         "\n"
         "    /**\n"
         "     * Expected state of one entry. Ids are full resource locations: the entry's, e.g. {@code realmforge:overworld},\n"
-        "     * and the dimension's, e.g. {@code minecraft:overworld}.\n"
+        "     * and the dimension's, e.g. {@code minecraft:overworld}. Each access requirement is the JSON the data holds.\n"
         "     */\n"
         "    public record DimensionRulesExpectation(String id, String dimension, Optional<MobLevelRule> mobLevels,\n"
-        "            List<Sample> samples) {\n"
+        "            List<Sample> samples, List<String> access) {\n"
         "    }\n"
         "\n"
         f"    public static final List<DimensionRulesExpectation> DIMENSION_RULES = {entries};\n"

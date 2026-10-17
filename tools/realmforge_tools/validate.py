@@ -21,17 +21,22 @@ from realmforge_tools.rooms.check import (
     markers,
 )
 from realmforge_tools.rooms.connectors import connectors, could_attach
-from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES
+from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES, WORLDGEN_DIR
+from realmforge_tools.schema.chapter import advancement_id as chapter_advancement
 from realmforge_tools.schema.character import STARTING_BREAD
 from realmforge_tools.schema.dungeon import DEAD_END_ROLES, PATH_ROLES, ROOM_ROLES, room_role
 from realmforge_tools.schema.item import USE_TEXT_GROUP
 from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
+from realmforge_tools.schema.realm import unlock_advancement
+from realmforge_tools.schema.requirement import ChapterCompletedDef, HasAdvancementDef
 from realmforge_tools.schema.spell import ALLY, DAMAGE, ENEMY, HEAL, SCALING_OF_KIND, SELF
 from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
 
 ITEM_REGISTRY = "minecraft:item"
+BLOCK_REGISTRY = "minecraft:block"
+ADVANCEMENT_REGISTRY = "minecraft:advancement"
 ENTITY_TYPE_REGISTRY = "minecraft:entity_type"
 ATTRIBUTE_REGISTRY = "minecraft:attribute"
 CREATIVE_TAB_REGISTRY = "minecraft:creative_mode_tab"
@@ -40,6 +45,7 @@ DIMENSION_REGISTRY = "minecraft:dimension"
 DIMENSION_TYPE_REGISTRY = "minecraft:dimension_type"
 SPELL_SCHOOL_REGISTRY = f"{MOD_ID}:spell_school"
 DUNGEON_TYPE_REGISTRY = f"{MOD_ID}:dungeon_type"
+CHAPTER_REGISTRY = f"{MOD_ID}:chapter"
 STRUCTURE_REGISTRY = "minecraft:structure"
 
 # Vanilla's dimensions (the level stems of its world presets). The registry report behind the vanilla ID universe
@@ -49,6 +55,7 @@ VANILLA_DIMENSIONS = ("minecraft:overworld", "minecraft:the_nether", "minecraft:
 # YAML content type -> the registry its ids live in.
 REGISTRY_OF_TYPE: dict[str, str] = {
     "items": ITEM_REGISTRY,
+    "blocks": BLOCK_REGISTRY,
     "stats": ATTRIBUTE_REGISTRY,
     "spell_schools": SPELL_SCHOOL_REGISTRY,
     "dungeons": DUNGEON_TYPE_REGISTRY,
@@ -60,6 +67,7 @@ REGISTRY_OF_TYPE: dict[str, str] = {
 # produce the same key as an entry of that type.
 RESERVED_TEXT_GROUPS: dict[str, str] = {
     "item": "content/items/",
+    "block": "content/blocks/",
     "attribute": "content/stats/",
     "spell_school": "content/spell_schools/",
     "death.attack": "content/spell_schools/",
@@ -87,8 +95,15 @@ def universe_with_content(vanilla: IdUniverse, content: Content) -> IdUniverse:
     for type_dir, registry in REGISTRY_OF_TYPE.items():
         for entry in content.entries(type_dir):
             universe.add(registry, f"{MOD_ID}:{entry.model.id}")
+    # A block registers its block item under the same id (generate/blocks.py).
+    for entry in content.blocks:
+        universe.add(ITEM_REGISTRY, f"{MOD_ID}:{entry.model.id}")
     for entry in content.spell_schools:
         universe.add(DAMAGE_TYPE_REGISTRY, entry.model.damage_type)
+    for entry in content.chapters:
+        universe.add(ADVANCEMENT_REGISTRY, f"{MOD_ID}:{chapter_advancement(entry.model.id)}")
+    for entry in content.realms:
+        universe.add(ADVANCEMENT_REGISTRY, f"{MOD_ID}:{unlock_advancement(entry.model.id)}")
     for file in content.worldgen:
         universe.add(WORLDGEN_REGISTRIES[file.directory], f"{MOD_ID}:{file.id}")
     for room in content.rooms:
@@ -114,6 +129,8 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_characters(content, universe)
     problems += _check_worldgen_references(content, universe)
     problems += _check_dimension_rules(content, universe)
+    problems += _check_blocks(content, universe)
+    problems += _check_realms(content, universe)
     problems += _check_text_groups(content)
     problems += _check_rooms(content, universe)
     problems += _check_dungeons(content)
@@ -633,6 +650,132 @@ def _check_dimension_rules(content: Content, universe: IdUniverse) -> list[Probl
                 Problem(entry.source, "dimension", f"{dimension} already has rules in {seen[dimension]}")
             )
         seen.setdefault(dimension, entry.source)
+        for n, requirement in enumerate(entry.model.access or []):
+            location = f"access.{n}"
+            if isinstance(requirement, HasAdvancementDef) and not universe.contains(
+                ADVANCEMENT_REGISTRY, requirement.advancement
+            ):
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"{location}.advancement",
+                        _unknown(requirement.advancement, ADVANCEMENT_REGISTRY, universe),
+                    )
+                )
+            if isinstance(requirement, ChapterCompletedDef) and not universe.contains(
+                CHAPTER_REGISTRY, requirement.chapter
+            ):
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"{location}.chapter",
+                        _unknown(requirement.chapter, CHAPTER_REGISTRY, universe),
+                    )
+                )
+    return problems
+
+
+def _check_blocks(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A block's item takes the block's id, so no item may have it too; its creative tabs exist."""
+    problems: list[Problem] = []
+    items = {entry.model.id: entry.source for entry in content.items}
+    for entry in content.blocks:
+        block = entry.model
+        if block.id in items:
+            problems.append(
+                Problem(
+                    entry.source, "id", f"the block's item would clash with the item in {items[block.id]}"
+                )
+            )
+        for i, tab in enumerate(block.creative_tabs):
+            if not universe.contains(CREATIVE_TAB_REGISTRY, tab):
+                problems.append(
+                    Problem(
+                        entry.source, f"creative_tabs.{i}", _unknown(tab, CREATIVE_TAB_REGISTRY, universe)
+                    )
+                )
+    return problems
+
+
+def _check_realms(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A realm names a dimension of ours that exists, one realm per dimension; the dimension's rules name the realm's
+    unlock advancement in their access requirements; its dimension type links by a coordinate scale above 1 and has
+    beds that set no spawn and do not explode (realm portal spec, "Data")."""
+    problems: list[Problem] = []
+    rules = {entry.model.dimension: entry for entry in content.dimensions}
+    dimension_files = {
+        f"{MOD_ID}:{file.id}": file for file in content.worldgen if file.directory == "dimension"
+    }
+    types = {f"{MOD_ID}:{file.id}": file for file in content.worldgen if file.directory == "dimension_type"}
+    seen: dict[str, str] = {}
+    for entry in content.realms:
+        realm = entry.model
+        if realm.dimension in seen:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "dimension",
+                    f"{realm.dimension} is already the realm of {seen[realm.dimension]}",
+                )
+            )
+        seen.setdefault(realm.dimension, entry.source)
+        if not universe.contains(ITEM_REGISTRY, realm.icon):
+            problems.append(Problem(entry.source, "icon", _unknown(realm.icon, ITEM_REGISTRY, universe)))
+        dimension = dimension_files.get(realm.dimension)
+        if dimension is None:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "dimension",
+                    f"{realm.dimension} is not one of our dimensions (content/{WORLDGEN_DIR}/dimension/)",
+                )
+            )
+            continue
+        unlock = f"{MOD_ID}:{unlock_advancement(realm.id)}"
+        rule = rules.get(realm.dimension)
+        if rule is None or not any(
+            isinstance(requirement, HasAdvancementDef) and requirement.advancement == unlock
+            for requirement in rule.model.access or []
+        ):
+            problems.append(
+                Problem(
+                    rule.source if rule is not None else entry.source,
+                    "access",
+                    f"the rules of {realm.dimension} (content/dimensions/) need its unlock in their access: "
+                    f"{{type: realmforge:has_advancement, advancement: {unlock}}}",
+                )
+            )
+        dimension_type = types.get(str(dimension.data.get("type")))
+        if dimension_type is None:
+            problems.append(
+                Problem(
+                    dimension.source, "type", "a realm's dimension type is one of ours (content/worldgen/)"
+                )
+            )
+            continue
+        problems += _realm_dimension_type_problems(dimension_type.source, dimension_type.data)
+    return problems
+
+
+def _realm_dimension_type_problems(source: str, data: dict) -> list[Problem]:
+    problems: list[Problem] = []
+    scale = data.get("coordinate_scale")
+    if not isinstance(scale, int | float) or isinstance(scale, bool) or scale <= 1:
+        problems.append(
+            Problem(
+                source, "coordinate_scale", "a realm links to Overworld by a coordinate scale above 1 (1:16)"
+            )
+        )
+    attributes = data.get("attributes")
+    bed_rule = attributes.get("minecraft:gameplay/bed_rule") if isinstance(attributes, dict) else None
+    if not isinstance(bed_rule, dict) or bed_rule.get("can_set_spawn") != "never" or bed_rule.get("explodes"):
+        problems.append(
+            Problem(
+                source,
+                "attributes.minecraft:gameplay/bed_rule",
+                "a realm's beds set no spawn and do not explode: can_set_spawn never, explodes false",
+            )
+        )
     return problems
 
 
