@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Armor a hit ignores, in percent of the armor left after flat Armor Pierce (architecture 9.1); toughness is never
+# shredded. Apotheosis's name for the same stat (Matěj, 2026-10-16).
+id: armor_shred
+name: {en_us: Armor Shred}
+kind: secondary
+max_percent: 100

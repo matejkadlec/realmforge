@@ -28,8 +28,8 @@ import net.minecraft.world.entity.Mob;
  *   <li>A player without a character gains no XP, so the command sets their {@code realmforge:level} attachment, which
  *   creating a character or logging in again derives from XP once more.</li>
  *   <li>A hostile mob also gets the scaling of its new level (W1, architecture 14.1), keeping its share of health:
- *   {@code /qa level 10 @n[type=zombie]}. Our armor formula reads the attacker's level (architecture 9.1), so a
- *   higher attacker level lets the same armor block less.</li>
+ *   {@code /qa level 10 @n[type=zombie]}. Its hits grow with the level, and vanilla's armor formula blocks less of a
+ *   bigger hit (architecture 9.1), so the same armor blocks less against it.</li>
  * </ul>
  */
 public final class LevelCommands {

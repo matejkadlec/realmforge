@@ -204,6 +204,14 @@ def test_every_school_bypasses_the_cooldown_and_magic_bypasses_armor(repo: RepoP
     }
 
 
+def test_no_school_hit_knocks_back(repo: RepoPaths) -> None:
+    # RLM-214: a spell pushes only through its knockback effect, so every school is in vanilla's no_knockback tag.
+    files = generate(repo)
+    assert json.loads(files[f"{TAGS}/no_knockback.json"]) == {
+        "values": ["realmforge:arcane", "realmforge:fire", "realmforge:frost", "realmforge:physical"]
+    }
+
+
 def test_no_magic_school_writes_no_armor_tag(repo: RepoPaths) -> None:
     for name in ("arcane", "fire", "frost"):
         (repo.content / "spell_schools" / f"{name}.yaml").unlink()
@@ -213,6 +221,7 @@ def test_no_magic_school_writes_no_armor_tag(repo: RepoPaths) -> None:
             file.unlink()
     files = generate(repo)
     assert f"{TAGS}/bypasses_cooldown.json" in files
+    assert json.loads(files[f"{TAGS}/no_knockback.json"]) == {"values": ["realmforge:physical"]}
     assert f"{TAGS}/bypasses_armor.json" not in files
 
 

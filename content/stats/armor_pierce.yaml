@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../tools/schemas/stats.schema.json
-# Armor a hit ignores, in points: it lowers the armor plus toughness a hit from this attacker meets, before the
-# armor formula and before Armor Pierce % (architecture 9.1), never below 0.
+# Armor a hit ignores, in points: it lowers the armor a hit from this attacker meets, before Armor Shred and before
+# vanilla's armor formula (architecture 9.1), never below 0. Armor toughness is never pierced.
 id: armor_pierce
 name: {en_us: Armor Pierce}
 kind: secondary

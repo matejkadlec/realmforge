@@ -97,6 +97,36 @@ public final class SpellGameTests {
     }
 
     /**
+     * RLM-214: a spell's school damage pushes nobody, as a spell knocks back only through its knockback effect, while
+     * a melee hit still does. The husk has no knockback resistance here; vanilla's knockback sets its velocity, which
+     * the test reads right after each hit.
+     */
+    @QaGameTest
+    public static void aSpellHitDealsNoKnockbackButAMeleeHitDoes(GameTestHelper helper) {
+        ServerPlayer player = caster(helper, "qa-spell-knockback");
+        withMana(player);
+        Husk husk = husk(helper, new BlockPos(2, 1, 2));
+        CombatGameTests.setBase(husk, Attributes.KNOCKBACK_RESISTANCE, 0);
+        learn(helper, player, GeneratedSpells.TEST_BOLT, 1);
+
+        Vec3 before = husk.position();
+        assertCast(helper, player, GeneratedSpells.TEST_BOLT, husk, husk);
+        assertHealth(helper, husk, HEALTH - 6, "test_bolt hit");
+        helper.assertTrue(horizontalSpeed(husk) == 0, "the bolt pushed the husk: " + husk.getDeltaMovement());
+        helper.assertTrue(husk.position().equals(before), "the husk left its place: " + husk.position());
+
+        husk.hurtServer(helper.getLevel(), helper.getLevel().damageSources().playerAttack(player), 1);
+        assertHealth(helper, husk, HEALTH - 7, "the melee hit");
+        helper.assertTrue(horizontalSpeed(husk) > 0.1, "a melee hit still knocks back: " + husk.getDeltaMovement());
+        logout(player);
+        helper.succeed();
+    }
+
+    private static double horizontalSpeed(LivingEntity entity) {
+        return entity.getDeltaMovement().horizontalDistance();
+    }
+
+    /**
      * A spell's own cooldown and the global cooldown refuse casts until their end; a spell off the global cooldown
      * goes through it.
      */

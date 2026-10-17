@@ -124,7 +124,7 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
             entry(GeneratedStats.XP_MULTIPLIER));
     private static final List<Entry> OFFENSE = List.of(entry(Attributes.ATTACK_DAMAGE), entry(Attributes.ATTACK_SPEED),
             entry(GeneratedStats.CRIT_CHANCE), entry(GeneratedStats.CRIT_DAMAGE), entry(GeneratedStats.ARMOR_PIERCE),
-            entry(GeneratedStats.ARMOR_PIERCE_PERCENT), entry(GeneratedStats.PROTECTION_PIERCE),
+            entry(GeneratedStats.ARMOR_SHRED), entry(GeneratedStats.PROTECTION_PIERCE),
             entry(GeneratedStats.PROTECTION_PIERCE_PERCENT), entry(GeneratedStats.LIFESTEAL),
             entry(GeneratedStats.OVERHEAL));
     private static final List<Entry> DEFENSE = List.of(entry(Attributes.MAX_HEALTH),

@@ -36,10 +36,10 @@ public final class GeneratedStats {
             ATTRIBUTES.register("armor_pierce",
                     () -> new RangedAttribute("attribute.realmforge.armor_pierce", 0.0, 0.0, 1000.0).setSyncable(true));
 
-    /** {@code realmforge:armor_pierce_percent} from {@code content/stats/armor_pierce_percent.yaml}: secondary, "Armor Pierce %". */
-    public static final DeferredHolder<Attribute, Attribute> ARMOR_PIERCE_PERCENT =
-            ATTRIBUTES.register("armor_pierce_percent",
-                    () -> new PercentageAttribute("attribute.realmforge.armor_pierce_percent", 0.0, 0.0, 1.0).setSyncable(true));
+    /** {@code realmforge:armor_shred} from {@code content/stats/armor_shred.yaml}: secondary, "Armor Shred". */
+    public static final DeferredHolder<Attribute, Attribute> ARMOR_SHRED =
+            ATTRIBUTES.register("armor_shred",
+                    () -> new PercentageAttribute("attribute.realmforge.armor_shred", 0.0, 0.0, 1.0).setSyncable(true));
 
     /** {@code realmforge:cast_time_reduction} from {@code content/stats/cast_time_reduction.yaml}: secondary, "Cast Time Reduction". */
     public static final DeferredHolder<Attribute, Attribute> CAST_TIME_REDUCTION =
@@ -165,7 +165,7 @@ public final class GeneratedStats {
     public static final List<DeferredHolder<Attribute, Attribute>> PRIMARY = List.of(DEXTERITY, INTELLECT, STRENGTH, VITALITY);
 
     /** Every stat above, in id order. */
-    public static final List<DeferredHolder<Attribute, Attribute>> ALL = List.of(ARCANE_POWER, ARCANE_RESISTANCE, ARMOR_PIERCE, ARMOR_PIERCE_PERCENT, CAST_TIME_REDUCTION, COOLDOWN_REDUCTION, CRIT_CHANCE, CRIT_DAMAGE, DEXTERITY, DODGE_CHANCE, FIRE_POWER, FIRE_RESISTANCE, FROST_POWER, FROST_RESISTANCE, HEALTH_REGENERATION, INTELLECT, LIFESTEAL, MAGIC_SHIELD, MANA_REGENERATION, MAX_MANA, OVERHEAL, PROTECTION_PIERCE, PROTECTION_PIERCE_PERCENT, SPELL_POWER, SPELL_RESISTANCE, STRENGTH, VITALITY, XP_MULTIPLIER);
+    public static final List<DeferredHolder<Attribute, Attribute>> ALL = List.of(ARCANE_POWER, ARCANE_RESISTANCE, ARMOR_PIERCE, ARMOR_SHRED, CAST_TIME_REDUCTION, COOLDOWN_REDUCTION, CRIT_CHANCE, CRIT_DAMAGE, DEXTERITY, DODGE_CHANCE, FIRE_POWER, FIRE_RESISTANCE, FROST_POWER, FROST_RESISTANCE, HEALTH_REGENERATION, INTELLECT, LIFESTEAL, MAGIC_SHIELD, MANA_REGENERATION, MAX_MANA, OVERHEAL, PROTECTION_PIERCE, PROTECTION_PIERCE_PERCENT, SPELL_POWER, SPELL_RESISTANCE, STRENGTH, VITALITY, XP_MULTIPLIER);
 
     private GeneratedStats() {
     }
