@@ -248,8 +248,8 @@ def _check_dungeons(content: Content) -> list[Problem]:
 
 
 def _check_pooled_room(room: RoomEntry) -> list[Problem]:
-    """What a room needs once a dungeon builds it into a plot: no fluid on its sides or floor, which would flow out of
-    its box past what cleanup clears (architecture 15.5), and an entrance marker only in the entrance, where players
+    """What a room needs once a dungeon builds it into a plot: no fluid that can reach its sides or floor, from where
+    it would flow out of its box past what cleanup clears (architecture 15.5), and an entrance marker only in the entrance, where players
     arrive (the builder reads only the entrance room's)."""
     problems: list[Problem] = []
     edges = room.derived("fluid_edges", fluid_edges)
@@ -259,8 +259,8 @@ def _check_pooled_room(room: RoomEntry) -> list[Problem]:
             Problem(
                 room.template,
                 f"fluid at {' '.join(str(c) for c in edges[0])}",
-                f"a fluid on the room's sides or floor{count} flows out of its box, where cleanup does not reach; "
-                "a room in a dungeon type's pool keeps its fluids inside",
+                f"a fluid that can reach the room's sides or floor{count} flows out of its box, where cleanup does "
+                "not reach; a room in a dungeon type's pool keeps its fluids inside",
             )
         )
     role = room_role(room.model.tags)
