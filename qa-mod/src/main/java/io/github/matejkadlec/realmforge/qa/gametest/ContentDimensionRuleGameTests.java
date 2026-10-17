@@ -1,12 +1,16 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
+import com.google.gson.JsonParser;
+import com.mojang.serialization.JsonOps;
 import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.core.Requirement;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedDimensionRuleExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedDimensionRuleExpectations.DimensionRulesExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedDimensionRuleExpectations.Sample;
 import io.github.matejkadlec.realmforge.world.DimensionRules;
 import io.github.matejkadlec.realmforge.world.MobLevelRule;
 import io.github.matejkadlec.realmforge.world.WorldRegistries;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -20,7 +24,8 @@ import net.minecraft.world.level.Level;
 /**
  * Checks that every entry of {@code content/dimensions/} reached the server's datapack registry
  * {@code realmforge:dimension_rules} as the content says, and that the game's mob level rule gives the level the
- * pipeline computes at each sample position, with and without the jitter ({@link GeneratedDimensionRuleExpectations},
+ * pipeline computes at each sample position, with and without the jitter, and that the access requirements are the
+ * content's ({@link GeneratedDimensionRuleExpectations},
  * architecture 6.5).
  */
 public final class ContentDimensionRuleGameTests {
@@ -52,6 +57,10 @@ public final class ContentDimensionRuleGameTests {
                     Optional.of(rules), expected.id() + " found by its dimension");
             helper.assertValueEqual(rules.mobLevels().map(ContentDimensionRuleGameTests::asWritten),
                     expected.mobLevels(), expected.id() + " mob levels");
+            List<Requirement> access = expected.access().stream()
+                    .map(json -> Requirement.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(json)).getOrThrow())
+                    .toList();
+            helper.assertValueEqual(rules.access(), access, expected.id() + " access requirements");
 
             for (Sample sample : expected.samples()) {
                 MobLevelRule rule = rules.mobLevels().orElseThrow();

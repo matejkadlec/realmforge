@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
+# Undervault's hardest stone, below the walkable floor, where the ancient debris lies (W2a, RLM-32): hardness 25
+# (Matěj, 2026-10-15), about half of obsidian's.
+id: coreslate
+name:
+  en_us: Coreslate
+hardness: 25
+blast_resistance: 9
+tool: pickaxe
+requires_tool: true
+sound: deepslate
+map_color: deepslate
+creative_tabs:
+  - minecraft:natural_blocks

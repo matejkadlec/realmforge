@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
@@ -71,12 +72,12 @@ class DimensionRulesTest {
                 {"dimension": "minecraft:overworld", "mob_levels": {"origin_level": 2, "blocks_per_level": 100,
                  "depth": {"below_y": 0, "blocks_per_level": 10}, "jitter": 1, "min_level": 1, "max_level": 6}}
                 """).getOrThrow();
-        assertEquals(new DimensionRules(Level.OVERWORLD, Optional.of(RULE)), rules);
+        assertEquals(new DimensionRules(Level.OVERWORLD, Optional.of(RULE), List.of()), rules);
     }
 
     @Test
     void mobLevelsDepthAndJitterAreOptional() {
-        assertEquals(new DimensionRules(Level.END, Optional.empty()),
+        assertEquals(new DimensionRules(Level.END, Optional.empty(), List.of()),
                 decode("{\"dimension\": \"minecraft:the_end\"}").getOrThrow());
         DimensionRules rules = decode("""
                 {"dimension": "minecraft:overworld", "mob_levels": {"origin_level": 1, "blocks_per_level": 5,
@@ -104,7 +105,7 @@ class DimensionRulesTest {
 
     @Test
     void codecRoundTrips() {
-        DimensionRules rules = new DimensionRules(Level.OVERWORLD, Optional.of(RULE));
+        DimensionRules rules = new DimensionRules(Level.OVERWORLD, Optional.of(RULE), List.of());
         JsonElement json = DimensionRules.CODEC.encodeStart(JsonOps.INSTANCE, rules).getOrThrow();
         assertEquals(rules, DimensionRules.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow());
     }

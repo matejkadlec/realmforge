@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# Titles of generated advancements (advancement.realmforge.<name>).
+id: advancement
+texts:
+  # A realm's unlock advancement (realmforge:realm/<realm>), shown in its toast: %1$s the realm's name.
+  realm_unlocked:
+    en_us: "Realm unlocked: %1$s"
