@@ -1,8 +1,9 @@
 # Realmforge
 
-An RPG mod and modpack for Minecraft **26.1.2** (NeoForge), inspired by World of Warcraft: Wrath of the Lich King:
-races and classes, spells and talents, leveling with story chapters, procedurally generated dungeons and
-dimensions, bosses with phases, professions, and a quest campaign. Set in the world of Realmforge.
+An RPG mod and modpack for Minecraft **26.1.2** (NeoForge), inspired by World of Warcraft (Classic, The Burning
+Crusade and Wrath of the Lich King): races and classes, spells and talents, leveling with story chapters,
+procedurally generated dungeons and dimensions, bosses with phases, professions, and a quest campaign.
+Set in the world of Realmforge.
 
 **Status:** early development. Milestone M0 (bootstrap) provides the build, CI, the content pipeline and a single
 test item; there is no gameplay yet. Next is M1, a small playable vertical slice. Goals:

@@ -58,9 +58,9 @@ The report builds on the [vision](vision.md) and the private artifact [Design No
 
 **What weighs most from the vision:**
 
-- Core 100% our own. Third parties only for QoL, UI and libraries, plus Better Combat, MineColonies, Distant Horizons and Iris unchanged.
+- Core 100% our own. Third parties only for QoL, UI and libraries, plus Better Combat, MineColonies, Distant Horizons and Iris unchanged. (Turned around by Matěj on 2026-10-15: Apotheosis, Apothic Attributes and Apothic Enchanting are in, with a weapons mod and more to replace planned custom work; the custom core is realms, quests, races, classes, spells, professions and semi-custom dungeons. RLM-205 carries the change and the ADR amending ADR 0004; [vision](vision.md), RLM-220.)
 - Interconnected systems are the main value: one own core, not a patchwork of third-party frameworks.
-- Volume (500+ quests, 100+ structures, 5-10+ dimensions) is unsustainable without generation and validation.
+- Volume (500+ quests, 100+ structures, 5-10+ dimensions) is unsustainable without generation and validation. (100+ structures counts small simple ones and other mods' structures; fully custom ones number dozens, Matěj, 2026-10-15, RLM-220.)
 - Balance without RNG grind and without one-shots, measurable by simulation (section 6).
 - Performance is a requirement, not a bonus.
 - Dropped from the Otherworld notes: temperature, thirst and seasons from the planned "Hearth & Harvest" section.
@@ -124,7 +124,7 @@ The original recommendation, kept for its reasoning: NeoForge 1.21.1 (21.1.x), M
 
 ## 3. Take as-is vs build
 
-Recommendation (accepted, [ADR 0004](decisions/0004-build-rpg-systems-in-house.md)): build all RPG systems ourselves; take QoL, UI, performance, libraries and a few big mods unchanged. Third-party RPG frameworks (Spell Engine, Pufferfish's Skills, Apotheosis) are models, not foundations: each brings its own attributes and assumptions, and interconnected systems are the main value.
+Recommendation (accepted, [ADR 0004](decisions/0004-build-rpg-systems-in-house.md)): build all RPG systems ourselves; take QoL, UI, performance, libraries and a few big mods unchanged. Third-party RPG frameworks (Spell Engine, Pufferfish's Skills, Apotheosis) are models, not foundations: each brings its own attributes and assumptions, and interconnected systems are the main value. (For Apotheosis and the Apothic mods Matěj turned this around on 2026-10-15: they join the pack, RLM-205, whose ADR amends ADR 0004.)
 
 ### Take as-is
 
@@ -153,7 +153,7 @@ All have NeoForge 26.1.2 builds. The pack only references them, nothing is forke
 
 | System | Main inspiration | Note |
 | --- | --- | --- |
-| Races, classes, dual class | WoW, Origins from Otherworld | own datapack registries |
+| Races, classes, specializations (dual spec, no dual class: RLM-218) | WoW, Origins from Otherworld | own datapack registries |
 | Character leveling, chapter level caps | Otherworld (JustLeveling), WotLK | XP stops at the cap (Otherworld banks it) |
 | Mob level by location | AutoLeveling | fixed boss levels |
 | Stats, milestones (10 STR = +10% dmg), crit, dodge, spell power | Apothic Attributes (MIT), Spell Power | own attributes via the NeoForge API |

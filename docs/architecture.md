@@ -455,7 +455,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | Attachment | Owner package | On | Holds | Synced to |
 | --- | --- | --- | --- | --- |
 | `realmforge:level` | `stats` | every living entity | the level: derived from XP and the cap for players, set at spawn for mobs, fixed for bosses | the player itself and everyone tracking the entity |
-| `realmforge:character` | `character` | players | race, classes (a list: one in M1, room for dual class), total character XP, cached level cap, the stat points spent on each primary stat | the owner and nearby players (small, nothing secret) |
+| `realmforge:character` | `character` | players | race, class (a one-entry list, from when dual class was planned; there is none, [10.1](#101-races-and-classes)), total character XP, cached level cap, the stat points spent on each primary stat | the owner and nearby players (small, nothing secret) |
 | `realmforge:spellbook` | `spell` | players | known spells and their levels, spell bar layout | owner |
 | `realmforge:combat` | `spell` | players and mobs that cast | resource pools (mana, rage), cooldowns, current cast (transient), whether a cast set Better Combat's disable tag | owner, throttled (players; clients never read a mob's copy) |
 | `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points | owner |
@@ -809,13 +809,29 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
 - **The server enforces creation too:** a client that skips the screen gains nothing. Until the character exists,
   the server refuses the player's gameplay payloads (casting, spell bar, talents) and awards no character XP, and
   every system that reads race or class handles a missing character instead of assuming one.
-- **A race** gives base modifiers, innate spells, optionally a size (`generic.scale`), and the allowed classes. Every
-  race gets one racial ability (Matěj, 2026-10-14), an innate spell, once the spell system exists (C4).
-- **A class** gives its resource type, starting stats, spells by level, talent trees and starting kit. Race and
+- **A race** gives base modifiers, innate spells, optionally a size (`generic.scale`), and the allowed classes.
+- **Racial abilities** (Matěj, 2026-10-15, RLM-219; built in C4): every race has one racial passive and one racial
+  active. The active is an innate spell on the spell bar's G key (C3b); the passive applies whenever its condition
+  holds. The Human's:
+  - **Will To Survive** (active) cleanses the player of every negative effect: disabling effects such as a stun
+    (much rarer here than in WoW) and also damage over time and other debuffs. Cooldown 5 minutes.
+  - **Sword Specialization** (passive; only its name, not a class specialization) gives +10% damage with sword-like
+    weapons: the item tag `#realmforge:sword_like`, swords and katanas today, and longswords and maybe rapiers once
+    the pack has them. For a Human, the tooltip of every such weapon (hover, JEI) shows two lines below the weapon's
+    stats and above the Apotheosis affixes, where Apotheosis puts "Heavenly Implements": "Sword Specialization" in
+    dark gray and "+10% damage" in light gray.
+- **A class** gives its resource type, starting stats, spells by level, its specializations' spell trees and starting
+  kit. Race and
   class stats stay the same at every level: each level gives stat points the player spends instead
   ([10.2](#102-leveling); Matěj, 2026-10-15, RLM-196: classes are for skills and abilities, not fixed stat
   growth). Whether races and classes keep their starting stats is open; they keep them until Matěj decides.
-- **Dual class:** the data model keeps a list of classes; the rules come in M3.
+- **Specializations, no dual class** (Matěj, 2026-10-15, RLM-218): a player has one class, never two. Every class
+  has three specializations (the word replaces "subclass"), each with its own spell tree of active and passive
+  spells. The player picks one in game, in a spell trees window, after creating the character (race and class),
+  and then spends points in that tree. From a level threshold (proposed: 20) they can pick a secondary
+  specialization, a dual spec. M1 has one specialization per class; the other two, and dual spec, come in M3
+  (Matěj, 2026-10-16). The `character` attachment still stores the class in a list from when dual class was
+  planned; the specialization work (the spell tree model, RLM-28) decides what it stores instead.
 - **Changing race or class:** a QA command in M1, an in-game way later.
 - **In code (C1):** `character/Race` and `character/PlayerClass` are the entries of `realmforge:race` and
   `realmforge:class` (`CharacterRegistries`, both synced). A race names its classes by id, so a missing class fails
@@ -1679,9 +1695,10 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     their milestones, and the other attributes (luck, mining speed, reach, movement speed, swimming speed, the XP
     multiplier); Combat: offense, and defense with spell resistance last; Magic: spells (max mana, mana regeneration,
     spell power, cooldown and cast time reduction) and the spell schools' power and resistance; Origin (C1): the race
-    with its description and what it gives (its racial ability once spells exist), and the class with its description,
-    then a subclass placeholder until subclasses exist (M3). The names the sheet gives vanilla attributes (Mining
-    Speed, Movement Speed, ...) apply on their rows and in the primary stats' bonuses. A stat of ours that no section
+    with its description and what it gives (its racial passive and active once spells exist), and the class with its
+    description, then a placeholder for the specialization until specializations exist (its text still reads
+    "Subclass: WIP" until RLM-254). The names the sheet gives vanilla attributes (Mining Speed, Movement Speed, ...)
+    apply on their rows and in the primary stats' bonuses. A stat of ours that no section
     names shows under Other. Values round for display only (Matěj, 2026-10-14): a percentage half up to a whole
     number (100.6% reads 101%), any other number half up to one decimal (6.45 reads 6.5). For a player with a
     character the Primary Stats title ends with "Unspent: 3", "Unspent:" white and the number yellow while any are

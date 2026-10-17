@@ -68,10 +68,10 @@ The Character tab opens its sub-tabs as a second row:
   (sub-tabs Classes, Races, Talents and Stats) and Basics, for the remaining systems (leveling and the level cap,
   chapters, dungeon instances, later professions and enchanting).
 - **Spells sit with what grants them:** a class entry lists its spells and a race entry its innate spells (every
-  race's racial ability, [architecture 10.1](../architecture.md#101-races-and-classes)), each with its icon and a
-  tooltip (school, cost, cast time, cooldown, the level that unlocks it), generated from the class or race data. A
-  spell that another system grants, such as summoning a mount (M4), appears in that system's Basics entry. A Spells
-  sub-tab would repeat these lists; searching a spell's name finds the entry that lists it.
+  race's racial passive and active, [architecture 10.1](../architecture.md#101-races-and-classes)), each with its
+  icon and a tooltip (school, cost, cast time, cooldown, the level that unlocks it), generated from the class or race
+  data. A spell that another system grants, such as summoning a mount (M4), appears in that system's Basics entry. A
+  Spells sub-tab would repeat these lists; searching a spell's name finds the entry that lists it.
 - **Left:** the tabs, then the entries of the selected tab grouped by chapter, newest chapter last. A chapter the
   player has not reached is one line ("Chapter 3: locked") without titles, so nothing is spoiled. Character and Basics
   entries mostly belong to chapter 1 and are readable from the start; a system that arrives with a later chapter

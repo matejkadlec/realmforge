@@ -6,20 +6,20 @@
 
 ## Owner
 
-I'm a Python full-stack developer (Django, vanilla JS) with 5 years of experience, plus a bit of C/C++/C#, SQL, Linux and ETL. I have only minimal experience with Java and Minecraft modding. We vibe-code this project: AI does most of the work, I set the direction, review and playtest.
+I'm a Python full-stack developer (Django, vanilla JS) with 5 years of experience, plus a bit of C/C++/C#, SQL, Linux and ETL. I have only minimal experience with Java and Minecraft modding. We vibe-code this project: AI does most of the work, I set the direction, review and playtest. (Status: refined on 2026-10-15: agents build it only to a degree; a lot cannot be vibe-coded at all, or needs several iterations before it is usable. RLM-220.)
 
 Communication with me is in English. Everything in the repo (code, documentation, commit messages, issues) is in English.
 The game is English only too (decided 2026-10-13): there will never be Czech texts from me. If someone else makes a translation, it can ship as a resource pack keyed by the same translation keys ([content/README.md](../content/README.md)).
 
 ## What I want to build
 
-An RPG experience for Minecraft, open source on GitHub. I'm making it mainly for myself, both to play it and for the fun of developing it. Form: hybrid (our own core mod + proven libraries and QoL mods as a modpack).
+An RPG experience for Minecraft, open source on GitHub. I'm making it mainly for myself, both to play it and for the fun of developing it. Form: hybrid (our own core mod + proven libraries and QoL mods as a modpack). (Status: changed on 2026-10-15: no longer mainly for me. Realmforge is for me and for other players, including players new to the mods in the pack, so it must be beginner friendly. Parties playing together are supported, though I will most likely play single player. RLM-220.)
 
-- TL;DR: a World of Warcraft-like mod/modpack (the Wrath of the Lich King version; every time I mention "WoW" I mean this expansion, definitely not retail WoW, which is absolutely tragic), with inspiration from other RPG packs and also from Hytale, which people call "MC 2.0", or, from a completely different genre but with interesting boss fights that are actually fun, Hades II.
+- TL;DR: a World of Warcraft-like mod/modpack (the Wrath of the Lich King version; every time I mention "WoW" I mean this expansion, definitely not retail WoW, which is absolutely tragic; Status: changed on 2026-10-15: "WoW" means Classic, TBC and WotLK alike, which share the same design; WotLK was the first reference, Classic is now the main one; never Cataclysm or later, RLM-220), with inspiration from other RPG packs and also from Hytale, which people call "MC 2.0", or, from a completely different genre but with interesting boss fights that are actually fun, Hades II.
 - Specifically:
-  - custom races/classes
+  - custom races/classes (Status: decided on 2026-10-15: every race has one racial passive and one racial active; Human: Will To Survive, which cleanses every negative effect on a 5-minute cooldown, and Sword Specialization, +10% damage with sword-like weapons; [architecture 10.1](architecture.md#101-races-and-classes), RLM-219.)
     - multiple ways to play the game: generally melee/ranged/mage, but also e.g. battle mage or summoner
-    - dual class
+    - dual class (Status: decided on 2026-10-15: no dual class, not now and not later. Every class has three specializations, a word that replaces "subclass", each with its own spell tree; the player picks one in game, in a spell trees window, after choosing race and class, and from a level threshold (proposed: 20) can pick a secondary specialization, a dual spec. M1 has one specialization tree per class, the other two come in M3 (2026-10-16). [Architecture 10.1](architecture.md#101-races-and-classes), RLM-218.)
   - character leveling (level caps per story chapter)
   - custom spells/skills, some from the race/class, some from items in the game
     - self-buffs, debuffs against bosses, single-target spells, AoE spells, special spells like Teleport or Angel Wings from Iron's Spells 'n Spellbooks
@@ -29,9 +29,9 @@ An RPG experience for Minecraft, open source on GitHub. I'm making it mainly for
     - talents that have a big impact on the game, e.g. +50 melee damage/-50% ranged damage (a very simple example; I probably wouldn't want that particular talent)
   - stats and some stat bonuses for milestones (STR, DEX, INT...; 10 STR = +10% attack damage)
   - custom dimensions (e.g. 5-10 or even more new dimensions), procedurally generated
-  - improved/overhauled Nether/End, OR maybe remove them completely; I wouldn't mind at all as long as we have our own dimensions. FTB Architect Exodus also has only custom dimensions and that modpack felt incredibly polished to me. The Nether and End are in every, literally every pack; this would make ours stand out, and I'd be fine with that. (Status: decided on 2026-10-12: both are removed; [ADR 0025](decisions/0025-remove-the-nether-and-end.md). Ashfire, a late fire realm, does not replace the Nether: [ADR 0032](decisions/0032-v1-realm-layout-amends-the-nether-and-end-removal.md).)
+  - improved/overhauled Nether/End, OR maybe remove them completely; I wouldn't mind at all as long as we have our own dimensions. FTB Architect Exodus also has only custom dimensions and that modpack felt incredibly polished to me. The Nether and End are in every, literally every pack; this would make ours stand out, and I'd be fine with that. (Status: decided on 2026-10-12: both are removed; [ADR 0025](decisions/0025-remove-the-nether-and-end.md). Ashfire, a late fire realm, does not replace the Nether: [ADR 0032](decisions/0032-v1-realm-layout-amends-the-nether-and-end-removal.md). Confirmed as final on 2026-10-15: removed, not overhauled; Ashfire has no Nether structures and no Nether look, at most some of its mobs, RLM-220.)
   - improved/overhauled villages, villagers and trades
-  - custom dungeons; 100+ structures, from small structures like a single building up to large dungeons like the Trial Chambers from newer vanilla MC
+  - custom dungeons; 100+ structures, from small structures like a single building up to large dungeons like the Trial Chambers from newer vanilla MC (Status: refined on 2026-10-15: 100+ holds only when small simple structures, such as a campfire, and other mods' structures count; fully custom structures number dozens, not 100+. RLM-220.)
     - procedurally generated dungeons: not 1 fixed structure; 1 dungeon type can generate in a practically unlimited number of ways, it will look similar and follow the same rules, but no two dungeons will ever be the same (like most modded dungeons or vanilla mineshafts)
     - NOT EVERY DUNGEON HAS TO END WITH A BOSS!
     - make some dungeons, maybe even most of them, instanced like in Hytale, i.e. a custom dimension that contains only that dungeon
@@ -92,7 +92,7 @@ An RPG experience for Minecraft, open source on GitHub. I'm making it mainly for
 ## Themes, setting, story
 
 - Themes: Fantasy, Magic, Extra Large, Adventure and RPG, Roguelike, Medieval
-- Story: the story in MC modpacks has never interested me much, but we'll add something "in the background"; AI will come up with it, it doesn't have to be extra deep.
+- Story: the story in MC modpacks has never interested me much, but we'll add something "in the background"; AI will come up with it, it doesn't have to be extra deep. (Status: changed on 2026-10-15: a strong storyline is wanted, work in progress in the [lore outline](lore/outline.md). RLM-220.)
 - The game world is called **Realmforge**: whenever the story, lore, quests or any texts (items, books, dialogs) refer to the in-game world, this name is used.
 
 ## What v0.1 should contain
@@ -112,7 +112,7 @@ Everything above, but feel free to cut down everything: fewer races, fewer class
 - Custom even though they exist: our own debugging/testing mod made specifically for this project; Lightweight Inventory Sorting (takes a minute, fully compatible with everything else).
 - Inspiration, but build our own: Explorer's Compass (great at its core, but unfinished and buggy), Iron's Spells 'n Spellbooks, Apotheosis, AutoLeveling, Farmer's Delight, Dave's Potioneering, Passive Skill Tree, Medieval Origins, Dummmmmmy (too basic).
 - More inspiration: WoW (WotLK), Hytale, Hades II (boss fights), Craft to Exile, and older versions of Advent of Ascension (MC 1.12; the newer versions are terribly cut down).
-- I want the core of the pack to be 100% our own: our own quests, dimensions, dungeons, mobs, bosses, boss fights, skills, spells, talents, glyphs, professions. I'm oversaturated with dungeons and bosses from other mods, and 95% of them feel terribly one-dimensional to me. Third-party mods only for QoL that doesn't really impact the game itself (Jade, Xaero, JEI/EMI...), with exceptions like Regions Unexplored or Waystones.
+- I want the core of the pack to be 100% our own: our own quests, dimensions, dungeons, mobs, bosses, boss fights, skills, spells, talents, glyphs, professions. I'm oversaturated with dungeons and bosses from other mods, and 95% of them feel terribly one-dimensional to me. Third-party mods only for QoL that doesn't really impact the game itself (Jade, Xaero, JEI/EMI...), with exceptions like Regions Unexplored or Waystones. (Status: turned around on 2026-10-15: Apotheosis, Apothic Attributes and Apothic Enchanting are in, and a weapons mod and more mods are being looked for to replace what was meant to be custom, because building everything is too much work. The custom core is now realms (custom dimensions), quests, races, classes, spells, professions and semi-custom dungeons, generated from existing pieces with a bit of hand-built work; the main effort goes into realms, quests and overall balance. RLM-205 brings the mods and the ADR that amends [ADR 0004](decisions/0004-build-rpg-systems-in-house.md); RLM-220.)
 
 ## Procedural generation (questions for the future)
 
