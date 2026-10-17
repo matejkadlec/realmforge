@@ -44,7 +44,8 @@ Forgefire Ashfire, and the Brink Unmade Isles (RLM-164).
 
 - **A realm is a custom dimension built around one style of biome**, not one biome: a desert with big oases, a
   tundra with frozen lakes. Each realm splits into sub-regions of rising level, like a Hytale zone with its three
-  regions (RE-3).
+  regions (RE-3). The level ranges this document gives them are the old area model: since RLM-240, mob levels
+  follow the player, floored at the realm's entry level.
 - **v1 has the realms of [At a glance](#at-a-glance); more may follow.** Not every realm has to be on the main
   path: some exist only for gear or a specific item, and progress may run through two realms at once (FTB
   Architect's Exodus is the reference; the twins of chapter 3 do). An optional side realm takes its level from the
@@ -83,9 +84,10 @@ Forgefire Ashfire, and the Brink Unmade Isles (RLM-164).
 - **A main questline ends at about two thirds of its band,** so the next realm opens at the start of its own band,
   and the top of a band holds harder optional content a player comes back for.
 - **Levels 1–10 are Overworld's, and Undervault opens at about level 6.** The old "levels 1–5 in Overworld" is gone.
-  Mob levels by area show the danger (W1), so the realm needs no hard level lock. It opens through chapter 1's main
-  questline, whose last step is the realm's unlock quest and also gives the Stone Sigil
-  ([realm portal spec](realm-portal.md#access-and-unlocks)). Overworld's own final boss gates Undervault once it
+  Mob levels follow the player, never below a realm's entry level (Matěj, 2026-10-16, RLM-240;
+  [apotheosis.md](apotheosis.md#mob-levels-and-loot)), and a realm's portal checks its entry level and quest.
+  Undervault opens through chapter 1's main questline, whose last step is the realm's unlock quest and also gives
+  the Stone Sigil ([realm portal spec](realm-portal.md#access-and-unlocks)). Overworld's own final boss gates Undervault once it
   exists (Matěj, 2026-10-16; [Overworld](#the-overworld)). The item rule of
   [Opening the next realm](#opening-the-next-realm) (RE-9) starts with the second realm, because Overworld has
   neither a realm ore nor a boss drop to craft the item from.
@@ -256,7 +258,8 @@ it offers most of what the Nether offered ([ADR 0025](../decisions/0025-remove-t
     players come back to mine; probably materials for curios and the like, not gear;
   - quartz set in stone (quartz early, because other mods expect it);
   - glowstone near the ceiling;
-  - patches of soul sand with nether wart, or a mob that drops nether wart;
+  - no nether wart: the Ancient Specialist sells it (RLM-241,
+    [ADR 0033](../decisions/0033-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md));
   - ore bands in the walls and pillars of the walkable floor, and a treasure ore with its own loot table (PF-5).
 - **Mobs:** stone-looking mobs and animated statues, each variant with one clear role (BM-11); a rock mob that climbs
   and a timid critter that flees into the rock; animals too, such as a "Stoneshroom" stone cow; shulkers with grey as
@@ -512,8 +515,9 @@ For Matěj; each has a proposal so the design can go on.
    realm.** A player always respawns in Overworld, at their bed or at the world spawn; a "Return to last death"
    scroll (RLM-155) takes them back ([realm portal spec](realm-portal.md#respawn)).
 2. **Finished realms** (research question 2, RE-4): a harder "enraged" band once later chapters raise the cap, or
-   their own levels forever? Proposal: their own levels until a later milestone shows players want to return. The
-   v1 layout already keeps harder optional content at the top of each band (RLM-188).
+   their own levels forever? **Decided 2026-10-16 (Matěj, RLM-240): neither.** Mob levels follow the player, floored
+   at the realm's entry level, and dungeons rise to their highest player, so players keep returning to lower realms
+   ([apotheosis.md](apotheosis.md#mob-levels-and-loot)).
 3. **One environmental rule per realm** (research question 15, RE-6), such as wind gusts on high ground or a
    sandstorm in the desert, each with a cheap counter item that arrives with the realm. Proposal: yes, from M4.
    Undervault has none (Matěj, 2026-10-15).
