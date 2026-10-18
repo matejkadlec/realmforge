@@ -551,7 +551,9 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 - `StatsFeature` adds every stat to players in `EntityAttributeModificationEvent`; mobs get the ones they need
   with the features that use them (spell power for casters).
 - NeoForge also has a boolean `creative_flight` attribute (`NeoForgeMod.CREATIVE_FLIGHT`): the planned basis for
-  Angel Wings-style spells and flying mounts.
+  Angel Wings-style spells. It is not the basis for flying mounts: a mount is its own entity the player rides
+  (RLM-115), and the mount entity itself flies, as a flying vehicle (`Entity#isFlyingVehicle()`) or with no gravity
+  while airborne ([Chococraft research, notes for the mount tasks](research/chococraft.md#notes-for-the-mount-tasks)).
 
 ### 8.2 Where modifiers come from
 
