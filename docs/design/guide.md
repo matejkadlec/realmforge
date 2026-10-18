@@ -70,8 +70,12 @@ The Character tab opens its sub-tabs as a second row:
 - **Spells sit with what grants them:** a class entry lists its spells and a race entry its innate spells (every
   race's racial passive and active, [architecture 10.1](../architecture.md#101-races-and-classes)), each with its
   icon and a tooltip (school, cost, cast time, cooldown, the level that unlocks it), generated from the class or race
-  data. A spell that another system grants, such as summoning a mount (M4), appears in that system's Basics entry. A
-  Spells sub-tab would repeat these lists; searching a spell's name finds the entry that lists it.
+  data. A talent-tree entry lists the spells its nodes grant (`grant_spell`,
+  [architecture 11.1](../architecture.md#111-model)), with the same tooltips. A spell that another system grants,
+  such as summoning a mount (M4), appears in that system's Basics entry. An item that grants a spell (an item
+  component) shows it in the item's own tooltip, so it appears wherever an entry lists that item (a dungeon's
+  notable loot, a boss's loot table); items have no entries of their own. A Spells sub-tab would repeat these
+  lists; searching a spell's name finds the entry that lists it.
 - **Left:** the tabs, then the entries of the selected tab grouped by chapter, newest chapter last. A chapter the
   player has not reached is one line ("Chapter 3: locked") without titles, so nothing is spoiled. Character and Basics
   entries mostly belong to chapter 1 and are readable from the start; a system that arrives with a later chapter
@@ -137,7 +141,8 @@ requires: []                      # optional extra unlocks, same types as dimens
   generator fills the facts block and placeholders such as `{level_min}` from the dungeon type, boss, dimension
   rules, class, race, talent tree or stat rules the entry describes (level range, where it is, how to enter, its
   bosses and their levels, its ores or loot; a class's resource and spells, a race's bonuses and innate spells,
-  what a stat point gives). A changed boss level changes the guide with it.
+  what a stat point gives, the spells a talent tree's nodes grant). An item icon's tooltip lists the spells it grants.
+  A changed boss level changes the guide with it.
 - **One source for quests and the guide (PR-2):** a quest names a guide entry (`guide: realmforge:catacombs`) and
   its FTB Quests description gets the entry's summary and a "see the guide" line, generated from the same text.
   Teaching quests and Basics entries share their text the same way, so nothing is written twice.
@@ -148,7 +153,9 @@ requires: []                      # optional extra unlocks, same types as dimens
 - **Validation** (Python): the chapter, subject, related entries and requirements exist; the subject fits the
   category; `requires` uses only requirement types the server recomputes on ([Unlock rule](#unlock-rule)); every
   placeholder resolves; every loot chance can be computed; every realm, dungeon type, boss, class, race, talent tree
-  and stat has a guide entry once the guide ships, and every spell a player can get appears in one.
+  and stat has a guide entry once the guide ships, and every spell a class, race, talent tree or other system grants
+  appears in one. Item-granted spells are left out of that rule: they show in their item's tooltip, and an item
+  that comes from crafting, a quest or a trade may appear in no entry.
 
 ## Unlock rule
 

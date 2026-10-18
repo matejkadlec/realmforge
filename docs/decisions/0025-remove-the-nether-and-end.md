@@ -5,9 +5,11 @@ Date: 2026-10-12
 Status: Accepted (resolves the Nether and End question left open by
 [0012](0012-procedural-dungeons-and-dimensions.md)), amended by
 [0032](0032-v1-realm-layout-amends-the-nether-and-end-removal.md) (Overworld for levels 1–10, Ashfire no replacement
-for the Nether, netherite in Undervault) and by
+for the Nether, netherite in Undervault), by
 [0034](0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md) (merchants sell the Nether and End
-materials, the Wither can be summoned again, no desert refining items)
+materials, the Wither can be summoned again, no desert refining items) and by
+[0037](0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md) (elytra source: chapter 3's final
+boss)
 
 ## Context
 
@@ -43,7 +45,7 @@ Matěj decided on 2026-10-11 and 2026-10-12 (Jira RLM-47; its comments hold his 
 
   | Item | Vanilla source | New source |
   | --- | --- | --- |
-  | Elytra | End cities | Chapter 4, when the fastest mount tier unlocks (RLM-101), or later (chapter 5, or a side questline of chapter 4); Matěj's reason: "elytra are a little better than a mount". **Settled 2026-10-13 (RLM-138): chapter 3's final boss**, as its drop or in an item frame in its room (like the End ship), so elytra arrive at the step into chapter 4; chapter 3 comes in M4, so this source ships with the removal. They get **their own equipment slot** and never take the chestplate slot (below) |
+  | Elytra | End cities | Chapter 4, when the fastest mount tier unlocks (RLM-101), or later (chapter 5, or a side questline of chapter 4); Matěj's reason: "elytra are a little better than a mount". They get **their own equipment slot** and never take the chestplate slot (below) |
   | Shulker shells (shulker boxes) | Shulkers in End cities | Mostly unneeded next to backpacks and Tom's Simple Storage. A trade, or shulkers that live in a realm (possibly already the stone realm) with grey instead of purple as their default colour |
   | Beacon (nether star) | The Wither, summoned from Nether materials | Earlier than the fire realm, because a vanilla beacon is easy to get: a nether star as a chapter 3 boss reward (any boss, not necessarily the Wither), or a small built beacon (two layers, for example emerald blocks) at the end of a dungeon |
   | Ender pearls | Endermen | Stay (endermen spawn in the Overworld), plus a Cleric trade and a repeatable quest, because recipes need them |
