@@ -206,8 +206,10 @@ above, and its first bundle's head SHA must equal the starting head it recorded.
    - Make the smallest correct change that keeps the pull request's intended behavior.
    - Findings that share a root cause get one shared fix.
    - Add or adjust a focused regression test for every code fix, in the suite the changed code calls for:
-     pytest in `tools/tests/`, JUnit in `mod/src/test/`, or a GameTest in `qa-mod/`. A fix only to docs, skills
-     or other text that no test reads needs none.
+     pytest in `tools/tests/`, JUnit in `mod/src/test/`, a GameTest in `qa-mod/`, or the shell suite in `tests/`
+     that covers a script: `tests/test_git_clean_worktrees.sh` for `git_clean_worktrees.sh` and its PowerShell
+     port `git_clean_worktrees.ps1`, `tests/test_gradle_queue.sh` for `.claude/scripts/gradle-queue.sh` and
+     `.claude/hooks/cloud-warmup.sh`. A fix only to docs, skills or other text that no test reads needs none.
    - Keep the unrelated changes already on the branch, and refactor nothing beyond what the finding needs.
 
    Then run the targeted checks and commit the fix (one commit per root cause, Conventional Commits, staged by
@@ -218,7 +220,12 @@ above, and its first bundle's head SHA must equal the starting head it recorded.
    - `mod/`, `qa-mod/` or Gradle files: `.claude/scripts/gradle-queue.sh build` and
      `.claude/scripts/gradle-queue.sh runGameTestServer` (the queue sources SDKMAN when `JAVA_HOME` is unset),
      then `uv run rf gametest-log`;
-   - `pack/`: `cd pack && packwiz refresh`, then `git diff --exit-code pack/`.
+   - `pack/`: `cd pack && packwiz refresh`, then `git diff --exit-code pack/`;
+   - `git_clean_worktrees.sh`, `git_clean_worktrees.ps1` or `tests/test_git_clean_worktrees.sh`:
+     `bash tests/test_git_clean_worktrees.sh` and `bash tests/test_git_clean_worktrees.sh git_clean_worktrees.ps1`
+     (the second needs `pwsh`);
+   - `.claude/scripts/gradle-queue.sh`, `.claude/hooks/cloud-warmup.sh` or `tests/test_gradle_queue.sh`:
+     `bash tests/test_gradle_queue.sh`.
 
    Never edit generated files; change `content/` or the generator and run `uv run rf gen`. Do not push: the next
    reviewer reads the local head. A round that fixes nothing commits nothing.
