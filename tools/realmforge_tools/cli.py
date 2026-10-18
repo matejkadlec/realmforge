@@ -11,6 +11,7 @@ uv run rf art gallery DIR   build the review gallery for the candidate textures 
 uv run rf rooms import SRC --to DIR    import .nbt, .schem and .litematic rooms into DIR with draft sidecars
 uv run rf rooms gallery [DIR]          render the rooms in DIR (default content/rooms) for review (needs Vulkan)
 uv run rf rooms review DIR             merge decisions copied from the gallery into DIR/review.yaml
+uv run rf rooms candidates [SPEC...]   build seed candidates of the room specs into .cache/rooms/candidates
 """
 
 from __future__ import annotations
@@ -30,6 +31,7 @@ from realmforge_tools.generate import generate_all, sync
 from realmforge_tools.id_universe import IdUniverse, load_vanilla
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import MINECRAFT_VERSION, RepoPaths
+from realmforge_tools.rooms import candidates as room_candidates
 from realmforge_tools.rooms import gallery as room_gallery
 from realmforge_tools.rooms import importer
 from realmforge_tools.rooms.render import CUT_HEIGHT, RenderError, RoomRenderer
@@ -92,7 +94,9 @@ def main(argv: list[str] | None = None) -> int:
             help=f"texture width in pixels (default: {DEFAULT_SIZE})",
         )
 
-    rooms = commands.add_parser("rooms", help="dungeon rooms: import, the review gallery, review decisions")
+    rooms = commands.add_parser(
+        "rooms", help="dungeon rooms: import, generated candidates, the review gallery, review decisions"
+    )
     rooms_commands = rooms.add_subparsers(dest="rooms_command", required=True)
     rooms_import = rooms_commands.add_parser(
         "import", help="turn .nbt, .schem and .litematic files into rooms with draft sidecars"
@@ -143,6 +147,25 @@ def main(argv: list[str] | None = None) -> int:
         "--from", dest="source", type=Path, help="file holding the copied decisions (default: standard input)"
     )
 
+    rooms_candidates = rooms_commands.add_parser(
+        "candidates", help="build the next seed candidates of the room specs for the gallery review"
+    )
+    rooms_candidates.add_argument("specs", nargs="*", help="room spec ids (default: every spec)")
+    rooms_candidates.add_argument(
+        "--count",
+        type=int,
+        default=room_candidates.DEFAULT_COUNT,
+        help=f"candidates per spec (default: {room_candidates.DEFAULT_COUNT})",
+    )
+    rooms_candidates.add_argument(
+        "--kept",
+        action="store_true",
+        help="also build the kept seeds, to review a generator change on them (with --count 0: only those)",
+    )
+    rooms_candidates.add_argument(
+        "--out", type=Path, help="output folder, replaced on every run (default: .cache/rooms/candidates)"
+    )
+
     gametest_log = commands.add_parser(
         "gametest-log",
         help="check the log of the last ./gradlew runGameTestServer; exit 1 on data loading errors",
@@ -183,7 +206,8 @@ def main(argv: list[str] | None = None) -> int:
             f"{len(content.stats)} stat(s), {len(content.stat_rules)} stat rule(s), "
             f"{len(content.dimensions)} dimension rule set(s), {len(content.races)} race(s), "
             f"{len(content.classes)} class(es), {len(content.worldgen)} worldgen file(s), "
-            f"{len(content.rooms)} room(s), {len(content.dungeons)} dungeon type(s), "
+            f"{len(content.rooms)} room(s), {len(content.room_specs)} room spec(s), "
+            f"{len(content.room_themes)} room theme(s), {len(content.dungeons)} dungeon type(s), "
             f"{len(content.chapters)} chapter(s), {len(content.kill_xp_multipliers)} kill XP multiplier(s), "
             f"{len(content.spells)} spell(s)."
         )
@@ -216,11 +240,56 @@ def _rooms(args: argparse.Namespace, paths: RepoPaths) -> int:
                 f"Wrote {paths.rel(args.directory / REVIEW_FILE)}: {changed} decision(s) changed, "
                 f"{kept} kept and {len(decisions) - kept} rejected in total"
             )
+            if room_candidates.is_candidates_folder(args.directory):
+                for frozen in room_candidates.freeze(decisions, paths):
+                    print(
+                        f"Froze content/room_specs/{frozen.spec}.yaml: kept {list(frozen.kept)}, "
+                        f"rejected {list(frozen.rejected)}"
+                    )
+                print("Run uv run rf gen to write the kept rooms.")
             return 0
+        if args.rooms_command == "candidates":
+            return _rooms_candidates(args, paths)
         return _rooms_gallery(args, paths)
-    except (OSError, importer.RoomImportError, room_gallery.GalleryError, RenderError) as e:
+    except (
+        OSError,
+        importer.RoomImportError,
+        room_gallery.GalleryError,
+        room_candidates.CandidatesError,
+        RenderError,
+    ) as e:
         print(f"rf rooms {args.rooms_command}: {e}", file=sys.stderr)
         return 1
+
+
+def _rooms_candidates(args: argparse.Namespace, paths: RepoPaths) -> int:
+    if args.count < (0 if args.kept else 1):
+        print("rf rooms candidates: --count must be at least 1 (0 with --kept)", file=sys.stderr)
+        return 1
+    try:
+        content, universe = load_and_validate(paths)
+    except ValidationFailed as e:
+        print(
+            f"rf rooms candidates: content/ does not validate ({len(e.problems)} problem(s)):",
+            file=sys.stderr,
+        )
+        for problem in e.problems:
+            print(f"  {problem}", file=sys.stderr)
+        return 1
+    out_dir = args.out or paths.cache / "rooms" / "candidates"
+    results = room_candidates.write_candidates(
+        content, universe, out_dir, args.count, args.specs or None, kept=args.kept
+    )
+    for result in results:
+        print(f"{result.spec}: seeds {result.written or 'none'}")
+        for seed, reason in result.refused:
+            print(f"  REFUSED seed {seed}: {reason}")
+    written = sum(len(result.written) for result in results)
+    print(
+        f"Wrote {written} candidate(s) to {paths.rel(out_dir)}. Next: uv run rf rooms gallery {paths.rel(out_dir)}, "
+        f"then uv run rf rooms review {paths.rel(out_dir)} with the decisions."
+    )
+    return 0
 
 
 def _rooms_import(args: argparse.Namespace, paths: RepoPaths) -> int:

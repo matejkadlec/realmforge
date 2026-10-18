@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/room_specs.schema.json
+# A short corridor that ends a branch, or closes a doorway nothing else takes.
+id: dead_end
+kind: dead_end
+theme: realmforge:stone_vault
+footprint: [5, 7]
+height: 5
+connectors: [north]
+features: [rubble]
+seeds: [1, 2, 3, 4]
+rejected_seeds: []

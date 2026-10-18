@@ -5,6 +5,11 @@ The renderer draws on Vulkan; without a GPU it needs a software driver (Mesa's l
 ``mesa-vulkan-drivers``; dev setup 5). The client jar is downloaded once into ``.cache/vanilla/<version>/`` and
 read at runtime only: renders of vanilla blocks are fine for review, but no vanilla texture file is ever committed
 (ADR 0028).
+
+Data markers (architecture 15.3) are part of what a room is for, so every view shows them, labelled
+([ADR 0035](../../../docs/decisions/0035-room-galleries-show-every-marker-with-its-label.md)): a marker is drawn as a
+block in its label's colour (``MARKER_STYLES``), even above a cutaway's cut, so a marker on a balcony shows in the
+plan too. The game never places a marker; the colour stands for the spot.
 """
 
 from __future__ import annotations
@@ -12,11 +17,60 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from realmforge_tools.rooms.structure import AIR, Structure
+from realmforge_tools.rooms.check import DATA_MODE, STRUCTURE_BLOCK
+from realmforge_tools.rooms.structure import AIR, Pos, Structure, StructureBlock
 
 # How high above the template's bottom the cutaway views cut the room, so the floor and the walls' lower part
 # show. A lower room loses only its top layer (its ceiling).
 CUT_HEIGHT = 5
+
+
+@dataclass(frozen=True)
+class MarkerStyle:
+    """How the gallery shows a marker: the block drawn at its spot, the colour of its label on the page, and what
+    the dungeon does there."""
+
+    block: str
+    colour: str
+    meaning: str
+
+
+# Every marker of rooms/check.py MARKERS has a style (a test holds new markers to it), each its own colour.
+MARKER_STYLES = {
+    "entrance": MarkerStyle(
+        "minecraft:lime_concrete",
+        "#5ea918",
+        "where players appear when they enter the dungeon (one, in an entrance room)",
+    ),
+    "mob": MarkerStyle(
+        "minecraft:red_concrete",
+        "#c4473a",
+        "a spot where the dungeon's encounters put a monster when the run starts",
+    ),
+    "chest": MarkerStyle(
+        "minecraft:yellow_concrete",
+        "#e0b030",
+        "a spot where the dungeon's loot puts a chest when the run starts",
+    ),
+    "exit": MarkerStyle("minecraft:light_blue_concrete", "#3aafd9", "where the dungeon's way out stands"),
+}
+# A structure block that is no known marker (validation refuses it in content; an imported file may hold one).
+UNKNOWN_MARKER = MarkerStyle(
+    "minecraft:magenta_concrete", "#c74ebd", "not a marker the dungeon knows: validation refuses it"
+)
+
+
+def marker_label(block: StructureBlock) -> str | None:
+    """The label of a data marker (its metadata; "" when it has none), or None for any other block."""
+    data = block.nbt or {}
+    if block.state.name != STRUCTURE_BLOCK or data.get("mode") != DATA_MODE:
+        return None
+    label = data.get("metadata")
+    return label if isinstance(label, str) else ""
+
+
+def marker_style(label: str) -> MarkerStyle:
+    return MARKER_STYLES.get(label, UNKNOWN_MARKER)
 
 
 @dataclass(frozen=True)
@@ -36,6 +90,20 @@ VIEWS = (
 )
 
 
+def drawn_blocks(structure: Structure, view: View, cut: int = CUT_HEIGHT) -> list[tuple[Pos, str]]:
+    """The blocks a view draws, as (position, block state): no air, nothing at or above a cutaway's cut, and every
+    data marker as its label's block wherever it is."""
+    height = min(structure.size[1] - 1, cut) if view.cut else structure.size[1]
+    drawn = []
+    for block in structure.blocks:
+        label = marker_label(block)
+        if label is not None:
+            drawn.append((block.pos, marker_style(label).block))
+        elif block.state.name != AIR and block.pos[1] < height:
+            drawn.append((block.pos, str(block.state)))
+    return drawn
+
+
 class RenderError(RuntimeError):
     """nucleation could not render; usually the missing Vulkan driver."""
 
@@ -53,11 +121,9 @@ class RoomRenderer:
 
     def render(self, structure: Structure, view: View, target: Path, cut: int = CUT_HEIGHT) -> None:
         nucleation = self._nucleation
-        height = min(structure.size[1] - 1, cut) if view.cut else structure.size[1]
         schematic = nucleation.Schematic.create("room")
-        for block in structure.blocks:
-            if block.state.name != AIR and block.pos[1] < height:
-                schematic.set_block_from_string(*block.pos, str(block.state))
+        for pos, state in drawn_blocks(structure, view, cut):
+            schematic.set_block_from_string(*pos, state)
         config = nucleation.RenderConfig.create(self.size, self.size)
         if view.top:
             config.set_orthographic(True)

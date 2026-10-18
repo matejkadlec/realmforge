@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/room_specs.schema.json
+# The boss's room: a sunken floor, pillars and a balcony, mob markers on the floor and on the balcony.
+id: arena
+kind: arena
+theme: realmforge:stone_vault
+footprint: [16, 16]
+height: 10
+connectors: [south]
+features: [pit, balcony, pillars]
+seeds: [1, 2, 3, 4]
+rejected_seeds: []

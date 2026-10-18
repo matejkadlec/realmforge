@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/room_specs.schema.json
+# A treasure room at the end of a branch: chest markers in its niches.
+id: treasure_vault
+kind: treasure
+theme: realmforge:stone_vault
+footprint: [9, 9]
+height: 6
+connectors: [south]
+features: [alcoves]
+seeds: [1, 2, 3]
+rejected_seeds: []

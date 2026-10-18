@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/room_specs.schema.json
+# A fight between pillars, with mob markers for the dungeon's encounters (W6).
+id: combat_pillars
+kind: combat
+theme: realmforge:stone_vault
+footprint: [13, 13]
+height: 7
+connectors: [west, east]
+features: [pillars, rubble]
+seeds: [1, 2, 3, 4]
+rejected_seeds: []

@@ -180,7 +180,12 @@ blocks shift (RLM-119).
 **`rf rooms gallery [DIR]`** renders every `*.nbt` below `DIR` (default `content/rooms/`; any folder works, such as the
 spike rooms in `qa-mod/src/generated/resources/data/realmforge_qa/structure/spike/`, which can be viewed but not
 reviewed, or a folder of generated seed candidates) from four views: outside, cut `--cut` blocks above the bottom
-(default 5) from two corners, and a plan of the cut. It writes the PNGs and `index.html` to
+(default 5) from two corners, and a plan of the cut. Every data marker shows with its label
+([ADR 0035](../docs/decisions/0035-room-galleries-show-every-marker-with-its-label.md)): the views draw it as a block in
+its label's colour (`MARKER_STYLES` in `rooms/render.py`: `entrance` lime, `mob` red, `chest` yellow, `exit` light
+blue, anything else magenta), also above the cut, each card lists the room's markers by label with their positions,
+and the page opens with a legend of the labels and the connectors. A new marker gets its style in the same change (a
+test holds `MARKERS` to it). It writes the PNGs and `index.html` to
 `.cache/rooms/gallery/<folder>/` (replaced on every run; `--out` picks another folder, which must not overlap the rooms'
 folder and is replaced only when it is empty or an earlier gallery, marked by a `.room-gallery` file). The renderer is
 [nucleation](https://github.com/Schem-at/Nucleation) (MIT, pinned in `pyproject.toml`), with block models and textures
@@ -197,3 +202,29 @@ kept candidate's seed is frozen. The next gallery starts from those decisions. `
 `keep` names a room; a `reject` outlives its dropped room, so the next import of the source skips it. A generated
 folder, such as the spike rooms, has no review: `rf rooms review` refuses it, because `rf gen` would delete its
 `review.yaml`.
+
+**Generated rooms** (A4d) come from the room specs in `content/room_specs/` and the themes in
+`content/room_themes/` ([content/README.md](../content/README.md)). The room generator (`rooms/generator.py`) builds
+a spec with a seed; `rf gen` builds every kept seed (the spec's `seeds`) into
+`data/realmforge/structure/rooms/generated/<spec>/seed_<n>.nbt`, and the room cache keeps each built room under a
+digest of the spec, its theme and the seed, so validation builds a spec again only when one of them, or the
+generator, changed. Validation runs `rooms/walk.py` on each: its doorways reach each other with three blocks of
+headroom, and no cell where a mob could spawn is dark. **`rf rooms candidates [SPEC...]`** (`--count`, 4 by default;
+`--out`) builds the next seeds of each spec that no review decided on (neither kept nor rejected, from 1 up) into
+`.cache/rooms/candidates/<spec>/seed_<n>.nbt` with a sidecar, and leaves out, with the reason, a candidate that
+validation would refuse. It replaces that folder on every run. `--kept` builds the specs' kept seeds too (with
+`--count 0` only those), so a change to the generator can be reviewed on the rooms it changes; a reject decision on
+a kept room moves it to `rejected_seeds`. Review them like any other folder:
+
+```bash
+uv run rf rooms candidates                                  # every spec; or name some
+uv run rf rooms gallery .cache/rooms/candidates --cut 4     # --cut 4 shows the rooms below their cornice
+uv run rf rooms review .cache/rooms/candidates --from decisions.yaml
+uv run rf gen                                               # writes the kept rooms
+```
+
+`rf rooms review` on the candidates folder (marked by `.room-candidates`) also freezes its decisions into the specs:
+a kept seed joins `seeds`, a rejected one `rejected_seeds`, and only those two lines of the spec change (written as
+flow lists, `seeds: [2, 7]`; a spec that writes either as a block list is refused). The generator is deterministic,
+so a change to it changes every kept room: `rf gen --check` shows which, and a change a player would see goes back to
+the gallery.

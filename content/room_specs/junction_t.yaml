@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/room_specs.schema.json
+# Where a corridor splits in two.
+id: junction_t
+kind: t_junction
+theme: realmforge:stone_vault
+footprint: [9, 9]
+height: 6
+connectors: [east, south, west]
+features: [rubble]
+seeds: [1, 2, 3, 4]
+rejected_seeds: []

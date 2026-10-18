@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/room_specs.schema.json
+# Four corridors meet under pillars.
+id: crossing
+kind: crossing
+theme: realmforge:stone_vault
+footprint: [9, 9]
+height: 6
+connectors: [north, east, south, west]
+features: [pillars]
+seeds: [1, 2, 3, 4]
+rejected_seeds: []

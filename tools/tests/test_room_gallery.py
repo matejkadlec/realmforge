@@ -200,3 +200,50 @@ def test_real_render_of_a_spike_room(tmp_path: Path) -> None:
     target = tmp_path / "start.png"
     renderer.render(read_structure(room_structure(SPIKE_ROOMS["start"])), VIEWS[1], target)
     assert target.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+# --- markers, always shown with their label (ADR 0035) ----------------------------------------------------------
+
+
+def test_every_marker_has_its_own_style() -> None:
+    from realmforge_tools.rooms.check import MARKERS
+    from realmforge_tools.rooms.render import MARKER_STYLES, UNKNOWN_MARKER
+
+    assert set(MARKER_STYLES) == set(MARKERS), "a new marker needs a style in rooms/render.py (ADR 0035)"
+    styles = [*MARKER_STYLES.values(), UNKNOWN_MARKER]
+    assert len({style.block for style in styles}) == len(styles)
+    assert len({style.colour for style in styles}) == len(styles)
+
+
+def test_views_draw_every_marker_in_its_colour_even_above_the_cut() -> None:
+    from realmforge_tools.rooms.render import MARKER_STYLES, drawn_blocks
+    from realmforge_tools.rooms.structure import BlockState, StructureBlock
+
+    marker = BlockState("minecraft:structure_block", (("mode", "data"),))
+    structure = Structure(
+        (3, 9, 3),
+        4790,
+        (
+            StructureBlock(
+                (1, 1, 1), marker, {"id": "minecraft:structure_block", "mode": "DATA", "metadata": "mob"}
+            ),
+            StructureBlock(
+                (1, 7, 1), marker, {"id": "minecraft:structure_block", "mode": "DATA", "metadata": "chest"}
+            ),
+            StructureBlock((0, 7, 0), BlockState("minecraft:stone")),
+        ),
+    )
+    plan = next(view for view in VIEWS if view.name == "plan")
+    drawn = dict(drawn_blocks(structure, plan, cut=4))
+    assert drawn == {(1, 1, 1): MARKER_STYLES["mob"].block, (1, 7, 1): MARKER_STYLES["chest"].block}
+
+
+def test_page_lists_each_rooms_markers_under_a_legend(tmp_path: Path) -> None:
+    rooms = spike_folder(tmp_path / "rooms")
+    page, _ = gallery.build(rooms, tmp_path / "out", FakeRenderer(), "Rooms")
+    text = page.read_text(encoding="utf-8")
+    assert '<section class="legend-markers">' in text
+    for label in ("entrance", "mob", "chest", "exit"):
+        assert f"<code>{label}</code>:" in text  # the legend
+    assert "<code>entrance</code> &times;1: 7 1 7" in text  # the start room's card
+    assert "<code>mob</code> &times;1: 12 1 3" in text  # the corridor's

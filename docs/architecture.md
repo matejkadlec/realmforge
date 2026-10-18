@@ -371,7 +371,8 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `loot/`, `recipes/`, tags | `data/realmforge/loot_table/`, `recipe/`, `tags/` | reloadable vanilla data |
 | `chapters/`, `quests/` | `data/realmforge/advancement/`; `pack/config/ftbquests/quests/` (SNBT, stable ids per ADR 0006) | advancements; the FTB Quests book |
 | `worldgen/<registry>/<id>.json` (JSON, [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)) | validated and copied unchanged to `data/realmforge/dimension/`, `dimension_type/`, `worldgen/<registry>/` | vanilla worldgen registries |
-| `rooms/` (NBT plus a YAML sidecar, or a room spec in YAML; [15.4](#154-rooms)) | NBT validated and copied, specs generated into NBT, both to `data/realmforge/structure/` | structure templates |
+| `rooms/` (NBT plus a YAML sidecar; [15.4](#154-rooms)) | validated and copied, normalized, to `data/realmforge/structure/rooms/` | structure templates |
+| `room_specs/`, `room_themes/` (exist, A4d; [15.4](#154-rooms)) | each kept seed of a spec built by the room generator into `data/realmforge/structure/rooms/generated/<spec>/seed_<n>.nbt`; themes name the blocks it builds with | structure templates |
 | item YAML with a weapon preset | `data/realmforge/weapon_attributes/<item>.json` (Better Combat format) | read by Better Combat |
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
 | `texts/` (exists) | lang keys `<group>.realmforge.<name>`, `GeneratedTexts` constants | translations |
@@ -1384,7 +1385,9 @@ half and shape, and a slab loses its type. Two ways keep them:
 - **One rule per block state** (a `blockstate_match` input and the same properties on the output), written by
   `rf gen` from a theme's table of roles and blocks, so nobody writes hundreds of rules by hand. Vanilla only, and
   every id stays inside the ID universe. This is the default: W4 adds the generator, whose output is then the
-  theme's processor list.
+  theme's processor list. The tables exist since A4d: `content/room_themes/<id>.yaml` names a block for each role
+  the room generator builds with, each role its own block, so a swap from the theme a room was built with to
+  another can tell the roles apart ([15.4](#154-rooms)).
 - **Lithostitched's `lithostitched:block_swap`** (in the pack), which copies the properties
   (`Block#withPropertiesOf`, checked in its 1.8.0 build for 26.1). It ties the themes to Lithostitched and names an
   id outside the ID universe until the full-pack registry dump exists, so it is only the fallback.
@@ -1438,7 +1441,7 @@ data mode whose metadata names the marker (`DataMarker.Kind`):
 | `entrance` | where players arrive; one at most, in an entrance room only | W4b |
 | `exit` | where the way out stands | W4d |
 | `mob` | a spot the dungeon's encounters put a mob on | W6 |
-| `chest` | a spot the dungeon's loot puts a chest on | W6 |
+| `chest` | a spot the dungeon's loot puts a chest on, facing the room's middle ([ADR 0036](decisions/0036-room-lights-and-decorations-form-patterns.md)) | W6 |
 
 When a plot opens, the builder reads them from each room's template as vanilla's `SinglePoolElement#getDataMarkers`
 does (`StructureTemplate#filterBlocks` with the room's placement settings, so they turn with the room), and the plot
@@ -1462,10 +1465,34 @@ Rooms are generated or imported; nobody has to build one by hand
   saved with, and vanilla upgrades it from there when it loads it (`TemplateSource#readStructure`), so imported
   rooms from older versions stay as they were saved. A template without one is refused: vanilla would read it as
   version 500 and run every upgrade since on it.
-- **Generated rooms** (A4d): room specs in YAML (kind, a footprint up to 16×16, height, connector sides, features,
-  a seed, blocks named by neutral roles that themes swap) become structure NBT through the room generator in
-  `rf gen`, with style rules for walls, floors, stairs and light, and jigsaws and markers from the connectors. The
-  NBT is generated output, never edited by hand.
+- **Generated rooms** (A4d): a room spec (`content/room_specs/<id>.yaml`: kind, a footprint up to 16×16, height,
+  connector sides, features, the theme, pools and weight) and a seed become a structure template through the room
+  generator (`rooms/generator.py`); every kept seed ships as `realmforge:rooms/generated/<spec>/seed_<n>`, written
+  by `rf gen` and never edited by hand. The kind gives the role tag (`entrance`; the hallways `corridor`, `curve`,
+  `t_junction`, `crossing`, `dead_end`; `combat`; `treasure`; `arena`, role `boss`) and the connectors the shape
+  tag. A theme (`content/room_themes/<id>.yaml`) names the block of each neutral role (`floor`, `floor_border`,
+  `wall_base`, `wall_body` and its cracked and mossy patches, `wall_cornice`, `ceiling`, `pillar`, `stairs`,
+  `slab`, `rubble`, `wall_light`, `ceiling_light`, ...), and a generated room holds nothing else besides air, its
+  jigsaws and its markers. The style rules: walls one block thick in three layers (base, body with patches,
+  cornice); a floor border along the walls and in the doorways and a seeded pattern in the middle; doorways three
+  wide and high in the middle of each connector side, with a jigsaw `realmforge:door` at the foot like the
+  imported rooms', so the two kinds join; three-wide paths from every doorway to the middle that pillars, rubble,
+  niches and stairs keep clear of; profiles with their facing worked out (a moulding of upside-down stairs or top
+  slabs under the ceiling, corbels under pillar capitals, the step around a pit, stairs up to a balcony's deck of
+  top slabs, corner shapes by vanilla's `StairBlock` rule); lights in patterns that leave no cell dark where a mob
+  could spawn (`rooms/lights.py`, [ADR 0036](decisions/0036-room-lights-and-decorations-form-patterns.md)): wall
+  lights all at one height, two free blocks from a wall's ends and three apart, balanced on opposite walls, only on
+  pilasters and pillars where a room has them, flanking all doorways or none, lanterns in big rooms, preferring
+  combinations the room's symmetry maps onto themselves; and markers by kind: an `entrance` in the entrance's
+  middle; `mob` in combat rooms and arenas, on full blocks of the floor (ground mobs, never on a step or the
+  balcony), spread evenly (the middle of each spot's share of the floor, at least three blocks apart, a block clear
+  of the walls and three of the doorways); five `chest` spots in a treasure room, mirrored across the doorway's line
+  where the niches allow, in the niches or against the walls. Markers and lights are built last, so changing them
+  leaves the rest of a kept room as it was. The features are `pillars`, `alcoves` (niches in the walls without
+  a doorway), `pit` (a sunken middle one block deep; the floor is then two blocks thick), `balcony` and `rubble`.
+  The seed picks the variations (floor pattern, patches, moulding, pillar layout, niche rhythm, rubble, lights,
+  markers), and the same spec, theme and seed always give the same room. A change to the generator therefore
+  changes the kept rooms too: `rf gen` shows it, and a change a player would see goes back to the gallery.
 - **Imported rooms** (A4b, A4c): MIT, CC0 and LGPL-3.0 rooms from other mods, taken in by `rf rooms import` from
   `.nbt`, `.schem` or `.litematic` files with a rules file that remaps blocks, block entities, jigsaw names and
   pools, container loot tables and entities and picks the files that are rooms
@@ -1491,11 +1518,17 @@ Rooms are generated or imported; nobody has to build one by hand
   or exported as a schematic and taken in by `rf rooms import --ours`, which marks the sidecar's `source` as ours.
   Validation keeps every other imported room in `third_party/<source>/`, where its notices are required.
 - **Review:** the room gallery (A4e, `rf rooms gallery`) renders rooms headless through nucleation, with the client
-  jar's models and textures read at runtime; Matěj keeps or rejects them in batches. `rf rooms review` records the
-  decisions in a `review.yaml` in the reviewed folder: rejected imports are dropped, and a kept generated
-  candidate's seed is frozen. A reject decision stays after its room is dropped, and `rf rooms import` skips the
-  rooms a review rejects, so importing the source again does not bring them back. Generated folders are not
-  reviewed: `rf gen` would delete their `review.yaml`.
+  jar's models and textures read at runtime; Matěj keeps or rejects them in batches. Every data marker shows with
+  its label, drawn in its label's colour (also above a cutaway's cut) and listed on the room's card under a legend,
+  because where a room puts its markers is reviewed like its blocks
+  ([ADR 0035](decisions/0035-room-galleries-show-every-marker-with-its-label.md)). `rf rooms review` records the
+  decisions in a `review.yaml` in the reviewed folder: rejected imports are dropped. A reject decision stays after
+  its room is dropped, and `rf rooms import` skips the rooms a review rejects, so importing the source again does
+  not bring them back. Generated rooms are reviewed as candidates: `rf rooms candidates` builds the next seeds of
+  each spec that no review decided on into `.cache/rooms/candidates/<spec>/seed_<n>.nbt`, and `rf rooms review`
+  on that folder freezes the decisions into the specs (a kept seed joins `seeds`, a rejected one
+  `rejected_seeds`, so the next candidates are new). Folders inside the generated directories are not reviewed:
+  `rf gen` would delete their `review.yaml`.
 - **Validation:** size limits (48 blocks per axis, a structure block's maximum), connectors on the room's boundary
   facing out, known markers, only blocks the themes can swap and only ids inside the ID universe (an imported
   room's own blocks are remapped, and a container's loot table must exist), and `LICENSE` and `NOTICE` next to
@@ -1513,9 +1546,16 @@ Rooms are generated or imported; nobody has to build one by hand
   ending such as `_bricks`). Anything else lets it through, an unknown block and a missing cell included; a room that
   fails on a solid block the list lacks gets the block added. A fluid on the roof of a closed room stays inside. A
   pooled room holds an entrance marker only if it is an entrance (`validate.py`). Thirteen imported rooms have fluids
-  that can flow out and are in no pool. The swappable blocks come with
-  the themes of the room generator (A4d). Generated rooms are also checked for reachability
-  between their connectors and for headroom. In the game, `ContentRoomGameTests` (QA mod) loads every room through
+  that can flow out and are in no pool. Generated rooms are also checked by `rooms/walk.py`: every connector's
+  doorway has three blocks of headroom over a floor, every connector can be walked to from every other (steps of
+  one block at most, three blocks of headroom all the way, no parkour), and no cell where a mob could spawn (a
+  block below, two passable cells) is without block light, since the instances' dimension type lets monsters
+  spawn only at block light 0. Light spreads one level less per step through passable cells; a stair or slab
+  counts as blocking it, so the check errs on the dark side. A generated room also holds only its theme's blocks,
+  air, jigsaws and markers. Validation checks every theme's blocks against the ID universe and against what their
+  role needs (a full solid block, stairs, a slab, a wall torch, a lantern), and keeps `content/rooms/generated/`
+  free for the generated rooms. Imported rooms are not held to the theme blocks yet: W4's themes decide how they
+  are swapped. In the game, `ContentRoomGameTests` (QA mod) loads every room through
   the structure manager, which upgrades an imported room from its data version, and compares its size, jigsaws and
   air blocks with `GeneratedRoomExpectations`, and checks that every structure block in it is a data marker the
   builder knows.

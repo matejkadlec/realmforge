@@ -2,7 +2,9 @@
 
 ``rf rooms gallery [DIR]`` renders each ``*.nbt`` below ``DIR`` (default ``content/rooms/``; also a folder of
 generated seed candidates) from four views into ``.cache/rooms/gallery/<folder>/`` and writes ``index.html``
-there. The page shows each room's size and sidecar, and a Keep and a Reject choice. Its "Copy decisions" button
+there. The page shows each room's size, sidecar and data markers, and a Keep and a Reject choice. Markers are part
+of what a room is for, so the gallery shows every one with its label, in the renders and on the card, under a legend
+of the labels ([ADR 0035](../../../docs/decisions/0035-room-galleries-show-every-marker-with-its-label.md)). Its "Copy decisions" button
 copies them as YAML; ``rf rooms review DIR`` merges that text into ``DIR/review.yaml``, the record that the import
 (A4c) and the generator (A4d) act on: rejected imports are dropped, a kept candidate's seed is frozen. The page
 starts from the decisions already in ``review.yaml``. A generated folder (the spike rooms) can be viewed but not
@@ -22,7 +24,15 @@ from pydantic import ValidationError
 
 from realmforge_tools.art.gallery import PAGE_CSS, PAGE_FONTS
 from realmforge_tools.project import RepoPaths
-from realmforge_tools.rooms.render import CUT_HEIGHT, VIEWS, RoomRenderer
+from realmforge_tools.rooms.render import (
+    CUT_HEIGHT,
+    MARKER_STYLES,
+    UNKNOWN_MARKER,
+    VIEWS,
+    RoomRenderer,
+    marker_label,
+    marker_style,
+)
 from realmforge_tools.rooms.structure import AIR, Structure, StructureError, read_structure
 from realmforge_tools.schema.room import REVIEW_FILE, ReviewFile, RoomDef
 from realmforge_tools.yamlio import YamlLoadError, load_yaml, load_yaml_text
@@ -178,6 +188,7 @@ def render_page(
         "session: <code>rf rooms review</code> records them. Views: outside, cut "
         f"{cut} blocks above the bottom (or below the top layer of a lower room) from two corners, and a plan of the "
         "cut.</p>",
+        _legend(),
         "</header>",
         '<div class="rooms">',
     ]
@@ -218,6 +229,7 @@ def _card(room: GalleryRoom, decision: str | None) -> str:
         facts.append(f"pools: {', '.join(room.sidecar.pools) or 'none'}")
         facts.append(f"tags: {', '.join(room.sidecar.tags) or 'none'}")
     parts.append(f'<p class="stats">{esc(" · ".join(facts))}</p>')
+    parts.append(_markers(structure))
     parts.append('<div class="views">')
     for view in VIEWS:
         src = f"{room.key}/{view.name}.png"
@@ -234,6 +246,44 @@ def _card(room: GalleryRoom, decision: str | None) -> str:
         )
     parts.append("</div></article>")
     return "".join(parts)
+
+
+def _legend() -> str:
+    """What the colours in the renders mean: one line per marker label, and the connectors."""
+    esc = html.escape
+    rows = [
+        f'<li><span class="swatch" style="background:{style.colour}"></span> <code>{esc(label)}</code>: '
+        f"{esc(style.meaning)}</li>"
+        for label, style in [*MARKER_STYLES.items(), ("unknown", UNKNOWN_MARKER)]
+    ]
+    return (
+        '<section class="legend-markers"><h2 class="small">Markers</h2>'
+        '<p class="muted">Each marker is drawn as a block in its colour, also above the cut (a marker on a balcony '
+        "shows in the plan), and listed on its card with its position (x y z from the room's corner). The game never "
+        "places a marker; the dungeon fills its spot.</p>"
+        f"<ul>{''.join(rows)}</ul>"
+        '<p class="muted">Connectors are the jigsaw blocks at the foot of the doorways: rooms join where two meet, and '
+        "a placed room turns them into air.</p></section>"
+    )
+
+
+def _markers(structure: Structure) -> str:
+    """The room's markers, grouped by label with their positions."""
+    esc = html.escape
+    found: dict[str, list[str]] = {}
+    for block in structure.blocks:
+        label = marker_label(block)
+        if label is not None:
+            found.setdefault(label, []).append(" ".join(map(str, block.pos)))
+    if not found:
+        return '<p class="markers muted">No markers.</p>'
+    order = [label for label in MARKER_STYLES if label in found] + sorted(set(found) - MARKER_STYLES.keys())
+    lines = [
+        f'<span class="marker"><span class="swatch" style="background:{marker_style(label).colour}"></span> '
+        f"<code>{esc(label or 'no label')}</code> &times;{len(found[label])}: {esc(' · '.join(found[label]))}</span>"
+        for label in order
+    ]
+    return f'<p class="markers">{"".join(lines)}</p>'
 
 
 def _sidecar(path: Path) -> RoomDef | None:
@@ -254,6 +304,11 @@ h1, h3 code { overflow-wrap: anywhere; }
 .room[data-decision="keep"] { border-color: #3c9a5f; box-shadow: inset 4px 0 0 #3c9a5f; }
 .room[data-decision="reject"] { border-color: #c4473a; box-shadow: inset 4px 0 0 #c4473a; opacity: 0.8; }
 .error { color: #c4473a; margin: 0; }
+.legend-markers ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.legend-markers li, .marker { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.legend-markers p { margin: 0; max-width: 65ch; }
+.markers { margin: 0; display: grid; gap: 4px; font-size: 0.9rem; }
+.swatch { flex: none; }
 """
 
 # Starts from the decisions in review.yaml (checked radios), then any unsent choices kept in localStorage.
