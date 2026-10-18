@@ -36,7 +36,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0022](0022-playtest-before-the-pull-request.md) | Playtest before the pull request: qa1 and qa2 | Accepted (amends 0016 and 0021), amended by [0024](0024-no-github-labels.md) |
 | [0023](0023-texture-generator.md) | Texture generator: Retro Diffusion Fast, cleaned to the project palette | Accepted (refines 0007) |
 | [0024](0024-no-github-labels.md) | No GitHub labels: playtests run on qa1 and qa2 alone | Accepted (amends 0015 and 0022) |
-| [0025](0025-remove-the-nether-and-end.md) | Remove the Nether and End; the Overworld is the starting area | Accepted (resolves the open question of 0012), amended by [0032](0032-v1-realm-layout-amends-the-nether-and-end-removal.md) and [0034](0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md) |
+| [0025](0025-remove-the-nether-and-end.md) | Remove the Nether and End; the Overworld is the starting area | Accepted (resolves the open question of 0012), amended by [0032](0032-v1-realm-layout-amends-the-nether-and-end-removal.md), [0034](0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md) and [0037](0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md) (elytra source) |
 | [0026](0026-platform-minecraft-26-1-2-neoforge.md) | Platform: Minecraft 26.1.2 on NeoForge | Accepted (supersedes 0003) |
 | [0027](0027-client-bound-payload-handlers-through-the-client-event.md) | Client-bound payload handlers through NeoForge's client event | Accepted (amends 0014) |
 | [0028](0028-dungeon-rooms-generated-or-imported.md) | Dungeon rooms are generated or imported, not built by hand | Accepted (amends 0007, 0009, 0012 and 0014) |
@@ -48,6 +48,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0034](0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md) | Ancient merchants and the Wither amend the Nether and End removal | Accepted (amends 0025) |
 | [0035](0035-room-galleries-show-every-marker-with-its-label.md) | Room galleries show every marker with its label | Accepted |
 | [0036](0036-room-lights-and-decorations-form-patterns.md) | Room lights and decorations form patterns | Accepted |
+| [0037](0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md) | Elytra from chapter 3's final boss amend the Nether and End removal | Accepted (amends 0025) |
 
 ## Open questions (not decided)
 
