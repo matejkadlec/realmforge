@@ -21,6 +21,8 @@ from realmforge_tools.project import DATA_VERSION, QA_MOD_ID, RepoPaths
 # name -> (size x, size y, size z). Each template is a smooth stone floor (y = 0) with air above.
 PLATFORMS: dict[str, tuple[int, int, int]] = {
     "platform_5x5": (5, 5, 5),
+    # Room for a realm portal's frame, 5 wide and 6 tall, with space in front of it and behind it (W2b).
+    "platform_9x9": (9, 8, 9),
 }
 
 AIR = ("minecraft:air", ())
