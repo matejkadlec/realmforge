@@ -1,6 +1,7 @@
 """Blocks: Java registrations (the block and its block item), blockstates, block and item models, placeholder
 textures, loot tables (the block drops itself), the vanilla mining tags, and the QA mod's expectations
-(architecture 6.2)."""
+(architecture 6.2). A block's kind decides its Java class (a kind other than simple comes from ``world/BlockKinds``,
+which the feature owning the kind fills), its blockstate and its models."""
 
 from __future__ import annotations
 
@@ -49,15 +50,10 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     for entry in content.blocks:
         block_id = entry.model.id
         model = f"{MOD_ID}:block/{block_id}"
-        files[assets / "blockstates" / f"{block_id}.json"] = dump_json({"variants": {"": {"model": model}}})
-        files[assets / "models" / "block" / f"{block_id}.json"] = dump_json(
-            {"parent": "minecraft:block/cube_all", "textures": {"all": model}}
-        )
+        for path, data in _models(entry.model).items():
+            files[assets / path] = data
         files[assets / "items" / f"{block_id}.json"] = dump_json(
             {"model": {"type": "minecraft:model", "model": model}}
-        )
-        files[assets / "textures" / "block" / f"{block_id}.png"] = placeholder_block_texture(
-            f"{MOD_ID}:{block_id}"
         )
         files[data_dir(paths) / "loot_table" / "blocks" / f"{block_id}.json"] = dump_json(_loot(block_id))
         for tag in mining_tags(entry.model):
@@ -71,6 +67,41 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     files[java_file_path(qa_java, QA_GENERATED_PACKAGE, "GeneratedBlockExpectations")] = _expectations(
         content
     )
+    return files
+
+
+def _models(block: BlockDef) -> dict[str, bytes]:
+    """The blockstate, block models and placeholder textures of a block, by path under ``assets/realmforge/``.
+
+    - simple: one full cube.
+    - dungeon_portal: a full cube that looks different while open (``open=true``: the model and texture
+      ``<id>_open``).
+    - dungeon_exit: a plate one pixel high, vanilla's carpet shape.
+    """
+    block_id = block.id
+    model = f"{MOD_ID}:block/{block_id}"
+    files: dict[str, bytes] = {}
+    if block.kind == "dungeon_portal":
+        open_model = f"{model}_open"
+        variants = {"open=false": {"model": model}, "open=true": {"model": open_model}}
+        files[f"blockstates/{block_id}.json"] = dump_json({"variants": variants})
+        for name in (block_id, f"{block_id}_open"):
+            texture = f"{MOD_ID}:block/{name}"
+            files[f"models/block/{name}.json"] = dump_json(
+                {"parent": "minecraft:block/cube_all", "textures": {"all": texture}}
+            )
+            files[f"textures/block/{name}.png"] = placeholder_block_texture(f"{MOD_ID}:{name}")
+        return files
+    files[f"blockstates/{block_id}.json"] = dump_json({"variants": {"": {"model": model}}})
+    if block.kind == "dungeon_exit":
+        files[f"models/block/{block_id}.json"] = dump_json(
+            {"parent": "minecraft:block/carpet", "textures": {"wool": model}}
+        )
+    else:
+        files[f"models/block/{block_id}.json"] = dump_json(
+            {"parent": "minecraft:block/cube_all", "textures": {"all": model}}
+        )
+    files[f"textures/block/{block_id}.png"] = placeholder_block_texture(f"{MOD_ID}:{block_id}")
     return files
 
 
@@ -109,10 +140,19 @@ def _registrations(content: Content) -> bytes:
         )
         if block.requires_tool:
             properties += "\n                    .requiresCorrectToolForDrops()"
+        if block.kind == "simple":
+            register = f"BLOCKS.registerSimpleBlock({string_literal(block.id)}, {properties})"
+        else:
+            # The feature that owns the kind provides its block class (world/BlockKinds).
+            register = (
+                f"BLOCKS.registerBlock({string_literal(block.id)},\n"
+                f"                    properties -> BlockKinds.create({string_literal(block.kind)}, properties),\n"
+                f"                    {properties})"
+            )
         fields.append(
             f"    /** {{@code {MOD_ID}:{block.id}}} from {{@code {entry.source}}}. */\n"
             f"    public static final DeferredBlock<Block> {constant} =\n"
-            f"            BLOCKS.registerSimpleBlock({string_literal(block.id)}, {properties});\n"
+            f"            {register};\n"
             f"\n"
             f"    /** The block item of {{@link #{constant}}}. */\n"
             f"    public static final DeferredItem<BlockItem> {constant}_ITEM = ITEMS.registerSimpleBlockItem({constant});\n"
@@ -130,7 +170,12 @@ def _registrations(content: Content) -> bytes:
         header(Path(__file__), SOURCES) + f"package {GENERATED_PACKAGE};\n"
         "\n"
         f"import {JAVA_PACKAGE}.Realmforge;\n"
-        "import net.minecraft.world.item.BlockItem;\n"
+        + (
+            f"import {JAVA_PACKAGE}.world.BlockKinds;\n"
+            if any(e.model.kind != "simple" for e in content.blocks)
+            else ""
+        )
+        + "import net.minecraft.world.item.BlockItem;\n"
         "import net.minecraft.world.level.block.Block;\n"
         "import net.minecraft.world.level.block.SoundType;\n"
         "import net.minecraft.world.level.material.MapColor;\n"

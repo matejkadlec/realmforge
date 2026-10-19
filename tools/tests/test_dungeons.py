@@ -22,8 +22,10 @@ POOL = "realmforge:crypt"
 LAYOUT = "layout:\n  main_path: [2, 4]\n  branches: [0, 1]\n  branch_rooms: [1, 2]\n  ending: boss\n"
 
 
-def dungeon(entry_id: str = "crypt", pool: str = POOL, layout: str = LAYOUT) -> str:
-    return f"id: {entry_id}\nname:\n  en_us: Crypt\npool: {pool}\n{layout}"
+def dungeon(
+    entry_id: str = "crypt", pool: str = POOL, layout: str = LAYOUT, key: str = "minecraft:tripwire_hook"
+) -> str:
+    return f"id: {entry_id}\nname:\n  en_us: Crypt\npool: {pool}\n{layout}key: {key}\nopen_minutes: 20\n"
 
 
 def room_structure(
@@ -141,6 +143,31 @@ def test_dungeon_type_carries_its_pools_rooms(repo: RepoPaths) -> None:
         in java
     )
     assert "tools/schemas/dungeons.schema.json" in files
+    assert (data["key"], data["open_minutes"]) == ("minecraft:tripwire_hook", 20)
+    assert '"boss",\n                    "minecraft:tripwire_hook", 20,' in java
+    tag = json.loads(files["mod/src/generated/resources/data/realmforge/tags/item/dungeon_key.json"])
+    assert tag == {"values": ["minecraft:tripwire_hook"]}, "the client reads the keys from this tag"
+
+
+def test_a_key_is_an_item_that_opens_one_dungeon_type(repo: RepoPaths) -> None:
+    crypt(repo)
+    write(repo.content / "dungeons" / "vault.yaml", dungeon("vault"))
+    write(repo.content / "dungeons" / "tomb.yaml", dungeon("tomb", key="minecraft:no_such_key"))
+    problems = problems_for(repo)
+    assert any(
+        "vault.yaml" in p and "key" in p and "minecraft:tripwire_hook already opens" in p for p in problems
+    ), problems
+    assert any(
+        "tomb.yaml" in p and "key" in p and "unknown id 'minecraft:no_such_key'" in p for p in problems
+    )
+
+
+@pytest.mark.parametrize("minutes", [0, 241])
+def test_a_portal_stays_open_between_1_and_240_minutes(repo: RepoPaths, minutes: int) -> None:
+    crypt(repo)
+    path = repo.content / "dungeons" / "crypt.yaml"
+    path.write_text(path.read_text().replace("open_minutes: 20", f"open_minutes: {minutes}"))
+    assert any("crypt.yaml" in p and "open_minutes" in p for p in problems_for(repo))
 
 
 def test_a_pool_without_rooms_is_a_problem(repo: RepoPaths) -> None:

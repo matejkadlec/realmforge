@@ -45,7 +45,7 @@ def generate(repo: RepoPaths) -> dict[str, bytes]:
 
 def test_repository_blocks_are_undervaults_stones() -> None:
     content, universe = load_and_validate(RepoPaths())
-    hardness = {e.model.id: e.model.hardness for e in content.blocks}
+    hardness = {e.model.id: e.model.hardness for e in content.blocks if e.model.kind == "simple"}
     # Matěj, 2026-10-15: four stones of hardness 25, 20, 18 and 12; the common one has 20.
     assert hardness == {"coreslate": 25, "mottlestone": 18, "siltstone": 12, "vaultstone": 20}
     assert universe.contains("minecraft:block", "realmforge:vaultstone")
@@ -118,3 +118,69 @@ def test_a_block_and_an_item_cannot_share_an_id(repo: RepoPaths) -> None:
         "the block's item would clash with the item in content/items/test_item.yaml" in p
         for p in problems_for(repo)
     )
+
+
+PORTAL = "id: test_portal\nname: {en_us: Test Portal}\nkind: dungeon_portal\nhardness: 5\n"
+EXIT = "id: test_exit\nname: {en_us: Test Exit}\nkind: dungeon_exit\nhardness: 1.5\n"
+
+
+def test_a_block_kind_comes_from_its_feature_with_its_own_blockstate(repo: RepoPaths) -> None:
+    (repo.content / "blocks" / "dungeon_exit.yaml").unlink()  # one exit at most
+    write(repo.content / "blocks" / "test_rock.yaml", BLOCK)
+    write(repo.content / "blocks" / "test_portal.yaml", PORTAL)
+    write(repo.content / "blocks" / "test_exit.yaml", EXIT)
+    files = generate(repo)
+    java = files[JAVA].decode()
+    assert "import io.github.matejkadlec.realmforge.world.BlockKinds;" in java
+    assert 'BLOCKS.registerSimpleBlock("test_rock", properties -> properties' in java
+    assert (
+        'BLOCKS.registerBlock("test_portal",\n'
+        '                    properties -> BlockKinds.create("dungeon_portal", properties),\n'
+        "                    properties -> properties\n"
+    ) in java
+    assert 'properties -> BlockKinds.create("dungeon_exit", properties)' in java
+    assert "TEST_PORTAL_ITEM = ITEMS.registerSimpleBlockItem(TEST_PORTAL)" in java
+
+    assert json.loads(files[f"{ASSETS}/blockstates/test_portal.json"]) == {
+        "variants": {
+            "open=false": {"model": "realmforge:block/test_portal"},
+            "open=true": {"model": "realmforge:block/test_portal_open"},
+        }
+    }
+    assert json.loads(files[f"{ASSETS}/models/block/test_portal_open.json"]) == {
+        "parent": "minecraft:block/cube_all",
+        "textures": {"all": "realmforge:block/test_portal_open"},
+    }
+    assert (
+        files[f"{ASSETS}/textures/block/test_portal.png"]
+        != files[f"{ASSETS}/textures/block/test_portal_open.png"]
+    )
+    assert json.loads(files[f"{ASSETS}/blockstates/test_exit.json"]) == {
+        "variants": {"": {"model": "realmforge:block/test_exit"}}
+    }
+    assert json.loads(files[f"{ASSETS}/models/block/test_exit.json"]) == {
+        "parent": "minecraft:block/carpet",
+        "textures": {"wool": "realmforge:block/test_exit"},
+    }
+    assert f"{DATA}/realmforge/loot_table/blocks/test_portal.json" in files
+
+
+def test_simple_blocks_alone_need_no_block_kinds(repo: RepoPaths) -> None:
+    for path in (repo.content / "blocks").glob("*.yaml"):
+        if "kind:" in path.read_text(encoding="utf-8"):
+            path.unlink()
+    write(repo.content / "blocks" / "test_rock.yaml", BLOCK)
+    assert "BlockKinds" not in generate(repo)[JAVA].decode()
+
+
+def test_the_game_uses_one_dungeon_exit(repo: RepoPaths) -> None:
+    write(repo.content / "blocks" / "test_exit.yaml", EXIT)
+    problems = problems_for(repo)
+    assert any("test_exit.yaml" in p and "kind" in p and "one dungeon_exit block" in p for p in problems), (
+        problems
+    )
+
+
+def test_an_unknown_kind_is_a_problem(repo: RepoPaths) -> None:
+    write(repo.content / "blocks" / "test_rock.yaml", BLOCK + "kind: teleporter\n")
+    assert any("test_rock.yaml" in p and "kind" in p for p in problems_for(repo))
