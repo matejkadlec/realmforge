@@ -2,19 +2,13 @@ package io.github.matejkadlec.realmforge.world.realm;
 
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.core.Requirement;
-import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
 import io.github.matejkadlec.realmforge.world.DimensionRules;
+import io.github.matejkadlec.realmforge.world.net.RealmRefusedPayload;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
-import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
-import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -32,6 +26,7 @@ import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.EntityTravelToDimensionEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerRespawnPositionEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Who may enter and leave a realm (realm portal spec, "Access and unlocks", "Multiplayer", "Respawn"). Every move into
@@ -54,9 +49,6 @@ public final class RealmAccess {
     /** How often a refused player hears about it: once every 3 seconds at most. */
     static final int REFUSAL_INTERVAL_TICKS = 60;
 
-    private static final int TITLE_FADE_IN_TICKS = 5;
-    private static final int TITLE_STAY_TICKS = 40;
-    private static final int TITLE_FADE_OUT_TICKS = 10;
     /** Shoulder entities come down where the player stands, a little above the feet, as vanilla puts them. */
     private static final double SHOULDER_DROP_HEIGHT = 0.7;
 
@@ -66,7 +58,10 @@ public final class RealmAccess {
     private RealmAccess() {
     }
 
-    /** Refuses a move into a dimension the player may not enter, and every move of another entity into or out of a realm. */
+    /**
+     * Refuses a move into a dimension the player may not enter, and every move of another entity into or out of a
+     * realm.
+     */
     public static void onTravel(EntityTravelToDimensionEvent event) {
         Entity entity = event.getEntity();
         if (!(entity.level() instanceof ServerLevel level) || level.dimension() == event.getDimension()) {
@@ -178,7 +173,10 @@ public final class RealmAccess {
                 original.postTeleportTransition());
     }
 
-    /** The centre-screen refusal, with the realm's hint below it and a short sound, once every 3 seconds at most. */
+    /**
+     * The centre-screen refusal, with the realm's hint below it ({@link RealmRefusedPayload}: the client draws it
+     * smaller than a vanilla title), and a short sound, once every 3 seconds at most.
+     */
     private static void tellRefused(ServerPlayer player, ResourceKey<Level> dimension) {
         long now = player.level().getGameTime();
         Long last = LAST_REFUSAL.get(player);
@@ -186,15 +184,10 @@ public final class RealmAccess {
             return;
         }
         LAST_REFUSAL.put(player, now);
-        player.connection.send(new ClientboundSetTitlesAnimationPacket(TITLE_FADE_IN_TICKS, TITLE_STAY_TICKS,
-                TITLE_FADE_OUT_TICKS));
-        Component hint = Realms.of(player.level().registryAccess(), dimension)
-                .map(Holder::value)
-                .map(realm -> (Component) Component.translatable(realm.lockedHint()))
-                .orElse(Component.empty());
-        player.connection.send(new ClientboundSetSubtitleTextPacket(hint));
-        player.connection.send(new ClientboundSetTitleTextPacket(
-                Component.translatable(GeneratedTexts.MESSAGE_REALM_NOT_ELIGIBLE).withStyle(ChatFormatting.RED)));
+        String hint = Realms.of(player.level().registryAccess(), dimension)
+                .map(realm -> realm.value().lockedHint())
+                .orElse("");
+        PacketDistributor.sendToPlayer(player, new RealmRefusedPayload(hint));
         player.connection.send(new ClientboundSoundPacket(SoundEvents.NOTE_BLOCK_BASS, SoundSource.PLAYERS,
                 player.getX(), player.getY(), player.getZ(), 1.0F, 0.5F, player.getRandom().nextLong()));
     }

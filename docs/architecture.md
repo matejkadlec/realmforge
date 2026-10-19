@@ -1331,8 +1331,10 @@ loot: realmforge:boss/hollow_warden
     NeoForge's cancellable `EntityTravelToDimensionEvent` first (portals, `/tp`, `/execute in ... run tp`, ender
     pearls, other mods' warps). At `HIGH` priority, a player who fails the target's access requirements is refused
     and stays where they are, with the centre-screen "You are not eligible to pass through the portal." and the
-    realm's hint below it, at most once every 3 seconds. A move within one level is left alone. There is no operator
-    bypass;
+    realm's hint below it, at most once every 3 seconds: `RealmRefusedPayload` carries the hint, and
+    `client/hud/RealmRefusalHud` draws both like vanilla's title and subtitle, the title at 3x instead of vanilla's
+    4x (which runs the sentence into a 1080p screen's edges, Matěj, 2026-10-19) and never wider than 80 % of the
+    screen. A move within one level is left alone. There is no operator bypass;
   - **only players travel:** every other entity is refused a move into or out of a realm;
   - **shoulder entities stay behind:** at `LOWEST` priority, once nothing refused the trip, a player's shoulder
     entities are put down in the level they leave; the respawn listener does the same for a death in a realm. A
@@ -1799,7 +1801,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
 - Server → client: `CastStarted` and `CastEnded` (exist: `spell/net/CastStartedPayload` and `CastEndedPayload`, kept
   by `client/spell/ClientCasts`), `CombatText` (exists: `combat/net/CombatTextPayload`, shown by
   `client/hud/CombatTextHud`), `HitDirection` (exists: `combat/net/HitDirectionPayload`, shown by
-  `client/hud/HitDirectionHud`), `DungeonStatus`.
+  `client/hud/HitDirectionHud`), `RealmRefused` (exists: `world/net/RealmRefusedPayload`, the realm's hint, shown by
+  `client/hud/RealmRefusalHud`, [15.1](#151-dimensions)), `DungeonStatus`.
 
 ## 18. Client code: rendering, GUI, input
 
