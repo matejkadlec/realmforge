@@ -306,7 +306,7 @@ How features cooperate without breaking the direction:
 | `realmforge:dimension_rules` | `content/dimensions/` | gameplay rules of one dimension, named in a `dimension` field (for example `minecraft:overworld`): mob levels and the access requirements ([15.1](#151-dimensions)); flags later. Validation allows one entry per dimension; the server indexes the entries by dimension | no | M1 |
 | `realmforge:realm` | `content/realms/` | a realm (owned by `world`, W2a): its dimension, name, subtitle, locked hint, flavour line and the icon of its unlock advancement `realmforge:realm/<id>`; W2b adds the portal's fields. Validation allows one realm per dimension; `world/realm/Realms` indexes them by dimension, and Overworld is never a realm | yes | M1 |
 | `realmforge:boss` | `content/bosses/` | fixed level, attributes, phases, abilities (spells), arena, loot | no | M1 |
-| `realmforge:dungeon_type` | `content/dungeons/` | rule set: the room pool it is built from, resolved into its rooms (template, size, role, weight, connectors), and its layout rules (W4a); theme, encounters, loot, level range and key join with the tasks that use them | no | M1 |
+| `realmforge:dungeon_type` | `content/dungeons/` | rule set: the room pool it is built from, resolved into its rooms (template, size, role, weight, connectors), and its layout rules (W4a); its key and how long a portal to it stays open (W4d); theme, encounters, loot and level range join with the tasks that use them | no | M1 |
 | `realmforge:affix` | `content/affixes/` | rollable modifier: item categories (tags), tiers by rarity and level | yes | M2 |
 | `realmforge:gem` | `content/gems/` | socketable gem and its bonuses | yes | M2 |
 
@@ -367,11 +367,11 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 
 | `content/` | Generated | Loaded as |
 | --- | --- | --- |
-| `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/` (exists: simple full blocks with their items, loot tables and mining tags), `entities/`, `effects/`, `sounds/` | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
+| `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/` (exists: blocks with their items, loot tables, mining tags and recipes; a block's kind picks its class, below), `entities/`, `effects/`, `sounds/` | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
 | `races/`, `classes/`, `spells/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `realms/`, `bosses/`, `dungeons/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
 | `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template | the planner ([15.3](#153-generation-pure-first-then-minecraft)) |
-| `loot/`, `recipes/`, tags | `data/realmforge/loot_table/`, `recipe/`, `tags/` | reloadable vanilla data |
+| `loot/`, tags; the `recipe` of an item or block (exists, W4d) | `data/realmforge/loot_table/`, `recipe/<id>.json` (vanilla's `crafting_shaped`, the result the entry itself), `tags/` | reloadable vanilla data |
 | `chapters/`, `realms/`, `quests/` | `data/realmforge/advancement/` (a chapter's `chapter/<id>`, a realm's unlock `realm/<id>`); `pack/config/ftbquests/quests/` (SNBT, stable ids per ADR 0006) | advancements; the FTB Quests book |
 | `worldgen/<registry>/<id>.json` (JSON, [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)) | validated and copied unchanged to `data/realmforge/dimension/`, `dimension_type/`, `worldgen/<registry>/` | vanilla worldgen registries |
 | `rooms/` (NBT plus a YAML sidecar; [15.4](#154-rooms)) | validated and copied, normalized, to `data/realmforge/structure/rooms/` | structure templates |
@@ -380,6 +380,13 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
 | `texts/` (exists) | lang keys `<group>.realmforge.<name>`, `GeneratedTexts` constants | translations |
 | every type | `tools/schemas/<type>.schema.json` | editor completion |
+
+**Block kinds.** A block in `content/blocks/` is `simple` (a full block) unless its `kind` names behavior that is game
+code: `dungeon_portal` and `dungeon_exit` so far ([15.5](#155-instances)). `GeneratedBlocks` belongs to `world`, below
+the features that own those kinds, so it creates such a block through `world/BlockKinds`, a provider the owning feature
+fills when the mod is constructed (`dungeon/portal/DungeonBlocks`); the kind also decides the blockstate and models
+(`generate/blocks.py`), and `BlockKinds#blocks(kind)` hands the owner its blocks, for a block entity type or for
+placing one.
 
 The quest book is part of the modpack (All Rights Reserved, [ADR 0009](decisions/0009-licensing.md)), so its
 files are generated into `pack/`, not into the jar. FTB Quests reads them from `config/ftbquests/quests/` in the
@@ -1371,7 +1378,8 @@ loot: realmforge:boss/hollow_warden
 ### 15.2 Dungeon types
 
 A dungeon type (`content/dungeons/<id>.yaml`, the registry `realmforge:dungeon_type`, W4a) names the room pool it is
-built from and the rules of its layout ([15.3](#153-generation-pure-first-then-minecraft)):
+built from, the rules of its layout ([15.3](#153-generation-pure-first-then-minecraft)), and since W4d its key and how
+long a portal to it stays open ([15.5](#155-instances)):
 
 ```yaml
 # content/dungeons/test_dungeon.yaml (exists)
@@ -1383,15 +1391,18 @@ layout:
   branches: [1, 2]                    # side branches off the main path's rooms
   branch_rooms: [1, 2]                # rooms in each branch, its dead end included
   ending: treasure                    # the role of the room that ends the main path: boss or treasure
+key: realmforge:test_dungeon_key      # the item that opens a dungeon portal to it, one key per type (W4d)
+open_minutes: 30                      # how long that portal stays open (W4d)
 ```
 
 `rf gen` resolves the pool into the entry: each room's template, size, role, weight and connectors, in room id order
 (`generate/dungeons.py`), so the game plans a layout without loading a template, and JUnit fuzzes the planner on the
 same files. Validation checks that the pool holds an entrance, rooms to pass through (two connectors, a third when
 the rules always want a branch), a room for the ending and a dead end, that every room in it has exactly one role tag,
-and that every connector of every room meets some connector of the pool. `realmforge:test_dungeon` is test content
-like `realmforge:test_item`: nothing in the game opens it, and W6 brings the real types. What later tasks add, as a
-sketch:
+and that every connector of every room meets some connector of the pool, that its key is an item and no other type's
+key. The keys also form the item tag `realmforge:dungeon_key`, which the client reads to know which items a portal
+takes, as the dungeon types stay on the server. `realmforge:test_dungeon` is test content like `realmforge:test_item`,
+opened with the Test Dungeon Key, and W6 brings the real types. What later tasks add, as a sketch:
 
 ```yaml
 # planned fields (names are examples)
@@ -1401,8 +1412,6 @@ ending: {type: realmforge:boss_lair, boss: realmforge:hollow_warden}   # or real
 encounters: {budget_per_room: [2, 4], mobs: realmforge:crypt}           # W6
 loot: {chests: [2, 4], table: realmforge:dungeon/sunken_crypt}          # W6
 level: [8, 12]
-open_minutes: 40                     # how long a portal to it stays open (W4d)
-key: realmforge:crypt_key            # the key that opens a portal to it (W4d)
 ```
 
 The ending is a rule of the type, so "not every dungeon ends with a boss" is just another ending type.
@@ -1458,7 +1467,8 @@ Steps 1 and 2 exist since W4a (`dungeon/plan/`; `DungeonType#plan(seed)` → `Du
   corner is the plot's origin, so every room offset is relative to it.
 - **Cost:** on the test dungeon (23 rooms, layouts of 8 to 17 rooms) planning took 3.5 ms at the median, 24 ms at
   the 99th percentile and 44 ms at worst over 3,000 seeds, with at most 11 attempts. It reads no world, so it can
-  move off the main thread if the portal's entry path (W4d) needs it.
+  move off the main thread if the portal's entry path (W4d) ever needs it; so far it runs on the server thread when a
+  key opens a portal.
 
 JUnit fuzzes steps 1 and 2 over thousands of seeds, on synthetic room sets and on the generated dungeon types
 (`DungeonPlannerTest`, `PlanChecks`): every rule holds, no rooms overlap, every room is reachable from the entrance,
@@ -1615,15 +1625,42 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   progress, its party and the chunks it holds. The party is a list of players: solo in M1 (decision D8), parties
   later (RLM-68) without a data migration. Each player's run and return point live in the player's
   `realmforge:instance` attachment ([7](#7-player-state)), with the game mode entering took from them (W4c).
-- **Entry:** an entrance in the world (W4d: a temporary portal opened with a dungeon key, D8) → allocate a plot
+- **Entry:** a dungeon portal opened with a dungeon key (W4d, D8; below) → allocate a plot
   (`InstanceManager#open`: the rooms' boxes and data markers from their templates, lowest free plot first) → load
   its chunks in the background, then hold them → build over ticks → find where players arrive → teleport the online
   party members there (`ServerPlayer#teleportTo(ServerLevel, x, y, z, yaw, pitch)`), looking at the layout's way on:
   the entrance's connector to the next room of the main path (`InstanceLayout#lookAt`). Players arrive at the
   entrance room's entrance marker; without one, `SpawnFinder` takes the spot nearest the middle of the entrance room
   where a player stands on a sturdy floor with two free blocks (no collision, no fluid), the lowest of equally near
-  ones, and the middle of its roof when there is none. `/qa dungeon enter <type> [<seed>]` enters a planned dungeon
-  until W4d's portal; `/qa instance enter` builds the spike test rooms in a row.
+  ones, and the middle of its roof when there is none. A run opened through a portal does not move anyone: its owner
+  enters through the portal once it is built. `/qa dungeon enter <type> [<seed>]` builds a planned dungeon and moves
+  you in when it stands, without a portal or a timer; `/qa instance enter` builds the spike test rooms in a row.
+- **The dungeon portal** (W4d, RLM-181; Matěj's decision of 2026-10-11 in RLM-34): a craftable, reusable block
+  (`content/blocks/dungeon_portal.yaml`, kind `dungeon_portal`; code in `dungeon/portal/`). A dungeon type's key used
+  on it (`DungeonPortals#useKey`) plans a layout of that type from a new seed and opens a run for the player who used
+  it, alone (D8): `InstanceManager#openPortal` takes a plot as above and records on the plot its run id (unique in the
+  world, so a later run in the same plot is never taken for it), the portal (`PortalLink`: the type and the block's
+  position) and the game time it closes at, the type's `open_minutes` from now. The key is used up only once the run
+  is open: inside a dungeon, on a portal already open, for a player who already has a run, or when the type has no
+  layout that fits a plot, the player keeps it and is told why. The portal's block entity
+  (`DungeonPortalBlockEntity`) remembers the plot and run id; the block is lit (`open=true`) while that run is being
+  built or playable, checks once a second whether it still is, and goes dark when it is not. The portal used without
+  a key takes the player who opened it in once the run is built (the builder tells them it is open); anyone else, or
+  the owner while it is still being built, is told so. The block cannot be broken while open (`getDestroyProgress`
+  is 0, and `BreakBlockEvent` is cancelled for creative players too) and explosions leave it; no portal is placed
+  (`getStateForPlacement` returns null) or opened inside the instance dimension. Recipes have placeholder costs
+  until balance. A run whose build fails (a unit throws, above) gives its key back: at once to a player online, at
+  their next login otherwise (the manager's saved `refunds`).
+- **The timer:** every run opened through a portal closes at its saved game time
+  (`InstanceManager#runTimers`, each tick before the builder runs): its party gets "The portal closes in …" 5
+  minutes, 1 minute and 10 seconds before (`PortalTimer`), then "The portal has closed.", and the run is released:
+  every player inside goes back to their return point, which is where they stood at the portal when they entered,
+  and the plot is cleared and freed, items left inside included. `/qa instance timer <seconds>` sets your run to close
+  that many seconds from now. `DungeonPortalGameTests` open a portal with a key and enter it (a stranger can neither
+  enter nor break it, and it takes no second key), let the timer send the player back and free the plot, leave by
+  `/instance leave` and by the exit, complete a run with 1 minute left (5 minutes from then), give a key back after
+  a failed build, and refuse a portal inside a dungeon; JUnit checks the warnings' times (`PortalTimerTest`) and the
+  plot's saved run, portal and timer (`PlotTest`).
 - **Room templates load when the server starts** and after a reload, which empties the structure manager's cache
   (`ServerStartedEvent`, `OnDatapackSyncEvent` without a player): every room of every dungeon type, so no run waits
   for a template to load and upgrade from its data version (up to 54 ms each in spike 3). A reload posts its sync
@@ -1652,8 +1689,11 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   for the chunks it does not hold, and a build released before any of its units ran loads none. The GameTest server
   runs its ticks back to back, so the background loading of a new plot cell (seconds) would outlast the tests' tick
   timeouts; there the QA mod loads the chunks plots wait for before each tick (`GameTestChunkLoads`).
-- **Completion:** a run whose goal is done (its final boss died; W4d adds the trigger, the message and the timer) is
-  `completed` (`InstanceManager#complete`): its players stay until they leave or the plot closes.
+- **Completion:** a run whose goal is done is `completed` (`InstanceManager#complete`, the entry point for the final
+  boss's death and the objectives of W5 and W6, and `/qa instance complete` until then): its players stay until they
+  leave or the plot closes, which is now 5 minutes from then, however much time was left (`PortalTimer
+  #COMPLETED_TICKS`), and they read "You completed the instance and will be automatically teleported out in 5 minutes.
+  Use '/instance leave' to exit immediately."
 - **Rules inside: nobody edits the rooms** (W4c, `dungeon/instance/InstanceRules`). Survival players are switched to
   Adventure mode when they enter (creative operators keep theirs, and so do players in Adventure or spectator mode);
   their visit remembers survival, and leaving gives it back, unless something else changed the game mode since (an
@@ -1690,18 +1730,24 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   arrival spot, still inside and in the same run, looking along the way on; the visit is copied on death, and the
   respawned player keeps Adventure mode. Their bed or anchor stays their spawn point outside (vanilla still uses an
   anchor charge when the anchor was the original respawn target, as `findRespawnPositionAndUseSpawnBlock` runs before
-  the event). A run released while its player lies dead does not move the body (`release` skips dead players): the
-  respawn takes them to their return point instead, which ends the visit. Leaving the End is no death and is left
-  alone.
-- **Also inside:** no natural spawns, leave through the exit portal or a command.
+  the event). A run released while its player lies dead does not move the body (`release` skips dead players, and so
+  does their next login, RLM-258): the respawn takes them to their return point instead, which ends the visit.
+  Leaving the End is no death and is left alone.
+- **Also inside:** no natural spawns. **The way out** (W4d): the builder lays the Dungeon Exit
+  (`content/blocks/dungeon_exit.yaml`, kind `dungeon_exit`: a plate one pixel high without collision) where players
+  arrive and at every `exit` marker, where nothing stands, once the rooms stand; using it leaves the run, as
+  `/instance leave` does, the player command (`command/InstanceCommand`) that works at any time. Closing clears the
+  exit with the rooms.
 - **Leaving and disconnects:** leaving by command or exit, respawning outside the dimension (at the return point
   after the run was released, above; `PlayerEvent.PlayerRespawnEvent`) or being teleported out (`PlayerEvent.PlayerChangedDimensionEvent`) leaves the
   run; a run whose party is empty is released, built or still building. A party member who has not entered yet (the
-  run is still being built, or built and waiting) can leave it too (`InstanceManager#leave`, `/qa instance leave`),
-  and is never moved in. A disconnect keeps the run. On login
-  (`PlayerEvent.PlayerLoggedInEvent`) a player inside the dimension stays if their run is still playable and is sent
-  back to their return point otherwise; a player outside it drops out of a run they never entered (they disconnected
-  while it was being built). W4 adds a timeout for party members who stay offline.
+  run is still being built, or built and waiting) can leave it too (`InstanceManager#leave`, `/instance leave`), and
+  is never moved in; so the last player to leave a portal's run closes the portal. A disconnect keeps the run. On
+  login (`PlayerEvent.PlayerLoggedInEvent`) a player inside the dimension stays if their run is still playable and is
+  sent back to their return point otherwise, unless they lie dead: a run released while they lay dead leaves them for
+  their respawn, which takes them to their return point (RLM-258), as the respawn above does. A player outside it
+  drops out of a run they never entered (they disconnected while it was being built), unless a portal opened it:
+  that run waits for them until its timer runs out. The portal's timer is the timeout for players who stay offline.
 - **Cleanup and plot reuse: clear, then reuse** (spike 3). When a run is released, its blocks are cleared over the
   next ticks (containers emptied first so nothing drops, entities other than players removed), its rooms and 4 blocks
   around each (`PlotWork.MARGIN`) for what spreads past a wall while players are inside: fire, a vine, a creative
@@ -2001,11 +2047,13 @@ The QA mod grows with the features: `/qa` commands (level, class, talents, gear 
 instance with a given seed, reset cooldowns, god mode), a training dummy with a DPS meter, and a combat log file
 that agents can read. So far:
 
-- `/qa instance enter|leave|build|free|list|bench` from spike 3, and `/qa state show|reset [<entity>]` from
-  F3, which prints or clears the player state attachments ([7](#7-player-state));
+- `/qa instance enter|leave|build|free|list|bench` from spike 3, `/qa instance complete` and
+  `/qa instance timer <seconds>` from W4d (complete your run; set its portal to close that many seconds from now,
+  [15.5](#155-instances)), and `/qa state show|reset [<entity>]` from F3, which prints or clears the player state
+  attachments ([7](#7-player-state));
 - `/qa dungeon plan|build|enter <type> [<seed>]` (W4a, W4b): plan a layout of a dungeon type, with a top-down map
-  and a legend in the server log, build it into a plot for a fly-through, or build it and move in at its entrance as
-  the portal will (W4d); without a seed a random one is drawn and named
+  and a legend in the server log, build it into a plot for a fly-through, or build it and move in at its entrance
+  without a portal or a timer; without a seed a random one is drawn and named
   ([15.3](#153-generation-pure-first-then-minecraft), [15.5](#155-instances));
 - `/qa stats set <stat> <value> [<players>]`, `/qa stats reset|show` (F4b: points for a primary stat, percent for a
   share) and `/qa level <level> [<entity>]` (a player with a character gets exactly the character XP of the level,

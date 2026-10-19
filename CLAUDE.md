@@ -60,7 +60,9 @@ our own core mod holds all RPG systems; the modpack adds third-party QoL, perfor
   (`realmforge:stone`), one giant cave of four slow custom stones (`content/blocks/`), sealed until the player's own
   unlock advancement `realmforge:realm/stone` (`content/realms/`, access requirements in the dimension rules), entered
   through `/qa realm enter` until the realm portal exists (W2b), with no mob crossing into or out of it and every
-  respawn in Overworld.
+  respawn in Overworld. Dungeons are entered through the Dungeon Portal (W4d): a dungeon key opens it for its player
+  alone, for the dungeon type's open time, with warnings before it closes and sends everyone back; the Dungeon Exit
+  and `/instance leave` leave at any time, and a completed run closes 5 minutes later.
 
 ## Pinned versions
 
