@@ -33,3 +33,10 @@ texts:
   # unspent points now).
   stat_points_returned:
     en_us: "Your level fell, so your stat points are unspent again. Unspent stat points: %1$s."
+  # Realms (W2a, realm portal spec "Access and unlocks"). The title a player gets when a portal, a command or a warp
+  # would take them into a realm they have not unlocked (Matěj's wording, RLM-128); the realm's hint is the subtitle.
+  realm_not_eligible:
+    en_us: You are not eligible to pass through the portal.
+  # A bed in a realm, which sets no spawn: a player always respawns in Overworld (RLM-128).
+  bed_only_overworld:
+    en_us: Beds only work in Overworld

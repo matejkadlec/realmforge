@@ -1,0 +1,14 @@
+{
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 734025196,
+    "separation": 2,
+    "spacing": 5
+  },
+  "structures": [
+    {
+      "structure": "realmforge:undervault_fossil",
+      "weight": 1
+    }
+  ]
+}

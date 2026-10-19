@@ -56,7 +56,11 @@ our own core mod holds all RPG systems; the modpack adds third-party QoL, perfor
   instantly, with a cast time or as a channel, interrupted by moving by itself (not by a push), death, a dimension
   change or logout, with no melee during a cast, and synced to clients as cast payloads; at an entity, a ground point
   or a direction, with damage, heals, projectiles, areas, status effects, teleports, dashes and knockback. Procs and
-  the spell bar come next (C3a-4, C3b).
+  the spell bar come next (C3a-4, C3b). The first realm exists (W2a): Undervault, the stone realm
+  (`realmforge:stone`), one giant cave of four slow custom stones (`content/blocks/`), sealed until the player's own
+  unlock advancement `realmforge:realm/stone` (`content/realms/`, access requirements in the dimension rules), entered
+  through `/qa realm enter` until the realm portal exists (W2b), with no mob crossing into or out of it and every
+  respawn in Overworld.
 
 ## Pinned versions
 

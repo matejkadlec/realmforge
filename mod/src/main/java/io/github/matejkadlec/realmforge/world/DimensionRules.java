@@ -3,8 +3,10 @@ package io.github.matejkadlec.realmforge.world;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.core.Requirement;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.core.Holder;
@@ -16,18 +18,20 @@ import net.minecraft.world.level.Level;
 /**
  * The gameplay rules of one dimension, an entry of the datapack registry {@code realmforge:dimension_rules} from
  * {@code content/dimensions/} (architecture 5.2, 15.1). The entry names its dimension in a field, so its own id stays
- * ours ({@code realmforge:overworld} holds the rules of {@code minecraft:overworld}). So far it holds the rule for mob
- * levels; the access requirement and flags follow with the realms (W2a).
+ * ours ({@code realmforge:overworld} holds the rules of {@code minecraft:overworld}): the rule for mob levels, and what
+ * a player needs to enter the dimension, which {@link RealmAccess} checks on every way in (W2a).
  *
  * <p>The registry stays on the server. {@link #of} finds a dimension's rules through an index built once per
  * registry, so a spawn costs one map lookup.
  *
  * @param mobLevels the level of mobs spawning there; without it, mobs there have no level
+ * @param access what a player needs to enter the dimension, every one of them; none: open to everyone
  */
-public record DimensionRules(ResourceKey<Level> dimension, Optional<MobLevelRule> mobLevels) {
+public record DimensionRules(ResourceKey<Level> dimension, Optional<MobLevelRule> mobLevels, List<Requirement> access) {
     public static final Codec<DimensionRules> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     Level.RESOURCE_KEY_CODEC.fieldOf("dimension").forGetter(DimensionRules::dimension),
-                    MobLevelRule.CODEC.optionalFieldOf("mob_levels").forGetter(DimensionRules::mobLevels))
+                    MobLevelRule.CODEC.optionalFieldOf("mob_levels").forGetter(DimensionRules::mobLevels),
+                    Requirement.CODEC.listOf().optionalFieldOf("access", List.of()).forGetter(DimensionRules::access))
             .apply(instance, DimensionRules::new));
 
     /** The index of the last registry asked about: one per loaded world, rebuilt when the world changes. */

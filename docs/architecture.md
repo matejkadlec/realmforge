@@ -171,7 +171,8 @@ io.github.matejkadlec.realmforge
 ├─ item/              item behaviours, gear components; affixes and gems later
 ├─ loot/              loot functions and conditions, reward rolls
 ├─ character/         races, classes, character data, leveling, level caps, the character sheet's view
-├─ world/             dimension rules and access, world defaults, Dark Vision, griefing protection
+├─ world/             dimension rules and access, realms, world blocks, world defaults, Dark Vision, griefing
+│                     protection
 ├─ mob/               mob levels and scaling, AI goal library, custom mobs
 ├─ boss/              boss definitions, phase machine, boss entity
 ├─ dungeon/           dungeon types, planner, layout, builder, instances
@@ -228,8 +229,8 @@ trees, so `character` sits above `spell` and `talent`). "May use" includes whate
 | `Realmforge` (entry point), `command`, `compat`, `network` | public APIs of any feature |
 | `client` | anything; nothing outside `client/` uses `client/` |
 
-Generated classes belong to the feature that owns their content type (`GeneratedItems` to `item`, generated
-status effects to `effect`) and follow that feature's row.
+Generated classes belong to the feature that owns their content type (`GeneratedItems` to `item`, `GeneratedBlocks`
+to `world`, generated status effects to `effect`) and follow that feature's row.
 
 How features cooperate without breaking the direction:
 
@@ -261,7 +262,8 @@ How features cooperate without breaking the direction:
 | | `RegisterTicketControllersEvent` (mod) | chunk ticket controllers: instance plots ([15.5](#155-instances)) |
 | World creation | `LevelEvent.CreateSpawnPosition` (game; listened to, never cancelled) | the gamerules of a new world, once ([19.1](#191-world-defaults)) |
 | Server start | `RegisterCommandsEvent`, `ServerStartedEvent` (game) | commands |
-| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerRespawnPositionEvent`, `PlayerEvent.PlayerRespawnEvent`, `PlayerEvent.PlayerChangedDimensionEvent`, `PlayerTickEvent.Post` (game) | recompute stats at the end of a new player entity's first tick and after a change; keep health across respawns ([8.2](#82-where-modifiers-come-from)); bring a character's level cap and level up to date at login ([10.2](#102-leveling)); keep or end the player's instance run, and respawn a death inside it at its entrance ([15.5](#155-instances)); reapply Dark Vision ([19.1](#191-world-defaults)) |
+| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerRespawnPositionEvent`, `PlayerEvent.PlayerRespawnEvent`, `PlayerEvent.PlayerChangedDimensionEvent`, `PlayerTickEvent.Post` (game) | recompute stats at the end of a new player entity's first tick and after a change; keep health across respawns ([8.2](#82-where-modifiers-come-from)); bring a character's level cap and level up to date at login ([10.2](#102-leveling)); keep or end the player's instance run, and respawn a death inside it at its entrance ([15.5](#155-instances)); respawn a death in a realm in Overworld ([15.1](#151-dimensions)); reapply Dark Vision ([19.1](#191-world-defaults)) |
+| Travel | `EntityTravelToDimensionEvent` (game) | refuse a player without a dimension's access and every other entity a trip into or out of a realm; put a travelling player's shoulder entities down ([15.1](#151-dimensions)) |
 | Play | damage, death, spawn, tick and advancement events (game) | sections 8-16 |
 | Client start | `RealmforgeClient` constructor; client registration events (mod) | [section 18](#18-client-code-rendering-gui-input) |
 
@@ -301,7 +303,8 @@ How features cooperate without breaking the direction:
 | `realmforge:curve` | `content/curves/` | named table of points (level → value), linearly interpolated: XP per level, mob scaling, item budgets | yes | M1 |
 | `realmforge:chapter` | `content/chapters/` | story chapter (owned by `progression`, C2): order, the level cap while it is the player's current chapter and the one once it is completed; its advancement `realmforge:chapter/<id>` marks it completed (what a chapter unlocks names the chapter through `chapter_completed`) | yes | M1 |
 | `realmforge:kill_xp_multiplier` | `content/kill_xp_multipliers/` | how much kill XP the mobs of one entity type give (owned by `character`, C2), named in an `entity` field, by size for slimes and magma cubes; the XP model calls it the mob's rank. Validation allows one entry per entity type | no | M1 |
-| `realmforge:dimension_rules` | `content/dimensions/` | gameplay rules of one dimension, named in a `dimension` field (for example `minecraft:overworld`): mob levels, access requirement, flags. Validation allows one entry per dimension; the server indexes the entries by dimension | no | M1 |
+| `realmforge:dimension_rules` | `content/dimensions/` | gameplay rules of one dimension, named in a `dimension` field (for example `minecraft:overworld`): mob levels and the access requirements ([15.1](#151-dimensions)); flags later. Validation allows one entry per dimension; the server indexes the entries by dimension | no | M1 |
+| `realmforge:realm` | `content/realms/` | a realm (owned by `world`, W2a): its dimension, name, subtitle, locked hint, flavour line and the icon of its unlock advancement `realmforge:realm/<id>`; W2b adds the portal's fields. Validation allows one realm per dimension; `world/realm/Realms` indexes them by dimension, and Overworld is never a realm | yes | M1 |
 | `realmforge:boss` | `content/bosses/` | fixed level, attributes, phases, abilities (spells), arena, loot | no | M1 |
 | `realmforge:dungeon_type` | `content/dungeons/` | rule set: the room pool it is built from, resolved into its rooms (template, size, role, weight, connectors), and its layout rules (W4a); theme, encounters, loot, level range and key join with the tasks that use them | no | M1 |
 | `realmforge:affix` | `content/affixes/` | rollable modifier: item categories (tags), tiers by rarity and level | yes | M2 |
@@ -325,7 +328,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `realmforge:resource_type` | mana, rage (`spell/ResourceTypes`; C1 gave them ids and names, C3a-1 their pools, C3a-4 rage's gain and decay) | classes, spell costs |
 | `realmforge:phase_trigger_type` | health_below, time_in_phase, adds_defeated | bosses |
 | `realmforge:dungeon_ending_type` | boss_lair, treasury; later puzzle, wave_arena, escape, mounted_run, exploration | dungeon types |
-| `realmforge:requirement_type` | level_at_least, chapter_completed, class_is, has_advancement | unlocks: dimensions, dungeons, items, talents |
+| `realmforge:requirement_type` | has_advancement (`core/HasAdvancement`), level_at_least (`character/LevelAtLeast`), chapter_completed (`progression/ChapterCompleted`), all W2a; class_is later | unlocks: dimensions (W2a), dungeons, items, talents |
 | `realmforge:affix_type` (M2) | attribute, on_hit, on_kill | affixes |
 
 ### 5.4 Using registry entries in Java
@@ -364,12 +367,12 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 
 | `content/` | Generated | Loaded as |
 | --- | --- | --- |
-| `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/`, `entities/`, `effects/`, `sounds/` | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
-| `races/`, `classes/`, `spells/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `bosses/`, `dungeons/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
+| `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/` (exists: simple full blocks with their items, loot tables and mining tags), `entities/`, `effects/`, `sounds/` | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
+| `races/`, `classes/`, `spells/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `realms/`, `bosses/`, `dungeons/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
 | `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template | the planner ([15.3](#153-generation-pure-first-then-minecraft)) |
 | `loot/`, `recipes/`, tags | `data/realmforge/loot_table/`, `recipe/`, `tags/` | reloadable vanilla data |
-| `chapters/`, `quests/` | `data/realmforge/advancement/`; `pack/config/ftbquests/quests/` (SNBT, stable ids per ADR 0006) | advancements; the FTB Quests book |
+| `chapters/`, `realms/`, `quests/` | `data/realmforge/advancement/` (a chapter's `chapter/<id>`, a realm's unlock `realm/<id>`); `pack/config/ftbquests/quests/` (SNBT, stable ids per ADR 0006) | advancements; the FTB Quests book |
 | `worldgen/<registry>/<id>.json` (JSON, [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)) | validated and copied unchanged to `data/realmforge/dimension/`, `dimension_type/`, `worldgen/<registry>/` | vanilla worldgen registries |
 | `rooms/` (NBT plus a YAML sidecar; [15.4](#154-rooms)) | validated and copied, normalized, to `data/realmforge/structure/rooms/` | structure templates |
 | `room_specs/`, `room_themes/` (exist, A4d; [15.4](#154-rooms)) | each kept seed of a spec built by the room generator into `data/realmforge/structure/rooms/generated/<spec>/seed_<n>.nbt`; themes name the blocks it builds with | structure templates |
@@ -1206,7 +1209,8 @@ Built in W1 (RLM-31): `world/DimensionRules`, `world/MobLevelRule` and `mob/MobL
   all clamped to `min_level .. max_level`. `MobLevelRule` is plain Java, and the pipeline computes the same
   (`MobLevelRuleDef.level_at`); a GameTest compares the two at sample positions. A dimension without a rule (the
   Nether and End for now) gives no level, and its mobs read as level 1. The Overworld's first numbers: level 1 at
-  the origin, one more every 500 blocks up to 5, one more per 32 blocks below y 0, jitter 1.
+  the origin, one more every 500 blocks up to 5, one more per 32 blocks below y 0, jitter 1. Undervault's (W2a, the
+  realm portal spec's): level 6 at the origin, one more every 320 blocks up to 18, jitter 1, no depth rule.
 - **The scaling** (`MobScaling`) comes from three curves at the mob's level: `realmforge:mob_health` multiplies its
   maximum health, `mob_armor` adds armor points, and `mob_damage` multiplies the damage of every hit it causes. The
   first two are permanent attribute modifiers, `realmforge:mob_level/max_health` and `realmforge:mob_level/armor`
@@ -1318,8 +1322,38 @@ loot: realmforge:boss/hollow_warden
   `data/realmforge/dimension/`, `dimension_type/` and `worldgen/<registry>/`. Python checks the location, the id,
   that the file is a JSON object, that a dimension's `type` names a known dimension type, and that no file clashes
   with the core mod's own resources; the game decodes the rest when a world loads.
-- Gameplay rules in `realmforge:dimension_rules`: mob levels, the access requirement (for example a chapter), flags.
-- Access by portal or item, locked behind the requirement (the vision's "locked dimensions").
+- Gameplay rules in `realmforge:dimension_rules`: mob levels, the access requirements (`core/Requirement`, from the
+  type registry `realmforge:requirement_type`: an advancement, a level, a chapter), flags later.
+- **Realms** (W2a, RLM-32; the [realm portal spec](design/realm-portal.md)): a realm is a dimension of ours that an
+  entry of `realmforge:realm` names, sealed until the player's own unlock, the advancement `realmforge:realm/<id>`
+  (criterion `minecraft:impossible`), which its dimension rules require. `world/realm/RealmAccess` enforces it:
+  - **every way in:** every move into another level goes through `Entity#teleport(TeleportTransition)`, which posts
+    NeoForge's cancellable `EntityTravelToDimensionEvent` first (portals, `/tp`, `/execute in ... run tp`, ender
+    pearls, other mods' warps). At `HIGH` priority, a player who fails the target's access requirements is refused
+    and stays where they are, with the centre-screen "You are not eligible to pass through the portal." and the
+    realm's hint below it, at most once every 3 seconds: `RealmRefusedPayload` carries the hint, and
+    `client/hud/RealmRefusalHud` draws both like vanilla's title and subtitle, the title at 3x instead of vanilla's
+    4x (which runs the sentence into a 1080p screen's edges, Matěj, 2026-10-19) and never wider than 80 % of the
+    screen. A move within one level is left alone. There is no operator bypass;
+  - **only players travel:** every other entity is refused a move into or out of a realm;
+  - **shoulder entities stay behind:** at `LOWEST` priority, once nothing refused the trip, a player's shoulder
+    entities are put down in the level they leave; the respawn listener does the same for a death in a realm. A
+    helper recreates them as vanilla's `respawnEntityOnShoulder` does, because `removeEntitiesOnShoulder` waits 20
+    ticks after a landing; the shoulder setters are opened by an access transformer ([19.3](#193-mixins-and-access-transformers));
+  - **respawn in Overworld:** `PlayerRespawnPositionEvent` moves a respawn whose level is a realm to the world
+    spawn (beds there set none: the dimension type's `bed_rule`). `world` listens before `dungeon`, so a death in
+    an instance still respawns at the run's entrance ([15.5](#155-instances)).
+- **Undervault** (`realmforge:stone`, W2a): a noise dimension 128 blocks high with one biome,
+  `realmforge:undervault`, built from `content/worldgen/`. Its final density is one giant cave: a floor at about
+  y 32 (a 2D noise moves it a few blocks), a ceiling at about y 100, and pillars from floor to ceiling where a broad
+  2D noise is high (about 8 % of the columns), with narrow 3D tunnels through them; bedrock below and above. The
+  surface rule lays coreslate (hardness 25) below the floor and siltstone (12) in the ceiling, vaultstone (20) is the
+  default block, and features add mottlestone (18) patches, glowstone in the ceiling, ancient debris only in the
+  coreslate under the floor (never exposed), vanilla ores and the Nether's bone fossils. Its dimension type links at
+  `coordinate_scale` 16, has no skylight, beds that set no spawn and do not explode, and no respawn anchors. A
+  GameTest samples the density function over 2,048 blocks and generates the chunks at the origin.
+- Access by portal (W2b, the realm portal) or item, locked behind the requirement (the vision's "locked
+  dimensions").
 - A technical dimension `realmforge:instances` (void, no natural spawning, fixed time) hosts dungeon instances. The
   code depends on it, so it lives in the core mod's resources (`data/realmforge/dimension/instances.json` and
   `dimension_type/instances.json`), not in `content/worldgen/`
@@ -1767,7 +1801,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
 - Server → client: `CastStarted` and `CastEnded` (exist: `spell/net/CastStartedPayload` and `CastEndedPayload`, kept
   by `client/spell/ClientCasts`), `CombatText` (exists: `combat/net/CombatTextPayload`, shown by
   `client/hud/CombatTextHud`), `HitDirection` (exists: `combat/net/HitDirectionPayload`, shown by
-  `client/hud/HitDirectionHud`), `DungeonStatus`.
+  `client/hud/HitDirectionHud`), `RealmRefused` (exists: `world/net/RealmRefusedPayload`, the realm's hint, shown by
+  `client/hud/RealmRefusalHud`, [15.1](#151-dimensions)), `DungeonStatus`.
 
 ## 18. Client code: rendering, GUI, input
 
@@ -1927,7 +1962,8 @@ Access transformers live in `src/main/resources/META-INF/accesstransformer.cfg`,
 Minecraft jar a project compiles against (its default location), and which `neoforge.mods.toml` lists under
 `[[accessTransformers]]`, so FML applies it when the game loads: in a dev run (the runs live in `qa-mod/`, whose own
 jar lacks the core mod's transforms), on the GameTest server and in the pack. The core mod's one opens
-`LivingEntity#lastHurt` for the hurt cooldown ([9.1](#91-damage-pipeline)); the QA mod's opens `lastHurt` and
+`LivingEntity#lastHurt` for the hurt cooldown ([9.1](#91-damage-pipeline)) and `ServerPlayer#setShoulderEntityLeft`
+and `Right` for the shoulder entities a realm trip leaves behind ([15.1](#151-dimensions)); the QA mod's opens `lastHurt` and
 `damageContainers` for `CombatGameTests` and `CombatStatGameTests`.
 
 ### 19.4 Optional integrations
@@ -1994,6 +2030,10 @@ that agents can read. So far:
   the cast in progress, set a resource pool, end every cooldown, and print the known spells, the pools, the running
   cooldowns, the cast in progress and how the last cast-time or channelled spell ended
   ([11.2](#112-casting-server-authoritative));
+- `/qa realm enter <realm> [<x> <z>]`, `/qa realm unlock|lock <realm>` (W2a): take the player to a realm's floor at
+  x, z (0, 0 by default) the way `/tp` does, so a player without the realm's unlock is refused, and grant or revoke
+  the unlock advancement as `/advancement grant|revoke @s only realmforge:realm/<realm>` does
+  ([15.1](#151-dimensions));
 - the combat log, `logs/realmforge-combat.log` in the game directory (`run/client/`, `run/gametest/`, ...): one line
   per hit or dodge that involves a player or a dummy, with the damage type, school, crit, attacker level, the
   original damage, what armor blocked, and the damage dealt and taken from health. A new server starts a new file.

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from realmforge_tools.content import Content
 from realmforge_tools.formats.jsonfmt import dump_json
-from realmforge_tools.generate import datapack, dungeons, spell_schools, stats, texts
+from realmforge_tools.generate import blocks, datapack, dungeons, spell_schools, stats, texts
 from realmforge_tools.generate.items import flavor_key, translation_key
 from realmforge_tools.project import MOD_ID, SUPPORTED_LOCALES, RepoPaths
 
@@ -20,6 +20,9 @@ def collect(content: Content) -> dict[str, dict[str, str]]:
         if entry.model.flavor is not None:
             for locale, text in entry.model.flavor.translations().items():
                 by_locale[locale][flavor_key(entry.model.id)] = text
+    for entry in content.blocks:
+        for locale, text in entry.model.name.translations().items():
+            by_locale[locale][blocks.translation_key(entry.model.id)] = text
     every = (
         datapack.translations(content)
         | stats.translations(content)

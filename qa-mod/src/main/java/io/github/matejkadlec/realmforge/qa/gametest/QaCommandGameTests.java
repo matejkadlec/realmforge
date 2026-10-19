@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.OptionalInt;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
@@ -30,6 +31,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForgeMod;
@@ -149,6 +151,44 @@ public final class QaCommandGameTests {
         helper.assertValueEqual(MobCommands.describe(helper.spawn(EntityType.COW, new BlockPos(0, 1, 4))),
                 "Cow: No Level", "/qa mob on a cow");
         server.getPlayerList().remove(player);
+        helper.succeed();
+    }
+
+    /**
+     * W2a's playtest: {@code /qa realm enter} is refused before the unlock and lands on Undervault's floor after it;
+     * {@code /qa realm lock} and vanilla's {@code /advancement} lock and unlock it again.
+     */
+    @QaGameTest
+    public static void realmCommandsReachTheirStates(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-realm-commands");
+        player.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
+        try {
+            run(server, player, "qa realm enter realmforge:stone");
+            helper.assertTrue(player.level() == helper.getLevel(), "/qa realm enter is refused without the unlock");
+            run(server, player, "qa realm unlock realmforge:stone");
+            run(server, player, "qa realm enter realmforge:stone");
+            helper.assertTrue(player.level().dimension().identifier().toString().equals("realmforge:stone"),
+                    "/qa realm enter takes an unlocked player into Undervault");
+            helper.assertTrue(player.getY() >= 24 && player.getY() <= 42 && player.level().getBlockState(
+                    player.blockPosition().below()).isFaceSturdy(player.level(), player.blockPosition().below(),
+                    Direction.UP), "the player stands on the floor, at y " + player.getY());
+
+            run(server, player, "qa realm lock realmforge:stone");
+            run(server, player, "tp @s 0 100 0");
+            run(server, player, "execute in minecraft:overworld run tp @s 0 100 0");
+            helper.assertTrue(player.level().dimension() == Level.OVERWORLD,
+                    "leaving a realm needs no unlock");
+            run(server, player, "execute in realmforge:stone run tp @s 0 40 0");
+            helper.assertTrue(player.level().dimension() == Level.OVERWORLD,
+                    "/qa realm lock took the unlock away");
+            run(server, player, "advancement grant @s only realmforge:realm/stone");
+            run(server, player, "execute in realmforge:stone run tp @s 0 40 0");
+            helper.assertTrue(player.level().dimension().identifier().toString().equals("realmforge:stone"),
+                    "/advancement grant unlocks the realm too");
+        } finally {
+            server.getPlayerList().remove(player);
+        }
         helper.succeed();
     }
 

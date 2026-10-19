@@ -66,7 +66,7 @@ def test_worldgen_ids_join_the_universe(repo: RepoPaths) -> None:
         DIMENSION.replace("minecraft:overworld", "realmforge:dusk"),
     )
     content, universe = load_and_validate(repo)
-    assert [f.id for f in content.worldgen] == ["shadowlands", "dusk"]
+    assert {"shadowlands", "dusk"} <= {f.id for f in content.worldgen}
     assert universe.contains("minecraft:dimension", "realmforge:shadowlands")
     assert universe.contains("minecraft:dimension_type", "realmforge:dusk")
 

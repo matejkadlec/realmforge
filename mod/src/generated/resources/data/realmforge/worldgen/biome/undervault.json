@@ -1,0 +1,93 @@
+{
+  "attributes": {
+    "minecraft:audio/ambient_sounds": {
+      "mood": {
+        "block_search_extent": 8,
+        "offset": 2.0,
+        "sound": "minecraft:ambient.cave",
+        "tick_delay": 6000
+      }
+    },
+    "minecraft:audio/background_music": {
+      "default": {
+        "max_delay": 24000,
+        "min_delay": 12000,
+        "sound": "minecraft:music.overworld.dripstone_caves"
+      }
+    },
+    "minecraft:visual/fog_color": "#2b2d36"
+  },
+  "carvers": [],
+  "downfall": 0.0,
+  "effects": {
+    "water_color": "#3f76e4"
+  },
+  "features": [
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [
+      "realmforge:ore_mottlestone",
+      "realmforge:ore_coal_undervault",
+      "realmforge:ore_iron_undervault",
+      "realmforge:ore_gold_undervault",
+      "realmforge:ore_diamond_undervault",
+      "realmforge:ore_debris_undervault_large",
+      "realmforge:ore_debris_undervault_small"
+    ],
+    [
+      "realmforge:ore_glowstone_undervault"
+    ],
+    [],
+    [],
+    []
+  ],
+  "has_precipitation": false,
+  "spawn_costs": {},
+  "spawners": {
+    "ambient": [
+      {
+        "type": "minecraft:bat",
+        "maxCount": 8,
+        "minCount": 8,
+        "weight": 10
+      }
+    ],
+    "axolotls": [],
+    "creature": [],
+    "misc": [],
+    "monster": [
+      {
+        "type": "minecraft:zombie",
+        "maxCount": 4,
+        "minCount": 2,
+        "weight": 100
+      },
+      {
+        "type": "minecraft:skeleton",
+        "maxCount": 4,
+        "minCount": 2,
+        "weight": 100
+      },
+      {
+        "type": "minecraft:spider",
+        "maxCount": 4,
+        "minCount": 2,
+        "weight": 80
+      },
+      {
+        "type": "minecraft:creeper",
+        "maxCount": 2,
+        "minCount": 1,
+        "weight": 50
+      }
+    ],
+    "underground_water_creature": [],
+    "water_ambient": [],
+    "water_creature": []
+  },
+  "temperature": 0.8
+}

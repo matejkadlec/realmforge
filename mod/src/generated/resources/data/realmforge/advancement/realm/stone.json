@@ -1,0 +1,33 @@
+{
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "background": "minecraft:gui/advancements/backgrounds/stone",
+    "description": {
+      "translate": "realm.realmforge.stone.flavour"
+    },
+    "frame": "goal",
+    "hidden": true,
+    "icon": {
+      "id": "realmforge:vaultstone"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.realmforge.realm_unlocked",
+      "with": [
+        {
+          "translate": "realm.realmforge.stone.name"
+        }
+      ]
+    }
+  },
+  "requirements": [
+    [
+      "unlocked"
+    ]
+  ]
+}

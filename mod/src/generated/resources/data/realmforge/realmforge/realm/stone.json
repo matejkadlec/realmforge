@@ -1,0 +1,8 @@
+{
+  "dimension": "realmforge:stone",
+  "name": "realm.realmforge.stone.name",
+  "subtitle": "realm.realmforge.stone.subtitle",
+  "locked_hint": "realm.realmforge.stone.locked_hint",
+  "flavour": "realm.realmforge.stone.flavour",
+  "icon": "realmforge:vaultstone"
+}
