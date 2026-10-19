@@ -21,6 +21,7 @@ Later topic research, starting with the reference games Craft to Exile 2, Advent
 | Lang files in `en_us`, possibly `cs_cz` | English only (decided 2026-10-13); a community translation would ship as a resource pack | [vision](vision.md#owner) |
 | Build ourselves: gear rarity, affixes, gems, reforging and enchanting, with Apotheosis and Apothic Enchanting as inspiration | Apotheosis, Apothic Attributes and Apothic Enchanting are in the pack (Matěj, 2026-10-15 and 16) and carry them, fitted to our stats: Apothic Attributes' crit and dodge never fire, its formulas are vanilla's | [0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) |
 | Remove Nether and End "if you choose it" | Removed (decided 2026-10-12), and the items get new sources; Ashfire, a late fire realm, does not replace the Nether (2026-10-16) | [0025](decisions/0025-remove-the-nether-and-end.md), [0032](decisions/0032-v1-realm-layout-amends-the-nether-and-end-removal.md) |
+| Villager trades for emeralds (vanilla) | Trades for our own copper, silver and gold coins at 100:1, generated from YAML as vanilla 26.1 trade data with fixed prices; JEI / REI Trades shows them (Matěj, 2026-10-15 to 2026-10-19, RLM-222, [research](research/coins-and-trades.md)) | [0040](decisions/0040-coins-and-data-driven-merchant-trades.md) |
 | The owner builds key rooms in creative | Nobody builds rooms by hand (decided 2026-10-12): generated rooms plus an imported MIT, CC0 and LGPL-3.0 baseline with its notices | [0028](decisions/0028-dungeon-rooms-generated-or-imported.md) |
 | No vanilla textures, not even as AI input | No vanilla texture files or recolours in our assets, and none as input for generating our textures; vanilla blocks in our structures and renders of them are fine | [0028](decisions/0028-dungeon-rooms-generated-or-imported.md) |
 
@@ -168,7 +169,7 @@ All have NeoForge 26.1.2 builds. The pack only references them, nothing is forke
 | Pets and mounts | WoW Hunter pet and mounts, familiars from Otherworld | GeckoLib models |
 | Mobs and bosses with phases | Hades II, WotLK | no flying bosses |
 | Dimensions and dungeons | AoA 1.12, Hytale, Trial Chambers | section 9 |
-| Villages, villagers, trades | Cisco's Medieval RPG | repeatable trade quests, later contracts (section 9) |
+| Villages, villagers, trades | Cisco's Medieval RPG | repeatable trade quests, later contracts (section 9); trades in coins as vanilla data ([ADR 0040](decisions/0040-coins-and-data-driven-merchant-trades.md)) |
 | Structure locator | Explorer's Compass | none of its code (CC BY-NC-SA) |
 | Small UI | EMI Trades, Lightweight Inventory Sorting, Damage Numbers | missing on NeoForge or Fabric-only. **Superseded in part:** Neat and Toast Control cover YDM's MobHealthBar and Toast Remover by Matěj's choice, and No Recipe Book is in the pack since 26.1.2, see [overrides](#owner-overrides) |
 | Default world rules, Dark Vision toggle, Nether and End removed ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)) | Otherworld (Dark Vision) | notes below |
