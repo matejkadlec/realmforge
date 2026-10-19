@@ -64,6 +64,15 @@ consumable decisions of 11–12 October 2026.
   and the roadmap changes only as he decided.
 - Later topic research (for example `realm-portals.md`, RLM-39) goes into this folder too.
 
+## Coins, merchant trades and trade display (2026-10-19, RLM-222)
+
+- **[coins-and-trades.md](coins-and-trades.md)**: coin, trade-editing and villager mods on NeoForge 26.1.2 (Modrinth
+  API and their sources), vanilla 26.1's data-driven trades read in the game's sources (`villager_trade`,
+  `trade_set`, how professions and the wandering trader pick them, the limits for coin prices), and trade display
+  in JEI. Decided by Matěj (2026-10-19): our own copper, silver and gold coins at 100:1 with a converter of our own,
+  trades generated from our YAML as vanilla data, and JEI / REI Trades in the pack
+  ([ADR 0040](../decisions/0040-coins-and-data-driven-merchant-trades.md)).
+
 ## Chococraft and mount tiers (2026-10-12, RLM-101)
 
 - **[chococraft.md](chococraft.md)**: whether the Chococraft mod (0.11.12 for NeoForge 1.21.1) can carry Matěj's

@@ -4,7 +4,8 @@ Date: 2026-10-11
 
 Status: Accepted; composition updated 2026-10-12 for the port to Minecraft 26.1.2
 ([0026](0026-platform-minecraft-26-1-2-neoforge.md), RLM-124); config overrides added 2026-10-13 (RLM-132); amended
-by [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) (Apotheosis, Apothic Attributes and Apothic Enchanting added, RLM-271)
+by [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) (Apotheosis, Apothic Attributes and Apothic Enchanting added, RLM-271); amended by [0040](0040-coins-and-data-driven-merchant-trades.md) (JEI / REI Trades) and
+[0041](0041-dungeon-containers-hold-loot-through-lootr.md) (Lootr, M1), 2026-10-19
 
 ## Context
 
