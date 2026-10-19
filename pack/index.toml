@@ -9,6 +9,10 @@ file = "config/apotheosis/apothic_enchanting.cfg"
 hash = "a3dffbd3da542c9b47efcff28a9f66816043bc7d2794ac91ffccd1e094cfd784"
 
 [[files]]
+file = "config/defaultoptions/keybindings.txt"
+hash = "836ad8c4e1ee09c2511f8abdd61b21eea989d48d1e8664bb1ed73f043e7898ba"
+
+[[files]]
 file = "config/waystones-common.toml"
 hash = "ed3365781af0dadc1f8d85883970be0bf0ce36c482b83fe36ec25e531a65b28e"
 
@@ -50,6 +54,16 @@ metafile = true
 [[files]]
 file = "mods/collective.pw.toml"
 hash = "52f27d7c1acedaddd53f88038f83148230de4a37728bdd0e361c3d9505da7f2e"
+metafile = true
+
+[[files]]
+file = "mods/controlling.pw.toml"
+hash = "35f32705249695a3d45491cb5c99be69a89a13edb8724bcb5dd58fa90f4a05de"
+metafile = true
+
+[[files]]
+file = "mods/default-options.pw.toml"
+hash = "6e746c6a79213a28fa75747297480841bcb268cedac79da81591752b1367a6fc"
 metafile = true
 
 [[files]]
@@ -185,6 +199,11 @@ metafile = true
 [[files]]
 file = "mods/regions-unexplored.pw.toml"
 hash = "5588a74d9e970686e0d614b7df750e79c7c13bbc0b2282061535a993dfd12b60"
+metafile = true
+
+[[files]]
+file = "mods/searchables.pw.toml"
+hash = "6c88191f6fd85a532645982c56ebe71ad36b4ac4948da7b8d952a10bcc885b4e"
 metafile = true
 
 [[files]]

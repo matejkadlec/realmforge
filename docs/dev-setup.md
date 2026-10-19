@@ -94,6 +94,10 @@ WSL it is good only for "does it load" checks (3.3).
   world ([architecture 15.1](architecture.md#151-dimensions)). In game, `/qa cast 200` makes you cast for 10
   seconds: a test animation plays and melee, Better Combat's included, is blocked until it ends
   ([ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)).
+- **The pack's default keys.** Default Options sets the pack's default keys from
+  `pack/config/defaultoptions/keybindings.txt` ([pack README](../pack/README.md#configuration)). A new
+  `run/client/options.txt` starts with them; an existing one keeps its keys until you press **Reset Keys** in Key
+  Binds (or delete the file, which also brings back `dev/options.txt`). Controlling adds a search to Key Binds.
 - **A lean client on demand.** `./gradlew runClient -PleanClient` loads only our mods, Player Animation Library (the
   QA mod's animation library) and Yeetus Experimentus: it starts faster, for quick checks and agents' screenshot
   runs, and shows our code without the other mods. `-PwithBetterCombat` adds Better Combat and Cloth Config to it:

@@ -127,6 +127,27 @@ no enchantment shows its description. The descriptions are Enchantment
 Descriptions' texts (the dev runs load it too), shown in dark grey under each enchantment on every item;
 Enchantment Descriptions' own options (books only, hold Shift) no longer apply.
 
+**Default Options** (`config/defaultoptions/keybindings.txt`, Default Options
+26.1.2.2, RLM-279, [ADR 0043](../docs/decisions/0043-default-keys-and-key-search-in-the-pack.md)).
+The pack's default keys, one `key_<key mapping>:<key>` line each, replacing the
+defaults the mods bring. Key names are positions on a US keyboard (`key.keyboard.y`),
+which the game shows as the player's layout labels them (Z on a Czech QWERTZ
+keyboard). A new profile gets these keys; an existing one keeps its own until the
+player presses **Reset Keys** in Key Binds (or deletes `options.txt`), which
+returns every key to these defaults. Matěj's picks of 2026-10-19:
+
+- free for spells (RLM-25): Quick Actions and Swap Offhand; Chat stays on T for
+  now;
+- Open Quests on `;` (the key left of 1 on a Czech keyboard), Tom's Simple
+  Storage's Open Terminal on V (RLM-25), Just Zoom's Zoom on Z (Czech QWERTZ);
+- unbound: Just Zoom's Open Options (it shared B with Open Backpack), Xaero's
+  Minimap Settings (it had Z), every Iris key and every Sophisticated
+  Backpacks and Sophisticated Core key.
+
+To find a key mapping's name, boot the pack and read the `key_` lines of the
+client's `options.txt`; Controlling's search in Key Binds finds a key by name or
+by its key.
+
 ## Optional mods
 
 The pack has none since Quark left with the 26.1.2 port. An optional mod is
