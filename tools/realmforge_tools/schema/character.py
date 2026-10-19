@@ -12,6 +12,7 @@ from realmforge_tools.schema.common import (
     ContentId,
     LocalizedText,
     ResourceId,
+    Seconds,
     StrictModel,
     UniqueResourceIds,
 )
@@ -23,6 +24,7 @@ FiniteNumber = Annotated[float, Field(allow_inf_nan=False)]
 # (ids only until C3a gives them behaviour). The game refuses a class naming any other.
 RESOURCE_TYPES: tuple[str, ...] = (f"{MOD_ID}:mana", f"{MOD_ID}:rage")
 ResourceType = Literal["realmforge:mana", "realmforge:rage"]
+RAGE = f"{MOD_ID}:rage"
 
 # Every class's starting kit holds this much bread (Matěj, 2026-10-14: "for both classes and any future classes").
 STARTING_BREAD: tuple[str, int] = ("minecraft:bread", 32)
@@ -90,6 +92,33 @@ class RaceDef(StrictModel):
     )
 
 
+class RageDef(StrictModel):
+    """How a rage class gains and loses rage (architecture 11.5): from melee hits it deals and damage it takes, decaying
+    out of combat. The pool holds 100."""
+
+    per_hit_dealt: float = Field(
+        ge=0,
+        le=100,
+        allow_inf_nan=False,
+        description="Rage for a full-strength melee hit dealt; a weaker swing gives its share.",
+    )
+    per_max_health_taken: float = Field(
+        ge=0,
+        le=1000,
+        allow_inf_nan=False,
+        description="Rage for taking damage equal to the whole max health from an attacker; a hit for a tenth of it "
+        "gives a tenth.",
+    )
+    decay_per_second: float = Field(
+        ge=0, le=100, allow_inf_nan=False, description="Rage lost every second out of combat."
+    )
+    decay_after_seconds: Seconds = Field(
+        gt=0,
+        le=60,
+        description="How long after the last hit dealt or taken the holder is out of combat and its rage decays.",
+    )
+
+
 class ClassDef(StrictModel):
     """A class: its resource, the stats it gives and its starting kit (architecture 10.1). Spells by level and talent
     trees come with C4 and C5."""
@@ -107,9 +136,21 @@ class ClassDef(StrictModel):
     modifiers: list[CharacterModifierDef] = Field(
         default_factory=list, description="Attribute modifiers the class gives, the same at every level."
     )
+    rage: RageDef | None = Field(
+        default=None,
+        description="How the class gains and loses rage; a rage class sets it, any other leaves it out.",
+    )
     starting_kit: list[KitItemDef] = Field(
         default_factory=list, description="Items a new character of this class receives once."
     )
+
+    @model_validator(mode="after")
+    def _rage(self) -> ClassDef:
+        if self.resource == RAGE and self.rage is None:
+            raise ValueError("a rage class sets its rage numbers (rage)")
+        if self.resource != RAGE and self.rage is not None:
+            raise ValueError(f"rage numbers are for a class whose resource is {RAGE}")
+        return self
 
 
 def modifier_id(registry: Literal["race", "class"], entry_id: str, n: int) -> str:

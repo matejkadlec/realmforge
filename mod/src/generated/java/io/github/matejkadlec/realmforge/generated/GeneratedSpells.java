@@ -47,6 +47,18 @@ public final class GeneratedSpells {
     /** {@code realmforge:test_npc_bolt} from {@code content/spells/test_npc_bolt.yaml}: arcane, enemy, damage. */
     public static final ResourceKey<Spell> TEST_NPC_BOLT = key("test_npc_bolt");
 
+    /** {@code realmforge:test_npc_far_bolt} from {@code content/spells/test_npc_far_bolt.yaml}: arcane, farthest_player, damage. */
+    public static final ResourceKey<Spell> TEST_NPC_FAR_BOLT = key("test_npc_far_bolt");
+
+    /** {@code realmforge:test_npc_random_bolt} from {@code content/spells/test_npc_random_bolt.yaml}: arcane, random_player, damage. */
+    public static final ResourceKey<Spell> TEST_NPC_RANDOM_BOLT = key("test_npc_random_bolt");
+
+    /** {@code realmforge:test_npc_target_bolt} from {@code content/spells/test_npc_target_bolt.yaml}: arcane, current_target, damage. */
+    public static final ResourceKey<Spell> TEST_NPC_TARGET_BOLT = key("test_npc_target_bolt");
+
+    /** {@code realmforge:test_proc_spark} from {@code content/spells/test_proc_spark.yaml}: arcane, enemy, damage. */
+    public static final ResourceKey<Spell> TEST_PROC_SPARK = key("test_proc_spark");
+
     /** {@code realmforge:test_scorch} from {@code content/spells/test_scorch.yaml}: fire, ground_point, area. */
     public static final ResourceKey<Spell> TEST_SCORCH = key("test_scorch");
 
@@ -66,7 +78,7 @@ public final class GeneratedSpells {
     public static final ResourceKey<Spell> TEST_SURE_CRIT = key("test_sure_crit");
 
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Spell>> ALL = List.of(TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT);
+    public static final List<ResourceKey<Spell>> ALL = List.of(TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT);
 
     private GeneratedSpells() {
     }

@@ -42,14 +42,17 @@ from realmforge_tools.schema.spell import (
     ALLY,
     APPLY_EFFECT,
     AREA,
+    CURRENT_TARGET,
     DAMAGE,
     DASH,
     DIRECTION,
     ENEMY,
+    FARTHEST_PLAYER,
     GROUND_POINT,
     HEAL,
     KNOCKBACK,
     PROJECTILE,
+    RANDOM_PLAYER,
     REMOVE_EFFECT,
     SCALING_OF_KIND,
     SELF,
@@ -564,17 +567,18 @@ def _check_spell_schools(content: Content, universe: IdUniverse) -> list[Problem
 # Which targeting types each effect may use: damage and knockback hit enemies, heals mend the caster or its allies,
 # status effects go on anyone; a projectile flies at an enemy, a ground point or along a direction, an area lies at the
 # caster's feet, an enemy's or a ground point, a teleport needs a point to go to, and a dash rushes at an enemy, a
-# point or along a direction.
+# point or along a direction. The NPC targeting types choose an enemy, so they go wherever enemy does.
+_NPC = (CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLAYER)
 _EFFECT_TARGETING: dict[str, tuple[str, ...]] = {
-    DAMAGE: (ENEMY,),
+    DAMAGE: (ENEMY, *_NPC),
     HEAL: (SELF, ALLY),
-    APPLY_EFFECT: (SELF, ENEMY, ALLY),
-    REMOVE_EFFECT: (SELF, ENEMY, ALLY),
-    KNOCKBACK: (ENEMY,),
-    PROJECTILE: (ENEMY, GROUND_POINT, DIRECTION),
-    AREA: (SELF, ENEMY, GROUND_POINT),
+    APPLY_EFFECT: (SELF, ENEMY, ALLY, *_NPC),
+    REMOVE_EFFECT: (SELF, ENEMY, ALLY, *_NPC),
+    KNOCKBACK: (ENEMY, *_NPC),
+    PROJECTILE: (ENEMY, GROUND_POINT, DIRECTION, *_NPC),
+    AREA: (SELF, ENEMY, GROUND_POINT, *_NPC),
     TELEPORT: (GROUND_POINT, DIRECTION),
-    DASH: (ENEMY, GROUND_POINT, DIRECTION),
+    DASH: (ENEMY, GROUND_POINT, DIRECTION, *_NPC),
 }
 MOB_EFFECT_REGISTRY = "minecraft:mob_effect"
 

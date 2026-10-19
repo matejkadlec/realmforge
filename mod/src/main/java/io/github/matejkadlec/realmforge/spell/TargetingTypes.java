@@ -8,7 +8,9 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * The targeting types (architecture 5.3): {@code self}, {@code enemy} and {@code ally} (C3a-1), {@code ground_point}
- * and {@code direction} (C3a-3). The pipeline knows the same ids ({@code tools/realmforge_tools/schema/spell.py}).
+ * and {@code direction} (C3a-3), and the NPC types {@code current_target}, {@code random_player} and
+ * {@code farthest_player} (C3a-4), which only {@code npc_only} spells use. The pipeline knows the same ids
+ * ({@code tools/realmforge_tools/schema/spell.py}).
  */
 public final class TargetingTypes {
     private static final DeferredRegister<MapCodec<? extends SpellTargeting>> TYPES =
@@ -33,6 +35,18 @@ public final class TargetingTypes {
     /** {@code realmforge:direction}: a direction from the caster's eyes ({@link DirectionTargeting}). */
     public static final DeferredHolder<MapCodec<? extends SpellTargeting>, MapCodec<DirectionTargeting>> DIRECTION =
             TYPES.register("direction", () -> DirectionTargeting.MAP_CODEC);
+
+    /** {@code realmforge:current_target}: a mob's current target ({@link CurrentTargetTargeting}). */
+    public static final DeferredHolder<MapCodec<? extends SpellTargeting>, MapCodec<CurrentTargetTargeting>>
+            CURRENT_TARGET = TYPES.register("current_target", () -> CurrentTargetTargeting.MAP_CODEC);
+
+    /** {@code realmforge:random_player}: a random player a mob may attack ({@link RandomPlayerTargeting}). */
+    public static final DeferredHolder<MapCodec<? extends SpellTargeting>, MapCodec<RandomPlayerTargeting>>
+            RANDOM_PLAYER = TYPES.register("random_player", () -> RandomPlayerTargeting.MAP_CODEC);
+
+    /** {@code realmforge:farthest_player}: the farthest player a mob may attack ({@link FarthestPlayerTargeting}). */
+    public static final DeferredHolder<MapCodec<? extends SpellTargeting>, MapCodec<FarthestPlayerTargeting>>
+            FARTHEST_PLAYER = TYPES.register("farthest_player", () -> FarthestPlayerTargeting.MAP_CODEC);
 
     private TargetingTypes() {
     }

@@ -23,6 +23,12 @@ public final class GeneratedTexts {
     /** {@code command.realmforge.xp_set} from {@code content/texts/command.yaml}: "Set the character XP of %2$s to %1$s" */
     public static final String COMMAND_XP_SET = "command.realmforge.xp_set";
 
+    /** {@code entity.realmforge.spell_area} from {@code content/texts/entity.yaml}: "Spell Area" */
+    public static final String ENTITY_SPELL_AREA = "entity.realmforge.spell_area";
+
+    /** {@code entity.realmforge.spell_projectile} from {@code content/texts/entity.yaml}: "Spell Projectile" */
+    public static final String ENTITY_SPELL_PROJECTILE = "entity.realmforge.spell_projectile";
+
     /** {@code gui.realmforge.block_reach} from {@code content/texts/gui.yaml}: "Block Reach" */
     public static final String GUI_BLOCK_REACH = "gui.realmforge.block_reach";
 

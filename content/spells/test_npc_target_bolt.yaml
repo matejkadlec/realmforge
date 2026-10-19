@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3a-4): a mob's bolt at its current target, the one it attacks. Not gameplay content; the GameTests in
+# the QA mod cast it.
+id: test_npc_target_bolt
+school: realmforge:arcane
+scales_with: spell_power
+targeting: {type: realmforge:current_target, range: 16}
+cast: {type: instant}
+npc_only: true
+effects:
+  - {type: realmforge:damage, amount: 4}

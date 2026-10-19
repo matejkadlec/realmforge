@@ -293,6 +293,30 @@
       "title": "CritDef",
       "type": "object"
     },
+    "CurrentTargetTargetingDef": {
+      "additionalProperties": false,
+      "description": "NPC only: the caster's current target (the mob's attack target), an enemy in range and in line of sight.",
+      "properties": {
+        "range": {
+          "description": "Range in blocks, at most 128.",
+          "exclusiveMinimum": 0,
+          "maximum": 128.0,
+          "title": "Range",
+          "type": "number"
+        },
+        "type": {
+          "const": "realmforge:current_target",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "range"
+      ],
+      "title": "CurrentTargetTargetingDef",
+      "type": "object"
+    },
     "DamageEffectDef": {
       "additionalProperties": false,
       "description": "Damage of the spell's school to each target. A magic school's hit gets the caster's spell power and the\nschool's power in the damage pipeline (architecture 9.1); a physical ability adds a share of the caster's attack\ndamage instead (``attack_damage_percent``). Either way the hit can crit as the spell's ``crit`` says.",
@@ -407,6 +431,30 @@
         "range"
       ],
       "title": "EnemyTargetingDef",
+      "type": "object"
+    },
+    "FarthestPlayerTargetingDef": {
+      "additionalProperties": false,
+      "description": "NPC only: the farthest player in range and in line of sight that the caster may attack, as random_player\nchooses from.",
+      "properties": {
+        "range": {
+          "description": "Range in blocks, at most 128.",
+          "exclusiveMinimum": 0,
+          "maximum": 128.0,
+          "title": "Range",
+          "type": "number"
+        },
+        "type": {
+          "const": "realmforge:farthest_player",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "range"
+      ],
+      "title": "FarthestPlayerTargetingDef",
       "type": "object"
     },
     "GroundPointTargetingDef": {
@@ -590,6 +638,30 @@
         "effects"
       ],
       "title": "ProjectileEffectDef",
+      "type": "object"
+    },
+    "RandomPlayerTargetingDef": {
+      "additionalProperties": false,
+      "description": "NPC only: a random player in range and in line of sight that the caster may attack (not in creative or\nspectator mode, not its ally).",
+      "properties": {
+        "range": {
+          "description": "Range in blocks, at most 128.",
+          "exclusiveMinimum": 0,
+          "maximum": 128.0,
+          "title": "Range",
+          "type": "number"
+        },
+        "type": {
+          "const": "realmforge:random_player",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "range"
+      ],
+      "title": "RandomPlayerTargetingDef",
       "type": "object"
     },
     "RemoveEffectEffectDef": {
@@ -797,9 +869,12 @@
       "discriminator": {
         "mapping": {
           "realmforge:ally": "#/$defs/AllyTargetingDef",
+          "realmforge:current_target": "#/$defs/CurrentTargetTargetingDef",
           "realmforge:direction": "#/$defs/DirectionTargetingDef",
           "realmforge:enemy": "#/$defs/EnemyTargetingDef",
+          "realmforge:farthest_player": "#/$defs/FarthestPlayerTargetingDef",
           "realmforge:ground_point": "#/$defs/GroundPointTargetingDef",
+          "realmforge:random_player": "#/$defs/RandomPlayerTargetingDef",
           "realmforge:self": "#/$defs/SelfTargetingDef"
         },
         "propertyName": "type"
@@ -819,6 +894,15 @@
         },
         {
           "$ref": "#/$defs/DirectionTargetingDef"
+        },
+        {
+          "$ref": "#/$defs/CurrentTargetTargetingDef"
+        },
+        {
+          "$ref": "#/$defs/RandomPlayerTargetingDef"
+        },
+        {
+          "$ref": "#/$defs/FarthestPlayerTargetingDef"
         }
       ],
       "title": "Targeting"

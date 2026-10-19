@@ -95,6 +95,49 @@
       ],
       "title": "LocalizedText",
       "type": "object"
+    },
+    "RageDef": {
+      "additionalProperties": false,
+      "description": "How a rage class gains and loses rage (architecture 11.5): from melee hits it deals and damage it takes, decaying\nout of combat. The pool holds 100.",
+      "properties": {
+        "decay_after_seconds": {
+          "description": "How long after the last hit dealt or taken the holder is out of combat and its rage decays.",
+          "exclusiveMinimum": 0,
+          "maximum": 60,
+          "minimum": 0,
+          "title": "Decay After Seconds",
+          "type": "number"
+        },
+        "decay_per_second": {
+          "description": "Rage lost every second out of combat.",
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Decay Per Second",
+          "type": "number"
+        },
+        "per_hit_dealt": {
+          "description": "Rage for a full-strength melee hit dealt; a weaker swing gives its share.",
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Per Hit Dealt",
+          "type": "number"
+        },
+        "per_max_health_taken": {
+          "description": "Rage for taking damage equal to the whole max health from an attacker; a hit for a tenth of it gives a tenth.",
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Per Max Health Taken",
+          "type": "number"
+        }
+      },
+      "required": [
+        "per_hit_dealt",
+        "per_max_health_taken",
+        "decay_per_second",
+        "decay_after_seconds"
+      ],
+      "title": "RageDef",
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -123,6 +166,18 @@
     "name": {
       "$ref": "#/$defs/LocalizedText",
       "description": "The class's name, shown on character creation and the character sheet (Title Case)."
+    },
+    "rage": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RageDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "How the class gains and loses rage; a rage class sets it, any other leaves it out."
     },
     "resource": {
       "description": "The resource its spells cost: realmforge:mana or realmforge:rage.",

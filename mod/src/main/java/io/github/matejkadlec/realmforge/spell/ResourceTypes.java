@@ -13,7 +13,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * {@code tools/realmforge_tools/schema/character.py}), so a class can name only these.
  */
 public final class ResourceTypes {
-    /** The size of every rage pool, as in WoW. C3a-4 gives rage its gain and decay, with their numbers in data. */
+    /** The size of every rage pool, as in WoW. Its gain and decay ({@link Rage}) take their numbers from the class. */
     public static final double RAGE_MAXIMUM = 100;
 
     private static final DeferredRegister<ResourceType> TYPES =
@@ -29,12 +29,12 @@ public final class ResourceTypes {
                     holder -> DamagePipeline.stat(holder, GeneratedStats.MANA_REGENERATION), true));
 
     /**
-     * {@code realmforge:rage}: the melee resource, {@value #RAGE_MAXIMUM} at most, starting empty. Its gain in combat
-     * and its decay come with C3a-4; until then only costs and QA commands change it.
+     * {@code realmforge:rage}: the melee resource, {@value #RAGE_MAXIMUM} at most, starting empty. Melee hits dealt and
+     * damage taken fill it, and out of combat it decays every second, by the holder's {@link RageRules} ({@link Rage}).
      */
     public static final DeferredHolder<ResourceType, ResourceType> RAGE =
             TYPES.register("rage", () -> new ResourceType(GeneratedTexts.RESOURCE_RAGE, holder -> RAGE_MAXIMUM,
-                    holder -> 0, false));
+                    Rage::regeneration, false));
 
     private ResourceTypes() {
     }

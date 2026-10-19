@@ -67,6 +67,8 @@
   "death.attack.realmforge.physical.item": "%1$s was struck down",
   "death.attack.realmforge.physical.player": "%1$s was struck down",
   "dungeon_type.realmforge.test_dungeon.name": "Test Dungeon",
+  "entity.realmforge.spell_area": "Spell Area",
+  "entity.realmforge.spell_projectile": "Spell Projectile",
   "gui.realmforge.block_reach": "Block Reach",
   "gui.realmforge.character_creation": "Create Your Character",
   "gui.realmforge.character_sheet": "Character Sheet",

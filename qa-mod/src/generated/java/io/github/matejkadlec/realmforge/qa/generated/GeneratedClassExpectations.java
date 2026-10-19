@@ -4,6 +4,7 @@
 package io.github.matejkadlec.realmforge.qa.generated;
 
 import java.util.List;
+import java.util.Optional;
 
 /** What {@code content/classes/} says about every class, so GameTests can check that the game agrees. */
 public final class GeneratedClassExpectations {
@@ -12,6 +13,11 @@ public final class GeneratedClassExpectations {
      * percentages).
      */
     public record Bonus(String id, String attribute, String operation, double amount) {
+    }
+
+    /** How a rage class gains and loses rage, in game units (the decay's delay in ticks). */
+    public record Rage(double perHitDealt, double perMaxHealthTaken, double decayPerSecond,
+            int decayAfterTicks) {
     }
 
     /** One item of the starting kit. */
@@ -23,7 +29,7 @@ public final class GeneratedClassExpectations {
      * are the ones the game must give, in this order.
      */
     public record ClassExpectation(String id, String nameKey, String descriptionKey, String resource,
-            List<KitItem> startingKit, List<Bonus> bonuses) {
+            Optional<Rage> rage, List<KitItem> startingKit, List<Bonus> bonuses) {
     }
 
     public static final List<ClassExpectation> CLASSES = List.of(
@@ -32,6 +38,7 @@ public final class GeneratedClassExpectations {
                     "class.realmforge.mage.name",
                     "class.realmforge.mage.description",
                     "realmforge:mana",
+                    Optional.empty(),
                     List.of(new KitItem("realmforge:stone_wand", 1), new KitItem("realmforge:apprentice_hat", 1), new KitItem("realmforge:apprentice_robes", 1), new KitItem("realmforge:apprentice_pants", 1), new KitItem("realmforge:apprentice_boots", 1), new KitItem("minecraft:bread", 32)),
                     List.of(new Bonus("realmforge:class/realmforge/0/mage", "realmforge:intellect", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/mage", "realmforge:vitality", "add_value", 2.0), new Bonus("realmforge:class/realmforge/2/mage", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:class/realmforge/3/mage", "realmforge:max_mana", "add_value", 100.0), new Bonus("realmforge:class/realmforge/4/mage", "realmforge:mana_regeneration", "add_value", 5.0))),
             new ClassExpectation(
@@ -39,6 +46,7 @@ public final class GeneratedClassExpectations {
                     "class.realmforge.warrior.name",
                     "class.realmforge.warrior.description",
                     "realmforge:rage",
+                    Optional.of(new Rage(10.0, 50.0, 2.0, 100)),
                     List.of(new KitItem("minecraft:stone_sword", 1), new KitItem("minecraft:shield", 1), new KitItem("minecraft:leather_helmet", 1), new KitItem("minecraft:leather_chestplate", 1), new KitItem("minecraft:leather_leggings", 1), new KitItem("minecraft:leather_boots", 1), new KitItem("minecraft:bread", 32)),
                     List.of(new Bonus("realmforge:class/realmforge/0/warrior", "realmforge:strength", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/warrior", "realmforge:vitality", "add_value", 4.0), new Bonus("realmforge:class/realmforge/2/warrior", "realmforge:dexterity", "add_value", 2.0))));
 

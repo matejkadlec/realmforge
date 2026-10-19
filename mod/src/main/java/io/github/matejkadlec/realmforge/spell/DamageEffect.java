@@ -38,6 +38,7 @@ public record DamageEffect(double amount, double perLevel, double attackDamage) 
                 context.casterStat(Attributes.ATTACK_DAMAGE));
         LivingEntity caster = context.caster();
         target.hurtServer(context.level(), SpellSchools.damage(context.level().registryAccess(),
-                spell.school().unwrapKey().orElseThrow(), context.direct(), caster, spell.crit()), (float) damage);
+                spell.school().unwrapKey().orElseThrow(), context.direct(), caster, spell.crit(), context.procOrigin()),
+                (float) damage);
     }
 }

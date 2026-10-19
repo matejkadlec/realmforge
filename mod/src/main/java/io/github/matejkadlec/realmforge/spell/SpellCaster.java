@@ -6,6 +6,7 @@ import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
@@ -13,7 +14,7 @@ import net.minecraft.world.entity.player.Player;
 
 /**
  * Casts spells, the same for players, mobs and bosses (architecture 11.2). Server-authoritative: a client's intent (the
- * spell bar, C3b) and a mob's AI (C3a-4) both end here, and every check runs on the server.
+ * spell bar, C3b) and a mob's AI (W3, W5) both end here, and every check runs on the server.
  *
  * <p>A cast is refused, paying nothing and running nothing, when (in this order; research SP-3 names each reason):
  * <ol>
@@ -28,7 +29,9 @@ import net.minecraft.world.entity.player.Player;
  * Otherwise an instant spell pays its cost, starts its cooldowns (Cooldown Reduction shortens the spell's own, never the
  * global one) and runs every effect on the target ({@link SpellTarget}). A cast-time or channelled spell starts the global cooldown and
  * begins its cast ({@link Casting}): a cast time pays its cost and starts its own cooldown when it completes, a channel
- * when it begins. Mobs pay no cost: NPC resources are C3a-4's.
+ * when it begins. Mobs and bosses pay no cost: their cooldowns pace their spells (architecture 11.2 step 6).
+ *
+ * <p>A proc casts its spell through {@link #castProc}: at once and for free, whatever the caster is doing.
  */
 public final class SpellCaster {
     /** Leaves room for float rounding, so a pool of exactly the cost pays it. */
@@ -122,6 +125,30 @@ public final class SpellCaster {
         return CastResult.cast(hit);
     }
 
+    /**
+     * {@code caster} casts {@code spell} at {@code level} as the proc {@code origin} (architecture 12): instantly,
+     * whatever its cast type, without its cost, its cooldowns or the global cooldown, and while another cast runs.
+     * Only the caster's state (alive, not a spectator) and the spell's targeting can refuse it. Its effects run with
+     * the proc as their origin, so their hits trigger no proc.
+     */
+    public static CastResult castProc(LivingEntity caster, Holder.Reference<Spell> spell, int level, SpellAim aim,
+            Identifier origin) {
+        if (!(caster.level() instanceof ServerLevel serverLevel)) {
+            throw new IllegalStateException("Spells are cast on the logical server only");
+        }
+        if (!canCast(caster)) {
+            return CastResult.refused(CastFailure.CANNOT_CAST);
+        }
+        Either<SpellTarget, CastFailure> resolved = spell.value().targeting().resolve(caster, aim);
+        Optional<CastFailure> missed = resolved.right();
+        if (missed.isPresent()) {
+            return CastResult.refused(missed.get());
+        }
+        SpellTarget hit = resolved.left().orElseThrow();
+        runEffects(serverLevel, caster, spell, level, hit, Optional.of(origin));
+        return CastResult.cast(hit);
+    }
+
     /** Whether {@code caster} has enough of the spell's resource for a cast at {@code level}; mobs always do. */
     static boolean canPay(LivingEntity caster, Spell spell, int level, CombatState state) {
         double cost = cost(caster, spell, level);
@@ -167,7 +194,13 @@ public final class SpellCaster {
     /** Runs every effect of the spell on {@code target}, with the caster's stats as they are now. */
     static void runEffects(ServerLevel level, LivingEntity caster, Holder<Spell> spell, int spellLevel,
             SpellTarget target) {
-        EffectContext context = EffectContext.of(level, caster, spell, spellLevel);
+        runEffects(level, caster, spell, spellLevel, target, Optional.empty());
+    }
+
+    /** {@link #runEffects(ServerLevel, LivingEntity, Holder, int, SpellTarget)} for a proc's spell, if it has one. */
+    private static void runEffects(ServerLevel level, LivingEntity caster, Holder<Spell> spell, int spellLevel,
+            SpellTarget target, Optional<Identifier> procOrigin) {
+        EffectContext context = EffectContext.of(level, caster, spell, spellLevel, procOrigin);
         for (SpellEffect effect : spell.value().effects()) {
             effect.apply(context, target);
         }
