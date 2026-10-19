@@ -161,8 +161,9 @@ Rules:
   spells; and the `effects`, in order: `realmforge:damage` (a hit of the school on an enemy) and `realmforge:heal`
   (on the caster or an ally), each with `amount` at level 1 and `per_level`, and `attack_damage_percent` (the share
   of the caster's attack damage added) on an attack damage spell, where its damage effects need one;
-  `realmforge:apply_effect` (`effect`, a status effect id such as `minecraft:slowness`, `duration_seconds` up to 60,
-  `amplifier`) and `realmforge:remove_effect` (`effect`) on any entity target; `realmforge:knockback` (`strength`,
+  `realmforge:apply_effect` (`effect`, a status effect id such as `minecraft:slowness`, never an instant one such as
+  `minecraft:instant_health`, which would apply every tick: use `realmforge:heal` or `realmforge:damage`;
+  `duration_seconds` up to 60, `amplifier`) and `realmforge:remove_effect` (`effect`) on any entity target; `realmforge:knockback` (`strength`,
   0.4 is a melee hit's) on an enemy, which also interrupts its cast; `realmforge:projectile` (`speed` in blocks per
   second, `size`, `lifetime_seconds`, and its own `effects` on the first enemy it hits) at an enemy, a ground point or
   along a direction; `realmforge:area` (`radius`, `duration_seconds`, `interval_seconds`, `affects: enemies` or

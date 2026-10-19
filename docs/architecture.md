@@ -1115,7 +1115,8 @@ type only for genuinely new behaviour.
   Projectile" and "Spell Area", come from `content/texts/entity.yaml` (RLM-259) and show where the game prints an
   entity's own name (F3, `/data`).
 - **The other effect types:** `apply_effect` (a status effect from the caster, vanilla's until C3c, at most a minute:
-  research SP-8) and `remove_effect` act on an entity; `teleport` moves the caster to the target's position (a ground
+  research SP-8, never an instant one, which vanilla applies on every tick of its duration: the validation refuses
+  them, RLM-260) and `remove_effect` act on an entity; `teleport` moves the caster to the target's position (a ground
   point, the end of a direction's ray with its feet where its eyes would be, an entity's feet), stepping back toward
   the caster until its box is free, or not at all; `dash` throws the caster toward the target, or along a direction,
   with a burst of speed in blocks per tick; `knockback` pushes its target along the spell's direction (away from the

@@ -583,6 +583,14 @@ _EFFECT_TARGETING: dict[str, tuple[str, ...]] = {
 }
 MOB_EFFECT_REGISTRY = "minecraft:mob_effect"
 
+# Vanilla's instant status effects (InstantenousMobEffect) apply on every tick of their duration, so
+# realmforge:apply_effect with one would heal, hurt or feed every tick (RLM-260): what a spell uses instead.
+INSTANT_MOB_EFFECTS: dict[str, str] = {
+    "minecraft:instant_health": f"use {HEAL} instead",
+    "minecraft:instant_damage": f"use {DAMAGE} instead",
+    "minecraft:saturation": "a spell does not feed",
+}
+
 
 def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
     """A spell's school exists, and the stat it scales with fits the school's kind: off-class stats do nothing for a
@@ -650,7 +658,8 @@ def _check_inner_effects(
 def _check_effect(
     source: str, path: str, effect: BaseModel, spell: SpellDef, universe: IdUniverse
 ) -> list[Problem]:
-    """An effect's share of attack damage fits what the spell scales with, and its status effect exists."""
+    """An effect's share of attack damage fits what the spell scales with, and its status effect exists; a status
+    effect a spell applies is not an instant one."""
     problems: list[Problem] = []
     percent = getattr(effect, "attack_damage_percent", None)
     if spell.scales_with == "spell_power" and percent is not None:
@@ -672,6 +681,14 @@ def _check_effect(
     status = getattr(effect, "effect", None)
     if status is not None and not universe.contains(MOB_EFFECT_REGISTRY, status):
         problems.append(Problem(source, f"{path}.effect", _unknown(status, MOB_EFFECT_REGISTRY, universe)))
+    elif effect.type == APPLY_EFFECT and status in INSTANT_MOB_EFFECTS:
+        problems.append(
+            Problem(
+                source,
+                f"{path}.effect",
+                f"{status} is instant and would apply on every tick of its duration: {INSTANT_MOB_EFFECTS[status]}",
+            )
+        )
     return problems
 
 
