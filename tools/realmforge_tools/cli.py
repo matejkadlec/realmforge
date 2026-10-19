@@ -274,7 +274,8 @@ def _rooms_candidates(args: argparse.Namespace, paths: RepoPaths) -> int:
         return 1
     try:
         # A kept seed that broke is refused below rather than stopping the run, so the review can reject it.
-        content, universe = load_and_validate(paths, skip_broken_kept_seeds=args.kept)
+        broken: dict[tuple[str, int], list[str]] = {}
+        content, universe = load_and_validate(paths, broken_kept_seeds=broken if args.kept else None)
     except ValidationFailed as e:
         print(
             f"rf rooms candidates: content/ does not validate ({len(e.problems)} problem(s)):",
@@ -285,7 +286,7 @@ def _rooms_candidates(args: argparse.Namespace, paths: RepoPaths) -> int:
         return 1
     out_dir = args.out or paths.cache / "rooms" / "candidates"
     results = room_candidates.write_candidates(
-        content, universe, out_dir, args.count, args.specs or None, kept=args.kept
+        content, universe, out_dir, args.count, args.specs or None, kept=args.kept, broken=broken
     )
     for result in results:
         print(f"{result.spec}: seeds {result.written or 'none'}")

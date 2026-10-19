@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import difflib
 import math
+import re
 from itertools import pairwise
 from pathlib import PurePosixPath
 
@@ -100,20 +101,30 @@ RESERVED_TEXT_GROUPS: dict[str, str] = {
 
 
 def load_and_validate(
-    paths: RepoPaths, *, skip_broken_kept_seeds: bool = False
+    paths: RepoPaths, *, broken_kept_seeds: dict[tuple[str, int], list[str]] | None = None
 ) -> tuple[Content, IdUniverse]:
     """Load content and run every validation step. Raises ValidationFailed with all problems found.
 
-    With ``skip_broken_kept_seeds`` a kept seed of a room spec that the generator cannot build, or whose room fails
-    validation, is no problem: ``rf rooms candidates --kept`` reports it as refused instead, so the review can
-    reject it (RLM-263). A generated room's problems name its seed (``_room_location``)."""
-    content = load_content(paths, skip_broken_kept_seeds=skip_broken_kept_seeds)
+    Given ``broken_kept_seeds``, a kept seed of a room spec that the generator cannot build, or whose room fails
+    validation, is no problem: its problems go there instead, under (spec id, seed), and ``rf rooms candidates
+    --kept`` refuses the seed with them, so the review can reject it (RLM-263). A generated room's problems name its
+    seed (``_room_location``); a seed the generator cannot build is missing from the content and refused anyway."""
+    content = load_content(paths, skip_broken_kept_seeds=broken_kept_seeds is not None)
     universe = universe_with_content(load_vanilla(paths), content)
     _add_core_mod_worldgen(universe, paths)
     problems = validate_content(content, universe) + _check_worldgen_clashes(content, paths)
-    if skip_broken_kept_seeds:
-        specs = {entry.source for entry in content.room_specs}
-        problems = [p for p in problems if not (p.file in specs and p.location.startswith("seed "))]
+    if broken_kept_seeds is not None:
+        specs = {entry.source: entry.model.id for entry in content.room_specs}
+        kept = []
+        for problem in problems:
+            seed = re.match(r"seed (\d+)", problem.location) if problem.file in specs else None
+            if seed is None:
+                kept.append(problem)
+                continue
+            where = problem.location[seed.end() :].removeprefix(": ")
+            reason = f"{where}: {problem.message}" if where else problem.message
+            broken_kept_seeds.setdefault((specs[problem.file], int(seed[1])), []).append(reason)
+        problems = kept
     if problems:
         raise ValidationFailed(problems)
     return content, universe

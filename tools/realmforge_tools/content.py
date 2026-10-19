@@ -178,7 +178,8 @@ def load_content(
     A room template is decoded only on a miss of the room cache (``rooms/cache.py``); a hit leaves the decoding to
     the first use of ``RoomEntry.structure``. Without ``read_templates`` the templates are not even read, so a broken
     one goes unreported: for callers that need only the rooms' ids and sidecars. With ``skip_broken_kept_seeds`` a
-    kept seed the generator cannot build is left out without a problem (``validate.load_and_validate``)."""
+    kept seed the generator cannot build is left out without a problem (``validate.load_and_validate`` with
+    ``broken_kept_seeds``)."""
     problems: list[Problem] = []
     loaded: dict[str, list[Entry]] = {name: [] for name in CONTENT_TYPES}
     worldgen: list[WorldgenFile] = []

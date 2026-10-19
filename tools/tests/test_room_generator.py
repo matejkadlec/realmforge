@@ -684,8 +684,11 @@ def test_candidates_kept_refuses_a_kept_seed_that_no_longer_validates(
     monkeypatch.setattr(candidates, "walk_problems", lambda structure: blocked)
     with pytest.raises(ValidationFailed, match="seed 2: doorway 2 1 0"):
         load_and_validate(repo)
-    content_, universe = load_and_validate(repo, skip_broken_kept_seeds=True)
-    results = write_candidates(content_, universe, tmp_path / "candidates", 0, kept=True)
+    broken: dict[tuple[str, int], list[str]] = {}
+    content_, universe = load_and_validate(repo, broken_kept_seeds=broken)
+    reason = "doorway 2 1 0: cannot be walked to from the other connectors"
+    assert broken == {("nook", 2): [reason], ("nook", 3): [reason]}
+    results = write_candidates(content_, universe, tmp_path / "candidates", 0, kept=True, broken=broken)
     assert [(r.spec, r.written, [seed for seed, _ in r.refused]) for r in results] == [("nook", [], [2, 3])]
     # Without --kept a broken kept seed still stops the run: it is not what that run shows.
     monkeypatch.setattr(cli, "RepoPaths", lambda: repo)
@@ -699,4 +702,20 @@ def test_only_the_kept_seeds_problems_are_skipped(repo: RepoPaths, monkeypatch: 
     spec = repo.content / "room_specs/nook.yaml"
     spec.write_text(spec.read_text(encoding="utf-8").replace("realmforge:stone_vault", "realmforge:nope"))
     with pytest.raises(ValidationFailed, match="no theme 'realmforge:nope'"):
-        load_and_validate(repo, skip_broken_kept_seeds=True)
+        load_and_validate(repo, broken_kept_seeds={})
+
+
+def test_candidates_kept_refuses_a_kept_seed_with_any_validation_problem(
+    repo: RepoPaths, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A check write_candidates does not repeat itself: a block the theme has no role for.
+    for path in (repo.content / "room_specs").glob("*.yaml"):
+        path.unlink()
+    write_spec(repo, "nook", NOOK)
+    monkeypatch.setattr(validate, "unknown_blocks", lambda structure, blocks: ["minecraft:dirt"])
+    broken: dict[tuple[str, int], list[str]] = {}
+    content_, universe = load_and_validate(repo, broken_kept_seeds=broken)
+    results = write_candidates(content_, universe, tmp_path / "candidates", 1, kept=True, broken=broken)
+    assert [(r.written, r.refused) for r in results] == [
+        ([4], [(seed, "holds minecraft:dirt, which theme stone_vault has no role for") for seed in (2, 3)])
+    ]
