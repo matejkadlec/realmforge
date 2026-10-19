@@ -56,8 +56,8 @@ decompiled Minecraft + NeoForge sources into `build/mc-sources/`.
 ## 3. The dev client (`runClient`)
 
 `./gradlew runClient` starts a dev client with the core mod and the QA mod, so the `/qa` commands work. Besides
-ours, only Player Animation Library (a QA mod dependency), Yeetus Experimentus and Apotheosis with Apothic
-Attributes, Apothic Enchanting and Placebo are loaded. Its game directory is
+ours, only Player Animation Library (a QA mod dependency), Yeetus Experimentus, Apotheosis with Apothic
+Attributes, Apothic Enchanting and Placebo, and Enchantment Descriptions with Prickle are loaded. Its game directory is
 `run/client` in the checkout (saves, options, logs). Playtests run it on Windows (3.2), where mouse look works; in
 WSL it is good only for "does it load" checks (3.3).
 

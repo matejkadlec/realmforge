@@ -137,6 +137,8 @@ def placebo = 'maven.modrinth:placebo:c4uzJQYp' // 26.1.2-10.0.2
 def apothicAttributes = 'maven.modrinth:apothic-attributes:lLLTcZXk' // 26.1.2-3.1.0
 def apothicEnchanting = 'maven.modrinth:apothic-enchanting:5yksP3X6' // 26.1.2-2.1.0
 def apotheosis = 'maven.modrinth:apotheosis:EXaIH7Xm' // 26.1.2-9.1.0
+def enchantmentDescriptions = 'maven.modrinth:enchantment-descriptions:MMZecuPQ' // 26.1.2.6
+def prickle = 'maven.modrinth:prickle:FzfKD3xX' // 26.1.2.6
 
 dependencies {
     implementation project(':mod')
@@ -156,6 +158,12 @@ dependencies {
     runtimeOnly apothicAttributes
     runtimeOnly apothicEnchanting
     runtimeOnly apotheosis
+
+    // Enchantment Descriptions and its config library Prickle, as in the pack: the description texts that Apothic
+    // Enchanting shows under each enchantment come from it (RLM-271). Its mod and mixins are client-only, so the
+    // server and GameTest runs load it without effect.
+    runtimeOnly enchantmentDescriptions
+    runtimeOnly prickle
 
     // Better Combat and its config library join the dev runs only with `-PwithBetterCombat`, so the default runs
     // and CI test the mods without it: ./gradlew runClient -PwithBetterCombat

@@ -1,9 +1,9 @@
 """The QA mod's Modrinth dependencies are the builds the modpack ships (RLM-83).
 
 `qa-mod/build.gradle` names Player Animation Library, Better Combat, Cloth Config, Yeetus Experimentus, Placebo,
-Apothic Attributes, Apothic Enchanting and Apotheosis (RLM-271) by Modrinth version id
-(`maven.modrinth:<slug>:<id>`); each id must equal `version` under `[update.modrinth]` in
-`pack/mods/<slug>.pw.toml`, or the dev runs would test our code against other jars than players get.
+Apothic Attributes, Apothic Enchanting, Apotheosis, Enchantment Descriptions and Prickle (RLM-271) by Modrinth version
+id (`maven.modrinth:<slug>:<id>`); each id must equal `version` under `[update.modrinth]` in `pack/mods/<slug>.pw.toml`,
+or the dev runs would test our code against other jars than players get.
 """
 
 from __future__ import annotations
@@ -25,6 +25,8 @@ PACK_SLUGS = {
     "apothic-attributes",
     "apothic-enchanting",
     "apotheosis",
+    "enchantment-descriptions",
+    "prickle",
 }
 
 
