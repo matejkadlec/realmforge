@@ -33,6 +33,8 @@ from realmforge_tools.schema.dungeon import DEAD_END_ROLES, PATH_ROLES, ROOM_ROL
 from realmforge_tools.schema.item import USE_TEXT_GROUP
 from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
+from realmforge_tools.schema.realm import unlock_advancement
+from realmforge_tools.schema.requirement import ChapterCompletedDef, HasAdvancementDef
 from realmforge_tools.schema.room_spec import FULL, LANTERN, SLAB, STAIRS, THEME_ROLES, WALL_TORCH
 from realmforge_tools.schema.spell import (
     ALLY,
@@ -52,8 +54,6 @@ from realmforge_tools.schema.spell import (
     TELEPORT,
     SpellDef,
 )
-from realmforge_tools.schema.realm import unlock_advancement
-from realmforge_tools.schema.requirement import ChapterCompletedDef, HasAdvancementDef
 from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
 

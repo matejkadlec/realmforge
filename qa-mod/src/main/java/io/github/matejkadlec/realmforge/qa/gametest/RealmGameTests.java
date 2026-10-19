@@ -1,6 +1,5 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
-import com.mojang.authlib.GameProfile;
 import com.mojang.logging.LogUtils;
 import io.github.matejkadlec.realmforge.generated.GeneratedBlocks;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedRealmExpectations;
@@ -62,7 +61,7 @@ public final class RealmGameTests {
         MinecraftServer server = helper.getLevel().getServer();
         RealmExpectation expected = stone();
         ServerLevel realm = realm(helper, expected);
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-realm-access"));
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-realm-access");
         try {
             Vec3 start = helper.absoluteVec(new Vec3(2.5, 1, 2.5));
             player.teleportTo(helper.getLevel(), start.x, start.y, start.z, Set.of(), 0.0F, 0.0F, true);
@@ -127,7 +126,7 @@ public final class RealmGameTests {
         MinecraftServer server = helper.getLevel().getServer();
         RealmExpectation expected = stone();
         ServerLevel realm = realm(helper, expected);
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-realm-respawn"));
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-realm-respawn");
         try {
             award(helper, player, expected.unlockAdvancement());
             helper.assertTrue(teleport(player, realm, IN_REALM), "the unlocked player enters the realm");
@@ -161,7 +160,7 @@ public final class RealmGameTests {
         MinecraftServer server = helper.getLevel().getServer();
         RealmExpectation expected = stone();
         ServerLevel realm = realm(helper, expected);
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-realm-parrot"));
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-realm-parrot");
         Vec3 start = helper.absoluteVec(new Vec3(2.5, 1, 2.5));
         player.teleportTo(helper.getLevel(), start.x, start.y, start.z, Set.of(), 0.0F, 0.0F, true);
         award(helper, player, expected.unlockAdvancement());
@@ -197,7 +196,7 @@ public final class RealmGameTests {
         MinecraftServer server = helper.getLevel().getServer();
         RealmExpectation expected = stone();
         ServerLevel realm = realm(helper, expected);
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-realm-bed"));
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-realm-bed");
         try {
             award(helper, player, expected.unlockAdvancement());
             helper.assertTrue(teleport(player, realm, IN_REALM), "the player enters the realm");

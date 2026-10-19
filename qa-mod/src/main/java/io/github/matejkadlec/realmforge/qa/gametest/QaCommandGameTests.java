@@ -161,7 +161,7 @@ public final class QaCommandGameTests {
     @QaGameTest
     public static void realmCommandsReachTheirStates(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = QaPlayers.login(server, new GameProfile(UUID.randomUUID(), "qa-realm-commands"));
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-realm-commands");
         player.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
         try {
             run(server, player, "qa realm enter realmforge:stone");

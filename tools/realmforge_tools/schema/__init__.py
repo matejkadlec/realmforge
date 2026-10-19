@@ -14,8 +14,8 @@ from realmforge_tools.schema.dimension_rules import DimensionRulesDef
 from realmforge_tools.schema.dungeon import DungeonTypeDef
 from realmforge_tools.schema.item import ItemDef
 from realmforge_tools.schema.kill_xp_multiplier import KillXpMultiplierDef
-from realmforge_tools.schema.room_spec import RoomSpecDef, RoomThemeDef
 from realmforge_tools.schema.realm import RealmDef
+from realmforge_tools.schema.room_spec import RoomSpecDef, RoomThemeDef
 from realmforge_tools.schema.spell import SpellDef
 from realmforge_tools.schema.spell_school import SpellSchoolDef
 from realmforge_tools.schema.stat import StatDef
@@ -85,9 +85,9 @@ __all__ = [
     "ItemDef",
     "KillXpMultiplierDef",
     "RaceDef",
+    "RealmDef",
     "RoomSpecDef",
     "RoomThemeDef",
-    "RealmDef",
     "SpellDef",
     "SpellSchoolDef",
     "StatDef",
