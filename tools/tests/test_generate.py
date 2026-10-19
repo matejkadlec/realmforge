@@ -87,7 +87,14 @@ def test_item_use_and_flavor_become_tooltip_lines_and_a_use_tag(repo: RepoPaths)
 
 
 def test_items_without_lore_import_nothing_for_it(repo: RepoPaths) -> None:
-    (repo.content / "items" / "oblivion_scroll.yaml").unlink()
+    # The Scroll of Oblivion has a use line, and a realm's sigil names its realm: without both, no item has lore.
+    for path in (
+        "items/oblivion_scroll.yaml",
+        "items/stone_sigil.yaml",
+        "realms/stone.yaml",
+        "dimensions/stone.yaml",
+    ):
+        (repo.content / path).unlink()
     files = generate(repo)
     assert "ItemLore" not in files[GENERATED_JAVA].decode()
     assert not any("/tags/item/use/" in path for path in files)

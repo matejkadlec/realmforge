@@ -249,6 +249,11 @@ public final class RealmPortals {
         long now = level.getGameTime();
         for (Iterator<Mark> it = MARKS.iterator(); it.hasNext(); ) {
             Mark mark = it.next();
+            if (mark.level().getServer() != level.getServer()) {
+                // A server that stopped while its frame was marked.
+                it.remove();
+                continue;
+            }
             if (mark.level() != level) {
                 continue;
             }

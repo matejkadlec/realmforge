@@ -32,6 +32,7 @@ def test_repository_content_is_valid() -> None:
         "apprentice_pants",
         "apprentice_robes",
         "oblivion_scroll",
+        "stone_sigil",
         "stone_wand",
         "test_dungeon_key",
         "test_item",

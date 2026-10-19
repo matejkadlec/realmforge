@@ -18,7 +18,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.InsideBlockEffectApplier;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -43,8 +42,9 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * The portal block that fills a lit realm portal's opening (realm portal spec, "Travel", "Look and sound", "Edge
- * cases"). Like vanilla's nether portal block it has an axis, no collision, no item and no drops, and it checks its
- * frame on every neighbour update: a broken frame block takes the whole opening with it. Unlike it:
+ * cases"). Like vanilla's nether portal block it has an axis, no collision, no item (so pick block gives nothing) and no
+ * drops, and it checks its frame on every neighbour update: a broken frame block takes the whole opening with it.
+ * Unlike it:
  *
  * <ul>
  *   <li>only players travel: a player without access to the destination is refused when they step in, so the
@@ -87,7 +87,10 @@ public final class RealmPortalBlock extends Block implements Portal, LiquidBlock
         return SHAPES.get(state.getValue(AXIS));
     }
 
-    /** A neighbour changed: the portal stays only while its frame is complete. */
+    /**
+     * A neighbour changed: the portal stays only while its frame is complete and its opening whole, so a broken frame
+     * block or a portal block an explosion took closes the whole portal, as a nether portal's.
+     */
     @Override
     protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos,
             Direction directionToNeighbour, BlockPos neighbourPos, BlockState neighbourState, RandomSource random) {
@@ -95,7 +98,10 @@ public final class RealmPortalBlock extends Block implements Portal, LiquidBlock
             return super.updateShape(state, level, ticks, pos, directionToNeighbour, neighbourPos, neighbourState,
                     random);
         }
-        return RealmPortals.frameOf(level, pos, state.getValue(AXIS)).isPresent()
+        boolean whole = RealmPortals.frameOf(level, pos, state.getValue(AXIS))
+                .filter(frame -> frame.opening().stream().allMatch(open -> level.getBlockState(open).is(this)))
+                .isPresent();
+        return whole
                 ? super.updateShape(state, level, ticks, pos, directionToNeighbour, neighbourPos, neighbourState, random)
                 : Blocks.AIR.defaultBlockState();
     }
@@ -158,11 +164,6 @@ public final class RealmPortalBlock extends Block implements Portal, LiquidBlock
                 .filter(particle -> random.nextInt(3) == 0)
                 .ifPresent(particle -> level.addParticle(particle, pos.getX() + random.nextDouble(),
                         pos.getY() + random.nextDouble(), pos.getZ() + random.nextDouble(), 0.0, 0.0, 0.0));
-    }
-
-    @Override
-    protected ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state, boolean includeData) {
-        return ItemStack.EMPTY;
     }
 
     @Override

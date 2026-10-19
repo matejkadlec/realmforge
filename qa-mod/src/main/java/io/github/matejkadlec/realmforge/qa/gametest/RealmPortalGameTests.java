@@ -423,8 +423,10 @@ public final class RealmPortalGameTests {
         BucketItem bucket = (BucketItem) Items.WATER_BUCKET;
         BlockPos target = frame.at(1, 1);
         Direction facing = frame.front();
-        bucket.emptyContents(null, level, target, new BlockHitResult(Vec3.atCenterOf(target), facing, target, false));
-        bucket.emptyContents(null, level, frame.at(0, 2), null);
+        ItemStack water = new ItemStack(Items.WATER_BUCKET);
+        bucket.emptyContents(null, level, target, new BlockHitResult(Vec3.atCenterOf(target), facing, target, false),
+                water);
+        bucket.emptyContents(null, level, frame.at(0, 2), null, water);
         helper.assertTrue(lit(level, frame), "a bucket and a dispenser leave the portal in place");
         // A source in front of the opening's middle, at its foot: it flows along the floor, and never into the portal.
         level.setBlockAndUpdate(frame.at(1, 0).relative(facing), Blocks.WATER.defaultBlockState());
