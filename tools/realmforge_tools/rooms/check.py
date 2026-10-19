@@ -199,6 +199,15 @@ _SOLID_SUFFIXES = (
 )
 # The directions a fluid flows: down and to the four sides, never up.
 _FLOW = ((0, -1, 0), (1, 0, 0), (-1, 0, 0), (0, 0, 1), (0, 0, -1))
+# A connector's face -> the step that leaves the room's box through it.
+_FACE_STEPS = {
+    "west": (-1, 0, 0),
+    "east": (1, 0, 0),
+    "down": (0, -1, 0),
+    "up": (0, 1, 0),
+    "north": (0, 0, -1),
+    "south": (0, 0, 1),
+}
 
 # A jigsaw's front (the first part of its orientation) -> (axis, side) of the room's box it must sit on.
 _JIGSAW_FACES = {
@@ -335,11 +344,18 @@ def markers(structure: Structure) -> list[tuple[str, Pos]]:
 def fluid_edges(structure: Structure) -> list[Pos]:
     """Positions of the room's fluids that can flow out of its box. A fluid flows down and sideways, never up, so
     each one is followed through every cell it can enter (``_holds_flowing_fluid``). Once it reaches the floor or a
-    side it leaves the box, past what cleanup clears (architecture 15.5), unless it leaves through a connector, where
-    the next room continues. A fluid on the roof or in a closed basin stays inside."""
+    side it leaves the box, past what cleanup clears (architecture 15.5), unless it leaves through a connector's own
+    face, where the next room continues: a step out of a connector's cell in any other direction (down out of a side
+    connector in the floor layer, sideways out of one on an edge) leaves beside the next room. A fluid on the roof or
+    in a closed basin stays inside."""
     size = structure.size
     at = {block.pos: block for block in structure.blocks}
-    exits = {block.pos for block in structure.blocks if block.state.name == JIGSAW}
+    exits: dict[Pos, Pos] = {}  # a connector's cell -> the step out through its face
+    for block in structure.blocks:
+        if block.state.name == JIGSAW:
+            face = connector_face(block.pos, block.state.get("orientation"), size)
+            if face is not None:
+                exits[block.pos] = _FACE_STEPS[face]
     contained: set[Pos] = (
         set()
     )  # cells from which no fluid leaves: everything they reach was followed already
@@ -353,7 +369,7 @@ def fluid_edges(structure: Structure) -> list[Pos]:
 
 
 def _fluid_leaves(
-    start: Pos, size: Pos, at: dict[Pos, StructureBlock], exits: set[Pos], contained: set[Pos]
+    start: Pos, size: Pos, at: dict[Pos, StructureBlock], exits: dict[Pos, Pos], contained: set[Pos]
 ) -> bool:
     """Whether a fluid at ``start`` can flow out of the box: a flood fill down and sideways through the cells that
     hold flowing fluid. A fill that stays inside adds its cells to ``contained``, which later fills skip."""
@@ -364,7 +380,7 @@ def _fluid_leaves(
         for dx, dy, dz in _FLOW:
             next_pos = (x + dx, y + dy, z + dz)
             if not all(0 <= c < s for c, s in zip(next_pos, size, strict=True)):
-                if (x, y, z) not in exits:
+                if exits.get((x, y, z)) != (dx, dy, dz):
                     return True
                 continue
             if next_pos in seen or next_pos in contained:

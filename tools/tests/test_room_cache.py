@@ -17,6 +17,7 @@ from realmforge_tools.rooms.cache import RoomCache, template_key, universe_diges
 from realmforge_tools.rooms.structure import BlockState, StructureBlock, read_structure, write_structure
 from realmforge_tools.validate import load_and_validate
 
+from .conftest import write
 from .test_rooms import add_room, problems, small_room
 
 
@@ -176,12 +177,37 @@ def test_a_new_data_version_or_id_universe_code_misses(
 
 def _tools_with_changed_id_universe(scratch: Path) -> Path:
     """A copy of the hashed sources whose ``id_universe.py`` differs."""
+    return _tools_with_change(scratch, "id_universe.py")
+
+
+def _tools_with_change(scratch: Path, changed: str) -> Path:
+    """A copy of the hashed sources in which the file ``changed`` differs."""
     tools = Path(cache.__file__).resolve().parent.parent
-    copy = scratch / "tools-copy"
+    copy = scratch / f"tools-copy-{changed.replace('/', '-')}"
     for folder in ("rooms", "formats"):
         shutil.copytree(tools / folder, copy / folder, ignore=shutil.ignore_patterns("__pycache__"))
-    (copy / "id_universe.py").write_text((tools / "id_universe.py").read_text() + "\n# changed\n")
+    for name in ("id_universe.py", "schema/room_spec.py"):
+        (copy / name).parent.mkdir(parents=True, exist_ok=True)
+        (copy / name).write_text((tools / name).read_text() + ("\n# changed\n" if name == changed else ""))
     return copy
+
+
+def test_a_change_to_the_room_spec_schema_misses_the_generated_rooms(
+    repo: RepoPaths, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    write(
+        repo.content / "room_specs/nook.yaml",
+        "id: nook\ntheme: realmforge:stone_vault\nkind: dead_end\nfootprint: [5, 7]\nheight: 5\n"
+        "connectors: [north]\nseeds: [1]\n",
+    )
+    key = load_content(repo).rooms[0].key
+    with monkeypatch.context() as patch:
+        patch.setattr(cache, "_TOOLS", _tools_with_change(repo.root.parent, "schema/room_spec.py"))
+        cache.code_version.cache_clear()
+        try:
+            assert load_content(repo).rooms[0].key != key, "PIT_FLOOR, SIDES or KIND_ROLES may have changed"
+        finally:
+            cache.code_version.cache_clear()
 
 
 def test_check_results_follow_the_data_version(repo: RepoPaths, monkeypatch: pytest.MonkeyPatch) -> None:

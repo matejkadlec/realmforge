@@ -86,7 +86,8 @@ every room with its size, jigsaws and air blocks in the QA mod's `GeneratedRoomE
 Decoding the templates is slow (the NBT reader is pure Python), so `rooms/cache.py` keeps each decoded template and
 what is read from it (its size, connectors, normalized bytes, the problems `check_structure` finds) in
 `.cache/rooms/parsed/<version>/`, keyed by the sha256 of the template's bytes. The version folder is named after
-a digest of the code in `rooms/`, `formats/` and `id_universe.py` and of the game's `DATA_VERSION`, and the check
+a digest of the code in `rooms/`, `formats/`, `id_universe.py` and `schema/room_spec.py` (whose constants the room
+generator builds from) and of the game's `DATA_VERSION`, and the check
 results also carry the ID universe's digest (`check-<digest>/`). A warm cache answers `rf validate` and `rf gen`
 without decoding any room; a changed template, a change to that code or to `DATA_VERSION` misses and is decoded
 again (a few seconds when every room misses, as in CI or a new worktree). Nothing piles up: a run's first write
@@ -214,7 +215,10 @@ headroom, and no cell where a mob could spawn is dark. **`rf rooms candidates [S
 `.cache/rooms/candidates/<spec>/seed_<n>.nbt` with a sidecar, and leaves out, with the reason, a candidate that
 validation would refuse. It replaces that folder on every run. `--kept` builds the specs' kept seeds too (with
 `--count 0` only those), so a change to the generator can be reviewed on the rooms it changes; a reject decision on
-a kept room moves it to `rejected_seeds`. Review them like any other folder:
+a kept room moves it to `rejected_seeds`. A kept seed the changed generator can no longer build, or whose room no
+longer validates, stops `rf validate` and `rf gen`, but not `--kept`: it prints `REFUSED seed <n>: <reason>`, and
+`rf rooms review` takes a `<spec>/seed_<n>: reject` for it although the folder holds no room for it. Review them like
+any other folder:
 
 ```bash
 uv run rf rooms candidates                                  # every spec; or name some

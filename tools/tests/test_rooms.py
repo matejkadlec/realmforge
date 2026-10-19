@@ -1372,3 +1372,23 @@ def test_a_fluid_may_flow_out_through_a_connector_only() -> None:
     assert fluid_edges(walled_room(water)) == [], "through the east connector into the next room"
     beside = StructureBlock((4, 1, 3), AIR)  # a gap beside the connector is a gap in the wall
     assert fluid_edges(walled_room(water, beside)) == [(3, 1, 2)]
+
+
+def east_connector(pos: tuple[int, int, int]) -> StructureBlock:
+    return StructureBlock(
+        pos, BlockState.parse("minecraft:jigsaw[orientation=east_up]"), {"id": "minecraft:jigsaw"}
+    )
+
+
+def test_a_fluid_leaves_a_connector_only_through_its_own_face() -> None:
+    water = BlockState("minecraft:water", (("level", "0"),))
+    # A doorway two connectors high, the lower one in the floor layer: the fluid falls into it and on out of the
+    # floor, under the next room instead of into it.
+    floor = walled_room(StructureBlock((3, 1, 2), water), east_connector((4, 0, 2)))
+    assert fluid_edges(floor) == [(3, 1, 2)], "down out of a side connector in the floor layer"
+    # A connector on the east face's north edge: the fluid steps north out of it, beside the next room.
+    edge = walled_room(StructureBlock((3, 1, 1), water), east_connector((4, 1, 1)), east_connector((4, 1, 0)))
+    assert fluid_edges(edge) == [(3, 1, 1)], "north out of a connector on the edge"
+    # The same fluids stay inside once nothing but the connectors' own faces lets them out.
+    assert fluid_edges(walled_room(StructureBlock((3, 1, 2), water))) == []
+    assert fluid_edges(walled_room(StructureBlock((3, 1, 1), water), east_connector((4, 1, 1)))) == []

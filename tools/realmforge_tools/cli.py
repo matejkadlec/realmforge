@@ -234,7 +234,13 @@ def _rooms(args: argparse.Namespace, paths: RepoPaths) -> int:
             return _rooms_import(args, paths)
         if args.rooms_command == "review":
             text = args.source.read_text(encoding="utf-8") if args.source else sys.stdin.read()
-            decisions, changed = room_gallery.merge_review(args.directory, text, paths)
+            # A kept seed that candidates --kept refused has no room in the folder; its reject still freezes.
+            kept_seeds = (
+                room_candidates.kept_keys(paths)
+                if room_candidates.is_candidates_folder(args.directory)
+                else set()
+            )
+            decisions, changed = room_gallery.merge_review(args.directory, text, paths, kept_seeds)
             kept = sum(1 for value in decisions.values() if value == "keep")
             print(
                 f"Wrote {paths.rel(args.directory / REVIEW_FILE)}: {changed} decision(s) changed, "
@@ -267,7 +273,9 @@ def _rooms_candidates(args: argparse.Namespace, paths: RepoPaths) -> int:
         print("rf rooms candidates: --count must be at least 1 (0 with --kept)", file=sys.stderr)
         return 1
     try:
-        content, universe = load_and_validate(paths)
+        # A kept seed that broke is refused below rather than stopping the run, so the review can reject it.
+        broken: dict[tuple[str, int], list[str]] = {}
+        content, universe = load_and_validate(paths, broken_kept_seeds=broken if args.kept else None)
     except ValidationFailed as e:
         print(
             f"rf rooms candidates: content/ does not validate ({len(e.problems)} problem(s)):",
@@ -278,7 +286,7 @@ def _rooms_candidates(args: argparse.Namespace, paths: RepoPaths) -> int:
         return 1
     out_dir = args.out or paths.cache / "rooms" / "candidates"
     results = room_candidates.write_candidates(
-        content, universe, out_dir, args.count, args.specs or None, kept=args.kept
+        content, universe, out_dir, args.count, args.specs or None, kept=args.kept, broken=broken
     )
     for result in results:
         print(f"{result.spec}: seeds {result.written or 'none'}")

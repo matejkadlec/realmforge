@@ -1563,7 +1563,9 @@ Rooms are generated or imported; nobody has to build one by hand
   not bring them back. Generated rooms are reviewed as candidates: `rf rooms candidates` builds the next seeds of
   each spec that no review decided on into `.cache/rooms/candidates/<spec>/seed_<n>.nbt`, and `rf rooms review`
   on that folder freezes the decisions into the specs (a kept seed joins `seeds`, a rejected one
-  `rejected_seeds`, so the next candidates are new). Folders inside the generated directories are not reviewed:
+  `rejected_seeds`, so the next candidates are new). With `--kept` it builds the kept seeds too, and refuses a kept
+  seed a generator change broke instead of stopping, so its reject still reaches the spec (RLM-263). Folders inside
+  the generated directories are not reviewed:
   `rf gen` would delete their `review.yaml`.
 - **Validation:** size limits (48 blocks per axis, a structure block's maximum), connectors on the room's boundary
   facing out, known markers, only blocks the themes can swap and only ids inside the ID universe (an imported
@@ -1576,7 +1578,9 @@ Rooms are generated or imported; nobody has to build one by hand
   kelp or seagrass) that can reach its sides or floor: a fluid flows down and sideways, and from there out of the
   room's box, past what cleanup clears ([15.5](#155-instances)). `fluid_edges` follows each fluid down and sideways
   through every cell a flowing fluid can enter (`FlowingFluid#canHoldFluid`), so a fluid beside a floor hole or a
-  wall gap fails too; leaving through a connector is fine, as the next room continues there (RLM-217). Python knows
+  wall gap fails too; leaving through a connector is fine, as the next room continues there (RLM-217), but only
+  through the connector's own face: a step down out of a side connector in the floor layer, or sideways out of one
+  on an edge, leaves beside the next room and fails (RLM-255). Python knows
   only block names, so a cell stops the fluid only when it surely does: a waterloggable block (it takes water only
   as a source), a door, a sign, a ladder, sugar cane, a portal, or a full block in `SOLID_BLOCKS` (a name or an
   ending such as `_bricks`). Anything else lets it through, an unknown block and a missing cell included; a room that

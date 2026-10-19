@@ -62,10 +62,12 @@ def write_candidates(
     spec_ids: list[str] | None = None,
     *,
     kept: bool = False,
+    broken: dict[tuple[str, int], list[str]] | None = None,
 ) -> list[SpecCandidates]:
     """Build the candidates into ``out_dir``, which is replaced: it must be new, empty or an earlier candidates
     folder. With ``kept`` the specs' kept seeds come too, so a change to the generator can be reviewed on the rooms
-    it changes; a reject decision on one moves it to ``rejected_seeds``."""
+    it changes; a reject decision on one moves it to ``rejected_seeds``. A kept seed in ``broken`` (the validation
+    problems ``load_and_validate`` set aside, by spec and seed) is refused with them."""
     specs = {entry.model.id: entry.model for entry in content.room_specs}
     unknown = sorted(set(spec_ids or ()) - specs.keys())
     if unknown:
@@ -89,6 +91,9 @@ def write_candidates(
         result = SpecCandidates(spec_id)
         seeds = (sorted(spec.seeds) if kept else []) + candidate_seeds(spec, count)
         for seed in seeds:
+            if (spec_id, seed) in (broken or {}):
+                result.refused.append((seed, "; ".join((broken or {})[spec_id, seed])))
+                continue
             try:
                 structure = generate_room(spec, themes[spec.theme], seed)
             except RoomGeneratorError as e:
@@ -119,6 +124,16 @@ def _sidecar(spec: RoomSpecDef) -> str:
 
 def is_candidates_folder(directory: Path) -> bool:
     return (directory / MARKER).is_file()
+
+
+def kept_keys(paths: RepoPaths) -> set[str]:
+    """``<spec>/seed_<n>`` of every kept seed in ``content/room_specs/``: a review of a candidates folder may decide on
+    them even when ``write_candidates`` refused to build one (a kept seed a generator change broke)."""
+    keys = set()
+    for path in sorted((paths.content / "room_specs").glob("*.yaml")):
+        spec = _parse(path.read_text(encoding="utf-8"), path)
+        keys |= {f"{spec.id}/{candidate_name(seed)}" for seed in spec.seeds}
+    return keys
 
 
 @dataclass(frozen=True)

@@ -190,7 +190,8 @@ Rules:
   and never places them, and validation refuses any other structure block. A room in the pool of a dungeon type
   keeps its fluids (water, lava, waterlogged blocks, kelp, seagrass) from reaching its sides and floor, through a
   floor hole or a wall gap too, where they would flow out of its box past what cleanup clears; only its connectors
-  may let a fluid through, into the next room.
+  may let a fluid through, into the next room, and each only through its own face (not down out of a side
+  connector in the floor layer, not sideways out of one on an edge).
 - `room_specs/` holds the rooms the room generator builds (A4d,
   [architecture 15.4](../docs/architecture.md#154-rooms)): the `kind` (`entrance`; the hallways `corridor` with
   two opposite connectors, `curve` with two adjacent, `t_junction` with three, `crossing` with four and `dead_end`

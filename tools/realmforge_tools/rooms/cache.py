@@ -11,10 +11,11 @@ again and any change to a template, or to the code that reads it, misses:
   connectors, fluid edges and markers, its normalized bytes for the jar, the problems ``check_structure`` finds
   against an ID universe (whose digest goes into the kind, ``check-<digest>``).
 
-The code version hashes ``CACHE_VERSION``, the game's ``DATA_VERSION`` and the source of ``rooms/``, ``formats/``
-and ``id_universe.py``, so an edit there invalidates every entry without a manual bump. A cached value is therefore
-computed only by functions in that code (or the standard library) and reads no other constant than
-``DATA_VERSION``; bump ``CACHE_VERSION`` for any other change that alters what is cached. Old entries do not pile
+The code version hashes ``CACHE_VERSION``, the game's ``DATA_VERSION`` and the source of ``rooms/``, ``formats/``,
+``id_universe.py`` and ``schema/room_spec.py`` (whose constants and methods the room generator builds from:
+``PIT_FLOOR``, the ``SIDES`` order, ``KIND_ROLES``; RLM-263), each named by its path below ``realmforge_tools/``, so
+an edit there invalidates every entry without a manual bump. A cached value is therefore computed only by functions
+in that code (or the standard library) and reads no other constant than ``DATA_VERSION``; bump ``CACHE_VERSION`` for any other change that alters what is cached. Old entries do not pile
 up: the first write of a run deletes every other version's folder, and the first write of a ``check-<digest>``
 kind deletes the check results of other ID universes (RLM-238). Entries are written atomically (a temporary file,
 then a rename), so parallel runs (the hook while pytest runs) never read half a file, and an entry that cannot be
@@ -50,9 +51,10 @@ def code_version() -> str:
         *(_TOOLS / "rooms").glob("*.py"),
         *(_TOOLS / "formats").glob("*.py"),
         _TOOLS / "id_universe.py",
+        _TOOLS / "schema" / "room_spec.py",
     ]
     for source in sorted(sources):
-        digest.update(f"{source.parent.name}/{source.name}".encode() + b"\0" + source.read_bytes())
+        digest.update(source.relative_to(_TOOLS).as_posix().encode() + b"\0" + source.read_bytes())
     return digest.hexdigest()
 
 
