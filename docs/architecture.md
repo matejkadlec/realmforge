@@ -304,7 +304,7 @@ How features cooperate without breaking the direction:
 | `realmforge:chapter` | `content/chapters/` | story chapter (owned by `progression`, C2): order, the level cap while it is the player's current chapter and the one once it is completed; its advancement `realmforge:chapter/<id>` marks it completed (what a chapter unlocks names the chapter through `chapter_completed`) | yes | M1 |
 | `realmforge:kill_xp_multiplier` | `content/kill_xp_multipliers/` | how much kill XP the mobs of one entity type give (owned by `character`, C2), named in an `entity` field, by size for slimes and magma cubes; the XP model calls it the mob's rank. Validation allows one entry per entity type | no | M1 |
 | `realmforge:dimension_rules` | `content/dimensions/` | gameplay rules of one dimension, named in a `dimension` field (for example `minecraft:overworld`): mob levels and the access requirements ([15.1](#151-dimensions)); flags later. Validation allows one entry per dimension; the server indexes the entries by dimension | no | M1 |
-| `realmforge:realm` | `content/realms/` | a realm (owned by `world`, W2a): its dimension, name, subtitle, locked hint, flavour line and the icon of its unlock advancement `realmforge:realm/<id>`; W2b adds the portal's fields. Validation allows one realm per dimension; `world/realm/Realms` indexes them by dimension, and Overworld is never a realm | yes | M1 |
+| `realmforge:realm` | `content/realms/` | a realm (owned by `world`, W2a): its dimension, name, subtitle, locked hint, flavour line and the icon of its unlock advancement `realmforge:realm/<id>`, and the realm portal's fields (W2b): its sigil, colour, particle, sound pitch and arrival (where a trip may build a portal). Overworld has an entry too, which is no realm: no unlock, sigil, hint or flavour, its colour the return portals'. Validation allows one entry per dimension and one realm per sigil; `world/realm/Realms` indexes them by dimension and by sigil, and `Realms#of` never returns Overworld's | yes | M1 |
 | `realmforge:boss` | `content/bosses/` | fixed level, attributes, phases, abilities (spells), arena, loot | no | M1 |
 | `realmforge:dungeon_type` | `content/dungeons/` | rule set: the room pool it is built from, resolved into its rooms (template, size, role, weight, connectors), and its layout rules (W4a); its key and how long a portal to it stays open (W4d); theme, encounters, loot and level range join with the tasks that use them | no | M1 |
 | `realmforge:affix` | `content/affixes/` | rollable modifier: item categories (tags), tiers by rarity and level | yes | M2 |
@@ -383,11 +383,16 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | every type | `tools/schemas/<type>.schema.json` | editor completion |
 
 **Block kinds.** A block in `content/blocks/` is `simple` (a full block) unless its `kind` names behavior that is game
-code: `dungeon_portal` and `dungeon_exit` so far ([15.5](#155-instances)). `GeneratedBlocks` belongs to `world`, below
-the features that own those kinds, so it creates such a block through `world/BlockKinds`, a provider the owning feature
-fills when the mod is constructed (`dungeon/portal/DungeonBlocks`); the kind also decides the blockstate and models
-(`generate/blocks.py`), and `BlockKinds#blocks(kind)` hands the owner its blocks, for a block entity type or for
-placing one.
+code: `dungeon_portal` and `dungeon_exit` ([15.5](#155-instances)), and the realm portal's `portal_stone`,
+`realm_selector` and `realm_portal` ([15.1](#151-dimensions)). `GeneratedBlocks` belongs to `world`, below the
+features that own most kinds, so it creates such a block through `world/BlockKinds`, a provider the owning feature
+fills when the mod is constructed (`dungeon/portal/DungeonBlocks`, `world/realm/RealmPortalBlocks`); the kind also
+decides the blockstate and models (`generate/blocks.py`), and `BlockKinds#blocks(kind)` hands the owner its blocks,
+for a block entity type, a point-of-interest type or for placing one. Kinds the game uses one block of
+(`dungeon_exit` and the realm portal's three) allow one block each. `portal_stone` and `realm_selector` have the
+blockstate property `generated`, which a trip sets on the frames it builds, and their loot tables drop the block only
+without it. `realm_portal` has no item: no block item, no loot table (`noLootTable`), no recipe and no creative tab.
+`hardness: -1` makes a block unbreakable, as vanilla's bedrock and portals.
 
 The quest book is part of the modpack (All Rights Reserved, [ADR 0009](decisions/0009-licensing.md)), so its
 files are generated into `pack/`, not into the jar. FTB Quests reads them from `config/ftbquests/quests/` in the
@@ -472,6 +477,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:combat` | `spell` | players and mobs that cast | resource pools (mana, rage), cooldowns, current cast (transient), whether a cast set Better Combat's disable tag | owner, throttled (players; clients never read a mob's copy) |
 | `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points | owner |
 | `realmforge:dark_vision` | `world` | players | whether Dark Vision is switched on (on by default) | not synced (the effect itself is) |
+| `realmforge:visited_realms` | `world` | players | the ids of the realms the player has arrived in, so the arrival shows a realm's flavour line once (W2b); copied on death | not synced |
 | `realmforge:instance` | `dungeon` | players | the run's plot, the return point (spike 3) and the game mode to give back when entering switched it to Adventure (W4c) | not synced |
 | `realmforge:stat_tracker` | `stats` | players | when the stat modifiers were last recomputed and what a respawn owes the health ([8.2](#82-where-modifiers-come-from)); transient: not saved or copied | not synced |
 | `realmforge:magic_shield` | `combat` | players (any entity with the stat) | the points left in the magic shield and the tick count from which it refills ([9.1](#91-damage-pipeline)); transient: not saved or copied, so a new player entity starts with a full shield | the owner, points only (the HUD bar) |
@@ -1426,8 +1432,44 @@ loot: realmforge:boss/hollow_warden
   coreslate under the floor (never exposed), vanilla ores and the Nether's bone fossils. Its dimension type links at
   `coordinate_scale` 16, has no skylight, beds that set no spawn and do not explode, and no respawn anchors. A
   GameTest samples the density function over 2,048 blocks and generates the chunks at the origin.
-- Access by portal (W2b, the realm portal) or item, locked behind the requirement (the vision's "locked
-  dimensions").
+- **The realm portal** (W2b, RLM-154; the [realm portal spec](design/realm-portal.md)), in `world/realm/`:
+  - **blocks:** Portal Stone (`PortalStoneBlock`), the realm selector (`RealmSelectorBlock`, with
+    `RealmSelectorBlockEntity`) and the portal block (`RealmPortalBlock`), the block kinds of `RealmPortalBlocks`, which
+    also registers the selector's block entity and its point-of-interest type `realmforge:realm_selector`. Frame
+    blocks and the portal cannot be pushed;
+  - **the frame:** `PortalFrame` is the check as plain Java over a block lookup: 5 by 6 around a 3x4 opening, along
+    either axis, the 13 Portal Stone and the selector in the bottom middle required, the corners decoration
+    (JUnit `PortalFrameTest`);
+  - **the selector** (`RealmPortals`): its block entity holds the entry of `realmforge:realm` it opens onto (a realm's,
+    or Overworld's for a return portal), which counts only while the opening holds portal blocks, so a frame that
+    went dark leads nowhere. A realm's sigil opens a complete frame onto that realm for a player with its unlock,
+    or switches a lit one; inside a realm every sigil is refused, and the sneak gesture with an empty main hand
+    opens the frame onto Overworld, while in Overworld it closes the portal. A common
+    `PlayerInteractEvent.RightClickBlock` listener sets `useBlock` to `TRUE` for that gesture, so an item in the off
+    hand never blocks it (RLM-133). Dimensions without an entry (the instances, the Nether, other mods') refuse. An
+    incomplete frame is marked with red dust for 3 seconds. Messages go to the action bar;
+  - **the portal block:** like vanilla's nether portal it has an axis and no collision, and checks its frame on every
+    neighbour update, so a broken frame block takes the whole opening with it. It implements `Portal`: only a player
+    on foot steps in, and only with access to the destination (otherwise the realm refusal, so the countdown never
+    starts); the trip takes 2 seconds (1 tick in creative) with no vanilla overlay (`Transition.NONE`). It refuses
+    every fluid (`LiquidBlockContainer#canPlaceLiquid` and `canBeReplaced(BlockState, Fluid)` answer false);
+  - **linking** (`RealmPortalLinker`): the source opening's centre times the dimension types' teleportation scale,
+    clamped into the target's world border, as the nether portal does; the nearest lit portal leading back where
+    the player came from within the search radius (point-of-interest data), or one built within the build radius:
+    128 and 16 in Overworld, ⌊128 ÷ scale⌋ and one less in a realm (8 and 7 at 1:16), so a pair a trip built always
+    links back. The spot (`PortalSpots`, plain Java over the terrain, JUnit `PortalSpotsTest`) is the one nearest the
+    scaled position whose bottom row replaces solid floor, with the frame's space free and floor with two free
+    blocks on one side; at the realm entry's arrival heights, ties by the source portal's height. Where nothing
+    fits, the frame is carved out on a floor of the arrival block with a pocket kept free of fluids and falling
+    blocks. A built frame is `generated` and drops nothing. The player arrives in front of the exit portal, facing
+    away from it, or in the opening; the vanilla travel sound plays at the realm's pitch, and vanilla's portal ticket
+    loads the exit's chunks for a short time;
+  - **arrival** (`RealmArrivals`): on every arrival in a realm, a 2-second title with its name, element and levels
+    (from its dimension rules); the first arrival also shows its flavour line in chat (`realmforge:visited_realms`);
+  - **look:** the portal's texture is one greyscale, see-through swirl (so the chunk mesher puts it in the translucent
+    layer), tinted on the client with the destination's colour (`client/render/RealmPortalColors`, a
+    `BlockTintSource`); the selector's block entity is synced, and a change re-renders the opening. `animateTick`
+    shows dust in that colour, the realm's particle and the vanilla portal hum at its pitch.
 - A technical dimension `realmforge:instances` (void, no natural spawning, fixed time) hosts dungeon instances. The
   code depends on it, so it lives in the core mod's resources (`data/realmforge/dimension/instances.json` and
   `dimension_type/instances.json`), not in `content/worldgen/`
@@ -1911,6 +1953,7 @@ depth limit.
 | entity level | synced attachment, to the player itself and everyone tracking the entity |
 | boss phase | the boss bar's title (`ServerBossEvent#setName`) |
 | events: cast started or ended, combat text, dungeon status | payloads, for example `PacketDistributor.sendToPlayersTrackingEntityAndSelf` |
+| the realm selector's destination | its block entity's update tag with the chunk, and its update packet on every change (`Level#sendBlockUpdated`) |
 
 Cast bars and cooldowns are drawn from a start time and a duration, so they need no per-tick packets.
 

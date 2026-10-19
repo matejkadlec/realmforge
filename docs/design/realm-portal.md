@@ -191,8 +191,10 @@ hoppers have nothing to take.
 - **The portal checks it when a player steps into a portal block,** so the portal never starts its countdown for a
   player without access. That player stays where they are, and a centre-screen message says "You are not eligible
   to pass through the portal." (Matěj's wording, RLM-128), with the realm's hint below it ("Unlocked by a chapter 1
-  quest"). The message comes at most once every 3 seconds, with a short refusal sound; vanilla's title and
-  subtitle packets carry it.
+  quest"). The message comes at most once every 3 seconds, with a short refusal sound. The server sends it as a
+  payload of our own (`RealmRefusedPayload`, the realm's hint), and the client draws it like a title and subtitle,
+  smaller than vanilla's, whose 4x title runs the sentence into the screen's edges (Matěj's playtest of W2a,
+  2026-10-19), so the portal, `/tp` and a warp show the same refusal.
 - **Every other way in is checked too,** so the advancement seals the realm whatever the path. In 26.1.2 every move
   into another level goes through `Entity#teleport(TeleportTransition)` (`ServerPlayer` overrides it), which posts
   NeoForge's cancellable `EntityTravelToDimensionEvent` before it moves anything. The event also fires for a move
