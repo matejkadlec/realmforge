@@ -33,6 +33,15 @@ versionRange = "${minecraft_version_range}"
 ordering = "NONE"
 side = "BOTH"
 
+# Apotheosis's attribute library: compat/apothic_attributes switches its crit and dodge off when it is loaded
+# (architecture 19.4). The pack ships it; the core mod runs without it.
+[[dependencies.realmforge]]
+modId = "apothic_attributes"
+type = "optional"
+versionRange = "[3.1.0,)"
+ordering = "NONE"
+side = "BOTH"
+
 # stats/AttributeCaps raises vanilla's attribute caps through a mixin accessor (architecture 8.4, 19.3).
 [[mixins]]
 config = "realmforge.mixins.json"
