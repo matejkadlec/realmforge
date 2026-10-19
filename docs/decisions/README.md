@@ -31,7 +31,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0017](0017-jira-as-the-source-of-task-status.md) | Jira as the source of task status | Accepted (amends 0015 and 0016), amended by [0021](0021-status-overview-and-plan-changes.md) |
 | [0018](0018-pack-boot-tests.md) | Pack boot tests: server and client self tests on every PR | Accepted (amends 0010), adjusted for 26.1.2 by [0026](0026-platform-minecraft-26-1-2-neoforge.md) |
 | [0019](0019-dungeon-instances-in-plots.md) | Dungeon instances in plots | Accepted (refines 0012), amended by [0031](0031-instance-builder-background-chunks-and-shared-budget.md) |
-| [0020](0020-cast-animations-and-melee-while-casting.md) | Cast animations through playerAnimator, no melee while casting | Accepted, amended by [0026](0026-platform-minecraft-26-1-2-neoforge.md) (Player Animation Library) |
+| [0020](0020-cast-animations-and-melee-while-casting.md) | Cast animations through playerAnimator, no melee while casting | Accepted, amended by [0026](0026-platform-minecraft-26-1-2-neoforge.md) (Player Animation Library) and [0039](0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md) (a cast slows instead of moving interrupting it) |
 | [0021](0021-status-overview-and-plan-changes.md) | A status overview ends every response; plan changes without a label | Accepted (amends 0015, 0016 and 0017), amended by [0022](0022-playtest-before-the-pull-request.md) |
 | [0022](0022-playtest-before-the-pull-request.md) | Playtest before the pull request: qa1 and qa2 | Accepted (amends 0016 and 0021), amended by [0024](0024-no-github-labels.md) |
 | [0023](0023-texture-generator.md) | Texture generator: Retro Diffusion Fast, cleaned to the project palette | Accepted (refines 0007) |
@@ -50,6 +50,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0036](0036-room-lights-and-decorations-form-patterns.md) | Room lights and decorations form patterns | Accepted |
 | [0037](0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md) | Elytra from chapter 3's final boss amend the Nether and End removal | Accepted (amends 0025) |
 | [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) | Apotheosis carries gear rarity, affixes, gems and enchanting | Accepted (amends 0004 and 0013) |
+| [0039](0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md) | A cast slows its caster instead of moving interrupting it | Accepted (amends 0020) |
 | [0040](0040-coins-and-data-driven-merchant-trades.md) | Coins and data-driven merchant trades | Accepted (amends 0013) |
 | [0041](0041-dungeon-containers-hold-loot-through-lootr.md) | Dungeon containers hold loot through Lootr | Accepted (amends 0013) |
 

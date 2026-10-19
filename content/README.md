@@ -152,9 +152,9 @@ Rules:
   attack, never one in creative or spectator mode), each with a `range`, which go wherever `realmforge:enemy` does); `cast`: `{type: instant}`, `{type: cast_time, duration_seconds}`
   (the effects, the cost and the cooldown come when the cast completes) or `{type: channel, duration_seconds,
   interval_seconds}` (it pays and starts its cooldown when it begins, then runs its effects every interval; the
-  duration is a whole number of intervals), the timed ones with `castable_while_moving` (moving cancels them by
-  default; only the caster's own movement counts, a player's movement or jump key or a mob walking, never a push
-  such as a melee hit's knockback, RLM-243) and `lock_on` (range and line of sight are not checked again before the effects); an optional `cost` (`resource` `realmforge:mana` or `realmforge:rage`, `amount` at level 1, `per_level`);
+  duration is a whole number of intervals), the timed ones with `castable_while_moving` (by default the cast slows
+  its caster as Slowness III does, to 55 % of its speed; with `true` the caster moves at full speed; moving never
+  cancels a cast, ADR 0039) and `lock_on` (range and line of sight are not checked again before the effects); an optional `cost` (`resource` `realmforge:mana` or `realmforge:rage`, `amount` at level 1, `per_level`);
   `cooldown_seconds`; `global_cooldown_seconds` (1 by default, 0 for a spell off the global cooldown); `max_level`;
   the `crit` block (`can_crit`, `multiplier_percent` instead of 1 + the caster's crit damage, `bonus_chance_percent`
   added to the caster's crit chance; every spell can crit by default, heals too); `npc_only` for mob and boss

@@ -1017,7 +1017,8 @@ lists spells granted while equipped or on use): the vision's "some from the race
    sends `CastStartedPayload` to the caster and tracking players (cast bar, animation). A player who starts
    tracking the caster later (walking up to a boss, reconnecting mid-cast) gets the current cast from a
    `PlayerEvent.StartTracking` listener, as a `CastStartedPayload` with the original start time, so the telegraph
-   still shows. Moving or an interrupt cancels the cast, as the spell's rules say.
+   still shows. An interrupt cancels the cast; moving never does, but slows the caster
+   ([ADR 0039](decisions/0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md)).
 4. When a cast-time spell completes, the server checks the resource and the target again, because both can change
    during the cast: rage decays, effects drain mana, and the target can die, leave the caster's dimension, move out
    of range or go behind cover. If either check fails, the cast fails like an interrupt; a spell that should lock
@@ -1026,7 +1027,7 @@ lists spells granted while equipped or on use): the vision's "some from the race
    spell, spell level, random source). Effects read the caster's stats as they run, those that a projectile or an
    area runs later included ([11.3](#113-spell-entities)).
 5. A channel pays its cost and starts its cooldown when it begins, then runs its effects at the tick interval its
-   data sets for as long as it lasts, checking the target before every tick as in step 4. Moving or an interrupt
+   data sets for as long as it lasts, checking the target before every tick as in step 4. An interrupt
    ends it early, and the ticks already run stay applied.
 6. Mobs and bosses use the same `SpellCaster`, without a payload. Their cooldowns and current cast live in their
    own `combat` attachment ([7](#7-player-state)), and their cast bars, the telegraphs players react to, reach
@@ -1079,26 +1080,16 @@ caster looks at within range, and must be in range and in sight (`Targets#canSee
 aimed at, or else where the caster looks, and its position is its range along it or the first block in the way. Only
 an entity target is checked again before a cast time's effects and a channel's ticks, and seen afresh then
 (`SpellTarget#now`), so a projectile flies at where the target stands at the end of the cast; a point or a direction
-stays as it began. **What counts as moving** (RLM-243): only the caster's own movement, a player pressing a movement or the
-jump key (`ServerPlayer#getLastClientInput`, the keys its client last sent) or a mob walking or strafing (its
-movement input, which its move control sets every tick it walks), while the caster is more than 0.1 blocks from
-where the cast began (`Casting#movesByItself`). Being pushed is not moving: a melee hit's knockback, crowding mobs
-or a water current move the cast's start point along instead, so a Mage hit by a zombie keeps casting. A spell's
-`realmforge:knockback` interrupts the target's cast explicitly (`CastEnd.KNOCKED_BACK`), unless it may be cast while
-moving. `CastGameTests` covers both, and `SpellEffectGameTests` the knockback.
-
-**How a player's push is told apart** (RLM-261): a player's client moves the player and reports its keys, and a
-modified client can report no key while it walks. So the keys only count against the player: with a key down it moves
-by itself, and with none it moves by itself too unless the server pushed it within the last 30 ticks
-(`Casting#PUSH_TICKS`: a knockback's flight and slide, plus the round trip to a client with a high ping). The server
-notes a push from what it sees itself: a knockback (`LivingKnockBackEvent`), an explosion's
-(`ExplosionKnockbackEvent`), any velocity it gave the player and has not sent yet (`hurtMarked`, read at the start of
-each level tick and in the cast's own tick), and, every tick of a cast, a fluid (a water current, a bubble column), a
-vehicle, or an entity crowding the player (`Level#getPushableEntities`, as vanilla's pushing finds them). Movement
-the server does not know of interrupts the cast: drifting on after releasing the keys, sliding on ice, a piston or a
-slime block. A modified client can still move freely for 30 ticks after each push, or while it stands in a fluid or
-in a crowd; that is the price of keeping a hit Mage casting. A mob is the server's own, so its movement input decides
-alone.
+stays as it began. **Moving slows, it never interrupts** (RLM-261,
+[ADR 0039](decisions/0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md)): a cast-time or channelled
+spell that may not be cast while moving gives its caster the transient movement speed modifier
+`Casting#CAST_SLOW` (`realmforge:cast_slow`, −45 % `ADD_MULTIPLIED_TOTAL`, Slowness III's amount) from its start until
+it ends, however it ends; a spell with `castable_while_moving` leaves the caster at full speed. The modifier is no
+status effect: no icon, no particles, milk does not clear it, and it is never saved, so a crash leaves none behind.
+Players and mobs are slowed alike. A player's client moves the player, so a modified client can ignore the slow as it
+can ignore vanilla's Slowness. A spell's `realmforge:knockback` interrupts the target's cast explicitly
+(`CastEnd.KNOCKED_BACK`), unless it may be cast while moving. `CastGameTests` covers the slow, and
+`SpellEffectGameTests` the knockback.
 
 ### 11.3 Spell entities
 
