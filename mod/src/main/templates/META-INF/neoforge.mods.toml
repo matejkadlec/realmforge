@@ -42,6 +42,22 @@ versionRange = "[3.1.0,)"
 ordering = "NONE"
 side = "BOTH"
 
+# Our data overrides some of Apotheosis's and Apothic Enchanting's (architecture 19.4): loading after them puts our
+# data pack above theirs, so our files win.
+[[dependencies.realmforge]]
+modId = "apotheosis"
+type = "optional"
+versionRange = "[9.1.0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.realmforge]]
+modId = "apothic_enchanting"
+type = "optional"
+versionRange = "[2.1.0,)"
+ordering = "AFTER"
+side = "BOTH"
+
 # stats/AttributeCaps raises vanilla's attribute caps through a mixin accessor (architecture 8.4, 19.3).
 [[mixins]]
 config = "realmforge.mixins.json"

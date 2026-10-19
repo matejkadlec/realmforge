@@ -88,31 +88,8 @@ def matching(entries: list[LogEntry], level: str, patterns: tuple[tuple[str, str
     ]
 
 
-# Known harmless ERROR lines that the pack's mods log while a server loads their data (Apotheosis and its modules,
-# RLM-271), in the pack boot (packboot.ALLOWED_ERRORS) and in the GameTest server, whose dev runs load them too.
-MOD_DATA_ALLOWED_ERRORS: tuple[tuple[str, str], ...] = (
-    (
-        r"^net\.minecraft\.server\.packs\.resources\.SimpleJsonResourceReloadListener: Couldn't parse data file"
-        r" 'neoforge:global_loot_modifiers' from 'neoforge:loot_modifiers/global_loot_modifiers\.json': ",
-        "Apothic Enchanting 2.1.0 still ships NeoForge 21.1's list of loot modifiers; NeoForge 26.1 loads every file in"
-        " loot_modifiers/ as a modifier (LootModifierManager), so it reads the list as one and skips it, and the"
-        " warden tendril modifier the list names loads on its own",
-    ),
-    (
-        r"^apotheosis: Failed parsing apotheosis:affixes file apotheosis:generic/attribute/lucky\.$",
-        "Apotheosis 9.1.0's Lucky affix lists the apotheosis:charm loot category, which Apotheosis registers only"
-        " when Curios is installed; without Curios the affix is skipped until RLM-272 overrides it",
-    ),
-    (
-        r"^apotheosis: Underlying Exception:\s*$",
-        "the exception Placebo's DynamicRegistry logs right after each 'Failed parsing <registry> file <id>.' line,"
-        " which stays checked on its own",
-    ),
-)
-
 # Known harmless ERROR lines of the GameTest server, matched like packboot.ALLOWED_ERRORS. Every entry needs a reason.
 GAMETEST_ALLOWED_ERRORS: tuple[tuple[str, str], ...] = (
-    *MOD_DATA_ALLOWED_ERRORS,
     (
         r"^net\.minecraft\.server\.dedicated\.Settings: Failed to load properties from file: server\.properties$",
         "the GameTest server reads server.properties before writing it, so a fresh run directory (CI) has none yet",

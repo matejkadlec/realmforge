@@ -1,0 +1,140 @@
+{
+  "$defs": {
+    "StepValuesDef": {
+      "additionalProperties": false,
+      "description": "The values an affix rolls at one rarity: from ``min`` to ``max`` in steps of ``step``.",
+      "properties": {
+        "max": {
+          "description": "The highest value, at least min.",
+          "title": "Max",
+          "type": "number"
+        },
+        "min": {
+          "description": "The lowest value.",
+          "title": "Min",
+          "type": "number"
+        },
+        "step": {
+          "description": "The step between values (Apotheosis's default 0.01).",
+          "exclusiveMinimum": 0,
+          "title": "Step",
+          "type": "number"
+        }
+      },
+      "required": [
+        "min",
+        "max",
+        "step"
+      ],
+      "title": "StepValuesDef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One of Apotheosis's attribute affixes, replaced by this definition.",
+  "properties": {
+    "affix": {
+      "description": "The Apotheosis affix this entry replaces, e.g. apotheosis:generic/attribute/lucky.",
+      "pattern": "^apotheosis:[a-z0-9_]+(/[a-z0-9_]+)*$",
+      "title": "Affix",
+      "type": "string"
+    },
+    "affix_type": {
+      "description": "Apotheosis's kind of affix, which decides the rarities it can roll on: stat from common up.",
+      "enum": [
+        "stat",
+        "basic_effect",
+        "ability"
+      ],
+      "title": "Affix Type",
+      "type": "string"
+    },
+    "attribute": {
+      "description": "The attribute the affix modifies, e.g. minecraft:luck.",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+      "title": "Attribute",
+      "type": "string"
+    },
+    "categories": {
+      "description": "The loot categories it rolls on, e.g. apotheosis:melee_weapon.",
+      "items": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Categories",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "exclusive_set": {
+      "description": "Affixes that never roll together with this one.",
+      "items": {
+        "description": "An Apotheosis affix, e.g. apotheosis:generic/attribute/lucky.",
+        "pattern": "^apotheosis:[a-z0-9_]+(/[a-z0-9_]+)*$",
+        "type": "string"
+      },
+      "title": "Exclusive Set",
+      "type": "array"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "operation": {
+      "description": "How the modifier applies, as a vanilla attribute modifier's operation.",
+      "enum": [
+        "add_value",
+        "add_multiplied_base",
+        "add_multiplied_total"
+      ],
+      "title": "Operation",
+      "type": "string"
+    },
+    "quality": {
+      "description": "Apotheosis's quality: luck's effect on the weight.",
+      "minimum": 0,
+      "title": "Quality",
+      "type": "number"
+    },
+    "type": {
+      "const": "apotheosis:attribute",
+      "description": "The affix kind; only apotheosis:attribute (an attribute modifier) so far.",
+      "title": "Type",
+      "type": "string"
+    },
+    "values": {
+      "additionalProperties": {
+        "$ref": "#/$defs/StepValuesDef"
+      },
+      "description": "Its values per rarity, keyed by rarity (apotheosis:common to apotheosis:mythic).",
+      "minProperties": 1,
+      "title": "Values",
+      "type": "object"
+    },
+    "weight": {
+      "description": "How often it rolls against other affixes (Apotheosis's weight).",
+      "minimum": 0,
+      "title": "Weight",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "affix",
+    "type",
+    "attribute",
+    "operation",
+    "affix_type",
+    "weight",
+    "quality",
+    "categories",
+    "values"
+  ],
+  "title": "ApotheosisAffixDef",
+  "type": "object"
+}

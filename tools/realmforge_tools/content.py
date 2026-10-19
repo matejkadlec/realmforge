@@ -27,6 +27,7 @@ from realmforge_tools.rooms.structure import Pos, Structure, StructureError, rea
 from realmforge_tools.schema import (
     CONTENT_TYPES,
     WORLDGEN_DIR,
+    ApotheosisAffixDef,
     BlockDef,
     ChapterDef,
     ClassDef,
@@ -160,6 +161,7 @@ class Content:
     room_specs: tuple[Entry[RoomSpecDef], ...]
     room_themes: tuple[Entry[RoomThemeDef], ...]
     realms: tuple[Entry[RealmDef], ...]
+    apotheosis_affixes: tuple[Entry[ApotheosisAffixDef], ...]
     worldgen: tuple[WorldgenFile, ...]
     rooms: tuple[RoomEntry, ...] = ()
     room_reviews: tuple[RoomReview, ...] = ()
@@ -243,6 +245,7 @@ def load_content(
         room_specs=by_id(loaded["room_specs"]),
         room_themes=by_id(loaded["room_themes"]),
         realms=by_id(loaded["realms"]),
+        apotheosis_affixes=by_id(loaded["apotheosis_affixes"]),
         worldgen=tuple(sorted(worldgen, key=lambda f: (f.directory, f.id))),
         rooms=rooms,
         room_reviews=reviews,

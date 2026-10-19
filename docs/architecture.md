@@ -379,6 +379,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | item YAML with a weapon preset | `data/realmforge/weapon_attributes/<item>.json` (Better Combat format) | read by Better Combat |
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
 | `texts/` (exists) | lang keys `<group>.realmforge.<name>`, `GeneratedTexts` constants | translations |
+| `apotheosis_affixes/` (exists, RLM-271) | `data/apotheosis/apotheosis/affixes/<path>.json`, replacing Apotheosis's affix at that path ([19.4](#194-optional-integrations)) | Apotheosis's affix registry |
 | every type | `tools/schemas/<type>.schema.json` | editor completion |
 
 **Block kinds.** A block in `content/blocks/` is `simple` (a full block) unless its `kind` names behavior that is game
@@ -2075,9 +2076,27 @@ attributes up by id, so the core mod has no compile-time dependency on it:
 
 The pack's config (`pack/config/apotheosis/`) sets its protection and armor formulas to vanilla's and turns its
 attributes panel off; Apothic Enchanting's inlined enchantment descriptions are on, because it replaces the
-enchantment tooltip that Enchantment Descriptions hooks into. The QA mod's dev runs load the three mods and copy
-`pack/config/` into their config folders (`seedPackConfig`), and `ApothicAttributesGameTests` check that its crit
-and dodge never fire, also with its crit and dodge modifiers on the attacker and the target.
+enchantment tooltip that Enchantment Descriptions hooks into, and shows Enchantment Descriptions' texts itself. The
+QA mod's dev runs load the three mods with Enchantment Descriptions and copy `pack/config/` into their config folders
+(`seedPackConfig`), and `ApothicAttributesGameTests` check that its crit and dodge never fire, also with its crit and
+dodge modifiers on the attacker and the target.
+
+**Their data, fixed and fitted** (RLM-271). The core mod declares an optional dependency on Apotheosis and Apothic
+Enchanting with `ordering = "AFTER"`: FML sorts the mod files by those edges, and NeoForge stacks the mods' data packs
+in that order, so a file of ours replaces theirs at the same path.
+
+- **Apotheosis's affixes** come from `content/apotheosis_affixes/` ([6.2](#62-what-each-content-type-becomes)): an
+  entry names the affix it replaces and holds its whole definition, and `rf gen` writes it to Apotheosis's own path
+  (`data/apotheosis/apotheosis/affixes/<path>.json`). The first is Lucky, whose `apotheosis:charm` loot category
+  exists only with Curios: without it Apotheosis skipped the whole affix with an error on every load. RLM-272
+  remaps the other affixes to our stats the same way.
+- **Apothic Enchanting's stale list of loot modifiers** (`data/neoforge/loot_modifiers/global_loot_modifiers.json`,
+  the NeoForge 21.1 format) is replaced by a file in the core mod's resources whose `neoforge:never` condition makes
+  NeoForge skip it quietly. NeoForge 26.1 reads every file in `loot_modifiers/` as a modifier and logged an error for
+  that list; the warden tendril modifier it names loads on its own. It is a fix for another mod's data, not content,
+  like the instances dimension the code needs ([15.1](#151-dimensions)).
+
+The pack boot and the GameTest log allow none of these errors, so a mod update that brings one back fails them.
 
 Checked against our systems (RLM-271), with nothing to fix:
 

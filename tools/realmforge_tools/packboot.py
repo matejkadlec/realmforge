@@ -39,7 +39,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
 
-from realmforge_tools.gamelog import MOD_DATA_ALLOWED_ERRORS, parse_log, unexpected_errors
+from realmforge_tools.gamelog import parse_log, unexpected_errors
 from realmforge_tools.project import RepoPaths
 
 NEOFORGE_VERSION = "26.1.2.116"
@@ -86,7 +86,6 @@ NEOFORGE_CLIENT_VERSION = f"neoforge-{NEOFORGE_VERSION}"
 # entry needs a reason, and an entry that no longer matches anything should go.
 ALLOWED_ERRORS: dict[str, tuple[tuple[str, str], ...]] = {
     "server": (
-        *MOD_DATA_ALLOWED_ERRORS,
         (
             r"^snownee\.jade\.Jade: Failed to collect shearable blocks$",
             "Jade 26.1.10 reads the loot table registry when a dedicated server loads its tags, which 26.1.2 does not"

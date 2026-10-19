@@ -46,7 +46,7 @@ Matěj turned this around:
   - **Its stats point at ours:** Apotheosis data that grants an Apothic Attributes stat is remapped to ours, or
     switched off where it would be useless (RLM-272).
   - **Their data comes from `content/`** like all our content ([0005](0005-content-pipeline-yaml-single-source-of-truth.md)):
-    the pipeline generates the overrides (RLM-272).
+    the pipeline generates the overrides (`content/apotheosis_affixes/` from RLM-271 on, the rest with RLM-272).
   - **Their recipes stay at their defaults**, with the Nether and End materials from the merchants and the Wither
     ([0034](0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md)).
 - **Everything else in 0004 stands:** Spell Engine and Pufferfish's Skills stay inspiration only, Better Combat,
@@ -60,10 +60,14 @@ Matěj turned this around:
 - **Two attribute sets on every entity:** Apothic Attributes registers about 25 attributes. Those with an
   equivalent of ours stay neutral or point at ours, and GameTests check that its crit and dodge never fire
   (`ApothicAttributesGameTests`). A later mod that brings combat stats of its own gets the same treatment.
-- **The dev runs and the GameTests load the three mods**, and every dev run copies `pack/config/` into its config
-  folder before it starts, so they play with the pack's settings.
-- **Curios gaps:** Apotheosis's charm category exists only with Curios. Without it, its Lucky affix fails to load
-  until RLM-272 overrides it, and our curio categories wait for Curios and our curio items (RLM-273).
+- **The dev runs and the GameTests load the three mods**, with Enchantment Descriptions, whose texts Apothic
+  Enchanting shows, and every dev run copies `pack/config/` into its config folder before it starts, so they play
+  with the pack's settings.
+- **Our data replaces theirs:** the core mod loads after Apotheosis and Apothic Enchanting, so a file of ours wins
+  at the same path. `content/apotheosis_affixes/` generates Apotheosis's affixes, starting with Lucky, whose charm
+  category exists only with Curios (without Curios Apotheosis skipped the whole affix); a core mod resource retires
+  Apothic Enchanting's stale list of loot modifiers. Our curio categories wait for Curios and our curio items
+  (RLM-273).
 - **Licenses:** Apotheosis, Apothic Attributes and Apothic Enchanting are MIT code; Apotheosis's assets are ARR,
   and we never reuse them. The pack only references their jars.
 - **Docs:** the [vision](../vision.md), [research notes, section 3](../research-notes.md#3-take-as-is-vs-build),

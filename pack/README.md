@@ -124,7 +124,7 @@ Enchanting 2.1.0, RLM-271): `client."Enable Inlined Enchantment Descriptions" =
 true`. Apothic Enchanting writes the enchantment lines of a tooltip itself and
 cancels vanilla's, which Enchantment Descriptions hooks into, so without this
 no enchantment shows its description. The descriptions are Enchantment
-Descriptions' texts, shown in dark grey under each enchantment on every item;
+Descriptions' texts (the dev runs load it too), shown in dark grey under each enchantment on every item;
 Enchantment Descriptions' own options (books only, hold Shift) no longer apply.
 
 ## Optional mods
@@ -138,7 +138,8 @@ and installs every optional mod.
 
 The dev-only QA mod gets **Player Animation Library**, **Better Combat**,
 **Cloth Config**, **Yeetus Experimentus**, **Placebo**, **Apothic
-Attributes**, **Apothic Enchanting** and **Apotheosis** from Modrinth's Maven,
+Attributes**, **Apothic Enchanting**, **Apotheosis**, **Enchantment
+Descriptions** and **Prickle** from Modrinth's Maven,
 so the dev runs (`./gradlew runClient`, with `-PwithBetterCombat` for Better
 Combat) and the GameTests test our code against the jars players get.
 `qa-mod/build.gradle` names them by Modrinth version id, the `version` under

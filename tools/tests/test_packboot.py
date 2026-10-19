@@ -146,26 +146,6 @@ def test_the_server_allowlist_covers_an_error_page_from_the_key_service() -> Non
     assert len(boot_problems(_outcome(log=other), ALLOWED_ERRORS["server"])) == 1
 
 
-# The data errors Apotheosis and Apothic Enchanting log on a server of the pack (RLM-271, 2026-10-19).
-APOTHEOSIS_SERVER_LOG = f"""\
-{FOUND_JAR}
-[19Oct2026 01:13:37.291] [Worker-Main-3/ERROR] [net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener/]: Couldn't parse data file 'neoforge:global_loot_modifiers' from 'neoforge:loot_modifiers/global_loot_modifiers.json': DataResult.Error['No key type in MapLike[{{"replace":false,"entries":["apothic_enchanting:warden_tendril"]}}]']
-[19Oct2026 01:13:44.141] [main/ERROR] [apotheosis/]: Failed parsing apotheosis:affixes file apotheosis:generic/attribute/lucky.
-[19Oct2026 01:13:44.141] [main/ERROR] [apotheosis/]: Underlying Exception:
-io.netty.handler.codec.CodecException: Codec failure for type apotheosis:affixes, message: Unknown registry key in ResourceKey[minecraft:root / apotheosis:loot_category]: apotheosis:charm
-"""
-
-
-def test_the_server_allowlist_covers_the_apotheosis_data_errors_only_for_those_files() -> None:
-    assert boot_problems(_outcome(log=APOTHEOSIS_SERVER_LOG), ALLOWED_ERRORS["server"]) == []
-    # Another affix that fails to parse still fails the boot, though its "Underlying Exception" line is allowed.
-    other = APOTHEOSIS_SERVER_LOG.replace("generic/attribute/lucky", "melee/attribute/vampiric")
-    assert [
-        "melee/attribute/vampiric" in problem
-        for problem in boot_problems(_outcome(log=other), ALLOWED_ERRORS["server"])
-    ] == [True]
-
-
 def test_the_client_runs_under_xvfb_when_it_exists(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(packboot.shutil, "which", lambda name: f"/usr/bin/{name}")
     assert packboot._headless(["game"]) == ["/usr/bin/xvfb-run", "-a", "-s", packboot.XVFB_SCREEN, "game"]
