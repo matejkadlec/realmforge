@@ -12,8 +12,8 @@
   converter that breaks a coin into smaller ones and merges them back, since crafting converts at most 9:1. No
   currency mod: Lightman's Currency was the alternative (section 1a).
 - **Vanilla 26.1 trades as data:** our merchants' trades are `villager_trade` and `trade_set` files generated from
-  our YAML (section 4); prices stay fixed (`reputation_discount: 0`, `xp: 0`, and Hero of the Village's discount
-  stopped in code).
+  our YAML (section 4); prices stay fixed (`reputation_discount: 0`, and Hero of the Village's discount stopped in
+  code), and a merchant keeps its profession once it has traded (section 4, "Levels").
 - **JEI / REI Trades joins the pack** to show trades in JEI, since EMI and EMI Trades have no 26.1 builds.
 
 ## How the facts were checked
@@ -203,7 +203,11 @@ tags to point at our own trades). Limits that matter for coins:
   clamping that discount in code, or VillagerConfig's `max_discount: 0`.
 - **No player in the predicate context**: offers are rolled per merchant, not per player, so chapter-gated stock
   needs separate merchants (or our own code); `location_check` on `origin` can vary stock by dimension/realm.
-- **Levels:** `xp` defaults to 1, so a "no levels" merchant needs `xp: 0` on every trade (or only a level-1 set).
+- **Levels:** `xp` defaults to 1, and a merchant meant to have no levels gets all its trades in its level-1 set
+  (higher levels then add nothing). `xp: 0` on every trade is not the way: a villager at level 1 with 0 XP that
+  loses its workstation goes back to no profession and drops its offers (`ResetProfession`,
+  `Villager#setVillagerData`), while vanilla villagers lock their profession with their first trade's XP. Keep
+  `xp` at 1 or more, or lock the profession in code.
 - Villagers restock at their workstation; the wandering trader never restocks.
 
 ---
@@ -220,8 +224,8 @@ What it takes, by RLM-222's requirements:
    100:1 chain except Lightman's Currency.
 2. **Fixed-price trades:** a new content type (say `content/merchants/`) that the generator turns into
    `data/realmforge/villager_trade/<merchant>/*.json`, a `trade_set` per merchant (`amount` = number of trades,
-   `allow_duplicates: false`, `random_sequence` set) and its `tags/villager_trade/` file, with `xp: 0`,
-   `reputation_discount: 0` and a large `max_uses`. Validation: at most two denominations per price, each ≤ 99.
+   `allow_duplicates: false`, `random_sequence` set) and its `tags/villager_trade/` file, with
+   `reputation_discount: 0`, a large `max_uses` and an `xp` of 1 or more (section 4, "Levels"). Validation: at most two denominations per price, each ≤ 99.
 3. **Ancient Builder and Ancient Specialist** (ADR 0034: ordinary professions with workstations, no levels): Java
    in the core mod registers two `PoiType`s (Ancient Casting, Ancient Workbench) and two `VillagerProfession`s
    whose `tradeSetsByLevel` holds only level 1, plus profession textures. Hero of the Village needs a fix in code

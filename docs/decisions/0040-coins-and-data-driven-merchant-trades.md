@@ -30,8 +30,10 @@ Matěj's choices of 2026-10-19:
 3. **Trades are vanilla data generated from our YAML:** a merchant content type becomes `villager_trade` files, a
    `trade_set` per merchant and level and their tags. Our merchants are villager professions registered in Java
    (their trade sets per level) or small `AbstractVillager` subclasses that read our trade sets.
-4. **Prices stay fixed:** our trades set `reputation_discount: 0` (no demand or reputation changes) and `xp: 0` (no
-   villager levels), and our code stops Hero of the Village's discount on our merchants.
+4. **Prices stay fixed and merchants never level up into new trades:** our trades set `reputation_discount: 0` (no
+   demand or reputation changes), our code stops Hero of the Village's discount on our merchants, and a merchant's
+   trades all sit in its level-1 trade set, so a higher level offers nothing new. A merchant still keeps its
+   profession once it has traded (below), so its trades do not all give `xp: 0`.
 5. **Coin drops** come from loot data per realm: copper in the first realms, silver later, gold late.
 6. **JEI / REI Trades** (GPL-3.0-only, unmodified, installed on client and server) joins the pack and shows every
    villager profession's trades in JEI, ours included. It replaces the EMI Trades wish of 0013's list of mods to
@@ -42,6 +44,11 @@ Matěj's choices of 2026-10-19:
 - A price mixes at most two coin types (a trade has two cost slots) and at most 99 of each.
 - Vanilla's own villagers keep their emerald trades until a ticket decides what they sell; our datapack can rewrite
   every vanilla trade the same way when it does.
+- **`xp: 0` would let a merchant lose its profession:** a villager at level 1 with 0 XP that loses its workstation
+  (broken, moved or claimed) goes back to no profession and drops its offers (`ResetProfession`,
+  `Villager#setVillagerData` in 26.1.2), and any jobless villager can then take that workstation. Vanilla villagers
+  lock their profession with their first trade's XP. Our merchants keep an `xp` of 1 or more on their trades, or
+  lock the profession in code; RLM-285 and RLM-241 choose.
 - Trades and trade sets load with the world, not on `/reload`, and are not sent to clients: JEI / REI Trades reads
   them on the server.
 - Follow-up tickets carry it: the coins and the converter (RLM-284), the merchant content type (RLM-285), coin drops
