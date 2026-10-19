@@ -152,17 +152,18 @@ Rules:
   attack, never one in creative or spectator mode), each with a `range`, which go wherever `realmforge:enemy` does); `cast`: `{type: instant}`, `{type: cast_time, duration_seconds}`
   (the effects, the cost and the cooldown come when the cast completes) or `{type: channel, duration_seconds,
   interval_seconds}` (it pays and starts its cooldown when it begins, then runs its effects every interval; the
-  duration is a whole number of intervals), the timed ones with `castable_while_moving` (moving cancels them by
-  default; only the caster's own movement counts, a player's movement or jump key or a mob walking, never a push
-  such as a melee hit's knockback, RLM-243) and `lock_on` (range and line of sight are not checked again before the effects); an optional `cost` (`resource` `realmforge:mana` or `realmforge:rage`, `amount` at level 1, `per_level`);
+  duration is a whole number of intervals), the timed ones with `castable_while_moving` (by default the cast slows
+  its caster as Slowness III does, to 55 % of its speed; with `true` the caster moves at full speed; moving never
+  cancels a cast, ADR 0039) and `lock_on` (range and line of sight are not checked again before the effects); an optional `cost` (`resource` `realmforge:mana` or `realmforge:rage`, `amount` at level 1, `per_level`);
   `cooldown_seconds`; `global_cooldown_seconds` (1 by default, 0 for a spell off the global cooldown); `max_level`;
   the `crit` block (`can_crit`, `multiplier_percent` instead of 1 + the caster's crit damage, `bonus_chance_percent`
   added to the caster's crit chance; every spell can crit by default, heals too); `npc_only` for mob and boss
   spells; and the `effects`, in order: `realmforge:damage` (a hit of the school on an enemy) and `realmforge:heal`
   (on the caster or an ally), each with `amount` at level 1 and `per_level`, and `attack_damage_percent` (the share
   of the caster's attack damage added) on an attack damage spell, where its damage effects need one;
-  `realmforge:apply_effect` (`effect`, a status effect id such as `minecraft:slowness`, `duration_seconds` up to 60,
-  `amplifier`) and `realmforge:remove_effect` (`effect`) on any entity target; `realmforge:knockback` (`strength`,
+  `realmforge:apply_effect` (`effect`, a status effect id such as `minecraft:slowness`, never an instant one such as
+  `minecraft:instant_health`, which would apply every tick: use `realmforge:heal` or `realmforge:damage`;
+  `duration_seconds` up to 60, `amplifier`) and `realmforge:remove_effect` (`effect`) on any entity target; `realmforge:knockback` (`strength`,
   0.4 is a melee hit's) on an enemy, which also interrupts its cast; `realmforge:projectile` (`speed` in blocks per
   second, `size`, `lifetime_seconds`, and its own `effects` on the first enemy it hits) at an enemy, a ground point or
   along a direction; `realmforge:area` (`radius`, `duration_seconds`, `interval_seconds`, `affects: enemies` or

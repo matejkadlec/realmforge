@@ -332,7 +332,8 @@ class _TimedCastDef(StrictModel):
 
     castable_while_moving: bool = Field(
         default=False,
-        description="Whether the caster may move during the cast; by default moving cancels it.",
+        description="Whether the caster moves at full speed during the cast; by default the cast slows it as "
+        "Slowness III does.",
     )
     lock_on: bool = Field(
         default=False,

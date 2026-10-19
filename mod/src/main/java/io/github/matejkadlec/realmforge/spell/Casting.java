@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.spell;
 
+import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.spell.CombatState.Cast;
@@ -14,9 +15,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Input;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
@@ -36,13 +38,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   the spell level, where the cast began, the ticks run).</li>
  *   <li><b>Cast Time Reduction</b> shortens a cast time, and a channel's interval, so a channel keeps its tick
  *   count.</li>
- *   <li><b>Interrupts:</b> moving more than {@value #MOVE_TOLERANCE} blocks from where the cast began by itself
- *   (unless the spell may be cast while moving), a spell's knockback, death, a dimension change, logging out, the
- *   caster's removal and a cancel ({@link #cancel}) end it without more effects.</li>
- *   <li><b>What counts as moving</b> (RLM-243): the caster's own movement, a player pressing a movement or the jump
- *   key (the client's last input), a mob walking or strafing (its movement input). Being pushed is not moving: a
- *   melee hit's knockback, crowding mobs, a water current move the cast's start point along instead. A spell's
- *   {@code realmforge:knockback} interrupts the cast explicitly ({@link #knockedBack}).</li>
+ *   <li><b>Interrupts:</b> a spell's knockback (unless the spell may be cast while moving), death, a dimension change,
+ *   logging out, the caster's removal and a cancel ({@link #cancel}) end it without more effects.</li>
+ *   <li><b>Moving slows, it never interrupts</b> (RLM-261, ADR 0039): a cast of a spell that may not be cast while
+ *   moving gives its caster {@link #CAST_SLOW}, Slowness III's share of movement speed, until the cast ends however it
+ *   ends. A spell's {@code realmforge:knockback} still interrupts the cast ({@link #knockedBack}).</li>
  *   <li><b>A cast time</b> completes after its duration: the cost and the target are checked again ({@link
  *   SpellCaster#recheck}), and a failed check ends it like an interrupt, without the cost, the cooldown or the effects.
  *   Otherwise it pays, starts its cooldown and runs its effects.</li>
@@ -58,8 +58,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * </ul>
  */
 public final class Casting {
-    /** How far, in blocks, a caster may move by itself from where its cast began before the cast counts as moved. */
-    public static final double MOVE_TOLERANCE = 0.1;
+    /**
+     * The movement speed a caster loses while it casts a spell that may not be cast while moving: Slowness III's, three
+     * times vanilla's 15 % a level (ADR 0039). A transient modifier: never saved, so a crash leaves none behind.
+     */
+    public static final AttributeModifier CAST_SLOW = new AttributeModifier(Realmforge.id("cast_slow"), -0.45,
+            AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
 
     /** Every cast in progress, by caster. Server thread only. */
     private static final Map<LivingEntity, Running> RUNNING = new HashMap<>();
@@ -98,8 +102,11 @@ public final class Casting {
             state.setSetBetterCombatTag(true);
         }
         caster.syncData(SpellAttachments.COMBAT);
-        RUNNING.put(caster, new Running(caster, spell, level, target, (ServerLevel) caster.level(), caster.position(),
-                cast, interval));
+        AttributeInstance speed = caster.getAttribute(Attributes.MOVEMENT_SPEED);
+        if (!spellCast.castableWhileMoving() && speed != null) {
+            speed.addOrUpdateTransientModifier(CAST_SLOW);
+        }
+        RUNNING.put(caster, new Running(caster, spell, level, target, (ServerLevel) caster.level(), cast, interval));
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new CastStartedPayload(caster.getId(), cast));
     }
 
@@ -198,10 +205,9 @@ public final class Casting {
     }
 
     /**
-     * What ended the cast from the caster's side, if anything: death, removal, a dimension change, moving by itself. A
-     * player's dimension change also ends it at once ({@code PlayerChangedDimensionEvent}), even when the player comes
-     * back within the tick; a mob that changes dimension is removed and replaced. A caster that was pushed beyond the
-     * tolerance takes the cast's start point along.
+     * What ended the cast from the caster's side, if anything: death, removal, a dimension change. A player's
+     * dimension change also ends it at once ({@code PlayerChangedDimensionEvent}), even when the player comes back
+     * within the tick; a mob that changes dimension is removed and replaced. Moving never ends it ({@link #CAST_SLOW}).
      */
     private static Optional<CastEnd> interruption(Running running) {
         LivingEntity caster = running.caster();
@@ -217,27 +223,7 @@ public final class Casting {
         if (caster.level() != running.level()) {
             return Optional.of(CastEnd.CHANGED_DIMENSION);
         }
-        if (!running.spell().value().cast().castableWhileMoving()
-                && caster.position().distanceToSqr(running.start()) > MOVE_TOLERANCE * MOVE_TOLERANCE) {
-            if (movesByItself(caster)) {
-                return Optional.of(CastEnd.MOVED);
-            }
-            running.start = caster.position();
-        }
         return Optional.empty();
-    }
-
-    /**
-     * Whether {@code caster} moves by its own will (RLM-243): a player presses a movement or the jump key (the last
-     * input its client sent), a mob walks or strafes (the movement input its move control sets). Being pushed or
-     * carried moves neither.
-     */
-    public static boolean movesByItself(LivingEntity caster) {
-        if (caster instanceof ServerPlayer player) {
-            Input input = player.getLastClientInput();
-            return input.forward() || input.backward() || input.left() || input.right() || input.jump();
-        }
-        return caster.zza != 0 || caster.xxa != 0 || caster.isJumping();
     }
 
     /**
@@ -252,6 +238,10 @@ public final class Casting {
         CombatState state = caster.getData(SpellAttachments.COMBAT);
         state.clearCast();
         clearBetterCombatTag(caster, state);
+        AttributeInstance speed = caster.getAttribute(Attributes.MOVEMENT_SPEED);
+        if (speed != null) {
+            speed.removeModifier(CAST_SLOW.id());
+        }
         caster.syncData(SpellAttachments.COMBAT);
         CastEndedPayload payload = new CastEndedPayload(caster.getId(), running.spell().key(), end);
         if (end == CastEnd.LOGGED_OUT) {
@@ -315,21 +305,18 @@ public final class Casting {
         private final int spellLevel;
         private final SpellTarget target;
         private final ServerLevel level;
-        /** Where the cast began, moved along while the caster is pushed. */
-        private Vec3 start;
         private final Cast cast;
         private final int interval;
         /** How many of a channel's ticks have run. */
         private int ticksRun;
 
         private Running(LivingEntity caster, Holder.Reference<Spell> spell, int spellLevel, SpellTarget target,
-                ServerLevel level, Vec3 start, Cast cast, int interval) {
+                ServerLevel level, Cast cast, int interval) {
             this.caster = caster;
             this.spell = spell;
             this.spellLevel = spellLevel;
             this.target = target;
             this.level = level;
-            this.start = start;
             this.cast = cast;
             this.interval = interval;
         }
@@ -353,11 +340,6 @@ public final class Casting {
         /** The level the cast began in. */
         ServerLevel level() {
             return level;
-        }
-
-        /** Where the caster stood when the cast began, or where it was last pushed to. */
-        Vec3 start() {
-            return start;
         }
 
         Cast cast() {

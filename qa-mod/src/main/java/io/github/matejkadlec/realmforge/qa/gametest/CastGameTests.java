@@ -135,7 +135,8 @@ public final class CastGameTests {
         assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, husk);
         assertBegun(helper, seeker, GeneratedSpells.TEST_HOMING_BOLT, husk);
         husk.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 19.5)), 0, 0);
-        // The seeker may move during its cast: walking after the husk interrupts nothing.
+        // The seeker may move during its cast, at full speed (ADR 0039).
+        assertSlowed(helper, seeker, false, "a spell castable while moving does not slow");
         seeker.snapTo(helper.absoluteVec(new Vec3(0.5, 1, 2.5)), 0, 0);
         helper.runAfterDelay(50, () -> {
             assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.OUT_OF_RANGE);
@@ -149,8 +150,8 @@ public final class CastGameTests {
     }
 
     /**
-     * A channel pays and starts its cooldown when it begins, then runs its effects at every interval; moving ends it
-     * early, and the ticks already run stay applied.
+     * A channel pays and starts its cooldown when it begins, then runs its effects at every interval; moving does not
+     * end it (ADR 0039), an interrupt does, and the ticks already run stay applied.
      */
     @QaGameTest
     public static void aChannelTicksAtItsIntervalAndStopsWhenInterrupted(GameTestHelper helper) {
@@ -171,9 +172,14 @@ public final class CastGameTests {
             assertHealth(helper, husk, HEALTH - 4, "two ticks after two seconds");
             walk(helper, player, new Vec3(1.5, 1, 0.5));
         });
+        helper.runAfterDelay(50, () -> {
+            helper.assertTrue(Casting.isCasting(player), "moving ended the channel");
+            helper.assertTrue(Casting.cancel(player), "no channel to cancel");
+        });
         helper.runAfterDelay(75, () -> {
-            assertEnded(helper, player, GeneratedSpells.TEST_DRAIN, CastEnd.MOVED);
-            assertHealth(helper, husk, HEALTH - 4, "moving stopped the third tick; the first two stay");
+            assertEnded(helper, player, GeneratedSpells.TEST_DRAIN, CastEnd.CANCELLED);
+            assertSlowed(helper, player, false, "the cancel took the cast's slow away");
+            assertHealth(helper, husk, HEALTH - 4, "the cancel stopped the third tick; the first two stay");
             assertPool(helper, player, 85, "and the cost is not refunded");
             logout(player);
             helper.succeed();
@@ -181,72 +187,45 @@ public final class CastGameTests {
     }
 
     /**
-     * Being pushed is not moving (RLM-243): a melee hit's knockback moves a casting mob, and a player its client moved
-     * without a key pressed, and both casts go on and complete.
+     * Moving slows, it never interrupts (RLM-261, ADR 0039): a player walking with a movement key down and a mob walking
+     * on its path both keep their casts, at 55 % of their speed, and get their full speed back when the casts complete.
      */
     @QaGameTest
-    public static void aCasterPushedByMeleeKeepsItsCast(GameTestHelper helper) {
-        Husk target = husk(helper, new BlockPos(0, 1, 4));
-        Husk caster = helper.spawnWithNoFreeWill(EntityType.HUSK, new BlockPos(2, 1, 1));
-        MobLevels.setLevel(caster, EntityLevel.MIN);
-        CombatGameTests.setBase(caster, Attributes.MAX_HEALTH, HEALTH);
-        CombatGameTests.setBase(caster, Attributes.KNOCKBACK_RESISTANCE, 0);
-        caster.setHealth((float) HEALTH);
-        Husk attacker = helper.spawnWithNoFreeWill(EntityType.HUSK, new BlockPos(2, 1, 0));
-        MobLevels.setLevel(attacker, EntityLevel.MIN);
-        assertBegun(helper, caster, GeneratedSpells.TEST_SLOW_BOLT, target);
-        Vec3 start = caster.position();
-        helper.assertTrue(attacker.doHurtTarget(helper.getLevel(), caster), "the attacker's melee hit missed");
-
-        ServerPlayer player = caster(helper, "qa-cast-pushed");
-        learn(helper, player, GeneratedSpells.TEST_SLOW_BOLT);
-        assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, target);
-        // A player's client moves the player: the server only sees where to, and no key pressed.
-        player.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 0.9)), 0, 0);
-
-        helper.runAfterDelay(10, () -> {
-            helper.assertTrue(caster.position().distanceTo(start) > 3 * Casting.MOVE_TOLERANCE,
-                    "the knockback moved the husk: " + caster.position().distanceTo(start) + " blocks");
-            helper.assertTrue(Casting.isCasting(caster), "the pushed husk lost its cast");
-            helper.assertTrue(Casting.isCasting(player), "the pushed player lost its cast");
-        });
-        helper.runAfterDelay(50, () -> {
-            assertEnded(helper, caster, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.COMPLETED);
-            assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.COMPLETED);
-            assertHealth(helper, target, HEALTH - 20, "both casts landed");
-            logout(player);
-            helper.succeed();
-        });
-    }
-
-    /**
-     * Moving by itself loses the cast (RLM-243): a player pressing a movement key while its client moves it, and a mob
-     * that walks.
-     */
-    @QaGameTest
-    public static void aCasterThatMovesByItselfLosesItsCast(GameTestHelper helper) {
+    public static void aMovingCasterIsSlowedAndKeepsItsCast(GameTestHelper helper) {
         Husk target = husk(helper, new BlockPos(0, 1, 4));
         ServerPlayer player = caster(helper, "qa-cast-walker");
+        double playerSpeed = player.getAttributeValue(Attributes.MOVEMENT_SPEED);
         learn(helper, player, GeneratedSpells.TEST_SLOW_BOLT);
         assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, target);
+        assertSlowed(helper, player, true, "the cast slows the player");
+        helper.assertValueEqual(player.getAttributeValue(Attributes.MOVEMENT_SPEED), playerSpeed * 0.55,
+                "Slowness III's share: 55 % of the speed is left");
         walk(helper, player, new Vec3(2.5, 1, 1.5));
 
         Husk husk = helper.spawnWithNoFreeWill(EntityType.HUSK, new BlockPos(4, 1, 0));
         MobLevels.setLevel(husk, EntityLevel.MIN);
+        Vec3 huskStart = husk.position();
         assertBegun(helper, husk, GeneratedSpells.TEST_SLOW_BOLT, target);
-        // Its navigation walks it, as its AI would, setting its movement input every tick; like GameTestHelper#walkTo,
-        // only once it stands on the ground.
+        assertSlowed(helper, husk, true, "the cast slows the mob");
+        // Its navigation walks it, as its AI would; like GameTestHelper#walkTo, only once it stands on the ground.
         Vec3 goal = helper.absoluteVec(new Vec3(4.5, 1, 3.5));
         helper.runAfterDelay(2, () -> helper.assertTrue(husk.getNavigation().moveTo(goal.x, goal.y, goal.z, 1.0),
                 "the husk found no path"));
 
-        helper.runAfterDelay(35, () -> {
-            assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.MOVED);
-            helper.assertTrue(husk.position().distanceTo(goal) < 2.5, "the husk did not walk: at "
-                    + helper.relativeVec(husk.position()) + ", zza " + husk.zza + ", casting " + Casting.isCasting(husk)
-                    + ", path " + husk.getNavigation().getPath() + ", done " + husk.getNavigation().isDone());
-            assertEnded(helper, husk, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.MOVED);
-            assertHealth(helper, target, HEALTH, "neither cast landed");
+        helper.runAfterDelay(30, () -> {
+            helper.assertTrue(Casting.isCasting(player), "walking ended the player's cast");
+            helper.assertTrue(husk.position().distanceTo(huskStart) > 0.5, "the husk did not walk: at "
+                    + helper.relativeVec(husk.position()));
+            helper.assertTrue(Casting.isCasting(husk), "walking ended the husk's cast");
+        });
+        helper.runAfterDelay(50, () -> {
+            assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.COMPLETED);
+            assertEnded(helper, husk, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.COMPLETED);
+            assertHealth(helper, target, HEALTH - 20, "both casts landed");
+            assertSlowed(helper, player, false, "the player's full speed is back");
+            helper.assertValueEqual(player.getAttributeValue(Attributes.MOVEMENT_SPEED), playerSpeed,
+                    "the player's speed as before the cast");
+            assertSlowed(helper, husk, false, "the husk's full speed is back");
             logout(player);
             helper.succeed();
         });
@@ -466,6 +445,11 @@ public final class CastGameTests {
     static void walk(GameTestHelper helper, ServerPlayer player, Vec3 pos) {
         player.setLastClientInput(new Input(true, false, false, false, false, false, false));
         player.snapTo(helper.absoluteVec(pos), player.getYRot(), player.getXRot());
+    }
+
+    private static void assertSlowed(GameTestHelper helper, LivingEntity caster, boolean slowed, String message) {
+        helper.assertValueEqual(caster.getAttribute(Attributes.MOVEMENT_SPEED).hasModifier(Casting.CAST_SLOW.id()),
+                slowed, message);
     }
 
     private static boolean hasBetterCombatTag(ServerPlayer player) {

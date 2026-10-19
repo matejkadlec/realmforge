@@ -618,6 +618,45 @@ def test_status_effects_must_exist(repo: RepoPaths) -> None:
     assert_problem(repo, "minecraft:slowness_x")
 
 
+@pytest.mark.parametrize(
+    ("status", "expected"),
+    [
+        ("minecraft:instant_health", "use realmforge:heal instead"),
+        ("minecraft:instant_damage", "use realmforge:damage instead"),
+        ("minecraft:saturation", "a spell does not feed"),
+    ],
+)
+def test_apply_effect_refuses_instant_status_effects(repo: RepoPaths, status: str, expected: str) -> None:
+    spell(
+        repo,
+        "hex",
+        "school: realmforge:arcane\n"
+        "scales_with: spell_power\n"
+        "targeting: {type: realmforge:enemy, range: 16}\n"
+        "cast: {type: instant}\n"
+        "effects:\n"
+        "  - {type: realmforge:projectile, speed: 20, size: 0.5, lifetime_seconds: 2, effects: "
+        f"[{{type: realmforge:apply_effect, effect: {status}, duration_seconds: 2}}]}}\n",
+    )
+    assert_problem(repo, f"effects.0.effects.0.effect: {status} is instant")
+    assert_problem(repo, expected)
+
+
+def test_remove_effect_may_name_an_instant_status_effect(repo: RepoPaths) -> None:
+    spell(
+        repo,
+        "cleanse",
+        "school: realmforge:arcane\n"
+        "scales_with: spell_power\n"
+        "targeting: {type: realmforge:self}\n"
+        "cast: {type: instant}\n"
+        "effects:\n"
+        "  - {type: realmforge:remove_effect, effect: minecraft:instant_damage}\n",
+    )
+    content, _ = load_and_validate(repo)
+    assert any(entry.model.id == "cleanse" for entry in content.spells)
+
+
 def test_spell_entities_are_in_game_units(repo: RepoPaths) -> None:
     files = generate(repo)
     missile = json.loads(files[f"{SPELL_DATA}/test_missile.json"])
