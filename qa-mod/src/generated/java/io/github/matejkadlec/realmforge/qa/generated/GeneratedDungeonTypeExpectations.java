@@ -20,10 +20,13 @@ public final class GeneratedDungeonTypeExpectations {
             List<ConnectorExpectation> connectors) {
     }
 
-    /** One dungeon type: its id, its name's translation key, its pool, its layout rules and its rooms. */
+    /**
+     * One dungeon type: its id, its name's translation key, its pool, its layout rules, its key, how many minutes
+     * a portal to it stays open, and its rooms.
+     */
     public record DungeonTypeExpectation(String id, String name, String pool, int mainPathMin, int mainPathMax,
-            int branchesMin, int branchesMax, int branchRoomsMin, int branchRoomsMax, String ending,
-            List<RoomExpectation> rooms) {
+            int branchesMin, int branchesMax, int branchRoomsMin, int branchRoomsMax, String ending, String key,
+            int openMinutes, List<RoomExpectation> rooms) {
     }
 
     public static final List<DungeonTypeExpectation> DUNGEON_TYPES = List.of(
@@ -33,6 +36,7 @@ public final class GeneratedDungeonTypeExpectations {
                     "realmforge:stone_vault",
                     3, 6, 1, 2, 1, 2,
                     "treasure",
+                    "realmforge:test_dungeon_key", 30,
                     List.of(
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/entrances/entrance_1", 7, 6, 7, "entrance", 1,
                                     List.of(

@@ -4,6 +4,7 @@
 package io.github.matejkadlec.realmforge.generated;
 
 import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.world.BlockKinds;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -29,6 +30,31 @@ public final class GeneratedBlocks {
 
     /** The block item of {@link #CORESLATE}. */
     public static final DeferredItem<BlockItem> CORESLATE_ITEM = ITEMS.registerSimpleBlockItem(CORESLATE);
+
+    /** {@code realmforge:dungeon_exit} from {@code content/blocks/dungeon_exit.yaml}. */
+    public static final DeferredBlock<Block> DUNGEON_EXIT =
+            BLOCKS.registerBlock("dungeon_exit",
+                    properties -> BlockKinds.create("dungeon_exit", properties),
+                    properties -> properties
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .strength(1.5F, 6.0F)
+                    .sound(SoundType.STONE));
+
+    /** The block item of {@link #DUNGEON_EXIT}. */
+    public static final DeferredItem<BlockItem> DUNGEON_EXIT_ITEM = ITEMS.registerSimpleBlockItem(DUNGEON_EXIT);
+
+    /** {@code realmforge:dungeon_portal} from {@code content/blocks/dungeon_portal.yaml}. */
+    public static final DeferredBlock<Block> DUNGEON_PORTAL =
+            BLOCKS.registerBlock("dungeon_portal",
+                    properties -> BlockKinds.create("dungeon_portal", properties),
+                    properties -> properties
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(5.0F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops());
+
+    /** The block item of {@link #DUNGEON_PORTAL}. */
+    public static final DeferredItem<BlockItem> DUNGEON_PORTAL_ITEM = ITEMS.registerSimpleBlockItem(DUNGEON_PORTAL);
 
     /** {@code realmforge:mottlestone} from {@code content/blocks/mottlestone.yaml}. */
     public static final DeferredBlock<Block> MOTTLESTONE =
@@ -75,6 +101,9 @@ public final class GeneratedBlocks {
 
     private static void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {
         switch (event.getTabKey().identifier().toString()) {
+            case "minecraft:functional_blocks" -> {
+                event.accept(DUNGEON_PORTAL_ITEM);
+            }
             case "minecraft:natural_blocks" -> {
                 event.accept(CORESLATE_ITEM);
                 event.accept(MOTTLESTONE_ITEM);

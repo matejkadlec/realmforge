@@ -146,6 +146,12 @@ public final class GeneratedTexts {
     /** {@code message.realmforge.dark_vision_on} from {@code content/texts/message.yaml}: "Dark Vision On" */
     public static final String MESSAGE_DARK_VISION_ON = "message.realmforge.dark_vision_on";
 
+    /** {@code message.realmforge.dungeon_completed} from {@code content/texts/message.yaml}: "You completed the instance and will be automatically teleported out in 5 minutes. Use '/instance leave' to exit immediately." */
+    public static final String MESSAGE_DUNGEON_COMPLETED = "message.realmforge.dungeon_completed";
+
+    /** {@code message.realmforge.dungeon_left} from {@code content/texts/message.yaml}: "You left the dungeon." */
+    public static final String MESSAGE_DUNGEON_LEFT = "message.realmforge.dungeon_left";
+
     /** {@code message.realmforge.level_cap_raised} from {@code content/texts/message.yaml}: "%1$s complete! Your level cap is now %2$s." */
     public static final String MESSAGE_LEVEL_CAP_RAISED = "message.realmforge.level_cap_raised";
 
@@ -157,6 +163,48 @@ public final class GeneratedTexts {
 
     /** {@code message.realmforge.level_up_subtitle} from {@code content/texts/message.yaml}: "You are now level %1$s" */
     public static final String MESSAGE_LEVEL_UP_SUBTITLE = "message.realmforge.level_up_subtitle";
+
+    /** {@code message.realmforge.not_in_dungeon} from {@code content/texts/message.yaml}: "You are not in a dungeon." */
+    public static final String MESSAGE_NOT_IN_DUNGEON = "message.realmforge.not_in_dungeon";
+
+    /** {@code message.realmforge.portal_already_open} from {@code content/texts/message.yaml}: "This portal is already open." */
+    public static final String MESSAGE_PORTAL_ALREADY_OPEN = "message.realmforge.portal_already_open";
+
+    /** {@code message.realmforge.portal_closed} from {@code content/texts/message.yaml}: "The portal has closed." */
+    public static final String MESSAGE_PORTAL_CLOSED = "message.realmforge.portal_closed";
+
+    /** {@code message.realmforge.portal_closes_in_10_seconds} from {@code content/texts/message.yaml}: "The portal closes in 10 seconds." */
+    public static final String MESSAGE_PORTAL_CLOSES_IN_10_SECONDS = "message.realmforge.portal_closes_in_10_seconds";
+
+    /** {@code message.realmforge.portal_closes_in_1_minute} from {@code content/texts/message.yaml}: "The portal closes in 1 minute." */
+    public static final String MESSAGE_PORTAL_CLOSES_IN_1_MINUTE = "message.realmforge.portal_closes_in_1_minute";
+
+    /** {@code message.realmforge.portal_closes_in_5_minutes} from {@code content/texts/message.yaml}: "The portal closes in 5 minutes." */
+    public static final String MESSAGE_PORTAL_CLOSES_IN_5_MINUTES = "message.realmforge.portal_closes_in_5_minutes";
+
+    /** {@code message.realmforge.portal_dungeon_already_open} from {@code content/texts/message.yaml}: "You already have a dungeon open. Leave it before you open another." */
+    public static final String MESSAGE_PORTAL_DUNGEON_ALREADY_OPEN = "message.realmforge.portal_dungeon_already_open";
+
+    /** {@code message.realmforge.portal_failed} from {@code content/texts/message.yaml}: "The dungeon could not be built, so your key was returned." */
+    public static final String MESSAGE_PORTAL_FAILED = "message.realmforge.portal_failed";
+
+    /** {@code message.realmforge.portal_inside_dungeon} from {@code content/texts/message.yaml}: "A portal cannot open inside a dungeon." */
+    public static final String MESSAGE_PORTAL_INSIDE_DUNGEON = "message.realmforge.portal_inside_dungeon";
+
+    /** {@code message.realmforge.portal_needs_key} from {@code content/texts/message.yaml}: "Use a dungeon key on the portal to open it." */
+    public static final String MESSAGE_PORTAL_NEEDS_KEY = "message.realmforge.portal_needs_key";
+
+    /** {@code message.realmforge.portal_not_yours} from {@code content/texts/message.yaml}: "This portal leads to someone else's dungeon." */
+    public static final String MESSAGE_PORTAL_NOT_YOURS = "message.realmforge.portal_not_yours";
+
+    /** {@code message.realmforge.portal_opening} from {@code content/texts/message.yaml}: "The portal to %1$s is opening. It stays open for %2$s minutes." */
+    public static final String MESSAGE_PORTAL_OPENING = "message.realmforge.portal_opening";
+
+    /** {@code message.realmforge.portal_ready} from {@code content/texts/message.yaml}: "The portal to %1$s is open. Use it to enter." */
+    public static final String MESSAGE_PORTAL_READY = "message.realmforge.portal_ready";
+
+    /** {@code message.realmforge.portal_still_opening} from {@code content/texts/message.yaml}: "The portal is still opening." */
+    public static final String MESSAGE_PORTAL_STILL_OPENING = "message.realmforge.portal_still_opening";
 
     /** {@code message.realmforge.realm_not_eligible} from {@code content/texts/message.yaml}: "You are not eligible to pass through the portal." */
     public static final String MESSAGE_REALM_NOT_ELIGIBLE = "message.realmforge.realm_not_eligible";

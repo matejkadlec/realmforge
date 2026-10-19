@@ -1,5 +1,5 @@
 """Dungeon types: ``content/dungeons/<id>.yaml`` -> ``data/realmforge/realmforge/dungeon_type/<id>.json``, their
-names for the lang files, and the QA mod's expectations.
+names for the lang files, the item tag ``realmforge:dungeon_key`` of their keys, and the QA mod's expectations.
 
 A dungeon type names its room pool; the generated entry also carries the pool's rooms resolved, in room id order:
 each room's template (the structure ``realmforge:rooms/<id>``), size, role, weight and connectors as the game reads
@@ -24,6 +24,9 @@ from realmforge_tools.schema.room import ROOMS_DIR
 
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
 REGISTRY = "dungeon_type"
+# The item tag of every dungeon type's key: the client reads it to know which items a dungeon portal takes, as the
+# dungeon types themselves stay on the server (architecture 15.5).
+KEY_TAG = f"{MOD_ID}:dungeon_key"
 
 
 def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
@@ -32,6 +35,10 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         folder / f"{entry.model.id}.json": dump_json(dungeon_data(entry.model, content))
         for entry in content.dungeons
     }
+    keys = sorted({entry.model.key for entry in content.dungeons})
+    if keys:
+        tag = KEY_TAG.split(":", 1)[1]
+        files[data_dir(paths) / "tags" / "item" / f"{tag}.json"] = dump_json({"values": keys})
     expectations = java_file_path(
         paths.qa_generated / "java", QA_GENERATED_PACKAGE, "GeneratedDungeonTypeExpectations"
     )
@@ -94,6 +101,7 @@ def _expectations(content: Content) -> bytes:
             f"                    {layout.main_path[0]}, {layout.main_path[1]}, {layout.branches[0]}, "
             f"{layout.branches[1]}, {layout.branch_rooms[0]}, {layout.branch_rooms[1]},\n"
             f"                    {string_literal(layout.ending)},\n"
+            f"                    {string_literal(dungeon.key)}, {dungeon.open_minutes},\n"
             f"                    List.of(\n{rooms}))"
         )
     entries = "List.of(\n" + ",\n".join(rows) + ")" if rows else "List.of()"
@@ -117,10 +125,13 @@ def _expectations(content: Content) -> bytes:
         "            List<ConnectorExpectation> connectors) {\n"
         "    }\n"
         "\n"
-        "    /** One dungeon type: its id, its name's translation key, its pool, its layout rules and its rooms. */\n"
+        "    /**\n"
+        "     * One dungeon type: its id, its name's translation key, its pool, its layout rules, its key, how many minutes\n"
+        "     * a portal to it stays open, and its rooms.\n"
+        "     */\n"
         "    public record DungeonTypeExpectation(String id, String name, String pool, int mainPathMin, int mainPathMax,\n"
-        "            int branchesMin, int branchesMax, int branchRoomsMin, int branchRoomsMax, String ending,\n"
-        "            List<RoomExpectation> rooms) {\n"
+        "            int branchesMin, int branchesMax, int branchRoomsMin, int branchRoomsMax, String ending, String key,\n"
+        "            int openMinutes, List<RoomExpectation> rooms) {\n"
         "    }\n"
         "\n"
         f"    public static final List<DungeonTypeExpectation> DUNGEON_TYPES = {entries};\n"

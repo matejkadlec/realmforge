@@ -12,6 +12,7 @@ import io.github.matejkadlec.realmforge.dungeon.instance.Plot;
 import io.github.matejkadlec.realmforge.dungeon.instance.PlotState;
 import io.github.matejkadlec.realmforge.dungeon.instance.RoomPlacement;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonRoom;
+import io.github.matejkadlec.realmforge.generated.GeneratedBlocks;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.instance.InstanceBench;
 import io.github.matejkadlec.realmforge.qa.instance.SpikeLayouts;
@@ -34,6 +35,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.FlatLevelSource;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import net.minecraft.world.phys.AABB;
@@ -69,8 +71,8 @@ public final class InstanceGameTests {
 
     /**
      * Done when of spike 3 and W4b: a plot is built and entered at its entrance marker, looking along the row, with its
-     * markers recorded and none placed; its run completes and is left; and it is cleared, a block beside a room
-     * included.
+     * markers recorded and none placed (the dungeon exit lies at the entrance and exit markers, W4d); its run completes
+     * and is left; and it is cleared, a block beside a room included.
      */
     @QaGameTest(timeoutTicks = TIMEOUT)
     public static void instanceIsBuiltEnteredLeftAndCleared(GameTestHelper helper) {
@@ -112,8 +114,11 @@ public final class InstanceGameTests {
                     helper.assertTrue(instances.getBlockState(origin.offset(SpikeLayouts.MARKER))
                             .is(Blocks.CHISELED_STONE_BRICKS), "the start room was placed");
                     for (DataMarker marker : plot.markers()) {
-                        helper.assertTrue(instances.getBlockState(origin.offset(marker.pos())).isAir(),
-                                "the " + marker.kind().getSerializedName() + " marker was not placed");
+                        // W4d lays the dungeon exit where players arrive (the entrance marker) and at exit markers.
+                        BlockState placed = instances.getBlockState(origin.offset(marker.pos()));
+                        boolean exit = marker.kind() != DataMarker.Kind.MOB;
+                        helper.assertTrue(exit ? placed.is(GeneratedBlocks.DUNGEON_EXIT.get()) : placed.isAir(),
+                                "the " + marker.kind().getSerializedName() + " marker was not placed: " + placed);
                     }
                     helper.assertTrue(instances.getBlockEntity(chest) instanceof ChestBlockEntity box
                             && box.getItem(0).is(Items.BREAD), "the hall's chest was placed with its bread");

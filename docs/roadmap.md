@@ -227,12 +227,15 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   drop valid loot.
 - **W4 Dungeon framework** (RLM-34, L, after spike 3 and W1). The instance dimension from spike 3;
   `realmforge:dungeon_type`; the room format and its validation (`content/rooms/`); the pure planner and layout
-  with fuzz tests; the builder with data markers and chunk tickets; `InstanceManager`; entry and exit; the rules
-  inside (Adventure mode plus guards for non-player edits and for items with `can_break` or `can_place_on`,
-  [architecture 15.5](architecture.md#155-instances)); QA commands to preview a layout and enter a dungeon. *Done
-  when:* GameTests build and enter an instance, and a bucket (a plain one, and water, lava and empty buckets with
-  `can_place_on`), flint and steel, an axe, a hoe, a tool with `can_break`, placing and breaking all leave the room
-  unchanged.
+  with fuzz tests; the builder with data markers and chunk tickets; `InstanceManager`; entry through a temporary
+  dungeon portal that a dungeon key opens for its player alone (D8), open for the dungeon type's time with warnings
+  before it closes and sends everyone back, and exit at any time by the dungeon exit or `/instance leave`; a completed
+  run closes 5 minutes later; the rules inside (Adventure mode plus guards for non-player edits and for items with
+  `can_break` or `can_place_on`, [architecture 15.5](architecture.md#155-instances)); QA commands to preview a layout
+  and enter a dungeon. *Done when:* GameTests build and enter an instance, open a portal with a key, close it by its
+  timer and by the last player's `/instance leave`, and check the completion's 5 minutes, and a bucket (a plain one,
+  and water, lava and empty buckets with `can_place_on`), flint and steel, an axe, a hoe, a tool with `can_break`,
+  placing and breaking all leave the room unchanged.
 - **W5 Boss** (RLM-35, L, after C3a and W3). `realmforge:boss`, `BossPhaseMachine`, abilities through the spell engine,
   the boss entity and model, the phase name in the boss bar, arena rules, loot. The boss is tested on its own,
   before any dungeon references it. *Done when:* GameTests cover every phase change.

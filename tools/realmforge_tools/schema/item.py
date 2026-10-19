@@ -8,6 +8,7 @@ from pydantic import Field
 
 from realmforge_tools.project import MOD_ID
 from realmforge_tools.schema.common import ContentId, LocalizedText, StrictModel, UniqueResourceIds
+from realmforge_tools.schema.recipe import ShapedRecipeDef
 
 # What right-clicking an item can do (architecture 13). Each use is game code in the feature it belongs to, which finds
 # its items through the item tag realmforge:use/<use> that the pipeline writes; each has its tooltip line, the text
@@ -24,7 +25,7 @@ def use_tag(use: str) -> str:
 
 class ItemDef(StrictModel):
     """A simple item. Generates its registration, model, lang entries and (for now) a placeholder texture; a use and a
-    flavor line become its tooltip."""
+    flavor line become its tooltip, and a recipe its crafting recipe."""
 
     id: ContentId
     name: LocalizedText = Field(description="Display name.")
@@ -43,4 +44,7 @@ class ItemDef(StrictModel):
     flavor: LocalizedText | None = Field(
         default=None,
         description="A flavor line in the tooltip: one sentence, no mechanics, at most 12 words (lore style guide).",
+    )
+    recipe: ShapedRecipeDef | None = Field(
+        default=None, description="Optional: the shaped crafting recipe that makes the item."
     )

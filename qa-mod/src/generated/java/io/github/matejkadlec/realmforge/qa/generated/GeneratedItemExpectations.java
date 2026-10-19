@@ -53,6 +53,12 @@ public final class GeneratedItemExpectations {
                     List.of("minecraft:combat"),
                     ""),
             new ItemExpectation(
+                    "realmforge:test_dungeon_key",
+                    "item.realmforge.test_dungeon_key",
+                    16,
+                    List.of("minecraft:tools_and_utilities"),
+                    ""),
+            new ItemExpectation(
                     "realmforge:test_item",
                     "item.realmforge.test_item",
                     16,

@@ -78,6 +78,7 @@ def test_only_the_gone_template_tests_failed_build_is_allowed() -> None:
         "java.lang.IllegalArgumentException: unknown room template TEMPLATE\n"
     )
     assert gametest_problems(line.replace("TEMPLATE", "realmforge_qa:gametest/gone") + PASSED) == []
+    assert gametest_problems(line.replace("TEMPLATE", "realmforge_qa:gametest/portal_gone") + PASSED) == []
     (problem,) = gametest_problems(line.replace("TEMPLATE", "realmforge:rooms/stone/hall") + PASSED)
     assert "unknown room template realmforge:rooms/stone/hall" in problem
 

@@ -7,6 +7,7 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
@@ -29,7 +30,10 @@ public final class Plot {
             BoundingBox.CODEC.listOf().optionalFieldOf("dirty", List.of()).forGetter(plot -> plot.dirty),
             Codec.INT.optionalFieldOf("step", 0).forGetter(Plot::step),
             UUIDUtil.CODEC.listOf().optionalFieldOf("party", List.of()).forGetter(plot -> plot.party),
-            Codec.LONG.listOf().optionalFieldOf("chunks", List.of()).forGetter(plot -> List.copyOf(plot.chunks))
+            Codec.LONG.listOf().optionalFieldOf("chunks", List.of()).forGetter(plot -> List.copyOf(plot.chunks)),
+            Codec.LONG.optionalFieldOf("run", 0L).forGetter(Plot::run),
+            PortalLink.CODEC.optionalFieldOf("portal").forGetter(Plot::portal),
+            Codec.LONG.optionalFieldOf("closes_at").forGetter(plot -> Optional.ofNullable(plot.closesAt))
     ).apply(instance, Plot::new));
 
     private final int id;
@@ -50,6 +54,14 @@ public final class Plot {
     private final List<UUID> party;
     /** Chunks this plot holds loaded through the ticket controller, in the order it took them. */
     private final LongSet chunks;
+    /** The current run's id, unique in this world; 0 while the plot holds no run. */
+    private long run;
+    /** The dungeon portal the current run was opened through, if any (W4d). */
+    @Nullable
+    private PortalLink portal;
+    /** The game time at which the current run is released, if it has a timer (W4d). */
+    @Nullable
+    private Long closesAt;
     /** Derived from the saved state; rebuilt after a restart. */
     @Nullable
     private List<PlotWork.Unit> units;
@@ -60,12 +72,12 @@ public final class Plot {
 
     Plot(int id) {
         this(id, PlotState.FREE, Optional.empty(), List.of(), List.of(), Optional.empty(), List.of(), 0, List.of(),
-                List.of());
+                List.of(), 0L, Optional.empty(), Optional.empty());
     }
 
     private Plot(int id, PlotState state, Optional<InstanceLayout> layout, List<BoundingBox> rooms,
             List<DataMarker> markers, Optional<Vec3> spawn, List<BoundingBox> dirty, int step, List<UUID> party,
-            List<Long> chunks) {
+            List<Long> chunks, long run, Optional<PortalLink> portal, Optional<Long> closesAt) {
         this.id = id;
         this.state = state;
         this.layout = layout.orElse(null);
@@ -76,6 +88,9 @@ public final class Plot {
         this.step = step;
         this.party = new ArrayList<>(party);
         this.chunks = new LongLinkedOpenHashSet(chunks);
+        this.run = run;
+        this.portal = portal.orElse(null);
+        this.closesAt = closesAt.orElse(null);
     }
 
     public int id() {
@@ -126,6 +141,21 @@ public final class Plot {
         return List.copyOf(party);
     }
 
+    /** The current run's id, unique in this world, so a portal can tell its run from a later one in the plot. */
+    public long run() {
+        return run;
+    }
+
+    /** The dungeon portal the current run was opened through; a run opened otherwise (a QA command) has none. */
+    public Optional<PortalLink> portal() {
+        return Optional.ofNullable(portal);
+    }
+
+    /** The game time at which the current run is released, if it has a timer. */
+    public OptionalLong closesAt() {
+        return closesAt == null ? OptionalLong.empty() : OptionalLong.of(closesAt);
+    }
+
     /** The chunks it holds loaded, as {@code ChunkPos#pack} values. */
     public LongSet chunks() {
         return chunks;
@@ -165,7 +195,11 @@ public final class Plot {
         step++;
     }
 
-    void startBuilding(InstanceLayout layout, List<BoundingBox> rooms, List<DataMarker> markers, List<UUID> party) {
+    void startBuilding(InstanceLayout layout, List<BoundingBox> rooms, List<DataMarker> markers, List<UUID> party,
+            long run, @Nullable PortalLink portal, @Nullable Long closesAt) {
+        this.run = run;
+        this.portal = portal;
+        this.closesAt = closesAt;
         this.layout = layout;
         this.rooms = List.copyOf(rooms);
         this.markers = List.copyOf(markers);
@@ -198,6 +232,10 @@ public final class Plot {
         state = PlotState.COMPLETED;
     }
 
+    void setClosesAt(long gameTime) {
+        closesAt = gameTime;
+    }
+
     /**
      * Start clearing everything this plot may hold, including the rooms of an unfinished build once a unit of it ran
      * (a build released before that placed nothing, so it has nothing to clear and no chunk to load for it).
@@ -227,6 +265,9 @@ public final class Plot {
         markers = List.of();
         spawn = null;
         party.clear();
+        run = 0L;
+        portal = null;
+        closesAt = null;
     }
 
     private void enter(PlotState next) {

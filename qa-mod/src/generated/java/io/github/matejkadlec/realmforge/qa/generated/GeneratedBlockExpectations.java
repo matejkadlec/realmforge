@@ -23,6 +23,18 @@ public final class GeneratedBlockExpectations {
                     List.of("minecraft:mineable/pickaxe"),
                     "realmforge:blocks/coreslate"),
             new BlockExpectation(
+                    "realmforge:dungeon_exit",
+                    "block.realmforge.dungeon_exit",
+                    1.5F, 6.0F, false,
+                    List.of(),
+                    "realmforge:blocks/dungeon_exit"),
+            new BlockExpectation(
+                    "realmforge:dungeon_portal",
+                    "block.realmforge.dungeon_portal",
+                    5.0F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/dungeon_portal"),
+            new BlockExpectation(
                     "realmforge:mottlestone",
                     "block.realmforge.mottlestone",
                     18.0F, 6.0F, true,

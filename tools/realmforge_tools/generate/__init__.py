@@ -23,6 +23,7 @@ from realmforge_tools.generate import (
     lang,
     leveling,
     realms,
+    recipes,
     rooms,
     schemas,
     spell_schools,
@@ -39,6 +40,7 @@ def generate_all(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     generators = (
         items.generate,
         blocks.generate,
+        recipes.generate,
         datapack.generate,
         curves.generate,
         dimension_rules.generate,

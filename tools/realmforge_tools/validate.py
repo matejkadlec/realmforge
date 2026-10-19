@@ -28,6 +28,7 @@ from realmforge_tools.rooms.connectors import connectors, could_attach
 from realmforge_tools.rooms.generator import GENERATED_DIR, theme_blocks, unknown_blocks
 from realmforge_tools.rooms.walk import walk_problems
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES, WORLDGEN_DIR
+from realmforge_tools.schema.block import SINGLE_BLOCK_KINDS
 from realmforge_tools.schema.chapter import advancement_id as chapter_advancement
 from realmforge_tools.schema.character import STARTING_BREAD
 from realmforge_tools.schema.dungeon import DEAD_END_ROLES, PATH_ROLES, ROOM_ROLES, room_role
@@ -179,6 +180,8 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_room_specs(content)
     problems += _check_rooms(content, universe)
     problems += _check_dungeons(content)
+    problems += _check_dungeon_keys(content, universe)
+    problems += _check_recipes(content, universe)
     problems += _check_chapters(content)
     problems += _check_leveling_curves(content)
     problems += _check_kill_xp_multipliers(content, universe)
@@ -830,11 +833,23 @@ def _check_dimension_rules(content: Content, universe: IdUniverse) -> list[Probl
 
 
 def _check_blocks(content: Content, universe: IdUniverse) -> list[Problem]:
-    """A block's item takes the block's id, so no item may have it too; its creative tabs exist."""
+    """A block's item takes the block's id, so no item may have it too; its creative tabs exist; a kind the game uses
+    one block of (the dungeon exit) has one block at most."""
     problems: list[Problem] = []
     items = {entry.model.id: entry.source for entry in content.items}
+    kind_blocks: dict[str, str] = {}
     for entry in content.blocks:
         block = entry.model
+        if block.kind in SINGLE_BLOCK_KINDS:
+            if block.kind in kind_blocks:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        "kind",
+                        f"the game uses one {block.kind} block, and {kind_blocks[block.kind]} is one already",
+                    )
+                )
+            kind_blocks.setdefault(block.kind, entry.source)
         if block.id in items:
             problems.append(
                 Problem(
@@ -847,6 +862,38 @@ def _check_blocks(content: Content, universe: IdUniverse) -> list[Problem]:
                     Problem(
                         entry.source, f"creative_tabs.{i}", _unknown(tab, CREATIVE_TAB_REGISTRY, universe)
                     )
+                )
+    return problems
+
+
+def _check_dungeon_keys(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A dungeon type's key is an item, and no other dungeon type has the same key: a key opens a portal to one type
+    (W4d, architecture 15.5)."""
+    problems: list[Problem] = []
+    types_of_key: dict[str, str] = {}
+    for entry in content.dungeons:
+        key = entry.model.key
+        if not universe.contains(ITEM_REGISTRY, key):
+            problems.append(Problem(entry.source, "key", _unknown(key, ITEM_REGISTRY, universe)))
+        elif key in types_of_key:
+            problems.append(
+                Problem(entry.source, "key", f"{key} already opens the dungeon type in {types_of_key[key]}")
+            )
+        types_of_key.setdefault(key, entry.source)
+    return problems
+
+
+def _check_recipes(content: Content, universe: IdUniverse) -> list[Problem]:
+    """Every ingredient of an item's or block's recipe is an item."""
+    problems: list[Problem] = []
+    for entry in [*content.items, *content.blocks]:
+        recipe = entry.model.recipe
+        if recipe is None:
+            continue
+        for char, ingredient in sorted(recipe.key.items()):
+            if not universe.contains(ITEM_REGISTRY, ingredient):
+                problems.append(
+                    Problem(entry.source, f"recipe.key.{char}", _unknown(ingredient, ITEM_REGISTRY, universe))
                 )
     return problems
 

@@ -76,8 +76,9 @@ class LayoutDef(StrictModel):
 
 
 class DungeonTypeDef(StrictModel):
-    """A kind of dungeon: the room pool it is built from and the rules of its layout. Encounters, loot, its level
-    range, its theme and its key come with the tasks that use them."""
+    """A kind of dungeon: the room pool it is built from, the rules of its layout, the key that opens a portal to it
+    and how long that portal stays open (W4d). Encounters, loot, its level range and its theme come with the tasks
+    that use them."""
 
     id: ContentId
     name: LocalizedText = Field(description="The dungeon's name, a label (Title Case).")
@@ -85,3 +86,13 @@ class DungeonTypeDef(StrictModel):
         description="The room pool it is built from: the rooms whose sidecar lists this id in its pools."
     )
     layout: LayoutDef
+    key: ResourceId = Field(
+        description=(
+            "The item that opens a dungeon portal to it, used up each time: its key. One key per dungeon type."
+        )
+    )
+    open_minutes: int = Field(
+        ge=1,
+        le=240,
+        description="How long a portal to it stays open, in minutes; then everyone inside is sent back (W4d).",
+    )

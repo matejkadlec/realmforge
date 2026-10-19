@@ -7,9 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.mojang.serialization.JsonOps;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
@@ -32,7 +35,7 @@ class PlotTest {
     @Test
     void aBuildingPlotSurvivesSavingWithItsProgress() {
         Plot plot = new Plot(3);
-        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER));
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null);
         plot.advance();
         plot.advance();
 
@@ -54,7 +57,7 @@ class PlotTest {
     @Test
     void aBuiltPlotKeepsItsSpawnAndMustBeClearedOfItsRoomsAndTheirMargin() {
         Plot plot = new Plot(0);
-        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER));
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null);
         Vec3 spawn = new Vec3(7.5, 1, 7.5);
         plot.finishBuilding(spawn);
         assertEquals(PlotState.READY, plot.state());
@@ -79,7 +82,7 @@ class PlotTest {
     @Test
     void closingAnUnfinishedBuildAlsoClearsItsRoomsAndTheirMargin() {
         Plot plot = new Plot(0);
-        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER));
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null);
         plot.advance();
         plot.startClosing();
         assertEquals(PlotWork.withMargin(ROOMS), plot.dirty());
@@ -88,7 +91,7 @@ class PlotTest {
     @Test
     void closingABuildBeforeAnyUnitRanClearsNothing() {
         Plot plot = new Plot(0);
-        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER));
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null);
         plot.startClosing();
         assertEquals(List.of(), plot.dirty());
         assertEquals(List.of(), plot.units(), "nothing to clear, so the plot is free at its next turn");
@@ -98,7 +101,7 @@ class PlotTest {
     @Test
     void aPlotWantsTheChunksOfItsRoomsWithTheirMarginFromOpeningToClosing() {
         Plot plot = new Plot(0);
-        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER));
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null);
         assertEquals(PlotWork.chunks(PlotWork.withMargin(ROOMS)), plot.wantedChunks());
         assertTrue(plot.wantedChunks().size() > PlotWork.chunks(ROOMS).size(),
                 "the margin reaches into chunks the rooms do not touch");
@@ -111,7 +114,7 @@ class PlotTest {
     @Test
     void aCompletedRunStaysPlayableAndCompleted() {
         Plot plot = new Plot(0);
-        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER));
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null);
         plot.finishBuilding(Vec3.ZERO);
         plot.activate();
         assertEquals(PlotState.ACTIVE, plot.state());
@@ -121,6 +124,38 @@ class PlotTest {
         assertTrue(plot.state().isPlayable());
         assertFalse(plot.state().hasWork());
         assertEquals(PlotState.COMPLETED, reload(plot).state());
+    }
+
+    @Test
+    void aPortalRunKeepsItsRunItsPortalAndItsTimerUntilItCloses() {
+        PortalLink portal = new PortalLink(Identifier.parse("realmforge:test_dungeon"),
+                GlobalPos.of(Level.OVERWORLD, new BlockPos(10, 70, -4)));
+        Plot plot = new Plot(2);
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 42L, portal, 36_000L);
+        Plot loaded = reload(plot);
+        assertEquals(42L, loaded.run());
+        assertEquals(Optional.of(portal), loaded.portal());
+        assertEquals(OptionalLong.of(36_000L), loaded.closesAt());
+
+        plot.finishBuilding(Vec3.ZERO);
+        plot.activate();
+        plot.complete();
+        plot.setClosesAt(500L);
+        assertEquals(OptionalLong.of(500L), reload(plot).closesAt(), "completing sets a new close time");
+
+        plot.startClosing();
+        assertEquals(0L, plot.run(), "a closing plot holds no run, so no portal leads to it");
+        assertEquals(Optional.empty(), plot.portal());
+        assertEquals(OptionalLong.empty(), reload(plot).closesAt());
+    }
+
+    @Test
+    void aRunWithoutAPortalHasNoTimer() {
+        Plot plot = new Plot(0);
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 1L, null, null);
+        Plot loaded = reload(plot);
+        assertEquals(Optional.empty(), loaded.portal());
+        assertEquals(OptionalLong.empty(), loaded.closesAt());
     }
 
     private static Plot reload(Plot plot) {

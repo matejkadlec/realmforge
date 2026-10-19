@@ -51,7 +51,7 @@ import net.neoforged.neoforge.event.EventHooks;
  * W4c: the rules inside an instance (architecture 15.5). Survival players play in Adventure mode and get their game
  * mode back when they leave, creative ones keep theirs; nothing a player or anything else does changes the rooms; a
  * death inside respawns at the entrance, and a run released while its player lay dead respawns them at their return
- * point.
+ * point, also after a logout and login (RLM-258).
  *
  * <p>Plots are built from the spike rooms (SpikeLayouts). The start room's floor is polished andesite with chiseled
  * stone bricks under the entrance marker; tests add the blocks a tool works on (a log, dirt, a water source) with
@@ -300,6 +300,48 @@ public final class InstanceRulesGameTests {
                     helper.assertTrue(player.level() == instances, "a dead player stays where they lie");
 
                     ServerPlayer respawned = server.getPlayerList().respawn(player, false, Entity.RemovalReason.KILLED);
+                    helper.assertTrue(respawned.level() == helper.getLevel(), "the player respawned in the overworld");
+                    helper.assertTrue(respawned.position().closerThan(start, 0.01),
+                            "the player respawned at " + respawned.position() + ", not where they entered from");
+                    helper.assertFalse(respawned.hasData(DungeonAttachments.VISIT), "the respawn ended the visit");
+                    helper.assertValueEqual(respawned.gameMode(), GameType.SURVIVAL, "game mode after the respawn");
+                    server.getPlayerList().remove(respawned);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.FREE, "plot is " + plot.state()))
+                .thenSucceed();
+    }
+
+    /**
+     * Done when of RLM-258: a player who lies dead when their run is released and logs out before they respawn stays
+     * dead where they lie at their next login, and their respawn takes them to their return point, ends the visit and
+     * gives their game mode back.
+     */
+    @QaGameTest(timeoutTicks = TIMEOUT)
+    public static void aDeadPlayerWhoseRunWasReleasedRespawnsAtTheReturnPointAfterALogin(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        InstanceManager manager = manager(helper);
+        ServerLevel instances = InstanceDimension.level(server);
+        ServerPlayer player = login(helper, "qa-rules-dead-login", GameType.SURVIVAL);
+        GameProfile profile = player.getGameProfile();
+        Vec3 start = player.position();
+        Plot plot = manager.open(SpikeLayouts.spike(), List.of(player.getUUID()));
+
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.ACTIVE, "plot is " + plot.state()))
+                .thenExecute(() -> {
+                    player.connection.markClientLoaded();
+                    player.hasChangedDimension();
+                    player.hurtServer(instances, player.damageSources().genericKill(), Float.MAX_VALUE);
+                    helper.assertTrue(player.isDeadOrDying(), "the player survived the kill");
+                    manager.release(plot);
+                    server.getPlayerList().remove(player);
+
+                    ServerPlayer again = QaPlayers.login(server, profile);
+                    helper.assertTrue(again.isDeadOrDying(), "the player logs in dead");
+                    helper.assertTrue(again.level() == instances, "the login left the dead player where they lie");
+                    helper.assertTrue(again.hasData(DungeonAttachments.VISIT), "the visit waits for the respawn");
+
+                    ServerPlayer respawned = server.getPlayerList().respawn(again, false, Entity.RemovalReason.KILLED);
                     helper.assertTrue(respawned.level() == helper.getLevel(), "the player respawned in the overworld");
                     helper.assertTrue(respawned.position().closerThan(start, 0.01),
                             "the player respawned at " + respawned.position() + ", not where they entered from");

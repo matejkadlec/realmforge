@@ -16,11 +16,68 @@
       ],
       "title": "LocalizedText",
       "type": "object"
+    },
+    "ShapedRecipeDef": {
+      "additionalProperties": false,
+      "description": "A shaped crafting recipe that makes the entry: its rows of the crafting grid and the item each character\nstands for.",
+      "properties": {
+        "category": {
+          "default": "misc",
+          "description": "Its tab in the recipe book.",
+          "enum": [
+            "building",
+            "redstone",
+            "equipment",
+            "misc"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "count": {
+          "default": 1,
+          "description": "How many the recipe makes.",
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "key": {
+          "description": "Character -> the item it stands for, e.g. S: minecraft:stone_bricks. Every character is used.",
+          "minProperties": 1,
+          "patternProperties": {
+            "^\\S$": {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            }
+          },
+          "title": "Key",
+          "type": "object"
+        },
+        "pattern": {
+          "description": "Rows of the crafting grid, top to bottom, all the same width; a space is an empty slot: [\"SSS\", \"S#S\"].",
+          "items": {
+            "maxLength": 3,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 3,
+          "minItems": 1,
+          "title": "Pattern",
+          "type": "array"
+        }
+      },
+      "required": [
+        "pattern",
+        "key"
+      ],
+      "title": "ShapedRecipeDef",
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "A simple full block that drops itself, with its block item.",
+  "description": "A block that drops itself, with its block item.",
   "properties": {
     "blast_resistance": {
       "default": 6.0,
@@ -55,6 +112,17 @@
       "title": "Id",
       "type": "string"
     },
+    "kind": {
+      "default": "simple",
+      "description": "What it does: simple (a full block), dungeon_portal (a dungeon key opens it, W4d) or dungeon_exit (the way out the builder puts where players arrive in a dungeon; one block at most).",
+      "enum": [
+        "simple",
+        "dungeon_portal",
+        "dungeon_exit"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
     "map_color": {
       "default": "stone",
       "description": "Its colour on maps.",
@@ -73,6 +141,18 @@
     "name": {
       "$ref": "#/$defs/LocalizedText",
       "description": "Display name."
+    },
+    "recipe": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ShapedRecipeDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional: the shaped crafting recipe that makes the block's item."
     },
     "requires_tool": {
       "default": false,

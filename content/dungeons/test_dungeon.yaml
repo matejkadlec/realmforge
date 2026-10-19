@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../tools/schemas/dungeons.schema.json
 # The dungeon framework's test type (W4a, RLM-178), test content like realmforge:test_item: a vault of the stone vault
-# rooms imported from Stonevaults. Nothing in the game opens it yet; `/qa dungeon plan`, `build` and `enter` show
-# its layouts. The real dungeon types come with W6.
+# rooms imported from Stonevaults. Its key opens a dungeon portal to it (W4d, RLM-181); `/qa dungeon plan`, `build` and
+# `enter` show its layouts. The real dungeon types come with W6. The open time is a placeholder until balance.
 id: test_dungeon
 name:
   en_us: Test Dungeon
@@ -11,3 +11,5 @@ layout:
   branches: [1, 2]
   branch_rooms: [1, 2]
   ending: treasure
+key: realmforge:test_dungeon_key
+open_minutes: 30
