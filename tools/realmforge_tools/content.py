@@ -170,12 +170,15 @@ class Content:
         return getattr(self, type_dir)
 
 
-def load_content(paths: RepoPaths, *, read_templates: bool = True) -> Content:
+def load_content(
+    paths: RepoPaths, *, read_templates: bool = True, skip_broken_kept_seeds: bool = False
+) -> Content:
     """Load and schema-validate every file in ``content/``. Raises ValidationFailed listing all problems.
 
     A room template is decoded only on a miss of the room cache (``rooms/cache.py``); a hit leaves the decoding to
     the first use of ``RoomEntry.structure``. Without ``read_templates`` the templates are not even read, so a broken
-    one goes unreported: for callers that need only the rooms' ids and sidecars."""
+    one goes unreported: for callers that need only the rooms' ids and sidecars. With ``skip_broken_kept_seeds`` a
+    kept seed the generator cannot build is left out without a problem (``validate.load_and_validate``)."""
     problems: list[Problem] = []
     loaded: dict[str, list[Entry]] = {name: [] for name in CONTENT_TYPES}
     worldgen: list[WorldgenFile] = []
@@ -211,7 +214,10 @@ def load_content(paths: RepoPaths, *, read_templates: bool = True) -> Content:
 
     cache = RoomCache(paths.cache / "rooms" / "parsed" if read_templates else None)
     rooms, reviews, notices = _load_rooms(room_files, paths, problems, cache, read_templates=read_templates)
-    rooms += _generated_rooms(loaded["room_specs"], loaded["room_themes"], problems, cache)
+    unbuilt: list[Problem] = []  # kept seeds the generator cannot build
+    rooms += _generated_rooms(loaded["room_specs"], loaded["room_themes"], unbuilt, cache)
+    if not skip_broken_kept_seeds:
+        problems += unbuilt
     if problems:
         raise ValidationFailed(problems)
 

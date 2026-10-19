@@ -9,10 +9,12 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from realmforge_tools import cli, content, validate
 from realmforge_tools.generate import generate_all
 from realmforge_tools.id_universe import load_vanilla
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import REPO_ROOT, RepoPaths
+from realmforge_tools.rooms import candidates
 from realmforge_tools.rooms.candidates import MARKER, CandidatesError, freeze, write_candidates
 from realmforge_tools.rooms.check import check_structure, markers
 from realmforge_tools.rooms.connectors import connectors, could_attach
@@ -627,3 +629,74 @@ def test_candidates_can_bring_the_kept_rooms_for_another_look(repo: RepoPaths, t
     assert [(r.spec, r.written) for r in results] == [("nook", [2, 3, 4])]
     frozen = freeze({"nook/seed_3": "reject"}, repo)  # a second look can drop a kept room
     assert [(f.spec, f.kept, f.rejected) for f in frozen] == [("nook", (), (3,))]
+
+
+def _break_seed(monkeypatch: pytest.MonkeyPatch, broken: int) -> None:
+    """The generator, as after a change to it, cannot build ``broken`` any more."""
+
+    def build(spec: RoomSpecDef, theme: RoomThemeDef, seed: int) -> Structure:
+        if seed == broken:
+            raise RoomGeneratorError("no pattern of lights leaves the room without dark cells")
+        return generate_room(spec, theme, seed)
+
+    monkeypatch.setattr(content, "generate_room", build)
+    monkeypatch.setattr(candidates, "generate_room", build)
+
+
+NOOK = (
+    "kind: dead_end\nfootprint: [5, 7]\nheight: 5\nconnectors: [north]\nseeds: [2, 3]\nrejected_seeds: [1]\n"
+)
+
+
+def test_candidates_kept_refuses_a_kept_seed_that_no_longer_builds(
+    repo: RepoPaths, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    for path in (repo.content / "room_specs").glob("*.yaml"):
+        path.unlink()
+    nook = write_spec(repo, "nook", NOOK)
+    _break_seed(monkeypatch, 3)
+    with pytest.raises(ValidationFailed, match="seed 3: the generator cannot build it"):
+        load_and_validate(repo)  # rf validate and rf gen still refuse it
+    monkeypatch.setattr(cli, "RepoPaths", lambda: repo)
+    out = tmp_path / "candidates"
+    assert cli.main(["rooms", "candidates", "--kept", "--count", "0", "--out", str(out)]) == 0
+    printed = capsys.readouterr().out
+    assert "nook: seeds [2]" in printed and "REFUSED seed 3: no pattern of lights" in printed
+    assert sorted(p.name for p in (out / "nook").glob("*.nbt")) == ["seed_2.nbt"]
+    # The refused seed has no room in the folder, and the review still takes its reject.
+    decisions = write(tmp_path / "decisions.yaml", "nook/seed_3: reject\nnook/seed_2: keep\n")
+    assert cli.main(["rooms", "review", str(out), "--from", str(decisions)]) == 0
+    assert "seeds: [2]\nrejected_seeds: [1, 3]\n" in nook.read_text(encoding="utf-8")
+    load_and_validate(repo)
+    # A seed nobody kept is no room of this folder either.
+    stray = write(tmp_path / "stray.yaml", "nook/seed_9: reject\n")
+    assert cli.main(["rooms", "review", str(out), "--from", str(stray)]) == 1
+
+
+def test_candidates_kept_refuses_a_kept_seed_that_no_longer_validates(
+    repo: RepoPaths, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    for path in (repo.content / "room_specs").glob("*.yaml"):
+        path.unlink()
+    write_spec(repo, "nook", NOOK)
+    blocked = [("doorway 2 1 0", "cannot be walked to from the other connectors")]
+    monkeypatch.setattr(validate, "walk_problems", lambda structure: blocked)
+    monkeypatch.setattr(candidates, "walk_problems", lambda structure: blocked)
+    with pytest.raises(ValidationFailed, match="seed 2: doorway 2 1 0"):
+        load_and_validate(repo)
+    content_, universe = load_and_validate(repo, skip_broken_kept_seeds=True)
+    results = write_candidates(content_, universe, tmp_path / "candidates", 0, kept=True)
+    assert [(r.spec, r.written, [seed for seed, _ in r.refused]) for r in results] == [("nook", [], [2, 3])]
+    # Without --kept a broken kept seed still stops the run: it is not what that run shows.
+    monkeypatch.setattr(cli, "RepoPaths", lambda: repo)
+    assert cli.main(["rooms", "candidates", "--out", str(tmp_path / "other")]) == 1
+
+
+def test_only_the_kept_seeds_problems_are_skipped(repo: RepoPaths, monkeypatch: pytest.MonkeyPatch) -> None:
+    for path in (repo.content / "room_specs").glob("*.yaml"):
+        path.unlink()
+    write_spec(repo, "nook", NOOK)
+    spec = repo.content / "room_specs/nook.yaml"
+    spec.write_text(spec.read_text(encoding="utf-8").replace("realmforge:stone_vault", "realmforge:nope"))
+    with pytest.raises(ValidationFailed, match="no theme 'realmforge:nope'"):
+        load_and_validate(repo, skip_broken_kept_seeds=True)

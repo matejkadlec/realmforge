@@ -1563,7 +1563,9 @@ Rooms are generated or imported; nobody has to build one by hand
   not bring them back. Generated rooms are reviewed as candidates: `rf rooms candidates` builds the next seeds of
   each spec that no review decided on into `.cache/rooms/candidates/<spec>/seed_<n>.nbt`, and `rf rooms review`
   on that folder freezes the decisions into the specs (a kept seed joins `seeds`, a rejected one
-  `rejected_seeds`, so the next candidates are new). Folders inside the generated directories are not reviewed:
+  `rejected_seeds`, so the next candidates are new). With `--kept` it builds the kept seeds too, and refuses a kept
+  seed a generator change broke instead of stopping, so its reject still reaches the spec (RLM-263). Folders inside
+  the generated directories are not reviewed:
   `rf gen` would delete their `review.yaml`.
 - **Validation:** size limits (48 blocks per axis, a structure block's maximum), connectors on the room's boundary
   facing out, known markers, only blocks the themes can swap and only ids inside the ID universe (an imported

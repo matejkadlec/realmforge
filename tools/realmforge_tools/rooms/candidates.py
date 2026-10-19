@@ -121,6 +121,16 @@ def is_candidates_folder(directory: Path) -> bool:
     return (directory / MARKER).is_file()
 
 
+def kept_keys(paths: RepoPaths) -> set[str]:
+    """``<spec>/seed_<n>`` of every kept seed in ``content/room_specs/``: a review of a candidates folder may decide on
+    them even when ``write_candidates`` refused to build one (a kept seed a generator change broke)."""
+    keys = set()
+    for path in sorted((paths.content / "room_specs").glob("*.yaml")):
+        spec = _parse(path.read_text(encoding="utf-8"), path)
+        keys |= {f"{spec.id}/{candidate_name(seed)}" for seed in spec.seeds}
+    return keys
+
+
 @dataclass(frozen=True)
 class Frozen:
     spec: str

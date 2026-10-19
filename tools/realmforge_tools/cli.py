@@ -234,7 +234,13 @@ def _rooms(args: argparse.Namespace, paths: RepoPaths) -> int:
             return _rooms_import(args, paths)
         if args.rooms_command == "review":
             text = args.source.read_text(encoding="utf-8") if args.source else sys.stdin.read()
-            decisions, changed = room_gallery.merge_review(args.directory, text, paths)
+            # A kept seed that candidates --kept refused has no room in the folder; its reject still freezes.
+            kept_seeds = (
+                room_candidates.kept_keys(paths)
+                if room_candidates.is_candidates_folder(args.directory)
+                else set()
+            )
+            decisions, changed = room_gallery.merge_review(args.directory, text, paths, kept_seeds)
             kept = sum(1 for value in decisions.values() if value == "keep")
             print(
                 f"Wrote {paths.rel(args.directory / REVIEW_FILE)}: {changed} decision(s) changed, "
@@ -267,7 +273,8 @@ def _rooms_candidates(args: argparse.Namespace, paths: RepoPaths) -> int:
         print("rf rooms candidates: --count must be at least 1 (0 with --kept)", file=sys.stderr)
         return 1
     try:
-        content, universe = load_and_validate(paths)
+        # A kept seed that broke is refused below rather than stopping the run, so the review can reject it.
+        content, universe = load_and_validate(paths, skip_broken_kept_seeds=args.kept)
     except ValidationFailed as e:
         print(
             f"rf rooms candidates: content/ does not validate ({len(e.problems)} problem(s)):",

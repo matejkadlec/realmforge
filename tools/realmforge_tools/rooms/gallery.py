@@ -129,9 +129,12 @@ def parse_decisions(text: str, where: str) -> dict[str, str]:
         raise GalleryError(f"{where}: {problems}") from e
 
 
-def merge_review(directory: Path, text: str, paths: RepoPaths) -> tuple[dict[str, str], int]:
+def merge_review(
+    directory: Path, text: str, paths: RepoPaths, also: set[str] | None = None
+) -> tuple[dict[str, str], int]:
     """Merge decisions (the page's YAML) into ``directory/review.yaml``. Returns all decisions and how many
-    changed. Every key must name a room in the folder, and the folder must not be generated."""
+    changed. Every key must name a room in the folder or be one of ``also``, and the folder must not be
+    generated."""
     folder = directory.resolve()
     if any(folder.is_relative_to(root.resolve()) for root in paths.generated_roots()):
         raise GalleryError(
@@ -140,7 +143,7 @@ def merge_review(directory: Path, text: str, paths: RepoPaths) -> tuple[dict[str
         )
     decisions = parse_decisions(text, "the decisions")
     known = room_files(directory)
-    unknown = sorted(key for key in decisions if key not in known)
+    unknown = sorted(key for key in decisions if key not in known and key not in (also or set()))
     if unknown:
         raise GalleryError(f"no such room in {directory}: {', '.join(unknown)}")
     merged = read_review(directory)

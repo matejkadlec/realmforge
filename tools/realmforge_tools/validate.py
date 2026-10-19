@@ -99,12 +99,21 @@ RESERVED_TEXT_GROUPS: dict[str, str] = {
 }
 
 
-def load_and_validate(paths: RepoPaths) -> tuple[Content, IdUniverse]:
-    """Load content and run every validation step. Raises ValidationFailed with all problems found."""
-    content = load_content(paths)
+def load_and_validate(
+    paths: RepoPaths, *, skip_broken_kept_seeds: bool = False
+) -> tuple[Content, IdUniverse]:
+    """Load content and run every validation step. Raises ValidationFailed with all problems found.
+
+    With ``skip_broken_kept_seeds`` a kept seed of a room spec that the generator cannot build, or whose room fails
+    validation, is no problem: ``rf rooms candidates --kept`` reports it as refused instead, so the review can
+    reject it (RLM-263). A generated room's problems name its seed (``_room_location``)."""
+    content = load_content(paths, skip_broken_kept_seeds=skip_broken_kept_seeds)
     universe = universe_with_content(load_vanilla(paths), content)
     _add_core_mod_worldgen(universe, paths)
     problems = validate_content(content, universe) + _check_worldgen_clashes(content, paths)
+    if skip_broken_kept_seeds:
+        specs = {entry.source for entry in content.room_specs}
+        problems = [p for p in problems if not (p.file in specs and p.location.startswith("seed "))]
     if problems:
         raise ValidationFailed(problems)
     return content, universe
@@ -280,7 +289,7 @@ def _check_dungeons(content: Content) -> list[Problem]:
             problems.append(
                 Problem(
                     room.source,
-                    "tags",
+                    _room_location(room, "tags"),
                     f"a room in a dungeon type's pool has exactly one role tag ({', '.join(ROOM_ROLES)}); "
                     f"this one has {', '.join(roles) if roles else 'none'}",
                 )
@@ -344,7 +353,7 @@ def _check_dungeons(content: Content) -> list[Problem]:
                     problems.append(
                         Problem(
                             room.source,
-                            "pools",
+                            _room_location(room, "pools"),
                             f"its connector at {position} (facing {connector.front}, target {connector.target}) "
                             f"meets no connector in pool {dungeon.pool}, so {entry.source} can never place it",
                         )
@@ -363,7 +372,7 @@ def _check_pooled_room(room: RoomEntry) -> list[Problem]:
         problems.append(
             Problem(
                 room.template,
-                f"fluid at {' '.join(str(c) for c in edges[0])}",
+                _room_location(room, f"fluid at {' '.join(str(c) for c in edges[0])}"),
                 f"a fluid that can reach the room's sides or floor{count} flows out of its box, where cleanup does "
                 "not reach; a room in a dungeon type's pool keeps its fluids inside",
             )
@@ -374,7 +383,7 @@ def _check_pooled_room(room: RoomEntry) -> list[Problem]:
             problems.append(
                 Problem(
                     room.template,
-                    f"data marker {' '.join(str(c) for c in pos)}",
+                    _room_location(room, f"data marker {' '.join(str(c) for c in pos)}"),
                     f"an entrance marker in a room whose role is {role}: players arrive only in the entrance room",
                 )
             )
