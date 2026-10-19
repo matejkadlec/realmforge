@@ -8,20 +8,31 @@ import java.util.List;
 /** What {@code content/realms/} says about every realm, so GameTests can check that the game agrees. */
 public final class GeneratedRealmExpectations {
     /**
-     * Expected state of one realm. Ids are full resource locations: the realm's, e.g. {@code realmforge:stone},
-     * its dimension's and its unlock advancement's.
+     * Expected state of one entry. Ids are full resource locations: the realm's, e.g. {@code realmforge:stone},
+     * its dimension's, its unlock advancement's and its sigil's; the colour is RGB. Overworld's entry, which is
+     * no realm, has an empty hint, unlock and sigil.
      */
     public record RealmExpectation(String id, String dimension, String nameKey, String lockedHintKey,
-            String unlockAdvancement) {
+            String unlockAdvancement, String sigil, int colour) {
     }
 
     public static final List<RealmExpectation> REALMS = List.of(
+            new RealmExpectation(
+                    "realmforge:overworld",
+                    "minecraft:overworld",
+                    "realm.realmforge.overworld.name",
+                    "",
+                    "",
+                    "",
+                    0x5DBB63),
             new RealmExpectation(
                     "realmforge:stone",
                     "realmforge:stone",
                     "realm.realmforge.stone.name",
                     "realm.realmforge.stone.locked_hint",
-                    "realmforge:realm/stone"));
+                    "realmforge:realm/stone",
+                    "realmforge:stone_sigil",
+                    0x7A8FB0));
 
     private GeneratedRealmExpectations() {
     }

@@ -4,5 +4,17 @@
   "subtitle": "realm.realmforge.stone.subtitle",
   "locked_hint": "realm.realmforge.stone.locked_hint",
   "flavour": "realm.realmforge.stone.flavour",
-  "icon": "realmforge:vaultstone"
+  "icon": "realmforge:vaultstone",
+  "sigil": "realmforge:stone_sigil",
+  "colour": "#7A8FB0",
+  "particle": "minecraft:ash",
+  "sound_pitch": 0.8,
+  "arrival": {
+    "y": [
+      20,
+      90
+    ],
+    "floor": "realmforge:vaultstone",
+    "pocket_radius": 3
+  }
 }

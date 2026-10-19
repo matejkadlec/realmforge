@@ -1,7 +1,8 @@
 """Blocks: Java registrations (the block and its block item), blockstates, block and item models, placeholder
 textures, loot tables (the block drops itself), the vanilla mining tags, and the QA mod's expectations
 (architecture 6.2). A block's kind decides its Java class (a kind other than simple comes from ``world/BlockKinds``,
-which the feature owning the kind fills), its blockstate and its models."""
+which the feature owning the kind fills), its blockstate and its models, and whether it has an item and a loot
+table."""
 
 from __future__ import annotations
 
@@ -11,9 +12,12 @@ from realmforge_tools.content import Content
 from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.generate.datapack import data_dir
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
-from realmforge_tools.generate.textures import placeholder_block_texture
+from realmforge_tools.generate.textures import placeholder_block_texture, placeholder_portal_texture
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
-from realmforge_tools.schema.block import BlockDef
+from realmforge_tools.schema.block import GENERATED_FLAG_KINDS, ITEMLESS_KINDS, BlockDef
+
+# The blockstate property of GENERATED_FLAG_KINDS: true on the blocks of a frame a trip built.
+GENERATED = "generated"
 
 GENERATED_PACKAGE = f"{JAVA_PACKAGE}.generated"
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
@@ -25,9 +29,10 @@ def translation_key(block_id: str) -> str:
     return f"block.{MOD_ID}.{block_id}"
 
 
-def loot_table(block_id: str) -> str:
-    """The loot table a block drops: vanilla's default, ``<namespace>:blocks/<path>``."""
-    return f"{MOD_ID}:blocks/{block_id}"
+def loot_table(block: BlockDef) -> str:
+    """The loot table a block drops: vanilla's default, ``<namespace>:blocks/<path>``; none for a block without an
+    item."""
+    return "" if block.kind in ITEMLESS_KINDS else f"{MOD_ID}:blocks/{block.id}"
 
 
 def mining_tags(block: BlockDef) -> list[str]:
@@ -52,10 +57,12 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         model = f"{MOD_ID}:block/{block_id}"
         for path, data in _models(entry.model).items():
             files[assets / path] = data
+        if entry.model.kind in ITEMLESS_KINDS:
+            continue
         files[assets / "items" / f"{block_id}.json"] = dump_json(
             {"model": {"type": "minecraft:model", "model": model}}
         )
-        files[data_dir(paths) / "loot_table" / "blocks" / f"{block_id}.json"] = dump_json(_loot(block_id))
+        files[data_dir(paths) / "loot_table" / "blocks" / f"{block_id}.json"] = dump_json(_loot(entry.model))
         for tag in mining_tags(entry.model):
             tags.setdefault(tag, []).append(f"{MOD_ID}:{block_id}")
     minecraft_data = paths.mod_generated / "resources" / "data" / "minecraft"
@@ -77,10 +84,31 @@ def _models(block: BlockDef) -> dict[str, bytes]:
     - dungeon_portal: a full cube that looks different while open (``open=true``: the model and texture
       ``<id>_open``).
     - dungeon_exit: a plate one pixel high, vanilla's carpet shape.
+    - portal_stone, realm_selector: one full cube, whether ``generated`` or not.
+    - realm_portal: a pane four pixels thick across the opening, along either axis (``axis=x``: the model
+      ``<id>_ns``, ``axis=z``: ``<id>_ew``, as vanilla's nether portal), tinted on the client (tint index 0) with the
+      colour of the realm it opens onto, from a greyscale, see-through texture.
     """
     block_id = block.id
     model = f"{MOD_ID}:block/{block_id}"
     files: dict[str, bytes] = {}
+    if block.kind == "realm_portal":
+        variants = {"axis=x": {"model": f"{model}_ns"}, "axis=z": {"model": f"{model}_ew"}}
+        files[f"blockstates/{block_id}.json"] = dump_json({"variants": variants})
+        for suffix, element in (("ns", _portal_pane("x")), ("ew", _portal_pane("z"))):
+            files[f"models/block/{block_id}_{suffix}.json"] = dump_json(
+                {"textures": {"particle": model, "portal": model}, "elements": [element]}
+            )
+        files[f"textures/block/{block_id}.png"] = placeholder_portal_texture(f"{MOD_ID}:{block_id}")
+        return files
+    if block.kind in GENERATED_FLAG_KINDS:
+        variants = {f"{GENERATED}=false": {"model": model}, f"{GENERATED}=true": {"model": model}}
+        files[f"blockstates/{block_id}.json"] = dump_json({"variants": variants})
+        files[f"models/block/{block_id}.json"] = dump_json(
+            {"parent": "minecraft:block/cube_all", "textures": {"all": model}}
+        )
+        files[f"textures/block/{block_id}.png"] = placeholder_block_texture(f"{MOD_ID}:{block_id}")
+        return files
     if block.kind == "dungeon_portal":
         open_model = f"{model}_open"
         variants = {"open=false": {"model": model}, "open=true": {"model": open_model}}
@@ -105,19 +133,37 @@ def _models(block: BlockDef) -> dict[str, bytes]:
     return files
 
 
-def _loot(block_id: str) -> dict[str, object]:
-    """One copy of the block, unless an explosion destroyed it, as vanilla's own simple blocks drop."""
+def _portal_pane(axis: str) -> dict[str, object]:
+    """The portal block's pane: across the block along ``axis``, its two wide faces tinted (tint index 0)."""
+    face = {"uv": [0, 0, 16, 16], "texture": "#portal", "tintindex": 0}
+    if axis == "x":
+        return {"from": [0, 0, 6], "to": [16, 16, 10], "faces": {"north": face, "south": face}}
+    return {"from": [6, 0, 0], "to": [10, 16, 16], "faces": {"east": face, "west": face}}
+
+
+def _loot(block: BlockDef) -> dict[str, object]:
+    """One copy of the block, unless an explosion destroyed it, as vanilla's own simple blocks drop; a block with the
+    ``generated`` flag only when the flag is false, so a frame a trip built drops nothing."""
+    conditions: list[dict[str, object]] = [{"condition": "minecraft:survives_explosion"}]
+    if block.kind in GENERATED_FLAG_KINDS:
+        conditions.append(
+            {
+                "block": f"{MOD_ID}:{block.id}",
+                "condition": "minecraft:block_state_property",
+                "properties": {GENERATED: "false"},
+            }
+        )
     return {
         "type": "minecraft:block",
         "pools": [
             {
                 "bonus_rolls": 0.0,
-                "conditions": [{"condition": "minecraft:survives_explosion"}],
-                "entries": [{"type": "minecraft:item", "name": f"{MOD_ID}:{block_id}"}],
+                "conditions": conditions,
+                "entries": [{"type": "minecraft:item", "name": f"{MOD_ID}:{block.id}"}],
                 "rolls": 1.0,
             }
         ],
-        "random_sequence": loot_table(block_id),
+        "random_sequence": loot_table(block),
     }
 
 
@@ -140,6 +186,8 @@ def _registrations(content: Content) -> bytes:
         )
         if block.requires_tool:
             properties += "\n                    .requiresCorrectToolForDrops()"
+        if block.kind in ITEMLESS_KINDS:
+            properties += "\n                    .noLootTable()"
         if block.kind == "simple":
             register = f"BLOCKS.registerSimpleBlock({string_literal(block.id)}, {properties})"
         else:
@@ -149,14 +197,18 @@ def _registrations(content: Content) -> bytes:
                 f"                    properties -> BlockKinds.create({string_literal(block.kind)}, properties),\n"
                 f"                    {properties})"
             )
-        fields.append(
+        field = (
             f"    /** {{@code {MOD_ID}:{block.id}}} from {{@code {entry.source}}}. */\n"
             f"    public static final DeferredBlock<Block> {constant} =\n"
             f"            {register};\n"
-            f"\n"
-            f"    /** The block item of {{@link #{constant}}}. */\n"
-            f"    public static final DeferredItem<BlockItem> {constant}_ITEM = ITEMS.registerSimpleBlockItem({constant});\n"
         )
+        if block.kind not in ITEMLESS_KINDS:
+            field += (
+                f"\n"
+                f"    /** The block item of {{@link #{constant}}}. */\n"
+                f"    public static final DeferredItem<BlockItem> {constant}_ITEM = ITEMS.registerSimpleBlockItem({constant});\n"
+            )
+        fields.append(field)
         for tab in block.creative_tabs:
             tabs.setdefault(tab, []).append(f"{constant}_ITEM")
 
@@ -223,7 +275,7 @@ def _expectations(content: Content) -> bytes:
             f"                    {string_literal(translation_key(block.id))},\n"
             f"                    {_float(block.hardness)}, {_float(block.blast_resistance)}, {str(block.requires_tool).lower()},\n"
             f"                    List.of({tags}),\n"
-            f"                    {string_literal(loot_table(block.id))})"
+            f"                    {string_literal(loot_table(block))})"
         )
     blocks = "List.of(\n" + ",\n".join(rows) + ")" if rows else "List.of()"
     source = (
@@ -235,7 +287,8 @@ def _expectations(content: Content) -> bytes:
         "public final class GeneratedBlockExpectations {\n"
         "    /**\n"
         "     * Expected state of one block. Ids are full resource locations, e.g. {@code realmforge:vaultstone}; the tags\n"
-        "     * are the vanilla mining tags it is in, and its block item has the block's id.\n"
+        "     * are the vanilla mining tags it is in, and its block item has the block's id. A block without an item has\n"
+        "     * an empty loot table.\n"
         "     */\n"
         "    public record BlockExpectation(String id, String translationKey, float hardness, float blastResistance,\n"
         "            boolean requiresTool, List<String> miningTags, String lootTable) {\n"

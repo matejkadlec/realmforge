@@ -99,9 +99,9 @@
       "uniqueItems": true
     },
     "hardness": {
-      "description": "How long the block takes to mine: stone 1.5, deepslate 3, obsidian 50.",
+      "description": "How long the block takes to mine: stone 1.5, deepslate 3, obsidian 50; -1: never, as bedrock.",
       "maximum": 1000,
-      "minimum": 0,
+      "minimum": -1.0,
       "title": "Hardness",
       "type": "number"
     },
@@ -114,11 +114,14 @@
     },
     "kind": {
       "default": "simple",
-      "description": "What it does: simple (a full block), dungeon_portal (a dungeon key opens it, W4d) or dungeon_exit (the way out the builder puts where players arrive in a dungeon; one block at most).",
+      "description": "What it does: simple (a full block), dungeon_portal (a dungeon key opens it, W4d), dungeon_exit (the way out the builder puts where players arrive in a dungeon), or the realm portal's portal_stone (its frame), realm_selector (the frame's bottom middle) and realm_portal (the portal block, without an item). One block at most of each kind but simple and dungeon_portal.",
       "enum": [
         "simple",
         "dungeon_portal",
-        "dungeon_exit"
+        "dungeon_exit",
+        "portal_stone",
+        "realm_selector",
+        "realm_portal"
       ],
       "title": "Kind",
       "type": "string"
@@ -133,7 +136,8 @@
         "color_light_gray",
         "color_black",
         "terracotta_white",
-        "sand"
+        "sand",
+        "none"
       ],
       "title": "Map Color",
       "type": "string"
@@ -170,7 +174,8 @@
         "calcite",
         "basalt",
         "dripstone_block",
-        "polished_deepslate"
+        "polished_deepslate",
+        "glass"
       ],
       "title": "Sound",
       "type": "string"

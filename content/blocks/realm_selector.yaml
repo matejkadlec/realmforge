@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
+# The realm selector (W2b, realm portal spec "The realm selector"): the bottom middle of a realm portal's frame. A
+# realm's sigil right-clicked on it opens the portal onto that realm, sneaking with an empty hand closes it (in a realm:
+# opens it back to Overworld), an empty hand shows where it leads. 4 Portal Stone, 4 gold ingots and a compass. Pistons
+# cannot move it; one a trip built drops nothing. The numbers are proposals for Matěj's playtest.
+id: realm_selector
+name:
+  en_us: Realm Selector
+kind: realm_selector
+hardness: 3
+blast_resistance: 6
+tool: pickaxe
+requires_tool: true
+sound: stone
+map_color: color_gray
+creative_tabs:
+  - minecraft:functional_blocks
+recipe:
+  pattern:
+    - PGP
+    - GCG
+    - PGP
+  key:
+    P: realmforge:portal_stone
+    G: minecraft:gold_ingot
+    C: minecraft:compass
+  category: building

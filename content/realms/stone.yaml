@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../tools/schemas/realms.schema.json
 # Undervault, the stone realm: chapter 2, levels 6-18 (realm design, "The stone realm"; realm portal spec). Its
 # unlock is the advancement realmforge:realm/stone, which chapter 1's last main quest grants (Q2); until then
-# `/advancement grant @s only realmforge:realm/stone`. W2b adds the portal's fields.
+# `/advancement grant @s only realmforge:realm/stone`. The portal's fields (W2b) follow the icon.
 id: stone
 dimension: realmforge:stone
 name:
@@ -13,3 +13,15 @@ locked_hint:
 flavour:
   en_us: Cold air rises from below, smelling of dust and old stone.
 icon: realmforge:vaultstone
+# The realm portal (W2b, realm portal spec): the Stone Sigil opens it onto Undervault, slate blue with ash, its vanilla
+# sounds a little lower. A trip that finds no portal near the scaled position builds one with its bottom row at y 20 to
+# 90, near the cave floor (about y 32), or carves one out on a floor of Vaultstone, the realm's common stone. The
+# colour and the pitch are proposals for Matěj's playtest.
+sigil: realmforge:stone_sigil
+colour: "#7A8FB0"
+particle: minecraft:ash
+sound_pitch: 0.8
+arrival:
+  y: [20, 90]
+  floor: realmforge:vaultstone
+  pocket_radius: 3

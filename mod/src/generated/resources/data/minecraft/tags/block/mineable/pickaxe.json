@@ -3,6 +3,8 @@
     "realmforge:coreslate",
     "realmforge:dungeon_portal",
     "realmforge:mottlestone",
+    "realmforge:portal_stone",
+    "realmforge:realm_selector",
     "realmforge:siltstone",
     "realmforge:vaultstone"
   ]

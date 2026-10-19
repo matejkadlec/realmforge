@@ -67,6 +67,42 @@ public final class GeneratedBlocks {
     /** The block item of {@link #MOTTLESTONE}. */
     public static final DeferredItem<BlockItem> MOTTLESTONE_ITEM = ITEMS.registerSimpleBlockItem(MOTTLESTONE);
 
+    /** {@code realmforge:portal_stone} from {@code content/blocks/portal_stone.yaml}. */
+    public static final DeferredBlock<Block> PORTAL_STONE =
+            BLOCKS.registerBlock("portal_stone",
+                    properties -> BlockKinds.create("portal_stone", properties),
+                    properties -> properties
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops());
+
+    /** The block item of {@link #PORTAL_STONE}. */
+    public static final DeferredItem<BlockItem> PORTAL_STONE_ITEM = ITEMS.registerSimpleBlockItem(PORTAL_STONE);
+
+    /** {@code realmforge:realm_portal} from {@code content/blocks/realm_portal.yaml}. */
+    public static final DeferredBlock<Block> REALM_PORTAL =
+            BLOCKS.registerBlock("realm_portal",
+                    properties -> BlockKinds.create("realm_portal", properties),
+                    properties -> properties
+                    .mapColor(MapColor.NONE)
+                    .strength(-1.0F, 0.0F)
+                    .sound(SoundType.GLASS)
+                    .noLootTable());
+
+    /** {@code realmforge:realm_selector} from {@code content/blocks/realm_selector.yaml}. */
+    public static final DeferredBlock<Block> REALM_SELECTOR =
+            BLOCKS.registerBlock("realm_selector",
+                    properties -> BlockKinds.create("realm_selector", properties),
+                    properties -> properties
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops());
+
+    /** The block item of {@link #REALM_SELECTOR}. */
+    public static final DeferredItem<BlockItem> REALM_SELECTOR_ITEM = ITEMS.registerSimpleBlockItem(REALM_SELECTOR);
+
     /** {@code realmforge:siltstone} from {@code content/blocks/siltstone.yaml}. */
     public static final DeferredBlock<Block> SILTSTONE =
             BLOCKS.registerSimpleBlock("siltstone", properties -> properties
@@ -103,6 +139,8 @@ public final class GeneratedBlocks {
         switch (event.getTabKey().identifier().toString()) {
             case "minecraft:functional_blocks" -> {
                 event.accept(DUNGEON_PORTAL_ITEM);
+                event.accept(PORTAL_STONE_ITEM);
+                event.accept(REALM_SELECTOR_ITEM);
             }
             case "minecraft:natural_blocks" -> {
                 event.accept(CORESLATE_ITEM);

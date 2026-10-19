@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import colorsys
 import hashlib
+import math
 
 from realmforge_tools.formats.png import Rgba, encode_rgba
 
@@ -59,4 +60,25 @@ def placeholder_block_texture(seed: str) -> bytes:
                 base + ((cell % 9) - 4) * 0.025 + (0.12 if cell > 236 else 0.0) - (0.10 if cell < 16 else 0.0)
             )
             pixels.append(_rgb(hue, 0.12, min(max(shade, 0.0), 1.0)))
+    return encode_rgba(SIZE, SIZE, pixels)
+
+
+def placeholder_portal_texture(seed: str) -> bytes:
+    """A 16x16 see-through greyscale swirl for a portal block, which the client tints with a realm's colour.
+
+    Its pixels are partly transparent, so the game renders the block translucent, as vanilla's nether portal; the
+    swirl's phase comes from a hash of ``seed``, so the tile is the same on every machine.
+    """
+    phase = hashlib.sha256(seed.encode("utf-8")).digest()[0] / 256 * 2 * math.pi
+    centre = (SIZE - 1) / 2
+    pixels: list[Rgba] = []
+    for y in range(SIZE):
+        for x in range(SIZE):
+            dx, dy = x - centre, y - centre
+            radius = math.hypot(dx, dy)
+            # Bands that wind outwards: bright where the angle and the distance from the middle line up.
+            band = (math.cos(math.atan2(dy, dx) * 2 + radius * 0.9 + phase) + 1) / 2
+            grey = round(150 + 105 * band)
+            alpha = round(150 + 70 * band)
+            pixels.append((grey, grey, grey, alpha))
     return encode_rgba(SIZE, SIZE, pixels)

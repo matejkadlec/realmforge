@@ -9,7 +9,8 @@ import java.util.List;
 public final class GeneratedBlockExpectations {
     /**
      * Expected state of one block. Ids are full resource locations, e.g. {@code realmforge:vaultstone}; the tags
-     * are the vanilla mining tags it is in, and its block item has the block's id.
+     * are the vanilla mining tags it is in, and its block item has the block's id. A block without an item has
+     * an empty loot table.
      */
     public record BlockExpectation(String id, String translationKey, float hardness, float blastResistance,
             boolean requiresTool, List<String> miningTags, String lootTable) {
@@ -40,6 +41,24 @@ public final class GeneratedBlockExpectations {
                     18.0F, 6.0F, true,
                     List.of("minecraft:mineable/pickaxe"),
                     "realmforge:blocks/mottlestone"),
+            new BlockExpectation(
+                    "realmforge:portal_stone",
+                    "block.realmforge.portal_stone",
+                    3.0F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/portal_stone"),
+            new BlockExpectation(
+                    "realmforge:realm_portal",
+                    "block.realmforge.realm_portal",
+                    -1.0F, 0.0F, false,
+                    List.of(),
+                    ""),
+            new BlockExpectation(
+                    "realmforge:realm_selector",
+                    "block.realmforge.realm_selector",
+                    3.0F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/realm_selector"),
             new BlockExpectation(
                     "realmforge:siltstone",
                     "block.realmforge.siltstone",

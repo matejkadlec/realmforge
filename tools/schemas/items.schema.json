@@ -90,6 +90,12 @@
       "type": "array",
       "uniqueItems": true
     },
+    "fire_resistant": {
+      "default": false,
+      "description": "Fire and lava do not destroy the dropped item, as netherite's.",
+      "title": "Fire Resistant",
+      "type": "boolean"
+    },
     "flavor": {
       "anyOf": [
         {

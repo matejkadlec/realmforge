@@ -1,6 +1,7 @@
 """Items: Java registrations, item model definitions and models, placeholder textures, the item tags of item uses
 (``data/realmforge/tags/item/use/<use>.json``), and the QA mod's expectations. An item's use and flavor line become
-its tooltip: the vanilla lore component, set on the item's default components."""
+its tooltip: the vanilla lore component, set on the item's default components. A realm's sigil (``content/realms/``)
+names its realm there, with the realm's element, and says it is never used up (realm portal spec, "Realm sigils")."""
 
 from __future__ import annotations
 
@@ -9,15 +10,21 @@ from pathlib import Path
 from realmforge_tools.content import Content
 from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.generate.datapack import data_dir
+from realmforge_tools.generate.datapack import translation_key as entry_translation_key
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
 from realmforge_tools.generate.textures import placeholder_texture
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.item import USE_TEXT_GROUP, ItemDef, use_tag
+from realmforge_tools.schema.realm import RealmDef
 from realmforge_tools.schema.text import text_key
 
 GENERATED_PACKAGE = f"{JAVA_PACKAGE}.generated"
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
 VANILLA_DEFAULT_STACK_SIZE = 64
+# A sigil's tooltip lines, texts in content/texts/tooltip.yaml: its realm (%1$s the name, %2$s the element), and that
+# it is never used up.
+SIGIL_REALM_TEXT = ("tooltip", "sigil_realm")
+SIGIL_KEPT_TEXT = ("tooltip", "sigil_never_used_up")
 # What an item's tooltip lines need (_lore).
 LORE_IMPORTS = (
     "java.util.List",
@@ -72,6 +79,7 @@ def _registrations(content: Content, paths: RepoPaths) -> bytes:
     fields: list[str] = []
     tabs: dict[str, list[str]] = {}
     imports = {"net.minecraft.world.item.Item"}
+    realms_by_sigil = {entry.model.sigil: entry.model for entry in content.realms if entry.model.sigil}
     for entry in content.items:
         item = entry.model
         # The register call sets the item's id on the properties; the lambda only adds to them.
@@ -79,7 +87,9 @@ def _registrations(content: Content, paths: RepoPaths) -> bytes:
         properties = ""
         if item.max_stack_size != VANILLA_DEFAULT_STACK_SIZE:
             properties += f".stacksTo({item.max_stack_size})"
-        lore = _lore(item)
+        if item.fire_resistant:
+            properties += ".fireResistant()"
+        lore = _lore(item, realms_by_sigil.get(f"{MOD_ID}:{item.id}"))
         if lore:
             imports.update(LORE_IMPORTS)
             properties += (
@@ -141,11 +151,24 @@ def _registrations(content: Content, paths: RepoPaths) -> bytes:
     return source.encode("utf-8")
 
 
-def _lore(item: ItemDef) -> str:
-    """The item's tooltip lines as Java: its use in green, as a "Use:" line, then its flavor line in vanilla's lore
-    style (purple, italic). Empty when it has neither."""
+def _lore(item: ItemDef, realm: RealmDef | None) -> str:
+    """The item's tooltip lines as Java: the realm it is the sigil of, with the realm's element, and that it is never
+    used up (grey, not italic); its use in green, as a "Use:" line; then its flavor line in vanilla's lore style
+    (purple, italic). Empty when it has none of them."""
     indent = " " * 28
     lines = []
+    if realm is not None:
+        name = entry_translation_key("realm", realm.id, "name")
+        subtitle = entry_translation_key("realm", realm.id, "subtitle")
+        plain = (
+            f"\n{indent}        .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(false))"
+        )
+        lines.append(
+            f"Component.translatable({string_literal(text_key(*SIGIL_REALM_TEXT))},\n"
+            f"{indent}        Component.translatable({string_literal(name)}),\n"
+            f"{indent}        Component.translatable({string_literal(subtitle)})){plain}"
+        )
+        lines.append(f"Component.translatable({string_literal(text_key(*SIGIL_KEPT_TEXT))}){plain}")
     if item.use is not None:
         key = text_key(USE_TEXT_GROUP, item.use)
         lines.append(

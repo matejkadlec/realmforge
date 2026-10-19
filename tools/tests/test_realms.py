@@ -1,5 +1,6 @@
 """content/realms/: the datapack registry realmforge:realm, each realm's unlock advancement and the checks between a
-realm, its dimension, its dimension type and its dimension rules (realm portal spec, "Data")."""
+realm, its dimension, its dimension type and its dimension rules; the portal's fields and Overworld's entry (realm
+portal spec, "Data")."""
 
 from __future__ import annotations
 
@@ -18,6 +19,7 @@ LANG = "mod/src/generated/resources/assets/realmforge/lang/en_us.json"
 EXPECTATIONS = (
     "qa-mod/src/generated/java/io/github/matejkadlec/realmforge/qa/generated/GeneratedRealmExpectations.java"
 )
+ITEMS = "mod/src/generated/java/io/github/matejkadlec/realmforge/generated/GeneratedItems.java"
 
 
 def problems_for(repo: RepoPaths) -> list[str]:
@@ -38,12 +40,14 @@ def edit_json(repo: RepoPaths, rel: str, change: dict[str, object]) -> None:
     path.write_text(json.dumps(data), encoding="utf-8")
 
 
-def test_repository_realm_is_undervault() -> None:
+def test_repository_realms_are_undervault_and_overworlds_entry() -> None:
     content, universe = load_and_validate(RepoPaths())
     assert [(e.model.id, e.model.dimension, e.model.name.en_us) for e in content.realms] == [
-        ("stone", "realmforge:stone", "Undervault")
+        ("overworld", "minecraft:overworld", "Overworld"),
+        ("stone", "realmforge:stone", "Undervault"),
     ]
     assert universe.contains("minecraft:advancement", "realmforge:realm/stone")
+    assert not universe.contains("minecraft:advancement", "realmforge:realm/overworld")
     assert universe.contains("realmforge:realm", "realmforge:stone")
 
 
@@ -56,6 +60,11 @@ def test_a_realm_becomes_its_entry_unlock_and_texts(repo: RepoPaths) -> None:
         "locked_hint": "realm.realmforge.stone.locked_hint",
         "flavour": "realm.realmforge.stone.flavour",
         "icon": "realmforge:vaultstone",
+        "sigil": "realmforge:stone_sigil",
+        "colour": "#7A8FB0",
+        "particle": "minecraft:ash",
+        "sound_pitch": 0.8,
+        "arrival": {"y": [20, 90], "floor": "realmforge:vaultstone", "pocket_radius": 3},
     }
     unlock = json.loads(files[f"{DATA}/advancement/realm/stone.json"])
     assert unlock["criteria"] == {"unlocked": {"trigger": "minecraft:impossible"}}
@@ -71,7 +80,11 @@ def test_a_realm_becomes_its_entry_unlock_and_texts(repo: RepoPaths) -> None:
     assert lang["realm.realmforge.stone.name"] == "Undervault"
     assert lang["realm.realmforge.stone.subtitle"] == "Stone Realm"
     assert lang["advancement.realmforge.realm_unlocked"] == "Realm unlocked: %1$s"
-    assert '"realmforge:realm/stone")' in files[EXPECTATIONS].decode()
+    expectations = files[EXPECTATIONS].decode()
+    assert (
+        '"realmforge:realm/stone",\n                    "realmforge:stone_sigil",\n                    0x7A8FB0)'
+        in (expectations)
+    )
 
 
 def test_a_realms_rules_must_require_its_unlock(repo: RepoPaths) -> None:
@@ -129,12 +142,17 @@ def test_a_realm_names_one_of_our_dimensions_once(repo: RepoPaths) -> None:
     write(repo.content / "realms" / "twin.yaml", source.replace("id: stone", "id: twin"))
     write(
         repo.content / "realms" / "surface.yaml",
-        source.replace("id: stone", "id: surface").replace("realmforge:stone", "minecraft:overworld"),
+        source.replace("id: stone", "id: surface")
+        .replace("dimension: realmforge:stone", "dimension: minecraft:the_nether")
+        .replace("realmforge:stone_sigil", "realmforge:test_item"),
     )
     problems = problems_for(repo)
     assert any("realms/twin.yaml: dimension: realmforge:stone is already the realm of" in p for p in problems)
     assert any(
-        "realms/surface.yaml: dimension: minecraft:overworld is not one of our dimensions" in p
+        "realms/twin.yaml: sigil: realmforge:stone_sigil is already the sigil of" in p for p in problems
+    )
+    assert any(
+        "realms/surface.yaml: dimension: minecraft:the_nether is not one of our dimensions" in p
         for p in problems
     )
 
@@ -143,3 +161,85 @@ def test_a_realms_icon_is_an_item(repo: RepoPaths) -> None:
     path = repo.content / "realms" / "stone.yaml"
     path.write_text(path.read_text(encoding="utf-8").replace("realmforge:vaultstone", "realmforge:vaultstne"))
     assert any("realms/stone.yaml: icon: unknown id 'realmforge:vaultstne'" in p for p in problems_for(repo))
+
+
+def test_overworlds_entry_is_no_realm(repo: RepoPaths) -> None:
+    files = generate(repo)
+    assert json.loads(files[f"{DATA}/realmforge/realm/overworld.json"]) == {
+        "dimension": "minecraft:overworld",
+        "name": "realm.realmforge.overworld.name",
+        "colour": "#5DBB63",
+        "sound_pitch": 1.0,
+        "arrival": {"y": [64, 310], "floor": "minecraft:stone_bricks", "pocket_radius": 3},
+    }
+    assert f"{DATA}/advancement/realm/overworld.json" not in files
+    assert (
+        '"realmforge:overworld",\n                    "minecraft:overworld",' in files[EXPECTATIONS].decode()
+    )
+
+
+def test_overworld_has_no_realm_fields_and_a_realm_needs_them(repo: RepoPaths) -> None:
+    overworld = repo.content / "realms" / "overworld.yaml"
+    overworld.write_text(
+        overworld.read_text(encoding="utf-8")
+        + "sigil: realmforge:stone_sigil\nlocked_hint: {en_us: Never.}\n",
+        encoding="utf-8",
+    )
+    stone = repo.content / "realms" / "stone.yaml"
+    stone.write_text(stone.read_text(encoding="utf-8").replace("sigil: realmforge:stone_sigil\n", ""))
+    problems = problems_for(repo)
+    assert any(
+        "realms/overworld.yaml" in p
+        and "Overworld is always open and no realm, so it has no locked_hint, sigil" in p
+        for p in problems
+    ), problems
+    assert any("realms/stone.yaml" in p and "a realm needs sigil" in p for p in problems), problems
+
+
+def test_a_sigil_is_one_of_our_items_that_stacks_to_one(repo: RepoPaths) -> None:
+    stone = repo.content / "realms" / "stone.yaml"
+    stone.write_text(
+        stone.read_text(encoding="utf-8").replace("realmforge:stone_sigil", "realmforge:test_item")
+    )
+    assert any(
+        "realms/stone.yaml: sigil: a sigil stacks to 1: realmforge:test_item stacks to" in p
+        for p in problems_for(repo)
+    )
+    stone.write_text(stone.read_text(encoding="utf-8").replace("realmforge:test_item", "minecraft:compass"))
+    assert any(
+        "realms/stone.yaml: sigil: minecraft:compass is not an item of ours" in p for p in problems_for(repo)
+    )
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "expected"),
+    [
+        ("particle: minecraft:ash", "particle: minecraft:dust", "particle: minecraft:dust is not a particle"),
+        ("floor: realmforge:vaultstone", "floor: realmforge:vaultstne", "arrival.floor: unknown id"),
+        ("y: [20, 90]", "y: [20, 125]", "arrival.y: a built frame's bottom row stands at y 1 to 122"),
+        ("y: [20, 90]", "y: [90, 20]", "y is [lowest, highest]"),
+        ('colour: "#7A8FB0"', "colour: slate", "colour"),
+    ],
+)
+def test_invalid_portal_fields_are_rejected(repo: RepoPaths, old: str, new: str, expected: str) -> None:
+    stone = repo.content / "realms" / "stone.yaml"
+    text = stone.read_text(encoding="utf-8")
+    assert old in text
+    stone.write_text(text.replace(old, new), encoding="utf-8")
+    problems = problems_for(repo)
+    assert any("realms/stone.yaml" in p and expected in p for p in problems), problems
+
+
+def test_a_sigil_names_its_realm_in_its_tooltip_and_resists_fire(repo: RepoPaths) -> None:
+    java = generate(repo)[ITEMS].decode()
+    assert (
+        'ITEMS.registerSimpleItem("stone_sigil", properties -> properties.stacksTo(1).fireResistant()' in java
+    )
+    assert (
+        'Component.translatable("tooltip.realmforge.sigil_realm",\n'
+        '                                    Component.translatable("realm.realmforge.stone.name"),\n'
+        '                                    Component.translatable("realm.realmforge.stone.subtitle"))'
+    ) in java
+    assert 'Component.translatable("tooltip.realmforge.sigil_never_used_up")' in java
+    lang = json.loads(generate(repo)[LANG])
+    assert lang["tooltip.realmforge.sigil_realm"] == "%1$s — %2$s"

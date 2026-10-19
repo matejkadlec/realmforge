@@ -40,6 +40,35 @@ texts:
   # A bed in a realm, which sets no spawn: a player always respawns in Overworld (RLM-128).
   bed_only_overworld:
     en_us: Beds only work in Overworld
+  # The realm portal's selector (W2b, realm portal spec "The realm selector"), in the action bar. %1$s is a realm's
+  # name (no article, RLM-188), Overworld's for a return portal. A sigil or the sneak gesture opened the portal:
+  realm_portal_opens_onto:
+    en_us: The portal opens onto %1$s
+  # A sigil of the realm the portal already shows.
+  realm_portal_already_opens_onto:
+    en_us: The portal already opens onto %1$s
+  # A sigil of a realm the player has not unlocked (%2$s the realm's hint).
+  realm_portal_not_eligible:
+    en_us: You are not eligible to open a portal to %1$s. %2$s
+  # Any sigil on a frame inside a realm: those lead only back to Overworld (Matěj, RLM-188).
+  realm_portal_only_back:
+    en_us: This portal leads only back to Overworld
+  # A sigil or the gesture on a frame that is not complete, or whose opening is blocked; particles mark the problems.
+  realm_portal_frame_incomplete:
+    en_us: The frame is incomplete
+  # An empty hand on a dark selector, or the sneak gesture that closed it.
+  realm_portal_closed:
+    en_us: The portal is closed
+  # A selector in a dimension without a realm entry: the instances, the Nether, the End, other mods' dimensions.
+  realm_portal_cannot_open_here:
+    en_us: The portal cannot open here
+  # A selector set to a realm that no longer exists (content removed, a data pack off): it shows this and refuses.
+  realm_portal_unknown_realm:
+    en_us: The portal opens onto an unknown realm
+  # The arrival title's subtitle in a realm (RLM-139, realm portal spec "Arriving"): %1$s its element ("Stone Realm"),
+  # %2$s and %3$s its lowest and highest level (from its dimension rules).
+  realm_arrival_levels:
+    en_us: "%1$s · Levels %2$s–%3$s"
   # Dungeon portals (W4d, RLM-181, architecture 15.5). A key opened a portal (%1$s the dungeon type's name, %2$s the
   # minutes it stays open).
   portal_opening:

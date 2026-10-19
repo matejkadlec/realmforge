@@ -102,7 +102,7 @@ def test_block_textures_are_opaque_and_differ_by_id(repo: RepoPaths) -> None:
     [
         (("tool: pickaxe\n", ""), "requires_tool and tool_tier need a tool"),
         (("requires_tool: true\n", ""), "a tool_tier only matters when requires_tool is true"),
-        (("hardness: 4.5", "hardness: -1"), "Input should be greater than or equal to 0"),
+        (("hardness: 4.5", "hardness: -2"), "Input should be greater than or equal to -1"),
         (("sound: deepslate", "sound: wool"), "Input should be 'stone'"),
         (("minecraft:building_blocks", "minecraft:building"), "unknown id 'minecraft:building'"),
     ],
@@ -184,3 +184,80 @@ def test_the_game_uses_one_dungeon_exit(repo: RepoPaths) -> None:
 def test_an_unknown_kind_is_a_problem(repo: RepoPaths) -> None:
     write(repo.content / "blocks" / "test_rock.yaml", BLOCK + "kind: teleporter\n")
     assert any("test_rock.yaml" in p and "kind" in p for p in problems_for(repo))
+
+
+def test_the_realm_portals_blocks_have_their_own_shapes_loot_and_items(repo: RepoPaths) -> None:
+    files = generate(repo)
+    java = files[JAVA].decode()
+    # The portal block: no item, no loot table.
+    assert 'properties -> BlockKinds.create("realm_portal", properties)' in java
+    assert ".strength(-1.0F, 0.0F)" in java and ".noLootTable()" in java
+    assert "REALM_PORTAL_ITEM" not in java
+    assert f"{ASSETS}/items/realm_portal.json" not in files
+    assert f"{DATA}/realmforge/loot_table/blocks/realm_portal.json" not in files
+    assert json.loads(files[f"{ASSETS}/blockstates/realm_portal.json"]) == {
+        "variants": {
+            "axis=x": {"model": "realmforge:block/realm_portal_ns"},
+            "axis=z": {"model": "realmforge:block/realm_portal_ew"},
+        }
+    }
+    pane = json.loads(files[f"{ASSETS}/models/block/realm_portal_ns.json"])["elements"][0]
+    assert (pane["from"], pane["to"]) == ([0, 0, 6], [16, 16, 10])
+    assert {face["tintindex"] for face in pane["faces"].values()} == {0}
+    # See-through, so the game renders it translucent.
+    _, _, pixels = decode_rgba(files[f"{ASSETS}/textures/block/realm_portal.png"])
+    assert all(alpha < 255 for *_, alpha in pixels)
+    assert '"realmforge:realm_portal",\n                    "block.realmforge.realm_portal",' in (
+        files[EXPECTATIONS].decode()
+    )
+    # The frame's blocks: both states look alike, and only a block without the generated flag drops itself.
+    for block in ("portal_stone", "realm_selector"):
+        assert json.loads(files[f"{ASSETS}/blockstates/{block}.json"]) == {
+            "variants": {
+                "generated=false": {"model": f"realmforge:block/{block}"},
+                "generated=true": {"model": f"realmforge:block/{block}"},
+            }
+        }
+        pool = json.loads(files[f"{DATA}/realmforge/loot_table/blocks/{block}.json"])["pools"][0]
+        assert {
+            "block": f"realmforge:{block}",
+            "condition": "minecraft:block_state_property",
+            "properties": {"generated": "false"},
+        } in pool["conditions"]
+        assert f"{block.upper()}_ITEM = ITEMS.registerSimpleBlockItem" in java
+
+
+def test_the_realm_portal_needs_all_three_kinds(repo: RepoPaths) -> None:
+    (repo.content / "blocks" / "realm_selector.yaml").unlink()
+    problems = problems_for(repo)
+    assert any(
+        "kind: the realm portal needs a block of each of" in p and "none is realm_selector" in p
+        for p in problems
+    ), problems
+
+
+@pytest.mark.parametrize(
+    ("change", "expected"),
+    [
+        ("hardness: -0.5\n", "hardness is 0 or more, or -1"),
+        ("hardness: -1\ntool: pickaxe\n", "a block nothing breaks needs no tool"),
+    ],
+)
+def test_unbreakable_blocks_are_minus_one_and_need_no_tool(
+    repo: RepoPaths, change: str, expected: str
+) -> None:
+    write(repo.content / "blocks" / "test_rock.yaml", "id: test_rock\nname: {en_us: Test Rock}\n" + change)
+    assert any("test_rock.yaml" in p and expected in p for p in problems_for(repo))
+
+
+def test_a_block_without_an_item_has_no_creative_tab(repo: RepoPaths) -> None:
+    portal = repo.content / "blocks" / "realm_portal.yaml"
+    portal.write_text(
+        portal.read_text(encoding="utf-8") + "creative_tabs: [minecraft:functional_blocks]\n",
+        encoding="utf-8",
+    )
+    assert any(
+        "realm_portal.yaml" in p
+        and "a realm_portal block has no item, so no creative_tabs and no recipe" in p
+        for p in problems_for(repo)
+    )

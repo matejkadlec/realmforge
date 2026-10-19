@@ -28,14 +28,14 @@ from realmforge_tools.rooms.connectors import connectors, could_attach
 from realmforge_tools.rooms.generator import GENERATED_DIR, theme_blocks, unknown_blocks
 from realmforge_tools.rooms.walk import walk_problems
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES, WORLDGEN_DIR
-from realmforge_tools.schema.block import SINGLE_BLOCK_KINDS
+from realmforge_tools.schema.block import ITEMLESS_KINDS, REALM_PORTAL_KINDS, SINGLE_BLOCK_KINDS
 from realmforge_tools.schema.chapter import advancement_id as chapter_advancement
 from realmforge_tools.schema.character import STARTING_BREAD
 from realmforge_tools.schema.dungeon import DEAD_END_ROLES, PATH_ROLES, ROOM_ROLES, room_role
-from realmforge_tools.schema.item import USE_TEXT_GROUP
+from realmforge_tools.schema.item import USE_TEXT_GROUP, ItemDef
 from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
-from realmforge_tools.schema.realm import unlock_advancement
+from realmforge_tools.schema.realm import FRAME_HEIGHT, PORTAL_PARTICLES, unlock_advancement
 from realmforge_tools.schema.requirement import ChapterCompletedDef, HasAdvancementDef
 from realmforge_tools.schema.room_spec import FULL, LANTERN, SLAB, STAIRS, THEME_ROLES, WALL_TORCH
 from realmforge_tools.schema.spell import (
@@ -75,6 +75,11 @@ SPELL_SCHOOL_REGISTRY = f"{MOD_ID}:spell_school"
 DUNGEON_TYPE_REGISTRY = f"{MOD_ID}:dungeon_type"
 CHAPTER_REGISTRY = f"{MOD_ID}:chapter"
 STRUCTURE_REGISTRY = "minecraft:structure"
+PARTICLE_TYPE_REGISTRY = "minecraft:particle_type"
+# Vanilla Overworld's height (net.minecraft.world.level.dimension.DimensionType, minecraft:overworld): its lowest y and
+# the number of blocks above it, for Overworld's arrival heights.
+OVERWORLD_MIN_Y = -64
+OVERWORLD_HEIGHT = 384
 
 # Vanilla's dimensions (the level stems of its world presets). The registry report behind the vanilla ID universe
 # lists no minecraft:dimension registry, as a world's dimensions come from its preset, so they are named here.
@@ -142,15 +147,17 @@ def universe_with_content(vanilla: IdUniverse, content: Content) -> IdUniverse:
     for type_dir, registry in REGISTRY_OF_TYPE.items():
         for entry in content.entries(type_dir):
             universe.add(registry, f"{MOD_ID}:{entry.model.id}")
-    # A block registers its block item under the same id (generate/blocks.py).
+    # A block registers its block item under the same id (generate/blocks.py), unless its kind has none.
     for entry in content.blocks:
-        universe.add(ITEM_REGISTRY, f"{MOD_ID}:{entry.model.id}")
+        if entry.model.kind not in ITEMLESS_KINDS:
+            universe.add(ITEM_REGISTRY, f"{MOD_ID}:{entry.model.id}")
     for entry in content.spell_schools:
         universe.add(DAMAGE_TYPE_REGISTRY, entry.model.damage_type)
     for entry in content.chapters:
         universe.add(ADVANCEMENT_REGISTRY, f"{MOD_ID}:{chapter_advancement(entry.model.id)}")
     for entry in content.realms:
-        universe.add(ADVANCEMENT_REGISTRY, f"{MOD_ID}:{unlock_advancement(entry.model.id)}")
+        if not entry.model.is_overworld:
+            universe.add(ADVANCEMENT_REGISTRY, f"{MOD_ID}:{unlock_advancement(entry.model.id)}")
     for file in content.worldgen:
         universe.add(WORLDGEN_REGISTRIES[file.directory], f"{MOD_ID}:{file.id}")
     for room in content.rooms:
@@ -856,8 +863,24 @@ def _check_dimension_rules(content: Content, universe: IdUniverse) -> list[Probl
 
 def _check_blocks(content: Content, universe: IdUniverse) -> list[Problem]:
     """A block's item takes the block's id, so no item may have it too; its creative tabs exist; a kind the game uses
-    one block of (the dungeon exit) has one block at most."""
+    one block of (the dungeon exit, the realm portal's) has one block at most; the realm portal's three kinds come
+    together, since a portal needs its frame, its selector and its portal block."""
     problems: list[Problem] = []
+    portal_kinds = {
+        entry.model.kind: entry.source for entry in content.blocks if entry.model.kind in REALM_PORTAL_KINDS
+    }
+    if portal_kinds:
+        missing = [kind for kind in REALM_PORTAL_KINDS if kind not in portal_kinds]
+        if missing:
+            source = next(iter(portal_kinds.values()))
+            problems.append(
+                Problem(
+                    source,
+                    "kind",
+                    f"the realm portal needs a block of each of {', '.join(REALM_PORTAL_KINDS)}; "
+                    f"none is {', '.join(missing)}",
+                )
+            )
     items = {entry.model.id: entry.source for entry in content.items}
     kind_blocks: dict[str, str] = {}
     for entry in content.blocks:
@@ -923,14 +946,18 @@ def _check_recipes(content: Content, universe: IdUniverse) -> list[Problem]:
 def _check_realms(content: Content, universe: IdUniverse) -> list[Problem]:
     """A realm names a dimension of ours that exists, one realm per dimension; the dimension's rules name the realm's
     unlock advancement in their access requirements; its dimension type links by a coordinate scale above 1 and has
-    beds that set no spawn and do not explode (realm portal spec, "Data")."""
+    beds that set no spawn and do not explode. Its sigil is an item of ours that stacks to 1, the sigil of no other
+    realm; its particle is one without options; its arrival floor is a block, and a built frame fits the dimension at
+    its arrival heights. Overworld's entry, which is no realm, needs only the arrival (realm portal spec, "Data")."""
     problems: list[Problem] = []
     rules = {entry.model.dimension: entry for entry in content.dimensions}
     dimension_files = {
         f"{MOD_ID}:{file.id}": file for file in content.worldgen if file.directory == "dimension"
     }
     types = {f"{MOD_ID}:{file.id}": file for file in content.worldgen if file.directory == "dimension_type"}
+    items = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.items}
     seen: dict[str, str] = {}
+    sigils: dict[str, str] = {}
     for entry in content.realms:
         realm = entry.model
         if realm.dimension in seen:
@@ -942,8 +969,33 @@ def _check_realms(content: Content, universe: IdUniverse) -> list[Problem]:
                 )
             )
         seen.setdefault(realm.dimension, entry.source)
-        if not universe.contains(ITEM_REGISTRY, realm.icon):
+        if not universe.contains(BLOCK_REGISTRY, realm.arrival.floor):
+            problems.append(
+                Problem(
+                    entry.source, "arrival.floor", _unknown(realm.arrival.floor, BLOCK_REGISTRY, universe)
+                )
+            )
+        if realm.is_overworld:
+            problems += _arrival_height_problems(
+                entry.source, realm.arrival.y, OVERWORLD_MIN_Y, OVERWORLD_HEIGHT
+            )
+            continue
+        if realm.icon is not None and not universe.contains(ITEM_REGISTRY, realm.icon):
             problems.append(Problem(entry.source, "icon", _unknown(realm.icon, ITEM_REGISTRY, universe)))
+        problems += _realm_sigil_problems(entry.source, realm.sigil, items, sigils)
+        if realm.particle is not None and realm.particle not in PORTAL_PARTICLES:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "particle",
+                    f"{realm.particle} is not a particle without options that suits a portal: "
+                    f"one of {', '.join(PORTAL_PARTICLES)}",
+                )
+            )
+        elif realm.particle is not None and not universe.contains(PARTICLE_TYPE_REGISTRY, realm.particle):
+            problems.append(
+                Problem(entry.source, "particle", _unknown(realm.particle, PARTICLE_TYPE_REGISTRY, universe))
+            )
         dimension = dimension_files.get(realm.dimension)
         if dimension is None:
             problems.append(
@@ -977,7 +1029,47 @@ def _check_realms(content: Content, universe: IdUniverse) -> list[Problem]:
             )
             continue
         problems += _realm_dimension_type_problems(dimension_type.source, dimension_type.data)
+        min_y, height = dimension_type.data.get("min_y"), dimension_type.data.get("height")
+        if isinstance(min_y, int) and isinstance(height, int):
+            problems += _arrival_height_problems(entry.source, realm.arrival.y, min_y, height)
     return problems
+
+
+def _realm_sigil_problems(
+    source: str, sigil: str | None, items: dict[str, ItemDef], sigils: dict[str, str]
+) -> list[Problem]:
+    """A realm's sigil is an item of ours that stacks to 1, and no other realm's: the selector needs one destination
+    for each sigil."""
+    if sigil is None:
+        return []
+    problems: list[Problem] = []
+    item = items.get(sigil)
+    if item is None:
+        problems.append(Problem(source, "sigil", f"{sigil} is not an item of ours (content/items/)"))
+    elif item.max_stack_size != 1:
+        problems.append(
+            Problem(source, "sigil", f"a sigil stacks to 1: {sigil} stacks to {item.max_stack_size}")
+        )
+    if sigil in sigils:
+        problems.append(Problem(source, "sigil", f"{sigil} is already the sigil of {sigils[sigil]}"))
+    sigils.setdefault(sigil, source)
+    return problems
+
+
+def _arrival_height_problems(source: str, heights: list[int], min_y: int, height: int) -> list[Problem]:
+    """A built frame stands on a floor below its bottom row and reaches FRAME_HEIGHT blocks up, all inside the
+    dimension."""
+    lowest, highest = min_y + 1, min_y + height - FRAME_HEIGHT
+    if heights[0] < lowest or heights[1] > highest:
+        return [
+            Problem(
+                source,
+                "arrival.y",
+                f"a built frame's bottom row stands at y {lowest} to {highest} in this dimension, "
+                f"with a floor below it and its top row inside: not {heights[0]} to {heights[1]}",
+            )
+        ]
+    return []
 
 
 def _realm_dimension_type_problems(source: str, data: dict) -> list[Problem]:

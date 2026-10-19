@@ -47,6 +47,12 @@ public final class GeneratedItemExpectations {
                     List.of("minecraft:tools_and_utilities"),
                     "realmforge:use/unlearn_stat_points"),
             new ItemExpectation(
+                    "realmforge:stone_sigil",
+                    "item.realmforge.stone_sigil",
+                    1,
+                    List.of("minecraft:tools_and_utilities"),
+                    ""),
+            new ItemExpectation(
                     "realmforge:stone_wand",
                     "item.realmforge.stone_wand",
                     1,
