@@ -53,6 +53,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0039](0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md) | A cast slows its caster instead of moving interrupting it | Accepted (amends 0020) |
 | [0040](0040-coins-and-data-driven-merchant-trades.md) | Coins and data-driven merchant trades | Accepted (amends 0013) |
 | [0041](0041-dungeon-containers-hold-loot-through-lootr.md) | Dungeon containers hold loot through Lootr | Accepted (amends 0013) |
+| [0042](0042-the-dev-runs-load-the-whole-pack.md) | The dev runs load the whole pack | Accepted (amends 0020) |
 
 ## Open questions (not decided)
 

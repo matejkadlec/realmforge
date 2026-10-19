@@ -134,18 +134,22 @@ marked `[option]` in its `.pw.toml`. Caveat for the next one: packwiz-installer'
 command-line mode (`-g`, typical for dedicated servers) cannot choose options
 and installs every optional mod.
 
-## Mods the QA mod uses too
+## The dev runs load the pack
 
-The dev-only QA mod gets **Player Animation Library**, **Better Combat**,
-**Cloth Config**, **Yeetus Experimentus**, **Placebo**, **Apothic
-Attributes**, **Apothic Enchanting**, **Apotheosis**, **Enchantment
-Descriptions** and **Prickle** from Modrinth's Maven,
-so the dev runs (`./gradlew runClient`, with `-PwithBetterCombat` for Better
-Combat) and the GameTests test our code against the jars players get.
-`qa-mod/build.gradle` names them by Modrinth version id, the `version` under
-`[update.modrinth]` in their `mods/<slug>.pw.toml`. Updating one of these mods
-means updating `qa-mod/build.gradle` too: `uv run pytest`
-(`tools/tests/test_qa_mod_dependencies.py`) fails while they differ.
+The dev runs (`./gradlew runClient`, `runServer`, `runGameTestServer`) load every
+mod of this folder's `mods/` for their side, at the exact build the pack ships
+([ADR 0042](../docs/decisions/0042-the-dev-runs-load-the-whole-pack.md)):
+`qa-mod/build.gradle` reads `mods/*.pw.toml` itself, so adding, updating or
+removing a mod here changes the dev runs and the GameTests with it, with nothing
+to update by hand. A `side = "client"` mod joins the client, `"server"` the dev
+server and the GameTest server, `"both"` every run. Modrinth mods come from
+Modrinth's Maven by `mod-id` and `version` under `[update.modrinth]`,
+CurseForge ones from CurseMaven by `project-id` and `file-id` under
+`[update.curseforge]`, and each jar is checked against the `hash` under
+`[download]` before a run starts. `uv run pytest`
+(`tools/tests/test_dev_run_mods.py`) fails on a `.pw.toml` that reader cannot
+take. `./gradlew runClient -PleanClient` starts a client without the pack's
+mods, except Player Animation Library and Yeetus Experimentus.
 
 Every dev run (client, server, GameTest server) also gets this folder's
 `config/`: the QA mod's `seedPackConfig` task copies it into the run's `config/`

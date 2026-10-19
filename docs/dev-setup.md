@@ -55,10 +55,9 @@ decompiled Minecraft + NeoForge sources into `build/mc-sources/`.
 
 ## 3. The dev client (`runClient`)
 
-`./gradlew runClient` starts a dev client with the core mod and the QA mod, so the `/qa` commands work. Besides
-ours, only Player Animation Library (a QA mod dependency), Yeetus Experimentus, Apotheosis with Apothic
-Attributes, Apothic Enchanting and Placebo, and Enchantment Descriptions with Prickle are loaded. Its game directory is
-`run/client` in the checkout (saves, options, logs). Playtests run it on Windows (3.2), where mouse look works; in
+`./gradlew runClient` starts a dev client with the core mod and the QA mod, so the `/qa` commands work, and with
+every client-side and shared mod of the pack (3.1). Its game directory is `run/client` in the checkout (saves,
+options, logs). Playtests run it on Windows (3.2), where mouse look works; in
 WSL it is good only for "does it load" checks (3.3).
 
 ### 3.1 What every dev client gets
@@ -83,15 +82,26 @@ WSL it is good only for "does it load" checks (3.3).
   (`pack/config/`) into `run/client/config/`, replacing the files the mods wrote, as packwiz-installer does for a
   player; the dev server and the GameTest server get them too. So a mod's settings changed in game last only until
   the next launch: change them in `pack/config/` ([pack README](../pack/README.md#configuration)).
-- **Apotheosis**, as in the pack, with Apothic Attributes' crit and dodge switched off
-  ([architecture 19.4](architecture.md#194-optional-integrations)): the GameTests run with it too.
-- **No experimental-settings warning.** Our data pack dimensions make vanilla call every new world
-  experimental; Yeetus Experimentus, the same build as the pack, skips the warning screen
-  ([architecture 15.1](architecture.md#151-dimensions)).
-- **Better Combat on demand.** `./gradlew runClient -PwithBetterCombat` adds Better Combat and Cloth Config, the
-  same versions as the pack, to check our code with Better Combat installed. In game, `/qa cast 200` makes you cast
-  for 10 seconds: a test animation plays and melee is blocked until it ends
+- **The whole pack.** Every mod in `pack/mods/` whose `side` is `client` or `both` (JEI, Jade, Better Combat,
+  FTB Quests, Sodium, Iris, Distant Horizons and the rest), at the exact build the pack ships
+  ([ADR 0042](decisions/0042-the-dev-runs-load-the-whole-pack.md)). `qa-mod/build.gradle` reads the list from
+  `pack/mods/*.pw.toml`, so a mod added to or removed from the pack is in or out of the next launch; the first
+  launch after a change downloads the new jars (Modrinth's Maven, CurseMaven for the FTB mods), and
+  `verifyPackClientMods` checks each jar against the hash in its `.pw.toml`. The dev server and the GameTest server
+  load the `server` and `both` mods the same way, so the GameTests run with them too. Apotheosis keeps Apothic
+  Attributes' crit and dodge switched off ([architecture 19.4](architecture.md#194-optional-integrations)), and
+  Yeetus Experimentus skips the experimental-settings warning that our data pack dimensions cause for every new
+  world ([architecture 15.1](architecture.md#151-dimensions)). In game, `/qa cast 200` makes you cast for 10
+  seconds: a test animation plays and melee, Better Combat's included, is blocked until it ends
   ([ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)).
+- **A lean client on demand.** `./gradlew runClient -PleanClient` loads only our mods, Player Animation Library (the
+  QA mod's animation library) and Yeetus Experimentus: it starts faster, for quick checks and agents' screenshot
+  runs, and shows our code without the other mods. `-PwithBetterCombat` adds Better Combat and Cloth Config to it:
+  `./gradlew runClient -PleanClient -PwithBetterCombat`. Without `-PleanClient` the flag changes nothing, because
+  the whole pack has Better Combat already.
+- **No `@OnlyIn` warning screen.** A dev run (never a player's game) would stop at a loading screen listing every
+  mod that still uses NeoForge's `@OnlyIn` (Jade Addons); the runs set `neoforge.warnings.onlyin.hide`, and the log
+  keeps the `OnlyInWarningsHandler` lines.
 - **Logs.** Every launch writes `run/client/logs/latest.log` and `run/client/logs/debug.log` (the same plus debug
   lines); older launches are gzipped next to them (`2026-10-12-1.log.gz`, `debug-1.log.gz`), and a crash leaves a
   report in `run/client/crash-reports/`. To hand a problem to an agent, attach the file, or paste the output of
@@ -177,16 +187,17 @@ there while the game runs. The handoff gives the commands
   - `Ignoring chat session from Dev due to missing Services public key`: only in the offline `Dev` profile.
 - **Cast screenshots without input.** `REALMFORGE_QA_CAST_SHOTS=<label> ./gradlew runClient` makes the QA mod
   create a superflat world from the title screen, run `/qa cast`, save the cast pose and quit, about 50 seconds
-  after the title screen (`-PwithBetterCombat` adds the Better Combat set). It shoots six views (looking level,
+  after the title screen, with the whole pack, so Better Combat is loaded (`-PleanClient` shoots without it, and
+  `-PleanClient -PwithBetterCombat` with it but without the other pack mods). It shoots six views (looking level,
   up 45 and 80 degrees, down 45 and 80, right after a 90-degree turn) in four cameras (first person, both
   third-person views, and a still `side` camera 2.5 blocks to the player's right) at field of view 110 and 70, to
   `run/client/screenshots/<label>-<plain|bettercombat>-<view>-fov<n>-<camera>-hold.png`, plus the peak of the
   pulse (`-pulse.png`) looking level. It needs no mouse, so it works around the broken mouse look above; agents
-  use it to check the framing of cast animations (RLM-89, RLM-108). Agents add `-PofflineClient` (3.1):
-  `REALMFORGE_QA_CAST_SHOTS=<label> ./gradlew runClient -PofflineClient`. Without it DevLogin runs first, and
-  without a cached login it waits for the console prompt.
-- `./gradlew runServer` starts a dev dedicated server in `run/server`; accept the EULA once in
-  `run/server/eula.txt`.
+  use it to check the framing of cast animations (RLM-89, RLM-108). Agents add `-PofflineClient` (3.1), usually
+  with `-PleanClient`: `REALMFORGE_QA_CAST_SHOTS=<label> ./gradlew runClient -PofflineClient -PleanClient`.
+  Without `-PofflineClient` DevLogin runs first, and without a cached login it waits for the console prompt.
+- `./gradlew runServer` starts a dev dedicated server in `run/server` with the pack's `server` and `both` mods;
+  accept the EULA once in `run/server/eula.txt`.
 
 ## 4. Playing the pack on Windows (Prism Launcher + packwiz-installer)
 
