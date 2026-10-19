@@ -822,8 +822,8 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
   key. The `combat` attachment records that a cast set the tag, so an operator's own tag survives and a login
   removes one a crash left behind. A cast cancels a swing; an attack does not interrupt a cast. **In code (C3a-2):**
   `spell/Casting` cancels the event and sets, records (`CombatState#setBetterCombatTag`, saved) and removes the tag;
-  `client/spell/ClientCasts` cancels the attack key, swing included, while the local player casts. Mobs' melee during
-  their casts is C3a-4's (NPC casting).
+  `client/spell/ClientCasts` cancels the attack key, swing included, while the local player casts. A mob attacks
+  only when its AI says so, so W3's goal library keeps a casting mob from attacking (C3a-4 left it there).
 
 ## 10. Character: races, classes, leveling
 
@@ -862,7 +862,9 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
 - **Changing race or class:** a QA command in M1, an in-game way later.
 - **In code (C1):** `character/Race` and `character/PlayerClass` are the entries of `realmforge:race` and
   `realmforge:class` (`CharacterRegistries`, both synced). A race names its classes by id, so a missing class fails
-  the world load; a class names its resource (`realmforge:resource_type`, [5.3](#53-type-registries)). Their
+  the world load; a class names its resource (`realmforge:resource_type`, [5.3](#53-type-registries)), and a rage
+  class its rage numbers (`spell/RageRules`, C3a-4), which `character` hands `spell` as a `Rage.Source`
+  ([11.5](#115-resources-cooldowns-modifiers)). Their
   modifiers (`CharacterModifier`: an amount, the same at every level) reach the player through `CharacterBonuses`,
   the `StatSource` that `stats` applies before the stat rules ([8.2](#82-where-modifiers-come-from)).
   `CharacterCreation` holds the rules: the player has no character yet, the race and the class exist, and the race
@@ -1025,6 +1027,18 @@ lists spells granted while equipped or on use): the vision's "some from the race
    own `combat` attachment ([7](#7-player-state)), and their cast bars, the telegraphs players react to, reach
    clients only through the cast payloads.
 
+**In code (C3a-4, RLM-212): NPC casting.** Mobs and bosses cast through the same `SpellCaster`, without a spellbook,
+a payload or a cost: their spells are paced by their cooldowns and the global cooldown, which their own `combat`
+attachment keeps, and a cast-time spell's bar reaches every tracking player through the cast payloads, as a
+player's does. A mob's AI (W3's goal library, W5's boss phases) decides when to cast; until then `/execute as <mob>
+run qa spell cast <spell>` drives it. Three targeting types let a mob choose its target, and only `npc_only` spells
+use them (the pipeline checks it): `current_target` (`spell/CurrentTargetTargeting`) takes the mob's attack target
+(`Mob#getTarget`), checked as an `enemy` target is; `random_player` and `farthest_player` choose among the players in
+range and in sight that the mob may attack (`Targets#playerTargets`: alive, neither in creative nor spectator mode,
+not invulnerable, not its ally), at random or the farthest from its eyes. Given an entity to aim at, as a cast time's
+check before its effects is, they check that one instead of choosing again, so a cast-time spell hits the player it
+chose. `arena_point` comes with the boss (W5). `NpcCastGameTests` casts all three, the farthest one with a cast time.
+
 **In code (C3a-1):** `spell/SpellCaster` casts instant spells for any living caster; a player at the level their
 spellbook knows, a mob at level 1. It refuses a cast, paying nothing and running nothing, with a `spell/CastFailure`
 (research SP-3; C3b turns each into a text), checked in this order: the caster is dead or a spectator, the spell
@@ -1032,9 +1046,9 @@ does not exist, a player casts an `npc_only` spell or one their spellbook does n
 runs, the global cooldown runs and the spell is on it, the targeting finds no valid target (`spell/Targets`: in range
 from the caster's eyes to the target's box, and in vanilla's line of sight), a player lacks the cost. Otherwise the
 cost and the cooldowns apply, then every effect runs on the target with an `EffectContext` (caster, spell, spell
-level, random source; C3a-3 adds the entity that delivers it, and procs, C3a-4, the proc origin). Allies (`Targets#allied`) are the caster, its team mates and tamed
+level, random source; C3a-3 adds the entity that delivers it, and C3a-4 the proc origin, [12](#12-talents)). Allies (`Targets#allied`) are the caster, its team mates and tamed
 pets (vanilla's `isAlliedTo`), and for a player every other player, as M1 has no PvP; everything else is an enemy.
-Mobs pay no cost until C3a-4 decides NPC resources. `/qa spell` drives it until the spell bar exists.
+Mobs pay no cost (C3a-4 kept it so: their cooldowns pace them). `/qa spell` drives it until the spell bar exists.
 
 **In code (C3a-2):** a spell's `cast` (`spell/SpellCast`) is `instant`, `cast_time` (a duration) or `channel` (a
 duration that is a whole number of intervals), and the two timed types may set `castable_while_moving` and `lock_on`.
@@ -1049,7 +1063,7 @@ checks the cost and the target again (`SpellCaster#recheck`: alive, then the tar
 enemy or ally; a spell that locks on only needs its target alive and in the caster's dimension), and a channel
 checks the target before every tick, run at the end of each interval. Every end is a `spell/CastEnd` (completed, an
 interrupt, or the failed check), sent to the caster and its trackers as `CastEndedPayload` and posted on the game bus
-as `CastEndedEvent`, which procs (C3a-4) will use and the QA mod logs for `/qa spell show` and the GameTests
+as `CastEndedEvent`, which the QA mod logs for `/qa spell show` and the GameTests
 (`CastGameTests`). The effects run on the first server tick at or after the cast's end time.
 
 **In code (C3a-3, RLM-211 and RLM-243):** a cast aims at an entity, a point or nothing (`spell/SpellAim`, what the
@@ -1092,8 +1106,9 @@ type only for genuinely new behaviour.
 - **Never saved:** they carry a live cast (the caster, the spell), so a chunk that unloads or a server that stops
   drops them (`shouldBeSaved` is false), they use no portal, and commands cannot summon them. Only their size is
   synced; the client moves them and draws particles (a trail, a ring) with no-op renderers
-  (`client/render/SpellEntityRenderers`) until C6 (RLM-29) gives spells their visuals. Their entity type names have
-  no translation yet (RLM-259).
+  (`client/render/SpellEntityRenderers`) until C6 (RLM-29) gives spells their visuals. Their names, "Spell
+  Projectile" and "Spell Area", come from `content/texts/entity.yaml` (RLM-259) and show where the game prints an
+  entity's own name (F3, `/data`).
 - **The other effect types:** `apply_effect` (a status effect from the caster, vanilla's until C3c, at most a minute:
   research SP-8) and `remove_effect` act on an entity; `teleport` moves the caster to the target's position (a ground
   point, the end of a direction's ray with its feet where its eyes would be, an entity's feet), stepping back toward
@@ -1121,8 +1136,18 @@ type only for genuinely new behaviour.
   pool is and what it regains every second (`spell/ResourceType`), so `spell/Resources` needs no knowledge of the
   holder's class: mana's pool is Max Mana big, fills the first time its maximum is above 0 and regains Mana
   Regeneration every second (Matěj, 2026-10-14: a Mage starts with 100 and 5, from its class modifiers); rage's is
-  100 big and starts empty, its gain and decay coming with C3a-4. A pool keeps its amount while its maximum reads 0
-  (a respawned player before the first stat recompute) and drops to a lowered maximum otherwise.
+  100 big and starts empty. A pool keeps its amount while its maximum reads 0 (a respawned player before the first
+  stat recompute) and drops to a lowered maximum otherwise.
+- **Rage (C3a-4, RLM-212):** `spell/Rage` gives a holder with `RageRules` (a rage class's `rage` numbers in its data,
+  handed over by `character` as a `Rage.Source`) rage from the damage pipeline's hits (`CombatEvent.Hit`): a melee hit
+  it deals (a player's or a mob's own attack, not a projectile or a spell) gives `per_hit_dealt` times the swing's
+  attack strength, so spam clicks give little, and damage an attacker deals it gives `per_max_health_taken` times
+  the share of its max health the hit took (the inflicted damage, a magic shield's share included). A hit dealt or
+  taken, or a dodged one, puts both sides in combat; `decay_after_seconds` after the last one the pool loses
+  `decay_per_second` every second, as rage's regeneration ([`ResourceType`](#115-resources-cooldowns-modifiers)) is
+  negative then. Combat is transient, so a new player entity starts out of it. The Warrior's starting numbers are 10
+  a hit, 50 for the whole max health and 2 a second after 5 s, until the class kits (C4) tune them. Mobs pay no cost
+  ([11.2](#112-casting-server-authoritative)), so no mob gains rage. `RageGameTests` and `RageRulesTest` cover it.
 - **Cooldowns:** a spell's own cooldown, shortened by Cooldown Reduction (at most 75 %, its stat's cap), and the
   global cooldown, 1 s by default (research SP-11), which a spell may shorten or switch off and which Cooldown
   Reduction never touches. Both are stored as the game time they end.
@@ -1167,6 +1192,21 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
   property tests check that no sequence of payloads reaches an invalid allocation.
 - **Glyphs** (M3) reuse the same effect types, with glyph items as the source.
 - **Screen:** a WoW-style grid, drawn from a pure `TalentTreeView`.
+- **In code (C3a-4, RLM-212): the proc engine.** A `spell/Proc` has an id, a trigger (`HIT`, `CRIT`, `KILL` or
+  `HIT_TAKEN`, from its holder's side), a chance, an internal cooldown in ticks (research SP-15) and an action: cast a
+  spell (`CastSpell`, at the other entity, or for a kill at the point where the victim died, so a `self` spell takes
+  the holder) or apply a status effect (`ApplyEffect`, to the holder or the other entity). `spell/Procs` reacts to
+  `CombatEvent.Hit` (every hit with an attacker: melee, ranged and spells, a dodged one never) and to kills
+  (`LivingDeathEvent`, last, so a totem's save counts), and fires the procs that every `Procs.Source` gives the
+  entities involved; talents (C5) and items will add theirs, and the QA mod adds `QaProcs` for its tests. A proc
+  fires at its chance outside its internal cooldown, which starts once its spell was cast or its effect took hold.
+  Its spell goes through `SpellCaster#castProc`: at once and free, whatever its cast type, without the spell's
+  cooldowns or the global cooldown, while another cast runs. The proc origin is the proc's id: `EffectContext`
+  carries it to every effect, a projectile or an area keeps it, `DamageEffect` puts it into its
+  `combat/SchoolDamageSource`, and `Procs` ignores every hit and kill whose source carries one. Vanilla status
+  effects' ticks have no attacker, so no proc reacts to them; our own status effects (C3c) will keep the origin.
+  Internal cooldowns are transient, by holder and proc id. `ProcGameTests` covers a proc on hit and its internal
+  cooldown, a proc's own hit triggering nothing, and the crit and kill triggers.
 
 ## 13. Items, gear and loot
 

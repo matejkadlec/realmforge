@@ -51,12 +51,13 @@ our own core mod holds all RPG systems; the modpack adds third-party QoL, perfor
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits.
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell
-  engine has begun (C3a-1 to C3a-3): spells as data in `content/spells/`, cast by players and mobs through one
+  engine is done (C3a): spells as data in `content/spells/`, cast by players and mobs through one
   `SpellCaster` (reached through `/qa spell` until the spell bar exists), with mana pools, cooldowns and spell crits,
   instantly, with a cast time or as a channel, interrupted by moving by itself (not by a push), death, a dimension
   change or logout, with no melee during a cast, and synced to clients as cast payloads; at an entity, a ground point
-  or a direction, with damage, heals, projectiles, areas, status effects, teleports, dashes and knockback. Procs and
-  the spell bar come next (C3a-4, C3b). The first realm exists (W2a): Undervault, the stone realm
+  or a direction, with damage, heals, projectiles, areas, status effects, teleports, dashes and knockback; rage that
+  hits fill and that decays out of combat, procs that never trigger procs, and mobs choosing their target (their
+  current target, a random or the farthest player). The spell bar comes next (C3b). The first realm exists (W2a): Undervault, the stone realm
   (`realmforge:stone`), one giant cave of four slow custom stones (`content/blocks/`), sealed until the player's own
   unlock advancement `realmforge:realm/stone` (`content/realms/`, access requirements in the dimension rules), entered
   through `/qa realm enter` until the realm portal exists (W2b), with no mob crossing into or out of it and every
