@@ -7,7 +7,12 @@ import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.dungeon.DungeonAttachments;
 import io.github.matejkadlec.realmforge.dungeon.DungeonRegistries;
 import io.github.matejkadlec.realmforge.dungeon.DungeonType;
+import io.github.matejkadlec.realmforge.dungeon.plan.DungeonPlan;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonRoom;
+import io.github.matejkadlec.realmforge.dungeon.plan.PlanningException;
+import io.github.matejkadlec.realmforge.dungeon.portal.DungeonBlocks;
+import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
+import io.github.matejkadlec.realmforge.world.BlockKinds;
 import it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -18,21 +23,31 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -79,7 +94,10 @@ public final class InstanceManager extends SavedData {
             Codec.INT.fieldOf("next_id").forGetter(manager -> manager.nextId),
             Codec.INT.listOf().optionalFieldOf("free", List.of()).forGetter(manager -> List.copyOf(manager.free)),
             Plot.CODEC.listOf().optionalFieldOf("plots", List.of())
-                    .forGetter(manager -> List.copyOf(manager.plots.values()))
+                    .forGetter(manager -> List.copyOf(manager.plots.values())),
+            Codec.LONG.optionalFieldOf("next_run", 1L).forGetter(manager -> manager.nextRun),
+            Codec.unboundedMap(UUIDUtil.STRING_CODEC, Identifier.CODEC.listOf()).optionalFieldOf("refunds", Map.of())
+                    .forGetter(manager -> Map.copyOf(manager.refunds))
     ).apply(instance, InstanceManager::new));
     /**
      * Saved as {@code data/realmforge/instances.dat} in the instance dimension's folder. Data that fails to parse is
@@ -89,6 +107,10 @@ public final class InstanceManager extends SavedData {
             new SavedDataType<>(Realmforge.id("instances"), InstanceManager::new, CODEC);
 
     private int nextId;
+    /** The id the next run gets; ids are never reused, so a portal can tell its run from a later one in its plot. */
+    private long nextRun = 1L;
+    /** Keys to give back to players who were offline when their dungeon could not be built, given at their login. */
+    private final Map<UUID, List<Identifier>> refunds = new HashMap<>();
     /** Freed plots, reused lowest id first so the world stays compact. */
     private final IntSortedSet free = new IntAVLTreeSet();
     private final Int2ObjectSortedMap<Plot> plots = new Int2ObjectAVLTreeMap<>();
@@ -101,10 +123,13 @@ public final class InstanceManager extends SavedData {
     private InstanceManager() {
     }
 
-    private InstanceManager(int nextId, List<Integer> free, List<Plot> plots) {
+    private InstanceManager(int nextId, List<Integer> free, List<Plot> plots, long nextRun,
+            Map<UUID, List<Identifier>> refunds) {
         this.nextId = nextId;
         this.free.addAll(free);
         plots.forEach(plot -> this.plots.put(plot.id(), plot));
+        this.nextRun = Math.max(1L, nextRun);
+        refunds.forEach((player, keys) -> this.refunds.put(player, new ArrayList<>(keys)));
     }
 
     /** Registers the chunk ticket type and the ticket controller plots load and hold their chunks with. */
@@ -186,11 +211,34 @@ public final class InstanceManager extends SavedData {
 
     /**
      * Takes a plot and starts building {@code layout} in it over the next ticks, after its chunks have loaded in the
-     * background. Online party members enter when it is built.
+     * background. Online party members enter when it is built. The run has no timer.
      *
      * @throws IllegalArgumentException when a room template is unknown or a room reaches outside the plot
      */
     public Plot open(InstanceLayout layout, List<UUID> party) {
+        return open(layout, party, null, 0L);
+    }
+
+    /**
+     * Opens a run of {@code type} for {@code player} through the dungeon portal at {@code portal} (W4d): plans a layout
+     * from a new seed and starts building it. The run closes after the type's open time; the player enters through
+     * the portal once it is built, not by themselves.
+     *
+     * @throws PlanningException when no layout of the type fits a plot
+     * @throws IllegalArgumentException when a room template is unknown or a room reaches outside the plot
+     */
+    public Plot openPortal(ServerPlayer player, Holder.Reference<DungeonType> type, GlobalPos portal) {
+        DungeonType dungeon = type.value();
+        DungeonPlan plan = dungeon.plan(level().getRandom().nextLong());
+        return open(plan.toInstanceLayout(), List.of(player.getUUID()),
+                new PortalLink(type.key().identifier(), portal), dungeon.openTicks());
+    }
+
+    /**
+     * {@link #open(InstanceLayout, List)} for a run opened through a dungeon portal, which closes {@code openTicks}
+     * after now; public for the GameTests, which open portal runs of layouts of their own.
+     */
+    public Plot open(InstanceLayout layout, List<UUID> party, @Nullable PortalLink portal, long openTicks) {
         ServerLevel level = level();
         List<BoundingBox> relativeRooms = new ArrayList<>();
         List<DataMarker> markers = new ArrayList<>();
@@ -217,7 +265,8 @@ public final class InstanceManager extends SavedData {
         List<BoundingBox> rooms = relativeRooms.stream()
                 .map(box -> box.moved(origin.getX(), origin.getY(), origin.getZ()))
                 .toList();
-        plot.startBuilding(layout, rooms, markers, party);
+        Long closesAt = portal == null ? null : level.getGameTime() + openTicks;
+        plot.startBuilding(layout, rooms, markers, party, nextRun++, portal, closesAt);
         holdChunks(plot);
         setDirty();
         LOGGER.debug("Opened instance plot {} at {} for {}", plot.id(), origin, party);
@@ -235,7 +284,7 @@ public final class InstanceManager extends SavedData {
         if (level == null) {
             return;
         }
-        boolean changed = false;
+        boolean changed = runTimers(level);
         List<Plot> busy = new ArrayList<>();
         List<Plot> later = new ArrayList<>();
         for (Plot plot : plots.values()) {
@@ -314,22 +363,75 @@ public final class InstanceManager extends SavedData {
     }
 
     /**
-     * Marks an active run's goal as done (W4d: when its final boss dies); its players stay until they leave or the
-     * plot closes. False for a plot that is not active.
+     * Marks an active run's goal as done: the entry point for its final boss's death and its objectives (W5, W6), and
+     * {@code /qa instance complete}. Its players stay until they leave or the plot closes, which is now 5 minutes from
+     * now, however much time the run had left ({@link PortalTimer#COMPLETED_TICKS}); the party is told so. False for a
+     * plot that is not active.
      */
     public boolean complete(Plot plot) {
         if (plot.state() != PlotState.ACTIVE) {
             return false;
         }
         plot.complete();
+        plot.setClosesAt(level().getGameTime() + PortalTimer.COMPLETED_TICKS);
+        tell(plot, Component.translatable(GeneratedTexts.MESSAGE_DUNGEON_COMPLETED));
         setDirty();
         return true;
     }
 
     /**
+     * Sets a run's timer to {@code ticks} from now, for {@code /qa instance timer} and the GameTests; the warnings still
+     * come at their times. False for a plot without a run.
+     */
+    public boolean closeIn(Plot plot, long ticks) {
+        if (!plot.state().isPlayable() && plot.state() != PlotState.BUILDING) {
+            return false;
+        }
+        plot.setClosesAt(level().getGameTime() + ticks);
+        setDirty();
+        return true;
+    }
+
+    // ---- Dungeon portals (W4d) ----
+
+    /** Whether run {@code run} of plot {@code plotId} is still open: being built or playable. */
+    public boolean isOpen(int plotId, long run) {
+        Plot plot = plots.get(plotId);
+        return plot != null && plot.run() == run
+                && (plot.state() == PlotState.BUILDING || plot.state().isPlayable());
+    }
+
+    /** What happened when a player used an open portal. */
+    public enum PortalUse {
+        /** The player entered the run. */
+        ENTERED,
+        /** The run is still being built. */
+        STILL_OPENING,
+        /** The run belongs to another player. */
+        NOT_YOURS,
+        /** The run is gone: the portal closed. */
+        CLOSED
+    }
+
+    /** A player used the portal of run {@code run} of plot {@code plotId}: its party member enters once it is built. */
+    public PortalUse usePortal(ServerPlayer player, int plotId, long run) {
+        if (!isOpen(plotId, run)) {
+            return PortalUse.CLOSED;
+        }
+        Plot plot = plots.get(plotId);
+        if (!plot.party().contains(player.getUUID())) {
+            return PortalUse.NOT_YOURS;
+        }
+        if (plot.state() == PlotState.BUILDING) {
+            return PortalUse.STILL_OPENING;
+        }
+        return enter(player, plot) ? PortalUse.ENTERED : PortalUse.NOT_YOURS;
+    }
+
+    /**
      * Ends a plot's run: players still inside are sent back (a dead one when they respawn), then its blocks, its rooms'
      * margin included, are cleared over the next ticks before the plot is free for the next run. Nobody waits for that
-     * (spike 3, ADR 0019).
+     * (spike 3, ADR 0019). Its dungeon portal, if any, closes with it ({@code DungeonPortalBlockEntity}).
      */
     public void release(Plot plot) {
         if (plot.state() == PlotState.CLOSING || plot.state() == PlotState.FREE) {
@@ -352,11 +454,14 @@ public final class InstanceManager extends SavedData {
 
     /**
      * After a login: a player inside the instance dimension stays only if their run still exists; anyone else is
-     * sent back. A player outside it leaves the run they belong to: one they left while offline (they still hold
-     * a visit), or one they never entered because they disconnected while it was being built. Whoever leaves gets
-     * back the game mode entering took from them, also after a crash.
+     * sent back, but a dead one is left to their respawn, which takes them to their return point. A player outside it
+     * leaves the run they belong to: one they left while offline (they still hold a visit), or one they never entered
+     * because they disconnected while it was being built, unless a portal opened it, which keeps it until its timer
+     * runs out. Whoever leaves gets back the game mode entering took from them, also after a crash. Keys owed to the
+     * player are given back.
      */
     public void onLogin(ServerPlayer player) {
+        giveRefunds(player);
         InstanceVisit visit = player.getExistingDataOrNull(DungeonAttachments.VISIT);
         if (!InstanceDimension.isInstance(player.level())) {
             if (visit != null) {
@@ -364,7 +469,8 @@ public final class InstanceManager extends SavedData {
                 leftRun(player.getUUID(), visit.plot());
             }
             for (Plot plot : List.copyOf(plots.values())) {
-                if (plot.party().contains(player.getUUID())) {
+                // A run opened through a portal waits for its player until its timer runs out (W4d).
+                if (plot.party().contains(player.getUUID()) && plot.portal().isEmpty()) {
                     leftRun(player.getUUID(), plot.id());
                 }
             }
@@ -374,6 +480,11 @@ public final class InstanceManager extends SavedData {
         if (plot != null && plot.state().isPlayable() && plot.party().contains(player.getUUID())) {
             // The server may force its default game mode at login.
             player.setData(DungeonAttachments.VISIT, InstanceRules.enterAdventure(player, visit));
+            return;
+        }
+        if (visit != null && player.isDeadOrDying()) {
+            // Released while they lay dead, as release leaves them (RLM-258): their respawn takes them to their
+            // return point, ends the visit and gives their game mode back.
             return;
         }
         LOGGER.info("Sending {} out of the instance dimension: their run is gone",
@@ -442,6 +553,7 @@ public final class InstanceManager extends SavedData {
                     LOGGER.error("Instance plot {} failed to build ({}): {}; releasing it", plot.id(), unit, e.getMessage(), e);
                     // The failed unit counts as run: it may have placed blocks, which closing must clear.
                     plot.advance();
+                    refundKey(plot);
                     release(plot);
                     return true;
                 }
@@ -462,6 +574,13 @@ public final class InstanceManager extends SavedData {
         LOGGER.info("Instance {}", report);
         if (plot.state() == PlotState.BUILDING) {
             plot.finishBuilding(findSpawn(plot));
+            placeExits(plot);
+            Optional<PortalLink> portal = plot.portal();
+            if (portal.isPresent()) {
+                // The party enters through the portal, which stands where they come back to.
+                tell(plot, Component.translatable(GeneratedTexts.MESSAGE_PORTAL_READY, typeName(portal.get())));
+                return;
+            }
             MinecraftServer server = level().getServer();
             for (UUID member : plot.party()) {
                 ServerPlayer player = server.getPlayerList().getPlayer(member);
@@ -510,6 +629,106 @@ public final class InstanceManager extends SavedData {
         LOGGER.warn("Instance plot {}: its entrance room has no entrance marker and no floor to stand on; players "
                 + "arrive on its roof at {}", plot.id(), roof.toShortString());
         return Vec3.atBottomCenterOf(roof.subtract(origin));
+    }
+
+    /**
+     * Sends the timer warnings and releases every run whose timer ran out, telling its party the portal closed.
+     * Returns whether any closed.
+     */
+    private boolean runTimers(ServerLevel level) {
+        long now = level.getGameTime();
+        boolean closed = false;
+        for (Plot plot : List.copyOf(plots.values())) {
+            OptionalLong closesAt = plot.closesAt();
+            if (closesAt.isEmpty() || (plot.state() != PlotState.BUILDING && !plot.state().isPlayable())) {
+                continue;
+            }
+            long left = closesAt.getAsLong() - now;
+            if (left <= 0) {
+                LOGGER.info("Instance plot {}: its portal closed", plot.id());
+                tell(plot, Component.translatable(GeneratedTexts.MESSAGE_PORTAL_CLOSED));
+                release(plot);
+                closed = true;
+            } else {
+                PortalTimer.warning(left).ifPresent(key -> tell(plot, Component.translatable(key)));
+            }
+        }
+        return closed;
+    }
+
+    /**
+     * Lays the dungeon exit where players arrive and at every exit marker, where nothing stands (W4d). Closing clears it
+     * with the rooms.
+     */
+    private void placeExits(Plot plot) {
+        List<Block> exits = BlockKinds.blocks(DungeonBlocks.EXIT_KIND);
+        if (exits.isEmpty()) {
+            return;
+        }
+        BlockState exit = exits.getFirst().defaultBlockState();
+        ServerLevel level = level();
+        BlockPos origin = plot.origin();
+        List<BlockPos> spots = new ArrayList<>();
+        plot.spawn().ifPresent(spawn -> spots.add(BlockPos.containing(spawn).offset(origin)));
+        plot.markers().stream().filter(marker -> marker.kind() == DataMarker.Kind.EXIT)
+                .forEach(marker -> spots.add(origin.offset(marker.pos())));
+        for (BlockPos spot : spots) {
+            if (level.getBlockState(spot).isAir()) {
+                level.setBlock(spot, exit, Block.UPDATE_ALL);
+            }
+        }
+    }
+
+    /** Gives back the key that opened a portal run that could not be built, now or at the player's next login. */
+    private void refundKey(Plot plot) {
+        Optional<PortalLink> portal = plot.portal();
+        if (portal.isEmpty()) {
+            return;
+        }
+        DungeonType type = level().registryAccess().lookupOrThrow(DungeonRegistries.DUNGEON_TYPE)
+                .getValue(portal.get().type());
+        if (type == null) {
+            return;
+        }
+        for (UUID member : plot.party()) {
+            refunds.computeIfAbsent(member, ignored -> new ArrayList<>()).add(type.key());
+            ServerPlayer player = level().getServer().getPlayerList().getPlayer(member);
+            if (player != null) {
+                giveRefunds(player);
+            }
+        }
+        setDirty();
+    }
+
+    private void giveRefunds(ServerPlayer player) {
+        List<Identifier> keys = refunds.remove(player.getUUID());
+        if (keys == null) {
+            return;
+        }
+        for (Identifier key : keys) {
+            BuiltInRegistries.ITEM.getOptional(key)
+                    .ifPresent(item -> player.getInventory().placeItemBackInInventory(new ItemStack(item)));
+        }
+        player.sendSystemMessage(Component.translatable(GeneratedTexts.MESSAGE_PORTAL_FAILED));
+        setDirty();
+    }
+
+    /** Tells the plot's party members who are online. */
+    private void tell(Plot plot, Component message) {
+        MinecraftServer server = level().getServer();
+        for (UUID member : plot.party()) {
+            ServerPlayer player = server.getPlayerList().getPlayer(member);
+            if (player != null) {
+                player.sendSystemMessage(message);
+            }
+        }
+    }
+
+    /** The name of the portal's dungeon type, or its id when the type is gone. */
+    private Component typeName(PortalLink portal) {
+        DungeonType type = level().registryAccess().lookupOrThrow(DungeonRegistries.DUNGEON_TYPE)
+                .getValue(portal.type());
+        return type == null ? Component.literal(portal.type().toString()) : Component.translatable(type.name());
     }
 
     /** Drops the player from the plot's party; a run left with nobody, built or still building, is released. */

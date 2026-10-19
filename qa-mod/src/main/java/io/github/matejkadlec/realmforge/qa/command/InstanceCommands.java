@@ -23,6 +23,9 @@ import net.minecraft.server.level.ServerPlayer;
  * {@code /qa instance ...}: spike 3's tools for instanced dungeons. {@code enter} builds the spike rooms in a plot
  * and moves you in, {@code leave} brings you back (or drops a run still being built for you), {@code build} opens a
  * plot without anyone (from the console too), {@code free}, {@code list} and {@code bench} (measurements, ADR 0019).
+ * W4d adds {@code complete}, which completes your run as its final boss's death will (its portal then closes in 5
+ * minutes), and {@code timer <seconds>}, which sets your run's portal to close that many seconds from now, so the
+ * warnings and the closing can be seen without waiting.
  */
 final class InstanceCommands {
     private static final SimpleCommandExceptionType NO_DIMENSION =
@@ -33,6 +36,8 @@ final class InstanceCommands {
             new SimpleCommandExceptionType(Component.literal("You are not in an instance run"));
     private static final SimpleCommandExceptionType ALREADY_IN_RUN =
             new SimpleCommandExceptionType(Component.literal("You are already in an instance run; leave it first"));
+    private static final SimpleCommandExceptionType NOT_ACTIVE = new SimpleCommandExceptionType(
+            Component.literal("Only an active run completes: enter it first, and complete it once"));
     private static final SimpleCommandExceptionType NO_PLOT =
             new SimpleCommandExceptionType(Component.literal("No such plot in use"));
     private static final SimpleCommandExceptionType BENCH_RUNNING =
@@ -56,6 +61,10 @@ final class InstanceCommands {
                                 .then(Commands.argument("turned", BoolArgumentType.bool())
                                         .executes(context -> open(context, rooms(context), turned(context), false)))))
                 .then(Commands.literal("leave").executes(InstanceCommands::leave))
+                .then(Commands.literal("complete").executes(InstanceCommands::complete))
+                .then(Commands.literal("timer")
+                        .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 4 * 60 * 60))
+                                .executes(InstanceCommands::timer)))
                 .then(Commands.literal("free")
                         .then(Commands.argument("plot", IntegerArgumentType.integer(0))
                                 .executes(InstanceCommands::free)))
@@ -95,6 +104,31 @@ final class InstanceCommands {
         }
         context.getSource().sendSuccess(() -> Component.literal("Left the instance run"), false);
         return 1;
+    }
+
+    private static int complete(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        InstanceManager manager = manager(context);
+        Plot plot = manager.plotOf(player).orElseThrow(NOT_IN_RUN::create);
+        if (!manager.complete(plot)) {
+            throw NOT_ACTIVE.create();
+        }
+        context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
+                "Completed the run in plot %d", plot.id())), true);
+        return 1;
+    }
+
+    private static int timer(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        int seconds = IntegerArgumentType.getInteger(context, "seconds");
+        InstanceManager manager = manager(context);
+        Plot plot = manager.plotOf(player).orElseThrow(NOT_IN_RUN::create);
+        if (!manager.closeIn(plot, seconds * 20L)) {
+            throw NOT_IN_RUN.create();
+        }
+        context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
+                "The run in plot %d closes in %d seconds", plot.id(), seconds)), true);
+        return seconds;
     }
 
     private static int free(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

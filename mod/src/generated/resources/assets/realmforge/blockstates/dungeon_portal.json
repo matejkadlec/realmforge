@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "open=false": {
+      "model": "realmforge:block/dungeon_portal"
+    },
+    "open=true": {
+      "model": "realmforge:block/dungeon_portal_open"
+    }
+  }
+}

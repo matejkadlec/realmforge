@@ -3,6 +3,7 @@ package io.github.matejkadlec.realmforge.dungeon;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceRules;
+import io.github.matejkadlec.realmforge.dungeon.portal.DungeonBlocks;
 import java.util.function.BiConsumer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -16,7 +17,7 @@ import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 
-/** Dungeon types, planner, layout, builder and instances (architecture 15). */
+/** Dungeon types, planner, layout, builder, instances and the dungeon portal (architecture 15). */
 public final class DungeonFeature {
     private DungeonFeature() {
     }
@@ -27,6 +28,7 @@ public final class DungeonFeature {
         modBus.addListener(DataPackRegistryEvent.NewRegistry.class, DungeonRegistries::registerDataPackRegistries);
         InstanceManager.register(modBus);
         InstanceRules.register();
+        DungeonBlocks.register(modBus);
 
         // Inside the level tick, so the builder's time counts in the server's tick time (and /tick query, spark).
         NeoForge.EVENT_BUS.addListener(LevelTickEvent.Post.class, event -> {

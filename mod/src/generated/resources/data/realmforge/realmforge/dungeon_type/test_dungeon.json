@@ -16,6 +16,8 @@
     ],
     "ending": "treasure"
   },
+  "key": "realmforge:test_dungeon_key",
+  "open_minutes": 30,
   "rooms": [
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/entrances/entrance_1",

@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
+# The dungeon portal (W4d, RLM-181; Matěj's decision of 2026-10-11 in RLM-34): a dungeon key used on it opens a portal
+# to the key's dungeon type for that type's open time, and only the player who opened it can pass through. Reusable;
+# it cannot be broken while open. A placeholder look until the A* assets, and a placeholder recipe until balance.
+id: dungeon_portal
+name:
+  en_us: Dungeon Portal
+kind: dungeon_portal
+hardness: 5
+blast_resistance: 6
+tool: pickaxe
+requires_tool: true
+sound: stone
+map_color: color_gray
+creative_tabs:
+  - minecraft:functional_blocks
+recipe:
+  pattern:
+    - SSS
+    - SIS
+    - SSS
+  key:
+    S: minecraft:stone_bricks
+    I: minecraft:iron_ingot

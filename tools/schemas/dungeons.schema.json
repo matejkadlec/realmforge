@@ -79,7 +79,7 @@
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "A kind of dungeon: the room pool it is built from and the rules of its layout. Encounters, loot, its level\nrange, its theme and its key come with the tasks that use them.",
+  "description": "A kind of dungeon: the room pool it is built from, the rules of its layout, the key that opens a portal to it\nand how long that portal stays open (W4d). Encounters, loot, its level range and its theme come with the tasks\nthat use them.",
   "properties": {
     "id": {
       "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
@@ -88,12 +88,25 @@
       "title": "Id",
       "type": "string"
     },
+    "key": {
+      "description": "The item that opens a dungeon portal to it, used up each time: its key. One key per dungeon type.",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+      "title": "Key",
+      "type": "string"
+    },
     "layout": {
       "$ref": "#/$defs/LayoutDef"
     },
     "name": {
       "$ref": "#/$defs/LocalizedText",
       "description": "The dungeon's name, a label (Title Case)."
+    },
+    "open_minutes": {
+      "description": "How long a portal to it stays open, in minutes; then everyone inside is sent back (W4d).",
+      "maximum": 240,
+      "minimum": 1,
+      "title": "Open Minutes",
+      "type": "integer"
     },
     "pool": {
       "description": "The room pool it is built from: the rooms whose sidecar lists this id in its pools.",
@@ -106,7 +119,9 @@
     "id",
     "name",
     "pool",
-    "layout"
+    "layout",
+    "key",
+    "open_minutes"
   ],
   "title": "DungeonTypeDef",
   "type": "object"

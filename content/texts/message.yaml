@@ -40,3 +40,48 @@ texts:
   # A bed in a realm, which sets no spawn: a player always respawns in Overworld (RLM-128).
   bed_only_overworld:
     en_us: Beds only work in Overworld
+  # Dungeon portals (W4d, RLM-181, architecture 15.5). A key opened a portal (%1$s the dungeon type's name, %2$s the
+  # minutes it stays open).
+  portal_opening:
+    en_us: The portal to %1$s is opening. It stays open for %2$s minutes.
+  # The dungeon behind the portal is built (%1$s the dungeon type's name).
+  portal_ready:
+    en_us: The portal to %1$s is open. Use it to enter.
+  # Used while the dungeon behind it is still being built.
+  portal_still_opening:
+    en_us: The portal is still opening.
+  # Used by a player who did not open it: a dungeon is solo (D8).
+  portal_not_yours:
+    en_us: This portal leads to someone else's dungeon.
+  # A closed portal used without a key.
+  portal_needs_key:
+    en_us: Use a dungeon key on the portal to open it.
+  # A key used on a portal that is already open.
+  portal_already_open:
+    en_us: This portal is already open.
+  # A key used on a portal inside a dungeon.
+  portal_inside_dungeon:
+    en_us: A portal cannot open inside a dungeon.
+  # A key used by a player who already has a dungeon.
+  portal_dungeon_already_open:
+    en_us: You already have a dungeon open. Leave it before you open another.
+  # The dungeon could not be planned or built; the key is given back.
+  portal_failed:
+    en_us: The dungeon could not be built, so your key was returned.
+  # Warnings before the portal closes and sends everyone inside back.
+  portal_closes_in_5_minutes:
+    en_us: The portal closes in 5 minutes.
+  portal_closes_in_1_minute:
+    en_us: The portal closes in 1 minute.
+  portal_closes_in_10_seconds:
+    en_us: The portal closes in 10 seconds.
+  portal_closed:
+    en_us: The portal has closed.
+  # The dungeon's goal is done (its final boss died); the portal now closes in 5 minutes (Matěj's wording, RLM-181).
+  dungeon_completed:
+    en_us: You completed the instance and will be automatically teleported out in 5 minutes. Use '/instance leave' to exit immediately.
+  # /instance leave, or the dungeon exit.
+  dungeon_left:
+    en_us: You left the dungeon.
+  not_in_dungeon:
+    en_us: You are not in a dungeon.

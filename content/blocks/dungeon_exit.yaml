@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
+# The way out of a dungeon (W4d, RLM-181): the builder lays it where players arrive, and at every exit marker. Using it
+# leaves the dungeon, as /instance leave does. Never crafted; a placeholder look until the A* assets.
+id: dungeon_exit
+name:
+  en_us: Dungeon Exit
+kind: dungeon_exit
+hardness: 1.5
+sound: stone
+map_color: color_light_gray

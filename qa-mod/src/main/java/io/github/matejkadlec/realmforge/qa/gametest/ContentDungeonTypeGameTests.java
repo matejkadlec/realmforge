@@ -17,6 +17,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.JigsawBlock;
@@ -58,6 +59,10 @@ public final class ContentDungeonTypeGameTests {
                             expected.branchesMax(), expected.branchRoomsMin(), expected.branchRoomsMax()),
                     expected.id() + " layout ranges");
             helper.assertValueEqual(layout.ending().getSerializedName(), expected.ending(), expected.id() + " ending");
+            helper.assertValueEqual(type.key().toString(), expected.key(), expected.id() + " key");
+            helper.assertValueEqual(type.openMinutes(), expected.openMinutes(), expected.id() + " open minutes");
+            helper.assertTrue(BuiltInRegistries.ITEM.getValue(type.key()).builtInRegistryHolder().is(DungeonType.KEYS),
+                    expected.id() + "'s key is in the item tag " + DungeonType.KEYS.location());
             helper.assertValueEqual(type.rooms().stream().map(ContentDungeonTypeGameTests::asWritten).toList(),
                     expected.rooms(), expected.id() + " rooms");
         }

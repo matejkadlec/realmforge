@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "G": "minecraft:gold_nugget",
+    "I": "minecraft:iron_ingot"
+  },
+  "pattern": [
+    "G",
+    "I"
+  ],
+  "result": {
+    "id": "realmforge:test_dungeon_key"
+  }
+}

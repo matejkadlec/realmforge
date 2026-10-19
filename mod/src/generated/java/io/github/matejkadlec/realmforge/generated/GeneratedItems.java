@@ -47,6 +47,10 @@ public final class GeneratedItems {
     public static final DeferredItem<Item> STONE_WAND =
             ITEMS.registerSimpleItem("stone_wand", properties -> properties.stacksTo(1));
 
+    /** {@code realmforge:test_dungeon_key} from {@code content/items/test_dungeon_key.yaml}. */
+    public static final DeferredItem<Item> TEST_DUNGEON_KEY =
+            ITEMS.registerSimpleItem("test_dungeon_key", properties -> properties.stacksTo(16));
+
     /** {@code realmforge:test_item} from {@code content/items/test_item.yaml}. */
     public static final DeferredItem<Item> TEST_ITEM =
             ITEMS.registerSimpleItem("test_item", properties -> properties.stacksTo(16));
@@ -74,6 +78,7 @@ public final class GeneratedItems {
             }
             case "minecraft:tools_and_utilities" -> {
                 event.accept(OBLIVION_SCROLL);
+                event.accept(TEST_DUNGEON_KEY);
             }
             default -> {
             }
