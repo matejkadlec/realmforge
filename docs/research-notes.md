@@ -19,6 +19,7 @@ Later topic research, starting with the reference games Craft to Exile 2, Advent
 | GameTests (location unspecified) | In the dev-only QA mod `realmforge_qa`; the release jar has no test code | [0010](decisions/0010-testing-strategy.md) |
 | Communicate with the owner in Czech | English | [vision](vision.md#owner) |
 | Lang files in `en_us`, possibly `cs_cz` | English only (decided 2026-10-13); a community translation would ship as a resource pack | [vision](vision.md#owner) |
+| Build ourselves: gear rarity, affixes, gems, reforging and enchanting, with Apotheosis and Apothic Enchanting as inspiration | Apotheosis, Apothic Attributes and Apothic Enchanting are in the pack (Matěj, 2026-10-15 and 16) and carry them, fitted to our stats: Apothic Attributes' crit and dodge never fire, its formulas are vanilla's | [0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) |
 | Remove Nether and End "if you choose it" | Removed (decided 2026-10-12), and the items get new sources; Ashfire, a late fire realm, does not replace the Nether (2026-10-16) | [0025](decisions/0025-remove-the-nether-and-end.md), [0032](decisions/0032-v1-realm-layout-amends-the-nether-and-end-removal.md) |
 | The owner builds key rooms in creative | Nobody builds rooms by hand (decided 2026-10-12): generated rooms plus an imported MIT, CC0 and LGPL-3.0 baseline with its notices | [0028](decisions/0028-dungeon-rooms-generated-or-imported.md) |
 | No vanilla textures, not even as AI input | No vanilla texture files or recolours in our assets, and none as input for generating our textures; vanilla blocks in our structures and renders of them are fine | [0028](decisions/0028-dungeon-rooms-generated-or-imported.md) |
@@ -58,7 +59,7 @@ The report builds on the [vision](vision.md) and the private artifact [Design No
 
 **What weighs most from the vision:**
 
-- Core 100% our own. Third parties only for QoL, UI and libraries, plus Better Combat, MineColonies, Distant Horizons and Iris unchanged. (Turned around by Matěj on 2026-10-15: Apotheosis, Apothic Attributes and Apothic Enchanting are in, with a weapons mod and more to replace planned custom work; the custom core is realms, quests, races, classes, spells, professions and semi-custom dungeons. RLM-205 carries the change and the ADR amending ADR 0004; [vision](vision.md), RLM-220.)
+- Core 100% our own. Third parties only for QoL, UI and libraries, plus Better Combat, MineColonies, Distant Horizons and Iris unchanged. (Turned around by Matěj on 2026-10-15: Apotheosis, Apothic Attributes and Apothic Enchanting are in, with a weapons mod and more to replace planned custom work; the custom core is realms, quests, races, classes, spells, professions and semi-custom dungeons. [ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) records it, amending ADR 0004; [vision](vision.md), RLM-205, RLM-220.)
 - Interconnected systems are the main value: one own core, not a patchwork of third-party frameworks.
 - Volume (500+ quests, 100+ structures, 5-10+ dimensions) is unsustainable without generation and validation. (100+ structures counts small simple ones and other mods' structures; fully custom ones number dozens, Matěj, 2026-10-15, RLM-220.)
 - Balance without RNG grind and without one-shots, measurable by simulation (section 6).
@@ -124,7 +125,7 @@ The original recommendation, kept for its reasoning: NeoForge 1.21.1 (21.1.x), M
 
 ## 3. Take as-is vs build
 
-Recommendation (accepted, [ADR 0004](decisions/0004-build-rpg-systems-in-house.md)): build all RPG systems ourselves; take QoL, UI, performance, libraries and a few big mods unchanged. Third-party RPG frameworks (Spell Engine, Pufferfish's Skills, Apotheosis) are models, not foundations: each brings its own attributes and assumptions, and interconnected systems are the main value. (For Apotheosis and the Apothic mods Matěj turned this around on 2026-10-15: they join the pack, RLM-205, whose ADR amends ADR 0004.)
+Recommendation (accepted, [ADR 0004](decisions/0004-build-rpg-systems-in-house.md)): build all RPG systems ourselves; take QoL, UI, performance, libraries and a few big mods unchanged. Third-party RPG frameworks (Spell Engine, Pufferfish's Skills, Apotheosis) are models, not foundations: each brings its own attributes and assumptions, and interconnected systems are the main value. **Superseded in part** by [ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md): Matěj turned this around on 2026-10-15 for Apotheosis and the Apothic mods, which are in the pack and carry gear rarity, affixes, gems, reforging and enchanting; the custom core is realms, quests, races, classes, spells, professions and semi-custom dungeons.
 
 ### Take as-is
 
@@ -137,6 +138,7 @@ All have NeoForge 26.1.2 builds. The pack only references them, nothing is forke
 | Storage | Sophisticated Storage + Backpacks, Tom's Simple Storage | |
 | World | Regions Unexplored (beta on 26.1.2), Tree Harvester | Tree Harvester replaces TreeChop, which stayed on 1.21.1; Quark was dropped |
 | Big mods unchanged | Better Combat, Distant Horizons, Iris; MineColonies paused | MineColonies (CurseForge-only) has no 26.1.2 build yet; RLM-125 adds it back |
+| Gear and enchanting | Apotheosis, Apothic Attributes, Apothic Enchanting | since 2026-10-15 ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)); fitted to our stats, so Apothic Attributes' crit and dodge never fire |
 | Performance | Sodium, Lithium, FerriteCore, ModernFix, ImmediatelyFast, EntityCulling, spark (profiler) | Embeddium is replaced by official Sodium |
 
 ### Libraries we build on
@@ -160,8 +162,8 @@ All have NeoForge 26.1.2 builds. The pack only references them, nothing is forke
 | Spells, skills, spell schools | Spell Engine (best data format), Iron's Spells | spell type in Java, parameters in data |
 | Talents and glyphs | WoW talents, Pufferfish's Skills, Passive Skill Tree | WoW-style GUI, not a node web |
 | Status effects | Iron's Spells (Oakskin), WoW | boss buffs and debuffs |
-| Gear: rarity, affixes, gems, reforging, RNG item chests | Apotheosis (code MIT, assets ARR) | data components on the item |
-| Enchanting without RNG | Apothic Enchanting | data-driven enchantments (since 1.21) |
+| Gear: RNG item chests | Apotheosis (code MIT, assets ARR) | items that roll a loot table. **Superseded:** rarity, affixes, gems and reforging come from Apotheosis itself ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)) |
+| Enchanting with less RNG | Apothic Enchanting | **Superseded:** Apothic Enchanting itself is in the pack ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)) |
 | Professions | WoW, Dave's Potioneering | levels, recipes as data |
 | Pets and mounts | WoW Hunter pet and mounts, familiars from Otherworld | GeckoLib models |
 | Mobs and bosses with phases | Hades II, WotLK | no flying bosses |

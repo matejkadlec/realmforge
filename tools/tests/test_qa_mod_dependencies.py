@@ -1,8 +1,9 @@
 """The QA mod's Modrinth dependencies are the builds the modpack ships (RLM-83).
 
-`qa-mod/build.gradle` names Player Animation Library, Better Combat, Cloth Config and Yeetus Experimentus by Modrinth
-version id (`maven.modrinth:<slug>:<id>`); each id must equal `version` under `[update.modrinth]` in
-`pack/mods/<slug>.pw.toml`, or the dev runs would test our code against other jars than players get.
+`qa-mod/build.gradle` names Player Animation Library, Better Combat, Cloth Config, Yeetus Experimentus, Placebo,
+Apothic Attributes, Apothic Enchanting, Apotheosis, Enchantment Descriptions and Prickle (RLM-271) by Modrinth version
+id (`maven.modrinth:<slug>:<id>`); each id must equal `version` under `[update.modrinth]` in `pack/mods/<slug>.pw.toml`,
+or the dev runs would test our code against other jars than players get.
 """
 
 from __future__ import annotations
@@ -15,7 +16,18 @@ from realmforge_tools.project import REPO_ROOT
 from tests.conftest import write
 
 COORDINATE = re.compile(r"""['"]maven\.modrinth:([a-z0-9_-]+):([^'"$]+)['"]""")
-PACK_SLUGS = {"player-animation-library", "better-combat", "cloth-config", "yeetus-experimentus"}
+PACK_SLUGS = {
+    "player-animation-library",
+    "better-combat",
+    "cloth-config",
+    "yeetus-experimentus",
+    "placebo",
+    "apothic-attributes",
+    "apothic-enchanting",
+    "apotheosis",
+    "enchantment-descriptions",
+    "prickle",
+}
 
 
 def modrinth_coordinates(build_gradle: str) -> dict[str, str]:

@@ -4,7 +4,9 @@
 > Nether and End (RLM-199). Written on 2026-10-17 from Matěj's decisions on both tickets (2026-10-15 to 2026-10-17).
 > Matěj adopted Apotheosis, Apothic Attributes and Apothic Enchanting on 2026-10-15 (RLM-201); that ticket holds
 > the research this document builds on, read in the 26.1 sources (Apotheosis 9.1.0 `f2e7686`). RLM-205 brings the
-> mods into the pack with the ADR that amends [ADR 0004](../decisions/0004-build-rpg-systems-in-house.md), RLM-232
+> mods into the pack with [ADR 0038](../decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md),
+> which amends [ADR 0004](../decisions/0004-build-rpg-systems-in-house.md), in three parts (RLM-271 the mods with
+> Apothic Attributes' crit and dodge off, RLM-272 the data from our YAML, RLM-273 the loot categories); RLM-232
 > carries the affix set, RLM-198 the rest of the Apotheosis data, RLM-240 the mob levels and RLM-241 the merchants
 > that sell Nether and End materials. Numbers are Apotheosis 9.1.0's defaults unless a line says otherwise.
 
@@ -130,7 +132,7 @@ later, because many systems make the player stronger and only the levels make mo
 | Invaders | bosses in affix gear, 0–3 % of natural spawns by tier, only in listed dimension types | Apotheosis data; our realms to be listed |
 
 - **Stats point at ours:** an augment, affix or gem that grants an `apothic_attributes:` stat is remapped to ours
-  (armor pierce included) or switched off (RLM-205). Our stats exist only on players today
+  (armor pierce included) or switched off (RLM-272). Our stats exist only on players today
   (`StatsFeature#addToPlayers`), so a mob augment with armor pierce needs them on mobs (open question 2).
 - **Apotheosis's default elites, invaders and gems** cover Overworld, the Nether and the End. Without the Nether and
   End ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)) only Overworld's apply; each realm adds its own
@@ -212,14 +214,14 @@ For Matěj; each has a proposal so the integration can go on.
 
 1. **Apotheosis's progression advancements.** With our mod setting the tier, the tab's goals (the Wither, the
    Ender Dragon, five slots of rarer gear) no longer unlock anything, and the Ender Dragon's cannot be reached.
-   Proposal: hide the tab by overriding the advancements with a false condition (RLM-205).
+   Proposal: hide the tab by overriding the advancements with a false condition (RLM-272).
 2. **Our stats on mobs, and mob crits.** Remapped augments need our combat stats (armor pierce, armor shred) on
    mobs, and Matěj's idea of monsters that crit with our crit, never Apothic Attributes', needs our crit stats there
    too, with a chance that could rise with the mob's level. Proposal: register our combat stats on hostile mobs with
-   RLM-205's remapping; mob crits wait for their own ticket after a playtest of the layers above.
+   RLM-272's remapping; mob crits wait for their own ticket after a playtest of the layers above.
 3. **Elites and invaders per realm.** Proposal: each realm's dimension type joins the invader spawn rules when the
    realm ships, with Apotheosis's default invaders first and realm-themed ones as the realm's content grows;
-   Undervault joins with RLM-205.
+   Undervault joins with RLM-272.
 4. **Armor from both the curve and the augments.** Our level curve and the tier augments both add armor, and
    RLM-204 asked that no stat be counted twice. Proposal: keep both as Matěj asked, and retune the armor curve if
    the playtest shows mobs too tanky; the augments' armor stays within vanilla's formula since RLM-223.

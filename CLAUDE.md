@@ -7,7 +7,10 @@ must be written into the repo (this file, `docs/`, git history).
 
 Realmforge is an RPG mod and modpack for Minecraft 26.1.2 (NeoForge) inspired by World of Warcraft ("WoW" means
 Classic, TBC and WotLK alike, Classic the main reference; never Cataclysm or later, never retail). It is a hybrid:
-our own core mod holds all RPG systems; the modpack adds third-party QoL, performance and library mods.
+our own core mod holds the custom core (realms, quests, races, classes, spells, professions, semi-custom dungeons);
+the modpack adds third-party QoL, performance and library mods, and gameplay mods fitted to our stats, such as
+Apotheosis for gear rarity, affixes, gems and enchanting
+([ADR 0038](docs/decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)).
 
 - **Owner:** Matěj, a Python full-stack (Django) developer with little Java and modding experience. The project is
   vibe-coded: agents do most of the work, Matěj sets direction, reviews and playtests. **Communicate in English.**

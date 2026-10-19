@@ -379,6 +379,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | item YAML with a weapon preset | `data/realmforge/weapon_attributes/<item>.json` (Better Combat format) | read by Better Combat |
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
 | `texts/` (exists) | lang keys `<group>.realmforge.<name>`, `GeneratedTexts` constants | translations |
+| `apotheosis_affixes/` (exists, RLM-271) | `data/apotheosis/apotheosis/affixes/<path>.json`, replacing Apotheosis's affix at that path ([19.4](#194-optional-integrations)) | Apotheosis's affix registry |
 | every type | `tools/schemas/<type>.schema.json` | editor completion |
 
 **Block kinds.** A block in `content/blocks/` is `simple` (a full block) unless its `kind` names behavior that is game
@@ -538,7 +539,8 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   stamina so it is never confused with a stamina resource) and intellect (INT). They are attributes, so gear, buffs
   and talents modify them like anything else. They start at 0: race, class, the stat points a player spends, talents
   and gear raise them (C1 and later; levels give stat points, not stats: RLM-196). Luck and defense stay out (D5).
-- **Secondary stats (ours):** crit chance (5 % to start with), crit damage (+50 %), dodge chance (no primary stat
+- **Secondary stats (ours):** crit chance (5 % to start with), crit damage (+50 %: a crit deals 150 % for melee,
+  ranged and spell hits alike, Matěj, 2026-10-19, who first meant it for spells only), dodge chance (no primary stat
   gives it: D5 keeps it for future classes such as the Rogue), spell power, and each magic school's power and
   resistance (`fire_power`, `fire_resistance`, ...; F5, the resistances capped at 75 % so nothing becomes immune
   without a tell, research BM-18). Matěj's playtest of F4b and F5 (2026-10-13) set the rest of the list, shown on the
@@ -660,7 +662,8 @@ nothing. So:
 - `AttributeCaps.max` reads the cap of any attribute from the attribute itself, and `AttributeCaps.RAISED` lists the
   raised ones. Our own stats take their caps from `content/stats/` (`max`, `max_percent`), so a stat with a hard cap,
   such as tenacity (research SP-12), is a content entry, and code asks `AttributeCaps.max` for its cap.
-- Every other cap stays vanilla's.
+- Every other cap stays vanilla's, except two of Apothic Attributes' that are capped down so its crit and dodge
+  never fire: its crit damage at 1.0 and its dodge chance at 0 ([19.4](#194-optional-integrations)).
 - Armor mitigation is vanilla's formula, after our armor pierce and shred ([9.1](#91-damage-pipeline), RLM-223).
 
 ## 9. Combat
@@ -688,7 +691,8 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
    the amount the spell engine deals ([11.2](#112-casting-server-authoritative)).
 2. **`CriticalHitEvent`**, for a player's melee attack: a full-strength attack crits on the player's crit chance and
    deals 1 + crit damage, instead of vanilla's jump crit (a jump no longer matters). Vanilla still plays its crit
-   sound and particles, and a crit keeps a sword's sweep (vanilla's jump crits never happened on the ground).
+   sound and particles, and a crit keeps a sword's sweep (vanilla's jump crits never happened on the ground). Our crit
+   and dodge are the only ones: Apothic Attributes' never fire ([19.4](#194-optional-integrations)).
 3. **`LivingIncomingDamageEvent`**, before mitigation:
    - **Dodge** (the defender's dodge chance) cancels a melee hit, a projectile or a physical school hit from an
      attacker; magic, explosions and damage from the world cannot be dodged. Cancelling stops a hit cleanly since
@@ -712,7 +716,8 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
      projectiles (their shooter's) and physical school hits. NeoForge runs that reduction for every hit, so the
      formula keeps vanilla's (zero) reduction for damage in `#minecraft:bypasses_armor`. Vanilla still wears the
      armor down. The formula is ours in code (`DamageCalculator#armorReduction`, JUnit-checked against vanilla's), so
-     a mod that replaces `CombatRules` (Apothic Attributes, RLM-205) does not change it
+     a mod that replaces `CombatRules` (Apothic Attributes, whose armor and protection formulas the pack sets to
+     vanilla's anyway, [19.4](#194-optional-integrations)) does not change it
      ([ADR 0033](decisions/0033-vanilla-armor-formula-amends-our-own.md)).
    - **The magic shield** joins the absorption reduction
      (`addReductionModifier(DamageContainer.Reduction.ABSORPTION, ...)`) of a defender that has the stat or points
@@ -1219,20 +1224,16 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
   dependency on `item`. A use and an item's `flavor` line are its tooltip: the vanilla lore component on the item's
   default components, the use as a green "Use:" line from `content/texts/item_use.yaml`, the flavor line in vanilla's
   lore style. The first use, `unlearn_stat_points`, is the Scroll of Oblivion's ([10.2](#102-leveling)).
-- **Rarity:** the vision wants five tiers, common to legendary; vanilla's `Rarity` has four (common to epic). M2
-  picks one of two ways:
-  - extend vanilla `Rarity` with a fifth constant through NeoForge's enum extension (in NeoForge 26.1 `Rarity` is
-    an `IExtensibleEnum`): name colours then work wherever vanilla styles item names (tooltips, chat) and likely in
-    mods that reuse that styling (*verify* Jade and JEI), but vanilla raises the shown rarity of enchanted common,
-    uncommon and rare items (`ItemStack#getRarity`);
-  - our own data component: full control and WoW-style colours, but we style item names ourselves and other mods
-    do not see the tier.
-- **Affixes, gems, reforging (M2):** rolled affixes are a data component on the stack (`realmforge:affixes`: affix
-  key plus rolled values). `ItemAttributeModifierEvent` turns them into attribute modifiers, so vanilla applies them
-  on equip and lists them in tooltips; special affixes are procs. Sockets and gems are another component;
-  reforging is a station with a menu.
-- **Loot:** loot tables generated from YAML, with our own loot functions (`Registries.LOOT_FUNCTION_TYPE`, for
-  example "roll affixes for the mob's level"), so other mods and data packs see ordinary loot tables. "No trash loot"
+- **Rarity, affixes, gems, reforging and enchanting (M2) come from Apotheosis**, Apothic Attributes and Apothic
+  Enchanting, which are in the pack ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)):
+  its five rarities (mythic shown as Legendary), affixes, gems and sockets live in its own data components and data,
+  and its tables reforge, salvage and augment. There is no rarity of our own (vanilla's `Rarity` stays as it is), no
+  `realmforge:affixes` component and no item level. We fit it to our systems: its stats point at ours, its data is
+  generated from `content/` (RLM-272), our wands and curio slots get loot categories of their own (RLM-273), and its
+  world tier follows our realms ([Apotheosis design](design/apotheosis.md)). Apothic Attributes' own crit and dodge
+  are switched off ([19.4](#194-optional-integrations)).
+- **Loot:** loot tables generated from YAML, with our own loot functions (`Registries.LOOT_FUNCTION_TYPE`) where
+  vanilla's and Apotheosis's are not enough, so other mods and data packs see ordinary loot tables. "No trash loot"
   is a validation rule: a denylist plus a minimum value per tier.
 - **Rewards:** quest choice rewards are pre-rolled stacks written into the quest files (ADR 0006). RNG item chests
   (M2) are items that roll a loot table when opened.
@@ -2045,7 +2046,7 @@ numbers are content, so they are versioned, validated and tested.
 Last resort, only where no event or API exists. Each one sits in `mixin/` (or the access transformer file) with a
 comment saying why, and gets a test. A mod lists its mixins in `<modid>.mixins.json`, which `neoforge.mods.toml`
 names under `[[mixins]]`. The core mod's one is `RangedAttributeAccessor`, which raises attribute caps
-([8.4](#84-caps)). The QA mod has one too, for tests only: `GameTestServerMixin` gives the GameTest world the data
+([8.4](#84-caps)) and caps two of Apothic Attributes' down ([19.4](#194-optional-integrations)). The QA mod has one too, for tests only: `GameTestServerMixin` gives the GameTest world the data
 pack dimensions, which vanilla leaves out ([20](#20-tests-per-layer)).
 
 Access transformers live in `src/main/resources/META-INF/accesstransformer.cfg`, which ModDevGradle applies to the
@@ -2061,6 +2062,53 @@ and `Right` for the shoulder entities a realm trip leaves behind ([15.1](#151-di
 `compat/<modid>/` (client parts in `client/compat/<modid>/`) runs only when `ModList.get().isLoaded(modid)`, with
 an optional dependency in `neoforge.mods.toml`. Data-only integrations (Better Combat weapon files and its disable
 tag, Xaero icons, FTB Quests files) need no code.
+
+**Apothic Attributes** (RLM-271, [ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md))
+is Apotheosis's attribute library, with a crit and a dodge of its own that would roll next to ours
+([9.1](#91-damage-pipeline)). `compat/apothic_attributes/ApothicAttributesCompat` switches both off, looking its
+attributes up by id, so the core mod has no compile-time dependency on it:
+
+- every entity type gets its crit chance 0 and crit damage 1.0 as base values (it adds them at 5 % and 150 %),
+  through `EntityAttributeModificationEvent` at LOW priority, a phase FML runs after every mod's NORMAL listeners;
+- its crit damage is capped at 1.0 and its dodge chance at 0 at common setup (`RangedAttributeAccessor`,
+  [8.4](#84-caps)), so no affix, gem or tier augment lifts them before RLM-272 remaps its data to our stats. Its crit
+  adds damage only above a crit damage of 1, and its dodge rolls a random float against the dodge chance, which at
+  0 dodges only on a float of exactly 0 (once in 2^24 rolls).
+
+The pack's config (`pack/config/apotheosis/`) sets its protection and armor formulas to vanilla's and turns its
+attributes panel off; Apothic Enchanting's inlined enchantment descriptions are on, because it replaces the
+enchantment tooltip that Enchantment Descriptions hooks into, and shows Enchantment Descriptions' texts itself. The
+QA mod's dev runs load the three mods with Enchantment Descriptions and copy `pack/config/` into their config folders
+(`seedPackConfig`), and `ApothicAttributesGameTests` check that its crit and dodge never fire, also with its crit and
+dodge modifiers on the attacker and the target.
+
+**Their data, fixed and fitted** (RLM-271). The core mod declares an optional dependency on Apotheosis and Apothic
+Enchanting with `ordering = "AFTER"`: FML sorts the mod files by those edges, and NeoForge stacks the mods' data packs
+in that order, so a file of ours replaces theirs at the same path.
+
+- **Apotheosis's affixes** come from `content/apotheosis_affixes/` ([6.2](#62-what-each-content-type-becomes)): an
+  entry names the affix it replaces and holds its whole definition, and `rf gen` writes it to Apotheosis's own path
+  (`data/apotheosis/apotheosis/affixes/<path>.json`). The first is Lucky, whose `apotheosis:charm` loot category
+  exists only with Curios: without it Apotheosis skipped the whole affix with an error on every load. RLM-272
+  remaps the other affixes to our stats the same way.
+- **Apothic Enchanting's stale list of loot modifiers** (`data/neoforge/loot_modifiers/global_loot_modifiers.json`,
+  the NeoForge 21.1 format) is replaced by a file in the core mod's resources whose `neoforge:never` condition makes
+  NeoForge skip it quietly. NeoForge 26.1 reads every file in `loot_modifiers/` as a modifier and logged an error for
+  that list; the warden tendril modifier it names loads on its own. It is a fix for another mod's data, not content,
+  like the instances dimension the code needs ([15.1](#151-dimensions)).
+
+The pack boot and the GameTest log allow none of these errors, so a mod update that brings one back fails them.
+
+Checked against our systems (RLM-271), with nothing to fix:
+
+- **Better Combat's reach** is the player's entity interaction range, which includes Apotheosis's reach affix,
+  plus the weapon preset's range bonus; only bows and crossbows have a fixed range. Its swing timing reads the attack
+  speed attribute, so attack speed affixes change it as they should.
+- **Mob health:** Apotheosis keeps a mob's share of health when it adds tier augments on join, and W1 refills a
+  new mob to its maximum on join ([14.1](#141-mob-levels)), so a fresh mob ends at full health in either order.
+- **Damage-type tags:** Apotheosis adds tags to single damage sources (its Magical arrows and Thunderstruck count
+  as magic or lightning and bypass armor). Our school check reads the damage type, not tags, so such a hit is no
+  school hit; our armor formula honours `#minecraft:bypasses_armor`, and our dodge still applies to the arrow.
 
 ### 19.5 Performance
 

@@ -102,6 +102,31 @@ dimension. Leashed mobs travel along (`transportLeashed`), pets do not
 into a realm the player has not unlocked is the core mod's job (realm portal
 spec, W2a).
 
+**Apothic Attributes** (`config/apotheosis/apothic_attributes.cfg`, Apothic
+Attributes 3.1.0, RLM-271, [ADR 0038](../docs/decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)).
+Apotheosis's attribute library is fitted to our combat, whose formulas and stats
+stay the only ones:
+
+- `combat_rules."Protection Formula" = 1 - min(protPoints, 20) / 25`: vanilla's
+  protection, 4 % a point up to 80 %, instead of 2.5 % a point up to 85 %.
+- `combat_rules."Armor Formula"`: vanilla's armor formula, as the config's own
+  note gives it, instead of `a / (a + armor)`. Our damage pipeline computes armor
+  itself, so this only keeps other callers of vanilla's `CombatRules` in step
+  ([ADR 0033](../docs/decisions/0033-vanilla-armor-formula-amends-our-own.md)).
+- `general."Enable Attributes GUI" = false`: no attributes panel of its own;
+  our character sheet shows the stats.
+
+Its crit and dodge are switched off in code, not here
+([architecture 19.4](../docs/architecture.md#194-optional-integrations)).
+
+**Apothic Enchanting** (`config/apotheosis/apothic_enchanting.cfg`, Apothic
+Enchanting 2.1.0, RLM-271): `client."Enable Inlined Enchantment Descriptions" =
+true`. Apothic Enchanting writes the enchantment lines of a tooltip itself and
+cancels vanilla's, which Enchantment Descriptions hooks into, so without this
+no enchantment shows its description. The descriptions are Enchantment
+Descriptions' texts (the dev runs load it too), shown in dark grey under each enchantment on every item;
+Enchantment Descriptions' own options (books only, hold Shift) no longer apply.
+
 ## Optional mods
 
 The pack has none since Quark left with the 26.1.2 port. An optional mod is
@@ -112,14 +137,20 @@ and installs every optional mod.
 ## Mods the QA mod uses too
 
 The dev-only QA mod gets **Player Animation Library**, **Better Combat**,
-**Cloth Config** and **Yeetus Experimentus** from Modrinth's Maven, so the dev
-runs (`./gradlew runClient`, with `-PwithBetterCombat` for Better Combat) test
-our code against the jars players get. `qa-mod/build.gradle` names them by
-Modrinth version id, the `version` under `[update.modrinth]` in
-`mods/player-animation-library.pw.toml`, `better-combat.pw.toml`,
-`cloth-config.pw.toml` and `yeetus-experimentus.pw.toml`. Updating one of these
-mods means updating `qa-mod/build.gradle` too: `uv run pytest`
+**Cloth Config**, **Yeetus Experimentus**, **Placebo**, **Apothic
+Attributes**, **Apothic Enchanting**, **Apotheosis**, **Enchantment
+Descriptions** and **Prickle** from Modrinth's Maven,
+so the dev runs (`./gradlew runClient`, with `-PwithBetterCombat` for Better
+Combat) and the GameTests test our code against the jars players get.
+`qa-mod/build.gradle` names them by Modrinth version id, the `version` under
+`[update.modrinth]` in their `mods/<slug>.pw.toml`. Updating one of these mods
+means updating `qa-mod/build.gradle` too: `uv run pytest`
 (`tools/tests/test_qa_mod_dependencies.py`) fails while they differ.
+
+Every dev run (client, server, GameTest server) also gets this folder's
+`config/`: the QA mod's `seedPackConfig` task copies it into the run's `config/`
+folder before each launch, replacing the files the mods wrote, as
+packwiz-installer does in a player's instance.
 
 ## Boot test
 

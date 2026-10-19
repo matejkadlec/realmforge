@@ -6,6 +6,7 @@ wrong types are errors. JSON Schemas for editor completion are generated from th
 
 from dataclasses import dataclass
 
+from realmforge_tools.schema.apotheosis_affix import ApotheosisAffixDef
 from realmforge_tools.schema.block import BlockDef
 from realmforge_tools.schema.chapter import ChapterDef
 from realmforge_tools.schema.character import ClassDef, RaceDef
@@ -41,6 +42,7 @@ CONTENT_TYPES: dict[str, type] = {
     "room_themes": RoomThemeDef,
     "room_specs": RoomSpecDef,
     "realms": RealmDef,
+    "apotheosis_affixes": ApotheosisAffixDef,
 }
 
 # content/worldgen/ holds vanilla worldgen JSON instead of YAML; it is validated and copied (content.py, validate.py).
@@ -75,6 +77,7 @@ __all__ = [
     "CONTENT_TYPES",
     "DATAPACK_TYPES",
     "WORLDGEN_DIR",
+    "ApotheosisAffixDef",
     "BlockDef",
     "ChapterDef",
     "ClassDef",

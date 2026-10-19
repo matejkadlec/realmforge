@@ -1,0 +1,13 @@
+name = "Apothic-Enchanting"
+filename = "ApothicEnchanting-26.1.2-2.1.0.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/pL8MtgqY/versions/5yksP3X6/ApothicEnchanting-26.1.2-2.1.0.jar"
+hash-format = "sha512"
+hash = "3eb146a2b22c18beb1d739b05a6bf5054f05b2f239c25edc3c21b6a8c6f81d3595db0235cba243b44f997ed6fe4198c45763bc6a9e5017b8e5d4067a983a3c58"
+
+[update]
+[update.modrinth]
+mod-id = "pL8MtgqY"
+version = "5yksP3X6"

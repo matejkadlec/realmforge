@@ -2,7 +2,7 @@
 
 Date: 2026-10-11
 
-Status: Accepted
+Status: Accepted, amended by [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) (third-party gameplay mods: Apotheosis carries gear rarity, affixes, gems and enchanting)
 
 ## Context
 

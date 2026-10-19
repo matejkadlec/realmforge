@@ -1,0 +1,13 @@
+name = "Apotheosis"
+filename = "Apotheosis-26.1.2-9.1.0.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/rqFWfVlz/versions/EXaIH7Xm/Apotheosis-26.1.2-9.1.0.jar"
+hash-format = "sha512"
+hash = "8db33b929de427e0f2154d0007fb13cc6d3a95b30b6b68b8be265c3bd45f099a72284315e19203e3dd2662bbe1447b5c052eae4b014d7fd46b9edaaeb31b258c"
+
+[update]
+[update.modrinth]
+mod-id = "rqFWfVlz"
+version = "EXaIH7Xm"

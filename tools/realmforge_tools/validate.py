@@ -188,6 +188,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_chapters(content)
     problems += _check_leveling_curves(content)
     problems += _check_kill_xp_multipliers(content, universe)
+    problems += _check_apotheosis_affixes(content, universe)
     return problems
 
 
@@ -1070,6 +1071,27 @@ def _check_kill_xp_multipliers(content: Content, universe: IdUniverse) -> list[P
                     f"only {' and '.join(SIZED_ENTITY_TYPES)} have a size; {entity} gives by multiplier alone",
                 )
             )
+    return problems
+
+
+def _check_apotheosis_affixes(content: Content, universe: IdUniverse) -> list[Problem]:
+    """Each entry replaces another Apotheosis affix, modifies an attribute that exists (vanilla's or our stats) and is
+    not exclusive with itself (architecture 19.4)."""
+    problems: list[Problem] = []
+    seen: dict[str, str] = {}
+    for entry in content.apotheosis_affixes:
+        affix = entry.model
+        if affix.affix in seen:
+            problems.append(
+                Problem(entry.source, "affix", f"{affix.affix} is already replaced by {seen[affix.affix]}")
+            )
+        seen.setdefault(affix.affix, entry.source)
+        if not universe.contains(ATTRIBUTE_REGISTRY, affix.attribute):
+            problems.append(
+                Problem(entry.source, "attribute", _unknown(affix.attribute, ATTRIBUTE_REGISTRY, universe))
+            )
+        if affix.affix in affix.exclusive_set:
+            problems.append(Problem(entry.source, "exclusive_set", f"{affix.affix} cannot exclude itself"))
     return problems
 
 
