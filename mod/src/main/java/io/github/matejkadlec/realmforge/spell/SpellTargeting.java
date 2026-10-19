@@ -7,8 +7,8 @@ import net.minecraft.world.entity.LivingEntity;
 
 /**
  * Who or where a spell can target, an entry of the type registry {@code realmforge:targeting_type} (architecture 5.3,
- * 11.2): {@code self}, {@code enemy}, {@code ally}, {@code ground_point} and {@code direction}
- * ({@link TargetingTypes}); the NPC types come with C3a-4.
+ * 11.2): {@code self}, {@code enemy}, {@code ally}, {@code ground_point}, {@code direction} and the NPC types
+ * {@code current_target}, {@code random_player} and {@code farthest_player} ({@link TargetingTypes}).
  */
 public interface SpellTargeting {
     /** A targeting by its {@code type}, e.g. {@code {"type": "realmforge:enemy", "range": 24}}. */

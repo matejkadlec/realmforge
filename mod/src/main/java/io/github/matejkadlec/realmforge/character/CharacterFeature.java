@@ -3,7 +3,10 @@ package io.github.matejkadlec.realmforge.character;
 import com.mojang.serialization.MapCodec;
 import io.github.matejkadlec.realmforge.core.Requirement;
 import io.github.matejkadlec.realmforge.core.RequirementTypes;
+import io.github.matejkadlec.realmforge.spell.Rage;
 import io.github.matejkadlec.realmforge.stats.CharacterStats;
+import java.util.Optional;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
@@ -23,10 +26,10 @@ public final class CharacterFeature {
     }
 
     /**
-     * Registers the feature's registries and event listeners (leveling's and the stat points' among them), and hands
-     * {@code stats} the race and class modifiers and those of spent stat points. At common setup, once every attribute
-     * is registered, it makes the attributes the character sheet shows sync to the client. Called once from
-     * {@code Realmforge}.
+     * Registers the feature's registries and event listeners (leveling's and the stat points' among them), hands
+     * {@code stats} the race and class modifiers and those of spent stat points, and {@code spell} a rage class's rage
+     * numbers. At common setup, once every attribute is registered, it makes the attributes the character sheet shows
+     * sync to the client. Called once from {@code Realmforge}.
      */
     public static void register(IEventBus modBus) {
         CharacterAttachments.register(modBus);
@@ -34,6 +37,9 @@ public final class CharacterFeature {
         modBus.addListener(DataPackRegistryEvent.NewRegistry.class, CharacterRegistries::registerDataPackRegistries);
         CharacterStats.addSource(CharacterBonuses.SOURCE);
         CharacterStats.addSource(StatPoints.SOURCE);
+        Rage.addSource(holder -> holder instanceof Player player
+                ? Characters.mainClass(player).flatMap(playerClass -> playerClass.value().rage())
+                : Optional.empty());
         Leveling.register();
         StatPoints.register();
         modBus.addListener(FMLCommonSetupEvent.class,

@@ -82,6 +82,10 @@ def test_repository_spells_are_the_engine_tests() -> None:
         "test_mending_ring",
         "test_missile",
         "test_npc_bolt",
+        "test_npc_far_bolt",
+        "test_npc_random_bolt",
+        "test_npc_target_bolt",
+        "test_proc_spark",
         "test_scorch",
         "test_shove",
         "test_slow_bolt",
@@ -238,11 +242,17 @@ def test_an_attack_damage_heal_may_leave_out_its_share(repo: RepoPaths) -> None:
     assert any(entry.model.id == "second_wind" for entry in content.spells)
 
 
+# Damage hits an enemy, which the NPC targeting types choose too (C3a-4).
+ENEMIES = (
+    "realmforge:enemy or realmforge:current_target or realmforge:random_player or realmforge:farthest_player"
+)
+
+
 @pytest.mark.parametrize(
     ("targeting", "effect", "allowed"),
     [
-        ("{type: realmforge:self}", "{type: realmforge:damage, amount: 3}", "realmforge:enemy"),
-        ("{type: realmforge:ally, range: 8}", "{type: realmforge:damage, amount: 3}", "realmforge:enemy"),
+        ("{type: realmforge:self}", "{type: realmforge:damage, amount: 3}", ENEMIES),
+        ("{type: realmforge:ally, range: 8}", "{type: realmforge:damage, amount: 3}", ENEMIES),
         (
             "{type: realmforge:enemy, range: 8}",
             "{type: realmforge:heal, amount: 3}",
@@ -336,8 +346,9 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
     assert 'public static final ResourceKey<Spell> TEST_BOLT = key("test_bolt");' in keys
     assert (
         "ALL = List.of(TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, "
-        "TEST_HOMING_BOLT, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_SCORCH, TEST_SHOVE, "
-        "TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT);"
+        "TEST_HOMING_BOLT, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, "
+        "TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, "
+        "TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT);"
     ) in keys
     expectations = files[EXPECTATIONS].decode()
     assert (
@@ -654,3 +665,72 @@ def test_expectations_of_spell_entities_hold_their_effects(repo: RepoPaths) -> N
     ) in expectations
     assert 'Map.of("affects", "allies")' in expectations
     assert 'new EffectExpectation("realmforge:teleport", Map.of(), Map.of(), List.of())' in expectations
+
+
+# C3a-4 (RLM-212): the NPC targeting types
+
+NPC_TARGETING = ["realmforge:current_target", "realmforge:random_player", "realmforge:farthest_player"]
+
+
+@pytest.mark.parametrize("targeting", NPC_TARGETING)
+def test_npc_targeting_is_for_npc_spells_only(targeting: str) -> None:
+    with pytest.raises(ValueError, match="so the spell is npc_only: true"):
+        spell_model(targeting={"type": targeting, "range": 16})
+    npc_spell = spell_model(targeting={"type": targeting, "range": 16}, npc_only=True)
+    assert npc_spell.targeting.type == targeting
+
+
+@pytest.mark.parametrize("targeting", NPC_TARGETING)
+def test_npc_targeting_needs_a_range_of_at_most_128(targeting: str) -> None:
+    with pytest.raises(ValueError, match="range"):
+        spell_model(targeting={"type": targeting}, npc_only=True)
+    with pytest.raises(ValueError, match="range"):
+        spell_model(targeting={"type": targeting, "range": 129}, npc_only=True)
+
+
+@pytest.mark.parametrize("targeting", NPC_TARGETING)
+@pytest.mark.parametrize(
+    "effect",
+    [
+        "{type: realmforge:damage, amount: 3}",
+        "{type: realmforge:knockback, strength: 1}",
+        "{type: realmforge:apply_effect, effect: minecraft:slowness, duration_seconds: 2}",
+        "{type: realmforge:projectile, speed: 20, size: 0.5, lifetime_seconds: 2, effects: "
+        "[{type: realmforge:damage, amount: 3}]}",
+        "{type: realmforge:dash, strength: 1}",
+    ],
+)
+def test_npc_targeting_goes_where_enemy_does(repo: RepoPaths, targeting: str, effect: str) -> None:
+    spell(
+        repo,
+        "boss_bolt",
+        "school: realmforge:arcane\n"
+        "scales_with: spell_power\n"
+        f"targeting: {{type: {targeting}, range: 16}}\n"
+        "cast: {type: instant}\n"
+        "npc_only: true\n"
+        f"effects:\n  - {effect}\n",
+    )
+    content, _ = load_and_validate(repo)
+    assert any(entry.model.id == "boss_bolt" for entry in content.spells)
+
+
+@pytest.mark.parametrize("targeting", NPC_TARGETING)
+def test_npc_targeting_heals_nobody(repo: RepoPaths, targeting: str) -> None:
+    spell(
+        repo,
+        "boss_mend",
+        "school: realmforge:arcane\n"
+        "scales_with: spell_power\n"
+        f"targeting: {{type: {targeting}, range: 16}}\n"
+        "cast: {type: instant}\n"
+        "npc_only: true\n"
+        "effects:\n  - {type: realmforge:heal, amount: 3}\n",
+    )
+    assert_problem(repo, f"so the targeting is realmforge:self or realmforge:ally, not {targeting}")
+
+
+def test_npc_targeting_data(repo: RepoPaths) -> None:
+    data = json.loads(generate(repo)[f"{SPELL_DATA}/test_npc_far_bolt.json"])
+    assert data["targeting"] == {"type": "realmforge:farthest_player", "range": 16.0}
+    assert data["npc_only"] is True

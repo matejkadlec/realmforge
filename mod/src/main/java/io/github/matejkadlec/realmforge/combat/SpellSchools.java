@@ -6,6 +6,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
@@ -42,11 +43,12 @@ public final class SpellSchools {
 
     /**
      * A damage source of the school's type, as {@link #damage(RegistryAccess, ResourceKey, Entity, Entity)}, that
-     * crits by {@code crit}: a spell's crit data (architecture 11.1).
+     * crits by {@code crit}: a spell's crit data (architecture 11.1). {@code procOrigin} names the proc whose spell
+     * deals it, if one does, so no proc reacts to the hit (architecture 12).
      */
     public static SchoolDamageSource damage(RegistryAccess registries, ResourceKey<SpellSchool> school,
-            @Nullable Entity direct, @Nullable Entity causing, CritRule crit) {
-        return new SchoolDamageSource(damageType(registries, school), direct, causing, crit);
+            @Nullable Entity direct, @Nullable Entity causing, CritRule crit, Optional<Identifier> procOrigin) {
+        return new SchoolDamageSource(damageType(registries, school), direct, causing, crit, procOrigin);
     }
 
     private static Holder<DamageType> damageType(RegistryAccess registries, ResourceKey<SpellSchool> school) {

@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3a-4): a mob's bolt at a random player in range and sight. Not gameplay content; the GameTests in the
+# QA mod cast it.
+id: test_npc_random_bolt
+school: realmforge:arcane
+scales_with: spell_power
+targeting: {type: realmforge:random_player, range: 16}
+cast: {type: instant}
+global_cooldown_seconds: 0
+npc_only: true
+effects:
+  - {type: realmforge:damage, amount: 2}

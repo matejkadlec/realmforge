@@ -19,6 +19,12 @@
       "amount": 2.0
     }
   ],
+  "rage": {
+    "per_hit_dealt": 10.0,
+    "per_max_health_taken": 50.0,
+    "decay_per_second": 2.0,
+    "decay_after_ticks": 100
+  },
   "starting_kit": [
     {
       "item": "minecraft:stone_sword",

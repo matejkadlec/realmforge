@@ -23,11 +23,20 @@ name: {en_us: Elf}
 description: {en_us: Light on their feet.}
 classes: [realmforge:warrior]
 """
-CLASS = """id: rogue
+RAGE = """rage:
+  per_hit_dealt: 10
+  per_max_health_taken: 50
+  decay_per_second: 2
+  decay_after_seconds: 5
+"""
+CLASS = (
+    """id: rogue
 name: {en_us: Rogue}
 description: {en_us: Quick and quiet.}
 resource: realmforge:rage
 """
+    + RAGE
+)
 BREAD = "  - {item: minecraft:bread, count: 32}\n"
 
 
@@ -140,6 +149,54 @@ def test_class_resource_is_a_known_type(repo: RepoPaths) -> None:
     assert_problem(repo, "resource")
 
 
+def test_a_rage_class_sets_its_rage_numbers(repo: RepoPaths) -> None:
+    write(repo.content / "races" / "elf.yaml", RACE.replace("[realmforge:warrior]", "[realmforge:rogue]"))
+    write(repo.content / "classes" / "rogue.yaml", CLASS.replace(RAGE, ""))
+    assert_problem(repo, "a rage class sets its rage numbers")
+
+
+def test_only_a_rage_class_sets_rage_numbers(repo: RepoPaths) -> None:
+    write(repo.content / "races" / "elf.yaml", RACE.replace("[realmforge:warrior]", "[realmforge:rogue]"))
+    write(repo.content / "classes" / "rogue.yaml", CLASS.replace("realmforge:rage", "realmforge:mana"))
+    assert_problem(repo, "rage numbers are for a class whose resource is realmforge:rage")
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("per_hit_dealt", "-1"),
+        ("per_hit_dealt", "101"),
+        ("per_max_health_taken", "-1"),
+        ("decay_per_second", "-1"),
+        ("decay_after_seconds", "0"),
+        ("decay_after_seconds", "61"),
+        ("decay_after_seconds", "0.01"),
+    ],
+)
+def test_rage_numbers_are_bounded(repo: RepoPaths, field: str, value: str) -> None:
+    write(repo.content / "races" / "elf.yaml", RACE.replace("[realmforge:warrior]", "[realmforge:rogue]"))
+    numbers = {line.split(":")[0].strip(): line for line in RAGE.splitlines()[1:]}
+    write(
+        repo.content / "classes" / "rogue.yaml",
+        CLASS.replace(numbers[field], f"  {field}: {value}") + "starting_kit:\n" + BREAD,
+    )
+    assert_problem(repo, f"rage.{field}")
+
+
+def test_rage_numbers_are_in_game_units(repo: RepoPaths) -> None:
+    out = generate(repo)
+    data = json.loads(out[f"{DATA}/class/warrior.json"])
+    assert data["rage"] == {
+        "per_hit_dealt": 10.0,
+        "per_max_health_taken": 50.0,
+        "decay_per_second": 2.0,
+        "decay_after_ticks": 100,
+    }
+    assert "rage" not in json.loads(out[f"{DATA}/class/mage.json"])
+    expectations = out[f"{QA}/GeneratedClassExpectations.java"].decode()
+    assert "Optional.of(new Rage(10.0, 50.0, 2.0, 100))" in expectations
+
+
 def test_kit_items_exist(repo: RepoPaths) -> None:
     write(repo.content / "races" / "elf.yaml", RACE.replace("[realmforge:warrior]", "[realmforge:rogue]"))
     write(
@@ -208,6 +265,12 @@ def test_generated_data_and_lang(repo: RepoPaths) -> None:
         "name": "class.realmforge.rogue.name",
         "description": "class.realmforge.rogue.description",
         "resource": "realmforge:rage",
+        "rage": {
+            "per_hit_dealt": 10.0,
+            "per_max_health_taken": 50.0,
+            "decay_per_second": 2.0,
+            "decay_after_ticks": 100,
+        },
         "modifiers": [
             {
                 "attribute": "realmforge:crit_chance",

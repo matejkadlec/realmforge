@@ -3,8 +3,9 @@
 One engine casts them for players, mobs and bosses (C3a). The first part (C3a-1, RLM-209) has instant casts, the
 ``damage`` and ``heal`` effect types and the ``self``, ``enemy`` and ``ally`` targeting types; the second (C3a-2,
 RLM-210) adds cast times and channels; the third (C3a-3, RLM-211) the spell entities (``projectile``, ``area``), the
-status effect, movement and knockback effect types and the ``ground_point`` and ``direction`` targeting types. The NPC
-targeting types join with C3a-4. Names and descriptions come with the spell bar and its tooltips (C3b, RLM-25).
+status effect, movement and knockback effect types and the ``ground_point`` and ``direction`` targeting types; the
+fourth (C3a-4, RLM-212) the NPC targeting types ``current_target``, ``random_player`` and ``farthest_player``. Names and
+descriptions come with the spell bar and its tooltips (C3b, RLM-25).
 """
 
 from __future__ import annotations
@@ -55,6 +56,11 @@ ENEMY = f"{MOD_ID}:enemy"
 ALLY = f"{MOD_ID}:ally"
 GROUND_POINT = f"{MOD_ID}:ground_point"
 DIRECTION = f"{MOD_ID}:direction"
+CURRENT_TARGET = f"{MOD_ID}:current_target"
+RANDOM_PLAYER = f"{MOD_ID}:random_player"
+FARTHEST_PLAYER = f"{MOD_ID}:farthest_player"
+# The targeting types a mob or boss chooses its target with: only npc_only spells use them (architecture 11.2).
+NPC_TARGETING: tuple[str, ...] = (CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLAYER)
 
 
 class _LeveledAmount(StrictModel):
@@ -278,8 +284,38 @@ class DirectionTargetingDef(StrictModel):
     range: float = Field(gt=0, le=MAX_RANGE, allow_inf_nan=False, description="Range in blocks, at most 128.")
 
 
+class CurrentTargetTargetingDef(StrictModel):
+    """NPC only: the caster's current target (the mob's attack target), an enemy in range and in line of sight."""
+
+    type: Literal["realmforge:current_target"]
+    range: float = Field(gt=0, le=MAX_RANGE, allow_inf_nan=False, description="Range in blocks, at most 128.")
+
+
+class RandomPlayerTargetingDef(StrictModel):
+    """NPC only: a random player in range and in line of sight that the caster may attack (not in creative or
+    spectator mode, not its ally)."""
+
+    type: Literal["realmforge:random_player"]
+    range: float = Field(gt=0, le=MAX_RANGE, allow_inf_nan=False, description="Range in blocks, at most 128.")
+
+
+class FarthestPlayerTargetingDef(StrictModel):
+    """NPC only: the farthest player in range and in line of sight that the caster may attack, as random_player
+    chooses from."""
+
+    type: Literal["realmforge:farthest_player"]
+    range: float = Field(gt=0, le=MAX_RANGE, allow_inf_nan=False, description="Range in blocks, at most 128.")
+
+
 TargetingDef = Annotated[
-    SelfTargetingDef | EnemyTargetingDef | AllyTargetingDef | GroundPointTargetingDef | DirectionTargetingDef,
+    SelfTargetingDef
+    | EnemyTargetingDef
+    | AllyTargetingDef
+    | GroundPointTargetingDef
+    | DirectionTargetingDef
+    | CurrentTargetTargetingDef
+    | RandomPlayerTargetingDef
+    | FarthestPlayerTargetingDef,
     Field(discriminator="type"),
 ]
 
@@ -425,6 +461,12 @@ class SpellDef(StrictModel):
                 raise ValueError(
                     f"per_level never applies with max_level 1 ({', '.join(leveled)}): raise max_level or drop it"
                 )
+        return self
+
+    @model_validator(mode="after")
+    def _npc_targeting(self) -> SpellDef:
+        if self.targeting.type in NPC_TARGETING and not self.npc_only:
+            raise ValueError(f"{self.targeting.type} chooses a mob's target, so the spell is npc_only: true")
         return self
 
     def all_effects(self) -> list[tuple[str, BaseModel]]:

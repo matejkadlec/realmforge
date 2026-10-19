@@ -12,7 +12,8 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  * The resource pools in the {@code realmforge:combat} attachment (architecture 7, 11.5). Each resource type says how
  * big a holder's pool is and what it regains every second ({@link ResourceType}): mana is Max Mana big, starts full the
  * first time its maximum is above 0 (a new Mage, a mana item) and regains Mana Regeneration every second (Matěj,
- * 2026-10-14); rage is 100 big and starts empty (its gain and decay come with C3a-4). Logical server only.
+ * 2026-10-14); rage is 100 big, starts empty, fills from hits and decays out of combat ({@link Rage}). Logical server
+ * only.
  */
 public final class Resources {
     /** One second. */
@@ -63,6 +64,14 @@ public final class Resources {
         return holder.getExistingData(SpellAttachments.COMBAT)
                 .map(state -> state.resource(type.unwrapKey().orElseThrow()))
                 .orElse(0.0F);
+    }
+
+    /**
+     * Adds {@code amount} to {@code holder}'s pool of {@code type}, creating it, as {@link #set} does: within 0 and the
+     * pool's maximum, synced to the holder. Returns the amount the pool now holds.
+     */
+    public static float add(LivingEntity holder, Holder<ResourceType> type, double amount) {
+        return set(holder, type, amount(holder, type) + amount);
     }
 
     /**

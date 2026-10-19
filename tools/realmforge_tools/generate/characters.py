@@ -6,10 +6,10 @@ from pathlib import Path
 from typing import Literal
 
 from realmforge_tools.content import Content
-from realmforge_tools.generate.datapack import translation_key
+from realmforge_tools.generate.datapack import seconds_to_ticks, translation_key
 from realmforge_tools.generate.javagen import header, java_file_path, string_literal
 from realmforge_tools.project import MOD_ID, QA_JAVA_PACKAGE, RepoPaths
-from realmforge_tools.schema.character import CharacterModifierDef, bonuses
+from realmforge_tools.schema.character import CharacterModifierDef, RageDef, bonuses
 
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
 
@@ -38,6 +38,15 @@ def _bonuses(registry: Literal["race", "class"], entry_id: str, modifiers: list[
         for id_, attribute, operation, amount in bonuses(registry, entry_id, modifiers)
     )
     return f"List.of({rows})"
+
+
+def _rage(rage: RageDef | None) -> str:
+    if rage is None:
+        return "Optional.empty()"
+    return (
+        f"Optional.of(new Rage({_double(rage.per_hit_dealt)}, {_double(rage.per_max_health_taken)}, "
+        f"{_double(rage.decay_per_second)}, {seconds_to_ticks(rage.decay_after_seconds)}))"
+    )
 
 
 def _list(rows: list[str]) -> str:
@@ -101,6 +110,7 @@ def _classes(content: Content) -> bytes:
             f"                    {string_literal(translation_key('class', player_class.id, 'name'))},\n"
             f"                    {string_literal(translation_key('class', player_class.id, 'description'))},\n"
             f"                    {string_literal(player_class.resource)},\n"
+            f"                    {_rage(player_class.rage)},\n"
             f"                    List.of({kit}),\n"
             f"                    {_bonuses('class', player_class.id, player_class.modifiers)})"
         )
@@ -108,11 +118,17 @@ def _classes(content: Content) -> bytes:
         header(Path(__file__), "content/classes/") + f"package {QA_GENERATED_PACKAGE};\n"
         "\n"
         "import java.util.List;\n"
+        "import java.util.Optional;\n"
         "\n"
         "/** What {@code content/classes/} says about every class, so GameTests can check that the game agrees. */\n"
         "public final class GeneratedClassExpectations {\n"
         + _BONUS_RECORDS
-        + "    /** One item of the starting kit. */\n"
+        + "    /** How a rage class gains and loses rage, in game units (the decay's delay in ticks). */\n"
+        "    public record Rage(double perHitDealt, double perMaxHealthTaken, double decayPerSecond,\n"
+        "            int decayAfterTicks) {\n"
+        "    }\n"
+        "\n"
+        "    /** One item of the starting kit. */\n"
         "    public record KitItem(String item, int count) {\n"
         "    }\n"
         "\n"
@@ -121,7 +137,7 @@ def _classes(content: Content) -> bytes:
         "     * are the ones the game must give, in this order.\n"
         "     */\n"
         "    public record ClassExpectation(String id, String nameKey, String descriptionKey, String resource,\n"
-        "            List<KitItem> startingKit, List<Bonus> bonuses) {\n"
+        "            Optional<Rage> rage, List<KitItem> startingKit, List<Bonus> bonuses) {\n"
         "    }\n"
         "\n"
         f"    public static final List<ClassExpectation> CLASSES = {_list(rows)};\n"

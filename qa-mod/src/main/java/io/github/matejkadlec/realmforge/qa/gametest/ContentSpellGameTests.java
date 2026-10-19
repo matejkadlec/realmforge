@@ -8,16 +8,20 @@ import io.github.matejkadlec.realmforge.qa.generated.GeneratedSpellExpectations.
 import io.github.matejkadlec.realmforge.spell.AllyTargeting;
 import io.github.matejkadlec.realmforge.spell.ApplyEffectEffect;
 import io.github.matejkadlec.realmforge.spell.AreaEffect;
+import io.github.matejkadlec.realmforge.spell.CurrentTargetTargeting;
 import io.github.matejkadlec.realmforge.spell.DamageEffect;
 import io.github.matejkadlec.realmforge.spell.DashEffect;
 import io.github.matejkadlec.realmforge.spell.DirectionTargeting;
 import io.github.matejkadlec.realmforge.spell.EnemyTargeting;
+import io.github.matejkadlec.realmforge.spell.FarthestPlayerTargeting;
 import io.github.matejkadlec.realmforge.spell.GroundPointTargeting;
 import io.github.matejkadlec.realmforge.spell.HealEffect;
 import io.github.matejkadlec.realmforge.spell.KnockbackEffect;
 import io.github.matejkadlec.realmforge.spell.ProjectileEffect;
+import io.github.matejkadlec.realmforge.spell.RandomPlayerTargeting;
 import io.github.matejkadlec.realmforge.spell.RemoveEffectEffect;
 import io.github.matejkadlec.realmforge.spell.Spell;
+import io.github.matejkadlec.realmforge.spell.SpellEntities;
 import io.github.matejkadlec.realmforge.spell.SpellEffect;
 import io.github.matejkadlec.realmforge.spell.SpellRegistries;
 import io.github.matejkadlec.realmforge.spell.SpellTargeting;
@@ -27,6 +31,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import net.minecraft.core.Registry;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.locale.Language;
 import net.minecraft.resources.Identifier;
 
 /**
@@ -96,6 +101,19 @@ public final class ContentSpellGameTests {
         helper.succeed();
     }
 
+    /**
+     * RLM-259: the spell entity types have English names from {@code content/texts/entity.yaml}, which the game shows
+     * where it prints an entity's own name (F3, {@code /data}).
+     */
+    @QaGameTest
+    public static void spellEntityTypesHaveNames(GameTestHelper helper) {
+        helper.assertValueEqual(Language.getInstance().getOrDefault(
+                SpellEntities.PROJECTILE.get().getDescriptionId()), "Spell Projectile", "the projectile's name");
+        helper.assertValueEqual(Language.getInstance().getOrDefault(SpellEntities.AREA.get().getDescriptionId()),
+                "Spell Area", "the area's name");
+        helper.succeed();
+    }
+
     private static String targetingType(SpellTargeting targeting) {
         return SpellRegistries.TARGETING_TYPES.getKey(targeting.codec()).toString();
     }
@@ -106,6 +124,9 @@ public final class ContentSpellGameTests {
             case AllyTargeting ally -> ally.range();
             case GroundPointTargeting point -> point.range();
             case DirectionTargeting direction -> direction.range();
+            case CurrentTargetTargeting current -> current.range();
+            case RandomPlayerTargeting random -> random.range();
+            case FarthestPlayerTargeting farthest -> farthest.range();
             default -> 0.0;
         };
     }

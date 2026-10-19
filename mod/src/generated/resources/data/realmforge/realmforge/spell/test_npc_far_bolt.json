@@ -1,0 +1,29 @@
+{
+  "school": "realmforge:arcane",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:farthest_player",
+    "range": 16.0
+  },
+  "cast": {
+    "castable_while_moving": false,
+    "lock_on": false,
+    "type": "cast_time",
+    "duration_ticks": 20
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 20,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": true,
+  "effects": [
+    {
+      "amount": 3.0,
+      "per_level": 0,
+      "type": "realmforge:damage"
+    }
+  ]
+}

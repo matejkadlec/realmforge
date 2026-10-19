@@ -8,6 +8,7 @@ import io.github.matejkadlec.realmforge.character.PlayerClass;
 import io.github.matejkadlec.realmforge.character.Race;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedClassExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedClassExpectations.ClassExpectation;
+import io.github.matejkadlec.realmforge.qa.generated.GeneratedClassExpectations.Rage;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedRaceExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedRaceExpectations.RaceExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.Bonus;
@@ -69,6 +70,9 @@ public final class ContentCharacterGameTests {
                     expected.id() + " description");
             helper.assertValueEqual(playerClass.resource().getRegisteredName(), expected.resource(),
                     expected.id() + " resource");
+            helper.assertValueEqual(playerClass.rage().map(rage -> new Rage(rage.perHitDealt(),
+                    rage.perMaxHealthTaken(), rage.decayPerSecond(), rage.decayAfterTicks())), expected.rage(),
+                    expected.id() + " rage");
             List<String> kit = playerClass.startingKit().stream().map(ContentCharacterGameTests::kitItem).toList();
             List<String> expectedKit = expected.startingKit().stream()
                     .map(item -> item.item() + " x" + item.count()).toList();

@@ -402,7 +402,7 @@ public final class SpellGameTests {
     }
 
     /** A husk that stands still with {@value #HEALTH} health, no armor and level 1. */
-    private static Husk husk(GameTestHelper helper, BlockPos pos) {
+    static Husk husk(GameTestHelper helper, BlockPos pos) {
         Husk husk = helper.spawn(EntityType.HUSK, pos);
         husk.setNoAi(true);
         MobLevels.setLevel(husk, EntityLevel.MIN);

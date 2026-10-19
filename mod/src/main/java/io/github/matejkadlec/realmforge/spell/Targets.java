@@ -1,6 +1,10 @@
 package io.github.matejkadlec.realmforge.spell;
 
+import java.util.List;
 import java.util.Optional;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
@@ -24,11 +28,32 @@ public final class Targets {
 
     /**
      * Whether {@code target} is {@code caster}'s ally: itself, a team mate or a tamed pet (vanilla's
-     * {@code Entity#isAlliedTo}), and for a player every other player, as M1 has no PvP. Everything else is an enemy.
-     * C3a-4 adds the NPC side (a boss's adds).
+     * {@code Entity#isAlliedTo}), and for a player every other player, as M1 has no PvP. Everything else is an enemy,
+     * so a mob's spells hit other mobs too; the boss (W5) decides how its adds are spared.
      */
     public static boolean allied(LivingEntity caster, LivingEntity target) {
         return caster.isAlliedTo(target) || caster instanceof Player && target instanceof Player;
+    }
+
+    /**
+     * Why a mob or boss may not choose {@code target} for an NPC targeting within {@code range} blocks, if it may not:
+     * the target is no player it may attack (alive, neither in creative nor spectator mode, not invulnerable, not its
+     * ally), or it is out of reach ({@link #reach}).
+     */
+    public static Optional<CastFailure> playerTarget(LivingEntity caster, LivingEntity target, double range) {
+        if (!(target instanceof Player player) || !EntitySelector.NO_CREATIVE_OR_SPECTATOR.test(player)
+                || !player.canBeSeenAsEnemy() || allied(caster, player)) {
+            return Optional.of(CastFailure.INVALID_TARGET);
+        }
+        return reach(caster, player, range);
+    }
+
+    /** The players in {@code caster}'s level that it may choose for an NPC targeting within {@code range} blocks. */
+    public static List<ServerPlayer> playerTargets(LivingEntity caster, double range) {
+        if (!(caster.level() instanceof ServerLevel level)) {
+            return List.of();
+        }
+        return level.players().stream().filter(player -> playerTarget(caster, player, range).isEmpty()).toList();
     }
 
     /**
