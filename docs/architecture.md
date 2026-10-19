@@ -1087,6 +1087,19 @@ or a water current move the cast's start point along instead, so a Mage hit by a
 `realmforge:knockback` interrupts the target's cast explicitly (`CastEnd.KNOCKED_BACK`), unless it may be cast while
 moving. `CastGameTests` covers both, and `SpellEffectGameTests` the knockback.
 
+**How a player's push is told apart** (RLM-261): a player's client moves the player and reports its keys, and a
+modified client can report no key while it walks. So the keys only count against the player: with a key down it moves
+by itself, and with none it moves by itself too unless the server pushed it within the last 30 ticks
+(`Casting#PUSH_TICKS`: a knockback's flight and slide, plus the round trip to a client with a high ping). The server
+notes a push from what it sees itself: a knockback (`LivingKnockBackEvent`), an explosion's
+(`ExplosionKnockbackEvent`), any velocity it gave the player and has not sent yet (`hurtMarked`, read at the start of
+each level tick and in the cast's own tick), and, every tick of a cast, a fluid (a water current, a bubble column), a
+vehicle, or an entity crowding the player (`Level#getPushableEntities`, as vanilla's pushing finds them). Movement
+the server does not know of interrupts the cast: drifting on after releasing the keys, sliding on ice, a piston or a
+slime block. A modified client can still move freely for 30 ticks after each push, or while it stands in a fluid or
+in a crowd; that is the price of keeping a hit Mage casting. A mob is the server's own, so its movement input decides
+alone.
+
 ### 11.3 Spell entities
 
 Registries freeze at startup, so variety lives in data: one generic projectile entity type and one generic area

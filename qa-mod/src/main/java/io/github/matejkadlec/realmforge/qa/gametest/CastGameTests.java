@@ -181,8 +181,8 @@ public final class CastGameTests {
     }
 
     /**
-     * Being pushed is not moving (RLM-243): a melee hit's knockback moves a casting mob, and a player its client moved
-     * without a key pressed, and both casts go on and complete.
+     * Being pushed is not moving (RLM-243): a melee hit's knockback moves a casting mob, and a player its client moves
+     * after a melee hit's knockback, without a key pressed (RLM-261), and both casts go on and complete.
      */
     @QaGameTest
     public static void aCasterPushedByMeleeKeepsItsCast(GameTestHelper helper) {
@@ -198,11 +198,14 @@ public final class CastGameTests {
         Vec3 start = caster.position();
         helper.assertTrue(attacker.doHurtTarget(helper.getLevel(), caster), "the attacker's melee hit missed");
 
-        ServerPlayer player = caster(helper, "qa-cast-pushed");
+        // The player stands clear of the husks, so no crowding pushes it.
+        ServerPlayer player = caster(helper, "qa-cast-pushed", new Vec3(4.5, 1, 3.5));
         learn(helper, player, GeneratedSpells.TEST_SLOW_BOLT);
         assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, target);
-        // A player's client moves the player: the server only sees where to, and no key pressed.
-        player.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 0.9)), 0, 0);
+        // A melee hit's knockback from the north, the call LivingEntity#hurtServer makes for it.
+        player.knockback(0.4, 0, -1);
+        // The knockback reaches the player through its client: the server only sees where to, and no key pressed.
+        helper.runAfterDelay(3, () -> player.snapTo(helper.absoluteVec(new Vec3(4.5, 1, 4.4)), 0, 0));
 
         helper.runAfterDelay(10, () -> {
             helper.assertTrue(caster.position().distanceTo(start) > 3 * Casting.MOVE_TOLERANCE,
@@ -214,6 +217,26 @@ public final class CastGameTests {
             assertEnded(helper, caster, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.COMPLETED);
             assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.COMPLETED);
             assertHealth(helper, target, HEALTH - 20, "both casts landed");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Moving without a push loses the cast, whatever keys the client reports (RLM-261): a modified client can report
+     * no key pressed while it walks, so a player the server did not push moves by itself.
+     */
+    @QaGameTest
+    public static void aPlayerMovedWithoutAPushLosesItsCast(GameTestHelper helper) {
+        Husk target = husk(helper, new BlockPos(0, 1, 4));
+        ServerPlayer player = caster(helper, "qa-cast-keys-up", new Vec3(4.5, 1, 0.5));
+        learn(helper, player, GeneratedSpells.TEST_SLOW_BOLT);
+        assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, target);
+        player.snapTo(helper.absoluteVec(new Vec3(4.5, 1, 1.5)), 0, 0);
+
+        helper.runAfterDelay(5, () -> {
+            assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.MOVED);
+            assertHealth(helper, target, HEALTH, "the cast did not land");
             logout(player);
             helper.succeed();
         });
@@ -404,11 +427,19 @@ public final class CastGameTests {
 
     /** A fake player at the platform's south edge, in survival, at 0 % crit chance, with a full pool of 100 mana. */
     static ServerPlayer caster(GameTestHelper helper, String name) {
-        return caster(helper, new GameProfile(UUID.randomUUID(), name));
+        return caster(helper, name, new Vec3(2.5, 1, 0.5));
+    }
+
+    private static ServerPlayer caster(GameTestHelper helper, String name, Vec3 pos) {
+        return caster(helper, new GameProfile(UUID.randomUUID(), name), pos);
     }
 
     private static ServerPlayer caster(GameTestHelper helper, GameProfile profile) {
-        ServerPlayer player = QaPlayers.loginOnPlatform(helper, profile, new Vec3(2.5, 1, 0.5));
+        return caster(helper, profile, new Vec3(2.5, 1, 0.5));
+    }
+
+    private static ServerPlayer caster(GameTestHelper helper, GameProfile profile, Vec3 pos) {
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, profile, pos);
         player.setGameMode(GameType.SURVIVAL);
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
         StatsCommands.setBase(player, GeneratedStats.MAX_MANA, 100);

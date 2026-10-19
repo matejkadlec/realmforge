@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,9 +20,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.level.ExplosionKnockbackEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -39,10 +43,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   <li><b>Interrupts:</b> moving more than {@value #MOVE_TOLERANCE} blocks from where the cast began by itself
  *   (unless the spell may be cast while moving), a spell's knockback, death, a dimension change, logging out, the
  *   caster's removal and a cancel ({@link #cancel}) end it without more effects.</li>
- *   <li><b>What counts as moving</b> (RLM-243): the caster's own movement, a player pressing a movement or the jump
- *   key (the client's last input), a mob walking or strafing (its movement input). Being pushed is not moving: a
- *   melee hit's knockback, crowding mobs, a water current move the cast's start point along instead. A spell's
- *   {@code realmforge:knockback} interrupts the cast explicitly ({@link #knockedBack}).</li>
+ *   <li><b>What counts as moving</b> (RLM-243, RLM-261): the caster's own movement, a mob walking or strafing (its
+ *   movement input). Being pushed is not moving: a melee hit's knockback, crowding mobs, a water current move the
+ *   cast's start point along instead. A player's client moves the player, so the server tells a push apart only by
+ *   what it knows itself ({@link #movesByItself}): a player moves by itself while a movement or the jump key is down,
+ *   and otherwise unless the server pushed it within {@value #PUSH_TICKS} ticks, so a client that reports no keys
+ *   while it walks still loses the cast. A spell's {@code realmforge:knockback} interrupts the cast explicitly
+ *   ({@link #knockedBack}).</li>
  *   <li><b>A cast time</b> completes after its duration: the cost and the target are checked again ({@link
  *   SpellCaster#recheck}), and a failed check ends it like an interrupt, without the cost, the cooldown or the effects.
  *   Otherwise it pays, starts its cooldown and runs its effects.</li>
@@ -61,14 +68,26 @@ public final class Casting {
     /** How far, in blocks, a caster may move by itself from where its cast began before the cast counts as moved. */
     public static final double MOVE_TOLERANCE = 0.1;
 
+    /**
+     * How long, in ticks, a player's movement still counts as the server's last push of it: a melee knockback's flight
+     * and slide, plus the round trip to a client with a high ping.
+     */
+    public static final int PUSH_TICKS = 30;
+
     /** Every cast in progress, by caster. Server thread only. */
     private static final Map<LivingEntity, Running> RUNNING = new HashMap<>();
+
+    /** The game time the server last pushed each player at (RLM-261). Server thread only. */
+    private static final Map<UUID, Long> PUSHED = new HashMap<>();
 
     private Casting() {
     }
 
     static void register() {
         NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, Casting::onServerTick);
+        NeoForge.EVENT_BUS.addListener(LevelTickEvent.Pre.class, Casting::onLevelTick);
+        NeoForge.EVENT_BUS.addListener(LivingKnockBackEvent.class, event -> pushed(event.getEntity()));
+        NeoForge.EVENT_BUS.addListener(ExplosionKnockbackEvent.class, event -> pushed(event.getAffectedEntity()));
         NeoForge.EVENT_BUS.addListener(AttackEntityEvent.class, Casting::onAttack);
         NeoForge.EVENT_BUS.addListener(LivingDeathEvent.class, Casting::onDeath);
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class, Casting::onLoggedIn);
@@ -76,7 +95,10 @@ public final class Casting {
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerChangedDimensionEvent.class,
                 event -> end(event.getEntity(), CastEnd.CHANGED_DIMENSION));
         NeoForge.EVENT_BUS.addListener(PlayerEvent.StartTracking.class, Casting::onStartTracking);
-        NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, event -> RUNNING.clear());
+        NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, event -> {
+            RUNNING.clear();
+            PUSHED.clear();
+        });
     }
 
     /**
@@ -149,6 +171,28 @@ public final class Casting {
         }
     }
 
+    /**
+     * A velocity the server gave a player between two ticks (a player's melee hit, handled with its packet) is sent at
+     * the start of its level's tick, which clears {@code hurtMarked}: note it before that.
+     */
+    private static void onLevelTick(LevelTickEvent.Pre event) {
+        if (RUNNING.isEmpty()) {
+            return;
+        }
+        for (LivingEntity caster : RUNNING.keySet()) {
+            if (caster.level() == event.getLevel() && caster.hurtMarked) {
+                pushed(caster);
+            }
+        }
+    }
+
+    /** Notes that the server pushed {@code entity}, if it is a player: its client moves it along (RLM-261). */
+    private static void pushed(Entity entity) {
+        if (entity instanceof ServerPlayer player) {
+            PUSHED.put(player.getUUID(), player.level().getGameTime());
+        }
+    }
+
     private static void tick(Running running) {
         LivingEntity caster = running.caster();
         Optional<CastEnd> interrupted = interruption(running);
@@ -217,6 +261,9 @@ public final class Casting {
         if (caster.level() != running.level()) {
             return Optional.of(CastEnd.CHANGED_DIMENSION);
         }
+        if (caster instanceof ServerPlayer player && isPushedNow(player)) {
+            pushed(player);
+        }
         if (!running.spell().value().cast().castableWhileMoving()
                 && caster.position().distanceToSqr(running.start()) > MOVE_TOLERANCE * MOVE_TOLERANCE) {
             if (movesByItself(caster)) {
@@ -228,16 +275,32 @@ public final class Casting {
     }
 
     /**
-     * Whether {@code caster} moves by its own will (RLM-243): a player presses a movement or the jump key (the last
-     * input its client sent), a mob walks or strafes (the movement input its move control sets). Being pushed or
-     * carried moves neither.
+     * Whether {@code caster} moves by its own will (RLM-243): a mob walks or strafes (the movement input its move
+     * control sets). A player's client moves the player and reports its keys, which a modified client can fake, so
+     * the keys only count against it (RLM-261): a player moves by itself while it presses a movement or the jump key,
+     * and otherwise unless the server pushed it within the last {@value #PUSH_TICKS} ticks ({@link #isPushedNow}, a
+     * knockback, an explosion). Being pushed or carried moves neither.
      */
     public static boolean movesByItself(LivingEntity caster) {
         if (caster instanceof ServerPlayer player) {
             Input input = player.getLastClientInput();
-            return input.forward() || input.backward() || input.left() || input.right() || input.jump();
+            if (input.forward() || input.backward() || input.left() || input.right() || input.jump()) {
+                return true;
+            }
+            Long pushedAt = PUSHED.get(player.getUUID());
+            return pushedAt == null || player.level().getGameTime() - pushedAt > PUSH_TICKS;
         }
         return caster.zza != 0 || caster.xxa != 0 || caster.isJumping();
+    }
+
+    /**
+     * Whether the server sees {@code player} pushed or carried now: a velocity it gave the player and has not sent
+     * yet, a fluid (a water current, a bubble column), a vehicle, or an entity crowding it, as vanilla's own pushing
+     * finds them ({@code LivingEntity#pushEntities}).
+     */
+    private static boolean isPushedNow(ServerPlayer player) {
+        return player.hurtMarked || player.isInLiquid() || player.isPassenger()
+                || !player.level().getPushableEntities(player, player.getBoundingBox()).isEmpty();
     }
 
     /**
@@ -300,6 +363,7 @@ public final class Casting {
     /** Fires before the player is saved, so a cast's tag never reaches the save on a clean logout. */
     private static void onLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         end(event.getEntity(), CastEnd.LOGGED_OUT);
+        PUSHED.remove(event.getEntity().getUUID());
     }
 
     private static void onStartTracking(PlayerEvent.StartTracking event) {
