@@ -539,7 +539,8 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   stamina so it is never confused with a stamina resource) and intellect (INT). They are attributes, so gear, buffs
   and talents modify them like anything else. They start at 0: race, class, the stat points a player spends, talents
   and gear raise them (C1 and later; levels give stat points, not stats: RLM-196). Luck and defense stay out (D5).
-- **Secondary stats (ours):** crit chance (5 % to start with), crit damage (+50 %), dodge chance (no primary stat
+- **Secondary stats (ours):** crit chance (5 % to start with), crit damage (+50 %: a crit deals 150 % for melee,
+  ranged and spell hits alike, Matěj, 2026-10-19, who first meant it for spells only), dodge chance (no primary stat
   gives it: D5 keeps it for future classes such as the Rogue), spell power, and each magic school's power and
   resistance (`fire_power`, `fire_resistance`, ...; F5, the resistances capped at 75 % so nothing becomes immune
   without a tell, research BM-18). Matěj's playtest of F4b and F5 (2026-10-13) set the rest of the list, shown on the
