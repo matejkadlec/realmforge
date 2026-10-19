@@ -76,7 +76,7 @@ public final class RealmAccess {
         }
         if (!mayEnter(player, event.getDimension())) {
             event.setCanceled(true);
-            tellRefused(player, event.getDimension());
+            refuse(player, event.getDimension());
         }
     }
 
@@ -177,7 +177,7 @@ public final class RealmAccess {
      * The centre-screen refusal, with the realm's hint below it ({@link RealmRefusedPayload}: the client draws it
      * smaller than a vanilla title), and a short sound, once every 3 seconds at most.
      */
-    private static void tellRefused(ServerPlayer player, ResourceKey<Level> dimension) {
+    static void refuse(ServerPlayer player, ResourceKey<Level> dimension) {
         long now = player.level().getGameTime();
         Long last = LAST_REFUSAL.get(player);
         if (last != null && now - last < REFUSAL_INTERVAL_TICKS && now >= last) {

@@ -9,6 +9,7 @@ import io.github.matejkadlec.realmforge.client.hud.XpBarHud;
 import io.github.matejkadlec.realmforge.client.input.CharacterSheetKey;
 import io.github.matejkadlec.realmforge.client.input.DarkVisionKey;
 import io.github.matejkadlec.realmforge.client.network.ClientPayloadHandlers;
+import io.github.matejkadlec.realmforge.client.render.RealmPortalColors;
 import io.github.matejkadlec.realmforge.client.render.SpellEntityRenderers;
 import io.github.matejkadlec.realmforge.client.screen.CharacterCreationScreen;
 import io.github.matejkadlec.realmforge.client.spell.ClientCasts;
@@ -38,5 +39,6 @@ public final class RealmforgeClient {
         RightAlignedLines.register(modBus);
         ClientCasts.register();
         SpellEntityRenderers.register(modBus);
+        RealmPortalColors.register(modBus);
     }
 }
