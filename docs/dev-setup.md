@@ -56,7 +56,8 @@ decompiled Minecraft + NeoForge sources into `build/mc-sources/`.
 ## 3. The dev client (`runClient`)
 
 `./gradlew runClient` starts a dev client with the core mod and the QA mod, so the `/qa` commands work. Besides
-ours, only Player Animation Library (a QA mod dependency) and Yeetus Experimentus are loaded. Its game directory is
+ours, only Player Animation Library (a QA mod dependency), Yeetus Experimentus and Apotheosis with Apothic
+Attributes, Apothic Enchanting and Placebo are loaded. Its game directory is
 `run/client` in the checkout (saves, options, logs). Playtests run it on Windows (3.2), where mouse look works; in
 WSL it is good only for "does it load" checks (3.3).
 
@@ -78,6 +79,12 @@ WSL it is good only for "does it load" checks (3.3).
   onboarding and no tutorial hints. Delete `run/client/options.txt` to get them back. To change them for every
   fresh client, edit `dev/options.txt` without comment lines (Minecraft logs those as bad options); option names
   and encodings are vanilla's (`fov:1.0` is 70 + 40 × 1.0).
+- **The pack's config.** Before every launch, `seedPackConfig` copies the pack's config overrides
+  (`pack/config/`) into `run/client/config/`, replacing the files the mods wrote, as packwiz-installer does for a
+  player; the dev server and the GameTest server get them too. So a mod's settings changed in game last only until
+  the next launch: change them in `pack/config/` ([pack README](../pack/README.md#configuration)).
+- **Apotheosis**, as in the pack, with Apothic Attributes' crit and dodge switched off
+  ([architecture 19.4](architecture.md#194-optional-integrations)): the GameTests run with it too.
 - **No experimental-settings warning.** Our data pack dimensions make vanilla call every new world
   experimental; Yeetus Experimentus, the same build as the pack, skips the warning screen
   ([architecture 15.1](architecture.md#151-dimensions)).

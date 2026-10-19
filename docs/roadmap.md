@@ -290,10 +290,10 @@ Placeholders are generated until real art exists ([ADR 0007](decisions/0007-asse
 
 ## M2: Gear and loot
 
-Outline: five rarity tiers everywhere (first decide how: extend vanilla `Rarity` or use our own component,
-[architecture 13](architecture.md#13-items-gear-and-loot)); affixes with item levels and loot by mob level; gems
-and sockets; a
-reforging station; RNG item chests (as items); quest choice rewards with pre-rolled gear; Curios with the first
+Outline: Apotheosis's five rarities (mythic shown as Legendary), affixes, gems and sockets and its reforging,
+fitted to our stats and generated from our YAML ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md),
+[Apotheosis design](design/apotheosis.md)), with loot by the player's world tier, not an item level; RNG item
+chests (as items); quest choice rewards with pre-rolled gear; Curios with the first
 curios; more weapon and armor sets; simple craftable foods and potions with weak, long-lasting buffs (a few percent,
 more against one mob type, for example +5% damage for an hour or +8% against undead), brewable without the Nether
 ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)). Probably also the full-pack registry dump for the ID
@@ -336,8 +336,9 @@ the village, villager and trade overhaul. Also:
 
 Outline: professions that can be combined and leveled (for example mining, alchemy, smithing, jewelcrafting for
 curios, tailoring, cooking); cooking and alchemy bring the stronger foods and potions, with medium to very strong
-effects (M2 has the simple ones); enchanting without RNG on data-driven enchantments; the final role of vanilla XP
-(follows D3).
+effects (M2 has the simple ones); enchanting with less RNG (Apothic Enchanting,
+[ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)); the final role of
+vanilla XP (follows D3).
 
 ## M6: Companions and mounts
 

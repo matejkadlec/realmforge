@@ -15,7 +15,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0001](0001-record-architecture-decisions.md) | Record architecture decisions | Accepted, amended by [0030](0030-adrs-bind-agents-not-the-owner.md) |
 | [0002](0002-hybrid-core-mod-and-modpack.md) | Hybrid: own core mod plus a modpack | Accepted |
 | [0003](0003-platform-minecraft-1-21-1-neoforge.md) | Platform: Minecraft 1.21.1 on NeoForge | Superseded by [0026](0026-platform-minecraft-26-1-2-neoforge.md) |
-| [0004](0004-build-rpg-systems-in-house.md) | Build all RPG systems in-house | Accepted |
+| [0004](0004-build-rpg-systems-in-house.md) | Build all RPG systems in-house | Accepted, amended by [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) (third-party gameplay mods, Apotheosis) |
 | [0005](0005-content-pipeline-yaml-single-source-of-truth.md) | Content pipeline: YAML as the single source of truth | Accepted, amended by [0014](0014-core-mod-architecture.md) |
 | [0006](0006-quests-ftb-quests-generated-from-data.md) | Quests: FTB Quests generated from data | Accepted |
 | [0007](0007-asset-pipeline.md) | Asset pipeline | Accepted, refined by [0023](0023-texture-generator.md), vanilla texture rule narrowed to texture files by [0028](0028-dungeon-rooms-generated-or-imported.md) |
@@ -24,7 +24,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0010](0010-testing-strategy.md) | Testing strategy | Accepted, amended by [0018](0018-pack-boot-tests.md) |
 | [0011](0011-repository-layout-and-workflow.md) | Repository layout and workflow | Accepted |
 | [0012](0012-procedural-dungeons-and-dimensions.md) | Procedural dungeons and dimensions | Accepted, refined by [0019](0019-dungeon-instances-in-plots.md), its Nether and End question resolved by [0025](0025-remove-the-nether-and-end.md), hand-built rooms replaced by [0028](0028-dungeon-rooms-generated-or-imported.md) |
-| [0013](0013-modpack-composition.md) | Modpack composition | Accepted (written separately), composition updated for 26.1.2 by [0026](0026-platform-minecraft-26-1-2-neoforge.md) |
+| [0013](0013-modpack-composition.md) | Modpack composition | Accepted (written separately), composition updated for 26.1.2 by [0026](0026-platform-minecraft-26-1-2-neoforge.md), Apotheosis added by [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) |
 | [0014](0014-core-mod-architecture.md) | Core mod architecture | Accepted, decision 9 amended by [0027](0027-client-bound-payload-handlers-through-the-client-event.md), decision 8 (hand-made rooms) by [0028](0028-dungeon-rooms-generated-or-imported.md), decision 6 (armor formula) by [0033](0033-vanilla-armor-formula-amends-our-own.md) |
 | [0015](0015-merging-through-monitor-pr.md) | Merging through monitor-pr | Superseded by [0029](0029-independent-claude-review-before-every-merge.md); was Accepted (amends 0011), holds extended by [0016](0016-jira-batch-delivery.md) and [0017](0017-jira-as-the-source-of-task-status.md), `needs-approval` removed by [0021](0021-status-overview-and-plan-changes.md), `needs-playtest` removed by [0024](0024-no-github-labels.md) |
 | [0016](0016-jira-batch-delivery.md) | Jira batch delivery with flow1 and flow2 | Accepted (extends 0011), amended by [0017](0017-jira-as-the-source-of-task-status.md), [0021](0021-status-overview-and-plan-changes.md) and [0022](0022-playtest-before-the-pull-request.md) |
@@ -49,6 +49,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0035](0035-room-galleries-show-every-marker-with-its-label.md) | Room galleries show every marker with its label | Accepted |
 | [0036](0036-room-lights-and-decorations-form-patterns.md) | Room lights and decorations form patterns | Accepted |
 | [0037](0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md) | Elytra from chapter 3's final boss amend the Nether and End removal | Accepted (amends 0025) |
+| [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) | Apotheosis carries gear rarity, affixes, gems and enchanting | Accepted (amends 0004 and 0013) |
 
 ## Open questions (not decided)
 
