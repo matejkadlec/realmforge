@@ -1,8 +1,31 @@
 hash-format = "sha256"
 
 [[files]]
+file = "config/apotheosis/apothic_attributes.cfg"
+hash = "e6d1a1399f1fd62250aafb16cfd78812e1a18028ce700f0a54bf2d02ca6a76ed"
+
+[[files]]
+file = "config/apotheosis/apothic_enchanting.cfg"
+hash = "a3dffbd3da542c9b47efcff28a9f66816043bc7d2794ac91ffccd1e094cfd784"
+
+[[files]]
 file = "config/waystones-common.toml"
 hash = "ed3365781af0dadc1f8d85883970be0bf0ce36c482b83fe36ec25e531a65b28e"
+
+[[files]]
+file = "mods/apotheosis.pw.toml"
+hash = "90641fe73cbf5abe2d534ddad745ada385b2f4edcf22a4f24e68fe40243524dd"
+metafile = true
+
+[[files]]
+file = "mods/apothic-attributes.pw.toml"
+hash = "a65b3e71e2526226acbbcc94edcfd282d4c31c24b7a89287cee6a585127dc58f"
+metafile = true
+
+[[files]]
+file = "mods/apothic-enchanting.pw.toml"
+hash = "ec357a52140531ca684cc683e60795729de9aa636204d306d4f491b5ecf372be"
+metafile = true
 
 [[files]]
 file = "mods/appleskin.pw.toml"

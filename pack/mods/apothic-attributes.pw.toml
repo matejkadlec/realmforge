@@ -1,0 +1,13 @@
+name = "Apothic Attributes"
+filename = "ApothicAttributes-26.1.2-3.1.0.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/DGaH8Rh0/versions/lLLTcZXk/ApothicAttributes-26.1.2-3.1.0.jar"
+hash-format = "sha512"
+hash = "7b1d3e618aff092aa48272d8a3cea973cc5ada327cca708b73af826b5ef8ef945e803e72f8858704059e3b00241786a952de017c4279c23813600fcfb1a212b7"
+
+[update]
+[update.modrinth]
+mod-id = "DGaH8Rh0"
+version = "lLLTcZXk"

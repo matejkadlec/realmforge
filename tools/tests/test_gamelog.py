@@ -60,6 +60,20 @@ def test_every_allowlist_entry_has_a_reason() -> None:
     assert all(reason.strip() for _pattern, reason in GAMETEST_ALLOWED_ERRORS)
 
 
+def test_the_apotheosis_data_errors_of_the_dev_runs_pass() -> None:
+    lucky = (
+        "[19Oct2026 01:13:44.141] [main/ERROR] [apotheosis/]: Failed parsing apotheosis:affixes file "
+        "apotheosis:generic/attribute/lucky.\n"
+        "[19Oct2026 01:13:44.141] [main/ERROR] [apotheosis/]: Underlying Exception: \n"
+        "io.netty.handler.codec.CodecException: Codec failure for type apotheosis:affixes\n"
+    )
+    assert gametest_problems(lucky + PASSED) == []
+    (problem,) = gametest_problems(
+        lucky.replace("generic/attribute/lucky", "melee/attribute/vampiric") + PASSED
+    )
+    assert "melee/attribute/vampiric" in problem
+
+
 def test_cli_exit_codes(tmp_path: Path, capsys) -> None:
     clean = write(tmp_path / "clean.log", HARMLESS + PASSED)
     broken = write(tmp_path / "broken.log", BROKEN_RECIPE + PASSED)
