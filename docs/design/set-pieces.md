@@ -5,6 +5,7 @@
 > generator, 2026-10-17) and [ADR 0036](../decisions/0036-room-lights-and-decorations-form-patterns.md). The mask
 > report was run over the 164 rooms on `master` at `4e0043a`. Rooms stay generated or imported
 > ([ADR 0028](../decisions/0028-dungeon-rooms-generated-or-imported.md)); set pieces are their dressing, not rooms.
+> **Matěj approved this design on 2026-10-19** with the [decisions](#decisions) below.
 
 ## At a glance
 
@@ -28,8 +29,9 @@
 - **Building is one step:** `/qa setpiece jig <mask>` builds the workshop frame with a structure block already set
   to the piece's bounds; Matěj builds, presses Save, and `rf set-pieces import` brings the file into
   `content/set_pieces/` with a drafted fit rule.
-- **Containers are decorative by default**, and a piece never blocks a doorway, a path between doorways, a marker,
-  a light or a spawner.
+- **Containers hold loot:** a chest or barrel in a piece rolls the normal container loot table, per player through
+  Lootr ([container loot](container-loot.md)). A piece never blocks a doorway, a path between doorways, a marker, a
+  light or a spawner.
 
 ## Where it plugs in
 
@@ -86,7 +88,6 @@ weight: 2
 variants:
   mirror: true
   chance: {minecraft:skeleton_skull: 0.5}
-containers: decorative   # or a loot role, see Gameplay rules
 ```
 
 - **The mask** uses Matěj's own notation from the ticket:
@@ -244,11 +245,11 @@ The jig is dev-only code in `qa-mod/`; the import is part of `rf`.
 
 ## Gameplay rules
 
-- **Containers are decorative by default:** a chest or barrel in a piece is empty, since W6's loot comes from chest
-  markers and their budget (a treasure room's five chest spots, ADR 0036 point 3). A piece may instead give its
-  container a loot role (`containers: clutter`): the dungeon type fills it from a small table of consumables and
-  coins (RLM-222), at most one per room, never progression items, which drop at 100 % elsewhere (LE-1). That is a
-  question for Matěj below.
+- **Containers hold loot** (Matěj, 2026-10-19, [ADR 0041](../decisions/0041-dungeon-containers-hold-loot-through-lootr.md)):
+  no container in a dungeon is empty, so a chest or barrel in a piece rolls the normal container loot table, per
+  player through Lootr, like every other chest and barrel outside a treasure room
+  ([container loot](container-loot.md)). The builder places it as Lootr's container with that table; the piece's
+  template only says where it stands.
 - **Never in the way:**
   - two blocks or more from every connector, and every doorway stays reachable from every other with the piece
     placed (the matcher checks the room with all its spots filled);
@@ -267,23 +268,22 @@ The jig is dev-only code in `qa-mod/`; the import is part of `rf`.
 
 ## Follow-up tickets
 
-- **RLM-275** Set pieces: content type, fit rules and the matcher (`content/set_pieces/`, `rooms/set_pieces.py`,
+- **RLM-280** Set pieces: content type, fit rules and the matcher (`content/set_pieces/`, `rooms/set_pieces.py`,
   spots in the dungeon type entry, pytest, the mask report as an `rf` command, the gallery's spot outlines).
-- **RLM-276** Set pieces: the workshop jig command and `rf set-pieces import`.
-- **RLM-277** Set pieces: the dungeon builder places them (Java placement, variety processors, density per role,
+- **RLM-281** Set pieces: the workshop jig command and `rf set-pieces import`.
+- **RLM-282** Set pieces: the dungeon builder places them (Java placement, variety processors, density per role,
   GameTests).
-- **RLM-278** Set pieces: Matěj builds the first pieces (ongoing; his task, a few a week).
+- **RLM-283** Set pieces: Matěj builds the first pieces (ongoing; his task, a few a week).
 
-## Open questions
+## Decisions
 
-For Matěj; each has a proposal so the work can go on.
+Matěj's answers of 2026-10-19 to this design's questions:
 
-1. **Placement at generation, not at import.** Proposal: as recommended above, the spots are found at `rf gen` and
-   the pieces placed when a plot opens, so runs vary. The alternative bakes pieces into the rooms at import and
-   gives every run the same rooms.
-2. **Containers in pieces.** Proposal: decorative and empty by default; a piece may opt into a "clutter" role
-   with a few consumables and coins, at most one per room. Alternative: always empty, or always clutter.
-3. **A three-wide niche feature** in the room generator, sized for pieces like the hay niche. Proposal: not yet;
-   pieces that bring their own walls cover it, and a new feature goes through the gallery when Matěj wants it.
-4. **Density.** Proposal: a hallway gets at most one pattern, a combat room one or two, a treasure room its own
-   tags only, and a dungeon type can lower or raise this.
+1. **Placement at generation**, as recommended: the spots are found at `rf gen` and the pieces placed when a plot
+   opens, so every run varies.
+2. **Containers in pieces hold loot**, the normal container table through Lootr (above); the question of decorative
+   or clutter containers is gone.
+3. **No three-wide niche feature yet:** pieces that bring their own walls cover it; a new generator feature goes
+   through the gallery when Matěj wants it.
+4. **Density:** a hallway gets at most one pattern, a combat room one or two, a treasure room its own tags only, and
+   a dungeon type can lower or raise this.

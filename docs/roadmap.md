@@ -243,7 +243,10 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   traps and a vault, without a boss. Its rooms come from A4 (generated and imported,
   [ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)); agents assemble variants and set encounter
   and loot budgets. Both types put the netherite upgrade smithing template into their loot, fairly often (Matěj,
-  RLM-188).
+  RLM-188). No container in a dungeon is empty: every chest and barrel holds loot worth a few mob kills, per player
+  through Lootr, which joins the pack in M1 (Matěj, 2026-10-19,
+  [ADR 0041](decisions/0041-dungeon-containers-hold-loot-through-lootr.md),
+  [container loot](design/container-loot.md)).
 
 ### Phase 4: story, polish, release
 
@@ -316,7 +319,8 @@ the Nether and End removed and their items given new sources (D10,
 [ADR 0025](decisions/0025-remove-the-nether-and-end.md)); world-structure dungeons (jigsaw and
 Lithostitched); more dungeon endings (puzzle temple, wave arena, escape, mounted run, ruin exploration); our own
 structure locator; more mobs (friendly ones too) and bosses with lore and locator items; chapter 3; the start of
-the village, villager and trade overhaul. Also:
+the village, villager and trade overhaul, with trades paid in our own coins, not emeralds
+([ADR 0040](decisions/0040-coins-and-data-driven-merchant-trades.md)). Also:
 
 - **Elytra from chapter 3's final boss** (RLM-138): its drop, or an item frame in its room (like the End ship),
   so elytra arrive at the step into chapter 4 and ship with the removal of the End. The "every item is
@@ -360,7 +364,7 @@ the day"; repeatable trade quests move over from FTB Quests
 No milestone yet:
 
 - Small UI mods missing on NeoForge 1.21.1 (RLM-61, [ADR 0013](decisions/0013-modpack-composition.md)): EMI
-  Trades, Damage Numbers (M1's combat text may cover it), No Recipe Book, Lightweight Inventory Sorting, and a
+  Trades (JEI / REI Trades instead, [ADR 0040](decisions/0040-coins-and-data-driven-merchant-trades.md)), Damage Numbers (M1's combat text may cover it), No Recipe Book, Lightweight Inventory Sorting, and a
   replacement for the temporary Toast Control.
 - CurseForge publishing (RLM-62, [ADR 0008](decisions/0008-distribution-github-and-curseforge.md)).
 - Nightly spark profiles; our own performance mod (RLM-63).
