@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
+import com.mojang.logging.LogUtils;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedRealmExpectations.RealmExpectation;
@@ -35,6 +36,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import org.slf4j.Logger;
 
 /**
  * The realm portal (W2b, RLM-154; realm portal spec, "Tests"): a sigil lights a complete frame only for a player with
@@ -45,9 +47,11 @@ import net.minecraft.world.phys.Vec3;
  * <p>Trips use far-away places of their own, so no two tests find each other's portals: Overworld x and z in their own
  * 16-block cells around 40,000, realm x and z around 2,500. Positions in the realm are absolute. A trip runs the
  * portal's own {@code getPortalDestination} and teleports the player with it, as vanilla's portal processing does
- * once the 2 seconds are up.
+ * once the 2 seconds are up. Each trip logs how long it took on the server thread: a trip that builds a portal
+ * generates the chunks around it there, as vanilla's nether portal does (realm portal spec, "Arriving").
  */
 public final class RealmPortalGameTests {
+    private static final Logger LOGGER = LogUtils.getLogger();
     /** The selector of the frame on {@link QaGameTests#PLATFORM_9X9}, which runs along x. */
     private static final BlockPos SELECTOR = new BlockPos(4, 0, 4);
     /** The flat GameTest world's grass, where far-away Overworld frames stand. */
@@ -534,13 +538,20 @@ public final class RealmPortalGameTests {
         player.teleportTo(level, at.x, at.y, at.z, Set.of(), 0.0F, 0.0F, true);
     }
 
-    /** The trip through the portal block at {@code entry}, as vanilla makes it once the portal's time is up. */
+    /**
+     * The trip through the portal block at {@code entry}, as vanilla makes it once the portal's time is up, and how
+     * long it took: finding or building the exit portal (with the chunks it generates), then the teleport.
+     */
     private static void travel(GameTestHelper helper, ServerPlayer player, ServerLevel level, BlockPos entry) {
         BlockState state = level.getBlockState(entry);
         helper.assertTrue(state.getBlock() instanceof RealmPortalBlock, "a portal block at " + entry);
+        long start = System.nanoTime();
         TeleportTransition transition = ((RealmPortalBlock) state.getBlock()).getPortalDestination(level, player, entry);
         helper.assertTrue(transition != null, "the portal at " + entry + " leads somewhere");
+        long linked = System.nanoTime();
         player.teleport(transition);
+        LOGGER.info("Realm portal trip from {} {}: exit portal {} ms, teleport {} ms", level.dimension().identifier(),
+                entry, (linked - start) / 1_000_000, (System.nanoTime() - linked) / 1_000_000);
     }
 
     /** The realm's return portal within the realm's search radius of {@code centre}. */
