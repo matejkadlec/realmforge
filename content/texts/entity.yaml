@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# Names of our entity types (entity.realmforge.<path>), which the game shows where it prints an entity's own name: the
+# F3 screen's targeted entity, /kill and /data output. The spell entities carry a spell's projectile and area
+# (architecture 11.3).
+id: entity
+texts:
+  spell_projectile:
+    en_us: Spell Projectile
+  spell_area:
+    en_us: Spell Area
