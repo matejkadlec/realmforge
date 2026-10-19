@@ -94,3 +94,24 @@ def test_an_error_page_from_the_key_service_is_allowed_and_no_other() -> None:
     assert gametest_problems(line + PASSED) == []
     (problem,) = gametest_problems(line.replace("/publickeys", "/minecraft/profile") + PASSED)
     assert "/minecraft/profile" in problem
+
+
+def test_only_third_party_onlyin_warnings_are_allowed() -> None:
+    def onlyin(message: str) -> str:
+        return (
+            "[19Oct2026 21:39:51.000] [main/ERROR] [net.neoforged.neoforge.common.OnlyInWarningsHandler/]: "
+            f"{message}\n"
+        )
+
+    third_party = onlyin(
+        "The mod jadeaddons uses the @OnlyIn annotation; the runtime member-stripping behaviour of this annotation"
+        " is no longer present, which may lead to issues if that behaviour was relied upon"
+    ) + onlyin(
+        "@OnlyIn used on method snownee.jadeaddons.create.CreatePlugin.registerClient(Lsnownee/jade/api/X;)V"
+    )
+    assert gametest_problems(third_party + PASSED) == []
+    ours = onlyin(
+        "The mod realmforge_qa uses the @OnlyIn annotation; the runtime member-stripping behaviour of this annotation"
+        " is no longer present, which may lead to issues if that behaviour was relied upon"
+    ) + onlyin("@OnlyIn used on class io.github.matejkadlec.realmforge.client.SomeScreen")
+    assert len(gametest_problems(ours + PASSED)) == 2
