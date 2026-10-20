@@ -339,12 +339,13 @@ the first world-structure dungeons join it (Matěj, 2026-10-19, RLM-264,
 [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)):
 
 - **Gear and tooltip mods** (RLM-314): Artifacts and Immersive Armors after their catalogues, from which Matěj picks
-  what stays (RLM-312, RLM-313), Legendary Tooltips, Item Borders, YDM's Weapon Master.
+  what stays (RLM-312, RLM-313; Artifacts' curio items wait for his word on ADR 0025's curio rule), Legendary
+  Tooltips, Item Borders, YDM's Weapon Master.
 - **World-structure dungeons, moved from M4,** for Overworld and Undervault, each structure only in its realm
   ([realm design](design/realms.md#structures-from-other-mods)): Overworld's structure and dungeon mods (RLM-315:
-  YUNG's suite, Dungeons and Taverns, Structory, MVS, Battle Towers, Dungeons Enhanced, Underground Worlds),
-  Undervault's from other mods in its stones (RLM-316), and our own dungeon types as world structures, starting with
-  Undervault's dwarf-like fortress (RLM-317).
+  YUNG's suite, Dungeons and Taverns, MVS, Battle Towers, Dungeons Enhanced, Underground Worlds; Structory waits for
+  Matěj's reading of its Stardust Labs License), Undervault's from other mods in its stones (RLM-316), and our own
+  dungeon types as world structures, starting with Undervault's dwarf-like fortress (RLM-317).
 - **Illagers and villages** (RLM-318): Illager Invasion, It Takes a Pillage, Illager Warship, ChoiceTheorem's
   Overhauled Village with Village Taverns, Villager Names, Ender Zoology.
 - **The Overworld chapter's content:** its main questline (2–3 zombie, skeleton or spider dungeons, then pillagers,

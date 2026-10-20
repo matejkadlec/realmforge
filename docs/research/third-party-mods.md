@@ -31,10 +31,10 @@ the [ADR 0013](../decisions/0013-modpack-composition.md) list.
 | M1 | Iron's RPG Tweaks, combat module only | marked No on 2026-10-18, then taken on 2026-10-19 (below) | PK4, RLM-311 |
 | M1 | Controlling + Searchables | in the pack since RLM-279 ([ADR 0043](../decisions/0043-default-keys-and-key-search-in-the-pack.md)) | done |
 | M1 | Lootr | moved from M2 to M1 on 2026-10-19 ([ADR 0041](../decisions/0041-dungeon-containers-hold-loot-through-lootr.md)) | RLM-288 |
-| M2 | Artifacts, Immersive Armors | a catalogue each first (every item with its effect, a proposed minimum realm or level, early unique reward candidates); Matěj decides what stays | RLM-312, RLM-313, RLM-314 |
+| M2 | Artifacts, Immersive Armors | **Artifacts is held:** its items are curios, which ADR 0025 keeps out of the pack unless they are ours (RLM-7), so Matěj decides with its catalogue. A catalogue each first (every item with its effect, a proposed minimum realm or level, early unique reward candidates); Matěj decides what stays | RLM-312, RLM-313, RLM-314 |
 | M2 | Legendary Tooltips, Item Borders, YDM's Weapon Master | | RLM-314 |
 | M2 | YUNG's suite: Better Mineshafts, Desert Temples, Jungle Temples, Witch Huts, Ocean Monuments, Bridges, Extras, Better Caves, Better Dungeons | not Better Strongholds. Better Dungeons is in (open question 1, below) | RLM-315 |
-| M2 | Dungeons and Taverns, Structory, Structory: Towers, MVS – Moog's Voyager Structures, Battle Towers, Dungeons Enhanced, Underground Worlds | not D&T's Stronghold splinter. Dungeons Enhanced's 26.1.2 build is 6.4.1 beta | RLM-315 |
+| M2 | Dungeons and Taverns, Structory, Structory: Towers, MVS – Moog's Voyager Structures, Battle Towers, Dungeons Enhanced, Underground Worlds | not D&T's Stronghold splinter. **Structory and Structory: Towers are held:** they are Stardust Labs mods under the Stardust Labs License, whose AI clause ADR 0028 avoids, so they wait for Matěj's reading (ADR 0044). Dungeons Enhanced's 26.1.2 build is 6.4.1 beta | RLM-315 |
 | M2 | Golem Dungeons | Abandoned Factory in Undervault; its golems join raids from wave 5 (a config switch), decided before the raid quests are tuned | RLM-316 |
 | M2 | Illager Invasion, It Takes a Pillage, Illager Warship, Ender Zoology, ChoiceTheorem's Overhauled Village, Village Taverns, Villager Names | Village Taverns' pieces go into CTOV's village pools (Lithostitched `add_template_pool_elements`). Villager Names with a custom name list that leaves out our story NPCs' names (it has no blacklist) | RLM-318 |
 | M3 | Ranged Weapon API, More Bows and Arrows | with the ranged play style; More Bows and Arrows gets a catalogue first | RLM-323, RLM-324 |
@@ -131,7 +131,7 @@ Structures-style simple structures, and light boss-free dungeons. Where they end
 - **Vanilla structure overhauls:** YUNG's suite (mineshafts, desert and jungle temples, witch huts, ocean monuments),
   ChoiceTheorem's Overhauled Village with Village Taverns, Dungeons and Taverns. Whether vanilla's jungle temple
   still generates in 26.1.2 (RLM-221's question) is checked when RLM-315 places YUNG's Better Jungle Temples.
-- **Simple structures:** Structory, Structory: Towers, MVS; Repurposed Structures was not reviewed (above).
+- **Simple structures:** MVS, and Structory with Structory: Towers if Matěj clears their Stardust Labs License (ADR 0044); Repurposed Structures was not reviewed (above).
 - **Light dungeons:** Dungeons Enhanced (the ships, the pillager camp), Battle Towers, Underground Worlds, Golem
   Dungeons, Illager Warship; bosses at most lightweight. L_Ender's Cataclysm, Aquamirae, When Dungeons Arise and
   Stalwart Dungeons stay out, as RLM-221 said.

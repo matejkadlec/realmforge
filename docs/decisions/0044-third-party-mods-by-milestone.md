@@ -35,11 +35,11 @@ answered the open questions the same night (RLM-264). The candidates and every p
     or Cut Through (only if Better Combat does not already hit through grass), Crafting Tweaks, Item Highlighter, Pick
     Up Notifier, RightClickHarvest, Comforts, Traveler's Titles, Macaw's building mods, Better ModList, BetterF3,
     Lootr ([0041](0041-dungeon-containers-hold-loot-through-lootr.md)) and Iron's RPG Tweaks, combat module only.
-  - **M2:** Artifacts, Immersive Armors, Legendary Tooltips, Item Borders, YDM's Weapon Master, YUNG's suite (Better
-    Dungeons included, Better Strongholds not), Dungeons and Taverns (not its Stronghold splinter), Structory,
-    Structory: Towers, MVS, Battle Towers, Dungeons Enhanced, Underground Worlds, Golem Dungeons, Illager Invasion, It
-    Takes a Pillage, Illager Warship, Ender Zoology, ChoiceTheorem's Overhauled Village, Village Taverns, Villager
-    Names.
+  - **M2:** Artifacts (held, below), Immersive Armors, Legendary Tooltips, Item Borders, YDM's Weapon Master, YUNG's
+    suite (Better Dungeons included, Better Strongholds not), Dungeons and Taverns (not its Stronghold splinter),
+    Structory and Structory: Towers (held, below), MVS, Battle Towers, Dungeons Enhanced, Underground Worlds, Golem
+    Dungeons, Illager Invasion, It Takes a Pillage, Illager Warship, Ender Zoology, ChoiceTheorem's Overhauled
+    Village, Village Taverns, Villager Names.
   - **M3:** Ranged Weapon API and More Bows and Arrows, with the ranged play style.
   - **M4:** YUNG's Cave Biomes, The Lost Castle, Alex's Mobs Continued (its Nether and End mobs off or moved), Just
     Enough Resources, LambDynamicLights, Effectual, Falling Leaves, Fresh Animations with ETF and EMF, Fusion (in M1
@@ -69,6 +69,16 @@ answered the open questions the same night (RLM-264). The candidates and every p
 - **Licences:** CC BY-NC-ND mods are used unmodified: packwiz downloads the original jar, and every change is our own
   config, data pack or processor (Matěj accepts this reading). Nothing of theirs is copied into our repository, as
   rule 8 of `CLAUDE.md` already requires.
+- **Held for Matěj:** two picks meet an accepted rule they would change, so they wait for his word before they join:
+  - **Structory and Structory: Towers** are Stardust Labs mods under the Stardust Labs License (Modrinth, checked on
+    2026-10-20). [0028](0028-dungeon-rooms-generated-or-imported.md) avoids Stardust Labs content entirely because
+    that licence bans use in AI projects, and leaves a runtime pack dependency to pack composition, which is this
+    ADR. They join only once Matěj gives his reading of that clause for a pack dependency of an AI-built pack; until
+    then the Overworld structure work (RLM-315) leaves them out.
+  - **Artifacts** brings worn accessories, which are curio items, while
+    [0025](0025-remove-the-nether-and-end.md) keeps every other mod's curio items out of the curio slots and the pack
+    (Matěj, RLM-7: only our curios and the Sophisticated backpack). Its catalogue (RLM-312) puts the choice to him:
+    allow the Artifacts items he keeps, which amends that rule, or leave Artifacts out.
 - **Catalogues first:** Artifacts, Immersive Armors and More Bows and Arrows each get a catalogue (every item with its
   effect, a proposed minimum realm or level, early unique reward candidates) before they are enabled, and Matěj
   decides what stays.
