@@ -38,9 +38,7 @@ class PortalFrameTest {
             put(sealstone, Part.SEALSTONE);
             frame.bricks().forEach(pos -> put(pos, Part.BRICKS));
             if (corners) {
-                for (BlockPos corner : List.of(frame.at(-1, -1), frame.at(3, -1), frame.at(-1, 4), frame.at(3, 4))) {
-                    put(corner, Part.BRICKS);
-                }
+                frame.corners().forEach(corner -> put(corner, Part.BRICKS));
             }
             return this;
         }
@@ -53,6 +51,8 @@ class PortalFrameTest {
         assertEquals(12, frame.opening().size());
         assertEquals(new BlockPos(9, 65, -20), frame.corner());
         assertEquals(new BlockPos(11, 68, -20), frame.at(2, 3));
+        assertEquals(List.of(new BlockPos(8, 64, -20), new BlockPos(12, 64, -20), new BlockPos(8, 69, -20),
+                new BlockPos(12, 69, -20)), frame.corners());
         assertTrue(frame.inOpening(new BlockPos(10, 66, -20)));
         assertFalse(frame.inOpening(new BlockPos(10, 66, -19)), "the opening is one block deep");
         assertFalse(frame.inOpening(new BlockPos(12, 66, -20)), "the side is no opening");

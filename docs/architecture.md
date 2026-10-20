@@ -1457,16 +1457,18 @@ loot: realmforge:boss/hollow_warden
     seconds (1 tick in creative), any other entity's starts at once, with no vanilla overlay (`Transition.NONE`). It
     refuses every fluid (`LiquidBlockContainer#canPlaceLiquid` and `canBeReplaced(BlockState, Fluid)` answer false);
   - **linking** (`RealmPortalLinker`): the source opening's centre times the dimension types' teleportation scale,
-    clamped into the target's world border, as the nether portal does; the nearest lit portal leading back where
-    the player came from within the search radius (point-of-interest data), or one built within the build radius:
-    128 and 16 in Overworld, ⌊128 ÷ scale⌋ and one less in a realm (8 and 7 at 1:16), so a pair a trip built always
-    links back. The spot (`PortalSpots`, plain Java over the terrain, JUnit `PortalSpotsTest`) is the one nearest the
-    scaled position where the frame stands on the floor: its bottom row free on solid blocks, the frame's space
-    free, and floor with two free blocks in front of the opening on one side; at the realm entry's arrival heights,
-    ties by the source portal's height. Where nothing fits, the frame is carved out standing on a floor of the
-    arrival block with a pocket kept free of fluids and falling blocks. A built frame is `generated` and drops
-    nothing. The entity arrives in front of the exit portal, facing away from it, or in the opening; the vanilla
-    travel sound plays at the realm's pitch, and vanilla's portal ticket loads the exit's chunks for a short time;
+    clamped into the target's world border, as the nether portal does; the nearest lit portal leading back where the
+    player came from within the search radius (point-of-interest data), or one built within the build radius: 128 and 16
+    in Overworld, ⌊128 ÷ scale⌋ and one less in a realm (8 and 7 at 1:16), so a pair a trip built always links back. The
+    spot (`PortalSpots`, plain Java over the terrain, JUnit `PortalSpotsTest`) is the one nearest the scaled position
+    where the frame is set into the floor: its bottom row replaces solid floor, the frame's space above is free, and
+    floor with two free blocks lies in front of the opening at its height on one side; at the realm entry's arrival
+    heights, ties by the source portal's height. The terrain's top loads each column's chunk (`Level#getHeight` answers
+    the lowest height for a chunk that is not fully loaded). Where nothing fits, the frame is carved out set into a
+    floor of the arrival block with a pocket kept free of fluids and falling blocks. A built frame has Realmforge Bricks
+    in its corners too, all `generated`, dropping nothing. The entity arrives in front of the exit portal, facing away
+    from it, or in the opening; the vanilla travel sound plays at the realm's pitch, and vanilla's portal ticket loads
+    the exit's chunks for a short time;
   - **arrival** (`RealmArrivals`): on every arrival in a realm, a 2-second title with its name, element and levels
     (from its dimension rules); the first arrival also shows its flavour line in chat (`realmforge:visited_realms`);
   - **look:** the portal's texture is one greyscale, see-through swirl (so the chunk mesher puts it in the translucent

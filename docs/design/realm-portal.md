@@ -17,7 +17,8 @@
 > W2b (the portal, RLM-154) build it ([What M1 takes from this](#what-m1-takes-from-this)). Matěj's playtest of
 > W2b (2026-10-20) named the frame's blocks Realmforge Bricks and the Realmforge Sealstone and the realms' keys
 > signets (the first version's Portal Stone, realm selector and sigils), changed their recipes, let every entity
-> travel and put trip-built frames on the floor ([Decisions](#decisions), 12 to 14). Other block and item names
+> travel and set trip-built frames into the floor, with Realmforge Bricks in their corners ([Decisions](#decisions),
+> 12 to 14). Other block and item names
 > are working names; realm names are the approved ones of the [lore outline](../lore/outline.md#the-realms)
 > (RLM-139, RLM-188), without an article. The v1 realm layout (RLM-188, 2026-10-16) moved the stone realm to
 > chapter 2 (levels 6–18) and its unlock to the end of chapter 1's main questline. APIs named here were checked
@@ -318,26 +319,30 @@ When no portal leads the right way within the search radius, the trip builds one
 
 - **The spot:** the one nearest the scaled position, searched in a spiral within the build radius of that side (⌊128 ÷
   scale⌋ − 1 blocks in a realm, 7 at 1:16, one less than the search for the rounding in [Linking](#linking); 16 blocks
-  in Overworld, as vanilla's spiral), where the frame stands on solid floor (Matěj, 2026-10-20: "on the floor, not in
-  the ground": its bottom row stands on top of the floor and never replaces it), the whole frame's space is free, and
-  one side of the opening has floor and two free blocks to arrive on. It must be inside the world border and within the
+  in Overworld, as vanilla's spiral), where the frame is set into solid floor (Matěj, 2026-10-20: "the bottom side in
+  the floor … so player doesn't have to jump in order to get in, but can just walk": its bottom row replaces the top of
+  the floor, so the opening is at floor level), the rest of the frame's space is free, and one side has floor and two
+  free blocks in front of the opening, at its height, to arrive on. It must be inside the world border and within the
   `y` range of the dimension's realm entry (`arrival.y`, [Data](#data-contentrealms)), which keeps arrivals in the depth
   band of the realm's lowest levels. The source portal's height, clamped into that range, decides between spots at the
   same distance.
-- **Overworld's `y` range** is 64 to 310 (a proposal): the frame's bottom row stands at least one block above
+- **Overworld's `y` range** is 64 to 310 (a proposal): the frame's bottom row lies at least one block above
   sea level (63), so a way back over deep ocean, from a realm portal at y 30 say, finds no floor in the spiral and
   builds on a platform at the surface instead of carving a frame under the seabed. Vanilla's own fallback in
   `PortalForcer#createPortal` keeps y ≥ 70; 64 also lets a frame stand on beaches and plains, which lie between 63
   and 70. The top, 310, is that fallback's ceiling (the highest buildable y less 9), so a mountain's surface is a
   spot too, where a lower ceiling would carve the frame into the rock.
 - **Where nothing fits** (the stone realm has a bedrock ceiling; a realm can have a void below or water), the frame is
-  carved out at the scaled position, clamped into the `y` range: a floor of the entry's arrival block (`arrival.floor`)
-  under it and in front of it, and air around it. A safe pocket of `arrival.pocket_radius` blocks keeps out fluids and
-  falling blocks (RE-6: 3 by default, larger for a realm that needs it, such as an underwater one).
+  carved out at the scaled position, clamped into the `y` range: set into a floor of the entry's arrival block
+  (`arrival.floor`) that reaches in front of it, and air around it. A safe pocket of `arrival.pocket_radius` blocks
+  keeps out fluids and falling blocks (RE-6: 3 by default, larger for a realm that needs it, such as an underwater one).
+- **Its corners are Realmforge Bricks too** (Matěj, 2026-10-20: "without it it looks bad"). A frame needs no corners
+  to light, and a player's own frame may leave them out; every frame a trip builds has them.
 - **The new portal is lit:** in a realm its sealstone shows return, in Overworld the realm the player came from.
 - **It works like a frame a player built:** anyone may switch or close it, and breaking any of its blocks closes it
   ([Edge cases](#edge-cases)).
-- **Its blocks drop nothing.** Every frame a trip builds holds 13 Realmforge Bricks and a sealstone, which cost ender
+- **Its blocks drop nothing.** Every frame a trip builds holds 17 Realmforge Bricks (its corners included) and a
+  sealstone, which cost ender
   pearls, eight kinds of bricks, 4 gold ingots and a compass to craft, and waystone warps are free in the pack. Entering
   a portal, breaking the return frame the trip built, warping back to the first portal and entering it again would yield
   a frame each time: a farm. So Realmforge Bricks and the sealstone carry a block state flag, `generated` (a working
@@ -351,9 +356,9 @@ When no portal leads the right way within the search radius, the trip builds one
 ### Arriving
 
 - **The player arrives in front of the exit portal, facing away from it,** when one side of the opening has floor and
-  two blocks of air: on the floor the frame stands on, one step below the opening. Otherwise they arrive in the opening,
-  as a nether portal places them, and the portal cooldown vanilla sets after every trip (`Entity#setPortalCooldown`)
-  keeps them from bouncing straight back.
+  two blocks of air at the opening's height: on the floor the frame is set into, so they walk straight back in.
+  Otherwise they arrive in the opening, as a nether portal places them, and the portal cooldown vanilla sets after every
+  trip (`Entity#setPortalCooldown`) keeps them from bouncing straight back.
 - **A title** shows the realm's name with its element subtitle, and its levels, for 2 seconds on every arrival in a
   realm (RLM-139); the player's first arrival also shows its flavour line.
 - **Chunk loading:** a trip loads only the chunks around the exit portal, for a short time, through vanilla's portal
@@ -700,7 +705,10 @@ His playtest of W2b (2026-10-20, RLM-154) added:
     an ender pearl ([The frame](#the-frame)).
 13. **Every entity travels through a portal** ([Multiplayer](#multiplayer)), replacing 9's "only players travel"
     for portals; every other way into or out of a realm still carries only players.
-14. **A frame a trip builds stands on the floor,** not in it ([Building a portal](#building-a-portal)).
+14. **A frame a trip builds is set into the floor, with Realmforge Bricks in its corners**
+    ([Building a portal](#building-a-portal)): its bottom row replaces the top of the floor, so a player walks in
+    without jumping (Matěj's reconfirmation of 2026-10-20; the first revision of that day stood it on top of the
+    floor). The corners stay optional for a player's own frame.
 
 ## Open questions
 

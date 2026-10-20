@@ -164,9 +164,9 @@ public final class RealmPortalLinker {
 
     /**
      * Where nothing fits (a realm with a ceiling, a void, water, Overworld's sea): the frame is carved out at
-     * {@code at}, its bottom row standing on a floor of the arrival block that reaches in front of it, with free space
-     * around it; fluids and falling blocks at the pocket's edge become floor blocks too, so none runs or falls in
-     * (realm portal spec, "Building a portal").
+     * {@code at}, its bottom row set into a floor of the arrival block that reaches in front of it, so the opening is
+     * at floor level, with free space around it; fluids and falling blocks at the pocket's edge become floor blocks
+     * too, so none runs or falls in (realm portal spec, "Building a portal").
      */
     static PortalFrame.Frame carve(ServerLevel level, BlockPos at, Direction.Axis axis, Realm.Arrival arrival) {
         PortalFrame.Frame frame = new PortalFrame.Frame(at, axis);
@@ -178,9 +178,9 @@ public final class RealmPortalLinker {
         for (int across = -2 - radius; across <= PortalFrame.WIDTH + 1 + radius; across++) {
             for (int depth = -radius - 1; depth <= radius + 1; depth++) {
                 boolean edge = across < -1 - radius || across > PortalFrame.WIDTH + radius || Math.abs(depth) > radius;
-                for (int up = -2; up <= PortalFrame.HEIGHT + 1; up++) {
+                for (int up = -1; up <= PortalFrame.HEIGHT + 1; up++) {
                     BlockPos pos = frame.at(across, up).relative(front, depth);
-                    if (!border.isWithinBounds(pos) || level.isOutsideBuildHeight(pos) || (edge && up == -2)) {
+                    if (!border.isWithinBounds(pos) || level.isOutsideBuildHeight(pos)) {
                         continue;
                     }
                     if (edge || up == PortalFrame.HEIGHT + 1) {
@@ -188,7 +188,7 @@ public final class RealmPortalLinker {
                             level.setBlock(pos, floor, Block.UPDATE_ALL);
                         }
                     } else {
-                        level.setBlock(pos, up == -2 ? floor : Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+                        level.setBlock(pos, up == -1 ? floor : Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
                     }
                 }
             }

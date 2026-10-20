@@ -227,13 +227,17 @@ public final class RealmPortals {
     }
 
     /**
-     * Builds a frame a trip needs, lit onto {@code destination}: 13 Realmforge Bricks and a sealstone, all
-     * {@link RealmforgeBricksBlock#GENERATED}, so they drop nothing, then the opening (realm portal spec, "Building a
-     * portal"). The corners stay as they are.
+     * Builds a frame a trip needs, lit onto {@code destination}: 13 Realmforge Bricks and a sealstone, and Realmforge
+     * Bricks in the four corners too, which no frame needs but every built one has (Matěj, 2026-10-20: "without it it
+     * looks bad"); all {@link RealmforgeBricksBlock#GENERATED}, so they drop nothing, then the opening (realm portal
+     * spec, "Building a portal").
      */
     public static void build(ServerLevel level, PortalFrame.Frame frame, Identifier destination) {
         BlockState stone = RealmPortalBlocks.bricks().defaultBlockState().setValue(RealmforgeBricksBlock.GENERATED, true);
         for (BlockPos pos : frame.bricks()) {
+            level.setBlock(pos, stone, Block.UPDATE_ALL);
+        }
+        for (BlockPos pos : frame.corners()) {
             level.setBlock(pos, stone, Block.UPDATE_ALL);
         }
         level.setBlock(frame.sealstone(),

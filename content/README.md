@@ -108,22 +108,22 @@ Rules:
   `tool_tier` (`stone`, `iron`, `diamond`), its `sound` and `map_color` (vanilla's constants, lower case) and
   `creative_tabs`. Its block item takes its id, so no item in `items/` may share it. Undervault's four stones are the
   first (RLM-32).
-- `realms/` holds the realms ([realm portal spec](../docs/design/realm-portal.md)): the realm's `dimension` (one of
-  ours from `worldgen/dimension/`, one realm per dimension), its `name` without an article, its `subtitle` (the
-  element), its `description` in running text (lowercase, without an article: `stone realm`, which the refusal at the
-  sealstone reads as "a portal to the stone realm"), the `locked_hint` a refused player reads (one sentence naming
-  the unlock quest), a `flavour` line and the `icon` item of its unlock. The unlock is
-  the advancement `realmforge:realm/<id>` (criterion `minecraft:impossible`: only the realm's quest or a command
-  grants it), which the dimension's rules in `dimensions/` must name in their `access`. The realm's dimension type
-  must link by a `coordinate_scale` above 1 and have a `minecraft:gameplay/bed_rule` that sets no spawn and does not
-  explode. The portal's fields (W2b): the `signet` that opens the realm portal onto the realm (an item of ours that
-  stacks to 1, the signet of no other realm), the portal's `colour` (`#RRGGBB`), the
-  `particle` it shows next to the dust in that colour (a vanilla particle without options from the list in
-  `schema/realm.py`), the `sound_pitch` of the vanilla portal sounds (0.5 to 2, 1 by default) and the `arrival`:
-  the heights `y: [lowest, highest]` a built frame's bottom row may stand at (inside the dimension, with a floor below
-  it and its top row in), the `floor` block of a frame carved out where nothing fits, and its `pocket_radius` (3).
-  `overworld.yaml` is Overworld's entry (`dimension: minecraft:overworld`), which is no realm: only its `name`,
-  `colour` (the return portals') and `arrival` (where a way back builds a portal), and no unlock.
+- `realms/` holds the realms ([realm portal spec](../docs/design/realm-portal.md)): the realm's `dimension` (one of ours
+  from `worldgen/dimension/`, one realm per dimension), its `name` without an article, its `subtitle` (the element), its
+  `description` in running text (lowercase, without an article: `stone realm`, which the refusal at the sealstone reads
+  as "a portal to the stone realm"), the `locked_hint` a refused player reads (one sentence naming the unlock quest), a
+  `flavour` line and the `icon` item of its unlock. The unlock is the advancement `realmforge:realm/<id>` (criterion
+  `minecraft:impossible`: only the realm's quest or a command grants it), which the dimension's rules in `dimensions/`
+  must name in their `access`. The realm's dimension type must link by a `coordinate_scale` above 1 and have a
+  `minecraft:gameplay/bed_rule` that sets no spawn and does not explode. The portal's fields (W2b): the `signet` that
+  opens the realm portal onto the realm (an item of ours that stacks to 1, the signet of no other realm), the portal's
+  `colour` (`#RRGGBB`), the `particle` it shows next to the dust in that colour (a vanilla particle without options from
+  the list in `schema/realm.py`), the `sound_pitch` of the vanilla portal sounds (0.5 to 2, 1 by default) and the
+  `arrival`: the heights `y: [lowest, highest]` a built frame's bottom row may lie at (it replaces the top of the floor,
+  so the opening is at floor level; inside the dimension, with its top row in), the `floor` block of a frame carved out
+  where nothing fits, and its `pocket_radius` (3). `overworld.yaml` is Overworld's entry
+  (`dimension: minecraft:overworld`), which is no realm: only its `name`, `colour` (the return portals') and `arrival`
+  (where a way back builds a portal), and no unlock.
 - `races/` and `classes/` define who a player can be ([architecture 10.1](../docs/architecture.md#101-races-and-classes)).
   A race lists the classes it may take (each must exist, and every class must be open to some race) and gives
   `modifiers`; a class names its `resource` (`realmforge:mana` or `realmforge:rage`), and a rage class, and only a

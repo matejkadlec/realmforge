@@ -277,14 +277,14 @@ public final class RealmPortalGameTests {
             // of carving a frame at the source's height clamped into the arrival heights, y 20.
             helper.assertTrue(built.sealstone().getY() != stoneArrivalMinY(realm),
                     "the trip found the floor in chunks nothing had loaded: " + built.sealstone());
-            for (int across = -1; across <= PortalFrame.WIDTH; across++) {
-                helper.assertTrue(realm.getBlockState(built.at(across, -2)).isSolid(),
-                        "the built frame stands on the floor, not in it: " + built.at(across, -2));
-            }
             helper.assertTrue(realm.getBlockState(built.sealstone()).getValue(RealmforgeBricksBlock.GENERATED)
                     && realm.getBlockState(built.at(-1, 2)).getValue(RealmforgeBricksBlock.GENERATED),
                     "a frame a trip built is marked generated");
+            assertCornersBuilt(helper, realm, built);
             assertArrivedAt(helper, player, built);
+            // The frame sits in the floor (Matěj, 2026-10-20): the player stands at the opening's height and walks in.
+            helper.assertValueEqual(player.blockPosition().getY(), built.at(1, 0).getY(),
+                    "the player arrived at the opening's height, on the floor the frame is set into");
 
             travel(helper, player, realm, built.at(1, 1));
             helper.assertTrue(player.level() == level, "the way back leads to Overworld");
@@ -323,8 +323,8 @@ public final class RealmPortalGameTests {
         int cellX = 2_600;
         int cellZ = 2_600;
         PortalFrame.Frame first = litOverworldFrame(level, cellX * 16 + 15, cellZ * 16 + 8, stone);
-        // Solid rock all around the scaled position, but for one spot 7 blocks west of it: a frame across x standing on
-        // the rock at y 39, arrived at from the east.
+        // Solid rock all around the scaled position, but for one spot 7 blocks west of it: a frame across x set into
+        // the rock at y 40, arrived at from the east.
         BlockState rock = Blocks.STONE.defaultBlockState();
         for (int x = cellX - 9; x <= cellX + 9; x++) {
             for (int z = cellZ - 9; z <= cellZ + 9; z++) {
@@ -335,12 +335,12 @@ public final class RealmPortalGameTests {
         }
         PortalFrame.Frame only = new PortalFrame.Frame(new BlockPos(cellX - 7, REALM_FLOOR, cellZ), Direction.Axis.Z);
         for (int across = -1; across <= PortalFrame.WIDTH; across++) {
-            for (int up = -1; up <= PortalFrame.HEIGHT; up++) {
+            for (int up = 0; up <= PortalFrame.HEIGHT; up++) {
                 realm.setBlock(only.at(across, up), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
             }
         }
         for (int across = 0; across < PortalFrame.WIDTH; across++) {
-            for (int up = -1; up <= 0; up++) {
+            for (int up = 0; up <= 1; up++) {
                 realm.setBlock(only.at(across, up).relative(only.front().getOpposite()), Blocks.AIR.defaultBlockState(),
                         Block.UPDATE_CLIENTS);
             }
@@ -364,8 +364,8 @@ public final class RealmPortalGameTests {
 
     /**
      * A trip from a realm portal with no Overworld portal near its scaled-back position builds one there. Over the
-     * flat GameTest world nothing fits at Overworld's arrival heights (64 to 310), so it is carved out standing on a
-     * platform at y 63; the trip back arrives at the realm portal it came from.
+     * flat GameTest world nothing fits at Overworld's arrival heights (64 to 310), so it is carved out set into a
+     * platform at y 64, with Realmforge Bricks in its corners; the trip back arrives at the realm portal it came from.
      */
     @QaGameTest(timeoutTicks = 200)
     public static void aWayBackWithNoPortalNearBuildsOneOnAPlatform(GameTestHelper helper) {
@@ -393,10 +393,12 @@ public final class RealmPortalGameTests {
             helper.assertValueEqual(built.get().sealstone().getY(), 64, "the built frame's bottom row is at y 64");
             helper.assertTrue(level.getBlockState(built.get().sealstone()).getValue(RealmforgeBricksBlock.GENERATED),
                     "the built frame is marked generated");
-            helper.assertTrue(level.getBlockState(built.get().at(1, -2)).is(Blocks.STONE_BRICKS)
-                            && level.getBlockState(built.get().at(1, -2).relative(built.get().front())).is(Blocks.STONE_BRICKS),
-                    "the frame stands on a platform of Overworld's arrival block, which reaches in front of it");
+            helper.assertTrue(level.getBlockState(built.get().at(1, -1).relative(built.get().front())).is(Blocks.STONE_BRICKS),
+                    "the frame is set into a platform of Overworld's arrival block, which reaches in front of it");
+            assertCornersBuilt(helper, level, built.get());
             assertArrivedAt(helper, player, built.get());
+            helper.assertValueEqual(player.blockPosition().getY(), built.get().at(1, 0).getY(),
+                    "the player arrived on the platform at the opening's height");
 
             travel(helper, player, level, built.get().at(1, 1));
             helper.assertTrue(player.level() == realm, "the trip back leads into the realm");
@@ -631,6 +633,15 @@ public final class RealmPortalGameTests {
                 entry, (linked - start) / 1_000_000, (System.nanoTime() - linked) / 1_000_000);
         helper.assertTrue(arrived != null, "the trip through " + entry + " was let through");
         return arrived;
+    }
+
+    /** Every corner of a frame a trip built is Realmforge Bricks that drop nothing (Matěj, 2026-10-20). */
+    private static void assertCornersBuilt(GameTestHelper helper, ServerLevel level, PortalFrame.Frame frame) {
+        for (BlockPos corner : frame.corners()) {
+            BlockState state = level.getBlockState(corner);
+            helper.assertTrue(state.is(RealmPortalBlocks.bricks()) && state.getValue(RealmforgeBricksBlock.GENERATED),
+                    "the built frame has generated Realmforge Bricks in its corner at " + corner + ", not " + state);
+        }
     }
 
     /** The lowest height a frame built in the stone realm may stand at, where a trip from the flat world carves. */

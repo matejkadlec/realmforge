@@ -94,6 +94,11 @@ public final class PortalFrame {
             return stones;
         }
 
+        /** The frame's four corners, which no frame needs and every frame a trip builds has (Matěj, 2026-10-20). */
+        public List<BlockPos> corners() {
+            return List.of(at(-1, -1), at(WIDTH, -1), at(-1, HEIGHT), at(WIDTH, HEIGHT));
+        }
+
         /** The position {@code across} to the right of the opening's corner and {@code up} above it. */
         public BlockPos at(int across, int up) {
             return corner().relative(right(), across).above(up);

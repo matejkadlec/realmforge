@@ -17,8 +17,8 @@ flavour:
   en_us: Cold air rises from below, smelling of dust and old stone.
 icon: realmforge:vaultstone
 # The realm portal (W2b, realm portal spec): the Signet of the Undervault opens it onto Undervault, slate blue with ash,
-# its vanilla sounds a little lower. A trip that finds no portal near the scaled position builds one standing on the
-# cave floor (about y 32), its bottom row at y 20 to 90, or carves one out on a floor of Vaultstone, the realm's common
+# its vanilla sounds a little lower. A trip that finds no portal near the scaled position builds one set into the cave
+# floor (about y 32), its bottom row at y 20 to 90, or carves one out in a floor of Vaultstone, the realm's common
 # stone. The colour and the pitch are proposals for Matěj's playtest.
 signet: realmforge:undervault_signet
 colour: "#7A8FB0"
