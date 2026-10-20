@@ -77,7 +77,7 @@ Undervault (levels 6-18), about 12 hours for an average player by the [XP model]
 | Race | 1 |
 | Classes | 2: a melee class and a caster (decision D1: Warrior with rage, Mage with mana) |
 | Spells | 4-5 per class, covering a self-buff, a debuff, single target, AoE and one special spell (such as a blink) |
-| Spell trees | one specialization spell tree per class (RLM-218); talents are postponed indefinitely (Matěj, 2026-10-16, RLM-28, [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)) |
+| Spell trees | one specialization spell tree per class (C5, RLM-218); talents are postponed indefinitely (Matěj, 2026-10-16, RLM-28, [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)) |
 | Chapters | 2: Overworld (chapter 1, levels 1-10) and Undervault (chapter 2, levels 6-18); no Overworld dungeon or boss |
 | Leveling | levels 1-18 with a level cap: 10 in chapter 1, 18 once it is done, 30 once chapter 2 is done (D2; XP stops at the cap) |
 | Stats | primary stats with derived bonuses and at least one milestone bonus; a character sheet |
@@ -199,6 +199,12 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   Specialization with the `#realmforge:sword_like` item tag and its tooltip lines, Will To Survive on the spell bar's
   G key; [architecture 10.1](architecture.md#101-races-and-classes), RLM-219); a first balance pass on the training
   dummy.
+- **C5 Specialization spell trees** (RLM-333, M, after C4). Talents are postponed indefinitely (RLM-28), but the M1
+  tree stays as a specialization spell tree, one per class (Matěj, 2026-10-16, RLM-218): most spells take several
+  points and grow stronger with each, some gain an extra effect at the top rank, big-impact spells have one rank;
+  the tree holds active and passive spells. The spell trees window, where the player picks the specialization and
+  spends points ([architecture 10.1](architecture.md#101-races-and-classes)). *Done when:* JUnit covers the point
+  rules, and a GameTest shows a spent point changing a spell's cast.
 - **C6 Casting animations and effects** (RLM-29, M, after spike 4 and C4). Animations, particles and sounds for both
   classes.
 
@@ -309,10 +315,11 @@ boot. Controlling with Searchables is in since RLM-279, and Lootr is W6's (RLM-2
    profile).
 2. In a new world a player can create a character (1 race, 2 classes); reach level 10 by killing mobs and
    questing and stay there until chapter 1 is done; finish chapter 1 and see the level cap rise to 18; enter
-   Undervault once chapter 1's quest unlocks it; use every class spell; reach level 18 and stay
+   Undervault once chapter 1's quest unlocks it; use every class spell and spend points in its specialization spell
+   tree; reach level 18 and stay
    there until chapter 2 is done; clear both dungeon types, one ending with the boss and one without; beat the boss
    through all three phases; finish chapter 2 and see the level cap rise to 30.
-3. JUnit covers formulas, the dungeon planner and layout, and the phase machine; GameTests cover
+3. JUnit covers formulas, the spell tree rules, the dungeon planner and layout, and the phase machine; GameTests cover
    spells, leveling and the cap, the chapter bridge, instances and boss phases; every CI job is green.
 4. `docs/architecture.md` and CLAUDE.md match the code; spike outcomes and changed decisions have ADRs.
 5. GitHub Release v0.1.0 (jar and pack), built from a tag.
@@ -427,8 +434,8 @@ No milestone yet:
   Professions replace EMI Trades next to JEI / REI Trades
   ([ADR 0040](decisions/0040-coins-and-data-driven-merchant-trades.md)), the pack already shows damage numbers, No
   Recipe Book is in, and Toast Control stays ([ADR 0044](decisions/0044-third-party-mods-by-milestone.md)).
-- Talents (C5, RLM-28) and glyphs: postponed indefinitely, maybe not in v1 (Matěj, 2026-10-16). Each class's spells
-  form specialization spell trees instead (RLM-218).
+- Talents (RLM-28) and glyphs: postponed indefinitely, maybe not in v1 (Matěj, 2026-10-16). Each class's spells
+  form specialization spell trees instead (C5, RLM-218).
 - CurseForge publishing (RLM-62, [ADR 0008](decisions/0008-distribution-github-and-curseforge.md)).
 - Nightly spark profiles; our own performance mod (RLM-63).
 - A local bridge so agents can see screenshots and game state from Matěj's PC (RLM-64,

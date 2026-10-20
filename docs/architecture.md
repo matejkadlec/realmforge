@@ -863,7 +863,7 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
   and then spends points in that tree. From a level threshold (proposed: 20) they can pick a secondary
   specialization, a dual spec. M1 has one specialization per class; the other two, and dual spec, come in M3
   (Matěj, 2026-10-16). The `character` attachment still stores the class in a list from when dual class was
-  planned; the specialization work (the spell tree model, RLM-28) decides what it stores instead.
+  planned; the specialization work (the spell tree model, C5, RLM-333) decides what it stores instead.
 - **Changing race or class:** a QA command in M1, an in-game way later.
 - **In code (C1):** `character/Race` and `character/PlayerClass` are the entries of `realmforge:race` and
   `realmforge:class` (`CharacterRegistries`, both synced). A race names its classes by id, so a missing class fails
@@ -1184,7 +1184,7 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
 
 **Postponed indefinitely** (Matěj, 2026-10-16, RLM-28; confirmed 2026-10-18,
 [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)): M1 builds no talents, and each class's spells form
-specialization spell trees instead (RLM-218, [10.1](#101-races-and-classes)). The design below stays for when talents
+specialization spell trees instead (C5, RLM-333; RLM-218, [10.1](#101-races-and-classes)). The design below stays for when talents
 return; the proc engine at its end exists since C3a.
 
 - **Model:** one `realmforge:talent_tree` entry per tree with its grid size and nodes: id, column, row, icon, max
