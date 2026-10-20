@@ -1152,10 +1152,14 @@ type only for genuinely new behaviour.
   handed over by `character` as a `Rage.Source`) rage from the damage pipeline's hits (`CombatEvent.Hit`): a melee hit
   it deals (a player's or a mob's own attack, not a projectile or a spell) gives `per_hit_dealt` times the swing's
   attack strength, so spam clicks give little, and damage an attacker deals it gives `per_max_health_taken` times
-  the share of its max health the hit took (the inflicted damage, a magic shield's share included). A hit dealt or
-  taken, or a dodged one, puts both sides in combat; `decay_after_seconds` after the last one the pool loses
-  `decay_per_second` every second, as rage's regeneration ([`ResourceType`](#115-resources-cooldowns-modifiers)) is
-  negative then. Combat is transient, so a new player entity starts out of it. The Warrior's starting numbers are 10
+  the share of its max health the hit took (the inflicted damage, a magic shield's share included). **A swing gives
+  its rage once, however many mobs it hits** (RLM-278): only the holder's first melee hit in a game tick counts.
+  Vanilla hurts a sword's target before its sweep, and Better Combat ([9.2](#92-better-combat)) attacks a swing's
+  targets one after another in the same tick, each with its own full-strength `Player#attack`, so neither the sweep
+  nor Better Combat's further targets add rage; when the target's hit is dodged, the first hit that lands counts. A
+  hit dealt or taken, or a dodged one, puts both sides in combat; `decay_after_seconds` after the last one the pool
+  loses `decay_per_second` every second, as rage's regeneration ([`ResourceType`](#115-resources-cooldowns-modifiers))
+  is negative then. Combat is transient, so a new player entity starts out of it. The Warrior's starting numbers are 10
   a hit, 50 for the whole max health and 2 a second after 5 s, until the class kits (C4) tune them. Mobs pay no cost
   ([11.2](#112-casting-server-authoritative)), so no mob gains rage. `RageGameTests` and `RageRulesTest` cover it.
 - **Cooldowns:** a spell's own cooldown, shortened by Cooldown Reduction (at most 75 %, its stat's cap), and the
