@@ -8,6 +8,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.SectionPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
@@ -257,9 +258,17 @@ public final class RealmPortalLinker {
                 return border.isWithinBounds(pos);
             }
 
+            /**
+             * Loads the column's chunk, generating it when nothing has: {@code Level#getHeight} answers the level's
+             * lowest height for a chunk that is not fully loaded, which would hide every spot on a first trip.
+             */
             @Override
             public int top(int x, int z) {
-                return level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
+                if (!border.isWithinBounds(x, z)) {
+                    return level.getMinY();
+                }
+                return level.getChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z))
+                        .getHeight(Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15) + 1;
             }
         };
     }

@@ -10,6 +10,7 @@ import io.github.matejkadlec.realmforge.world.realm.RealmPortalBlock;
 import io.github.matejkadlec.realmforge.world.realm.RealmPortalBlocks;
 import io.github.matejkadlec.realmforge.world.realm.RealmPortalLinker;
 import io.github.matejkadlec.realmforge.world.realm.RealmPortals;
+import io.github.matejkadlec.realmforge.world.realm.Realms;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -272,6 +273,10 @@ public final class RealmPortalGameTests {
                     "the return portal stands within 7 blocks of the scaled position: " + built.sealstone());
             helper.assertTrue(built.sealstone().getY() >= 20 && built.sealstone().getY() <= 90,
                     "the built frame stands at the realm's arrival heights: " + built.sealstone());
+            // The realm's chunks there were never loaded: the trip still finds the cave floor (about y 32) instead
+            // of carving a frame at the source's height clamped into the arrival heights, y 20.
+            helper.assertTrue(built.sealstone().getY() != stoneArrivalMinY(realm),
+                    "the trip found the floor in chunks nothing had loaded: " + built.sealstone());
             for (int across = -1; across <= PortalFrame.WIDTH; across++) {
                 helper.assertTrue(realm.getBlockState(built.at(across, -2)).isSolid(),
                         "the built frame stands on the floor, not in it: " + built.at(across, -2));
@@ -626,6 +631,11 @@ public final class RealmPortalGameTests {
                 entry, (linked - start) / 1_000_000, (System.nanoTime() - linked) / 1_000_000);
         helper.assertTrue(arrived != null, "the trip through " + entry + " was let through");
         return arrived;
+    }
+
+    /** The lowest height a frame built in the stone realm may stand at, where a trip from the flat world carves. */
+    private static int stoneArrivalMinY(ServerLevel realm) {
+        return Realms.of(realm.registryAccess(), realm.dimension()).orElseThrow().value().arrival().minY();
     }
 
     /** The realm's return portal within the realm's search radius of {@code centre}. */
