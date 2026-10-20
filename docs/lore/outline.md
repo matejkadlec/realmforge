@@ -348,7 +348,7 @@ Decided rules that a line of lore makes feel natural. Texts may use these lines;
 | Signets are never used up; one signet opens any number of portals (RLM-128) | a seal asks for its signet every time and never takes it: a signet is shown, not paid |
 | Unlocks are per player: without their own unlock, a player can neither open nor switch a portal to that realm with its signet, nor pass through an open one (RLM-128) | the seal knows a traveler by their deeds |
 | Portals link like the Nether's, with scaled coordinates, so arrivals stay near a realm's origin (RLM-128) | none needed: texts never explain where a portal leads inside a realm |
-| Only players travel through realm portals (RLM-128, "for now") | the gates pass a living traveler and what they carry, nothing that walks or drifts on its own |
+| Every entity travels through a realm portal, a player only with the realm's unlock, and a mount or vehicle carrying a player without it stays out; other ways into a realm carry only players (Matěj, 2026-10-20, RLM-154, replacing RLM-128's "only players, for now") | the seals weigh only those who could one day break them; beasts, stones and driftwood pass unjudged, and a gate opens only by its own art, never by a shortcut |
 | The next signet is crafted from the current realm (RE-9) | the guardian holds the shards of the seals after it |
 | No flying bosses (vision) | the forge-drakes' iron wings are too heavy to fly |
 | Every realm has its own light (RE-18) | the Gatewrights forged light into every realm, the violet glow of Unmade Isles included |
