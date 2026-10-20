@@ -5,7 +5,9 @@ Date: 2026-10-11
 Status: Accepted; composition updated 2026-10-12 for the port to Minecraft 26.1.2
 ([0026](0026-platform-minecraft-26-1-2-neoforge.md), RLM-124); config overrides added 2026-10-13 (RLM-132); amended
 by [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) (Apotheosis, Apothic Attributes and Apothic Enchanting added, RLM-271); amended by [0040](0040-coins-and-data-driven-merchant-trades.md) (JEI / REI Trades) and
-[0041](0041-dungeon-containers-hold-loot-through-lootr.md) (Lootr, M1), 2026-10-19
+[0041](0041-dungeon-containers-hold-loot-through-lootr.md) (Lootr, M1), 2026-10-19; amended by
+[0044](0044-third-party-mods-by-milestone.md) (the mods by milestone; nothing left to build of the small UI mods),
+2026-10-20
 
 ## Context
 
@@ -38,7 +40,7 @@ The modpack wraps our core mod with third-party QoL, UI, performance and library
 ## Consequences
 
 - Updating mods is `packwiz update --all` plus a playtest; the pinned render stack is updated deliberately.
-- `packwiz update` picks the newest file regardless of its release channel; a mod that publishes betas between releases gets pinned to its newest release build ([pack README](../../pack/README.md#release-builds-of-libraries)). On 26.1.2 that is JEI and Jade; Yeetus Experimentus is pinned because Modrinth tags it 26.1 only, so `packwiz update` finds no 26.1.2 build of it.
+- `packwiz update` picks the newest file regardless of its release channel; a mod that publishes betas between releases gets pinned to its newest release build ([pack README](../../pack/README.md#release-builds)). On 26.1.2 that is JEI and Jade; Yeetus Experimentus is pinned because Modrinth tags it 26.1 only, so `packwiz update` finds no 26.1.2 build of it.
 - After every mod change, check the dependencies the jars declare (`neoforge.mods.toml`, embedded jars included): packwiz misses some, and a library can stay behind after its last user left. The 26.1.2 port dropped Fzzy Config and Kotlin for Forge (EMI Loot's), Bookshelf (Enchantment Descriptions now needs Prickle) and Architectury API (FTB no longer needs it), and added Player Animation Library (Better Combat 3), Shogi (Waystones) and Collective (Tree Harvester).
 - Better Combat 3 animates through Player Animation Library, which is maintained, instead of playerAnimator; our cast animations use the same library ([0020](0020-cast-animations-and-melee-while-casting.md)).
 - The pack has no optional mod since Quark left, so each side boots once in the pack boot test ([0018](0018-pack-boot-tests.md)).
