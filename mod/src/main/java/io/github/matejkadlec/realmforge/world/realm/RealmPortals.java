@@ -133,7 +133,8 @@ public final class RealmPortals {
         }
         if (!RealmAccess.mayEnter(player, realm.value().dimension())) {
             tell(player, Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_NOT_ELIGIBLE,
-                    Component.translatable(realm.value().name()), Component.translatable(realm.value().lockedHint())));
+                    Component.translatable(realm.value().description()),
+                    Component.translatable(realm.value().lockedHint())));
             return;
         }
         open(player, level, sealstone, realm);

@@ -68,6 +68,18 @@
       "title": "Colour",
       "type": "string"
     },
+    "description": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LocalizedText"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The realm as a plain description in running text, lowercase and without an article: stone realm. The refusal at the sealstone reads 'a portal to the stone realm' (Matěj, 2026-10-20). Every realm has one; Overworld none."
+    },
     "dimension": {
       "description": "The realm's dimension, e.g. realmforge:stone (content/worldgen/); minecraft:overworld for Overworld's entry, which is no realm.",
       "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
@@ -118,7 +130,7 @@
         }
       ],
       "default": null,
-      "description": "How to unlock it, shown when a player without the unlock is refused: one sentence. Every realm has one; Overworld none."
+      "description": "How to unlock it, shown when a player without the unlock is refused: one sentence naming the quest, 'Unlocked by completing The Ominous Chief quest.' Every realm has one; Overworld none."
     },
     "name": {
       "$ref": "#/$defs/LocalizedText",

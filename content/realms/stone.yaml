@@ -8,8 +8,11 @@ name:
   en_us: Undervault
 subtitle:
   en_us: Stone Realm
+description:
+  en_us: stone realm
+# The quest's name is a placeholder until Q2 writes chapter 1's quests (Matěj, 2026-10-20).
 locked_hint:
-  en_us: Unlocked by a chapter 1 quest.
+  en_us: Unlocked by completing The Ominous Chief quest.
 flavour:
   en_us: Cold air rises from below, smelling of dust and old stone.
 icon: realmforge:vaultstone

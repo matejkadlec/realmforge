@@ -41,7 +41,7 @@
   "block.realmforge.realmforge_stone": "Realmforge Stone",
   "block.realmforge.siltstone": "Siltstone",
   "block.realmforge.vaultstone": "Vaultstone",
-  "chapter.realmforge.chapter_1.name": "Chapter 1",
+  "chapter.realmforge.chapter_1.name": "The Ominous Tale",
   "chapter.realmforge.chapter_2.name": "Chapter 2",
   "class.realmforge.mage.description": "Strikes from afar with fire, frost and arcane power, drawn from a well of mana.",
   "class.realmforge.mage.name": "Mage",
@@ -153,7 +153,7 @@
   "message.realmforge.realm_portal_cannot_open_here": "The portal cannot open here",
   "message.realmforge.realm_portal_closed": "The portal is closed",
   "message.realmforge.realm_portal_frame_incomplete": "The frame is incomplete",
-  "message.realmforge.realm_portal_not_eligible": "You are not eligible to open a portal to %1$s. %2$s",
+  "message.realmforge.realm_portal_not_eligible": "You are not eligible to open a portal to the %1$s. %2$s",
   "message.realmforge.realm_portal_only_back": "This portal leads only back to Overworld",
   "message.realmforge.realm_portal_opens_onto": "The portal opens onto %1$s",
   "message.realmforge.realm_portal_unknown_realm": "The portal opens onto an unknown realm",
@@ -165,8 +165,9 @@
   "race.realmforge.human.description": "Folk of the Overworld's roads and towns. At home anywhere, and good at a little of everything.",
   "race.realmforge.human.name": "Human",
   "realm.realmforge.overworld.name": "Overworld",
+  "realm.realmforge.stone.description": "stone realm",
   "realm.realmforge.stone.flavour": "Cold air rises from below, smelling of dust and old stone.",
-  "realm.realmforge.stone.locked_hint": "Unlocked by a chapter 1 quest.",
+  "realm.realmforge.stone.locked_hint": "Unlocked by completing The Ominous Chief quest.",
   "realm.realmforge.stone.name": "Undervault",
   "realm.realmforge.stone.subtitle": "Stone Realm",
   "resource.realmforge.mana": "Mana",
@@ -175,6 +176,5 @@
   "spell_school.realmforge.fire.name": "Fire",
   "spell_school.realmforge.frost.name": "Frost",
   "spell_school.realmforge.physical.name": "Physical",
-  "tooltip.realmforge.signet_never_used_up": "Never used up",
-  "tooltip.realmforge.signet_realm": "%1$s — %2$s"
+  "tooltip.realmforge.signet_not_consumed": "Does not consume on use"
 }

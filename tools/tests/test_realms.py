@@ -57,6 +57,7 @@ def test_a_realm_becomes_its_entry_unlock_and_texts(repo: RepoPaths) -> None:
         "dimension": "realmforge:stone",
         "name": "realm.realmforge.stone.name",
         "subtitle": "realm.realmforge.stone.subtitle",
+        "description": "realm.realmforge.stone.description",
         "locked_hint": "realm.realmforge.stone.locked_hint",
         "flavour": "realm.realmforge.stone.flavour",
         "icon": "realmforge:vaultstone",
@@ -231,17 +232,27 @@ def test_invalid_portal_fields_are_rejected(repo: RepoPaths, old: str, new: str,
     assert any("realms/stone.yaml" in p and expected in p for p in problems), problems
 
 
-def test_a_signet_names_its_realm_in_its_tooltip_and_resists_fire(repo: RepoPaths) -> None:
+def test_a_signets_tooltip_says_it_is_not_consumed_and_it_resists_fire(repo: RepoPaths) -> None:
     java = generate(repo)[ITEMS].decode()
     assert (
         'ITEMS.registerSimpleItem("undervault_signet", properties -> properties.stacksTo(1).fireResistant()'
         in java
     )
-    assert (
-        'Component.translatable("tooltip.realmforge.signet_realm",\n'
-        '                                    Component.translatable("realm.realmforge.stone.name"),\n'
-        '                                    Component.translatable("realm.realmforge.stone.subtitle"))'
-    ) in java
-    assert 'Component.translatable("tooltip.realmforge.signet_never_used_up")' in java
+    # Matěj, 2026-10-20: one line, no realm name or element.
+    assert 'Component.translatable("tooltip.realmforge.signet_not_consumed")' in java
+    assert "realm.realmforge.stone.subtitle" not in java
     lang = json.loads(generate(repo)[LANG])
-    assert lang["tooltip.realmforge.signet_realm"] == "%1$s — %2$s"
+    assert lang["tooltip.realmforge.signet_not_consumed"] == "Does not consume on use"
+
+
+def test_a_realms_description_and_hint_fill_the_refusal_at_the_sealstone(repo: RepoPaths) -> None:
+    files = generate(repo)
+    lang = json.loads(files[LANG])
+    message = lang["message.realmforge.realm_portal_not_eligible"]
+    description = lang["realm.realmforge.stone.description"]
+    hint = lang["realm.realmforge.stone.locked_hint"]
+    # Matěj's wording, 2026-10-20.
+    assert message.replace("%1$s", description).replace("%2$s", hint) == (
+        "You are not eligible to open a portal to the stone realm. "
+        "Unlocked by completing The Ominous Chief quest."
+    )

@@ -103,11 +103,19 @@ class RealmDef(StrictModel):
             "one; Overworld none."
         ),
     )
+    description: LocalizedText | None = Field(
+        default=None,
+        description=(
+            "The realm as a plain description in running text, lowercase and without an article: stone realm. The "
+            "refusal at the sealstone reads 'a portal to the stone realm' (Matěj, 2026-10-20). Every realm has one; "
+            "Overworld none."
+        ),
+    )
     locked_hint: LocalizedText | None = Field(
         default=None,
         description=(
-            "How to unlock it, shown when a player without the unlock is refused: one sentence. Every realm has one; "
-            "Overworld none."
+            "How to unlock it, shown when a player without the unlock is refused: one sentence naming the quest, "
+            "'Unlocked by completing The Ominous Chief quest.' Every realm has one; Overworld none."
         ),
     )
     flavour: LocalizedText | None = Field(
@@ -158,6 +166,7 @@ class RealmDef(StrictModel):
     def _realm_fields(self) -> RealmDef:
         realm_only = {
             "subtitle": self.subtitle,
+            "description": self.description,
             "locked_hint": self.locked_hint,
             "flavour": self.flavour,
             "icon": self.icon,

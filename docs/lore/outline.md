@@ -290,7 +290,9 @@ a chapter.
 
 ## Chapters 1 and 2 for Q2
 
-M1 ships chapters 1 and 2 (RLM-188), and Q2 writes both: about 25–30 quests, the 16 beats below as the two main
+M1 ships chapters 1 and 2 (RLM-188), and Q2 writes both. Chapter 1 is named **The Ominous Tale**, and its final
+quest, which grants the Signet of the Undervault and the realm's unlock, is called **The Ominous Chief** for now
+(Matěj, 2026-10-20; Undervault's locked hint names it): about 25–30 quests, the 16 beats below as the two main
 questlines plus side quests (roadmap: rewards from the gear set; each chapter's last quest grants its chapter
 advancement). Beats 1–9 are chapter 1, in Overworld (levels 1–10); beats 10–16 are chapter 2, in Undervault (levels
 6–18). These beats are the story they tell; each names what it teaches, so the quests can follow the order of the
@@ -303,7 +305,7 @@ systems M1 builds. The order, the counts and the rewards are Q2's to set, agains
 | 2 | The Wild Is Wide | Overworld | kills a few hostile mobs; gains levels | the Lodge wants to know the newcomer can handle themselves |
 | 3 | A Spark in the Hand | Overworld | casts class spells | Maren on the old crafts of fighting and casting |
 | 4 | What You Learn | Overworld | learns a talent | everyone in the Lodge has a specialty |
-| 5 | Stone and Copper | Overworld | gathers stone bricks and copper | the Gatewrights built gates from plain stone; Maren has the plan |
+| 5 | Brick and Pearl | Overworld | gathers the bricks of eight Overworld stones and an ender pearl for Realmforge Stone | the Gatewrights built gates from plain stone; Maren has the plan |
 | 6 | Realmforge Bricks | Overworld | crafts Realmforge Bricks | the plan's first page |
 | 7 | The Keystone | Overworld | crafts the sealstone | the gate's heart: a stone that remembers where it leads |
 | 8 | Raise the Gate | Overworld | builds the frame | the first gate raised in an age |

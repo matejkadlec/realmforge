@@ -59,11 +59,7 @@ public final class GeneratedItems {
     public static final DeferredItem<Item> UNDERVAULT_SIGNET =
             ITEMS.registerSimpleItem("undervault_signet", properties -> properties.stacksTo(1).fireResistant()
                     .component(DataComponents.LORE, new ItemLore(List.of(
-                            Component.translatable("tooltip.realmforge.signet_realm",
-                                    Component.translatable("realm.realmforge.stone.name"),
-                                    Component.translatable("realm.realmforge.stone.subtitle"))
-                                    .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(false)),
-                            Component.translatable("tooltip.realmforge.signet_never_used_up")
+                            Component.translatable("tooltip.realmforge.signet_not_consumed")
                                     .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(false))))));
 
     private GeneratedItems() {

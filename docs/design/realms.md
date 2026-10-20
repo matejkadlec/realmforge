@@ -33,9 +33,10 @@ realms are deeper than others and a player can come back for a harder optional d
 **Names** (Matěj, RLM-139 and RLM-188): the names players read, from the [lore outline](../lore/outline.md#the-realms).
 **A realm name never takes an article** (Matěj, 2026-10-15 and 2026-10-16): Overworld, Undervault, Sunwastes,
 Everwinter, Olympus, Prestoria, Quagmire, Ashfire, Unmade Isles, in every text and every document. Where a player
-first meets one (the guide, the signet tooltip, the arrival title), it carries a plain subtitle with its element, such
-as "Undervault — Stone Realm" ([style guide](../lore/style.md#text-types)). This document keeps "stone realm",
-"desert realm" and so on as plain descriptions. Renamed on 2026-10-15: the Rimefields became Everwinter, the
+first meets one (the guide, the arrival title), it carries a plain subtitle with its element, such as "Undervault —
+Stone Realm" ([style guide](../lore/style.md#text-types)). This document keeps "stone realm", "desert realm" and so on
+as plain descriptions, and so does the refusal at the realm portal's sealstone: "You are not eligible to open a portal
+to the stone realm." (Matěj, 2026-10-20). Renamed on 2026-10-15: the Rimefields became Everwinter, the
 Forgefire Ashfire, and the Brink Unmade Isles (RLM-164).
 
 ## Progression rules

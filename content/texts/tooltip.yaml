@@ -2,10 +2,7 @@
 # Item tooltip lines the pipeline writes into an item's lore (tooltip.realmforge.<name>, generate/items.py).
 id: tooltip
 texts:
-  # A realm's signet (W2b, realm portal spec "Realm signets"): the realm it opens the portal onto, %1$s the realm's
-  # name, %2$s its element ("Undervault — Stone Realm", RLM-139).
-  signet_realm:
-    en_us: "%1$s — %2$s"
-  # A signet opens any number of portals and is never consumed.
-  signet_never_used_up:
-    en_us: Never used up
+  # A realm's signet (W2b, realm portal spec "Realm signets"): it opens any number of portals and is never consumed
+  # (Matěj's wording, 2026-10-20; the tooltip's only line).
+  signet_not_consumed:
+    en_us: Does not consume on use

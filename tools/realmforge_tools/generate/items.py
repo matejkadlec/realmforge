@@ -10,7 +10,6 @@ from pathlib import Path
 from realmforge_tools.content import Content
 from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.generate.datapack import data_dir
-from realmforge_tools.generate.datapack import translation_key as entry_translation_key
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
 from realmforge_tools.generate.textures import placeholder_texture
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
@@ -21,10 +20,8 @@ from realmforge_tools.schema.text import text_key
 GENERATED_PACKAGE = f"{JAVA_PACKAGE}.generated"
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
 VANILLA_DEFAULT_STACK_SIZE = 64
-# A signet's tooltip lines, texts in content/texts/tooltip.yaml: its realm (%1$s the name, %2$s the element), and that
-# it is never used up.
-SIGNET_REALM_TEXT = ("tooltip", "signet_realm")
-SIGNET_KEPT_TEXT = ("tooltip", "signet_never_used_up")
+# A signet's tooltip line, a text in content/texts/tooltip.yaml: it is not consumed on use (Matěj, 2026-10-20).
+SIGNET_KEPT_TEXT = ("tooltip", "signet_not_consumed")
 # What an item's tooltip lines need (_lore).
 LORE_IMPORTS = (
     "java.util.List",
@@ -152,21 +149,14 @@ def _registrations(content: Content, paths: RepoPaths) -> bytes:
 
 
 def _lore(item: ItemDef, realm: RealmDef | None) -> str:
-    """The item's tooltip lines as Java: the realm it is the signet of, with the realm's element, and that it is never
-    used up (grey, not italic); its use in green, as a "Use:" line; then its flavor line in vanilla's lore style
-    (purple, italic). Empty when it has none of them."""
+    """The item's tooltip lines as Java: for a realm's signet, that it is not consumed on use (grey, not italic); its
+    use in green, as a "Use:" line; then its flavor line in vanilla's lore style (purple, italic). Empty when it has
+    none of them."""
     indent = " " * 28
     lines = []
     if realm is not None:
-        name = entry_translation_key("realm", realm.id, "name")
-        subtitle = entry_translation_key("realm", realm.id, "subtitle")
         plain = (
             f"\n{indent}        .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(false))"
-        )
-        lines.append(
-            f"Component.translatable({string_literal(text_key(*SIGNET_REALM_TEXT))},\n"
-            f"{indent}        Component.translatable({string_literal(name)}),\n"
-            f"{indent}        Component.translatable({string_literal(subtitle)})){plain}"
         )
         lines.append(f"Component.translatable({string_literal(text_key(*SIGNET_KEPT_TEXT))}){plain}")
     if item.use is not None:

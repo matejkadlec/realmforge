@@ -230,7 +230,7 @@ public final class GeneratedTexts {
     /** {@code message.realmforge.realm_portal_frame_incomplete} from {@code content/texts/message.yaml}: "The frame is incomplete" */
     public static final String MESSAGE_REALM_PORTAL_FRAME_INCOMPLETE = "message.realmforge.realm_portal_frame_incomplete";
 
-    /** {@code message.realmforge.realm_portal_not_eligible} from {@code content/texts/message.yaml}: "You are not eligible to open a portal to %1$s. %2$s" */
+    /** {@code message.realmforge.realm_portal_not_eligible} from {@code content/texts/message.yaml}: "You are not eligible to open a portal to the %1$s. %2$s" */
     public static final String MESSAGE_REALM_PORTAL_NOT_ELIGIBLE = "message.realmforge.realm_portal_not_eligible";
 
     /** {@code message.realmforge.realm_portal_only_back} from {@code content/texts/message.yaml}: "This portal leads only back to Overworld" */
@@ -263,11 +263,8 @@ public final class GeneratedTexts {
     /** {@code resource.realmforge.rage} from {@code content/texts/resource.yaml}: "Rage" */
     public static final String RESOURCE_RAGE = "resource.realmforge.rage";
 
-    /** {@code tooltip.realmforge.signet_never_used_up} from {@code content/texts/tooltip.yaml}: "Never used up" */
-    public static final String TOOLTIP_SIGNET_NEVER_USED_UP = "tooltip.realmforge.signet_never_used_up";
-
-    /** {@code tooltip.realmforge.signet_realm} from {@code content/texts/tooltip.yaml}: "%1$s — %2$s" */
-    public static final String TOOLTIP_SIGNET_REALM = "tooltip.realmforge.signet_realm";
+    /** {@code tooltip.realmforge.signet_not_consumed} from {@code content/texts/tooltip.yaml}: "Does not consume on use" */
+    public static final String TOOLTIP_SIGNET_NOT_CONSUMED = "tooltip.realmforge.signet_not_consumed";
 
     private GeneratedTexts() {
     }

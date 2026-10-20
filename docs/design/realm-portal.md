@@ -112,7 +112,7 @@ hoppers have nothing to take.
 | --- | --- |
 | right-click with a signet of a realm the player has unlocked | opens the portal onto the signet's realm, or switches it there at once; the signet stays in the hand |
 | right-click with the signet of the realm a lit portal already shows | nothing changes; "The portal already opens onto Undervault" |
-| right-click with a signet of a realm the player has not unlocked | refused, with the realm's hint: "You are not eligible to open a portal to Undervault" |
+| right-click with a signet of a realm the player has not unlocked | refused, with the realm's hint: "You are not eligible to open a portal to the stone realm. Unlocked by completing The Ominous Chief quest." (Matěj, 2026-10-20) |
 | right-click with any signet on a frame inside a realm | refused: "This portal leads only back to Overworld" (Matěj, RLM-188) |
 | right-click with an empty hand | the action bar shows where the portal opens onto, or "The portal is closed" for a dark one |
 | sneak and right-click with an empty main hand, whatever the off hand holds | in Overworld, closes the portal (setting none); inside a realm, opens it onto return, or switches it back to return |
@@ -133,10 +133,10 @@ hoppers have nothing to take.
 ## Realm signets
 
 - **One per realm,** stacking to 1, never consumed (RE-1), fire resistant (`Item.Properties#fireResistant`), so lava
-  does not take it. One signet opens any number of portals (Matěj, RLM-128). Its tooltip names the realm with its
-  element subtitle ("Undervault — Stone Realm", Matěj, RLM-139) and says "Never used up". It shows no levels:
-  they live in the server-only `realmforge:dimension_rules`, and the arrival title, which the server sends, shows
-  them.
+  does not take it. One signet opens any number of portals (Matěj, RLM-128). Its tooltip is one line, "Does not
+  consume on use" (Matěj, 2026-10-20, replacing the first version's "Undervault — Stone Realm" and "Never used up").
+  It shows no levels: they live in the server-only `realmforge:dimension_rules`, and the arrival title, which the
+  server sends, shows them.
 - **A signet is a key, not the unlock.** Every copy of a realm's signet is the same item, whoever obtained it, and
   anyone may hold one (Matěj, RLM-128). A player needs a signet to open or switch a portal, and their own unlock
   ([Access and unlocks](#access-and-unlocks)) to use it.
@@ -218,9 +218,9 @@ hoppers have nothing to take.
   RLM-128). A respawn does not pass through the event (`PlayerList#respawn` creates the player in the target level
   directly), and a respawn never puts a player in a realm ([Respawn](#respawn)).
 - **What a locked realm shows elsewhere:** a portal someone else opened onto it looks the same as for anyone (its
-  colour, particles and sound), so a player sees where a friend went. The signet's tooltip and the realm's hint say
-  how to unlock it. A realm map with locked realms and their hints (RE-7) is a later view, in the guide (RLM-102,
-  approved for M4 in RLM-116) or a screen of its own; M1 needs none.
+  colour, particles and sound), so a player sees where a friend went. The realm's hint says how to unlock it. A
+  realm map with locked realms and their hints (RE-7) is a later view, in the guide (RLM-102, approved for M4 in
+  RLM-116) or a screen of its own; M1 needs none.
 - **No operator bypass:** a creative player needs the unlock like anyone else, so tests and playtests see the real
   rule. `/advancement grant @s only realmforge:realm/stone`, or a QA command, unlocks a realm for testing.
 
@@ -508,8 +508,9 @@ without one; never in a realm. This answers the realm design's
 id: stone
 dimension: realmforge:stone          # the realm's dimension (content/worldgen/dimension/stone.json)
 name: {en_us: Undervault}            # the approved name (RLM-139), without an article (RLM-188)
-subtitle: {en_us: Stone Realm}       # shown with the name in the guide, the signet tooltip and the arrival title
-locked_hint: {en_us: "Unlocked by a chapter 1 quest."}
+subtitle: {en_us: Stone Realm}       # shown with the name in the guide and the arrival title
+description: {en_us: stone realm}    # in running text: "a portal to the stone realm" (Matěj, 2026-10-20)
+locked_hint: {en_us: "Unlocked by completing The Ominous Chief quest."}   # the quest's name is a placeholder
 flavour: {en_us: "Cold air rises from below, smelling of dust and old stone."}
 # W2b adds the portal's fields:
 signet: realmforge:undervault_signet        # an item from content/items/, stack size 1
@@ -530,8 +531,9 @@ arrival: {y: [64, 310], floor: minecraft:stone_bricks, pocket_radius: 3}   # por
 ```
 
 - **The name in messages:** a realm's name takes no article (Matěj, RLM-188), so it reads the same alone (the
-  arrival title, the signet tooltip) and mid-sentence ("The portal opens onto Undervault"). The pydantic model
-  carries one form and each message a template; no message hard-codes a realm's name.
+  arrival title) and mid-sentence ("The portal opens onto Undervault"). The pydantic model carries one form and each
+  message a template; no message hard-codes a realm's name. The refusal at the sealstone names the realm by its
+  plain `description` instead: "You are not eligible to open a portal to the stone realm." (Matěj, 2026-10-20).
 - **The coordinate scale is not here:** it is the `coordinate_scale` of the realm's dimension type
   (`content/worldgen/dimension_type/stone.json`, `16.0`), next to its `bed_rule` and `respawn_anchor_works`
   attributes, because vanilla reads it from there.
