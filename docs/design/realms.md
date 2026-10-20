@@ -4,9 +4,11 @@
 > fills them. Written on 2026-10-12 from Matěj's decisions of 2026-10-11 and 2026-10-12 (Jira RLM-40 and RLM-47) and
 > the reference-game research ([reference-games.md](../research/reference-games.md), cited by item ID such as
 > RE-9). Updated on 2026-10-16 with the v1 realm layout (RLM-188): Matěj's decisions of 2026-10-14 to 2026-10-16 on
-> level bands, chapters and caps, realm names, new and dropped realms and realm tool tiers. It is a first version:
-> Matěj expects to change it after playing, so it sets rules and direction, not every detail. Realm names are the
-> names players read, approved by Matěj with the [lore outline](../lore/outline.md) (RLM-139, RLM-188); mob and
+> level bands, chapters and caps, realm names, new and dropped realms and realm tool tiers. Updated on 2026-10-20 with
+> two renames: Olympus became Asgard, opened from about level 15 (RLM-245), and Prestoria became Atlantis, a water
+> realm (RLM-265). It is a first version: Matěj expects to change it after playing, so it sets rules and direction,
+> not every detail. Realm names are the names players read, approved by Matěj with the
+> [lore outline](../lore/outline.md) (RLM-139, RLM-188); mob and
 > place names are working names. The [Void realm](#the-void-realm) section is RLM-95's design, which waits for his
 > approval (RLM-164). Plan: [roadmap](../roadmap.md); the XP model that fills the bands:
 > [leveling.md](leveling.md); the Nether and End: [ADR 0025](../decisions/0025-remove-the-nether-and-end.md), amended
@@ -14,9 +16,10 @@
 
 ## At a glance
 
-v1 has eight realms on the main path and one hub (Matěj, 2026-10-14 and 2026-10-15, RLM-188). Bands overlap, as in
-WoW Classic: each realm starts 2–6 levels before the previous one ends, and bands are 8–14 levels wide, so some
-realms are deeper than others and a player can come back for a harder optional dungeon.
+v1 has eight realms on the main path and one hub (Matěj, 2026-10-14 and 2026-10-15, RLM-188; the hub opens earlier
+since 2026-10-17, RLM-245). Bands overlap, as in WoW Classic: each realm starts 2–6 levels before the previous one
+ends, and bands are 8–14 levels wide, so some realms are deeper than others and a player can come back for a harder
+optional dungeon.
 
 | Realm | Name | Levels | Chapter | Milestone | Identity | Signature content |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -24,20 +27,24 @@ realms are deeper than others and a player can come back for a harder optional d
 | [Stone realm](#the-stone-realm) | Undervault | 6–18 | 2 | M1 | earth and stone | one giant cave, the mine of the whole game, mines with friendly NPCs, catacombs, a boss arena, ancient debris |
 | [Desert realm](#the-desert-realm) | Sunwastes | 16–24 | 3 (twin) | M4 | sun and sand | dunes and big oases, pyramid and sphinx dungeons |
 | [Tundra realm](#the-tundra-realm) | Everwinter | 20–30 | 3 (twin) | M4 | frost | frozen lakes with something beneath, a nordic fortress, an ice castle |
-| [Hub realm](#the-hub-realm) | Olympus | from 30 | none | later | the heavens | a celestial city and palace full of NPCs, quests into realms 4–7, trading |
-| [Prehistoric realm](#the-prehistoric-realm) | Prestoria | 26–40 | 4 | later | the ancient wild | dinosaurs |
+| [Hub realm](#the-hub-realm) | Asgard | from about 15 | none | later | the heavens | a celestial city and palace full of NPCs, the centre of the game: quests into Sunwastes, Everwinter and every later realm, trading |
+| [Water realm](#the-water-realm) | Atlantis | 26–40 | 4 | later | water | under water up to about y 128: sand hills, coral reefs, kelp and shipwrecks on the seabed, an underwater city, the Ocean Monument |
 | [Swamp realm](#the-swamp-realm) | Quagmire | 36–44 | 5 | later | slime | slime-block biomes, several kinds of slime, a slime dungeon |
 | [Fire realm](#the-fire-realm) | Ashfire | 40–52 | 6 | later | fire | black and red plains, burnt trees, lava lakes, volcanoes, grounded dragons |
 | [Void realm](#the-void-realm) | Unmade Isles | 48–60 | 7, the last of v1 | later | void | islands joined by bridges and chains, guard towers, the Void Cathedral and the finale, malachite gear |
 
 **Names** (Matěj, RLM-139 and RLM-188): the names players read, from the [lore outline](../lore/outline.md#the-realms).
-**A realm name never takes an article** (Matěj, 2026-10-15 and 2026-10-16): Overworld, Undervault, Sunwastes,
-Everwinter, Olympus, Prestoria, Quagmire, Ashfire, Unmade Isles, in every text and every document. Where a player
-first meets one (the guide, the arrival title), it carries a plain subtitle with its element, such as "Undervault —
-Stone Realm" ([style guide](../lore/style.md#text-types)). This document keeps "stone realm", "desert realm" and so on
-as plain descriptions, and so does the refusal at the realm portal's sealstone: "You are not eligible to open a portal
-to the stone realm." (Matěj, 2026-10-20). Renamed on 2026-10-15: the Rimefields became Everwinter, the
-Forgefire Ashfire, and the Brink Unmade Isles (RLM-164).
+**A realm's name has no article** (Matěj, 2026-10-15 and 2026-10-16): Overworld, Undervault, Sunwastes,
+Everwinter, Asgard, Atlantis, Quagmire, Ashfire, Unmade Isles, in every text and every document, as a name, a label
+or a title. **A sentence that refers to the realm takes "the" where it reads naturally,** as with the Nether ("Enter
+the Nether", "I was at the Nether"), and **every realm's entry quest is titled "Enter the {realm}"** (Matěj,
+2026-10-19, RLM-265, refining RLM-188's "never 'the', anywhere"; [style guide](../lore/style.md#text-types)). Where a
+player first meets one (the guide, the arrival title), it carries a plain subtitle with its element, such as
+"Undervault — Stone Realm". This document keeps "stone realm", "desert realm" and so on as plain descriptions, and
+so does the refusal at the realm portal's sealstone: "You are not eligible to open a portal to the stone realm."
+(Matěj, 2026-10-20). Renamed on 2026-10-15: the Rimefields became Everwinter, the Forgefire Ashfire, and the Brink
+Unmade Isles (RLM-164). Renamed later: Olympus became Asgard (2026-10-17, RLM-245), and the prehistoric Prestoria
+became the water realm Atlantis (2026-10-19, RLM-265).
 
 ## Progression rules
 
@@ -66,15 +73,15 @@ Forgefire Ashfire, and the Brink Unmade Isles (RLM-164).
   - spawn tables per biome with passive, ambient and hostile mobs, so no realm has only hostile life (WF-14);
   - a friendly or neutral faction next to a hostile one, each with its own settlements (WF-3);
   - one identity element visible on the realm's mobs and drops (RE-5), and music and ambience from the start (RE-8);
-  - Olympus is the exception: a small, passive realm of NPCs ([The hub realm](#the-hub-realm)).
+  - Asgard is the exception: a small, passive realm of NPCs ([The hub realm](#the-hub-realm)).
 - **No horror realm with limited visibility** (RE-18). Every realm has its own light (glowstone, crystals, a sky),
   so Dark Vision is a comfort, not a requirement.
 
 ### Chapters and levels
 
 - **A realm is a chapter, and the twins share one** (Matěj, RLM-188): chapter 1 is Overworld, chapter 2
-  Undervault, chapter 3 Sunwastes and Everwinter together, then Prestoria, Quagmire, Ashfire and Unmade Isles as
-  chapters 4 to 7. Olympus is no chapter. The twins each have dungeons across their own band, and the player
+  Undervault, chapter 3 Sunwastes and Everwinter together, then Atlantis, Quagmire, Ashfire and Unmade Isles as
+  chapters 4 to 7. Asgard is no chapter. The twins each have dungeons across their own band, and the player
   alternates between them (waystones make that easy). The old rule "10 levels per chapter" is gone; Matěj expects to
   change the numbers at least once after playing.
 - **A chapter's level cap is its last level:** 10, 18, 30, 40, 44, 52 and 60, raised by the chapter's main
@@ -168,13 +175,16 @@ never also in Overworld.** Vanilla strongholds are off from M1.
 | Undervault | Dungeons Enhanced: Deep Crypt, Dungeon Variant (set into the cave walls); Golem Dungeons: Abandoned Factory | M2 (RLM-316) |
 | Sunwastes | Dungeons Enhanced: Desert Tomb, Desert Temple, Hay Storage; YUNG's Cave Biomes: Lost Caves | M4 (RLM-325) |
 | Everwinter | Dungeons Enhanced: Castle, Ice Pit, Witch Tower, Watch Tower; YUNG's Cave Biomes: Frosted Caves; The Lost Castle in the tundra | M4 (RLM-325) |
-| Prestoria (Atlantis, if RLM-265 makes it the water realm) | Dungeons Enhanced: Elders Temple, Sunken Shrine, Flying Dutchman (a ghost ship 20–40 blocks above the seabed, through a start-height override) | with the realm |
+| Atlantis | Dungeons Enhanced: Elders Temple, Sunken Shrine, Flying Dutchman (a ghost ship 20–40 blocks above the seabed, through a start-height override); the vanilla Ocean Monument, through YUNG's Better Ocean Monuments (RLM-265) | with the realm |
 | Quagmire | Dungeons Enhanced: Tall Witch Hut; Grim Kingdoms (a ruined castle in the swamp) | with the realm |
 | Ashfire | Dungeons Enhanced: Black Citadel; Golem Dungeons: Piglin Factory | with the realm |
 | Unmade Isles | MSS – Moog's Soaring Structures | with the realm |
 
-YUNG's Cave Biomes generates in neither Overworld nor Undervault. Paintings in a dungeon come from its theme's own
-set, never random across themes (RLM-322).
+YUNG's Cave Biomes generates in neither Overworld nor Undervault. The Ocean Monument leaves Overworld for Atlantis, so
+prismarine, and with it Apothic Enchanting's seashelves, comes only from Atlantis: Matěj accepts that, since he finds
+seashelves unbalanced for the pack's early game (2026-10-19, RLM-265). Dungeons Enhanced's Pirate Ship and Fishing
+Ship stay in Overworld. Paintings in a dungeon come from its theme's
+own set, never random across themes (RLM-322).
 
 ### Puzzles and traps
 
@@ -254,8 +264,8 @@ Chapter 1 (levels 1–10), the realm of M1. Identity: home.
   Overworld the node between realms (TR-7). With cheap waystones the hub costs no walking. As a place, the hub
   waits (Matěj, RLM-139): in M1 the Wayfarers' Lodge is a voice in the quest book, and a Lodge house in a village,
   with NPCs and services that grow each chapter (WF-8), may come with the M4 village overhaul
-  ([lore outline](../lore/outline.md#decisions)). Olympus, from level 30, is the second hub: the place of quests,
-  not of portals ([The hub realm](#the-hub-realm)).
+  ([lore outline](../lore/outline.md#decisions)). Asgard, from about level 15, is the second hub: the place of
+  quests, not of portals ([The hub realm](#the-hub-realm)).
 
 ### The stone realm
 
@@ -351,19 +361,36 @@ mechanic: the vision rules it out).
 
 ### The hub realm
 
-Name: **Olympus** (the name may still change, Matěj). Open from level 30, no chapter. Identity: the heavens. Matěj's
-rules (2026-10-15, RLM-188):
+Name: **Asgard**, and its king is **Odin** (Matěj, 2026-10-17, RLM-245; renamed from Olympus). Open from about
+level 15, no chapter. Identity: the heavens. Matěj's rules (2026-10-15, RLM-188, and 2026-10-17, RLM-245):
+
+- **The centre of the whole game** (2026-10-17): the hub matters for progress, story and items, so players reach it
+  much earlier than the old level 30, with many stories, quests, trades, dialogues and relationships.
+- **The way in: the Asgard Medallion,** crafted, not a quest reward. Undervault's final boss, a stone giant or golem,
+  drops the **Stone Heart** directly, so in practice Asgard opens when that boss falls, at about level 15. Recipe
+  (shaped; Ruby, Sapphire, Topaz and netherite are all Undervault materials, so it is craftable once the boss dies):
+
+  | | | |
+  | --- | --- | --- |
+  | Ruby | Sapphire | Topaz |
+  | Diamond | **Stone Heart** | Emerald |
+  | Iron Ingot | Gold Ingot | Netherite Ingot |
+
+  RLM-245 decided this recipe for a "Sigil of Asgard"; on 2026-10-20 Matěj made the item the Asgard Medallion
+  instead of a sigil, with its own portal of Holy Stone bricks (RLM-302), so the recipe carries over as a proposal
+  ([open question 17](#open-questions)).
 
 - **A small, finite, passive realm in the heavens,** built like one giant dungeon: a celestial city and palace full
   of NPCs, inspired by Hytale's Forgotten Temple and WoW's Dalaran (also a flying city). Technically a dimension, but
   more like a dungeon.
 - **Nothing can be broken or built there,** it is bounded, and there is no flight. The only ways out are the portal
   the player came through, or a jump into the void (death).
-- **What it offers:** quests into Prestoria, Quagmire, Ashfire and Unmade Isles (sometimes into lower realms or
-  dungeons), about a fifth of those realms' quests ([leveling.md](leveling.md#content-budget-per-realm)); trading,
-  profession levelling, dialogues, and campaign hints the guide leaves out (the guide only says something like
-  "… Olympus citizens could know more about this prehistoric realm."). Players keep coming back until level 60.
-- **Unique NPCs live only in Olympus.** They matter to the story and give unique quests. One of them sells keys to
+- **What it offers:** quests into Sunwastes and Everwinter (Matěj, 2026-10-17) and every later realm, Atlantis,
+  Quagmire, Ashfire and Unmade Isles (sometimes into lower realms or dungeons), a share of those realms' quests
+  ([leveling.md](leveling.md#content-budget-per-realm)); trading, profession levelling, dialogues, and campaign hints
+  the guide leaves out (the guide only says something like "… the citizens of Asgard could know more about this
+  realm."). Players keep coming back until level 60.
+- **Unique NPCs live only in Asgard.** They matter to the story and give unique quests. One of them sells keys to
   late-game dungeons (early dungeon keys stay craftable, RLM-181): Matěj left the name open ("it can be Torva"), and
   Claude's pick is **Torva Flintmark**, the Cairnfolk forewoman of chapter 2, who already keeps the catacomb keys in
   the lore outline.
@@ -371,12 +398,49 @@ rules (2026-10-15, RLM-188):
   a reward"). A few important campaign NPCs keep one title-like name in every structure, as bosses do (for example
   "The Wanderer"), like Twilight Forest's Questing Ram, who sets a task the campaign needs.
 - **No custom NPCs in M1.**
-- How a player first reaches it is open ([open question 17](#open-questions)).
 
-### The prehistoric realm
+### The water realm
 
-Name: **Prestoria**. Chapter 4 (levels 26–40), later. Identity: the ancient wild: dinosaurs (Matěj, RLM-188). The
-rest is designed with its chapter.
+Name: **Atlantis**. Chapter 4 (levels 26–40), later. Identity: water. It replaced Prestoria, the prehistoric realm of
+dinosaurs, on 2026-10-19 (Matěj, RLM-265): Prestoria was the one realm whose theme he was unsure of, a water realm is
+truly unique, and this band is short, so players need not stay long if they don't want to. The level band and the
+world tier stay. Themes he weighed for the slot: prehistoric, giants, sculk and water; not wanted: a forest realm. This
+reverses RLM-188's "underwater realm dropped, an underwater instanced dungeon instead" ([Candidate
+realms](#candidate-realms)). "The rest will be refined later."
+
+- **Shape** (Matěj): mostly under water. Water up to about y 128, and above it an empty surface: no islands, just
+  water. No bedrock ceiling ("it wouldn't look good").
+- **The seabed:** sand hills, coral reefs, kelp and coral blocks, and shipwrecks; an underwater city fits the name.
+- **Structures:** Dungeons Enhanced's Sunken Shrine and Elders Temple, the Flying Dutchman as a ghost ship floating
+  through the water 20–40 blocks above the seabed ("like in Pirates of the Caribbean"; our data pack overrides its
+  start height), and the vanilla Ocean Monument through YUNG's Better Ocean Monuments, all moved out of Overworld
+  ([Structures from other mods](#structures-from-other-mods)). Other mods' underwater dungeons may be used, and a
+  surface dungeon can be adapted and moved under water.
+- **Prismarine comes only from here,** and with it Apothic Enchanting's seashelves; Matěj accepts that, since he
+  finds seashelves unbalanced for the pack's early game.
+- **The entry quest "Enter the Atlantis"** is read-only: it explains the realm and rewards the **Breath of Atlantis**,
+  a charm-slot curio that gives infinite breath (like the Aether's), with an enchanted book of **Depth Strider IV** and
+  one of **Aqua Affinity** (Matěj, 2026-10-19).
+- **Seeing under water:** Night Vision (Matěj, 2026-10-19). Vanilla's underwater fog is short; whether the realm's
+  biome and dimension environment attributes also widen it (Lithostitched's `set_biome_attributes` and
+  `set_dimension_attributes`) is for the task that builds the realm.
+- **Swimming faster than Depth Strider III:** since 1.21 Depth Strider adds `minecraft:water_movement_efficiency`,
+  about a third per level, and the attribute caps at 1.0, which level III already reaches. Apothic Enchanting raises
+  the enchantment's max level but not its effect, so levels IV–X swim no faster by default. Matěj expects higher
+  levels to be better. Proposal (Claude, from Apothic Enchanting's 26.1 source): our data pack overrides vanilla's
+  `minecraft:depth_strider` enchantment file (enchantments are data since 1.21), so each level above III also adds
+  swim speed, for example through NeoForge's swim speed attribute; the numbers are tuned in a playtest.
+- **Poseidon's Bow,** the ranged answer, made for Atlantis (Matěj, 2026-10-19): "Arrows shot by this bow ignore
+  water collision." It is not anti-gravity: its arrows fly the normal arc, as if shot out of water.
+  - **Recipe:** an Everwinter boss drop, 2 Everwinter ores and 3 Reinforced Sticks; the boss drop and the ore are
+    still open.
+  - **Reinforced Stick:** a common material, made at the smithing table from a Reinforced Smithing Template, a stick
+    and a steel ingot.
+  - **Reinforced Smithing Template:** loot from Undervault's dungeons, used with steel ingots to reinforce various
+    items, the stick among them. Both are general materials of Undervault's gear, not only Atlantis's.
+  - **Steel:** probably an ore from Undervault.
+- **Still open** ([open questions 18–21](#open-questions)): the portal's arrival on the seabed, mounts, the realm's
+  mobs, and whether vanilla shipwrecks generate here too.
 
 ### The swamp realm
 
@@ -520,13 +584,15 @@ art or assets of other games.
 Themes Matěj described for later realms, to pick from if v1 grows. What the v1 layout took or dropped (Matěj,
 RLM-188):
 
-- **Taken:** the sky islands' celestial palace and Olympus-like theme of gods became [Olympus](#the-hub-realm);
-  Advent of Ascension's dinosaur theme became [Prestoria](#the-prehistoric-realm).
+- **Taken:** the sky islands' celestial palace and Olympus-like theme of gods became the hub realm, now
+  [Asgard](#the-hub-realm); **underwater** (a coral reef, sunken ships, an Atlantis-like city), dropped by RLM-188 for
+  an underwater instanced dungeon, became [Atlantis](#the-water-realm) (Matěj, 2026-10-19, RLM-265).
 - **Dropped:**
   - **the dense forest** (a giant tree as a dungeon, varied tree biomes): too close to Overworld;
-  - **a labyrinth realm** (AoA's realm made of rooms): perhaps a dungeon instead;
-  - **underwater** (a coral reef, sunken ships, an Atlantis-like city): an underwater instanced dungeon instead.
+  - **a labyrinth realm** (AoA's realm made of rooms): perhaps a dungeon instead.
 - **Still open:**
+  - **prehistoric:** Advent of Ascension's dinosaur theme, which was Prestoria until Atlantis took its slot
+    (RLM-265); giants and sculk, the other themes Matěj weighed for that slot;
   - **sky islands** as a realm of their own: large, well-connected islands (no mini islands, no clouds), a whole
     island as one dungeon with paths woven vertically and horizontally; a void rescue keeps a fall from being a lost
     run (RE-15);
@@ -540,7 +606,7 @@ RLM-188):
   (RLM-264, [ADR 0044](../decisions/0044-third-party-mods-by-milestone.md)).
 - **M4:** Sunwastes and Everwinter (dimensions 2 and 3, chapter 3), with their world structures, realm tool tiers
   (RLM-194), and the removal of the Nether and End.
-- **Later:** Olympus, Prestoria, Quagmire, Ashfire, and the Void realm as the
+- **Later:** Asgard, Atlantis, Quagmire, Ashfire, and the Void realm as the
   last one. The Void realm may be built earlier than other realms, and still stays last on the main path
   ([Realms](#realms)).
 
@@ -562,7 +628,8 @@ For Matěj; each has a proposal so the design can go on.
    catacombs (W6's type B) end in a treasury without one. Proposal: a bossless instance completes when its treasury
    opens (DU-6).
 5. **The realm for chapter 3.** **Decided 2026-10-15 (Matěj, RLM-188):** chapter 3 is the twin chapter, Sunwastes
-   and Everwinter (levels 16–30); the forest and underwater realms are dropped.
+   and Everwinter (levels 16–30); the forest and underwater realms are dropped (the underwater realm came back as
+   Atlantis on 2026-10-19, RLM-265).
 6. **The fire realm's chapter.** **Decided 2026-10-15 (Matěj, RLM-188):** chapter 6 (levels 40–52), after the
    elytra, so its dragons can be strong.
 7. **Elytra or flying mounts first?** Asked once, in the mount decision RLM-115, question 4
@@ -607,5 +674,16 @@ For Matěj; each has a proposal so the design can go on.
 16. **Sunwastes' material** now that ancient debris and netherite scrap moved to Undervault (Matěj,
     2026-10-15). Proposal: the twins' first tool tier comes from a desert gem or metal of its own, and the brushing
     loot keeps its gems and books.
-17. **How a player reaches Olympus.** Proposal: a signet like every other realm's, from the quest that ends the twin
-    chapter, so it opens at level 30 as the layout says; its portal leads only back to Overworld, like every realm's.
+17. **How a player reaches Asgard.** **Decided 2026-10-17 (Matěj, RLM-245): a crafted item** from the Stone Heart,
+    the guaranteed drop of Undervault's final boss, so Asgard opens at about level 15 ([The hub realm](#the-hub-realm)).
+    On 2026-10-20 the item became the Asgard Medallion, with Asgard's own portal of Holy Stone bricks (RLM-302).
+    Proposal: the medallion takes RLM-245's recipe unchanged. Open on RLM-302: how Holy Stone, "findable in
+    Everwinter" (chapter 3, levels 20–30), fits a portal a player builds at about level 15.
+18. **Arriving in Atlantis.** The realm portal links to the seabed, so a player arrives under water. Proposal: an air
+    dome around the arrival, as AoA 1.21 does for L'Borean
+    ([research notes](../research/notes/aoa-dimensions-h-to-z.md)); alternative: a platform.
+19. **Mounts in Atlantis.** Ground mounts don't swim, and flying mounts can only cross the empty surface. No proposal
+    yet: it belongs to the mount design (RLM-115).
+20. **Atlantis's mobs.** Proposal: drowned and guardians at first, our own sea mobs later.
+21. **Vanilla shipwrecks in Atlantis.** The seabed has shipwrecks (Matěj); whether they are vanilla's, generating
+    here too (and still in Overworld), is open. Proposal: yes, in both.

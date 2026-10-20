@@ -56,6 +56,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0042](0042-the-dev-runs-load-the-whole-pack.md) | The dev runs load the whole pack | Accepted (amends 0020) |
 | [0043](0043-default-keys-and-key-search-in-the-pack.md) | Default keys and key search in the pack | Accepted (amends 0013) |
 | [0044](0044-third-party-mods-by-milestone.md) | Third-party mods by milestone | Accepted (amends 0004, 0013 and 0025) |
+| [0045](0045-asgard-and-atlantis-amend-the-v1-realm-layout.md) | Asgard and Atlantis amend the v1 realm layout | Accepted (amends 0032) |
 
 ## Open questions (not decided)
 

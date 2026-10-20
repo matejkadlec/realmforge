@@ -11,7 +11,8 @@
 > and the realm design record RLM-128's decision: the unlock comes from the realm's quest, portals link like the
 > Nether's with scaled coordinates, and respawn is always in Overworld. Updated on 2026-10-16 with the v1 realm layout
 > (RLM-188): the realm names Everwinter, Ashfire and Unmade Isles, the new realms Olympus, Prestoria and Quagmire, one
-> chapter per realm (the twins share one), and realm names without an article.
+> chapter per realm (the twins share one), and realm names without an article. Updated on 2026-10-20: Olympus became
+> Asgard, opened from about level 15 (RLM-245), and Prestoria became Atlantis, a water realm (RLM-265).
 
 ## At a glance
 
@@ -98,7 +99,7 @@ made again (the repeatable quest of the [realm portal spec](../design/realm-port
      guardian's trial and carry its shards home.
   3. **The chain (chapters 3 to 6):** each chapter opens the next realm, or the pair of twins (Sunwastes and
      Everwinter, chapter 3). Each realm shows the Void a little closer: its guardian is harder to reason with and its
-     threat a little stranger. From level 30, Olympus hands out quests into the later realms.
+     threat a little stranger. From about level 15, Asgard hands out quests into the twins and every later realm.
   4. **The Void realm (chapter 7, the last of v1):** Unmade Isles, the realm nearest the Void, where the First Wright
      went.
 - **The finale (Matěj, RLM-139):** in the Void Cathedral the player finds the First Wright, hollowed out by the
@@ -123,8 +124,8 @@ approved by Matěj (RLM-139, RLM-188), and the design documents use them too. A 
 | Stone realm | Undervault | 2 (6–18) | earth and stone | the Cairnfolk | the Hewn | the Unbroken, a stone colossus |
 | Desert realm | Sunwastes | 3 (16–24) | sun and sand | the Wellkeepers | the Gilded | a great sphinx (twin seal) |
 | Tundra realm | Everwinter | 3 (20–30) | frost | the Kettlefolk | the Thawed | the Thawed's queen in the ice castle (twin seal) |
-| Hub realm | Olympus | none (from 30) | the heavens | its citizens | none | none: a branch seal |
-| Prehistoric realm | Prestoria | 4 (26–40) | the ancient wild | open | the ancient beasts | open |
+| Hub realm | Asgard | none (from about 15) | the heavens | its citizens, under their king Odin | none | none: a branch seal |
+| Water realm | Atlantis | 4 (26–40) | water | open | open | open |
 | Swamp realm | Quagmire | 5 (36–44) | slime | open | the slimes | open |
 | Fire realm | Ashfire | 6 (40–52) | fire | the Emberwrights | the forge-drakes | the eldest forge-drake |
 | Void realm | Unmade Isles | 7 (48–60) | void | the Chainkeepers | the Unforged | the First Wright (finale) |
@@ -190,19 +191,24 @@ and it held: ships froze in the lakes mid-voyage and a sea-raiding people slept 
 - **The guardian** is the queen of the Thawed in the ice castle, who holds the other shard that seal needs. The
   two shards together forge the next signet.
 
-### The hub realm: Olympus
+### The hub realm: Asgard
 
 A small realm the Gatewrights lifted into the heavens to keep it out of reach: a celestial city and palace above the
-chain, a branch seal rather than a link, with no guardian and no trial. Its citizens are the only named people who
-live in one place for good (Matěj: unique NPCs live only in Olympus); they know the later realms and send Wayfarers
-into them from level 30, and they remember what the guide leaves out. Nothing there can be built or broken, and the
-only ways out are the gate a traveler came through or a long fall. Its history, its people and how a Wayfarer first
-reaches it are written with the realm ([realm design](../design/realms.md#the-hub-realm)).
+chain, ruled by its king, **Odin**, a branch seal rather than a link, with no guardian and no trial. Its citizens are
+the only named people who live in one place for good (Matěj: unique NPCs live only in Asgard); they know the realms
+beyond Undervault and send Wayfarers into them from about level 15, and they remember what the guide leaves out. It
+is the centre of the game: its stories, quests, trades and friendships run through every later chapter (Matěj,
+2026-10-17). Nothing there can be built or broken, and the only ways out are the gate a traveler came through or a
+long fall. A Wayfarer first reaches it with the Asgard Medallion, crafted around the Stone Heart of Undervault's last
+guardian (RLM-245, RLM-302); its history and people are written with the realm
+([realm design](../design/realms.md#the-hub-realm)).
 
-### The prehistoric realm: Prestoria
+### The water realm: Atlantis
 
-A realm the Gatewrights sealed around the oldest wild they found, so its beasts would outlive the age that bred
-them: dinosaurs. Its peoples and guardian are written with its chapter.
+A realm the Gatewrights forged around water and let the sea close over: sand hills, coral reefs and the wrecks of
+ships on its floor, water reaching nearly to the sky, and nothing above it but an empty surface. A city lies on the
+seabed, and the realm is named after it. Its peoples and guardian are written with its chapter
+([realm design](../design/realms.md#the-water-realm)).
 
 ### The swamp realm: Quagmire
 
@@ -244,8 +250,8 @@ malachite, the one thing in the chain the Void seems unable to unmake.
 ### Further realms
 
 The chain can grow beyond v1 with the [candidate realms](../design/realms.md#candidate-realms), each a link nobody
-had counted. The dense forest and the underwater realm are dropped (Matěj, RLM-188), and the sky islands' celestial
-palace became Olympus.
+had counted. The dense forest is dropped (Matěj, RLM-188); the underwater realm, dropped then too, became Atlantis
+(Matěj, 2026-10-19, RLM-265), and the sky islands' celestial palace became the hub, now Asgard.
 
 A new realm fits the chain when it has: one element (RE-5) and a look of its own (RE-20); a friendly and a hostile
 people; a guardian holding the shards of the seals after it; and a reason the Gatewrights forged it.
@@ -279,8 +285,8 @@ a chapter.
   Scholarly, kind, a little dry; she reads Gatewright script better than anyone alive and has never been through a
   gate herself, which she minds more than she says.
 - **Torva Flintmark**, forewoman of the Cairnfolk mine nearest the arena: blunt, cheerful, keeps the catacomb keys
-  and sells them again for repeat runs (LE-2). The Cairnfolk's voice in chapter 2. Unique NPCs live only in Olympus
-  (Matěj, 2026-10-15), so in Undervault she speaks through the quest book; Claude's pick for Olympus's seller of
+  and sells them again for repeat runs (LE-2). The Cairnfolk's voice in chapter 2. Unique NPCs live only in Asgard
+  (Matěj, 2026-10-15), so in Undervault she speaks through the quest book; Claude's pick for Asgard's seller of
   late-game dungeon keys is Torva, who has kept keys all her life ([realm design](../design/realms.md#the-hub-realm)).
 - **The Scribe in the Stone**, Undervault's Sealbound: a Gatewright set into the arena wall, slow to speak and
   formal. Every sealed realm has a Sealbound like him, so the player meets the same kind of figure before each
@@ -355,8 +361,9 @@ The outline forces none of these; each is decided elsewhere, and the lore follow
   quest book and a society, not a building. A Lodge house in a village may come with the M4 village overhaul
   (RLM-139), and the lore follows whatever that task builds.
 - **Friendly NPCs in M1.** There are none (Matěj, 2026-10-15), and the beats of chapters 1 and 2 work without them.
-- **Olympus, Prestoria and Quagmire.** Their lines above give each a reason to exist; their peoples, guardians and
-  history are written with their chapters, and Olympus's way in with its design.
+- **Asgard, Atlantis and Quagmire.** Their lines above give each a reason to exist; their peoples, guardians and
+  history are written with their chapters. Asgard's way in is the Asgard Medallion (RLM-245); its own portal of Holy
+  Stone bricks is RLM-302's.
 - **Boss mechanics, mob and item names** (W3, W5, A1). The outline gives the bosses and peoples an identity; the
   tasks that build them name and shape them, within the [style guide](style.md#names).
 - **The Void realm's gameplay** ([realm design](../design/realms.md#the-void-realm), RLM-95, waiting for Matěj in
@@ -399,6 +406,15 @@ Matěj's answers of 2026-10-13 and 2026-10-14 (RLM-139), which this version reco
    - **chapters:** a realm is a chapter and the twins share one, so chapter 1 is Overworld (levels 1–10), chapter 2
      Undervault (6–18), and so on to chapter 7, Unmade Isles (48–60). M1 ships chapters 1 and 2;
    - **Ashfire is not the Nether** and is not inspired by it (2026-10-16).
+8. **Two later renames and the article in sentences:**
+   - **Olympus became Asgard** (Matěj, 2026-10-17, RLM-245), whose king is **Odin**. It opens from about level 15,
+     through the Asgard Medallion (named on 2026-10-20, RLM-302), and is the centre of the game, with quests into the
+     twins and every later realm;
+   - **Prestoria became Atlantis** (Matěj, 2026-10-19, RLM-265), a water realm in the same chapter 4 band. The
+     prehistoric theme left with it, and the underwater realm RLM-188 dropped came back;
+   - **the article in sentences** (Matěj, 2026-10-19, RLM-265): a realm's name still has no article, but a sentence
+     that refers to the realm takes "the" where it reads naturally, as with the Nether ("Enter the Nether"), and
+     every realm's entry quest is titled "Enter the {realm}" ([style guide](style.md#text-types)).
 
 ## Open questions
 

@@ -77,6 +77,8 @@ Matěj, 2026-10-19: **each structure only in its realm, never also in Overworld.
   `trial_spawner` data ([customizing guide](https://github.com/Ametrin-Studios/DungeonsEnhanced/blob/main/customizing.md)).
 - **Flying Dutchman** spawns 64+ blocks above the surface in the mod; our data pack overrides its start height so it
   floats 20–40 blocks above Atlantis's seabed (open question 2; details on RLM-265).
+- **Ocean Monuments** (vanilla, through YUNG's Better Ocean Monuments) generate only in Atlantis, never in Overworld
+  (Matěj, 2026-10-19, RLM-265), so prismarine and Apothic Enchanting's seashelves come only from there.
 - **Strongholds** are off completely from M1 (Structurify), and neither YUNG's Better Strongholds nor D&T's
   Stronghold splinter comes in.
 - **Ancient Cities** stay, modified at least slightly (D&T's Ancient City Overhaul), for a later Overworld questline
