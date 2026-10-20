@@ -94,8 +94,9 @@ Undervault (levels 6-18), about 12 hours for an average player by the [XP model]
 specialization per class; RLM-218), talents and glyphs (postponed indefinitely, RLM-28), affixes, gems, reforging,
 professions, pets, mounts, villages, the enchanting overhaul, contracts, world-structure dungeons, Overworld's own
 dungeons and final boss (Matěj, 2026-10-16; both in M2 since 2026-10-19, RLM-264), realm tool tiers (RLM-194, M4),
-custom NPCs, changes to the Nether and End, and dungeon parties: instances are solo in M1 (decision D8); parties come
-later (RLM-68).
+custom NPCs, changes to the Nether and End (apart from strongholds off, which leaves the End unreachable,
+[ADR 0044](decisions/0044-third-party-mods-by-milestone.md)), and dungeon parties: instances are solo in M1
+(decision D8); parties come later (RLM-68).
 
 **Order:** the spikes first, then foundations; character and world work can run in parallel after that; quests
 and the release come last. "After" in a task names what must be merged first.

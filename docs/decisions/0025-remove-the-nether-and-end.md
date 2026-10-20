@@ -9,7 +9,8 @@ for the Nether, netherite in Undervault), by
 [0034](0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md) (merchants sell the Nether and End
 materials, the Wither can be summoned again, no desert refining items) and by
 [0037](0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md) (elytra source: chapter 3's final
-boss); its stronghold question answered by [0044](0044-third-party-mods-by-milestone.md) (strongholds are off from M1)
+boss); amended by [0044](0044-third-party-mods-by-milestone.md) (strongholds are off from M1, so the End is unreachable
+from M1)
 
 ## Context
 

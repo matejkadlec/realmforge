@@ -1424,8 +1424,9 @@ loot: realmforge:boss/hollow_warden
   experimental data packs in the create screen; nothing changes on servers. The dev client loads the same build
   with the rest of the pack ([ADR 0042](decisions/0042-the-dev-runs-load-the-whole-pack.md)). We add no mixin of
   our own for it ([19.3](#193-mixins-and-access-transformers)).
-- The Nether and End are removed in M4 ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)); M1 does not touch
-  them.
+- The Nether and End are removed in M4 ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)); M1 touches them
+  only by switching vanilla strongholds off (PK3), which leaves the End without a portal
+  ([ADR 0044](decisions/0044-third-party-mods-by-milestone.md)).
 
 ### 15.2 Dungeon types
 

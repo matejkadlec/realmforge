@@ -3,7 +3,7 @@
 Date: 2026-10-20
 
 Status: Accepted (amends [0004](0004-build-rpg-systems-in-house.md) and [0013](0013-modpack-composition.md);
-answers the stronghold question of [0025](0025-remove-the-nether-and-end.md))
+answers the stronghold question of [0025](0025-remove-the-nether-and-end.md) and amends its "M1 does not change them")
 
 ## Context
 
@@ -87,6 +87,13 @@ answered the open questions the same night (RLM-264). The candidates and every p
 - **More mods, more checks:** each one goes in with its own ticket, its side, a pack boot, the pack README and the
   0013 list; worldgen mods add a structure-placement check and a spark profile, and every mob mod meets our mob
   levels (RLM-240) and our stats as the one attribute model (0038).
+- **The End is unreachable from M1 on.** Without strongholds no End portal generates, so players cannot reach the
+  End from M1, long before M4 removes the dimension; [0025](0025-remove-the-nether-and-end.md) said M1 leaves both
+  dimensions untouched, and this amends that. Items only the End gives (end stone, purpur, chorus fruit, end rods,
+  dragon's breath, the End's shulker shells) have no source until [0034](0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md)'s
+  merchants or M4's removal task gives them one, and the advancements "Eye Spy" and "The End?" become unreachable
+  early; elytra already wait for chapter 3's final boss ([0037](0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md)).
+  Whether M1 needs an earlier source for any of them is open for Matěj. The Nether is unchanged.
 - **Our damage pipeline meets Iron's RPG Tweaks:** PK4 checks it against the hurt-cooldown handling of
   [architecture 9.1](../architecture.md#91-damage-pipeline) and keeps fire, lava, cactus and crowds from hitting every
   tick.
