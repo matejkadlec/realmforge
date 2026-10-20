@@ -2,6 +2,7 @@ package io.github.matejkadlec.realmforge.world;
 
 import com.mojang.serialization.Codec;
 import io.github.matejkadlec.realmforge.Realmforge;
+import java.util.List;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -20,6 +21,16 @@ public final class WorldAttachments {
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<Boolean>> DARK_VISION =
             ATTACHMENTS.register("dark_vision", () -> AttachmentType.builder(() -> Boolean.TRUE)
                     .serialize(Codec.BOOL.fieldOf("value"))
+                    .copyOnDeath()
+                    .build());
+
+    /**
+     * {@code realmforge:visited_realms}: the ids of the realms the player has arrived in, so the arrival shows a realm's
+     * flavour line only the first time (realm portal spec, "Arriving"). Copied on death; not synced.
+     */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<List<String>>> VISITED_REALMS =
+            ATTACHMENTS.register("visited_realms", () -> AttachmentType.builder(() -> List.<String>of())
+                    .serialize(Codec.STRING.listOf().fieldOf("value"))
                     .copyOnDeath()
                     .build());
 

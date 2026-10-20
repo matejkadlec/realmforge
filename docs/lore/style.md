@@ -37,9 +37,9 @@
 | --- | --- | --- | --- |
 | Quest title | Title Case, like vanilla advancements; no end punctuation | 1–5 words | Raise the Gate |
 | Quest description | the giver's voice, then what to do; the task list comes from data | 1–3 sentences, at most 50 words | "The plan shows a frame of plain stone around one keystone. Stand it up somewhere you can find again." Maren |
-| Item, block or mob type name | Title Case, like vanilla; no flavour in the name | 1–3 words | Portal Stone |
+| Item, block or mob type name | Title Case, like vanilla; no flavour in the name | 1–3 words | Realmforge Bricks |
 | Character name (a unique NPC or boss) | a name, a title, or both ([Names](#names)) | 1–6 words | Torva Flintmark, the Scribe in the Stone |
-| Realm name | the realm's name from the [outline](outline.md#the-realms), never with an article as a name, label or title (Matěj, RLM-188); a sentence that refers to the realm takes "the" where it reads naturally, as with the Nether ("Enter the Nether", "I was at the Nether"), and every realm's entry quest is titled "Enter the {realm}" (Matěj, 2026-10-19, RLM-265); where a player first meets it (the guide, the sigil tooltip, the arrival title), a plain subtitle with its element follows (Matěj, RLM-139) | name 1–3 words, subtitle 2 words | Undervault — Stone Realm |
+| Realm name | the realm's name from the [outline](outline.md#the-realms), never with an article as a name, label or title (Matěj, RLM-188); a sentence that refers to the realm takes "the" where it reads naturally, as with the Nether ("Enter the Nether", "I was at the Nether"), and every realm's entry quest is titled "Enter the {realm}" (Matěj, 2026-10-19, RLM-265); where a player first meets it (the guide, the arrival title), a plain subtitle with its element follows (Matěj, RLM-139) | name 1–3 words, subtitle 2 words | Undervault — Stone Realm |
 | Flavour line (item tooltip lore) | one sentence, no mechanics | at most 12 words | "Warm to the touch, though nothing near it burns." |
 | Mechanics in a tooltip | generated from data, never written in prose | - | - |
 | Realm arrival line | what the player sees, hears or smells | one sentence, at most 15 words | "Cold air rises from below, smelling of dust and old stone." |
@@ -58,12 +58,12 @@
 | Realmforge | the whole world | Minecraft, the server, this world |
 | realm (lower case); a realm's name in Title Case, without an article except where a sentence reads naturally with one ("Enter the Atlantis") | a custom dimension | dimension, world, plane |
 | Overworld, without an article | the starting world | the surface, home world |
-| sigil | the item that opens a realm | key, rune, stone (keys are dungeon keys) |
+| signet | the item that opens a realm (Matěj, 2026-10-20) | key, rune, stone (keys are dungeon keys), sigil (the old name) |
 | seal | a realm's lock | barrier, ward |
 | gate | a realm portal, in story texts | door, rift |
-| keystone | the realm selector, in story texts | switch, controller |
+| keystone | the sealstone, in story texts | switch, controller |
 | guardian | a realm's main-path boss in story texts | final boss |
-| shard | the guardian's drop for the next sigil, in story texts | core, heart |
+| shard | the guardian's drop for the next signet, in story texts | core, heart |
 | the Void | what lies past the last realm | the abyss, the dark |
 | the Chain of Seals, the chain | the order of the realms | the path, the progression |
 | Wayfarer | the player, when the Lodge speaks | hero, champion, adventurer |

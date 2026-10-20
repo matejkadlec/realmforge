@@ -63,6 +63,12 @@ public final class GeneratedItemExpectations {
                     "item.realmforge.test_item",
                     16,
                     List.of("minecraft:ingredients"),
+                    ""),
+            new ItemExpectation(
+                    "realmforge:undervault_signet",
+                    "item.realmforge.undervault_signet",
+                    1,
+                    List.of("minecraft:tools_and_utilities"),
                     ""));
 
     private GeneratedItemExpectations() {

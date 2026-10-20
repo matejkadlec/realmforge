@@ -347,21 +347,21 @@ public final class RealmGameTests {
         helper.succeed();
     }
 
-    private static RealmExpectation stone() {
+    static RealmExpectation stone() {
         return GeneratedRealmExpectations.REALMS.stream()
                 .filter(realm -> realm.id().equals("realmforge:stone"))
                 .findFirst()
                 .orElseThrow();
     }
 
-    private static ServerLevel realm(GameTestHelper helper, RealmExpectation expected) {
+    static ServerLevel realm(GameTestHelper helper, RealmExpectation expected) {
         ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, Identifier.parse(expected.dimension()));
         ServerLevel level = helper.getLevel().getServer().getLevel(dimension);
         helper.assertTrue(level != null, "the GameTest world has no " + expected.dimension() + " dimension");
         return level;
     }
 
-    private static void award(GameTestHelper helper, ServerPlayer player, String advancement) {
+    static void award(GameTestHelper helper, ServerPlayer player, String advancement) {
         AdvancementHolder holder = player.level().getServer().getAdvancements().get(Identifier.parse(advancement));
         helper.assertTrue(holder != null, "the realm's unlock advancement exists: " + advancement);
         for (String criterion : holder.value().criteria().keySet()) {

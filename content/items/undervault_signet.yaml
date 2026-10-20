@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# The Signet of the Undervault (W2b, realm portal spec "Realm signets"; named by Matěj, 2026-10-20): right-clicked on a
+# Realmforge Sealstone, it opens the realm portal onto Undervault, for a player who has unlocked it. Never used up, one
+# opens any number of portals, and lava does not take it. Its tooltip names the realm (content/realms/stone.yaml names
+# it as the signet). Chapter 1's last main quest rewards it (Q2); until then `/give @s realmforge:undervault_signet`.
+# The generated placeholder until the A* textures.
+id: undervault_signet
+name:
+  en_us: Signet of the Undervault
+max_stack_size: 1
+fire_resistant: true
+creative_tabs:
+  - minecraft:tools_and_utilities

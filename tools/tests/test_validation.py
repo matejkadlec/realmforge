@@ -35,6 +35,7 @@ def test_repository_content_is_valid() -> None:
         "stone_wand",
         "test_dungeon_key",
         "test_item",
+        "undervault_signet",
     ]
     assert universe.contains("minecraft:item", "realmforge:test_item")
 

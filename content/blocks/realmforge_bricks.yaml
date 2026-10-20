@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
+# Realmforge Bricks (W2b, realm portal spec "The frame"; named by Matěj, 2026-10-20): 13 of them and a Realmforge
+# Sealstone frame a realm portal, 5 wide and 6 tall around a 3x4 opening. 4 Realmforge Stone make 4, as stone makes
+# stone bricks. Pistons cannot move them. A frame a trip built drops nothing (its `generated` state). The numbers are
+# proposals for Matěj's playtest.
+id: realmforge_bricks
+name:
+  en_us: Realmforge Bricks
+kind: realmforge_bricks
+hardness: 3
+blast_resistance: 6
+tool: pickaxe
+requires_tool: true
+sound: stone
+map_color: color_gray
+creative_tabs:
+  - minecraft:functional_blocks
+recipe:
+  pattern:
+    - SS
+    - SS
+  key:
+    S: realmforge:realmforge_stone
+  count: 4
+  category: building

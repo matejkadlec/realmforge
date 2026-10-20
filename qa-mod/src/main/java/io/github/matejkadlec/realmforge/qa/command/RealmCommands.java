@@ -25,7 +25,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * {@code /qa realm} for realms before the realm portal exists (W2a; the portal is W2b):
+ * {@code /qa realm} for realms without the realm portal (W2a; the portal, W2b, needs a frame and a signet):
  * <ul>
  *   <li>{@code /qa realm enter <realm> [<x> <z>]} takes the player to the realm's floor at x, z (0, 0 by default):
  *       the highest standing spot below y {@value #SEARCH_FROM_Y} with two blocks of air above it. It moves the player

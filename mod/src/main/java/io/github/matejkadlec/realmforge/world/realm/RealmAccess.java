@@ -4,8 +4,10 @@ import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.core.Requirement;
 import io.github.matejkadlec.realmforge.world.DimensionRules;
 import io.github.matejkadlec.realmforge.world.net.RealmRefusedPayload;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.WeakHashMap;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
@@ -38,7 +40,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * <ul>
  *   <li>A player enters a dimension only with every access requirement of its rules: a realm's is its unlock. A
  *       refused player stays where they are and gets a centre-screen message, at most once every 3 seconds.
- *   <li>No other entity enters or leaves a realm: items, mobs and vehicles stay where they are.
+ *   <li>No other entity enters or leaves a realm, except through a realm portal (Matěj, 2026-10-20: every entity
+ *       travels through one): items, mobs and vehicles moved any other way stay where they are.
  *   <li>A player's shoulder entities (a parrot) stay in the level the player leaves, on a trip into or out of a realm
  *       and at a death in one: on the shoulder they are no entity, so no event stops them.
  *   <li>A player always respawns in Overworld: a respawn whose level is a realm (a spawn point set there by command
@@ -54,6 +57,11 @@ public final class RealmAccess {
 
     /** The game time of each player's last refusal message; weak, so a player who left is forgotten. */
     private static final Map<ServerPlayer, Long> LAST_REFUSAL = new WeakHashMap<>();
+    /**
+     * The entities on a realm portal trip, by id, with the server tick of the trip: the entity that stepped in and its
+     * passengers, which vanilla moves one by one after the vehicle. Touched only on the server thread.
+     */
+    private static final Map<UUID, Integer> PORTAL_TRIPS = new HashMap<>();
 
     private RealmAccess() {
     }
@@ -69,14 +77,16 @@ public final class RealmAccess {
         }
         RegistryAccess registries = level.registryAccess();
         if (!(entity instanceof ServerPlayer player)) {
-            if (Realms.isRealm(registries, level.dimension()) || Realms.isRealm(registries, event.getDimension())) {
+            boolean touchesRealm = Realms.isRealm(registries, level.dimension())
+                    || Realms.isRealm(registries, event.getDimension());
+            if (touchesRealm && !onPortalTrip(entity)) {
                 event.setCanceled(true);
             }
             return;
         }
         if (!mayEnter(player, event.getDimension())) {
             event.setCanceled(true);
-            tellRefused(player, event.getDimension());
+            refuse(player, event.getDimension());
         }
     }
 
@@ -108,6 +118,22 @@ public final class RealmAccess {
         if (Realms.isRealm(registries, target.newLevel().dimension())) {
             event.setTeleportTransition(overworldSpawn(player, target));
         }
+    }
+
+    /**
+     * Lets {@code entity} and its passengers through on this tick's trip through a realm portal, which they started by
+     * stepping in ({@code RealmPortalLinker#destination}); players still need access.
+     */
+    static void allowPortalTrip(Entity entity) {
+        int tick = entity.level().getServer().getTickCount();
+        PORTAL_TRIPS.values().removeIf(trip -> trip != tick);
+        PORTAL_TRIPS.put(entity.getUUID(), tick);
+        entity.getIndirectPassengers().forEach(passenger -> PORTAL_TRIPS.put(passenger.getUUID(), tick));
+    }
+
+    private static boolean onPortalTrip(Entity entity) {
+        Integer tick = PORTAL_TRIPS.get(entity.getUUID());
+        return tick != null && tick == entity.level().getServer().getTickCount();
     }
 
     /** Whether the player meets every access requirement of {@code dimension}'s rules; true without rules. */
@@ -177,7 +203,7 @@ public final class RealmAccess {
      * The centre-screen refusal, with the realm's hint below it ({@link RealmRefusedPayload}: the client draws it
      * smaller than a vanilla title), and a short sound, once every 3 seconds at most.
      */
-    private static void tellRefused(ServerPlayer player, ResourceKey<Level> dimension) {
+    static void refuse(ServerPlayer player, ResourceKey<Level> dimension) {
         long now = player.level().getGameTime();
         Long last = LAST_REFUSAL.get(player);
         if (last != null && now - last < REFUSAL_INTERVAL_TICKS && now >= last) {

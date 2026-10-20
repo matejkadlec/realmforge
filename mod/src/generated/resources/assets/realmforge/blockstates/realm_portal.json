@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "realmforge:block/realm_portal_ns"
+    },
+    "axis=z": {
+      "model": "realmforge:block/realm_portal_ew"
+    }
+  }
+}

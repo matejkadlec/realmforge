@@ -55,6 +55,13 @@ public final class GeneratedItems {
     public static final DeferredItem<Item> TEST_ITEM =
             ITEMS.registerSimpleItem("test_item", properties -> properties.stacksTo(16));
 
+    /** {@code realmforge:undervault_signet} from {@code content/items/undervault_signet.yaml}. */
+    public static final DeferredItem<Item> UNDERVAULT_SIGNET =
+            ITEMS.registerSimpleItem("undervault_signet", properties -> properties.stacksTo(1).fireResistant()
+                    .component(DataComponents.LORE, new ItemLore(List.of(
+                            Component.translatable("tooltip.realmforge.signet_not_consumed")
+                                    .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(false))))));
+
     private GeneratedItems() {
     }
 
@@ -79,6 +86,7 @@ public final class GeneratedItems {
             case "minecraft:tools_and_utilities" -> {
                 event.accept(OBLIVION_SCROLL);
                 event.accept(TEST_DUNGEON_KEY);
+                event.accept(UNDERVAULT_SIGNET);
             }
             default -> {
             }

@@ -2,7 +2,24 @@
   "dimension": "realmforge:stone",
   "name": "realm.realmforge.stone.name",
   "subtitle": "realm.realmforge.stone.subtitle",
+  "description": "realm.realmforge.stone.description",
   "locked_hint": "realm.realmforge.stone.locked_hint",
+  "levels": [
+    6,
+    18
+  ],
   "flavour": "realm.realmforge.stone.flavour",
-  "icon": "realmforge:vaultstone"
+  "icon": "realmforge:vaultstone",
+  "signet": "realmforge:undervault_signet",
+  "colour": "#7A8FB0",
+  "particle": "minecraft:ash",
+  "sound_pitch": 0.8,
+  "arrival": {
+    "y": [
+      20,
+      90
+    ],
+    "floor": "realmforge:vaultstone",
+    "pocket_radius": 3
+  }
 }

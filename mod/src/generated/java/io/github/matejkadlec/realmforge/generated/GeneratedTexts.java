@@ -212,8 +212,35 @@ public final class GeneratedTexts {
     /** {@code message.realmforge.portal_still_opening} from {@code content/texts/message.yaml}: "The portal is still opening." */
     public static final String MESSAGE_PORTAL_STILL_OPENING = "message.realmforge.portal_still_opening";
 
+    /** {@code message.realmforge.realm_arrival_levels} from {@code content/texts/message.yaml}: "%1$s · Levels %2$s–%3$s" */
+    public static final String MESSAGE_REALM_ARRIVAL_LEVELS = "message.realmforge.realm_arrival_levels";
+
     /** {@code message.realmforge.realm_not_eligible} from {@code content/texts/message.yaml}: "You are not eligible to pass through the portal." */
     public static final String MESSAGE_REALM_NOT_ELIGIBLE = "message.realmforge.realm_not_eligible";
+
+    /** {@code message.realmforge.realm_portal_already_opens_onto} from {@code content/texts/message.yaml}: "The portal already opens onto %1$s" */
+    public static final String MESSAGE_REALM_PORTAL_ALREADY_OPENS_ONTO = "message.realmforge.realm_portal_already_opens_onto";
+
+    /** {@code message.realmforge.realm_portal_cannot_open_here} from {@code content/texts/message.yaml}: "The portal cannot open here" */
+    public static final String MESSAGE_REALM_PORTAL_CANNOT_OPEN_HERE = "message.realmforge.realm_portal_cannot_open_here";
+
+    /** {@code message.realmforge.realm_portal_closed} from {@code content/texts/message.yaml}: "The portal is closed" */
+    public static final String MESSAGE_REALM_PORTAL_CLOSED = "message.realmforge.realm_portal_closed";
+
+    /** {@code message.realmforge.realm_portal_frame_incomplete} from {@code content/texts/message.yaml}: "The frame is incomplete" */
+    public static final String MESSAGE_REALM_PORTAL_FRAME_INCOMPLETE = "message.realmforge.realm_portal_frame_incomplete";
+
+    /** {@code message.realmforge.realm_portal_not_eligible} from {@code content/texts/message.yaml}: "You are not eligible to open a portal to the %1$s. %2$s" */
+    public static final String MESSAGE_REALM_PORTAL_NOT_ELIGIBLE = "message.realmforge.realm_portal_not_eligible";
+
+    /** {@code message.realmforge.realm_portal_only_back} from {@code content/texts/message.yaml}: "This portal leads only back to Overworld" */
+    public static final String MESSAGE_REALM_PORTAL_ONLY_BACK = "message.realmforge.realm_portal_only_back";
+
+    /** {@code message.realmforge.realm_portal_opens_onto} from {@code content/texts/message.yaml}: "The portal opens onto %1$s" */
+    public static final String MESSAGE_REALM_PORTAL_OPENS_ONTO = "message.realmforge.realm_portal_opens_onto";
+
+    /** {@code message.realmforge.realm_portal_unknown_realm} from {@code content/texts/message.yaml}: "The portal opens onto an unknown realm" */
+    public static final String MESSAGE_REALM_PORTAL_UNKNOWN_REALM = "message.realmforge.realm_portal_unknown_realm";
 
     /** {@code message.realmforge.stat_points_none_spent} from {@code content/texts/message.yaml}: "You have no spent stat points to unlearn." */
     public static final String MESSAGE_STAT_POINTS_NONE_SPENT = "message.realmforge.stat_points_none_spent";
@@ -235,6 +262,9 @@ public final class GeneratedTexts {
 
     /** {@code resource.realmforge.rage} from {@code content/texts/resource.yaml}: "Rage" */
     public static final String RESOURCE_RAGE = "resource.realmforge.rage";
+
+    /** {@code tooltip.realmforge.signet_not_consumed} from {@code content/texts/tooltip.yaml}: "Does not consume on use" */
+    public static final String TOOLTIP_SIGNET_NOT_CONSUMED = "tooltip.realmforge.signet_not_consumed";
 
     private GeneratedTexts() {
     }

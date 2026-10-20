@@ -8,13 +8,17 @@
 > Approved by Matěj on 2026-10-13 with changes (RLM-128, [Decisions](#decisions)):
 >
 > - portals link like the Nether's, with scaled coordinates, so there is no landing and no home point;
-> - a realm's unlock comes from its quest, not from holding its sigil;
+> - a realm's unlock comes from its quest, not from holding its signet;
 > - a player always respawns in Overworld.
 >
 > RLM-133 closed three gaps that the review of the first version found, and RLM-157 the ones the review of the
 > second found: the realm-side build radius allows for rounding, frames a trip builds drop nothing, Overworld
 > has an arrival height, and shoulder parrots stay out of realms. Roadmap tasks W2a (the realm, RLM-32) and
-> W2b (the portal, RLM-154) build it ([What M1 takes from this](#what-m1-takes-from-this)). Block and item names
+> W2b (the portal, RLM-154) build it ([What M1 takes from this](#what-m1-takes-from-this)). Matěj's playtest of
+> W2b (2026-10-20) named the frame's blocks Realmforge Bricks and the Realmforge Sealstone and the realms' keys
+> signets (the first version's Portal Stone, realm selector and sigils), changed their recipes, let every entity
+> travel and set trip-built frames into the floor, with Realmforge Bricks in their corners ([Decisions](#decisions),
+> 12 to 14). Other block and item names
 > are working names; realm names are the approved ones of the [lore outline](../lore/outline.md#the-realms)
 > (RLM-139, RLM-188), without an article. The v1 realm layout (RLM-188, 2026-10-16) moved the stone realm to
 > chapter 2 (levels 6–18) and its unlock to the end of chapter 1's main questline. APIs named here were checked
@@ -23,12 +27,12 @@
 ## At a glance
 
 - **One frame for every realm** (RE-1): 5 blocks wide and 6 tall around a 3×4 opening, built by the player from cheap
-  Overworld materials. The bottom middle block is the **realm selector**.
-- **One sigil per realm**, never consumed and stacking to 1; one sigil opens any number of portals. Right-clicking
-  the selector with a sigil opens the portal onto that realm, or switches an open portal straight to it, with no
+  Overworld materials. The bottom middle block is the **sealstone**.
+- **One signet per realm**, never consumed and stacking to 1; one signet opens any number of portals. Right-clicking
+  the sealstone with a signet opens the portal onto that realm, or switches an open portal straight to it, with no
   clearing step (RE-1).
 - **The unlock is the player's own:** a realm's unlock quest grants it, for that player, for good. Every copy of a
-  sigil is the same item and anyone may hold one, but without the unlock a player can neither open a portal to that
+  signet is the same item and anyone may hold one, but without the unlock a player can neither open a portal to that
   realm with it nor pass through an open one.
 - **Portals link like the Nether's, in both directions** (Matěj, RLM-128). An Overworld portal leads to the realm
   portal near its scaled position in the realm, or builds one there, and the way back works the same in reverse.
@@ -39,18 +43,18 @@
 - **A player always respawns in Overworld,** at their bed or at the world spawn, never in a realm. A
   "Return to last death" scroll (RLM-155) takes them back to where they died.
 - **Each realm has its own colour**, particles and sound, and a flavour line (RE-1).
-- **Only players travel** (Matěj: "for now"). Items, mobs and vehicles never pass a realm portal, and no other
-  entity is moved into or out of a realm, so there is no chunk-loading trick and no realm mob in Overworld
-  ([Multiplayer](#multiplayer) names the one path the rule cannot see).
+- **Every entity travels through a portal** (Matěj, 2026-10-20, replacing the first version's "only players
+  travel"): items, mobs and vehicles pass as through a nether portal, while a player still needs the realm's unlock.
+  Every other way into or out of a realm (`/tp`, a warp) still carries only players ([Multiplayer](#multiplayer)).
 
-| Realm | Sigil (working name) | How a player gets the sigil | What unlocks the realm | Portal colour |
+| Realm | Signet (working name) | How a player gets the signet | What unlocks the realm | Portal colour |
 | --- | --- | --- | --- | --- |
 | Overworld | none | - | always open | green `#5DBB63` |
-| Stone realm (Undervault) | Stone Sigil | reward of chapter 1's last main quest, the realm's unlock quest; a repeatable quest replaces a lost one | that quest, at about level 6 | slate blue `#7A8FB0` |
-| Desert realm (Sunwastes) | Desert Sigil | crafted from a stone realm ore plus the stone realm boss's guaranteed drop (RE-9) | its main-chain quest after the stone realm boss | gold `#E8B84A` |
-| Tundra realm (Everwinter) | Tundra Sigil | the same, with a different stone realm ore | its own quest after the same boss | ice white `#BFF4FF` |
-| Fire realm (Ashfire) | Fire Sigil | from the realm before it, by the same rule | the quest after that realm's boss | red `#E0502C` |
-| Void realm (Unmade Isles) | Void Sigil | from the realm before it, by the same rule (RLM-95) | the quest after that realm's boss | deep purple `#4B1F6F` |
+| Stone realm (Undervault) | Signet of the Undervault | reward of chapter 1's last main quest, the realm's unlock quest; a repeatable quest replaces a lost one | that quest, at about level 6 | slate blue `#7A8FB0` |
+| Desert realm (Sunwastes) | Desert Signet | crafted from a stone realm ore plus the stone realm boss's guaranteed drop (RE-9) | its main-chain quest after the stone realm boss | gold `#E8B84A` |
+| Tundra realm (Everwinter) | Tundra Signet | the same, with a different stone realm ore | its own quest after the same boss | ice white `#BFF4FF` |
+| Fire realm (Ashfire) | Fire Signet | from the realm before it, by the same rule | the quest after that realm's boss | red `#E0502C` |
+| Void realm (Unmade Isles) | Void Signet | from the realm before it, by the same rule (RLM-95) | the quest after that realm's boss | deep purple `#4B1F6F` |
 
 Asgard, Atlantis and Quagmire ([realm design](realms.md#at-a-glance)) get their rows when they are designed. Asgard
 opens with the Asgard Medallion, crafted from the Stone Heart of Undervault's final boss (RLM-245), and gets its own
@@ -60,24 +64,26 @@ is kept for the Void realm, which comes after M4 removes the nether portals
 
 ## The frame
 
-- **Two block types** (Matěj, RLM-128, as in Advent of Ascension): **Portal Stone** for the frame and the **realm
-  selector** for its bottom middle. Both are crafted from Overworld materials.
+- **Two block types** (Matěj, RLM-128, as in Advent of Ascension; named by him on 2026-10-20): **Realmforge Bricks**
+  for the frame and the **Realmforge Sealstone** (the sealstone) for its bottom middle. Both are crafted from
+  Overworld materials.
 - **Shape:** a vertical rectangle, 5 wide and 6 tall, around a 3×4 opening, along either horizontal axis (like a
   nether portal). The four corners are optional decoration, as on a nether portal: the frame is the 14 blocks that
-  touch the opening, 13 Portal Stone and one realm selector in the middle of the bottom row. So every required block
+  touch the opening, 13 Realmforge Bricks and one sealstone in the middle of the bottom row. So every required block
   touches a portal block, and breaking any of them reaches the portal through a neighbour update
   ([Edge cases](#edge-cases)). One fixed size keeps the check simple and every portal recognisable; AoA used the
   same outline (RE-1).
-- **Materials, cheap and from Overworld,** because the first frame is built before any realm is open, and AoA's
-  players stalled on exactly this step (they ended up buying its runes from an NPC):
-  - **Portal Stone:** 4 stone bricks around a copper ingot make 4. A tag of stone bricks
-    (`#realmforge:portal_stone_bricks`) also takes the realms' own bricks, so a frame can be built inside a realm
-    that has no vanilla stone;
-  - **realm selector:** 4 Portal Stone, 4 gold ingots and a compass;
-  - a whole frame takes 17 Portal Stone (13 in the frame, 4 in the selector), so 5 crafts: 20 stone bricks and 5
-    copper ingots, plus 4 gold ingots and a compass. That is a short mining trip for a player in Overworld's early
-    levels, and chapter 1's quests walk through it. The numbers are proposals for Matěj's playtest.
-- **Lighting:** right-click the selector with a sigil ([The realm selector](#the-realm-selector)). The selector
+- **Materials from Overworld,** because the first frame is built before any realm is open (Matěj, 2026-10-20):
+  - **Realmforge Stone:** the bricks of eight Overworld stones (stone, deepslate, quartz, mud, tuff, diorite, granite
+    and andesite bricks) around an ender pearl make 8. Vanilla has no diorite, granite or andesite bricks, so they
+    are blocks of ours: 4 of the polished stone make 4, as vanilla makes tuff bricks;
+  - **Realmforge Bricks:** 4 Realmforge Stone make 4, as stone makes stone bricks;
+  - **Realmforge Sealstone:** 4 Realmforge Bricks, 4 gold ingots and a compass;
+  - a whole frame takes 17 Realmforge Bricks (13 in the frame, 4 in the sealstone): 5 crafts of bricks from 20
+    Realmforge Stone, so 3 crafts of the stone (3 ender pearls and 3 of each of the eight bricks), plus 4 gold
+    ingots and a compass. The ender pearl makes the first frame a goal of Overworld's early levels; chapter 1's
+    quests walk through it. The numbers are proposals for Matěj's playtest.
+- **Lighting:** right-click the sealstone with a signet ([The sealstone](#the-sealstone)). The sealstone
   checks the player's unlock first, then the frame:
   - **complete,** with the opening empty (air, or blocks such as grass that are replaced when something is placed
     there) or already filled with this frame's own portal blocks (a switch): the opening fills with portal blocks of
@@ -90,7 +96,7 @@ is kept for the Void realm, which comes after M4 removes the nether portals
 - **Frame blocks cannot be pushed** by pistons (`BlockBehaviour.Properties#pushReaction(PushReaction.BLOCK)`), so no
   contraption moves a lit frame apart.
 
-## The realm selector
+## The sealstone
 
 The bottom middle block of the frame (Matěj's requirement). Its block entity holds one setting, which always matches
 the opening:
@@ -100,73 +106,72 @@ the opening:
 - **return** while it is open onto Overworld, the way back from a realm ([Travel](#travel)).
 
 The setting becomes none whenever the opening goes dark: the sneak gesture closes it, or a broken frame block takes
-the portal blocks with it (they check their frame on neighbour updates) and resets a selector that still stands. So a
-closed or rebuilt frame lights again with the sigil it showed before (RLM-133). The selector stores no item, so
+the portal blocks with it (they check their frame on neighbour updates) and resets a sealstone that still stands. So a
+closed or rebuilt frame lights again with the signet it showed before (RLM-133). The sealstone stores no item, so
 hoppers have nothing to take.
 
-| Action on the selector | Result |
+| Action on the sealstone | Result |
 | --- | --- |
-| right-click with a sigil of a realm the player has unlocked | opens the portal onto the sigil's realm, or switches it there at once; the sigil stays in the hand |
-| right-click with the sigil of the realm a lit portal already shows | nothing changes; "The portal already opens onto Undervault" |
-| right-click with a sigil of a realm the player has not unlocked | refused, with the realm's hint: "You are not eligible to open a portal to Undervault" |
-| right-click with any sigil on a frame inside a realm | refused: "This portal leads only back to Overworld" (Matěj, RLM-188) |
+| right-click with a signet of a realm the player has unlocked | opens the portal onto the signet's realm, or switches it there at once; the signet stays in the hand |
+| right-click with the signet of the realm a lit portal already shows | nothing changes; "The portal already opens onto Undervault" |
+| right-click with a signet of a realm the player has not unlocked | refused, with the realm's hint: "You are not eligible to open a portal to the stone realm. Unlocked by completing The Ominous Chief quest." (Matěj, 2026-10-20) |
+| right-click with any signet on a frame inside a realm | refused: "This portal leads only back to Overworld" (Matěj, RLM-188) |
 | right-click with an empty hand | the action bar shows where the portal opens onto, or "The portal is closed" for a dark one |
 | sneak and right-click with an empty main hand, whatever the off hand holds | in Overworld, closes the portal (setting none); inside a realm, opens it onto return, or switches it back to return |
-| break the selector | the portal closes, and the selector drops as an item without its setting; one a trip built drops nothing ([Building a portal](#building-a-portal)) |
+| break the sealstone | the portal closes, and the sealstone drops as an item without its setting; one a trip built drops nothing ([Building a portal](#building-a-portal)) |
 
-- **Who may switch a portal:** anyone holding a sigil they are eligible to use (Matěj, RLM-128). Unlocks are per
+- **Who may switch a portal:** anyone holding a signet they are eligible to use (Matěj, RLM-128). Unlocks are per
   player ([Multiplayer](#multiplayer)), so switching changes only where the portal leads, never who may enter.
 - **The sneak gesture with something in the off hand** (RLM-133). Vanilla skips a block's use while the player
   sneaks with anything in either hand that does not bypass the sneak (`ServerPlayerGameMode#useItemOn` on the server,
   `MultiPlayerGameMode#performUseItemOn` on the client; `IItemStackExtension#doesSneakBypassUse` is true only for an
   empty stack by default). A shield, torch or food in the off hand would then block the gesture, and a torch or a
-  block there would be placed against the selector instead. Both methods post `PlayerInteractEvent.RightClickBlock`
+  block there would be placed against the sealstone instead. Both methods post `PlayerInteractEvent.RightClickBlock`
   before that check. So a common listener in `world`, which runs on both sides, sets `useBlock` to `TRUE` when the
-  player sneaks, the main hand is empty and the target is a realm selector. The selector's `useWithoutItem` then
+  player sneaks, the main hand is empty and the target is a sealstone. The sealstone's `useWithoutItem` then
   handles the gesture on both sides. On the client the main hand's use succeeds, so the client never goes on to the
   off hand.
 
-## Realm sigils
+## Realm signets
 
 - **One per realm,** stacking to 1, never consumed (RE-1), fire resistant (`Item.Properties#fireResistant`), so lava
-  does not take it. One sigil opens any number of portals (Matěj, RLM-128). Its tooltip names the realm with its
-  element subtitle ("Undervault — Stone Realm", Matěj, RLM-139) and says "Never used up". It shows no levels:
-  they live in the server-only `realmforge:dimension_rules`, and the arrival title, which the server sends, shows
-  them.
-- **A sigil is a key, not the unlock.** Every copy of a realm's sigil is the same item, whoever obtained it, and
-  anyone may hold one (Matěj, RLM-128). A player needs a sigil to open or switch a portal, and their own unlock
+  does not take it. One signet opens any number of portals (Matěj, RLM-128). Its tooltip is one line, "Does not
+  consume on use" (Matěj, 2026-10-20, replacing the first version's "Undervault — Stone Realm" and "Never used up").
+  It shows no levels: the arrival title shows the realm entry's level band.
+- **A signet is a key, not the unlock.** Every copy of a realm's signet is the same item, whoever obtained it, and
+  anyone may hold one (Matěj, RLM-128). A player needs a signet to open or switch a portal, and their own unlock
   ([Access and unlocks](#access-and-unlocks)) to use it.
-- **Where sigils come from** (RE-9, LE-1):
-  - **the Stone Sigil** is a reward of the stone realm's unlock quest, the last quest of chapter 1's main questline
-    (the roadmap's "locked until chapter 1's main questline unlocks it"; Undervault opens at about level 6, with no
-    hard level lock, [realm design](realms.md#chapters-and-levels)). The same quest grants the unlock;
-  - **a lost Stone Sigil** comes back through a repeatable quest that opens once that first quest is complete and
-    gives a new sigil for a few copper ingots (FTB Quests' repeatable quests; Q1 checks the field). A player who lost
-    the sigil before or after opening a portal is never stuck;
-  - **every later main-path sigil is crafted** from an ore or gem of the realm the player is leaving plus the
-    guaranteed drop of that realm's main-path boss. The recipe is shown in the quest log, and crafting the sigil is
+- **Where signets come from** (RE-9, LE-1):
+  - **the Signet of the Undervault** is a reward of the stone realm's unlock quest, the last quest of chapter 1's main
+    questline (the roadmap's "locked until chapter 1's main questline unlocks it"; Undervault opens at about level 6,
+    with no hard level lock, [realm design](realms.md#chapters-and-levels)). The same quest grants the unlock;
+  - **a lost Signet of the Undervault** comes back through a repeatable quest that opens once that first quest is
+    complete and gives a new signet for a few copper ingots (FTB Quests' repeatable quests; Q1 checks the field). A
+    player who lost the signet before or after opening a portal is never stuck;
+  - **every later main-path signet is crafted** from an ore or gem of the realm the player is leaving plus the
+    guaranteed drop of that realm's main-path boss. The recipe is shown in the quest log, and crafting the signet is
     a step of the chapter's main chain. Beating that boss is what "completing" a realm means; the realm itself has
     no completion flag ([realm design](realms.md#opening-the-next-realm));
   - **when the next chapter has two realms** (chapter 3: Sunwastes and Everwinter), the boss before them
     (Undervault's) drops one material per realm it opens, two, every kill;
-  - **when two realms share a chapter, the next main-path sigil needs both:** its recipe takes the guaranteed drop
+  - **when two realms share a chapter, the next main-path signet needs both:** its recipe takes the guaranteed drop
     of each realm's main-path boss (for the realm after chapter 3: Sunwastes' and Everwinter's), so finishing one
     branch never opens the next realm. Both realms are needed for further progress
     ([realm design](realms.md#the-desert-realm));
-  - **an optional side realm's sigil** comes from wherever its design puts it: a chest at 100% in an instanced
+  - **an optional side realm's signet** comes from wherever its design puts it: a chest at 100% in an instanced
     dungeon, which is rebuilt for every run, or a trade that restocks; never a random drop, and never a chest found
     only once (PR-15).
-- **Nothing depends on luck, and every sigil can be replaced:** each source is a quest reward, a guaranteed drop or
-  a recipe. The Stone Sigil has its repeatable quest; every later sigil is crafted again from a boss the player can
-  always replay, since an NPC sells the keys of dungeons already done (LE-2). A lost sigil never locks the realm
-  again, because the unlock belongs to the player.
+- **Nothing depends on luck, and every signet can be replaced:** each source is a quest reward, a guaranteed drop or a
+  recipe. The Signet of the Undervault has its repeatable quest; every later signet is crafted again from a boss the
+  player can always replay, since an NPC sells the keys of dungeons already done (LE-2). A lost signet never locks the
+  realm again, because the unlock belongs to the player.
 
 ## Access and unlocks
 
 - **The unlock is an advancement per realm,** `realmforge:realm/<realm>`, generated from the realm's data. Its only
   criterion is `minecraft:impossible`, like a chapter's advancement
   ([architecture 16](../architecture.md#16-progression-and-quests)), so nothing in play grants it but the realm's
-  unlock quest. Holding, crafting, picking up or trading a sigil unlocks nothing. The advancement is hidden until
+  unlock quest. Holding, crafting, picking up or trading a signet unlocks nothing. The advancement is hidden until
   earned and shows a toast, "Realm unlocked: Undervault"; it adds no chat line (`hidden`, `show_toast`,
   `announce_to_chat` in vanilla's advancement display).
 - **The unlock quest** grants it through an `AdvancementReward` that is per player and claims itself
@@ -176,24 +181,27 @@ hoppers have nothing to take.
   joins someone's FTB Teams party gets that team's realm unlocks, as they get its chapter advancements, at their
   next login: FTB Quests claims a per-player reward for the members online when the quest completes, and for every
   other member, one who joins later included, at their next login. Whether that exception stays is an
-  [open question](#open-questions). Its tasks are the player's own progress, never "have the sigil", which a trade
+  [open question](#open-questions). Its tasks are the player's own progress, never "have the signet", which a trade
   could complete:
-  - **the stone realm's:** the last quest of chapter 1's main questline; it also rewards the Stone Sigil. Q2 writes
-    it;
-  - **a later main-path realm's:** the main-chain step after the boss or bosses whose drops its sigil takes, with a
+  - **the stone realm's:** the last quest of chapter 1's main questline; it also rewards the Signet of the Undervault.
+    Q2 writes it;
+  - **a later main-path realm's:** the main-chain step after the boss or bosses whose drops its signet takes, with a
     task such as defeating that boss (`realmforge:boss_defeated`). The chapter that adds the realm writes it.
 - **The access requirement:** the realm dimension's entry in `realmforge:dimension_rules` holds it
   ([architecture 15.1](../architecture.md#151-dimensions)). For a realm it is
   `{type: realmforge:has_advancement, advancement: realmforge:realm/<realm>}`, from the first set of
   `realmforge:requirement_type` ([architecture 5.3](../architecture.md#53-type-registries)). A realm may add more
   requirements, such as a level; validation fails a realm whose rules leave out its unlock advancement.
-- **The selector checks it** before it opens or switches a portal to a realm
-  ([The realm selector](#the-realm-selector)).
+- **The sealstone checks it** before it opens or switches a portal to a realm
+  ([The sealstone](#the-sealstone)).
 - **The portal checks it when a player steps into a portal block,** so the portal never starts its countdown for a
   player without access. That player stays where they are, and a centre-screen message says "You are not eligible
   to pass through the portal." (Matěj's wording, RLM-128), with the realm's hint below it ("Unlocked by a chapter 1
-  quest"). The message comes at most once every 3 seconds, with a short refusal sound; vanilla's title and
-  subtitle packets carry it.
+  quest"). The message comes at most once every 3 seconds, with a short refusal sound. The server sends it as a
+  payload of our own (`RealmRefusedPayload`, the realm's hint), and the client draws it like a title and subtitle at
+  2x and 1x, half of vanilla's 4x and 2x, which run the sentence into the screen's edges (Matěj's playtests of W2a,
+  2026-10-19, and W2b, 2026-10-20: "make both fonts 1 scale lower"), so the portal, `/tp` and a warp show the same
+  refusal.
 - **Every other way in is checked too,** so the advancement seals the realm whatever the path. In 26.1.2 every move
   into another level goes through `Entity#teleport(TeleportTransition)` (`ServerPlayer` overrides it), which posts
   NeoForge's cancellable `EntityTravelToDimensionEvent` before it moves anything. The event also fires for a move
@@ -211,9 +219,9 @@ hoppers have nothing to take.
   RLM-128). A respawn does not pass through the event (`PlayerList#respawn` creates the player in the target level
   directly), and a respawn never puts a player in a realm ([Respawn](#respawn)).
 - **What a locked realm shows elsewhere:** a portal someone else opened onto it looks the same as for anyone (its
-  colour, particles and sound), so a player sees where a friend went. The sigil's tooltip and the realm's hint say
-  how to unlock it. A realm map with locked realms and their hints (RE-7) is a later view, in the guide (RLM-102,
-  approved for M4 in RLM-116) or a screen of its own; M1 needs none.
+  colour, particles and sound), so a player sees where a friend went. The realm's hint says how to unlock it. A
+  realm map with locked realms and their hints (RE-7) is a later view, in the guide (RLM-102, approved for M4 in
+  RLM-116) or a screen of its own; M1 needs none.
 - **No operator bypass:** a creative player needs the unlock like anyone else, so tests and playtests see the real
   rule. `/advancement grant @s only realmforge:realm/stone`, or a QA command, unlocks a realm for testing.
 
@@ -249,8 +257,8 @@ player arrives wherever the linked portal stands.
   So a pair a trip built always links back, both ways. Overworld portals up to about 128 blocks apart (8 × 16) lead
   to one realm portal, as Overworld portals up to 128 blocks apart share one nether portal. Matěj asked for exactly
   that: Overworld portals close to each other target the same realm portal.
-- **The search reads point-of-interest data, as vanilla's does:** the realm selector is a point of interest of our
-  own (`Registries.POINT_OF_INTEREST_TYPE`, `PoiManager#getInSquare`). The search then keeps only selectors whose
+- **The search reads point-of-interest data, as vanilla's does:** the sealstone is a point of interest of our
+  own (`Registries.POINT_OF_INTEREST_TYPE`, `PoiManager#getInSquare`). The search then keeps only sealstones whose
   portal is lit and leads the right way. Portals are never linked by a saved pair, so breaking or switching a portal
   needs no bookkeeping.
 - **No portal links two realms** (Matěj, RLM-188): a frame inside a realm opens only onto return
@@ -308,31 +316,36 @@ follows from the realm's level bands:
 When no portal leads the right way within the search radius, the trip builds one, as vanilla's
 `PortalForcer#createPortal` does for nether portals:
 
-- **The spot:** the one nearest the scaled position, searched in a spiral within the build radius of that side
-  (⌊128 ÷ scale⌋ − 1 blocks in a realm, 7 at 1:16, one less than the search for the rounding in
-  [Linking](#linking); 16 blocks in Overworld, as vanilla's spiral), where the frame stands on solid floor with
-  air in its opening and on one side in front of it. It must be inside the world border and within the `y` range of
-  the dimension's realm entry (`arrival.y`, [Data](#data-contentrealms)), which keeps arrivals in the depth band of
-  the realm's lowest levels. The source portal's height, clamped into that range, decides between spots at the same
-  distance.
-- **Overworld's `y` range** is 64 to 310 (a proposal): the frame's bottom row stands at least one block above
+- **The spot:** the one nearest the scaled position, searched in a spiral within the build radius of that side (⌊128 ÷
+  scale⌋ − 1 blocks in a realm, 7 at 1:16, one less than the search for the rounding in [Linking](#linking); 16 blocks
+  in Overworld, as vanilla's spiral), where the frame is set into solid floor (Matěj, 2026-10-20: "the bottom side in
+  the floor … so player doesn't have to jump in order to get in, but can just walk": its bottom row replaces the top of
+  the floor, so the opening is at floor level), the rest of the frame's space is free, and one side has floor and two
+  free blocks in front of the opening, at its height, to arrive on. It must be inside the world border and within the
+  `y` range of the dimension's realm entry (`arrival.y`, [Data](#data-contentrealms)), which keeps arrivals in the depth
+  band of the realm's lowest levels. The source portal's height, clamped into that range, decides between spots at the
+  same distance.
+- **Overworld's `y` range** is 64 to 310 (a proposal): the frame's bottom row lies at least one block above
   sea level (63), so a way back over deep ocean, from a realm portal at y 30 say, finds no floor in the spiral and
   builds on a platform at the surface instead of carving a frame under the seabed. Vanilla's own fallback in
   `PortalForcer#createPortal` keeps y ≥ 70; 64 also lets a frame stand on beaches and plains, which lie between 63
   and 70. The top, 310, is that fallback's ceiling (the highest buildable y less 9), so a mountain's surface is a
   spot too, where a lower ceiling would carve the frame into the rock.
 - **Where nothing fits** (the stone realm has a bedrock ceiling; a realm can have a void below or water), the frame is
-  carved out at the scaled position, clamped into the `y` range: a floor of the entry's arrival block (`arrival.floor`)
-  under and in front of it, and air around it. A safe pocket of `arrival.pocket_radius` blocks keeps out fluids and
-  falling blocks (RE-6: 3 by default, larger for a realm that needs it, such as an underwater one).
-- **The new portal is lit:** in a realm its selector shows return, in Overworld the realm the player came from.
+  carved out at the scaled position, clamped into the `y` range: set into a floor of the entry's arrival block
+  (`arrival.floor`) that reaches in front of it, and air around it. A safe pocket of `arrival.pocket_radius` blocks
+  keeps out fluids and falling blocks (RE-6: 3 by default, larger for a realm that needs it, such as an underwater one).
+- **Its corners are Realmforge Bricks too** (Matěj, 2026-10-20: "without it it looks bad"). A frame needs no corners
+  to light, and a player's own frame may leave them out; every frame a trip builds has them.
+- **The new portal is lit:** in a realm its sealstone shows return, in Overworld the realm the player came from.
 - **It works like a frame a player built:** anyone may switch or close it, and breaking any of its blocks closes it
   ([Edge cases](#edge-cases)).
-- **Its blocks drop nothing.** Every frame a trip builds holds 13 Portal Stone and a selector, which cost 5 copper
-  ingots, 4 gold ingots and a compass to craft, and waystone warps are free in the pack. Entering a portal, breaking
-  the return frame the trip built, warping back to the first portal and entering it again would yield a frame each
-  time: a farm. So Portal Stone and the realm selector carry a block state flag, `generated` (a working name),
-  which a trip sets on the blocks it places and a player's placement never does, and their loot tables drop the
+- **Its blocks drop nothing.** Every frame a trip builds holds 17 Realmforge Bricks (its corners included) and a
+  sealstone, which cost ender
+  pearls, eight kinds of bricks, 4 gold ingots and a compass to craft, and waystone warps are free in the pack. Entering
+  a portal, breaking the return frame the trip built, warping back to the first portal and entering it again would yield
+  a frame each time: a farm. So Realmforge Bricks and the sealstone carry a block state flag, `generated` (a working
+  name), which a trip sets on the blocks it places and a player's placement never does, and their loot tables drop the
   block only without it (vanilla's `minecraft:block_state_property` condition). The floor blocks a carved spot gets
   (`arrival.floor`) drop as usual: they are plain building blocks the realm or Overworld has in plenty.
 - **Overworld is no exception** (Matěj: the way back works "exactly like Nether → Overworld"): the way back
@@ -342,13 +355,16 @@ When no portal leads the right way within the search radius, the trip builds one
 ### Arriving
 
 - **The player arrives in front of the exit portal, facing away from it,** when one side of the opening has floor and
-  two blocks of air. Otherwise they arrive in the opening, as a nether portal places them, and the portal cooldown
-  vanilla sets after every trip (`Entity#setPortalCooldown`) keeps them from bouncing straight back.
-- **A title** shows the realm's name with its element subtitle, and its levels, for 2 seconds on every arrival in a
-  realm (RLM-139); the player's first arrival also shows its flavour line.
+  two blocks of air at the opening's height: on the floor the frame is set into, so they walk straight back in.
+  Otherwise they arrive in the opening, as a nether portal places them, and the portal cooldown vanilla sets after every
+  trip (`Entity#setPortalCooldown`) keeps them from bouncing straight back.
+- **A title** shows the realm's name with its element subtitle, and its level band (the realm entry's `levels`,
+  "Stone Realm · Levels 6–18"), for 2 seconds on every arrival in a realm (RLM-139); the player's first arrival also
+  shows its flavour line.
 - **Chunk loading:** a trip loads only the chunks around the exit portal, for a short time, through vanilla's portal
-  ticket (`TeleportTransition.PLACE_PORTAL_TICKET`, as for nether portals). Portals load nothing permanently, and
-  since items and mobs never travel, no portal works as a chunk loader. Building a portal generates its chunks on the
+  ticket (`TeleportTransition.PLACE_PORTAL_TICKET`, as for nether portals). Portals load nothing permanently; since
+  every entity travels, an item thrown through keeps the exit's chunks loaded for a short time on each trip, the
+  chunk-loading trick a nether portal allows too. Building a portal generates its chunks on the
   main thread, as vanilla does for a nether portal; W2b measures that hitch.
 
 ### Recall and waystones
@@ -386,12 +402,12 @@ without one; never in a realm. This answers the realm design's
 
 ## Look and sound
 
-- **One portal block** for every realm, tinted with the colour of the realm its selector shows (return portals use
+- **One portal block** for every realm, tinted with the colour of the realm its sealstone shows (return portals use
   Overworld's green). Its texture is one greyscale swirl, tinted on the client by a block tint source
   (`RegisterColorHandlersEvent.BlockTintSources`, a `BlockTintSource` whose `colorInWorld` reads the frame's
-  selector). The selector's block entity sends its setting to clients, and the colours come from the synced realm
-  registry ([Data](#data-contentrealms)); *verify* that the region the chunk mesher reads holds the selector's block
-  entity. Block colours are baked into the chunk mesh, so when the setting arrives on the client, the selector marks
+  sealstone). The sealstone's block entity sends its setting to clients, and the colours come from the synced realm
+  registry ([Data](#data-contentrealms)); *verify* that the region the chunk mesher reads holds the sealstone's block
+  entity. Block colours are baked into the chunk mesh, so when the setting arrives on the client, the sealstone marks
   the opening for re-rendering (`Level#sendBlockUpdated` on the client level, which reaches
   `LevelRenderer#blockChanged`); otherwise a switched portal would keep the old realm's colour.
 - **Particles:** a swirl of vanilla dust in the realm's colour (`DustParticleOptions`), plus one vanilla particle
@@ -415,21 +431,25 @@ without one; never in a realm. This answers the realm design's
   ([architecture 16](../architecture.md#16-progression-and-quests); an [open question](#open-questions)). Shared
   quests in our own parties come later, with low priority (RLM-156, on top of RLM-68's parties): when one member
   completes a quest, the members who can complete it get it too, the unlock included.
-- **Sigils change hands freely,** but a friend's sigil opens nothing for a player without their own unlock.
+- **Signets change hands freely,** but a friend's signet opens nothing for a player without their own unlock.
 - **A player without access** in a portal someone else opened is refused as in
   [Access and unlocks](#access-and-unlocks), while their friends pass through.
 - **Everyone who comes through one portal arrives at the same linked portal,** and the way back links by position,
   whoever built the portals.
-- **Only players travel.** Vanilla already keeps a passenger out of portals (`Entity#canUsePortal` is false for a
-  passenger), and the realm portal refuses every entity that is not a player, so a player on a horse must dismount.
-  WoW-style summoned mounts (M4, RLM-115) are dismissed and summoned again on the other side, and pets (later)
-  follow their owner through their own system, which adds its own exception.
-- **Other paths carry no mobs either** (RLM-133, rechecked for 26.1.2). Every move into another level goes through
+- **Every entity travels through a portal** (Matěj, 2026-10-20: "when any entity goes in, it teleports it into the
+  dimension"). A mob, an item, a projectile or a vehicle with its passengers that steps in travels as through a
+  nether portal (vanilla keeps a passenger itself out of portals, `Entity#canUsePortal`, so it travels with its
+  vehicle) and arrives at the linked portal, which a trip builds when none is near. A player still needs access: a
+  vehicle that carries a player without it does not step in. A creature keeps the level it has, so an Overworld mob
+  in a realm is weaker than the realm's, and a realm's creature in Overworld stronger than Overworld's. This replaces
+  the first version's "only players travel" (decision 9).
+- **Other paths carry no mobs** (RLM-133, rechecked for 26.1.2). Every move into another level goes through
   `Entity#teleport(TeleportTransition)`, which posts `EntityTravelToDimensionEvent` for every entity
   ([Access and unlocks](#access-and-unlocks) lists the paths). `world` cancels it for every entity that is not a
-  player when the target is another level and a realm is the source or the target. A move within one realm passes:
-  `/tp` inside the realm, a leashed mob on a warp between two waystones in the same realm, a teleport spell. The
-  Waystones mod takes leashed mobs along on a warp
+  player when the target is another level and a realm is the source or the target, unless the move is a trip
+  through a realm portal (the portal lets the entity and its passengers through on the tick of the trip). A move
+  within one realm passes: `/tp` inside the realm, a leashed mob on a warp between two waystones in the same realm,
+  a teleport spell. The Waystones mod takes leashed mobs along on a warp
   (`transportLeashed = "ENABLED"` in the pack); *verify* that its version moves them with `Entity#teleport` or
   `Entity#teleportTo`, so the event stops them. If it does not, the pack sets `SAME_DIMENSION`, which leaves them
   behind on every warp to another dimension.
@@ -454,21 +474,21 @@ without one; never in a realm. This answers the realm design's
 ## Edge cases
 
 - **A frame inside a realm:** allowed, and it opens only back to Overworld (Matěj, RLM-188): the sneak gesture
-  opens it onto return (Overworld, at the scaled-back position, [Linking](#linking)), and every sigil is refused
-  there ([The realm selector](#the-realm-selector)). A trip to another realm goes through Overworld.
+  opens it onto return (Overworld, at the scaled-back position, [Linking](#linking)), and every signet is refused
+  there ([The sealstone](#the-sealstone)). A trip to another realm goes through Overworld.
 - **Instance dimensions and other dimensions:** a frame lights only in dimensions that have a realm entry: the
   Overworld and the realms. In `realmforge:instances`, in the Nether and End until M4 removes them, and in
-  dimensions of other mods the selector refuses: "The portal cannot open here". Inside instances players are in
+  dimensions of other mods the sealstone refuses: "The portal cannot open here". Inside instances players are in
   Adventure mode anyway and cannot build one ([architecture 15.5](../architecture.md#155-instances)). Dungeon
   entrances are a different thing: a temporary portal opened with a dungeon key that is used up (D8, W4), and
   leaving an instance returns the player to its entrance. Matěj sees a fixed entry and exit point as the instances'
   way, not the realms' (RLM-128).
-- **Broken frames:** breaking any frame block or the selector closes the portal at once (the portal blocks check
+- **Broken frames:** breaking any frame block or the sealstone closes the portal at once (the portal blocks check
   their frame on neighbour updates, as nether portal blocks do; every required frame block touches the opening, and
   the corners are optional, so every break reaches a portal block). A player standing in it stays where they are. The
-  selector's setting becomes none, so the rebuilt frame opens again with the sigil
-  ([The realm selector](#the-realm-selector)).
-- **A missing destination:** a selector set to a realm that no longer exists (content removed, data pack off) shows
+  sealstone's setting becomes none, so the rebuilt frame opens again with the signet
+  ([The sealstone](#the-sealstone)).
+- **A missing destination:** a sealstone set to a realm that no longer exists (content removed, data pack off) shows
   "unknown realm" and refuses. A player who logs in inside a dimension that no longer exists is moved by vanilla.
 - **Fluids:** the portal block refuses fluids on both of vanilla's paths:
   - **flowing fluids:** it is a `LiquidBlockContainer` whose `canPlaceLiquid` answers false. Vanilla's
@@ -494,11 +514,12 @@ without one; never in a realm. This answers the realm design's
 id: stone
 dimension: realmforge:stone          # the realm's dimension (content/worldgen/dimension/stone.json)
 name: {en_us: Undervault}            # the approved name (RLM-139), without an article (RLM-188)
-subtitle: {en_us: Stone Realm}       # shown with the name in the guide, the sigil tooltip and the arrival title
-locked_hint: {en_us: "Unlocked by a chapter 1 quest."}
+subtitle: {en_us: Stone Realm}       # shown with the name in the guide and the arrival title
+description: {en_us: stone realm}    # in running text: "a portal to the stone realm" (Matěj, 2026-10-20)
+locked_hint: {en_us: "Unlocked by completing The Ominous Chief quest."}   # the quest's name is a placeholder
 flavour: {en_us: "Cold air rises from below, smelling of dust and old stone."}
 # W2b adds the portal's fields:
-sigil: realmforge:stone_sigil        # an item from content/items/, stack size 1
+signet: realmforge:undervault_signet        # an item from content/items/, stack size 1
 colour: "#7A8FB0"
 particle: minecraft:ash              # the extra particle next to the tinted dust
 sound_pitch: 0.8                     # until A3 brings our own sounds
@@ -506,7 +527,7 @@ arrival: {y: [20, 90], floor: realmforge:slate_bricks, pocket_radius: 3}   # whe
 ```
 
 ```yaml
-# content/realms/overworld.yaml (sketch): always open, so no sigil and no hint
+# content/realms/overworld.yaml (sketch): always open, so no signet and no hint
 id: overworld
 dimension: minecraft:overworld
 name: {en_us: Overworld}
@@ -516,47 +537,49 @@ arrival: {y: [64, 310], floor: minecraft:stone_bricks, pocket_radius: 3}   # por
 ```
 
 - **The name in messages:** a realm's name takes no article (Matěj, RLM-188), so it reads the same alone (the
-  arrival title, the sigil tooltip) and mid-sentence ("The portal opens onto Undervault"). The pydantic model
-  carries one form and each message a template; no message hard-codes a realm's name.
+  arrival title) and mid-sentence ("The portal opens onto Undervault"). The pydantic model carries one form and each
+  message a template; no message hard-codes a realm's name. The refusal at the sealstone names the realm by its
+  plain `description` instead: "You are not eligible to open a portal to the stone realm." (Matěj, 2026-10-20).
 - **The coordinate scale is not here:** it is the `coordinate_scale` of the realm's dimension type
   (`content/worldgen/dimension_type/stone.json`, `16.0`), next to its `bed_rule` and `respawn_anchor_works`
   attributes, because vanilla reads it from there.
 - **`realmforge:realm`, a new datapack registry** owned by `world`
   ([architecture 5.2](../architecture.md#52-our-datapack-registries)), synced to clients, because they need the
-  colour and the name. Overworld is an entry too (`overworld`: no sigil, an arrival `y` range and floor for
+  colour and the name. Overworld is an entry too (`overworld`: no signet, an arrival `y` range and floor for
   portals built on the way back, [Building a portal](#building-a-portal)), which gives return portals their colour
   and gives a later realm map its root. The architecture lists only what is built: the task that builds the
   registry adds it to [architecture 5.2](../architecture.md#52-our-datapack-registries) and the content type to
   [6.2](../architecture.md#62-what-each-content-type-becomes) in its own pull request (CLAUDE.md rule 11).
 - **Package direction** ([architecture 4.4](../architecture.md#44-dependencies-between-features)): the realm entry
-  names its sigil by id in vanilla's static item registry, resolved by vanilla's item codec, the way a worldgen file
-  names its blocks. `world` uses no code and no registry of the `item` feature for it: a sigil is a plain generated
-  item without behaviour of its own, and the selector compares the held stack with the realm's item. So `world`
+  names its signet by id in vanilla's static item registry, resolved by vanilla's item codec, the way a worldgen file
+  names its blocks. `world` uses no code and no registry of the `item` feature for it: a signet is a plain generated
+  item without behaviour of its own, and the sealstone compares the held stack with the realm's item. So `world`
   keeps its row in the dependency table.
 - **`rf gen` writes** the registry entry, the unlock advancement `realmforge:realm/<id>` (criterion
   `minecraft:impossible`), the lang keys (`realm.realmforge.<id>.name`, ...) and GameTest expectations.
 - **Validation:**
-  - every id the entry names (the dimension, the sigil, the particle, the arrival floor block) exists in the ID
+  - every id the entry names (the dimension, the signet, the particle, the arrival floor block) exists in the ID
     universe, which holds `minecraft:particle_type` and `minecraft:block` (CLAUDE.md rule 3);
   - the particle is a type without options (a `SimpleParticleType` such as `minecraft:ash`, from a list the
     validator keeps), because types such as `minecraft:dust` or `minecraft:block` need option data the entry does
     not carry;
-  - one realm per dimension, and one realm per sigil: two realms on one sigil would leave the selector no single
+  - one realm per dimension, and one realm per signet: two realms on one signet would leave the sealstone no single
     destination;
-  - every realm but Overworld names a sigil, since a realm without one has no way onto a selector, and the
-    sigil stacks to 1;
+  - every realm but Overworld names a signet, since a realm without one has no way onto a sealstone, and the
+    signet stacks to 1;
   - the realm dimension's `dimension_rules` access requirement includes the unlock advancement;
   - the realm's dimension type sets a `coordinate_scale` above 1 and a `bed_rule` that sets no spawn.
-- **The sigil source check comes later.** Every sigil needs a renewable source (a recipe, a repeatable quest, or the
+- **The signet source check comes later.** Every signet needs a renewable source (a recipe, a repeatable quest, or the
   guaranteed drop of a boss that can be replayed), never only a one-time reward, as the "every item obtainable" rule
-  asks ([ADR 0005](../decisions/0005-content-pipeline-yaml-single-source-of-truth.md)). That rule is not in the
-  pipeline yet: it needs recipes, loot and quests as data, and quests arrive with Q1. The sigil check joins it then,
-  together with a check that every realm has an unlock quest. Until Q2 adds the chapter 1 quests, the Stone Sigil and
-  the unlock have no source in play: `/give`, `/advancement grant` and a QA command hand them out for tests and
+  asks ([ADR 0005](../decisions/0005-content-pipeline-yaml-single-source-of-truth.md)). That rule is not in the pipeline
+  yet: it needs recipes, loot and quests as data, and quests arrive with Q1. The signet check joins it then, together
+  with a check that every realm has an unlock quest. Until Q2 adds the chapter 1 quests, the Signet of the Undervault
+  and the unlock have no source in play: `/give`, `/advancement grant` and a QA command hand them out for tests and
   playtests, so W2a and W2b do not wait for Q2.
-- **Not in the data yet:** a realm map's positions and parents (RE-7) and a level band of its own (the levels come
-  from `dimension_rules`, which stays on the server). They join when a client view needs them, synced with the realm
-  entry.
+- **Not in the data yet:** a realm map's positions and parents (RE-7). They join when a client view needs them,
+  synced with the realm entry. The realm's level band is in it (`levels`, for the arrival title): mob levels follow
+  the nearest player up to the dimension rules' `max_level` (RLM-303), so the band no longer comes from them;
+  validation keeps its lowest at their `entry_level`.
 
 ## Code shape
 
@@ -565,31 +588,32 @@ dimension rules and access:
 
 - `world/realm/`:
   - `Realm` (record with `CODEC`) and its registry key;
-  - `RealmAccess`, which asks `core`'s requirement API at the selector, at the portal and in its
+  - `RealmAccess`, which asks `core`'s requirement API at the sealstone, at the portal and in its
     `EntityTravelToDimensionEvent` listener, which also stops every entity that is not a player from entering or
-    leaving a realm, puts a travelling player's shoulder entities down, and ignores a move within one level;
+    leaving a realm other than through a realm portal, puts a travelling player's shoulder entities down, and
+    ignores a move within one level;
   - the respawn listener (`PlayerRespawnPositionEvent`), which also puts down the shoulder entities of a player who
     died in a realm;
   - `PortalFrame`, the frame check as plain Java over a block lookup: both axes, the missing positions;
   - `RealmPortalBlock`, implementing vanilla's `Portal` (`getPortalDestination`, `getPortalTransitionTime`,
     `getLocalTransition`) and `LiquidBlockContainer`, and overriding `canBeReplaced(BlockState, Fluid)` (it refuses
     every fluid, flowing or from a bucket);
-  - `RealmSelectorBlock` with its block entity, and its point-of-interest type;
+  - `SealstoneBlock` with its block entity, and its point-of-interest type;
   - `RealmPortalLinker`: the scaled position, the search for a linked portal and the building of a new one, with the
     spot search as plain Java over a column of blocks;
   - the `PlayerInteractEvent.RightClickBlock` listener for the sneak gesture (common code: it runs on both sides);
 - `client/`: the portal block's tint source;
-- Portal Stone, the selector and the sigils as YAML content: blocks once the block content type exists, sigils as
-  items. The two blocks' `generated` flag and the loot tables that check it come from that content type
-  ([Building a portal](#building-a-portal)).
+- Realmforge Bricks, the sealstone and the signets as YAML content: blocks once the block content type exists, signets
+  as items. The two blocks' `generated` flag and the loot tables that check it come from that content type ([Building a
+  portal](#building-a-portal)).
 
 ## Tests
 
 - **JUnit:**
   - the frame check (both axes; corners present or missing, which both light; a missing side block; a block in the
-    opening; the selector off-centre; a frame too big or too small);
+    opening; the sealstone off-centre; a frame too big or too small);
   - the scaled position, both ways, with the world border clamp and its rounding down;
-  - a sigil on a frame inside a realm is refused, and the sneak gesture still opens it onto return;
+  - a signet on a frame inside a realm is refused, and the sneak gesture still opens it onto return;
   - the build radius of each side, ⌊128 ÷ scale⌋ − 1 in a realm: from every Overworld x in one 16-block cell,
     a realm portal at either end of the radius aims back within 128 blocks;
   - the spot search for a built portal (a ceiling, a void, water, a full column, the `y` range), including a way
@@ -600,10 +624,10 @@ dimension rules and access:
 - **GameTests** (W2a's and W2b's "Done when"):
   - access is refused before the unlock advancement and allowed after it: through a teleport into the realm (as a
     waystone makes one), and through the portal, where the player stays put and gets the centre-screen message;
-  - a player holding a sigil without its unlock cannot open or switch a portal with it, and can after the unlock;
-  - a sigil lights a complete frame, a second sigil switches it, and an incomplete frame stays dark;
+  - a player holding a signet without its unlock cannot open or switch a portal with it, and can after the unlock;
+  - a signet lights a complete frame, a second signet switches it, and an incomplete frame stays dark;
   - breaking a frame block closes the portal; closed by the sneak gesture, or broken and rebuilt, the frame relights
-    with the sigil it showed before (RLM-133);
+    with the signet it showed before (RLM-133);
   - the sneak gesture with a shield in the off hand closes an Overworld portal, and opens a frame in a realm onto
     return (RLM-133);
   - a trip from Overworld builds a return portal within 7 blocks of the scaled position in the realm, and the
@@ -614,11 +638,12 @@ dimension rules and access:
     back arrives at the realm portal it came from;
   - a built portal never stands outside the world border or outside its dimension's `y` range;
   - breaking the blocks of a frame a trip built closes the portal and drops nothing, while a frame a player built
-    drops its Portal Stone and its selector;
+    drops its Realmforge Bricks and its sealstone;
   - a water bucket emptied into a lit portal's opening, by a player and by a dispenser, and water flowing into it,
     leave its portal blocks in place;
-  - the selector refuses in the instance dimension;
-  - an item, a mob and a mounted player do not travel through a portal; a mob moved into or out of a realm with
+  - the sealstone refuses in the instance dimension;
+  - an item and a mob step into a portal and travel, and a pig carrying a player without the unlock does not;
+    a mob moved into or out of a realm with
     `Entity#teleport(TeleportTransition)`, and one moved with `/tp` (`Entity#teleportTo`), stays where it is
     (RLM-133), while a mob teleported within the realm moves;
   - a parrot on a player's shoulder stays in the level the player leaves, through a portal into a realm, a
@@ -636,14 +661,14 @@ W2 is split in two (Matěj, RLM-128; the roadmap holds the plan):
   access requirement), the `realmforge:requirement_type` registry with its first types, `content/realms/` with the
   realm's name, hint and unlock advancement, the access check on every way in with the non-player and shoulder
   entity rules, and the respawn rule.
-- **W2b, the realm portal** (RLM-154, after W2a): the frame, the selector, the portal block, the Stone Sigil, the
-  portal's fields in `content/realms/` (the Overworld entry's included) and the synced registry, the linking and
-  building (trip-built frames drop nothing), the selector's gestures, the look and the sounds. It uses vanilla
-  particles and sounds; textures are placeholders until the art pipeline makes them.
-- **Q2** (chapters 1 and 2) adds the stone realm's unlock quest, which rewards the unlock and the Stone Sigil, the
-  quests that walk through the frame, and the repeatable quest that replaces a lost sigil. Until then `/give`,
-  `/advancement grant` and the QA mod stand in.
-- **Later:** the "Return to last death" scroll (RLM-155); the desert and tundra sigils with M4's realms; a tinted
+- **W2b, the realm portal** (RLM-154, after W2a): the frame, the sealstone, the portal block, the Signet of the
+  Undervault, the portal's fields in `content/realms/` (the Overworld entry's included) and the synced registry, the
+  linking and building (trip-built frames drop nothing), the sealstone's gestures, the look and the sounds. It uses
+  vanilla particles and sounds; textures are placeholders until the art pipeline makes them.
+- **Q2** (chapters 1 and 2) adds the stone realm's unlock quest, which rewards the unlock and the Signet of the
+  Undervault, the quests that walk through the frame, and the repeatable quest that replaces a lost signet. Until then
+  `/give`, `/advancement grant` and the QA mod stand in.
+- **Later:** the "Return to last death" scroll (RLM-155); the desert and tundra signets with M4's realms; a tinted
   overlay; our own sounds (A3); a realm map; shared quests in a party (RLM-156).
 
 ## Decisions
@@ -651,13 +676,13 @@ W2 is split in two (Matěj, RLM-128; the roadmap holds the plan):
 Matěj's answers of 2026-10-13 (RLM-128), which this version records:
 
 1. **The spec is approved** with the changes below.
-2. **Sigils:** every sigil of a realm is the same item, and anyone may hold one. What counts is the player's own
-   progress: without the realm's unlock quest a player can neither open a portal to that realm with the sigil nor
-   pass through an open one ("You are not eligible to pass through the portal."). One sigil opens any number of
+2. **Signets:** every signet of a realm is the same item, and anyone may hold one. What counts is the player's own
+   progress: without the realm's unlock quest a player can neither open a portal to that realm with the signet nor
+   pass through an open one ("You are not eligible to pass through the portal."). One signet opens any number of
    portals.
 3. **First portal:** answered by the Nether-like travel. Any number of portals can lead to one realm, anywhere in the
    Overworld, so no generated shrine is needed.
-4. **Who may switch a portal:** anyone holding a sigil they are eligible to use.
+4. **Who may switch a portal:** anyone holding a signet they are eligible to use.
 5. **Recall:** the Waystones mod's Warp Scroll and Return Scroll, plus our "Return to last death" scroll.
 6. **W2's size:** split into W2a (the stone realm's dimension, its rules and the requirement types) and W2b (the
    realm portal), each M.
@@ -671,7 +696,20 @@ Matěj's answers of 2026-10-13 (RLM-128), which this version records:
     at an arrival point, and a warp into a realm the player has not unlocked never works.
 11. **Portals inside a realm lead only back to Overworld** (Matěj, 2026-10-15, RLM-188 item 8): a portal opens onto
     a realm only from Overworld, and a frame built inside a realm opens only onto return. This replaces the first
-    version's sigil that switched a frame inside a realm to another realm.
+    version's signet that switched a frame inside a realm to another realm.
+
+His playtest of W2b (2026-10-20, RLM-154) added:
+
+12. **Names:** the frame's blocks are **Realmforge Bricks** and the **Realmforge Sealstone** (the first version's
+    Portal Stone and realm selector), and a realm's key is its **signet** ("Signet of the Undervault"; the first
+    version's sigil). Realmforge Bricks are made of Realmforge Stone, which is made of eight Overworld bricks around
+    an ender pearl ([The frame](#the-frame)).
+13. **Every entity travels through a portal** ([Multiplayer](#multiplayer)), replacing 9's "only players travel"
+    for portals; every other way into or out of a realm still carries only players.
+14. **A frame a trip builds is set into the floor, with Realmforge Bricks in its corners**
+    ([Building a portal](#building-a-portal)): its bottom row replaces the top of the floor, so a player walks in
+    without jumping (Matěj's reconfirmation of 2026-10-20; the first revision of that day stood it on top of the
+    floor). The corners stay optional for a player's own frame.
 
 ## Open questions
 

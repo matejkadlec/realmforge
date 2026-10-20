@@ -1,6 +1,7 @@
 """Items: Java registrations, item model definitions and models, placeholder textures, the item tags of item uses
 (``data/realmforge/tags/item/use/<use>.json``), and the QA mod's expectations. An item's use and flavor line become
-its tooltip: the vanilla lore component, set on the item's default components."""
+its tooltip: the vanilla lore component, set on the item's default components. A realm's signet (``content/realms/``)
+names its realm there, with the realm's element, and says it is never used up (realm portal spec, "Realm signets")."""
 
 from __future__ import annotations
 
@@ -13,11 +14,14 @@ from realmforge_tools.generate.javagen import constant_name, header, java_file_p
 from realmforge_tools.generate.textures import placeholder_texture
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.item import USE_TEXT_GROUP, ItemDef, use_tag
+from realmforge_tools.schema.realm import RealmDef
 from realmforge_tools.schema.text import text_key
 
 GENERATED_PACKAGE = f"{JAVA_PACKAGE}.generated"
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
 VANILLA_DEFAULT_STACK_SIZE = 64
+# A signet's tooltip line, a text in content/texts/tooltip.yaml: it is not consumed on use (Matěj, 2026-10-20).
+SIGNET_KEPT_TEXT = ("tooltip", "signet_not_consumed")
 # What an item's tooltip lines need (_lore).
 LORE_IMPORTS = (
     "java.util.List",
@@ -72,6 +76,7 @@ def _registrations(content: Content, paths: RepoPaths) -> bytes:
     fields: list[str] = []
     tabs: dict[str, list[str]] = {}
     imports = {"net.minecraft.world.item.Item"}
+    realms_by_signet = {entry.model.signet: entry.model for entry in content.realms if entry.model.signet}
     for entry in content.items:
         item = entry.model
         # The register call sets the item's id on the properties; the lambda only adds to them.
@@ -79,7 +84,9 @@ def _registrations(content: Content, paths: RepoPaths) -> bytes:
         properties = ""
         if item.max_stack_size != VANILLA_DEFAULT_STACK_SIZE:
             properties += f".stacksTo({item.max_stack_size})"
-        lore = _lore(item)
+        if item.fire_resistant:
+            properties += ".fireResistant()"
+        lore = _lore(item, realms_by_signet.get(f"{MOD_ID}:{item.id}"))
         if lore:
             imports.update(LORE_IMPORTS)
             properties += (
@@ -141,11 +148,17 @@ def _registrations(content: Content, paths: RepoPaths) -> bytes:
     return source.encode("utf-8")
 
 
-def _lore(item: ItemDef) -> str:
-    """The item's tooltip lines as Java: its use in green, as a "Use:" line, then its flavor line in vanilla's lore
-    style (purple, italic). Empty when it has neither."""
+def _lore(item: ItemDef, realm: RealmDef | None) -> str:
+    """The item's tooltip lines as Java: for a realm's signet, that it is not consumed on use (grey, not italic); its
+    use in green, as a "Use:" line; then its flavor line in vanilla's lore style (purple, italic). Empty when it has
+    none of them."""
     indent = " " * 28
     lines = []
+    if realm is not None:
+        plain = (
+            f"\n{indent}        .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(false))"
+        )
+        lines.append(f"Component.translatable({string_literal(text_key(*SIGNET_KEPT_TEXT))}){plain}")
     if item.use is not None:
         key = text_key(USE_TEXT_GROUP, item.use)
         lines.append(

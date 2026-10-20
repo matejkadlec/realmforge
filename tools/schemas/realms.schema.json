@@ -1,5 +1,41 @@
 {
   "$defs": {
+    "ArrivalDef": {
+      "additionalProperties": false,
+      "description": "Where a trip may build a portal in the dimension when none is near (realm portal spec, \"Building a portal\").",
+      "properties": {
+        "floor": {
+          "description": "The block under and in front of a frame carved out where no spot fits, e.g. minecraft:stone_bricks. It drops as usual.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Floor",
+          "type": "string"
+        },
+        "pocket_radius": {
+          "default": 3,
+          "description": "Blocks of safe space around a carved frame, free of fluids and falling blocks (3 by default).",
+          "maximum": 8,
+          "minimum": 1,
+          "title": "Pocket Radius",
+          "type": "integer"
+        },
+        "y": {
+          "description": "[lowest, highest]: the heights a built frame's bottom row may stand at, which keep arrivals in the depth band of the realm's lowest levels; Overworld [64, 310], above sea level.",
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Y",
+          "type": "array"
+        }
+      },
+      "required": [
+        "y",
+        "floor"
+      ],
+      "title": "ArrivalDef",
+      "type": "object"
+    },
     "LocalizedText": {
       "additionalProperties": false,
       "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
@@ -20,23 +56,62 @@
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "A realm: its dimension, what players read about it, and the icon of its unlock.",
+  "description": "A realm: its dimension, what players read about it, the icon of its unlock, and its portal.",
   "properties": {
+    "arrival": {
+      "$ref": "#/$defs/ArrivalDef",
+      "description": "Where a trip may build a portal in the dimension."
+    },
+    "colour": {
+      "description": "The portal's colour while it opens onto the realm, e.g. #7A8FB0; Overworld's: return portals.",
+      "pattern": "^#[0-9A-Fa-f]{6}$",
+      "title": "Colour",
+      "type": "string"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LocalizedText"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The realm as a plain description in running text, lowercase and without an article: stone realm. The refusal at the sealstone reads 'a portal to the stone realm' (Matěj, 2026-10-20). Every realm has one; Overworld none."
+    },
     "dimension": {
-      "description": "The realm's dimension, e.g. realmforge:stone (content/worldgen/).",
+      "description": "The realm's dimension, e.g. realmforge:stone (content/worldgen/); minecraft:overworld for Overworld's entry, which is no realm.",
       "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
       "title": "Dimension",
       "type": "string"
     },
     "flavour": {
-      "$ref": "#/$defs/LocalizedText",
-      "description": "A flavour line, shown on the first arrival and with the unlock: one sentence, no mechanics."
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LocalizedText"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "A flavour line, shown on the first arrival and with the unlock: one sentence, no mechanics. Every realm has one; Overworld none."
     },
     "icon": {
-      "description": "The item the unlock advancement shows, e.g. one of the realm's blocks.",
-      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
-      "title": "Icon",
-      "type": "string"
+      "anyOf": [
+        {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The item the unlock advancement shows, e.g. one of the realm's blocks. Every realm has one; Overworld none.",
+      "title": "Icon"
     },
     "id": {
       "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
@@ -45,27 +120,97 @@
       "title": "Id",
       "type": "string"
     },
+    "levels": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "[lowest, highest]: the realm's level band, which the arrival title shows (RLM-139); the lowest is the entry level its dimension rules floor mobs at, the highest at most their max_level. Every realm has one; Overworld none.",
+      "title": "Levels"
+    },
     "locked_hint": {
-      "$ref": "#/$defs/LocalizedText",
-      "description": "How to unlock it, shown when a player without the unlock is refused: one sentence."
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LocalizedText"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "How to unlock it, shown when a player without the unlock is refused: one sentence naming the quest, 'Unlocked by completing The Ominous Chief quest.' Every realm has one; Overworld none."
     },
     "name": {
       "$ref": "#/$defs/LocalizedText",
       "description": "The realm's name, without an article: Undervault (RLM-188)."
     },
+    "particle": {
+      "anyOf": [
+        {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The vanilla particle the portal shows next to the dust in its colour, one without options: minecraft:ash. Every realm has one; Overworld none.",
+      "title": "Particle"
+    },
+    "signet": {
+      "anyOf": [
+        {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The item from content/items/ that opens the realm portal onto the realm, stacking to 1: realmforge:undervault_signet. Every realm has its own; Overworld none.",
+      "title": "Signet"
+    },
+    "sound_pitch": {
+      "default": 1.0,
+      "description": "The pitch of the vanilla portal sounds for this realm until our own sounds exist (A3): 0.5-2.",
+      "maximum": 2.0,
+      "minimum": 0.5,
+      "title": "Sound Pitch",
+      "type": "number"
+    },
     "subtitle": {
-      "$ref": "#/$defs/LocalizedText",
-      "description": "Its element, shown with the name where a player first meets it: Stone Realm (RLM-139)."
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LocalizedText"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Its element, shown with the name where a player first meets it: Stone Realm (RLM-139). Every realm has one; Overworld none."
     }
   },
   "required": [
     "id",
     "dimension",
     "name",
-    "subtitle",
-    "locked_hint",
-    "flavour",
-    "icon"
+    "colour",
+    "arrival"
   ],
   "title": "RealmDef",
   "type": "object"

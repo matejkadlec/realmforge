@@ -9,7 +9,8 @@ import java.util.List;
 public final class GeneratedBlockExpectations {
     /**
      * Expected state of one block. Ids are full resource locations, e.g. {@code realmforge:vaultstone}; the tags
-     * are the vanilla mining tags it is in, and its block item has the block's id.
+     * are the vanilla mining tags it is in, and its block item has the block's id. A block without an item has
+     * an empty loot table.
      */
     public record BlockExpectation(String id, String translationKey, float hardness, float blastResistance,
             boolean requiresTool, List<String> miningTags, String lootTable) {
@@ -17,11 +18,23 @@ public final class GeneratedBlockExpectations {
 
     public static final List<BlockExpectation> BLOCKS = List.of(
             new BlockExpectation(
+                    "realmforge:andesite_bricks",
+                    "block.realmforge.andesite_bricks",
+                    1.5F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/andesite_bricks"),
+            new BlockExpectation(
                     "realmforge:coreslate",
                     "block.realmforge.coreslate",
                     25.0F, 9.0F, true,
                     List.of("minecraft:mineable/pickaxe"),
                     "realmforge:blocks/coreslate"),
+            new BlockExpectation(
+                    "realmforge:diorite_bricks",
+                    "block.realmforge.diorite_bricks",
+                    1.5F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/diorite_bricks"),
             new BlockExpectation(
                     "realmforge:dungeon_exit",
                     "block.realmforge.dungeon_exit",
@@ -35,11 +48,41 @@ public final class GeneratedBlockExpectations {
                     List.of("minecraft:mineable/pickaxe"),
                     "realmforge:blocks/dungeon_portal"),
             new BlockExpectation(
+                    "realmforge:granite_bricks",
+                    "block.realmforge.granite_bricks",
+                    1.5F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/granite_bricks"),
+            new BlockExpectation(
                     "realmforge:mottlestone",
                     "block.realmforge.mottlestone",
                     18.0F, 6.0F, true,
                     List.of("minecraft:mineable/pickaxe"),
                     "realmforge:blocks/mottlestone"),
+            new BlockExpectation(
+                    "realmforge:realm_portal",
+                    "block.realmforge.realm_portal",
+                    -1.0F, 0.0F, false,
+                    List.of(),
+                    ""),
+            new BlockExpectation(
+                    "realmforge:realmforge_bricks",
+                    "block.realmforge.realmforge_bricks",
+                    3.0F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/realmforge_bricks"),
+            new BlockExpectation(
+                    "realmforge:realmforge_sealstone",
+                    "block.realmforge.realmforge_sealstone",
+                    3.0F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/realmforge_sealstone"),
+            new BlockExpectation(
+                    "realmforge:realmforge_stone",
+                    "block.realmforge.realmforge_stone",
+                    3.0F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/realmforge_stone"),
             new BlockExpectation(
                     "realmforge:siltstone",
                     "block.realmforge.siltstone",

@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
+# Andesite Bricks (W2b; Matěj, 2026-10-20): vanilla has none, and Realmforge Stone needs the bricks of eight Overworld
+# stones. 4 polished andesite make 4, as vanilla makes tuff bricks; as hard as polished andesite. The generated
+# placeholder texture until the A* textures.
+id: andesite_bricks
+name:
+  en_us: Andesite Bricks
+hardness: 1.5
+blast_resistance: 6
+tool: pickaxe
+requires_tool: true
+sound: stone
+map_color: stone
+creative_tabs:
+  - minecraft:building_blocks
+recipe:
+  pattern:
+    - PP
+    - PP
+  key:
+    P: minecraft:polished_andesite
+  count: 4
+  category: building

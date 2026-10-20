@@ -1,10 +1,10 @@
 """Realms: each realm's unlock advancement and the QA mod's expectations (the realm entries and their lang entries:
-datapack.py).
+datapack.py). Overworld's entry is no realm, so it has no unlock.
 
 - ``data/realmforge/advancement/realm/<id>.json``: the realm's unlock, with ``minecraft:impossible`` as its only
   criterion, so only the realm's unlock quest or a command grants it (realm portal spec, "Access and unlocks"). It is
   hidden until earned, shows the toast "Realm unlocked: <name>" and adds no chat line.
-- ``GeneratedRealmExpectations``: every realm, its dimension, texts and unlock.
+- ``GeneratedRealmExpectations``: every entry, its dimension, texts, unlock, signet and portal colour.
 """
 
 from __future__ import annotations
@@ -33,6 +33,8 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     files: dict[Path, bytes] = {}
     advancement_dir = data_dir(paths) / "advancement"
     for entry in content.realms:
+        if entry.model.is_overworld:
+            continue
         files[advancement_dir / f"{unlock_advancement(entry.model.id)}.json"] = dump_json(
             _advancement(entry.model)
         )
@@ -67,13 +69,17 @@ def _expectations(content: Content) -> bytes:
     rows = []
     for entry in content.realms:
         realm = entry.model
+        hint = "" if realm.is_overworld else translation_key(REGISTRY, realm.id, "locked_hint")
+        unlock = "" if realm.is_overworld else f"{MOD_ID}:{unlock_advancement(realm.id)}"
         rows.append(
             "            new RealmExpectation(\n"
             f"                    {string_literal(f'{MOD_ID}:{realm.id}')},\n"
             f"                    {string_literal(realm.dimension)},\n"
             f"                    {string_literal(translation_key(REGISTRY, realm.id, 'name'))},\n"
-            f"                    {string_literal(translation_key(REGISTRY, realm.id, 'locked_hint'))},\n"
-            f"                    {string_literal(f'{MOD_ID}:{unlock_advancement(realm.id)}')})"
+            f"                    {string_literal(hint)},\n"
+            f"                    {string_literal(unlock)},\n"
+            f"                    {string_literal(realm.signet or '')},\n"
+            f"                    0x{realm.colour[1:].upper()})"
         )
     realms = "List.of(\n" + ",\n".join(rows) + ")" if rows else "List.of()"
     source = (
@@ -84,11 +90,12 @@ def _expectations(content: Content) -> bytes:
         "/** What {@code content/realms/} says about every realm, so GameTests can check that the game agrees. */\n"
         "public final class GeneratedRealmExpectations {\n"
         "    /**\n"
-        "     * Expected state of one realm. Ids are full resource locations: the realm's, e.g. {@code realmforge:stone},\n"
-        "     * its dimension's and its unlock advancement's.\n"
+        "     * Expected state of one entry. Ids are full resource locations: the realm's, e.g. {@code realmforge:stone},\n"
+        "     * its dimension's, its unlock advancement's and its signet's; the colour is RGB. Overworld's entry, which is\n"
+        "     * no realm, has an empty hint, unlock and signet.\n"
         "     */\n"
         "    public record RealmExpectation(String id, String dimension, String nameKey, String lockedHintKey,\n"
-        "            String unlockAdvancement) {\n"
+        "            String unlockAdvancement, String signet, int colour) {\n"
         "    }\n"
         "\n"
         f"    public static final List<RealmExpectation> REALMS = {realms};\n"

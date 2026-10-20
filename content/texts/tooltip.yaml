@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# Item tooltip lines the pipeline writes into an item's lore (tooltip.realmforge.<name>, generate/items.py).
+id: tooltip
+texts:
+  # A realm's signet (W2b, realm portal spec "Realm signets"): it opens any number of portals and is never consumed
+  # (Matěj's wording, 2026-10-20; the tooltip's only line).
+  signet_not_consumed:
+    en_us: Does not consume on use

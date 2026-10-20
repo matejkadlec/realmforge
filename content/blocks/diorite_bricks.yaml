@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
+# Diorite Bricks (W2b; Matěj, 2026-10-20): vanilla has none, and Realmforge Stone needs the bricks of eight Overworld
+# stones. 4 polished diorite make 4, as vanilla makes tuff bricks; as hard as polished diorite. The generated
+# placeholder texture until the A* textures.
+id: diorite_bricks
+name:
+  en_us: Diorite Bricks
+hardness: 1.5
+blast_resistance: 6
+tool: pickaxe
+requires_tool: true
+sound: stone
+map_color: quartz
+creative_tabs:
+  - minecraft:building_blocks
+recipe:
+  pattern:
+    - PP
+    - PP
+  key:
+    P: minecraft:polished_diorite
+  count: 4
+  category: building

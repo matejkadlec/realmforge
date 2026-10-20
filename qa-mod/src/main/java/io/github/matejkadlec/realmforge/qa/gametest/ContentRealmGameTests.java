@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.locale.Language;
@@ -20,9 +21,10 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
 /**
- * W2a (RLM-32): every realm of {@code content/realms/} reached the datapack registry {@code realmforge:realm} as
- * written, its unlock advancement exists with {@code minecraft:impossible} as its only criterion and a hidden toast,
- * and its dimension's rules require that unlock ({@link GeneratedRealmExpectations}).
+ * W2a (RLM-32), W2b (RLM-154): every entry of {@code content/realms/} reached the datapack registry
+ * {@code realmforge:realm} as written, with its signet and portal colour; a realm's unlock advancement exists with
+ * {@code minecraft:impossible} as its only criterion and a hidden toast, and its dimension's rules require that unlock.
+ * Overworld's entry is no realm and has neither ({@link GeneratedRealmExpectations}).
  */
 public final class ContentRealmGameTests {
     private ContentRealmGameTests() {
@@ -49,7 +51,20 @@ public final class ContentRealmGameTests {
             helper.assertValueEqual(realm.name(), expected.nameKey(), expected.id() + " name");
             helper.assertValueEqual(realm.lockedHint(), expected.lockedHintKey(), expected.id() + " hint");
             helper.assertTrue(Language.getInstance().has(realm.name()), expected.id() + ": no en_us name");
+            helper.assertValueEqual(realm.colour() & 0xFFFFFF, expected.colour(), expected.id() + " portal colour");
+            helper.assertValueEqual(realm.signet().map(Identifier::toString).orElse(""), expected.signet(),
+                    expected.id() + " signet");
+            if (dimension.equals(Level.OVERWORLD)) {
+                helper.assertTrue(expected.unlockAdvancement().isEmpty(), "Overworld needs no unlock");
+                helper.assertTrue(Realms.overworld(helper.getLevel().registryAccess()).isPresent()
+                        && !Realms.isRealm(helper.getLevel().registryAccess(), dimension), "Overworld is no realm");
+                continue;
+            }
             helper.assertTrue(Language.getInstance().has(realm.lockedHint()), expected.id() + ": no en_us hint");
+            helper.assertTrue(realm.signet().flatMap(BuiltInRegistries.ITEM::getOptional)
+                            .flatMap(signet -> Realms.bySignet(helper.getLevel().registryAccess(), signet))
+                            .map(holder -> holder.key().identifier().toString().equals(expected.id()))
+                            .orElse(false), expected.id() + " is its signet's realm");
 
             ResourceKey<Realm> key = ResourceKey.create(WorldRegistries.REALM, Identifier.parse(expected.id()));
             Identifier unlock = Realms.unlockAdvancement(key);

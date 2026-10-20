@@ -1,15 +1,32 @@
 # yaml-language-server: $schema=../../tools/schemas/realms.schema.json
 # Undervault, the stone realm: chapter 2, levels 6-18 (realm design, "The stone realm"; realm portal spec). Its
 # unlock is the advancement realmforge:realm/stone, which chapter 1's last main quest grants (Q2); until then
-# `/advancement grant @s only realmforge:realm/stone`. W2b adds the portal's fields.
+# `/advancement grant @s only realmforge:realm/stone`. The portal's fields (W2b) follow the icon.
 id: stone
 dimension: realmforge:stone
 name:
   en_us: Undervault
 subtitle:
   en_us: Stone Realm
+description:
+  en_us: stone realm
+# The quest's name is a placeholder until Q2 writes chapter 1's quests (Matěj, 2026-10-20).
 locked_hint:
-  en_us: Unlocked by a chapter 1 quest.
+  en_us: Unlocked by completing The Ominous Chief quest.
+# Its level band, chapter 2's (RLM-188), which the arrival title shows; its dimension rules floor mobs at 6 too.
+levels: [6, 18]
 flavour:
   en_us: Cold air rises from below, smelling of dust and old stone.
 icon: realmforge:vaultstone
+# The realm portal (W2b, realm portal spec): the Signet of the Undervault opens it onto Undervault, slate blue with ash,
+# its vanilla sounds a little lower. A trip that finds no portal near the scaled position builds one set into the cave
+# floor (about y 32), its bottom row at y 20 to 90, or carves one out in a floor of Vaultstone, the realm's common
+# stone. The colour and the pitch are proposals for Matěj's playtest.
+signet: realmforge:undervault_signet
+colour: "#7A8FB0"
+particle: minecraft:ash
+sound_pitch: 0.8
+arrival:
+  y: [20, 90]
+  floor: realmforge:vaultstone
+  pocket_radius: 3

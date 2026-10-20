@@ -9,13 +9,15 @@ import java.util.Optional;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 
 /**
- * The public API of {@code world} for realms (architecture 4.3, 15.1): which dimension is a realm, and its unlock.
- * Overworld is never a realm, even once W2b gives it an entry for its return portals.
+ * The public API of {@code world} for realms (architecture 4.3, 15.1): which dimension is a realm, its unlock, and the
+ * entries the realm portal reads. Overworld's entry, which gives return portals their colour, is never a realm.
  */
 public final class Realms {
     /** The path prefix of every realm's unlock advancement. */
@@ -24,7 +26,8 @@ public final class Realms {
     /** The index of the last registry asked about: one per loaded world, rebuilt when the world changes. */
     private static volatile Index index;
 
-    private record Index(Registry<Realm> registry, Map<ResourceKey<Level>, Holder.Reference<Realm>> byDimension) {
+    private record Index(Registry<Realm> registry, Map<ResourceKey<Level>, Holder.Reference<Realm>> byDimension,
+            Map<Item, Holder.Reference<Realm>> bySignet) {
     }
 
     private Realms() {
@@ -38,16 +41,25 @@ public final class Realms {
 
     /** The realm whose dimension is {@code dimension}, or empty when it is not a realm's. */
     public static Optional<Holder.Reference<Realm>> of(RegistryAccess registries, ResourceKey<Level> dimension) {
-        if (dimension == Level.OVERWORLD) {
-            return Optional.empty();
-        }
-        Registry<Realm> registry = registries.lookupOrThrow(WorldRegistries.REALM);
-        Index current = index;
-        if (current == null || current.registry() != registry) {
-            current = new Index(registry, byDimension(registry));
-            index = current;
-        }
-        return Optional.ofNullable(current.byDimension().get(dimension));
+        return dimension == Level.OVERWORLD ? Optional.empty() : entry(registries, dimension);
+    }
+
+    /**
+     * The entry whose dimension is {@code dimension}: a realm's, Overworld's, or empty for any other dimension (the
+     * instances, the Nether, other mods' dimensions), where the realm portal does not open.
+     */
+    public static Optional<Holder.Reference<Realm>> entry(RegistryAccess registries, ResourceKey<Level> dimension) {
+        return Optional.ofNullable(index(registries).byDimension().get(dimension));
+    }
+
+    /** Overworld's entry, the destination of return portals; empty only when no data pack gives it one. */
+    public static Optional<Holder.Reference<Realm>> overworld(RegistryAccess registries) {
+        return entry(registries, Level.OVERWORLD);
+    }
+
+    /** The realm whose signet is {@code item}, or empty when it is no signet. */
+    public static Optional<Holder.Reference<Realm>> bySignet(RegistryAccess registries, Item item) {
+        return Optional.ofNullable(index(registries).bySignet().get(item));
     }
 
     /** Whether {@code dimension} is a realm's. */
@@ -55,9 +67,19 @@ public final class Realms {
         return of(registries, dimension).isPresent();
     }
 
+    private static Index index(RegistryAccess registries) {
+        Registry<Realm> registry = registries.lookupOrThrow(WorldRegistries.REALM);
+        Index current = index;
+        if (current == null || current.registry() != registry) {
+            current = new Index(registry, byDimension(registry), bySignet(registry));
+            index = current;
+        }
+        return current;
+    }
+
     /**
-     * The realms by their dimension. Our pipeline allows one per dimension; when another data pack adds a second, the
-     * realm with the lowest id wins and the log says so.
+     * The entries by their dimension. Our pipeline allows one per dimension; when another data pack adds a second, the
+     * entry with the lowest id wins and the log says so.
      */
     private static Map<ResourceKey<Level>, Holder.Reference<Realm>> byDimension(Registry<Realm> registry) {
         Map<ResourceKey<Level>, Holder.Reference<Realm>> byDimension = new HashMap<>();
@@ -72,5 +94,16 @@ public final class Realms {
                     }
                 });
         return Map.copyOf(byDimension);
+    }
+
+    /** The realms by their signet, the lowest id first when two share one; signets that are no item are left out. */
+    private static Map<Item, Holder.Reference<Realm>> bySignet(Registry<Realm> registry) {
+        Map<Item, Holder.Reference<Realm>> bySignet = new HashMap<>();
+        registry.listElements()
+                .sorted(Comparator.comparing(holder -> holder.key().identifier()))
+                .forEach(holder -> holder.value().signet()
+                        .flatMap(BuiltInRegistries.ITEM::getOptional)
+                        .ifPresent(item -> bySignet.putIfAbsent(item, holder)));
+        return Map.copyOf(bySignet);
     }
 }

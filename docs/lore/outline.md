@@ -19,9 +19,9 @@
 - **Realmforge** is the world, and its name is its history: it was forged. Long ago its makers, the
   **Gatewrights**, split a world the **Void** was eating into separate **realms**, each forged around one element,
   and chained them in a line between Overworld and the Void.
-- **The Chain of Seals** keeps that line: every realm beyond Overworld is sealed. The first **sigil** is an old
-  relic the Lodge has kept; every later main-path sigil is forged from a shard held by the **guardian** of the realm
-  before it, and a side realm's sigil comes from wherever its design puts it. That is why the realms open one by
+- **The Chain of Seals** keeps that line: every realm beyond Overworld is sealed. The first **signet** is an old
+  relic the Lodge has kept; every later main-path signet is forged from a shard held by the **guardian** of the realm
+  before it, and a side realm's signet comes from wherever its design puts it. That is why the realms open one by
   one, in order, and why the Void realm is always the last.
 - **The player** is a newcomer whom the **Wayfarers' Lodge**, a society of explorers and scholars, sends to walk
   the chain: earn each realm's passage, pass each guardian's trial, carry each shard onwards.
@@ -55,13 +55,13 @@ line is the **Chain of Seals**, and it is built into the seals themselves:
 
 | Lore | What it is in the game |
 | --- | --- |
-| A realm's **seal** opens only to its **sigil** | the realm portal opens onto a realm when its sigil is used on the realm selector ([realm portal](../design/realm-portal.md)) |
-| One **gate design** for every realm | one portal frame, with the realm selector as its keystone |
+| A realm's **seal** opens only to its **signet** | the realm portal opens onto a realm when its signet is used on the sealstone ([realm portal](../design/realm-portal.md)) |
+| One **gate design** for every realm | one portal frame, with the sealstone as its keystone |
 | Each sealed realm's **guardian** holds a **shard** for each seal it opens (two when twin realms follow) | the main-path boss drops, at 100%, one material per realm it opens, two for the twins of chapter 3 (RE-9, [realm portal](../design/realm-portal.md)) |
-| A sigil is forged from a realm's own ore and the guardian's shard | the next sigil is crafted from the current realm's ore or gem and that drop |
-| The seal knows a traveler by their deeds, not by the sigil in their hand | per-player unlock through the realm's unlock quest; holding someone else's sigil does not let a player through (RLM-128) |
-| **Twin seals:** some realms were forged as a pair, and the next seal needs both shards | a two-realm chapter: the next main-path sigil needs both realms' boss drops |
-| **Branch seals:** small realms hang off the chain like charms | optional side realms, whose sigil comes from a realm on the main path |
+| A signet is forged from a realm's own ore and the guardian's shard | the next signet is crafted from the current realm's ore or gem and that drop |
+| The seal knows a traveler by their deeds, not by the signet in their hand | per-player unlock through the realm's unlock quest; holding someone else's signet does not let a player through (RLM-128) |
+| **Twin seals:** some realms were forged as a pair, and the next seal needs both shards | a two-realm chapter: the next main-path signet needs both realms' boss drops |
+| **Branch seals:** small realms hang off the chain like charms | optional side realms, whose signet comes from a realm on the main path |
 | The Void lies past the end of the chain, however long it grows | the Void realm is always the last realm; a new realm joins the chain before it |
 
 The chain has no known length. The Gatewrights forged more realms than anyone remembers, so a realm found later
@@ -75,17 +75,17 @@ is a link nobody had counted, and the Void stays where it always was: past the l
 - **Where they went:** nobody knows for sure, and the story keeps it that way until the finale. Some stayed in the
   realms as the **Sealbound**, bound into stone, ice or iron beside their realm's guardian, to watch the seal. Their
   founder, the **First Wright**, went to the last realm to hold the line against the Void.
-- **What they left:** the gate design, the sigil craft, the guardians and their trials, the Hewn (stone servants),
+- **What they left:** the gate design, the signet craft, the guardians and their trials, the Hewn (stone servants),
   and their writings, which are the lore's main carrier (WF-7).
 
 ### Why now
 
-The seals are thinning. Gatewright runes in Overworld's ruins have begun to glow, and the oldest stones of their
-gates have grown warm to the touch. Maren Vell, the Lodge's archivist, has read the warning the First Wright carved
-into those ruins: _when the gate stones grow warm, the chain is failing; someone must walk it and forge the last
-seal anew._ The Lodge has kept an old stone sigil for generations without knowing what it was. Now it knows, and it
-needs someone to carry it. The gate plan also shows how to cut a copy from the relic, so a lost Stone Sigil can
-always be made again (the repeatable quest of the [realm portal spec](../design/realm-portal.md)).
+The seals are thinning. Gatewright runes in Overworld's ruins have begun to glow, and the oldest stones of their gates
+have grown warm to the touch. Maren Vell, the Lodge's archivist, has read the warning the First Wright carved into those
+ruins: _when the gate stones grow warm, the chain is failing; someone must walk it and forge the last seal anew._ The
+Lodge has kept an old stone signet for generations without knowing what it was. Now it knows, and it needs someone to
+carry it. The gate plan also shows how to cut a copy from the relic, so a lost Signet of the Undervault can always be
+made again (the repeatable quest of the [realm portal spec](../design/realm-portal.md)).
 
 ## The player
 
@@ -105,7 +105,7 @@ always be made again (the repeatable quest of the [realm portal spec](../design/
 - **The finale (Matěj, RLM-139):** in the Void Cathedral the player finds the First Wright, hollowed out by the
   Void after ages of holding the line. He no longer holds the last seal; he means to open it and forge the Void
   itself into a realm, which would unmake the rest. The player defeats him and forges the last seal anew from the
-  sigils of the main path (sigils are never used up), as the [Void realm design](../design/realms.md#the-void-realm)
+  signets of the main path (signets are never used up), as the [Void realm design](../design/realms.md#the-void-realm)
   proposes (Matěj decides it in RLM-164). The chain holds, the realms stay open to those who earned them, and the
   Lodge names the player the first Gatewright of a new age. Play goes on after it: the realms, their dungeons and
   later the contracts stay.
@@ -136,7 +136,7 @@ names are the realm design's.
 ### Overworld
 
 The heart of the world and the start of the chain, the one place the Gatewrights never sealed. It has no seal and
-no sigil: every realm's way back leads here. The **Wayfarers' Lodge** has studied the Gatewright ruins here for
+no signet: every realm's way back leads here. The **Wayfarers' Lodge** has studied the Gatewright ruins here for
 generations, and its archivist starts the player's journey. Overworld's danger is the ordinary wild (night
 monsters, caves), which is where a Wayfarer learns to fight. Overworld gets dungeons, bosses and a final boss of its
 own in a later milestone, and that boss then stands before the way into Undervault (Matěj, 2026-10-16); the
@@ -189,7 +189,7 @@ and it held: ships froze in the lakes mid-voyage and a sea-raiding people slept 
   they want their fortress, their ships and their sea back. Their nordic fortress and their frozen shipwrecks are
   the realm's dungeons.
 - **The guardian** is the queen of the Thawed in the ice castle, who holds the other shard that seal needs. The
-  two shards together forge the next sigil.
+  two shards together forge the next signet.
 
 ### The hub realm: Asgard
 
@@ -296,7 +296,9 @@ a chapter.
 
 ## Chapters 1 and 2 for Q2
 
-M1 ships chapters 1 and 2 (RLM-188), and Q2 writes both: about 25–30 quests, the 16 beats below as the two main
+M1 ships chapters 1 and 2 (RLM-188), and Q2 writes both. Chapter 1 is named **The Ominous Tale**, and its final
+quest, which grants the Signet of the Undervault and the realm's unlock, is called **The Ominous Chief** for now
+(Matěj, 2026-10-20; Undervault's locked hint names it): about 25–30 quests, the 16 beats below as the two main
 questlines plus side quests (roadmap: rewards from the gear set; each chapter's last quest grants its chapter
 advancement). Beats 1–9 are chapter 1, in Overworld (levels 1–10); beats 10–16 are chapter 2, in Undervault (levels
 6–18). These beats are the story they tell; each names what it teaches, so the quests can follow the order of the
@@ -309,11 +311,11 @@ systems M1 builds. The order, the counts and the rewards are Q2's to set, agains
 | 2 | The Wild Is Wide | Overworld | kills a few hostile mobs; gains levels | the Lodge wants to know the newcomer can handle themselves |
 | 3 | A Spark in the Hand | Overworld | casts class spells | Maren on the old crafts of fighting and casting |
 | 4 | What You Learn | Overworld | learns a talent | everyone in the Lodge has a specialty |
-| 5 | Stone and Copper | Overworld | gathers stone bricks and copper | the Gatewrights built gates from plain stone; Maren has the plan |
-| 6 | Portal Stone | Overworld | crafts Portal Stone | the plan's first page |
-| 7 | The Keystone | Overworld | crafts the realm selector | the gate's heart: a stone that remembers where it leads |
+| 5 | Brick and Pearl | Overworld | gathers the bricks of eight Overworld stones and an ender pearl for Realmforge Stone | the Gatewrights built gates from plain stone; Maren has the plan |
+| 6 | Realmforge Bricks | Overworld | crafts Realmforge Bricks | the plan's first page |
+| 7 | The Keystone | Overworld | crafts the sealstone | the gate's heart: a stone that remembers where it leads |
 | 8 | Raise the Gate | Overworld | builds the frame | the first gate raised in an age |
-| 9 | The Stone Sigil | Overworld | finishes the unlock quest and receives the Stone Sigil; chapter 1's advancement raises the level cap | the Lodge's old relic turns out to be the first sigil; Maren cuts a copy for the player from it (and will again if it is lost); the seal will know the player now |
+| 9 | The Signet of the Undervault | Overworld | finishes the unlock quest and receives the Signet of the Undervault; chapter 1's advancement raises the level cap | the Lodge's old relic turns out to be the first signet; Maren cuts a copy for the player from it (and will again if it is lost); the seal will know the player now |
 | 10 | Into Undervault | Undervault | enters the realm (and finds a Cairnfolk mine once mines exist) | first arrival; the Cairnfolk are surprised to see anyone from above |
 | 11 | Ore for the Cairnfolk | Undervault | mines the realm's ores | Torva trades ore for the catacomb key |
 | 12 | The Catacombs | Undervault | clears the catacombs to their treasury | the Gatewrights' dead and their riddles; the arena key lies in the treasury |
@@ -343,11 +345,11 @@ Decided rules that a line of lore makes feel natural. Texts may use these lines;
 | Keep inventory on death (vision) | the pull of home brings back what the traveler carried, too |
 | "Return to last death" scroll (RLM-128) | a scroll that follows the thread the traveler's spirit left on the way home |
 | Level cap per chapter, its last level, raised when the chapter is done (D2, RLM-188) | the seals bind strength as well as realms, so nobody could grow strong enough to break one by force; the bond loosens once every trial of a chapter is passed (both guardians of twin realms) |
-| Sigils are never used up; one sigil opens any number of portals (RLM-128) | a seal asks for its sigil every time and never takes it: a sigil is shown, not paid |
-| Unlocks are per player: without their own unlock, a player can neither open nor switch a portal to that realm with its sigil, nor pass through an open one (RLM-128) | the seal knows a traveler by their deeds |
+| Signets are never used up; one signet opens any number of portals (RLM-128) | a seal asks for its signet every time and never takes it: a signet is shown, not paid |
+| Unlocks are per player: without their own unlock, a player can neither open nor switch a portal to that realm with its signet, nor pass through an open one (RLM-128) | the seal knows a traveler by their deeds |
 | Portals link like the Nether's, with scaled coordinates, so arrivals stay near a realm's origin (RLM-128) | none needed: texts never explain where a portal leads inside a realm |
-| Only players travel through realm portals (RLM-128, "for now") | the gates pass a living traveler and what they carry, nothing that walks or drifts on its own |
-| The next sigil is crafted from the current realm (RE-9) | the guardian holds the shards of the seals after it |
+| Every entity travels through a realm portal, a player only with the realm's unlock, and a mount or vehicle carrying a player without it stays out; other ways into a realm carry only players (Matěj, 2026-10-20, RLM-154, replacing RLM-128's "only players, for now") | the seals weigh only those who could one day break them; beasts, stones and driftwood pass unjudged, and a gate opens only by its own art, never by a shortcut |
+| The next signet is crafted from the current realm (RE-9) | the guardian holds the shards of the seals after it |
 | No flying bosses (vision) | the forge-drakes' iron wings are too heavy to fly |
 | Every realm has its own light (RE-18) | the Gatewrights forged light into every realm, the violet glow of Unmade Isles included |
 
@@ -365,7 +367,7 @@ The outline forces none of these; each is decided elsewhere, and the lore follow
 - **Boss mechanics, mob and item names** (W3, W5, A1). The outline gives the bosses and peoples an identity; the
   tasks that build them name and shape them, within the [style guide](style.md#names).
 - **The Void realm's gameplay** ([realm design](../design/realms.md#the-void-realm), RLM-95, waiting for Matěj in
-  RLM-164): the last seal forged from the main-path sigils, malachite gear (the lore says the Void cannot unmake
+  RLM-164): the last seal forged from the main-path signets, malachite gear (the lore says the Void cannot unmake
   malachite, which the proposed set bonus follows) and the fall rule. If he changes one, the lines that tell it
   change with it.
 
@@ -373,22 +375,22 @@ The outline forces none of these; each is decided elsewhere, and the lore follow
 
 Matěj's answers of 2026-10-13 and 2026-10-14 (RLM-139), which this version records:
 
-1. **The outline is approved:** the Gatewrights split the world into realms chained against the Void; sigils open
+1. **The outline is approved:** the Gatewrights split the world into realms chained against the Void; signets open
    seals; each guardian is a trial that holds the shards of the seals after it; the Wayfarers' Lodge sends the
    player along the chain. The [style guide](style.md) is approved too.
 2. **The names are approved as proposed:** Realmforge, the Gatewrights, the Chain of Seals, the Wayfarers' Lodge,
    Maren Vell, Torva Flintmark, the Cairnfolk, the Hewn, the Unbroken, the Scribe in the Stone and the other
    peoples in the tables.
    - **Realm names:** Undervault, Sunwastes, Rimefields, Forgefire and Brink; Overworld stays Overworld (three were
-     renamed on 2026-10-15, item 7). Where a player first meets a realm's name (the guide, the sigil tooltip, the
+     renamed on 2026-10-15, item 7). Where a player first meets a realm's name (the guide, the signet tooltip, the
      arrival title), it carries a plain subtitle with its element, such as "Undervault — Stone Realm". The
      [realm design](../design/realms.md) uses these names.
    - **"Maren Vell" stays** (2026-10-14). Said aloud it is "Ma-ren Vell", not Marvel's "Mar-Vell", and "Vell"
      echoes vellum, which suits an archivist.
 3. **The finale as proposed:** the First Wright, hollowed out by the Void, is the final antagonist in the Void
-   Cathedral, so the Void realm is on the main path. Forging the last seal from every main-path sigil is a
+   Cathedral, so the Void realm is on the main path. Forging the last seal from every main-path signet is a
    gameplay idea for the Void realm design: [RLM-95 proposes it](../design/realms.md#the-void-realm), and Matěj
-   decides it in RLM-164. Side realms stay optional, so their sigils are never part of it.
+   decides it in RLM-164. Side realms stay optional, so their signets are never part of it.
 4. **The level cap lore is used:** texts may say that the seals bind strength and that the bond loosens once every
    trial of a chapter is passed. The rule itself is unchanged.
 5. **The Lodge is a voice in the quest book for M1;** a Lodge house in a village may come with the M4 village
