@@ -13,6 +13,8 @@ description:
 # The quest's name is a placeholder until Q2 writes chapter 1's quests (Matěj, 2026-10-20).
 locked_hint:
   en_us: Unlocked by completing The Ominous Chief quest.
+# Its level band, chapter 2's (RLM-188), which the arrival title shows; its dimension rules floor mobs at 6 too.
+levels: [6, 18]
 flavour:
   en_us: Cold air rises from below, smelling of dust and old stone.
 icon: realmforge:vaultstone

@@ -114,8 +114,9 @@ Rules:
 - `realms/` holds the realms ([realm portal spec](../docs/design/realm-portal.md)): the realm's `dimension` (one of ours
   from `worldgen/dimension/`, one realm per dimension), its `name` without an article, its `subtitle` (the element), its
   `description` in running text (lowercase, without an article: `stone realm`, which the refusal at the sealstone reads
-  as "a portal to the stone realm"), the `locked_hint` a refused player reads (one sentence naming the unlock quest), a
-  `flavour` line and the `icon` item of its unlock. The unlock is the advancement `realmforge:realm/<id>` (criterion
+  as "a portal to the stone realm"), the `locked_hint` a refused player reads (one sentence naming the unlock quest), its
+  `levels: [lowest, highest]` (the band the arrival title shows; the lowest is its dimension rules' `entry_level`, the
+  highest at most their `max_level`), a `flavour` line and the `icon` item of its unlock. The unlock is the advancement `realmforge:realm/<id>` (criterion
   `minecraft:impossible`: only the realm's quest or a command grants it), which the dimension's rules in `dimensions/`
   must name in their `access`. The realm's dimension type must link by a `coordinate_scale` above 1 and have a
   `minecraft:gameplay/bed_rule` that sets no spawn and does not explode. The portal's fields (W2b): the `signet` that

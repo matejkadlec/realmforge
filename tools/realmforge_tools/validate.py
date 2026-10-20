@@ -945,10 +945,11 @@ def _check_recipes(content: Content, universe: IdUniverse) -> list[Problem]:
 
 def _check_realms(content: Content, universe: IdUniverse) -> list[Problem]:
     """A realm names a dimension of ours that exists, one realm per dimension; the dimension's rules name the realm's
-    unlock advancement in their access requirements; its dimension type links by a coordinate scale above 1 and has
-    beds that set no spawn and do not explode. Its signet is an item of ours that stacks to 1, the signet of no other
-    realm; its particle is one without options; its arrival floor is a block, and a built frame fits the dimension at
-    its arrival heights. Overworld's entry, which is no realm, needs only the arrival (realm portal spec, "Data")."""
+    unlock advancement in their access requirements, and the realm's level band starts at their entry level and ends
+    at their max level or below; its dimension type links by a coordinate scale above 1 and has beds that set no spawn
+    and do not explode. Its signet is an item of ours that stacks to 1, the signet of no other realm; its particle is
+    one without options; its arrival floor is a block, and a built frame fits the dimension at its arrival heights.
+    Overworld's entry, which is no realm, needs only the arrival (realm portal spec, "Data")."""
     problems: list[Problem] = []
     rules = {entry.model.dimension: entry for entry in content.dimensions}
     dimension_files = {
@@ -1020,6 +1021,17 @@ def _check_realms(content: Content, universe: IdUniverse) -> list[Problem]:
                     f"{{type: realmforge:has_advancement, advancement: {unlock}}}",
                 )
             )
+        if rule is not None and rule.model.mob_levels is not None and realm.levels is not None:
+            band = rule.model.mob_levels
+            if realm.levels[0] != band.entry_level or realm.levels[1] > band.max_level:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        "levels",
+                        f"{realm.levels} starts at the entry level of {realm.dimension}'s rules, "
+                        f"{band.entry_level}, and ends at its max_level, {band.max_level}, or below",
+                    )
+                )
         dimension_type = types.get(str(dimension.data.get("type")))
         if dimension_type is None:
             problems.append(

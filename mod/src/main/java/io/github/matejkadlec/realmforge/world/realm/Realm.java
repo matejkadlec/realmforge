@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.world.realm;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +26,7 @@ import net.minecraft.world.level.Level;
  * @param subtitle its element ("Stone Realm"); empty for Overworld
  * @param description the realm in running text, lowercase and without an article ("stone realm"); empty for Overworld
  * @param lockedHint how to unlock it, the subtitle of a refusal; empty for Overworld
+ * @param levels the realm's level band, which the arrival title shows; empty for Overworld
  * @param flavour a flavour line; empty for Overworld
  * @param icon the item its unlock advancement shows
  * @param signet the item that opens the realm portal onto the realm, an id in the static item registry
@@ -34,7 +36,7 @@ import net.minecraft.world.level.Level;
  * @param arrival where a trip may build a portal in the dimension
  */
 public record Realm(ResourceKey<Level> dimension, String name, String subtitle, String description, String lockedHint,
-        String flavour, Optional<Identifier> icon, Optional<Identifier> signet, int colour, Optional<Identifier> particle,
+        Optional<Levels> levels, String flavour, Optional<Identifier> icon, Optional<Identifier> signet, int colour, Optional<Identifier> particle,
         float soundPitch, Arrival arrival) {
     public static final Codec<Realm> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     Level.RESOURCE_KEY_CODEC.fieldOf("dimension").forGetter(Realm::dimension),
@@ -42,6 +44,7 @@ public record Realm(ResourceKey<Level> dimension, String name, String subtitle, 
                     Codec.STRING.optionalFieldOf("subtitle", "").forGetter(Realm::subtitle),
                     Codec.STRING.optionalFieldOf("description", "").forGetter(Realm::description),
                     Codec.STRING.optionalFieldOf("locked_hint", "").forGetter(Realm::lockedHint),
+                    Levels.CODEC.optionalFieldOf("levels").forGetter(Realm::levels),
                     Codec.STRING.optionalFieldOf("flavour", "").forGetter(Realm::flavour),
                     Identifier.CODEC.optionalFieldOf("icon").forGetter(Realm::icon),
                     Identifier.CODEC.optionalFieldOf("signet").forGetter(Realm::signet),
@@ -50,6 +53,20 @@ public record Realm(ResourceKey<Level> dimension, String name, String subtitle, 
                     Codec.floatRange(0.5F, 2.0F).optionalFieldOf("sound_pitch", 1.0F).forGetter(Realm::soundPitch),
                     Arrival.CODEC.fieldOf("arrival").forGetter(Realm::arrival))
             .apply(instance, Realm::new));
+
+    /**
+     * A realm's level band, from the lowest level to the highest (RLM-188: Undervault's is chapter 2's, 6 to 18).
+     *
+     * @param lowest its entry level
+     * @param highest its last level
+     */
+    public record Levels(int lowest, int highest) {
+        public static final Codec<Levels> CODEC = Codec.intRange(1, Integer.MAX_VALUE).listOf(2, 2).comapFlatMap(
+                range -> range.get(0) <= range.get(1)
+                        ? DataResult.success(new Levels(range.get(0), range.get(1)))
+                        : DataResult.error(() -> "levels " + range + " are not [lowest, highest]"),
+                levels -> List.of(levels.lowest(), levels.highest()));
+    }
 
     /**
      * Where a trip may build a portal in the dimension when none is near (realm portal spec, "Building a portal").

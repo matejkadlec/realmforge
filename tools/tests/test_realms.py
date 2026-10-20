@@ -59,6 +59,7 @@ def test_a_realm_becomes_its_entry_unlock_and_texts(repo: RepoPaths) -> None:
         "subtitle": "realm.realmforge.stone.subtitle",
         "description": "realm.realmforge.stone.description",
         "locked_hint": "realm.realmforge.stone.locked_hint",
+        "levels": [6, 18],
         "flavour": "realm.realmforge.stone.flavour",
         "icon": "realmforge:vaultstone",
         "signet": "realmforge:undervault_signet",
@@ -196,6 +197,18 @@ def test_overworld_has_no_realm_fields_and_a_realm_needs_them(repo: RepoPaths) -
         for p in problems
     ), problems
     assert any("realms/stone.yaml" in p and "a realm needs signet" in p for p in problems), problems
+
+
+def test_a_realms_levels_start_at_its_entry_level(repo: RepoPaths) -> None:
+    stone = repo.content / "realms" / "stone.yaml"
+    stone.write_text(stone.read_text(encoding="utf-8").replace("levels: [6, 18]", "levels: [5, 61]"))
+    assert any(
+        "realms/stone.yaml: levels: [5, 61] starts at the entry level of realmforge:stone's rules, 6, and ends at its "
+        "max_level, 60, or below" in p
+        for p in problems_for(repo)
+    )
+    stone.write_text(stone.read_text(encoding="utf-8").replace("levels: [5, 61]", "levels: [18, 6]"))
+    assert any("levels is [lowest, highest]" in p for p in problems_for(repo))
 
 
 def test_a_signet_is_one_of_our_items_that_stacks_to_one(repo: RepoPaths) -> None:

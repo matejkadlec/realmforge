@@ -137,8 +137,7 @@ hoppers have nothing to take.
 - **One per realm,** stacking to 1, never consumed (RE-1), fire resistant (`Item.Properties#fireResistant`), so lava
   does not take it. One signet opens any number of portals (Matěj, RLM-128). Its tooltip is one line, "Does not
   consume on use" (Matěj, 2026-10-20, replacing the first version's "Undervault — Stone Realm" and "Never used up").
-  It shows no levels: they live in the server-only `realmforge:dimension_rules`, and the arrival title, which the
-  server sends, shows them.
+  It shows no levels: the arrival title shows the realm entry's level band.
 - **A signet is a key, not the unlock.** Every copy of a realm's signet is the same item, whoever obtained it, and
   anyone may hold one (Matěj, RLM-128). A player needs a signet to open or switch a portal, and their own unlock
   ([Access and unlocks](#access-and-unlocks)) to use it.
@@ -359,8 +358,9 @@ When no portal leads the right way within the search radius, the trip builds one
   two blocks of air at the opening's height: on the floor the frame is set into, so they walk straight back in.
   Otherwise they arrive in the opening, as a nether portal places them, and the portal cooldown vanilla sets after every
   trip (`Entity#setPortalCooldown`) keeps them from bouncing straight back.
-- **A title** shows the realm's name with its element subtitle, and its levels, for 2 seconds on every arrival in a
-  realm (RLM-139); the player's first arrival also shows its flavour line.
+- **A title** shows the realm's name with its element subtitle, and its level band (the realm entry's `levels`,
+  "Stone Realm · Levels 6–18"), for 2 seconds on every arrival in a realm (RLM-139); the player's first arrival also
+  shows its flavour line.
 - **Chunk loading:** a trip loads only the chunks around the exit portal, for a short time, through vanilla's portal
   ticket (`TeleportTransition.PLACE_PORTAL_TICKET`, as for nether portals). Portals load nothing permanently; since
   every entity travels, an item thrown through keeps the exit's chunks loaded for a short time on each trip, the
@@ -576,9 +576,10 @@ arrival: {y: [64, 310], floor: minecraft:stone_bricks, pocket_radius: 3}   # por
   with a check that every realm has an unlock quest. Until Q2 adds the chapter 1 quests, the Signet of the Undervault
   and the unlock have no source in play: `/give`, `/advancement grant` and a QA command hand them out for tests and
   playtests, so W2a and W2b do not wait for Q2.
-- **Not in the data yet:** a realm map's positions and parents (RE-7) and a level band of its own (the levels come
-  from `dimension_rules`, which stays on the server). They join when a client view needs them, synced with the realm
-  entry.
+- **Not in the data yet:** a realm map's positions and parents (RE-7). They join when a client view needs them,
+  synced with the realm entry. The realm's level band is in it (`levels`, for the arrival title): mob levels follow
+  the nearest player up to the dimension rules' `max_level` (RLM-303), so the band no longer comes from them;
+  validation keeps its lowest at their `entry_level`.
 
 ## Code shape
 

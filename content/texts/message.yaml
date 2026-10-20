@@ -67,7 +67,7 @@ texts:
   realm_portal_unknown_realm:
     en_us: The portal opens onto an unknown realm
   # The arrival title's subtitle in a realm (RLM-139, realm portal spec "Arriving"): %1$s its element ("Stone Realm"),
-  # %2$s and %3$s its lowest and highest level (from its dimension rules).
+  # %2$s and %3$s its lowest and highest level (the realm entry's `levels`).
   realm_arrival_levels:
     en_us: "%1$s · Levels %2$s–%3$s"
   # Dungeon portals (W4d, RLM-181, architecture 15.5). A key opened a portal (%1$s the dungeon type's name, %2$s the

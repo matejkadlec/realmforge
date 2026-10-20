@@ -118,6 +118,16 @@ class RealmDef(StrictModel):
             "'Unlocked by completing The Ominous Chief quest.' Every realm has one; Overworld none."
         ),
     )
+    levels: list[int] | None = Field(
+        default=None,
+        min_length=2,
+        max_length=2,
+        description=(
+            "[lowest, highest]: the realm's level band, which the arrival title shows (RLM-139); the lowest is the "
+            "entry level its dimension rules floor mobs at, the highest at most their max_level. Every realm has one; "
+            "Overworld none."
+        ),
+    )
     flavour: LocalizedText | None = Field(
         default=None,
         description=(
@@ -168,6 +178,7 @@ class RealmDef(StrictModel):
             "subtitle": self.subtitle,
             "description": self.description,
             "locked_hint": self.locked_hint,
+            "levels": self.levels,
             "flavour": self.flavour,
             "icon": self.icon,
             "signet": self.signet,
@@ -181,4 +192,6 @@ class RealmDef(StrictModel):
             missing = [name for name, value in realm_only.items() if value is None]
             if missing:
                 raise ValueError(f"a realm needs {', '.join(missing)}")
+            if self.levels is not None and not 1 <= self.levels[0] <= self.levels[1]:
+                raise ValueError("levels is [lowest, highest], from 1: the first is not above the second")
         return self

@@ -1,12 +1,9 @@
 package io.github.matejkadlec.realmforge.world.realm;
 
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
-import io.github.matejkadlec.realmforge.world.DimensionRules;
-import io.github.matejkadlec.realmforge.world.MobLevelRule;
 import io.github.matejkadlec.realmforge.world.WorldAttachments;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -20,7 +17,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 /**
  * The arrival title (realm portal spec, "Arriving"; RLM-139): on every arrival in a realm, whatever the way in, the
  * realm's name with its element and its levels for 2 seconds; on a player's first arrival, its flavour line in chat
- * too. The levels come from the realm's dimension rules, which stay on the server.
+ * too. The levels are the realm entry's level band ({@link Realm#levels}).
  */
 public final class RealmArrivals {
     /** How long the title stays: 2 seconds, between vanilla's short fades. */
@@ -41,10 +38,9 @@ public final class RealmArrivals {
     private static void arrive(ServerPlayer player, Holder.Reference<Realm> realm) {
         Component name = Component.translatable(realm.value().name());
         Component element = Component.translatable(realm.value().subtitle());
-        Optional<MobLevelRule> levels = DimensionRules.mobLevels(player.level().registryAccess(), realm.value().dimension());
-        Component subtitle = levels
-                .<Component>map(rule -> Component.translatable(GeneratedTexts.MESSAGE_REALM_ARRIVAL_LEVELS, element,
-                        rule.minLevel(), rule.maxLevel()))
+        Component subtitle = realm.value().levels()
+                .<Component>map(levels -> Component.translatable(GeneratedTexts.MESSAGE_REALM_ARRIVAL_LEVELS, element,
+                        levels.lowest(), levels.highest()))
                 .orElse(element);
         player.connection.send(new ClientboundSetTitlesAnimationPacket(FADE_IN_TICKS, STAY_TICKS, FADE_OUT_TICKS));
         player.connection.send(new ClientboundSetSubtitleTextPacket(subtitle));

@@ -4,6 +4,10 @@
   "subtitle": "realm.realmforge.stone.subtitle",
   "description": "realm.realmforge.stone.description",
   "locked_hint": "realm.realmforge.stone.locked_hint",
+  "levels": [
+    6,
+    18
+  ],
   "flavour": "realm.realmforge.stone.flavour",
   "icon": "realmforge:vaultstone",
   "signet": "realmforge:undervault_signet",

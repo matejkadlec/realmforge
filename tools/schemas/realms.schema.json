@@ -120,6 +120,24 @@
       "title": "Id",
       "type": "string"
     },
+    "levels": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "[lowest, highest]: the realm's level band, which the arrival title shows (RLM-139); the lowest is the entry level its dimension rules floor mobs at, the highest at most their max_level. Every realm has one; Overworld none.",
+      "title": "Levels"
+    },
     "locked_hint": {
       "anyOf": [
         {
