@@ -140,9 +140,13 @@ returns every key to these defaults. Matěj's picks of 2026-10-19:
   now;
 - Open Quests on `;` (the key left of 1 on a Czech keyboard), Tom's Simple
   Storage's Open Terminal on V (RLM-25), Just Zoom's Zoom on Z (Czech QWERTZ);
+- Xaero's Minimap (2026-10-20): Minimap Settings on `ú` (right of P on a Czech
+  keyboard), Zoom In and Zoom Out Minimap on the numeric keypad's + and -, New
+  Waypoint on N, Open Waypoint Screen on `,` (right of M); our Dark Vision key
+  moved from N to H for it (its default is in our code);
 - unbound: Just Zoom's Open Options (it shared B with Open Backpack), Xaero's
-  Minimap Settings (it had Z), every Iris key and every Sophisticated
-  Backpacks and Sophisticated Core key.
+  Quick Waypoint, vanilla's Open Command, every Iris key and every
+  Sophisticated Backpacks and Sophisticated Core key.
 
 To find a key mapping's name, boot the pack and read the `key_` lines of the
 client's `options.txt`; Controlling's search in Key Binds finds a key by name or

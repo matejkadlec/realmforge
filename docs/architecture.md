@@ -2026,7 +2026,7 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
   Still allowed, as mixed or harmless cases: zombies breaking turtle eggs, a skeleton's arrows breaking decorated
   pots, chorus flowers or pointed dripstone, foxes picking sweet berries, sheep eating grass, snow golems leaving
   snow. Inside instances every mob is denied, which is intended there ([15.5](#155-instances)).
-- Dark Vision: a key (`client/input/DarkVisionKey`, N by default, "Toggle Dark Vision" under Realmforge in the
+- Dark Vision: a key (`client/input/DarkVisionKey`, H by default, "Toggle Dark Vision" under Realmforge in the
   controls) sends `ToggleDarkVisionPayload`; the server flips the sender's switch and confirms it on the action
   bar. The effect is vanilla night vision as an infinite, hidden effect (`MobEffectInstance.INFINITE_DURATION`, no
   particles, no icon); every player has it, switched on by default. The on/off state lives in the

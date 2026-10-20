@@ -13,12 +13,23 @@ key_key.ftbquests.keys.quests:key.keyboard.grave.accent
 # Tom's Simple Storage: Open Terminal on V (RLM-25).
 key_key.toms_storage.open_terminal:key.keyboard.v
 
-# Just Zoom: Zoom on Z (Czech QWERTZ); Open Options unbound (it shared B with Open Backpack).
+# Just Zoom: Zoom on Z (Czech QWERTZ; Xaero's Minimap Settings had that key); Open Options unbound (it shared B
+# with Open Backpack).
 key_justzoom.keybinds.keybind.zoom:key.keyboard.y
 key_justzoom.keybinds.keybind.open_options:key.keyboard.unknown
 
-# Xaero's Minimap: Minimap Settings unbound, so Zoom has that key to itself.
-key_gui.xaero_minimap_settings:key.keyboard.unknown
+# Vanilla: Open Command unbound (chat with a typed / does the same).
+key_key.command:key.keyboard.unknown
+
+# Xaero's Minimap (Matěj, 2026-10-20): Minimap Settings on ú (right of P on a Czech keyboard), zoom on the numeric
+# keypad's + and -, New Waypoint on N, Open Waypoint Screen on , (right of M), Quick Waypoint unbound. Our Dark
+# Vision key moved from N to H for this (DarkVisionKey).
+key_gui.xaero_minimap_settings:key.keyboard.left.bracket
+key_gui.xaero_zoom_in:key.keyboard.keypad.add
+key_gui.xaero_zoom_out:key.keyboard.keypad.subtract
+key_gui.xaero_new_waypoint:key.keyboard.n
+key_gui.xaero_waypoints_key:key.keyboard.comma
+key_gui.xaero_instant_waypoint:key.keyboard.unknown
 
 # Iris: all unbound.
 key_iris.keybind.reload:key.keyboard.unknown

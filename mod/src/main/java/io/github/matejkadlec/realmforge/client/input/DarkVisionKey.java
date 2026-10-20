@@ -17,7 +17,7 @@ import net.neoforged.neoforge.common.util.Lazy;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * The Dark Vision key (N by default, rebindable in Options > Controls under Realmforge): each press asks the server to
+ * The Dark Vision key (H by default, rebindable in Options > Controls under Realmforge): each press asks the server to
  * flip the player's Dark Vision (architecture 19.1). The server decides; the client only sends the intent.
  */
 public final class DarkVisionKey {
@@ -28,7 +28,7 @@ public final class DarkVisionKey {
             GeneratedTexts.KEY_DARK_VISION,
             KeyConflictContext.IN_GAME,
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_N,
+            GLFW.GLFW_KEY_H,
             CATEGORY));
 
     private DarkVisionKey() {

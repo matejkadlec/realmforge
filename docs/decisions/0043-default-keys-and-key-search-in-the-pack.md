@@ -23,7 +23,9 @@ Controlling with Searchables for M1 on RLM-264 (2026-10-18).
    RLM-25 (the [pack README](../../pack/README.md#configuration) lists them):
    - Quick Actions and Swap Offhand are free for spells;
    - Open Quests is on `;`, Open Terminal on V and Zoom on Z;
-   - every Iris and Sophisticated key is unbound, as are Just Zoom's Open Options and Xaero's Minimap Settings.
+   - Xaero's Minimap gets Matěj's keys of 2026-10-20, and our Dark Vision key moves from N to H in our code;
+   - every Iris and Sophisticated key is unbound, as are Just Zoom's Open Options, Xaero's Quick Waypoint and
+     vanilla's Open Command.
 3. **Controlling** (26.1.2.7) with its library **Searchables** (1.0.2), both client-only, join the pack: Key Binds
    gets a search by name or key and a filter for conflicts.
 
