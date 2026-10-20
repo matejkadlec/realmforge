@@ -67,20 +67,165 @@ def seedPackConfig = tasks.register('seedPackConfig') {
     }
 }
 
+// The dev runs play with the whole pack (RLM-279, ADR 0042): every mod of pack/mods/*.pw.toml at the build the pack
+// ships, read from there so the two never drift. A `side = "client"` mod joins the client, a `"server"` one the dev
+// server and the GameTest server, a `"both"` one every run, as packwiz-installer sorts them for a player and a server.
+// A Modrinth mod comes from Modrinth's Maven by project and version id ([update.modrinth]), a CurseForge one from
+// CurseMaven by project and file id ([update.curseforge]); before a run starts, verifyPackMods* checks each jar
+// against the hash in its .pw.toml. tools/tests/test_dev_run_mods.py checks that every .pw.toml has what this
+// reader needs.
+//
+// `-PleanClient` starts the client with only the mods in leanClientMods, for quick checks and agents' screenshot
+// runs; `-PwithBetterCombat` adds Better Combat and its config library to it: ./gradlew runClient -PleanClient
+
+// Reads the flat TOML packwiz writes: `[section]` headers and `key = value` lines, values as strings.
+static Map<String, Map<String, String>> readPackwizToml(File file) {
+    Map<String, Map<String, String>> sections = [:]
+    def section = ''
+    file.eachLine('UTF-8') { line ->
+        def header = line.trim() =~ /^\[(.+)]$/
+        def entry = line.trim() =~ /^([A-Za-z0-9_-]+)\s*=\s*"?(.*?)"?$/
+        if (header.matches()) {
+            section = header.group(1)
+        } else if (entry.matches()) {
+            sections.computeIfAbsent(section) { [:] }[entry.group(1)] = entry.group(2)
+        }
+    }
+    return sections
+}
+
+def packMods = rootProject.file('pack/mods').listFiles().findAll { it.name.endsWith('.pw.toml') }.sort { it.name }
+        .collect { file ->
+            def toml = readPackwizToml(file)
+            def slug = file.name - '.pw.toml'
+            def side = toml['']?.side
+            def modrinth = toml['update.modrinth'] ?: [:]
+            def curseforge = toml['update.curseforge'] ?: [:]
+            def download = toml['download'] ?: [:]
+            if (!(side in ['client', 'server', 'both'])) {
+                throw new GradleException("pack/mods/${file.name}: side is '${side}', not client, server or both")
+            }
+            String coordinate
+            if (modrinth['mod-id'] && modrinth.version) {
+                coordinate = "maven.modrinth:${modrinth['mod-id']}:${modrinth.version}"
+            } else if (curseforge['project-id'] && curseforge['file-id']) {
+                coordinate = "curse.maven:${slug}-${curseforge['project-id']}:${curseforge['file-id']}"
+            } else {
+                throw new GradleException("pack/mods/${file.name}: no [update.modrinth] mod-id and version, and no " +
+                        "[update.curseforge] project-id and file-id, so the dev runs cannot download it")
+            }
+            if (!(download['hash-format'] in ['sha1', 'sha256', 'sha512']) || !download.hash) {
+                throw new GradleException("pack/mods/${file.name}: no sha1, sha256 or sha512 hash under [download]")
+            }
+            [slug: slug, side: side, coordinate: coordinate, hashFormat: download['hash-format'], hash: download.hash]
+        }
+def packMod = { String slug ->
+    def mod = packMods.find { it.slug == slug }
+    if (mod == null) {
+        throw new GradleException("qa-mod/build.gradle names pack/mods/${slug}.pw.toml, which does not exist")
+    }
+    return mod
+}
+
+// The lean client: Player Animation Library, which the QA mod compiles against (dependencies below), and Yeetus
+// Experimentus, which skips the experimental-settings warning of every new world (architecture 15.1).
+def leanClient = providers.gradleProperty('leanClient').isPresent()
+def leanClientMods = ['player-animation-library', 'yeetus-experimentus']
+if (providers.gradleProperty('withBetterCombat').isPresent()) {
+    leanClientMods += ['better-combat', 'cloth-config']
+}
+
+configurations {
+    packClientMods { canBeConsumed = false; transitive = false }
+    packServerMods { canBeConsumed = false; transitive = false }
+    packLeanClientMods { canBeConsumed = false; transitive = false }
+}
+packMods.each { mod ->
+    if (mod.side != 'server') {
+        dependencies.add('packClientMods', mod.coordinate)
+    }
+    if (mod.side != 'client') {
+        dependencies.add('packServerMods', mod.coordinate)
+    }
+}
+leanClientMods.each { dependencies.add('packLeanClientMods', packMod(it).coordinate) }
+def clientMods = configurations.named(leanClient ? 'packLeanClientMods' : 'packClientMods')
+def serverMods = configurations.named('packServerMods')
+
+// A run's classpath is its source set's runtime classpath, so the client and the servers each get a source set of
+// their own (without sources) that adds their pack mods to the QA mod's. ModDevGradle puts its launcher (DevLaunch,
+// DevLogin) into the run source set's own runtime classpath configuration, which therefore stays part of it.
+sourceSets {
+    devClient {
+        runtimeClasspath = sourceSets.main.runtimeClasspath + configurations.devClientRuntimeClasspath +
+                files(clientMods)
+    }
+    devServer {
+        runtimeClasspath = sourceSets.main.runtimeClasspath + configurations.devServerRuntimeClasspath +
+                files(serverMods)
+    }
+}
+
+// Checks every pack mod jar a run loads against the hash its .pw.toml records, so a run never loads another file
+// than packwiz-installer gives a player. Runs again only when the jars change.
+// Configuration-cache safe: the action uses only the values captured here, never `project`.
+def registerPackModCheck = { String name, configuration ->
+    tasks.register(name) {
+        group = 'realmforge'
+        description = "Checks the jars of ${configuration.name} against the hashes in pack/mods/*.pw.toml."
+        // Each jar with its Maven coordinate (group:module:version), as plain values the configuration cache stores.
+        def artifacts = configuration.flatMap { it.incoming.artifacts.resolvedArtifacts }.map { results ->
+            results.collect { [it.id.componentIdentifier.displayName, it.file] }
+        }
+        def expected = packMods.collectEntries { [(it.coordinate): [it.slug, it.hashFormat, it.hash]] }
+        inputs.files(configuration)
+        inputs.property('expected', expected)
+        def marker = layout.buildDirectory.file("pack-mods/${name}.txt")
+        outputs.file(marker)
+        doLast {
+            def checked = artifacts.get().collect { coordinate, jar ->
+                def (slug, format, hash) = expected[coordinate]
+                def algorithm = ['sha1': 'SHA-1', 'sha256': 'SHA-256', 'sha512': 'SHA-512'][format]
+                def digest = java.security.MessageDigest.getInstance(algorithm)
+                jar.withInputStream { stream ->
+                    def buffer = new byte[65536]
+                    for (int read = stream.read(buffer); read > 0; read = stream.read(buffer)) {
+                        digest.update(buffer, 0, read)
+                    }
+                }
+                def actual = digest.digest().encodeHex().toString()
+                if (actual != hash) {
+                    throw new GradleException("${jar.name} is not the build pack/mods/${slug}.pw.toml " +
+                            "names: its ${format} is ${actual}, the pack's is ${hash}")
+                }
+                "${slug} ${jar.name}"
+            }
+            marker.get().asFile.text = checked.sort().join('\n') + '\n'
+        }
+    }
+}
+def verifyPackClientMods = registerPackModCheck('verifyPackClientMods', clientMods)
+def verifyPackServerMods = registerPackModCheck('verifyPackServerMods', serverMods)
+
 neoForge {
     version = neo_version
 
-    // All dev runs live here and load both mods (core + QA).
+    // All dev runs live here and load both mods (core + QA) and the pack's mods for their side.
     runs {
         configureEach {
             logLevel = org.slf4j.event.Level.INFO
             taskBefore seedPackConfig
+            // A dev run (never a player's game) warns on a loading screen about every mod that still uses @OnlyIn,
+            // such as Jade Addons, and waits for a click. The log keeps the warning (OnlyInWarningsHandler).
+            systemProperty 'neoforge.warnings.onlyin.hide', 'true'
         }
 
         client {
             client()
+            sourceSet = sourceSets.devClient
             gameDirectory = rootProject.file('run/client')
             taskBefore seedDevOptions
+            taskBefore verifyPackClientMods
             // Logs in with a real Minecraft account (covers1624's DevLogin, built into ModDevGradle) instead of
             // the offline `Dev` profile; the first launch prints a Microsoft login link in the console.
             // `-PofflineClient` starts as the offline `Dev` player instead, without the login prompt that an
@@ -90,14 +235,19 @@ neoForge {
 
         server {
             server()
+            sourceSet = sourceSets.devServer
             programArgument '--nogui'
             gameDirectory = rootProject.file('run/server')
+            taskBefore verifyPackServerMods
         }
 
-        // Headless: starts a GameTest server, runs all GameTests, exits non-zero on failure.
+        // Headless: starts a GameTest server, runs all GameTests, exits non-zero on failure. It loads the pack's
+        // server-side mods like the dev server, so CI catches a collision between them and our code.
         gameTestServer {
             type = 'gameTestServer'
+            sourceSet = sourceSets.devServer
             gameDirectory = rootProject.file('run/gametest')
+            taskBefore verifyPackServerMods
         }
     }
 
@@ -124,53 +274,27 @@ repositories {
             includeGroup 'maven.modrinth'
         }
     }
+    // CurseMaven serves CurseForge files by project and file id, only for the `curse.maven` group: the pack's
+    // CurseForge-only mods (FTB Quests, FTB Library, FTB Teams).
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'CurseMaven'
+                url = 'https://cursemaven.com'
+            }
+        }
+        filter {
+            includeGroup 'curse.maven'
+        }
+    }
 }
-
-// The builds the modpack ships, by Modrinth version id: each id is the `version` under [update.modrinth] in
-// pack/mods/<slug>.pw.toml. An id never changes, while a version number can be edited by its author. Update them
-// together with the pack; tools/tests/test_qa_mod_dependencies.py fails while one differs. Spike 4, ADR 0020.
-def playerAnimationLib = 'maven.modrinth:player-animation-library:QmAdOGjK' // 1.2.8+26.1
-def betterCombat = 'maven.modrinth:better-combat:YPa9bdAg' // 3.2.2+26.1.2-neoforge
-def clothConfig = 'maven.modrinth:cloth-config:TimoYzse' // 26.1.154+neoforge
-def yeetusExperimentus = 'maven.modrinth:yeetus-experimentus:Vw0Mo4mX' // 99.0.0
-def placebo = 'maven.modrinth:placebo:c4uzJQYp' // 26.1.2-10.0.2
-def apothicAttributes = 'maven.modrinth:apothic-attributes:lLLTcZXk' // 26.1.2-3.1.0
-def apothicEnchanting = 'maven.modrinth:apothic-enchanting:5yksP3X6' // 26.1.2-2.1.0
-def apotheosis = 'maven.modrinth:apotheosis:EXaIH7Xm' // 26.1.2-9.1.0
-def enchantmentDescriptions = 'maven.modrinth:enchantment-descriptions:MMZecuPQ' // 26.1.2.6
-def prickle = 'maven.modrinth:prickle:FzfKD3xX' // 26.1.2.6
 
 dependencies {
     implementation project(':mod')
 
     // Player Animation Library, the animation library Better Combat uses: the QA mod's test cast animation (/qa cast).
-    implementation playerAnimationLib
-
-    // Yeetus Experimentus skips the experimental-settings warning that our data pack dimensions cause on every new
-    // world, as it does in the pack (architecture 15.1, RLM-84). Its mixins are client-only, so the server and
-    // GameTest runs load it without effect.
-    runtimeOnly yeetusExperimentus
-
-    // Apotheosis with Apothic Attributes, Apothic Enchanting and their library Placebo, as in the pack (RLM-271): every
-    // dev run and the GameTests play with them, so the GameTests check our combat with Apothic Attributes' crit and
-    // dodge switched off (compat/apothic_attributes, ApothicAttributesGameTests).
-    runtimeOnly placebo
-    runtimeOnly apothicAttributes
-    runtimeOnly apothicEnchanting
-    runtimeOnly apotheosis
-
-    // Enchantment Descriptions and its config library Prickle, as in the pack: the description texts that Apothic
-    // Enchanting shows under each enchantment come from it (RLM-271). Its mod and mixins are client-only, so the
-    // server and GameTest runs load it without effect.
-    runtimeOnly enchantmentDescriptions
-    runtimeOnly prickle
-
-    // Better Combat and its config library join the dev runs only with `-PwithBetterCombat`, so the default runs
-    // and CI test the mods without it: ./gradlew runClient -PwithBetterCombat
-    if (providers.gradleProperty('withBetterCombat').isPresent()) {
-        runtimeOnly betterCombat
-        runtimeOnly clothConfig
-    }
+    // The pack's build, as every pack mod above; the client and the servers load it as a pack mod as well.
+    implementation packMod('player-animation-library').coordinate
 }
 
 def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {

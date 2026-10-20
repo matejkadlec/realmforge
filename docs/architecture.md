@@ -1417,7 +1417,8 @@ loot: realmforge:boss/hollow_warden
   and a world created before Realmforge was added would ask for a backup once. The client-only pack mod Yeetus
   Experimentus ([ADR 0013](decisions/0013-modpack-composition.md)) skips both screens and the warning for
   experimental data packs in the create screen; nothing changes on servers. The dev client loads the same build
-  from `qa-mod/build.gradle`. We add no mixin of our own for it ([19.3](#193-mixins-and-access-transformers)).
+  with the rest of the pack ([ADR 0042](decisions/0042-the-dev-runs-load-the-whole-pack.md)). We add no mixin of
+  our own for it ([19.3](#193-mixins-and-access-transformers)).
 - The Nether and End are removed in M4 ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)); M1 does not touch
   them.
 
@@ -2025,7 +2026,7 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
   Still allowed, as mixed or harmless cases: zombies breaking turtle eggs, a skeleton's arrows breaking decorated
   pots, chorus flowers or pointed dripstone, foxes picking sweet berries, sheep eating grass, snow golems leaving
   snow. Inside instances every mob is denied, which is intended there ([15.5](#155-instances)).
-- Dark Vision: a key (`client/input/DarkVisionKey`, N by default, "Toggle Dark Vision" under Realmforge in the
+- Dark Vision: a key (`client/input/DarkVisionKey`, H by default, "Toggle Dark Vision" under Realmforge in the
   controls) sends `ToggleDarkVisionPayload`; the server flips the sender's switch and confirms it on the action
   bar. The effect is vanilla night vision as an infinite, hidden effect (`MobEffectInstance.INFINITE_DURATION`, no
   particles, no icon); every player has it, switched on by default. The on/off state lives in the
@@ -2083,7 +2084,7 @@ attributes up by id, so the core mod has no compile-time dependency on it:
 The pack's config (`pack/config/apotheosis/`) sets its protection and armor formulas to vanilla's and turns its
 attributes panel off; Apothic Enchanting's inlined enchantment descriptions are on, because it replaces the
 enchantment tooltip that Enchantment Descriptions hooks into, and shows Enchantment Descriptions' texts itself. The
-QA mod's dev runs load the three mods with Enchantment Descriptions and copy `pack/config/` into their config folders
+QA mod's dev runs load them with the rest of the pack (ADR 0042) and copy `pack/config/` into their config folders
 (`seedPackConfig`), and `ApothicAttributesGameTests` check that its crit and dodge never fire, also with its crit and
 dodge modifiers on the attacker and the target.
 

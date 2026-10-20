@@ -111,6 +111,17 @@ GAMETEST_ALLOWED_ERRORS: tuple[tuple[str, str], ...] = (
         ".aKeyComesBackWhenItsDungeonCannotBeBuilt remove those room templates on purpose; any other failed build "
         "stays an error",
     ),
+    (
+        r"^snownee\.jade\.Jade: Failed to collect shearable blocks$",
+        "the GameTest server loads the pack's server-side mods (RLM-279), and Jade 26.1.10 hits this on every dedicated"
+        " server, as packboot.ALLOWED_ERRORS records",
+    ),
+    (
+        r"^net\.neoforged\.neoforge\.common\.OnlyInWarningsHandler: (The mod (?!realmforge)\S+ uses the @OnlyIn "
+        r"annotation|@OnlyIn used on \w+ (for )?(?!io\.github\.matejkadlec\.)\S+$)",
+        "NeoForge lists, only outside production, every pack mod that still uses @OnlyIn (Jade Addons); a use in our"
+        " own mods stays an error",
+    ),
 )
 
 # WARN lines that are data errors: vanilla reports these only as warnings, but they mean broken content.

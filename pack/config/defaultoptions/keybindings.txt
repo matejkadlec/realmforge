@@ -1,0 +1,51 @@
+# The pack's default keys (RLM-279), read by Default Options: key_<key mapping>:<key>[:<modifier>]. A player's
+# own binding stays; a key still on its mod's default moves to the one here. Keys are named by their position on a
+# US keyboard, while the game shows them as the player's layout labels them: on Matěj's Czech QWERTZ keyboard
+# key.keyboard.y is labelled Z, and key.keyboard.grave.accent (left of 1) is labelled ;.
+
+# Vanilla: Quick Actions and Swap Offhand are left free for spells (RLM-25). Chat stays on T for now.
+key_key.quickActions:key.keyboard.unknown
+key_key.swapOffhand:key.keyboard.unknown
+
+# FTB Quests: Open Quests on ; (Czech QWERTZ).
+key_key.ftbquests.keys.quests:key.keyboard.grave.accent
+
+# Tom's Simple Storage: Open Terminal on V (RLM-25).
+key_key.toms_storage.open_terminal:key.keyboard.v
+
+# Just Zoom: Zoom on Z (Czech QWERTZ; Xaero's Minimap Settings had that key); Open Options unbound (it shared B
+# with Open Backpack).
+key_justzoom.keybinds.keybind.zoom:key.keyboard.y
+key_justzoom.keybinds.keybind.open_options:key.keyboard.unknown
+
+# Vanilla: Open Command unbound (chat with a typed / does the same).
+key_key.command:key.keyboard.unknown
+
+# Xaero's Minimap (Matěj, 2026-10-20): Minimap Settings on ú (right of P on a Czech keyboard), zoom on the numeric
+# keypad's + and -, New Waypoint on N, Open Waypoint Screen on , (right of M), Quick Waypoint unbound. Our Dark
+# Vision key moved from N to H for this (DarkVisionKey).
+key_gui.xaero_minimap_settings:key.keyboard.left.bracket
+key_gui.xaero_zoom_in:key.keyboard.keypad.add
+key_gui.xaero_zoom_out:key.keyboard.keypad.subtract
+key_gui.xaero_new_waypoint:key.keyboard.n
+key_gui.xaero_waypoints_key:key.keyboard.comma
+key_gui.xaero_instant_waypoint:key.keyboard.unknown
+
+# Iris: all unbound.
+key_iris.keybind.reload:key.keyboard.unknown
+key_iris.keybind.toggleShaders:key.keyboard.unknown
+key_iris.keybind.shaderPackSelection:key.keyboard.unknown
+key_iris.keybind.wireframe:key.keyboard.unknown
+
+# Sophisticated Backpacks and Sophisticated Core: all unbound.
+key_key.sophisticatedbackpacks.open_backpack:key.keyboard.unknown
+key_key.sophisticatedbackpacks.inventory_interaction:key.keyboard.unknown
+key_key.sophisticatedbackpacks.tool_swap:key.keyboard.unknown
+key_key.sophisticatedbackpacks.toggle_upgrade_1:key.keyboard.unknown
+key_key.sophisticatedbackpacks.toggle_upgrade_2:key.keyboard.unknown
+key_key.sophisticatedbackpacks.toggle_upgrade_3:key.keyboard.unknown
+key_key.sophisticatedbackpacks.toggle_upgrade_4:key.keyboard.unknown
+key_key.sophisticatedbackpacks.toggle_upgrade_5:key.keyboard.unknown
+key_key.sophisticatedcore.sort:key.keyboard.unknown
+key_key.sophisticatedcore.transfer_to_storage:key.keyboard.unknown
+key_key.sophisticatedcore.transfer_to_inventory:key.keyboard.unknown

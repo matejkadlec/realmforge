@@ -127,6 +127,31 @@ no enchantment shows its description. The descriptions are Enchantment
 Descriptions' texts (the dev runs load it too), shown in dark grey under each enchantment on every item;
 Enchantment Descriptions' own options (books only, hold Shift) no longer apply.
 
+**Default Options** (`config/defaultoptions/keybindings.txt`, Default Options
+26.1.2.2, RLM-279, [ADR 0043](../docs/decisions/0043-default-keys-and-key-search-in-the-pack.md)).
+The pack's default keys, one `key_<key mapping>:<key>` line each, replacing the
+defaults the mods bring. Key names are positions on a US keyboard (`key.keyboard.y`),
+which the game shows as the player's layout labels them (Z on a Czech QWERTZ
+keyboard). A new profile gets these keys; an existing one keeps its own until the
+player presses **Reset Keys** in Key Binds (or deletes `options.txt`), which
+returns every key to these defaults. Matěj's picks of 2026-10-19:
+
+- free for spells (RLM-25): Quick Actions and Swap Offhand; Chat stays on T for
+  now;
+- Open Quests on `;` (the key left of 1 on a Czech keyboard), Tom's Simple
+  Storage's Open Terminal on V (RLM-25), Just Zoom's Zoom on Z (Czech QWERTZ);
+- Xaero's Minimap (2026-10-20): Minimap Settings on `ú` (right of P on a Czech
+  keyboard), Zoom In and Zoom Out Minimap on the numeric keypad's + and -, New
+  Waypoint on N, Open Waypoint Screen on `,` (right of M); our Dark Vision key
+  moved from N to H for it (its default is in our code);
+- unbound: Just Zoom's Open Options (it shared B with Open Backpack), Xaero's
+  Quick Waypoint, vanilla's Open Command, every Iris key and every
+  Sophisticated Backpacks and Sophisticated Core key.
+
+To find a key mapping's name, boot the pack and read the `key_` lines of the
+client's `options.txt`; Controlling's search in Key Binds finds a key by name or
+by its key.
+
 ## Optional mods
 
 The pack has none since Quark left with the 26.1.2 port. An optional mod is
@@ -134,18 +159,22 @@ marked `[option]` in its `.pw.toml`. Caveat for the next one: packwiz-installer'
 command-line mode (`-g`, typical for dedicated servers) cannot choose options
 and installs every optional mod.
 
-## Mods the QA mod uses too
+## The dev runs load the pack
 
-The dev-only QA mod gets **Player Animation Library**, **Better Combat**,
-**Cloth Config**, **Yeetus Experimentus**, **Placebo**, **Apothic
-Attributes**, **Apothic Enchanting**, **Apotheosis**, **Enchantment
-Descriptions** and **Prickle** from Modrinth's Maven,
-so the dev runs (`./gradlew runClient`, with `-PwithBetterCombat` for Better
-Combat) and the GameTests test our code against the jars players get.
-`qa-mod/build.gradle` names them by Modrinth version id, the `version` under
-`[update.modrinth]` in their `mods/<slug>.pw.toml`. Updating one of these mods
-means updating `qa-mod/build.gradle` too: `uv run pytest`
-(`tools/tests/test_qa_mod_dependencies.py`) fails while they differ.
+The dev runs (`./gradlew runClient`, `runServer`, `runGameTestServer`) load every
+mod of this folder's `mods/` for their side, at the exact build the pack ships
+([ADR 0042](../docs/decisions/0042-the-dev-runs-load-the-whole-pack.md)):
+`qa-mod/build.gradle` reads `mods/*.pw.toml` itself, so adding, updating or
+removing a mod here changes the dev runs and the GameTests with it, with nothing
+to update by hand. A `side = "client"` mod joins the client, `"server"` the dev
+server and the GameTest server, `"both"` every run. Modrinth mods come from
+Modrinth's Maven by `mod-id` and `version` under `[update.modrinth]`,
+CurseForge ones from CurseMaven by `project-id` and `file-id` under
+`[update.curseforge]`, and each jar is checked against the `hash` under
+`[download]` before a run starts. `uv run pytest`
+(`tools/tests/test_dev_run_mods.py`) fails on a `.pw.toml` that reader cannot
+take. `./gradlew runClient -PleanClient` starts a client without the pack's
+mods, except Player Animation Library and Yeetus Experimentus.
 
 Every dev run (client, server, GameTest server) also gets this folder's
 `config/`: the QA mod's `seedPackConfig` task copies it into the run's `config/`
