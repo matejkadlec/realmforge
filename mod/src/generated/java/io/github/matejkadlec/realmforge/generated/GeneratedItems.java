@@ -43,17 +43,6 @@ public final class GeneratedItems {
                                     .withStyle(style -> style.withColor(ChatFormatting.GREEN).withItalic(false)),
                             Component.translatable("item.realmforge.oblivion_scroll.flavor")))));
 
-    /** {@code realmforge:stone_sigil} from {@code content/items/stone_sigil.yaml}. */
-    public static final DeferredItem<Item> STONE_SIGIL =
-            ITEMS.registerSimpleItem("stone_sigil", properties -> properties.stacksTo(1).fireResistant()
-                    .component(DataComponents.LORE, new ItemLore(List.of(
-                            Component.translatable("tooltip.realmforge.sigil_realm",
-                                    Component.translatable("realm.realmforge.stone.name"),
-                                    Component.translatable("realm.realmforge.stone.subtitle"))
-                                    .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(false)),
-                            Component.translatable("tooltip.realmforge.sigil_never_used_up")
-                                    .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(false))))));
-
     /** {@code realmforge:stone_wand} from {@code content/items/stone_wand.yaml}. */
     public static final DeferredItem<Item> STONE_WAND =
             ITEMS.registerSimpleItem("stone_wand", properties -> properties.stacksTo(1));
@@ -65,6 +54,17 @@ public final class GeneratedItems {
     /** {@code realmforge:test_item} from {@code content/items/test_item.yaml}. */
     public static final DeferredItem<Item> TEST_ITEM =
             ITEMS.registerSimpleItem("test_item", properties -> properties.stacksTo(16));
+
+    /** {@code realmforge:undervault_signet} from {@code content/items/undervault_signet.yaml}. */
+    public static final DeferredItem<Item> UNDERVAULT_SIGNET =
+            ITEMS.registerSimpleItem("undervault_signet", properties -> properties.stacksTo(1).fireResistant()
+                    .component(DataComponents.LORE, new ItemLore(List.of(
+                            Component.translatable("tooltip.realmforge.signet_realm",
+                                    Component.translatable("realm.realmforge.stone.name"),
+                                    Component.translatable("realm.realmforge.stone.subtitle"))
+                                    .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(false)),
+                            Component.translatable("tooltip.realmforge.signet_never_used_up")
+                                    .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(false))))));
 
     private GeneratedItems() {
     }
@@ -89,8 +89,8 @@ public final class GeneratedItems {
             }
             case "minecraft:tools_and_utilities" -> {
                 event.accept(OBLIVION_SCROLL);
-                event.accept(STONE_SIGIL);
                 event.accept(TEST_DUNGEON_KEY);
+                event.accept(UNDERVAULT_SIGNET);
             }
             default -> {
             }

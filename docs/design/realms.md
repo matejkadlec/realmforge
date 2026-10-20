@@ -33,7 +33,7 @@ realms are deeper than others and a player can come back for a harder optional d
 **Names** (Matěj, RLM-139 and RLM-188): the names players read, from the [lore outline](../lore/outline.md#the-realms).
 **A realm name never takes an article** (Matěj, 2026-10-15 and 2026-10-16): Overworld, Undervault, Sunwastes,
 Everwinter, Olympus, Prestoria, Quagmire, Ashfire, Unmade Isles, in every text and every document. Where a player
-first meets one (the guide, the sigil tooltip, the arrival title), it carries a plain subtitle with its element, such
+first meets one (the guide, the signet tooltip, the arrival title), it carries a plain subtitle with its element, such
 as "Undervault — Stone Realm" ([style guide](../lore/style.md#text-types)). This document keeps "stone realm",
 "desert realm" and so on as plain descriptions. Renamed on 2026-10-15: the Rimefields became Everwinter, the
 Forgefire Ashfire, and the Brink Unmade Isles (RLM-164).
@@ -52,7 +52,7 @@ Forgefire Ashfire, and the Brink Unmade Isles (RLM-164).
   realms a player must visit to reach it (PR-15).
 - **The Void realm is always the last realm on the main path** (Matěj, RLM-95). A new main-path realm joins the
   chain before it, never after it, so its chapter is always the last one and its level band the game's highest.
-  Its place is data, not code: adding a realm before it moves its level band (its `dimension_rules`) and its sigil's
+  Its place is data, not code: adding a realm before it moves its level band (its `dimension_rules`) and its signet's
   recipe down the chain ([The Void realm](#the-void-realm)).
 - **Portals start in Overworld** (Matěj, RLM-188): a portal in Overworld opens onto any realm the player has
   unlocked, and a portal built inside a realm opens only back to Overworld, so a trip between realms goes through
@@ -79,18 +79,17 @@ Forgefire Ashfire, and the Brink Unmade Isles (RLM-164).
 - **A chapter's level cap is its last level:** 10, 18, 30, 40, 44, 52 and 60, raised by the chapter's main
   questline (Matěj, 2026-10-15; C2 implements it, [architecture 10.2](../architecture.md#102-leveling)). XP stops at
   the cap, so a finished chapter brings no level by itself ([leveling.md](leveling.md#chapters-and-caps)).
-- **What is mandatory:** every realm's main questline and its sigil, for both twins too (the twin seal needs both
+- **What is mandatory:** every realm's main questline and its signet, for both twins too (the twin seal needs both
   shards). Not every dungeon or boss is. Levels can also come from repeatable instanced dungeons.
 - **A main questline ends at about two thirds of its band,** so the next realm opens at the start of its own band,
   and the top of a band holds harder optional content a player comes back for.
-- **Levels 1–10 are Overworld's, and Undervault opens at about level 6.** The old "levels 1–5 in Overworld" is gone.
-  Mob levels follow the player, never below a realm's entry level (Matěj, 2026-10-16, RLM-240;
-  [apotheosis.md](apotheosis.md#mob-levels-and-loot)), and the realm needs no hard level lock. Undervault opens
-  through chapter 1's main questline, whose last step is the realm's unlock quest and also gives the Stone Sigil
-  ([realm portal spec](realm-portal.md#access-and-unlocks)). Overworld's own final boss gates Undervault once it
-  exists (Matěj, 2026-10-16; [Overworld](#the-overworld)). The item rule of
-  [Opening the next realm](#opening-the-next-realm) (RE-9) starts with the second realm, because Overworld has
-  neither a realm ore nor a boss drop to craft the item from.
+- **Levels 1–10 are Overworld's, and Undervault opens at about level 6.** The old "levels 1–5 in Overworld" is gone. Mob
+  levels follow the player, never below a realm's entry level (Matěj, 2026-10-16, RLM-240;
+  [apotheosis.md](apotheosis.md#mob-levels-and-loot)), and the realm needs no hard level lock. Undervault opens through
+  chapter 1's main questline, whose last step is the realm's unlock quest and also gives the Signet of the Undervault
+  ([realm portal spec](realm-portal.md#access-and-unlocks)). Overworld's own final boss gates Undervault once it exists
+  (Matěj, 2026-10-16; [Overworld](#the-overworld)). The item rule of [Opening the next realm](#opening-the-next-realm)
+  (RE-9) starts with the second realm, because Overworld has neither a realm ore nor a boss drop to craft the item from.
 - 1 stat point (Matěj, 2026-10-15, RLM-196) and about 1 skill point per level; spell limits per chapter as in D4
   (RLM-54).
 - Each chapter ends in a short main quest chain whose last step opens the next band (PR-1); everything else is
@@ -242,7 +241,7 @@ Chapter 1 (levels 1–10), the realm of M1. Identity: home.
   are removed ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)).
 - **Its own dungeons, bosses and loot** come with a later milestone, and its final boss is what a player must kill to
   enter Undervault from then on (Matěj, 2026-10-16). Until then chapter 1's main questline, ending with the Stone
-  Sigil, is the gate, and RLM-224's "Prepare" quest stands before the quest that enters Undervault. M1 has no Overworld
+  Signet, is the gate, and RLM-224's "Prepare" quest stands before the quest that enters Undervault. M1 has no Overworld
   dungeon or boss (Matěj chose option b on RLM-188, 2026-10-16).
 - **M2 brings them** (Matěj, 2026-10-19, RLM-264): a main questline of 2–3 zombie, skeleton or spider dungeons, then
   pillagers, illagers and evokers to the chapter's end, with raid quests on the way (RLM-320). The final boss is an
@@ -408,14 +407,14 @@ gameplay proposals wait for his approval in RLM-164 ([open questions 9–12](#op
 shared (a purple void world behind a portal arch, and two images of a void zone from WoW) are inspiration only: no
 art or assets of other games.
 
-- **Place in the chain: always last** ([Realms](#realms)). Its sigil is crafted like every later main-path sigil
+- **Place in the chain: always last** ([Realms](#realms)). Its signet is crafted like every later main-path signet
   (RE-9), from the chapter before it: an ore of that chapter's realm and its guardian's guaranteed drop (Ashfire's).
   When that chapter has two realms, the recipe takes both guardians' drops, as the
-  [realm portal spec](realm-portal.md#realm-sigils) requires after every shared chapter, so finishing one branch
+  [realm portal spec](realm-portal.md#realm-signets) requires after every shared chapter, so finishing one branch
   never opens the Void realm.
   - **Built early:** Matěj may have it built before other realms. Then it follows the last chapter that exists at
     the time (for example Sunwastes and Everwinter after M4, with both drops), and each realm added before it
-    moves its sigil recipe and its level band down the chain.
+    moves its signet recipe and its level band down the chain.
   - **Worlds that already reached it:** the unlock is permanent (RLM-128), so a player who has it keeps it. A realm
     added before it opens through its own quest, and the player can go back for it.
 - **Shape:** large floating islands over the Void, at different heights, joined by bridges of dark stone with chain
@@ -495,7 +494,7 @@ art or assets of other games.
      the nave, as the Scribe in the Stone does in the stone realm;
   5. the First Wright fights on the ground, in phases, with no flying phase (vision);
   6. **the last seal** (proposed, [open question 10](#open-questions)): at the Cathedral's heart the player shows
-     every main-path sigil, which is never consumed ("a sigil is shown, not paid"), and forges the last seal. That
+     every main-path signet, which is never consumed ("a signet is shown, not paid"), and forges the last seal. That
      step finishes the main story; the realms, their dungeons and later the contracts stay.
 - **Malachite gear** (proposed, [open question 11](#open-questions)): the best craftable gear.
   - **The set:** helmet, chestplate, leggings and boots, plus one weapon per play style that exists when the realm
@@ -581,9 +580,9 @@ For Matěj; each has a proposal so the design can go on.
 9. **The Void realm** (RLM-95). Approve [its section](#the-void-realm): islands on a grid joined by bridges and
    chains, three sub-regions, the Chainkeepers and the Unforged, the guard towers, the broken gates and the Void
    Cathedral, and how your "always last" rule works when a realm is added before it. Proposal: as written.
-10. **The last seal from the main-path sigils.** The finale's last step asks the player to show every main-path
-    sigil, which is never consumed. Proposal: yes. It ties the chain together and costs nothing, since a player keeps
-    every sigil and can replace a lost one. Alternative: defeating the First Wright alone ends the story.
+10. **The last seal from the main-path signets.** The finale's last step asks the player to show every main-path
+    signet, which is never consumed. Proposal: yes. It ties the chain together and costs nothing, since a player keeps
+    every signet and can replace a lost one. Alternative: defeating the First Wright alone ends the story.
 11. **Malachite gear.** Proposal: four armour pieces and one weapon per play style, plus the top tier of tools
     (Matěj, 2026-10-15); single pieces as strong as the previous chapter's best boss drops and below the First
     Wright's; with 2 pieces immunity to unmaking, with 4 a permanent damage reduction against every source.
@@ -607,5 +606,5 @@ For Matěj; each has a proposal so the design can go on.
 16. **Sunwastes' material** now that ancient debris and netherite scrap moved to Undervault (Matěj,
     2026-10-15). Proposal: the twins' first tool tier comes from a desert gem or metal of its own, and the brushing
     loot keeps its gems and books.
-17. **How a player reaches Olympus.** Proposal: a sigil like every other realm's, from the quest that ends the twin
+17. **How a player reaches Olympus.** Proposal: a signet like every other realm's, from the quest that ends the twin
     chapter, so it opens at level 30 as the layout says; its portal leads only back to Overworld, like every realm's.

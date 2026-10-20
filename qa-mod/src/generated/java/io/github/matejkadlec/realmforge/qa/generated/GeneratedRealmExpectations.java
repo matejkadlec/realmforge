@@ -9,11 +9,11 @@ import java.util.List;
 public final class GeneratedRealmExpectations {
     /**
      * Expected state of one entry. Ids are full resource locations: the realm's, e.g. {@code realmforge:stone},
-     * its dimension's, its unlock advancement's and its sigil's; the colour is RGB. Overworld's entry, which is
-     * no realm, has an empty hint, unlock and sigil.
+     * its dimension's, its unlock advancement's and its signet's; the colour is RGB. Overworld's entry, which is
+     * no realm, has an empty hint, unlock and signet.
      */
     public record RealmExpectation(String id, String dimension, String nameKey, String lockedHintKey,
-            String unlockAdvancement, String sigil, int colour) {
+            String unlockAdvancement, String signet, int colour) {
     }
 
     public static final List<RealmExpectation> REALMS = List.of(
@@ -31,7 +31,7 @@ public final class GeneratedRealmExpectations {
                     "realm.realmforge.stone.name",
                     "realm.realmforge.stone.locked_hint",
                     "realmforge:realm/stone",
-                    "realmforge:stone_sigil",
+                    "realmforge:undervault_signet",
                     0x7A8FB0));
 
     private GeneratedRealmExpectations() {

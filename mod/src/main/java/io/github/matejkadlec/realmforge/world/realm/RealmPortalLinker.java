@@ -87,11 +87,13 @@ public final class RealmPortalLinker {
     }
 
     /**
-     * The trip of {@code player} through the portal block at {@code entry}: the linked or newly built portal in the
-     * destination, and where the player arrives there. Empty when the portal leads nowhere it can open (a broken frame,
-     * an unknown realm, a dimension that is not loaded, or the dimension the player is in).
+     * The trip of {@code entity} through the portal block at {@code entry}: the linked or newly built portal in the
+     * destination, and where the entity arrives there. Every entity travels (Matěj, 2026-10-20), and the trip lets the
+     * entity and its passengers past the rule that keeps other entities out of realms ({@link RealmAccess}). Empty when
+     * the portal leads nowhere it can open (a broken frame, an unknown realm, a dimension that is not loaded, or the
+     * dimension the entity is in).
      */
-    public static Optional<TeleportTransition> destination(ServerLevel source, ServerPlayer player, BlockPos entry) {
+    public static Optional<TeleportTransition> destination(ServerLevel source, Entity entity, BlockPos entry) {
         BlockState state = source.getBlockState(entry);
         if (!(state.getBlock() instanceof RealmPortalBlock)) {
             return Optional.empty();
@@ -99,7 +101,7 @@ public final class RealmPortalLinker {
         Optional<PortalFrame.Frame> sourceFrame = RealmPortals.frameOf(source, entry, state.getValue(RealmPortalBlock.AXIS));
         Registry<Realm> realms = source.registryAccess().lookupOrThrow(WorldRegistries.REALM);
         Optional<Holder.Reference<Realm>> target = sourceFrame
-                .flatMap(frame -> RealmPortals.destination(source, frame.selector()))
+                .flatMap(frame -> RealmPortals.destination(source, frame.sealstone()))
                 .flatMap(realms::get);
         Optional<Holder.Reference<Realm>> origin = Realms.entry(source.registryAccess(), source.dimension());
         if (sourceFrame.isEmpty() || target.isEmpty() || origin.isEmpty()) {
@@ -116,6 +118,7 @@ public final class RealmPortalLinker {
         }
         // The realm's pitch: the one entered, or on the way back, the one left.
         float pitch = (level.dimension() == Level.OVERWORLD ? origin : target).get().value().soundPitch();
+        RealmAccess.allowPortalTrip(entity);
         return Optional.of(arrive(level, exit.get(), pitch));
     }
 
@@ -132,7 +135,7 @@ public final class RealmPortalLinker {
             return linked;
         }
         Realm.Arrival arrival = target.arrival();
-        int preferredY = arrival.clampY(sourceFrame.selector().getY());
+        int preferredY = arrival.clampY(sourceFrame.sealstone().getY());
         PortalFrame.Frame frame = PortalSpots.find(terrain(level), scaled, buildRadius(level), arrival.minY(),
                         arrival.maxY(), preferredY)
                 .orElseGet(() -> carve(level, scaled.atY(preferredY), sourceFrame.axis(), arrival));
@@ -141,14 +144,14 @@ public final class RealmPortalLinker {
     }
 
     /**
-     * The nearest lit portal within {@code radius} of {@code centre} (a square, as vanilla's) whose selector leads to
+     * The nearest lit portal within {@code radius} of {@code centre} (a square, as vanilla's) whose sealstone leads to
      * {@code back}; the lowest first among equally near ones. Reads point-of-interest data, as vanilla's search does.
      */
     public static Optional<PortalFrame.Frame> findPortal(ServerLevel level, BlockPos centre, int radius, Identifier back) {
         PoiManager pois = level.getPoiManager();
         pois.ensureLoadedAndValid(level, centre, radius);
         WorldBorder border = level.getWorldBorder();
-        return pois.getInSquare(type -> type.is(RealmPortalBlocks.SELECTOR_POI), centre, radius,
+        return pois.getInSquare(type -> type.is(RealmPortalBlocks.SEALSTONE_POI), centre, radius,
                         PoiManager.Occupancy.ANY)
                 .map(PoiRecord::getPos)
                 .filter(border::isWithinBounds)
@@ -160,9 +163,9 @@ public final class RealmPortalLinker {
 
     /**
      * Where nothing fits (a realm with a ceiling, a void, water, Overworld's sea): the frame is carved out at
-     * {@code at}, on a floor of the arrival block under and in front of it, with free space around it; fluids and
-     * falling blocks at the pocket's edge become floor blocks too, so none runs or falls in (realm portal spec,
-     * "Building a portal").
+     * {@code at}, its bottom row standing on a floor of the arrival block that reaches in front of it, with free space
+     * around it; fluids and falling blocks at the pocket's edge become floor blocks too, so none runs or falls in
+     * (realm portal spec, "Building a portal").
      */
     static PortalFrame.Frame carve(ServerLevel level, BlockPos at, Direction.Axis axis, Realm.Arrival arrival) {
         PortalFrame.Frame frame = new PortalFrame.Frame(at, axis);
@@ -174,9 +177,9 @@ public final class RealmPortalLinker {
         for (int across = -2 - radius; across <= PortalFrame.WIDTH + 1 + radius; across++) {
             for (int depth = -radius - 1; depth <= radius + 1; depth++) {
                 boolean edge = across < -1 - radius || across > PortalFrame.WIDTH + radius || Math.abs(depth) > radius;
-                for (int up = -1; up <= PortalFrame.HEIGHT + 1; up++) {
+                for (int up = -2; up <= PortalFrame.HEIGHT + 1; up++) {
                     BlockPos pos = frame.at(across, up).relative(front, depth);
-                    if (!border.isWithinBounds(pos) || level.isOutsideBuildHeight(pos)) {
+                    if (!border.isWithinBounds(pos) || level.isOutsideBuildHeight(pos) || (edge && up == -2)) {
                         continue;
                     }
                     if (edge || up == PortalFrame.HEIGHT + 1) {
@@ -184,7 +187,7 @@ public final class RealmPortalLinker {
                             level.setBlock(pos, floor, Block.UPDATE_ALL);
                         }
                     } else {
-                        level.setBlock(pos, up == -1 ? floor : Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+                        level.setBlock(pos, up == -2 ? floor : Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
                     }
                 }
             }
@@ -198,15 +201,16 @@ public final class RealmPortalLinker {
     }
 
     /**
-     * The player arrives in front of {@code exit}, facing away from it, when one side of the opening has floor and two
-     * free blocks; otherwise in the opening, as a nether portal places them, where vanilla's portal cooldown keeps them
-     * from bouncing straight back. The trip plays the vanilla travel sound at the realm's pitch and loads the chunks
-     * around the exit for a short time, through vanilla's portal ticket.
+     * The entity arrives in front of {@code exit}, facing away from it, when one side of the opening has floor and two
+     * free blocks ({@link PortalSpots#arrival}); otherwise in the opening, as a nether portal places it, where
+     * vanilla's portal cooldown keeps it from bouncing straight back. The trip plays the vanilla travel sound at the
+     * realm's pitch for a player and loads the chunks around the exit for a short time, through vanilla's portal
+     * ticket.
      */
     static TeleportTransition arrive(ServerLevel level, PortalFrame.Frame exit, float pitch) {
-        Optional<Direction> side = PortalSpots.arrival(terrain(level), exit);
-        BlockPos foot = side.map(direction -> exit.at(1, 0).relative(direction)).orElse(exit.at(1, 0));
-        float yaw = side.orElse(exit.front()).toYRot();
+        Optional<PortalSpots.Arrival> arrival = PortalSpots.arrival(terrain(level), exit);
+        BlockPos foot = arrival.map(PortalSpots.Arrival::foot).orElse(exit.at(1, 0));
+        float yaw = arrival.map(PortalSpots.Arrival::side).orElse(exit.front()).toYRot();
         BlockPos ticket = exit.at(1, 0);
         TeleportTransition.PostTeleportTransition post = entity -> {
             playTravelSound(entity, pitch);

@@ -20,10 +20,10 @@ import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 
 /**
  * The realm portal's colour (architecture 18; realm portal spec, "Look and sound"): one greyscale swirl for every realm,
- * tinted with the colour of the entry its frame's selector opens onto, from the synced realm registry. The colour is
- * baked into the chunk mesh, so the selector marks the opening for re-rendering when its setting changes
- * ({@code RealmSelectorBlockEntity}). The chunk mesher's region holds the block entities of its sections, so the
- * selector, at most five blocks below a portal block, is there.
+ * tinted with the colour of the entry its frame's sealstone opens onto, from the synced realm registry. The colour is
+ * baked into the chunk mesh, so the sealstone marks the opening for re-rendering when its setting changes
+ * ({@code SealstoneBlockEntity}). The chunk mesher's region holds the block entities of its sections, so the
+ * sealstone, at most five blocks below a portal block, is there.
  */
 public final class RealmPortalColors {
     /** Until the level is known: Overworld's green, the return portals' colour. */
@@ -53,7 +53,7 @@ public final class RealmPortalColors {
                 return color(state);
             }
             Optional<Realm> destination = RealmPortals.frameOf(level, pos, state.getValue(RealmPortalBlock.AXIS))
-                    .flatMap(frame -> RealmPortals.destination(level, frame.selector()))
+                    .flatMap(frame -> RealmPortals.destination(level, frame.sealstone()))
                     .flatMap(id -> client.registryAccess().lookupOrThrow(WorldRegistries.REALM).get(id))
                     .map(Holder::value);
             return destination.map(Realm::colour).orElseGet(() -> color(state));

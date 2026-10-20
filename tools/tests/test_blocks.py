@@ -43,11 +43,14 @@ def generate(repo: RepoPaths) -> dict[str, bytes]:
     return {repo.rel(path): data for path, data in generate_all(content, repo).items()}
 
 
-def test_repository_blocks_are_undervaults_stones() -> None:
+def test_repository_blocks_are_undervaults_stones_and_the_portal_materials() -> None:
     content, universe = load_and_validate(RepoPaths())
     hardness = {e.model.id: e.model.hardness for e in content.blocks if e.model.kind == "simple"}
     # Matěj, 2026-10-15: four stones of hardness 25, 20, 18 and 12; the common one has 20.
-    assert hardness == {"coreslate": 25, "mottlestone": 18, "siltstone": 12, "vaultstone": 20}
+    stones = {"coreslate": 25, "mottlestone": 18, "siltstone": 12, "vaultstone": 20}
+    # Matěj, 2026-10-20: Realmforge Stone from 8 Overworld bricks, three of them ours, with vanilla's brick hardness.
+    materials = {"realmforge_stone": 3, "diorite_bricks": 1.5, "granite_bricks": 1.5, "andesite_bricks": 1.5}
+    assert hardness == stones | materials
     assert universe.contains("minecraft:block", "realmforge:vaultstone")
     assert universe.contains("minecraft:item", "realmforge:vaultstone")
 
@@ -60,7 +63,8 @@ def test_a_block_becomes_its_registration_assets_loot_and_tags(repo: RepoPaths) 
     assert ".strength(4.5F, 6.0F)" in java and ".sound(SoundType.DEEPSLATE)" in java
     assert ".mapColor(MapColor.DEEPSLATE)" in java and ".requiresCorrectToolForDrops()" in java
     assert "TEST_ROCK_ITEM = ITEMS.registerSimpleBlockItem(TEST_ROCK)" in java
-    assert 'case "minecraft:building_blocks" -> {\n                event.accept(TEST_ROCK_ITEM);' in java
+    building_blocks = java.split('case "minecraft:building_blocks" -> {')[1].split("}")[0]
+    assert "event.accept(TEST_ROCK_ITEM);" in building_blocks
     assert json.loads(files[f"{ASSETS}/blockstates/test_rock.json"]) == {
         "variants": {"": {"model": "realmforge:block/test_rock"}}
     }
@@ -211,7 +215,7 @@ def test_the_realm_portals_blocks_have_their_own_shapes_loot_and_items(repo: Rep
         files[EXPECTATIONS].decode()
     )
     # The frame's blocks: both states look alike, and only a block without the generated flag drops itself.
-    for block in ("portal_stone", "realm_selector"):
+    for block in ("realmforge_bricks", "realmforge_sealstone"):
         assert json.loads(files[f"{ASSETS}/blockstates/{block}.json"]) == {
             "variants": {
                 "generated=false": {"model": f"realmforge:block/{block}"},
@@ -228,10 +232,10 @@ def test_the_realm_portals_blocks_have_their_own_shapes_loot_and_items(repo: Rep
 
 
 def test_the_realm_portal_needs_all_three_kinds(repo: RepoPaths) -> None:
-    (repo.content / "blocks" / "realm_selector.yaml").unlink()
+    (repo.content / "blocks" / "realmforge_sealstone.yaml").unlink()
     problems = problems_for(repo)
     assert any(
-        "kind: the realm portal needs a block of each of" in p and "none is realm_selector" in p
+        "kind: the realm portal needs a block of each of" in p and "none is realmforge_sealstone" in p
         for p in problems
     ), problems
 

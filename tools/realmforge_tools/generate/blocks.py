@@ -84,7 +84,7 @@ def _models(block: BlockDef) -> dict[str, bytes]:
     - dungeon_portal: a full cube that looks different while open (``open=true``: the model and texture
       ``<id>_open``).
     - dungeon_exit: a plate one pixel high, vanilla's carpet shape.
-    - portal_stone, realm_selector: one full cube, whether ``generated`` or not.
+    - realmforge_bricks, realmforge_sealstone: one full cube, whether ``generated`` or not.
     - realm_portal: a pane four pixels thick across the opening, along either axis (``axis=x``: the model
       ``<id>_ns``, ``axis=z``: ``<id>_ew``, as vanilla's nether portal), tinted on the client (tint index 0) with the
       colour of the realm it opens onto, from a greyscale, see-through texture.

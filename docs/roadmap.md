@@ -227,7 +227,7 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   refused before the unlock and allowed after it, a mob teleported in staying where it is, and a death in the realm
   respawning in Overworld.
 - **W2b Realm portal** (RLM-154, M, after W2a). Access through the realm portal
-  ([realm portal design](design/realm-portal.md)): the frame, the realm selector and the stone realm's sigil, a
+  ([realm portal design](design/realm-portal.md)): the frame, the sealstone and the stone realm's signet, a
   chapter 1 quest reward; Nether-like linking in both directions at the realm's coordinate scale, to a portal near
   the scaled position or one built there. *Done when:* GameTests show the portal refusing a player before the unlock
   and passing them after it, and a trip into the realm and back that links to the portals at the scaled positions

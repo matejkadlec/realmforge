@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "C": "minecraft:compass",
+    "G": "minecraft:gold_ingot",
+    "P": "realmforge:realmforge_bricks"
+  },
+  "pattern": [
+    "PGP",
+    "GCG",
+    "PGP"
+  ],
+  "result": {
+    "id": "realmforge:realmforge_sealstone"
+  }
+}

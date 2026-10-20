@@ -11,7 +11,7 @@ import net.minecraft.core.Direction;
 /**
  * The realm portal's frame as plain Java over a block lookup (realm portal spec, "The frame"): a vertical rectangle 5
  * wide and 6 tall around a 3x4 opening, along either horizontal axis. The 14 blocks that touch the opening are
- * required, 13 Portal Stone and the realm selector in the middle of the bottom row; the four corners are decoration.
+ * required, 13 Realmforge Bricks and the sealstone in the middle of the bottom row; the four corners are decoration.
  * So every required block touches the opening, and breaking any of them reaches a portal block through a neighbour
  * update.
  */
@@ -23,8 +23,8 @@ public final class PortalFrame {
 
     /** What a position holds, as far as the frame is concerned. */
     public enum Part {
-        PORTAL_STONE,
-        SELECTOR,
+        BRICKS,
+        SEALSTONE,
         /** A realm portal block. */
         PORTAL,
         /** Air, or a block that something placed there replaces, without a fluid. */
@@ -42,12 +42,12 @@ public final class PortalFrame {
     }
 
     /**
-     * A frame's place: its selector and the horizontal axis it runs along. Positions go "right" along the axis, towards
+     * A frame's place: its sealstone and the horizontal axis it runs along. Positions go "right" along the axis, towards
      * its positive end.
      */
-    public record Frame(BlockPos selector, Direction.Axis axis) {
+    public record Frame(BlockPos sealstone, Direction.Axis axis) {
         public Frame {
-            selector = selector.immutable();
+            sealstone = sealstone.immutable();
             if (!axis.isHorizontal()) {
                 throw new IllegalArgumentException("a frame runs along a horizontal axis, not " + axis);
             }
@@ -63,9 +63,9 @@ public final class PortalFrame {
             return right().getClockWise();
         }
 
-        /** The opening's bottom left position: above the selector, one to the left. */
+        /** The opening's bottom left position: above the sealstone, one to the left. */
         public BlockPos corner() {
-            return selector.above().relative(right(), -1);
+            return sealstone.above().relative(right(), -1);
         }
 
         /** The opening's 12 positions, row by row from the bottom left. */
@@ -79,8 +79,8 @@ public final class PortalFrame {
             return opening;
         }
 
-        /** The 13 positions of Portal Stone: the rest of the bottom row, the sides and the top row. */
-        public List<BlockPos> portalStones() {
+        /** The 13 positions of Realmforge Bricks: the rest of the bottom row, the sides and the top row. */
+        public List<BlockPos> bricks() {
             List<BlockPos> stones = new ArrayList<>(13);
             stones.add(at(0, -1));
             stones.add(at(2, -1));
@@ -110,7 +110,7 @@ public final class PortalFrame {
     }
 
     /**
-     * The state of a frame around a selector.
+     * The state of a frame around a sealstone.
      *
      * @param frame where it is
      * @param missing the frame positions that do not hold the block they need
@@ -133,14 +133,14 @@ public final class PortalFrame {
         }
     }
 
-    /** Checks {@code frame}: its 13 Portal Stone, its selector and its opening. */
+    /** Checks {@code frame}: its 13 Realmforge Bricks, its sealstone and its opening. */
     public static Check check(Lookup lookup, Frame frame) {
         List<BlockPos> missing = new ArrayList<>();
-        if (lookup.at(frame.selector()) != Part.SELECTOR) {
-            missing.add(frame.selector());
+        if (lookup.at(frame.sealstone()) != Part.SEALSTONE) {
+            missing.add(frame.sealstone());
         }
-        for (BlockPos stone : frame.portalStones()) {
-            if (lookup.at(stone) != Part.PORTAL_STONE) {
+        for (BlockPos stone : frame.bricks()) {
+            if (lookup.at(stone) != Part.BRICKS) {
                 missing.add(stone);
             }
         }
@@ -155,12 +155,12 @@ public final class PortalFrame {
     }
 
     /**
-     * The frame around the selector at {@code selector}: the axis whose frame can light, X first; when neither can,
+     * The frame around the sealstone at {@code sealstone}: the axis whose frame can light, X first; when neither can,
      * the one with the fewest problems, so the particles mark what is left of the frame the player is building.
      */
-    public static Check around(Lookup lookup, BlockPos selector) {
+    public static Check around(Lookup lookup, BlockPos sealstone) {
         return Stream.of(Direction.Axis.X, Direction.Axis.Z)
-                .map(axis -> check(lookup, new Frame(selector, axis)))
+                .map(axis -> check(lookup, new Frame(sealstone, axis)))
                 .min(Comparator.comparing((Check check) -> !check.canLight())
                         .thenComparingInt(check -> check.problems().size()))
                 .orElseThrow();
@@ -168,7 +168,7 @@ public final class PortalFrame {
 
     /**
      * The complete frame whose opening holds the portal block at {@code portal}, along {@code axis}, the portal's
-     * axis: below the opening's bottom row of portal blocks, one of the three positions there is its selector.
+     * axis: below the opening's bottom row of portal blocks, one of the three positions there is its sealstone.
      */
     public static Optional<Frame> ofPortal(Lookup lookup, BlockPos portal, Direction.Axis axis) {
         BlockPos.MutableBlockPos bottom = portal.mutable();
@@ -177,11 +177,11 @@ public final class PortalFrame {
         }
         Direction right = Direction.get(Direction.AxisDirection.POSITIVE, axis);
         for (int offset = -1; offset <= 1; offset++) {
-            BlockPos selector = bottom.below().relative(right, offset);
-            if (lookup.at(selector) != Part.SELECTOR) {
+            BlockPos sealstone = bottom.below().relative(right, offset);
+            if (lookup.at(sealstone) != Part.SEALSTONE) {
                 continue;
             }
-            Frame frame = new Frame(selector, axis);
+            Frame frame = new Frame(sealstone, axis);
             if (frame.inOpening(portal) && check(lookup, frame).complete()) {
                 return Optional.of(frame);
             }

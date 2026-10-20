@@ -263,11 +263,11 @@ public final class GeneratedTexts {
     /** {@code resource.realmforge.rage} from {@code content/texts/resource.yaml}: "Rage" */
     public static final String RESOURCE_RAGE = "resource.realmforge.rage";
 
-    /** {@code tooltip.realmforge.sigil_never_used_up} from {@code content/texts/tooltip.yaml}: "Never used up" */
-    public static final String TOOLTIP_SIGIL_NEVER_USED_UP = "tooltip.realmforge.sigil_never_used_up";
+    /** {@code tooltip.realmforge.signet_never_used_up} from {@code content/texts/tooltip.yaml}: "Never used up" */
+    public static final String TOOLTIP_SIGNET_NEVER_USED_UP = "tooltip.realmforge.signet_never_used_up";
 
-    /** {@code tooltip.realmforge.sigil_realm} from {@code content/texts/tooltip.yaml}: "%1$s — %2$s" */
-    public static final String TOOLTIP_SIGIL_REALM = "tooltip.realmforge.sigil_realm";
+    /** {@code tooltip.realmforge.signet_realm} from {@code content/texts/tooltip.yaml}: "%1$s — %2$s" */
+    public static final String TOOLTIP_SIGNET_REALM = "tooltip.realmforge.signet_realm";
 
     private GeneratedTexts() {
     }

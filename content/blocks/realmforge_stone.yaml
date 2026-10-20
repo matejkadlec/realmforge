@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
+# Realmforge Stone (W2b; Matěj, 2026-10-20): what Realmforge Bricks are made of. The bricks of eight Overworld stones
+# around an ender pearl make 8: stone, deepslate, quartz, mud and tuff bricks from vanilla, and our diorite, granite and
+# andesite bricks. A frame and its sealstone take 17 bricks, so 20 Realmforge Stone: 3 crafts, 3 ender pearls. The
+# numbers are proposals for Matěj's playtest.
+id: realmforge_stone
+name:
+  en_us: Realmforge Stone
+hardness: 3
+blast_resistance: 6
+tool: pickaxe
+requires_tool: true
+sound: stone
+map_color: color_gray
+creative_tabs:
+  - minecraft:building_blocks
+recipe:
+  pattern:
+    - SDQ
+    - MET
+    - IGA
+  key:
+    S: minecraft:stone_bricks
+    D: minecraft:deepslate_bricks
+    Q: minecraft:quartz_bricks
+    M: minecraft:mud_bricks
+    E: minecraft:ender_pearl
+    T: minecraft:tuff_bricks
+    I: realmforge:diorite_bricks
+    G: realmforge:granite_bricks
+    A: realmforge:andesite_bricks
+  count: 8
+  category: building

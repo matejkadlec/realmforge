@@ -5,7 +5,7 @@
   "locked_hint": "realm.realmforge.stone.locked_hint",
   "flavour": "realm.realmforge.stone.flavour",
   "icon": "realmforge:vaultstone",
-  "sigil": "realmforge:stone_sigil",
+  "signet": "realmforge:undervault_signet",
   "colour": "#7A8FB0",
   "particle": "minecraft:ash",
   "sound_pitch": 0.8,

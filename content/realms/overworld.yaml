@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=../../tools/schemas/realms.schema.json
-# Overworld's entry (W2b, realm portal spec, "Data"): no realm, always open, so no unlock, sigil, hint or flavour line.
+# Overworld's entry (W2b, realm portal spec, "Data"): no realm, always open, so no unlock, signet, hint or flavour line.
 # Its colour is the return portals', the way back from a realm. A way back that finds no portal near the scaled
 # position builds one with its bottom row at y 64 to 310: above sea level (63), so over deep ocean it builds on a
 # platform at the surface instead of under the seabed (RLM-157); 310 is vanilla's own ceiling for a built portal.

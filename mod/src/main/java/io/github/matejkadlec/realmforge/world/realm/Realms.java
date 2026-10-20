@@ -27,7 +27,7 @@ public final class Realms {
     private static volatile Index index;
 
     private record Index(Registry<Realm> registry, Map<ResourceKey<Level>, Holder.Reference<Realm>> byDimension,
-            Map<Item, Holder.Reference<Realm>> bySigil) {
+            Map<Item, Holder.Reference<Realm>> bySignet) {
     }
 
     private Realms() {
@@ -57,9 +57,9 @@ public final class Realms {
         return entry(registries, Level.OVERWORLD);
     }
 
-    /** The realm whose sigil is {@code item}, or empty when it is no sigil. */
-    public static Optional<Holder.Reference<Realm>> bySigil(RegistryAccess registries, Item item) {
-        return Optional.ofNullable(index(registries).bySigil().get(item));
+    /** The realm whose signet is {@code item}, or empty when it is no signet. */
+    public static Optional<Holder.Reference<Realm>> bySignet(RegistryAccess registries, Item item) {
+        return Optional.ofNullable(index(registries).bySignet().get(item));
     }
 
     /** Whether {@code dimension} is a realm's. */
@@ -71,7 +71,7 @@ public final class Realms {
         Registry<Realm> registry = registries.lookupOrThrow(WorldRegistries.REALM);
         Index current = index;
         if (current == null || current.registry() != registry) {
-            current = new Index(registry, byDimension(registry), bySigil(registry));
+            current = new Index(registry, byDimension(registry), bySignet(registry));
             index = current;
         }
         return current;
@@ -96,14 +96,14 @@ public final class Realms {
         return Map.copyOf(byDimension);
     }
 
-    /** The realms by their sigil, the lowest id first when two share one; sigils that are no item are left out. */
-    private static Map<Item, Holder.Reference<Realm>> bySigil(Registry<Realm> registry) {
-        Map<Item, Holder.Reference<Realm>> bySigil = new HashMap<>();
+    /** The realms by their signet, the lowest id first when two share one; signets that are no item are left out. */
+    private static Map<Item, Holder.Reference<Realm>> bySignet(Registry<Realm> registry) {
+        Map<Item, Holder.Reference<Realm>> bySignet = new HashMap<>();
         registry.listElements()
                 .sorted(Comparator.comparing(holder -> holder.key().identifier()))
-                .forEach(holder -> holder.value().sigil()
+                .forEach(holder -> holder.value().signet()
                         .flatMap(BuiltInRegistries.ITEM::getOptional)
-                        .ifPresent(item -> bySigil.putIfAbsent(item, holder)));
-        return Map.copyOf(bySigil);
+                        .ifPresent(item -> bySignet.putIfAbsent(item, holder)));
+        return Map.copyOf(bySignet);
     }
 }

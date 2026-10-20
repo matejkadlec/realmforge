@@ -87,10 +87,10 @@ def test_item_use_and_flavor_become_tooltip_lines_and_a_use_tag(repo: RepoPaths)
 
 
 def test_items_without_lore_import_nothing_for_it(repo: RepoPaths) -> None:
-    # The Scroll of Oblivion has a use line, and a realm's sigil names its realm: without both, no item has lore.
+    # The Scroll of Oblivion has a use line, and a realm's signet names its realm: without both, no item has lore.
     for path in (
         "items/oblivion_scroll.yaml",
-        "items/stone_sigil.yaml",
+        "items/undervault_signet.yaml",
         "realms/stone.yaml",
         "dimensions/stone.yaml",
     ):

@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
+# Granite Bricks (W2b; Matěj, 2026-10-20): vanilla has none, and Realmforge Stone needs the bricks of eight Overworld
+# stones. 4 polished granite make 4, as vanilla makes tuff bricks; as hard as polished granite. The generated
+# placeholder texture until the A* textures.
+id: granite_bricks
+name:
+  en_us: Granite Bricks
+hardness: 1.5
+blast_resistance: 6
+tool: pickaxe
+requires_tool: true
+sound: stone
+map_color: dirt
+creative_tabs:
+  - minecraft:building_blocks
+recipe:
+  pattern:
+    - PP
+    - PP
+  key:
+    P: minecraft:polished_granite
+  count: 4
+  category: building

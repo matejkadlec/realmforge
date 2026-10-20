@@ -18,6 +18,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.TriState;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -27,12 +28,12 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
 /**
- * What the realm portal does (realm portal spec, "The frame", "The realm selector", "Access and unlocks"): the
- * selector's gestures, lighting and closing a frame, the check when a player steps in, and the frames a trip builds
+ * What the realm portal does (realm portal spec, "The frame", "The sealstone", "Access and unlocks"): the
+ * sealstone's gestures, lighting and closing a frame, the check when a player steps in, and the frames a trip builds
  * ({@link RealmPortalLinker} finds where).
  *
- * <p>The selector's setting counts only while its opening is lit: a frame that went dark leads nowhere, so a closed or
- * rebuilt frame lights again with a sigil (RLM-133).
+ * <p>The sealstone's setting counts only while its opening is lit: a frame that went dark leads nowhere, so a closed or
+ * rebuilt frame lights again with a signet (RLM-133).
  */
 public final class RealmPortals {
     /** How long particles mark what an incomplete frame lacks: 3 seconds. */
@@ -56,11 +57,11 @@ public final class RealmPortals {
     }
 
     static PortalFrame.Part part(BlockState state) {
-        if (state.getBlock() instanceof PortalStoneBlock) {
-            return PortalFrame.Part.PORTAL_STONE;
+        if (state.getBlock() instanceof RealmforgeBricksBlock) {
+            return PortalFrame.Part.BRICKS;
         }
-        if (state.getBlock() instanceof RealmSelectorBlock) {
-            return PortalFrame.Part.SELECTOR;
+        if (state.getBlock() instanceof SealstoneBlock) {
+            return PortalFrame.Part.SEALSTONE;
         }
         if (state.getBlock() instanceof RealmPortalBlock) {
             return PortalFrame.Part.PORTAL;
@@ -73,17 +74,17 @@ public final class RealmPortals {
         return PortalFrame.ofPortal(lookup(level), portal, axis);
     }
 
-    /** Whether the opening above the selector at {@code selector} holds portal blocks. */
-    public static boolean isLit(BlockGetter level, BlockPos selector) {
-        return level.getBlockState(selector.above()).getBlock() instanceof RealmPortalBlock;
+    /** Whether the opening above the sealstone at {@code sealstone} holds portal blocks. */
+    public static boolean isLit(BlockGetter level, BlockPos sealstone) {
+        return level.getBlockState(sealstone.above()).getBlock() instanceof RealmPortalBlock;
     }
 
     /**
-     * Where the selector at {@code selector} leads: the id of a {@code realmforge:realm} entry, a realm's or (a return
+     * Where the sealstone at {@code sealstone} leads: the id of a {@code realmforge:realm} entry, a realm's or (a return
      * portal) Overworld's. Empty while the opening is dark.
      */
-    public static Optional<Identifier> destination(BlockGetter level, BlockPos selector) {
-        if (!isLit(level, selector) || !(level.getBlockEntity(selector) instanceof RealmSelectorBlockEntity entity)) {
+    public static Optional<Identifier> destination(BlockGetter level, BlockPos sealstone) {
+        if (!isLit(level, sealstone) || !(level.getBlockEntity(sealstone) instanceof SealstoneBlockEntity entity)) {
             return Optional.empty();
         }
         return entity.storedDestination();
@@ -92,30 +93,35 @@ public final class RealmPortals {
     /** The entry the portal block at {@code portal} leads to, on either side; empty for a broken frame or an unknown realm. */
     public static Optional<Realm> destinationOfPortal(Level level, BlockPos portal, Direction.Axis axis) {
         return frameOf(level, portal, axis)
-                .flatMap(frame -> destination(level, frame.selector()))
+                .flatMap(frame -> destination(level, frame.sealstone()))
                 .flatMap(id -> level.registryAccess().lookupOrThrow(WorldRegistries.REALM).getOptional(id));
     }
 
     /**
-     * Whether the player in the portal block at {@code portal} may start the trip: the portal leads somewhere, and the
-     * player may enter the destination. A player without access is told, at most once every 3 seconds, and stays where
-     * they are, so the portal never starts its countdown for them.
+     * Whether the entity in the portal block at {@code portal} may start the trip: the portal leads somewhere, and the
+     * entity, when it is a player, and every player riding it may enter the destination. Each player without access is
+     * told, at most once every 3 seconds, and the entity stays where it is, so the portal never starts its countdown.
      */
-    static boolean mayTravel(ServerPlayer player, ServerLevel level, BlockPos portal, Direction.Axis axis) {
+    static boolean mayTravel(Entity entity, ServerLevel level, BlockPos portal, Direction.Axis axis) {
         Optional<Realm> destination = destinationOfPortal(level, portal, axis);
         if (destination.isEmpty()) {
             return false;
         }
         ResourceKey<Level> dimension = destination.get().dimension();
-        if (dimension != level.dimension() && !RealmAccess.mayEnter(player, dimension)) {
-            RealmAccess.refuse(player, dimension);
-            return false;
+        if (dimension == level.dimension()) {
+            return true;
         }
-        return true;
+        List<ServerPlayer> refused = entity.getSelfAndPassengers()
+                .filter(ServerPlayer.class::isInstance)
+                .map(ServerPlayer.class::cast)
+                .filter(player -> !RealmAccess.mayEnter(player, dimension))
+                .toList();
+        refused.forEach(player -> RealmAccess.refuse(player, dimension));
+        return refused.isEmpty();
     }
 
-    /** A sigil used on the selector at {@code selector} (realm portal spec, "The realm selector"). */
-    static void useSigil(ServerPlayer player, ServerLevel level, BlockPos selector, Holder.Reference<Realm> realm) {
+    /** A signet used on the sealstone at {@code sealstone} (realm portal spec, "The sealstone"). */
+    static void useSignet(ServerPlayer player, ServerLevel level, BlockPos sealstone, Holder.Reference<Realm> realm) {
         RegistryAccess registries = level.registryAccess();
         if (Realms.entry(registries, level.dimension()).isEmpty()) {
             tell(player, Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_CANNOT_OPEN_HERE));
@@ -130,14 +136,14 @@ public final class RealmPortals {
                     Component.translatable(realm.value().name()), Component.translatable(realm.value().lockedHint())));
             return;
         }
-        open(player, level, selector, realm);
+        open(player, level, sealstone, realm);
     }
 
     /**
      * The sneak gesture with an empty main hand: in Overworld it closes the portal; inside a realm it opens the portal
      * onto Overworld, or switches it back there.
      */
-    static void useSneaking(ServerPlayer player, ServerLevel level, BlockPos selector) {
+    static void useSneaking(ServerPlayer player, ServerLevel level, BlockPos sealstone) {
         RegistryAccess registries = level.registryAccess();
         Optional<Holder.Reference<Realm>> overworld = Realms.overworld(registries);
         if (Realms.entry(registries, level.dimension()).isEmpty() || overworld.isEmpty()) {
@@ -145,18 +151,18 @@ public final class RealmPortals {
             return;
         }
         if (Realms.isRealm(registries, level.dimension())) {
-            open(player, level, selector, overworld.get());
+            open(player, level, sealstone, overworld.get());
             return;
         }
-        if (isLit(level, selector)) {
-            close(level, selector);
+        if (isLit(level, sealstone)) {
+            close(level, sealstone);
         }
         tell(player, Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_CLOSED));
     }
 
-    /** An empty hand on the selector: where its portal leads, or that it is closed. */
-    static void showDestination(ServerPlayer player, ServerLevel level, BlockPos selector) {
-        Optional<Identifier> destination = destination(level, selector);
+    /** An empty hand on the sealstone: where its portal leads, or that it is closed. */
+    static void showDestination(ServerPlayer player, ServerLevel level, BlockPos sealstone) {
+        Optional<Identifier> destination = destination(level, sealstone);
         if (destination.isEmpty()) {
             tell(player, Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_CLOSED));
             return;
@@ -169,18 +175,18 @@ public final class RealmPortals {
     }
 
     /**
-     * Opens the frame around {@code selector} onto {@code entry}, or switches it there, once the frame is complete and
+     * Opens the frame around {@code sealstone} onto {@code entry}, or switches it there, once the frame is complete and
      * its opening free; otherwise particles mark what is missing or in the way.
      */
-    private static void open(ServerPlayer player, ServerLevel level, BlockPos selector, Holder.Reference<Realm> entry) {
+    private static void open(ServerPlayer player, ServerLevel level, BlockPos sealstone, Holder.Reference<Realm> entry) {
         Component name = Component.translatable(entry.value().name());
-        PortalFrame.Check check = PortalFrame.around(lookup(level), selector);
+        PortalFrame.Check check = PortalFrame.around(lookup(level), sealstone);
         if (!check.canLight()) {
             tell(player, Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_FRAME_INCOMPLETE));
             mark(level, check.problems());
             return;
         }
-        if (destination(level, selector).filter(entry.key().identifier()::equals).isPresent()) {
+        if (destination(level, sealstone).filter(entry.key().identifier()::equals).isPresent()) {
             tell(player, Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_ALREADY_OPENS_ONTO, name));
             return;
         }
@@ -189,12 +195,12 @@ public final class RealmPortals {
     }
 
     /**
-     * Lights a complete frame onto {@code destination}: the selector's setting, then the opening's portal blocks along
+     * Lights a complete frame onto {@code destination}: the sealstone's setting, then the opening's portal blocks along
      * the frame's axis. Placed without neighbour updates, as vanilla places nether portal blocks, so the half-filled
      * opening does not take itself apart.
      */
     public static void light(ServerLevel level, PortalFrame.Frame frame, Identifier destination) {
-        if (level.getBlockEntity(frame.selector()) instanceof RealmSelectorBlockEntity entity) {
+        if (level.getBlockEntity(frame.sealstone()) instanceof SealstoneBlockEntity entity) {
             entity.setDestination(destination);
         }
         BlockState portal = RealmPortalBlocks.portal().defaultBlockState().setValue(RealmPortalBlock.AXIS, frame.axis());
@@ -203,34 +209,34 @@ public final class RealmPortals {
         }
     }
 
-    /** Closes the portal over {@code selector}: the opening goes dark and the setting becomes none. */
-    public static void close(ServerLevel level, BlockPos selector) {
-        BlockState above = level.getBlockState(selector.above());
+    /** Closes the portal over {@code sealstone}: the opening goes dark and the setting becomes none. */
+    public static void close(ServerLevel level, BlockPos sealstone) {
+        BlockState above = level.getBlockState(sealstone.above());
         if (above.getBlock() instanceof RealmPortalBlock) {
-            PortalFrame.Frame frame = new PortalFrame.Frame(selector, above.getValue(RealmPortalBlock.AXIS));
+            PortalFrame.Frame frame = new PortalFrame.Frame(sealstone, above.getValue(RealmPortalBlock.AXIS));
             for (BlockPos pos : frame.opening()) {
                 if (level.getBlockState(pos).getBlock() instanceof RealmPortalBlock) {
                     level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
                 }
             }
         }
-        if (level.getBlockEntity(selector) instanceof RealmSelectorBlockEntity entity) {
+        if (level.getBlockEntity(sealstone) instanceof SealstoneBlockEntity entity) {
             entity.setDestination(null);
         }
     }
 
     /**
-     * Builds a frame a trip needs, lit onto {@code destination}: 13 Portal Stone and a selector, all
-     * {@link PortalStoneBlock#GENERATED}, so they drop nothing, then the opening (realm portal spec, "Building a
+     * Builds a frame a trip needs, lit onto {@code destination}: 13 Realmforge Bricks and a sealstone, all
+     * {@link RealmforgeBricksBlock#GENERATED}, so they drop nothing, then the opening (realm portal spec, "Building a
      * portal"). The corners stay as they are.
      */
     public static void build(ServerLevel level, PortalFrame.Frame frame, Identifier destination) {
-        BlockState stone = RealmPortalBlocks.portalStone().defaultBlockState().setValue(PortalStoneBlock.GENERATED, true);
-        for (BlockPos pos : frame.portalStones()) {
+        BlockState stone = RealmPortalBlocks.bricks().defaultBlockState().setValue(RealmforgeBricksBlock.GENERATED, true);
+        for (BlockPos pos : frame.bricks()) {
             level.setBlock(pos, stone, Block.UPDATE_ALL);
         }
-        level.setBlock(frame.selector(),
-                RealmPortalBlocks.selector().defaultBlockState().setValue(PortalStoneBlock.GENERATED, true),
+        level.setBlock(frame.sealstone(),
+                RealmPortalBlocks.sealstone().defaultBlockState().setValue(RealmforgeBricksBlock.GENERATED, true),
                 Block.UPDATE_ALL);
         light(level, frame, destination);
     }
@@ -272,14 +278,14 @@ public final class RealmPortals {
     }
 
     /**
-     * Lets the sneak gesture reach the selector whatever the off hand holds (RLM-133): vanilla skips a block's use while
+     * Lets the sneak gesture reach the sealstone whatever the off hand holds (RLM-133): vanilla skips a block's use while
      * the player sneaks with anything in either hand, so a shield, torch or food in the off hand would block it. Common
-     * code, run on both sides; the selector's {@code useWithoutItem} then handles the gesture.
+     * code, run on both sides; the sealstone's {@code useWithoutItem} then handles the gesture.
      */
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         if (event.getHand() == InteractionHand.MAIN_HAND && event.getEntity().isSecondaryUseActive()
                 && event.getEntity().getMainHandItem().isEmpty()
-                && event.getLevel().getBlockState(event.getPos()).getBlock() instanceof RealmSelectorBlock) {
+                && event.getLevel().getBlockState(event.getPos()).getBlock() instanceof SealstoneBlock) {
             event.setUseBlock(TriState.TRUE);
         }
     }

@@ -60,7 +60,7 @@ def test_a_realm_becomes_its_entry_unlock_and_texts(repo: RepoPaths) -> None:
         "locked_hint": "realm.realmforge.stone.locked_hint",
         "flavour": "realm.realmforge.stone.flavour",
         "icon": "realmforge:vaultstone",
-        "sigil": "realmforge:stone_sigil",
+        "signet": "realmforge:undervault_signet",
         "colour": "#7A8FB0",
         "particle": "minecraft:ash",
         "sound_pitch": 0.8,
@@ -82,7 +82,7 @@ def test_a_realm_becomes_its_entry_unlock_and_texts(repo: RepoPaths) -> None:
     assert lang["advancement.realmforge.realm_unlocked"] == "Realm unlocked: %1$s"
     expectations = files[EXPECTATIONS].decode()
     assert (
-        '"realmforge:realm/stone",\n                    "realmforge:stone_sigil",\n                    0x7A8FB0)'
+        '"realmforge:realm/stone",\n                    "realmforge:undervault_signet",\n                    0x7A8FB0)'
         in (expectations)
     )
 
@@ -144,12 +144,13 @@ def test_a_realm_names_one_of_our_dimensions_once(repo: RepoPaths) -> None:
         repo.content / "realms" / "surface.yaml",
         source.replace("id: stone", "id: surface")
         .replace("dimension: realmforge:stone", "dimension: minecraft:the_nether")
-        .replace("realmforge:stone_sigil", "realmforge:test_item"),
+        .replace("realmforge:undervault_signet", "realmforge:test_item"),
     )
     problems = problems_for(repo)
     assert any("realms/twin.yaml: dimension: realmforge:stone is already the realm of" in p for p in problems)
     assert any(
-        "realms/twin.yaml: sigil: realmforge:stone_sigil is already the sigil of" in p for p in problems
+        "realms/twin.yaml: signet: realmforge:undervault_signet is already the signet of" in p
+        for p in problems
     )
     assert any(
         "realms/surface.yaml: dimension: minecraft:the_nether is not one of our dimensions" in p
@@ -182,32 +183,32 @@ def test_overworld_has_no_realm_fields_and_a_realm_needs_them(repo: RepoPaths) -
     overworld = repo.content / "realms" / "overworld.yaml"
     overworld.write_text(
         overworld.read_text(encoding="utf-8")
-        + "sigil: realmforge:stone_sigil\nlocked_hint: {en_us: Never.}\n",
+        + "signet: realmforge:undervault_signet\nlocked_hint: {en_us: Never.}\n",
         encoding="utf-8",
     )
     stone = repo.content / "realms" / "stone.yaml"
-    stone.write_text(stone.read_text(encoding="utf-8").replace("sigil: realmforge:stone_sigil\n", ""))
+    stone.write_text(stone.read_text(encoding="utf-8").replace("signet: realmforge:undervault_signet\n", ""))
     problems = problems_for(repo)
     assert any(
         "realms/overworld.yaml" in p
-        and "Overworld is always open and no realm, so it has no locked_hint, sigil" in p
+        and "Overworld is always open and no realm, so it has no locked_hint, signet" in p
         for p in problems
     ), problems
-    assert any("realms/stone.yaml" in p and "a realm needs sigil" in p for p in problems), problems
+    assert any("realms/stone.yaml" in p and "a realm needs signet" in p for p in problems), problems
 
 
-def test_a_sigil_is_one_of_our_items_that_stacks_to_one(repo: RepoPaths) -> None:
+def test_a_signet_is_one_of_our_items_that_stacks_to_one(repo: RepoPaths) -> None:
     stone = repo.content / "realms" / "stone.yaml"
     stone.write_text(
-        stone.read_text(encoding="utf-8").replace("realmforge:stone_sigil", "realmforge:test_item")
+        stone.read_text(encoding="utf-8").replace("realmforge:undervault_signet", "realmforge:test_item")
     )
     assert any(
-        "realms/stone.yaml: sigil: a sigil stacks to 1: realmforge:test_item stacks to" in p
+        "realms/stone.yaml: signet: a signet stacks to 1: realmforge:test_item stacks to" in p
         for p in problems_for(repo)
     )
     stone.write_text(stone.read_text(encoding="utf-8").replace("realmforge:test_item", "minecraft:compass"))
     assert any(
-        "realms/stone.yaml: sigil: minecraft:compass is not an item of ours" in p for p in problems_for(repo)
+        "realms/stone.yaml: signet: minecraft:compass is not an item of ours" in p for p in problems_for(repo)
     )
 
 
@@ -230,16 +231,17 @@ def test_invalid_portal_fields_are_rejected(repo: RepoPaths, old: str, new: str,
     assert any("realms/stone.yaml" in p and expected in p for p in problems), problems
 
 
-def test_a_sigil_names_its_realm_in_its_tooltip_and_resists_fire(repo: RepoPaths) -> None:
+def test_a_signet_names_its_realm_in_its_tooltip_and_resists_fire(repo: RepoPaths) -> None:
     java = generate(repo)[ITEMS].decode()
     assert (
-        'ITEMS.registerSimpleItem("stone_sigil", properties -> properties.stacksTo(1).fireResistant()' in java
+        'ITEMS.registerSimpleItem("undervault_signet", properties -> properties.stacksTo(1).fireResistant()'
+        in java
     )
     assert (
-        'Component.translatable("tooltip.realmforge.sigil_realm",\n'
+        'Component.translatable("tooltip.realmforge.signet_realm",\n'
         '                                    Component.translatable("realm.realmforge.stone.name"),\n'
         '                                    Component.translatable("realm.realmforge.stone.subtitle"))'
     ) in java
-    assert 'Component.translatable("tooltip.realmforge.sigil_never_used_up")' in java
+    assert 'Component.translatable("tooltip.realmforge.signet_never_used_up")' in java
     lang = json.loads(generate(repo)[LANG])
-    assert lang["tooltip.realmforge.sigil_realm"] == "%1$s — %2$s"
+    assert lang["tooltip.realmforge.signet_realm"] == "%1$s — %2$s"

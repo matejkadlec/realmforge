@@ -17,7 +17,7 @@ import net.minecraft.world.level.Level;
  * are translation keys.
  *
  * <p>Overworld has an entry too, which is no realm ({@link Realms#of} never returns it): always open, without a
- * subtitle, hint, flavour line, icon, sigil or particle. Its colour is the return portals', and its arrival is where a
+ * subtitle, hint, flavour line, icon, signet or particle. Its colour is the return portals', and its arrival is where a
  * way back from a realm builds a portal.
  *
  * @param dimension the realm's dimension
@@ -26,14 +26,14 @@ import net.minecraft.world.level.Level;
  * @param lockedHint how to unlock it, the subtitle of a refusal; empty for Overworld
  * @param flavour a flavour line; empty for Overworld
  * @param icon the item its unlock advancement shows
- * @param sigil the item that opens the realm portal onto the realm, an id in the static item registry
+ * @param signet the item that opens the realm portal onto the realm, an id in the static item registry
  * @param colour the portal's colour while it opens onto the realm, RGB with an opaque alpha byte
  * @param particle the vanilla particle without options that the portal shows next to the dust in its colour
  * @param soundPitch the pitch of the vanilla portal sounds for this realm
  * @param arrival where a trip may build a portal in the dimension
  */
 public record Realm(ResourceKey<Level> dimension, String name, String subtitle, String lockedHint, String flavour,
-        Optional<Identifier> icon, Optional<Identifier> sigil, int colour, Optional<Identifier> particle,
+        Optional<Identifier> icon, Optional<Identifier> signet, int colour, Optional<Identifier> particle,
         float soundPitch, Arrival arrival) {
     public static final Codec<Realm> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     Level.RESOURCE_KEY_CODEC.fieldOf("dimension").forGetter(Realm::dimension),
@@ -42,7 +42,7 @@ public record Realm(ResourceKey<Level> dimension, String name, String subtitle, 
                     Codec.STRING.optionalFieldOf("locked_hint", "").forGetter(Realm::lockedHint),
                     Codec.STRING.optionalFieldOf("flavour", "").forGetter(Realm::flavour),
                     Identifier.CODEC.optionalFieldOf("icon").forGetter(Realm::icon),
-                    Identifier.CODEC.optionalFieldOf("sigil").forGetter(Realm::sigil),
+                    Identifier.CODEC.optionalFieldOf("signet").forGetter(Realm::signet),
                     ExtraCodecs.STRING_RGB_COLOR.fieldOf("colour").forGetter(Realm::colour),
                     Identifier.CODEC.optionalFieldOf("particle").forGetter(Realm::particle),
                     Codec.floatRange(0.5F, 2.0F).optionalFieldOf("sound_pitch", 1.0F).forGetter(Realm::soundPitch),

@@ -35,9 +35,14 @@ class PortalSpotsTest {
         }
     }
 
+    /** A cave: floor up to {@code floorY}, open above it to a ceiling at {@code ceilingY}. */
+    private static Terrain cave(int floorY, int ceilingY) {
+        return new Terrain(pos -> pos.getY() <= floorY || pos.getY() >= ceilingY, pos -> false, 1_000_000, 127);
+    }
+
     /** A cave: floor up to {@code floorY}, open above it to a ceiling at y 100. */
     private static Terrain cave(int floorY) {
-        return new Terrain(pos -> pos.getY() <= floorY || pos.getY() >= 100, pos -> false, 1_000_000, 127);
+        return cave(floorY, 100);
     }
 
     @Test
@@ -45,10 +50,20 @@ class PortalSpotsTest {
         BlockPos origin = new BlockPos(40, 70, -12);
         Optional<PortalFrame.Frame> spot = PortalSpots.find(cave(32), origin, 7, 20, 90, 70);
         assertTrue(spot.isPresent());
-        // The bottom row replaces the floor's top block, the opening stands on it.
-        assertEquals(new BlockPos(40, 32, -12), spot.get().selector());
+        // The bottom row stands on the floor's top block (Matěj, 2026-10-20: "on the floor, not in the ground").
+        assertEquals(new BlockPos(40, 33, -12), spot.get().sealstone());
         assertEquals(Direction.Axis.X, spot.get().axis());
-        assertEquals(Optional.of(Direction.SOUTH), PortalSpots.arrival(cave(32), spot.get()));
+        // The player arrives on the floor in front of the sealstone, one step below the opening.
+        assertEquals(Optional.of(new PortalSpots.Arrival(Direction.SOUTH, new BlockPos(40, 33, -11))),
+                PortalSpots.arrival(cave(32), spot.get()));
+    }
+
+    @Test
+    void aFrameNeedsItsWholeHeightAboveTheFloor() {
+        // Floor up to y 32: the frame takes y 33 to 38, so a ceiling at y 38 leaves no room and one at y 39 does.
+        assertEquals(Optional.empty(), PortalSpots.find(cave(32, 38), BlockPos.ZERO, 7, 20, 90, 64));
+        assertEquals(33, PortalSpots.find(cave(32, 39), BlockPos.ZERO, 7, 20, 90, 64).orElseThrow().sealstone()
+                .getY());
     }
 
     @Test
@@ -61,8 +76,9 @@ class PortalSpotsTest {
         Optional<PortalFrame.Frame> spot = PortalSpots.find(shelf, BlockPos.ZERO, 16, 20, 90, 64);
         assertTrue(spot.isPresent());
         // The whole bottom row needs floor: on the shelf's edge only a frame across x fits, arrived at from the east.
-        assertEquals(new PortalFrame.Frame(new BlockPos(9, 32, 0), Direction.Axis.Z), spot.get());
-        assertEquals(Optional.of(Direction.EAST), PortalSpots.arrival(shelf, spot.get()));
+        assertEquals(new PortalFrame.Frame(new BlockPos(9, 33, 0), Direction.Axis.Z), spot.get());
+        assertEquals(Optional.of(Direction.EAST),
+                PortalSpots.arrival(shelf, spot.get()).map(PortalSpots.Arrival::side));
     }
 
     @Test
@@ -70,8 +86,8 @@ class PortalSpotsTest {
         // Two floors in one column: a ledge at y 50 above the cave floor at y 32.
         Terrain ledges = new Terrain(pos -> pos.getY() <= 32 || pos.getY() == 50 || pos.getY() >= 100,
                 pos -> false, 1_000_000, 127);
-        assertEquals(50, PortalSpots.find(ledges, BlockPos.ZERO, 7, 20, 90, 70).orElseThrow().selector().getY());
-        assertEquals(32, PortalSpots.find(ledges, BlockPos.ZERO, 7, 20, 90, 20).orElseThrow().selector().getY());
+        assertEquals(51, PortalSpots.find(ledges, BlockPos.ZERO, 7, 20, 90, 70).orElseThrow().sealstone().getY());
+        assertEquals(33, PortalSpots.find(ledges, BlockPos.ZERO, 7, 20, 90, 20).orElseThrow().sealstone().getY());
     }
 
     @Test

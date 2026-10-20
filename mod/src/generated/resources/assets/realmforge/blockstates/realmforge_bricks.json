@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "generated=false": {
+      "model": "realmforge:block/realmforge_bricks"
+    },
+    "generated=true": {
+      "model": "realmforge:block/realmforge_bricks"
+    }
+  }
+}

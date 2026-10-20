@@ -4,7 +4,7 @@ datapack.py). Overworld's entry is no realm, so it has no unlock.
 - ``data/realmforge/advancement/realm/<id>.json``: the realm's unlock, with ``minecraft:impossible`` as its only
   criterion, so only the realm's unlock quest or a command grants it (realm portal spec, "Access and unlocks"). It is
   hidden until earned, shows the toast "Realm unlocked: <name>" and adds no chat line.
-- ``GeneratedRealmExpectations``: every entry, its dimension, texts, unlock, sigil and portal colour.
+- ``GeneratedRealmExpectations``: every entry, its dimension, texts, unlock, signet and portal colour.
 """
 
 from __future__ import annotations
@@ -78,7 +78,7 @@ def _expectations(content: Content) -> bytes:
             f"                    {string_literal(translation_key(REGISTRY, realm.id, 'name'))},\n"
             f"                    {string_literal(hint)},\n"
             f"                    {string_literal(unlock)},\n"
-            f"                    {string_literal(realm.sigil or '')},\n"
+            f"                    {string_literal(realm.signet or '')},\n"
             f"                    0x{realm.colour[1:].upper()})"
         )
     realms = "List.of(\n" + ",\n".join(rows) + ")" if rows else "List.of()"
@@ -91,11 +91,11 @@ def _expectations(content: Content) -> bytes:
         "public final class GeneratedRealmExpectations {\n"
         "    /**\n"
         "     * Expected state of one entry. Ids are full resource locations: the realm's, e.g. {@code realmforge:stone},\n"
-        "     * its dimension's, its unlock advancement's and its sigil's; the colour is RGB. Overworld's entry, which is\n"
-        "     * no realm, has an empty hint, unlock and sigil.\n"
+        "     * its dimension's, its unlock advancement's and its signet's; the colour is RGB. Overworld's entry, which is\n"
+        "     * no realm, has an empty hint, unlock and signet.\n"
         "     */\n"
         "    public record RealmExpectation(String id, String dimension, String nameKey, String lockedHintKey,\n"
-        "            String unlockAdvancement, String sigil, int colour) {\n"
+        "            String unlockAdvancement, String signet, int colour) {\n"
         "    }\n"
         "\n"
         f"    public static final List<RealmExpectation> REALMS = {realms};\n"

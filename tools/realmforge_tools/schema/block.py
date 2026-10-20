@@ -31,27 +31,36 @@ Sound = Literal[
 SOUNDS: tuple[str, ...] = get_args(Sound)
 # Vanilla's MapColor constants (net.minecraft.world.level.material.MapColor) a block may show on maps.
 MapColor = Literal[
-    "stone", "deepslate", "color_gray", "color_light_gray", "color_black", "terracotta_white", "sand", "none"
+    "stone",
+    "deepslate",
+    "color_gray",
+    "color_light_gray",
+    "color_black",
+    "terracotta_white",
+    "sand",
+    "none",
+    "quartz",
+    "dirt",
 ]
 MAP_COLORS: tuple[str, ...] = get_args(MapColor)
 # What a block does. simple: a full block and nothing more. dungeon_portal: the dungeon portal (W4d, architecture 15.5),
 # a full block that a dungeon key opens, lit while open (blockstate property open). dungeon_exit: the way out of a
 # dungeon, a thin plate without collision that the builder puts where players arrive (blockstate without properties).
-# The realm portal (W2b, docs/design/realm-portal.md) has three: portal_stone, the frame's block; realm_selector, the
-# frame's bottom middle, which a sigil opens onto a realm (a block entity); both carry the blockstate property
+# The realm portal (W2b, docs/design/realm-portal.md) has three: realmforge_bricks, the frame's block; realmforge_sealstone, the
+# frame's bottom middle, which a signet opens onto a realm (a block entity); both carry the blockstate property
 # generated, which a trip sets on the frames it builds, and drop only without it. realm_portal: the portal block that
 # fills a lit frame's opening (blockstate property axis), with no item, no loot and no collision.
 BlockKind = Literal[
-    "simple", "dungeon_portal", "dungeon_exit", "portal_stone", "realm_selector", "realm_portal"
+    "simple", "dungeon_portal", "dungeon_exit", "realmforge_bricks", "realmforge_sealstone", "realm_portal"
 ]
 BLOCK_KINDS: tuple[str, ...] = get_args(BlockKind)
 # Kinds the game uses one block of, so at most one block may have them.
-SINGLE_BLOCK_KINDS = ("dungeon_exit", "portal_stone", "realm_selector", "realm_portal")
+SINGLE_BLOCK_KINDS = ("dungeon_exit", "realmforge_bricks", "realmforge_sealstone", "realm_portal")
 # The realm portal's kinds: a portal needs all three, so either every one has its block or none does.
-REALM_PORTAL_KINDS = ("portal_stone", "realm_selector", "realm_portal")
+REALM_PORTAL_KINDS = ("realmforge_bricks", "realmforge_sealstone", "realm_portal")
 # Kinds whose blocks have the blockstate property generated, and drop only without it (realm portal spec, "Building a
 # portal": a frame a trip built drops nothing).
-GENERATED_FLAG_KINDS = ("portal_stone", "realm_selector")
+GENERATED_FLAG_KINDS = ("realmforge_bricks", "realmforge_sealstone")
 # Kinds without a block item: no item, no loot table, no recipe and no creative tab.
 ITEMLESS_KINDS = ("realm_portal",)
 # The hardness of a block nothing can break, as vanilla's bedrock and portals.
@@ -67,8 +76,8 @@ class BlockDef(StrictModel):
         default="simple",
         description=(
             "What it does: simple (a full block), dungeon_portal (a dungeon key opens it, W4d), dungeon_exit (the "
-            "way out the builder puts where players arrive in a dungeon), or the realm portal's portal_stone (its "
-            "frame), realm_selector (the frame's bottom middle) and realm_portal (the portal block, without an item). "
+            "way out the builder puts where players arrive in a dungeon), or the realm portal's realmforge_bricks (its "
+            "frame), realmforge_sealstone (the frame's bottom middle) and realm_portal (the portal block, without an item). "
             "One block at most of each kind but simple and dungeon_portal."
         ),
     )

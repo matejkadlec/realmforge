@@ -56,17 +56,17 @@ Rules:
   stat point (the Scroll of Oblivion, RLM-196). The pipeline puts the item into the tag `realmforge:use/<use>`,
   which the game's code for that use reads. An optional `flavor` is a one-sentence flavor line under it in the tooltip, with no
   mechanics, at most 12 words ([lore style guide](../docs/lore/style.md)). `fire_resistant: true` keeps the dropped
-  item from burning in fire and lava, as netherite's (a realm's sigil). The sigil of a realm in `realms/` gets two
-  tooltip lines of its own: the realm's name with its element (`tooltip.yaml`'s `sigil_realm`) and "Never used up".
-- `blocks/` may give a block a `kind`, what it does ([architecture 6.2](../docs/architecture.md#62-what-each-content-type-becomes)):
-  `simple` (the default, a full block), `dungeon_portal` (a dungeon key opens it, lit while open; models `<id>` and
-  `<id>_open`) or `dungeon_exit` (the way out of a dungeon, a plate one pixel high without collision; one block at
-  most) ([15.5](../docs/architecture.md#155-instances)), or one of the realm portal's three, which come together, one
-  block each ([15.1](../docs/architecture.md#151-dimensions)): `portal_stone` (the frame) and `realm_selector` (the
-  frame's bottom middle) have the blockstate property `generated`, which a trip sets on the frames it builds, and
-  drop only without it; `realm_portal`, the portal block, has no item, loot table, recipe or creative tab, and its
-  model is a pane across either axis, tinted with the destination realm's colour from a greyscale, see-through
-  texture.
+  item from burning in fire and lava, as netherite's (a realm's signet). The signet of a realm in `realms/` gets two
+  tooltip lines of its own: the realm's name with its element (`tooltip.yaml`'s `signet_realm`) and "Never used up".
+- `blocks/` may give a block a `kind`, what it does ([architecture
+  6.2](../docs/architecture.md#62-what-each-content-type-becomes)): `simple` (the default, a full block),
+  `dungeon_portal` (a dungeon key opens it, lit while open; models `<id>` and `<id>_open`) or `dungeon_exit` (the way
+  out of a dungeon, a plate one pixel high without collision; one block at most)
+  ([15.5](../docs/architecture.md#155-instances)), or one of the realm portal's three, which come together, one block
+  each ([15.1](../docs/architecture.md#151-dimensions)): `realmforge_bricks` (the frame) and `realmforge_sealstone` (the
+  frame's bottom middle) have the blockstate property `generated`, which a trip sets on the frames it builds, and drop
+  only without it; `realm_portal`, the portal block, has no item, loot table, recipe or creative tab, and its model is a
+  pane across either axis, tinted with the destination realm's colour from a greyscale, see-through texture.
 - `items/` and `blocks/` may give an entry a `recipe`: a shaped crafting recipe that makes it, its `pattern` (one to
   three rows of one to three characters, all the same width, a space for an empty slot), its `key` (each character
   of the pattern, and only those, to an item id), an optional `count` (1) and recipe book `category` (`misc`). It
@@ -114,8 +114,8 @@ Rules:
   the advancement `realmforge:realm/<id>` (criterion `minecraft:impossible`: only the realm's quest or a command
   grants it), which the dimension's rules in `dimensions/` must name in their `access`. The realm's dimension type
   must link by a `coordinate_scale` above 1 and have a `minecraft:gameplay/bed_rule` that sets no spawn and does not
-  explode. The portal's fields (W2b): the `sigil` that opens the realm portal onto the realm (an item of ours that
-  stacks to 1, the sigil of no other realm; its tooltip names the realm), the portal's `colour` (`#RRGGBB`), the
+  explode. The portal's fields (W2b): the `signet` that opens the realm portal onto the realm (an item of ours that
+  stacks to 1, the signet of no other realm; its tooltip names the realm), the portal's `colour` (`#RRGGBB`), the
   `particle` it shows next to the dust in that colour (a vanilla particle without options from the list in
   `schema/realm.py`), the `sound_pitch` of the vanilla portal sounds (0.5 to 2, 1 by default) and the `arrival`:
   the heights `y: [lowest, highest]` a built frame's bottom row may stand at (inside the dimension, with a floor below

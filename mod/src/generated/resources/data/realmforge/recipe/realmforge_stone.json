@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "A": "realmforge:andesite_bricks",
+    "D": "minecraft:deepslate_bricks",
+    "E": "minecraft:ender_pearl",
+    "G": "realmforge:granite_bricks",
+    "I": "realmforge:diorite_bricks",
+    "M": "minecraft:mud_bricks",
+    "Q": "minecraft:quartz_bricks",
+    "S": "minecraft:stone_bricks",
+    "T": "minecraft:tuff_bricks"
+  },
+  "pattern": [
+    "SDQ",
+    "MET",
+    "IGA"
+  ],
+  "result": {
+    "count": 8,
+    "id": "realmforge:realmforge_stone"
+  }
+}

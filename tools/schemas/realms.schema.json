@@ -139,7 +139,7 @@
       "description": "The vanilla particle the portal shows next to the dust in its colour, one without options: minecraft:ash. Every realm has one; Overworld none.",
       "title": "Particle"
     },
-    "sigil": {
+    "signet": {
       "anyOf": [
         {
           "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
@@ -151,8 +151,8 @@
         }
       ],
       "default": null,
-      "description": "The item from content/items/ that opens the realm portal onto the realm, stacking to 1: realmforge:stone_sigil. Every realm has its own; Overworld none.",
-      "title": "Sigil"
+      "description": "The item from content/items/ that opens the realm portal onto the realm, stacking to 1: realmforge:undervault_signet. Every realm has its own; Overworld none.",
+      "title": "Signet"
     },
     "sound_pitch": {
       "default": 1.0,

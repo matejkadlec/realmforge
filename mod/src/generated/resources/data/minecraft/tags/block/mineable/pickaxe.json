@@ -1,10 +1,14 @@
 {
   "values": [
+    "realmforge:andesite_bricks",
     "realmforge:coreslate",
+    "realmforge:diorite_bricks",
     "realmforge:dungeon_portal",
+    "realmforge:granite_bricks",
     "realmforge:mottlestone",
-    "realmforge:portal_stone",
-    "realmforge:realm_selector",
+    "realmforge:realmforge_bricks",
+    "realmforge:realmforge_sealstone",
+    "realmforge:realmforge_stone",
     "realmforge:siltstone",
     "realmforge:vaultstone"
   ]

@@ -10,7 +10,6 @@ import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -47,12 +46,13 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Unlike it:
  *
  * <ul>
- *   <li>only players travel: a player without access to the destination is refused when they step in, so the
- *       countdown never starts, and every other entity is ignored ({@link #entityInside});
- *   <li>a trip takes 2 seconds, one tick in creative, and shows no vanilla portal overlay ({@link Portal.Transition#NONE});
+ *   <li>a player without access to the destination is refused when they step in, so the countdown never starts; so is
+ *       a vehicle or a mount carrying one ({@link #entityInside}). Every other entity travels (Matěj, 2026-10-20);
+ *   <li>a player's trip takes 2 seconds, one tick in creative, and shows no vanilla portal overlay
+ *       ({@link Portal.Transition#NONE}); any other entity's starts at once, as through a nether portal;
  *   <li>it refuses every fluid, flowing or from a bucket or a dispenser ({@link LiquidBlockContainer},
  *       {@link #canBeReplaced(BlockState, Fluid)}), so no fluid washes the opening away;
- *   <li>its colour, particles and hum are the destination realm's, read from the frame's selector on the client.
+ *   <li>its colour, particles and hum are the destination realm's, read from the frame's sealstone on the client.
  * </ul>
  */
 public final class RealmPortalBlock extends Block implements Portal, LiquidBlockContainer {
@@ -106,28 +106,32 @@ public final class RealmPortalBlock extends Block implements Portal, LiquidBlock
                 : Blocks.AIR.defaultBlockState();
     }
 
+    /**
+     * An entity in the portal starts its trip when the portal leads somewhere, and when it and every player riding it
+     * may enter the destination. A passenger never starts one: the vehicle it rides takes it along, as vanilla's
+     * portals do.
+     */
     @Override
     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity,
             InsideBlockEffectApplier effectApplier, boolean isPrecise) {
-        if (level instanceof ServerLevel server && entity instanceof ServerPlayer player && player.canUsePortal(false)
-                && RealmPortals.mayTravel(player, server, pos, state.getValue(AXIS))) {
-            player.setAsInsidePortal(this, pos);
+        if (level instanceof ServerLevel server && entity.canUsePortal(false)
+                && RealmPortals.mayTravel(entity, server, pos, state.getValue(AXIS))) {
+            entity.setAsInsidePortal(this, pos);
         }
     }
 
     @Override
     public int getPortalTransitionTime(ServerLevel level, Entity entity) {
-        return entity instanceof Player player && player.getAbilities().invulnerable
-                ? CREATIVE_TRANSITION_TICKS
-                : TRANSITION_TICKS;
+        if (!(entity instanceof Player player)) {
+            return 0;
+        }
+        return player.getAbilities().invulnerable ? CREATIVE_TRANSITION_TICKS : TRANSITION_TICKS;
     }
 
     @Override
     public @Nullable TeleportTransition getPortalDestination(ServerLevel currentLevel, Entity entity,
             BlockPos portalEntryPos) {
-        return entity instanceof ServerPlayer player
-                ? RealmPortalLinker.destination(currentLevel, player, portalEntryPos).orElse(null)
-                : null;
+        return RealmPortalLinker.destination(currentLevel, entity, portalEntryPos).orElse(null);
     }
 
     @Override

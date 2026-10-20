@@ -1,7 +1,7 @@
 """Items: Java registrations, item model definitions and models, placeholder textures, the item tags of item uses
 (``data/realmforge/tags/item/use/<use>.json``), and the QA mod's expectations. An item's use and flavor line become
-its tooltip: the vanilla lore component, set on the item's default components. A realm's sigil (``content/realms/``)
-names its realm there, with the realm's element, and says it is never used up (realm portal spec, "Realm sigils")."""
+its tooltip: the vanilla lore component, set on the item's default components. A realm's signet (``content/realms/``)
+names its realm there, with the realm's element, and says it is never used up (realm portal spec, "Realm signets")."""
 
 from __future__ import annotations
 
@@ -21,10 +21,10 @@ from realmforge_tools.schema.text import text_key
 GENERATED_PACKAGE = f"{JAVA_PACKAGE}.generated"
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
 VANILLA_DEFAULT_STACK_SIZE = 64
-# A sigil's tooltip lines, texts in content/texts/tooltip.yaml: its realm (%1$s the name, %2$s the element), and that
+# A signet's tooltip lines, texts in content/texts/tooltip.yaml: its realm (%1$s the name, %2$s the element), and that
 # it is never used up.
-SIGIL_REALM_TEXT = ("tooltip", "sigil_realm")
-SIGIL_KEPT_TEXT = ("tooltip", "sigil_never_used_up")
+SIGNET_REALM_TEXT = ("tooltip", "signet_realm")
+SIGNET_KEPT_TEXT = ("tooltip", "signet_never_used_up")
 # What an item's tooltip lines need (_lore).
 LORE_IMPORTS = (
     "java.util.List",
@@ -79,7 +79,7 @@ def _registrations(content: Content, paths: RepoPaths) -> bytes:
     fields: list[str] = []
     tabs: dict[str, list[str]] = {}
     imports = {"net.minecraft.world.item.Item"}
-    realms_by_sigil = {entry.model.sigil: entry.model for entry in content.realms if entry.model.sigil}
+    realms_by_signet = {entry.model.signet: entry.model for entry in content.realms if entry.model.signet}
     for entry in content.items:
         item = entry.model
         # The register call sets the item's id on the properties; the lambda only adds to them.
@@ -89,7 +89,7 @@ def _registrations(content: Content, paths: RepoPaths) -> bytes:
             properties += f".stacksTo({item.max_stack_size})"
         if item.fire_resistant:
             properties += ".fireResistant()"
-        lore = _lore(item, realms_by_sigil.get(f"{MOD_ID}:{item.id}"))
+        lore = _lore(item, realms_by_signet.get(f"{MOD_ID}:{item.id}"))
         if lore:
             imports.update(LORE_IMPORTS)
             properties += (
@@ -152,7 +152,7 @@ def _registrations(content: Content, paths: RepoPaths) -> bytes:
 
 
 def _lore(item: ItemDef, realm: RealmDef | None) -> str:
-    """The item's tooltip lines as Java: the realm it is the sigil of, with the realm's element, and that it is never
+    """The item's tooltip lines as Java: the realm it is the signet of, with the realm's element, and that it is never
     used up (grey, not italic); its use in green, as a "Use:" line; then its flavor line in vanilla's lore style
     (purple, italic). Empty when it has none of them."""
     indent = " " * 28
@@ -164,11 +164,11 @@ def _lore(item: ItemDef, realm: RealmDef | None) -> str:
             f"\n{indent}        .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(false))"
         )
         lines.append(
-            f"Component.translatable({string_literal(text_key(*SIGIL_REALM_TEXT))},\n"
+            f"Component.translatable({string_literal(text_key(*SIGNET_REALM_TEXT))},\n"
             f"{indent}        Component.translatable({string_literal(name)}),\n"
             f"{indent}        Component.translatable({string_literal(subtitle)})){plain}"
         )
-        lines.append(f"Component.translatable({string_literal(text_key(*SIGIL_KEPT_TEXT))}){plain}")
+        lines.append(f"Component.translatable({string_literal(text_key(*SIGNET_KEPT_TEXT))}){plain}")
     if item.use is not None:
         key = text_key(USE_TEXT_GROUP, item.use)
         lines.append(

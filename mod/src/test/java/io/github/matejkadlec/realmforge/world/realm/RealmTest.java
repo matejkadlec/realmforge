@@ -24,7 +24,7 @@ class RealmTest {
     private static final Realm STONE = new Realm(ResourceKey.create(Registries.DIMENSION, Realmforge.id("stone")),
             "realm.realmforge.stone.name", "realm.realmforge.stone.subtitle", "realm.realmforge.stone.locked_hint",
             "realm.realmforge.stone.flavour", Optional.of(Realmforge.id("vaultstone")),
-            Optional.of(Realmforge.id("stone_sigil")), 0xFF7A8FB0, Optional.of(Identifier.withDefaultNamespace("ash")),
+            Optional.of(Realmforge.id("undervault_signet")), 0xFF7A8FB0, Optional.of(Identifier.withDefaultNamespace("ash")),
             0.8F, new Realm.Arrival(20, 90, Realmforge.id("vaultstone"), 3));
     private static final Realm OVERWORLD = new Realm(Level.OVERWORLD, "realm.realmforge.overworld.name", "", "", "",
             Optional.empty(), Optional.empty(), 0xFF5DBB63, Optional.empty(), 1.0F,

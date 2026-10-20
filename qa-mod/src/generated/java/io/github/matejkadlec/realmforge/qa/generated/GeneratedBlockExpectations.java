@@ -18,11 +18,23 @@ public final class GeneratedBlockExpectations {
 
     public static final List<BlockExpectation> BLOCKS = List.of(
             new BlockExpectation(
+                    "realmforge:andesite_bricks",
+                    "block.realmforge.andesite_bricks",
+                    1.5F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/andesite_bricks"),
+            new BlockExpectation(
                     "realmforge:coreslate",
                     "block.realmforge.coreslate",
                     25.0F, 9.0F, true,
                     List.of("minecraft:mineable/pickaxe"),
                     "realmforge:blocks/coreslate"),
+            new BlockExpectation(
+                    "realmforge:diorite_bricks",
+                    "block.realmforge.diorite_bricks",
+                    1.5F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/diorite_bricks"),
             new BlockExpectation(
                     "realmforge:dungeon_exit",
                     "block.realmforge.dungeon_exit",
@@ -36,17 +48,17 @@ public final class GeneratedBlockExpectations {
                     List.of("minecraft:mineable/pickaxe"),
                     "realmforge:blocks/dungeon_portal"),
             new BlockExpectation(
+                    "realmforge:granite_bricks",
+                    "block.realmforge.granite_bricks",
+                    1.5F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/granite_bricks"),
+            new BlockExpectation(
                     "realmforge:mottlestone",
                     "block.realmforge.mottlestone",
                     18.0F, 6.0F, true,
                     List.of("minecraft:mineable/pickaxe"),
                     "realmforge:blocks/mottlestone"),
-            new BlockExpectation(
-                    "realmforge:portal_stone",
-                    "block.realmforge.portal_stone",
-                    3.0F, 6.0F, true,
-                    List.of("minecraft:mineable/pickaxe"),
-                    "realmforge:blocks/portal_stone"),
             new BlockExpectation(
                     "realmforge:realm_portal",
                     "block.realmforge.realm_portal",
@@ -54,11 +66,23 @@ public final class GeneratedBlockExpectations {
                     List.of(),
                     ""),
             new BlockExpectation(
-                    "realmforge:realm_selector",
-                    "block.realmforge.realm_selector",
+                    "realmforge:realmforge_bricks",
+                    "block.realmforge.realmforge_bricks",
                     3.0F, 6.0F, true,
                     List.of("minecraft:mineable/pickaxe"),
-                    "realmforge:blocks/realm_selector"),
+                    "realmforge:blocks/realmforge_bricks"),
+            new BlockExpectation(
+                    "realmforge:realmforge_sealstone",
+                    "block.realmforge.realmforge_sealstone",
+                    3.0F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/realmforge_sealstone"),
+            new BlockExpectation(
+                    "realmforge:realmforge_stone",
+                    "block.realmforge.realmforge_stone",
+                    3.0F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/realmforge_stone"),
             new BlockExpectation(
                     "realmforge:siltstone",
                     "block.realmforge.siltstone",

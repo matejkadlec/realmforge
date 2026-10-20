@@ -20,6 +20,17 @@ public final class GeneratedBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(Realmforge.MOD_ID);
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Realmforge.MOD_ID);
 
+    /** {@code realmforge:andesite_bricks} from {@code content/blocks/andesite_bricks.yaml}. */
+    public static final DeferredBlock<Block> ANDESITE_BRICKS =
+            BLOCKS.registerSimpleBlock("andesite_bricks", properties -> properties
+                    .mapColor(MapColor.STONE)
+                    .strength(1.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops());
+
+    /** The block item of {@link #ANDESITE_BRICKS}. */
+    public static final DeferredItem<BlockItem> ANDESITE_BRICKS_ITEM = ITEMS.registerSimpleBlockItem(ANDESITE_BRICKS);
+
     /** {@code realmforge:coreslate} from {@code content/blocks/coreslate.yaml}. */
     public static final DeferredBlock<Block> CORESLATE =
             BLOCKS.registerSimpleBlock("coreslate", properties -> properties
@@ -30,6 +41,17 @@ public final class GeneratedBlocks {
 
     /** The block item of {@link #CORESLATE}. */
     public static final DeferredItem<BlockItem> CORESLATE_ITEM = ITEMS.registerSimpleBlockItem(CORESLATE);
+
+    /** {@code realmforge:diorite_bricks} from {@code content/blocks/diorite_bricks.yaml}. */
+    public static final DeferredBlock<Block> DIORITE_BRICKS =
+            BLOCKS.registerSimpleBlock("diorite_bricks", properties -> properties
+                    .mapColor(MapColor.QUARTZ)
+                    .strength(1.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops());
+
+    /** The block item of {@link #DIORITE_BRICKS}. */
+    public static final DeferredItem<BlockItem> DIORITE_BRICKS_ITEM = ITEMS.registerSimpleBlockItem(DIORITE_BRICKS);
 
     /** {@code realmforge:dungeon_exit} from {@code content/blocks/dungeon_exit.yaml}. */
     public static final DeferredBlock<Block> DUNGEON_EXIT =
@@ -56,6 +78,17 @@ public final class GeneratedBlocks {
     /** The block item of {@link #DUNGEON_PORTAL}. */
     public static final DeferredItem<BlockItem> DUNGEON_PORTAL_ITEM = ITEMS.registerSimpleBlockItem(DUNGEON_PORTAL);
 
+    /** {@code realmforge:granite_bricks} from {@code content/blocks/granite_bricks.yaml}. */
+    public static final DeferredBlock<Block> GRANITE_BRICKS =
+            BLOCKS.registerSimpleBlock("granite_bricks", properties -> properties
+                    .mapColor(MapColor.DIRT)
+                    .strength(1.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops());
+
+    /** The block item of {@link #GRANITE_BRICKS}. */
+    public static final DeferredItem<BlockItem> GRANITE_BRICKS_ITEM = ITEMS.registerSimpleBlockItem(GRANITE_BRICKS);
+
     /** {@code realmforge:mottlestone} from {@code content/blocks/mottlestone.yaml}. */
     public static final DeferredBlock<Block> MOTTLESTONE =
             BLOCKS.registerSimpleBlock("mottlestone", properties -> properties
@@ -67,19 +100,6 @@ public final class GeneratedBlocks {
     /** The block item of {@link #MOTTLESTONE}. */
     public static final DeferredItem<BlockItem> MOTTLESTONE_ITEM = ITEMS.registerSimpleBlockItem(MOTTLESTONE);
 
-    /** {@code realmforge:portal_stone} from {@code content/blocks/portal_stone.yaml}. */
-    public static final DeferredBlock<Block> PORTAL_STONE =
-            BLOCKS.registerBlock("portal_stone",
-                    properties -> BlockKinds.create("portal_stone", properties),
-                    properties -> properties
-                    .mapColor(MapColor.COLOR_GRAY)
-                    .strength(3.0F, 6.0F)
-                    .sound(SoundType.STONE)
-                    .requiresCorrectToolForDrops());
-
-    /** The block item of {@link #PORTAL_STONE}. */
-    public static final DeferredItem<BlockItem> PORTAL_STONE_ITEM = ITEMS.registerSimpleBlockItem(PORTAL_STONE);
-
     /** {@code realmforge:realm_portal} from {@code content/blocks/realm_portal.yaml}. */
     public static final DeferredBlock<Block> REALM_PORTAL =
             BLOCKS.registerBlock("realm_portal",
@@ -90,18 +110,42 @@ public final class GeneratedBlocks {
                     .sound(SoundType.GLASS)
                     .noLootTable());
 
-    /** {@code realmforge:realm_selector} from {@code content/blocks/realm_selector.yaml}. */
-    public static final DeferredBlock<Block> REALM_SELECTOR =
-            BLOCKS.registerBlock("realm_selector",
-                    properties -> BlockKinds.create("realm_selector", properties),
+    /** {@code realmforge:realmforge_bricks} from {@code content/blocks/realmforge_bricks.yaml}. */
+    public static final DeferredBlock<Block> REALMFORGE_BRICKS =
+            BLOCKS.registerBlock("realmforge_bricks",
+                    properties -> BlockKinds.create("realmforge_bricks", properties),
                     properties -> properties
                     .mapColor(MapColor.COLOR_GRAY)
                     .strength(3.0F, 6.0F)
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops());
 
-    /** The block item of {@link #REALM_SELECTOR}. */
-    public static final DeferredItem<BlockItem> REALM_SELECTOR_ITEM = ITEMS.registerSimpleBlockItem(REALM_SELECTOR);
+    /** The block item of {@link #REALMFORGE_BRICKS}. */
+    public static final DeferredItem<BlockItem> REALMFORGE_BRICKS_ITEM = ITEMS.registerSimpleBlockItem(REALMFORGE_BRICKS);
+
+    /** {@code realmforge:realmforge_sealstone} from {@code content/blocks/realmforge_sealstone.yaml}. */
+    public static final DeferredBlock<Block> REALMFORGE_SEALSTONE =
+            BLOCKS.registerBlock("realmforge_sealstone",
+                    properties -> BlockKinds.create("realmforge_sealstone", properties),
+                    properties -> properties
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops());
+
+    /** The block item of {@link #REALMFORGE_SEALSTONE}. */
+    public static final DeferredItem<BlockItem> REALMFORGE_SEALSTONE_ITEM = ITEMS.registerSimpleBlockItem(REALMFORGE_SEALSTONE);
+
+    /** {@code realmforge:realmforge_stone} from {@code content/blocks/realmforge_stone.yaml}. */
+    public static final DeferredBlock<Block> REALMFORGE_STONE =
+            BLOCKS.registerSimpleBlock("realmforge_stone", properties -> properties
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops());
+
+    /** The block item of {@link #REALMFORGE_STONE}. */
+    public static final DeferredItem<BlockItem> REALMFORGE_STONE_ITEM = ITEMS.registerSimpleBlockItem(REALMFORGE_STONE);
 
     /** {@code realmforge:siltstone} from {@code content/blocks/siltstone.yaml}. */
     public static final DeferredBlock<Block> SILTSTONE =
@@ -137,10 +181,16 @@ public final class GeneratedBlocks {
 
     private static void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {
         switch (event.getTabKey().identifier().toString()) {
+            case "minecraft:building_blocks" -> {
+                event.accept(ANDESITE_BRICKS_ITEM);
+                event.accept(DIORITE_BRICKS_ITEM);
+                event.accept(GRANITE_BRICKS_ITEM);
+                event.accept(REALMFORGE_STONE_ITEM);
+            }
             case "minecraft:functional_blocks" -> {
                 event.accept(DUNGEON_PORTAL_ITEM);
-                event.accept(PORTAL_STONE_ITEM);
-                event.accept(REALM_SELECTOR_ITEM);
+                event.accept(REALMFORGE_BRICKS_ITEM);
+                event.accept(REALMFORGE_SEALSTONE_ITEM);
             }
             case "minecraft:natural_blocks" -> {
                 event.accept(CORESLATE_ITEM);

@@ -22,14 +22,15 @@ import org.joml.Matrix3x2fStack;
 /**
  * The refusal of a trip into a realm the player has not unlocked ({@link RealmRefusedPayload}; architecture 15.1, 18):
  * "You are not eligible to pass through the portal." in red in the middle of the screen, the realm's hint below it,
- * drawn like vanilla's title and subtitle (fade in, stay, fade out). The title is 3x, not vanilla's 4x, at which the
- * sentence runs into both edges of a 1080p screen (Matěj, 2026-10-19), and never wider than {@value #MAX_WIDTH_SHARE}
- * of the screen, so it keeps room to both edges at any window size.
+ * drawn like vanilla's title and subtitle (fade in, stay, fade out). The title is 2x and the hint 1x, not vanilla's 4x
+ * and 2x, at which the sentence runs into both edges of a 1080p screen (Matěj, 2026-10-19; one step smaller again,
+ * 2026-10-20), and the title is never wider than {@value #MAX_WIDTH_SHARE} of the screen, so it keeps room to both
+ * edges at any window size.
  */
 public final class RealmRefusalHud {
     private static final Identifier LAYER = Realmforge.id("realm_refusal");
-    private static final float TITLE_SCALE = 3.0F;
-    private static final float HINT_SCALE = 2.0F;
+    private static final float TITLE_SCALE = 2.0F;
+    private static final float HINT_SCALE = 1.0F;
     /** The most of the screen's width the title may take. */
     private static final float MAX_WIDTH_SHARE = 0.8F;
     /** Vanilla's title timing: 5 ticks in, 40 shown, 10 out. */

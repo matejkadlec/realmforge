@@ -22,7 +22,7 @@ import net.minecraft.world.level.Level;
 
 /**
  * W2a (RLM-32), W2b (RLM-154): every entry of {@code content/realms/} reached the datapack registry
- * {@code realmforge:realm} as written, with its sigil and portal colour; a realm's unlock advancement exists with
+ * {@code realmforge:realm} as written, with its signet and portal colour; a realm's unlock advancement exists with
  * {@code minecraft:impossible} as its only criterion and a hidden toast, and its dimension's rules require that unlock.
  * Overworld's entry is no realm and has neither ({@link GeneratedRealmExpectations}).
  */
@@ -52,8 +52,8 @@ public final class ContentRealmGameTests {
             helper.assertValueEqual(realm.lockedHint(), expected.lockedHintKey(), expected.id() + " hint");
             helper.assertTrue(Language.getInstance().has(realm.name()), expected.id() + ": no en_us name");
             helper.assertValueEqual(realm.colour() & 0xFFFFFF, expected.colour(), expected.id() + " portal colour");
-            helper.assertValueEqual(realm.sigil().map(Identifier::toString).orElse(""), expected.sigil(),
-                    expected.id() + " sigil");
+            helper.assertValueEqual(realm.signet().map(Identifier::toString).orElse(""), expected.signet(),
+                    expected.id() + " signet");
             if (dimension.equals(Level.OVERWORLD)) {
                 helper.assertTrue(expected.unlockAdvancement().isEmpty(), "Overworld needs no unlock");
                 helper.assertTrue(Realms.overworld(helper.getLevel().registryAccess()).isPresent()
@@ -61,10 +61,10 @@ public final class ContentRealmGameTests {
                 continue;
             }
             helper.assertTrue(Language.getInstance().has(realm.lockedHint()), expected.id() + ": no en_us hint");
-            helper.assertTrue(realm.sigil().flatMap(BuiltInRegistries.ITEM::getOptional)
-                            .flatMap(sigil -> Realms.bySigil(helper.getLevel().registryAccess(), sigil))
+            helper.assertTrue(realm.signet().flatMap(BuiltInRegistries.ITEM::getOptional)
+                            .flatMap(signet -> Realms.bySignet(helper.getLevel().registryAccess(), signet))
                             .map(holder -> holder.key().identifier().toString().equals(expected.id()))
-                            .orElse(false), expected.id() + " is its sigil's realm");
+                            .orElse(false), expected.id() + " is its signet's realm");
 
             ResourceKey<Realm> key = ResourceKey.create(WorldRegistries.REALM, Identifier.parse(expected.id()));
             Identifier unlock = Realms.unlockAdvancement(key);

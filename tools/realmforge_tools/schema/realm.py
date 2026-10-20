@@ -5,10 +5,10 @@ A realm is a dimension of its own, sealed until the player unlocks it: its unloc
 ``realmforge:realm/<id>``, whose only criterion is ``minecraft:impossible``, so only the realm's unlock quest (Q2)
 or a command grants it. The realm's dimension rules (``content/dimensions/``) name that advancement in their access
 requirements. Its portal fields (W2b) say how the realm portal looks and sounds when it opens onto the realm, which
-sigil opens it, and where a trip may build a portal in the realm.
+signet opens it, and where a trip may build a portal in the realm.
 
 Overworld has an entry too (``dimension: minecraft:overworld``), but it is no realm: it is always open, so it has no
-unlock, sigil, hint or flavour line. Its colour is the return portals', and its arrival is where a way back from a realm
+unlock, signet, hint or flavour line. Its colour is the return portals', and its arrival is where a way back from a realm
 builds a portal (realm portal spec, "Building a portal").
 """
 
@@ -124,11 +124,11 @@ class RealmDef(StrictModel):
             "none."
         ),
     )
-    sigil: ResourceId | None = Field(
+    signet: ResourceId | None = Field(
         default=None,
         description=(
             "The item from content/items/ that opens the realm portal onto the realm, stacking to 1: "
-            "realmforge:stone_sigil. Every realm has its own; Overworld none."
+            "realmforge:undervault_signet. Every realm has its own; Overworld none."
         ),
     )
     colour: HexColour = Field(
@@ -161,7 +161,7 @@ class RealmDef(StrictModel):
             "locked_hint": self.locked_hint,
             "flavour": self.flavour,
             "icon": self.icon,
-            "sigil": self.sigil,
+            "signet": self.signet,
             "particle": self.particle,
         }
         if self.is_overworld:

@@ -864,7 +864,7 @@ def _check_dimension_rules(content: Content, universe: IdUniverse) -> list[Probl
 def _check_blocks(content: Content, universe: IdUniverse) -> list[Problem]:
     """A block's item takes the block's id, so no item may have it too; its creative tabs exist; a kind the game uses
     one block of (the dungeon exit, the realm portal's) has one block at most; the realm portal's three kinds come
-    together, since a portal needs its frame, its selector and its portal block."""
+    together, since a portal needs its frame, its sealstone and its portal block."""
     problems: list[Problem] = []
     portal_kinds = {
         entry.model.kind: entry.source for entry in content.blocks if entry.model.kind in REALM_PORTAL_KINDS
@@ -946,7 +946,7 @@ def _check_recipes(content: Content, universe: IdUniverse) -> list[Problem]:
 def _check_realms(content: Content, universe: IdUniverse) -> list[Problem]:
     """A realm names a dimension of ours that exists, one realm per dimension; the dimension's rules name the realm's
     unlock advancement in their access requirements; its dimension type links by a coordinate scale above 1 and has
-    beds that set no spawn and do not explode. Its sigil is an item of ours that stacks to 1, the sigil of no other
+    beds that set no spawn and do not explode. Its signet is an item of ours that stacks to 1, the signet of no other
     realm; its particle is one without options; its arrival floor is a block, and a built frame fits the dimension at
     its arrival heights. Overworld's entry, which is no realm, needs only the arrival (realm portal spec, "Data")."""
     problems: list[Problem] = []
@@ -957,7 +957,7 @@ def _check_realms(content: Content, universe: IdUniverse) -> list[Problem]:
     types = {f"{MOD_ID}:{file.id}": file for file in content.worldgen if file.directory == "dimension_type"}
     items = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.items}
     seen: dict[str, str] = {}
-    sigils: dict[str, str] = {}
+    signets: dict[str, str] = {}
     for entry in content.realms:
         realm = entry.model
         if realm.dimension in seen:
@@ -982,7 +982,7 @@ def _check_realms(content: Content, universe: IdUniverse) -> list[Problem]:
             continue
         if realm.icon is not None and not universe.contains(ITEM_REGISTRY, realm.icon):
             problems.append(Problem(entry.source, "icon", _unknown(realm.icon, ITEM_REGISTRY, universe)))
-        problems += _realm_sigil_problems(entry.source, realm.sigil, items, sigils)
+        problems += _realm_signet_problems(entry.source, realm.signet, items, signets)
         if realm.particle is not None and realm.particle not in PORTAL_PARTICLES:
             problems.append(
                 Problem(
@@ -1035,24 +1035,24 @@ def _check_realms(content: Content, universe: IdUniverse) -> list[Problem]:
     return problems
 
 
-def _realm_sigil_problems(
-    source: str, sigil: str | None, items: dict[str, ItemDef], sigils: dict[str, str]
+def _realm_signet_problems(
+    source: str, signet: str | None, items: dict[str, ItemDef], signets: dict[str, str]
 ) -> list[Problem]:
-    """A realm's sigil is an item of ours that stacks to 1, and no other realm's: the selector needs one destination
-    for each sigil."""
-    if sigil is None:
+    """A realm's signet is an item of ours that stacks to 1, and no other realm's: the sealstone needs one destination
+    for each signet."""
+    if signet is None:
         return []
     problems: list[Problem] = []
-    item = items.get(sigil)
+    item = items.get(signet)
     if item is None:
-        problems.append(Problem(source, "sigil", f"{sigil} is not an item of ours (content/items/)"))
+        problems.append(Problem(source, "signet", f"{signet} is not an item of ours (content/items/)"))
     elif item.max_stack_size != 1:
         problems.append(
-            Problem(source, "sigil", f"a sigil stacks to 1: {sigil} stacks to {item.max_stack_size}")
+            Problem(source, "signet", f"a signet stacks to 1: {signet} stacks to {item.max_stack_size}")
         )
-    if sigil in sigils:
-        problems.append(Problem(source, "sigil", f"{sigil} is already the sigil of {sigils[sigil]}"))
-    sigils.setdefault(sigil, source)
+    if signet in signets:
+        problems.append(Problem(source, "signet", f"{signet} is already the signet of {signets[signet]}"))
+    signets.setdefault(signet, source)
     return problems
 
 
