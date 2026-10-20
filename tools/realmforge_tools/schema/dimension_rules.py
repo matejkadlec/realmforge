@@ -3,77 +3,87 @@
 
 from __future__ import annotations
 
-import math
+from dataclasses import dataclass
 
 from pydantic import Field, model_validator
 
 from realmforge_tools.schema.common import ContentId, ResourceId, StrictModel
 from realmforge_tools.schema.requirement import RequirementDef
 
-# The game reads every number here as a Java int (world/MobLevelRule); the world is far smaller than that.
+# The game reads these numbers as Java ints (world/MobLevelRule).
 JAVA_INT_MAX = 2**31 - 1
-JAVA_INT_MIN = -(2**31)
-# The largest jitter (world/MobLevelRule.MAX_JITTER), far beyond any band.
-MAX_JITTER = 1000
+# The most offsets either side of the player's level (world/MobLevelRule.MAX_SPREAD), and the largest weight
+# (world/MobLevelRule.MAX_WEIGHT): far beyond any sensible rule, so a weight sum always fits an int.
+MAX_SPREAD = 10
+MAX_WEIGHT = 1000
 
 
-class DepthDef(StrictModel):
-    """Deeper is stronger: below ``below_y``, a mob is one level higher for every ``blocks_per_level`` blocks."""
+@dataclass(frozen=True)
+class LevelChances:
+    """The levels a mob may spawn at near a player, with their weights (not normalised): ``weights[i]`` is the
+    weight of level ``lowest + i``."""
 
-    below_y: int = Field(
-        ge=JAVA_INT_MIN, le=JAVA_INT_MAX, description="The height below which depth adds levels."
-    )
-    blocks_per_level: int = Field(
-        ge=1, le=JAVA_INT_MAX, description="Blocks below below_y for each level more (1 or more)."
-    )
+    lowest: int
+    weights: tuple[int, ...]
+
+    @property
+    def highest(self) -> int:
+        return self.lowest + len(self.weights) - 1
 
 
 class MobLevelRuleDef(StrictModel):
-    """How the level of a mob spawning in the dimension follows from where it spawns: the level at the
-    dimension's origin, one level more every ``blocks_per_level`` blocks of horizontal distance from it, more with
-    depth, a random spread of ``jitter`` levels either way, all clamped to ``min_level`` .. ``max_level``."""
+    """How the level of a mob spawning in the dimension follows the nearest player (RLM-240, architecture 14.1):
+    near the player's level, by ``weights`` for the offsets around it, never below ``entry_level`` (the realm's floor)
+    nor above ``max_level``."""
 
-    origin_level: int = Field(
-        ge=1, le=JAVA_INT_MAX, description="Level at the origin (x 0, z 0), above the depth line."
-    )
-    blocks_per_level: int = Field(
+    entry_level: int = Field(
         ge=1,
         le=JAVA_INT_MAX,
-        description="Horizontal distance from the origin, in blocks, for each level more (1 or more).",
+        description=(
+            "The realm's floor: the level needed to enter it. No mob there is lower, and a player below it meets "
+            "every mob at it."
+        ),
     )
-    depth: DepthDef | None = Field(default=None, description="Optional: levels added with depth.")
-    jitter: int = Field(
-        default=0,
-        ge=0,
-        le=MAX_JITTER,
-        description="Each mob's level is up to this many levels higher or lower, at random (0: none).",
+    max_level: int = Field(ge=1, le=JAVA_INT_MAX, description="The highest level a mob there gets.")
+    weights: list[int] = Field(
+        min_length=1,
+        max_length=2 * MAX_SPREAD + 1,
+        description=(
+            "The weight of each offset from the nearest player's level, lowest first, the middle one for the "
+            "player's own level: [5, 10, 20, 30, 20, 10, 5] is -3 to +3. An odd number of weights, each 1 to "
+            f"{MAX_WEIGHT}; the floor and the cap drop offsets, and the rest share the chance by their weights."
+        ),
     )
-    min_level: int = Field(ge=1, le=JAVA_INT_MAX, description="The lowest level in the dimension.")
-    max_level: int = Field(ge=1, le=JAVA_INT_MAX, description="The highest level in the dimension.")
 
     @model_validator(mode="after")
-    def _range(self) -> MobLevelRuleDef:
-        if self.min_level > self.max_level:
-            raise ValueError(f"min_level {self.min_level} is above max_level {self.max_level}")
-        if not self.min_level <= self.origin_level <= self.max_level:
+    def _shape(self) -> MobLevelRuleDef:
+        if self.entry_level > self.max_level:
+            raise ValueError(f"entry_level {self.entry_level} is above max_level {self.max_level}")
+        if len(self.weights) % 2 == 0:
             raise ValueError(
-                f"origin_level {self.origin_level} is outside min_level {self.min_level} .. "
-                f"max_level {self.max_level}"
+                f"weights needs an odd number of entries, the middle one for offset 0: {self.weights}"
             )
+        if any(not 1 <= weight <= MAX_WEIGHT for weight in self.weights):
+            raise ValueError(f"every weight must be 1 to {MAX_WEIGHT}: {self.weights}")
         return self
 
-    def unclamped_level_at(self, x: float, y: float, z: float) -> float:
-        """The level before the jitter and the clamp: the game's ``MobLevelRule`` computes the same."""
-        distance = math.sqrt(x * x + z * z)
-        level = self.origin_level + math.floor(distance / self.blocks_per_level)
-        if self.depth is not None and y < self.depth.below_y:
-            level += math.floor((self.depth.below_y - y) / self.depth.blocks_per_level)
-        return float(level)
+    @property
+    def spread(self) -> int:
+        """How many levels a mob may be above or below the player."""
+        return len(self.weights) // 2
 
-    def level_at(self, x: float, y: float, z: float, offset: int = 0) -> int:
-        """The level of a mob spawning at ``x, y, z`` whose jitter came out as ``offset`` (-jitter .. jitter)."""
-        level = self.unclamped_level_at(x, y, z) + offset
-        return int(min(max(level, self.min_level), self.max_level))
+    def chances(self, player_level: int) -> LevelChances:
+        """The levels a mob spawning near a player of ``player_level`` may get: the game's ``MobLevelRule``
+        computes the same. A player below the floor meets every mob at it; when the cap leaves no offset (a player
+        far above it), every mob is at the cap."""
+        if player_level < self.entry_level:
+            return LevelChances(self.entry_level, (1,))
+        lowest = max(self.entry_level, player_level - self.spread)
+        highest = min(self.max_level, player_level + self.spread)
+        if lowest > highest:
+            return LevelChances(self.max_level, (1,))
+        start = lowest - player_level + self.spread
+        return LevelChances(lowest, tuple(self.weights[start : start + highest - lowest + 1]))
 
 
 class DimensionRulesDef(StrictModel):

@@ -5,18 +5,18 @@ import io.github.matejkadlec.realmforge.stats.RecomputedModifiers;
 import io.github.matejkadlec.realmforge.stats.StatBonus;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import io.github.matejkadlec.realmforge.world.DimensionRules;
+import io.github.matejkadlec.realmforge.world.MobLevelRule;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.Enemy;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingConversionEvent;
@@ -25,8 +25,8 @@ import net.neoforged.neoforge.event.entity.living.MobSplitEvent;
 
 /**
  * Mob levels and the scaling they bring (architecture 14.1). Every hostile mob ({@link #getsLevel}) gets its level
- * from the rules of its dimension ({@link DimensionRules}) and the {@link MobScaling} of that level, and no mob carries
- * a level without its scaling:
+ * from the rules of its dimension ({@link DimensionRules}), which follow the nearest player ({@link #levelAt}), and the
+ * {@link MobScaling} of that level, and no mob carries a level without its scaling. A mob keeps the level it got:
  * <ul>
  *   <li>{@code FinalizeSpawnEvent} levels a spawning mob and marks it ({@link MobAttachments#PENDING_REFILL}); when it
  *   joins the level, its health is refilled to its maximum, as vanilla's {@code Mob#finalizeSpawn} runs after the
@@ -61,14 +61,18 @@ public final class MobLevels {
     }
 
     /**
-     * The level the rules of {@code dimension} give a mob at a position, with its jitter drawn from {@code random}, or
-     * empty when the dimension has no mob level rule.
+     * The level the rules of the level's dimension give a mob spawning at a position, drawn from {@code random}, or
+     * empty when the dimension has no mob level rule. It follows the nearest player who is not a spectator, at any
+     * distance (RLM-240); with no such player in the dimension, a mob gets the floor.
      */
-    public static OptionalInt levelAt(RegistryAccess registries, ResourceKey<Level> dimension, double x, double y,
-            double z, RandomSource random) {
-        return DimensionRules.mobLevels(registries, dimension)
-                .map(rule -> OptionalInt.of(rule.levelAt(x, y, z, random)))
-                .orElse(OptionalInt.empty());
+    public static OptionalInt levelAt(ServerLevel level, double x, double y, double z, RandomSource random) {
+        Optional<MobLevelRule> rule = DimensionRules.mobLevels(level.registryAccess(), level.dimension());
+        if (rule.isEmpty()) {
+            return OptionalInt.empty();
+        }
+        Player nearest = level.getNearestPlayer(x, y, z, -1, EntitySelector.NO_SPECTATORS);
+        int playerLevel = nearest != null ? level(nearest).orElse(EntityLevel.MIN) : rule.get().entryLevel();
+        return OptionalInt.of(rule.get().levelFor(playerLevel, random));
     }
 
     /**
@@ -96,8 +100,8 @@ public final class MobLevels {
     }
 
     /**
-     * Levels a spawning mob from the rules at its spawn position and marks it, so its health is refilled when it
-     * joins. A mob spawned with a new chunk ({@code NaturalSpawner#spawnMobsForChunkGeneration}, structure pieces) is
+     * Levels a spawning mob from the rules and the player nearest its spawn position and marks it, so its health is
+     * refilled when it joins. A mob spawned with a new chunk ({@code NaturalSpawner#spawnMobsForChunkGeneration}, structure pieces) is
      * finalized on a world generation thread, where setting the synced level would read the server's entity tracking
      * from that thread: it is only marked, and its join, on the server thread, levels it.
      */
@@ -110,8 +114,7 @@ public final class MobLevels {
             mob.setData(MobAttachments.PENDING_REFILL, Boolean.TRUE);
             return;
         }
-        OptionalInt rolled = levelAt(level.registryAccess(), level.dimension(), event.getX(), event.getY(),
-                event.getZ(), mob.getRandom());
+        OptionalInt rolled = levelAt(level, event.getX(), event.getY(), event.getZ(), mob.getRandom());
         if (rolled.isPresent()) {
             setLevel(mob, rolled.getAsInt());
             mob.setData(MobAttachments.PENDING_REFILL, Boolean.TRUE);
@@ -123,7 +126,8 @@ public final class MobLevels {
      * refills a marked one, leveled in its spawn. A mob moving between dimensions keeps what it has.
      */
     static void onJoinLevel(EntityJoinLevelEvent event) {
-        if (event.getLevel().isClientSide() || !(event.getEntity() instanceof Mob mob) || !getsLevel(mob)) {
+        if (!(event.getLevel() instanceof ServerLevel serverLevel) || !(event.getEntity() instanceof Mob mob)
+                || !getsLevel(mob)) {
             return;
         }
         boolean refill = mob.hasData(MobAttachments.PENDING_REFILL);
@@ -132,8 +136,8 @@ public final class MobLevels {
         }
         OptionalInt level = level(mob);
         if (level.isEmpty()) {
-            levelAt(event.getLevel().registryAccess(), event.getLevel().dimension(), mob.getX(), mob.getY(),
-                    mob.getZ(), mob.getRandom()).ifPresent(rolled -> setLevel(mob, rolled));
+            levelAt(serverLevel, mob.getX(), mob.getY(), mob.getZ(), mob.getRandom())
+                    .ifPresent(rolled -> setLevel(mob, rolled));
         } else if (event.loadedFromDisk() && !refill) {
             applyScaling(mob, level.getAsInt());
         }

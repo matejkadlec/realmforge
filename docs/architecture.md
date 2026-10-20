@@ -1277,20 +1277,29 @@ return; the proc engine at its end exists since C3a.
 ### 14.1 Mob levels
 
 Built in W1 (RLM-31): `world/DimensionRules`, `world/MobLevelRule` and `mob/MobLevels`, with the scaling in
-`mob/MobScaling`.
+`mob/MobScaling`. Since RLM-303 (part 1 of RLM-240) the level follows the nearest player instead of the distance
+from the dimension's origin; dungeon levels (RLM-304, RLM-305) come later.
 
 - **Which mobs:** every hostile mob, vanilla's and later ours: a `Mob` that carries vanilla's `Enemy` marker
   (`MobLevels#getsLevel`). Animals, villagers and golems get none. Bosses take the fixed level from their definition
   (W5).
 - **The rule:** `realmforge:dimension_rules` (owned by `world`, server only) gives a dimension an optional mob level
-  rule (`content/dimensions/`, [content README](../content/README.md)): the level at the dimension's origin (x 0,
-  z 0), one level more every `blocks_per_level` blocks of horizontal distance from it, one more for every
-  `depth.blocks_per_level` blocks below `depth.below_y`, then a random jitter of up to `jitter` levels either way,
-  all clamped to `min_level .. max_level`. `MobLevelRule` is plain Java, and the pipeline computes the same
-  (`MobLevelRuleDef.level_at`); a GameTest compares the two at sample positions. A dimension without a rule (the
-  Nether and End for now) gives no level, and its mobs read as level 1. The Overworld's first numbers: level 1 at
-  the origin, one more every 500 blocks up to 5, one more per 32 blocks below y 0, jitter 1. Undervault's (W2a, the
-  realm portal spec's): level 6 at the origin, one more every 320 blocks up to 18, jitter 1, no depth rule.
+  rule (`content/dimensions/`, [content README](../content/README.md)), which follows the nearest player (Matěj,
+  2026-10-16, RLM-240): a mob is up to 3 levels below or above the player's level, each offset by its weight in
+  `weights` (5, 10, 20, 30, 20, 10 and 5 % for −3 to +3), never below `entry_level`, the realm's floor (the level
+  needed to enter it: Overworld 1, Undervault 6), nor above `max_level` (60). The floor and the cap drop offsets, and
+  the rest share the chance by their weights (`MobLevelRule#chances`): a level 6 player in Undervault meets levels 6
+  to 9 at 30, 20, 10 and 5 parts of 65. A player below the floor (a level set by command; the realm portal's level
+  check is RLM-306) meets every mob at the floor; a player so far above the cap that no offset is left, every mob at
+  the cap. So a level 5 zombie never meets a level 60 player, and exploring far punishes nobody. `MobLevelRule` is
+  plain Java, and the pipeline computes the same (`MobLevelRuleDef.chances`); a GameTest compares the two at sample
+  player levels around the floor, the middle and the cap. A dimension without a rule (the Nether, the End and the
+  dungeon instances for now) gives no level, and its mobs read as level 1.
+- **Whose level:** the nearest player in the mob's dimension who is not a spectator, at any distance, read from
+  their `realmforge:level` (`MobLevels#levelAt`): vanilla spawns hostiles only near players, and a spawner needs one
+  within 16 blocks. With no such player in the dimension (a mob summoned from the server console into an empty
+  dimension), a mob gets the floor. A mob keeps the level it got: the player's later level, another player coming
+  near, or a reload (which only rescales to the current curves) never changes it.
 - **The scaling** (`MobScaling`) comes from three curves at the mob's level: `realmforge:mob_health` multiplies its
   maximum health, `mob_armor` adds armor points, and `mob_damage` multiplies the damage of every hit it causes. The
   first two are permanent attribute modifiers, `realmforge:mob_level/max_health` and `realmforge:mob_level/armor`
@@ -1302,8 +1311,8 @@ Built in W1 (RLM-31): `world/DimensionRules`, `world/MobLevelRule` and `mob/MobL
   (`DamageSource#getEntity`) is a leveled mob, so arrows, explosions and thrown potions grow with the level too; only
   melee reads the attack damage attribute. The shipped curves add nothing at level 1, and a curve a data pack removed
   adds nothing.
-- **At spawn:** in `FinalizeSpawnEvent`, `mob` rolls the level from the rules of the mob's dimension at the spawn
-  position, writes it into `realmforge:level` and applies the scaling. A mob spawned with a new chunk
+- **At spawn:** in `FinalizeSpawnEvent`, `mob` rolls the level from the rules of the mob's dimension and the player
+  nearest the spawn position, writes it into `realmforge:level` and applies the scaling. A mob spawned with a new chunk
   (`NaturalSpawner#spawnMobsForChunkGeneration`, structure pieces such as a monument's guardians) is finalized on a
   world generation thread, in a `WorldGenRegion`; setting the synced level there would read the server's entity
   tracking (`ChunkMap#getPlayersWatching`) from that thread, so the event only marks such a mob, and its join, on
@@ -1320,9 +1329,9 @@ Built in W1 (RLM-31): `world/DimensionRules`, `world/MobLevelRule` and `mob/MobL
 - **Spawns without `finalizeSpawn`** skip the event: slime splits (`Slime#remove`), silverfish from infested
   blocks, `GameTestHelper#spawn`. Split children copy the parent's level and get its scaling in `MobSplitEvent`
   (`getParent`, `getChildren`). Any other mob that joins without a level (checked with `hasData`) is leveled in
-  `EntityJoinLevelEvent` the same way: the level from the rules and its scaling, keeping its share of health (a
-  fresh mob's is all of it). So the default level never passes for an assigned one, and no mob carries a level
-  without its scaling. A mob saved before W1 is leveled this way when it loads.
+  `EntityJoinLevelEvent` the same way: the level from the rules and the nearest player, and its scaling, keeping its
+  share of health (a fresh mob's is all of it). So the default level never passes for an assigned one, and no mob
+  carries a level without its scaling. A mob saved before W1 is leveled this way when it loads.
 - **Conversions** (`Mob#convertTo`: a zombie drowns, a skeleton turns into a stray, a piglin or hoglin zombifies, a
   zombie villager is cured). In 26.1.2 every vanilla caller posts `LivingConversionEvent.Post` from the conversion's
   callback, which `convertTo` runs before it adds the new mob with `addFreshEntity`. NeoForge's own listener

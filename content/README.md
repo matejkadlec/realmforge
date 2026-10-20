@@ -94,9 +94,12 @@ Rules:
 - `dimensions/` holds the gameplay rules of a dimension, which `dimension` names (`minecraft:overworld`, or one of
   ours from `worldgen/dimension/`); at most one entry per dimension
   ([architecture 14.1](../docs/architecture.md#141-mob-levels)). Its optional `mob_levels` rule gives every hostile
-  mob spawning there a level: `origin_level` at x 0, z 0, one more every `blocks_per_level` blocks of horizontal
-  distance, one more every `depth.blocks_per_level` blocks below `depth.below_y`, then up to `jitter` levels either
-  way at random (at most 1000), clamped to `min_level .. max_level`. What a level adds comes from the curves
+  mob spawning there a level near the nearest player's: `weights` holds the weight of each offset from the player's
+  level, an odd number of them (1 to 1000 each, at most 10 either side), the middle one for the player's own level
+  (`[5, 10, 20, 30, 20, 10, 5]` is −3 to +3); no mob is below `entry_level`, the realm's floor (the level needed to
+  enter it), nor above `max_level`. The floor and the cap drop offsets and the rest share the chance by their
+  weights; a player below the floor meets every mob at it. A mob keeps the level it spawned with. What a level adds
+  comes from the curves
   `mob_health` (a multiple of maximum health), `mob_damage` (a multiple of the damage of every hit the mob causes)
   and `mob_armor` (armor points). Its optional `access` lists what a player needs to enter the dimension, every one
   at once, refused on every way in (a portal, `/tp`, a warp; [architecture 15.1](../docs/architecture.md#151-dimensions)):

@@ -1,11 +1,17 @@
 {
   "dimension": "realmforge:stone",
   "mob_levels": {
-    "origin_level": 6,
-    "blocks_per_level": 320,
-    "jitter": 1,
-    "min_level": 6,
-    "max_level": 18
+    "entry_level": 6,
+    "max_level": 60,
+    "weights": [
+      5,
+      10,
+      20,
+      30,
+      20,
+      10,
+      5
+    ]
   },
   "access": [
     {

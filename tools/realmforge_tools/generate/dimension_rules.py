@@ -12,10 +12,6 @@ from realmforge_tools.schema.dimension_rules import DimensionRulesDef, MobLevelR
 
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
 SOURCES = "content/dimensions/"
-# How far beyond the cap the samples reach, in levels, and the farthest point from the origin: the world border.
-_EXTRA_LEVELS = 1
-_MAX_SAMPLED_LEVELS = 6
-_WORLD_EDGE = 30_000_000.0
 
 
 def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
@@ -26,53 +22,43 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     }
 
 
-def sample_positions(rule: MobLevelRuleDef) -> list[tuple[float, float, float]]:
-    """Where the GameTest compares the game's level rule with ``MobLevelRuleDef.level_at``: the origin; on both
-    sides of each distance step up to the cap and one beyond; a diagonal; on both sides of the depth line and its
-    first steps; and the world's edge."""
-    top = float(rule.depth.below_y + 16) if rule.depth is not None else 64.0
-    step = float(rule.blocks_per_level)
-    positions = [(0.0, top, 0.0)]
-    steps = min(rule.max_level - rule.origin_level + _EXTRA_LEVELS, _MAX_SAMPLED_LEVELS)
-    for k in range(1, steps + 1):
-        positions += [(k * step - 0.5, top, 0.0), (0.0, top, -k * step)]
-    positions.append((step, top, step))
-    if rule.depth is not None:
-        line = float(rule.depth.below_y)
-        depth_step = float(rule.depth.blocks_per_level)
-        positions += [(0.0, line, 0.0), (0.0, line - 0.5, 0.0), (0.0, line - depth_step, 0.0)]
-        positions.append((0.0, line - 2 * depth_step - 0.5, 0.0))
-    positions.append((_WORLD_EDGE, top, 0.0))
-    return positions
+def sample_player_levels(rule: MobLevelRuleDef) -> list[int]:
+    """The player levels at which the GameTest compares the game's level rule with ``MobLevelRuleDef.chances``:
+    level 1; around the floor (below it, at it, one above, and where the floor stops cutting offsets); the middle;
+    around the cap (where it starts cutting, at it, above it, and so far above that it leaves no offset)."""
+    entry, top, spread = rule.entry_level, rule.max_level, rule.spread
+    levels = {
+        1,
+        entry - 1,
+        entry,
+        entry + 1,
+        entry + spread,
+        (entry + top) // 2,
+        top - spread,
+        top,
+        top + 1,
+        top + spread + 1,
+    }
+    return sorted(level for level in levels if level >= 1)
 
 
-def _double(value: float) -> str:
-    """A Java double literal; repr() gives the shortest text that reads back as the same double."""
-    return repr(float(value))
+def _ints(values: list[int] | tuple[int, ...]) -> str:
+    return f"List.of({', '.join(str(value) for value in values)})"
 
 
 def _rule(rule: MobLevelRuleDef | None) -> str:
     if rule is None:
         return "Optional.empty()"
-    depth = (
-        f"Optional.of(new Depth({rule.depth.below_y}, {rule.depth.blocks_per_level}))"
-        if rule.depth is not None
-        else "Optional.empty()"
-    )
-    return (
-        f"Optional.of(new MobLevelRule({rule.origin_level}, {rule.blocks_per_level}, {depth}, {rule.jitter}, "
-        f"{rule.min_level}, {rule.max_level}))"
-    )
+    return f"Optional.of(new MobLevelRule({rule.entry_level}, {rule.max_level}, {_ints(rule.weights)}))"
 
 
 def _samples(rule: MobLevelRuleDef | None) -> str:
     if rule is None:
         return "List.of()"
-    samples = [
-        f"new Sample({_double(x)}, {_double(y)}, {_double(z)}, {rule.level_at(x, y, z)}, "
-        f"{rule.level_at(x, y, z, -rule.jitter)}, {rule.level_at(x, y, z, rule.jitter)})"
-        for x, y, z in sample_positions(rule)
-    ]
+    samples = []
+    for player_level in sample_player_levels(rule):
+        chances = rule.chances(player_level)
+        samples.append(f"new Sample({player_level}, {chances.lowest}, {_ints(chances.weights)})")
     return "List.of(\n                            " + ",\n                            ".join(samples) + ")"
 
 
@@ -106,20 +92,15 @@ def _expectations(content: Content) -> bytes:
         "\n"
         "/** What {@code content/dimensions/} says about every dimension, so GameTests can check that the game agrees. */\n"
         "public final class GeneratedDimensionRuleExpectations {\n"
-        "    /** Levels added with depth, as written in the YAML. */\n"
-        "    public record Depth(int belowY, int blocksPerLevel) {\n"
-        "    }\n"
-        "\n"
         "    /** The mob level rule, as written in the YAML. */\n"
-        "    public record MobLevelRule(int originLevel, int blocksPerLevel, Optional<Depth> depth, int jitter,\n"
-        "            int minLevel, int maxLevel) {\n"
+        "    public record MobLevelRule(int entryLevel, int maxLevel, List<Integer> weights) {\n"
         "    }\n"
         "\n"
         "    /**\n"
-        "     * The level the pipeline's rule gives a mob spawning at a position: without jitter, and with the jitter's\n"
-        "     * lowest and highest roll. The game must agree.\n"
+        "     * The levels the pipeline's rule gives a mob spawning near a player of {@code playerLevel}: from\n"
+        "     * {@code lowest} up, one weight per level, not normalised. The game must agree.\n"
         "     */\n"
-        "    public record Sample(double x, double y, double z, int level, int lowest, int highest) {\n"
+        "    public record Sample(int playerLevel, int lowest, List<Integer> weights) {\n"
         "    }\n"
         "\n"
         "    /**\n"

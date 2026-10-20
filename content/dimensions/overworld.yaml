@@ -1,14 +1,11 @@
 # yaml-language-server: $schema=../../tools/schemas/dimensions.schema.json
-# The Overworld is chapter 1's first band, levels 1 to 5 (realm design, "Chapters and levels"): level 1 at the
-# origin, one level more every 500 blocks out (the cap, 5, from 2,000 blocks on), one more for every 32 blocks below
-# y 0 (two at the bottom of the world), and each mob up to one level above or below that. W1's first numbers, tuned in
-# playtests. The scaling each level brings is in the mob_* curves.
+# Mob levels follow the nearest player (RLM-240, part 1: RLM-303): within 3 levels of theirs, most often their own,
+# never below the realm's entry level (the Overworld's is 1) nor above 60 (RLM-240). The weights are the chances of -3
+# to +3 levels from the player's, in percent; the floor and the cap drop offsets, and the rest share the chance by
+# their weights. The scaling each level brings is in the mob_* curves.
 id: overworld
 dimension: minecraft:overworld
 mob_levels:
-  origin_level: 1
-  blocks_per_level: 500
-  depth: {below_y: 0, blocks_per_level: 32}
-  jitter: 1
-  min_level: 1
-  max_level: 5
+  entry_level: 1
+  max_level: 60
+  weights: [5, 10, 20, 30, 20, 10, 5]

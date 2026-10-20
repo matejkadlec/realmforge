@@ -11,96 +11,118 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.Test;
 
 class DimensionRulesTest {
-    private static final MobLevelRule RULE =
-            new MobLevelRule(2, 100, Optional.of(new MobLevelRule.Depth(0, 10)), 1, 1, 6);
+    private static final List<Integer> WEIGHTS = List.of(5, 10, 20, 30, 20, 10, 5);
+    private static final MobLevelRule RULE = new MobLevelRule(6, 60, WEIGHTS);
 
     @Test
-    void levelRisesOneStepPerBlocksPerLevelOfHorizontalDistance() {
-        assertEquals(2, RULE.levelAt(0, 64, 0, 0));
-        assertEquals(2, RULE.levelAt(99.9, 64, 0, 0));
-        assertEquals(3, RULE.levelAt(100, 64, 0, 0));
-        assertEquals(4, RULE.levelAt(0, 64, -250, 0));
-        assertEquals(3, RULE.levelAt(60, 64, 80, 0), "60, 80 is 100 blocks away");
-        assertEquals(2, RULE.levelAt(70, 64, 70, 0), "70, 70 is 99 blocks away");
+    void aPlayerBetweenTheFloorAndTheCapMeetsEveryOffsetByItsWeight() {
+        assertEquals(new MobLevelRule.Chances(17, WEIGHTS), RULE.chances(20));
+        MobLevelRule.Chances chances = RULE.chances(20);
+        assertEquals(17, chances.lowest());
+        assertEquals(23, chances.highest());
+        assertEquals(30, chances.weight(20));
+        assertEquals(5, chances.weight(23));
+        assertEquals(0, chances.weight(16), "more than 3 below");
+        assertEquals(0, chances.weight(24), "more than 3 above");
+        assertEquals(3, RULE.spread());
     }
 
     @Test
-    void depthAddsLevelsBelowItsLine() {
-        assertEquals(2, RULE.levelAt(0, 0, 0, 0));
-        assertEquals(2, RULE.levelAt(0, -9.5, 0, 0));
-        assertEquals(3, RULE.levelAt(0, -10, 0, 0));
-        assertEquals(5, RULE.levelAt(0, -35, 0, 0));
-        MobLevelRule flat = new MobLevelRule(2, 100, Optional.empty(), 1, 1, 6);
-        assertEquals(2, flat.levelAt(0, -35, 0, 0));
+    void theFloorDropsTheOffsetsBelowIt() {
+        assertEquals(new MobLevelRule.Chances(6, List.of(30, 20, 10, 5)), RULE.chances(6), "at the floor");
+        assertEquals(new MobLevelRule.Chances(6, List.of(20, 30, 20, 10, 5)), RULE.chances(7));
+        assertEquals(new MobLevelRule.Chances(6, WEIGHTS), RULE.chances(9), "the floor cuts nothing from 9 on");
     }
 
     @Test
-    void levelsAreClampedAfterTheJitter() {
-        assertEquals(6, RULE.levelAt(10_000, 64, 0, 0));
-        assertEquals(6, RULE.levelAt(10_000, 64, 0, 1));
-        assertEquals(1, RULE.levelAt(0, 64, 0, -1));
-        assertEquals(3, RULE.levelAt(0, 64, 0, 1));
-        assertEquals(6, RULE.levelAt(30_000_000, 64, 0, 0), "the world's edge");
-    }
-
-    @Test
-    void randomLevelsStayWithinTheJitter() {
-        RandomSource random = RandomSource.create(42);
-        boolean low = false;
-        boolean high = false;
-        for (int i = 0; i < 200; i++) {
-            int level = RULE.levelAt(150, 64, 0, random);
-            assertTrue(level >= 2 && level <= 4, "level " + level);
-            low |= level == 2;
-            high |= level == 4;
+    void aPlayerBelowTheFloorMeetsEveryMobAtIt() {
+        assertEquals(new MobLevelRule.Chances(6, List.of(1)), RULE.chances(5));
+        assertEquals(new MobLevelRule.Chances(6, List.of(1)), RULE.chances(1));
+        RandomSource random = RandomSource.create(7);
+        for (int i = 0; i < 50; i++) {
+            assertEquals(6, RULE.levelFor(3, random));
         }
-        assertTrue(low && high, "both ends of the jitter come up");
-        MobLevelRule steady = new MobLevelRule(2, 100, Optional.empty(), 0, 1, 6);
-        assertEquals(3, steady.levelAt(150, 64, 0, random));
+    }
+
+    @Test
+    void theCapDropsTheOffsetsAboveIt() {
+        assertEquals(new MobLevelRule.Chances(57, List.of(5, 10, 20, 30)), RULE.chances(60), "at the cap");
+        assertEquals(new MobLevelRule.Chances(58, List.of(5, 10, 20)), RULE.chances(61));
+        assertEquals(new MobLevelRule.Chances(60, List.of(5)), RULE.chances(63));
+        assertEquals(new MobLevelRule.Chances(60, List.of(1)), RULE.chances(64), "no offset left: the cap");
+        assertEquals(new MobLevelRule.Chances(60, List.of(1)), RULE.chances(1000));
+    }
+
+    @Test
+    void rollsFollowTheWeights() {
+        RandomSource random = RandomSource.create(42);
+        int rolls = 20_000;
+        Map<Integer, Integer> counts = new HashMap<>();
+        for (int i = 0; i < rolls; i++) {
+            counts.merge(RULE.levelFor(20, random), 1, Integer::sum);
+        }
+        assertEquals(Set.of(17, 18, 19, 20, 21, 22, 23), counts.keySet());
+        for (int offset = -3; offset <= 3; offset++) {
+            double share = counts.get(20 + offset) / (double) rolls;
+            double expected = WEIGHTS.get(offset + 3) / 100.0;
+            assertEquals(expected, share, 0.015, "the share of offset " + offset);
+        }
+    }
+
+    @Test
+    void rollsAtTheFloorAreRenormalised() {
+        RandomSource random = RandomSource.create(42);
+        int rolls = 20_000;
+        Map<Integer, Integer> counts = new HashMap<>();
+        for (int i = 0; i < rolls; i++) {
+            counts.merge(RULE.levelFor(6, random), 1, Integer::sum);
+        }
+        assertEquals(Set.of(6, 7, 8, 9), counts.keySet());
+        assertEquals(30 / 65.0, counts.get(6) / (double) rolls, 0.015, "the player's own level, 30 of 65");
+        assertEquals(5 / 65.0, counts.get(9) / (double) rolls, 0.015, "three above, 5 of 65");
     }
 
     @Test
     void codecReadsTheGeneratedFormat() {
         DimensionRules rules = decode("""
-                {"dimension": "minecraft:overworld", "mob_levels": {"origin_level": 2, "blocks_per_level": 100,
-                 "depth": {"below_y": 0, "blocks_per_level": 10}, "jitter": 1, "min_level": 1, "max_level": 6}}
+                {"dimension": "minecraft:overworld", "mob_levels": {"entry_level": 6, "max_level": 60,
+                 "weights": [5, 10, 20, 30, 20, 10, 5]}}
                 """).getOrThrow();
         assertEquals(new DimensionRules(Level.OVERWORLD, Optional.of(RULE), List.of()), rules);
     }
 
     @Test
-    void mobLevelsDepthAndJitterAreOptional() {
+    void mobLevelsAreOptional() {
         assertEquals(new DimensionRules(Level.END, Optional.empty(), List.of()),
                 decode("{\"dimension\": \"minecraft:the_end\"}").getOrThrow());
         DimensionRules rules = decode("""
-                {"dimension": "minecraft:overworld", "mob_levels": {"origin_level": 1, "blocks_per_level": 5,
-                 "min_level": 1, "max_level": 1}}
+                {"dimension": "minecraft:overworld", "mob_levels": {"entry_level": 1, "max_level": 1, "weights": [1]}}
                 """).getOrThrow();
-        assertEquals(Optional.of(new MobLevelRule(1, 5, Optional.empty(), 0, 1, 1)), rules.mobLevels());
+        assertEquals(Optional.of(new MobLevelRule(1, 1, List.of(1))), rules.mobLevels());
     }
 
     @Test
-    void codecRejectsBrokenRanges() {
-        assertTrue(rule("\"origin_level\": 2, \"blocks_per_level\": 5, \"min_level\": 3, \"max_level\": 2").isError(),
-                "min above max");
-        assertTrue(rule("\"origin_level\": 7, \"blocks_per_level\": 5, \"min_level\": 1, \"max_level\": 6").isError(),
-                "origin above max");
-        assertTrue(rule("\"origin_level\": 1, \"blocks_per_level\": 0, \"min_level\": 1, \"max_level\": 6").isError(),
-                "no distance step");
-        assertTrue(rule("\"origin_level\": 1, \"blocks_per_level\": 5, \"jitter\": -1, \"min_level\": 1, "
-                + "\"max_level\": 6").isError(), "negative jitter");
-        assertTrue(rule("\"origin_level\": 1, \"blocks_per_level\": 5, \"jitter\": 1001, \"min_level\": 1, "
-                + "\"max_level\": 6").isError(), "jitter above the limit");
-        assertTrue(decode("{\"dimension\": \"minecraft:overworld\", \"mob_levels\": {\"origin_level\": 1, "
-                + "\"blocks_per_level\": 5, \"depth\": {\"below_y\": 0, \"blocks_per_level\": 0}, \"min_level\": 1, "
-                + "\"max_level\": 6}}").isError(), "no depth step");
+    void codecRejectsBrokenRules() {
+        assertTrue(rule("\"entry_level\": 7, \"max_level\": 6, \"weights\": [1]").isError(), "floor above cap");
+        assertTrue(rule("\"entry_level\": 0, \"max_level\": 6, \"weights\": [1]").isError(), "floor 0");
+        assertTrue(rule("\"entry_level\": 1, \"max_level\": 6, \"weights\": [1, 2]").isError(), "even weights");
+        assertTrue(rule("\"entry_level\": 1, \"max_level\": 6, \"weights\": []").isError(), "no weights");
+        assertTrue(rule("\"entry_level\": 1, \"max_level\": 6, \"weights\": [1, 0, 1]").isError(), "weight 0");
+        assertTrue(rule("\"entry_level\": 1, \"max_level\": 6, \"weights\": [1001]").isError(),
+                "a weight above the limit");
+        assertTrue(rule("\"entry_level\": 1, \"max_level\": 6, \"weights\": [" + "1, ".repeat(21) + "1]")
+                .isError(), "more than 10 offsets either side");
+        assertTrue(rule("\"entry_level\": 1, \"max_level\": 6").isError(), "weights missing");
     }
 
     @Test
