@@ -8,10 +8,10 @@ import shutil
 import pytest
 
 from realmforge_tools.generate import generate_all
-from realmforge_tools.generate.dimension_rules import sample_positions
+from realmforge_tools.generate.dimension_rules import sample_player_levels
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import RepoPaths
-from realmforge_tools.schema.dimension_rules import MobLevelRuleDef
+from realmforge_tools.schema.dimension_rules import LevelChances, MobLevelRuleDef
 from realmforge_tools.validate import load_and_validate
 from tests.conftest import write
 
@@ -20,15 +20,8 @@ EXPECTATIONS = (
     "qa-mod/src/generated/java/io/github/matejkadlec/realmforge/qa/generated/"
     "GeneratedDimensionRuleExpectations.java"
 )
-RULE = (
-    "mob_levels:\n"
-    "  origin_level: 2\n"
-    "  blocks_per_level: 100\n"
-    "  depth: {below_y: 0, blocks_per_level: 10}\n"
-    "  jitter: 1\n"
-    "  min_level: 1\n"
-    "  max_level: 6\n"
-)
+RULE = "mob_levels:\n  entry_level: 6\n  max_level: 60\n  weights: [5, 10, 20, 30, 20, 10, 5]\n"
+WEIGHTS = (5, 10, 20, 30, 20, 10, 5)
 
 
 def problems_for(repo: RepoPaths) -> list[str]:
@@ -47,14 +40,7 @@ def rules(entry_id: str, dimension: str, body: str = RULE) -> str:
 
 
 def rule(**overrides: object) -> MobLevelRuleDef:
-    fields: dict[str, object] = {
-        "origin_level": 2,
-        "blocks_per_level": 100,
-        "depth": {"below_y": 0, "blocks_per_level": 10},
-        "jitter": 1,
-        "min_level": 1,
-        "max_level": 6,
-    }
+    fields: dict[str, object] = {"entry_level": 6, "max_level": 60, "weights": list(WEIGHTS)}
     fields.update(overrides)
     return MobLevelRuleDef.model_validate(fields)
 
@@ -101,28 +87,24 @@ def test_a_dimension_has_one_entry_at_most(repo: RepoPaths) -> None:
 @pytest.mark.parametrize(
     ("body", "expected"),
     [
-        (RULE.replace("min_level: 1", "min_level: 7"), "min_level 7 is above max_level 6"),
+        (RULE.replace("entry_level: 6", "entry_level: 61"), "entry_level 61 is above max_level 60"),
         (
-            RULE.replace("origin_level: 2", "origin_level: 9"),
-            "origin_level 9 is outside min_level 1 .. max_level 6",
+            RULE.replace("entry_level: 6", "entry_level: 0"),
+            "mob_levels.entry_level: Input should be greater than",
         ),
         (
-            RULE.replace("blocks_per_level: 100", "blocks_per_level: 0"),
-            "Input should be greater than or equal to 1",
+            RULE.replace("[5, 10, 20, 30, 20, 10, 5]", "[5, 10, 20, 30, 20, 10]"),
+            "weights needs an odd number of entries",
         ),
         (
-            RULE.replace("jitter: 1", "jitter: -1"),
-            "mob_levels.jitter: Input should be greater than or equal to 0",
+            RULE.replace("[5, 10, 20, 30, 20, 10, 5]", "[]"),
+            "mob_levels.weights: List should have at least 1 item",
         ),
-        (
-            RULE.replace("min_level: 1", "min_level: 0"),
-            "mob_levels.min_level: Input should be greater than or equal",
-        ),
-        (
-            RULE.replace("blocks_per_level: 10}", "blocks_per_level: 10, above_y: 3}"),
-            "Extra inputs are not permitted",
-        ),
-        (RULE.replace("jitter: 1", "jitter: 1.5"), "mob_levels.jitter: Input should be a valid integer"),
+        (RULE.replace("[5, 10, 20, 30, 20, 10, 5]", "[5, 0, 5]"), "every weight must be 1 to 1000"),
+        (RULE.replace("[5, 10, 20, 30, 20, 10, 5]", "[1001]"), "every weight must be 1 to 1000"),
+        (RULE.replace("[5, 10, 20, 30, 20, 10, 5]", f"{[1] * 23}"), "List should have at most 21 items"),
+        (RULE.replace("max_level: 60", "max_level: 60\n  jitter: 1"), "Extra inputs are not permitted"),
+        (RULE.replace("[5, 10, 20, 30, 20, 10, 5]", "[5, 1.5, 5]"), "Input should be a valid integer"),
     ],
 )
 def test_invalid_rules_are_rejected(repo: RepoPaths, body: str, expected: str) -> None:
@@ -133,46 +115,44 @@ def test_invalid_rules_are_rejected(repo: RepoPaths, body: str, expected: str) -
 # The level rule: the GameTest compares the game's MobLevelRule with these values.
 
 
-def test_level_rises_one_step_per_blocks_per_level_of_horizontal_distance() -> None:
+def test_a_player_between_the_floor_and_the_cap_meets_every_offset_by_its_weight() -> None:
+    chances = rule().chances(20)
+    assert chances == LevelChances(17, WEIGHTS)
+    assert (chances.lowest, chances.highest) == (17, 23)
+    assert rule().spread == 3
+
+
+def test_the_floor_drops_the_offsets_below_it() -> None:
     model = rule()
-    assert model.level_at(0, 64, 0) == 2
-    assert model.level_at(99.9, 64, 0) == 2
-    assert model.level_at(100, 64, 0) == 3
-    assert model.level_at(0, 64, -250) == 4
-    # 60, 80 is 100 blocks away: distance is horizontal and Euclidean.
-    assert model.level_at(60, 64, 80) == 3
-    assert model.level_at(70, 64, 70) == 2
+    assert model.chances(6) == LevelChances(6, (30, 20, 10, 5))
+    assert model.chances(7) == LevelChances(6, (20, 30, 20, 10, 5))
+    assert model.chances(9) == LevelChances(6, WEIGHTS)
 
 
-def test_depth_adds_levels_below_its_line() -> None:
+def test_a_player_below_the_floor_meets_every_mob_at_it() -> None:
+    assert rule().chances(5) == LevelChances(6, (1,))
+    assert rule().chances(1) == LevelChances(6, (1,))
+
+
+def test_the_cap_drops_the_offsets_above_it() -> None:
     model = rule()
-    assert model.level_at(0, 0, 0) == 2
-    assert model.level_at(0, -9.5, 0) == 2
-    assert model.level_at(0, -10, 0) == 3
-    assert model.level_at(0, -35, 0) == 5
-    assert rule(depth=None).level_at(0, -35, 0) == 2
+    assert model.chances(60) == LevelChances(57, (5, 10, 20, 30))
+    assert model.chances(61) == LevelChances(58, (5, 10, 20))
+    assert model.chances(63) == LevelChances(60, (5,))
+    assert model.chances(64) == LevelChances(60, (1,))
+    assert model.chances(1000) == LevelChances(60, (1,))
 
 
-def test_levels_are_clamped_after_the_jitter() -> None:
-    model = rule()
-    assert model.level_at(10_000, 64, 0) == 6
-    assert model.level_at(10_000, 64, 0, 1) == 6
-    assert model.level_at(0, 64, 0, -1) == 1
-    assert model.level_at(0, 64, 0, 1) == 3
-    assert rule(origin_level=1).level_at(0, 64, 0, -1) == 1
+def test_one_weight_means_the_players_own_level() -> None:
+    model = rule(entry_level=1, weights=[1])
+    assert model.chances(1) == LevelChances(1, (1,))
+    assert model.chances(42) == LevelChances(42, (1,))
 
 
-def test_samples_cover_the_origin_every_step_the_depth_line_and_the_edge() -> None:
-    model = rule(origin_level=4)
-    positions = sample_positions(model)
-    assert positions[0] == (0.0, 16.0, 0.0)
-    # Up to the cap (6) and one step beyond: three steps, each on both sides.
-    assert (299.5, 16.0, 0.0) in positions
-    assert (0.0, 16.0, -300.0) in positions
-    assert (399.5, 16.0, 0.0) not in positions
-    assert {(0.0, 0.0, 0.0), (0.0, -0.5, 0.0), (0.0, -10.0, 0.0), (0.0, -20.5, 0.0)} <= set(positions)
-    assert positions[-1] == (30_000_000.0, 16.0, 0.0)
-    assert sample_positions(rule(depth=None))[0] == (0.0, 64.0, 0.0)
+def test_samples_cover_the_floor_the_middle_and_the_cap() -> None:
+    assert sample_player_levels(rule()) == [1, 5, 6, 7, 9, 33, 57, 60, 61, 64]
+    # Duplicates and levels below 1 drop out.
+    assert sample_player_levels(rule(entry_level=1, max_level=4, weights=[1])) == [1, 2, 4, 5]
 
 
 # Generation
@@ -182,20 +162,15 @@ def test_rules_become_data_and_expectations(repo: RepoPaths) -> None:
     files = generate(repo)
     assert json.loads(files[f"{DATA}/overworld.json"]) == {
         "dimension": "minecraft:overworld",
-        "mob_levels": {
-            "origin_level": 1,
-            "blocks_per_level": 500,
-            "depth": {"below_y": 0, "blocks_per_level": 32},
-            "jitter": 1,
-            "min_level": 1,
-            "max_level": 5,
-        },
+        "mob_levels": {"entry_level": 1, "max_level": 60, "weights": [5, 10, 20, 30, 20, 10, 5]},
     }
+    assert json.loads(files[f"{DATA}/stone.json"])["mob_levels"]["entry_level"] == 6
     expectations = files[EXPECTATIONS].decode()
     assert '"realmforge:overworld",\n                    "minecraft:overworld",' in expectations
-    assert "Optional.of(new MobLevelRule(1, 500, Optional.of(new Depth(0, 32)), 1, 1, 5))" in expectations
-    assert "new Sample(999.5, 16.0, 0.0, 2, 1, 3)" in expectations
-    assert "new Sample(0.0, -64.5, 0.0, 3, 2, 4)" in expectations
+    assert "Optional.of(new MobLevelRule(1, 60, List.of(5, 10, 20, 30, 20, 10, 5)))" in expectations
+    assert "new Sample(1, 1, List.of(30, 20, 10, 5))" in expectations
+    assert "new Sample(5, 6, List.of(1))" in expectations
+    assert "new Sample(61, 58, List.of(5, 10, 20))" in expectations
 
 
 def test_rules_without_mob_levels(repo: RepoPaths) -> None:

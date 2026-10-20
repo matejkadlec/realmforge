@@ -50,7 +50,7 @@ Apotheosis for gear rarity, affixes, gems and enchanting
   26.1.2 (RLM-65, RLM-123, RLM-124). The core mod has its feature skeleton (F1), datapack registries (F2), player
   state (F3), stats (F4) with their names, a character sheet (F4b) and raised attribute caps (F4c), and the combat
   core (F5: spell schools, crit, dodge, resistances, our armor formula, combat text, the QA training dummy), and
-  hostile mobs get levels from the dimension rules with health, damage and armor scaled by curves (W1). A new player
+  hostile mobs get levels near the nearest player's, floored per realm (W1, RLM-303), scaled by curves. A new player
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits.
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell

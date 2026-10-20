@@ -8,20 +8,15 @@ import java.util.Optional;
 
 /** What {@code content/dimensions/} says about every dimension, so GameTests can check that the game agrees. */
 public final class GeneratedDimensionRuleExpectations {
-    /** Levels added with depth, as written in the YAML. */
-    public record Depth(int belowY, int blocksPerLevel) {
-    }
-
     /** The mob level rule, as written in the YAML. */
-    public record MobLevelRule(int originLevel, int blocksPerLevel, Optional<Depth> depth, int jitter,
-            int minLevel, int maxLevel) {
+    public record MobLevelRule(int entryLevel, int maxLevel, List<Integer> weights) {
     }
 
     /**
-     * The level the pipeline's rule gives a mob spawning at a position: without jitter, and with the jitter's
-     * lowest and highest roll. The game must agree.
+     * The levels the pipeline's rule gives a mob spawning near a player of {@code playerLevel}: from
+     * {@code lowest} up, one weight per level, not normalised. The game must agree.
      */
-    public record Sample(double x, double y, double z, int level, int lowest, int highest) {
+    public record Sample(int playerLevel, int lowest, List<Integer> weights) {
     }
 
     /**
@@ -36,46 +31,32 @@ public final class GeneratedDimensionRuleExpectations {
             new DimensionRulesExpectation(
                     "realmforge:overworld",
                     "minecraft:overworld",
-                    Optional.of(new MobLevelRule(1, 500, Optional.of(new Depth(0, 32)), 1, 1, 5)),
+                    Optional.of(new MobLevelRule(1, 60, List.of(5, 10, 20, 30, 20, 10, 5))),
                     List.of(
-                            new Sample(0.0, 16.0, 0.0, 1, 1, 2),
-                            new Sample(499.5, 16.0, 0.0, 1, 1, 2),
-                            new Sample(0.0, 16.0, -500.0, 2, 1, 3),
-                            new Sample(999.5, 16.0, 0.0, 2, 1, 3),
-                            new Sample(0.0, 16.0, -1000.0, 3, 2, 4),
-                            new Sample(1499.5, 16.0, 0.0, 3, 2, 4),
-                            new Sample(0.0, 16.0, -1500.0, 4, 3, 5),
-                            new Sample(1999.5, 16.0, 0.0, 4, 3, 5),
-                            new Sample(0.0, 16.0, -2000.0, 5, 4, 5),
-                            new Sample(2499.5, 16.0, 0.0, 5, 4, 5),
-                            new Sample(0.0, 16.0, -2500.0, 5, 5, 5),
-                            new Sample(500.0, 16.0, 500.0, 2, 1, 3),
-                            new Sample(0.0, 0.0, 0.0, 1, 1, 2),
-                            new Sample(0.0, -0.5, 0.0, 1, 1, 2),
-                            new Sample(0.0, -32.0, 0.0, 2, 1, 3),
-                            new Sample(0.0, -64.5, 0.0, 3, 2, 4),
-                            new Sample(30000000.0, 16.0, 0.0, 5, 5, 5)),
+                            new Sample(1, 1, List.of(30, 20, 10, 5)),
+                            new Sample(2, 1, List.of(20, 30, 20, 10, 5)),
+                            new Sample(4, 1, List.of(5, 10, 20, 30, 20, 10, 5)),
+                            new Sample(30, 27, List.of(5, 10, 20, 30, 20, 10, 5)),
+                            new Sample(57, 54, List.of(5, 10, 20, 30, 20, 10, 5)),
+                            new Sample(60, 57, List.of(5, 10, 20, 30)),
+                            new Sample(61, 58, List.of(5, 10, 20)),
+                            new Sample(64, 60, List.of(1))),
                     List.of()),
             new DimensionRulesExpectation(
                     "realmforge:stone",
                     "realmforge:stone",
-                    Optional.of(new MobLevelRule(6, 320, Optional.empty(), 1, 6, 18)),
+                    Optional.of(new MobLevelRule(6, 60, List.of(5, 10, 20, 30, 20, 10, 5))),
                     List.of(
-                            new Sample(0.0, 64.0, 0.0, 6, 6, 7),
-                            new Sample(319.5, 64.0, 0.0, 6, 6, 7),
-                            new Sample(0.0, 64.0, -320.0, 7, 6, 8),
-                            new Sample(639.5, 64.0, 0.0, 7, 6, 8),
-                            new Sample(0.0, 64.0, -640.0, 8, 7, 9),
-                            new Sample(959.5, 64.0, 0.0, 8, 7, 9),
-                            new Sample(0.0, 64.0, -960.0, 9, 8, 10),
-                            new Sample(1279.5, 64.0, 0.0, 9, 8, 10),
-                            new Sample(0.0, 64.0, -1280.0, 10, 9, 11),
-                            new Sample(1599.5, 64.0, 0.0, 10, 9, 11),
-                            new Sample(0.0, 64.0, -1600.0, 11, 10, 12),
-                            new Sample(1919.5, 64.0, 0.0, 11, 10, 12),
-                            new Sample(0.0, 64.0, -1920.0, 12, 11, 13),
-                            new Sample(320.0, 64.0, 320.0, 7, 6, 8),
-                            new Sample(30000000.0, 64.0, 0.0, 18, 18, 18)),
+                            new Sample(1, 6, List.of(1)),
+                            new Sample(5, 6, List.of(1)),
+                            new Sample(6, 6, List.of(30, 20, 10, 5)),
+                            new Sample(7, 6, List.of(20, 30, 20, 10, 5)),
+                            new Sample(9, 6, List.of(5, 10, 20, 30, 20, 10, 5)),
+                            new Sample(33, 30, List.of(5, 10, 20, 30, 20, 10, 5)),
+                            new Sample(57, 54, List.of(5, 10, 20, 30, 20, 10, 5)),
+                            new Sample(60, 57, List.of(5, 10, 20, 30)),
+                            new Sample(61, 58, List.of(5, 10, 20)),
+                            new Sample(64, 60, List.of(1))),
                     List.of("{\n  \"advancement\": \"realmforge:realm/stone\",\n  \"type\": \"realmforge:has_advancement\"\n}")));
 
     private GeneratedDimensionRuleExpectations() {
