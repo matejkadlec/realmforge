@@ -195,13 +195,13 @@ other realms.
 | Undervault (stone, M1) | stone bricks, deepslate, tuff, cobblestone | barrels, crates of planks, minecart rails and a minecart, chains, lanterns, anvils, ore piles (raw ore blocks), scaffolding, tools in item frames |
 | Sunwastes (desert) | sandstone, smooth and cut sandstone, terracotta | decorated pots, skulls, banners, hay, cactus in pots, suspicious sand, sarcophagi of stairs |
 | Everwinter (tundra) | packed and blue ice, snow, spruce, stone bricks | spruce barrels and chests, campfires, powder snow, frozen lanterns (soul lanterns), furs (white wool and carpets) |
-| Olympus (hub) | quartz, calcite, gold blocks | lecterns, bookshelves, candles, flower pots, banners, amethyst |
-| Prestoria (prehistoric) | mud bricks, jungle wood, moss | bones (bone blocks), eggs (sniffer and turtle eggs), moss, hanging roots, campfires |
+| Asgard (hub) | quartz, calcite, gold blocks | lecterns, bookshelves, candles, flower pots, banners, amethyst |
+| Atlantis (water) | prismarine, dark prismarine, sandstone, coral blocks | sea lanterns, coral fans, kelp, sea pickles, conduits, barrels and chests from shipwrecks, chains |
 | Quagmire (swamp) | mud, mangrove, slime | slime blocks, mangrove roots, lily pads in cauldrons, brewing stands, mushrooms |
 | Ashfire (fire) | blackstone, basalt, magma | chains, soul lanterns, gilded blackstone, skulls, campfires, anvils |
 | Unmade Isles (void) | obsidian, purpur and end stone blocks (the End itself stays removed) | chains, crying obsidian, amethyst clusters, candles, end rods |
 
-**Pack mods.** Regions Unexplored adds woods and plants worth using for Prestoria and Quagmire. Sophisticated
+**Pack mods.** Regions Unexplored adds woods and plants worth using for Quagmire. Sophisticated
 Storage's barrels and chests are working storage, so they stay out of pieces. A modded block in a piece needs the
 full-pack registry dump first, since every id must be in the ID universe (`CLAUDE.md`, rule 3).
 

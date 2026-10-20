@@ -23,9 +23,9 @@
   ([ADR 0006](../decisions/0006-quests-ftb-quests-generated-from-data.md)); quests point to guide entries, and the
   guide never shows quest progress.
 - **It follows the player's chapter.** In chapter 2 the player reads about chapters 1 and 2, not 3.
-- **It leaves some things to Olympus** (Matěj, RLM-188): from chapter 4 on, a realm entry may end with a hint such
-  as "… Olympus citizens could know more about this prehistoric realm.", and the campaign hints themselves come from
-  Olympus's NPCs ([realm design](realms.md#the-hub-realm)).
+- **It leaves some things to Asgard** (Matěj, RLM-188): from chapter 3 on, since Asgard opens at about level 15
+  (RLM-245), a realm entry may end with a hint such as "… the citizens of Asgard could know more about this realm.",
+  and the campaign hints themselves come from Asgard's NPCs ([realm design](realms.md#the-hub-realm)).
 - **English only**, like the rest of the game.
 
 ## Screen

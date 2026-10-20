@@ -67,7 +67,7 @@ Hours per chapter, from one chapter's cap to the next (chapter 1 from level 1):
 | 1 | Overworld | 1–10 | 4.9 | 1.6 |
 | 2 | Undervault | 10–18 | 6.9 | 2.1 |
 | 3 | Sunwastes and Everwinter (twins) | 18–30 | 14.8 | 4.2 |
-| 4 | Prestoria | 30–40 | 16.8 | 4.5 |
+| 4 | Atlantis | 30–40 | 16.8 | 4.5 |
 | 5 | Quagmire | 40–44 | 8.0 | 2.1 |
 | 6 | Ashfire | 44–52 | 18.7 | 4.6 |
 | 7 | Unmade Isles | 52–60 | 22.9 | 5.5 |
@@ -160,7 +160,7 @@ Each chapter's cap is its last level, and the chapter's main questline raises it
 | 1, Overworld | 10 | 18 |
 | 2, Undervault | 18 | 30 |
 | 3, Sunwastes and Everwinter | 30 | 40 |
-| 4, Prestoria | 40 | 44 |
+| 4, Atlantis | 40 | 44 |
 | 5, Quagmire | 44 | 52 |
 | 6, Ashfire | 52 | 60 |
 | 7, Unmade Isles | 60 | - |
@@ -180,13 +180,15 @@ and dungeon runs (from the report; Q2 and later chapters set the exact counts ag
 | Undervault | about 58,000 | about 18 | about 160 | about 2 |
 | Sunwastes | about 61,000 | about 13 | about 130 | 1–2 |
 | Everwinter | about 104,000 | about 17 | about 180 | about 2 |
-| Prestoria | about 279,000 | about 33 | about 400 | about 4 |
+| Atlantis | about 279,000 | about 33 | about 400 | about 4 |
 | Quagmire | about 159,000 | about 15 | about 200 | about 2 |
 | Ashfire | about 428,000 | about 33 | about 470 | about 5 |
 | Unmade Isles | about 807,000 | about 48 | about 760 | about 8 |
 
 In all: about 190 standard quests (about 200–250 real ones, since small quests count half), about 2,400 kills and
-about 26 dungeon runs. Olympus hands out about a fifth of the quests of realms 4–7 (Prestoria to Unmade Isles).
+about 26 dungeon runs. Asgard, the hub and the centre of the game, hands out a share of the quests of every realm
+from chapter 3 on, Sunwastes to Unmade Isles (Matěj, 2026-10-17, RLM-245, since Asgard opens at about level 15). The
+report assumed about a fifth of the quests of realms 4–7; the share per realm is set with Q2 and later chapters.
 
 ## Anti-farm
 

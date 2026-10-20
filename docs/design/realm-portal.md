@@ -52,8 +52,9 @@
 | Fire realm (Ashfire) | Fire Sigil | from the realm before it, by the same rule | the quest after that realm's boss | red `#E0502C` |
 | Void realm (Unmade Isles) | Void Sigil | from the realm before it, by the same rule (RLM-95) | the quest after that realm's boss | deep purple `#4B1F6F` |
 
-Olympus, Prestoria and Quagmire ([realm design](realms.md#at-a-glance)) get their rows when they are designed; how a
-player first reaches Olympus is open there. Colours are proposals and live in data ([Data](#data-contentrealms)). Purple
+Asgard, Atlantis and Quagmire ([realm design](realms.md#at-a-glance)) get their rows when they are designed. Asgard
+opens with the Asgard Medallion, crafted from the Stone Heart of Undervault's final boss (RLM-245), and gets its own
+portal of Holy Stone bricks (RLM-302). Colours are proposals and live in data ([Data](#data-contentrealms)). Purple
 is kept for the Void realm, which comes after M4 removes the nether portals
 ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)), so no realm portal looks like a nether portal.
 
