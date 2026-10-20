@@ -23,10 +23,9 @@ import net.minecraft.world.level.Level;
 
 /**
  * Checks that every entry of {@code content/dimensions/} reached the server's datapack registry
- * {@code realmforge:dimension_rules} as the content says, and that the game's mob level rule gives the level the
- * pipeline computes at each sample position, with and without the jitter, and that the access requirements are the
- * content's ({@link GeneratedDimensionRuleExpectations},
- * architecture 6.5).
+ * {@code realmforge:dimension_rules} as the content says, that the game's mob level rule gives the levels and weights
+ * the pipeline computes near a player of each sample level, and that the access requirements are the content's
+ * ({@link GeneratedDimensionRuleExpectations}, architecture 6.5).
  */
 public final class ContentDimensionRuleGameTests {
     private ContentDimensionRuleGameTests() {
@@ -64,21 +63,15 @@ public final class ContentDimensionRuleGameTests {
 
             for (Sample sample : expected.samples()) {
                 MobLevelRule rule = rules.mobLevels().orElseThrow();
-                String where = expected.id() + " at " + sample.x() + ", " + sample.y() + ", " + sample.z();
-                helper.assertValueEqual(rule.levelAt(sample.x(), sample.y(), sample.z(), 0), sample.level(), where);
-                helper.assertValueEqual(rule.levelAt(sample.x(), sample.y(), sample.z(), -rule.jitter()),
-                        sample.lowest(), where + ", the lowest roll");
-                helper.assertValueEqual(rule.levelAt(sample.x(), sample.y(), sample.z(), rule.jitter()),
-                        sample.highest(), where + ", the highest roll");
+                helper.assertValueEqual(rule.chances(sample.playerLevel()),
+                        new MobLevelRule.Chances(sample.lowest(), sample.weights()),
+                        expected.id() + " near a player of level " + sample.playerLevel());
             }
         }
         helper.succeed();
     }
 
     private static GeneratedDimensionRuleExpectations.MobLevelRule asWritten(MobLevelRule rule) {
-        return new GeneratedDimensionRuleExpectations.MobLevelRule(rule.originLevel(), rule.blocksPerLevel(),
-                rule.depth().map(depth -> new GeneratedDimensionRuleExpectations.Depth(depth.belowY(),
-                        depth.blocksPerLevel())),
-                rule.jitter(), rule.minLevel(), rule.maxLevel());
+        return new GeneratedDimensionRuleExpectations.MobLevelRule(rule.entryLevel(), rule.maxLevel(), rule.weights());
     }
 }

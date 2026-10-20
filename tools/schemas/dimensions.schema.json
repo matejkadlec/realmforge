@@ -23,32 +23,6 @@
       "title": "ChapterCompletedDef",
       "type": "object"
     },
-    "DepthDef": {
-      "additionalProperties": false,
-      "description": "Deeper is stronger: below ``below_y``, a mob is one level higher for every ``blocks_per_level`` blocks.",
-      "properties": {
-        "below_y": {
-          "description": "The height below which depth adds levels.",
-          "maximum": 2147483647,
-          "minimum": -2147483648,
-          "title": "Below Y",
-          "type": "integer"
-        },
-        "blocks_per_level": {
-          "description": "Blocks below below_y for each level more (1 or more).",
-          "maximum": 2147483647,
-          "minimum": 1,
-          "title": "Blocks Per Level",
-          "type": "integer"
-        }
-      },
-      "required": [
-        "below_y",
-        "blocks_per_level"
-      ],
-      "title": "DepthDef",
-      "type": "object"
-    },
     "HasAdvancementDef": {
       "additionalProperties": false,
       "description": "The player has earned an advancement: a realm's unlock, ``realmforge:realm/<realm>``, for example.",
@@ -98,62 +72,37 @@
     },
     "MobLevelRuleDef": {
       "additionalProperties": false,
-      "description": "How the level of a mob spawning in the dimension follows from where it spawns: the level at the\ndimension's origin, one level more every ``blocks_per_level`` blocks of horizontal distance from it, more with\ndepth, a random spread of ``jitter`` levels either way, all clamped to ``min_level`` .. ``max_level``.",
+      "description": "How the level of a mob spawning in the dimension follows the nearest player (RLM-240, architecture 14.1):\nnear the player's level, by ``weights`` for the offsets around it, never below ``entry_level`` (the realm's floor)\nnor above ``max_level``.",
       "properties": {
-        "blocks_per_level": {
-          "description": "Horizontal distance from the origin, in blocks, for each level more (1 or more).",
+        "entry_level": {
+          "description": "The realm's floor: the level needed to enter it. No mob there is lower, and a player below it meets every mob at it.",
           "maximum": 2147483647,
           "minimum": 1,
-          "title": "Blocks Per Level",
-          "type": "integer"
-        },
-        "depth": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/DepthDef"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Optional: levels added with depth."
-        },
-        "jitter": {
-          "default": 0,
-          "description": "Each mob's level is up to this many levels higher or lower, at random (0: none).",
-          "maximum": 1000,
-          "minimum": 0,
-          "title": "Jitter",
+          "title": "Entry Level",
           "type": "integer"
         },
         "max_level": {
-          "description": "The highest level in the dimension.",
+          "description": "The highest level a mob there gets.",
           "maximum": 2147483647,
           "minimum": 1,
           "title": "Max Level",
           "type": "integer"
         },
-        "min_level": {
-          "description": "The lowest level in the dimension.",
-          "maximum": 2147483647,
-          "minimum": 1,
-          "title": "Min Level",
-          "type": "integer"
-        },
-        "origin_level": {
-          "description": "Level at the origin (x 0, z 0), above the depth line.",
-          "maximum": 2147483647,
-          "minimum": 1,
-          "title": "Origin Level",
-          "type": "integer"
+        "weights": {
+          "description": "The weight of each offset from the nearest player's level, lowest first, the middle one for the player's own level: [5, 10, 20, 30, 20, 10, 5] is -3 to +3. An odd number of weights, each 1 to 1000; the floor and the cap drop offsets, and the rest share the chance by their weights.",
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 21,
+          "minItems": 1,
+          "title": "Weights",
+          "type": "array"
         }
       },
       "required": [
-        "origin_level",
-        "blocks_per_level",
-        "min_level",
-        "max_level"
+        "entry_level",
+        "max_level",
+        "weights"
       ],
       "title": "MobLevelRuleDef",
       "type": "object"

@@ -5,15 +5,20 @@ import io.github.matejkadlec.realmforge.mob.MobLevels;
 import io.github.matejkadlec.realmforge.mob.MobScaling;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
-import io.github.matejkadlec.realmforge.world.DimensionRules;
-import io.github.matejkadlec.realmforge.world.MobLevelRule;
 import java.util.List;
 import java.util.OptionalInt;
+import java.util.Set;
+import java.util.TreeSet;
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.ConversionParams;
 import net.minecraft.world.entity.Entity;
@@ -42,47 +47,124 @@ import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 
 /**
- * W1's Done when (architecture 14.1): a mob's level follows the Overworld's rule by distance and depth; a leveled mob
- * has its scaled maximum health and starts with full health; a split slime's children keep the parent's level; a mob
- * added without {@code finalizeSpawn} ({@code GameTestHelper#spawn}) gets a level and its scaling; a converted mob
- * keeps a level and the scaling that belongs to it. Also: a mob from world generation is leveled when it joins, passive
- * mobs get no level, a cured mob loses it, a leveled mob's hits grow with its level, and a mob loaded from disk is
- * rescaled to the current curves, keeping its share of health.
+ * W1's and RLM-303's Done when (architecture 14.1): a mob's level follows the nearest player, within the rule's offsets
+ * of their level and never below the realm's floor, and a mob keeps the level it spawned with; a leveled mob has its
+ * scaled maximum health and starts with full health; a split slime's children keep the parent's level; a mob added
+ * without {@code finalizeSpawn} ({@code GameTestHelper#spawn}) gets a level and its scaling; a converted mob keeps a
+ * level and the scaling that belongs to it. Also: a mob from world generation is leveled when it joins, passive mobs
+ * get no level, a cured mob loses it, a leveled mob's hits grow with its level, and a mob loaded from disk is rescaled
+ * to the current curves, keeping its share of health.
  *
- * <p>GameTests run far from the origin (anywhere within 15 million blocks) at y -59, so a mob on a test's platform is
- * at the Overworld's top levels; tests that need other positions spawn there in absolute coordinates.
+ * <p>Other tests log their own players in, so a mob that must follow a known player spawns where that player stands:
+ * nobody else is nearer.
  */
 public final class MobLevelGameTests {
     private static final double TOLERANCE = 1e-4;
     /** Health no test's hits use up, for a target. */
     private static final double HEALTH = 1000;
+    /** Mobs rolled per player level: the chance that 40 rolls all land on the player's own level is 0.3^40. */
+    private static final int ROLLS = 40;
+    private static final ResourceKey<Level> STONE =
+            ResourceKey.create(Registries.DIMENSION, Identifier.parse("realmforge:stone"));
+    /** Where in Undervault the floor test stands, far from the other realm tests' spots. */
+    private static final Vec3 IN_UNDERVAULT = new Vec3(-1000.5, 64, 1000.5);
 
     private MobLevelGameTests() {
     }
 
-    /** The level by distance and depth: near the origin, far from it, and deep below the origin. */
+    /** RLM-303: mobs spawn within 3 levels of the nearest player's level, and follow it when it changes. */
     @QaGameTest
-    public static void levelFollowsDistanceAndDepth(GameTestHelper helper) {
+    public static void levelFollowsTheNearestPlayer(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         helper.assertValueEqual(level.dimension(), Level.OVERWORLD, "GameTests run in the Overworld");
-        MobLevelRule rule = DimensionRules.mobLevels(level.registryAccess(), Level.OVERWORLD).orElseThrow();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-mob-level-near");
+        try {
+            setPlayerLevel(player, 30);
+            Set<Integer> seen = assertLevelsNear(helper, level, player, 27, 33);
+            helper.assertTrue(seen.contains(30) && seen.size() >= 3, "a spread around level 30: " + seen);
+            setPlayerLevel(player, 50);
+            seen = assertLevelsNear(helper, level, player, 47, 53);
+            helper.assertTrue(seen.contains(50) && seen.size() >= 3, "a spread around level 50: " + seen);
+            setPlayerLevel(player, 1);
+            seen = assertLevelsNear(helper, level, player, 1, 4);
+            helper.assertTrue(seen.contains(1), "level 1 comes up at the Overworld's floor: " + seen);
+        } finally {
+            helper.getLevel().getServer().getPlayerList().remove(player);
+        }
+        helper.succeed();
+    }
 
-        int near = assertLevelFromTheRule(helper, rule, new BlockPos(0, 100, 0));
-        int far = assertLevelFromTheRule(helper, rule, new BlockPos(100_000, 100, 0));
-        assertLevelFromTheRule(helper, rule, new BlockPos(0, -40, 0));
-        helper.assertTrue(rule.levelAt(100_000, 100, 0, -rule.jitter()) > rule.levelAt(0, 100, 0, rule.jitter()),
-                "the Overworld's levels rise with distance beyond the jitter: " + near + " near, " + far + " far");
-        helper.assertTrue(rule.levelAt(0, -40, 0, 0) > rule.levelAt(0, 100, 0, 0), "levels rise with depth");
+    /**
+     * RLM-303: Undervault's floor is 6. A player below it meets every mob at 6; one just above it meets mobs from 6
+     * up, none below.
+     */
+    @QaGameTest
+    public static void undervaultsMobsNeverGoBelowItsFloor(GameTestHelper helper) {
+        ServerLevel realm = helper.getLevel().getServer().getLevel(STONE);
+        helper.assertTrue(realm != null, "the GameTest world has Undervault");
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-mob-level-floor");
+        try {
+            award(helper, player, "realmforge:realm/stone");
+            realm.getChunk(Mth.floor(IN_UNDERVAULT.x) >> 4, Mth.floor(IN_UNDERVAULT.z) >> 4);
+            helper.assertTrue(player.teleportTo(realm, IN_UNDERVAULT.x, IN_UNDERVAULT.y, IN_UNDERVAULT.z, Set.of(),
+                    0.0F, 0.0F, true), "the unlocked player enters Undervault");
+            setPlayerLevel(player, 3);
+            assertLevelsNear(helper, realm, player, 6, 6);
+            setPlayerLevel(player, 7);
+            Set<Integer> seen = assertLevelsNear(helper, realm, player, 6, 10);
+            helper.assertTrue(seen.contains(6) && seen.contains(7), "levels 6 and 7 come up: " + seen);
+        } finally {
+            helper.getLevel().getServer().getPlayerList().remove(player);
+        }
+        helper.succeed();
+    }
+
+    /** RLM-303: a mob keeps the level it spawned with when the player's level changes and when it loads again. */
+    @QaGameTest
+    public static void aMobKeepsTheLevelItSpawnedWith(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-mob-level-keep");
+        Skeleton skeleton = null;
+        try {
+            setPlayerLevel(player, 30);
+            skeleton = EntityType.SKELETON.spawn(level, player.blockPosition(), EntitySpawnReason.COMMAND);
+            helper.assertTrue(skeleton != null, "a skeleton spawned");
+            int spawned = assertLeveled(helper, skeleton);
+            helper.assertTrue(spawned >= 27 && spawned <= 33, "level " + spawned + " near a level 30 player");
+            setPlayerLevel(player, 55);
+            NeoForge.EVENT_BUS.post(new EntityJoinLevelEvent(skeleton, level, true));
+            helper.assertValueEqual(MobLevels.level(skeleton), OptionalInt.of(spawned),
+                    "the skeleton's level after the player leveled up and it loaded again");
+            assertScaled(helper, skeleton, spawned);
+        } finally {
+            if (skeleton != null) {
+                skeleton.discard();
+            }
+            helper.getLevel().getServer().getPlayerList().remove(player);
+        }
         helper.succeed();
     }
 
     /** A skeleton spawned through {@code finalizeSpawn} has its scaled maximum health, and all of it. */
     @QaGameTest
     public static void spawnedMobHasItsScaledMaximumHealthInFull(GameTestHelper helper) {
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-mob-level-health");
+        try {
+            setPlayerLevel(player, 20);
+            assertSpawnedInFull(helper);
+        } finally {
+            helper.getLevel().getServer().getPlayerList().remove(player);
+        }
+        helper.succeed();
+    }
+
+    /** {@link #spawnedMobHasItsScaledMaximumHealthInFull} next to its level 20 player. */
+    private static void assertSpawnedInFull(GameTestHelper helper) {
         Skeleton skeleton = helper.spawn(EntityType.SKELETON, 2, 1, 2, EntitySpawnReason.SPAWN_ITEM_USE);
         int level = assertLeveled(helper, skeleton);
         MobScaling scaling = MobScaling.at(helper.getLevel().registryAccess(), level);
-        helper.assertTrue(scaling.health() > 1, "the platform's level " + level + " scales health");
+        helper.assertTrue(level >= 17 && level <= 23, "level " + level + " near a level 20 player");
+        helper.assertTrue(scaling.health() > 1, "level " + level + " scales health");
         assertScaled(helper, skeleton, level);
         AttributeInstance health = skeleton.getAttribute(Attributes.MAX_HEALTH);
         helper.assertValueEqual(health.getModifiers().size(), 1, "the skeleton's only health modifier is its level's");
@@ -96,7 +178,6 @@ public final class MobLevelGameTests {
             assertScaled(helper, zombie, assertLeveled(helper, zombie));
             assertClose(helper, zombie.getHealth(), zombie.getMaxHealth(), "a new zombie's health");
         }
-        helper.succeed();
     }
 
     /**
@@ -252,24 +333,39 @@ public final class MobLevelGameTests {
     }
 
     /**
-     * Spawns a skeleton through {@code finalizeSpawn} at an absolute position, checks that its level is one the rule
-     * gives there, removes it and returns the level.
+     * Spawns {@link #ROLLS} skeletons through {@code finalizeSpawn} where the player stands, checks that each one's
+     * level is within {@code lowest .. highest} and scaled to it, removes them and returns the levels that came up.
      */
-    private static int assertLevelFromTheRule(GameTestHelper helper, MobLevelRule rule, BlockPos pos) {
-        ServerLevel level = helper.getLevel();
-        level.getChunk(pos.getX() >> 4, pos.getZ() >> 4);
-        Skeleton skeleton = EntityType.SKELETON.spawn(level, pos, EntitySpawnReason.COMMAND);
-        helper.assertTrue(skeleton != null, "a skeleton spawned at " + pos);
-        try {
-            int got = assertLeveled(helper, skeleton);
-            int lowest = rule.levelAt(skeleton.getX(), skeleton.getY(), skeleton.getZ(), -rule.jitter());
-            int highest = rule.levelAt(skeleton.getX(), skeleton.getY(), skeleton.getZ(), rule.jitter());
-            helper.assertTrue(got >= lowest && got <= highest,
-                    "level " + got + " at " + pos + ", the rule gives " + lowest + " to " + highest);
-            assertScaled(helper, skeleton, got);
-            return got;
-        } finally {
-            skeleton.discard();
+    private static Set<Integer> assertLevelsNear(GameTestHelper helper, ServerLevel level, ServerPlayer player,
+            int lowest, int highest) {
+        Set<Integer> seen = new TreeSet<>();
+        for (int i = 0; i < ROLLS; i++) {
+            Skeleton skeleton = EntityType.SKELETON.spawn(level, player.blockPosition(), EntitySpawnReason.COMMAND);
+            helper.assertTrue(skeleton != null, "a skeleton spawned at " + player.blockPosition());
+            try {
+                int got = assertLeveled(helper, skeleton);
+                helper.assertTrue(got >= lowest && got <= highest, "level " + got + " near a level "
+                        + MobLevels.level(player).orElse(EntityLevel.MIN) + " player, expected " + lowest + " to "
+                        + highest);
+                assertScaled(helper, skeleton, got);
+                seen.add(got);
+            } finally {
+                skeleton.discard();
+            }
+        }
+        return seen;
+    }
+
+    /** Sets the level of a player without a character, as {@code /qa level} does. */
+    private static void setPlayerLevel(ServerPlayer player, int level) {
+        player.setData(StatsAttachments.LEVEL, new EntityLevel(level));
+    }
+
+    private static void award(GameTestHelper helper, ServerPlayer player, String advancement) {
+        AdvancementHolder holder = player.level().getServer().getAdvancements().get(Identifier.parse(advancement));
+        helper.assertTrue(holder != null, "the advancement exists: " + advancement);
+        for (String criterion : holder.value().criteria().keySet()) {
+            player.getAdvancements().award(holder, criterion);
         }
     }
 

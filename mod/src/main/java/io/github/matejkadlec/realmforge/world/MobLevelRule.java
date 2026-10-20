@@ -3,70 +3,101 @@ package io.github.matejkadlec.realmforge.world;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import java.util.Optional;
+import java.util.List;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.RandomSource;
 
 /**
- * How the level of a mob spawning in a dimension follows from where it spawns, part of the dimension's
- * {@link DimensionRules} (architecture 14.1): {@code originLevel} at the dimension's origin (x 0, z 0), one level more
- * every {@code blocksPerLevel} blocks of horizontal distance from it, more with {@link Depth depth}, a random
- * {@code jitter} of up to that many levels either way, all clamped to {@code minLevel .. maxLevel}. The pipeline
- * computes the same ({@code MobLevelRuleDef.level_at}), and a GameTest compares the two at sample positions.
+ * How the level of a mob spawning in a dimension follows the nearest player, part of the dimension's
+ * {@link DimensionRules} (RLM-240, architecture 14.1): a mob is up to {@link #spread()} levels below or above the
+ * player, each offset with its weight from {@code weights} (lowest offset first, the middle one for the player's own
+ * level), never below {@code entryLevel}, the realm's floor, nor above {@code maxLevel}. The floor and the cap drop
+ * offsets, and the rest share the chance by their weights. A player below the floor meets every mob at it; a player so
+ * far above the cap that no offset is left meets every mob at the cap. The pipeline computes the same
+ * ({@code MobLevelRuleDef.chances}), and a GameTest compares the two at sample player levels.
  *
- * @param depth levels added below a height, when present
- * @param jitter the most a mob's level differs from the rule's at random, either way; 0 for none
+ * @param entryLevel the realm's floor: the level needed to enter it
+ * @param weights the weight of each offset from the player's level, an odd number of them, each 1 to
+ *     {@link #MAX_WEIGHT}
  */
-public record MobLevelRule(int originLevel, int blocksPerLevel, Optional<Depth> depth, int jitter, int minLevel,
-        int maxLevel) {
-    /** The largest jitter, far beyond any band, so a roll's range always fits an {@code int}. */
-    public static final int MAX_JITTER = 1000;
+public record MobLevelRule(int entryLevel, int maxLevel, List<Integer> weights) {
+    /** The most offsets either side of the player's level, far beyond any sensible rule. */
+    public static final int MAX_SPREAD = 10;
+    /** The largest weight, so a sum of weights always fits an {@code int}. */
+    public static final int MAX_WEIGHT = 1000;
 
     public static final Codec<MobLevelRule> CODEC = RecordCodecBuilder.<MobLevelRule>create(instance -> instance.group(
-                    ExtraCodecs.POSITIVE_INT.fieldOf("origin_level").forGetter(MobLevelRule::originLevel),
-                    ExtraCodecs.POSITIVE_INT.fieldOf("blocks_per_level").forGetter(MobLevelRule::blocksPerLevel),
-                    Depth.CODEC.optionalFieldOf("depth").forGetter(MobLevelRule::depth),
-                    Codec.intRange(0, MAX_JITTER).optionalFieldOf("jitter", 0).forGetter(MobLevelRule::jitter),
-                    ExtraCodecs.POSITIVE_INT.fieldOf("min_level").forGetter(MobLevelRule::minLevel),
-                    ExtraCodecs.POSITIVE_INT.fieldOf("max_level").forGetter(MobLevelRule::maxLevel))
+                    ExtraCodecs.POSITIVE_INT.fieldOf("entry_level").forGetter(MobLevelRule::entryLevel),
+                    ExtraCodecs.POSITIVE_INT.fieldOf("max_level").forGetter(MobLevelRule::maxLevel),
+                    Codec.intRange(1, MAX_WEIGHT).listOf(1, 2 * MAX_SPREAD + 1).fieldOf("weights")
+                            .forGetter(MobLevelRule::weights))
             .apply(instance, MobLevelRule::new))
             .validate(MobLevelRule::validate);
 
-    /** Deeper is stronger: below {@code belowY}, one level more for every {@code blocksPerLevel} blocks down. */
-    public record Depth(int belowY, int blocksPerLevel) {
-        public static final Codec<Depth> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                        Codec.INT.fieldOf("below_y").forGetter(Depth::belowY),
-                        ExtraCodecs.POSITIVE_INT.fieldOf("blocks_per_level").forGetter(Depth::blocksPerLevel))
-                .apply(instance, Depth::new));
+    public MobLevelRule {
+        weights = List.copyOf(weights);
     }
 
-    /** The level at a position before the jitter and the clamp. */
-    public double unclampedLevelAt(double x, double y, double z) {
-        double distance = Math.sqrt(x * x + z * z);
-        double level = originLevel + Math.floor(distance / blocksPerLevel);
-        if (depth.isPresent() && y < depth.get().belowY()) {
-            level += Math.floor((depth.get().belowY() - y) / depth.get().blocksPerLevel());
+    /**
+     * The levels a mob spawning near a player of one level may get: from {@code lowest} up, one weight per level, not
+     * normalised.
+     */
+    public record Chances(int lowest, List<Integer> weights) {
+        public int highest() {
+            return lowest + weights.size() - 1;
         }
-        return level;
+
+        /** The weight of {@code level}, 0 outside the range. */
+        public int weight(int level) {
+            return level < lowest || level > highest() ? 0 : weights.get(level - lowest);
+        }
+
+        /** A level drawn from {@code random} by the weights. */
+        public int roll(RandomSource random) {
+            int total = weights.stream().mapToInt(Integer::intValue).sum();
+            int left = random.nextInt(total);
+            for (int i = 0; i < weights.size(); i++) {
+                left -= weights.get(i);
+                if (left < 0) {
+                    return lowest + i;
+                }
+            }
+            throw new IllegalStateException("a roll below the total always lands on a level");
+        }
     }
 
-    /** The level of a mob spawning at a position whose jitter came out as {@code offset}: clamped to the range. */
-    public int levelAt(double x, double y, double z, int offset) {
-        return (int) Math.min(Math.max(unclampedLevelAt(x, y, z) + offset, minLevel), maxLevel);
+    /** How many levels a mob may be below or above the player. */
+    public int spread() {
+        return weights.size() / 2;
     }
 
-    /** The level of a mob spawning at a position, with a jitter drawn from {@code random}. */
-    public int levelAt(double x, double y, double z, RandomSource random) {
-        return levelAt(x, y, z, jitter == 0 ? 0 : random.nextIntBetweenInclusive(-jitter, jitter));
+    /** The levels a mob spawning near a player of {@code playerLevel} may get, with their weights. */
+    public Chances chances(int playerLevel) {
+        if (playerLevel < entryLevel) {
+            return new Chances(entryLevel, List.of(1));
+        }
+        int lowest = Math.max(entryLevel, playerLevel - spread());
+        int highest = Math.min(maxLevel, playerLevel + spread());
+        if (lowest > highest) {
+            return new Chances(maxLevel, List.of(1));
+        }
+        int start = lowest - playerLevel + spread();
+        return new Chances(lowest, weights.subList(start, start + highest - lowest + 1));
+    }
+
+    /** The level of a mob spawning near a player of {@code playerLevel}, drawn from {@code random}. */
+    public int levelFor(int playerLevel, RandomSource random) {
+        return chances(playerLevel).roll(random);
     }
 
     private static DataResult<MobLevelRule> validate(MobLevelRule rule) {
-        if (rule.minLevel() > rule.maxLevel()) {
-            return DataResult.error(() -> "min_level " + rule.minLevel() + " is above max_level " + rule.maxLevel());
+        if (rule.entryLevel() > rule.maxLevel()) {
+            return DataResult.error(() -> "entry_level " + rule.entryLevel() + " is above max_level "
+                    + rule.maxLevel());
         }
-        if (rule.originLevel() < rule.minLevel() || rule.originLevel() > rule.maxLevel()) {
-            return DataResult.error(() -> "origin_level " + rule.originLevel() + " is outside min_level "
-                    + rule.minLevel() + " .. max_level " + rule.maxLevel());
+        if (rule.weights().size() % 2 == 0) {
+            return DataResult.error(() -> "weights needs an odd number of entries, the middle one for offset 0: "
+                    + rule.weights());
         }
         return DataResult.success(rule);
     }
