@@ -875,7 +875,7 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
   and then spends points in that tree. From a level threshold (proposed: 20) they can pick a secondary
   specialization, a dual spec. M1 has one specialization per class; the other two, and dual spec, come in M3
   (Matěj, 2026-10-16). The `character` attachment still stores the class in a list from when dual class was
-  planned; the specialization work (the spell tree model, RLM-28) decides what it stores instead.
+  planned; the specialization work (the spell tree model, C5, RLM-333) decides what it stores instead.
 - **Changing race or class:** a QA command in M1, an in-game way later.
 - **In code (C1):** `character/Race` and `character/PlayerClass` are the entries of `realmforge:race` and
   `realmforge:class` (`CharacterRegistries`, both synced). A race names its classes by id, so a missing class fails
@@ -1198,6 +1198,11 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
 
 ## 12. Talents
 
+**Postponed indefinitely** (Matěj, 2026-10-16, RLM-28; confirmed 2026-10-18,
+[ADR 0044](decisions/0044-third-party-mods-by-milestone.md)): M1 builds no talents, and each class's spells form
+specialization spell trees instead (C5, RLM-333; RLM-218, [10.1](#101-races-and-classes)). The design below stays for when talents
+return; the proc engine at its end exists since C3a.
+
 - **Model:** one `realmforge:talent_tree` entry per tree with its grid size and nodes: id, column, row, icon, max
   rank, prerequisites (another node at some rank; points spent in the tree for each tier) and typed effects per
   rank.
@@ -1216,7 +1221,7 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
   later.
 - **Validation:** Python checks every tree (no cycles, every node reachable, the tier math works out); JUnit
   property tests check that no sequence of payloads reaches an invalid allocation.
-- **Glyphs** (M3) reuse the same effect types, with glyph items as the source.
+- **Glyphs** (postponed with talents) reuse the same effect types, with glyph items as the source.
 - **Screen:** a WoW-style grid, drawn from a pure `TalentTreeView`.
 - **In code (C3a-4, RLM-212): the proc engine.** A `spell/Proc` has an id, a trigger (`HIT`, `CRIT`, `KILL` or
   `HIT_TAKEN`, from its holder's side), a chance, an internal cooldown in ticks (research SP-15) and an action: cast a
@@ -1435,8 +1440,9 @@ loot: realmforge:boss/hollow_warden
   experimental data packs in the create screen; nothing changes on servers. The dev client loads the same build
   with the rest of the pack ([ADR 0042](decisions/0042-the-dev-runs-load-the-whole-pack.md)). We add no mixin of
   our own for it ([19.3](#193-mixins-and-access-transformers)).
-- The Nether and End are removed in M4 ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)); M1 does not touch
-  them.
+- The Nether and End are removed in M4 ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)); M1 touches them
+  only by switching vanilla strongholds off (PK3), which leaves the End without a portal
+  ([ADR 0044](decisions/0044-third-party-mods-by-milestone.md)).
 
 ### 15.2 Dungeon types
 
@@ -1469,7 +1475,7 @@ opened with the Test Dungeon Key, and W6 brings the real types. What later tasks
 
 ```yaml
 # planned fields (names are examples)
-placement: instance                  # world_structure later (M4)
+placement: instance                  # world_structure later (M2, 15.6)
 theme: realmforge:crypt              # block palette: a processor list (see below)
 ending: {type: realmforge:boss_lair, boss: realmforge:hollow_warden}   # or realmforge:treasury, ... (W5, W6)
 encounters: {budget_per_room: [2, 4], mobs: realmforge:crypt}           # W6
@@ -1645,7 +1651,7 @@ Rooms are generated or imported; nobody has to build one by hand
   room's own blocks are remapped, and a container's loot table must exist), and `LICENSE` and `NOTICE` next to
   third-party rooms (`COPYING` next to LGPL-3.0 ones). `rooms/check.py` checks the size, the data version, the
   ids, the loot tables, the connectors, each jigsaw's pool, which must be a vanilla template pool or a room
-  pool some sidecar lists (it becomes a template pool for world structures, M4), and the data markers: every
+  pool some sidecar lists (it becomes a template pool for world structures, M2), and the data markers: every
   structure block is one, in data mode, naming a marker of [15.3](#153-generation-pure-first-then-minecraft), with one
   entrance marker at most. A room in a dungeon type's pool also holds no fluid (water, lava, a waterlogged block,
   kelp or seagrass) that can reach its sides or floor: a fluid flows down and sideways, and from there out of the
@@ -1821,9 +1827,12 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   `/qa instance bench` measures clear then reuse.
 - No dimensions are created at runtime (ADR 0012).
 
-### 15.6 World structures (M4)
+### 15.6 World structures (M2)
 
-The same dungeon type format with `placement: world_structure`: the pipeline emits jigsaw `worldgen/structure`,
+Moved from M4 to M2 on 2026-10-19, starting with Undervault's dwarf-like fortress (RLM-317,
+[ADR 0044](decisions/0044-third-party-mods-by-milestone.md)); other mods' world structures are placed by realm through
+our data pack, Structurify and Lithostitched processors (RLM-315, RLM-316). The same dungeon type format with
+`placement: world_structure`: the pipeline emits jigsaw `worldgen/structure`,
 `structure_set`, `template_pool` and `processor_list` files. Vanilla 26.1.2 limits jigsaw to depth 20
 (`JigsawStructure.MAX_DEPTH`) and 128 blocks from the start (`MAX_TOTAL_STRUCTURE_RANGE`); Lithostitched lifts the
 depth limit.

@@ -64,7 +64,7 @@ dressing's full view of the room with the builder's variety:
    a sample dressing (seed 0), so Matěj judges both the spots and the pieces in them.
 
 The spots are data the game reads, so a room needs no change, and a new piece reaches every room at the next
-`rf gen`. Set pieces also work for the world structures of M4, which place the same rooms. The import dressing keeps
+`rf gen`. Set pieces also work for the world structures of M2, which place the same rooms. The import dressing keeps
 its block variety, vines and cobwebs; its barrels (which RLM-262 puts into patterns) can give way to barrel set
 pieces once those exist.
 

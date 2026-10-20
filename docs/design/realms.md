@@ -147,6 +147,34 @@ Matěj's direction for armour (2026-10-15), designed step by step as sets, weapo
   keys of dungeons already done (LE-2), so a failed or repeated run never needs luck.
 - **Before every realm's final boss** stands an optional "Prepare" quest with recommended gear and items (Matěj,
   2026-10-16, RLM-224).
+- **Open-air instances** (Matěj, 2026-10-19, RLM-264): instanced dungeons may also lie under the sky, like WoW's
+  Stratholme or Hytale's dungeons, an open area closed in by mountains or cliff walls with void beyond. They need a
+  second instance dimension with sky light and daylight (M4, RLM-327).
+- **Realmforge Trials** (Matěj, 2026-10-19): every realm's non-story dungeons and bosses sit in one quest chapter
+  group, with no dependencies between them except that the realm is unlocked.
+
+### Structures from other mods
+
+World-generated dungeons and their mobs may come from other mods, placed into our realms with their blocks swapped
+for the realm's (Lithostitched processors, Structurify), with boss-like mobs only if they are lightweight (Matěj,
+2026-10-18 and 2026-10-19, RLM-264, [ADR 0044](../decisions/0044-third-party-mods-by-milestone.md); every mod and
+its milestone in the [research note](../research/third-party-mods.md)). **Each structure appears only in its realm,
+never also in Overworld.** Vanilla strongholds are off from M1.
+
+| Realm | Structures | Milestone |
+| --- | --- | --- |
+| Overworld | Dungeons Enhanced: Large Dungeon, Tower of the Undead, Druid Circle, Pillager Camp, Pirate Ship, Fishing Ship, Monster Maze (dark, pale), Jungle Monument, Stables, Ruined Building, Mushroom House, Tree House, Miners House; YUNG's suite, Dungeons and Taverns, MVS, Battle Towers, Underground Worlds (Structory and Structory: Towers only if Matěj clears their Stardust Labs License, ADR 0044); the illager mods and the villages (CTOV with Village Taverns) | M2 (RLM-315, RLM-318) |
+| Overworld, late | Ancient Cities through Dungeons and Taverns' Ancient City Overhaul, with a Warden of level 40 and more for a later questline (a structure-bound level floor, RLM-240); Golem Dungeons' Sculk Factory beside them | later |
+| Undervault | Dungeons Enhanced: Deep Crypt, Dungeon Variant (set into the cave walls); Golem Dungeons: Abandoned Factory | M2 (RLM-316) |
+| Sunwastes | Dungeons Enhanced: Desert Tomb, Desert Temple, Hay Storage; YUNG's Cave Biomes: Lost Caves | M4 (RLM-325) |
+| Everwinter | Dungeons Enhanced: Castle, Ice Pit, Witch Tower, Watch Tower; YUNG's Cave Biomes: Frosted Caves; The Lost Castle in the tundra | M4 (RLM-325) |
+| Prestoria (Atlantis, if RLM-265 makes it the water realm) | Dungeons Enhanced: Elders Temple, Sunken Shrine, Flying Dutchman (a ghost ship 20–40 blocks above the seabed, through a start-height override) | with the realm |
+| Quagmire | Dungeons Enhanced: Tall Witch Hut; Grim Kingdoms (a ruined castle in the swamp) | with the realm |
+| Ashfire | Dungeons Enhanced: Black Citadel; Golem Dungeons: Piglin Factory | with the realm |
+| Unmade Isles | MSS – Moog's Soaring Structures | with the realm |
+
+YUNG's Cave Biomes generates in neither Overworld nor Undervault. Paintings in a dungeon come from its theme's own
+set, never random across themes (RLM-322).
 
 ### Puzzles and traps
 
@@ -216,6 +244,11 @@ Chapter 1 (levels 1–10), the realm of M1. Identity: home.
   enter Undervault from then on (Matěj, 2026-10-16). Until then chapter 1's main questline, ending with the Stone
   Sigil, is the gate, and RLM-224's "Prepare" quest stands before the quest that enters Undervault. M1 has no Overworld
   dungeon or boss (Matěj chose option b on RLM-188, 2026-10-16).
+- **M2 brings them** (Matěj, 2026-10-19, RLM-264): a main questline of 2–3 zombie, skeleton or spider dungeons, then
+  pillagers, illagers and evokers to the chapter's end, with raid quests on the way (RLM-320). The final boss is an
+  elite Illusioner at level 8 in an Illusioner tower, a world structure, with the tower's other mobs at about level 6
+  and no Blindness (RLM-321). The other world dungeons come from mods ([Structures from other
+  mods](#structures-from-other-mods)).
 - **The hub.** Every realm's way back leads to Overworld. [Realm portals](realm-portal.md) link like the
   Nether's (Matěj, RLM-128), so players build as many as they like, anywhere, and waystones they place make
   Overworld the node between realms (TR-7). With cheap waystones the hub costs no walking. As a place, the hub
@@ -286,8 +319,8 @@ it offers most of what the Nether offered ([ADR 0025](../decisions/0025-remove-t
   worldgen (the one-floor cave, the stone types and their hardness, the ancient debris, the sub-regions); W3's 1–2
   custom mobs (D11) are two animated statues (a melee and a caster archetype); W6's type A (ends in the boss's lair)
   is the stone arena and type B (ends in a treasury) the catacombs, both with netherite templates in their loot;
-  W5's boss fights in the arena. The fortress waits for M4's world-structure dungeons, and the NPC mines, the gems
-  and the full material set grow as later tasks need them.
+  W5's boss fights in the arena. The fortress waits for M2's world-structure dungeons (RLM-317), and the NPC mines,
+  the gems and the full material set grow as later tasks need them.
 
 ### The desert realm
 
@@ -295,7 +328,8 @@ Name: **Sunwastes**. Chapter 3 (levels 16–24), M4, the twin of Everwinter; bot
 Identity: sun and sand.
 
 - **Landscape:** dunes, sand mountains, big oases (sunken basins with water and fauna found nowhere else, RE-12),
-  abandoned towns that are empty or hold friendly NPCs.
+  abandoned towns that are empty or hold friendly NPCs; a savanna biome too, badlands maybe later (Matěj,
+  2026-10-19, RLM-264).
 - **Dungeons:** a pyramid, a sphinx, an abandoned desert town or village.
 - **Materials:** structures full of suspicious sand and red sand whose reworked brushing loot holds a little trash,
   desert-themed gems and enchanted books (no longer for refining: reforging takes Apotheosis's own materials,
@@ -309,7 +343,8 @@ Name: **Everwinter**. Chapter 3 (levels 20–30), M4, the twin of Sunwastes. Ide
 mechanic: the vision rules it out).
 
 - **Landscape:** big frozen lakes with something beneath them (under-ice content), ice spikes, frozen shipwrecks;
-  Hytale's frozen zone adds glacier lakes, hot-spring plains, stilt villages and coastal ice camps (RE-13).
+  Hytale's frozen zone adds glacier lakes, hot-spring plains, stilt villages and coastal ice camps (RE-13). Snow and
+  ice plus a tundra with spruce forests, where The Lost Castle stands (Matěj, 2026-10-19, RLM-264).
 - **Dungeons:** a nordic fortress, a big igloo or a group of igloos, an ice castle.
 - **Visual hints:** ice spikes and a campfire mark a cave worth entering (WF-5).
 - **Tools:** the second of the twins' two tiers.
@@ -501,9 +536,11 @@ RLM-188):
 
 - **M1:** Overworld (chapter 1, levels 1–10) and Undervault (chapter 2, levels 6–18), with no Overworld dungeon or
   boss.
-- **M4:** Sunwastes and Everwinter (dimensions 2 and 3, chapter 3), realm tool tiers (RLM-194), and the removal of
-  the Nether and End.
-- **Later:** Overworld's dungeons and final boss, Olympus, Prestoria, Quagmire, Ashfire, and the Void realm as the
+- **M2:** Overworld's dungeons, questline and final boss, and the first world structures in Overworld and Undervault
+  (RLM-264, [ADR 0044](../decisions/0044-third-party-mods-by-milestone.md)).
+- **M4:** Sunwastes and Everwinter (dimensions 2 and 3, chapter 3), with their world structures, realm tool tiers
+  (RLM-194), and the removal of the Nether and End.
+- **Later:** Olympus, Prestoria, Quagmire, Ashfire, and the Void realm as the
   last one. The Void realm may be built earlier than other realms, and still stays last on the main path
   ([Realms](#realms)).
 

@@ -44,10 +44,14 @@
 | [M5](#m5-professions-and-enchanting) | RLM-10 | Professions and enchanting | v0.5.0 | outline |
 | [M6](#m6-companions-and-mounts) | RLM-11 | Companions and mounts | v0.6.0 | outline |
 | [M7](#m7-contracts) | RLM-12 | Contracts | v0.7.0 | outline |
+| [M8](#m8-after-v1) | RLM-307 | After v1: optional features and the post-v1 mods | v2 | outline |
 
 The order follows dependencies and what makes the slice worth playing: loot gives dungeons a purpose (M2), new
 classes need a combat system with depth (M3), new dimensions need mobs, bosses and dungeon archetypes to fill them
-(M4), professions need gear and materials to work on (M5).
+(M4), professions need gear and materials to work on (M5). M8 holds what comes after v1 (Matěj, 2026-10-19,
+RLM-264). Which third-party mods join in which milestone is
+[ADR 0044](decisions/0044-third-party-mods-by-milestone.md), with every pick in the
+[research note](research/third-party-mods.md).
 
 ## M0: Bootstrap
 
@@ -73,7 +77,7 @@ Undervault (levels 6-18), about 12 hours for an average player by the [XP model]
 | Race | 1 |
 | Classes | 2: a melee class and a caster (decision D1: Warrior with rage, Mage with mana) |
 | Spells | 4-5 per class, covering a self-buff, a debuff, single target, AoE and one special spell (such as a blink) |
-| Talents | one tree per class, about 8-10 nodes in 3 tiers, including spell-modifying talents and one big-impact talent |
+| Spell trees | one specialization spell tree per class (C5, RLM-218); talents are postponed indefinitely (Matěj, 2026-10-16, RLM-28, [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)) |
 | Chapters | 2: Overworld (chapter 1, levels 1-10) and Undervault (chapter 2, levels 6-18); no Overworld dungeon or boss |
 | Leveling | levels 1-18 with a level cap: 10 in chapter 1, 18 once it is done, 30 once chapter 2 is done (D2; XP stops at the cap) |
 | Stats | primary stats with derived bonuses and at least one milestone bonus; a character sheet |
@@ -83,13 +87,16 @@ Undervault (levels 6-18), about 12 hours for an average player by the [XP model]
 | Boss | 1 boss with 3 phases, on the ground, no blindness or darkness |
 | Quests | chapters 1 and 2, about 25-30 quests, generated into FTB Quests |
 | Gear | a small set of fixed-stat weapons and armor as rewards; no affixes yet |
-| World | default gamerules, Dark Vision toggle, griefing protection |
+| World | default gamerules, Dark Vision toggle, griefing protection; vanilla strongholds off |
+| Pack | the M1 mods of [ADR 0044](decisions/0044-third-party-mods-by-milestone.md) ([Pack](#pack-parallel)) and Lootr |
 
 **Not in M1:** a second race, more classes, each class's other two specializations and dual spec (M1 has one
-specialization per class; RLM-218), glyphs, affixes, gems, reforging, professions, pets, mounts, villages, the
-enchanting overhaul, contracts, world-structure dungeons, Overworld's own dungeons and final boss (Matěj,
-2026-10-16), realm tool tiers (RLM-194, M4), custom NPCs, changes to the Nether and End, and dungeon parties:
-instances are solo in M1 (decision D8); parties come later (RLM-68).
+specialization per class; RLM-218), talents and glyphs (postponed indefinitely, RLM-28), affixes, gems, reforging,
+professions, pets, mounts, villages, the enchanting overhaul, contracts, world-structure dungeons, Overworld's own
+dungeons and final boss (Matěj, 2026-10-16; both in M2 since 2026-10-19, RLM-264), realm tool tiers (RLM-194, M4),
+custom NPCs, changes to the Nether and End (apart from strongholds off, which leaves the End unreachable,
+[ADR 0044](decisions/0044-third-party-mods-by-milestone.md)), and dungeon parties: instances are solo in M1
+(decision D8); parties come later (RLM-68).
 
 **Order:** the spikes first, then foundations; character and world work can run in parallel after that; quests
 and the release come last. "After" in a task names what must be merged first.
@@ -192,9 +199,12 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   Specialization with the `#realmforge:sword_like` item tag and its tooltip lines, Will To Survive on the spell bar's
   G key; [architecture 10.1](architecture.md#101-races-and-classes), RLM-219); a first balance pass on the training
   dummy.
-- **C5 Talents** (RLM-28, M, after C4). The registry, effect types, `TalentRules`, the talent screen, a respec command,
-  one tree per class. *Done when:* JUnit property tests pass, a GameTest shows a talent changing a cast, and one
-  shows that neither a proc's hit nor the ticks of a damage-over-time effect it applied trigger procs.
+- **C5 Specialization spell trees** (RLM-333, M, after C4). Talents are postponed indefinitely (RLM-28), but the M1
+  tree stays as a specialization spell tree, one per class (Matěj, 2026-10-16, RLM-218): most spells take several
+  points and grow stronger with each, some gain an extra effect at the top rank, big-impact spells have one rank;
+  the tree holds active and passive spells. The spell trees window, where the player picks the specialization and
+  spends points ([architecture 10.1](architecture.md#101-races-and-classes)). *Done when:* JUnit covers the point
+  rules, and a GameTest shows a spent point changing a spell's cast.
 - **C6 Casting animations and effects** (RLM-29, M, after spike 4 and C4). Animations, particles and sounds for both
   classes.
 
@@ -277,16 +287,39 @@ Placeholders are generated until real art exists ([ADR 0007](decisions/0007-asse
   MIT, CC0 and LGPL-3.0 rooms with their notices; nobody builds rooms by hand, and Matěj reviews them in a gallery
   ([ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)).
 
+### Pack (parallel)
+
+The M1 mods of [ADR 0044](decisions/0044-third-party-mods-by-milestone.md) (Matěj, 2026-10-18 and 2026-10-19,
+RLM-264). Each goes in with packwiz, its side, the [pack README](../pack/README.md) and the ADR 0013 list, and a pack
+boot. Controlling with Searchables is in since RLM-279, and Lootr is W6's (RLM-288).
+
+- **PK1 QoL and UI mods** (RLM-308, M). Inventory Sorting (instead of building Lightweight Inventory Sorting, RLM-61),
+  Advanced Loot Info with Advanced Core Info, Just Enough Professions, Clumps, Crafting Tweaks, Item Highlighter, Pick
+  Up Notifier, RightClickHarvest, Comforts, Traveler's Titles (never a second title next to W2b's arrival title),
+  Better ModList, BetterF3, and CleanCut or Cut Through only if Better Combat does not already hit through grass.
+  *Done when:* the pack boots with them on a server and a client, and Matěj played them.
+- **PK2 Macaw's building mods** (RLM-309, S). Furniture, Doors, Windows, Roofs, Bridges, Lights and Lamps, Fences and
+  Walls, Paths and Pavings, Trapdoors, Stairs. *Done when:* the pack boots with them, and Matěj played them.
+- **PK3 Structurify, strongholds off** (RLM-310, S). Vanilla strongholds are disabled completely; Structurify also
+  places other mods' structures in M2. *Done when:* the pack boots with it, and a check shows that no stronghold
+  generates.
+- **PK4 Iron's RPG Tweaks, combat module only** (RLM-311, M, after F5). Player damage never loses anything to the
+  10-tick hurt cooldown, melee included; its other modules stay off, and if it misbehaves our data pack adds player
+  attacks, arrows and our spell damage types to `#minecraft:bypasses_cooldown` instead
+  ([architecture 9.1](architecture.md#91-damage-pipeline)). *Done when:* GameTests show two melee hits 6 ticks apart
+  both landing in full and lava, fire and cactus hitting no more often than vanilla, and Matěj played it.
+
 ### Definition of done
 
 1. The full pack boots in CI (spike 6 job) and plays in Prism on Matěj's PC with acceptable performance (spark
    profile).
 2. In a new world a player can create a character (1 race, 2 classes); reach level 10 by killing mobs and
    questing and stay there until chapter 1 is done; finish chapter 1 and see the level cap rise to 18; enter
-   Undervault once chapter 1's quest unlocks it; use every class spell and learn talents; reach level 18 and stay
+   Undervault once chapter 1's quest unlocks it; use every class spell and spend points in its specialization spell
+   tree; reach level 18 and stay
    there until chapter 2 is done; clear both dungeon types, one ending with the boss and one without; beat the boss
    through all three phases; finish chapter 2 and see the level cap rise to 30.
-3. JUnit covers formulas, talent rules, the dungeon planner and layout, and the phase machine; GameTests cover
+3. JUnit covers formulas, the spell tree rules, the dungeon planner and layout, and the phase machine; GameTests cover
    spells, leveling and the cap, the chapter bridge, instances and boss phases; every CI job is green.
 4. `docs/architecture.md` and CLAUDE.md match the code; spike outcomes and changed decisions have ADRs.
 5. GitHub Release v0.1.0 (jar and pack), built from a tag.
@@ -301,25 +334,51 @@ curios; more weapon and armor sets; simple craftable foods and potions with weak
 more against one mob type, for example +5% damage for an hour or +8% against undead), brewable without the Nether
 ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)). Probably also the full-pack registry dump for the ID
 universe ([ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)), once content
-references other mods' items.
+references other mods' items. Apotheosis leaves M2 far smaller than planned, so the Overworld chapter's content and
+the first world-structure dungeons join it (Matěj, 2026-10-19, RLM-264,
+[ADR 0044](decisions/0044-third-party-mods-by-milestone.md)):
+
+- **Gear and tooltip mods** (RLM-314): Artifacts and Immersive Armors after their catalogues, from which Matěj picks
+  what stays (RLM-312, RLM-313; Artifacts' curio items wait for his word on ADR 0025's curio rule), Legendary
+  Tooltips, Item Borders, YDM's Weapon Master.
+- **World-structure dungeons, moved from M4,** for Overworld and Undervault, each structure only in its realm
+  ([realm design](design/realms.md#structures-from-other-mods)): Overworld's structure and dungeon mods (RLM-315:
+  YUNG's suite, Dungeons and Taverns, MVS, Battle Towers, Dungeons Enhanced, Underground Worlds; Structory waits for
+  Matěj's reading of its Stardust Labs License), Undervault's from other mods in its stones (RLM-316), and our own
+  dungeon types as world structures, starting with Undervault's dwarf-like fortress (RLM-317).
+- **Illagers and villages** (RLM-318): Illager Invasion, It Takes a Pillage, Illager Warship, ChoiceTheorem's
+  Overhauled Village with Village Taverns, Villager Names, Ender Zoology.
+- **The Overworld chapter's content:** its main questline (2–3 zombie, skeleton or spider dungeons, then pillagers,
+  illagers and evokers to the end of the chapter), the raid quests with our raid-wave and Bad Omen triggers, and the
+  Realmforge Trials quest group for every realm's non-story dungeons (RLM-320); the Illusioner tower with Overworld's
+  final boss, an elite Illusioner at level 8, whose kill opens Undervault from then on (RLM-321).
+- **Our own Structure Compass, moved from M4** (RLM-319): every structure of the dimension, with filtering and search
+  by group, an early quest reward.
+- **Painting variants of our own** (RLM-322), one set per dungeon theme.
 
 ## M3: Classes and combat depth
 
 Outline: more classes toward the vision's play styles (melee, ranged, mage, battle mage, summoner); a second race;
-the remaining spell schools; glyphs; the other two specialization spell trees of each class, toward three per class
+the remaining spell schools; the other two specialization spell trees of each class, toward three per class
 in v1 (Matěj, 2026-10-16), and dual spec, a secondary specialization from a level threshold (proposed: 20; RLM-218);
 interrupts, dispels and crowd control on bosses; threat; the
-balance simulation in CI and a nightly client test ([ADR 0010](decisions/0010-testing-strategy.md)).
+balance simulation in CI and a nightly client test ([ADR 0010](decisions/0010-testing-strategy.md)). With the
+ranged play style: Ranged Weapon API and More Bows and Arrows (RLM-324), after a catalogue from which Matěj picks what
+stays (RLM-323; [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)). Glyphs are postponed indefinitely
+(Matěj, 2026-10-16, RLM-28).
 
 ## M4: The world grows
 
 Outline: dimensions 2 and 3, Sunwastes and Everwinter, the twin realms of chapter 3 (levels 16-30,
 [realm design](design/realms.md)); realm tool tiers (RLM-194, [realm design](design/realms.md#realm-tool-tiers));
 the Nether and End removed and their items given new sources (D10,
-[ADR 0025](decisions/0025-remove-the-nether-and-end.md)); world-structure dungeons (jigsaw and
-Lithostitched); more dungeon endings (puzzle temple, wave arena, escape, mounted run, ruin exploration); our own
-structure locator; more mobs (friendly ones too) and bosses with lore and locator items; chapter 3; the start of
-the village, villager and trade overhaul, with trades paid in our own coins, not emeralds
+[ADR 0025](decisions/0025-remove-the-nether-and-end.md)); the twin realms' world structures, each only in its realm
+(RLM-325: Dungeons Enhanced, YUNG's Cave Biomes, The Lost Castle, Alex's Mobs Continued; Overworld's and Undervault's
+come in M2, [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)); more dungeon endings (puzzle temple, wave
+arena, escape, mounted run, ruin exploration) and open-air instanced dungeons under the sky, in a second instance
+dimension (RLM-327); visual and info mods (RLM-326: LambDynamicLights, Effectual, Falling Leaves, Fresh Animations,
+Fusion, Just Enough Resources); more mobs (friendly ones too) and bosses with lore and locator items; chapter 3; the
+start of the village, villager and trade overhaul, with trades paid in our own coins, not emeralds
 ([ADR 0040](decisions/0040-coins-and-data-driven-merchant-trades.md)). Also:
 
 - **Elytra from chapter 3's final boss** (RLM-138): its drop, or an item frame in its room (like the End ship),
@@ -342,7 +401,8 @@ Outline: professions that can be combined and leveled (for example mining, alche
 curios, tailoring, cooking); cooking and alchemy bring the stronger foods and potions, with medium to very strong
 effects (M2 has the simple ones); enchanting with less RNG (Apothic Enchanting,
 [ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)); the final role of
-vanilla XP (follows D3).
+vanilla XP (follows D3). Aquaculture 2 and Better Archeology seed the fishing and archaeology professions
+(RLM-328, [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)).
 
 ## M6: Companions and mounts
 
@@ -359,13 +419,24 @@ Outline: our own contract system for procedural quests: a job board, guild ranks
 the day"; repeatable trade quests move over from FTB Quests
 ([ADR 0006](decisions/0006-quests-ftb-quests-generated-from-data.md)).
 
+## M8: After v1
+
+Outline (v2, Matěj, 2026-10-19, RLM-264): the nice-to-haves after v1
+([ADR 0044](decisions/0044-third-party-mods-by-milestone.md)). An optional-features screen that switches on Shoulder
+Surfing Reloaded and Camera Overhaul, both off by default (RLM-329); Apothic Spawners, whose spawners give vanilla XP
+and mob loot but never class XP, Trims Overhaul, Gateways to Eternity and Yggdrasil (RLM-330).
+
 ## Backlog
 
 No milestone yet:
 
-- Small UI mods missing on NeoForge 1.21.1 (RLM-61, [ADR 0013](decisions/0013-modpack-composition.md)): EMI
-  Trades (JEI / REI Trades instead, [ADR 0040](decisions/0040-coins-and-data-driven-merchant-trades.md)), Damage Numbers (M1's combat text may cover it), No Recipe Book, Lightweight Inventory Sorting, and a
-  replacement for the temporary Toast Control.
+- Small UI mods missing on NeoForge 1.21.1 (RLM-61, [ADR 0013](decisions/0013-modpack-composition.md)): nothing is
+  left to build. Inventory Sorting replaces Lightweight Inventory Sorting (PK1), Advanced Loot Info and Just Enough
+  Professions replace EMI Trades next to JEI / REI Trades
+  ([ADR 0040](decisions/0040-coins-and-data-driven-merchant-trades.md)), the pack already shows damage numbers, No
+  Recipe Book is in, and Toast Control stays ([ADR 0044](decisions/0044-third-party-mods-by-milestone.md)).
+- Talents (RLM-28) and glyphs: postponed indefinitely, maybe not in v1 (Matěj, 2026-10-16). Each class's spells
+  form specialization spell trees instead (C5, RLM-218).
 - CurseForge publishing (RLM-62, [ADR 0008](decisions/0008-distribution-github-and-curseforge.md)).
 - Nightly spark profiles; our own performance mod (RLM-63).
 - A local bridge so agents can see screenshots and game state from Matěj's PC (RLM-64,

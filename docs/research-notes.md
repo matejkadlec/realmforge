@@ -12,7 +12,7 @@ Later topic research, starting with the reference games Craft to Exile 2, Advent
 | --- | --- | --- |
 | License: MIT for code, CC0 for assets | Mod (`mod/`, `qa-mod/`, `tools/`, everything in the jar): MPL-2.0 code, CC BY 4.0 assets. Modpack (`pack/`): All Rights Reserved | [0009](decisions/0009-licensing.md) |
 | Release on GitHub and CurseForge | GitHub Releases now, CurseForge later; no Modrinth publishing (mods may still be sourced from Modrinth for the pack) | [0008](decisions/0008-distribution-github-and-curseforge.md) |
-| Build ourselves: YDM's MobHealthBar, Toast Remover, No Recipe Book | Neat (over YDM's MobHealthBar) and Toast Control (over Toast Remover) are Matěj's deliberate picks (2026-10-12); No Recipe Book is in the pack since the 26.1.2 port. Still to build later: EMI Trades, Damage Numbers, Lightweight Inventory Sorting | [0013](decisions/0013-modpack-composition.md) |
+| Build ourselves: YDM's MobHealthBar, Toast Remover, No Recipe Book | Neat (over YDM's MobHealthBar) and Toast Control (over Toast Remover) are Matěj's deliberate picks (2026-10-12); No Recipe Book is in the pack since the 26.1.2 port. EMI Trades, Damage Numbers and Lightweight Inventory Sorting need no build of ours any more: JEI / REI Trades, Advanced Loot Info, Just Enough Professions and Inventory Sorting, and the pack already shows damage numbers (2026-10-18 and 19) | [0013](decisions/0013-modpack-composition.md), [0044](decisions/0044-third-party-mods-by-milestone.md) |
 | Pin Iris and Sodium | The pack pins the render stack together: Sodium 0.9.2, Iris 1.11.4 and Distant Horizons 3.3.3 on 26.1.2 (on 1.21.1 it was the stable pair Iris 1.8.12 and Sodium 0.6.13) | [0013](decisions/0013-modpack-composition.md) |
 | Platform: NeoForge 1.21.1, port re-evaluated in 2027 at the earliest | NeoForge 26.1.2, ported on 2026-10-12 before any M1 gameplay code; MineColonies paused, EMI and its addons, TreeChop and Quark gone | [0026](decisions/0026-platform-minecraft-26-1-2-neoforge.md) |
 | ID universe includes a full-pack registry dump | Vanilla reports now; the Registry Dump step is a TODO | [0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md) |
@@ -20,6 +20,7 @@ Later topic research, starting with the reference games Craft to Exile 2, Advent
 | Communicate with the owner in Czech | English | [vision](vision.md#owner) |
 | Lang files in `en_us`, possibly `cs_cz` | English only (decided 2026-10-13); a community translation would ship as a resource pack | [vision](vision.md#owner) |
 | Build ourselves: gear rarity, affixes, gems, reforging and enchanting, with Apotheosis and Apothic Enchanting as inspiration | Apotheosis, Apothic Attributes and Apothic Enchanting are in the pack (Matěj, 2026-10-15 and 16) and carry them, fitted to our stats: Apothic Attributes' crit and dodge never fire, its formulas are vanilla's | [0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) |
+| Third-party mods only for QoL, UI, performance and libraries; all dungeons and their mobs our own | The "minimal third-party mods" vision is gone (Matěj, 2026-10-18): world-generated dungeons and their mobs may come from mods, placed only in their realm with swapped blocks, boss-like mobs only if lightweight; the picks are planned by milestone, M1 to M8 (v2), and vanilla strongholds off from M1 (RLM-264, RLM-221, [research](research/third-party-mods.md)). Quests, story, classes, spells, realms, instanced dungeons, mounts, pets and the guide stay ours; talents and glyphs are postponed | [0044](decisions/0044-third-party-mods-by-milestone.md) |
 | Remove Nether and End "if you choose it" | Removed (decided 2026-10-12), and the items get new sources; Ashfire, a late fire realm, does not replace the Nether (2026-10-16) | [0025](decisions/0025-remove-the-nether-and-end.md), [0032](decisions/0032-v1-realm-layout-amends-the-nether-and-end-removal.md) |
 | Villager trades for emeralds (vanilla) | Trades for our own copper, silver and gold coins at 100:1, generated from YAML as vanilla 26.1 trade data with fixed prices; JEI / REI Trades shows them (Matěj, 2026-10-15 to 2026-10-19, RLM-222, [research](research/coins-and-trades.md)) | [0040](decisions/0040-coins-and-data-driven-merchant-trades.md) |
 | The owner builds key rooms in creative | Nobody builds rooms by hand (decided 2026-10-12): generated rooms plus an imported MIT, CC0 and LGPL-3.0 baseline with its notices | [0028](decisions/0028-dungeon-rooms-generated-or-imported.md) |
@@ -126,7 +127,9 @@ The original recommendation, kept for its reasoning: NeoForge 1.21.1 (21.1.x), M
 
 ## 3. Take as-is vs build
 
-Recommendation (accepted, [ADR 0004](decisions/0004-build-rpg-systems-in-house.md)): build all RPG systems ourselves; take QoL, UI, performance, libraries and a few big mods unchanged. Third-party RPG frameworks (Spell Engine, Pufferfish's Skills, Apotheosis) are models, not foundations: each brings its own attributes and assumptions, and interconnected systems are the main value. **Superseded in part** by [ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md): Matěj turned this around on 2026-10-15 for Apotheosis and the Apothic mods, which are in the pack and carry gear rarity, affixes, gems, reforging and enchanting; the custom core is realms, quests, races, classes, spells, professions and semi-custom dungeons.
+Recommendation (accepted, [ADR 0004](decisions/0004-build-rpg-systems-in-house.md)): build all RPG systems ourselves; take QoL, UI, performance, libraries and a few big mods unchanged. Third-party RPG frameworks (Spell Engine, Pufferfish's Skills, Apotheosis) are models, not foundations: each brings its own attributes and assumptions, and interconnected systems are the main value. **Superseded in part** by [ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md): Matěj turned this around on 2026-10-15 for Apotheosis and the Apothic mods, which are in the pack and carry gear rarity, affixes, gems, reforging and enchanting; the custom core is realms, quests, races, classes, spells, professions and semi-custom dungeons. **Superseded
+further** by [ADR 0044](decisions/0044-third-party-mods-by-milestone.md) (2026-10-18 and 19): world-generated dungeons
+and their mobs may come from other mods, and the pack grows by milestone ([research](research/third-party-mods.md)).
 
 ### Take as-is
 
@@ -161,7 +164,7 @@ All have NeoForge 26.1.2 builds. The pack only references them, nothing is forke
 | Mob level by location | AutoLeveling | fixed boss levels |
 | Stats, milestones (10 STR = +10% dmg), crit, dodge, spell power | Apothic Attributes (MIT), Spell Power | own attributes via the NeoForge API |
 | Spells, skills, spell schools | Spell Engine (best data format), Iron's Spells | spell type in Java, parameters in data |
-| Talents and glyphs | WoW talents, Pufferfish's Skills, Passive Skill Tree | WoW-style GUI, not a node web |
+| Talents and glyphs | WoW talents, Pufferfish's Skills, Passive Skill Tree | WoW-style GUI, not a node web. **Postponed indefinitely** (Matěj, 2026-10-16, RLM-28): specialization spell trees instead (RLM-218) |
 | Status effects | Iron's Spells (Oakskin), WoW | boss buffs and debuffs |
 | Gear: RNG item chests | Apotheosis (code MIT, assets ARR) | items that roll a loot table. **Superseded:** rarity, affixes, gems and reforging come from Apotheosis itself ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)) |
 | Enchanting with less RNG | Apothic Enchanting | **Superseded:** Apothic Enchanting itself is in the pack ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)) |
@@ -170,8 +173,8 @@ All have NeoForge 26.1.2 builds. The pack only references them, nothing is forke
 | Mobs and bosses with phases | Hades II, WotLK | no flying bosses |
 | Dimensions and dungeons | AoA 1.12, Hytale, Trial Chambers | section 9 |
 | Villages, villagers, trades | Cisco's Medieval RPG | repeatable trade quests, later contracts (section 9); trades in coins as vanilla data ([ADR 0040](decisions/0040-coins-and-data-driven-merchant-trades.md)) |
-| Structure locator | Explorer's Compass | none of its code (CC BY-NC-SA) |
-| Small UI | EMI Trades, Lightweight Inventory Sorting, Damage Numbers | missing on NeoForge or Fabric-only. **Superseded in part:** Neat and Toast Control cover YDM's MobHealthBar and Toast Remover by Matěj's choice, and No Recipe Book is in the pack since 26.1.2, see [overrides](#owner-overrides) |
+| Structure locator | Explorer's Compass | none of its code (CC BY-NC-SA); our own Structure Compass in M2 ([ADR 0044](decisions/0044-third-party-mods-by-milestone.md), RLM-319) |
+| Small UI | EMI Trades, Lightweight Inventory Sorting, Damage Numbers | missing on NeoForge or Fabric-only. **Superseded:** Neat and Toast Control cover YDM's MobHealthBar and Toast Remover by Matěj's choice, No Recipe Book is in the pack since 26.1.2, and Inventory Sorting, Advanced Loot Info and Just Enough Professions take the rest ([ADR 0044](decisions/0044-third-party-mods-by-milestone.md)), see [overrides](#owner-overrides) |
 | Default world rules, Dark Vision toggle, Nether and End removed ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)) | Otherworld (Dark Vision) | notes below |
 | QA and debug mod | Dummmmmmy | section 6 |
 

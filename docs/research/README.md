@@ -64,6 +64,14 @@ consumable decisions of 11–12 October 2026.
   and the roadmap changes only as he decided.
 - Later topic research (for example `realm-portals.md`, RLM-39) goes into this folder too.
 
+## Third-party mods by milestone (2026-10-18 to 2026-10-20, RLM-264, RLM-221)
+
+- **[third-party-mods.md](third-party-mods.md)**: Matěj's picks from about 130 mods with NeoForge 26.1.2 builds
+  (researched on the Modrinth API, 2026-10-18), by milestone with their tickets, the watchlist and the rejected
+  mods; where other mods' structures go (each only in its realm); the Overworld chapter's questline, raids and final
+  boss; and his answers of 2026-10-19. It answers RLM-221's Overworld structure research. Decided in
+  [ADR 0044](../decisions/0044-third-party-mods-by-milestone.md).
+
 ## Coins, merchant trades and trade display (2026-10-19, RLM-222)
 
 - **[coins-and-trades.md](coins-and-trades.md)**: coin, trade-editing and villager mods on NeoForge 26.1.2 (Modrinth
