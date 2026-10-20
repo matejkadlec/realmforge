@@ -33,6 +33,9 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.illager.Pillager;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
+import net.minecraft.world.entity.projectile.arrow.Arrow;
+import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownSplashPotion;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -55,6 +58,8 @@ public final class CombatGameTests {
     private static final double HEALTH = 1000;
     /** Where a player stands: the platform's north edge, facing the target in its middle. */
     private static final Vec3 EDGE = new Vec3(2.5, 1, 0.5);
+    /** A test arrow's base damage, big enough that vanilla's random crit-arrow bonus would show. */
+    private static final double ARROW_BASE = 20;
 
     private CombatGameTests() {
     }
@@ -168,6 +173,34 @@ public final class CombatGameTests {
         StatsCommands.setBase(player, GeneratedStats.CRIT_DAMAGE, 1);
         assertMelee(helper, player, mob, fist * 2, "a crit at 100 % crit damage");
         server.getPlayerList().remove(player);
+        helper.succeed();
+    }
+
+    /**
+     * RLM-291: a player's arrow from a full draw (vanilla's crit arrow) or thrown trident crits on the shooter's crit
+     * chance and deals 1 + crit damage, as a full-strength melee hit does, without vanilla's random crit-arrow bonus;
+     * an arrow from a weak draw never crits. Each shot hits in its first tick at 2 blocks a tick, so an arrow deals 2
+     * × its base damage of {@value #ARROW_BASE} (vanilla's bonus would add 0 to 21 more) and a trident 8.
+     */
+    @QaGameTest
+    public static void fullyDrawnArrowsAndTridentsCritOnCritChance(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-combat-ranged-crit", EDGE);
+        Pillager dummy = TrainingDummy.spawn(level, helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
+        double arrow = 2 * ARROW_BASE;
+
+        StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
+        assertShot(helper, dummy, arrow(helper, player, true), arrow, false, "a full draw at 0 % crit chance");
+        StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 1);
+        assertShot(helper, dummy, arrow(helper, player, true), arrow * 1.5, true,
+                "a full draw at 100 % crit chance and the base 50 % crit damage");
+        assertShot(helper, dummy, arrow(helper, player, false), arrow, false, "a weak draw at 100 % crit chance");
+        assertShot(helper, dummy, new ThrownTrident(level, player, new ItemStack(Items.TRIDENT)), 8 * 1.5, true,
+                "a thrown trident at 100 % crit chance");
+        StatsCommands.setBase(player, GeneratedStats.CRIT_DAMAGE, 1);
+        assertShot(helper, dummy, arrow(helper, player, true), arrow * 2, true, "a full draw at 100 % crit damage");
+        TrainingDummy.remove(dummy);
+        level.getServer().getPlayerList().remove(player);
         helper.succeed();
     }
 
@@ -323,6 +356,37 @@ public final class CombatGameTests {
         player.attack(target);
         double dealt = before - target.getHealth();
         helper.assertTrue(close(dealt, expected), what + ": " + expected + " expected, dealt " + dealt);
+    }
+
+    /** The shooter's arrow, from a full draw (vanilla's crit arrow) or not, with {@value #ARROW_BASE} base damage. */
+    private static AbstractArrow arrow(GameTestHelper helper, ServerPlayer shooter, boolean fullDraw) {
+        Arrow arrow = new Arrow(helper.getLevel(), shooter, new ItemStack(Items.ARROW), null);
+        arrow.setBaseDamage(ARROW_BASE);
+        arrow.setCritArrow(fullDraw);
+        return arrow;
+    }
+
+    /**
+     * Shoots {@code projectile} at the dummy in the platform's middle from the block in front of it, 2 blocks a tick
+     * without gravity, and ticks it once, so it hits at that speed; the dummy's meter shows what it dealt and whether
+     * it crit.
+     */
+    private static void assertShot(GameTestHelper helper, Pillager dummy, AbstractArrow projectile, double expected,
+            boolean crit, String what) {
+        settle(dummy);
+        TrainingDummy.Session before = TrainingDummy.session(dummy);
+        projectile.setPos(helper.absoluteVec(new Vec3(2.5, 1.5, 1.2)));
+        projectile.setNoGravity(true);
+        projectile.setDeltaMovement(0, 0, 2);
+        projectile.tick();
+        TrainingDummy.Session after = TrainingDummy.session(dummy);
+        int hits = before != null ? before.hits() : 0;
+        helper.assertTrue(after != null && after.hits() == hits + 1, what + ": the shot hit the dummy");
+        double dealt = after.total() - (before != null ? before.total() : 0);
+        int crits = after.crits() - (before != null ? before.crits() : 0);
+        helper.assertTrue(close(dealt, expected), what + ": " + expected + " expected, dealt " + dealt);
+        helper.assertValueEqual(crits == 1, crit, what + ": a crit");
+        projectile.discard();
     }
 
     /** Closes the target's hurt cooldown window, so the next hit counts in full. */

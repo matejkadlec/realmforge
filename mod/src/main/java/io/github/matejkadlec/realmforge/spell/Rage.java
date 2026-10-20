@@ -16,9 +16,11 @@ import net.minecraft.world.entity.player.Player;
 /**
  * Rage as a combat resource (architecture 11.5): a holder with {@link RageRules} gains rage from the melee hits it
  * deals and the damage attackers deal it, and loses it every second once it is out of combat. The rules come from
- * {@link Source}s that higher features add: {@code character} gives a rage class's from its data. Combat is the last
- * hit dealt or taken (a dodged one included) within the rules' {@code decayAfterTicks}; it is transient, so a new
- * player entity starts out of combat. Logical server only.
+ * {@link Source}s that higher features add: {@code character} gives a rage class's from its data. A swing gives its
+ * rage once, however many mobs it hits: only the holder's first melee hit in a game tick counts, so a sword's sweep or
+ * Better Combat's swing through several targets (one full-strength {@code Player#attack} each) gives no more. Combat is
+ * the last hit dealt or taken (a dodged one included) within the rules' {@code decayAfterTicks}; it is transient, so a
+ * new player entity starts out of combat. Logical server only.
  */
 public final class Rage {
     /** Gives a holder its rage rules, or nothing when it has none (a mana class, a mob). */
@@ -30,6 +32,8 @@ public final class Rage {
     private static final List<Source> SOURCES = new CopyOnWriteArrayList<>();
     /** Every living entity's game time of its last hit dealt or taken; weak keys, so a removed one leaves nothing. */
     private static final Map<LivingEntity, Long> LAST_COMBAT = new WeakHashMap<>();
+    /** Every rage holder's game time of its last melee hit that gave rage: one swing gives it once. */
+    private static final Map<LivingEntity, Long> LAST_SWING = new WeakHashMap<>();
 
     private Rage() {
     }
@@ -71,7 +75,11 @@ public final class Rage {
         DamageSource source = event.getSource();
         if (event.getSchool().isEmpty() && melee(source, attacker)) {
             double strength = attacker instanceof Player player ? player.getAttackStrengthScale(0.5F) : 1;
-            rules(attacker).ifPresent(rules -> gain(attacker, rules.forHitDealt(strength)));
+            rules(attacker).ifPresent(rules -> {
+                if (firstHitOfSwing(attacker)) {
+                    gain(attacker, rules.forHitDealt(strength));
+                }
+            });
         }
         rules(defender).ifPresent(rules -> gain(defender,
                 rules.forDamageTaken(event.getInflictedDamage(), defender.getMaxHealth())));
@@ -92,6 +100,17 @@ public final class Rage {
         return source.getDirectEntity() == attacker && !source.is(DamageTypeTags.IS_PROJECTILE)
                 && (source.is(DamageTypeTags.IS_PLAYER_ATTACK) || source.is(DamageTypes.MOB_ATTACK)
                         || source.is(DamageTypes.MOB_ATTACK_NO_AGGRO));
+    }
+
+    /**
+     * Whether this is the holder's first melee hit in this game tick, and so the one its swing's rage comes from. The
+     * main target is hurt before vanilla's sweep, and Better Combat attacks a swing's targets one after another in
+     * the same tick; when the main hit is dodged or dropped, the first hit that lands counts.
+     */
+    private static boolean firstHitOfSwing(LivingEntity holder) {
+        long now = holder.level().getGameTime();
+        Long last = LAST_SWING.put(holder, now);
+        return last == null || last != now;
     }
 
     private static void markCombat(LivingEntity attacker, LivingEntity defender) {

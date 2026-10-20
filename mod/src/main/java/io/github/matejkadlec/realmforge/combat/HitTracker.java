@@ -1,10 +1,12 @@
 package io.github.matejkadlec.realmforge.combat;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.WeakHashMap;
 import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
@@ -15,7 +17,8 @@ import net.minecraft.world.entity.player.Player;
 
 /**
  * What {@link DamagePipeline} learns about a hit in one damage event and needs in a later one: whether a player's
- * melee hit crit ({@code CriticalHitEvent}, before the target is hurt), and a school hit's crit and the
+ * melee hit crit ({@code CriticalHitEvent}, before the target is hurt), whether a player's arrow or trident comes
+ * from a full draw ({@code ProjectileImpactEvent}, before it hurts anything), and a hit's crit and a school hit's
  * {@code lastHurt} to restore ({@code LivingIncomingDamageEvent} to {@code LivingDamageEvent.Post}). Logical server
  * only, on the server thread.
  *
@@ -26,6 +29,7 @@ import net.minecraft.world.entity.player.Player;
  */
 final class HitTracker {
     private static final Map<Player, Entity> MELEE_CRITS = new WeakHashMap<>();
+    private static final Set<Entity> FULL_DRAWS = Collections.newSetFromMap(new WeakHashMap<>());
     private static final Map<LivingEntity, Deque<Hit>> HITS = new WeakHashMap<>();
 
     private HitTracker() {
@@ -56,6 +60,16 @@ final class HitTracker {
             return true;
         }
         return false;
+    }
+
+    /** Records that a player's projectile, about to hit, was shot at full strength; it stays so for every target. */
+    static void markFullDraw(Entity projectile) {
+        FULL_DRAWS.add(projectile);
+    }
+
+    /** Whether {@link #markFullDraw} marked this projectile (a hit's direct entity, null for none). */
+    static boolean fullDraw(@Nullable Entity projectile) {
+        return projectile != null && FULL_DRAWS.contains(projectile);
     }
 
     static void start(LivingEntity defender, Hit hit) {

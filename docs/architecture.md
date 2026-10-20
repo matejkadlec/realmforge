@@ -693,10 +693,20 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
    deals 1 + crit damage, instead of vanilla's jump crit (a jump no longer matters). Vanilla still plays its crit
    sound and particles, and a crit keeps a sword's sweep (vanilla's jump crits never happened on the ground). Our crit
    and dodge are the only ones: Apothic Attributes' never fire ([19.4](#194-optional-integrations)).
+   **Ranged hits crit the same way** (RLM-291): `ProjectileImpactEvent`, as its last listener, marks a player's
+   projectile at full strength, the counterpart of a full-strength swing: an arrow vanilla made a crit arrow (a fully
+   drawn bow, a player's crossbow, whose bolts always are) and a thrown trident (always fully charged). The arrow
+   stops being a crit arrow before it hurts anything, so vanilla's random crit-arrow bonus (up to half the hit again)
+   never stacks with ours; its crit trail still shows in flight, and the mark keeps a piercing arrow's later targets
+   counted. A marked projectile's hit rolls its shooter's crit chance in step 3. Mobs' projectiles never crit, like
+   mobs' melee.
 3. **`LivingIncomingDamageEvent`**, before mitigation:
    - **Dodge** (the defender's dodge chance) cancels a melee hit, a projectile or a physical school hit from an
      attacker; magic, explosions and damage from the world cannot be dodged. Cancelling stops a hit cleanly since
      NeoForge 26.1 (below), and `CombatEvent.Dodge` reports it.
+   - **A ranged crit:** a projectile hit marked in step 2 crits on its shooter's crit chance and deals 1 + crit
+     damage (150 % by default, as for melee and spells; Matěj, 2026-10-19), through `setAmount`, with the crit combat
+     text.
    - **A school hit** gets the attacker side, damage × (1 + spell power, for magic only, + the school's power stat),
      then the crit roll (crit chance and crit damage, as in melee, or the spell's crit rule: no crit at all, a bonus
      chance, its own multiplier; Matěj, 2026-10-15), then the defender's resistance: × (1 −
@@ -796,9 +806,11 @@ absorption, the overheal kept when the Absorption effect ends, an apple eaten wh
 (its schedule, no overheal) and the magic shield (before health, after absorption hearts, `lastHurt` kept, the
 refill).
 
-What one hit learns in an earlier event and needs in a later one (whether a melee hit crit, a school hit's
-`lastHurt`) waits in `combat/HitTracker`, per defender and matched by the damage source, because a hit the hurt
-cooldown drops never reaches `Post` and one hit's events can nest inside another's.
+What one hit learns in an earlier event and needs in a later one (whether a melee hit crit, whether a player's
+projectile comes from a full draw, a school hit's `lastHurt`) waits in `combat/HitTracker`, per defender and matched
+by the damage source (a projectile's mark per projectile), because a hit the hurt cooldown drops never reaches `Post`
+and one hit's events can nest inside another's. `CombatGameTests` shoots arrows and a trident at a training dummy:
+a full draw crits at 100 % crit chance and never gets vanilla's bonus at 0 %, and a weak draw never crits.
 
 **Cancelling `LivingIncomingDamageEvent` stops a hit cleanly since NeoForge 26.1.** `LivingEntity#hurtServer`
 pushes a `DamageContainer` onto the defender's `damageContainers` stack, posts the event, and pops the container again
@@ -1152,10 +1164,14 @@ type only for genuinely new behaviour.
   handed over by `character` as a `Rage.Source`) rage from the damage pipeline's hits (`CombatEvent.Hit`): a melee hit
   it deals (a player's or a mob's own attack, not a projectile or a spell) gives `per_hit_dealt` times the swing's
   attack strength, so spam clicks give little, and damage an attacker deals it gives `per_max_health_taken` times
-  the share of its max health the hit took (the inflicted damage, a magic shield's share included). A hit dealt or
-  taken, or a dodged one, puts both sides in combat; `decay_after_seconds` after the last one the pool loses
-  `decay_per_second` every second, as rage's regeneration ([`ResourceType`](#115-resources-cooldowns-modifiers)) is
-  negative then. Combat is transient, so a new player entity starts out of it. The Warrior's starting numbers are 10
+  the share of its max health the hit took (the inflicted damage, a magic shield's share included). **A swing gives
+  its rage once, however many mobs it hits** (RLM-278): only the holder's first melee hit in a game tick counts.
+  Vanilla hurts a sword's target before its sweep, and Better Combat ([9.2](#92-better-combat)) attacks a swing's
+  targets one after another in the same tick, each with its own full-strength `Player#attack`, so neither the sweep
+  nor Better Combat's further targets add rage; when the target's hit is dodged, the first hit that lands counts. A
+  hit dealt or taken, or a dodged one, puts both sides in combat; `decay_after_seconds` after the last one the pool
+  loses `decay_per_second` every second, as rage's regeneration ([`ResourceType`](#115-resources-cooldowns-modifiers))
+  is negative then. Combat is transient, so a new player entity starts out of it. The Warrior's starting numbers are 10
   a hit, 50 for the whole max health and 2 a second after 5 s, until the class kits (C4) tune them. Mobs pay no cost
   ([11.2](#112-casting-server-authoritative)), so no mob gains rage. `RageGameTests` and `RageRulesTest` cover it.
 - **Cooldowns:** a spell's own cooldown, shortened by Cooldown Reduction (at most 75 %, its stat's cap), and the

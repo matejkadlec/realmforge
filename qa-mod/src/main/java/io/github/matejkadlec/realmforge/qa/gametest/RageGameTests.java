@@ -15,14 +15,17 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.fml.ModList;
 
 /**
  * C3a-4 (RLM-212): rage as a combat resource (architecture 11.5). The Warrior's numbers in {@code content/classes/}
  * give 10 rage for a full-strength melee hit and 50 for losing the whole max health to attackers, and 5 s after the
- * last hit dealt or taken the pool loses 2 every second. A fake player's connection never ticks it, so the tests run
- * its ticks themselves ({@link #seconds}); its combat clock is the level's game time.
+ * last hit dealt or taken the pool loses 2 every second. A swing gives its rage once, however many mobs it hits
+ * (RLM-278). A fake player's connection never ticks it, so the tests run its ticks themselves ({@link #seconds}); its
+ * combat clock is the level's game time.
  */
 public final class RageGameTests {
     private static final double TOLERANCE = 1e-3;
@@ -61,6 +64,64 @@ public final class RageGameTests {
             assertRage(helper, player, afterHits - 2, "out of combat it decays 2 a second");
             seconds(player, 2);
             assertRage(helper, player, afterHits - 6, "two more seconds");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * RLM-278: a full-strength swing whose sword sweeps the mobs beside its target gives the per-hit rage once, not
+     * once for every mob it hurts. Better Combat turns vanilla's sweep off for the weapons it knows (the stone sword
+     * among them), so with it loaded the swing hurts only its target; {@link #aSwingThroughSeveralMobsGivesRageOnce}
+     * covers its own swing.
+     */
+    @QaGameTest
+    public static void aSweepGivesRageOnce(GameTestHelper helper) {
+        ServerPlayer player = character(helper, "qa-rage-sweep", "warrior");
+        Husk target = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
+        Husk left = SpellGameTests.husk(helper, new BlockPos(1, 1, 2));
+        Husk right = SpellGameTests.husk(helper, new BlockPos(3, 1, 2));
+        helper.assertTrue(player.getMainHandItem().is(Items.STONE_SWORD), "the Warrior holds its stone sword");
+        seconds(player, 1);
+        helper.assertTrue(player.getAttackStrengthScale(0.5F) >= 1, "a full-strength swing is ready");
+        // A fake player's client never reports where it stands, and vanilla sweeps only on the ground.
+        player.setOnGround(true);
+
+        player.attack(target);
+        helper.assertTrue(target.getHealth() < target.getMaxHealth(), "the swing hit its target");
+        if (!ModList.get().isLoaded("bettercombat")) {
+            helper.assertTrue(left.getHealth() < left.getMaxHealth() && right.getHealth() < right.getMaxHealth(),
+                    "the sweep hurt both mobs beside the target");
+        }
+        assertRage(helper, player, 10, "a swing that sweeps three mobs gives 10 once");
+        logout(player);
+        helper.succeed();
+    }
+
+    /**
+     * RLM-278: Better Combat hits each target of a swing with its own full-strength {@code Player#attack}, all in the
+     * same game tick. The tests' player ticks leave the game time standing, so recharging between two attacks plays
+     * that swing: the rage comes once, and the next swing, a tick later, gives it again.
+     */
+    @QaGameTest
+    public static void aSwingThroughSeveralMobsGivesRageOnce(GameTestHelper helper) {
+        ServerPlayer player = character(helper, "qa-rage-swing", "warrior");
+        Husk first = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
+        // Out of the first hit's sweep, so only its own attack hurts it.
+        Husk second = SpellGameTests.husk(helper, new BlockPos(0, 1, 2));
+        seconds(player, 1);
+        player.attack(first);
+        seconds(player, 1);
+        helper.assertTrue(player.getAttackStrengthScale(0.5F) >= 1, "the second target's hit is at full strength");
+        player.attack(second);
+        helper.assertTrue(first.getHealth() < first.getMaxHealth() && second.getHealth() < second.getMaxHealth(),
+                "the swing hit both mobs");
+        assertRage(helper, player, 10, "two full-strength hits in one tick give 10 once");
+        helper.runAfterDelay(1, () -> {
+            seconds(player, 1);
+            CombatGameTests.settle(first);
+            player.attack(first);
+            assertRage(helper, player, 20, "the next tick's swing gives 10 more");
             logout(player);
             helper.succeed();
         });

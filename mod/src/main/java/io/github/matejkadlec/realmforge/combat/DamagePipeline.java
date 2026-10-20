@@ -14,11 +14,15 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
+import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.phys.EntityHitResult;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
+import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingHealEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
@@ -32,12 +36,16 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *   <li>{@code CriticalHitEvent}: a player's full-strength melee attack crits on our crit chance and deals 1 + crit
  *   damage, instead of vanilla's jump crit; vanilla still plays the crit sound and particles, and a crit no longer
  *   stops a sword's sweep (vanilla's jump crits never met one on the ground).</li>
+ *   <li>{@code ProjectileImpactEvent}, last: a player's arrow from a full draw (vanilla's crit arrow: a fully drawn bow
+ *   or a player's crossbow) or a thrown trident is marked as one that may crit, and an arrow stops being vanilla's
+ *   crit arrow, so vanilla's random crit-arrow bonus never stacks with our crit.</li>
  *   <li>{@code LivingIncomingDamageEvent}: a dodge cancels the hit (melee, projectiles and physical school hits; never
- *   magic, explosions or the world). A school hit gets spell power (magic), the school's power, a crit roll (by the
- *   spell's {@link CritRule} when a {@link SchoolDamageSource} brings one) and the defender's resistance (spell
- *   resistance added for magic). The armor reduction becomes vanilla's formula on the armor the attacker's armor
- *   pierce and shred leave, except for damage in {@code #minecraft:bypasses_armor}. The defender's magic shield joins
- *   the absorption reduction ({@link MagicShields}).</li>
+ *   magic, explosions or the world). A marked projectile's hit crits on its shooter's crit chance and deals 1 + crit
+ *   damage. A school hit gets spell power (magic), the school's power, a crit roll (by the spell's {@link CritRule}
+ *   when a {@link SchoolDamageSource} brings one) and the defender's resistance (spell resistance added for magic).
+ *   The armor reduction becomes vanilla's formula on the armor the attacker's armor pierce and shred leave, except
+ *   for damage in {@code #minecraft:bypasses_armor}. The defender's magic shield joins the absorption reduction
+ *   ({@link MagicShields}).</li>
  *   <li>Hurt cooldown: a school hit lands through it ({@code #minecraft:bypasses_cooldown}) and leaves the defender's
  *   window as it was: it grants no invulnerability of its own, and {@code lastHurt}, which vanilla overwrites, is
  *   restored afterwards, so melee hits in an open window are still compared with the previous melee hit, not with a
@@ -57,6 +65,8 @@ public final class DamagePipeline {
 
     static void register() {
         NeoForge.EVENT_BUS.addListener(CriticalHitEvent.class, DamagePipeline::onCriticalHit);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, ProjectileImpactEvent.class,
+                DamagePipeline::onProjectileImpact);
         NeoForge.EVENT_BUS.addListener(LivingIncomingDamageEvent.class, DamagePipeline::onIncomingDamage);
         NeoForge.EVENT_BUS.addListener(LivingDamageEvent.Post.class, DamagePipeline::onDamagePost);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, LivingHealEvent.class, DamagePipeline::onHeal);
@@ -113,6 +123,23 @@ public final class DamagePipeline {
         HitTracker.markMeleeCrit(player, event.getTarget(), crit);
     }
 
+    /**
+     * Last of the impact listeners, so a cancelled impact never reaches it. A player's projectile at full strength,
+     * like a full-strength melee attack, may crit: an arrow vanilla made a crit arrow (a fully drawn bow, a player's
+     * crossbow) and a thrown trident (always fully charged). The arrow stops being a crit arrow before it hurts, so
+     * vanilla adds no random bonus; the mark keeps a piercing arrow's later targets counted as a full draw.
+     */
+    static void onProjectileImpact(ProjectileImpactEvent event) {
+        if (!(event.getProjectile() instanceof AbstractArrow arrow) || arrow.level().isClientSide()
+                || !(event.getRayTraceResult() instanceof EntityHitResult) || !(arrow.getOwner() instanceof Player)) {
+            return;
+        }
+        if (arrow.isCritArrow() || arrow instanceof ThrownTrident) {
+            HitTracker.markFullDraw(arrow);
+            arrow.setCritArrow(false);
+        }
+    }
+
     static void onIncomingDamage(LivingIncomingDamageEvent event) {
         LivingEntity defender = event.getEntity();
         if (!(defender.level() instanceof ServerLevel level)) {
@@ -137,10 +164,25 @@ public final class DamagePipeline {
         }
         if (school.isPresent()) {
             schoolHit(event, level, defender, source, school.get());
-        } else if (HitTracker.takeMeleeCrit(source, defender)) {
+        } else if (HitTracker.takeMeleeCrit(source, defender) || rangedCrit(event, source)) {
             HitTracker.start(defender, new HitTracker.Hit(source, level.getGameTime(), Optional.empty(), true,
                     Float.NaN));
         }
+    }
+
+    /**
+     * Rolls a player's projectile hit from a full draw ({@link #onProjectileImpact}) on the shooter's crit chance and
+     * scales a crit by 1 + crit damage, as {@link #onCriticalHit} does for melee; whether it crit.
+     */
+    private static boolean rangedCrit(LivingIncomingDamageEvent event, DamageSource source) {
+        if (!source.is(DamageTypeTags.IS_PROJECTILE) || !(source.getEntity() instanceof Player shooter)
+                || !HitTracker.fullDraw(source.getDirectEntity())
+                || !DamageCalculator.crits(stat(shooter, GeneratedStats.CRIT_CHANCE), shooter.getRandom())) {
+            return false;
+        }
+        event.setAmount(event.getAmount()
+                * (float) DamageCalculator.critMultiplier(stat(shooter, GeneratedStats.CRIT_DAMAGE)));
+        return true;
     }
 
     static void onDamagePost(LivingDamageEvent.Post event) {

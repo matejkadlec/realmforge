@@ -111,9 +111,10 @@ Rules:
   A race lists the classes it may take (each must exist, and every class must be open to some race) and gives
   `modifiers`; a class names its `resource` (`realmforge:mana` or `realmforge:rage`), and a rage class, and only a
   rage class, sets its `rage` numbers: `per_hit_dealt` (rage for a full-strength melee hit dealt, a weaker swing
-  giving its share), `per_max_health_taken` (rage for losing the whole max health to attackers, a hit for a tenth of
-  it giving a tenth), `decay_per_second` and `decay_after_seconds` (how long after the last hit dealt or taken the
-  pool starts to decay; [architecture 11.5](../docs/architecture.md#115-resources-cooldowns-modifiers)). A class
+  giving its share, and a swing giving it once however many mobs it hits), `per_max_health_taken` (rage for losing
+  the whole max health to attackers, a hit for a tenth of it giving a tenth), `decay_per_second` and
+  `decay_after_seconds` (how long after the last hit dealt or taken the pool starts to decay;
+  [architecture 11.5](../docs/architecture.md#115-resources-cooldowns-modifiers)). A class
   gives `modifiers` and a `starting_kit` (items with a `count` of 1 to 64, given once when the character is created; every class's kit
   holds Bread ×32, Matěj, 2026-10-14, which validation checks). A modifier is the stat rules' shape (`attribute`,
   `operation`, `amount` or `amount_percent`, in the same units) and gives the same at every level: levels give stat
