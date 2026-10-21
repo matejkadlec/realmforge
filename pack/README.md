@@ -141,13 +141,14 @@ bar's of RLM-25 ([ADR 0046](../docs/decisions/0046-spell-bar-default-keys-amend-
   code) takes R, T, F, G, H and C, X for the racial ability and P for the
   spellbook, so vanilla's Chat moves from T to Enter, and its creative toolbar
   keys (C and X) and Social Interactions (P; the pause menu's Player Reporting
-  still opens it) go unbound;
+  still opens it) go unbound, and Apotheosis's Open World Tier Select moves from
+  Ctrl+T to Alt+T, so holding Ctrl to sprint does not steal T;
 - Open Quests on `;` (the key left of 1 on a Czech keyboard), Tom's Simple
   Storage's Open Terminal on V (RLM-25), Just Zoom's Zoom on Z (Czech QWERTZ);
 - Xaero's Minimap (2026-10-20): Minimap Settings on `ú` (right of P on a Czech
   keyboard), Zoom In and Zoom Out Minimap on the numeric keypad's + and -, New
   Waypoint on N, Open Waypoint Screen on `,` (right of M); our Dark Vision key
-  moved from N to H for it, then to J for the spell bar (its default is in our
+  moved from N to H for it, then to U for the spell bar (its default is in our
   code);
 - unbound: Just Zoom's Open Options (it shared B with Open Backpack), Xaero's
   Quick Waypoint, vanilla's Open Command, every Iris key and every

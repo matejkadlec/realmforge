@@ -1239,7 +1239,8 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
   under Realmforge Spell Bar, and P for the spellbook. GLFW names keys by their US position, which these share with
   Matěj's Czech QWERTZ keyboard. The pack's default keys (`pack/config/defaultoptions/keybindings.txt`,
   [ADR 0046](decisions/0046-spell-bar-default-keys-amend-the-pack-defaults.md)) move vanilla's chat to Enter and
-  unbind the keys the bar takes; Dark Vision moved from H to J.
+  unbind the keys the bar takes, Apotheosis's Open World Tier Select moves from Ctrl+T to Alt+T (a held sprint key
+  would otherwise steal T), and Dark Vision moved from H to U.
 - **Learning and placing:** `Spells#learn` puts a learned spell into the bar's first empty slot, unless it is on the
   bar or is a mob's. The spellbook (`client/screen/SpellbookScreen`) moves a known spell into a slot, swapping with
   the one there, or empties one, through `SetSpellBarSlotPayload` and `Spells#placeOnBar`, which refuses another slot
@@ -2213,7 +2214,7 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
   Still allowed, as mixed or harmless cases: zombies breaking turtle eggs, a skeleton's arrows breaking decorated
   pots, chorus flowers or pointed dripstone, foxes picking sweet berries, sheep eating grass, snow golems leaving
   snow. Inside instances every mob is denied, which is intended there ([15.5](#155-instances)).
-- Dark Vision: a key (`client/input/DarkVisionKey`, J by default since the spell bar took H, "Toggle Dark Vision" under Realmforge in the
+- Dark Vision: a key (`client/input/DarkVisionKey`, U by default since the spell bar took H, "Toggle Dark Vision" under Realmforge in the
   controls) sends `ToggleDarkVisionPayload`; the server flips the sender's switch and confirms it on the action
   bar. The effect is vanilla night vision as an infinite, hidden effect (`MobEffectInstance.INFINITE_DURATION`, no
   particles, no icon); every player has it, switched on by default. The on/off state lives in the

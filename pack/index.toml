@@ -10,7 +10,7 @@ hash = "a3dffbd3da542c9b47efcff28a9f66816043bc7d2794ac91ffccd1e094cfd784"
 
 [[files]]
 file = "config/defaultoptions/keybindings.txt"
-hash = "8d73d4f1d237c003c4d07b05db52b1c07bbdf26a68e77fd988d818feba1097fc"
+hash = "dad456271a836d5f5439722efd15f06d73b8d122b4816f16131e05d206ad8d5c"
 
 [[files]]
 file = "config/waystones-common.toml"

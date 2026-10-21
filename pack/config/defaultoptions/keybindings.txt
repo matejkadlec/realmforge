@@ -14,6 +14,10 @@ key_key.loadToolbarActivator:key.keyboard.unknown
 key_key.saveToolbarActivator:key.keyboard.unknown
 key_key.socialInteractions:key.keyboard.unknown
 
+# Apotheosis: Open World Tier Select moves from Ctrl+T to Alt+T, so a player who holds Ctrl to sprint still casts the
+# spell bar's T (RLM-25).
+key_key.apotheosis.open_world_tier_select:key.keyboard.t:ALT
+
 # FTB Quests: Open Quests on ; (Czech QWERTZ).
 key_key.ftbquests.keys.quests:key.keyboard.grave.accent
 
@@ -30,7 +34,7 @@ key_key.command:key.keyboard.unknown
 
 # Xaero's Minimap (Matěj, 2026-10-20): Minimap Settings on ú (right of P on a Czech keyboard), zoom on the numeric
 # keypad's + and -, New Waypoint on N, Open Waypoint Screen on , (right of M), Quick Waypoint unbound. Our Dark
-# Vision key moved from N to H for this, then to J, as H became a spell key (DarkVisionKey, RLM-25).
+# Vision key moved from N to H for this, then to U, as H became a spell key (DarkVisionKey, RLM-25).
 key_gui.xaero_minimap_settings:key.keyboard.left.bracket
 key_gui.xaero_zoom_in:key.keyboard.keypad.add
 key_gui.xaero_zoom_out:key.keyboard.keypad.subtract

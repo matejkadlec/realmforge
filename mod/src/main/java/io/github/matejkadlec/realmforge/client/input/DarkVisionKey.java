@@ -17,9 +17,10 @@ import net.neoforged.neoforge.common.util.Lazy;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * The Dark Vision key (J by default, rebindable in Options > Controls under Realmforge): each press asks the server to
+ * The Dark Vision key (U by default, rebindable in Options > Controls under Realmforge): each press asks the server to
  * flip the player's Dark Vision (architecture 19.1). The server decides; the client only sends the intent. It moved
- * from H to J (C3b, RLM-25), because H is one of the spell bar's keys (Matěj, 2026-10-15).
+ * from H to U (C3b, RLM-25, ADR 0046), because H is one of the spell bar's keys (Matěj, 2026-10-15) and U is the one
+ * letter left free in the pack that sits near it (J is Toast Control's Clear Toasts).
  */
 public final class DarkVisionKey {
     /** The heading of our keys; its name is the text {@code key.category.realmforge.main} (content/texts/). */
@@ -29,7 +30,7 @@ public final class DarkVisionKey {
             GeneratedTexts.KEY_DARK_VISION,
             KeyConflictContext.IN_GAME,
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_J,
+            GLFW.GLFW_KEY_U,
             CATEGORY));
 
     private DarkVisionKey() {

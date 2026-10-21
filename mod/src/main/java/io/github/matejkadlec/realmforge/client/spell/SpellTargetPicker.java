@@ -1,7 +1,11 @@
 package io.github.matejkadlec.realmforge.client.spell;
 
+import io.github.matejkadlec.realmforge.spell.AllyTargeting;
+import io.github.matejkadlec.realmforge.spell.EnemyTargeting;
 import io.github.matejkadlec.realmforge.spell.Spell;
+import io.github.matejkadlec.realmforge.spell.Targets;
 import java.util.Optional;
+import java.util.function.Predicate;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -13,8 +17,9 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * The entity a spell bar key aims at (architecture 11.2 step 1): the first living entity under the crosshair within the
- * spell's range, not behind a block, as vanilla picks what the crosshair points at, only farther. The server checks the
- * target again; a spell on the caster itself aims at nothing.
+ * spell's range, not behind a block, as vanilla picks what the crosshair points at, only farther. An enemy spell sees
+ * through allies and an ally spell through enemies, so a heal aimed past a mob takes the caster, as an ally spell
+ * without a target does. The server checks the target again; a spell on the caster itself aims at nothing.
  */
 public final class SpellTargetPicker {
     private SpellTargetPicker() {
@@ -31,8 +36,13 @@ public final class SpellTargetPicker {
         double reach = block.getType() == HitResult.Type.MISS ? range * range
                 : block.getLocation().distanceToSqr(eye);
         AABB area = player.getBoundingBox().expandTowards(view).inflate(1.0);
+        Predicate<Entity> fits = spell.targeting() instanceof AllyTargeting
+                ? entity -> Targets.allied(player, (LivingEntity) entity)
+                : spell.targeting() instanceof EnemyTargeting
+                ? entity -> !Targets.allied(player, (LivingEntity) entity)
+                : entity -> true;
         EntityHitResult hit = ProjectileUtil.getEntityHitResult(player, eye, eye.add(view), area,
-                SpellTargetPicker::targetable, reach);
+                entity -> targetable(entity) && fits.test(entity), reach);
         return hit != null && hit.getEntity() instanceof LivingEntity living ? Optional.of(living) : Optional.empty();
     }
 

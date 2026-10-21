@@ -24,9 +24,12 @@ spellbook's key. 0043 is accepted, so this ADR records the change
    keys by their US position, which all of these share with Matěj's Czech QWERTZ keyboard.
 2. **The pack's default keys** (`pack/config/defaultoptions/keybindings.txt`) move vanilla's chat from T to Enter, and
    unbind the creative toolbar's Save and Load keys (C and X) and Social Interactions (P), which the pause menu's
-   Player Reporting still opens.
-3. **Dark Vision moves from H to J** (`client/input/DarkVisionKey`). This is the agent's pick, as no free key was
-   named: J sits next to H. Matěj confirms it, or names another key, in the C3b playtest.
+   Player Reporting still opens. Apotheosis's Open World Tier Select moves from Ctrl+T to Alt+T: NeoForge picks a
+   key's Ctrl binding over its plain one while Ctrl is held, so a player who holds Ctrl to sprint would open the world
+   tier screen instead of casting T's spell.
+3. **Dark Vision moves from H to U** (`client/input/DarkVisionKey`). This is the agent's pick, as no free key was
+   named: a boot of the whole pack (`rf pack-boot`) leaves B, I and U as the only letters without an in-game key, and
+   J, next to H, is Toast Control's Clear Toasts. Matěj confirms U, or names another key, in the C3b playtest.
 4. **The quick-drink potion key (Y) is not part of C3b:** what "the best potion" is and how often one may drink need
    a design of their own, so it is a follow-up ticket; `key.keyboard.z` (Y on QWERTZ) stays free for it.
 
@@ -35,4 +38,6 @@ spellbook's key. 0043 is accepted, so this ADR records the change
 - A player with the pack starts with the spell bar's keys and no conflict with vanilla; Reset Keys returns to them.
 - Without the pack (the core mod alone), vanilla's chat and the toolbar keys still share T, C and X with the spell bar
   until the player rebinds them.
-- 0043's Dark Vision on H is replaced by J; its other keys stand.
+- 0043's Dark Vision on H is replaced by U; its other keys stand.
+- The quick-drink potion's planned key, `key.keyboard.z` (Y on QWERTZ), is Xaero's Minimap's Enlarge Map in the pack;
+  the potion's ticket settles that.
