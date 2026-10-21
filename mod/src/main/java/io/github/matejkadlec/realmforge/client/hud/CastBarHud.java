@@ -49,6 +49,8 @@ public final class CastBarHud {
     /** Between the bar's ends and its texts. */
     private static final int TEXT_PADDING = 4;
     private static final float TIME_SCALE = 0.75F;
+    /** Extra font pixels between the time's characters. */
+    private static final int TIME_SPACING = 1;
     private static final int FRAME = 0x000000;
     private static final int EMPTY = 0x1A1A1A;
     private static final int ICON_BACKGROUND = 0x101010;
@@ -180,11 +182,19 @@ public final class CastBarHud {
 
         graphics.text(font, name, barX + TEXT_PADDING, innerY + (innerHeight - 8) / 2, ARGB.color(alpha, TEXT));
         if (!time.isEmpty()) {
+            // Smaller than the name, with a pixel more between its characters, so the decimal points stay readable.
+            int timeWidth = time.chars().map(c -> font.width(Character.toString(c)) + TIME_SPACING).sum()
+                    - TIME_SPACING;
             graphics.pose().pushMatrix();
-            graphics.pose().translate(barX + barWidth - TEXT_PADDING - font.width(time) * TIME_SCALE,
+            graphics.pose().translate(barX + barWidth - TEXT_PADDING - timeWidth * TIME_SCALE,
                     innerY + (innerHeight - 8 * TIME_SCALE) / 2);
             graphics.pose().scale(TIME_SCALE, TIME_SCALE);
-            graphics.text(font, time, 0, 0, ARGB.color(alpha, TIME_TEXT));
+            int characterX = 0;
+            for (int index = 0; index < time.length(); index++) {
+                String character = time.substring(index, index + 1);
+                graphics.text(font, character, characterX, 0, ARGB.color(alpha, TIME_TEXT));
+                characterX += font.width(character) + TIME_SPACING;
+            }
             graphics.pose().popMatrix();
         }
     }
