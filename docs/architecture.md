@@ -429,7 +429,7 @@ instance. After `rf gen` changes files in `pack/`, run `packwiz refresh` (CI che
 # movement in 11.3; the description's placeholders in 11.6)
 id: firebolt
 name: {en_us: Firebolt}
-description: {en_us: "Hurls a bolt of fire for {damage} Fire damage."}
+description: {en_us: "Hurls a bolt of fire for {damage} damage."}   # the number shows Fire's icon and colour
 school: realmforge:fire
 scales_with: spell_power                # magic; a physical ability scales with attack_damage
 targeting: {type: realmforge:enemy, range: 24}
@@ -1282,10 +1282,15 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
 - **Texts:** a spell's description names its numbers through placeholders (`{damage}`, `{heal}`, `{duration}`,
   `{periodic}`, `{periodic_total}`, `{interval}`, `{radius}`), which `spell/SpellText` fills with the spell's data at
   the player's level and their stats as they are now, as the effects would land before the target's resistance and a
-  crit; `schema/spell.py` and validation make sure each has the effect it reads. `spell/SpellTooltip` builds the
-  spellbook's tooltip: name, rank, cost, range, the cast after Cast Time Reduction, the cooldown after Cooldown
-  Reduction and the filled description. `SpellTextGameTests` and `SpellBarGameTests` cover the server side and the
-  texts, `CastQueueTest`, `CooldownSweepTest`, `SpellBarLayoutTest` and `SpellBarViewTest` the client's logic.
+  crit; `schema/spell.py` and validation make sure each has the effect it reads. A damage number shows its school
+  instead of naming it (Matěj's playtest of 2026-10-21): `SpellText#fill` puts the school's icon before it (an inline
+  GUI sprite, `combat/SpellSchools#icon`: `Component.object` with an `AtlasSprite` of the `gui` atlas,
+  `textures/gui/sprites/school/<id>.png`, a generated placeholder until the art exists) and draws the number in the
+  school's colour, the spell's school for `{damage}` and the effect's for its damage over time; descriptions read
+  "for {damage} damage". `spell/SpellTooltip` builds the spellbook's tooltip: name, rank, cost, range, the cast after
+  Cast Time Reduction, the cooldown after Cooldown Reduction and the filled description. `SpellTextGameTests` and
+  `SpellBarGameTests` cover the server side and the texts, `CastQueueTest`, `CooldownSweepTest`, `SpellBarLayoutTest`,
+  `CastBarStyleTest`, `KeyLabelsTest`, `SpellTextTest` and `SpellBarViewTest` the client's logic.
 
 ## 12. Talents
 

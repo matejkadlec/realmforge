@@ -3,7 +3,7 @@
 # content; the GameTests in the QA mod cast it.
 id: test_bolt
 name: {en_us: Test Bolt}
-description: {en_us: "Hurls a bolt of fire at an enemy for {damage} Fire damage."}
+description: {en_us: "Hurls a bolt of fire at an enemy for {damage} damage."}
 school: realmforge:fire
 scales_with: spell_power
 targeting: {type: realmforge:enemy, range: 16}

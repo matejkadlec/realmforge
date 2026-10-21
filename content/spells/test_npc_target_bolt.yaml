@@ -3,7 +3,7 @@
 # the QA mod cast it.
 id: test_npc_target_bolt
 name: {en_us: Test Creature Target Bolt}
-description: {en_us: "A creature's bolt at its target for {damage} Arcane damage."}
+description: {en_us: "A creature's bolt at its target for {damage} damage."}
 school: realmforge:arcane
 scales_with: spell_power
 targeting: {type: realmforge:current_target, range: 16}

@@ -3,7 +3,7 @@
 # are not checked again) and may be cast while moving. Not gameplay content; the GameTests in the QA mod cast it.
 id: test_homing_bolt
 name: {en_us: Test Homing Bolt}
-description: {en_us: "Sends a frost bolt that follows its target for {damage} Frost damage."}
+description: {en_us: "Sends a frost bolt that follows its target for {damage} damage."}
 school: realmforge:frost
 scales_with: spell_power
 targeting: {type: realmforge:enemy, range: 16}

@@ -3,7 +3,7 @@
 # QA mod cast it.
 id: test_npc_random_bolt
 name: {en_us: Test Creature Random Bolt}
-description: {en_us: "A creature's bolt at a random player for {damage} Arcane damage."}
+description: {en_us: "A creature's bolt at a random player for {damage} damage."}
 school: realmforge:arcane
 scales_with: spell_power
 targeting: {type: realmforge:random_player, range: 16}

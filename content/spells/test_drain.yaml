@@ -3,7 +3,7 @@
 # second for 3 s; moving ends it. Not gameplay content; the GameTests in the QA mod cast it.
 id: test_drain
 name: {en_us: Test Drain}
-description: {en_us: "Drains an enemy for {damage} Arcane damage at every tick of the channel."}
+description: {en_us: "Drains an enemy for {damage} damage at every tick of the channel."}
 school: realmforge:arcane
 scales_with: spell_power
 targeting: {type: realmforge:enemy, range: 16}

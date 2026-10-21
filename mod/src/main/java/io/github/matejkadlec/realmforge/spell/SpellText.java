@@ -4,6 +4,7 @@ import io.github.matejkadlec.realmforge.combat.CombatRegistries;
 import io.github.matejkadlec.realmforge.combat.DamageNumbers;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
 import io.github.matejkadlec.realmforge.combat.SpellSchool;
+import io.github.matejkadlec.realmforge.combat.SpellSchools;
 import io.github.matejkadlec.realmforge.effect.EffectTicks;
 import io.github.matejkadlec.realmforge.effect.Periodic;
 import io.github.matejkadlec.realmforge.effect.StatusEffect;
@@ -21,6 +22,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -44,7 +47,9 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  * </ul>
  *
  * Damage and healing read like combat text ({@link DamageNumbers}); seconds and blocks keep up to two decimals. A
- * placeholder without a value stays as it is written.
+ * placeholder without a value stays as it is written. A damage number shows its school instead of naming it (Matěj's
+ * playtest of 2026-10-21): the school's icon before it ({@link SpellSchools#icon}) and the number in the school's
+ * colour, so a description reads "for [icon]17 damage".
  */
 public final class SpellText {
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{([a-z_]+)\\}");
@@ -64,16 +69,58 @@ public final class SpellText {
                 .get(key).map(Holder::value);
     }
 
-    /** {@code template}, a translated description, with every placeholder that has a value replaced by it. */
-    public static String fill(String template, Map<String, String> values) {
+    /**
+     * {@code template}, a translated description, with every placeholder that has a value replaced by it; a value whose
+     * placeholder has a school ({@code placeholderSchools}) comes after the school's icon, in the school's colour.
+     */
+    public static MutableComponent fill(String template, Map<String, String> values,
+            Map<String, ResourceKey<SpellSchool>> placeholderSchools,
+            Function<ResourceKey<SpellSchool>, Optional<SpellSchool>> schools) {
         Matcher matcher = PLACEHOLDER.matcher(template);
-        StringBuilder filled = new StringBuilder();
+        MutableComponent filled = Component.empty();
+        int start = 0;
         while (matcher.find()) {
+            if (matcher.start() > start) {
+                filled.append(template.substring(start, matcher.start()));
+            }
             String value = values.get(matcher.group(1));
-            matcher.appendReplacement(filled, Matcher.quoteReplacement(value != null ? value : matcher.group()));
+            Optional<ResourceKey<SpellSchool>> key = Optional.ofNullable(placeholderSchools.get(matcher.group(1)));
+            Optional<SpellSchool> school = key.flatMap(schools);
+            if (value == null) {
+                filled.append(matcher.group());
+            } else if (key.isPresent() && school.isPresent()) {
+                filled.append(SpellSchools.icon(key.get(), school.get()));
+                filled.append(Component.literal(value).withColor(school.get().color()));
+            } else {
+                filled.append(value);
+            }
+            start = matcher.end();
         }
-        matcher.appendTail(filled);
-        return filled.toString();
+        if (start < template.length()) {
+            filled.append(template.substring(start));
+        }
+        return filled;
+    }
+
+    /**
+     * The school whose icon and colour each number of {@code spell} takes: the spell's own for {@code damage}, the
+     * effect's for its damage over time ({@code periodic}, {@code periodic_total}). Healing, seconds and blocks take
+     * none.
+     */
+    public static Map<String, ResourceKey<SpellSchool>> placeholderSchools(Spell spell) {
+        Map<String, ResourceKey<SpellSchool>> placeholders = new LinkedHashMap<>();
+        List<SpellEffect> effects = allEffects(spell.effects());
+        if (first(effects, DamageEffect.class).isPresent()) {
+            spell.school().unwrapKey().ifPresent(key -> placeholders.put("damage", key));
+        }
+        first(effects, ApplyEffectEffect.class).ifPresent(applied -> {
+            if (applied.effect().value() instanceof StatusEffect status && status.periodic().isPresent()
+                    && status.periodic().get().kind() == Periodic.Kind.DAMAGE) {
+                placeholders.put("periodic", status.periodic().get().school());
+                placeholders.put("periodic_total", status.periodic().get().school());
+            }
+        });
+        return placeholders;
     }
 
     /**

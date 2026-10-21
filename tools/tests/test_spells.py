@@ -352,7 +352,7 @@ def test_names_and_descriptions_go_into_the_lang_file(repo: RepoPaths) -> None:
     lang = json.loads(generate(repo)[LANG])
     assert lang["spell.realmforge.test_bolt.name"] == "Test Bolt"
     assert lang["spell.realmforge.test_bolt.description"] == (
-        "Hurls a bolt of fire at an enemy for {damage} Fire damage."
+        "Hurls a bolt of fire at an enemy for {damage} damage."
     )
     spell_keys = {key for key in lang if key.startswith("spell.realmforge.")}
     assert len(spell_keys) == 2 * len(load_and_validate(repo)[0].spells)

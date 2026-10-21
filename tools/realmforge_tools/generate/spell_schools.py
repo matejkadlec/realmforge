@@ -11,6 +11,7 @@ from realmforge_tools.content import Content
 from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.generate.datapack import data_dir, translation_key
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
+from realmforge_tools.generate.textures import placeholder_school_icon
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.common import LocalizedText
 from realmforge_tools.schema.spell_school import SpellSchoolDef, death_message_keys
@@ -38,10 +39,13 @@ def translations(content: Content) -> dict[str, LocalizedText]:
 def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     schools = [entry.model for entry in content.spell_schools]
     data = paths.mod_generated / "resources" / "data"
+    # GUI sprites: a school's icon goes inline before its numbers in spell tooltips (SpellSchools#icon).
+    icons = paths.mod_generated / "resources" / "assets" / MOD_ID / "textures" / "gui" / "sprites" / "school"
     files: dict[Path, bytes] = {}
     for school in schools:
         files[data_dir(paths) / MOD_ID / REGISTRY / f"{school.id}.json"] = dump_json(_entry(school))
         files[data / MOD_ID / "damage_type" / f"{school.id}.json"] = dump_json(_damage_type(school))
+        files[icons / f"{school.id}.png"] = placeholder_school_icon(int(school.color[1:], 16))
     tags = data / "minecraft" / "tags" / "damage_type"
     # Every school's hits land through the hurt cooldown and push nobody: a spell knocks back only through its
     # knockback effect (architecture 9.1, RLM-214). Magic ones skip vanilla's armor too.

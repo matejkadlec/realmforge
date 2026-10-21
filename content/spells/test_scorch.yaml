@@ -3,7 +3,7 @@
 # within 2 blocks. Not gameplay content; the GameTests in the QA mod cast it.
 id: test_scorch
 name: {en_us: Test Scorch}
-description: {en_us: "Sets the ground on fire in a radius of {radius} blocks, dealing {damage} Fire damage at intervals."}
+description: {en_us: "Sets the ground on fire in a radius of {radius} blocks, dealing {damage} damage at intervals."}
 school: realmforge:fire
 scales_with: spell_power
 targeting: {type: realmforge:ground_point, range: 16}

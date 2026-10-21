@@ -3,7 +3,7 @@
 # gameplay content; the GameTests in the QA mod cast it.
 id: test_ignite
 name: {en_us: Test Ignite}
-description: {en_us: "Sets an enemy burning for {periodic_total} Fire damage over {duration} sec."}
+description: {en_us: "Sets an enemy burning for {periodic_total} damage over {duration} sec."}
 school: realmforge:fire
 scales_with: spell_power
 targeting: {type: realmforge:enemy, range: 16}

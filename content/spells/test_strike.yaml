@@ -3,7 +3,7 @@
 # global cooldown. Not gameplay content; the GameTests in the QA mod cast it.
 id: test_strike
 name: {en_us: Test Strike}
-description: {en_us: "Strikes an enemy for {damage} Physical damage."}
+description: {en_us: "Strikes an enemy for {damage} damage."}
 school: realmforge:physical
 scales_with: attack_damage
 targeting: {type: realmforge:enemy, range: 4}

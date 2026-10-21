@@ -19,8 +19,8 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 /**
  * A spell's tooltip in the spellbook (architecture 11.6, 18; C3b, RLM-25), built from data with live numbers: its
  * name, its rank, its cost at that rank, its range, its cast after Cast Time Reduction, its cooldown after Cooldown
- * Reduction, and its description with the placeholders filled ({@link SpellText}). A view model in common code, so the
- * screen only draws it.
+ * Reduction, and its description with the placeholders filled ({@link SpellText}): its damage numbers with their
+ * school's icon and colour. A view model in common code, so the screen only draws it.
  */
 public final class SpellTooltip {
     private static final double TICKS_PER_SECOND = 20;
@@ -54,9 +54,9 @@ public final class SpellTooltip {
         if (cooldown > 0) {
             lines.add(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_COOLDOWN, seconds(cooldown)));
         }
-        String description = SpellText.fill(Language.getInstance().getOrDefault(spell.description()),
-                SpellText.values(spell, level, stats, schools));
-        lines.add(Component.literal(description).withStyle(ChatFormatting.YELLOW));
+        lines.add(SpellText.fill(Language.getInstance().getOrDefault(spell.description()),
+                SpellText.values(spell, level, stats, schools), SpellText.placeholderSchools(spell), schools)
+                .withStyle(ChatFormatting.YELLOW));
         return lines;
     }
 

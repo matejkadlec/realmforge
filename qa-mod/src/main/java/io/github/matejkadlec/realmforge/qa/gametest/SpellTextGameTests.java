@@ -59,11 +59,12 @@ public final class SpellTextGameTests {
         StatsCommands.setBase(player, GeneratedStats.COOLDOWN_REDUCTION, 0.5);
         helper.assertValueEqual(tooltip(helper, player, GeneratedSpells.TEST_BOLT, 3), List.of("Test Bolt",
                 "Rank 3 of 3", "20 Mana", "16 block range", "Instant", "1.5 sec cooldown",
-                "Hurls a bolt of fire at an enemy for 17 Fire damage."), "test_bolt at rank 3");
+                "Hurls a bolt of fire at an enemy for Fire 17 damage."),
+                "test_bolt at rank 3; as plain text the school's icon reads as its name");
         StatsCommands.setBase(player, GeneratedStats.CAST_TIME_REDUCTION, 0.25);
         helper.assertValueEqual(tooltip(helper, player, GeneratedSpells.TEST_DRAIN, 1), List.of("Test Drain",
                 "15 Mana", "16 block range", "Channeled (2.25 sec)", "2.5 sec cooldown",
-                "Drains an enemy for 3 Arcane damage at every tick of the channel."),
+                "Drains an enemy for Arcane 3 damage at every tick of the channel."),
                 "a channel of 3 ticks of 0.75 s after 25 % Cast Time Reduction");
         helper.assertValueEqual(tooltip(helper, player, GeneratedSpells.TEST_MENDING_RING, 1).subList(1, 3),
                 List.of("On yourself", "Instant"), "a spell on the caster has no range");

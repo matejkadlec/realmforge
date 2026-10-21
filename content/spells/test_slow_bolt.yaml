@@ -3,7 +3,7 @@
 # gameplay content; the GameTests in the QA mod cast it.
 id: test_slow_bolt
 name: {en_us: Test Slow Bolt}
-description: {en_us: "Hurls a heavy bolt of fire at an enemy for {damage} Fire damage."}
+description: {en_us: "Hurls a heavy bolt of fire at an enemy for {damage} damage."}
 school: realmforge:fire
 scales_with: spell_power
 targeting: {type: realmforge:enemy, range: 16}

@@ -3,7 +3,7 @@
 # content; the GameTests in the QA mod cast it.
 id: test_missile
 name: {en_us: Test Missile}
-description: {en_us: "Fires a missile at an enemy for {damage} Fire damage, slowing it for {duration} sec."}
+description: {en_us: "Fires a missile at an enemy for {damage} damage, slowing it for {duration} sec."}
 school: realmforge:fire
 scales_with: spell_power
 targeting: {type: realmforge:enemy, range: 16}

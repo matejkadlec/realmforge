@@ -111,6 +111,28 @@ def placeholder_effect_icon(color: int, category: str) -> bytes:
     return encode_rgba(EFFECT_ICON_SIZE, EFFECT_ICON_SIZE, pixels)
 
 
+SCHOOL_ICON_SIZE = 8
+
+
+def placeholder_school_icon(color: int) -> bytes:
+    """An 8x8 spell school icon until real art exists, drawn inline before a spell's numbers as a text glyph (8 px, the
+    font's height): a diamond in the school's colour (``color``, 0xRRGGBB) with a darker rim and a lighter upper left, 7
+    px across like a capital letter, and an empty last column and row so it keeps a pixel from the number."""
+    base = ((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF)
+    pixels: list[Rgba] = []
+    for y in range(SCHOOL_ICON_SIZE):
+        for x in range(SCHOOL_ICON_SIZE):
+            distance = abs(x - 3) + abs(y - 3)
+            if x == SCHOOL_ICON_SIZE - 1 or y == SCHOOL_ICON_SIZE - 1 or distance > 3:
+                pixels.append((0, 0, 0, 0))
+            elif distance == 3:
+                pixels.append(_shade(base, 0.55))
+            else:
+                # Lighter toward the upper left, as if lit from there.
+                pixels.append(_shade(base, 1.3 - (x + y) / 12))
+    return encode_rgba(SCHOOL_ICON_SIZE, SCHOOL_ICON_SIZE, pixels)
+
+
 def _shade(rgb: tuple[int, int, int], factor: float) -> Rgba:
     r, g, b = (min(255, max(0, round(channel * factor))) for channel in rgb)
     return r, g, b, 255

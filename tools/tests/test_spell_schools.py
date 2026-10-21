@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import struct
 
 import pytest
 
@@ -186,6 +187,15 @@ def test_combat_text_takes_the_school_colour_unless_it_has_its_own(repo: RepoPat
     assert json.loads(generate(repo)[f"{SCHOOL_DATA}/shadow.json"])["combat_text_color"] == "#663399"
     school(repo, "shadow", SHADOW + 'combat_text_color: "#aa88ff"\n')
     assert json.loads(generate(repo)[f"{SCHOOL_DATA}/shadow.json"])["combat_text_color"] == "#AA88FF"
+
+
+def test_every_school_has_an_icon_for_tooltips(repo: RepoPaths) -> None:
+    files = generate(repo)
+    icons = "mod/src/generated/resources/assets/realmforge/textures/gui/sprites/school"
+    fire = files[f"{icons}/fire.png"]
+    # 8 by 8: an inline glyph is as tall as the font.
+    assert fire.startswith(b"\x89PNG") and struct.unpack(">II", fire[16:24]) == (8, 8)
+    assert fire != files[f"{icons}/frost.png"]
 
 
 def test_the_colour_is_written_in_capitals(repo: RepoPaths) -> None:
