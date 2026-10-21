@@ -22,6 +22,10 @@ Texture pipeline ([ADR 0007](../docs/decisions/0007-asset-pipeline.md),
 3. `uv run rf art clean <candidate>.png <texture>.png` produces the texture: reduced to the 16x16 grid, alpha
    hardened, colors snapped to the palette.
 
+Our font's symbols (the mob level's skull, RLM-340) are not generator output: they are pixel rows in
+`tools/realmforge_tools/generate/fonts.py`, on the default Minecraft font's 8x8 grid in palette colours, and `rf gen`
+writes the font and its texture.
+
 Until a piece of content has approved art, its texture is a generated placeholder
 (`tools/realmforge_tools/generate/textures.py`). Never use vanilla textures or recolors of them, not even as AI
 input.

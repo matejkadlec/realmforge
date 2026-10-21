@@ -1369,11 +1369,11 @@ levels (RLM-304, RLM-305) come later.
   modifiers (removing any it no longer produces) and keeping its share of health. A release or data pack that changes
   a curve then reaches old mobs too.
 - XP (`character`) and loot (`loot`) read the level from `realmforge:level`; armor reads no level, only the hit's
-  size, which mob scaling raises with the level ([9.1](#91-damage-pipeline)). The level
-  shows with the mob's name and health bar, not apart from them (Matěj, 2026-10-14): through Neat, the pack's
-  health bar mod, if it can show it; otherwise through another health bar mod or a Neat add-on that can; otherwise
-  through health bars of our own (RLM-166, *verify* the chosen mod's API). Until then the dev game shows a mob's
-  level, health, armor and damage multiple with `/qa mob` ([20](#20-tests-per-layer)), the boss bar a boss's.
+  size, which mob scaling raises with the level ([9.1](#91-damage-pipeline)). The level shows before the mob's
+  name, in Neat's card above the mob and in Jade's tooltip (`Lv. 20 Zombie`, RLM-338; Matěj, 2026-10-20), never
+  apart from them (Matěj, 2026-10-14, RLM-166), coloured by the mob's level against the viewing player's
+  ([19.4](#194-optional-integrations)). The dev game also shows a mob's level, health, armor and damage multiple with
+  `/qa mob` ([20](#20-tests-per-layer)), the boss bar a boss's.
 
 ### 14.2 Custom mobs
 
@@ -2191,6 +2191,35 @@ and `Right` for the shoulder entities a realm trip leaves behind ([15.1](#151-di
 an optional dependency in `neoforge.mods.toml`. Data-only integrations (Better Combat weapon files and its disable
 tag, Xaero icons, FTB Quests files) need no code.
 
+**The mob level in Neat and Jade** (RLM-338, RLM-166, RLM-340; Matěj, 2026-10-20). Both show a mob's level before
+its name, `Lv. 20 Zombie`, from one function, `client/compat/MobLevelLabel`:
+
+- **The colour** of the whole `Lv. 20` follows the mob's level minus the viewing player's: gray (`#AAAAAA`) from −4
+  down, green (`#55FF55`) at −3, yellow (`#FFFF55`) from −2 to +2, orange (`#FF9933`, ours, not gold) at +3, red
+  (`#FF5555`) at +4. From +5 the number gives way to a skull, `Lv. ` in bold blood red (`#E02020`) and the skull glyph
+  in white, as a bitmap glyph takes the text colour as a tint. The name is white and upright, a custom name too.
+- **The text** `Lv. %1$s` is the XP bar's (`gui.realmforge.xp_bar_level`), so a mob's level reads like the player's
+  own. The level comes from the mob's synced `realmforge:level` ([7](#7-player-state)); only a mob (`Mob`) with a level
+  shows one, players and passive animals none. It is never written into a name, so death messages, name tags and other
+  mods see the mob's own.
+- **The skull** is our font `realmforge:symbols` (`assets/realmforge/font/symbols.json`, a bitmap provider) at the
+  private-use code point U+E000, a white skull with red eyes drawn on the default font's 8×8 grid with palette
+  colours. `rf gen` writes the font and its texture from the pixel rows in `tools/realmforge_tools/generate/fonts.py`,
+  and a JUnit test checks that the generated font holds the code point the label uses.
+- **Neat** (`client/compat/neat/NeatCompat`, client only) has no API for it, but a usable hook: its mixin on
+  `LivingEntityRenderer#extractRenderState` stores the card's name line in the render state (`NeatRenderState`,
+  which it mixes into `LivingEntityRenderState`), and NeoForge runs the render state modifiers of
+  `RegisterRenderStateModifiersEvent` after `extractRenderState` (`EntityRenderer#createRenderState`), so ours
+  replaces that line. A card without a name line keeps Neat's. Neat hides vanilla's name tag while its card shows
+  (its default `name_tag_render_behavior`, `WHEN_NO_HEALTHBAR`).
+- **Jade** (`compat/jade/JadeCompat`, a `@WailaPlugin` that Jade finds itself, with its client part in
+  `client/compat/jade/MobLevelTooltip`): an entity component provider replaces the name line that Jade's own provider
+  adds (`JadeIds.CORE_OBJECT_NAME`, priority −10100), running after it at the default priority. It is required, so
+  Jade's settings list no switch for it and it needs no text of ours.
+- The core mod compiles against the pack's builds of both (`compileOnly` in `mod/build.gradle`, read from their
+  `pack/mods/*.pw.toml`), so an update that changes a hook fails the build, not the game; `neoforge.mods.toml` names
+  both as optional dependencies.
+
 **Apothic Attributes** (RLM-271, [ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md))
 is Apotheosis's attribute library, with a crit and a dodge of its own that would roll next to ours
 ([9.1](#91-damage-pipeline)). `compat/apothic_attributes/ApothicAttributesCompat` switches both off, looking its
@@ -2286,11 +2315,11 @@ that agents can read. So far:
   screen;
 - `/qa dummy [<armor>]` (F5): a training dummy three blocks ahead, a pillager without a crossbow that stands still
   and never dies. A pillager is not undead, so poison and harming hurt it, healing heals it, and daylight does not
-  burn it: it takes damage and healing the way a player does (RLM-187). Its label, a text display riding it, shows
-  its armor with the share of a 10-damage hit it blocks against the nearest player's armor pierce and shred, as
-  vanilla's armor formula blocks less of a bigger hit ("15 Armor (40% vs a 10-damage hit)", RLM-223), over its name with the DPS of the current session (it ends after 5 s without a
-  hit); vanilla draws no name tag over an entity with a passenger, so the label carries both. The hitter sees each
-  hit on the action bar, `/qa dummy reset|remove`. Pillagers carry our stats in the dev game, so
+  burn it: it takes damage and healing the way a player does (RLM-187). Neat's card above it is its only display
+  (RLM-339; Matěj, 2026-10-20): its level and name with the DPS of the current session (`Lv. 1 Training Dummy | 19
+  DPS`, its custom name; a session ends after 5 s without a hit) and Neat's armor. Its own name tag stays hidden,
+  and a dummy from an older world loses the text display that labelled it before. The hitter sees each hit on the
+  action bar, `/qa dummy reset|remove`. Pillagers carry our stats in the dev game, so
   `/attribute @n[type=pillager] realmforge:dodge_chance base set 0.5` sets a dummy's dodge chance or resistances;
 - `/qa spell learn <spell> [<level>]`, `/qa spell cast <spell> [<target>]`, `/qa spell cancel`, `/qa spell resource
   <mana|rage> <amount>`, `/qa spell reset` and `/qa spell show` (C3a-1, C3a-2): teach the executing player a spell,
