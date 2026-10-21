@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.client;
 
 import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.client.compat.neat.NeatCompat;
 import io.github.matejkadlec.realmforge.client.hud.CombatTextHud;
 import io.github.matejkadlec.realmforge.client.hud.HitDirectionHud;
 import io.github.matejkadlec.realmforge.client.hud.MagicShieldHud;
@@ -37,6 +38,8 @@ public final class RealmforgeClient {
         MagicShieldHud.register(modBus);
         XpBarHud.register(modBus);
         RightAlignedLines.register(modBus);
+        // Optional integrations (architecture 19.4); Jade finds its plugin itself (compat/jade/JadeCompat).
+        NeatCompat.register(modBus);
         ClientCasts.register();
         SpellEntityRenderers.register(modBus);
         RealmPortalColors.register(modBus);

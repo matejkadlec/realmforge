@@ -58,6 +58,22 @@ versionRange = "[2.1.0,)"
 ordering = "AFTER"
 side = "BOTH"
 
+# The mob level in Neat's card above a mob and in Jade's tooltip (RLM-338, architecture 19.4): each integration runs
+# only when its mod is loaded.
+[[dependencies.realmforge]]
+modId = "neat"
+type = "optional"
+versionRange = "*"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.realmforge]]
+modId = "jade"
+type = "optional"
+versionRange = "*"
+ordering = "NONE"
+side = "BOTH"
+
 # stats/AttributeCaps raises vanilla's attribute caps through a mixin accessor (architecture 8.4, 19.3).
 [[mixins]]
 config = "realmforge.mixins.json"
