@@ -190,8 +190,8 @@ Rules:
   (the effects, the cost and the cooldown come when the cast completes) or `{type: channel, duration_seconds,
   interval_seconds}` (it pays and starts its cooldown when it begins, then runs its effects every interval; the
   duration is a whole number of intervals), the timed ones with `castable_while_moving` (by default the cast slows
-  its caster as Slowness III does, to 55 % of its speed; with `true` the caster moves at full speed; moving never
-  cancels a cast, ADR 0039) and `lock_on` (range and line of sight are not checked again before the effects); an optional `cost` (`resource` `realmforge:mana` or `realmforge:rage`, `amount` at level 1, `per_level`);
+  its caster to half its speed; with `true` the caster moves at full speed; moving never cancels a cast, ADR 0039,
+  ADR 0047) and `lock_on` (range and line of sight are not checked again before the effects); an optional `cost` (`resource` `realmforge:mana` or `realmforge:rage`, `amount` at level 1, `per_level`);
   `cooldown_seconds`; `global_cooldown_seconds` (0.5 by default, as in WoW; 0 for a spell off the global cooldown);
   `max_level`;
   the `crit` block (`can_crit`, `multiplier_percent` instead of 1 + the caster's crit damage, `bonus_chance_percent`

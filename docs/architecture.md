@@ -1107,7 +1107,7 @@ an entity target is checked again before a cast time's effects and a channel's t
 stays as it began. **Moving slows, it never interrupts** (RLM-261,
 [ADR 0039](decisions/0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md)): a cast-time or channelled
 spell that may not be cast while moving gives its caster the transient movement speed modifier
-`Casting#CAST_SLOW` (`realmforge:cast_slow`, −45 % `ADD_MULTIPLIED_TOTAL`, Slowness III's amount) from its start until
+`Casting#CAST_SLOW` (`realmforge:cast_slow`, −50 % `ADD_MULTIPLIED_TOTAL`, [ADR 0047](decisions/0047-the-cast-slow-halves-the-casters-speed.md)) from its start until
 it ends, however it ends; a spell with `castable_while_moving` leaves the caster at full speed. The modifier is no
 status effect: no icon, no particles, milk does not clear it, and it is never saved, so a crash leaves none behind.
 Players and mobs are slowed alike. A player's client moves the player, so a modified client can ignore the slow as it
