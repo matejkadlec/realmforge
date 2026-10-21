@@ -21,10 +21,12 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Display;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.monster.illager.Pillager;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -34,7 +36,9 @@ import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.NeoForgeMod;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 /**
  * The commands a playtest handoff gives (the flow's "Reaching the state") reach their states: they run here through
@@ -70,10 +74,9 @@ public final class QaCommandGameTests {
         helper.assertValueEqual(dummies.size(), 1, "dummies after /qa dummy 10");
         LivingEntity dummy = dummies.getFirst();
         helper.assertValueEqual(dummy.getAttributeValue(Attributes.ARMOR), 10.0, "the dummy's armor");
-        Display.TextDisplay label = TrainingDummy.labelEntity(dummy);
-        helper.assertTrue(label != null, "the dummy carries its armor label");
-        helper.assertValueEqual(label.getText().getString(), "10 Armor (20% vs a 10-damage hit)\nTraining Dummy",
-                "the label against a 10-damage hit (10 − 10 / 2 effective armor, 4 % each), over the dummy's name");
+        helper.assertTrue(dummy.getPassengers().isEmpty(), "Neat's card is the dummy's only display (RLM-339)");
+        helper.assertFalse(dummy.isCustomNameVisible(), "the dummy's own name tag stays hidden");
+        helper.assertValueEqual(dummy.getCustomName().getString(), "Training Dummy", "the name Neat shows");
         run(server, player, "attribute " + DUMMY + " realmforge:fire_resistance base set 0.5");
         helper.assertValueEqual(dummy.getAttributeValue(GeneratedStats.FIRE_RESISTANCE), 0.5, "the dummy's resistance");
         run(server, player, "damage " + DUMMY + " 10 realmforge:fire by @s");
@@ -88,10 +91,37 @@ public final class QaCommandGameTests {
         helper.assertValueEqual(player.getAttributeValue(GeneratedStats.CRIT_CHANCE), 0.05, "crit chance after reset");
         run(server, player, "qa dummy remove");
         helper.assertTrue(dummies(helper).isEmpty(), "/qa dummy remove removed the dummy");
-        AABB platform = new AABB(helper.absolutePos(BlockPos.ZERO)).inflate(8);
-        helper.assertTrue(helper.getLevel().getEntitiesOfClass(Display.TextDisplay.class, platform).isEmpty(),
-                "and its label");
         server.getPlayerList().remove(player);
+        helper.succeed();
+    }
+
+    /**
+     * RLM-339: a dummy from a world before it, which still carries its text display label and shows its name tag,
+     * loses both on its next full second, so Neat's card is its only display. The test posts that tick itself, as
+     * {@code /qa dummy remove} in another test removes every dummy of the level between ticks.
+     */
+    @QaGameTest
+    public static void anOldDummyLosesItsLabel(GameTestHelper helper) {
+        Pillager dummy = TrainingDummy.spawn(helper.getLevel(), helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
+        Entity label = EntityType.TEXT_DISPLAY.create(helper.getLevel(), EntitySpawnReason.COMMAND);
+        helper.assertTrue(label != null, "a text display can be created");
+        label.addTag(TrainingDummy.OLD_LABEL_TAG);
+        label.snapTo(dummy.getX(), dummy.getY() + dummy.getBbHeight(), dummy.getZ());
+        helper.getLevel().addFreshEntity(label);
+        label.startRiding(dummy, true, false);
+        dummy.setCustomNameVisible(true);
+        try {
+            helper.assertValueEqual(dummy.getPassengers(), List.of(label), "the old label rides the dummy");
+            dummy.tickCount = 19;
+            NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(dummy));
+            helper.assertTrue(dummy.getPassengers().contains(label), "a tick between full seconds leaves it");
+            dummy.tickCount = 20;
+            NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(dummy));
+            helper.assertTrue(label.isRemoved() && dummy.getPassengers().isEmpty(), "the old label is gone");
+            helper.assertFalse(dummy.isCustomNameVisible(), "the name tag is hidden");
+        } finally {
+            TrainingDummy.remove(dummy);
+        }
         helper.succeed();
     }
 

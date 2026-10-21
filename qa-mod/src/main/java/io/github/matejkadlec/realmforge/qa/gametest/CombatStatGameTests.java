@@ -44,8 +44,6 @@ public final class CombatStatGameTests {
         DamageSource hit = level.damageSources().playerAttack(player);
 
         assertMetered(helper, dummy, hit, 10 * (1 - CombatGameTests.blocked(dummy, 10, 15, 0)), "no armor pierce");
-        helper.assertValueEqual(TrainingDummy.armorLine(dummy, player).getString(),
-                "15 Armor (40% vs a 10-damage hit)", "the dummy's label: 15 − 10 / 2 effective armor, 4 % each");
         StatsCommands.setBase(player, GeneratedStats.ARMOR_PIERCE, 5);
         assertMetered(helper, dummy, hit, 10 * (1 - CombatGameTests.blocked(dummy, 10, 10, 0)),
                 "5 armor pierce leaves 10 armor");
@@ -54,8 +52,6 @@ public final class CombatStatGameTests {
                 "then 50 % armor shred takes half of the 10 left");
         StatsCommands.setBase(player, GeneratedStats.ARMOR_PIERCE, 20);
         assertMetered(helper, dummy, hit, 10, "more armor pierce than armor: the hit lands in full");
-        helper.assertValueEqual(TrainingDummy.armorLine(dummy, player).getString(),
-                "15 Armor (0% vs a 10-damage hit)", "the dummy's label counts the nearest player's armor pierce");
         TrainingDummy.remove(dummy);
         logout(player);
         helper.succeed();
