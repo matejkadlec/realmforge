@@ -214,11 +214,13 @@ headroom, and no cell where a mob could spawn is dark. **`rf rooms candidates [S
 `--out`) builds the next seeds of each spec that no review decided on (neither kept nor rejected, from 1 up) into
 `.cache/rooms/candidates/<spec>/seed_<n>.nbt` with a sidecar, and leaves out, with the reason, a candidate that
 validation would refuse. It replaces that folder on every run. `--kept` builds the specs' kept seeds too (with
-`--count 0` only those), so a change to the generator can be reviewed on the rooms it changes; a reject decision on
-a kept room moves it to `rejected_seeds`. A kept seed the changed generator can no longer build, or whose room no
+`--count 0` only those), so a change to the generator can be reviewed on the rooms it changes; a reject decision on a
+kept room moves it to `rejected_seeds`. A kept seed the changed generator can no longer build, or whose room no
 longer validates, stops `rf validate` and `rf gen`, but not `--kept`: it prints `REFUSED seed <n>: <reason>`, and
-`rf rooms review` takes a `<spec>/seed_<n>: reject` for it although the folder holds no room for it. Review them like
-any other folder:
+`rf rooms review` takes a `<spec>/seed_<n>: reject` for it although the folder holds no room for it. The run records
+the kept seeds it refused in the folder's `.refused-kept-seeds`, and the review takes a decision on a seed without a
+room only for those: a decision on a kept seed that run neither wrote nor refused (a typo, or a folder written
+without `--kept`) is refused as no such room. Review them like any other folder:
 
 ```bash
 uv run rf rooms candidates                                  # every spec; or name some
