@@ -54,7 +54,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0040](0040-coins-and-data-driven-merchant-trades.md) | Coins and data-driven merchant trades | Accepted (amends 0013) |
 | [0041](0041-dungeon-containers-hold-loot-through-lootr.md) | Dungeon containers hold loot through Lootr | Accepted (amends 0013) |
 | [0042](0042-the-dev-runs-load-the-whole-pack.md) | The dev runs load the whole pack | Accepted (amends 0020) |
-| [0043](0043-default-keys-and-key-search-in-the-pack.md) | Default keys and key search in the pack | Accepted (amends 0013), amended by [0046](0046-spell-bar-default-keys-amend-the-pack-defaults.md) (the spell bar's keys, chat on Enter, Dark Vision on U) |
+| [0043](0043-default-keys-and-key-search-in-the-pack.md) | Default keys and key search in the pack | Accepted (amends 0013), amended by [0046](0046-spell-bar-default-keys-amend-the-pack-defaults.md) (the spell bar's keys, chat on Enter, Dark Vision on ¨) |
 | [0044](0044-third-party-mods-by-milestone.md) | Third-party mods by milestone | Accepted (amends 0004, 0013 and 0025) |
 | [0045](0045-asgard-and-atlantis-amend-the-v1-realm-layout.md) | Asgard and Atlantis amend the v1 realm layout | Accepted (amends 0032) |
 | [0046](0046-spell-bar-default-keys-amend-the-pack-defaults.md) | The spell bar's default keys amend the pack's default keys | Accepted (amends 0043) |

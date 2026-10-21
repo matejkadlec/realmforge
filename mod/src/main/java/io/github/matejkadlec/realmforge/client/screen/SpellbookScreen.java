@@ -44,9 +44,11 @@ import org.lwjgl.glfw.GLFW;
  * only shows. The Options button opens the spell casting options.
  */
 public final class SpellbookScreen extends Screen {
-    private static final int PANEL_WIDTH = 220;
+    private static final int PANEL_WIDTH = 236;
     private static final int PADDING = 8;
     private static final int ROW = 20;
+    /** The known spells' slots, smaller than the bar's to fit a row. */
+    private static final int LIST_SLOT = 18;
     private static final int TOOLTIP_WIDTH = 200;
     private static final int PANEL = 0xC0101010;
     private static final int HEADING = 0xFFFFFFFF;
@@ -138,7 +140,7 @@ public final class SpellbookScreen extends Screen {
         for (int slot = 0; slot < Spellbook.SLOT_COUNT; slot++) {
             SpellBarView.Slot view = bar.slots().get(slot);
             int slotX = slotX(slot);
-            SpellSlots.draw(graphics, font, slotX, barY(), view, SpellBarHud.keyLabel(slot));
+            SpellSlots.draw(graphics, font, slotX, barY(), SpellBarLayout.SLOT, view, SpellBarHud.keyLabel(slot));
             if (selected != null && view.key().filter(selected::equals).isPresent()) {
                 graphics.outline(slotX - 1, barY() - 1, SpellBarLayout.SLOT + 2, SpellBarLayout.SLOT + 2, SELECTED);
             }
@@ -163,18 +165,17 @@ public final class SpellbookScreen extends Screen {
             if (row == hoveredRow) {
                 graphics.fill(x + PADDING - 2, rowY - 1, x + PANEL_WIDTH - PADDING, rowY + ROW - 1, HOVER);
             }
-            SpellSlots.draw(graphics, font, x + PADDING, rowY, new SpellBarView.Slot(Optional.of(entry.getKey()),
-                    spell, entry.getValue(), 0, 0, true, false), Optional.empty());
+            SpellSlots.draw(graphics, font, x + PADDING, rowY, LIST_SLOT, new SpellBarView.Slot(
+                    Optional.of(entry.getKey()), spell, entry.getValue(), 0, 0, true, false), Optional.empty());
             if (entry.getKey().equals(selected)) {
-                graphics.outline(x + PADDING - 1, rowY - 1, SpellBarLayout.SLOT + 2, SpellBarLayout.SLOT + 2,
-                        SELECTED);
+                graphics.outline(x + PADDING - 1, rowY - 1, LIST_SLOT + 2, LIST_SLOT + 2, SELECTED);
             }
             Component name = spell.map(value -> value.maxLevel() > 1
                     ? Component.translatable(GeneratedTexts.GUI_SPELL_WITH_RANK,
                     Component.translatable(value.name()), entry.getValue())
                     : Component.translatable(value.name())).orElse(Component.literal(entry.getKey().identifier()
                     .toString()));
-            graphics.text(font, name, x + PADDING + SpellBarLayout.SLOT + 6, rowY + 5, HEADING);
+            graphics.text(font, name, x + PADDING + LIST_SLOT + 6, rowY + 5, HEADING);
         }
 
         tooltip(graphics, player, mouseX, mouseY, bar);

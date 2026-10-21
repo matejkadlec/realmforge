@@ -1,6 +1,5 @@
 package io.github.matejkadlec.realmforge.client.input;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
 import io.github.matejkadlec.realmforge.world.net.ToggleDarkVisionPayload;
@@ -11,27 +10,22 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
-import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.Lazy;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * The Dark Vision key (U by default, rebindable in Options > Controls under Realmforge): each press asks the server to
+ * The Dark Vision key (¨ by default, rebindable in Options > Controls under Realmforge): each press asks the server to
  * flip the player's Dark Vision (architecture 19.1). The server decides; the client only sends the intent. It moved
- * from H to U (C3b, RLM-25, ADR 0046), because H is one of the spell bar's keys (Matěj, 2026-10-15) and U is the one
- * letter left free in the pack that sits near it (J is Toast Control's Clear Toasts).
+ * from H, one of the spell bar's keys (Matěj, 2026-10-15), to ¨ (C3b, RLM-25, ADR 0046; Matěj's playtest of
+ * 2026-10-21): the key by Enter on his Czech QWERTZ keyboard, a US keyboard's {@code \}, free in the pack.
  */
 public final class DarkVisionKey {
     /** The heading of our keys; its name is the text {@code key.category.realmforge.main} (content/texts/). */
     public static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Realmforge.id("main"));
 
-    public static final Lazy<KeyMapping> KEY = Lazy.of(() -> new KeyMapping(
-            GeneratedTexts.KEY_DARK_VISION,
-            KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_U,
-            CATEGORY));
+    public static final Lazy<KeyMapping> KEY = Lazy.of(() -> new RealmforgeKeyMapping(
+            GeneratedTexts.KEY_DARK_VISION, GLFW.GLFW_KEY_BACKSLASH, CATEGORY));
 
     private DarkVisionKey() {
     }

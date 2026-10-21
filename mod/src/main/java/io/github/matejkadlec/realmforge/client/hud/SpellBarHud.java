@@ -23,13 +23,14 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.GameType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 /**
- * The spell bar (architecture 11.6, 18; C3b, RLM-25): eight slots and the racial slot beside them, as wide as the
- * hotbar, right above the status rows and the XP bar ({@link SpellBarLayout}), drawn from {@link SpellBarView} by
- * {@link SpellSlots}. It shows even when empty (research SP-1), and never in spectator mode. It raises
- * {@code Gui#leftHeight} and {@code Gui#rightHeight}, so the selected item's name, the action bar message and the cast
- * bar ({@link CastBarHud}) stay above it.
+ * The spell bar (architecture 11.6, 18; C3b, RLM-25): eight slots and the racial slot side by side, above the status
+ * rows, the XP bar and the selected item's name ({@link SpellBarLayout}), drawn from {@link SpellBarView} by
+ * {@link SpellSlots}. It shows even when empty (research SP-1), and never in spectator mode. Its layer comes right
+ * after vanilla's item name, which is drawn on the line below the bar, and then raises {@code Gui#leftHeight} and
+ * {@code Gui#rightHeight}, so the action bar message and the cast bar ({@link CastBarHud}) stay above it.
  */
 public final class SpellBarHud {
     static final Identifier LAYER = Realmforge.id("spell_bar");
@@ -44,7 +45,7 @@ public final class SpellBarHud {
     /** Called once from {@code RealmforgeClient}. */
     public static void register(IEventBus modBus) {
         modBus.addListener(RegisterGuiLayersEvent.class,
-                event -> event.registerAbove(XpBarHud.LAYER, LAYER, SpellBarHud::render));
+                event -> event.registerAbove(VanillaGuiLayers.SELECTED_ITEM_NAME, LAYER, SpellBarHud::render));
     }
 
     /** The bar as the local player has it now. */
@@ -62,7 +63,7 @@ public final class SpellBarHud {
                 DamagePipeline.stat(player, GeneratedStats.COOLDOWN_REDUCTION), globalCooldownTicks);
     }
 
-    /** The label of {@code slot}'s key, empty while it is unbound. */
+    /** The label of {@code slot}'s key, empty while it is unbound; a § shows ({@code KeyLabels}). */
     public static Optional<Component> keyLabel(int slot) {
         KeyMapping key = SpellKeys.slot(slot);
         return key.isUnbound() ? Optional.empty() : Optional.of(key.getTranslatedKeyMessage());
@@ -78,12 +79,12 @@ public final class SpellBarHud {
         SpellBarView view = view(player);
         Gui gui = minecraft.gui;
         int stack = Math.max(gui.leftHeight, gui.rightHeight);
-        int top = SpellBarLayout.top(graphics.guiHeight(), stack);
+        int top = SpellBarLayout.top(graphics.guiHeight(), stack, minecraft.gameMode.canHurtPlayer());
         for (int slot = 0; slot < Spellbook.SLOT_COUNT; slot++) {
             SpellSlots.draw(graphics, minecraft.font, SpellBarLayout.slotX(slot, graphics.guiWidth()), top,
-                    view.slots().get(slot), keyLabel(slot));
+                    SpellBarLayout.SLOT, view.slots().get(slot), keyLabel(slot));
         }
-        int raised = SpellBarLayout.raised(stack);
+        int raised = SpellBarLayout.raised(graphics.guiHeight(), top);
         gui.leftHeight = raised;
         gui.rightHeight = raised;
     }

@@ -1233,14 +1233,19 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
 
 **In code (C3b, RLM-25): the spell bar.**
 
-- **Slots and keys** (Matěj, 2026-10-15 and 2026-10-16): the spellbook attachment's bar has eight slots, keyed R, T,
-  F, G, H and C, the last two unbound for each player to bind (auras, long self-buffs), and the racial slot beside them
-  on X, which the race fills (C4, `Spells#setRacialSpell`), never the player. `client/input/SpellKeys` registers them
-  under Realmforge Spell Bar, and P for the spellbook. GLFW names keys by their US position, which these share with
-  Matěj's Czech QWERTZ keyboard. The pack's default keys (`pack/config/defaultoptions/keybindings.txt`,
+- **Slots and keys** (Matěj, 2026-10-15, 2026-10-16 and his playtest of 2026-10-21): the spellbook attachment's bar
+  has eight slots, keyed R, T, F, G, H, C, Ů and § (the two keys right of L on a Czech QWERTZ keyboard, `;` and `'`
+  on a US one), and the racial slot beside them on X, which the race fills (C4, `Spells#setRacialSpell`), never the
+  player. `client/input/SpellKeys` registers them under Realmforge Spell Bar, and P for the spellbook. GLFW names
+  keys by their US position. The pack's default keys (`pack/config/defaultoptions/keybindings.txt`,
   [ADR 0046](decisions/0046-spell-bar-default-keys-amend-the-pack-defaults.md)) move vanilla's chat to Enter and
   unbind the keys the bar takes, Apotheosis's Open World Tier Select moves from Ctrl+T to Alt+T (a held sprint key
-  would otherwise steal T), and Dark Vision moved from H to U.
+  would otherwise steal T), and Dark Vision moved from H to ¨ (`\` on a US keyboard). Our keys are
+  `client/input/RealmforgeKeyMapping`s, labelled through `KeyLabels`: Minecraft reads `§` in any text as a formatting
+  code, so a key on § would show an empty label; ours draws it from the font `realmforge:keys`
+  (`assets/realmforge/font/keys.json`), which maps a private codepoint to the section sign of vanilla's font sheet.
+  NeoForge's Key Binds screen marks a key yellow when any other mapping shares it, even one that works only in a
+  screen (JEI's Show Recipe on R) or with F3 held; in game only the spell bar's key acts.
 - **Learning and placing:** `Spells#learn` puts a learned spell into the bar's first empty slot, unless it is on the
   bar or is a mob's. The spellbook (`client/screen/SpellbookScreen`) moves a known spell into a slot, swapping with
   the one there, or empties one, through `SetSpellBarSlotPayload` and `Spells#placeOnBar`, which refuses another slot
@@ -1256,16 +1261,23 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
   crosshair within its range, `client/spell/SpellTargetPicker`, and `replaceCast`); `spell/SpellBar` casts it through
   `SpellCaster`, which with `replaceCast` skips the already-casting check for another spell and cancels the cast in
   progress only once every other check passed. A refusal goes back as `CastRefusedPayload`.
-- **HUD** (`client/hud`): the spell bar (`SpellBarHud`, drawn from `spell/SpellBarView` by `SpellSlots`) is as wide as
-  the hotbar and sits right above the status rows and the XP bar, raising `Gui#leftHeight` and `Gui#rightHeight` so
-  the selected item's name and the action bar message stay above it (`SpellBarLayout`). It shows even when empty
-  (research SP-1). A slot is framed in its spell's school colour and shows the spell's initials until icons exist (C6,
-  A1), its key in the corner, a blue tint while the resource does not cover the cost, and the cooldown sweep
+- **HUD** (`client/hud`): the spell bar (`SpellBarHud`, drawn from `spell/SpellBarView` by `SpellSlots`) has its nine
+  24 px slots side by side, the racial slot last, 216 px wide (Matěj's playtest of 2026-10-21). Its layer comes right
+  after vanilla's selected item name, which is drawn on the line above the status rows and the XP bar; the bar sits
+  above that line, then raises `Gui#leftHeight` and `Gui#rightHeight` so the action bar message stays above it
+  (`SpellBarLayout`). It shows even when empty (research SP-1). A slot is framed in its spell's school colour, a frame
+  that stays once spells have icons (Matěj, 2026-10-21), shows the spell's initials until then (C6, A1), its key in
+  the corner, a blue tint while the resource does not cover the cost, and the cooldown sweep
   (`CooldownSweep`): a dark wedge that shrinks clockwise from 12 o'clock, for the spell's own cooldown or the global
-  cooldown, whichever ends later, with the seconds left of a cooldown of 2 s or more. The cast bar (`CastBarHud`) sits
-  above, with room for the item name and the action bar message between: gold filling for a cast time, green emptying
-  for a channel, with the spell's name and the seconds left; after a cast it stays a moment, full or red with how it
-  ended ("Interrupted", "Out of range"), and a refused cast's reason shows there in red (`spell/CastTexts`, research
+  cooldown, whichever ends later, with the seconds left of a cooldown of 2 s or more. The cast bar (`CastBarHud`,
+  after WoW's casting bar, Matěj's playtest of 2026-10-21) sits toward the middle of the screen, 70 % of the way down
+  at most and clear of the spell bar and the action bar message: a 200 by 20 px black frame with rounded corners and a
+  2 px border, holding the spell's icon (its initials on the school's colour until icons exist) and then the bar. The
+  bar fills in the spell school's colour, shaded in steps from light at the top to dark at the bottom with an almost
+  white leading edge (`CastBarStyle`); a cast time fills from the left, a channel starts full and empties toward the
+  left. The spell's name is on the left and the seconds "elapsed / total" on the right, smaller. After a cast the bar
+  stays a moment: full and flashing toward white as it fades, or red with how it ended in place of the name
+  ("Interrupted", "Out of range"), and a refused cast's reason shows there in red (`spell/CastTexts`, research
   SP-3).
 - **Texts:** a spell's description names its numbers through placeholders (`{damage}`, `{heal}`, `{duration}`,
   `{periodic}`, `{periodic_total}`, `{interval}`, `{radius}`), which `spell/SpellText` fills with the spell's data at
@@ -2214,7 +2226,7 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
   Still allowed, as mixed or harmless cases: zombies breaking turtle eggs, a skeleton's arrows breaking decorated
   pots, chorus flowers or pointed dripstone, foxes picking sweet berries, sheep eating grass, snow golems leaving
   snow. Inside instances every mob is denied, which is intended there ([15.5](#155-instances)).
-- Dark Vision: a key (`client/input/DarkVisionKey`, U by default since the spell bar took H, "Toggle Dark Vision" under Realmforge in the
+- Dark Vision: a key (`client/input/DarkVisionKey`, ¨ by default since the spell bar took H, "Toggle Dark Vision" under Realmforge in the
   controls) sends `ToggleDarkVisionPayload`; the server flips the sender's switch and confirms it on the action
   bar. The effect is vanilla night vision as an infinite, hidden effect (`MobEffectInstance.INFINITE_DURATION`, no
   particles, no icon); every player has it, switched on by default. The on/off state lives in the

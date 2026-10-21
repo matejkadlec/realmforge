@@ -138,8 +138,9 @@ returns every key to these defaults. Matěj's picks of 2026-10-19, with the spel
 bar's of RLM-25 ([ADR 0046](../docs/decisions/0046-spell-bar-default-keys-amend-the-pack-defaults.md)):
 
 - free for spells (RLM-25): Quick Actions and Swap Offhand; the spell bar (our
-  code) takes R, T, F, G, H and C, X for the racial ability and P for the
-  spellbook, so vanilla's Chat moves from T to Enter, and its creative toolbar
+  code) takes R, T, F, G, H, C, `ů` and `§` (right of L on a Czech keyboard),
+  X for the racial ability and P for the spellbook, so vanilla's Chat moves
+  from T to Enter, and its creative toolbar
   keys (C and X) and Social Interactions (P; the pause menu's Player Reporting
   still opens it) go unbound, and Apotheosis's Open World Tier Select moves from
   Ctrl+T to Alt+T, so holding Ctrl to sprint does not steal T;
@@ -148,8 +149,8 @@ bar's of RLM-25 ([ADR 0046](../docs/decisions/0046-spell-bar-default-keys-amend-
 - Xaero's Minimap (2026-10-20): Minimap Settings on `ú` (right of P on a Czech
   keyboard), Zoom In and Zoom Out Minimap on the numeric keypad's + and -, New
   Waypoint on N, Open Waypoint Screen on `,` (right of M); our Dark Vision key
-  moved from N to H for it, then to U for the spell bar (its default is in our
-  code);
+  moved from N to H for it, then to `¨` (by Enter on a Czech keyboard) for the
+  spell bar (its default is in our code);
 - unbound: Just Zoom's Open Options (it shared B with Open Backpack), Xaero's
   Quick Waypoint, vanilla's Open Command, every Iris key and every
   Sophisticated Backpacks and Sophisticated Core key.

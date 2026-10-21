@@ -66,6 +66,7 @@ def _entry(school: SpellSchoolDef) -> dict[str, Any]:
         "name": translation_key(REGISTRY, school.id, "name"),
         "kind": school.kind,
         "color": school.color.upper(),
+        "combat_text_color": _combat_text_color(school).upper(),
         "damage_type": school.damage_type,
     }
     if school.power is not None:
@@ -73,6 +74,10 @@ def _entry(school: SpellSchoolDef) -> dict[str, Any]:
     if school.resistance is not None:
         entry["resistance"] = school.resistance
     return entry
+
+
+def _combat_text_color(school: SpellSchoolDef) -> str:
+    return school.combat_text_color if school.combat_text_color is not None else school.color
 
 
 def _damage_type(school: SpellSchoolDef) -> dict[str, Any]:
@@ -134,6 +139,7 @@ def _expectations(content: Content) -> bytes:
             f"                    {string_literal(translation_key(REGISTRY, school.id, 'name'))},\n"
             f"                    {'true' if school.kind == 'magic' else 'false'},\n"
             f"                    0xFF{school.color[1:].upper()},\n"
+            f"                    0xFF{_combat_text_color(school)[1:].upper()},\n"
             f"                    {string_literal(school.damage_type)},\n"
             f"                    {string_literal(school.message_id)},\n"
             f"                    {_optional(school.power)},\n"
@@ -149,11 +155,12 @@ def _expectations(content: Content) -> bytes:
         "/** What {@code content/spell_schools/} says about every school, so GameTests can check that the game agrees. */\n"
         "public final class GeneratedSpellSchoolExpectations {\n"
         "    /**\n"
-        "     * Expected state of one school. Ids are full resource locations, e.g. {@code realmforge:fire}; the colour is\n"
+        "     * Expected state of one school. Ids are full resource locations, e.g. {@code realmforge:fire}; the colours are\n"
         '     * opaque ARGB, as the school\'s codec reads {@code "#RRGGBB"}.\n'
         "     */\n"
-        "    public record SpellSchoolExpectation(String id, String nameKey, boolean magic, int color, String damageType,\n"
-        "            String messageId, Optional<String> power, Optional<String> resistance) {\n"
+        "    public record SpellSchoolExpectation(String id, String nameKey, boolean magic, int color,\n"
+        "            int combatTextColor, String damageType, String messageId, Optional<String> power,\n"
+        "            Optional<String> resistance) {\n"
         "    }\n"
         "\n"
         f"    public static final List<SpellSchoolExpectation> SPELL_SCHOOLS = {schools};\n"

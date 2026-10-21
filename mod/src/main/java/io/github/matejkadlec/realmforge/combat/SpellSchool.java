@@ -20,17 +20,20 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
  *
  * @param name translation key of the school's name
  * @param kind physical (armor reduces it, it can be dodged) or magic (bypasses armor, spell power raises it)
- * @param color colour of the school's combat text, opaque ARGB (written {@code "#RRGGBB"})
+ * @param color colour of the school's spells: spell bar frames, the cast bar, damage numbers in tooltips; opaque ARGB
+ *              (written {@code "#RRGGBB"})
+ * @param combatTextColor colour of the school's floating combat text, opaque ARGB
  * @param damageType the vanilla damage type of the school's hits
  * @param power the secondary stat that raises the school's damage dealt, if any
  * @param resistance the secondary stat that lowers the school's damage taken, if any
  */
-public record SpellSchool(String name, Kind kind, int color, ResourceKey<DamageType> damageType,
-        Optional<Holder<Attribute>> power, Optional<Holder<Attribute>> resistance) {
+public record SpellSchool(String name, Kind kind, int color, int combatTextColor,
+        ResourceKey<DamageType> damageType, Optional<Holder<Attribute>> power, Optional<Holder<Attribute>> resistance) {
     public static final Codec<SpellSchool> CODEC = RecordCodecBuilder.<SpellSchool>create(instance -> instance.group(
                     Codec.STRING.fieldOf("name").forGetter(SpellSchool::name),
                     Kind.CODEC.fieldOf("kind").forGetter(SpellSchool::kind),
                     ExtraCodecs.STRING_RGB_COLOR.fieldOf("color").forGetter(SpellSchool::color),
+                    ExtraCodecs.STRING_RGB_COLOR.fieldOf("combat_text_color").forGetter(SpellSchool::combatTextColor),
                     ResourceKey.codec(Registries.DAMAGE_TYPE).fieldOf("damage_type").forGetter(SpellSchool::damageType),
                     Attribute.CODEC.optionalFieldOf("power").forGetter(SpellSchool::power),
                     Attribute.CODEC.optionalFieldOf("resistance").forGetter(SpellSchool::resistance))

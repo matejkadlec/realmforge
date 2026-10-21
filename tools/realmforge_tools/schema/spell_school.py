@@ -37,7 +37,13 @@ class SpellSchoolDef(StrictModel):
     kind: Literal["physical", "magic"] = Field(
         description="physical: armor reduces it, it can be dodged; magic: bypasses armor, spell power raises it."
     )
-    color: HexColor = Field(description='Colour of its combat text and tooltips, "#RRGGBB".')
+    color: HexColor = Field(
+        description='Colour of its spells: spell bar frames, the cast bar, damage numbers in tooltips, "#RRGGBB".'
+    )
+    combat_text_color: HexColor | None = Field(
+        default=None,
+        description='Colour of its floating combat text, "#RRGGBB"; the school\'s color when left out.',
+    )
     power: ResourceId | None = Field(
         default=None,
         description="Secondary stat (a share) that raises this school's damage, e.g. realmforge:fire_power.",

@@ -48,7 +48,8 @@ final class CombatText {
             return;
         }
         SpellSchool hitSchool = school.map(Holder::value).orElse(null);
-        int color = hitSchool != null && hitSchool.magic() ? hitSchool.color() : crit ? CRIT : physical(defender);
+        int color = hitSchool != null && hitSchool.magic() ? hitSchool.combatTextColor()
+                : crit ? CRIT : physical(defender);
         toAttacker(defender, source, new CombatTextPayload(defender.getId(), amount, color,
                 crit ? CombatTextPayload.CRIT : 0));
         hitDirection(defender, source);
@@ -93,6 +94,6 @@ final class CombatText {
     private static int physical(LivingEntity defender) {
         SpellSchool physical = defender.registryAccess().lookupOrThrow(CombatRegistries.SPELL_SCHOOL)
                 .getValue(GeneratedSpellSchools.PHYSICAL);
-        return physical != null ? physical.color() : BASE;
+        return physical != null ? physical.combatTextColor() : BASE;
     }
 }

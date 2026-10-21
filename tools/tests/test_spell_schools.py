@@ -167,6 +167,7 @@ def test_school_entries_name_their_damage_type_and_stats(repo: RepoPaths) -> Non
         "name": "spell_school.realmforge.fire.name",
         "kind": "magic",
         "color": "#FF7F1F",
+        "combat_text_color": "#FF7F1F",
         "damage_type": "realmforge:fire",
         "power": "realmforge:fire_power",
         "resistance": "realmforge:fire_resistance",
@@ -174,9 +175,17 @@ def test_school_entries_name_their_damage_type_and_stats(repo: RepoPaths) -> Non
     assert json.loads(files[f"{SCHOOL_DATA}/physical.json"]) == {
         "name": "spell_school.realmforge.physical.name",
         "kind": "physical",
-        "color": "#FFAA00",
+        "color": "#B2560D",
+        "combat_text_color": "#FFAA00",
         "damage_type": "realmforge:physical",
     }
+
+
+def test_combat_text_takes_the_school_colour_unless_it_has_its_own(repo: RepoPaths) -> None:
+    school(repo, "shadow", SHADOW)
+    assert json.loads(generate(repo)[f"{SCHOOL_DATA}/shadow.json"])["combat_text_color"] == "#663399"
+    school(repo, "shadow", SHADOW + 'combat_text_color: "#aa88ff"\n')
+    assert json.loads(generate(repo)[f"{SCHOOL_DATA}/shadow.json"])["combat_text_color"] == "#AA88FF"
 
 
 def test_the_colour_is_written_in_capitals(repo: RepoPaths) -> None:
@@ -246,12 +255,13 @@ def test_keys_and_expectations_cover_every_school(repo: RepoPaths) -> None:
         '                    "spell_school.realmforge.fire.name",\n'
         "                    true,\n"
         "                    0xFFFF7F1F,\n"
+        "                    0xFFFF7F1F,\n"
         '                    "realmforge:fire",\n'
         '                    "realmforge.fire",\n'
         '                    Optional.of("realmforge:fire_power"),\n'
         '                    Optional.of("realmforge:fire_resistance"))' in expectations
     )
-    assert "0xFFFFAA00,\n" in expectations
+    assert "0xFFB2560D,\n                    0xFFFFAA00,\n" in expectations
     assert "Optional.empty(),\n                    Optional.empty())" in expectations
 
 

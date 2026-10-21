@@ -61,8 +61,8 @@ Apotheosis for gear rarity, affixes, gems and enchanting
   to clients as cast payloads; at an entity, a ground point or a direction, with damage, heals, projectiles, areas,
   status effects, teleports, dashes and knockback; rage that hits fill and that decays out of combat, procs that
   never trigger procs, and mobs choosing their target (their current target, a random or the farthest player).
-  Players cast from the spell bar (C3b): eight slots on R, T, F, G, H, C and two unbound keys, the racial slot on X, a
-  cast bar, a cooldown sweep, a spellbook (P) whose tooltips fill a spell's numbers from data, a 0.5 s global cooldown
+  Players cast from the spell bar (C3b): eight slots on R, T, F, G, H, C, Ů and §, the racial slot on X, a
+  WoW-style cast bar, a cooldown sweep, a spellbook (P) whose tooltips fill a spell's numbers from data, a 0.5 s global cooldown
   and an optional spell queue (client options). Our own status effects come from `content/effects/` (C3c): attribute
   modifiers and damage or healing over time from their caster's stats, remembering who applied them. The first realm
   exists (W2a): Undervault, the stone realm

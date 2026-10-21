@@ -90,8 +90,9 @@ Rules:
   `physical` (armor reduces it, it can be dodged) or `magic` (bypasses armor; spell power raises it). `power` and
   `resistance` name secondary stats that are shares (`fire_power`, `fire_resistance`), each serving one school.
   The death message names only the victim, `%1$s`: the game passes the killer only sometimes. `color` is the
-  floating combat text's colour of the school's hits; the Physical school's colour is every hit's that is not magic
-  (melee and ranged too), red on a crit.
+  colour of the school's spells (spell bar frames, the cast bar, damage numbers in tooltips); `combat_text_color`
+  (the `color` when left out) is the floating combat text's colour of the school's hits. The Physical school's combat
+  text colour is every hit's that is not magic (melee and ranged too), red on a crit.
 - `dimensions/` holds the gameplay rules of a dimension, which `dimension` names (`minecraft:overworld`, or one of
   ours from `worldgen/dimension/`); at most one entry per dimension
   ([architecture 14.1](../docs/architecture.md#141-mob-levels)). Its optional `mob_levels` rule gives every hostile
