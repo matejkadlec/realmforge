@@ -3,14 +3,19 @@ package io.github.matejkadlec.realmforge.spell;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.matejkadlec.realmforge.effect.EffectSource;
+import io.github.matejkadlec.realmforge.effect.Effects;
 import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 
 /**
- * {@code realmforge:apply_effect}: gives the target a status effect, from the caster (architecture 11.4). Vanilla's
- * until C3c (RLM-26) adds ours. Combat effects keep their own short time scale (research SP-8), so at most a minute.
+ * {@code realmforge:apply_effect}: gives the target a status effect, from the caster (architecture 11.4): one of ours
+ * from {@code content/effects/} (C3c, RLM-26) or a vanilla one. It remembers the caster, the spell and the proc that
+ * cast it, if any ({@code effect/EffectSource}), for dispels, talents and the ticks of damage and healing over time.
+ * Combat effects keep their own short time scale (research SP-8), so at most a minute.
  *
  * @param effect the status effect
  * @param durationTicks how long it lasts
@@ -36,6 +41,8 @@ public record ApplyEffectEffect(Holder<MobEffect> effect, int durationTicks, int
 
     @Override
     public void applyTo(EffectContext context, LivingEntity target, SpellTarget spellTarget) {
-        target.addEffect(new MobEffectInstance(effect, durationTicks, amplifier), context.caster());
+        EffectSource source = new EffectSource(context.caster().getUUID(),
+                context.spell().unwrapKey().map(ResourceKey::identifier), context.procOrigin());
+        Effects.apply(target, new MobEffectInstance(effect, durationTicks, amplifier), context.caster(), source);
     }
 }

@@ -17,6 +17,8 @@ import java.util.Optional;
 public record CritRule(boolean canCrit, Optional<Double> multiplier, double bonusChance) {
     /** Crits on the caster's crit chance, for 1 + the caster's crit damage: 150 % with the base 50 %. */
     public static final CritRule DEFAULT = new CritRule(true, Optional.empty(), 0);
+    /** Never crits: the ticks of damage and healing over time (architecture 11.4). */
+    public static final CritRule NONE = new CritRule(false, Optional.empty(), 0);
 
     public static final Codec<CritRule> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     Codec.BOOL.optionalFieldOf("can_crit", true).forGetter(CritRule::canCrit),

@@ -215,10 +215,11 @@ def test_no_school_hit_knocks_back(repo: RepoPaths) -> None:
 def test_no_magic_school_writes_no_armor_tag(repo: RepoPaths) -> None:
     for name in ("arcane", "fire", "frost"):
         (repo.content / "spell_schools" / f"{name}.yaml").unlink()
-    # The magic spells name these schools, so they go too.
-    for file in (repo.content / "spells").glob("*.yaml"):
-        if "realmforge:physical" not in file.read_text(encoding="utf-8"):
-            file.unlink()
+    # The magic spells and effects name these schools, so they go too.
+    for folder in ("spells", "effects"):
+        for file in (repo.content / folder).glob("*.yaml"):
+            if "realmforge:physical" not in file.read_text(encoding="utf-8"):
+                file.unlink()
     files = generate(repo)
     assert f"{TAGS}/bypasses_cooldown.json" in files
     assert json.loads(files[f"{TAGS}/no_knockback.json"]) == {"values": ["realmforge:physical"]}
@@ -255,8 +256,8 @@ def test_keys_and_expectations_cover_every_school(repo: RepoPaths) -> None:
 
 
 def test_no_schools_still_compile(repo: RepoPaths) -> None:
-    # Spells name their school, so they go too.
-    for folder in ("spell_schools", "spells"):
+    # Spells and effects name their school, so they go too.
+    for folder in ("spell_schools", "spells", "effects"):
         for file in (repo.content / folder).glob("*.yaml"):
             file.unlink()
     files = generate(repo)

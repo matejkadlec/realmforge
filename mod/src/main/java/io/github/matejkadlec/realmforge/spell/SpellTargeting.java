@@ -16,6 +16,11 @@ public interface SpellTargeting {
 
     MapCodec<? extends SpellTargeting> codec();
 
+    /** How far the spell reaches in blocks, for its tooltip; 0 for a spell on the caster itself. */
+    default double reach() {
+        return 0;
+    }
+
     /** What the cast acts on, given the caster and what the cast aimed at, or why the cast cannot go ahead. */
     Either<SpellTarget, CastFailure> resolve(LivingEntity caster, SpellAim aim);
 }

@@ -82,3 +82,51 @@ def placeholder_portal_texture(seed: str) -> bytes:
             alpha = round(150 + 70 * band)
             pixels.append((grey, grey, grey, alpha))
     return encode_rgba(SIZE, SIZE, pixels)
+
+
+EFFECT_ICON_SIZE = 18
+
+
+def placeholder_effect_icon(color: int, category: str) -> bytes:
+    """An 18x18 status effect icon (vanilla's size) until real art exists: a disc in the effect's colour (``color``,
+    0xRRGGBB) with a darker rim and a lighter upper left, marked with a white arrow up for a beneficial effect, a
+    black arrow down for a harmful one and a dot for a neutral one, on a transparent background."""
+    base = ((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF)
+    centre = (EFFECT_ICON_SIZE - 1) / 2
+    marks = _effect_mark(category)
+    mark_colour: Rgba = (0, 0, 0, 255) if category == "harmful" else (255, 255, 255, 255)
+    pixels: list[Rgba] = []
+    for y in range(EFFECT_ICON_SIZE):
+        for x in range(EFFECT_ICON_SIZE):
+            radius = math.hypot(x - centre, y - centre)
+            if radius > 8.4:
+                pixels.append((0, 0, 0, 0))
+            elif (x, y) in marks:
+                pixels.append(mark_colour)
+            elif radius > 7.2:
+                pixels.append(_shade(base, 0.45))
+            else:
+                # Lighter toward the upper left, as if lit from there.
+                pixels.append(_shade(base, 1.15 - (x + y) / (4 * EFFECT_ICON_SIZE)))
+    return encode_rgba(EFFECT_ICON_SIZE, EFFECT_ICON_SIZE, pixels)
+
+
+def _shade(rgb: tuple[int, int, int], factor: float) -> Rgba:
+    r, g, b = (min(255, max(0, round(channel * factor))) for channel in rgb)
+    return r, g, b, 255
+
+
+def _effect_mark(category: str) -> set[tuple[int, int]]:
+    """The pixels of the icon's mark: an arrow up (beneficial) or down (harmful), or a dot (neutral)."""
+    if category == "neutral":
+        return {(x, y) for x in range(7, 11) for y in range(7, 11)}
+    marks: set[tuple[int, int]] = set()
+    for row in range(4):
+        # The arrow's head: rows of 2, 4, 6 and 8 pixels, centred like the 2-pixel shaft.
+        for x in range(8 - row, 10 + row):
+            marks.add((x, 4 + row))
+    for y in range(8, 14):
+        marks.update({(8, y), (9, y)})
+    if category == "harmful":
+        marks = {(x, EFFECT_ICON_SIZE - 1 - y) for x, y in marks}
+    return marks

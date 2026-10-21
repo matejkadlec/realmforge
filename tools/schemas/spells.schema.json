@@ -565,6 +565,23 @@
       "title": "KnockbackEffectDef",
       "type": "object"
     },
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    },
     "ProjectileEffectDef": {
       "additionalProperties": false,
       "description": "Launches a projectile from the caster's eyes toward the target (an enemy, a ground point or along a\ndirection). It flies straight, hits the first enemy in its way and runs its own ``effects`` on it; a block or the\nend of its lifetime ends it without them (architecture 11.3).",
@@ -770,6 +787,10 @@
       "$ref": "#/$defs/CritDef",
       "description": "How the spell crits; every spell can by default."
     },
+    "description": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "What the spell does, in its tooltip: one or two sentences. Numbers come from data through placeholders: {damage}, {heal}, {duration}, {periodic}, {periodic_total}, {interval} and {radius}."
+    },
     "effects": {
       "description": "What the spell does, in order.",
       "items": {
@@ -822,8 +843,8 @@
       "type": "array"
     },
     "global_cooldown_seconds": {
-      "default": 1.0,
-      "description": "How long a cast blocks every other spell (research SP-11: 1 s); 0 for spells off the global cooldown.",
+      "default": 0.5,
+      "description": "How long a cast blocks every other spell (0.5 s by default, as in WoW); 0 for spells off the global cooldown.",
       "minimum": 0,
       "title": "Global Cooldown Seconds",
       "type": "number"
@@ -842,6 +863,10 @@
       "minimum": 1,
       "title": "Max Level",
       "type": "integer"
+    },
+    "name": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "The spell's name, on the spell bar, in the spellbook and on the cast bar."
     },
     "npc_only": {
       "default": false,
@@ -910,6 +935,8 @@
   },
   "required": [
     "id",
+    "name",
+    "description",
     "school",
     "scales_with",
     "targeting",

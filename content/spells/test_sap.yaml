@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3c): saps an enemy with our own status effect test_sapped (attribute modifiers). Not gameplay content;
+# the GameTests in the QA mod cast it.
+id: test_sap
+name: {en_us: Test Sap}
+description: {en_us: "Saps an enemy's speed and spell power for {duration} sec."}
+school: realmforge:arcane
+scales_with: spell_power
+targeting: {type: realmforge:enemy, range: 16}
+cast: {type: instant}
+cooldown_seconds: 8
+effects:
+  - {type: realmforge:apply_effect, effect: realmforge:test_sapped, duration_seconds: 5}

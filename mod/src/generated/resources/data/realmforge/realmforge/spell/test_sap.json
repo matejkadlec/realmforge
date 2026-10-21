@@ -1,0 +1,29 @@
+{
+  "name": "spell.realmforge.test_sap.name",
+  "description": "spell.realmforge.test_sap.description",
+  "school": "realmforge:arcane",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:enemy",
+    "range": 16.0
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cooldown_ticks": 160,
+  "global_cooldown_ticks": 10,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "effects": [
+    {
+      "type": "realmforge:apply_effect",
+      "effect": "realmforge:test_sapped",
+      "duration_ticks": 100,
+      "amplifier": 0
+    }
+  ]
+}

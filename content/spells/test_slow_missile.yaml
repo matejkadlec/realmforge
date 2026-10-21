@@ -2,6 +2,8 @@
 # Engine test (C3a-3): a projectile at an enemy after a 1 s cast that deals 4 fire damage when it hits. It flies at
 # the target where it stands when the cast completes. Not gameplay content; the GameTests in the QA mod cast it.
 id: test_slow_missile
+name: {en_us: Test Slow Missile}
+description: {en_us: "Fires a missile at an enemy for {damage} Fire damage."}
 school: realmforge:fire
 scales_with: spell_power
 targeting: {type: realmforge:enemy, range: 16}

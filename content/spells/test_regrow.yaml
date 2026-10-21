@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3c): healing over time on you or an ally, from our own status effect test_regrowth. Not gameplay
+# content; the GameTests in the QA mod cast it.
+id: test_regrow
+name: {en_us: Test Regrow}
+description: {en_us: "Heals you or an ally for {periodic} every {interval} sec for {duration} sec."}
+school: realmforge:arcane
+scales_with: spell_power
+targeting: {type: realmforge:ally, range: 16}
+cast: {type: cast_time, duration_seconds: 1.5}
+cost: {resource: realmforge:mana, amount: 12}
+cooldown_seconds: 6
+effects:
+  - {type: realmforge:apply_effect, effect: realmforge:test_regrowth, duration_seconds: 3}

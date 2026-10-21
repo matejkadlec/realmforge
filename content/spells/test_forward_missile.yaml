@@ -2,6 +2,8 @@
 # Engine test (C3a-3): a frost projectile along the caster's look that deals 3 damage to the first enemy in its way.
 # Not gameplay content; the GameTests in the QA mod cast it.
 id: test_forward_missile
+name: {en_us: Test Forward Missile}
+description: {en_us: "Fires a frost missile straight ahead that hits the first enemy for {damage} Frost damage."}
 school: realmforge:frost
 scales_with: spell_power
 targeting: {type: realmforge:direction, range: 32}

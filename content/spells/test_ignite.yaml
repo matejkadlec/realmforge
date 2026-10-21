@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (C3c): sets an enemy burning, fire damage over time from our own status effect test_burning. Not
+# gameplay content; the GameTests in the QA mod cast it.
+id: test_ignite
+name: {en_us: Test Ignite}
+description: {en_us: "Sets an enemy burning for {periodic_total} Fire damage over {duration} sec."}
+school: realmforge:fire
+scales_with: spell_power
+targeting: {type: realmforge:enemy, range: 16}
+cast: {type: instant}
+cost: {resource: realmforge:mana, amount: 10}
+effects:
+  - {type: realmforge:apply_effect, effect: realmforge:test_burning, duration_seconds: 4}

@@ -6,3 +6,26 @@ texts:
     en_us: Toggle Dark Vision
   character_sheet:
     en_us: Character Sheet
+  # The spellbook (C3b, RLM-25): known spells, their tooltips, and the spell bar's layout.
+  spellbook:
+    en_us: Spellbook
+  # The spell bar's slots (C3b, RLM-25; Matěj, 2026-10-15 and 2026-10-16): six keyed by default, two left for each
+  # player to bind, and the racial ability beside the bar.
+  spell_slot_1:
+    en_us: Spell Slot 1
+  spell_slot_2:
+    en_us: Spell Slot 2
+  spell_slot_3:
+    en_us: Spell Slot 3
+  spell_slot_4:
+    en_us: Spell Slot 4
+  spell_slot_5:
+    en_us: Spell Slot 5
+  spell_slot_6:
+    en_us: Spell Slot 6
+  spell_slot_7:
+    en_us: Spell Slot 7
+  spell_slot_8:
+    en_us: Spell Slot 8
+  racial_ability:
+    en_us: Racial Ability

@@ -1,6 +1,8 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # Engine test (C3a-3): Slowness II on an enemy for 3 s. Not gameplay content; the GameTests in the QA mod cast it.
 id: test_chill
+name: {en_us: Test Chill}
+description: {en_us: "Slows an enemy for {duration} sec."}
 school: realmforge:frost
 scales_with: spell_power
 targeting: {type: realmforge:enemy, range: 16}

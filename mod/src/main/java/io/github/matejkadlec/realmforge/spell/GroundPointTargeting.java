@@ -47,4 +47,9 @@ public record GroundPointTargeting(double range) implements SpellTargeting {
         }
         return Either.left(SpellTarget.point(caster, point));
     }
+
+    @Override
+    public double reach() {
+        return range;
+    }
 }

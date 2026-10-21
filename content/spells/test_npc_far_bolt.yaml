@@ -2,6 +2,8 @@
 # Engine test (C3a-4): a mob's bolt with a 1 s cast time at the farthest player in range and sight, the one a boss
 # punishes for standing apart. Not gameplay content; the GameTests in the QA mod cast it.
 id: test_npc_far_bolt
+name: {en_us: Test Creature Far Bolt}
+description: {en_us: "A creature's bolt at the farthest player for {damage} Arcane damage."}
 school: realmforge:arcane
 scales_with: spell_power
 targeting: {type: realmforge:farthest_player, range: 16}

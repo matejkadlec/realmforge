@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# The lines of a spell's tooltip in the spellbook (spell.tooltip.realmforge.<name>, spell/SpellTooltip), built from
+# the spell's data: its rank, cost, range, cast and cooldown; the description below them is the spell's own.
+id: spell.tooltip
+texts:
+  # %1$s the rank, %2$s the highest rank.
+  rank:
+    en_us: Rank %1$s of %2$s
+  # "20 Mana" (%1$s the amount, %2$s the resource's name).
+  cost:
+    en_us: "%1$s %2$s"
+  # %1$s in blocks.
+  range:
+    en_us: "%1$s block range"
+  self:
+    en_us: On yourself
+  instant:
+    en_us: Instant
+  # %1$s in seconds.
+  cast_time:
+    en_us: "%1$s sec cast"
+  channel:
+    en_us: Channeled (%1$s sec)
+  cooldown:
+    en_us: "%1$s sec cooldown"
+  # The racial slot beside the spell bar, while it is empty (C4 fills it from the race).
+  racial_empty:
+    en_us: Your racial ability goes here
+  # A bar slot without a spell.
+  empty_slot:
+    en_us: Empty slot

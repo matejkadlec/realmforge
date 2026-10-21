@@ -2,6 +2,8 @@
 # Engine test (C3a-2): a free frost bolt with a 1 s cast time that locks on to its target (range and line of sight
 # are not checked again) and may be cast while moving. Not gameplay content; the GameTests in the QA mod cast it.
 id: test_homing_bolt
+name: {en_us: Test Homing Bolt}
+description: {en_us: "Sends a frost bolt that follows its target for {damage} Frost damage."}
 school: realmforge:frost
 scales_with: spell_power
 targeting: {type: realmforge:enemy, range: 16}

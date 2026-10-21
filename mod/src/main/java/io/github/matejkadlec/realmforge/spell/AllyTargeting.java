@@ -35,4 +35,9 @@ public record AllyTargeting(double range) implements SpellTargeting {
         return Targets.reach(caster, requested, range).<Either<SpellTarget, CastFailure>>map(Either::right)
                 .orElseGet(() -> Either.left(SpellTarget.of(caster, requested)));
     }
+
+    @Override
+    public double reach() {
+        return range;
+    }
 }

@@ -1,0 +1,34 @@
+{
+  "name": "spell.realmforge.test_ignite.name",
+  "description": "spell.realmforge.test_ignite.description",
+  "school": "realmforge:fire",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:enemy",
+    "range": 16.0
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cost": {
+    "amount": 10.0,
+    "per_level": 0,
+    "resource": "realmforge:mana"
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 10,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "effects": [
+    {
+      "type": "realmforge:apply_effect",
+      "effect": "realmforge:test_burning",
+      "duration_ticks": 80,
+      "amplifier": 0
+    }
+  ]
+}

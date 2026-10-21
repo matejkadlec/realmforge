@@ -8,6 +8,45 @@ public final class GeneratedTexts {
     /** {@code advancement.realmforge.realm_unlocked} from {@code content/texts/advancement.yaml}: "Realm unlocked: %1$s" */
     public static final String ADVANCEMENT_REALM_UNLOCKED = "advancement.realmforge.realm_unlocked";
 
+    /** {@code cast.realmforge.already_casting} from {@code content/texts/cast.yaml}: "You are already casting" */
+    public static final String CAST_ALREADY_CASTING = "cast.realmforge.already_casting";
+
+    /** {@code cast.realmforge.cannot_cast} from {@code content/texts/cast.yaml}: "You can't do that now" */
+    public static final String CAST_CANNOT_CAST = "cast.realmforge.cannot_cast";
+
+    /** {@code cast.realmforge.interrupted} from {@code content/texts/cast.yaml}: "Interrupted" */
+    public static final String CAST_INTERRUPTED = "cast.realmforge.interrupted";
+
+    /** {@code cast.realmforge.invalid_target} from {@code content/texts/cast.yaml}: "Invalid target" */
+    public static final String CAST_INVALID_TARGET = "cast.realmforge.invalid_target";
+
+    /** {@code cast.realmforge.no_line_of_sight} from {@code content/texts/cast.yaml}: "Target not in line of sight" */
+    public static final String CAST_NO_LINE_OF_SIGHT = "cast.realmforge.no_line_of_sight";
+
+    /** {@code cast.realmforge.no_target} from {@code content/texts/cast.yaml}: "You have no target" */
+    public static final String CAST_NO_TARGET = "cast.realmforge.no_target";
+
+    /** {@code cast.realmforge.not_enough_resource} from {@code content/texts/cast.yaml}: "Not enough %1$s" */
+    public static final String CAST_NOT_ENOUGH_RESOURCE = "cast.realmforge.not_enough_resource";
+
+    /** {@code cast.realmforge.not_known} from {@code content/texts/cast.yaml}: "You haven't learned that spell" */
+    public static final String CAST_NOT_KNOWN = "cast.realmforge.not_known";
+
+    /** {@code cast.realmforge.npc_only} from {@code content/texts/cast.yaml}: "Only creatures can cast that" */
+    public static final String CAST_NPC_ONLY = "cast.realmforge.npc_only";
+
+    /** {@code cast.realmforge.on_cooldown} from {@code content/texts/cast.yaml}: "Spell is not ready yet" */
+    public static final String CAST_ON_COOLDOWN = "cast.realmforge.on_cooldown";
+
+    /** {@code cast.realmforge.on_global_cooldown} from {@code content/texts/cast.yaml}: "Spell is not ready yet" */
+    public static final String CAST_ON_GLOBAL_COOLDOWN = "cast.realmforge.on_global_cooldown";
+
+    /** {@code cast.realmforge.out_of_range} from {@code content/texts/cast.yaml}: "Out of range" */
+    public static final String CAST_OUT_OF_RANGE = "cast.realmforge.out_of_range";
+
+    /** {@code cast.realmforge.unknown_spell} from {@code content/texts/cast.yaml}: "That spell no longer exists" */
+    public static final String CAST_UNKNOWN_SPELL = "cast.realmforge.unknown_spell";
+
     /** {@code combat_text.realmforge.miss} from {@code content/texts/combat_text.yaml}: "Miss!" */
     public static final String COMBAT_TEXT_MISS = "combat_text.realmforge.miss";
 
@@ -59,11 +98,17 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.kit_item} from {@code content/texts/gui.yaml}: "%1$s ×%2$s" */
     public static final String GUI_KIT_ITEM = "gui.realmforge.kit_item";
 
+    /** {@code gui.realmforge.known_spells} from {@code content/texts/gui.yaml}: "Known Spells" */
+    public static final String GUI_KNOWN_SPELLS = "gui.realmforge.known_spells";
+
     /** {@code gui.realmforge.mining_speed} from {@code content/texts/gui.yaml}: "Mining Speed" */
     public static final String GUI_MINING_SPEED = "gui.realmforge.mining_speed";
 
     /** {@code gui.realmforge.movement_speed} from {@code content/texts/gui.yaml}: "Movement Speed" */
     public static final String GUI_MOVEMENT_SPEED = "gui.realmforge.movement_speed";
+
+    /** {@code gui.realmforge.no_known_spells} from {@code content/texts/gui.yaml}: "You know no spells yet." */
+    public static final String GUI_NO_KNOWN_SPELLS = "gui.realmforge.no_known_spells";
 
     /** {@code gui.realmforge.none} from {@code content/texts/gui.yaml}: "None" */
     public static final String GUI_NONE = "gui.realmforge.none";
@@ -83,14 +128,44 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.primary_stats} from {@code content/texts/gui.yaml}: "Primary Stats" */
     public static final String GUI_PRIMARY_STATS = "gui.realmforge.primary_stats";
 
+    /** {@code gui.realmforge.queue_spell_casts} from {@code content/texts/gui.yaml}: "Queue Spell Casts" */
+    public static final String GUI_QUEUE_SPELL_CASTS = "gui.realmforge.queue_spell_casts";
+
+    /** {@code gui.realmforge.queue_spell_casts_tooltip} from {@code content/texts/gui.yaml}: "On: a spell you press during another spell's cast waits for it to end. Off: it cancels that cast and casts at once." */
+    public static final String GUI_QUEUE_SPELL_CASTS_TOOLTIP = "gui.realmforge.queue_spell_casts_tooltip";
+
     /** {@code gui.realmforge.race} from {@code content/texts/gui.yaml}: "Race" */
     public static final String GUI_RACE = "gui.realmforge.race";
+
+    /** {@code gui.realmforge.spell_bar} from {@code content/texts/gui.yaml}: "Spell Bar" */
+    public static final String GUI_SPELL_BAR = "gui.realmforge.spell_bar";
+
+    /** {@code gui.realmforge.spell_casting_options} from {@code content/texts/gui.yaml}: "Spell Casting Options" */
+    public static final String GUI_SPELL_CASTING_OPTIONS = "gui.realmforge.spell_casting_options";
+
+    /** {@code gui.realmforge.spell_options} from {@code content/texts/gui.yaml}: "Options" */
+    public static final String GUI_SPELL_OPTIONS = "gui.realmforge.spell_options";
 
     /** {@code gui.realmforge.spell_schools} from {@code content/texts/gui.yaml}: "Spell Schools" */
     public static final String GUI_SPELL_SCHOOLS = "gui.realmforge.spell_schools";
 
+    /** {@code gui.realmforge.spell_with_rank} from {@code content/texts/gui.yaml}: "%1$s (Rank %2$s)" */
+    public static final String GUI_SPELL_WITH_RANK = "gui.realmforge.spell_with_rank";
+
+    /** {@code gui.realmforge.spellbook} from {@code content/texts/gui.yaml}: "Spellbook" */
+    public static final String GUI_SPELLBOOK = "gui.realmforge.spellbook";
+
+    /** {@code gui.realmforge.spellbook_hint} from {@code content/texts/gui.yaml}: "Click a spell, then a slot. Right-click a slot to empty it." */
+    public static final String GUI_SPELLBOOK_HINT = "gui.realmforge.spellbook_hint";
+
     /** {@code gui.realmforge.spells} from {@code content/texts/gui.yaml}: "Spells" */
     public static final String GUI_SPELLS = "gui.realmforge.spells";
+
+    /** {@code gui.realmforge.spells_queue_size} from {@code content/texts/gui.yaml}: "Spells Queue Size" */
+    public static final String GUI_SPELLS_QUEUE_SIZE = "gui.realmforge.spells_queue_size";
+
+    /** {@code gui.realmforge.spells_queue_size_tooltip} from {@code content/texts/gui.yaml}: "How many spells can wait. At 1, a newer spell replaces the waiting one; above 1, it waits after them." */
+    public static final String GUI_SPELLS_QUEUE_SIZE_TOOLTIP = "gui.realmforge.spells_queue_size_tooltip";
 
     /** {@code gui.realmforge.spend_stat_point} from {@code content/texts/gui.yaml}: "Spend a point on %1$s" */
     public static final String GUI_SPEND_STAT_POINT = "gui.realmforge.spend_stat_point";
@@ -140,8 +215,41 @@ public final class GeneratedTexts {
     /** {@code key.realmforge.dark_vision} from {@code content/texts/key.yaml}: "Toggle Dark Vision" */
     public static final String KEY_DARK_VISION = "key.realmforge.dark_vision";
 
+    /** {@code key.realmforge.racial_ability} from {@code content/texts/key.yaml}: "Racial Ability" */
+    public static final String KEY_RACIAL_ABILITY = "key.realmforge.racial_ability";
+
+    /** {@code key.realmforge.spell_slot_1} from {@code content/texts/key.yaml}: "Spell Slot 1" */
+    public static final String KEY_SPELL_SLOT_1 = "key.realmforge.spell_slot_1";
+
+    /** {@code key.realmforge.spell_slot_2} from {@code content/texts/key.yaml}: "Spell Slot 2" */
+    public static final String KEY_SPELL_SLOT_2 = "key.realmforge.spell_slot_2";
+
+    /** {@code key.realmforge.spell_slot_3} from {@code content/texts/key.yaml}: "Spell Slot 3" */
+    public static final String KEY_SPELL_SLOT_3 = "key.realmforge.spell_slot_3";
+
+    /** {@code key.realmforge.spell_slot_4} from {@code content/texts/key.yaml}: "Spell Slot 4" */
+    public static final String KEY_SPELL_SLOT_4 = "key.realmforge.spell_slot_4";
+
+    /** {@code key.realmforge.spell_slot_5} from {@code content/texts/key.yaml}: "Spell Slot 5" */
+    public static final String KEY_SPELL_SLOT_5 = "key.realmforge.spell_slot_5";
+
+    /** {@code key.realmforge.spell_slot_6} from {@code content/texts/key.yaml}: "Spell Slot 6" */
+    public static final String KEY_SPELL_SLOT_6 = "key.realmforge.spell_slot_6";
+
+    /** {@code key.realmforge.spell_slot_7} from {@code content/texts/key.yaml}: "Spell Slot 7" */
+    public static final String KEY_SPELL_SLOT_7 = "key.realmforge.spell_slot_7";
+
+    /** {@code key.realmforge.spell_slot_8} from {@code content/texts/key.yaml}: "Spell Slot 8" */
+    public static final String KEY_SPELL_SLOT_8 = "key.realmforge.spell_slot_8";
+
+    /** {@code key.realmforge.spellbook} from {@code content/texts/key.yaml}: "Spellbook" */
+    public static final String KEY_SPELLBOOK = "key.realmforge.spellbook";
+
     /** {@code key.category.realmforge.main} from {@code content/texts/key.category.yaml}: "Realmforge" */
     public static final String KEY_CATEGORY_MAIN = "key.category.realmforge.main";
+
+    /** {@code key.category.realmforge.spell_bar} from {@code content/texts/key.category.yaml}: "Realmforge Spell Bar" */
+    public static final String KEY_CATEGORY_SPELL_BAR = "key.category.realmforge.spell_bar";
 
     /** {@code message.realmforge.bed_only_overworld} from {@code content/texts/message.yaml}: "Beds only work in Overworld" */
     public static final String MESSAGE_BED_ONLY_OVERWORLD = "message.realmforge.bed_only_overworld";
@@ -262,6 +370,36 @@ public final class GeneratedTexts {
 
     /** {@code resource.realmforge.rage} from {@code content/texts/resource.yaml}: "Rage" */
     public static final String RESOURCE_RAGE = "resource.realmforge.rage";
+
+    /** {@code spell.tooltip.realmforge.cast_time} from {@code content/texts/spell.tooltip.yaml}: "%1$s sec cast" */
+    public static final String SPELL_TOOLTIP_CAST_TIME = "spell.tooltip.realmforge.cast_time";
+
+    /** {@code spell.tooltip.realmforge.channel} from {@code content/texts/spell.tooltip.yaml}: "Channeled (%1$s sec)" */
+    public static final String SPELL_TOOLTIP_CHANNEL = "spell.tooltip.realmforge.channel";
+
+    /** {@code spell.tooltip.realmforge.cooldown} from {@code content/texts/spell.tooltip.yaml}: "%1$s sec cooldown" */
+    public static final String SPELL_TOOLTIP_COOLDOWN = "spell.tooltip.realmforge.cooldown";
+
+    /** {@code spell.tooltip.realmforge.cost} from {@code content/texts/spell.tooltip.yaml}: "%1$s %2$s" */
+    public static final String SPELL_TOOLTIP_COST = "spell.tooltip.realmforge.cost";
+
+    /** {@code spell.tooltip.realmforge.empty_slot} from {@code content/texts/spell.tooltip.yaml}: "Empty slot" */
+    public static final String SPELL_TOOLTIP_EMPTY_SLOT = "spell.tooltip.realmforge.empty_slot";
+
+    /** {@code spell.tooltip.realmforge.instant} from {@code content/texts/spell.tooltip.yaml}: "Instant" */
+    public static final String SPELL_TOOLTIP_INSTANT = "spell.tooltip.realmforge.instant";
+
+    /** {@code spell.tooltip.realmforge.racial_empty} from {@code content/texts/spell.tooltip.yaml}: "Your racial ability goes here" */
+    public static final String SPELL_TOOLTIP_RACIAL_EMPTY = "spell.tooltip.realmforge.racial_empty";
+
+    /** {@code spell.tooltip.realmforge.range} from {@code content/texts/spell.tooltip.yaml}: "%1$s block range" */
+    public static final String SPELL_TOOLTIP_RANGE = "spell.tooltip.realmforge.range";
+
+    /** {@code spell.tooltip.realmforge.rank} from {@code content/texts/spell.tooltip.yaml}: "Rank %1$s of %2$s" */
+    public static final String SPELL_TOOLTIP_RANK = "spell.tooltip.realmforge.rank";
+
+    /** {@code spell.tooltip.realmforge.self} from {@code content/texts/spell.tooltip.yaml}: "On yourself" */
+    public static final String SPELL_TOOLTIP_SELF = "spell.tooltip.realmforge.self";
 
     /** {@code tooltip.realmforge.signet_not_consumed} from {@code content/texts/tooltip.yaml}: "Does not consume on use" */
     public static final String TOOLTIP_SIGNET_NOT_CONSUMED = "tooltip.realmforge.signet_not_consumed";

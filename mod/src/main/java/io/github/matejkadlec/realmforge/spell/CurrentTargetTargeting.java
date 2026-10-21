@@ -32,4 +32,9 @@ public record CurrentTargetTargeting(double range) implements SpellTargeting {
         }
         return new EnemyTargeting(range).resolve(caster, SpellAim.at(target));
     }
+
+    @Override
+    public double reach() {
+        return range;
+    }
 }

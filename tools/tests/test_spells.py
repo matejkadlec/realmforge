@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 
@@ -46,13 +47,20 @@ def generate(repo: RepoPaths) -> dict[str, bytes]:
     return {repo.rel(path): data for path, data in generate_all(content, repo).items()}
 
 
+# Every spell names itself and says what it does (C3b, RLM-25); the tests that are not about the texts take these.
+TEXTS = "name: {en_us: Fireball}\ndescription: {en_us: A ball of fire.}\n"
+
+
 def spell(repo: RepoPaths, name: str, body: str) -> None:
-    write(repo.content / "spells" / f"{name}.yaml", f"id: {name}\n{body}")
+    texts = "" if body.startswith(("name:", "description:")) or "\nname:" in body else TEXTS
+    write(repo.content / "spells" / f"{name}.yaml", f"id: {name}\n{texts}{body}")
 
 
 def spell_model(**fields: object) -> SpellDef:
     data = {
         "id": "fireball",
+        "name": {"en_us": "Fireball"},
+        "description": {"en_us": "A ball of fire."},
         "school": "realmforge:fire",
         "scales_with": "spell_power",
         "targeting": {"type": "realmforge:enemy", "range": 24},
@@ -78,6 +86,7 @@ def test_repository_spells_are_the_engine_tests() -> None:
         "test_drain",
         "test_forward_missile",
         "test_homing_bolt",
+        "test_ignite",
         "test_mend",
         "test_mending_ring",
         "test_missile",
@@ -86,6 +95,8 @@ def test_repository_spells_are_the_engine_tests() -> None:
         "test_npc_random_bolt",
         "test_npc_target_bolt",
         "test_proc_spark",
+        "test_regrow",
+        "test_sap",
         "test_scorch",
         "test_shove",
         "test_slow_bolt",
@@ -174,7 +185,7 @@ def test_timed_casts() -> None:
 def test_defaults() -> None:
     model = spell_model()
     assert model.cost is None
-    assert (model.cooldown_seconds, model.global_cooldown_seconds, model.max_level) == (0, 1.0, 1)
+    assert (model.cooldown_seconds, model.global_cooldown_seconds, model.max_level) == (0, 0.5, 1)
     assert (
         model.crit.can_crit and model.crit.multiplier_percent is None and model.crit.bonus_chance_percent == 0
     )
@@ -275,7 +286,7 @@ def test_effects_fit_the_targeting(repo: RepoPaths, targeting: str, effect: str,
 
 
 def test_the_file_name_is_the_id(repo: RepoPaths) -> None:
-    write(repo.content / "spells" / "fireball.yaml", "id: fire_ball\n" + FIREBALL)
+    write(repo.content / "spells" / "fireball.yaml", "id: fire_ball\n" + TEXTS + FIREBALL)
     assert_problem(repo, "'fire_ball' must equal the file name 'fireball'")
 
 
@@ -293,13 +304,15 @@ def test_spell_data_is_in_game_units(repo: RepoPaths) -> None:
         + "crit: {multiplier_percent: 200, bonus_chance_percent: 10}\n",
     )
     assert json.loads(generate(repo)[f"{SPELL_DATA}/fireball.json"]) == {
+        "name": "spell.realmforge.fireball.name",
+        "description": "spell.realmforge.fireball.description",
         "school": "realmforge:fire",
         "scales_with": "spell_power",
         "targeting": {"type": "realmforge:enemy", "range": 24.0},
         "cast": {"type": "instant"},
         "cost": {"amount": 20.0, "per_level": 0, "resource": "realmforge:mana"},
         "cooldown_ticks": 160,
-        "global_cooldown_ticks": 20,
+        "global_cooldown_ticks": 10,
         "max_level": 2,
         "crit": {"can_crit": True, "multiplier": 2.0, "bonus_chance": 0.1},
         "npc_only": False,
@@ -335,9 +348,14 @@ def test_attack_damage_is_a_fraction(repo: RepoPaths) -> None:
     assert effect == {"amount": 2.0, "per_level": 0, "type": "realmforge:damage", "attack_damage": 1.0}
 
 
-def test_spells_add_no_texts(repo: RepoPaths) -> None:
+def test_names_and_descriptions_go_into_the_lang_file(repo: RepoPaths) -> None:
     lang = json.loads(generate(repo)[LANG])
-    assert not [key for key in lang if key.startswith("spell.")]
+    assert lang["spell.realmforge.test_bolt.name"] == "Test Bolt"
+    assert lang["spell.realmforge.test_bolt.description"] == (
+        "Hurls a bolt of fire at an enemy for {damage} Fire damage."
+    )
+    spell_keys = {key for key in lang if key.startswith("spell.realmforge.")}
+    assert len(spell_keys) == 2 * len(load_and_validate(repo)[0].spells)
 
 
 def test_keys_and_expectations(repo: RepoPaths) -> None:
@@ -346,14 +364,16 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
     assert 'public static final ResourceKey<Spell> TEST_BOLT = key("test_bolt");' in keys
     assert (
         "ALL = List.of(TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, "
-        "TEST_HOMING_BOLT, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, "
-        "TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, "
-        "TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT);"
+        "TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, "
+        "TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, "
+        "TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT);"
     ) in keys
     expectations = files[EXPECTATIONS].decode()
     assert (
         "            new SpellExpectation(\n"
         '                    "realmforge:test_bolt",\n'
+        '                    "spell.realmforge.test_bolt.name",\n'
+        '                    "spell.realmforge.test_bolt.description",\n'
         '                    "realmforge:fire",\n'
         '                    "spell_power",\n'
         '                    "realmforge:enemy",\n'
@@ -367,7 +387,7 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "                    10.0,\n"
         "                    5.0,\n"
         "                    60,\n"
-        "                    20,\n"
+        "                    10,\n"
         "                    3,\n"
         "                    true,\n"
         "                    Optional.empty(),\n"
@@ -773,3 +793,106 @@ def test_npc_targeting_data(repo: RepoPaths) -> None:
     data = json.loads(generate(repo)[f"{SPELL_DATA}/test_npc_far_bolt.json"])
     assert data["targeting"] == {"type": "realmforge:farthest_player", "range": 16.0}
     assert data["npc_only"] is True
+
+
+# Names, descriptions and their placeholders (C3b, RLM-25)
+
+
+def test_a_spell_names_itself_and_says_what_it_does() -> None:
+    for missing in ("name", "description"):
+        data = {
+            "id": "fireball",
+            "name": {"en_us": "Fireball"},
+            "description": {"en_us": "A ball of fire."},
+            "school": "realmforge:fire",
+            "scales_with": "spell_power",
+            "targeting": {"type": "realmforge:enemy", "range": 24},
+            "cast": {"type": "instant"},
+            "effects": [{"type": "realmforge:damage", "amount": 12}],
+        }
+        del data[missing]
+        with pytest.raises(ValueError, match="Field required"):
+            SpellDef.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    ("description", "expected"),
+    [
+        ("Deals {dmg} damage.", "unknown placeholder {dmg}"),
+        ("Deals {Damage} damage.", "unknown placeholder {Damage}"),
+        ("Deals {damage damage.", "a brace that opens or closes no {placeholder}"),
+        ("Deals damage} damage.", "a brace that opens or closes no {placeholder}"),
+        ("Heals for {heal}.", "{heal} needs a realmforge:heal effect"),
+        ("Slows for {duration} sec.", "{duration} needs a realmforge:apply_effect effect"),
+        ("Burns for {periodic_total}.", "{periodic_total} needs a realmforge:apply_effect effect"),
+        ("A ring of {radius} blocks.", "{radius} needs a realmforge:area effect"),
+    ],
+)
+def test_placeholders_must_be_known_and_have_their_effect(description: str, expected: str) -> None:
+    with pytest.raises(ValueError, match=re.escape(expected)):
+        spell_model(description={"en_us": description})
+
+
+def test_placeholders_read_the_first_effect_of_their_type() -> None:
+    model = spell_model(
+        description={
+            "en_us": "Deals {damage}, then {damage} again, in a ring of {radius}, for {duration} sec."
+        },
+        targeting={"type": "realmforge:self"},
+        effects=[
+            {
+                "type": "realmforge:area",
+                "radius": 3,
+                "duration_seconds": 2,
+                "interval_seconds": 1,
+                "effects": [
+                    {"type": "realmforge:damage", "amount": 4},
+                    {
+                        "type": "realmforge:apply_effect",
+                        "effect": "minecraft:slowness",
+                        "duration_seconds": 2,
+                    },
+                ],
+            }
+        ],
+    )
+    assert model.placeholders() == ["damage", "damage", "radius", "duration"]
+    assert model.first_effect("realmforge:damage").amount == 4
+
+
+def test_periodic_placeholders_need_an_effect_with_ticks(repo: RepoPaths) -> None:
+    spell(
+        repo,
+        "chilling_touch",
+        "name: {en_us: Chilling Touch}\n"
+        'description: {en_us: "Chills for {periodic} a tick."}\n'
+        "school: realmforge:frost\n"
+        "scales_with: spell_power\n"
+        "targeting: {type: realmforge:enemy, range: 8}\n"
+        "cast: {type: instant}\n"
+        "effects:\n"
+        "  - {type: realmforge:apply_effect, effect: minecraft:slowness, duration_seconds: 3}\n",
+    )
+    assert_problem(repo, "{periodic} reads the first apply_effect's damage or healing over time")
+
+
+def test_an_effect_with_ticks_lasts_whole_intervals(repo: RepoPaths) -> None:
+    spell(
+        repo,
+        "flicker",
+        "school: realmforge:fire\n"
+        "scales_with: spell_power\n"
+        "targeting: {type: realmforge:enemy, range: 8}\n"
+        "cast: {type: instant}\n"
+        "effects:\n"
+        "  - {type: realmforge:apply_effect, effect: realmforge:test_burning, duration_seconds: 2.5}\n",
+    )
+    assert_problem(
+        repo, "realmforge:test_burning ticks every 1 s, so it lasts a whole number of its intervals"
+    )
+
+
+def test_our_effects_may_be_applied(repo: RepoPaths) -> None:
+    content, _ = load_and_validate(repo)
+    ignite = next(entry.model for entry in content.spells if entry.model.id == "test_ignite")
+    assert ignite.first_effect("realmforge:apply_effect").effect == "realmforge:test_burning"

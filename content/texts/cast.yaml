@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# Why a cast failed (cast.realmforge.<name>, research SP-3): one text per spell/CastFailure, shown in red over the spell
+# bar when the server refuses a cast, and on the cast bar when a cast ends early (spell/CastTexts picks them).
+id: cast
+texts:
+  cannot_cast:
+    en_us: You can't do that now
+  unknown_spell:
+    en_us: That spell no longer exists
+  npc_only:
+    en_us: Only creatures can cast that
+  not_known:
+    en_us: You haven't learned that spell
+  already_casting:
+    en_us: You are already casting
+  on_cooldown:
+    en_us: Spell is not ready yet
+  on_global_cooldown:
+    en_us: Spell is not ready yet
+  no_target:
+    en_us: You have no target
+  invalid_target:
+    en_us: Invalid target
+  out_of_range:
+    en_us: Out of range
+  no_line_of_sight:
+    en_us: Target not in line of sight
+  # %1$s is the resource's name (Mana, Rage).
+  not_enough_resource:
+    en_us: Not enough %1$s
+  # The cast bar when the caster's side ended a cast: a knockback, death, a cancel, a new spell.
+  interrupted:
+    en_us: Interrupted

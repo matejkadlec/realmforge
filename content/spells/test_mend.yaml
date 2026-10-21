@@ -2,6 +2,8 @@
 # Engine test (C3a-1): an arcane heal on the caster or an ally, two levels. Not gameplay content; the GameTests in the
 # QA mod cast it.
 id: test_mend
+name: {en_us: Test Mend}
+description: {en_us: "Heals you or an ally for {heal}."}
 school: realmforge:arcane
 scales_with: spell_power
 targeting: {type: realmforge:ally, range: 16}

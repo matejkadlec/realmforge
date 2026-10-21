@@ -1,4 +1,6 @@
 {
+  "name": "spell.realmforge.test_npc_random_bolt.name",
+  "description": "spell.realmforge.test_npc_random_bolt.description",
   "school": "realmforge:arcane",
   "scales_with": "spell_power",
   "targeting": {
