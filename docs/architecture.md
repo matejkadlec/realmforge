@@ -1520,8 +1520,9 @@ key: realmforge:test_dungeon_key      # the item that opens a dungeon portal to 
 open_minutes: 30                      # how long that portal stays open (W4d)
 ```
 
-`rf gen` resolves the pool into the entry: each room's template, size, role, weight and connectors, in room id order
-(`generate/dungeons.py`), so the game plans a layout without loading a template, and JUnit fuzzes the planner on the
+`rf gen` resolves the pool into the entry: each room's template, size, role, weight and connectors, and its sidecar's
+`max_per_layout`, `near_start` and `explosion_breaks` where it sets them, in room id order (`generate/dungeons.py`),
+so the game plans a layout without loading a template, and JUnit fuzzes the planner on the
 same files. Validation checks that the pool holds an entrance, rooms to pass through (two connectors, a third when
 the rules always want a branch), a room for the ending and a dead end, that every room in it has exactly one role tag,
 and that every connector of every room meets some connector of the pool, that its key is an item and no other type's
@@ -1587,6 +1588,10 @@ Steps 1 and 2 exist since W4a (`dungeon/plan/`; `DungeonType#plan(seed)` → `Du
   connector of a neighbour right in front of it (a loop) or gets a dead end (slot `cap`, role `hallway`, `combat`,
   `stairs` or `treasure`); a connector neither closes sends the search back too. The positions and boxes come from
   `StructureTemplate.transform`, the builder's own math.
+- **Room rules** (RLM-256): a room the layout already holds as often as its `max_per_layout` allows is no candidate
+  for another node or cap, and a `near_start` room is one only where it hangs off the entrance or the first room of
+  the main path (node 1, which every graph has). Stonevaults' throne room (`treasure/mooshroom_king`, a dead end the
+  planner used to cap two or three free doors of one room with) is limited to one per layout, at the start.
 - **Attempts:** an attempt that runs out of steps (20,000 placements) gives up, and the next draws a new graph from
   the same random source, up to 64; no layout in 64 attempts throws `PlanningException`. The entrance's origin
   corner is the plot's origin, so every room offset is relative to it.
@@ -1597,7 +1602,8 @@ Steps 1 and 2 exist since W4a (`dungeon/plan/`; `DungeonType#plan(seed)` → `Du
 
 JUnit fuzzes steps 1 and 2 over thousands of seeds, on synthetic room sets and on the generated dungeon types
 (`DungeonPlannerTest`, `PlanChecks`): every rule holds, no rooms overlap, every room is reachable from the entrance,
-no connector stays open, and the same seed gives the same layout. `ContentDungeonTypeGameTests` checks in the game
+no connector stays open, no room appears more often than its limit or away from the start when it belongs there, and
+the same seed gives the same layout. `ContentDungeonTypeGameTests` checks in the game
 that every room's connectors are the jigsaw blocks the game reads from its template in every rotation, and
 `DungeonPlanGameTests` builds a layout of every type into a plot. `/qa dungeon plan <type> [<seed>]` names a layout's
 rooms by slot and writes a top-down map and a legend to the server log; `/qa dungeon build <type> [<seed>]` builds it
@@ -1625,8 +1631,10 @@ imported sources had any); the spike test rooms hold an entrance, a mob and an e
 Rooms are generated or imported; nobody has to build one by hand
 ([ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)).
 
-- **Format:** structure NBT in `content/rooms/` with a small YAML sidecar (tags, pools, weight, and the source of
-  an imported room). A room joins the room pools its sidecar lists, and a dungeon type is built from one pool
+- **Format:** structure NBT in `content/rooms/` with a small YAML sidecar (tags, pools, weight, the room's rules for
+  dungeons, `max_per_layout`, `near_start` and `explosion_breaks` ([15.3](#153-generation-pure-first-then-minecraft),
+  [15.5](#155-instances)), and the source of an imported room). A room joins the room pools its sidecar lists, and
+  a dungeon type is built from one pool
   ([15.2](#152-dungeon-types)); its role tag says which slots it can take. Connectors are vanilla jigsaw blocks,
   so the same rooms work in world structures later. Rooms are the second exception to YAML-only content, after
   worldgen JSON (ADR 0014 amends [ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)). A
@@ -1672,7 +1680,15 @@ Rooms are generated or imported; nobody has to build one by hand
   Desert Dungeon addon, Dungeon Now Loading, Mo' Structures): only pieces that are rooms, hallways or stairs of a
   dungeon, with a connector, at most 32 blocks per axis, and no copy of a vanilla template, and only what Matěj's
   gallery review kept. The plainest sets are dressed on import (`rooms/dress.py`): mossy, cracked and gravel variants
-  on surfaces with too few materials, vines, cobwebs and barrels, more the plainer the room. On import, jigsaws
+  on surfaces with too few materials, vines, cobwebs and barrels, more the plainer the room. Barrels form patterns
+  ([ADR 0036](decisions/0036-room-lights-and-decorations-form-patterns.md), RLM-262): on the room's main floor
+  against its outer walls (a full block with no air behind it, so never on or beside a throne or pillar inside the
+  room), never in a passage one block wide or where they would split the floor, as a corner barrel in a hallway, a
+  pair in a corner, mirrored corners or pairs, or a pair or row in a wall's middle; a room no pattern fits gets
+  none. A source's rules can also `place` a box of blocks into a room after the dressing: Stonevaults' `lobby_01`,
+  where a drop down the entrance shaft always lands (the entrance and the stairway's fall rooms connect down only
+  into each other and into it), gets a fall cushion of waterlogged stone brick bottom slabs set into its floor below
+  its ceiling hole, so a fall of any height deals no damage (RLM-276). On import, jigsaws
   inside a room (props, mobs, sub-pieces the source pulls in) become the block they leave behind, every connector
   is named `realmforge:door` (sides) or `realmforge:shaft` (up, down) with the pool `minecraft:empty`, marker blocks
   the source's processors replace at generation (red wool for rock, stained glass for legs) become what those
@@ -1713,7 +1729,9 @@ Rooms are generated or imported; nobody has to build one by hand
   kelp or seagrass) that can reach its sides or floor: a fluid flows down and sideways, and from there out of the
   room's box, past what cleanup clears ([15.5](#155-instances)). `fluid_edges` follows each fluid down and sideways
   through every cell a flowing fluid can enter (`FlowingFluid#canHoldFluid`), so a fluid beside a floor hole or a
-  wall gap fails too; leaving through a connector is fine, as the next room continues there (RLM-217), but only
+  wall gap fails too, but not down out of a waterlogged bottom slab or bottom-half stair, whose whole underside holds
+  the water (a fall cushion set into the floor layer, RLM-276); leaving through a connector is fine, as the next room
+  continues there (RLM-217), but only
   through the connector's own face: a step down out of a side connector in the floor layer, or sideways out of one
   on an edge, leaves beside the next room and fails (RLM-255). Python knows
   only block names, so a cell stops the fluid only when it surely does: a waterloggable block (it takes water only
@@ -1832,7 +1850,11 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   (`BlockEvent.FluidPlaceBlockEvent`: its caller ignores cancelling and places the event's new state, so the guard
   sets that back to the block that was there), trampled farmland (`BlockEvent.FarmlandTrampleEvent`), mob griefing
   (`EntityMobGriefingEvent`) and explosions (the block list of `ExplosionEvent.Detonate`, which the explosion's fire
-  uses too; it still hurts and pushes entities). Adventure mode still
+  uses too; it still hurts and pushes entities). The one exception is a room whose sidecar lists `explosion_breaks`
+  (RLM-257): the plan hands the list to each `RoomPlacement`, the plot saves it with its layout, and the guard keeps
+  an affected block only when it lies in such a room's box and is on that room's list (`Plot#explosionBreaks`), so
+  Stonevaults' combination lock blows its way open and nothing else breaks; the cleanup restores the room anyway.
+  `DungeonRoomGameTests` explodes TNT in that room and in a copy without the list. Adventure mode still
   lets an item with the `can_break` or `can_place_on` component (`DataComponents.CAN_BREAK`, `CAN_PLACE_ON`) edit
   matching blocks, and commands, data packs or other mods can hand out such items, so block breaks
   (`BreakBlockEvent`, posted on both sides, so the client predicts it) and placements

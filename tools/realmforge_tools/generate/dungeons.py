@@ -66,13 +66,20 @@ def dungeon_data(dungeon: DungeonTypeDef, content: Content) -> dict[str, Any]:
 
 
 def _room(room: RoomEntry) -> dict[str, Any]:
-    return {
+    data: dict[str, Any] = {
         "template": f"{MOD_ID}:{ROOMS_DIR}/{room.id}",
         "size": list(room.size),
         "role": room_role(room.model.tags),
         "weight": room.model.weight,
         "connectors": [_connector(connector) for connector in room.derived("connectors", connectors)],
     }
+    if room.model.max_per_layout is not None:
+        data["max_per_layout"] = room.model.max_per_layout
+    if room.model.near_start:
+        data["near_start"] = True
+    if room.model.explosion_breaks:
+        data["explosion_breaks"] = list(room.model.explosion_breaks)
+    return data
 
 
 def _connector(connector: Connector) -> dict[str, Any]:
@@ -120,9 +127,13 @@ def _expectations(content: Content) -> bytes:
         "            String target, String joint) {\n"
         "    }\n"
         "\n"
-        "    /** A room of the pool: its structure id, size, role, weight and connectors. */\n"
+        "    /**\n"
+        "     * A room of the pool: its structure id, size, role, weight, connectors, how often a layout may hold it (0:\n"
+        "     * no limit), whether it stays at the start, and the blocks an explosion may break in it.\n"
+        "     */\n"
         "    public record RoomExpectation(String template, int sizeX, int sizeY, int sizeZ, String role, int weight,\n"
-        "            List<ConnectorExpectation> connectors) {\n"
+        "            List<ConnectorExpectation> connectors, int maxPerLayout, boolean nearStart,\n"
+        "            List<String> explosionBreaks) {\n"
         "    }\n"
         "\n"
         "    /**\n"
@@ -153,8 +164,11 @@ def _room_expectation(room: RoomEntry) -> str:
     connector_list = (
         "List.of(\n" + ",\n".join(f"                                    {c}" for c in found) + ")"
     )
+    breaks = ", ".join(string_literal(block) for block in room.model.explosion_breaks)
     return (
         f"                            new RoomExpectation({string_literal(f'{MOD_ID}:{ROOMS_DIR}/{room.id}')}, "
         f"{x}, {y}, {z}, {string_literal(room_role(room.model.tags) or '')}, {room.model.weight},\n"
-        f"                                    {connector_list})"
+        f"                                    {connector_list},\n"
+        f"                                    {room.model.max_per_layout or 0}, "
+        f"{'true' if room.model.near_start else 'false'}, List.of({breaks}))"
     )

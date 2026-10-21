@@ -44,6 +44,38 @@
   "additionalProperties": false,
   "description": "How dungeons use a room. The template next to it holds the blocks.",
   "properties": {
+    "explosion_breaks": {
+      "description": "Blocks an explosion inside this room may break in a dungeon instance, where explosions otherwise break nothing: what a trap's TNT is meant to blow open (RLM-257). Every other block of the room stays.",
+      "items": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        "type": "string"
+      },
+      "title": "Explosion Breaks",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "max_per_layout": {
+      "anyOf": [
+        {
+          "maximum": 16,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The most times one dungeon layout holds this room; no limit when unset (RLM-256).",
+      "title": "Max Per Layout"
+    },
+    "near_start": {
+      "default": false,
+      "description": "True: the planner places this room only next to the entrance or the first room of the main path, at the dungeon's start (RLM-256).",
+      "title": "Near Start",
+      "type": "boolean"
+    },
     "pools": {
       "description": "The room pools the room joins (e.g. realmforge:stone_vault): a dungeon type is built from the rooms of one pool. Empty for a room that is not used yet, such as a fresh import.",
       "items": {

@@ -375,3 +375,64 @@ def test_a_pooled_room_fails_on_a_fluid_that_flows_out_through_an_opening(repo: 
     ]
     path.write_bytes(write_structure(Structure(room.size, room.data_version, (*shell, *room.blocks, water))))
     load_and_validate(repo)  # closed, the room holds its water; its doorways lead into the next rooms
+
+
+def test_a_cushion_set_into_the_floor_keeps_its_water(repo: RepoPaths) -> None:
+    # RLM-276: a waterlogged bottom slab in the floor layer holds its water: its underside is whole, and the floor
+    # around it closes its sides. A top slab's water would flow down out of the room.
+    crypt(repo)
+    add_room(repo, "crypt/landing", ["hallway"], "north", "south")
+    room = room_structure((7, 5, 7), "north", "south")
+    stone = BlockState("minecraft:stone_bricks")
+    shell = [
+        StructureBlock((x, y, z), stone)
+        for x in range(7)
+        for y in range(5)
+        for z in range(7)
+        if (x in (0, 6) or y in (0, 4) or z in (0, 6)) and (x, y, z) not in {c.pos for c in room.blocks}
+    ]
+    path = repo.content / "rooms" / "crypt" / "landing.nbt"
+    for half, leaks in (("bottom", False), ("top", True)):
+        cushion = BlockState.parse(f"minecraft:stone_brick_slab[type={half},waterlogged=true]")
+        blocks = [b for b in shell if b.pos != (3, 0, 3)] + [*room.blocks, StructureBlock((3, 0, 3), cushion)]
+        path.write_bytes(write_structure(Structure(room.size, room.data_version, tuple(blocks))))
+        if leaks:
+            assert sorted(problems_for(repo)) == [
+                "content/rooms/crypt/landing.nbt: fluid at 3 0 3: a fluid that can reach the room's sides or floor "
+                "flows out of its box, where cleanup does not reach; a room in a dungeon type's pool keeps its fluids "
+                "inside",
+            ]
+        else:
+            load_and_validate(repo)
+
+
+def test_a_rooms_planner_and_explosion_rules_reach_the_game(repo: RepoPaths) -> None:
+    # RLM-256 and RLM-257: the sidecar's rules go into the dungeon type's rooms and the QA mod's expectations.
+    crypt(repo)
+    nook = repo.content / "rooms" / "crypt" / "nook.yaml"
+    nook.write_text(
+        nook.read_text(encoding="utf-8")
+        + "max_per_layout: 1\nnear_start: true\nexplosion_breaks: [minecraft:gravel, minecraft:smooth_stone]\n",
+        encoding="utf-8",
+    )
+    files = generate(repo)
+    rooms = {room["template"]: room for room in json.loads(files[f"{DATA}/crypt.json"])["rooms"]}
+    nook_data = rooms["realmforge:rooms/crypt/nook"]
+    assert (nook_data["max_per_layout"], nook_data["near_start"], nook_data["explosion_breaks"]) == (
+        1,
+        True,
+        ["minecraft:gravel", "minecraft:smooth_stone"],
+    )
+    assert not {"max_per_layout", "near_start", "explosion_breaks"} & set(
+        rooms["realmforge:rooms/crypt/hall"]
+    )
+    java = files[EXPECTATIONS].decode()
+    assert '1, true, List.of("minecraft:gravel", "minecraft:smooth_stone"))' in java
+    assert "0, false, List.of())" in java
+    nook.write_text(
+        nook.read_text(encoding="utf-8").replace("minecraft:smooth_stone", "minecraft:no_such_block"),
+        encoding="utf-8",
+    )
+    assert any(
+        "explosion_breaks[1]: unknown block 'minecraft:no_such_block'" in p for p in problems_for(repo)
+    )

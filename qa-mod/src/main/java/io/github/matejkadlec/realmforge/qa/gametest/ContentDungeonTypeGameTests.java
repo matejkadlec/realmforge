@@ -119,7 +119,9 @@ public final class ContentDungeonTypeGameTests {
                         connector.target().toString(), connector.joint().getSerializedName()))
                 .toList();
         return new RoomExpectation(room.template().toString(), room.size().getX(), room.size().getY(),
-                room.size().getZ(), room.role().getSerializedName(), room.weight(), connectors);
+                room.size().getZ(), room.role().getSerializedName(), room.weight(), connectors,
+                room.maxPerLayout().orElse(0), room.nearStart(),
+                room.explosionBreaks().stream().map(Identifier::toString).toList());
     }
 
     private static String describe(StructureTemplate.JigsawBlockInfo jigsaw) {

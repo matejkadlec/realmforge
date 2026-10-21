@@ -173,6 +173,13 @@
           "target": "realmforge:door",
           "joint": "rollable"
         }
+      ],
+      "explosion_breaks": [
+        "minecraft:smooth_stone",
+        "minecraft:gravel",
+        "minecraft:redstone_wire",
+        "minecraft:redstone_torch",
+        "minecraft:redstone_wall_torch"
       ]
     },
     {
@@ -773,7 +780,9 @@
           "target": "realmforge:door",
           "joint": "rollable"
         }
-      ]
+      ],
+      "max_per_layout": 1,
+      "near_start": true
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/treasure/parrot",

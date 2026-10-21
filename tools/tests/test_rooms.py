@@ -806,7 +806,7 @@ def test_import_refuses_a_room_that_does_not_validate(repo: RepoPaths, tmp_path:
     assert result.written
 
 
-def test_reimport_keeps_pools_tags_and_weight(repo: RepoPaths, tmp_path: Path) -> None:
+def test_reimport_keeps_pools_tags_weight_and_room_rules(repo: RepoPaths, tmp_path: Path) -> None:
     source = tmp_path / "hall.nbt"
     source.write_bytes(write_structure(small_room()))
     target = third_party(repo)
@@ -817,7 +817,10 @@ def test_reimport_keeps_pools_tags_and_weight(repo: RepoPaths, tmp_path: Path) -
     sidecar.write_text(
         text.replace("pools: []", "pools:\n  - realmforge:rooms/halls")
         .replace('tags:\n  - "hallway"\n  - "dead_end"', "tags: [hallway]")
-        .replace("weight: 1", "weight: 3"),
+        .replace(
+            "weight: 1",
+            "weight: 3\nmax_per_layout: 1\nnear_start: true\nexplosion_breaks: [minecraft:gravel]",
+        ),
         encoding="utf-8",
     )
     importer.import_rooms([source], target, RULES, load_vanilla(repo), repo)
@@ -828,6 +831,52 @@ def test_reimport_keeps_pools_tags_and_weight(repo: RepoPaths, tmp_path: Path) -
         ["hallway"],
         3,
     )
+    assert (room.model.max_per_layout, room.model.near_start, room.model.explosion_breaks) == (
+        1,
+        True,
+        ["minecraft:gravel"],
+    ), "how dungeons treat the room survives a re-import (RLM-256, RLM-257)"
+    written = sidecar.read_text(encoding="utf-8")
+    importer.import_rooms([source], target, RULES, load_vanilla(repo), repo)
+    assert sidecar.read_text(encoding="utf-8") == written
+
+
+def test_place_sets_a_box_of_blocks_into_a_room(repo: RepoPaths, tmp_path: Path) -> None:
+    # The fall cushion's rule (RLM-276): the box replaces what the room had there, after the dressing.
+    source = tmp_path / "hall.nbt"
+    source.write_bytes(write_structure(small_room()))
+    cushion = "minecraft:stone_brick_slab[type=bottom,waterlogged=true]"
+    rules = RULES.model_copy(
+        update={
+            "place": {
+                "hall": [
+                    importer.PlacedBlocks.model_validate(
+                        {"from": [1, 0, 1], "to": [2, 0, 3], "block": cushion}
+                    )
+                ]
+            }
+        }
+    )
+    target = third_party(repo)
+    (result,) = importer.import_rooms([source], target, rules, load_vanilla(repo), repo)
+    assert result.written and any(note.startswith("placed " + cushion) for note in result.notes)
+    room = read_structure((target / "hall.nbt").read_bytes())
+    placed = {b.pos for b in room.blocks if b.state == BlockState.parse(cushion)}
+    assert placed == {(x, 0, z) for x in (1, 2) for z in (1, 2, 3)}
+    assert len({b.pos for b in room.blocks}) == len(room.blocks), "one block per cell"
+    outside = RULES.model_copy(
+        update={
+            "place": {
+                "hall": [
+                    importer.PlacedBlocks.model_validate(
+                        {"from": [4, 0, 4], "to": [5, 0, 4], "block": cushion}
+                    )
+                ]
+            }
+        }
+    )
+    (result,) = importer.import_rooms([source], target, outside, load_vanilla(repo), repo)
+    assert not result.written and "place: 5 0 4 lies outside the room" in result.problems
 
 
 def test_import_into_content_needs_third_party_or_ours(repo: RepoPaths, tmp_path: Path) -> None:

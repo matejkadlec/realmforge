@@ -19,6 +19,13 @@ loot_tables:
   stonevaults:*: null # the dungeon fills its chests (W4)
 entities:
   keep: [minecraft:painting, minecraft:item_frame, minecraft:glow_item_frame, minecraft:armor_stand]
+place:
+  # The fall cushion (RLM-276): a player who drops down the entrance shaft (the entrance, then any stack of the
+  # stairway's fall rooms) lands in lobby_01, the one room under it, below its 3x3 ceiling hole. Its floor there
+  # becomes waterlogged stone brick bottom slabs, so a drop of any height deals no fall damage; the floor around
+  # holds the water in, and a bottom slab's whole underside keeps it from flowing down.
+  dungeon/lobby/lobby_01:
+    - {from: [5, 0, 5], to: [7, 0, 7], block: "minecraft:stone_brick_slab[type=bottom,waterlogged=true]"}
 dress:
   exclude: [dungeon/entrances/*]  # approved as they are
   # Variety and decorations Matěj asked for in the gallery review (2026-10-14): the plainer a room, the more it

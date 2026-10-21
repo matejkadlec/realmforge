@@ -105,8 +105,9 @@ source file, its format and its data version, leaves `pools` empty and drafts th
 [content/README.md](../content/README.md)): the shape from the faces with a connector (`dead_end`, `straight`,
 `curved`, `t_junction`, `crossing`, plus `vertical` for one up or down), the role from a word in the room's path
 (`boss`, `treasure`, `entrance`, `stairs`, `hallway`), else `hallway` for a straight or curved piece at most 7 blocks
-wide (measured across the passage) and `combat` for the rest. A re-import keeps the sidecar's pools, tags and
-weight. A room is written only when it validates; otherwise the command lists the problems and writes nothing for that
+wide (measured across the passage) and `combat` for the rest. A re-import keeps the sidecar's pools, tags, weight
+and room rules (`max_per_layout`, `near_start`, `explosion_breaks`; [content/README](../content/README.md)). A room
+is written only when it validates; otherwise the command lists the problems and writes nothing for that
 room, and so does a source file that cannot be read (some jars ship a corrupt template; exclude it). A file that the
 gallery's review rejects is skipped (`SKIP` in the report): the `review.yaml` of the target folder decides, or that of
 a folder below it (the gallery reviews a subfolder on its own) or, inside `content/rooms/`, above it, and the nearest
@@ -152,6 +153,9 @@ dress:                # variety and decorations for plain rooms (rooms/dress.py)
   ceiling: {target: 3, replace: [minecraft:stone_bricks], variants: [minecraft:mossy_stone_bricks]}
   decorations: [vines, cobwebs, barrels]
   without: {barrels: [dungeon/rooms/library]}  # rooms that do not get a decoration
+place:                # boxes of one block set into a room after the dressing, by its path (a fall cushion, RLM-276)
+  dungeon/lobby/lobby_01:
+    - {from: [5, 0, 5], to: [7, 0, 7], block: "minecraft:stone_brick_slab[type=bottom,waterlogged=true]"}
 data_version: 4790    # for the files that state none, when the source is known to be saved with this version
 ```
 

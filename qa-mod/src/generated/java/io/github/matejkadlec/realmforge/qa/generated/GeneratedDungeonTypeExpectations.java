@@ -15,9 +15,13 @@ public final class GeneratedDungeonTypeExpectations {
             String target, String joint) {
     }
 
-    /** A room of the pool: its structure id, size, role, weight and connectors. */
+    /**
+     * A room of the pool: its structure id, size, role, weight, connectors, how often a layout may hold it (0:
+     * no limit), whether it stays at the start, and the blocks an explosion may break in it.
+     */
     public record RoomExpectation(String template, int sizeX, int sizeY, int sizeZ, String role, int weight,
-            List<ConnectorExpectation> connectors) {
+            List<ConnectorExpectation> connectors, int maxPerLayout, boolean nearStart,
+            List<String> explosionBreaks) {
     }
 
     /**
@@ -40,94 +44,117 @@ public final class GeneratedDungeonTypeExpectations {
                     List.of(
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/entrances/entrance_1", 7, 6, 7, "entrance", 1,
                                     List.of(
-                                    new ConnectorExpectation(3, 0, 3, "down", "west", "realmforge:shaft", "realmforge:shaft", "rollable"))),
+                                    new ConnectorExpectation(3, 0, 3, "down", "west", "realmforge:shaft", "realmforge:shaft", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/entrances/entrance_1_long", 7, 6, 7, "entrance", 1,
                                     List.of(
-                                    new ConnectorExpectation(3, 0, 3, "down", "west", "realmforge:shaft", "realmforge:shaft", "rollable"))),
+                                    new ConnectorExpectation(3, 0, 3, "down", "west", "realmforge:shaft", "realmforge:shaft", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/lobby/lobby_01", 13, 6, 13, "hallway", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 1, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"),
                                     new ConnectorExpectation(6, 1, 0, "north", "up", "realmforge:door", "realmforge:door", "rollable"),
                                     new ConnectorExpectation(6, 1, 12, "south", "up", "realmforge:door", "realmforge:door", "rollable"),
                                     new ConnectorExpectation(12, 1, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable"),
-                                    new ConnectorExpectation(6, 5, 6, "up", "south", "realmforge:shaft", "realmforge:shaft", "rollable"))),
+                                    new ConnectorExpectation(6, 5, 6, "up", "south", "realmforge:shaft", "realmforge:shaft", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/combination_lock", 13, 6, 13, "combat", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 1, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"),
-                                    new ConnectorExpectation(12, 1, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(12, 1, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of("minecraft:smooth_stone", "minecraft:gravel", "minecraft:redstone_wire", "minecraft:redstone_torch", "minecraft:redstone_wall_torch")),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/drowned_junction", 13, 6, 13, "combat", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 2, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"),
                                     new ConnectorExpectation(6, 2, 0, "north", "up", "realmforge:door", "realmforge:door", "rollable"),
-                                    new ConnectorExpectation(6, 2, 12, "south", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(6, 2, 12, "south", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/husk_temple", 13, 6, 13, "combat", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 1, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"),
-                                    new ConnectorExpectation(12, 1, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(12, 1, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/item_combination_lock", 13, 6, 13, "combat", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 1, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"),
-                                    new ConnectorExpectation(12, 1, 9, "east", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(12, 1, 9, "east", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/lava_parkour", 13, 6, 13, "combat", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 2, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"),
-                                    new ConnectorExpectation(12, 2, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(12, 2, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/lava_trap", 13, 6, 13, "combat", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 1, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"),
-                                    new ConnectorExpectation(12, 1, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(12, 1, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/library", 13, 6, 13, "combat", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 1, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"),
-                                    new ConnectorExpectation(12, 1, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(12, 1, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/nether_portal", 16, 8, 13, "combat", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 1, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"),
-                                    new ConnectorExpectation(15, 1, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(15, 1, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/pressure_plate_lock", 13, 6, 13, "combat", 1,
                                     List.of(
                                     new ConnectorExpectation(2, 2, 0, "north", "up", "realmforge:door", "realmforge:door", "rollable"),
-                                    new ConnectorExpectation(10, 2, 12, "south", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(10, 2, 12, "south", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/skeleton_trap", 13, 6, 13, "combat", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 2, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"),
-                                    new ConnectorExpectation(12, 2, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(12, 2, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/stairs", 10, 12, 5, "stairs", 1,
                                     List.of(
                                     new ConnectorExpectation(9, 1, 2, "east", "up", "realmforge:door", "realmforge:door", "rollable"),
-                                    new ConnectorExpectation(0, 8, 2, "west", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(0, 8, 2, "west", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/tight_maze", 13, 6, 13, "combat", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 1, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"),
-                                    new ConnectorExpectation(12, 1, 2, "east", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(12, 1, 2, "east", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/tnt_plate_trap", 13, 6, 13, "combat", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 2, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"),
-                                    new ConnectorExpectation(12, 2, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(12, 2, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/zombie_three_way_temple", 13, 6, 13, "combat", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 1, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"),
-                                    new ConnectorExpectation(12, 1, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(12, 1, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/stairway/fall_01", 5, 16, 5, "stairs", 1,
                                     List.of(
                                     new ConnectorExpectation(2, 0, 2, "down", "north", "realmforge:shaft", "realmforge:shaft", "rollable"),
-                                    new ConnectorExpectation(2, 15, 2, "up", "west", "realmforge:shaft", "realmforge:shaft", "rollable"))),
+                                    new ConnectorExpectation(2, 15, 2, "up", "west", "realmforge:shaft", "realmforge:shaft", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/stairway/fall_long", 5, 32, 5, "stairs", 1,
                                     List.of(
                                     new ConnectorExpectation(2, 0, 2, "down", "north", "realmforge:shaft", "realmforge:shaft", "rollable"),
-                                    new ConnectorExpectation(2, 31, 2, "up", "west", "realmforge:shaft", "realmforge:shaft", "rollable"))),
+                                    new ConnectorExpectation(2, 31, 2, "up", "west", "realmforge:shaft", "realmforge:shaft", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/treasure/egg", 13, 8, 13, "treasure", 1,
                                     List.of(
-                                    new ConnectorExpectation(0, 2, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(0, 2, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/treasure/mooshroom_king", 13, 6, 13, "treasure", 1,
                                     List.of(
-                                    new ConnectorExpectation(0, 1, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(0, 1, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    1, true, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/treasure/parrot", 9, 6, 9, "treasure", 1,
                                     List.of(
-                                    new ConnectorExpectation(0, 2, 4, "west", "up", "realmforge:door", "realmforge:door", "rollable"))),
+                                    new ConnectorExpectation(0, 2, 4, "west", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of()),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/treasure/tiny_cap", 3, 5, 5, "treasure", 1,
                                     List.of(
-                                    new ConnectorExpectation(0, 1, 2, "west", "up", "realmforge:door", "realmforge:door", "rollable"))))));
+                                    new ConnectorExpectation(0, 1, 2, "west", "up", "realmforge:door", "realmforge:door", "rollable")),
+                                    0, false, List.of()))));
 
     private GeneratedDungeonTypeExpectations() {
     }

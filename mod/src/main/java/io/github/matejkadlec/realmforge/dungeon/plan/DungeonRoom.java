@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.Identifier;
@@ -21,8 +22,12 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
  * @param role the part it plays in a layout
  * @param weight how often the planner picks it among the rooms that fit, relative to the others (1 to 150)
  * @param connectors its connectors, in template order
+ * @param maxPerLayout the most times one layout holds it, if limited (RLM-256)
+ * @param nearStart whether it may only hang off the entrance or the first room of the main path (RLM-256)
+ * @param explosionBreaks the blocks an explosion inside it may break in an instance (RLM-257)
  */
-public record DungeonRoom(Identifier template, Vec3i size, RoomRole role, int weight, List<Connector> connectors) {
+public record DungeonRoom(Identifier template, Vec3i size, RoomRole role, int weight, List<Connector> connectors,
+        Optional<Integer> maxPerLayout, boolean nearStart, List<Identifier> explosionBreaks) {
     /** The most a structure block saves per axis, which room validation allows. */
     public static final int MAX_SIZE = 48;
 
@@ -31,11 +36,21 @@ public record DungeonRoom(Identifier template, Vec3i size, RoomRole role, int we
                     Vec3i.CODEC.fieldOf("size").forGetter(DungeonRoom::size),
                     RoomRole.CODEC.fieldOf("role").forGetter(DungeonRoom::role),
                     Codec.intRange(1, 150).optionalFieldOf("weight", 1).forGetter(DungeonRoom::weight),
-                    Connector.CODEC.listOf().fieldOf("connectors").forGetter(DungeonRoom::connectors))
+                    Connector.CODEC.listOf().fieldOf("connectors").forGetter(DungeonRoom::connectors),
+                    Codec.intRange(1, 16).optionalFieldOf("max_per_layout").forGetter(DungeonRoom::maxPerLayout),
+                    Codec.BOOL.optionalFieldOf("near_start", false).forGetter(DungeonRoom::nearStart),
+                    Identifier.CODEC.listOf().optionalFieldOf("explosion_breaks", List.of())
+                            .forGetter(DungeonRoom::explosionBreaks))
             .apply(instance, DungeonRoom::new)).validate(DungeonRoom::validate);
 
     public DungeonRoom {
         connectors = List.copyOf(connectors);
+        explosionBreaks = List.copyOf(explosionBreaks);
+    }
+
+    /** A room without limits on where and how often it goes, whose explosions break nothing. */
+    public DungeonRoom(Identifier template, Vec3i size, RoomRole role, int weight, List<Connector> connectors) {
+        this(template, size, role, weight, connectors, Optional.empty(), false, List.of());
     }
 
     /** Whether it has one connector: it ends a branch, or closes a connector nothing else takes. */

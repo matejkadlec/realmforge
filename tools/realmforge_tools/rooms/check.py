@@ -343,11 +343,12 @@ def markers(structure: Structure) -> list[tuple[str, Pos]]:
 
 def fluid_edges(structure: Structure) -> list[Pos]:
     """Positions of the room's fluids that can flow out of its box. A fluid flows down and sideways, never up, so
-    each one is followed through every cell it can enter (``_holds_flowing_fluid``). Once it reaches the floor or a
-    side it leaves the box, past what cleanup clears (architecture 15.5), unless it leaves through a connector's own
-    face, where the next room continues: a step out of a connector's cell in any other direction (down out of a side
-    connector in the floor layer, sideways out of one on an edge) leaves beside the next room. A fluid on the roof or
-    in a closed basin stays inside."""
+    each one is followed through every cell it can enter (``_holds_flowing_fluid``), but not down out of a waterlogged
+    block whose bottom face is whole (``_closed_below``). Once it reaches the floor or a side it leaves the box, past
+    what cleanup clears (architecture 15.5), unless it leaves through a connector's own face, where the next room
+    continues: a step out of a connector's cell in any other direction (down out of a side connector in the floor
+    layer, sideways out of one on an edge) leaves beside the next room. A fluid on the roof or in a closed basin stays
+    inside."""
     size = structure.size
     at = {block.pos: block for block in structure.blocks}
     exits: dict[Pos, Pos] = {}  # a connector's cell -> the step out through its face
@@ -378,6 +379,8 @@ def _fluid_leaves(
     while todo:
         x, y, z = todo.pop()
         for dx, dy, dz in _FLOW:
+            if dy and (x, y, z) == start and _closed_below(at[start]):
+                continue
             next_pos = (x + dx, y + dy, z + dz)
             if not all(0 <= c < s for c, s in zip(next_pos, size, strict=True)):
                 if exits.get((x, y, z)) != (dx, dy, dz):
@@ -392,6 +395,16 @@ def _fluid_leaves(
             todo.append(next_pos)
     contained.update(seen)
     return False
+
+
+def _closed_below(block: StructureBlock) -> bool:
+    """A waterlogged block whose bottom face is whole, so its water cannot flow down out of it: a bottom slab or a
+    bottom-half stair (a fall cushion set into a floor, RLM-276). Water still flows out of its open sides."""
+    name, state = block.state.name, block.state
+    return state.get("waterlogged") == "true" and (
+        (name.endswith("_slab") and state.get("type") == "bottom")
+        or (name.endswith("_stairs") and state.get("half") == "bottom")
+    )
 
 
 def _holds_flowing_fluid(block: StructureBlock) -> bool:

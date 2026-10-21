@@ -12,6 +12,7 @@ import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
 
@@ -121,6 +122,22 @@ public final class Plot {
     /** The first marker of a kind in a room, in template order. */
     public Optional<DataMarker> marker(DataMarker.Kind kind, int room) {
         return markers.stream().filter(marker -> marker.kind() == kind && marker.room() == room).findFirst();
+    }
+
+    /**
+     * Whether an explosion may break {@code block} at {@code pos} (world coordinates): only inside a room of the current
+     * layout whose {@link RoomPlacement#explosionBreaks} lists it (RLM-257).
+     */
+    public boolean explosionBreaks(BlockPos pos, Identifier block) {
+        if (layout == null) {
+            return false;
+        }
+        for (int index = 0; index < rooms.size(); index++) {
+            if (rooms.get(index).isInside(pos)) {
+                return layout.rooms().get(index).explosionBreaks().contains(block);
+            }
+        }
+        return false;
     }
 
     /** Where players arrive, relative to the origin; known once the rooms stand. */

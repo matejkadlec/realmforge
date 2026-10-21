@@ -15,7 +15,9 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
  *
  * <p>Each attempt draws a {@link RoomGraph} (step 1), then places its rooms one by one, parent first (step 2): a room
  * that fits the node's slot, turned four ways, with one of its connectors taking a free connector of the parent by
- * vanilla's jigsaw rules ({@link Connector#takes}), inside the limits and overlapping no placed room. A node with no
+ * vanilla's jigsaw rules ({@link Connector#takes}), inside the limits and overlapping no placed room. A room the
+ * layout already holds as often as its {@link DungeonRoom#maxPerLayout} allows is no candidate, nor is a {@link
+ * DungeonRoom#nearStart} room anywhere but next to the entrance or the first room of the main path. A node with no
  * such placement sends the search back to the node before it. Once every node has its room, each connector still free
  * meets a free connector of a neighbour right in front of it, which closes a loop, or gets a dead end ({@link
  * Slot#CAP}); a connector neither can close sends the search back too. An attempt that runs out of steps gives up,
@@ -78,7 +80,8 @@ public final class DungeonPlanner {
                 return closeFreeConnectors();
             }
             RoomGraph.Node current = graph.node(node);
-            for (DungeonRoom room : byWeight(candidates(current.slot(), graph.connectorsNeeded(node)))) {
+            int host = current.parent() < 0 ? -1 : roomOfNode[current.parent()];
+            for (DungeonRoom room : byWeight(candidates(current.slot(), graph.connectorsNeeded(node), host))) {
                 for (Rotation rotation : Rotation.getShuffled(random)) {
                     if (current.parent() < 0) {
                         if (placeEntrance(node, room, rotation)) {
@@ -209,7 +212,7 @@ public final class DungeonPlanner {
         /** Closes the connector with a dead end that fits there. */
         private boolean cap(int room, int connector, List<int[]> marked) {
             Connector source = placed.get(room).connector(connector);
-            for (DungeonRoom deadEnd : byWeight(candidates(Slot.CAP, 1))) {
+            for (DungeonRoom deadEnd : byWeight(candidates(Slot.CAP, 1, room))) {
                 for (Rotation rotation : Rotation.getShuffled(random)) {
                     steps++;
                     Optional<PlannedRoom> fitted = fit(source, deadEnd, Slot.CAP, rotation, 0);
@@ -226,8 +229,11 @@ public final class DungeonPlanner {
             return false;
         }
 
-        /** The rooms that can take a slot whose room needs {@code needed} connectors. */
-        private List<DungeonRoom> candidates(Slot slot, int needed) {
+        /**
+         * The rooms that can take a slot whose room needs {@code needed} connectors and hangs off the placed room
+         * {@code host} ({@code -1} for the entrance).
+         */
+        private List<DungeonRoom> candidates(Slot slot, int needed, int host) {
             List<DungeonRoom> fitting = new ArrayList<>();
             for (DungeonRoom room : rooms) {
                 int connectors = room.connectors().size();
@@ -237,11 +243,22 @@ public final class DungeonPlanner {
                     case ENDING -> room.role() == ending && connectors >= needed;
                     case BRANCH_END, CAP -> room.role().closesBranches() && room.deadEnd();
                 };
-                if (fits) {
+                if (fits && belowLimit(room) && (!room.nearStart() || atStart(host))) {
                     fitting.add(room);
                 }
             }
             return fitting;
+        }
+
+        private boolean belowLimit(DungeonRoom room) {
+            return room.maxPerLayout().map(max -> placed.stream().filter(p -> p.room().equals(room)).count() < max)
+                    .orElse(true);
+        }
+
+        /** Whether a room hanging off the placed room {@code host} is at the dungeon's start. */
+        private boolean atStart(int host) {
+            // The first room of the main path is node 1, which every graph has and which hangs off the entrance.
+            return host <= 0 || placed.size() > 1 && host == roomOfNode[1];
         }
 
         /** The rooms in a random order in which a heavier room tends to come first (Efraimidis and Spirakis). */

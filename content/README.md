@@ -204,8 +204,14 @@ Rules:
   [ADR 0028](../docs/decisions/0028-dungeon-rooms-generated-or-imported.md)). A room's id is its path below
   `rooms/` without the suffix (`third_party/stonevaults/hall_a`), in lowercase snake_case folders and names; the
   sidecar names the room `pools` the room joins (a dungeon type is built from one pool), its `tags` (slot types),
-  its `weight` (how often the planner picks it among the rooms that fit, 1 to 150) and, for an imported room, its
-  `source`. `uv run rf rooms import` writes both files ([tools/README](../tools/README.md#rooms)); nobody
+  its `weight` (how often the planner picks it among the rooms that fit, 1 to 150), the rules for how dungeons treat
+  it when it needs any: `max_per_layout` (the most times one layout holds it, RLM-256), `near_start: true` (it hangs
+  only off the entrance or the first room of the main path, RLM-256) and `explosion_breaks` (the blocks an explosion
+  inside it may break in an instance, where explosions otherwise break nothing: what a trap's TNT is meant to blow
+  open, validated as block ids, RLM-257), and, for an imported room, its `source`. Stonevaults' throne room
+  (`treasure/mooshroom_king`) is limited to one per layout at the start, and its combination lock
+  (`rooms/combination_lock`) lets its TNT break the smooth stone, gravel and redstone that close its way on.
+  `uv run rf rooms import` writes both files ([tools/README](../tools/README.md#rooms)); nobody
   edits a template by hand. Validation checks the size (at most 48 blocks per axis), the template's data version
   (required, no newer than the game's), every block, block entity and entity id and every container's loot table
   against the ID universe, that jigsaws sit on the room's boundary, facing out, and that every jigsaw's pool is a
