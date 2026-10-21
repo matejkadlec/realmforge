@@ -8,10 +8,17 @@ import pytest
 from pydantic import ValidationError
 
 from realmforge_tools.id_universe import load_vanilla
-from realmforge_tools.project import DATA_VERSION, RepoPaths
+from realmforge_tools.project import DATA_VERSION, REPO_ROOT, RepoPaths
 from realmforge_tools.rooms.check import check_structure
 from realmforge_tools.rooms.dress import DressRules, dress, family
-from realmforge_tools.rooms.structure import BlockState, Pos, Structure, StructureBlock, StructureEntity
+from realmforge_tools.rooms.structure import (
+    BlockState,
+    Pos,
+    Structure,
+    StructureBlock,
+    StructureEntity,
+    read_structure,
+)
 
 STONE_BRICKS = "minecraft:stone_bricks"
 COBBLESTONE = "minecraft:cobblestone"
@@ -196,3 +203,110 @@ def test_decorations_keep_off_the_rooms_own_entities() -> None:
         near = {(x + dx, y + dy, z + dz) for dx in range(-2, 3) for dy in range(-2, 3) for dz in range(-2, 3)}
         placed = [b.pos for b in dressed.blocks if b.state.name in decorations and b.pos in near]
         assert not placed, (painting.block_pos, placed)
+
+
+# --- barrels in patterns (ADR 0036, RLM-262; the throne room, RLM-256) ------------------------------------------
+
+
+def barrels(structure: Structure) -> set[Pos]:
+    return {b.pos for b in structure.blocks if b.state.name == "minecraft:barrel"}
+
+
+def with_blocks(room: Structure, placed: dict[Pos, str]) -> Structure:
+    blocks = tuple(
+        StructureBlock(b.pos, BlockState(placed[b.pos])) if b.pos in placed else b for b in room.blocks
+    )
+    return Structure(room.size, room.data_version, blocks)
+
+
+def is_pattern(cells: set[Pos], size: Pos) -> bool:
+    """A mirror of the room maps the barrels onto themselves (mirrored corners, mirrored pairs, a pair or a row in a
+    wall's middle), or they are a pair side by side, or a single barrel, in a corner."""
+    mirrored = {(size[0] - 1 - x, y, z) for x, y, z in cells} == cells or {
+        (x, y, size[2] - 1 - z) for x, y, z in cells
+    } == cells
+    return mirrored or (len(cells) in (1, 2) and any(corner(pos, size) for pos in cells))
+
+
+def corner(pos: Pos, size: Pos) -> bool:
+    return pos[0] in (1, size[0] - 2) and pos[2] in (1, size[2] - 2)
+
+
+@pytest.mark.parametrize("name", [f"room-{i}" for i in range(12)])
+def test_barrels_stand_against_the_walls_in_a_pattern(name: str) -> None:
+    room = box_room()
+    dressed, _ = dress(room, RULES, name=name, tags=["combat"])
+    placed = barrels(dressed)
+    assert 2 <= len(placed) <= 3  # 121 blocks of floor
+    assert all(pos[1] == 1 for pos in placed)
+    assert all(pos[0] in (1, 11) or pos[2] in (1, 11) for pos in placed), placed
+    assert is_pattern(placed, room.size), placed
+
+
+def test_a_single_barrel_stands_only_in_a_corner_of_a_hallway() -> None:
+    for i in range(40):
+        dressed, _ = dress(box_room(), RULES, name=f"hall-{i}", tags=["hallway", "straight"])
+        placed = barrels(dressed)
+        assert len(placed) <= 1
+        assert all(corner(pos, dressed.size) for pos in placed), placed
+    stairs, _ = dress(box_room(), RULES, name="stairs", tags=["stairs", "straight"])
+    assert not barrels(stairs)
+
+
+def test_barrels_keep_off_a_throne_in_the_room() -> None:
+    # A gold throne in the middle, as in Stonevaults' mooshroom_king: its top and sides are no walls to stand
+    # barrels against, however the hashes fall.
+    throne = {
+        (x, y, z): "minecraft:gold_block" for x in range(5, 8) for y in range(1, 4) for z in range(5, 8)
+    }
+    room = with_blocks(box_room(), throne)
+    for i in range(24):
+        dressed, _ = dress(room, RULES, name=f"throne-{i}", tags=["treasure", "dead_end"])
+        placed = barrels(dressed)
+        assert placed and all(pos[1] == 1 for pos in placed)
+        near = {(x + dx, y, z + dz) for x, y, z in throne for dx in (-1, 0, 1) for dz in (-1, 0, 1)}
+        assert not placed & near, placed
+
+
+def test_barrels_never_close_a_passage() -> None:
+    # A wall across the room with a gap one block wide: barrels never fill the gap, nor cut the floor in two.
+    wall = {(x, 1, 6): STONE_BRICKS for x in range(1, 12) if x != 6}
+    room = with_blocks(box_room(), wall)
+    for i in range(24):
+        dressed, _ = dress(room, RULES, name=f"gap-{i}", tags=["combat"])
+        placed = barrels(dressed)
+        assert (6, 1, 6) not in placed
+        floor = {b.pos for b in dressed.blocks if b.pos[1] == 1 and b.state.name == "minecraft:air"}
+        seen, todo = set(), [next(iter(floor))]
+        while todo:
+            x, y, z = todo.pop()
+            if (x, y, z) in seen or (x, y, z) not in floor:
+                continue
+            seen.add((x, y, z))
+            todo += [(x + 1, y, z), (x - 1, y, z), (x, y, z + 1), (x, y, z - 1)]
+        assert seen == floor, placed
+
+
+def test_no_pattern_fits_means_no_barrel() -> None:
+    # A room too small for any pattern but a single barrel in a wall's middle gets none.
+    dressed, _ = dress(box_room((5, 4, 9)), RULES, name="narrow", tags=["combat"])
+    assert not barrels(dressed)
+
+
+def test_the_throne_room_has_no_barrel_on_or_beside_its_throne() -> None:
+    # The committed Stonevaults room after its re-import with these rules (RLM-256): the barrels stand on the main
+    # floor against the outer walls, none on the gold throne or next to it.
+    path = REPO_ROOT / "content/rooms/third_party/stonevaults/dungeon/treasure/mooshroom_king.nbt"
+    room = read_structure(path.read_bytes())
+    gold = {b.pos for b in room.blocks if b.state.name == "minecraft:gold_block"}
+    placed = barrels(room)
+    assert gold and placed
+    assert all(pos[1] == 1 for pos in placed)
+    near = {
+        (x + dx, y + dy, z + dz)
+        for x, y, z in gold
+        for dx in (-1, 0, 1)
+        for dy in (-1, 0, 1)
+        for dz in (-1, 0, 1)
+    }
+    assert not placed & near

@@ -166,10 +166,15 @@ source are rooms, so the import can run again; the report counts the files they 
 rooms variety: a surface (floor: air above, ceiling: air below, walls: air beside) with fewer block families than its
 `target` (a family is a material whatever its shape; it counts from 5 % of the surface) gets the next variants it
 lacks, each replacing 15 % of its `replace` blocks in patches, gravel only over a block. The plainer the room was,
-the more decorations it gets: vines from the top of the walls, cobwebs where wall meets ceiling and barrels against
-the walls (one at most in a hallway, none on stairs), all clear of the doorways and of the room's own entities;
-`without` leaves a decoration out of the rooms it names. No armor stands: placed by rule they looked out of place in
-Matěj's playtest. Choices are hashes of the room's path, so a re-import gives the same room.
+the more decorations it gets: vines from the top of the walls, cobwebs where wall meets ceiling and barrels, all
+clear of the doorways and of the room's own entities; `without` leaves a decoration out of the rooms it names.
+Barrels form a pattern ([ADR 0036](../docs/decisions/0036-room-lights-and-decorations-form-patterns.md), RLM-262):
+they stand on the room's main floor against its outer walls (a full block with no air behind it, so never on or
+beside a throne or pillar inside the room), never in a passage one block wide or where they would split the floor. A
+hallway gets at most one, in a corner, stairs none, other rooms by floor area two (a pair in a corner, two mirrored
+corners or a pair in a wall's middle), three (a row in a wall's middle) or four (two mirrored pairs or four mirrored
+corners); a room no pattern fits gets none. No armor stands: placed by rule they looked out of place in Matěj's
+playtest. Choices are hashes of the room's path, so a re-import gives the same room.
 The import report names every remap, every dropped entity, block entity, interior jigsaw and loot table, and the
 jigsaw names and pools no rule mapped; validation refuses a jigsaw pool that is neither a vanilla template pool nor a
 room pool some sidecar lists. The

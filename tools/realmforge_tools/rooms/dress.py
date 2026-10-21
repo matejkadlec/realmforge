@@ -12,11 +12,20 @@ plainer a surface, the more variants it gets, so a corridor gets the most and a 
   below holds it.
 - **Decorations**, scaled by how plain the room was (the share of its variants it needed): vines hanging from the
   top of the walls (a strand per ``VINE_SLOTS`` free spots there), cobwebs where wall meets ceiling (one per
-  ``COBWEB_SLOTS``) and barrels against the walls (a hallway gets one at most, stairs none). No armor stands: Matěj
-  tried them in the playtest (2026-10-14), and placed by rule they looked out of place (facing a wall, standing in
-  front of a throne). Doorways stay clear: nothing goes next to a connector; nothing takes the space of the room's
-  own entities (a painting pops off when a block fills its space). ``without`` leaves a decoration out of the rooms
-  it names; barrels come last, so leaving them out changes nothing else in a room.
+  ``COBWEB_SLOTS``) and barrels. No armor stands: Matěj tried them in the playtest (2026-10-14), and placed by rule
+  they looked out of place (facing a wall, standing in front of a throne). Doorways stay clear: nothing goes next to
+  a connector; nothing takes the space of the room's own entities (a painting pops off when a block fills its space).
+  ``without`` leaves a decoration out of the rooms it names; barrels come last, so leaving them out changes nothing
+  else in a room.
+- **Barrels form a pattern** (ADR 0036, RLM-262): they stand on the room's main floor (the level most of its floor
+  is on) against its outer walls, a full block with no air behind it up to the room's edge, so never on or beside
+  a throne, a pillar or a platform inside the room (RLM-256). A hallway gets at most one, in a corner; stairs none;
+  other rooms, by floor area (``BARREL_AREAS``), two (a pair in a corner, two corners that mirror each other or a
+  pair in a wall's middle), three (a row in a wall's middle) or four (two mirrored pairs or four mirrored corners).
+  Mirrors are the room's own: across the middle of its main floor, in x or z, and a group in a wall's middle is one
+  a mirror maps onto itself. Barrels never stand in a passage one block wide, nor split the main floor. A room that
+  fits no pattern of its size tries the smaller ones down to two, and gets no barrel rather than a single one in a
+  wall's middle.
 
 Everything is decided by hashes of the room's path and the positions, so the same import gives the same room.
 """
@@ -25,6 +34,7 @@ from __future__ import annotations
 
 import hashlib
 from collections import Counter
+from collections.abc import Callable, Collection
 from dataclasses import dataclass, replace
 from fnmatch import fnmatchcase
 from typing import Literal
@@ -49,6 +59,9 @@ VARIANT_SHARE = 0.15
 VINE_SLOTS = 6
 COBWEB_SLOTS = 8
 GRAVEL = "minecraft:gravel"
+BARREL = "minecraft:barrel[facing=up,open=false]"
+# Floor area from which a room that is no hallway gets 4, 3 or 2 barrels.
+BARREL_AREAS = ((250, 4), (100, 3), (30, 2))
 # Block names that are no full block to stand on or hang from.
 _NOT_FULL = (
     "slab", "stairs", "fence", "_wall", "pane", "bars", "carpet", "button", "plate", "rail", "torch", "lantern",
@@ -63,6 +76,7 @@ _HANGING_REACH = 2
 
 Surface = Literal["floor", "walls", "ceiling"]
 Decoration = Literal["vines", "cobwebs", "barrels"]
+Mirror = Callable[[Pos], Pos]
 
 
 class _Strict(BaseModel):
@@ -232,7 +246,7 @@ def _decorate(
 ) -> list[str]:
     placed: list[str] = []
     floor_area = len(surfaces["floor"])
-    top = _wall_slots(room, below="ceiling")
+    top = _top_wall_slots(room)
     if "vines" in decorations:
         strands = round(len(top) * plainness / VINE_SLOTS)
         hung = 0
@@ -258,14 +272,161 @@ def _decorate(
         if "hallway" in tags:
             count = int(plainness >= 0.5 and _value(name, "barrel-chance", (0, 0, 0)) < 0.5)
         else:
-            count = (floor_area >= 30) + (floor_area >= 100) + (floor_area >= 250)
-        slots = [s for s in _wall_slots(room, below="floor") if room.is_air(s[0])]
-        barrels = sorted(slots, key=lambda slot: _value(name, "barrels", slot[0]))[:count]
-        for pos, _ in barrels:
-            room.blocks[pos] = StructureBlock(pos, BlockState.parse("minecraft:barrel[facing=up,open=false]"))
+            count = next((n for area, n in BARREL_AREAS if floor_area >= area), 0)
+        barrels = barrel_pattern(room, count, name)
+        for pos in barrels:
+            room.blocks[pos] = StructureBlock(pos, BlockState.parse(BARREL))
         if barrels:
             placed.append(f"{len(barrels)} x barrel")
     return placed
+
+
+def barrel_pattern(room: _Room, count: int, name: str) -> list[Pos]:
+    """Where ``count`` barrels go as one of the patterns of the module's docstring, or fewer, down to two (a hallway's
+    one stays one), when no pattern of that size fits the room; ``name`` picks among the patterns that fit."""
+    floor = _main_floor(room)
+    walls = _outer_wall_slots(room, floor)
+    if not walls:
+        return []
+    corners = {pos for pos, sides in walls.items() if _perpendicular(sides)}
+    x2 = min(pos[0] for pos in floor) + max(pos[0] for pos in floor)
+    z2 = min(pos[2] for pos in floor) + max(pos[2] for pos in floor)
+    mirrors: tuple[Mirror, ...] = (lambda p: (x2 - p[0], p[1], p[2]), lambda p: (p[0], p[1], z2 - p[2]))
+    parts = _parts(floor, set())
+    for size in range(count, 1 if count > 1 else 0, -1):
+        patterns = {p for p in _patterns(walls, corners, mirrors, size) if _parts(floor, set(p)) <= parts}
+        if patterns:
+            return list(
+                min(patterns, key=lambda pattern: (_value(name, f"barrels:{pattern}", (0, 0, 0)), pattern))
+            )
+    return []
+
+
+def _patterns(
+    walls: dict[Pos, set[str]], corners: set[Pos], mirrors: tuple[Mirror, ...], count: int
+) -> set[tuple[Pos, ...]]:
+    """Every pattern of ``count`` barrels that fits, each as its sorted positions: one in a corner; a pair in a
+    corner, two mirrored corners or a pair in a wall's middle; a row of three in a wall's middle; two mirrored pairs
+    or four mirrored corners. A wall's middle is where a mirror maps the group onto itself."""
+    singles = [(corner,) for corner in corners]
+    pairs = _runs(walls, 2)
+    found: set[tuple[Pos, ...]] = set()
+    if count == 1:
+        found = set(singles)
+    elif count == 2:
+        found = {pair for pair in pairs if pair[0] in corners or pair[1] in corners}
+        found |= set(_mirrored(singles, mirrors, 1, corners))
+        found |= {pair for pair in pairs if _centred(pair, mirrors)}
+    elif count == 3:
+        found = {row for row in _runs(walls, 3) if _centred(row, mirrors)}
+    elif count == 4:
+        found = set(_mirrored(pairs, mirrors, 1, walls.keys())) | set(_mirrored(singles, mirrors, 2, corners))
+    return {pattern for pattern in found if len(pattern) == count}
+
+
+def _parts(floor: list[Pos], blocked: set[Pos]) -> int:
+    """How many pieces the main floor falls into, side by side, without ``blocked``: barrels must not add one."""
+    left = set(floor) - blocked
+    count = 0
+    while left:
+        count += 1
+        todo = [left.pop()]
+        while todo:
+            x, y, z = todo.pop()
+            for dx, _, dz in _SIDES.values():
+                cell = (x + dx, y, z + dz)
+                if cell in left:
+                    left.remove(cell)
+                    todo.append(cell)
+    return count
+
+
+def _centred(group: tuple[Pos, ...], mirrors: tuple[Mirror, ...]) -> bool:
+    return any({mirror(pos) for pos in group} == set(group) for mirror in mirrors)
+
+
+def _mirrored(
+    groups: list[tuple[Pos, ...]], mirrors: tuple[Mirror, ...], times: int, allowed: Collection[Pos]
+) -> list[tuple[Pos, ...]]:
+    """The groups with their mirror images added, across one mirror (``times`` 1) or both (2), as sorted
+    positions; a mirror image that leaves ``allowed`` or meets the group itself drops the pattern."""
+    results = []
+    for chosen in [(mirror,) for mirror in mirrors] if times == 1 else [mirrors]:
+        for group in groups:
+            cells = set(group)
+            for mirror in chosen:
+                image = {mirror(pos) for pos in cells}
+                if image & cells or not all(pos in allowed for pos in image):
+                    break
+                cells |= image
+            else:
+                results.append(tuple(sorted(cells)))
+    return results
+
+
+def _runs(walls: dict[Pos, set[str]], length: int) -> list[tuple[Pos, ...]]:
+    """``length`` slots side by side along one outer wall."""
+    runs = []
+    for start, sides in walls.items():
+        for side in sides:
+            dx, _, dz = _SIDES[side]
+            step = (dz, 0, dx)  # along the wall
+            run = [start]
+            for _ in range(length - 1):
+                nxt = (run[-1][0] + step[0], run[-1][1], run[-1][2] + step[2])
+                if side not in walls.get(nxt, set()):
+                    break
+                run.append(nxt)
+            if len(run) == length:
+                runs.append(tuple(sorted(run)))
+    return runs
+
+
+def _main_floor(room: _Room) -> list[Pos]:
+    """The air cells on full blocks at the level most of them are on: where players walk through the room."""
+    cells = [pos for pos in sorted(room.blocks) if room.is_air(pos) and room.is_full(_up(pos, -1))]
+    levels = Counter(pos[1] for pos in cells)
+    level = max(sorted(levels), key=lambda y: levels[y], default=None)
+    return [pos for pos in cells if pos[1] == level]
+
+
+def _outer_wall_slots(room: _Room, floor: list[Pos]) -> dict[Pos, set[str]]:
+    """The main floor's free cells two blocks or more from a connector and not in a passage one block wide, with
+    the sides on which an outer wall stands: a full block with nothing but blocks (or the room's edge) behind it."""
+    slots: dict[Pos, set[str]] = {}
+    for pos in floor:
+        if not room.is_free(pos) or room.near_door(pos, 1) or _narrow(room, pos):
+            continue
+        sides = {side for side in _SIDES if _outer_wall(room, pos, side)}
+        if sides:
+            slots[pos] = sides
+    return slots
+
+
+def _outer_wall(room: _Room, pos: Pos, side: str) -> bool:
+    behind = _beside(pos, side)
+    if not room.is_full(behind):
+        return False
+    while all(0 <= behind[axis] < room.size[axis] for axis in range(3)):
+        if room.is_air(behind):
+            return False
+        behind = _beside(behind, side)
+    return True
+
+
+def _narrow(room: _Room, pos: Pos) -> bool:
+    """A passage one block wide: full blocks on two opposite sides and none on the other two, so a barrel there would
+    close it (a notch, walled on three sides, takes one)."""
+    pairs = (("north", "south"), ("west", "east"))
+    return any(
+        all(room.is_full(_beside(pos, side)) for side in walled)
+        and not any(room.is_full(_beside(pos, side)) for side in open_)
+        for walled, open_ in (pairs, pairs[::-1])
+    )
+
+
+def _perpendicular(sides: set[str]) -> bool:
+    return bool(sides & {"north", "south"}) and bool(sides & {"west", "east"})
 
 
 def _taken(structure: Structure) -> set[Pos]:
@@ -282,19 +443,14 @@ def _taken(structure: Structure) -> set[Pos]:
     return taken
 
 
-def _wall_slots(
-    room: _Room, *, below: Literal["floor", "ceiling"], clearance: int = 1
-) -> list[tuple[Pos, str]]:
-    """Air next to a full wall block, at least ``clearance`` + 1 blocks from a connector: right under the ceiling
-    (``below="ceiling"``; any block above, an arch's stairs too) or right on a full floor block (``below="floor"``).
-    Each slot comes with the side its wall is on."""
+def _top_wall_slots(room: _Room, clearance: int = 1) -> list[tuple[Pos, str]]:
+    """Air right under the ceiling (any block above, an arch's stairs too) next to a full wall block, at least
+    ``clearance`` + 1 blocks from a connector. Each slot comes with the side its wall is on."""
     slots = []
     for pos in sorted(room.blocks):
         if not room.is_free(pos) or room.near_door(pos, clearance):
             continue
-        if below == "ceiling" and (_up(pos, 1) not in room.blocks or room.is_air(_up(pos, 1))):
-            continue
-        if below == "floor" and not room.is_full(_up(pos, -1)):
+        if _up(pos, 1) not in room.blocks or room.is_air(_up(pos, 1)):
             continue
         for side in _SIDES:
             if room.is_full(_beside(pos, side)):
