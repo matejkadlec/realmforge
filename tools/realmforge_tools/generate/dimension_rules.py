@@ -22,18 +22,19 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     }
 
 
-def sample_player_levels(rule: MobLevelRuleDef) -> list[int]:
-    """The player levels at which the GameTest compares the game's level rule with ``MobLevelRuleDef.chances``:
-    level 1; around the floor (below it, at it, one above, and where the floor stops cutting offsets); the middle;
-    around the cap (where it starts cutting, at it, above it, and so far above that it leaves no offset)."""
-    entry, top, spread = rule.entry_level, rule.max_level, rule.spread
+def sample_player_levels(rule: MobLevelRuleDef, floor: int) -> list[int]:
+    """The player levels at which the GameTest compares the game's level rule with ``MobLevelRuleDef.chances`` at
+    ``floor`` (the realm's or a structure's): level 1; around the floor (below it, at it, one above, and where the
+    floor stops cutting offsets); the middle; around the cap (where it starts cutting, at it, above it, and so far
+    above that it leaves no offset)."""
+    top, spread = rule.max_level, rule.spread
     levels = {
         1,
-        entry - 1,
-        entry,
-        entry + 1,
-        entry + spread,
-        (entry + top) // 2,
+        floor - 1,
+        floor,
+        floor + 1,
+        floor + spread,
+        (floor + top) // 2,
         top - spread,
         top,
         top + 1,
@@ -49,16 +50,24 @@ def _ints(values: list[int] | tuple[int, ...]) -> str:
 def _rule(rule: MobLevelRuleDef | None) -> str:
     if rule is None:
         return "Optional.empty()"
-    return f"Optional.of(new MobLevelRule({rule.entry_level}, {rule.max_level}, {_ints(rule.weights)}))"
+    floors = ", ".join(
+        f"new StructureFloor({string_literal(floor.structure)}, {floor.level})"
+        for floor in rule.structure_floors or []
+    )
+    return (
+        f"Optional.of(new MobLevelRule({rule.entry_level}, {rule.max_level}, {_ints(rule.weights)},\n"
+        f"                            List.of({floors})))"
+    )
 
 
 def _samples(rule: MobLevelRuleDef | None) -> str:
     if rule is None:
         return "List.of()"
     samples = []
-    for player_level in sample_player_levels(rule):
-        chances = rule.chances(player_level)
-        samples.append(f"new Sample({player_level}, {chances.lowest}, {_ints(chances.weights)})")
+    for floor in rule.floors:
+        for player_level in sample_player_levels(rule, floor):
+            chances = rule.chances(player_level, floor)
+            samples.append(f"new Sample({player_level}, {floor}, {chances.lowest}, {_ints(chances.weights)})")
     return "List.of(\n                            " + ",\n                            ".join(samples) + ")"
 
 
@@ -93,14 +102,20 @@ def _expectations(content: Content) -> bytes:
         "/** What {@code content/dimensions/} says about every dimension, so GameTests can check that the game agrees. */\n"
         "public final class GeneratedDimensionRuleExpectations {\n"
         "    /** The mob level rule, as written in the YAML. */\n"
-        "    public record MobLevelRule(int entryLevel, int maxLevel, List<Integer> weights) {\n"
+        "    public record MobLevelRule(int entryLevel, int maxLevel, List<Integer> weights,\n"
+        "            List<StructureFloor> structureFloors) {\n"
+        "    }\n"
+        "\n"
+        "    /** A structure's floor: the structure's id, or its tag after {@code #}, and the level. */\n"
+        "    public record StructureFloor(String structure, int level) {\n"
         "    }\n"
         "\n"
         "    /**\n"
-        "     * The levels the pipeline's rule gives a mob spawning near a player of {@code playerLevel}: from\n"
-        "     * {@code lowest} up, one weight per level, not normalised. The game must agree.\n"
+        "     * The levels the pipeline's rule gives a mob spawning near a player of {@code playerLevel} where its floor is\n"
+        "     * {@code floor} (the realm's or a structure's): from {@code lowest} up, one weight per level, not\n"
+        "     * normalised. The game must agree.\n"
         "     */\n"
-        "    public record Sample(int playerLevel, int lowest, List<Integer> weights) {\n"
+        "    public record Sample(int playerLevel, int floor, int lowest, List<Integer> weights) {\n"
         "    }\n"
         "\n"
         "    /**\n"

@@ -9,14 +9,20 @@ import java.util.Optional;
 /** What {@code content/dimensions/} says about every dimension, so GameTests can check that the game agrees. */
 public final class GeneratedDimensionRuleExpectations {
     /** The mob level rule, as written in the YAML. */
-    public record MobLevelRule(int entryLevel, int maxLevel, List<Integer> weights) {
+    public record MobLevelRule(int entryLevel, int maxLevel, List<Integer> weights,
+            List<StructureFloor> structureFloors) {
+    }
+
+    /** A structure's floor: the structure's id, or its tag after {@code #}, and the level. */
+    public record StructureFloor(String structure, int level) {
     }
 
     /**
-     * The levels the pipeline's rule gives a mob spawning near a player of {@code playerLevel}: from
-     * {@code lowest} up, one weight per level, not normalised. The game must agree.
+     * The levels the pipeline's rule gives a mob spawning near a player of {@code playerLevel} where its floor is
+     * {@code floor} (the realm's or a structure's): from {@code lowest} up, one weight per level, not
+     * normalised. The game must agree.
      */
-    public record Sample(int playerLevel, int lowest, List<Integer> weights) {
+    public record Sample(int playerLevel, int floor, int lowest, List<Integer> weights) {
     }
 
     /**
@@ -31,32 +37,44 @@ public final class GeneratedDimensionRuleExpectations {
             new DimensionRulesExpectation(
                     "realmforge:overworld",
                     "minecraft:overworld",
-                    Optional.of(new MobLevelRule(1, 60, List.of(5, 10, 20, 30, 20, 10, 5))),
+                    Optional.of(new MobLevelRule(1, 60, List.of(5, 10, 20, 30, 20, 10, 5),
+                            List.of(new StructureFloor("minecraft:ancient_city", 40)))),
                     List.of(
-                            new Sample(1, 1, List.of(30, 20, 10, 5)),
-                            new Sample(2, 1, List.of(20, 30, 20, 10, 5)),
-                            new Sample(4, 1, List.of(5, 10, 20, 30, 20, 10, 5)),
-                            new Sample(30, 27, List.of(5, 10, 20, 30, 20, 10, 5)),
-                            new Sample(57, 54, List.of(5, 10, 20, 30, 20, 10, 5)),
-                            new Sample(60, 57, List.of(5, 10, 20, 30)),
-                            new Sample(61, 58, List.of(5, 10, 20)),
-                            new Sample(64, 60, List.of(1))),
+                            new Sample(1, 1, 1, List.of(30, 20, 10, 5)),
+                            new Sample(2, 1, 1, List.of(20, 30, 20, 10, 5)),
+                            new Sample(4, 1, 1, List.of(5, 10, 20, 30, 20, 10, 5)),
+                            new Sample(30, 1, 27, List.of(5, 10, 20, 30, 20, 10, 5)),
+                            new Sample(57, 1, 54, List.of(5, 10, 20, 30, 20, 10, 5)),
+                            new Sample(60, 1, 57, List.of(5, 10, 20, 30)),
+                            new Sample(61, 1, 58, List.of(5, 10, 20)),
+                            new Sample(64, 1, 60, List.of(1)),
+                            new Sample(1, 40, 40, List.of(1)),
+                            new Sample(39, 40, 40, List.of(1)),
+                            new Sample(40, 40, 40, List.of(30, 20, 10, 5)),
+                            new Sample(41, 40, 40, List.of(20, 30, 20, 10, 5)),
+                            new Sample(43, 40, 40, List.of(5, 10, 20, 30, 20, 10, 5)),
+                            new Sample(50, 40, 47, List.of(5, 10, 20, 30, 20, 10, 5)),
+                            new Sample(57, 40, 54, List.of(5, 10, 20, 30, 20, 10, 5)),
+                            new Sample(60, 40, 57, List.of(5, 10, 20, 30)),
+                            new Sample(61, 40, 58, List.of(5, 10, 20)),
+                            new Sample(64, 40, 60, List.of(1))),
                     List.of()),
             new DimensionRulesExpectation(
                     "realmforge:stone",
                     "realmforge:stone",
-                    Optional.of(new MobLevelRule(6, 60, List.of(5, 10, 20, 30, 20, 10, 5))),
+                    Optional.of(new MobLevelRule(6, 60, List.of(5, 10, 20, 30, 20, 10, 5),
+                            List.of())),
                     List.of(
-                            new Sample(1, 6, List.of(1)),
-                            new Sample(5, 6, List.of(1)),
-                            new Sample(6, 6, List.of(30, 20, 10, 5)),
-                            new Sample(7, 6, List.of(20, 30, 20, 10, 5)),
-                            new Sample(9, 6, List.of(5, 10, 20, 30, 20, 10, 5)),
-                            new Sample(33, 30, List.of(5, 10, 20, 30, 20, 10, 5)),
-                            new Sample(57, 54, List.of(5, 10, 20, 30, 20, 10, 5)),
-                            new Sample(60, 57, List.of(5, 10, 20, 30)),
-                            new Sample(61, 58, List.of(5, 10, 20)),
-                            new Sample(64, 60, List.of(1))),
+                            new Sample(1, 6, 6, List.of(1)),
+                            new Sample(5, 6, 6, List.of(1)),
+                            new Sample(6, 6, 6, List.of(30, 20, 10, 5)),
+                            new Sample(7, 6, 6, List.of(20, 30, 20, 10, 5)),
+                            new Sample(9, 6, 6, List.of(5, 10, 20, 30, 20, 10, 5)),
+                            new Sample(33, 6, 30, List.of(5, 10, 20, 30, 20, 10, 5)),
+                            new Sample(57, 6, 54, List.of(5, 10, 20, 30, 20, 10, 5)),
+                            new Sample(60, 6, 57, List.of(5, 10, 20, 30)),
+                            new Sample(61, 6, 58, List.of(5, 10, 20)),
+                            new Sample(64, 6, 60, List.of(1))),
                     List.of("{\n  \"advancement\": \"realmforge:realm/stone\",\n  \"type\": \"realmforge:has_advancement\"\n}")));
 
     private GeneratedDimensionRuleExpectations() {

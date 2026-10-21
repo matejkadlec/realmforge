@@ -4,8 +4,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Annotated
 
-from pydantic import Field, model_validator
+from pydantic import Field, StringConstraints, model_validator
 
 from realmforge_tools.schema.common import ContentId, ResourceId, StrictModel
 from realmforge_tools.schema.requirement import RequirementDef
@@ -16,6 +17,20 @@ JAVA_INT_MAX = 2**31 - 1
 # (world/MobLevelRule.MAX_WEIGHT): far beyond any sensible rule, so a weight sum always fits an int.
 MAX_SPREAD = 10
 MAX_WEIGHT = 1000
+# The registry of world generation structures, which a structure floor names (or one of its tags).
+WORLDGEN_STRUCTURE_REGISTRY = "minecraft:worldgen/structure"
+
+# A structure, or a structure tag after "#": the game reads it with ExtraCodecs.TAG_OR_ELEMENT_ID.
+StructureRef = Annotated[
+    str,
+    StringConstraints(pattern=r"^#?[a-z0-9_.-]+:[a-z0-9_./-]+$"),
+    Field(
+        description=(
+            "A structure, e.g. minecraft:ancient_city, or a structure tag after #, e.g. #minecraft:village. "
+            "Validated against the ID universe."
+        )
+    ),
+]
 
 
 @dataclass(frozen=True)
@@ -31,17 +46,33 @@ class LevelChances:
         return self.lowest + len(self.weights) - 1
 
 
+class StructureFloorDef(StrictModel):
+    """A structure's floor (RLM-342): a mob that gets its level inside one of the structure's pieces is never below
+    ``level``."""
+
+    structure: StructureRef
+    level: int = Field(
+        ge=1,
+        le=JAVA_INT_MAX,
+        description=(
+            "The lowest level of a mob that gets its level inside one of the structure's pieces: above the rule's "
+            "entry_level, at most its max_level. A player below it meets every such mob at it."
+        ),
+    )
+
+
 class MobLevelRuleDef(StrictModel):
     """How the level of a mob spawning in the dimension follows the nearest player (RLM-240, architecture 14.1):
-    near the player's level, by ``weights`` for the offsets around it, never below ``entry_level`` (the realm's floor)
-    nor above ``max_level``."""
+    near the player's level, by ``weights`` for the offsets around it, never below its floor nor above
+    ``max_level``. The floor is ``entry_level`` (the realm's), or the highest of ``structure_floors`` whose structure
+    holds the spot (RLM-342)."""
 
     entry_level: int = Field(
         ge=1,
         le=JAVA_INT_MAX,
         description=(
-            "The realm's floor: the level needed to enter it. No mob there is lower, and a player below it meets "
-            "every mob at it."
+            "The realm's floor: the level needed to enter it. No mob that spawns there is lower, and a player below "
+            "it meets every mob at it. A mob that comes through a realm portal keeps the level it has."
         ),
     )
     max_level: int = Field(ge=1, le=JAVA_INT_MAX, description="The highest level a mob there gets.")
@@ -52,6 +83,15 @@ class MobLevelRuleDef(StrictModel):
             "The weight of each offset from the nearest player's level, lowest first, the middle one for the "
             "player's own level: [5, 10, 20, 30, 20, 10, 5] is -3 to +3. An odd number of weights, each 1 to "
             f"{MAX_WEIGHT}; the floor and the cap drop offsets, and the rest share the chance by their weights."
+        ),
+    )
+    structure_floors: list[StructureFloorDef] | None = Field(
+        default=None,
+        min_length=1,
+        description=(
+            "Optional: structures that raise the floor of the mobs they hold, each above entry_level, one entry per "
+            "structure or tag. A mob that gets its level inside a piece of one of them is never below its level, "
+            "and inside several, never below the highest."
         ),
     )
 
@@ -65,20 +105,43 @@ class MobLevelRuleDef(StrictModel):
             )
         if any(not 1 <= weight <= MAX_WEIGHT for weight in self.weights):
             raise ValueError(f"every weight must be 1 to {MAX_WEIGHT}: {self.weights}")
+        seen: set[str] = set()
+        for floor in self.structure_floors or []:
+            if not self.entry_level < floor.level <= self.max_level:
+                raise ValueError(
+                    f"the floor of {floor.structure}, {floor.level}, must be above entry_level {self.entry_level} "
+                    f"and at most max_level {self.max_level}"
+                )
+            if floor.structure in seen:
+                raise ValueError(f"{floor.structure} has two structure floors")
+            seen.add(floor.structure)
         return self
+
+    @property
+    def floors(self) -> list[int]:
+        """Every floor a mob may get its level at: the realm's, then each structure's, without repeats."""
+        floors = [self.entry_level]
+        for floor in self.structure_floors or []:
+            if floor.level not in floors:
+                floors.append(floor.level)
+        return floors
 
     @property
     def spread(self) -> int:
         """How many levels a mob may be above or below the player."""
         return len(self.weights) // 2
 
-    def chances(self, player_level: int) -> LevelChances:
-        """The levels a mob spawning near a player of ``player_level`` may get: the game's ``MobLevelRule``
-        computes the same. A player below the floor meets every mob at it; when the cap leaves no offset (a player
-        far above it), every mob is at the cap."""
-        if player_level < self.entry_level:
-            return LevelChances(self.entry_level, (1,))
-        lowest = max(self.entry_level, player_level - self.spread)
+    def chances(self, player_level: int, floor: int | None = None) -> LevelChances:
+        """The levels a mob spawning near a player of ``player_level`` may get where its floor is ``floor`` (the
+        realm's ``entry_level`` when not given, or a structure's): the game's ``MobLevelRule`` computes the same. A
+        player below the floor meets every mob at it; when the cap leaves no offset (a player far above it), every mob
+        is at the cap."""
+        floor = self.entry_level if floor is None else floor
+        if not self.entry_level <= floor <= self.max_level:
+            raise ValueError(f"floor {floor} is outside {self.entry_level} to {self.max_level}")
+        if player_level < floor:
+            return LevelChances(floor, (1,))
+        lowest = max(floor, player_level - self.spread)
         highest = min(self.max_level, player_level + self.spread)
         if lowest > highest:
             return LevelChances(self.max_level, (1,))
