@@ -171,7 +171,7 @@ never also in Overworld.** Vanilla strongholds are off from M1.
 | Realm | Structures | Milestone |
 | --- | --- | --- |
 | Overworld | Dungeons Enhanced: Large Dungeon, Tower of the Undead, Druid Circle, Pillager Camp, Pirate Ship, Fishing Ship, Monster Maze (dark, pale), Jungle Monument, Stables, Ruined Building, Mushroom House, Tree House, Miners House; YUNG's suite, Dungeons and Taverns, MVS, Battle Towers, Underground Worlds (Structory and Structory: Towers only if Matěj clears their Stardust Labs License, ADR 0044); the illager mods and the villages (CTOV with Village Taverns) | M2 (RLM-315, RLM-318) |
-| Overworld, late | Ancient Cities through Dungeons and Taverns' Ancient City Overhaul, with a Warden of level 40 and more for a later questline (a structure-bound level floor, RLM-240); Golem Dungeons' Sculk Factory beside them | later |
+| Overworld, late | Ancient Cities through Dungeons and Taverns' Ancient City Overhaul, with a Warden of level 40 and more for a later questline (the Overworld's structure floor of 40 for Ancient Cities, RLM-342); Golem Dungeons' Sculk Factory beside them | later |
 | Undervault | Dungeons Enhanced: Deep Crypt, Dungeon Variant (set into the cave walls); Golem Dungeons: Abandoned Factory | M2 (RLM-316) |
 | Sunwastes | Dungeons Enhanced: Desert Tomb, Desert Temple, Hay Storage; YUNG's Cave Biomes: Lost Caves | M4 (RLM-325) |
 | Everwinter | Dungeons Enhanced: Castle, Ice Pit, Witch Tower, Watch Tower; YUNG's Cave Biomes: Frosted Caves; The Lost Castle in the tundra | M4 (RLM-325) |

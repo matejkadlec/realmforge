@@ -1278,7 +1278,8 @@ return; the proc engine at its end exists since C3a.
 
 Built in W1 (RLM-31): `world/DimensionRules`, `world/MobLevelRule` and `mob/MobLevels`, with the scaling in
 `mob/MobScaling`. Since RLM-303 (part 1 of RLM-240) the level follows the nearest player instead of the distance
-from the dimension's origin; dungeon levels (RLM-304, RLM-305) come later.
+from the dimension's origin, and since RLM-342 (part 4) a structure can raise the floor of the mobs it holds; dungeon
+levels (RLM-304, RLM-305) come later.
 
 - **Which mobs:** every hostile mob, vanilla's and later ours: a `Mob` that carries vanilla's `Enemy` marker
   (`MobLevels#getsLevel`). Animals, villagers and golems get none. Bosses take the fixed level from their definition
@@ -1295,10 +1296,25 @@ from the dimension's origin; dungeon levels (RLM-304, RLM-305) come later.
   plain Java, and the pipeline computes the same (`MobLevelRuleDef.chances`); a GameTest compares the two at sample
   player levels around the floor, the middle and the cap. A dimension without a rule (the Nether, the End and the
   dungeon instances for now) gives no level, and its mobs read as level 1.
+- **Structure floors** (Matěj, 2026-10-19, RLM-342): the rule's optional `structure_floors` name a world generation
+  structure (`minecraft:ancient_city`) or a structure tag (`#minecraft:village`, read with vanilla's
+  `ExtraCodecs.TAG_OR_ELEMENT_ID`), each with a floor above `entry_level` and at most `max_level`. A mob that gets its
+  level inside one of such a structure's pieces takes the highest such floor instead of the realm's
+  (`MobLevels#floorAt`, `MobLevelRule#chances(playerLevel, floor)`); the rest of the rule holds. The Overworld's
+  Ancient Cities are 40 and more, for a later questline's Warden (ADR 0044), so a Warden their shriekers call is too;
+  one that a deep dark sculk patch outside a city calls (`SculkPatchFeature` places shriekers that can summon) follows
+  the realm's floor. `floorAt` reads the spot's chunk at `STRUCTURE_REFERENCES` and each referenced start's chunk at
+  `STRUCTURE_STARTS`, as `StructureManager#getStructureWithPieceAt` does, but through
+  `ServerChunkCache#getChunk(x, z, status, false)`, which never loads a chunk: a mob of a new chunk is leveled in
+  `EntityJoinLevelEvent`, which can fire while that chunk is still loading, where loading another one can deadlock
+  (NeoForge's warning on the event). The read misses nothing there: a chunk on its way to full status holds the chunks
+  within 8 at `STRUCTURE_STARTS` or later (`ChunkLevel`), and a reference never points farther. A structure that a
+  mod adds is named by its id or tag the same way, once the ID universe knows the pack's other mods
+  ([6.1](#61-stages)); in the game, an id that no loaded mod registers matches nothing.
 - **Whose level:** the nearest player in the mob's dimension who is not a spectator, at any distance, read from
   their `realmforge:level` (`MobLevels#levelAt`): vanilla spawns hostiles only near players, and a spawner needs one
   within 16 blocks. With no such player in the dimension (a mob summoned from the server console into an empty
-  dimension), a mob gets the floor. A mob keeps the level it got: the player's later level, another player coming
+  dimension), a mob gets the floor of its spot. A mob keeps the level it got: the player's later level, another player coming
   near, or a reload (which only rescales to the current curves) never changes it.
 - **The scaling** (`MobScaling`) comes from three curves at the mob's level: `realmforge:mob_health` multiplies its
   maximum health, `mob_armor` adds armor points, and `mob_damage` multiplies the damage of every hit it causes. The
