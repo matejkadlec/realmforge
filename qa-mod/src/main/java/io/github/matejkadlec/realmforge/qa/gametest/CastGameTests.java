@@ -72,7 +72,7 @@ public final class CastGameTests {
         assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, husk);
         helper.assertValueEqual(Spells.currentCast(player), Optional.of(
                 new Cast(GeneratedSpells.TEST_SLOW_BOLT, now, 40, false)), "a 2 s cast without Cast Time Reduction");
-        helper.assertValueEqual(player.getData(SpellAttachments.COMBAT).globalCooldownEnd(), now + 20,
+        helper.assertValueEqual(player.getData(SpellAttachments.COMBAT).globalCooldownEnd(), now + 10,
                 "the global cooldown starts with the cast");
         Spells.cancelCast(player);
         Spells.resetCooldowns(player);

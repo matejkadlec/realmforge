@@ -55,13 +55,17 @@ Apotheosis for gear rarity, affixes, gems and enchanting
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell
   engine is done (C3a): spells as data in `content/spells/`, cast by players and mobs through one
-  `SpellCaster` (reached through `/qa spell` until the spell bar exists), with mana pools, cooldowns and spell crits,
+  `SpellCaster` (from the spell bar or `/qa spell`), with mana pools, cooldowns and spell crits,
   instantly, with a cast time or as a channel, slowing the caster as Slowness III does while it moves (moving never
   interrupts, ADR 0039), interrupted by death, a dimension change or logout, with no melee during a cast, and synced
   to clients as cast payloads; at an entity, a ground point or a direction, with damage, heals, projectiles, areas,
   status effects, teleports, dashes and knockback; rage that hits fill and that decays out of combat, procs that
-  never trigger procs, and mobs choosing their target (their current target, a random or the farthest player). The
-  spell bar comes next (C3b). The first realm exists (W2a): Undervault, the stone realm
+  never trigger procs, and mobs choosing their target (their current target, a random or the farthest player).
+  Players cast from the spell bar (C3b): eight slots on R, T, F, G, H, C and two unbound keys, the racial slot on X, a
+  cast bar, a cooldown sweep, a spellbook (P) whose tooltips fill a spell's numbers from data, a 0.5 s global cooldown
+  and an optional spell queue (client options). Our own status effects come from `content/effects/` (C3c): attribute
+  modifiers and damage or healing over time from their caster's stats, remembering who applied them. The first realm
+  exists (W2a): Undervault, the stone realm
   (`realmforge:stone`), one giant cave of four slow custom stones (`content/blocks/`), sealed until the player's own
   unlock advancement `realmforge:realm/stone` (`content/realms/`, access requirements in the dimension rules), with no
   mob crossing into or out of it but through a realm portal, and every respawn in Overworld. It is entered through the

@@ -31,6 +31,11 @@ import net.minecraft.world.entity.player.Player;
  * begins its cast ({@link Casting}): a cast time pays its cost and starts its own cooldown when it completes, a channel
  * when it begins. Mobs and bosses pay no cost: their cooldowns pace their spells (architecture 11.2 step 6).
  *
+ * <p>The spell bar may replace the cast in progress (C3b, RLM-25; Matěj, 2026-10-19: with spell queueing off, a new
+ * spell cancels the cast and casts at once): with {@code replaceCast}, a cast of another spell skips the
+ * already-casting check, and only once every other check passed is the cast in progress cancelled, so a refused spell
+ * never cancels it. Two spells never cast at once.
+ *
  * <p>A proc casts its spell through {@link #castProc}: at once and for free, whatever the caster is doing.
  */
 public final class SpellCaster {
@@ -53,6 +58,15 @@ public final class SpellCaster {
      * (at most the spell's {@code max_level}); a mob or boss at level 1.
      */
     public static CastResult cast(LivingEntity caster, ResourceKey<Spell> spell, SpellAim aim) {
+        return cast(caster, spell, aim, false);
+    }
+
+    /**
+     * {@code caster} casts {@code spell} at what {@code aim} names, as {@link #cast(LivingEntity, ResourceKey,
+     * SpellAim)} does; with {@code replaceCast}, a cast of another spell in progress gives way to it once every other
+     * check passed (the spell bar, C3b).
+     */
+    public static CastResult cast(LivingEntity caster, ResourceKey<Spell> spell, SpellAim aim, boolean replaceCast) {
         if (!canCast(caster)) {
             return CastResult.refused(CastFailure.CANNOT_CAST);
         }
@@ -72,7 +86,7 @@ public final class SpellCaster {
             }
             level = Math.min(known.get(), holder.get().value().maxLevel());
         }
-        return cast(caster, holder.get(), level, aim);
+        return cast(caster, holder.get(), level, aim, replaceCast);
     }
 
     /**
@@ -80,6 +94,11 @@ public final class SpellCaster {
      * without the spellbook: mobs, bosses and, later, procs. A player still pays the cost.
      */
     public static CastResult cast(LivingEntity caster, Holder.Reference<Spell> spell, int level, SpellAim aim) {
+        return cast(caster, spell, level, aim, false);
+    }
+
+    private static CastResult cast(LivingEntity caster, Holder.Reference<Spell> spell, int level, SpellAim aim,
+            boolean replaceCast) {
         if (!(caster.level() instanceof ServerLevel serverLevel)) {
             throw new IllegalStateException("Spells are cast on the logical server only");
         }
@@ -88,7 +107,8 @@ public final class SpellCaster {
         }
         Spell value = spell.value();
         CombatState state = caster.getData(SpellAttachments.COMBAT);
-        if (state.currentCast().isPresent()) {
+        Optional<CombatState.Cast> current = state.currentCast();
+        if (current.isPresent() && (!replaceCast || current.get().spell().equals(spell.key()))) {
             return CastResult.refused(CastFailure.ALREADY_CASTING);
         }
         long now = serverLevel.getGameTime();
@@ -106,6 +126,9 @@ public final class SpellCaster {
         SpellTarget hit = resolved.left().orElseThrow();
         if (!canPay(caster, value, level, state)) {
             return CastResult.refused(CastFailure.NOT_ENOUGH_RESOURCE);
+        }
+        if (current.isPresent()) {
+            Casting.cancel(caster);
         }
 
         if (value.globalCooldownTicks() > 0) {
