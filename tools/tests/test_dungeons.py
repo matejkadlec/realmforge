@@ -9,9 +9,15 @@ import pytest
 
 from realmforge_tools.generate import generate_all
 from realmforge_tools.problems import ValidationFailed
-from realmforge_tools.project import DATA_VERSION, RepoPaths
+from realmforge_tools.project import DATA_VERSION, REPO_ROOT, RepoPaths
 from realmforge_tools.rooms.connectors import Connector, connectors, could_attach
-from realmforge_tools.rooms.structure import BlockState, Structure, StructureBlock, write_structure
+from realmforge_tools.rooms.structure import (
+    BlockState,
+    Structure,
+    StructureBlock,
+    read_structure,
+    write_structure,
+)
 from realmforge_tools.validate import load_and_validate
 
 from .conftest import write
@@ -404,6 +410,30 @@ def test_a_cushion_set_into_the_floor_keeps_its_water(repo: RepoPaths) -> None:
             ]
         else:
             load_and_validate(repo)
+
+
+def test_the_lobby_cushion_reaches_past_the_ceiling_hole() -> None:
+    # RLM-276: a player who holds a direction while falling leaves the shaft's wall below the lobby's ceiling and
+    # drifts outward before landing, so the cushion covers the ceiling hole and one block past it on every side, with
+    # nothing above it to land on first.
+    path = REPO_ROOT / "content/rooms/third_party/stonevaults/dungeon/lobby/lobby_01.nbt"
+    room = read_structure(path.read_bytes())
+    blocks = {block.pos: block.state for block in room.blocks}
+    top = room.size[1] - 1
+    hole = {
+        (x, z)
+        for (x, y, z), state in blocks.items()
+        if y == top and state.name in ("minecraft:air", "minecraft:jigsaw")
+    }
+    assert hole, "lobby_01 has no ceiling hole"
+    reach = {(x + dx, z + dz) for x, z in hole for dx in (-1, 0, 1) for dz in (-1, 0, 1)}
+    cushion = BlockState.parse("minecraft:stone_brick_slab[type=bottom,waterlogged=true]")
+    assert {cell for cell in reach if blocks.get((cell[0], 0, cell[1])) != cushion} == set()
+    assert {
+        cell
+        for cell in reach
+        if blocks.get((cell[0], 1, cell[1]), BlockState("minecraft:air")).name != "minecraft:air"
+    } == set()
 
 
 def test_a_rooms_planner_and_explosion_rules_reach_the_game(repo: RepoPaths) -> None:

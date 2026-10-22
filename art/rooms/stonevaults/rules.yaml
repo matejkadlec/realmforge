@@ -23,9 +23,12 @@ place:
   # The fall cushion (RLM-276): a player who drops down the entrance shaft (the entrance, then any stack of the
   # stairway's fall rooms) lands in lobby_01, the one room under it, below its 3x3 ceiling hole. Its floor there
   # becomes waterlogged stone brick bottom slabs, so a drop of any height deals no fall damage; the floor around
-  # holds the water in, and a bottom slab's whole underside keeps it from flowing down.
+  # holds the water in, and a bottom slab's whole underside keeps it from flowing down. The cushion reaches one
+  # block past the hole on every side: a player who holds a direction while falling leaves the shaft's wall once
+  # below the ceiling and drifts a little outward before landing, and the full floor block there would take them
+  # out of the water half a block higher.
   dungeon/lobby/lobby_01:
-    - {from: [5, 0, 5], to: [7, 0, 7], block: "minecraft:stone_brick_slab[type=bottom,waterlogged=true]"}
+    - {from: [4, 0, 4], to: [8, 0, 8], block: "minecraft:stone_brick_slab[type=bottom,waterlogged=true]"}
 dress:
   exclude: [dungeon/entrances/*]  # approved as they are
   # Variety and decorations Matěj asked for in the gallery review (2026-10-14): the plainer a room, the more it

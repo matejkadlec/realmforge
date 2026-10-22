@@ -47,8 +47,16 @@ public final class DungeonRoomGameTests {
     /** The combination lock's TNT, and the smooth stone wall beside it that the TNT is there to blow open. */
     private static final BlockPos LOCK_TNT = new BlockPos(8, 2, 6);
     private static final BlockPos LOCK_WALL = new BlockPos(7, 2, 6);
-    /** Where the lobby's cushion lies: the floor below its 3 x 3 ceiling hole. */
-    private static final BoundingBox CUSHION = new BoundingBox(5, 0, 5, 7, 0, 7);
+    /** Where the lobby's cushion lies: the floor below its 3 x 3 ceiling hole and one block past it on every side. */
+    private static final BoundingBox CUSHION = new BoundingBox(4, 0, 4, 8, 0, 8);
+    /**
+     * Landing spots inside the lobby, as block columns: two on the cushion's rim, where a player who holds a direction
+     * while falling lands after drifting off the shaft's wall below the ceiling, and one on the full floor beside it.
+     */
+    private static final List<BlockPos> RIM = List.of(new BlockPos(4, 0, 6), new BlockPos(8, 0, 8));
+    private static final BlockPos FLOOR = new BlockPos(10, 0, 6);
+    /** A fall distance that kills a pig landing anywhere but in water. */
+    private static final double DEADLY_FALL = 64.0;
     /** Lowest a room may go in a plot, so no shaft the planner lays out drops further than onto this lobby. */
     private static final int LOWEST = PlotGrid.limits().minY();
 
@@ -109,9 +117,10 @@ public final class DungeonRoomGameTests {
     /**
      * Done when of RLM-276: a mob dropped from above the entrance's floor into the lobby set at the lowest a plot's
      * rooms reach (a longer fall than any shaft the planner can lay out) lands in the cushion unharmed, while one
-     * dropped from the same height onto the lobby's roof dies; and once its water has ticked, none is outside the
-     * 3 x 3. A mob stands in for the player: water takes a falling player's damage the same way, by resetting the fall
-     * in {@code Entity}.
+     * dropped from the same height onto the lobby's roof dies. Mobs that land on the cushion's rim with a deadly fall
+     * behind them are unharmed too, and one that lands on the floor beside it dies. Once its water has ticked, none is
+     * outside the cushion. A mob stands in for the player: water takes a falling player's damage the same way, by
+     * resetting the fall in {@code LivingEntity#checkFallDamage}.
      */
     @QaGameTest(timeoutTicks = TIMEOUT)
     public static void aFallOntoTheCushionDealsNoDamage(GameTestHelper helper) {
@@ -121,6 +130,7 @@ public final class DungeonRoomGameTests {
         ServerLevel instances = InstanceDimension.level(helper.getLevel().getServer());
         Plot plot = manager.open(layout, List.of());
         Pig[] pigs = new Pig[2];
+        Pig[] landed = new Pig[RIM.size() + 1];
 
         helper.startSequence()
                 .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.READY, "plot is " + plot.state()))
@@ -138,17 +148,34 @@ public final class DungeonRoomGameTests {
                             plot.origin().getZ() + 6.5);
                     pigs[1] = pig(instances, plot.origin().getX() + 2.5, plot.origin().getY() + 2,
                             plot.origin().getZ() + 2.5);
+                    // Under the ceiling, already falling as fast and as far as at the end of the shaft.
+                    for (int i = 0; i < landed.length; i++) {
+                        BlockPos column = lobby.offset(i < RIM.size() ? RIM.get(i) : FLOOR);
+                        landed[i] = pig(instances, column.getX() + 0.5, column.getY() + 3, column.getZ() + 0.5);
+                        landed[i].setDeltaMovement(0.0, -3.0, 0.0);
+                        landed[i].fallDistance = DEADLY_FALL;
+                    }
                 })
                 .thenWaitUntil(() -> {
+                    // A failed step before this one leaves the pigs unset; the sequence still ticks this step.
+                    helper.assertTrue(landed[RIM.size()] != null, "the pigs were never dropped");
                     helper.assertTrue(pigs[0].getY() < plot.origin().getY() + LOWEST + 2
                             && (pigs[0].onGround() || pigs[0].isInWater()), "the pig is still falling");
                     helper.assertTrue(!pigs[1].isAlive(), "the pig on the roof is still alive");
+                    helper.assertTrue(!landed[RIM.size()].isAlive(), "the pig on the floor beside the cushion is "
+                            + "still alive");
                 })
                 .thenIdle(60)
                 .thenExecute(() -> {
                     helper.assertTrue(pigs[0].isAlive() && pigs[0].getHealth() == pigs[0].getMaxHealth(),
                             "the pig that fell into the cushion has " + pigs[0].getHealth() + " of "
                                     + pigs[0].getMaxHealth() + " health");
+                    for (int i = 0; i < RIM.size(); i++) {
+                        helper.assertTrue(landed[i].isAlive() && landed[i].getHealth() == landed[i].getMaxHealth(),
+                                "the pig that landed on the cushion's rim at " + RIM.get(i).toShortString()
+                                        + " has " + landed[i].getHealth() + " of " + landed[i].getMaxHealth()
+                                        + " health");
+                    }
                     BlockPos lobby = plot.origin().offset(0, LOWEST, 0);
                     BoundingBox cushion = cushion(lobby);
                     Set<BlockPos> wet = BlockPos.betweenClosedStream(plot.rooms().getFirst().inflatedBy(1))
@@ -158,6 +185,9 @@ public final class DungeonRoomGameTests {
                     wet.removeIf(cushion::isInside);
                     helper.assertTrue(wet.isEmpty(), "water outside the cushion at " + wet);
                     pigs[0].discard();
+                    for (int i = 0; i < RIM.size(); i++) {
+                        landed[i].discard();
+                    }
                     manager.release(plot);
                 })
                 .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.FREE, "plot is " + plot.state()))
