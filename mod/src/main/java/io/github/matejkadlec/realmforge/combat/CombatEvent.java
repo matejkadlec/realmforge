@@ -52,7 +52,11 @@ public abstract class CombatEvent extends LivingEvent {
             return school;
         }
 
-        /** Whether the hit was critical: our crit roll for player melee and for school hits. */
+        /**
+         * Whether the hit was critical: our crit roll for a player's melee, a player's projectile at full strength (an
+         * arrow from a fully drawn bow or a crossbow, a thrown trident) and school hits. Mobs' melee and projectiles
+         * never crit.
+         */
         public boolean isCrit() {
             return crit;
         }
