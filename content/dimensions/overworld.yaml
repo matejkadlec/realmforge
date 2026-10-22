@@ -9,3 +9,9 @@ mob_levels:
   entry_level: 1
   max_level: 60
   weights: [5, 10, 20, 30, 20, 10, 5]
+  # A structure raises the floor of the mobs it holds (RLM-240, part 4: RLM-342). Ancient Cities stay for a later
+  # Overworld questline with a Warden of level 40 and more (Matěj, 2026-10-19, ADR 0044): a mob that gets its level
+  # inside one, a Warden its shriekers call included, is at least 40.
+  structure_floors:
+    - structure: minecraft:ancient_city
+      level: 40

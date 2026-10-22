@@ -6,9 +6,16 @@ import io.github.matejkadlec.realmforge.stats.StatBonus;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import io.github.matejkadlec.realmforge.world.DimensionRules;
 import io.github.matejkadlec.realmforge.world.MobLevelRule;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
+import net.minecraft.core.SectionPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
@@ -17,6 +24,11 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingConversionEvent;
@@ -25,8 +37,9 @@ import net.neoforged.neoforge.event.entity.living.MobSplitEvent;
 
 /**
  * Mob levels and the scaling they bring (architecture 14.1). Every hostile mob ({@link #getsLevel}) gets its level
- * from the rules of its dimension ({@link DimensionRules}), which follow the nearest player ({@link #levelAt}), and the
- * {@link MobScaling} of that level, and no mob carries a level without its scaling. A mob keeps the level it got:
+ * from the rules of its dimension ({@link DimensionRules}), which follow the nearest player ({@link #levelAt}) above
+ * the floor of the realm or of a structure holding the mob ({@link #floorAt}), and the {@link MobScaling} of that
+ * level, and no mob carries a level without its scaling. A mob keeps the level it got:
  * <ul>
  *   <li>{@code FinalizeSpawnEvent} levels a spawning mob and marks it ({@link MobAttachments#PENDING_REFILL}); when it
  *   joins the level, its health is refilled to its maximum, as vanilla's {@code Mob#finalizeSpawn} runs after the
@@ -63,16 +76,61 @@ public final class MobLevels {
     /**
      * The level the rules of the level's dimension give a mob spawning at a position, drawn from {@code random}, or
      * empty when the dimension has no mob level rule. It follows the nearest player who is not a spectator, at any
-     * distance (RLM-240); with no such player in the dimension, a mob gets the floor.
+     * distance (RLM-240), never below the floor there ({@link #floorAt}); with no such player in the dimension, a mob
+     * gets the floor.
      */
     public static OptionalInt levelAt(ServerLevel level, double x, double y, double z, RandomSource random) {
         Optional<MobLevelRule> rule = DimensionRules.mobLevels(level.registryAccess(), level.dimension());
         if (rule.isEmpty()) {
             return OptionalInt.empty();
         }
+        int floor = floorAt(level, BlockPos.containing(x, y, z), rule.get());
         Player nearest = level.getNearestPlayer(x, y, z, -1, EntitySelector.NO_SPECTATORS);
-        int playerLevel = nearest != null ? level(nearest).orElse(EntityLevel.MIN) : rule.get().entryLevel();
-        return OptionalInt.of(rule.get().levelFor(playerLevel, random));
+        int playerLevel = nearest != null ? level(nearest).orElse(EntityLevel.MIN) : floor;
+        return OptionalInt.of(rule.get().levelFor(playerLevel, floor, random));
+    }
+
+    /**
+     * The floor of a mob that gets its level at {@code pos} (RLM-342): the highest of the rule's structure floors
+     * whose structure has a piece there, or the realm's entry level. It reads the structure references as vanilla's
+     * {@code StructureManager#getStructureWithPieceAt} does, but never loads a chunk: a mob can join while its chunk
+     * is still loading ({@code EntityJoinLevelEvent}), where loading another one can deadlock. Nothing it reads is
+     * missing then: a chunk on its way to full status holds the chunks within 8 at structure starts or later
+     * ({@code ChunkLevel}), and a reference never points farther.
+     */
+    public static int floorAt(ServerLevel level, BlockPos pos, MobLevelRule rule) {
+        int floor = rule.entryLevel();
+        if (rule.structureFloors().isEmpty()) {
+            return floor;
+        }
+        ServerChunkCache chunks = level.getChunkSource();
+        ChunkAccess here = chunks.getChunk(SectionPos.blockToSectionCoord(pos.getX()),
+                SectionPos.blockToSectionCoord(pos.getZ()), ChunkStatus.STRUCTURE_REFERENCES, false);
+        if (here == null) {
+            return floor;
+        }
+        Registry<Structure> structures = level.registryAccess().lookupOrThrow(Registries.STRUCTURE);
+        for (Map.Entry<Structure, LongSet> references : here.getAllReferences().entrySet()) {
+            int raised = rule.floorOf(structures.wrapAsHolder(references.getKey()));
+            if (raised > floor && hasPieceAt(level, chunks, pos, references.getKey(), references.getValue())) {
+                floor = raised;
+            }
+        }
+        return floor;
+    }
+
+    /** Whether one of the starts of {@code structure} that {@code references} point to has a piece at {@code pos}. */
+    private static boolean hasPieceAt(ServerLevel level, ServerChunkCache chunks, BlockPos pos, Structure structure,
+            LongSet references) {
+        for (long reference : references) {
+            ChunkPos startPos = ChunkPos.unpack(reference);
+            ChunkAccess startChunk = chunks.getChunk(startPos.x(), startPos.z(), ChunkStatus.STRUCTURE_STARTS, false);
+            StructureStart start = startChunk != null ? startChunk.getStartForStructure(structure) : null;
+            if (start != null && start.isValid() && level.structureManager().structureHasPieceAt(pos, start)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

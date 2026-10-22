@@ -72,10 +72,10 @@
     },
     "MobLevelRuleDef": {
       "additionalProperties": false,
-      "description": "How the level of a mob spawning in the dimension follows the nearest player (RLM-240, architecture 14.1):\nnear the player's level, by ``weights`` for the offsets around it, never below ``entry_level`` (the realm's floor)\nnor above ``max_level``.",
+      "description": "How the level of a mob spawning in the dimension follows the nearest player (RLM-240, architecture 14.1):\nnear the player's level, by ``weights`` for the offsets around it, never below its floor nor above\n``max_level``. The floor is ``entry_level`` (the realm's), or the highest of ``structure_floors`` whose structure\nholds the spot (RLM-342).",
       "properties": {
         "entry_level": {
-          "description": "The realm's floor: the level needed to enter it. No mob there is lower, and a player below it meets every mob at it.",
+          "description": "The realm's floor: the level needed to enter it. No mob that spawns there is lower, and a player below it meets every mob at it. A mob that comes through a realm portal keeps the level it has.",
           "maximum": 2147483647,
           "minimum": 1,
           "title": "Entry Level",
@@ -87,6 +87,23 @@
           "minimum": 1,
           "title": "Max Level",
           "type": "integer"
+        },
+        "structure_floors": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/StructureFloorDef"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional: structures that raise the floor of the mobs they hold, each above entry_level, one entry per structure or tag. A mob that gets its level inside a piece of one of them is never below its level, and inside several, never below the highest.",
+          "title": "Structure Floors"
         },
         "weights": {
           "description": "The weight of each offset from the nearest player's level, lowest first, the middle one for the player's own level: [5, 10, 20, 30, 20, 10, 5] is -3 to +3. An odd number of weights, each 1 to 1000; the floor and the cap drop offsets, and the rest share the chance by their weights.",
@@ -105,6 +122,31 @@
         "weights"
       ],
       "title": "MobLevelRuleDef",
+      "type": "object"
+    },
+    "StructureFloorDef": {
+      "additionalProperties": false,
+      "description": "A structure's floor (RLM-342): a mob that gets its level inside one of the structure's pieces is never below\n``level``.",
+      "properties": {
+        "level": {
+          "description": "The lowest level of a mob that gets its level inside one of the structure's pieces: above the rule's entry_level, at most its max_level. A player below it meets every such mob at it.",
+          "maximum": 2147483647,
+          "minimum": 1,
+          "title": "Level",
+          "type": "integer"
+        },
+        "structure": {
+          "description": "A structure, e.g. minecraft:ancient_city, or a structure tag after #, e.g. #minecraft:village. Validated against the ID universe.",
+          "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Structure",
+          "type": "string"
+        }
+      },
+      "required": [
+        "structure",
+        "level"
+      ],
+      "title": "StructureFloorDef",
       "type": "object"
     }
   },

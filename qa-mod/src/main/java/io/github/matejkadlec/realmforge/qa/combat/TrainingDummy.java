@@ -1,10 +1,7 @@
 package io.github.matejkadlec.realmforge.qa.combat;
 
-import com.mojang.math.Transformation;
-import io.github.matejkadlec.realmforge.character.CharacterSheetView;
 import io.github.matejkadlec.realmforge.combat.CombatEvent;
 import io.github.matejkadlec.realmforge.combat.DamageNumbers;
-import io.github.matejkadlec.realmforge.combat.DamagePipeline;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
@@ -18,7 +15,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -26,14 +22,12 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.illager.Pillager;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
-import org.joml.Vector3f;
 
 /**
  * The QA training dummy (architecture 20): a pillager that stands still, never dies and carries a DPS meter. Its name
@@ -46,12 +40,10 @@ import org.joml.Vector3f;
  * holds no crossbow, and it never joins a raid.
  *
  * <p>Pillagers carry our stats in the dev game ({@link #addStats}), so the dummy's dodge chance and resistances can be
- * set with vanilla's {@code /attribute} command. Its armor comes from {@code /qa dummy <armor>}. Its label, a text
- * display riding it, shows two lines (Matěj, 2026-10-13): the armor with the share of a {@value #LABEL_HIT}-damage
- * hit it blocks against the nearest player (that player's armor pierce and shred), as vanilla's armor formula blocks
- * less of a bigger hit (RLM-223), and below it the name with the DPS. Vanilla draws no name tag
- * over an entity that carries a passenger, so the label carries the name too; it changes with every hit and every
- * second.
+ * set with vanilla's {@code /attribute} command. Its armor comes from {@code /qa dummy <armor>}. Neat's card above it
+ * is its only display (RLM-339, Matěj, 2026-10-20): its name with the DPS ({@code Training Dummy | 19 DPS}, its custom
+ * name, which changes with every hit) after its level (RLM-338), and Neat's armor. Its own name tag stays hidden, and
+ * the text display that labelled it before is removed from a dummy that still carries one.
  *
  * <p>A pillager is a hostile mob, which gets a level and its scaling when it joins the world (W1, architecture 14.1).
  * A dummy joins at level 1, which adds nothing, so its health and armor stay what it was given; {@code /qa level}
@@ -63,14 +55,8 @@ public final class TrainingDummy {
     static final double MAX_HEALTH = 1000;
     static final int SESSION_GAP_TICKS = 100;
     private static final String NAME = "Training Dummy";
-    /** The damage of the hit the label's armor share is stated against: armor blocks less of a bigger hit. */
-    static final int LABEL_HIT = 10;
-    /** The entity tag of the text display that labels a dummy's armor. */
-    static final String LABEL_TAG = "realmforge_qa.training_dummy_label";
-    /** How far the label sits above the dummy's head, in blocks: where its name tag would be. */
-    private static final float LABEL_LIFT = 0.35F;
-    /** How far a player may stand from a dummy and still be the level its label shows. */
-    private static final double LABEL_RANGE = 32;
+    /** The entity tag of the text display that labelled a dummy before RLM-339, removed from a dummy carrying one. */
+    public static final String OLD_LABEL_TAG = "realmforge_qa.training_dummy_label";
 
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
 
@@ -97,7 +83,6 @@ public final class TrainingDummy {
         dummy.setCanJoinRaid(false);
         dummy.setPersistenceRequired();
         dummy.addTag(TAG);
-        dummy.setCustomNameVisible(true);
         dummy.getAttributes().getInstance(Attributes.MAX_HEALTH).setBaseValue(MAX_HEALTH);
         dummy.getAttributes().getInstance(Attributes.ARMOR).setBaseValue(armor);
         dummy.getAttributes().getInstance(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1);
@@ -108,40 +93,10 @@ public final class TrainingDummy {
         return dummy;
     }
 
-    /** Removes the dummy and its label. */
+    /** Removes the dummy, and a label it carries from before RLM-339. */
     public static void remove(LivingEntity dummy) {
         dummy.getPassengers().forEach(Entity::discard);
         dummy.discard();
-    }
-
-    /**
-     * The label's first line: the dummy's armor (and toughness, when it has any) and the share of a
-     * {@value #LABEL_HIT}-damage hit the armor formula blocks against {@code attacker}, with its armor pierce and
-     * shred (none without an attacker), such as "15 Armor (40% vs a 10-damage hit)".
-     */
-    public static Component armorLine(LivingEntity dummy, @Nullable LivingEntity attacker) {
-        double armor = dummy.getAttributeValue(Attributes.ARMOR);
-        double toughness = dummy.getAttributeValue(Attributes.ARMOR_TOUGHNESS);
-        double share = attacker != null
-                ? DamagePipeline.armorShare(dummy, LABEL_HIT,
-                        DamagePipeline.stat(attacker, GeneratedStats.ARMOR_PIERCE),
-                        DamagePipeline.stat(attacker, GeneratedStats.ARMOR_SHRED))
-                : DamagePipeline.armorShare(dummy, LABEL_HIT, 0, 0);
-        String text = CharacterSheetView.points(armor) + " Armor"
-                + (toughness > 0 ? ", " + CharacterSheetView.points(toughness) + " Toughness" : "")
-                + " (" + CharacterSheetView.share(share) + " vs a " + LABEL_HIT + "-damage hit)";
-        return Component.literal(text);
-    }
-
-    /** The text display that labels the dummy, or none (a dummy from before the label). */
-    @Nullable
-    public static Display.TextDisplay labelEntity(LivingEntity dummy) {
-        for (Entity passenger : dummy.getPassengers()) {
-            if (passenger instanceof Display.TextDisplay text && passenger.entityTags().contains(LABEL_TAG)) {
-                return text;
-            }
-        }
-        return null;
     }
 
     public static boolean isDummy(Entity entity) {
@@ -176,37 +131,21 @@ public final class TrainingDummy {
     private static void onTick(EntityTickEvent.Post event) {
         if (event.getEntity() instanceof LivingEntity dummy && dummy.tickCount % 20 == 0 && isDummy(dummy)
                 && dummy.level() instanceof ServerLevel) {
-            updateLabel(dummy);
+            dropOldLabel(dummy);
         }
     }
 
     /**
-     * Shows the dummy's armor against the nearest player, with its armor pierce and shred (none when nobody is
-     * near), adding the label if needed.
+     * Leaves Neat's card as the dummy's only display: hides its name tag and removes the text display that labelled it
+     * before RLM-339, both of which a dummy from an older world still has.
      */
-    static void updateLabel(LivingEntity dummy) {
-        if (!(dummy.level() instanceof ServerLevel level)) {
-            return;
-        }
-        Display.TextDisplay label = labelEntity(dummy);
-        if (label == null) {
-            label = EntityType.TEXT_DISPLAY.create(level, EntitySpawnReason.COMMAND);
-            if (label == null) {
-                return;
+    private static void dropOldLabel(LivingEntity dummy) {
+        dummy.setCustomNameVisible(false);
+        for (Entity passenger : dummy.getPassengers()) {
+            if (passenger.entityTags().contains(OLD_LABEL_TAG)) {
+                passenger.discard();
             }
-            label.addTag(LABEL_TAG);
-            label.setBillboardConstraints(Display.BillboardConstraints.CENTER);
-            label.setLineWidth(400);
-            label.setTransformation(new Transformation(new Vector3f(0, LABEL_LIFT, 0), null, null, null));
-            label.snapTo(dummy.getX(), dummy.getY() + dummy.getBbHeight(), dummy.getZ());
-            level.addFreshEntity(label);
-            label.startRiding(dummy, true, false);
         }
-        Player nearest = level.getNearestPlayer(dummy, LABEL_RANGE);
-        Component name = dummy.getCustomName() != null ? dummy.getCustomName() : Component.literal(NAME);
-        label.setText(Component.empty()
-                .append(armorLine(dummy, nearest))
-                .append("\n").append(name));
     }
 
     private static void addStats(EntityAttributeModificationEvent event) {
@@ -269,6 +208,5 @@ public final class TrainingDummy {
         dummy.setCustomName(session == null
                 ? Component.literal(NAME)
                 : Component.literal(NAME + " | " + DamageNumbers.format(session.dps()) + " DPS"));
-        updateLabel(dummy);
     }
 }

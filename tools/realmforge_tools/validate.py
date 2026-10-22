@@ -31,6 +31,7 @@ from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES, WORLDGEN_DIR
 from realmforge_tools.schema.block import ITEMLESS_KINDS, REALM_PORTAL_KINDS, SINGLE_BLOCK_KINDS
 from realmforge_tools.schema.chapter import advancement_id as chapter_advancement
 from realmforge_tools.schema.character import STARTING_BREAD, CharacterModifierDef
+from realmforge_tools.schema.dimension_rules import WORLDGEN_STRUCTURE_REGISTRY
 from realmforge_tools.schema.dungeon import DEAD_END_ROLES, PATH_ROLES, ROOM_ROLES, room_role
 from realmforge_tools.schema.effect import PeriodicDef, effect_id
 from realmforge_tools.schema.item import USE_TEXT_GROUP, ItemDef
@@ -897,7 +898,7 @@ def _check_worldgen_references(content: Content, universe: IdUniverse) -> list[P
 
 def _check_dimension_rules(content: Content, universe: IdUniverse) -> list[Problem]:
     """Each entry names a dimension that exists, and no two name the same one: the server indexes the rules by
-    dimension (architecture 5.2)."""
+    dimension (architecture 5.2). Each structure floor names a structure or a structure tag that exists."""
     problems: list[Problem] = []
     seen: dict[str, str] = {}
     for entry in content.dimensions:
@@ -911,6 +912,11 @@ def _check_dimension_rules(content: Content, universe: IdUniverse) -> list[Probl
                 Problem(entry.source, "dimension", f"{dimension} already has rules in {seen[dimension]}")
             )
         seen.setdefault(dimension, entry.source)
+        rule = entry.model.mob_levels
+        for n, floor in enumerate(rule.structure_floors or [] if rule is not None else []):
+            problem = _unknown_structure(floor.structure, universe)
+            if problem is not None:
+                problems.append(Problem(entry.source, f"mob_levels.structure_floors.{n}.structure", problem))
         for n, requirement in enumerate(entry.model.access or []):
             location = f"access.{n}"
             if isinstance(requirement, HasAdvancementDef) and not universe.contains(
@@ -1320,6 +1326,24 @@ def _check_worldgen_clashes(content: Content, paths: RepoPaths) -> list[Problem]
         for file in content.worldgen
         if file.id in core.get(file.directory, set())
     ]
+
+
+def _unknown_structure(reference: str, universe: IdUniverse) -> str | None:
+    """Why a structure or a structure tag (``#`` first) is not in the ID universe, or None when it is."""
+    if not reference.startswith("#"):
+        return (
+            None
+            if universe.contains(WORLDGEN_STRUCTURE_REGISTRY, reference)
+            else _unknown(reference, WORLDGEN_STRUCTURE_REGISTRY, universe)
+        )
+    tag = reference.removeprefix("#")
+    if universe.contains_tag(WORLDGEN_STRUCTURE_REGISTRY, tag):
+        return None
+    message = f"unknown tag {reference!r} in registry {WORLDGEN_STRUCTURE_REGISTRY}"
+    close = difflib.get_close_matches(tag, universe.tags.get(WORLDGEN_STRUCTURE_REGISTRY, set()), n=3)
+    if close:
+        message += f" (did you mean: {', '.join('#' + match for match in close)}?)"
+    return message
 
 
 def _unknown(id_: str, registry: str, universe: IdUniverse) -> str:

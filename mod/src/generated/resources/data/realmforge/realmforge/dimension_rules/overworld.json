@@ -11,6 +11,12 @@
       20,
       10,
       5
+    ],
+    "structure_floors": [
+      {
+        "structure": "minecraft:ancient_city",
+        "level": 40
+      }
     ]
   }
 }

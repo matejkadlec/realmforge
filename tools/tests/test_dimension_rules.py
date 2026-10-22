@@ -22,6 +22,7 @@ EXPECTATIONS = (
 )
 RULE = "mob_levels:\n  entry_level: 6\n  max_level: 60\n  weights: [5, 10, 20, 30, 20, 10, 5]\n"
 WEIGHTS = (5, 10, 20, 30, 20, 10, 5)
+FLOORS = "  structure_floors:\n"
 
 
 def problems_for(repo: RepoPaths) -> list[str]:
@@ -112,6 +113,74 @@ def test_invalid_rules_are_rejected(repo: RepoPaths, body: str, expected: str) -
     assert any(expected in p for p in problems_for(repo)), problems_for(repo)
 
 
+# Structure floors (RLM-342)
+
+
+@pytest.mark.parametrize(
+    ("floors", "expected"),
+    [
+        (
+            "    - {structure: minecraft:ancient_cty, level: 40}\n",
+            "mob_levels.structure_floors.0.structure: unknown id 'minecraft:ancient_cty' in registry "
+            "minecraft:worldgen/structure (did you mean: minecraft:ancient_city",
+        ),
+        (
+            "    - {structure: minecraft:stronghold, level: 30}\n    - {structure: '#minecraft:vilage', level: 20}\n",
+            "mob_levels.structure_floors.1.structure: unknown tag '#minecraft:vilage' in registry "
+            "minecraft:worldgen/structure (did you mean: #minecraft:village",
+        ),
+        (
+            "    - {structure: minecraft:ancient_city, level: 6}\n",
+            "the floor of minecraft:ancient_city, 6, must be above entry_level 6 and at most max_level 60",
+        ),
+        (
+            "    - {structure: minecraft:ancient_city, level: 61}\n",
+            "the floor of minecraft:ancient_city, 61, must be above entry_level 6",
+        ),
+        (
+            "    - {structure: minecraft:ancient_city, level: 40}\n    - {structure: minecraft:ancient_city, level: 50}\n",
+            "minecraft:ancient_city has two structure floors",
+        ),
+        ("    - {structure: ancient_city, level: 40}\n", "String should match pattern"),
+        ("    - {structure: minecraft:ancient_city}\n", "structure_floors.0.level: Field required"),
+        (
+            "    - {structure: minecraft:ancient_city, level: 40, radius: 8}\n",
+            "Extra inputs are not permitted",
+        ),
+        ("    []\n", "List should have at least 1 item"),
+    ],
+)
+def test_invalid_structure_floors_are_rejected(repo: RepoPaths, floors: str, expected: str) -> None:
+    body = RULE + FLOORS + floors
+    write(repo.content / "dimensions" / "overworld.yaml", rules("overworld", "minecraft:overworld", body))
+    assert any(expected in p for p in problems_for(repo)), problems_for(repo)
+
+
+def test_known_structures_and_structure_tags_pass(repo: RepoPaths) -> None:
+    body = (
+        RULE + FLOORS + "    - {structure: minecraft:ancient_city, level: 40}\n"
+        "    - {structure: '#minecraft:village', level: 20}\n"
+    )
+    write(repo.content / "dimensions" / "overworld.yaml", rules("overworld", "minecraft:overworld", body))
+    content, _ = load_and_validate(repo)
+    (overworld,) = [e.model for e in content.dimensions if e.model.id == "overworld"]
+    assert overworld.mob_levels is not None
+    assert [(f.structure, f.level) for f in overworld.mob_levels.structure_floors or []] == [
+        ("minecraft:ancient_city", 40),
+        ("#minecraft:village", 20),
+    ]
+    assert overworld.mob_levels.floors == [6, 40, 20]
+
+
+def test_the_overworlds_ancient_cities_are_level_40_and_more() -> None:
+    content, _ = load_and_validate(RepoPaths())
+    (overworld,) = [e.model for e in content.dimensions if e.model.id == "overworld"]
+    assert overworld.mob_levels is not None
+    assert [(f.structure, f.level) for f in overworld.mob_levels.structure_floors or []] == [
+        ("minecraft:ancient_city", 40)
+    ]
+
+
 # The level rule: the GameTest compares the game's MobLevelRule with these values.
 
 
@@ -143,6 +212,24 @@ def test_the_cap_drops_the_offsets_above_it() -> None:
     assert model.chances(1000) == LevelChances(60, (1,))
 
 
+def test_a_structure_floor_raises_the_floor_and_cuts_the_offsets_below_it() -> None:
+    model = rule(entry_level=1, structure_floors=[{"structure": "minecraft:ancient_city", "level": 40}])
+    assert model.chances(5, 40) == LevelChances(40, (1,))
+    assert model.chances(39, 40) == LevelChances(40, (1,))
+    assert model.chances(40, 40) == LevelChances(40, (30, 20, 10, 5))
+    assert model.chances(45, 40) == LevelChances(42, WEIGHTS)
+    assert model.chances(64, 40) == LevelChances(60, (1,))
+    assert model.chances(5) == model.chances(5, 1) == LevelChances(2, WEIGHTS)
+    assert model.floors == [1, 40]
+
+
+def test_a_floor_outside_the_rules_levels_is_refused() -> None:
+    with pytest.raises(ValueError, match="floor 5 is outside 6 to 60"):
+        rule().chances(20, 5)
+    with pytest.raises(ValueError, match="floor 61 is outside 6 to 60"):
+        rule().chances(20, 61)
+
+
 def test_one_weight_means_the_players_own_level() -> None:
     model = rule(entry_level=1, weights=[1])
     assert model.chances(1) == LevelChances(1, (1,))
@@ -150,9 +237,10 @@ def test_one_weight_means_the_players_own_level() -> None:
 
 
 def test_samples_cover_the_floor_the_middle_and_the_cap() -> None:
-    assert sample_player_levels(rule()) == [1, 5, 6, 7, 9, 33, 57, 60, 61, 64]
+    assert sample_player_levels(rule(), 6) == [1, 5, 6, 7, 9, 33, 57, 60, 61, 64]
+    assert sample_player_levels(rule(), 40) == [1, 39, 40, 41, 43, 50, 57, 60, 61, 64]
     # Duplicates and levels below 1 drop out.
-    assert sample_player_levels(rule(entry_level=1, max_level=4, weights=[1])) == [1, 2, 4, 5]
+    assert sample_player_levels(rule(entry_level=1, max_level=4, weights=[1]), 1) == [1, 2, 4, 5]
 
 
 # Generation
@@ -162,15 +250,32 @@ def test_rules_become_data_and_expectations(repo: RepoPaths) -> None:
     files = generate(repo)
     assert json.loads(files[f"{DATA}/overworld.json"]) == {
         "dimension": "minecraft:overworld",
-        "mob_levels": {"entry_level": 1, "max_level": 60, "weights": [5, 10, 20, 30, 20, 10, 5]},
+        "mob_levels": {
+            "entry_level": 1,
+            "max_level": 60,
+            "weights": [5, 10, 20, 30, 20, 10, 5],
+            "structure_floors": [{"structure": "minecraft:ancient_city", "level": 40}],
+        },
     }
-    assert json.loads(files[f"{DATA}/stone.json"])["mob_levels"]["entry_level"] == 6
+    stone = json.loads(files[f"{DATA}/stone.json"])["mob_levels"]
+    assert stone["entry_level"] == 6
+    assert "structure_floors" not in stone
     expectations = files[EXPECTATIONS].decode()
     assert '"realmforge:overworld",\n                    "minecraft:overworld",' in expectations
-    assert "Optional.of(new MobLevelRule(1, 60, List.of(5, 10, 20, 30, 20, 10, 5)))" in expectations
-    assert "new Sample(1, 1, List.of(30, 20, 10, 5))" in expectations
-    assert "new Sample(5, 6, List.of(1))" in expectations
-    assert "new Sample(61, 58, List.of(5, 10, 20))" in expectations
+    assert (
+        "Optional.of(new MobLevelRule(1, 60, List.of(5, 10, 20, 30, 20, 10, 5),\n"
+        '                            List.of(new StructureFloor("minecraft:ancient_city", 40))))'
+    ) in expectations
+    assert (
+        "Optional.of(new MobLevelRule(6, 60, List.of(5, 10, 20, 30, 20, 10, 5),\n                            List.of()))"
+        in expectations
+    )
+    assert "new Sample(1, 1, 1, List.of(30, 20, 10, 5))" in expectations
+    assert "new Sample(5, 6, 6, List.of(1))" in expectations
+    assert "new Sample(61, 6, 58, List.of(5, 10, 20))" in expectations
+    # The Ancient City's floor gets its own samples.
+    assert "new Sample(39, 40, 40, List.of(1))" in expectations
+    assert "new Sample(41, 40, 40, List.of(20, 30, 20, 10, 5))" in expectations
 
 
 def test_rules_without_mob_levels(repo: RepoPaths) -> None:

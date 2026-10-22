@@ -24,8 +24,8 @@ import net.minecraft.world.level.Level;
 /**
  * Checks that every entry of {@code content/dimensions/} reached the server's datapack registry
  * {@code realmforge:dimension_rules} as the content says, that the game's mob level rule gives the levels and weights
- * the pipeline computes near a player of each sample level, and that the access requirements are the content's
- * ({@link GeneratedDimensionRuleExpectations}, architecture 6.5).
+ * the pipeline computes near a player of each sample level, at the realm's floor and at each structure's, and that the
+ * access requirements are the content's ({@link GeneratedDimensionRuleExpectations}, architecture 6.5).
  */
 public final class ContentDimensionRuleGameTests {
     private ContentDimensionRuleGameTests() {
@@ -63,15 +63,20 @@ public final class ContentDimensionRuleGameTests {
 
             for (Sample sample : expected.samples()) {
                 MobLevelRule rule = rules.mobLevels().orElseThrow();
-                helper.assertValueEqual(rule.chances(sample.playerLevel()),
+                helper.assertValueEqual(rule.chances(sample.playerLevel(), sample.floor()),
                         new MobLevelRule.Chances(sample.lowest(), sample.weights()),
-                        expected.id() + " near a player of level " + sample.playerLevel());
+                        expected.id() + " near a player of level " + sample.playerLevel() + " at floor "
+                                + sample.floor());
             }
         }
         helper.succeed();
     }
 
     private static GeneratedDimensionRuleExpectations.MobLevelRule asWritten(MobLevelRule rule) {
-        return new GeneratedDimensionRuleExpectations.MobLevelRule(rule.entryLevel(), rule.maxLevel(), rule.weights());
+        return new GeneratedDimensionRuleExpectations.MobLevelRule(rule.entryLevel(), rule.maxLevel(), rule.weights(),
+                rule.structureFloors().stream()
+                        .map(floor -> new GeneratedDimensionRuleExpectations.StructureFloor(
+                                floor.structure().toString(), floor.level()))
+                        .toList());
     }
 }

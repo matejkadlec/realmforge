@@ -283,33 +283,30 @@ therefore give absolute coordinates in a realm. `/execute at <entity>` is not af
 position after the level.
 
 **The stone realm uses 1:16, twice the Nether's ratio** (Matěj: "like the Nether's 1:8, or stronger"). The ratio
-follows from the realm's level bands:
+came from mob levels that rose with the distance from the realm's origin. Since RLM-303 they follow the nearest
+player instead, floored at the realm's entry level ([architecture 14.1](../architecture.md#141-mob-levels)), so where
+a portal arrives no longer decides the levels met there. The ratio stays, and keeps arrivals near the realm's origin:
 
-- **Bands:** the [realm design](realms.md#the-stone-realm) puts the stone realm's sub-regions at about levels 6–10,
-  10–14 and 14–18, rising from the realm's origin outwards (the v1 layout's band 6–18, RLM-188; the first version
-  had 5–7, 7–9 and 9–10).
-- **The level rule W2a writes** (a proposal, by distance only; the depth part and the jitter of
-  [architecture 14.1](../architecture.md#141-mob-levels) aside): level 6 at the origin, one level more every 320
-  blocks, capped at 18. The bands are then 6–10 within 1,280 blocks of the origin, 10–14 up to 2,560, and 14–18
-  beyond.
-- **The scale:** Overworld bases mostly stand within 10,000 blocks of the origin (the realm design's travel rule
-  leaves trips of 1,000–10,000 blocks to waystones). At 1:16 every Overworld portal within 20,000 blocks arrives in
-  the first band, near the band's bottom for the usual bases. 1:16 was picked for the first version's narrower
-  bands (10,000 ÷ 640 ≈ 16) and stays: it keeps arrivals at the realm's lowest levels.
+- **Arrivals:** Overworld bases mostly stand within 10,000 blocks of the origin (the realm design's travel rule leaves
+  trips of 1,000–10,000 blocks to waystones). At 1:16 every Overworld portal within 20,000 blocks arrives within
+  1,250 blocks of the realm's origin, where the [realm design](realms.md#the-stone-realm)'s sub-regions start.
+- **Where 1:16 came from:** the first level rule (W2a, by distance) gave level 6 at the origin and one level more every
+  320 blocks, so the realm's first band, levels 6–10, lay within 1,280 blocks of the origin. 1:16 was picked for the
+  first version's narrower bands (10,000 ÷ 640 ≈ 16) and kept arrivals at the realm's lowest levels. The bands are
+  the old area model now, as the realm design says.
 
-| Overworld portal, blocks from 0, 0 | Arrival in the stone realm, blocks from 0, 0 | Level there, about |
-| --- | --- | --- |
-| 1,000 | 63 | 6 |
-| 5,000 | 313 | 7 |
-| 10,000 | 625 | 8 |
-| 20,000 | 1,250 | 10 |
-| 30,000 | 1,875 | 12 |
+| Overworld portal, blocks from 0, 0 | Arrival in the stone realm, blocks from 0, 0 |
+| --- | --- |
+| 1,000 | 63 |
+| 5,000 | 313 |
+| 10,000 | 625 |
+| 20,000 | 1,250 |
+| 30,000 | 1,875 |
 
-- **At the Nether's 1:8,** a portal at 5,000 would arrive at 625 (level 8) and one at 10,000 at 1,250 (level 10,
-  the edge of the first band).
+- **At the Nether's 1:8,** a portal at 5,000 would arrive at 625 and one at 10,000 at 1,250.
 - **The way back multiplies by 16:** a realm portal 1,000 blocks from the realm's origin leads to Overworld
   16,000 blocks out. That is how nether travel works too.
-- **A later realm** sets its own scale from its own bands, by the same arithmetic.
+- **A later realm** sets its own scale, by the same arithmetic of where its portals arrive.
 
 ### Building a portal
 

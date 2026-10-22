@@ -5,7 +5,13 @@ import io.github.matejkadlec.realmforge.mob.MobLevels;
 import io.github.matejkadlec.realmforge.mob.MobScaling;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
+import io.github.matejkadlec.realmforge.world.MobLevelRule;
+import io.github.matejkadlec.realmforge.world.MobLevelRule.StructureFloor;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeSet;
@@ -14,10 +20,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.ConversionParams;
@@ -35,11 +43,23 @@ import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.monster.skeleton.Skeleton;
+import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.monster.zombie.ZombieVillager;
 import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
+import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
+import net.minecraft.world.level.levelgen.structure.pools.EmptyPoolElement;
+import net.minecraft.world.level.levelgen.structure.templatesystem.LiquidSettings;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
@@ -53,7 +73,8 @@ import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
  * without {@code finalizeSpawn} ({@code GameTestHelper#spawn}) gets a level and its scaling; a converted mob keeps a
  * level and the scaling that belongs to it. Also: a mob from world generation is leveled when it joins, passive mobs
  * get no level, a cured mob loses it, a leveled mob's hits grow with its level, and a mob loaded from disk is rescaled
- * to the current curves, keeping its share of health.
+ * to the current curves, keeping its share of health. RLM-342's: a structure raises the floor of the mobs that get
+ * their level inside its pieces, by its id or its tag, the highest floor winning.
  *
  * <p>Other tests log their own players in, so a mob that must follow a known player spawns where that player stands:
  * nobody else is nearer.
@@ -115,6 +136,69 @@ public final class MobLevelGameTests {
             helper.assertTrue(seen.contains(6) && seen.contains(7), "levels 6 and 7 come up: " + seen);
         } finally {
             helper.getLevel().getServer().getPlayerList().remove(player);
+        }
+        helper.succeed();
+    }
+
+    /**
+     * RLM-342: inside an Ancient City's piece, the Overworld's rule floors a mob at 40, a Warden included, so a level 5
+     * player meets every one at 40 and a level 45 player meets them near 45; just outside the piece, in the same chunk,
+     * the realm's floor holds again. World generation records a structure's start and the references to it in the
+     * chunks it covers: the test records one start of one piece over the player's spot.
+     */
+    @QaGameTest
+    public static void anAncientCityRaisesTheFloorOfTheMobsItHolds(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-mob-level-structure");
+        BlockPos inside = player.blockPosition();
+        BlockPos outside = platformCornerInTheChunkOf(helper, inside);
+        Runnable remove = placeStart(level, BuiltinStructures.ANCIENT_CITY, inside);
+        Warden warden = null;
+        try {
+            setPlayerLevel(player, 5);
+            assertLevelsNear(helper, level, player, 40, 40);
+            warden = EntityType.WARDEN.spawn(level, inside, EntitySpawnReason.TRIGGERED);
+            helper.assertTrue(warden != null, "a warden spawned");
+            helper.assertValueEqual(MobLevels.level(warden), OptionalInt.of(40), "a warden in the Ancient City");
+            assertLevelsAt(helper, level, outside, 2, 8);
+            setPlayerLevel(player, 45);
+            Set<Integer> seen = assertLevelsNear(helper, level, player, 42, 48);
+            helper.assertTrue(seen.contains(45) && seen.size() >= 3, "a spread around level 45: " + seen);
+        } finally {
+            if (warden != null) {
+                warden.discard();
+            }
+            remove.run();
+            level.getServer().getPlayerList().remove(player);
+        }
+        helper.succeed();
+    }
+
+    /**
+     * RLM-342: a structure floor names its structure or a structure tag, and of several that hold a spot the highest
+     * wins; a floor whose structure holds nothing there leaves the realm's.
+     */
+    @QaGameTest
+    public static void aStructureTagRaisesTheFloorAndTheHighestFloorWins(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos inside = helper.absolutePos(new BlockPos(2, 1, 2));
+        BlockPos outside = platformCornerInTheChunkOf(helper, inside);
+        StructureFloor villages = floor("#minecraft:village", 20);
+        StructureFloor plains = floor("minecraft:village_plains", 25);
+        StructureFloor mineshafts = floor("#minecraft:mineshaft", 30);
+        List<Integer> weights = List.of(5, 10, 20, 30, 20, 10, 5);
+        Runnable remove = placeStart(level, BuiltinStructures.VILLAGE_PLAINS, inside);
+        try {
+            helper.assertValueEqual(MobLevels.floorAt(level, inside, new MobLevelRule(1, 60, weights,
+                    List.of(villages))), 20, "a plains village by its tag");
+            helper.assertValueEqual(MobLevels.floorAt(level, inside, new MobLevelRule(1, 60, weights,
+                    List.of(villages, plains, mineshafts))), 25, "the highest floor that holds the spot");
+            helper.assertValueEqual(MobLevels.floorAt(level, inside, new MobLevelRule(1, 60, weights,
+                    List.of(mineshafts))), 1, "a floor of other structures");
+            helper.assertValueEqual(MobLevels.floorAt(level, outside, new MobLevelRule(1, 60, weights,
+                    List.of(villages, plains))), 1, "outside the piece");
+        } finally {
+            remove.run();
         }
         helper.succeed();
     }
@@ -338,15 +422,22 @@ public final class MobLevelGameTests {
      */
     private static Set<Integer> assertLevelsNear(GameTestHelper helper, ServerLevel level, ServerPlayer player,
             int lowest, int highest) {
+        return assertLevelsAt(helper, level, player.blockPosition(), lowest, highest);
+    }
+
+    /** {@link #assertLevelsNear}, with the skeletons spawning at {@code pos}. */
+    private static Set<Integer> assertLevelsAt(GameTestHelper helper, ServerLevel level, BlockPos pos, int lowest,
+            int highest) {
         Set<Integer> seen = new TreeSet<>();
         for (int i = 0; i < ROLLS; i++) {
-            Skeleton skeleton = EntityType.SKELETON.spawn(level, player.blockPosition(), EntitySpawnReason.COMMAND);
-            helper.assertTrue(skeleton != null, "a skeleton spawned at " + player.blockPosition());
+            Skeleton skeleton = EntityType.SKELETON.spawn(level, pos, EntitySpawnReason.COMMAND);
+            helper.assertTrue(skeleton != null, "a skeleton spawned at " + pos);
             try {
                 int got = assertLeveled(helper, skeleton);
-                helper.assertTrue(got >= lowest && got <= highest, "level " + got + " near a level "
-                        + MobLevels.level(player).orElse(EntityLevel.MIN) + " player, expected " + lowest + " to "
-                        + highest);
+                ServerPlayer nearest = (ServerPlayer) level.getNearestPlayer(skeleton, -1);
+                helper.assertTrue(got >= lowest && got <= highest, "level " + got + " at " + pos + " near a level "
+                        + (nearest != null ? MobLevels.level(nearest).orElse(EntityLevel.MIN) : 0)
+                        + " player, expected " + lowest + " to " + highest);
                 assertScaled(helper, skeleton, got);
                 seen.add(got);
             } finally {
@@ -354,6 +445,53 @@ public final class MobLevelGameTests {
             }
         }
         return seen;
+    }
+
+    /**
+     * Records a start of {@code structure} in the chunk of {@code inside}, as world generation does, with one jigsaw
+     * piece two blocks high over {@code inside} alone, and a reference to it in that chunk. Returns what puts the
+     * chunk's starts and references back as they were.
+     */
+    private static Runnable placeStart(ServerLevel level, ResourceKey<Structure> key, BlockPos inside) {
+        Structure structure = level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(key).value();
+        ChunkPos chunkPos = ChunkPos.containing(inside);
+        LevelChunk chunk = level.getChunk(chunkPos.x(), chunkPos.z());
+        Map<Structure, StructureStart> starts = Map.copyOf(chunk.getAllStarts());
+        Map<Structure, LongSet> references = new HashMap<>();
+        chunk.getAllReferences().forEach((referenced, set) -> references.put(referenced, new LongOpenHashSet(set)));
+        BoundingBox box = new BoundingBox(inside.getX(), inside.getY(), inside.getZ(), inside.getX(),
+                inside.getY() + 1, inside.getZ());
+        PoolElementStructurePiece piece = new PoolElementStructurePiece(level.getServer().getStructureManager(),
+                EmptyPoolElement.INSTANCE, inside, 0, Rotation.NONE, box, LiquidSettings.IGNORE_WATERLOGGING);
+        chunk.setStartForStructure(structure,
+                new StructureStart(structure, chunkPos, 0, new PiecesContainer(List.of(piece))));
+        chunk.addReferenceForStructure(structure, chunkPos.pack());
+        return () -> {
+            chunk.setAllStarts(starts);
+            chunk.setAllReferences(references);
+        };
+    }
+
+    /**
+     * A corner of the test's platform, where a mob stands, in the same chunk as {@code pos}: the 5×5 platform crosses
+     * at most one chunk border either way, so the chunk of its middle holds one of its corners.
+     */
+    private static BlockPos platformCornerInTheChunkOf(GameTestHelper helper, BlockPos pos) {
+        for (BlockPos corner : List.of(new BlockPos(0, 1, 0), new BlockPos(4, 1, 0), new BlockPos(0, 1, 4),
+                new BlockPos(4, 1, 4))) {
+            BlockPos absolute = helper.absolutePos(corner);
+            if (ChunkPos.containing(absolute).equals(ChunkPos.containing(pos))) {
+                return absolute;
+            }
+        }
+        throw helper.assertionException(Component.literal("no platform corner in the chunk of " + pos));
+    }
+
+    /** A structure floor of {@code structure}, a structure's id or a structure tag after {@code #}. */
+    private static StructureFloor floor(String structure, int level) {
+        boolean tag = structure.startsWith("#");
+        return new StructureFloor(new ExtraCodecs.TagOrElementLocation(
+                Identifier.parse(tag ? structure.substring(1) : structure), tag), level);
     }
 
     /** Sets the level of a player without a character, as {@code /qa level} does. */
