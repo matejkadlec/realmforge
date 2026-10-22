@@ -34,13 +34,14 @@ public record DungeonPlan(long seed, int attempt, List<PlannedRoom> rooms, List<
     }
 
     /**
-     * What the builder places: every room's template, offset and rotation, and the entrance's connector to the next
-     * room on the main path, which an arriving player looks at. Where players arrive comes from the entrance room
-     * (its entrance marker, or a spot the builder finds there).
+     * What the builder places: every room's template, offset and rotation with the blocks an explosion may break
+     * there, and the entrance's connector to the next room on the main path, which an arriving player looks at. Where
+     * players arrive comes from the entrance room (its entrance marker, or a spot the builder finds there).
      */
     public InstanceLayout toInstanceLayout() {
         List<RoomPlacement> placements = rooms.stream()
-                .map(room -> new RoomPlacement(room.room().template(), room.offset(), room.rotation()))
+                .map(room -> new RoomPlacement(room.room().template(), room.offset(), room.rotation(),
+                        room.room().explosionBreaks()))
                 .toList();
         Optional<BlockPos> wayOn = links.stream()
                 .filter(link -> link.room() == 0 && link.otherRoom() == 1 || link.room() == 1 && link.otherRoom() == 0)

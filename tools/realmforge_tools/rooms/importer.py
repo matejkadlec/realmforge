@@ -2,8 +2,8 @@
 
 Each source file (``.nbt``, ``.schem``, ``.litematic``; a folder imports every one below it) becomes
 ``<target>/<name>.nbt``, the normalized template, and ``<target>/<name>.yaml``, a draft sidecar that records the
-source and leaves pools and tags for retagging (A4c). Re-importing keeps an existing sidecar's pools, tags and
-weight. A file that a ``review.yaml`` rejects (the gallery's record, in the target folder, a folder below it or,
+source and leaves pools and tags for retagging (A4c). Re-importing keeps an existing sidecar's pools, tags, weight
+and room rules (``KEPT_RULES``). A file that a ``review.yaml`` rejects (the gallery's record, in the target folder, a folder below it or,
 inside ``content/rooms/``, a folder above it; the nearest decides) is skipped, so a dropped room does not come back.
 
 A rules file (``--rules``, YAML, the ``ImportRules`` model) adapts a source to our ids:
@@ -62,6 +62,7 @@ from realmforge_tools.rooms.structure import (
     AIR,
     JIGSAW,
     BlockState,
+    Pos,
     Structure,
     StructureBlock,
     StructureError,
@@ -77,6 +78,8 @@ _UNSAFE = re.compile(r"[^a-z0-9_]+")
 DOOR = "realmforge:door"
 SHAFT = "realmforge:shaft"
 EMPTY_POOL = "minecraft:empty"
+# Sidecar fields a re-import keeps besides pools, tags and weight: how dungeons treat the room.
+KEPT_RULES = ("max_per_layout", "near_start", "explosion_breaks")
 # The seed a container keeps next to its loot table (RandomizableContainer.LOOT_TABLE_SEED_TAG).
 _LOOT_TABLE_SEED = "LootTableSeed"
 
@@ -105,6 +108,19 @@ class JigsawRules(_Strict):
     )
 
 
+class PlacedBlocks(_Strict):
+    """A box of one block state set into a room after its dressing, such as a fall cushion (RLM-276)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, populate_by_name=True)
+    start: tuple[int, int, int] = Field(
+        alias="from", description="One corner of the box, in the room's template."
+    )
+    to: tuple[int, int, int] = Field(description="The opposite corner, included.")
+    block: str = Field(
+        description="The block state, e.g. minecraft:stone_brick_slab[type=bottom,waterlogged=true]."
+    )
+
+
 class ImportRules(_Strict):
     blocks: dict[str, str] = Field(default_factory=dict)
     block_entities: dict[str, str] = Field(default_factory=dict)
@@ -117,6 +133,10 @@ class ImportRules(_Strict):
     exclude: list[str] = Field(default_factory=list)
     max_size: int | None = Field(default=None, ge=1, description="Leave out rooms bigger on any axis.")
     dress: DressRules | None = None
+    place: dict[str, list[PlacedBlocks]] = Field(
+        default_factory=dict,
+        description="Blocks set into rooms after their dressing, by the room's path below the source folder.",
+    )
     data_version: int | None = Field(
         default=None,
         ge=1,
@@ -313,7 +333,13 @@ def import_room(
     if rules.dress is not None and not rules.dress.excludes(name or stem.name):
         structure, dressed = dress(structure, rules.dress, name=name or stem.name, tags=tags)
         notes += dressed
+    placing: list[str] = []
+    for placed in rules.place.get(name or stem.name, []):
+        structure, outside = place_blocks(structure, placed)
+        notes.append(f"placed {placed.block} from {_fmt(placed.start)} to {_fmt(placed.to)}")
+        placing += [f"place: {_fmt(pos)} lies outside the room" for pos in outside]
     result = ImportedRoom(file, template, sidecar, structure, False, [*source.notes, *notes])
+    result.problems += placing
     if stem.name == REVIEW_FILE.removesuffix(".yaml"):
         result.problems.append("'review' is reserved for the gallery's review.yaml; rename the room")
     result.problems += [f"{where}: {message}" for where, message in check_structure(structure, universe)]
@@ -324,6 +350,7 @@ def import_room(
         pools=previous.pools if previous else [],
         tags=tags,
         weight=previous.weight if previous else 1,
+        **(previous.model_dump(include=set(KEPT_RULES)) if previous else {}),
         source=RoomSource(
             file=file.name, format=source.format, data_version=structure.data_version, ours=ours
         ),
@@ -333,6 +360,26 @@ def import_room(
     sidecar.write_text(sidecar_text(room, sidecar, paths), encoding="utf-8")
     result.written = True
     return result
+
+
+def place_blocks(structure: Structure, placed: PlacedBlocks) -> tuple[Structure, list[Pos]]:
+    """The structure with the box of ``placed`` set to its block (block entity data there is dropped), and the
+    positions of the box that lie outside the room."""
+    state = BlockState.parse(placed.block)
+    box = [
+        (x, y, z)
+        for x in range(min(placed.start[0], placed.to[0]), max(placed.start[0], placed.to[0]) + 1)
+        for y in range(min(placed.start[1], placed.to[1]), max(placed.start[1], placed.to[1]) + 1)
+        for z in range(min(placed.start[2], placed.to[2]), max(placed.start[2], placed.to[2]) + 1)
+    ]
+    inside = {pos for pos in box if all(0 <= c < s for c, s in zip(pos, structure.size, strict=True))}
+    blocks = [block for block in structure.blocks if block.pos not in inside]
+    blocks += [StructureBlock(pos, state) for pos in sorted(inside)]
+    return replace(structure, blocks=tuple(blocks)), [pos for pos in box if pos not in inside]
+
+
+def _fmt(pos: Pos) -> str:
+    return " ".join(map(str, pos))
 
 
 def apply_rules(structure: Structure, rules: ImportRules) -> tuple[Structure, list[str]]:
@@ -468,6 +515,12 @@ def sidecar_text(room: RoomDef, sidecar: Path, paths: RepoPaths) -> str:
         _yaml_list("tags", room.tags),
         f"weight: {room.weight}",
     ]
+    if room.max_per_layout is not None:
+        lines.append(f"max_per_layout: {room.max_per_layout}")
+    if room.near_start:
+        lines.append("near_start: true")
+    if room.explosion_breaks:
+        lines.append(_yaml_list("explosion_breaks", room.explosion_breaks))
     if source is not None:
         lines += [
             "source:",

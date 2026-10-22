@@ -1,5 +1,9 @@
 package io.github.matejkadlec.realmforge.dungeon.instance;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -16,7 +20,8 @@ import net.neoforged.neoforge.event.level.ExplosionEvent;
 import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 
 /**
- * The rules inside the instance dimension: nobody edits the rooms (architecture 15.5). Survival players play in
+ * The rules inside the instance dimension: nobody edits the rooms (architecture 15.5), but for the blocks a room lets
+ * explosions break. Survival players play in
  * Adventure mode there, which makes vanilla refuse their edits and lets the client predict the refusal; these guards
  * stop what Adventure mode lets through (items with {@code can_break} or {@code can_place_on}, buckets) and every edit
  * by anything that is not a player. Creative players keep their game mode and may edit.
@@ -62,10 +67,12 @@ public final class InstanceRules {
                 event.setCanGrief(false);
             }
         });
-        // The explosion still hurts and pushes entities; it breaks no block and, with the same list, lights no fire.
+        // The explosion still hurts and pushes entities; it breaks no block and, with the same list, lights no fire,
+        // but for the blocks its room lets explosions break (a trap's TNT blowing its way open, RLM-257).
         NeoForge.EVENT_BUS.addListener(ExplosionEvent.Detonate.class, event -> {
-            if (InstanceDimension.isInstance(event.getLevel())) {
-                event.getAffectedBlocks().clear();
+            if (event.getLevel() instanceof ServerLevel level && InstanceDimension.isInstance(level)) {
+                InstanceManager manager = InstanceManager.get(level.getServer());
+                event.getAffectedBlocks().removeIf(pos -> manager == null || !explosionBreaks(manager, level, pos));
             }
         });
     }
@@ -91,6 +98,13 @@ public final class InstanceRules {
                 player.setGameMode(mode);
             }
         });
+    }
+
+    private static boolean explosionBreaks(InstanceManager manager, ServerLevel level, BlockPos pos) {
+        Identifier block = BuiltInRegistries.BLOCK.getKey(level.getBlockState(pos).getBlock());
+        return manager.plot(PlotGrid.plotAt(pos.getX(), pos.getZ()))
+                .map(plot -> plot.explosionBreaks(pos, block))
+                .orElse(false);
     }
 
     private static boolean isInstance(LevelAccessor level) {

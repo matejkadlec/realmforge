@@ -222,6 +222,11 @@ def _check_rooms(content: Content, universe: IdUniverse) -> list[Problem]:
             )
         if source is not None and source.ours and third_party:
             problems.append(Problem(room.source, "source.ours", "a room in third_party/ is not ours"))
+        for index, block in enumerate(room.model.explosion_breaks):
+            if not universe.contains(BLOCK_REGISTRY, block):
+                problems.append(
+                    Problem(room.source, f"explosion_breaks[{index}]", f"unknown block {block!r}")
+                )
     # A rejected room is dropped, and its decision stays, so the next import of its source skips it.
     room_ids = {room.id for room in content.rooms}
     for review in content.room_reviews:

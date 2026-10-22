@@ -9,9 +9,15 @@ import pytest
 
 from realmforge_tools.generate import generate_all
 from realmforge_tools.problems import ValidationFailed
-from realmforge_tools.project import DATA_VERSION, RepoPaths
+from realmforge_tools.project import DATA_VERSION, REPO_ROOT, RepoPaths
 from realmforge_tools.rooms.connectors import Connector, connectors, could_attach
-from realmforge_tools.rooms.structure import BlockState, Structure, StructureBlock, write_structure
+from realmforge_tools.rooms.structure import (
+    BlockState,
+    Structure,
+    StructureBlock,
+    read_structure,
+    write_structure,
+)
 from realmforge_tools.validate import load_and_validate
 
 from .conftest import write
@@ -375,3 +381,143 @@ def test_a_pooled_room_fails_on_a_fluid_that_flows_out_through_an_opening(repo: 
     ]
     path.write_bytes(write_structure(Structure(room.size, room.data_version, (*shell, *room.blocks, water))))
     load_and_validate(repo)  # closed, the room holds its water; its doorways lead into the next rooms
+
+
+def test_a_cushion_set_into_the_floor_keeps_its_water(repo: RepoPaths) -> None:
+    # RLM-276: a waterlogged bottom slab in the floor layer holds its water: its underside is whole, and the floor
+    # around it closes its sides. A top slab's water would flow down out of the room.
+    crypt(repo)
+    add_room(repo, "crypt/landing", ["hallway"], "north", "south")
+    room = room_structure((7, 5, 7), "north", "south")
+    stone = BlockState("minecraft:stone_bricks")
+    shell = [
+        StructureBlock((x, y, z), stone)
+        for x in range(7)
+        for y in range(5)
+        for z in range(7)
+        if (x in (0, 6) or y in (0, 4) or z in (0, 6)) and (x, y, z) not in {c.pos for c in room.blocks}
+    ]
+    path = repo.content / "rooms" / "crypt" / "landing.nbt"
+    for half, leaks in (("bottom", False), ("top", True)):
+        cushion = BlockState.parse(f"minecraft:stone_brick_slab[type={half},waterlogged=true]")
+        blocks = [b for b in shell if b.pos != (3, 0, 3)] + [*room.blocks, StructureBlock((3, 0, 3), cushion)]
+        path.write_bytes(write_structure(Structure(room.size, room.data_version, tuple(blocks))))
+        if leaks:
+            assert sorted(problems_for(repo)) == [
+                "content/rooms/crypt/landing.nbt: fluid at 3 0 3: a fluid that can reach the room's sides or floor "
+                "flows out of its box, where cleanup does not reach; a room in a dungeon type's pool keeps its fluids "
+                "inside",
+            ]
+        else:
+            load_and_validate(repo)
+
+
+# Horizontal directions as (dx, dz), and each one's counter-clockwise neighbour, as Minecraft's Direction has them.
+_STEPS = {"north": (0, -1), "south": (0, 1), "west": (-1, 0), "east": (1, 0)}
+_COUNTER_CLOCKWISE = {"north": "west", "west": "south", "south": "east", "east": "north"}
+_OPPOSITE = {"north": "south", "south": "north", "west": "east", "east": "west"}
+
+
+def _stairs_shape(blocks: dict[tuple[int, int, int], BlockState], pos: tuple[int, int, int]) -> str:
+    """The shape StairBlock#getStairsShape gives the stair at pos from its neighbours (26.1.2), so a stored shape that
+    differs would change at the first block update."""
+
+    def stairs(at: tuple[int, int, int]) -> BlockState | None:
+        state = blocks.get(at)
+        return state if state is not None and state.name.endswith("_stairs") else None
+
+    def step(at: tuple[int, int, int], direction: str) -> tuple[int, int, int]:
+        dx, dz = _STEPS[direction]
+        return at[0] + dx, at[1], at[2] + dz
+
+    state = blocks[pos]
+    facing, half = state.get("facing"), state.get("half")
+
+    def can_take_shape(direction: str) -> bool:
+        other = stairs(step(pos, direction))
+        return other is None or other.get("facing") != facing or other.get("half") != half
+
+    def crosses(other: BlockState | None) -> bool:
+        return (
+            other is not None
+            and other.get("half") == half
+            and (_STEPS[other.get("facing")][0] == 0) != (_STEPS[facing][0] == 0)
+        )
+
+    behind = stairs(step(pos, facing))
+    if crosses(behind) and can_take_shape(_OPPOSITE[behind.get("facing")]):
+        return "outer_left" if behind.get("facing") == _COUNTER_CLOCKWISE[facing] else "outer_right"
+    front = stairs(step(pos, _OPPOSITE[facing]))
+    if crosses(front) and can_take_shape(front.get("facing")):
+        return "inner_left" if front.get("facing") == _COUNTER_CLOCKWISE[facing] else "inner_right"
+    return "straight"
+
+
+def test_the_lobby_cushion_reaches_past_the_ceiling_hole() -> None:
+    # RLM-276: a player who holds a direction while falling leaves the shaft's wall below the lobby's ceiling and
+    # drifts outward before landing. The cushion covers the ceiling hole with waterlogged slabs and the ring one block
+    # past it with waterlogged stairs, their tall half outward and L-shaped in the corners (Matěj's 5x5), with
+    # nothing above it to land on first.
+    path = REPO_ROOT / "content/rooms/third_party/stonevaults/dungeon/lobby/lobby_01.nbt"
+    room = read_structure(path.read_bytes())
+    blocks = {block.pos: block.state for block in room.blocks}
+    top = room.size[1] - 1
+    hole = {
+        (x, z)
+        for (x, y, z), state in blocks.items()
+        if y == top and state.name in ("minecraft:air", "minecraft:jigsaw")
+    }
+    assert hole, "lobby_01 has no ceiling hole"
+    reach = {(x + dx, z + dz) for x, z in hole for dx in (-1, 0, 1) for dz in (-1, 0, 1)}
+    slab = BlockState.parse("minecraft:stone_brick_slab[type=bottom,waterlogged=true]")
+    assert {cell for cell in hole if blocks.get((cell[0], 0, cell[1])) != slab} == set()
+
+    rim = reach - hole
+    assert len(hole) == 9 and len(rim) == 16
+    for x, z in sorted(rim):
+        state = blocks[(x, 0, z)]
+        assert state.name == "minecraft:stone_brick_stairs", (x, z, state)
+        assert (state.get("half"), state.get("waterlogged")) == ("bottom", "true"), (x, z, state)
+        assert state.get("shape") == _stairs_shape(blocks, (x, 0, z)), (x, z, state)
+        # The tall half faces away from the hole: the step toward the facing leaves the cushion.
+        dx, dz = _STEPS[state.get("facing")]
+        assert (x + dx, z + dz) not in reach, (x, z, state)
+        corner = sum((x + sx, z + sz) in hole for sx, sz in _STEPS.values()) == 0
+        assert state.get("shape").startswith("inner_") == corner, (x, z, state)
+    assert {
+        cell
+        for cell in reach
+        if blocks.get((cell[0], 1, cell[1]), BlockState("minecraft:air")).name != "minecraft:air"
+    } == set()
+
+
+def test_a_rooms_planner_and_explosion_rules_reach_the_game(repo: RepoPaths) -> None:
+    # RLM-256 and RLM-257: the sidecar's rules go into the dungeon type's rooms and the QA mod's expectations.
+    crypt(repo)
+    nook = repo.content / "rooms" / "crypt" / "nook.yaml"
+    nook.write_text(
+        nook.read_text(encoding="utf-8")
+        + "max_per_layout: 1\nnear_start: true\nexplosion_breaks: [minecraft:gravel, minecraft:smooth_stone]\n",
+        encoding="utf-8",
+    )
+    files = generate(repo)
+    rooms = {room["template"]: room for room in json.loads(files[f"{DATA}/crypt.json"])["rooms"]}
+    nook_data = rooms["realmforge:rooms/crypt/nook"]
+    assert (nook_data["max_per_layout"], nook_data["near_start"], nook_data["explosion_breaks"]) == (
+        1,
+        True,
+        ["minecraft:gravel", "minecraft:smooth_stone"],
+    )
+    assert not {"max_per_layout", "near_start", "explosion_breaks"} & set(
+        rooms["realmforge:rooms/crypt/hall"]
+    )
+    java = files[EXPECTATIONS].decode()
+    assert '1, true, List.of("minecraft:gravel", "minecraft:smooth_stone"))' in java
+    assert "0, false, List.of())" in java
+    nook.write_text(
+        nook.read_text(encoding="utf-8").replace("minecraft:smooth_stone", "minecraft:no_such_block"),
+        encoding="utf-8",
+    )
+    assert any(
+        "explosion_breaks[1]: unknown block 'minecraft:no_such_block'" in p for p in problems_for(repo)
+    )

@@ -105,8 +105,9 @@ source file, its format and its data version, leaves `pools` empty and drafts th
 [content/README.md](../content/README.md)): the shape from the faces with a connector (`dead_end`, `straight`,
 `curved`, `t_junction`, `crossing`, plus `vertical` for one up or down), the role from a word in the room's path
 (`boss`, `treasure`, `entrance`, `stairs`, `hallway`), else `hallway` for a straight or curved piece at most 7 blocks
-wide (measured across the passage) and `combat` for the rest. A re-import keeps the sidecar's pools, tags and
-weight. A room is written only when it validates; otherwise the command lists the problems and writes nothing for that
+wide (measured across the passage) and `combat` for the rest. A re-import keeps the sidecar's pools, tags, weight
+and room rules (`max_per_layout`, `near_start`, `explosion_breaks`; [content/README](../content/README.md)). A room
+is written only when it validates; otherwise the command lists the problems and writes nothing for that
 room, and so does a source file that cannot be read (some jars ship a corrupt template; exclude it). A file that the
 gallery's review rejects is skipped (`SKIP` in the report): the `review.yaml` of the target folder decides, or that of
 a folder below it (the gallery reviews a subfolder on its own) or, inside `content/rooms/`, above it, and the nearest
@@ -152,6 +153,11 @@ dress:                # variety and decorations for plain rooms (rooms/dress.py)
   ceiling: {target: 3, replace: [minecraft:stone_bricks], variants: [minecraft:mossy_stone_bricks]}
   decorations: [vines, cobwebs, barrels]
   without: {barrels: [dungeon/rooms/library]}  # rooms that do not get a decoration
+place:                # boxes of one block set into a room after the dressing, by its path (a fall cushion, RLM-276)
+  dungeon/lobby/lobby_01:
+    - {from: [5, 0, 5], to: [7, 0, 7], block: "minecraft:stone_brick_slab[type=bottom,waterlogged=true]"}
+    - {from: [4, 0, 5], to: [4, 0, 7], block: "minecraft:stone_brick_stairs[facing=west,half=bottom,shape=straight,waterlogged=true]"}
+    # ... the other three sides and the four corners (art/rooms/stonevaults/rules.yaml)
 data_version: 4790    # for the files that state none, when the source is known to be saved with this version
 ```
 
@@ -166,10 +172,15 @@ source are rooms, so the import can run again; the report counts the files they 
 rooms variety: a surface (floor: air above, ceiling: air below, walls: air beside) with fewer block families than its
 `target` (a family is a material whatever its shape; it counts from 5 % of the surface) gets the next variants it
 lacks, each replacing 15 % of its `replace` blocks in patches, gravel only over a block. The plainer the room was,
-the more decorations it gets: vines from the top of the walls, cobwebs where wall meets ceiling and barrels against
-the walls (one at most in a hallway, none on stairs), all clear of the doorways and of the room's own entities;
-`without` leaves a decoration out of the rooms it names. No armor stands: placed by rule they looked out of place in
-Matěj's playtest. Choices are hashes of the room's path, so a re-import gives the same room.
+the more decorations it gets: vines from the top of the walls, cobwebs where wall meets ceiling and barrels, all
+clear of the doorways and of the room's own entities; `without` leaves a decoration out of the rooms it names.
+Barrels form a pattern ([ADR 0036](../docs/decisions/0036-room-lights-and-decorations-form-patterns.md), RLM-262):
+they stand on the room's main floor against its outer walls (a full block with no air behind it, so never on or
+beside a throne or pillar inside the room), never in a passage one block wide or where they would split the floor. A
+hallway gets at most one, in a corner, stairs none, other rooms by floor area two (a pair in a corner, two mirrored
+corners or a pair in a wall's middle), three (a row in a wall's middle) or four (two mirrored pairs or four mirrored
+corners); a room no pattern fits gets none. No armor stands: placed by rule they looked out of place in Matěj's
+playtest. Choices are hashes of the room's path, so a re-import gives the same room.
 The import report names every remap, every dropped entity, block entity, interior jigsaw and loot table, and the
 jigsaw names and pools no rule mapped; validation refuses a jigsaw pool that is neither a vanilla template pool nor a
 room pool some sidecar lists. The
@@ -214,11 +225,13 @@ headroom, and no cell where a mob could spawn is dark. **`rf rooms candidates [S
 `--out`) builds the next seeds of each spec that no review decided on (neither kept nor rejected, from 1 up) into
 `.cache/rooms/candidates/<spec>/seed_<n>.nbt` with a sidecar, and leaves out, with the reason, a candidate that
 validation would refuse. It replaces that folder on every run. `--kept` builds the specs' kept seeds too (with
-`--count 0` only those), so a change to the generator can be reviewed on the rooms it changes; a reject decision on
-a kept room moves it to `rejected_seeds`. A kept seed the changed generator can no longer build, or whose room no
+`--count 0` only those), so a change to the generator can be reviewed on the rooms it changes; a reject decision on a
+kept room moves it to `rejected_seeds`. A kept seed the changed generator can no longer build, or whose room no
 longer validates, stops `rf validate` and `rf gen`, but not `--kept`: it prints `REFUSED seed <n>: <reason>`, and
-`rf rooms review` takes a `<spec>/seed_<n>: reject` for it although the folder holds no room for it. Review them like
-any other folder:
+`rf rooms review` takes a `<spec>/seed_<n>: reject` for it although the folder holds no room for it. The run records
+the kept seeds it refused in the folder's `.refused-kept-seeds`, and the review takes a decision on a seed without a
+room only for those: a decision on a kept seed that run neither wrote nor refused (a typo, or a folder written
+without `--kept`) is refused as no such room. Review them like any other folder:
 
 ```bash
 uv run rf rooms candidates                                  # every spec; or name some

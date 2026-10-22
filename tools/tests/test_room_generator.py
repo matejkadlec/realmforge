@@ -15,7 +15,13 @@ from realmforge_tools.id_universe import load_vanilla
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import REPO_ROOT, RepoPaths
 from realmforge_tools.rooms import candidates
-from realmforge_tools.rooms.candidates import MARKER, CandidatesError, freeze, write_candidates
+from realmforge_tools.rooms.candidates import (
+    MARKER,
+    CandidatesError,
+    freeze,
+    refused_kept_keys,
+    write_candidates,
+)
 from realmforge_tools.rooms.check import check_structure, markers
 from realmforge_tools.rooms.connectors import connectors, could_attach
 from realmforge_tools.rooms.generator import (
@@ -672,6 +678,34 @@ def test_candidates_kept_refuses_a_kept_seed_that_no_longer_builds(
     # A seed nobody kept is no room of this folder either.
     stray = write(tmp_path / "stray.yaml", "nook/seed_9: reject\n")
     assert cli.main(["rooms", "review", str(out), "--from", str(stray)]) == 1
+
+
+def test_a_review_decides_only_on_kept_seeds_that_its_folders_run_refused(
+    repo: RepoPaths, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    for path in (repo.content / "room_specs").glob("*.yaml"):
+        path.unlink()
+    nook = write_spec(repo, "nook", NOOK)
+    monkeypatch.setattr(cli, "RepoPaths", lambda: repo)
+    out = tmp_path / "candidates"
+    # Without --kept the folder holds only new seeds: a decision on kept seed 2 is a typo, not a review.
+    assert cli.main(["rooms", "candidates", "--count", "1", "--out", str(out)]) == 0
+    assert sorted(p.name for p in (out / "nook").glob("*.nbt")) == ["seed_4.nbt"]
+    typo = write(tmp_path / "typo.yaml", "nook/seed_2: reject\n")
+    capsys.readouterr()
+    assert cli.main(["rooms", "review", str(out), "--from", str(typo)]) == 1
+    assert "no such room" in capsys.readouterr().err and "seeds: [2, 3]\n" in nook.read_text(encoding="utf-8")
+    # A --kept run that refuses seed 3 lets the review reject it, and only it.
+    _break_seed(monkeypatch, 3)
+    assert cli.main(["rooms", "candidates", "--kept", "--count", "0", "--out", str(out)]) == 0
+    assert refused_kept_keys(out) == {"nook/seed_3"}
+    assert cli.main(["rooms", "review", str(out), "--from", str(typo)]) == 0  # seed 2 has a room this time
+    broken = write(tmp_path / "broken.yaml", "nook/seed_3: reject\n")
+    assert cli.main(["rooms", "review", str(out), "--from", str(broken)]) == 0
+    assert "seeds: []\nrejected_seeds: [1, 2, 3]\n" in nook.read_text(encoding="utf-8")
+    # The next run replaces the folder and its record: seed 3 is no longer one of its refusals.
+    assert cli.main(["rooms", "candidates", "--count", "1", "--out", str(out)]) == 0
+    assert refused_kept_keys(out) == set()
 
 
 def test_candidates_kept_refuses_a_kept_seed_that_no_longer_validates(

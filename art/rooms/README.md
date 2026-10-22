@@ -51,7 +51,8 @@ Mo' Structures' abandoned village temples, are not imported.
 ## Importing a source again
 
 Unpack the jar's folder outside the repository and import it with the rules; a re-import keeps the sidecars' pools,
-tags and weight, and skips the rooms the gallery's review rejected:
+tags, weight and room rules (`max_per_layout`, `near_start`, `explosion_breaks`), and skips the rooms the gallery's
+review rejected:
 
 ```bash
 unzip -q stonevaults-2.0.0+26.1-neoforge.jar 'data/stonevaults/structure/*' -d /tmp/stonevaults
@@ -59,10 +60,12 @@ uv run rf rooms import /tmp/stonevaults/data/stonevaults/structure --to content/
 uv run rf gen
 ```
 
-The dressing reads each room's slot tags from its sidecar (a `hallway` gets at most one barrel, other rooms one per
-step of floor area), so **retagging a dressed room needs its source imported again**, in the same commit: the
-committed template otherwise keeps the dressing of its old tags, and the next import changes it where nobody
-expects it. RLM-178 retagged Stonevaults' `lobby_01` without one, and its re-import in RLM-237 took a barrel out.
-The rooms of Stonevaults' dungeons and pillager dungeon and of Dungeon Now Loading's labyrinth are dressed.
+The dressing reads each room's slot tags from its sidecar (a `hallway` gets at most one barrel, other rooms a
+pattern of two to four by floor area), so **retagging a dressed room needs its source imported again**, in the same
+commit: the committed template otherwise keeps the dressing of its old tags, and the next import changes it where
+nobody expects it. RLM-178 retagged Stonevaults' `lobby_01` without one, and its re-import in RLM-237 took a barrel out.
+The rooms of Stonevaults' dungeons and pillager dungeon and of Dungeon Now Loading's labyrinth are dressed. Both
+were imported again when the barrels became patterns (RLM-262): only the added barrels moved. Stonevaults' rules
+also `place` the fall cushion into `lobby_01`, where every drop down its entrance shaft lands (RLM-276).
 
 A newer version of a source updates its `NOTICE` (version, file, what changed) and this table.

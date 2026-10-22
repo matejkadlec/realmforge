@@ -127,6 +127,24 @@ class DungeonPlannerTest {
         }
     }
 
+    /**
+     * RLM-256: a dead end limited to one per layout and to the dungeon's start, like Stonevaults' throne room, keeps
+     * both rules over every seed ({@link PlanChecks}), and still turns up in many layouts.
+     */
+    @Test
+    void aRoomKeepsItsLimitAndItsPlaceAtTheStart() {
+        DungeonRoom throne = new DungeonRoom(Identifier.parse("realmforge:rooms/test/throne"), new Vec3i(9, 6, 9),
+                RoomRole.TREASURE, 5, List.of(door(4, 1, 0, Direction.NORTH)), Optional.of(1), true, List.of());
+        List<DungeonRoom> rooms = List.of(ENTRANCE, CORRIDOR, CURVE, CROSSING, JUNCTION, DEAD_END, VAULT, LAIR, throne);
+        int with = 0;
+        for (long seed = 0; seed < SEEDS; seed++) {
+            DungeonPlan plan = plan(rooms, RULES, seed);
+            PlanChecks.assertValid(plan, rooms, RULES, PlotGrid.limits());
+            with += plan.rooms().stream().anyMatch(room -> room.room().equals(throne)) ? 1 : 0;
+        }
+        assertTrue(with > SEEDS / 10, "the throne room turned up in " + with + " of " + SEEDS + " layouts");
+    }
+
     /** An arriving player looks at the entrance's connector to the next room of the main path (W4b). */
     @Test
     void aLayoutLooksAtTheEntrancesWayOn() throws IOException {

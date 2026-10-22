@@ -70,6 +70,24 @@ final class PlanChecks {
             }
         }
 
+        // RLM-256: a room's limit per layout, and a room that belongs at the start hangs off the entrance or off the
+        // first room of the main path.
+        for (DungeonRoom room : pool) {
+            long count = rooms.stream().filter(placed -> placed.room().equals(room)).count();
+            room.maxPerLayout().ifPresent(max -> assertTrue(count <= max,
+                    seed + room.template() + " appears " + count + " times, at most " + max + " allowed"));
+        }
+        int firstPath = -1;
+        for (int i = 1; i < rooms.size() && firstPath < 0; i++) {
+            firstPath = rooms.get(i).slot() == Slot.PATH && parent[i] == 0 ? i : -1;
+        }
+        for (int i = 1; i < rooms.size(); i++) {
+            if (rooms.get(i).room().nearStart()) {
+                assertTrue(parent[i] == 0 || parent[i] == firstPath, seed + "room " + i + " ("
+                        + rooms.get(i).room().template() + ") hangs off room " + parent[i] + ", not at the start");
+            }
+        }
+
         boolean[] reached = new boolean[rooms.size()];
         Deque<Integer> queue = new ArrayDeque<>(List.of(0));
         reached[0] = true;

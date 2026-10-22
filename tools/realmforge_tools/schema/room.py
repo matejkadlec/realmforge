@@ -62,6 +62,23 @@ class RoomDef(StrictModel):
         "room in a pool must have, the shape (dead_end, straight, curved, t_junction, crossing), vertical, ...",
     )
     weight: int = Field(default=1, ge=1, le=150, description="Weight in its pools (vanilla allows 1 to 150).")
+    max_per_layout: int | None = Field(
+        default=None,
+        ge=1,
+        le=16,
+        description="The most times one dungeon layout holds this room; no limit when unset (RLM-256).",
+    )
+    near_start: bool = Field(
+        default=False,
+        description="True: the planner places this room only next to the entrance or the first room of the main "
+        "path, at the dungeon's start (RLM-256).",
+    )
+    explosion_breaks: UniqueResourceIds = Field(
+        default_factory=list,
+        description="Blocks an explosion inside this room may break in a dungeon instance, where explosions "
+        "otherwise break nothing: what a trap's TNT is meant to blow open (RLM-257). Every other block of the room "
+        "stays.",
+    )
     source: RoomSource | None = Field(default=None, description="Set for an imported room.")
 
 

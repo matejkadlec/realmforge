@@ -39,6 +39,9 @@ from realmforge_tools.yamlio import YamlLoadError, load_yaml_text
 # Written into every candidates folder: it marks the folder whose review freezes seeds, and lets a later run
 # replace it.
 MARKER = ".room-candidates"
+# Next to it: the kept seeds the run refused to build, one ``<spec>/seed_<n>`` per line. The review of the folder may
+# decide on them although the folder holds no room for them, and on no other seed without a room.
+REFUSED_KEPT = ".refused-kept-seeds"
 DEFAULT_COUNT = 4
 _KEY = re.compile(r"^(?P<spec>[a-z][a-z0-9_]*)/seed_(?P<seed>[1-9][0-9]*)$")
 
@@ -67,7 +70,8 @@ def write_candidates(
     """Build the candidates into ``out_dir``, which is replaced: it must be new, empty or an earlier candidates
     folder. With ``kept`` the specs' kept seeds come too, so a change to the generator can be reviewed on the rooms
     it changes; a reject decision on one moves it to ``rejected_seeds``. A kept seed in ``broken`` (the validation
-    problems ``load_and_validate`` set aside, by spec and seed) is refused with them."""
+    problems ``load_and_validate`` set aside, by spec and seed) is refused with them, and the refused kept seeds are
+    recorded in ``REFUSED_KEPT`` for the review."""
     specs = {entry.model.id: entry.model for entry in content.room_specs}
     unknown = sorted(set(spec_ids or ()) - specs.keys())
     if unknown:
@@ -86,6 +90,7 @@ def write_candidates(
         encoding="utf-8",
     )
     results = []
+    refused_kept = []
     for spec_id in spec_ids or sorted(specs):
         spec = specs[spec_id]
         result = SpecCandidates(spec_id)
@@ -108,7 +113,11 @@ def write_candidates(
             (folder / f"{candidate_name(seed)}.nbt").write_bytes(write_structure(structure))
             (folder / f"{candidate_name(seed)}.yaml").write_text(_sidecar(spec), encoding="utf-8")
             result.written.append(seed)
+        if kept:
+            refused_kept += [f"{spec_id}/{candidate_name(s)}" for s, _ in result.refused if s in spec.seeds]
         results.append(result)
+    if refused_kept:
+        (out_dir / REFUSED_KEPT).write_text("\n".join(refused_kept) + "\n", encoding="utf-8")
     return results
 
 
@@ -126,14 +135,13 @@ def is_candidates_folder(directory: Path) -> bool:
     return (directory / MARKER).is_file()
 
 
-def kept_keys(paths: RepoPaths) -> set[str]:
-    """``<spec>/seed_<n>`` of every kept seed in ``content/room_specs/``: a review of a candidates folder may decide on
-    them even when ``write_candidates`` refused to build one (a kept seed a generator change broke)."""
-    keys = set()
-    for path in sorted((paths.content / "room_specs").glob("*.yaml")):
-        spec = _parse(path.read_text(encoding="utf-8"), path)
-        keys |= {f"{spec.id}/{candidate_name(seed)}" for seed in spec.seeds}
-    return keys
+def refused_kept_keys(directory: Path) -> set[str]:
+    """``<spec>/seed_<n>`` of the kept seeds that the run which wrote the candidates folder refused to build (a kept
+    seed a generator change broke): its review may reject them although the folder holds no room for them."""
+    path = directory / REFUSED_KEPT
+    if not path.is_file():
+        return set()
+    return {line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()}
 
 
 @dataclass(frozen=True)

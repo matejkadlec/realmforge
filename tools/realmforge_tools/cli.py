@@ -234,13 +234,14 @@ def _rooms(args: argparse.Namespace, paths: RepoPaths) -> int:
             return _rooms_import(args, paths)
         if args.rooms_command == "review":
             text = args.source.read_text(encoding="utf-8") if args.source else sys.stdin.read()
-            # A kept seed that candidates --kept refused has no room in the folder; its reject still freezes.
-            kept_seeds = (
-                room_candidates.kept_keys(paths)
+            # A kept seed that this folder's candidates --kept run refused has no room in it; its reject still
+            # freezes. Any other seed without a room is refused.
+            refused_kept = (
+                room_candidates.refused_kept_keys(args.directory)
                 if room_candidates.is_candidates_folder(args.directory)
                 else set()
             )
-            decisions, changed = room_gallery.merge_review(args.directory, text, paths, kept_seeds)
+            decisions, changed = room_gallery.merge_review(args.directory, text, paths, refused_kept)
             kept = sum(1 for value in decisions.values() if value == "keep")
             print(
                 f"Wrote {paths.rel(args.directory / REVIEW_FILE)}: {changed} decision(s) changed, "
