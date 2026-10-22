@@ -9,11 +9,12 @@ import java.util.Optional;
 /** What {@code content/spell_schools/} says about every school, so GameTests can check that the game agrees. */
 public final class GeneratedSpellSchoolExpectations {
     /**
-     * Expected state of one school. Ids are full resource locations, e.g. {@code realmforge:fire}; the colour is
+     * Expected state of one school. Ids are full resource locations, e.g. {@code realmforge:fire}; the colours are
      * opaque ARGB, as the school's codec reads {@code "#RRGGBB"}.
      */
-    public record SpellSchoolExpectation(String id, String nameKey, boolean magic, int color, String damageType,
-            String messageId, Optional<String> power, Optional<String> resistance) {
+    public record SpellSchoolExpectation(String id, String nameKey, boolean magic, int color,
+            int combatTextColor, String damageType, String messageId, Optional<String> power,
+            Optional<String> resistance) {
     }
 
     public static final List<SpellSchoolExpectation> SPELL_SCHOOLS = List.of(
@@ -21,6 +22,7 @@ public final class GeneratedSpellSchoolExpectations {
                     "realmforge:arcane",
                     "spell_school.realmforge.arcane.name",
                     true,
+                    0xFFC77DFF,
                     0xFFC77DFF,
                     "realmforge:arcane",
                     "realmforge.arcane",
@@ -31,6 +33,7 @@ public final class GeneratedSpellSchoolExpectations {
                     "spell_school.realmforge.fire.name",
                     true,
                     0xFFFF7F1F,
+                    0xFFFF7F1F,
                     "realmforge:fire",
                     "realmforge.fire",
                     Optional.of("realmforge:fire_power"),
@@ -40,6 +43,7 @@ public final class GeneratedSpellSchoolExpectations {
                     "spell_school.realmforge.frost.name",
                     true,
                     0xFF7FD4FF,
+                    0xFF7FD4FF,
                     "realmforge:frost",
                     "realmforge.frost",
                     Optional.of("realmforge:frost_power"),
@@ -48,6 +52,7 @@ public final class GeneratedSpellSchoolExpectations {
                     "realmforge:physical",
                     "spell_school.realmforge.physical.name",
                     false,
+                    0xFFB2560D,
                     0xFFFFAA00,
                     "realmforge:physical",
                     "realmforge.physical",

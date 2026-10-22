@@ -8,7 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from realmforge_tools.content import Content
-from realmforge_tools.generate.datapack import game_field, seconds_to_ticks
+from realmforge_tools.generate.datapack import game_field, seconds_to_ticks, translation_key
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.spell import DAMAGE, HEAL, SpellDef
@@ -126,6 +126,8 @@ def _expectation(spell: SpellDef) -> str:
     return (
         "            new SpellExpectation(\n"
         f"                    {string_literal(f'{MOD_ID}:{spell.id}')},\n"
+        f"                    {string_literal(translation_key('spell', spell.id, 'name'))},\n"
+        f"                    {string_literal(translation_key('spell', spell.id, 'description'))},\n"
         f"                    {string_literal(spell.school)},\n"
         f"                    {string_literal(spell.scales_with)},\n"
         f"                    {string_literal(spell.targeting.type)},\n"
@@ -173,10 +175,12 @@ def _expectations(content: Content) -> bytes:
         "\n"
         "    /**\n"
         "     * Expected state of one spell, in game units (ticks, fractions). Ids are full resource locations, e.g.\n"
-        "     * {@code realmforge:test_bolt}; {@code range} is 0 for a spell on the caster itself, the cost's amounts are\n"
-        "     * 0 for a free spell, and the cast's duration and interval are 0 where its type has none.\n"
+        "     * {@code realmforge:test_bolt}; the name and description are translation keys; {@code range} is 0 for a\n"
+        "     * spell on the caster itself, the cost's amounts are 0 for a free spell, and the cast's duration and interval\n"
+        "     * are 0 where its type has none.\n"
         "     */\n"
-        "    public record SpellExpectation(String id, String school, String scalesWith, String targeting, double range,\n"
+        "    public record SpellExpectation(String id, String name, String description, String school, String scalesWith,\n"
+        "            String targeting, double range,\n"
         "            String cast, int castDurationTicks, int castIntervalTicks, boolean castableWhileMoving, boolean lockOn,\n"
         "            Optional<String> costResource, double costAmount, double costPerLevel, int cooldownTicks,\n"
         "            int globalCooldownTicks, int maxLevel, boolean canCrit, Optional<Double> critMultiplier,\n"

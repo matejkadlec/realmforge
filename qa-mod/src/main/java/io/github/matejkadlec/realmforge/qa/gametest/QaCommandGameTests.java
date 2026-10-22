@@ -2,13 +2,17 @@ package io.github.matejkadlec.realmforge.qa.gametest;
 
 import io.github.matejkadlec.realmforge.combat.DamageOverTime;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
+import io.github.matejkadlec.realmforge.generated.GeneratedSpells;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.mob.MobLevels;
 import io.github.matejkadlec.realmforge.mob.MobScaling;
 import io.github.matejkadlec.realmforge.qa.combat.TrainingDummy;
 import io.github.matejkadlec.realmforge.qa.command.MobCommands;
+import io.github.matejkadlec.realmforge.spell.SpellAttachments;
+import io.github.matejkadlec.realmforge.spell.Spellbook;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.OptionalInt;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
@@ -216,6 +220,40 @@ public final class QaCommandGameTests {
             run(server, player, "execute in realmforge:stone run tp @s 0 40 0");
             helper.assertTrue(player.level().dimension().identifier().toString().equals("realmforge:stone"),
                     "/advancement grant unlocks the realm too");
+        } finally {
+            server.getPlayerList().remove(player);
+        }
+        helper.succeed();
+    }
+
+    /**
+     * {@code /qa run}: the commands of one line run in order as its source, typed by the player or from a command
+     * block's {@code execute as ... at @s run qa run ...}; their order decides the spell bar's slots.
+     */
+    @QaGameTest
+    public static void runRunsItsCommandsInOrder(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-run-commands");
+        try {
+            run(server, player,
+                    "qa run qa spell learn realmforge:test_slow_bolt; /qa spell learn realmforge:test_bolt 3;;");
+            Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
+            helper.assertValueEqual(book.slot(0), Optional.of(GeneratedSpells.TEST_SLOW_BOLT),
+                    "the first command's spell on the first slot");
+            helper.assertValueEqual(book.slot(1), Optional.of(GeneratedSpells.TEST_BOLT),
+                    "the second command's spell on the second slot");
+            helper.assertValueEqual(book.spells().get(GeneratedSpells.TEST_BOLT), 3, "the second command's level");
+
+            CommandSourceStack commandBlock = server.createCommandSourceStack().withLevel(helper.getLevel())
+                    .withPosition(helper.absoluteVec(new Vec3(0.5, 1, 0.5)))
+                    .withPermission(PermissionSet.ALL_PERMISSIONS);
+            server.getCommands().performPrefixedCommand(commandBlock, "execute as qa-run-commands at @s run qa run "
+                    + "qa spell learn realmforge:test_drain; qa spell bar 9 realmforge:test_blink");
+            book = player.getData(SpellAttachments.SPELLBOOK);
+            helper.assertValueEqual(book.slot(2), Optional.of(GeneratedSpells.TEST_DRAIN),
+                    "a command block's line runs as the player");
+            helper.assertValueEqual(book.slot(Spellbook.RACIAL_SLOT), Optional.of(GeneratedSpells.TEST_BLINK),
+                    "and every command of it runs");
         } finally {
             server.getPlayerList().remove(player);
         }

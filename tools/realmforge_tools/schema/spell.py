@@ -4,27 +4,30 @@ One engine casts them for players, mobs and bosses (C3a). The first part (C3a-1,
 ``damage`` and ``heal`` effect types and the ``self``, ``enemy`` and ``ally`` targeting types; the second (C3a-2,
 RLM-210) adds cast times and channels; the third (C3a-3, RLM-211) the spell entities (``projectile``, ``area``), the
 status effect, movement and knockback effect types and the ``ground_point`` and ``direction`` targeting types; the
-fourth (C3a-4, RLM-212) the NPC targeting types ``current_target``, ``random_player`` and ``farthest_player``. Names and
-descriptions come with the spell bar and its tooltips (C3b, RLM-25).
+fourth (C3a-4, RLM-212) the NPC targeting types ``current_target``, ``random_player`` and ``farthest_player``. The spell
+bar and its tooltips (C3b, RLM-25) add the name and the description, whose numbers come from data through
+placeholders (architecture 6.3); our own status effects (C3c, RLM-26) add damage and healing over time.
 """
 
 from __future__ import annotations
 
+import re
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
 from realmforge_tools.project import MOD_ID
 from realmforge_tools.schema.character import ResourceType
-from realmforge_tools.schema.common import ContentId, ResourceId, Seconds, StrictModel
+from realmforge_tools.schema.common import ContentId, LocalizedText, ResourceId, Seconds, StrictModel
 
 FiniteNumber = Annotated[float, Field(allow_inf_nan=False)]
 NonNegative = Annotated[float, Field(ge=0, allow_inf_nan=False)]
 
 # Vanilla's line of sight check (LivingEntity#hasLineOfSight) fails beyond 128 blocks, so no range may exceed it.
 MAX_RANGE = 128.0
-# Research SP-11: about a second, which a spell may shorten or switch off (0).
-DEFAULT_GLOBAL_COOLDOWN = 1.0
+# Half a second, as in WoW, so instant spells cannot be spammed (Matěj, 2026-10-19, RLM-25; it replaced research
+# SP-11's second). A spell may shorten it or switch it off (0).
+DEFAULT_GLOBAL_COOLDOWN = 0.5
 MAX_SPELL_LEVEL = 100
 
 # What a spell's numbers grow with (Matěj, 2026-10-15): spell power for magic, attack damage for physical abilities.
@@ -61,6 +64,26 @@ RANDOM_PLAYER = f"{MOD_ID}:random_player"
 FARTHEST_PLAYER = f"{MOD_ID}:farthest_player"
 # The targeting types a mob or boss chooses its target with: only npc_only spells use them (architecture 11.2).
 NPC_TARGETING: tuple[str, ...] = (CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLAYER)
+
+# The placeholders a description may name, filled in the game from the spell's data at the player's spell level and
+# with their current stats (spell/SpellText; architecture 6.3: numbers come from data, never from prose):
+# - damage, heal: the first damage or heal effect (a projectile's or an area's included), raised by spell power and the
+#   school's power as the hit or heal would be, before the target's resistance and without a crit;
+# - duration: the first apply_effect's duration in seconds;
+# - periodic, periodic_total, interval: one tick, every tick and the time between two ticks of that effect's damage or
+#   healing over time (one of ours with periodic), raised by the caster's stats as its ticks are;
+# - radius: the first area's radius in blocks.
+PLACEHOLDERS: tuple[str, ...] = (
+    "damage",
+    "heal",
+    "duration",
+    "periodic",
+    "periodic_total",
+    "interval",
+    "radius",
+)
+PERIODIC_PLACEHOLDERS: frozenset[str] = frozenset({"periodic", "periodic_total", "interval"})
+_PLACEHOLDER = re.compile(r"\{([^{}]*)\}")
 
 
 class _LeveledAmount(StrictModel):
@@ -422,11 +445,30 @@ class CritDef(StrictModel):
         return self
 
 
+# The effect type each placeholder reads.
+_PLACEHOLDER_EFFECT: dict[str, str] = {
+    "damage": DAMAGE,
+    "heal": HEAL,
+    "duration": APPLY_EFFECT,
+    "periodic": APPLY_EFFECT,
+    "periodic_total": APPLY_EFFECT,
+    "interval": APPLY_EFFECT,
+    "radius": AREA,
+}
+
+
 class SpellDef(StrictModel):
     """A spell for players or NPCs: its school, what it scales with, its targeting, cast, cost, cooldowns, crit
     rules and typed effects, with numbers per spell level up to ``max_level`` (architecture 11.1)."""
 
     id: ContentId
+    name: LocalizedText = Field(
+        description="The spell's name, on the spell bar, in the spellbook and on the cast bar."
+    )
+    description: LocalizedText = Field(
+        description="What the spell does, in its tooltip: one or two sentences. Numbers come from data through "
+        "placeholders: {damage}, {heal}, {duration}, {periodic}, {periodic_total}, {interval} and {radius}."
+    )
     school: ResourceId = Field(description="The spell school whose damage it deals, e.g. realmforge:fire.")
     scales_with: ScalesWith = Field(
         description="spell_power for magic schools, attack_damage for physical abilities (Matěj, 2026-10-15)."
@@ -442,8 +484,8 @@ class SpellDef(StrictModel):
     )
     global_cooldown_seconds: Seconds = Field(
         default=DEFAULT_GLOBAL_COOLDOWN,
-        description="How long a cast blocks every other spell (research SP-11: 1 s); 0 for spells off the global "
-        "cooldown.",
+        description="How long a cast blocks every other spell (0.5 s by default, as in WoW); 0 for spells off the "
+        "global cooldown.",
     )
     max_level: int = Field(default=1, ge=1, le=MAX_SPELL_LEVEL, description="Highest spell level (rank).")
     crit: CritDef = Field(
@@ -469,6 +511,29 @@ class SpellDef(StrictModel):
         if self.targeting.type in NPC_TARGETING and not self.npc_only:
             raise ValueError(f"{self.targeting.type} chooses a mob's target, so the spell is npc_only: true")
         return self
+
+    @model_validator(mode="after")
+    def _placeholders(self) -> SpellDef:
+        text = self.description.en_us
+        if _PLACEHOLDER.sub("", text).count("{") or _PLACEHOLDER.sub("", text).count("}"):
+            raise ValueError("description: a brace that opens or closes no {placeholder}")
+        for name in self.placeholders():
+            if name not in PLACEHOLDERS:
+                raise ValueError(
+                    f"description: unknown placeholder {{{name}}}; known: {', '.join(PLACEHOLDERS)}"
+                )
+            needed = _PLACEHOLDER_EFFECT[name]
+            if self.first_effect(needed) is None:
+                raise ValueError(f"description: {{{name}}} needs a {needed} effect, and the spell has none")
+        return self
+
+    def placeholders(self) -> list[str]:
+        """The names of the placeholders in the description, in order."""
+        return _PLACEHOLDER.findall(self.description.en_us)
+
+    def first_effect(self, effect_type: str) -> BaseModel | None:
+        """The first effect of ``effect_type`` in ``all_effects`` order, what a placeholder reads."""
+        return next((effect for _, effect in self.all_effects() if effect.type == effect_type), None)
 
     def all_effects(self) -> list[tuple[str, BaseModel]]:
         """Every effect with its path, those that a projectile or an area runs included."""

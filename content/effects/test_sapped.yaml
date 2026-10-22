@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/effects.schema.json
+# Engine test (C3c): attribute modifiers, a vanilla attribute's and one of our stats'. Not gameplay content; test_sap
+# applies it, and the GameTests in the QA mod check its modifiers.
+id: test_sapped
+name: {en_us: Test Sapped}
+category: harmful
+color: "#8F8FA0"
+modifiers:
+  - {attribute: minecraft:movement_speed, operation: add_multiplied_total, amount_percent: -20}
+  - {attribute: realmforge:spell_power, operation: add_value, amount_percent: -10}

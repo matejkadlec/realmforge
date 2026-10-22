@@ -38,4 +38,9 @@ public record RandomPlayerTargeting(double range) implements SpellTargeting {
         }
         return Either.left(SpellTarget.of(caster, players.get(caster.getRandom().nextInt(players.size()))));
     }
+
+    @Override
+    public double reach() {
+        return range;
+    }
 }

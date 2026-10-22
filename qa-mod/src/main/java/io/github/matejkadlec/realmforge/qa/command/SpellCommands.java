@@ -18,6 +18,7 @@ import io.github.matejkadlec.realmforge.spell.SpellAttachments;
 import io.github.matejkadlec.realmforge.spell.SpellCaster;
 import io.github.matejkadlec.realmforge.spell.SpellRegistries;
 import io.github.matejkadlec.realmforge.spell.SpellTarget;
+import io.github.matejkadlec.realmforge.spell.Spellbook;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import java.util.List;
 import java.util.Locale;
@@ -38,16 +39,19 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 /**
- * {@code /qa spell} drives the spell engine before the spell bar exists (C3a-1, architecture 11), on the executing
+ * {@code /qa spell} drives the spell engine (C3a-1, architecture 11) and sets up the spell bar (C3b), on the executing
  * entity ({@code /execute as} makes a mob the caster):
  * <ul>
- *   <li>{@code /qa spell learn <spell> [<level>]} teaches the executing player a spell, at level 1 by default.</li>
+ *   <li>{@code /qa spell learn <spell> [<level>]} teaches the executing player a spell, at level 1 by default; it goes
+ *   into the spell bar's first empty slot.</li>
+ *   <li>{@code /qa spell bar <slot> [<spell>]} puts a known spell into a bar slot (1 to 8), or empties it; slot 9 is
+ *   the racial slot beside the bar (X), which takes any spell here until the race fills it (C4).</li>
  *   <li>{@code /qa spell cast <spell> [<target>]} casts it at the target (none by default: a self or ally spell then
  *   takes the caster, a ground point or a direction follows where the caster looks) and says why when the cast is
  *   refused; a cast-time or channelled spell begins (C3a-2).</li>
  *   <li>{@code /qa spell cast_at <spell> <pos>} casts it at a point: a ground point there, or a direction toward it
  *   (C3a-3).</li>
- *   <li>{@code /qa spell cancel} cancels the cast in progress, as the spell bar's cancel will (C3b).</li>
+ *   <li>{@code /qa spell cancel} cancels the cast in progress.</li>
  *   <li>{@code /qa spell resource <mana|rage> <amount>} sets a resource pool, within its maximum.</li>
  *   <li>{@code /qa spell reset} ends every cooldown, the global one included.</li>
  *   <li>{@code /qa spell show} prints the known spells, the pools, the running cooldowns, the cast in progress and
@@ -89,6 +93,11 @@ public final class SpellCommands {
                                 .then(Commands.argument("pos", Vec3Argument.vec3())
                                         .executes(context -> cast(context,
                                                 SpellAim.at(Vec3Argument.getVec3(context, "pos")))))))
+                .then(Commands.literal("bar")
+                        .then(Commands.argument("slot", IntegerArgumentType.integer(1, Spellbook.SLOT_COUNT))
+                                .executes(context -> bar(context, Optional.empty()))
+                                .then(Commands.argument("spell", IdentifierArgument.id()).suggests(SPELLS)
+                                        .executes(context -> bar(context, Optional.of(spell(context)))))))
                 .then(Commands.literal("cancel").executes(SpellCommands::cancel))
                 .then(resource)
                 .then(Commands.literal("reset").executes(SpellCommands::reset))
@@ -119,6 +128,24 @@ public final class SpellCommands {
         Spells.learn(player, spell.get(), level);
         context.getSource().sendSuccess(() -> Component.literal(player.getPlainTextName() + " knows "
                 + key.identifier() + " at level " + level), true);
+        return 1;
+    }
+
+    private static int bar(CommandContext<CommandSourceStack> context, Optional<ResourceKey<Spell>> spell)
+            throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        int slot = IntegerArgumentType.getInteger(context, "slot") - 1;
+        if (slot == Spellbook.RACIAL_SLOT) {
+            Spells.setRacialSpell(player, spell);
+        } else if (!Spells.placeOnBar(player, slot, spell)
+                && !player.getData(SpellAttachments.SPELLBOOK).slot(slot).equals(spell)) {
+            context.getSource().sendFailure(Component.literal(player.getPlainTextName() + " does not know "
+                    + spell.map(key -> key.identifier().toString()).orElse("that spell")));
+            return 0;
+        }
+        context.getSource().sendSuccess(() -> Component.literal("Slot " + (slot + 1) + " of "
+                + player.getPlainTextName() + " holds " + spell.map(key -> key.identifier().toString())
+                .orElse("nothing")), true);
         return 1;
     }
 

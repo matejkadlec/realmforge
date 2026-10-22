@@ -17,7 +17,7 @@ import net.minecraft.util.StringRepresentable;
  * @param intervalTicks       a channel's time between two ticks of its effects, which divides its duration; 0 for
  *                            the other types
  * @param castableWhileMoving whether the caster moves at full speed during a cast-time or channelled spell;
- *                            otherwise the cast slows it as Slowness III does (ADR 0039)
+ *                            otherwise the cast halves its speed (ADR 0039, ADR 0047)
  * @param lockOn              whether a cast-time or channelled spell keeps its target: range and line of sight are not
  *                            checked again before its effects run, only that the target lives in the caster's
  *                            dimension

@@ -2,6 +2,8 @@
 # Engine test (C3a-1): a frost bolt that always crits, for twice its damage, through its own crit data (Matěj,
 # 2026-10-15: a spell may change its crit chance and multiplier). Not gameplay content; the GameTests cast it.
 id: test_sure_crit
+name: {en_us: Test Sure Crit}
+description: {en_us: "Always strikes critically for {damage} damage."}
 school: realmforge:frost
 scales_with: spell_power
 targeting: {type: realmforge:enemy, range: 16}

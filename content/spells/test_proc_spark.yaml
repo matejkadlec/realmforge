@@ -2,6 +2,8 @@
 # Engine test (C3a-4): the spell a test proc casts at the enemy hit, so a proc's own hit can be told from the hit that
 # triggered it. Not gameplay content; the GameTests in the QA mod give the proc.
 id: test_proc_spark
+name: {en_us: Test Spark}
+description: {en_us: "A spark of {damage} damage."}
 school: realmforge:arcane
 scales_with: spell_power
 targeting: {type: realmforge:enemy, range: 16}

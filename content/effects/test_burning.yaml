@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/effects.schema.json
+# Engine test (C3c): fire damage over time, 2 a second at the first level. Not gameplay content; test_ignite applies
+# it, and the GameTests in the QA mod check its ticks and its source.
+id: test_burning
+name: {en_us: Test Burning}
+category: harmful
+color: "#FF7F1F"
+periodic: {type: damage, school: realmforge:fire, amount: 2, interval_seconds: 1}

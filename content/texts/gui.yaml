@@ -89,3 +89,31 @@ texts:
     en_us: "Subclass: WIP"
   subclass_wip_description:
     en_us: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+  # The spellbook (C3b, RLM-25, client/screen/SpellbookScreen): the player's known spells and the spell bar's layout.
+  spellbook:
+    en_us: Spellbook
+  known_spells:
+    en_us: Known Spells
+  spell_bar:
+    en_us: Spell Bar
+  no_known_spells:
+    en_us: You know no spells yet.
+  spellbook_hint:
+    en_us: Click a spell, then a slot. Right-click a slot to empty it.
+  # A known spell in the list: "Test Bolt (Rank 2)" (%1$s the name, %2$s the rank).
+  spell_with_rank:
+    en_us: "%1$s (Rank %2$s)"
+  spell_options:
+    en_us: Options
+  # The spell casting options (Matěj, 2026-10-19, RLM-25; client/screen/SpellOptionsScreen), also behind the
+  # Config button of the mod list.
+  spell_casting_options:
+    en_us: Spell Casting Options
+  queue_spell_casts:
+    en_us: Queue Spell Casts
+  queue_spell_casts_tooltip:
+    en_us: "On: a spell you press during another spell's cast waits for it to end. Off: it cancels that cast and casts at once."
+  spells_queue_size:
+    en_us: Spells Queue Size
+  spells_queue_size_tooltip:
+    en_us: "How many spells can wait. At 1, a newer spell replaces the waiting one; above 1, it waits after them."

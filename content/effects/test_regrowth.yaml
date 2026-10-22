@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/effects.schema.json
+# Engine test (C3c): arcane healing over time, 2 a second at the first level. Not gameplay content; test_regrow
+# applies it, and the GameTests in the QA mod check its ticks.
+id: test_regrowth
+name: {en_us: Test Regrowth}
+category: beneficial
+color: "#4FCF6F"
+periodic: {type: heal, school: realmforge:arcane, amount: 2, interval_seconds: 1}

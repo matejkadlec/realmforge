@@ -1,4 +1,6 @@
 {
+  "name": "spell.realmforge.test_strike.name",
+  "description": "spell.realmforge.test_strike.description",
   "school": "realmforge:physical",
   "scales_with": "attack_damage",
   "targeting": {

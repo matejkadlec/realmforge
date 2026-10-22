@@ -49,7 +49,7 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class SpellGameTests {
     private static final double TOLERANCE = 1e-4;
-    private static final double HEALTH = 1000;
+    static final double HEALTH = 1000;
     /** Marks this test's husk, as other tests' husks may stand nearby. */
     private static final String TARGET_TAG = "realmforge_qa.spell_target";
 
@@ -71,7 +71,7 @@ public final class SpellGameTests {
         assertPool(helper, player, ResourceTypes.MANA, 90, "after a cast for 10 mana");
         CombatState state = player.getData(SpellAttachments.COMBAT);
         helper.assertValueEqual(state.cooldowns().get(GeneratedSpells.TEST_BOLT), now + 60, "the 3 s cooldown");
-        helper.assertValueEqual(state.globalCooldownEnd(), now + 20, "the 1 s global cooldown");
+        helper.assertValueEqual(state.globalCooldownEnd(), now + 10, "the 0.5 s global cooldown");
 
         Spells.resetCooldowns(player);
         learn(helper, player, GeneratedSpells.TEST_BOLT, 3);
@@ -89,7 +89,7 @@ public final class SpellGameTests {
         state = player.getData(SpellAttachments.COMBAT);
         helper.assertValueEqual(state.cooldowns().get(GeneratedSpells.TEST_BOLT), later + 30,
                 "50 % cooldown reduction halves the cooldown");
-        helper.assertValueEqual(state.globalCooldownEnd(), later + 20, "but not the global cooldown");
+        helper.assertValueEqual(state.globalCooldownEnd(), later + 10, "but not the global cooldown");
         logout(player);
         helper.succeed();
     }

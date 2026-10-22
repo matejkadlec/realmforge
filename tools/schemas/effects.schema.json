@@ -1,0 +1,176 @@
+{
+  "$defs": {
+    "EffectModifierDef": {
+      "additionalProperties": false,
+      "description": "An attribute modifier the effect gives while it lasts. The amount is the first level's: vanilla multiplies it\nby the amplifier + 1, so Slowness II (amplifier 1) slows twice as much as Slowness I. Units follow the stat rules:\nmultiplied operations take ``amount_percent``; ``add_value`` on one of our stats takes its unit.",
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The amount, in game units.",
+          "title": "Amount"
+        },
+        "amount_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The amount in percent (5 means 5 %, the fraction 0.05).",
+          "title": "Amount Percent"
+        },
+        "attribute": {
+          "description": "The attribute it modifies, e.g. realmforge:strength.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Attribute",
+          "type": "string"
+        },
+        "operation": {
+          "description": "How the amount applies (vanilla's attribute modifier operations).",
+          "enum": [
+            "add_value",
+            "add_multiplied_base",
+            "add_multiplied_total"
+          ],
+          "title": "Operation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "attribute",
+        "operation"
+      ],
+      "title": "EffectModifierDef",
+      "type": "object"
+    },
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    },
+    "PeriodicDef": {
+      "additionalProperties": false,
+      "description": "Damage or healing of a spell school at the end of every interval while the effect lasts (damage or healing\nover time). Each amplifier level adds the amount again, and the caster's stats raise it as they would the\nschool's hit or heal: spell power for a magic school, and the school's power. Ticks never crit.",
+      "properties": {
+        "amount": {
+          "description": "Damage or healing of one tick at the first level (amplifier 0).",
+          "exclusiveMinimum": 0,
+          "title": "Amount",
+          "type": "number"
+        },
+        "interval_seconds": {
+          "description": "The time between two ticks, from 0.25 to 10 s.",
+          "minimum": 0,
+          "title": "Interval Seconds",
+          "type": "number"
+        },
+        "school": {
+          "description": "The spell school, e.g. realmforge:fire.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "School",
+          "type": "string"
+        },
+        "type": {
+          "description": "damage: a hit of the school; heal: healing.",
+          "enum": [
+            "damage",
+            "heal"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "school",
+        "amount",
+        "interval_seconds"
+      ],
+      "title": "PeriodicDef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A status effect of ours, ``realmforge:<id>``: harmful, beneficial or neutral, with attribute modifiers, damage\nor healing over time, or both. Its name is the effect's translation, ``effect.realmforge.<id>``, shown in the\ninventory and on the HUD with its icon (a placeholder until the art exists).",
+  "properties": {
+    "category": {
+      "description": "beneficial: a buff; harmful: a debuff (it can be dispelled as one); neutral: neither.",
+      "enum": [
+        "beneficial",
+        "harmful",
+        "neutral"
+      ],
+      "title": "Category",
+      "type": "string"
+    },
+    "color": {
+      "description": "Colour of its particles, \"#RRGGBB\".",
+      "pattern": "^#[0-9A-Fa-f]{6}$",
+      "title": "Color",
+      "type": "string"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "modifiers": {
+      "description": "Attribute modifiers it gives while it lasts.",
+      "items": {
+        "$ref": "#/$defs/EffectModifierDef"
+      },
+      "title": "Modifiers",
+      "type": "array"
+    },
+    "name": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "The effect's name, shown with its icon."
+    },
+    "periodic": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PeriodicDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Damage or healing at the end of every interval while it lasts."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "category",
+    "color"
+  ],
+  "title": "EffectDef",
+  "type": "object"
+}

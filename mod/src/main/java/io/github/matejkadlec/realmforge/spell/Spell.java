@@ -13,9 +13,12 @@ import net.minecraft.util.ExtraCodecs;
 
 /**
  * A spell, an entry of the datapack registry {@code realmforge:spell} from {@code content/spells/} (architecture 5.2,
- * 6.4, 11.1), cast by players, mobs and bosses through {@link SpellCaster}. Its names and texts come with the spell bar
- * (C3b); icons, animations and sounds with C6.
+ * 6.4, 11.1), cast by players, mobs and bosses through {@link SpellCaster}. Its name and description came with the spell
+ * bar (C3b); icons, animations and sounds come with C6.
  *
+ * @param name the translation key of its name
+ * @param description the translation key of what it does, with placeholders such as {@code {damage}} that
+ *                    {@link SpellText} fills from the data
  * @param school the spell school whose damage it deals; a school that does not exist fails the world load
  * @param scalesWith what its numbers grow with: spell power for magic, attack damage for physical abilities
  * @param targeting who it can target
@@ -28,13 +31,15 @@ import net.minecraft.util.ExtraCodecs;
  * @param npcOnly whether only mobs and bosses may cast it
  * @param effects what it does, in order
  */
-public record Spell(Holder<SpellSchool> school, Scaling scalesWith, SpellTargeting targeting, SpellCast cast,
+public record Spell(String name, String description, Holder<SpellSchool> school, Scaling scalesWith, SpellTargeting targeting, SpellCast cast,
         Optional<SpellCost> cost, int cooldownTicks, int globalCooldownTicks, int maxLevel, CritRule crit,
         boolean npcOnly, List<SpellEffect> effects) {
-    /** The global cooldown of a spell that names none: one second (research SP-11). */
-    public static final int DEFAULT_GLOBAL_COOLDOWN_TICKS = 20;
+    /** The global cooldown of a spell that names none: half a second, as in WoW (Matěj, 2026-10-19, RLM-25). */
+    public static final int DEFAULT_GLOBAL_COOLDOWN_TICKS = 10;
 
     public static final Codec<Spell> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                    Codec.STRING.fieldOf("name").forGetter(Spell::name),
+                    Codec.STRING.fieldOf("description").forGetter(Spell::description),
                     RegistryFixedCodec.create(CombatRegistries.SPELL_SCHOOL).fieldOf("school").forGetter(Spell::school),
                     Scaling.CODEC.fieldOf("scales_with").forGetter(Spell::scalesWith),
                     SpellTargeting.CODEC.fieldOf("targeting").forGetter(Spell::targeting),

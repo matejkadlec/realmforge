@@ -13,6 +13,7 @@ from realmforge_tools.schema.character import ClassDef, RaceDef
 from realmforge_tools.schema.curve import CurveDef
 from realmforge_tools.schema.dimension_rules import DimensionRulesDef
 from realmforge_tools.schema.dungeon import DungeonTypeDef
+from realmforge_tools.schema.effect import EffectDef
 from realmforge_tools.schema.item import ItemDef
 from realmforge_tools.schema.kill_xp_multiplier import KillXpMultiplierDef
 from realmforge_tools.schema.realm import RealmDef
@@ -38,6 +39,7 @@ CONTENT_TYPES: dict[str, type] = {
     "dungeons": DungeonTypeDef,
     "chapters": ChapterDef,
     "kill_xp_multipliers": KillXpMultiplierDef,
+    "effects": EffectDef,
     "spells": SpellDef,
     "room_themes": RoomThemeDef,
     "room_specs": RoomSpecDef,
@@ -85,6 +87,7 @@ __all__ = [
     "DatapackType",
     "DimensionRulesDef",
     "DungeonTypeDef",
+    "EffectDef",
     "ItemDef",
     "KillXpMultiplierDef",
     "RaceDef",

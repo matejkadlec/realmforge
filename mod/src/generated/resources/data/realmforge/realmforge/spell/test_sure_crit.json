@@ -1,4 +1,6 @@
 {
+  "name": "spell.realmforge.test_sure_crit.name",
+  "description": "spell.realmforge.test_sure_crit.description",
   "school": "realmforge:frost",
   "scales_with": "spell_power",
   "targeting": {

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import struct
 
 import pytest
 
@@ -167,6 +168,7 @@ def test_school_entries_name_their_damage_type_and_stats(repo: RepoPaths) -> Non
         "name": "spell_school.realmforge.fire.name",
         "kind": "magic",
         "color": "#FF7F1F",
+        "combat_text_color": "#FF7F1F",
         "damage_type": "realmforge:fire",
         "power": "realmforge:fire_power",
         "resistance": "realmforge:fire_resistance",
@@ -174,9 +176,26 @@ def test_school_entries_name_their_damage_type_and_stats(repo: RepoPaths) -> Non
     assert json.loads(files[f"{SCHOOL_DATA}/physical.json"]) == {
         "name": "spell_school.realmforge.physical.name",
         "kind": "physical",
-        "color": "#FFAA00",
+        "color": "#B2560D",
+        "combat_text_color": "#FFAA00",
         "damage_type": "realmforge:physical",
     }
+
+
+def test_combat_text_takes_the_school_colour_unless_it_has_its_own(repo: RepoPaths) -> None:
+    school(repo, "shadow", SHADOW)
+    assert json.loads(generate(repo)[f"{SCHOOL_DATA}/shadow.json"])["combat_text_color"] == "#663399"
+    school(repo, "shadow", SHADOW + 'combat_text_color: "#aa88ff"\n')
+    assert json.loads(generate(repo)[f"{SCHOOL_DATA}/shadow.json"])["combat_text_color"] == "#AA88FF"
+
+
+def test_every_school_has_an_icon_for_tooltips(repo: RepoPaths) -> None:
+    files = generate(repo)
+    icons = "mod/src/generated/resources/assets/realmforge/textures/gui/sprites/school"
+    fire = files[f"{icons}/fire.png"]
+    # 8 by 8: an inline glyph is as tall as the font.
+    assert fire.startswith(b"\x89PNG") and struct.unpack(">II", fire[16:24]) == (8, 8)
+    assert fire != files[f"{icons}/frost.png"]
 
 
 def test_the_colour_is_written_in_capitals(repo: RepoPaths) -> None:
@@ -215,10 +234,11 @@ def test_no_school_hit_knocks_back(repo: RepoPaths) -> None:
 def test_no_magic_school_writes_no_armor_tag(repo: RepoPaths) -> None:
     for name in ("arcane", "fire", "frost"):
         (repo.content / "spell_schools" / f"{name}.yaml").unlink()
-    # The magic spells name these schools, so they go too.
-    for file in (repo.content / "spells").glob("*.yaml"):
-        if "realmforge:physical" not in file.read_text(encoding="utf-8"):
-            file.unlink()
+    # The magic spells and effects name these schools, so they go too.
+    for folder in ("spells", "effects"):
+        for file in (repo.content / folder).glob("*.yaml"):
+            if "realmforge:physical" not in file.read_text(encoding="utf-8"):
+                file.unlink()
     files = generate(repo)
     assert f"{TAGS}/bypasses_cooldown.json" in files
     assert json.loads(files[f"{TAGS}/no_knockback.json"]) == {"values": ["realmforge:physical"]}
@@ -245,18 +265,19 @@ def test_keys_and_expectations_cover_every_school(repo: RepoPaths) -> None:
         '                    "spell_school.realmforge.fire.name",\n'
         "                    true,\n"
         "                    0xFFFF7F1F,\n"
+        "                    0xFFFF7F1F,\n"
         '                    "realmforge:fire",\n'
         '                    "realmforge.fire",\n'
         '                    Optional.of("realmforge:fire_power"),\n'
         '                    Optional.of("realmforge:fire_resistance"))' in expectations
     )
-    assert "0xFFFFAA00,\n" in expectations
+    assert "0xFFB2560D,\n                    0xFFFFAA00,\n" in expectations
     assert "Optional.empty(),\n                    Optional.empty())" in expectations
 
 
 def test_no_schools_still_compile(repo: RepoPaths) -> None:
-    # Spells name their school, so they go too.
-    for folder in ("spell_schools", "spells"):
+    # Spells and effects name their school, so they go too.
+    for folder in ("spell_schools", "spells", "effects"):
         for file in (repo.content / folder).glob("*.yaml"):
             file.unlink()
     files = generate(repo)

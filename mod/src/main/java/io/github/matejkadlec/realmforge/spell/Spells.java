@@ -22,16 +22,46 @@ public final class Spells {
     }
 
     /**
-     * Teaches {@code player} {@code spell} at {@code level}, replacing the level they knew. The level must lie between
-     * 1 and the spell's {@code max_level}. Character (C4: spells by class level) and talents (C5) call this.
+     * Teaches {@code player} {@code spell} at {@code level}, replacing the level they knew, and puts it into the spell
+     * bar's first empty slot unless it is on the bar already (C3b, RLM-25). The level must lie between 1 and the spell's
+     * {@code max_level}. Character (C4: spells by class level) and talents (C5) call this.
      */
     public static void learn(Player player, Holder.Reference<Spell> spell, int level) {
         if (level < 1 || level > spell.value().maxLevel()) {
             throw new IllegalArgumentException("Spell level " + level + " is outside 1 to " + spell.value().maxLevel()
                     + " for " + spell.key().identifier());
         }
+        Spellbook book = player.getData(SpellAttachments.SPELLBOOK).withSpell(spell.key(), level);
         player.setData(SpellAttachments.SPELLBOOK,
-                player.getData(SpellAttachments.SPELLBOOK).withSpell(spell.key(), level));
+                spell.value().npcOnly() ? book : book.withSpellOnBar(spell.key()));
+    }
+
+    /**
+     * Puts {@code spell} into the bar's {@code slot} (0 to 7), or empties the slot: the spellbook's intent
+     * ({@code SetSpellBarSlotPayload}). Refused, changing nothing, for another slot or a spell the player does not
+     * know; a spell already on the bar moves there, swapping with the one it displaces. Returns whether it changed.
+     */
+    public static boolean placeOnBar(Player player, int slot, Optional<ResourceKey<Spell>> spell) {
+        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
+        if (slot < 0 || slot >= Spellbook.BAR_SLOTS || spell.isPresent() && book.level(spell.get()).isEmpty()) {
+            return false;
+        }
+        Spellbook placed = spell.map(key -> book.placed(slot, key)).orElseGet(() -> book.withSlot(slot,
+                Optional.empty()));
+        if (placed.equals(book)) {
+            return false;
+        }
+        player.setData(SpellAttachments.SPELLBOOK, placed);
+        return true;
+    }
+
+    /**
+     * Sets the racial ability beside the bar ({@link Spellbook#RACIAL_SLOT}, X), or empties it. The race fills it (C4,
+     * RLM-27); the player cannot, so no payload reaches it. The spell must be known to be cast from there.
+     */
+    public static void setRacialSpell(Player player, Optional<ResourceKey<Spell>> spell) {
+        player.setData(SpellAttachments.SPELLBOOK,
+                player.getData(SpellAttachments.SPELLBOOK).withSlot(Spellbook.RACIAL_SLOT, spell));
     }
 
     /** {@code caster}'s cast-time or channelled spell in progress, if any. */

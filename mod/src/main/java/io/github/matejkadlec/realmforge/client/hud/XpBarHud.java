@@ -32,7 +32,7 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
  * for enchanting (decision D3). Shown only for a player with a character. Its place: {@link XpBarLayout}.
  */
 public final class XpBarHud {
-    private static final Identifier LAYER = Realmforge.id("xp_bar");
+    static final Identifier LAYER = Realmforge.id("xp_bar");
     private static final int WIDTH = XpBarLayout.WIDTH;
     private static final int HEIGHT = XpBarLayout.HEIGHT;
     private static final int BORDER = 0xFF000000;

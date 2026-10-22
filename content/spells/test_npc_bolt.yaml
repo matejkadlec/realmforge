@@ -2,6 +2,8 @@
 # Engine test (C3a-1): a spell only mobs and bosses may cast, which a player is refused. Not gameplay content; the
 # GameTests in the QA mod cast it.
 id: test_npc_bolt
+name: {en_us: Test Creature Bolt}
+description: {en_us: "A creature's bolt for {damage} damage."}
 school: realmforge:arcane
 scales_with: spell_power
 targeting: {type: realmforge:enemy, range: 16}

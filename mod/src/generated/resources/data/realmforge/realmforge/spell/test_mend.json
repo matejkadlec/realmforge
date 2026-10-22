@@ -1,4 +1,6 @@
 {
+  "name": "spell.realmforge.test_mend.name",
+  "description": "spell.realmforge.test_mend.description",
   "school": "realmforge:arcane",
   "scales_with": "spell_power",
   "targeting": {
@@ -14,7 +16,7 @@
     "resource": "realmforge:mana"
   },
   "cooldown_ticks": 0,
-  "global_cooldown_ticks": 20,
+  "global_cooldown_ticks": 10,
   "max_level": 2,
   "crit": {
     "can_crit": true,

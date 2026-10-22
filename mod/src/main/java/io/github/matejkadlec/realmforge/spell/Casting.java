@@ -41,8 +41,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   <li><b>Interrupts:</b> a spell's knockback (unless the spell may be cast while moving), death, a dimension change,
  *   logging out, the caster's removal and a cancel ({@link #cancel}) end it without more effects.</li>
  *   <li><b>Moving slows, it never interrupts</b> (RLM-261, ADR 0039): a cast of a spell that may not be cast while
- *   moving gives its caster {@link #CAST_SLOW}, Slowness III's share of movement speed, until the cast ends however it
- *   ends. A spell's {@code realmforge:knockback} still interrupts the cast ({@link #knockedBack}).</li>
+ *   moving gives its caster {@link #CAST_SLOW}, half its movement speed, until the cast ends however it ends. A spell's {@code realmforge:knockback} still interrupts the cast ({@link #knockedBack}).</li>
  *   <li><b>A cast time</b> completes after its duration: the cost and the target are checked again ({@link
  *   SpellCaster#recheck}), and a failed check ends it like an interrupt, without the cost, the cooldown or the effects.
  *   Otherwise it pays, starts its cooldown and runs its effects.</li>
@@ -59,10 +58,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
  */
 public final class Casting {
     /**
-     * The movement speed a caster loses while it casts a spell that may not be cast while moving: Slowness III's, three
-     * times vanilla's 15 % a level (ADR 0039). A transient modifier: never saved, so a crash leaves none behind.
+     * The movement speed a caster loses while it casts a spell that may not be cast while moving: exactly half (ADR 0039,
+     * ADR 0047), which no level of vanilla's Slowness gives. A transient modifier: never saved, so a crash leaves none
+     * behind.
      */
-    public static final AttributeModifier CAST_SLOW = new AttributeModifier(Realmforge.id("cast_slow"), -0.45,
+    public static final AttributeModifier CAST_SLOW = new AttributeModifier(Realmforge.id("cast_slow"), -0.5,
             AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
 
     /** Every cast in progress, by caster. Server thread only. */

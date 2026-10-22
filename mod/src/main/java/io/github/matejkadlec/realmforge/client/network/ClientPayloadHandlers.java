@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.client.network;
 
+import io.github.matejkadlec.realmforge.client.hud.CastBarHud;
 import io.github.matejkadlec.realmforge.client.hud.CombatTextHud;
 import io.github.matejkadlec.realmforge.client.hud.HitDirectionHud;
 import io.github.matejkadlec.realmforge.client.hud.RealmRefusalHud;
@@ -7,6 +8,7 @@ import io.github.matejkadlec.realmforge.client.spell.ClientCasts;
 import io.github.matejkadlec.realmforge.combat.net.CombatTextPayload;
 import io.github.matejkadlec.realmforge.combat.net.HitDirectionPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastEndedPayload;
+import io.github.matejkadlec.realmforge.spell.net.CastRefusedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastStartedPayload;
 import io.github.matejkadlec.realmforge.world.net.RealmRefusedPayload;
 import net.neoforged.bus.api.IEventBus;
@@ -32,7 +34,11 @@ public final class ClientPayloadHandlers {
         event.register(CombatTextPayload.TYPE, (payload, context) -> CombatTextHud.add(payload));
         event.register(HitDirectionPayload.TYPE, (payload, context) -> HitDirectionHud.add(payload));
         event.register(CastStartedPayload.TYPE, (payload, context) -> ClientCasts.start(payload));
-        event.register(CastEndedPayload.TYPE, (payload, context) -> ClientCasts.end(payload));
+        event.register(CastEndedPayload.TYPE, (payload, context) -> {
+            ClientCasts.end(payload);
+            CastBarHud.ended(payload);
+        });
+        event.register(CastRefusedPayload.TYPE, (payload, context) -> CastBarHud.refused(payload));
         event.register(RealmRefusedPayload.TYPE, (payload, context) -> RealmRefusalHud.show(payload));
     }
 }

@@ -297,7 +297,7 @@ How features cooperate without breaking the direction:
 | `realmforge:race` | `content/races/` | playable race: base modifiers, innate spells, allowed classes | yes | M1 |
 | `realmforge:class` | `content/classes/` | class: resource type, starting stats, spells by level, talent trees, starting kit | yes | M1 |
 | `realmforge:spell_school` | `content/spell_schools/` | school (owned by `combat`): kind (physical or magic), colour, its damage type, and the stats that are its power and resistance (attributes from `content/stats/`, static registrations, so a new school's stats need a game restart) | yes | M1 |
-| `realmforge:spell` | `content/spells/` | spell for players or NPCs: school, what it scales with, targeting, cast, cost, cooldowns, crit rules, typed effects with values per spell level (C3a-1; names and texts come with C3b) | yes | M1 |
+| `realmforge:spell` | `content/spells/` | spell for players or NPCs: school, what it scales with, targeting, cast, cost, cooldowns, crit rules, typed effects with values per spell level (C3a-1), its name and description with placeholders (C3b) | yes | M1 |
 | `realmforge:talent_tree` | `content/talents/` | WoW-style tree: nodes on a grid, ranks, prerequisites, typed effects per rank | yes | M1 |
 | `realmforge:stat_rule` | `content/stat_rules/` | what a primary stat gives: per-point modifiers, milestone bonuses | yes | M1 |
 | `realmforge:curve` | `content/curves/` | named table of points (level → value), linearly interpolated: XP per level, mob scaling, item budgets | yes | M1 |
@@ -367,7 +367,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 
 | `content/` | Generated | Loaded as |
 | --- | --- | --- |
-| `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/` (exists: blocks with their items, loot tables, mining tags and recipes; a block's kind picks its class, below), `entities/`, `effects/`, `sounds/` | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
+| `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/` (exists: blocks with their items, loot tables, mining tags and recipes; a block's kind picks its class, below), `effects/` (exists: status effects, [11.4](#114-status-effects)), `entities/`, `sounds/` | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
 | `races/`, `classes/`, `spells/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `realms/`, `bosses/`, `dungeons/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
 | `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template | the planner ([15.3](#153-generation-pure-first-then-minecraft)) |
@@ -425,9 +425,11 @@ instance. After `rf gen` changes files in `pack/`, run `packwiz refresh` (CI che
 ### 6.4 Example: the life of a spell
 
 ```yaml
-# content/spells/firebolt.yaml (the format of C3a, schema/spell.py; projectiles, areas, status effects and movement in
-# 11.3; C3b adds the name and description with their {damage} placeholders)
+# content/spells/firebolt.yaml (the format of C3a and C3b, schema/spell.py; projectiles, areas, status effects and
+# movement in 11.3; the description's placeholders in 11.6)
 id: firebolt
+name: {en_us: Firebolt}
+description: {en_us: "Hurls a bolt of fire for {damage} damage."}   # the number shows Fire's icon and colour
 school: realmforge:fire
 scales_with: spell_power                # magic; a physical ability scales with attack_damage
 targeting: {type: realmforge:enemy, range: 24}
@@ -443,11 +445,11 @@ effects:
 1. `uv run rf validate` checks the schema, that `realmforge:fire` is a known school, that the stat it scales with
    fits the school's kind, and that its effects fit its targeting.
 2. `uv run rf gen` writes `data/realmforge/realmforge/spell/firebolt.json` in game units (ticks, fractions), a
-   `GeneratedSpells` key and a GameTest expectation; with C3b also the `spell.realmforge.firebolt.*` lang entries.
+   `GeneratedSpells` key and a GameTest expectation, and the `spell.realmforge.firebolt.*` lang entries.
 3. `./gradlew build` packs them into the jar, whose resources act as the mod's built-in data pack.
 4. When a world loads, `Spell.CODEC` decodes the file and resolves its references; NeoForge syncs the registry to
    joining clients.
-5. The player presses a spell key (C3b; until then `/qa spell cast`). The client sends `CastSpellPayload`;
+5. The player presses a spell key (C3b; `/qa spell cast` drives it too). The client sends `CastSpellPayload`;
    `SpellCaster` validates it and begins the cast; the caster and nearby clients get `CastStartedPayload` for the cast
    bar and animation, and when the cast completes (`spell/Casting`) the effects run and the damage goes through the
    combat pipeline.
@@ -473,8 +475,9 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | --- | --- | --- | --- | --- |
 | `realmforge:level` | `stats` | every living entity | the level: derived from XP and the cap for players, set at spawn for mobs, fixed for bosses | the player itself and everyone tracking the entity |
 | `realmforge:character` | `character` | players | race, class (a one-entry list, from when dual class was planned; there is none, [10.1](#101-races-and-classes)), total character XP, cached level cap, the stat points spent on each primary stat | the owner and nearby players (small, nothing secret) |
-| `realmforge:spellbook` | `spell` | players | known spells and their levels, spell bar layout | owner |
+| `realmforge:spellbook` | `spell` | players | known spells and their levels, the spell bar's layout: its eight slots and the racial slot beside it (C3b) | owner |
 | `realmforge:combat` | `spell` | players and mobs that cast | resource pools (mana, rage), cooldowns, current cast (transient), whether a cast set Better Combat's disable tag | owner, throttled (players; clients never read a mob's copy) |
+| `realmforge:effect_sources` | `effect` | living entities | who applied each status effect a spell gave the holder: the caster's UUID, the spell's id, the proc origin ([11.4](#114-status-effects), C3c) | not synced (the server reads it) |
 | `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points | owner |
 | `realmforge:dark_vision` | `world` | players | whether Dark Vision is switched on (on by default) | not synced (the effect itself is) |
 | `realmforge:visited_realms` | `world` | players | the ids of the realms the player has arrived in, so the arrival shows a realm's flavour line once (W2b); copied on death | not synced |
@@ -764,8 +767,9 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
    `combat/DamageOverTime` remembers the player who applied each poison or wither (from `MobEffectEvent.Added`'s
    source: the player, or the owner of the splash potion, tipped arrow or lingering cloud; the latest application
    decides, and the entry goes when the effect ends or is removed), and the tick's number goes to that player in the
-   effect's colour, dark green for poison and ash grey for wither (RLM-186). Our own status effects (C3c) will add
-   their kinds to its list, so each effect's colour has one source. The player who took it gets no number, the
+   effect's colour, dark green for poison and ash grey for wither (RLM-186). Our own status effects (C3c) need no
+   entry there: their ticks are school hits from their caster ([11.4](#114-status-effects)), so the caster sees them
+   in the school's colour, as any school hit. The player who took it gets no number, the
    health bar shows the damage, but the direction it came from (`combat/net/HitDirectionPayload`), as for a dodge,
    which also shows "Miss!" to both players. A melee or ranged hit (`DamagePipeline#meleeOrRanged`: a mob or player
    attack, or a projectile, from an attacker; never a school hit or an explosion) then heals its attacker by the
@@ -861,7 +865,8 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
   every system that reads race or class handles a missing character instead of assuming one.
 - **A race** gives base modifiers, innate spells, optionally a size (`generic.scale`), and the allowed classes.
 - **Racial abilities** (Matěj, 2026-10-15, RLM-219; built in C4): every race has one racial passive and one racial
-  active. The active is an innate spell on the spell bar's G key (C3b); the passive applies whenever its condition
+  active. The active is an innate spell in the racial slot beside the spell bar, X by default (Matěj, 2026-10-16;
+  C3b); the passive applies whenever its condition
   holds. The Human's:
   - **Will To Survive** (active) cleanses the player of every negative effect: disabling effects such as a stun
     (much rarer here than in WoW) and also damage over time and other debuffs. Cooldown 5 minutes.
@@ -1010,7 +1015,8 @@ A `realmforge:spell` entry ([example in 6.4](#64-example-the-life-of-a-spell), `
 scales with, targeting (with the range), cast type (instant since C3a-1; cast time and channel since C3a-2), cost,
 its own cooldown and the global cooldown, crit rules, typed effects, a maximum level with values per level (the
 vision prefers spell levels or power over rarities; research SP-9), and an `npc_only` flag for mob and boss spells.
-Its name, description, icon, animation and sound keys come with the client side (C3b, C6).
+Its name and description are translation keys from C3b, the description's numbers placeholders filled from the data
+([11.6](#116-client-side)); its icon, animation and sound keys come with C6.
 
 - **What it scales with** (Matěj, 2026-10-15): spell power for magic, attack damage for physical abilities (a
   Warrior's Slam is a weapon move), later summon damage. Off-class stats do nothing for a class's abilities, so the
@@ -1065,7 +1071,7 @@ chose. `arena_point` comes with the boss (W5). `NpcCastGameTests` casts all thre
 
 **In code (C3a-1):** `spell/SpellCaster` casts instant spells for any living caster; a player at the level their
 spellbook knows, a mob at level 1. It refuses a cast, paying nothing and running nothing, with a `spell/CastFailure`
-(research SP-3; C3b turns each into a text), checked in this order: the caster is dead or a spectator, the spell
+(research SP-3; `spell/CastTexts` turns each into a text, C3b), checked in this order: the caster is dead or a spectator, the spell
 does not exist, a player casts an `npc_only` spell or one their spellbook does not know, the spell's own cooldown
 runs, the global cooldown runs and the spell is on it, the targeting finds no valid target (`spell/Targets`: in range
 from the caster's eyes to the target's box, and in vanilla's line of sight), a player lacks the cost. Otherwise the
@@ -1101,7 +1107,7 @@ an entity target is checked again before a cast time's effects and a channel's t
 stays as it began. **Moving slows, it never interrupts** (RLM-261,
 [ADR 0039](decisions/0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md)): a cast-time or channelled
 spell that may not be cast while moving gives its caster the transient movement speed modifier
-`Casting#CAST_SLOW` (`realmforge:cast_slow`, −45 % `ADD_MULTIPLIED_TOTAL`, Slowness III's amount) from its start until
+`Casting#CAST_SLOW` (`realmforge:cast_slow`, −50 % `ADD_MULTIPLIED_TOTAL`, [ADR 0047](decisions/0047-the-cast-slow-halves-the-casters-speed.md)) from its start until
 it ends, however it ends; a spell with `castable_while_moving` leaves the caster at full speed. The modifier is no
 status effect: no icon, no particles, milk does not clear it, and it is never saved, so a crash leaves none behind.
 Players and mobs are slowed alike. A player's client moves the player, so a modified client can ignore the slow as it
@@ -1136,7 +1142,8 @@ type only for genuinely new behaviour.
   (`client/render/SpellEntityRenderers`) until C6 (RLM-29) gives spells their visuals. Their names, "Spell
   Projectile" and "Spell Area", come from `content/texts/entity.yaml` (RLM-259) and show where the game prints an
   entity's own name (F3, `/data`).
-- **The other effect types:** `apply_effect` (a status effect from the caster, vanilla's until C3c, at most a minute:
+- **The other effect types:** `apply_effect` (a status effect from the caster, one of ours from `content/effects/`
+  or a vanilla one, remembering who applied it ([11.4](#114-status-effects)), at most a minute:
   research SP-8, never an instant one, which vanilla applies on every tick of its duration: the validation refuses
   them, RLM-260) and `remove_effect` act on an entity; `teleport` moves the caster to the target's position (a ground
   point, the end of a direction's ray with its feet where its eyes would be, an entity's feet), stepping back toward
@@ -1156,6 +1163,27 @@ type only for genuinely new behaviour.
   `effect` sits below `spell`; dispels and talent interactions use them. They also remember whether a proc
   applied them, and the damage or healing of their ticks carries that proc origin ([12](#12-talents)).
 - Guardrail: only a few bosses may apply blindness or darkness (validation counts them).
+
+**In code (C3c, RLM-26):** `content/effects/<id>.yaml` (`schema/effect.py`) names an effect, its category (beneficial,
+harmful, neutral), its particle colour, its attribute modifiers (units as for the stat rules: `amount_percent` for the
+multiplied operations; one per attribute, as `MobEffect` keeps one) and its `periodic` damage or healing: a school, an
+amount per tick at the first level and an interval from 0.25 to 10 s. `generate/effects.py` writes `GeneratedEffects`
+(a `DeferredRegister<MobEffect>`, which `effect/EffectFeature` registers; NeoForge registers attributes before status
+effects, so a modifier finds its attribute, ours included), an 18 by 18 placeholder icon in
+`textures/mob_effect/<id>.png` (a disc in the effect's colour with an arrow up or down), the name
+`effect.realmforge.<id>` and `GeneratedEffectExpectations`, which `ContentEffectGameTests` checks. Each is an
+`effect/StatusEffect`: vanilla's modifiers, multiplied by the amplifier + 1, and an `effect/Periodic` that ticks at the
+end of every interval since the effect began (an effect of 4 s and 1 s intervals ticks 4 times, the first after a
+second; validation keeps a spell's durations whole intervals), each level adding the amount again.
+`effect/EffectTicks` deals a tick as a hit of the school from the effect's caster, so the damage pipeline raises it by
+the caster's spell power (a magic school) and school power as they are when it ticks, the target's resistance lowers
+it, a kill counts for the caster and the caster sees its numbers; ticks never crit (`CritRule.NONE`) and never knock
+back. Healing ticks are raised the same way. Once the caster is gone (dead, logged out, in another dimension) the
+ticks go on at the bare amount. `apply_effect` applies an effect through `effect/Effects#apply`, which records its
+`effect/EffectSource` (the caster's UUID, the spell's id, the proc origin) in the holder's `realmforge:effect_sources`
+attachment; the latest application decides, so the same effect from a potion or a command forgets the source, and the
+effect's removal or expiry does too. `Effects#source` is what dispels and talents (C4, C5) read. `EffectGameTests`
+covers the ticks, the caster's stats, a caster that left, the modifiers and the sources.
 
 ### 11.5 Resources, cooldowns, modifiers
 
@@ -1181,16 +1209,17 @@ type only for genuinely new behaviour.
   a hit, 50 for the whole max health and 2 a second after 5 s, until the class kits (C4) tune them. Mobs pay no cost
   ([11.2](#112-casting-server-authoritative)), so no mob gains rage. `RageGameTests` and `RageRulesTest` cover it.
 - **Cooldowns:** a spell's own cooldown, shortened by Cooldown Reduction (at most 75 %, its stat's cap), and the
-  global cooldown, 1 s by default (research SP-11), which a spell may shorten or switch off and which Cooldown
-  Reduction never touches. Both are stored as the game time they end.
+  global cooldown, 0.5 s by default as in WoW (Matěj, 2026-10-19, RLM-25; it replaced research SP-11's second), which
+  a spell may shorten or switch off and which Cooldown Reduction never touches. Both are stored as the game time they
+  end.
 - Spell modifiers from talents (later glyphs and gear) are collected into a cached per-player view, invalidated
   when talents or gear change, and applied when a cast starts: cast time, cost, cooldown, damage, extra effects.
 
 ### 11.6 Client side
 
-The spell bar, cast bar and cooldown sweep are HUD layers; key mappings follow a default scheme decided in M1
-(proposal: a separate spell bar with its own keys, leaving the item hotbar alone); tooltips are built from data
-with live numbers; animations and particles start on `CastStartedPayload`. `client/spell/ClientCasts` (C3a-2) keeps
+The spell bar, cast bar and cooldown sweep are HUD layers; key mappings follow the default scheme Matěj decided for
+D4 (a separate spell bar with its own keys, leaving the item hotbar alone); tooltips are built from data with live
+numbers; animations and particles start on `CastStartedPayload`. `client/spell/ClientCasts` (C3a-2) keeps
 every cast in progress the client was told of, the local player's and every tracked caster's, by entity id, from
 `CastStartedPayload` until `CastEndedPayload` (or until 20 ticks after its end, for a caster the player stopped
 tracking), so the cast bar and the animations read one store (`CurrentCasts#progress` for the bar). Cast animations are Emotecraft JSON
@@ -1201,6 +1230,67 @@ the model's arms hang on a body that never pitches and trails the head by up to 
 turn rigidly with the camera about the eye (rotation and shoulder pivots), so the hands keep their place on screen;
 seen from outside only their rotation follows the head, like vanilla's bow pose. The QA mod's test cast does this in
 `QaCastAimAnimation` (RLM-108), which C6 moves into `client/animation`.
+
+**In code (C3b, RLM-25): the spell bar.**
+
+- **Slots and keys** (Matěj, 2026-10-15, 2026-10-16 and his playtest of 2026-10-21): the spellbook attachment's bar
+  has eight slots, keyed R, T, F, G, H, C, Ů and § (the two keys right of L on a Czech QWERTZ keyboard, `;` and `'`
+  on a US one), and the racial slot beside them on X, which the race fills (C4, `Spells#setRacialSpell`), never the
+  player. `client/input/SpellKeys` registers them under Realmforge Spell Bar, and P for the spellbook. GLFW names
+  keys by their US position. The pack's default keys (`pack/config/defaultoptions/keybindings.txt`,
+  [ADR 0046](decisions/0046-spell-bar-default-keys-amend-the-pack-defaults.md)) move vanilla's chat to Enter and
+  unbind the keys the bar takes, Apotheosis's Open World Tier Select moves from Ctrl+T to Alt+T (a held sprint key
+  would otherwise steal T), and Dark Vision moved from H to ¨ (`\` on a US keyboard). Our keys are
+  `client/input/RealmforgeKeyMapping`s, labelled through `KeyLabels`: Minecraft reads `§` in any text as a formatting
+  code, so a key on § would show an empty label; ours draws it from the font `realmforge:keys`
+  (`assets/realmforge/font/keys.json`), which maps a private codepoint to the section sign of vanilla's font sheet.
+  NeoForge's Key Binds screen marks a key yellow when any other mapping shares it, even one that works only in a
+  screen (JEI's Show Recipe on R) or with F3 held; in game only the spell bar's key acts.
+- **Learning and placing:** `Spells#learn` puts a learned spell into the bar's first empty slot, unless it is on the
+  bar or is a mob's. The spellbook (`client/screen/SpellbookScreen`) moves a known spell into a slot, swapping with
+  the one there, or empties one, through `SetSpellBarSlotPayload` and `Spells#placeOnBar`, which refuses another slot
+  or an unknown spell.
+- **Casting** (Matěj, 2026-10-19): `client/spell/CastQueue` decides every client tick, from the presses and the held
+  keys and the client options `Queue Spell Casts` (off) and `Spells Queue Size` (1 to 3; `client/ClientConfig`, edited
+  in `client/screen/SpellOptionsScreen`, behind the spellbook's Options button and the mod list's Config button).
+  Without queueing a press goes at once with `replaceCast`, cancelling another spell's cast in progress, and waits only
+  for the global cooldown; with queueing it waits for the cast to end too, and up to the queue size presses wait in
+  order, a new press replacing the waiting one at size 1. A held key casts its spell again whenever its cooldowns
+  allow, at most every half second, and never cancels a cast; pressing the spell being cast does nothing. Two spells
+  never cast at once. `client/spell/SpellBarInput` sends `CastSpellPayload` (the spell, the living entity under the
+  crosshair within its range, `client/spell/SpellTargetPicker`, and `replaceCast`); `spell/SpellBar` casts it through
+  `SpellCaster`, which with `replaceCast` skips the already-casting check for another spell and cancels the cast in
+  progress only once every other check passed. A refusal goes back as `CastRefusedPayload`.
+- **HUD** (`client/hud`): the spell bar (`SpellBarHud`, drawn from `spell/SpellBarView` by `SpellSlots`) has its nine
+  24 px slots side by side, the racial slot last, 216 px wide (Matěj's playtest of 2026-10-21). Its layer comes right
+  after vanilla's selected item name, which is drawn on the line above the status rows and the XP bar; the bar sits
+  above that line, then raises `Gui#leftHeight` and `Gui#rightHeight` so the action bar message stays above it
+  (`SpellBarLayout`). It shows even when empty (research SP-1). A slot is framed in its spell's school colour, a frame
+  that stays once spells have icons (Matěj, 2026-10-21), shows the spell's initials until then (C6, A1), its key in
+  the corner, a blue tint while the resource does not cover the cost, and the cooldown sweep
+  (`CooldownSweep`): a dark wedge that shrinks clockwise from 12 o'clock, for the spell's own cooldown or the global
+  cooldown, whichever ends later, with the seconds left of a cooldown of 2 s or more. The cast bar (`CastBarHud`,
+  after WoW's casting bar, Matěj's playtest of 2026-10-21) sits toward the middle of the screen, 70 % of the way down
+  at most and clear of the spell bar and the action bar message: a 200 by 20 px black frame with rounded corners and a
+  2 px border, holding the spell's icon (its initials on the school's colour until icons exist) and then the bar. The
+  bar fills in the spell school's colour, shaded in steps from light at the top to dark at the bottom with an almost
+  white leading edge (`CastBarStyle`); a cast time fills from the left, a channel starts full and empties toward the
+  left. The spell's name is on the left and the seconds "elapsed / total" on the right, smaller. After a cast the bar
+  stays a moment: full and flashing toward white as it fades, or red with how it ended in place of the name
+  ("Interrupted", "Out of range"), and a refused cast's reason shows there in red (`spell/CastTexts`, research
+  SP-3).
+- **Texts:** a spell's description names its numbers through placeholders (`{damage}`, `{heal}`, `{duration}`,
+  `{periodic}`, `{periodic_total}`, `{interval}`, `{radius}`), which `spell/SpellText` fills with the spell's data at
+  the player's level and their stats as they are now, as the effects would land before the target's resistance and a
+  crit; `schema/spell.py` and validation make sure each has the effect it reads. A damage number shows its school
+  instead of naming it (Matěj's playtest of 2026-10-21): `SpellText#fill` puts the school's icon before it (an inline
+  GUI sprite, `combat/SpellSchools#icon`: `Component.object` with an `AtlasSprite` of the `gui` atlas,
+  `textures/gui/sprites/school/<id>.png`, a generated placeholder until the art exists) and draws the number in the
+  school's colour, the spell's school for `{damage}` and the effect's for its damage over time; descriptions read
+  "for {damage} damage". `spell/SpellTooltip` builds the spellbook's tooltip: name, rank, cost, range, the cast after
+  Cast Time Reduction, the cooldown after Cooldown Reduction and the filled description. `SpellTextGameTests` and
+  `SpellBarGameTests` cover the server side and the texts, `CastQueueTest`, `CooldownSweepTest`, `SpellBarLayoutTest`,
+  `CastBarStyleTest`, `KeyLabelsTest`, `SpellTextTest` and `SpellBarViewTest` the client's logic.
 
 ## 12. Talents
 
@@ -1241,7 +1331,8 @@ return; the proc engine at its end exists since C3a.
   cooldowns or the global cooldown, while another cast runs. The proc origin is the proc's id: `EffectContext`
   carries it to every effect, a projectile or an area keeps it, `DamageEffect` puts it into its
   `combat/SchoolDamageSource`, and `Procs` ignores every hit and kill whose source carries one. Vanilla status
-  effects' ticks have no attacker, so no proc reacts to them; our own status effects (C3c) will keep the origin.
+  effects' ticks have no attacker, so no proc reacts to them; our own status effects (C3c) keep the origin: a proc's
+  `apply_effect` records it in the effect's source, and the effect's ticks carry it.
   Internal cooldowns are transient, by holder and proc id. `ProcGameTests` covers a proc on hit and its internal
   cooldown, a proc's own hit triggering nothing, and the crit and kill triggers.
 
@@ -2002,6 +2093,7 @@ depth limit.
 | --- | --- |
 | datapack registries | NeoForge, at login, through each registry's network codec |
 | character, spellbook, talents | synced attachments, sent on every `setData` |
+| effect sources | not synced: only the server reads who applied an effect |
 | combat state | attachment synced explicitly and throttled |
 | magic shield | synced attachment, to the owner, on every change (a hit, a refill) |
 | entity level | synced attachment, to the player itself and everyone tracking the entity |
@@ -2015,10 +2107,13 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
 
 - Client → server: `CreateCharacter` (exists: `character/net/CreateCharacterPayload`, sent by
   `client/screen/CharacterCreationScreen`), `SpendStatPoint` (exists: `character/net/SpendStatPointPayload`, sent by
-  `client/screen/CharacterSheetScreen`), `CastSpell`, `CancelCast`, `SetSpellBarSlot`, `LearnTalent`,
-  `ToggleDarkVision` (exists: `world/net/ToggleDarkVisionPayload`, sent by `client/input/DarkVisionKey`).
+  `client/screen/CharacterSheetScreen`), `CastSpell` (exists: `spell/net/CastSpellPayload`, sent by
+  `client/spell/SpellBarInput`), `SetSpellBarSlot` (exists: `spell/net/SetSpellBarSlotPayload`, sent by
+  `client/screen/SpellbookScreen`), `CancelCast`, `LearnTalent`, `ToggleDarkVision` (exists:
+  `world/net/ToggleDarkVisionPayload`, sent by `client/input/DarkVisionKey`).
 - Server → client: `CastStarted` and `CastEnded` (exist: `spell/net/CastStartedPayload` and `CastEndedPayload`, kept
-  by `client/spell/ClientCasts`), `CombatText` (exists: `combat/net/CombatTextPayload`, shown by
+  by `client/spell/ClientCasts`, the local player's end also shown by `client/hud/CastBarHud`), `CastRefused` (exists:
+  `spell/net/CastRefusedPayload`, the reason shown by `client/hud/CastBarHud`), `CombatText` (exists: `combat/net/CombatTextPayload`, shown by
   `client/hud/CombatTextHud`), `HitDirection` (exists: `combat/net/HitDirectionPayload`, shown by
   `client/hud/HitDirectionHud`), `RealmRefused` (exists: `world/net/RealmRefusedPayload`, the realm's hint, shown by
   `client/hud/RealmRefusalHud`, [15.1](#151-dimensions)), `DungeonStatus`.
@@ -2101,13 +2196,17 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     races on the left and the classes the chosen race allows on the right, as vanilla buttons with a gold outline on
     the chosen one, each with its description and what it gives ("+5 Strength"); a class also its resource and
     starting kit. It opens and closes by itself ([10.1](#101-races-and-classes)).
+  - The spell bar and the cast bar (`client/hud/SpellBarHud`, `CastBarHud`), the spellbook
+    (`client/screen/SpellbookScreen`, P by default) and the spell casting options (`SpellOptionsScreen`), C3b:
+    [11.6](#116-client-side).
 - **Minecraft 26.1 draws GUIs by render-state extraction:** a HUD layer (`GuiLayer`) and a screen
   (`Screen#extractRenderState`) receive a `GuiGraphicsExtractor` (`text`, `centeredText`, `fill`, `pose()` for
   scaling). A layer registered through `RegisterGuiLayersEvent` checks `options.hideGui` itself.
 - **Little rendering code:** GeckoLib for animated entities, vanilla widgets for UI, no rendering mixins unless
   unavoidable, no shaders of our own (Iris and Complementary). Porting costs the most here
   ([ADR 0003](decisions/0003-platform-minecraft-1-21-1-neoforge.md)), so it stays small.
-- **Client config** (`ModConfigSpec`, client type) holds UI preferences only.
+- **Client config** (`ModConfigSpec`, client type) holds UI preferences only: `client/ClientConfig` (C3b), the spell
+  casting options.
 
 ## 19. Cross-cutting rules
 
@@ -2148,7 +2247,7 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
   Still allowed, as mixed or harmless cases: zombies breaking turtle eggs, a skeleton's arrows breaking decorated
   pots, chorus flowers or pointed dripstone, foxes picking sweet berries, sheep eating grass, snow golems leaving
   snow. Inside instances every mob is denied, which is intended there ([15.5](#155-instances)).
-- Dark Vision: a key (`client/input/DarkVisionKey`, H by default, "Toggle Dark Vision" under Realmforge in the
+- Dark Vision: a key (`client/input/DarkVisionKey`, ¨ by default since the spell bar took H, "Toggle Dark Vision" under Realmforge in the
   controls) sends `ToggleDarkVisionPayload`; the server flips the sender's switch and confirms it on the action
   bar. The effect is vanilla night vision as an infinite, hidden effect (`MobEffectInstance.INFINITE_DURATION`, no
   particles, no icon); every player has it, switched on by default. The on/off state lives in the
@@ -2167,7 +2266,8 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
 ### 19.2 Configuration
 
 `ModConfigSpec` only for operator and UI settings (instance limits, timeouts, debug flags, HUD options). Gameplay
-numbers are content, so they are versioned, validated and tested.
+numbers are content, so they are versioned, validated and tested. The client config exists (C3b): `client/ClientConfig`,
+`config/realmforge-client.toml`, holds how the spell bar's presses wait ([11.6](#116-client-side)).
 
 ### 19.3 Mixins and access transformers
 
@@ -2330,7 +2430,11 @@ that agents can read. So far:
   cast it (as a mob with `/execute as`; a refusal names its reason; a cast-time or channelled spell begins), cancel
   the cast in progress, set a resource pool, end every cooldown, and print the known spells, the pools, the running
   cooldowns, the cast in progress and how the last cast-time or channelled spell ended
-  ([11.2](#112-casting-server-authoritative));
+  ([11.2](#112-casting-server-authoritative)); `/qa spell bar <slot> [<spell>]` (C3b) puts a known spell into a spell
+  bar slot (1 to 8, 9 the racial slot) or empties it;
+- `/qa run <command>; <command>; ...`: runs the commands in order as its source, so a playtest's setup takes one line;
+  chat cuts a line at 256 characters, so the line goes into an impulse command block as `execute as @p at @p run qa
+  run ...` ([flow: Reaching the state](ai-development-flow.md#reaching-the-state));
 - `/qa realm enter <realm> [<x> <z>]`, `/qa realm unlock|lock <realm>` (W2a): take the player to a realm's floor at
   x, z (0, 0 by default) the way `/tp` does, so a player without the realm's unlock is refused, and grant or revoke
   the unlock advancement as `/advancement grant|revoke @s only realmforge:realm/<realm>` does

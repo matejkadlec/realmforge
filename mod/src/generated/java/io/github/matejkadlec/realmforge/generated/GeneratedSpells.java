@@ -35,6 +35,9 @@ public final class GeneratedSpells {
     /** {@code realmforge:test_homing_bolt} from {@code content/spells/test_homing_bolt.yaml}: frost, enemy, damage. */
     public static final ResourceKey<Spell> TEST_HOMING_BOLT = key("test_homing_bolt");
 
+    /** {@code realmforge:test_ignite} from {@code content/spells/test_ignite.yaml}: fire, enemy, apply_effect. */
+    public static final ResourceKey<Spell> TEST_IGNITE = key("test_ignite");
+
     /** {@code realmforge:test_mend} from {@code content/spells/test_mend.yaml}: arcane, ally, heal. */
     public static final ResourceKey<Spell> TEST_MEND = key("test_mend");
 
@@ -59,6 +62,12 @@ public final class GeneratedSpells {
     /** {@code realmforge:test_proc_spark} from {@code content/spells/test_proc_spark.yaml}: arcane, enemy, damage. */
     public static final ResourceKey<Spell> TEST_PROC_SPARK = key("test_proc_spark");
 
+    /** {@code realmforge:test_regrow} from {@code content/spells/test_regrow.yaml}: arcane, ally, apply_effect. */
+    public static final ResourceKey<Spell> TEST_REGROW = key("test_regrow");
+
+    /** {@code realmforge:test_sap} from {@code content/spells/test_sap.yaml}: arcane, enemy, apply_effect. */
+    public static final ResourceKey<Spell> TEST_SAP = key("test_sap");
+
     /** {@code realmforge:test_scorch} from {@code content/spells/test_scorch.yaml}: fire, ground_point, area. */
     public static final ResourceKey<Spell> TEST_SCORCH = key("test_scorch");
 
@@ -78,7 +87,7 @@ public final class GeneratedSpells {
     public static final ResourceKey<Spell> TEST_SURE_CRIT = key("test_sure_crit");
 
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Spell>> ALL = List.of(TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT);
+    public static final List<ResourceKey<Spell>> ALL = List.of(TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT);
 
     private GeneratedSpells() {
     }

@@ -2,6 +2,8 @@
 # Engine test (C3a-3): a zone at the caster's feet that heals its allies within 3 blocks by 2 every second for 2 s.
 # Not gameplay content; the GameTests in the QA mod cast it.
 id: test_mending_ring
+name: {en_us: Test Mending Ring}
+description: {en_us: "Surrounds you with a ring of {radius} blocks that heals each ally in it for {heal} at intervals."}
 school: realmforge:arcane
 scales_with: spell_power
 targeting: {type: realmforge:self}

@@ -23,10 +23,25 @@
   "description": "A spell school: the kind of damage a spell, an ability or a boss attack deals (architecture 9.1). Each school\nis a vanilla damage type ``realmforge:<id>``, in ``#minecraft:bypasses_cooldown`` so its hits are never\nswallowed by the hurt cooldown.\n\n``physical`` damage meets armor (our formula) and can be dodged; ``magic`` damage bypasses armor, spell power\nraises it and the school's resistance lowers it. ``power`` and ``resistance`` name secondary stats (shares in\n``content/stats/``) that raise the school's damage dealt and lower its damage taken.",
   "properties": {
     "color": {
-      "description": "Colour of its combat text and tooltips, \"#RRGGBB\".",
+      "description": "Colour of its spells: spell bar frames, the cast bar, damage numbers in tooltips, \"#RRGGBB\".",
       "pattern": "^#[0-9A-Fa-f]{6}$",
       "title": "Color",
       "type": "string"
+    },
+    "combat_text_color": {
+      "anyOf": [
+        {
+          "description": "An RGB colour, \"#RRGGBB\".",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Colour of its floating combat text, \"#RRGGBB\"; the school's color when left out.",
+      "title": "Combat Text Color"
     },
     "death_message": {
       "$ref": "#/$defs/LocalizedText",

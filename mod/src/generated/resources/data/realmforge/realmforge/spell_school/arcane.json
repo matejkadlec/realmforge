@@ -2,6 +2,7 @@
   "name": "spell_school.realmforge.arcane.name",
   "kind": "magic",
   "color": "#C77DFF",
+  "combat_text_color": "#C77DFF",
   "damage_type": "realmforge:arcane",
   "power": "realmforge:arcane_power",
   "resistance": "realmforge:arcane_resistance"
