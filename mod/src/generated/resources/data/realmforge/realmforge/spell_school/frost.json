@@ -2,6 +2,7 @@
   "name": "spell_school.realmforge.frost.name",
   "kind": "magic",
   "color": "#7FD4FF",
+  "combat_text_color": "#7FD4FF",
   "damage_type": "realmforge:frost",
   "power": "realmforge:frost_power",
   "resistance": "realmforge:frost_resistance"

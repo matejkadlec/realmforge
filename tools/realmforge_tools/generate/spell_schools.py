@@ -11,6 +11,7 @@ from realmforge_tools.content import Content
 from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.generate.datapack import data_dir, translation_key
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
+from realmforge_tools.generate.textures import placeholder_school_icon
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.common import LocalizedText
 from realmforge_tools.schema.spell_school import SpellSchoolDef, death_message_keys
@@ -38,10 +39,13 @@ def translations(content: Content) -> dict[str, LocalizedText]:
 def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     schools = [entry.model for entry in content.spell_schools]
     data = paths.mod_generated / "resources" / "data"
+    # GUI sprites: a school's icon goes inline before its numbers in spell tooltips (SpellSchools#icon).
+    icons = paths.mod_generated / "resources" / "assets" / MOD_ID / "textures" / "gui" / "sprites" / "school"
     files: dict[Path, bytes] = {}
     for school in schools:
         files[data_dir(paths) / MOD_ID / REGISTRY / f"{school.id}.json"] = dump_json(_entry(school))
         files[data / MOD_ID / "damage_type" / f"{school.id}.json"] = dump_json(_damage_type(school))
+        files[icons / f"{school.id}.png"] = placeholder_school_icon(int(school.color[1:], 16))
     tags = data / "minecraft" / "tags" / "damage_type"
     # Every school's hits land through the hurt cooldown and push nobody: a spell knocks back only through its
     # knockback effect (architecture 9.1, RLM-214). Magic ones skip vanilla's armor too.
@@ -66,6 +70,7 @@ def _entry(school: SpellSchoolDef) -> dict[str, Any]:
         "name": translation_key(REGISTRY, school.id, "name"),
         "kind": school.kind,
         "color": school.color.upper(),
+        "combat_text_color": _combat_text_color(school).upper(),
         "damage_type": school.damage_type,
     }
     if school.power is not None:
@@ -73,6 +78,10 @@ def _entry(school: SpellSchoolDef) -> dict[str, Any]:
     if school.resistance is not None:
         entry["resistance"] = school.resistance
     return entry
+
+
+def _combat_text_color(school: SpellSchoolDef) -> str:
+    return school.combat_text_color if school.combat_text_color is not None else school.color
 
 
 def _damage_type(school: SpellSchoolDef) -> dict[str, Any]:
@@ -134,6 +143,7 @@ def _expectations(content: Content) -> bytes:
             f"                    {string_literal(translation_key(REGISTRY, school.id, 'name'))},\n"
             f"                    {'true' if school.kind == 'magic' else 'false'},\n"
             f"                    0xFF{school.color[1:].upper()},\n"
+            f"                    0xFF{_combat_text_color(school)[1:].upper()},\n"
             f"                    {string_literal(school.damage_type)},\n"
             f"                    {string_literal(school.message_id)},\n"
             f"                    {_optional(school.power)},\n"
@@ -149,11 +159,12 @@ def _expectations(content: Content) -> bytes:
         "/** What {@code content/spell_schools/} says about every school, so GameTests can check that the game agrees. */\n"
         "public final class GeneratedSpellSchoolExpectations {\n"
         "    /**\n"
-        "     * Expected state of one school. Ids are full resource locations, e.g. {@code realmforge:fire}; the colour is\n"
+        "     * Expected state of one school. Ids are full resource locations, e.g. {@code realmforge:fire}; the colours are\n"
         '     * opaque ARGB, as the school\'s codec reads {@code "#RRGGBB"}.\n'
         "     */\n"
-        "    public record SpellSchoolExpectation(String id, String nameKey, boolean magic, int color, String damageType,\n"
-        "            String messageId, Optional<String> power, Optional<String> resistance) {\n"
+        "    public record SpellSchoolExpectation(String id, String nameKey, boolean magic, int color,\n"
+        "            int combatTextColor, String damageType, String messageId, Optional<String> power,\n"
+        "            Optional<String> resistance) {\n"
         "    }\n"
         "\n"
         f"    public static final List<SpellSchoolExpectation> SPELL_SCHOOLS = {schools};\n"

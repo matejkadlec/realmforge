@@ -519,6 +519,12 @@ account name), our own commands, and the QA mod's `/qa` commands in the dev clie
 
 - When a state is tedious to reach (a high level, a late boss phase), the batch adds or extends a `/qa` command
   in `qa-mod/` (dev-only, merged with the batch) instead of asking Matěj to grind.
+- **Three or more commands in a row** go to Matěj as one command for an impulse command block (Matěj,
+  2026-10-22), in a code block he can copy: `execute as @p at @p run qa run <command>; <command>; ...`, without the
+  commands' slashes. `/qa run` runs them in order as the player; chat cuts a line at 256 characters, a command block
+  takes the whole line. Say how to run it once per handoff: `/give @s minecraft:command_block`, place it in creative,
+  paste the line, set it to **Always Active** and press Done, and it runs once. Commands he types between checks
+  (casting, `/damage @s 10` in the middle of a step) stay single lines.
 - Verify each command where an agent can: a GameTest that runs it, or the dev server console
   (`./gradlew runServer`).
 - When a state exists only in an automated test, say so in What to test.

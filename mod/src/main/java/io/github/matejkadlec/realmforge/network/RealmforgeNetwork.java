@@ -6,8 +6,13 @@ import io.github.matejkadlec.realmforge.character.net.CreateCharacterPayload;
 import io.github.matejkadlec.realmforge.character.net.SpendStatPointPayload;
 import io.github.matejkadlec.realmforge.combat.net.CombatTextPayload;
 import io.github.matejkadlec.realmforge.combat.net.HitDirectionPayload;
+import io.github.matejkadlec.realmforge.spell.SpellBar;
+import io.github.matejkadlec.realmforge.spell.Spells;
 import io.github.matejkadlec.realmforge.spell.net.CastEndedPayload;
+import io.github.matejkadlec.realmforge.spell.net.CastRefusedPayload;
+import io.github.matejkadlec.realmforge.spell.net.CastSpellPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastStartedPayload;
+import io.github.matejkadlec.realmforge.spell.net.SetSpellBarSlotPayload;
 import io.github.matejkadlec.realmforge.world.DarkVision;
 import io.github.matejkadlec.realmforge.world.net.RealmRefusedPayload;
 import io.github.matejkadlec.realmforge.world.net.ToggleDarkVisionPayload;
@@ -59,10 +64,23 @@ public final class RealmforgeNetwork {
                         StatPoints.spend(player, payload.stat());
                     }
                 });
+        registrar.playToServer(CastSpellPayload.TYPE, CastSpellPayload.STREAM_CODEC,
+                (payload, context) -> {
+                    if (context.player() instanceof ServerPlayer player) {
+                        SpellBar.cast(player, payload.spell(), payload.target(), payload.replaceCast());
+                    }
+                });
+        registrar.playToServer(SetSpellBarSlotPayload.TYPE, SetSpellBarSlotPayload.STREAM_CODEC,
+                (payload, context) -> {
+                    if (context.player() instanceof ServerPlayer player) {
+                        Spells.placeOnBar(player, payload.slot(), payload.spell());
+                    }
+                });
         registrar.playToClient(CombatTextPayload.TYPE, CombatTextPayload.STREAM_CODEC);
         registrar.playToClient(HitDirectionPayload.TYPE, HitDirectionPayload.STREAM_CODEC);
         registrar.playToClient(CastStartedPayload.TYPE, CastStartedPayload.STREAM_CODEC);
         registrar.playToClient(CastEndedPayload.TYPE, CastEndedPayload.STREAM_CODEC);
+        registrar.playToClient(CastRefusedPayload.TYPE, CastRefusedPayload.STREAM_CODEC);
         registrar.playToClient(RealmRefusedPayload.TYPE, RealmRefusedPayload.STREAM_CODEC);
     }
 }

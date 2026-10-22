@@ -40,4 +40,9 @@ public record DirectionTargeting(double range) implements SpellTargeting {
                 : hit.getLocation();
         return Either.left(SpellTarget.direction(end, direction));
     }
+
+    @Override
+    public double reach() {
+        return range;
+    }
 }

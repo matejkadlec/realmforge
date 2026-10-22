@@ -60,6 +60,10 @@ public final class ContentSpellGameTests {
             Spell spell = spells.getValue(Identifier.parse(expected.id()));
             helper.assertTrue(spell != null, "spell is not loaded: " + expected.id());
             String id = expected.id();
+            helper.assertValueEqual(spell.name(), expected.name(), id + " name");
+            helper.assertValueEqual(spell.description(), expected.description(), id + " description");
+            helper.assertTrue(Language.getInstance().has(spell.name()) && Language.getInstance().has(
+                    spell.description()), id + " has no name or description in the lang file");
             helper.assertValueEqual(spell.school().getRegisteredName(), expected.school(), id + " school");
             helper.assertValueEqual(spell.scalesWith().getSerializedName(), expected.scalesWith(), id + " scales with");
             helper.assertValueEqual(targetingType(spell.targeting()), expected.targeting(), id + " targeting");

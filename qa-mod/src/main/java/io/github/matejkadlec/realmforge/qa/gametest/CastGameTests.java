@@ -72,7 +72,7 @@ public final class CastGameTests {
         assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, husk);
         helper.assertValueEqual(Spells.currentCast(player), Optional.of(
                 new Cast(GeneratedSpells.TEST_SLOW_BOLT, now, 40, false)), "a 2 s cast without Cast Time Reduction");
-        helper.assertValueEqual(player.getData(SpellAttachments.COMBAT).globalCooldownEnd(), now + 20,
+        helper.assertValueEqual(player.getData(SpellAttachments.COMBAT).globalCooldownEnd(), now + 10,
                 "the global cooldown starts with the cast");
         Spells.cancelCast(player);
         Spells.resetCooldowns(player);
@@ -188,7 +188,7 @@ public final class CastGameTests {
 
     /**
      * Moving slows, it never interrupts (RLM-261, ADR 0039): a player walking with a movement key down and a mob walking
-     * on its path both keep their casts, at 55 % of their speed, and get their full speed back when the casts complete.
+     * on its path both keep their casts, at half their speed, and get their full speed back when the casts complete.
      */
     @QaGameTest
     public static void aMovingCasterIsSlowedAndKeepsItsCast(GameTestHelper helper) {
@@ -198,8 +198,8 @@ public final class CastGameTests {
         learn(helper, player, GeneratedSpells.TEST_SLOW_BOLT);
         assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, target);
         assertSlowed(helper, player, true, "the cast slows the player");
-        helper.assertValueEqual(player.getAttributeValue(Attributes.MOVEMENT_SPEED), playerSpeed * 0.55,
-                "Slowness III's share: 55 % of the speed is left");
+        helper.assertValueEqual(player.getAttributeValue(Attributes.MOVEMENT_SPEED), playerSpeed * 0.5,
+                "half the speed is left (ADR 0047)");
         walk(helper, player, new Vec3(2.5, 1, 1.5));
 
         Husk husk = helper.spawnWithNoFreeWill(EntityType.HUSK, new BlockPos(4, 1, 0));

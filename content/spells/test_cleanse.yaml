@@ -2,6 +2,8 @@
 # Engine test (C3a-3): removes Slowness from the caster or an ally. Not gameplay content; the GameTests in the QA mod
 # cast it.
 id: test_cleanse
+name: {en_us: Test Cleanse}
+description: {en_us: "Removes Slowness from you or an ally."}
 school: realmforge:arcane
 scales_with: spell_power
 targeting: {type: realmforge:ally, range: 16}

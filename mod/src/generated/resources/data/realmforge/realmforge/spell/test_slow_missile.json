@@ -1,4 +1,6 @@
 {
+  "name": "spell.realmforge.test_slow_missile.name",
+  "description": "spell.realmforge.test_slow_missile.description",
   "school": "realmforge:fire",
   "scales_with": "spell_power",
   "targeting": {
@@ -12,7 +14,7 @@
     "duration_ticks": 20
   },
   "cooldown_ticks": 0,
-  "global_cooldown_ticks": 20,
+  "global_cooldown_ticks": 10,
   "max_level": 1,
   "crit": {
     "can_crit": true,

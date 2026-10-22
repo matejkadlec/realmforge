@@ -1,11 +1,14 @@
 package io.github.matejkadlec.realmforge.combat;
 
 import java.util.Optional;
+import net.minecraft.ChatFormatting;
 import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.objects.AtlasSprite;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.damagesource.DamageSource;
@@ -18,6 +21,10 @@ import net.minecraft.world.entity.Entity;
  * that type is a school hit, the {@code /damage} command's included.
  */
 public final class SpellSchools {
+    /** The atlas of the GUI's sprites, where the school icons are. */
+    private static final Identifier GUI_ATLAS = Identifier.withDefaultNamespace("gui");
+    private static final String ICON_PREFIX = "school/";
+
     private SpellSchools() {
     }
 
@@ -54,5 +61,17 @@ public final class SpellSchools {
     private static Holder<DamageType> damageType(RegistryAccess registries, ResourceKey<SpellSchool> school) {
         SpellSchool value = registries.lookupOrThrow(CombatRegistries.SPELL_SCHOOL).getValueOrThrow(school);
         return registries.lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(value.damageType());
+    }
+
+    /**
+     * The school's icon as a piece of text: its GUI sprite {@code <namespace>:school/<path>}
+     * ({@code textures/gui/sprites/school/}), drawn inline as an 8 px glyph in white, so the text around it does not tint
+     * it. As plain text (narration, copying) it reads as the school's name.
+     */
+    public static Component icon(ResourceKey<SpellSchool> key, SpellSchool school) {
+        Identifier sprite = key.identifier().withPrefix(ICON_PREFIX);
+        return Component.object(new AtlasSprite(GUI_ATLAS, sprite),
+                        Component.translatable(school.name()).append(" "))
+                .withStyle(ChatFormatting.WHITE);
     }
 }

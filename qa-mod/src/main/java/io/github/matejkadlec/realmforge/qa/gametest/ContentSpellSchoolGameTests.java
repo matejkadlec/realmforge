@@ -52,6 +52,8 @@ public final class ContentSpellSchoolGameTests {
                     expected.id() + ": no en_us text for " + expected.nameKey());
             helper.assertValueEqual(school.magic(), expected.magic(), expected.id() + " is magic");
             helper.assertValueEqual(school.color(), expected.color(), expected.id() + " colour");
+            helper.assertValueEqual(school.combatTextColor(), expected.combatTextColor(),
+                    expected.id() + " combat text colour");
             helper.assertValueEqual(school.power().map(Holder::getRegisteredName), expected.power(),
                     expected.id() + " power");
             helper.assertValueEqual(school.resistance().map(Holder::getRegisteredName), expected.resistance(),

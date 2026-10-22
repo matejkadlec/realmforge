@@ -1,4 +1,6 @@
 {
+  "name": "spell.realmforge.test_slow_bolt.name",
+  "description": "spell.realmforge.test_slow_bolt.description",
   "school": "realmforge:fire",
   "scales_with": "spell_power",
   "targeting": {
@@ -17,7 +19,7 @@
     "resource": "realmforge:mana"
   },
   "cooldown_ticks": 0,
-  "global_cooldown_ticks": 20,
+  "global_cooldown_ticks": 10,
   "max_level": 1,
   "crit": {
     "can_crit": true,

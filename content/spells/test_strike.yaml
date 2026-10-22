@@ -2,6 +2,8 @@
 # Engine test (C3a-1): a physical ability that costs rage, adds the caster's attack damage, never crits and is off the
 # global cooldown. Not gameplay content; the GameTests in the QA mod cast it.
 id: test_strike
+name: {en_us: Test Strike}
+description: {en_us: "Strikes an enemy for {damage} damage."}
 school: realmforge:physical
 scales_with: attack_damage
 targeting: {type: realmforge:enemy, range: 4}

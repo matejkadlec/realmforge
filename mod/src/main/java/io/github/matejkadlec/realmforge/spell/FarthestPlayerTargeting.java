@@ -38,4 +38,9 @@ public record FarthestPlayerTargeting(double range) implements SpellTargeting {
         return farthest.<Either<SpellTarget, CastFailure>>map(player -> Either.left(SpellTarget.of(caster, player)))
                 .orElseGet(() -> Either.right(CastFailure.NO_TARGET));
     }
+
+    @Override
+    public double reach() {
+        return range;
+    }
 }

@@ -1,4 +1,6 @@
 {
+  "name": "spell.realmforge.test_chill.name",
+  "description": "spell.realmforge.test_chill.description",
   "school": "realmforge:frost",
   "scales_with": "spell_power",
   "targeting": {
@@ -9,7 +11,7 @@
     "type": "instant"
   },
   "cooldown_ticks": 0,
-  "global_cooldown_ticks": 20,
+  "global_cooldown_ticks": 10,
   "max_level": 1,
   "crit": {
     "can_crit": true,

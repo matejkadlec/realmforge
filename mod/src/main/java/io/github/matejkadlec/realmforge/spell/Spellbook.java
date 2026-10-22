@@ -18,11 +18,18 @@ import net.minecraft.util.ExtraCodecs;
  * their ids; a known spell whose entry is gone (content removed) simply cannot be cast.
  *
  * @param spells known spell to its level (1 or more)
- * @param bar    spell bar slot (0 or more) to the spell in it; empty slots are absent. The number of slots comes
- *               with the key scheme (decision D4)
+ * @param bar    spell bar slot to the spell in it; empty slots are absent. Slots 0 to 7 are the bar's (C3b, RLM-25:
+ *               R, T, F, G, H and C, then two the player binds; Matěj, 2026-10-15 and 2026-10-16), slot
+ *               {@value #RACIAL_SLOT} the racial ability's beside it (X), which the race fills, not the player
  */
 public record Spellbook(Map<ResourceKey<Spell>, Integer> spells, Map<Integer, ResourceKey<Spell>> bar) {
     public static final Spellbook EMPTY = new Spellbook(Map.of(), Map.of());
+    /** The spell bar's slots for class spells: 0 to 7. */
+    public static final int BAR_SLOTS = 8;
+    /** The racial ability's slot beside the bar. */
+    public static final int RACIAL_SLOT = BAR_SLOTS;
+    /** Every slot, the bar's and the racial one. */
+    public static final int SLOT_COUNT = BAR_SLOTS + 1;
 
     public static final Codec<Spellbook> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.unboundedMap(ResourceKey.codec(SpellRegistries.SPELL), ExtraCodecs.POSITIVE_INT)
@@ -47,8 +54,8 @@ public record Spellbook(Map<ResourceKey<Spell>, Integer> spells, Map<Integer, Re
             }
         });
         bar.keySet().forEach(slot -> {
-            if (slot < 0) {
-                throw new IllegalArgumentException("Spell bar slots start at 0: " + slot);
+            if (slot < 0 || slot >= SLOT_COUNT) {
+                throw new IllegalArgumentException("Spell bar slots are 0 to " + (SLOT_COUNT - 1) + ": " + slot);
             }
         });
     }
@@ -56,6 +63,55 @@ public record Spellbook(Map<ResourceKey<Spell>, Integer> spells, Map<Integer, Re
     /** The level of a known spell, empty when the player does not know it. */
     public Optional<Integer> level(ResourceKey<Spell> spell) {
         return Optional.ofNullable(spells.get(spell));
+    }
+
+    /** The spell in {@code slot}, if any. */
+    public Optional<ResourceKey<Spell>> slot(int slot) {
+        return Optional.ofNullable(bar.get(slot));
+    }
+
+    /** The first of the bar's slots (0 to 7) that holds {@code spell}, or -1. */
+    public int barSlotOf(ResourceKey<Spell> spell) {
+        for (int slot = 0; slot < BAR_SLOTS; slot++) {
+            if (spell.equals(bar.get(slot))) {
+                return slot;
+            }
+        }
+        return -1;
+    }
+
+    /** This book with {@code slot} holding {@code spell}, or emptied. */
+    public Spellbook withSlot(int slot, Optional<ResourceKey<Spell>> spell) {
+        Map<Integer, ResourceKey<Spell>> changed = new HashMap<>(bar);
+        spell.ifPresentOrElse(value -> changed.put(slot, value), () -> changed.remove(slot));
+        return new Spellbook(spells, changed);
+    }
+
+    /**
+     * This book with {@code spell} put into the bar's {@code slot} (0 to 7). A spell already elsewhere on the bar moves,
+     * and the spell it displaces takes its old slot, so dragging one spell onto another swaps them.
+     */
+    public Spellbook placed(int slot, ResourceKey<Spell> spell) {
+        if (slot < 0 || slot >= BAR_SLOTS) {
+            throw new IllegalArgumentException("The bar's slots are 0 to " + (BAR_SLOTS - 1) + ": " + slot);
+        }
+        int from = barSlotOf(spell);
+        Optional<ResourceKey<Spell>> displaced = slot(slot);
+        Spellbook book = withSlot(slot, Optional.of(spell));
+        return from >= 0 && from != slot ? book.withSlot(from, displaced) : book;
+    }
+
+    /** This book with {@code spell} in the bar's first empty slot, unless it is on the bar or the bar is full. */
+    public Spellbook withSpellOnBar(ResourceKey<Spell> spell) {
+        if (barSlotOf(spell) >= 0) {
+            return this;
+        }
+        for (int slot = 0; slot < BAR_SLOTS; slot++) {
+            if (!bar.containsKey(slot)) {
+                return withSlot(slot, Optional.of(spell));
+            }
+        }
+        return this;
     }
 
     /** This book with {@code spell} known at {@code level} (1 or more), replacing the level it had. */

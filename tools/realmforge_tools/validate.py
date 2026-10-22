@@ -30,8 +30,9 @@ from realmforge_tools.rooms.walk import walk_problems
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES, WORLDGEN_DIR
 from realmforge_tools.schema.block import ITEMLESS_KINDS, REALM_PORTAL_KINDS, SINGLE_BLOCK_KINDS
 from realmforge_tools.schema.chapter import advancement_id as chapter_advancement
-from realmforge_tools.schema.character import STARTING_BREAD
+from realmforge_tools.schema.character import STARTING_BREAD, CharacterModifierDef
 from realmforge_tools.schema.dungeon import DEAD_END_ROLES, PATH_ROLES, ROOM_ROLES, room_role
+from realmforge_tools.schema.effect import PeriodicDef, effect_id
 from realmforge_tools.schema.item import USE_TEXT_GROUP, ItemDef
 from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
@@ -51,6 +52,7 @@ from realmforge_tools.schema.spell import (
     GROUND_POINT,
     HEAL,
     KNOCKBACK,
+    PERIODIC_PLACEHOLDERS,
     PROJECTILE,
     RANDOM_PLAYER,
     REMOVE_EFFECT,
@@ -59,6 +61,7 @@ from realmforge_tools.schema.spell import (
     TELEPORT,
     SpellDef,
 )
+from realmforge_tools.schema.stat import StatDef
 from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
 
@@ -76,6 +79,7 @@ DUNGEON_TYPE_REGISTRY = f"{MOD_ID}:dungeon_type"
 CHAPTER_REGISTRY = f"{MOD_ID}:chapter"
 STRUCTURE_REGISTRY = "minecraft:structure"
 PARTICLE_TYPE_REGISTRY = "minecraft:particle_type"
+MOB_EFFECT_REGISTRY = "minecraft:mob_effect"
 # Vanilla Overworld's height (net.minecraft.world.level.dimension.DimensionType, minecraft:overworld): its lowest y and
 # the number of blocks above it, for Overworld's arrival heights.
 OVERWORLD_MIN_Y = -64
@@ -90,6 +94,7 @@ REGISTRY_OF_TYPE: dict[str, str] = {
     "items": ITEM_REGISTRY,
     "blocks": BLOCK_REGISTRY,
     "stats": ATTRIBUTE_REGISTRY,
+    "effects": MOB_EFFECT_REGISTRY,
     "spell_schools": SPELL_SCHOOL_REGISTRY,
     "dungeons": DUNGEON_TYPE_REGISTRY,
     **{t.directory: f"{MOD_ID}:{t.registry}" for t in DATAPACK_TYPES},
@@ -102,6 +107,7 @@ RESERVED_TEXT_GROUPS: dict[str, str] = {
     "item": "content/items/",
     "block": "content/blocks/",
     "attribute": "content/stats/",
+    "effect": "content/effects/",
     "spell_school": "content/spell_schools/",
     "death.attack": "content/spell_schools/",
     "dungeon_type": "content/dungeons/",
@@ -179,6 +185,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_references(content, universe)
     problems += _check_stat_rules(content, universe)
     problems += _check_spell_schools(content, universe)
+    problems += _check_effects(content, universe)
     problems += _check_spells(content, universe)
     problems += _check_characters(content, universe)
     problems += _check_worldgen_references(content, universe)
@@ -593,8 +600,6 @@ _EFFECT_TARGETING: dict[str, tuple[str, ...]] = {
     TELEPORT: (GROUND_POINT, DIRECTION),
     DASH: (ENEMY, GROUND_POINT, DIRECTION, *_NPC),
 }
-MOB_EFFECT_REGISTRY = "minecraft:mob_effect"
-
 # Vanilla's instant status effects (InstantenousMobEffect) apply on every tick of their duration, so
 # realmforge:apply_effect with one would heal, hurt or feed every tick (RLM-260): what a spell uses instead.
 INSTANT_MOB_EFFECTS: dict[str, str] = {
@@ -602,6 +607,27 @@ INSTANT_MOB_EFFECTS: dict[str, str] = {
     "minecraft:instant_damage": f"use {DAMAGE} instead",
     "minecraft:saturation": "a spell does not feed",
 }
+
+
+def _check_effects(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A status effect's periodic school exists, and its modifiers name attributes that exist, in their unit."""
+    problems: list[Problem] = []
+    stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
+    for entry in content.effects:
+        effect = entry.model
+        if effect.periodic is not None and not universe.contains(
+            SPELL_SCHOOL_REGISTRY, effect.periodic.school
+        ):
+            problems.append(
+                Problem(
+                    entry.source,
+                    "periodic.school",
+                    _unknown(effect.periodic.school, SPELL_SCHOOL_REGISTRY, universe),
+                )
+            )
+        for n, modifier in enumerate(effect.modifiers):
+            problems += _check_modifier(entry.source, f"modifiers.{n}", modifier, stats, universe)
+    return problems
 
 
 def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
@@ -612,9 +638,25 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
     effects a projectile or an area runs fit whom it reaches. Status effects exist."""
     problems: list[Problem] = []
     schools = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spell_schools}
+    effects = {
+        effect_id(entry.model.id): entry.model.periodic
+        for entry in content.effects
+        if entry.model.periodic is not None
+    }
     for entry in content.spells:
         spell = entry.model
         school = schools.get(spell.school)
+        periodic_names = sorted(PERIODIC_PLACEHOLDERS & set(spell.placeholders()))
+        applied = spell.first_effect(APPLY_EFFECT)
+        if periodic_names and applied is not None and applied.effect not in effects:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "description",
+                    f"{{{periodic_names[0]}}} reads the first apply_effect's damage or healing over time, and "
+                    f"{applied.effect} has none (only our effects with periodic do)",
+                )
+            )
         if not universe.contains(SPELL_SCHOOL_REGISTRY, spell.school):
             problems.append(
                 Problem(entry.source, "school", _unknown(spell.school, SPELL_SCHOOL_REGISTRY, universe))
@@ -630,7 +672,7 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
             )
         for n, effect in enumerate(spell.effects):
             path = f"effects.{n}"
-            problems += _check_effect(entry.source, path, effect, spell, universe)
+            problems += _check_effect(entry.source, path, effect, spell, universe, effects)
             allowed = _EFFECT_TARGETING[effect.type]
             if spell.targeting.type not in allowed:
                 problems.append(
@@ -641,12 +683,17 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
                         f"not {spell.targeting.type}",
                     )
                 )
-            problems += _check_inner_effects(entry.source, path, effect, spell, universe)
+            problems += _check_inner_effects(entry.source, path, effect, spell, universe, effects)
     return problems
 
 
 def _check_inner_effects(
-    source: str, path: str, effect: BaseModel, spell: SpellDef, universe: IdUniverse
+    source: str,
+    path: str,
+    effect: BaseModel,
+    spell: SpellDef,
+    universe: IdUniverse,
+    effects: dict[str, PeriodicDef],
 ) -> list[Problem]:
     """The effects a projectile runs on the enemy it hits, or an area on the enemies or allies inside it, fit them as
     the spell's targeting would."""
@@ -661,17 +708,23 @@ def _check_inner_effects(
     problems: list[Problem] = []
     for m, inner in enumerate(effect.effects):
         inner_path = f"{path}.effects.{m}"
-        problems += _check_effect(source, inner_path, inner, spell, universe)
+        problems += _check_effect(source, inner_path, inner, spell, universe, effects)
         if reached not in _EFFECT_TARGETING[inner.type]:
             problems.append(Problem(source, f"{inner_path}.type", f"{inner.type} cannot act on {what}"))
     return problems
 
 
 def _check_effect(
-    source: str, path: str, effect: BaseModel, spell: SpellDef, universe: IdUniverse
+    source: str,
+    path: str,
+    effect: BaseModel,
+    spell: SpellDef,
+    universe: IdUniverse,
+    effects: dict[str, PeriodicDef],
 ) -> list[Problem]:
     """An effect's share of attack damage fits what the spell scales with, and its status effect exists; a status
-    effect a spell applies is not an instant one."""
+    effect a spell applies is not an instant one, and one of ours with damage or healing over time lasts a whole
+    number of its intervals (``effects``: our periodic effects by id)."""
     problems: list[Problem] = []
     percent = getattr(effect, "attack_damage_percent", None)
     if spell.scales_with == "spell_power" and percent is not None:
@@ -691,6 +744,18 @@ def _check_effect(
             )
         )
     status = getattr(effect, "effect", None)
+    periodic = effects.get(status) if effect.type == APPLY_EFFECT else None
+    if periodic is not None:
+        ticks = effect.duration_seconds / periodic.interval_seconds
+        if abs(ticks - round(ticks)) > 1e-9:
+            problems.append(
+                Problem(
+                    source,
+                    f"{path}.duration_seconds",
+                    f"{status} ticks every {periodic.interval_seconds:g} s, so it lasts a whole number of its "
+                    f"intervals, not {effect.duration_seconds:g} s",
+                )
+            )
     if status is not None and not universe.contains(MOB_EFFECT_REGISTRY, status):
         problems.append(Problem(source, f"{path}.effect", _unknown(status, MOB_EFFECT_REGISTRY, universe)))
     elif effect.type == APPLY_EFFECT and status in INSTANT_MOB_EFFECTS:
@@ -721,33 +786,7 @@ def _check_characters(content: Content, universe: IdUniverse) -> list[Problem]:
                 )
     for entry in (*content.races, *content.classes):
         for n, modifier in enumerate(entry.model.modifiers):
-            path = f"modifiers.{n}"
-            target = stats.get(modifier.attribute)
-            if not universe.contains(ATTRIBUTE_REGISTRY, modifier.attribute):
-                problems.append(
-                    Problem(
-                        entry.source,
-                        f"{path}.attribute",
-                        _unknown(modifier.attribute, ATTRIBUTE_REGISTRY, universe),
-                    )
-                )
-            elif modifier.operation == "add_value" and target is not None:
-                if target.percent and not modifier.is_percent:
-                    problems.append(
-                        Problem(
-                            entry.source,
-                            f"{path}.amount",
-                            f"{modifier.attribute} is a share: write the amount as amount_percent",
-                        )
-                    )
-                elif not target.percent and modifier.is_percent:
-                    problems.append(
-                        Problem(
-                            entry.source,
-                            f"{path}.amount_percent",
-                            f"{modifier.attribute} counts points: add_value takes amount, not amount_percent",
-                        )
-                    )
+            problems += _check_modifier(entry.source, f"modifiers.{n}", modifier, stats, universe)
     bread, bread_count = STARTING_BREAD
     for entry in content.classes:
         class_id = f"{MOD_ID}:{entry.model.id}"
@@ -776,6 +815,37 @@ def _check_characters(content: Content, universe: IdUniverse) -> list[Problem]:
                     )
                 )
     return problems
+
+
+def _check_modifier(
+    source: str, path: str, modifier: CharacterModifierDef, stats: dict[str, StatDef], universe: IdUniverse
+) -> list[Problem]:
+    """A race's, class's or status effect's attribute modifier names an attribute that exists, in its unit as for
+    stat rules (architecture 8.3): add_value on one of our shares takes amount_percent, on points amount."""
+    if not universe.contains(ATTRIBUTE_REGISTRY, modifier.attribute):
+        return [
+            Problem(source, f"{path}.attribute", _unknown(modifier.attribute, ATTRIBUTE_REGISTRY, universe))
+        ]
+    target = stats.get(modifier.attribute)
+    if modifier.operation != "add_value" or target is None:
+        return []
+    if target.percent and not modifier.is_percent:
+        return [
+            Problem(
+                source,
+                f"{path}.amount",
+                f"{modifier.attribute} is a share: write the amount as amount_percent",
+            )
+        ]
+    if not target.percent and modifier.is_percent:
+        return [
+            Problem(
+                source,
+                f"{path}.amount_percent",
+                f"{modifier.attribute} counts points: add_value takes amount, not amount_percent",
+            )
+        ]
+    return []
 
 
 def _check_text_groups(content: Content) -> list[Problem]:
