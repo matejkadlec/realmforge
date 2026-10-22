@@ -18,3 +18,6 @@ rootProject.name = 'realmforge'
 include 'mod'
 // Dev-only QA mod (mod ID `realmforge_qa`): GameTests and debug tools. Never released.
 include 'qa-mod'
+// Better Key Binds (mod ID `better_key_binds`): a standalone client-side mod with secondary key binds, independent of
+// Realmforge (ADR 0048). Released on its own tags (`better-key-binds-v*`).
+include 'better-key-binds'
