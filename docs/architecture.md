@@ -2197,18 +2197,19 @@ its name, `Lv. 20 Zombie`, from one function, `client/compat/MobLevelLabel`:
 - **The colour** of the whole `Lv. 20` follows the mob's level minus the viewing player's: gray (`#AAAAAA`) from −4
   down, green (`#55FF55`) at −3, yellow (`#FFFF55`) from −2 to +2, orange (`#FF9933`, ours, not gold) at +3, red
   (`#FF5555`) at +4. From +5 the number gives way to a skull, `Lv.` in bold blood red (`#E02020`) and the skull glyph
-  right after the dot, in the same blood red with black eyes (Matěj's playtest, 2026-10-22). The name is white and
-  upright, a custom name too.
+  half a space after the dot, in the same blood red with black eyes (Matěj's playtest, 2026-10-22). The name is white
+  and upright, a custom name too.
 - **The text** `Lv. %1$s` is the XP bar's (`gui.realmforge.xp_bar_level`), so a mob's level reads like the player's
   own. The level comes from the mob's synced `realmforge:level` ([7](#7-player-state)); only a mob (`Mob`) with a level
   shows one, players and passive animals none. It is never written into a name, so death messages, name tags and other
   mods see the mob's own.
 - **The skull** is our font `realmforge:symbols` (`assets/realmforge/font/symbols.json`) at the private-use code
   point U+E000 of its bitmap provider: a white skull with black eyes on the default font's 8×8 grid with palette
-  colours, which the text colour tints (white takes it, black stays black). U+E001, a space of −5 pixels in its
-  `space` provider, steps back over the bold space of `Lv. %1$s`, so the XP bar's text stays as it is and the skull
-  still follows the dot. `rf gen` writes the font and its texture from `tools/realmforge_tools/generate/fonts.py`,
-  and a JUnit test checks that the generated font holds the code points the label uses.
+  colours, which the text colour tints (white takes it, black stays black). U+E001, a space of −3 pixels in its
+  `space` provider, steps back into the bold space of `Lv. %1$s` (5 pixels), which halves the gap between the dot and
+  the skull while the XP bar's text stays as it is. `rf gen` writes the font and its texture from
+  `tools/realmforge_tools/generate/fonts.py`, and a JUnit test checks that the generated font holds the code points
+  the label uses.
 - **Neat** (`client/compat/neat/NeatCompat`, client only) has no API for it, but a usable hook: its mixin on
   `LivingEntityRenderer#extractRenderState` stores the card's name line in the render state (`NeatRenderState`,
   which it mixes into `LivingEntityRenderState`), and NeoForge runs the render state modifiers of

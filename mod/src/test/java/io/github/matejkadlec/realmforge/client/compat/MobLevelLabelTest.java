@@ -60,14 +60,14 @@ class MobLevelLabelTest {
     }
 
     @Test
-    void fiveLevelsAboveShowsTheBloodRedSkullRightAfterABoldBloodRedLv() {
+    void fiveLevelsAboveShowsTheBloodRedSkullHalfASpaceAfterABoldBloodRedLv() {
         Component level = MobLevelLabel.level(30, 25);
         assertEquals(TextColor.fromRgb(MobLevelLabel.SKULL_RED), level.getStyle().getColor());
         assertTrue(level.getStyle().isBold());
         Object[] args = translatable(level).getArgs();
         assertEquals(1, args.length);
         Component skull = (Component) args[0];
-        assertEquals(MobLevelLabel.STEP_BACK + MobLevelLabel.SKULL, skull.getString(), "no space after the dot");
+        assertEquals(MobLevelLabel.STEP_BACK + MobLevelLabel.SKULL, skull.getString(), "half a space after the dot");
         Style style = skull.getStyle();
         assertEquals(MobLevelLabel.SYMBOLS, style.getFont());
         assertEquals(TextColor.fromRgb(MobLevelLabel.SKULL_RED), style.getColor(), "tints the skull, not its eyes");
@@ -105,8 +105,8 @@ class MobLevelLabelTest {
         assertEquals("realmforge:font/symbols.png", bitmap.get("file").getAsString());
         JsonObject space = providers.get(1).getAsJsonObject();
         assertEquals("space", space.get("type").getAsString());
-        assertEquals(-5, space.getAsJsonObject("advances").get(MobLevelLabel.STEP_BACK).getAsInt(),
-                "the default font's space (4) and the bold pixel");
+        assertEquals(-3, space.getAsJsonObject("advances").get(MobLevelLabel.STEP_BACK).getAsInt(),
+                "3 of the bold space's 5 pixels (the default font's 4 and the bold pixel)");
         assertTrue(MobLevelLabelTest.class.getResource("/assets/realmforge/textures/font/symbols.png") != null,
                 "the symbols texture");
     }

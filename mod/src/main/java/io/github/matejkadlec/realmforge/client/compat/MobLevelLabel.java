@@ -21,7 +21,7 @@ import net.minecraft.world.entity.player.Player;
  * {@code Lv. 20 Zombie}, one function for both. The whole {@code Lv. 20} takes its colour from the mob's level against
  * the viewing player's, as WoW colours a level ({@link #color}); a mob {@value #SKULL_DIFFERENCE} or more levels above
  * shows our skull glyph instead of the number ({@link #SKULL}, RLM-340), {@code Lv.} in bold blood red and the skull
- * right after the dot. The name stays white and upright, a custom name too (Neat draws those in italics).
+ * half a space after the dot. The name stays white and upright, a custom name too (Neat draws those in italics).
  * {@code Lv. %1$s} is the XP bar's text ({@link GeneratedTexts#GUI_XP_BAR_LEVEL}), so a mob's level reads like the
  * player's own above the hotbar. Only a mob that has a level shows one, read from its synced {@code realmforge:level}
  * ({@link MobLevels#level}); the level is never written into a name, so death messages, name tags and other mods see
@@ -46,9 +46,9 @@ public final class MobLevelLabel {
      */
     public static final String SKULL = "\uE000";
     /**
-     * A space of {@link #SYMBOLS} that steps five pixels back over the bold space {@code Lv. } ends with (the default
-     * font's 4 and the bold pixel), so the skull follows the dot as the next letter would (Matěj, 2026-10-22). Drawn
-     * without bold, which would add a pixel to it.
+     * A space of {@link #SYMBOLS} that steps three pixels back into the bold space {@code Lv. } ends with (the default
+     * font's 4 and the bold pixel), which halves the gap between the dot and the skull from 6 pixels to 3 (Matěj,
+     * 2026-10-22). Drawn without bold, which would add a pixel to it.
      */
     public static final String STEP_BACK = "\uE001";
 

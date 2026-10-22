@@ -40,9 +40,10 @@ SKULL_ROWS = (
 )
 # Each symbol: its code point and its rows, in the order the texture holds them, left to right.
 SYMBOLS: tuple[tuple[str, tuple[str, ...]], ...] = (("\ue000", SKULL_ROWS),)
-# Each space: its code point and its advance in pixels. U+E001 steps back over the bold space (4 pixels and the bold
-# pixel) that the label's "Lv. " ends with, so the skull follows the dot as the next letter would (Matěj, 2026-10-22).
-SPACES: tuple[tuple[str, int], ...] = (("\ue001", -5),)
+# Each space: its code point and its advance in pixels. U+E001 steps 3 pixels back into the bold space (4 pixels and
+# the bold pixel) that the label's "Lv. " ends with, which halves the gap between the dot and the skull from 6 pixels
+# to 3 (Matěj, 2026-10-22: none looked cramped, the whole space too wide).
+SPACES: tuple[tuple[str, int], ...] = (("\ue001", -3),)
 
 
 def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:

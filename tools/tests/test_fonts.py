@@ -26,7 +26,7 @@ def test_the_symbols_font_holds_the_skull_and_the_step_back(repo: RepoPaths) -> 
     assert font == {
         "providers": [
             {"type": "bitmap", "file": "realmforge:font/symbols.png", "ascent": 7, "chars": ["\ue000"]},
-            {"type": "space", "advances": {"\ue001": -5}},
+            {"type": "space", "advances": {"\ue001": -3}},
         ]
     }
     width, height, pixels = decode_rgba(files[f"{ASSETS}/textures/font/symbols.png"])
