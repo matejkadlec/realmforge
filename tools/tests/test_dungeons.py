@@ -412,9 +412,51 @@ def test_a_cushion_set_into_the_floor_keeps_its_water(repo: RepoPaths) -> None:
             load_and_validate(repo)
 
 
+# Horizontal directions as (dx, dz), and each one's counter-clockwise neighbour, as Minecraft's Direction has them.
+_STEPS = {"north": (0, -1), "south": (0, 1), "west": (-1, 0), "east": (1, 0)}
+_COUNTER_CLOCKWISE = {"north": "west", "west": "south", "south": "east", "east": "north"}
+_OPPOSITE = {"north": "south", "south": "north", "west": "east", "east": "west"}
+
+
+def _stairs_shape(blocks: dict[tuple[int, int, int], BlockState], pos: tuple[int, int, int]) -> str:
+    """The shape StairBlock#getStairsShape gives the stair at pos from its neighbours (26.1.2), so a stored shape that
+    differs would change at the first block update."""
+
+    def stairs(at: tuple[int, int, int]) -> BlockState | None:
+        state = blocks.get(at)
+        return state if state is not None and state.name.endswith("_stairs") else None
+
+    def step(at: tuple[int, int, int], direction: str) -> tuple[int, int, int]:
+        dx, dz = _STEPS[direction]
+        return at[0] + dx, at[1], at[2] + dz
+
+    state = blocks[pos]
+    facing, half = state.get("facing"), state.get("half")
+
+    def can_take_shape(direction: str) -> bool:
+        other = stairs(step(pos, direction))
+        return other is None or other.get("facing") != facing or other.get("half") != half
+
+    def crosses(other: BlockState | None) -> bool:
+        return (
+            other is not None
+            and other.get("half") == half
+            and (_STEPS[other.get("facing")][0] == 0) != (_STEPS[facing][0] == 0)
+        )
+
+    behind = stairs(step(pos, facing))
+    if crosses(behind) and can_take_shape(_OPPOSITE[behind.get("facing")]):
+        return "outer_left" if behind.get("facing") == _COUNTER_CLOCKWISE[facing] else "outer_right"
+    front = stairs(step(pos, _OPPOSITE[facing]))
+    if crosses(front) and can_take_shape(front.get("facing")):
+        return "inner_left" if front.get("facing") == _COUNTER_CLOCKWISE[facing] else "inner_right"
+    return "straight"
+
+
 def test_the_lobby_cushion_reaches_past_the_ceiling_hole() -> None:
     # RLM-276: a player who holds a direction while falling leaves the shaft's wall below the lobby's ceiling and
-    # drifts outward before landing, so the cushion covers the ceiling hole and one block past it on every side, with
+    # drifts outward before landing. The cushion covers the ceiling hole with waterlogged slabs and the ring one block
+    # past it with waterlogged stairs, their tall half outward and L-shaped in the corners (Matěj's 5x5), with
     # nothing above it to land on first.
     path = REPO_ROOT / "content/rooms/third_party/stonevaults/dungeon/lobby/lobby_01.nbt"
     room = read_structure(path.read_bytes())
@@ -427,8 +469,21 @@ def test_the_lobby_cushion_reaches_past_the_ceiling_hole() -> None:
     }
     assert hole, "lobby_01 has no ceiling hole"
     reach = {(x + dx, z + dz) for x, z in hole for dx in (-1, 0, 1) for dz in (-1, 0, 1)}
-    cushion = BlockState.parse("minecraft:stone_brick_slab[type=bottom,waterlogged=true]")
-    assert {cell for cell in reach if blocks.get((cell[0], 0, cell[1])) != cushion} == set()
+    slab = BlockState.parse("minecraft:stone_brick_slab[type=bottom,waterlogged=true]")
+    assert {cell for cell in hole if blocks.get((cell[0], 0, cell[1])) != slab} == set()
+
+    rim = reach - hole
+    assert len(hole) == 9 and len(rim) == 16
+    for x, z in sorted(rim):
+        state = blocks[(x, 0, z)]
+        assert state.name == "minecraft:stone_brick_stairs", (x, z, state)
+        assert (state.get("half"), state.get("waterlogged")) == ("bottom", "true"), (x, z, state)
+        assert state.get("shape") == _stairs_shape(blocks, (x, 0, z)), (x, z, state)
+        # The tall half faces away from the hole: the step toward the facing leaves the cushion.
+        dx, dz = _STEPS[state.get("facing")]
+        assert (x + dx, z + dz) not in reach, (x, z, state)
+        corner = sum((x + sx, z + sz) in hole for sx, sz in _STEPS.values()) == 0
+        assert state.get("shape").startswith("inner_") == corner, (x, z, state)
     assert {
         cell
         for cell in reach

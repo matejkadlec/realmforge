@@ -1687,9 +1687,10 @@ Rooms are generated or imported; nobody has to build one by hand
   pair in a corner, mirrored corners or pairs, or a pair or row in a wall's middle; a room no pattern fits gets
   none. A source's rules can also `place` a box of blocks into a room after the dressing: Stonevaults' `lobby_01`,
   where a drop down the entrance shaft always lands (the entrance and the stairway's fall rooms connect down only
-  into each other and into it), gets a fall cushion of waterlogged stone brick bottom slabs set into its floor below
-  its ceiling hole and one block past it on every side (a player who holds a direction drifts off the shaft's wall
-  below the ceiling), so a fall of any height deals no damage (RLM-276). On import, jigsaws
+  into each other and into it), gets a fall cushion set into its floor: waterlogged stone brick bottom slabs below
+  its ceiling hole and a ring of waterlogged stairs one block past it, tall half outward and L-shaped in the
+  corners, where a player who holds a direction drifts off the shaft's wall, so a fall of any height into it deals
+  no damage (RLM-276). On import, jigsaws
   inside a room (props, mobs, sub-pieces the source pulls in) become the block they leave behind, every connector
   is named `realmforge:door` (sides) or `realmforge:shaft` (up, down) with the pool `minecraft:empty`, marker blocks
   the source's processors replace at generation (red wool for rock, stained glass for legs) become what those

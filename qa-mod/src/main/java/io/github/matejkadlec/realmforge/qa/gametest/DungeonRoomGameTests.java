@@ -30,6 +30,7 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * The rules of single dungeon rooms in an instance: a trap's TNT blows open only what its room lists (RLM-257), and a
@@ -47,14 +48,19 @@ public final class DungeonRoomGameTests {
     /** The combination lock's TNT, and the smooth stone wall beside it that the TNT is there to blow open. */
     private static final BlockPos LOCK_TNT = new BlockPos(8, 2, 6);
     private static final BlockPos LOCK_WALL = new BlockPos(7, 2, 6);
-    /** Where the lobby's cushion lies: the floor below its 3 x 3 ceiling hole and one block past it on every side. */
+    /**
+     * Where the lobby's cushion lies: slabs below its 3 x 3 ceiling hole (5 to 7) and a ring of stairs one block past
+     * it on every side, their tall half outward.
+     */
     private static final BoundingBox CUSHION = new BoundingBox(4, 0, 4, 8, 0, 8);
     /**
-     * Landing spots inside the lobby, as block columns: two on the cushion's rim, where a player who holds a direction
-     * while falling lands after drifting off the shaft's wall below the ceiling, and one on the full floor beside it.
+     * Where a pig (0.9 wide) lands inside the lobby, relative to it: three where a player who holds a direction while
+     * falling comes down after drifting off the shaft's wall below the ceiling, 0.3 past the hole's edge onto the
+     * stairs' low halves (east, west and the south-east corner), and one on the full floor beside the cushion.
      */
-    private static final List<BlockPos> RIM = List.of(new BlockPos(4, 0, 6), new BlockPos(8, 0, 8));
-    private static final BlockPos FLOOR = new BlockPos(10, 0, 6);
+    private static final List<Vec3> RIM = List.of(new Vec3(7.85, 0, 6.5), new Vec3(5.15, 0, 6.5),
+            new Vec3(7.85, 0, 7.85));
+    private static final Vec3 FLOOR = new Vec3(10.5, 0, 6.5);
     /** A fall distance that kills a pig landing anywhere but in water. */
     private static final double DEADLY_FALL = 64.0;
     /** Lowest a room may go in a plot, so no shaft the planner lays out drops further than onto this lobby. */
@@ -117,10 +123,11 @@ public final class DungeonRoomGameTests {
     /**
      * Done when of RLM-276: a mob dropped from above the entrance's floor into the lobby set at the lowest a plot's
      * rooms reach (a longer fall than any shaft the planner can lay out) lands in the cushion unharmed, while one
-     * dropped from the same height onto the lobby's roof dies. Mobs that land on the cushion's rim with a deadly fall
-     * behind them are unharmed too, and one that lands on the floor beside it dies. Once its water has ticked, none is
-     * outside the cushion. A mob stands in for the player: water takes a falling player's damage the same way, by
-     * resetting the fall in {@code LivingEntity#checkFallDamage}.
+     * dropped from the same height onto the lobby's roof dies. Mobs that land with a deadly fall behind them where a
+     * drifting player comes down, across the hole's edge onto the rim stairs' low halves, are unharmed too, and one
+     * that lands on the floor beside the cushion dies. Once its water has ticked, none is outside the cushion. A mob
+     * stands in for the player: water takes a falling player's damage the same way, by resetting the fall in
+     * {@code LivingEntity#checkFallDamage}.
      */
     @QaGameTest(timeoutTicks = TIMEOUT)
     public static void aFallOntoTheCushionDealsNoDamage(GameTestHelper helper) {
@@ -150,8 +157,8 @@ public final class DungeonRoomGameTests {
                             plot.origin().getZ() + 2.5);
                     // Under the ceiling, already falling as fast and as far as at the end of the shaft.
                     for (int i = 0; i < landed.length; i++) {
-                        BlockPos column = lobby.offset(i < RIM.size() ? RIM.get(i) : FLOOR);
-                        landed[i] = pig(instances, column.getX() + 0.5, column.getY() + 3, column.getZ() + 0.5);
+                        Vec3 at = i < RIM.size() ? RIM.get(i) : FLOOR;
+                        landed[i] = pig(instances, lobby.getX() + at.x, lobby.getY() + 3, lobby.getZ() + at.z);
                         landed[i].setDeltaMovement(0.0, -3.0, 0.0);
                         landed[i].fallDistance = DEADLY_FALL;
                     }
@@ -172,7 +179,7 @@ public final class DungeonRoomGameTests {
                                     + pigs[0].getMaxHealth() + " health");
                     for (int i = 0; i < RIM.size(); i++) {
                         helper.assertTrue(landed[i].isAlive() && landed[i].getHealth() == landed[i].getMaxHealth(),
-                                "the pig that landed on the cushion's rim at " + RIM.get(i).toShortString()
+                                "the pig that landed on the cushion's rim at " + RIM.get(i)
                                         + " has " + landed[i].getHealth() + " of " + landed[i].getMaxHealth()
                                         + " health");
                     }

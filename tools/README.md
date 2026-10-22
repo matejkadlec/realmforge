@@ -155,7 +155,9 @@ dress:                # variety and decorations for plain rooms (rooms/dress.py)
   without: {barrels: [dungeon/rooms/library]}  # rooms that do not get a decoration
 place:                # boxes of one block set into a room after the dressing, by its path (a fall cushion, RLM-276)
   dungeon/lobby/lobby_01:
-    - {from: [4, 0, 4], to: [8, 0, 8], block: "minecraft:stone_brick_slab[type=bottom,waterlogged=true]"}
+    - {from: [5, 0, 5], to: [7, 0, 7], block: "minecraft:stone_brick_slab[type=bottom,waterlogged=true]"}
+    - {from: [4, 0, 5], to: [4, 0, 7], block: "minecraft:stone_brick_stairs[facing=west,half=bottom,shape=straight,waterlogged=true]"}
+    # ... the other three sides and the four corners (art/rooms/stonevaults/rules.yaml)
 data_version: 4790    # for the files that state none, when the source is known to be saved with this version
 ```
 

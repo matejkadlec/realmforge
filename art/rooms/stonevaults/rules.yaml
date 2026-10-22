@@ -23,12 +23,21 @@ place:
   # The fall cushion (RLM-276): a player who drops down the entrance shaft (the entrance, then any stack of the
   # stairway's fall rooms) lands in lobby_01, the one room under it, below its 3x3 ceiling hole. Its floor there
   # becomes waterlogged stone brick bottom slabs, so a drop of any height deals no fall damage; the floor around
-  # holds the water in, and a bottom slab's whole underside keeps it from flowing down. The cushion reaches one
-  # block past the hole on every side: a player who holds a direction while falling leaves the shaft's wall once
-  # below the ceiling and drifts a little outward before landing, and the full floor block there would take them
-  # out of the water half a block higher.
+  # holds the water in, and a bottom slab's whole underside keeps it from flowing down. A rim of waterlogged stone
+  # brick stairs reaches one block past the hole on every side, their tall half outward and L-shaped in the corners
+  # (Matěj's 5x5, 2026-10-22): a player who holds a direction while falling leaves the shaft's wall once below the
+  # ceiling and drifts a little outward, and lands on a stair's low half, in its water. Only a landing on the tall
+  # half deals damage. The corners are the shapes StairBlock gives this ring itself, so no block update reshapes them.
   dungeon/lobby/lobby_01:
-    - {from: [4, 0, 4], to: [8, 0, 8], block: "minecraft:stone_brick_slab[type=bottom,waterlogged=true]"}
+    - {from: [5, 0, 5], to: [7, 0, 7], block: "minecraft:stone_brick_slab[type=bottom,waterlogged=true]"}
+    - {from: [5, 0, 4], to: [7, 0, 4], block: "minecraft:stone_brick_stairs[facing=north,half=bottom,shape=straight,waterlogged=true]"}
+    - {from: [5, 0, 8], to: [7, 0, 8], block: "minecraft:stone_brick_stairs[facing=south,half=bottom,shape=straight,waterlogged=true]"}
+    - {from: [4, 0, 5], to: [4, 0, 7], block: "minecraft:stone_brick_stairs[facing=west,half=bottom,shape=straight,waterlogged=true]"}
+    - {from: [8, 0, 5], to: [8, 0, 7], block: "minecraft:stone_brick_stairs[facing=east,half=bottom,shape=straight,waterlogged=true]"}
+    - {from: [4, 0, 4], to: [4, 0, 4], block: "minecraft:stone_brick_stairs[facing=north,half=bottom,shape=inner_left,waterlogged=true]"}
+    - {from: [8, 0, 4], to: [8, 0, 4], block: "minecraft:stone_brick_stairs[facing=north,half=bottom,shape=inner_right,waterlogged=true]"}
+    - {from: [4, 0, 8], to: [4, 0, 8], block: "minecraft:stone_brick_stairs[facing=south,half=bottom,shape=inner_right,waterlogged=true]"}
+    - {from: [8, 0, 8], to: [8, 0, 8], block: "minecraft:stone_brick_stairs[facing=south,half=bottom,shape=inner_left,waterlogged=true]"}
 dress:
   exclude: [dungeon/entrances/*]  # approved as they are
   # Variety and decorations Matěj asked for in the gallery review (2026-10-14): the plainer a room, the more it
