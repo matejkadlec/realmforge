@@ -231,9 +231,9 @@ every launch, so the instance always matches the repository.
    ```
 
    then run `./gradlew :mod:installToPrism :better-key-binds:installToPrism` after each change. Each builds its jar,
-   removes its older jars (`realmforge-*.jar`, `better-key-binds-*.jar`) from that folder and copies the new one. Copying to `/mnt/c` is fine; only building there is slow.
-   packwiz-installer leaves files it didn't install alone, so the jars survive pack updates. The QA mod is never
-   installed into Prism.
+   removes its older jars (`realmforge-*.jar`, `better-key-binds-*.jar`) from that folder and copies the new one.
+   Copying to `/mnt/c` is fine; only building there is slow. packwiz-installer leaves files it didn't install alone,
+   so the jars survive pack updates. The QA mod is never installed into Prism.
 7. Shaders: put [Complementary Shaders](https://www.complementary.dev/shaders/) into the instance's
    `shaderpacks/` folder and enable it in Iris's video settings.
 

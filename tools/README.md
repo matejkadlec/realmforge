@@ -54,9 +54,9 @@ first (`./gradlew :mod:jar :better-key-binds:jar`). It works in `.cache/pack-boo
    ([ADR 0018](../docs/decisions/0018-pack-boot-tests.md#note-2026-10-12-2612-port)). Every step runs on Java 25
    (`JAVA_HOME` or `PATH`), which the tool checks first;
 2. installs the pack's mods for that side with packwiz-installer, serving `pack/` over a local HTTP server;
-3. copies the jars into `mods/` (Better Key Binds' on the client only) and boots with NeoForge's self test, once with the optional mods and once without
-   (once in all while the pack has none, as now); the client runs under Xvfb when `xvfb-run` exists
-   (`sudo apt install xvfb`);
+3. copies the jars into `mods/` (Better Key Binds' on the client only) and boots with NeoForge's self test, once with
+   the optional mods and once without (once in all while the pack has none, as now); the client runs under Xvfb when
+   `xvfb-run` exists (`sudo apt install xvfb`);
 4. fails on a non-zero exit, a missing self-test report, a crash report, a jar that was not loaded, or an ERROR or
    FATAL log line that `ALLOWED_ERRORS` in `packboot.py` does not explain.
 

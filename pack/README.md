@@ -208,8 +208,8 @@ packwiz-installer does in a player's instance.
 ## Boot test
 
 CI boots the whole pack plus the core mod on a dedicated server (job `pack-boot`) and, with Better Key Binds too, on a
-client under Xvfb (job `pack-boot-client`) for every pull request (with and without the optional mods, when the pack has any). Run the
-same locally from the repository root after changing anything here, with Java 25:
+client under Xvfb (job `pack-boot-client`) for every pull request (with and without the optional mods, when the pack
+has any). Run the same locally from the repository root after changing anything here, with Java 25:
 
 ```sh
 ./gradlew :mod:jar :better-key-binds:jar && uv run rf pack-boot
