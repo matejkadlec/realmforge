@@ -48,6 +48,14 @@ final class CastBarStyle {
         return 0xFF000000 | red << 16 | green << 8 | blue;
     }
 
+    /**
+     * Whether an ended cast or a refusal {@code age} ticks old still shows, for {@code ticks} ticks. A negative age was
+     * stamped in another world's game time and never shows.
+     */
+    static boolean showing(long age, int ticks) {
+        return age >= 0 && age < ticks;
+    }
+
     /** "0.9 / 2.0": the seconds elapsed, rounded down, and the cast's whole length, both with one decimal. */
     static String time(int elapsedTicks, int totalTicks) {
         int elapsed = Math.clamp(elapsedTicks, 0, totalTicks);

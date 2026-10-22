@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.client.hud;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashSet;
@@ -29,6 +30,14 @@ class CastBarStyleTest {
         assertEquals(0xFFFFFFFF, CastBarStyle.shade(PHYSICAL, 1));
         assertEquals(0xFF000000, CastBarStyle.shade(PHYSICAL, -1));
         assertEquals(0xFFD9AB86, CastBarStyle.shade(PHYSICAL, 0.5F));
+    }
+
+    @Test
+    void anEndedCastShowsOnlyForItsTicksAndNeverFromAnotherWorldsTime() {
+        assertTrue(CastBarStyle.showing(0, 15));
+        assertTrue(CastBarStyle.showing(14, 15));
+        assertFalse(CastBarStyle.showing(15, 15));
+        assertFalse(CastBarStyle.showing(-1_999_990, 15), "stamped in a world with a later game time");
     }
 
     @Test

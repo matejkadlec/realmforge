@@ -25,7 +25,9 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.level.GameType;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.common.NeoForge;
 
 /**
  * The local player's cast bar (architecture 11.6, 18; C3b, RLM-25), after WoW's casting bar (Matěj's playtest of
@@ -77,6 +79,10 @@ public final class CastBarHud {
     public static void register(IEventBus modBus) {
         modBus.addListener(RegisterGuiLayersEvent.class,
                 event -> event.registerAbove(SpellBarHud.LAYER, LAYER, CastBarHud::render));
+        NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, event -> {
+            ended = null;
+            message = null;
+        });
     }
 
     /** A cast ended: the local player's shows how it ended. */
@@ -121,7 +127,7 @@ public final class CastBarHud {
                     CastBarStyle.time(elapsed, cast.get().durationTicks()), 0, 255);
             return;
         }
-        if (ended != null && now - ended.gameTime() < ENDED_TICKS) {
+        if (ended != null && CastBarStyle.showing(now - ended.gameTime(), ENDED_TICKS)) {
             int alpha = fade(now - ended.gameTime(), ENDED_TICKS);
             Optional<Spell> spell = spell(player, ended.spell());
             Optional<Component> why = CastTexts.end(ended.end(), spell);
@@ -131,7 +137,7 @@ public final class CastBarHud {
                     why.orElseGet(() -> name(spell, ended.spell())), "", flash, alpha);
             return;
         }
-        if (message != null && now - message.gameTime() < MESSAGE_TICKS) {
+        if (message != null && CastBarStyle.showing(now - message.gameTime(), MESSAGE_TICKS)) {
             int alpha = fade(now - message.gameTime(), MESSAGE_TICKS);
             graphics.centeredText(font, message.text(), graphics.guiWidth() / 2,
                     top + (SpellBarLayout.CAST_BAR_HEIGHT - 8) / 2, ARGB.color(alpha, MESSAGE));
