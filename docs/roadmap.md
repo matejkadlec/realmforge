@@ -193,12 +193,16 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   cooldown sweep, tooltips with live numbers, the payloads.
 - **C3c Status effects** (RLM-26, M, after C3a). `content/effects/` to generated `MobEffect` registrations; damage and
   healing over time; source tracking for dispels.
-- **C4 Class kits** (RLM-27, M, after C3b and C3c). 4-5 spells per class; starting gear with fixed stats, generated
-  with per-slot modifier ids and the rule that gear never adds max health directly
+- **Spell aiming** (RLM-344, RLM-345, RLM-346, after C3b; moved from M3 before C4, Matěj, 2026-10-22). Spells cast
+  without a target and aim with the crosshair (RLM-344); smart auto-aim for targeted spells, with the target
+  highlighted (RLM-345); ground-targeted areas land at the crosshair, with clamp cast (RLM-346).
+- **C4 Class kits** (RLM-27, M, after C3b, C3c and the spell aiming). 4-5 spells per class; starting gear with fixed
+  stats, generated with per-slot modifier ids and the rule that gear never adds max health directly
   ([architecture 8.2](architecture.md#82-where-modifiers-come-from)); the Human's racial passive and active (Sword
   Specialization with the `#realmforge:sword_like` item tag and its tooltip lines, Will To Survive on the spell bar's
   G key; [architecture 10.1](architecture.md#101-races-and-classes), RLM-219); a first balance pass on the training
-  dummy.
+  dummy. The Mage never heals: it survives through utility (Ice Block, Mirror Image) and shields (Mana Shield, Ice
+  Barrier, perhaps spells that raise the Magic Shield for a while) (Matěj, 2026-10-22).
 - **C5 Specialization spell trees** (RLM-333, M, after C4). Talents are postponed indefinitely (RLM-28), but the M1
   tree stays as a specialization spell tree, one per class (Matěj, 2026-10-16, RLM-218): most spells take several
   points and grow stronger with each, some gain an extra effect at the top rank, big-impact spells have one rank;
@@ -359,10 +363,11 @@ the first world-structure dungeons join it (Matěj, 2026-10-19, RLM-264,
 ## M3: Classes and combat depth
 
 Outline: more classes toward the vision's play styles (melee, ranged, mage, battle mage, summoner); a second race;
-the remaining spell schools; the other two specialization spell trees of each class, toward three per class
-in v1 (Matěj, 2026-10-16), and dual spec, a secondary specialization from a level threshold (proposed: 20; RLM-218);
-interrupts, dispels and crowd control on bosses; threat; the
-balance simulation in CI and a nightly client test ([ADR 0010](decisions/0010-testing-strategy.md)). With the
+the remaining spell schools: Holy, the healing school, with the Paladin, a warrior with holy magic who leans toward
+spells and tanking (RLM-162; Holy and the Paladin come together, in M3 or later, Matěj, 2026-10-22); the other two
+specialization spell trees of each class, toward three per class in v1 (Matěj, 2026-10-16), and dual spec, a
+secondary specialization from a level threshold (proposed: 20; RLM-218); interrupts, dispels and crowd control on
+bosses; threat; the balance simulation in CI and a nightly client test ([ADR 0010](decisions/0010-testing-strategy.md)). With the
 ranged play style: Ranged Weapon API and More Bows and Arrows (RLM-324), after a catalogue from which Matěj picks what
 stays (RLM-323; [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)). Glyphs are postponed indefinitely
 (Matěj, 2026-10-16, RLM-28).
@@ -437,6 +442,9 @@ No milestone yet:
   Recipe Book is in, and Toast Control stays ([ADR 0044](decisions/0044-third-party-mods-by-milestone.md)).
 - Talents (RLM-28) and glyphs: postponed indefinitely, maybe not in v1 (Matěj, 2026-10-16). Each class's spells
   form specialization spell trees instead (C5, RLM-218).
+- The Nature (RLM-369) and Shadow (RLM-370) spell schools, late and undecided: Nature with the Druid and the Shaman,
+  Shadow with the Warlock (relatively late) and a shadow Priest. No school comes without a class that uses it
+  (Matěj, 2026-10-22).
 - CurseForge publishing (RLM-62, [ADR 0008](decisions/0008-distribution-github-and-curseforge.md)).
 - Nightly spark profiles; our own performance mod (RLM-63).
 - A local bridge so agents can see screenshots and game state from Matěj's PC (RLM-64,
