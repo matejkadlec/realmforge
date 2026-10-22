@@ -154,8 +154,11 @@ public final class RealmGameTests {
      * A parrot on a player's shoulder stays in the level the player leaves, on a trip into the realm and at a death in
      * it, also when it landed on the shoulder in the same tick (vanilla's own drop waits 20 ticks). The second parrot
      * perches once the realm's chunk has loaded its entities, so it is a real entity there before it sits down.
+     * Generating that cave chunk and loading its entities runs off the server thread and took over 200 ticks on a CI
+     * runner busy with the other GameTests' chunks (PR #100's instance plots among them); the timeout leaves room for
+     * that.
      */
-    @QaGameTest(timeoutTicks = 200)
+    @QaGameTest(timeoutTicks = 600)
     public static void shoulderParrotsStayBehind(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         RealmExpectation expected = stone();
