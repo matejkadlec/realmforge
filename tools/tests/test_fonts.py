@@ -20,11 +20,14 @@ def generated(repo: RepoPaths) -> dict[str, bytes]:
     return {repo.rel(path): data for path, data in generate_all(content, repo).items()}
 
 
-def test_the_symbols_font_is_a_bitmap_font_with_the_skull(repo: RepoPaths) -> None:
+def test_the_symbols_font_holds_the_skull_and_the_step_back(repo: RepoPaths) -> None:
     files = generated(repo)
     font = json.loads(files[f"{ASSETS}/font/symbols.json"])
     assert font == {
-        "providers": [{"type": "bitmap", "file": "realmforge:font/symbols.png", "ascent": 7, "chars": [""]}]
+        "providers": [
+            {"type": "bitmap", "file": "realmforge:font/symbols.png", "ascent": 7, "chars": ["\ue000"]},
+            {"type": "space", "advances": {"\ue001": -5}},
+        ]
     }
     width, height, pixels = decode_rgba(files[f"{ASSETS}/textures/font/symbols.png"])
     assert (width, height) == (8, 8)
@@ -43,7 +46,7 @@ def test_the_skull_keeps_to_the_letters_height_and_the_palette() -> None:
 
 
 def test_a_symbol_must_fill_its_cell(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(fonts, "SYMBOLS", (("", ("WW",) * 8),))
+    monkeypatch.setattr(fonts, "SYMBOLS", (("\ue001", ("WW",) * 8),))
     with pytest.raises(ValueError, match="symbol U\\+E001 is not 8x8 pixels"):
         fonts.texture()
 

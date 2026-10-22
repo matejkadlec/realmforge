@@ -20,11 +20,12 @@ import net.minecraft.world.entity.player.Player;
  * The level before a mob's name, in Neat's card above the mob and in Jade's tooltip (RLM-338, Matěj, 2026-10-20):
  * {@code Lv. 20 Zombie}, one function for both. The whole {@code Lv. 20} takes its colour from the mob's level against
  * the viewing player's, as WoW colours a level ({@link #color}); a mob {@value #SKULL_DIFFERENCE} or more levels above
- * shows our skull glyph instead of the number ({@link #SKULL}, RLM-340), in blood red and bold. The name stays white
- * and upright, a custom name too (Neat draws those in italics). {@code Lv. %1$s} is the XP bar's text
- * ({@link GeneratedTexts#GUI_XP_BAR_LEVEL}), so a mob's level reads like the player's own above the hotbar. Only a mob
- * that has a level shows one, read from its synced {@code realmforge:level} ({@link MobLevels#level}); the level is
- * never written into a name, so death messages, name tags and other mods see the mob's own.
+ * shows our skull glyph instead of the number ({@link #SKULL}, RLM-340), {@code Lv.} in bold blood red and the skull
+ * right after the dot. The name stays white and upright, a custom name too (Neat draws those in italics).
+ * {@code Lv. %1$s} is the XP bar's text ({@link GeneratedTexts#GUI_XP_BAR_LEVEL}), so a mob's level reads like the
+ * player's own above the hotbar. Only a mob that has a level shows one, read from its synced {@code realmforge:level}
+ * ({@link MobLevels#level}); the level is never written into a name, so death messages, name tags and other mods see
+ * the mob's own.
  */
 public final class MobLevelLabel {
     /** From this many levels above the player, the label shows the skull instead of the number. */
@@ -40,10 +41,16 @@ public final class MobLevelLabel {
     /** Our symbols font, which {@code rf gen} writes ({@code tools/realmforge_tools/generate/fonts.py}). */
     public static final FontDescription SYMBOLS = new FontDescription.Resource(Realmforge.id("symbols"));
     /**
-     * The skull, a white skull with red eyes on the default font's grid (RLM-340), at a private-use code point of
-     * {@link #SYMBOLS}. Drawn in white, as a bitmap glyph takes the text colour as a tint.
+     * The skull on the default font's grid (RLM-340), at a private-use code point of {@link #SYMBOLS}: white with black
+     * eyes, so the text colour tints it and leaves the eyes black (a blood-red skull, Matěj's playtest, 2026-10-22).
      */
-    public static final String SKULL = "";
+    public static final String SKULL = "\uE000";
+    /**
+     * A space of {@link #SYMBOLS} that steps five pixels back over the bold space {@code Lv. } ends with (the default
+     * font's 4 and the bold pixel), so the skull follows the dot as the next letter would (Matěj, 2026-10-22). Drawn
+     * without bold, which would add a pixel to it.
+     */
+    public static final String STEP_BACK = "\uE001";
 
     private MobLevelLabel() {
     }
@@ -75,15 +82,15 @@ public final class MobLevelLabel {
     }
 
     /**
-     * {@code Lv. N}, or {@code Lv. } and the skull, for a mob of {@code mobLevel} seen by a player of
+     * {@code Lv. N}, or {@code Lv.} and the skull, for a mob of {@code mobLevel} seen by a player of
      * {@code playerLevel}.
      */
     public static MutableComponent level(int mobLevel, int playerLevel) {
         int difference = mobLevel - playerLevel;
         boolean skull = skull(difference);
         Object shown = skull
-                ? Component.literal(SKULL).withStyle(style -> style.withFont(SYMBOLS).withColor(ChatFormatting.WHITE)
-                        .withBold(false))
+                ? Component.literal(STEP_BACK + SKULL).withStyle(style -> style.withFont(SYMBOLS)
+                        .withColor(TextColor.fromRgb(SKULL_RED)).withBold(false))
                 : mobLevel;
         return Component.translatable(GeneratedTexts.GUI_XP_BAR_LEVEL, shown)
                 .withStyle(style -> style.withColor(TextColor.fromRgb(color(difference))).withBold(skull));

@@ -7,6 +7,12 @@
       "chars": [
         ""
       ]
+    },
+    {
+      "type": "space",
+      "advances": {
+        "": -5
+      }
     }
   ]
 }

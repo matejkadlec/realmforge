@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
@@ -59,18 +60,18 @@ class MobLevelLabelTest {
     }
 
     @Test
-    void fiveLevelsAboveShowsTheWhiteSkullAfterABoldBloodRedLv() {
+    void fiveLevelsAboveShowsTheBloodRedSkullRightAfterABoldBloodRedLv() {
         Component level = MobLevelLabel.level(30, 25);
         assertEquals(TextColor.fromRgb(MobLevelLabel.SKULL_RED), level.getStyle().getColor());
         assertTrue(level.getStyle().isBold());
         Object[] args = translatable(level).getArgs();
         assertEquals(1, args.length);
         Component skull = (Component) args[0];
-        assertEquals(MobLevelLabel.SKULL, skull.getString());
+        assertEquals(MobLevelLabel.STEP_BACK + MobLevelLabel.SKULL, skull.getString(), "no space after the dot");
         Style style = skull.getStyle();
         assertEquals(MobLevelLabel.SYMBOLS, style.getFont());
-        assertEquals(TextColor.fromLegacyFormat(ChatFormatting.WHITE), style.getColor(), "white keeps its colours");
-        assertFalse(style.isBold(), "a bold glyph is drawn twice, a pixel apart");
+        assertEquals(TextColor.fromRgb(MobLevelLabel.SKULL_RED), style.getColor(), "tints the skull, not its eyes");
+        assertFalse(style.isBold(), "a bold glyph is drawn twice, a pixel apart, and a bold space is a pixel wider");
     }
 
     @Test
@@ -87,21 +88,25 @@ class MobLevelLabelTest {
         assertEquals(TextColor.fromLegacyFormat(ChatFormatting.WHITE), name.getStyle().getColor());
     }
 
-    /** The font and the code point the label uses are the ones {@code rf gen} writes ({@code generate/fonts.py}). */
+    /** The font and the code points the label uses are the ones {@code rf gen} writes ({@code generate/fonts.py}). */
     @Test
-    void theSkullIsInTheGeneratedFont() throws IOException {
+    void theSkullAndTheStepBackAreInTheGeneratedFont() throws IOException {
         FontDescription.Resource font = (FontDescription.Resource) MobLevelLabel.SYMBOLS;
         String path = "/assets/" + font.id().getNamespace() + "/font/" + font.id().getPath() + ".json";
-        JsonObject provider;
+        JsonArray providers;
         try (InputStream stream = MobLevelLabelTest.class.getResourceAsStream(path)) {
             assertTrue(stream != null, path + " is missing; run `uv run rf gen`");
-            provider = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject()
-                    .getAsJsonArray("providers").get(0).getAsJsonObject();
+            providers = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8))
+                    .getAsJsonObject().getAsJsonArray("providers");
         }
-        assertEquals("bitmap", provider.get("type").getAsString());
-        assertTrue(provider.getAsJsonArray("chars").get(0).getAsString().contains(MobLevelLabel.SKULL));
-        String texture = provider.get("file").getAsString();
-        assertEquals("realmforge:font/symbols.png", texture);
+        JsonObject bitmap = providers.get(0).getAsJsonObject();
+        assertEquals("bitmap", bitmap.get("type").getAsString());
+        assertTrue(bitmap.getAsJsonArray("chars").get(0).getAsString().contains(MobLevelLabel.SKULL));
+        assertEquals("realmforge:font/symbols.png", bitmap.get("file").getAsString());
+        JsonObject space = providers.get(1).getAsJsonObject();
+        assertEquals("space", space.get("type").getAsString());
+        assertEquals(-5, space.getAsJsonObject("advances").get(MobLevelLabel.STEP_BACK).getAsInt(),
+                "the default font's space (4) and the bold pixel");
         assertTrue(MobLevelLabelTest.class.getResource("/assets/realmforge/textures/font/symbols.png") != null,
                 "the symbols texture");
     }

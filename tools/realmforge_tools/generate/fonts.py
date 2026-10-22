@@ -3,8 +3,9 @@
 ``assets/realmforge/font/symbols.json`` is the font ``realmforge:symbols``; each symbol is one private-use code point
 in it, drawn on the default Minecraft font's grid (8x8 cells, ascent 7: rows 0 to 6 above the baseline, the bottom
 row below it), so it sits beside letters at their height and pixel size. A bitmap glyph takes the text colour as a
-tint, so text draws a symbol in white to keep its own colours. The game reads the font and the code point from
-``client/compat/MobLevelLabel`` (``SYMBOLS``, ``SKULL``).
+tint: its white pixels take the colour of the text that draws it, its black pixels stay black. Spaces of our own,
+narrow or negative, move the next glyph (a ``space`` provider in the same font). The game reads the font and the code
+points from ``client/compat/MobLevelLabel`` (``SYMBOLS``, ``STEP_BACK``, ``SKULL``).
 """
 
 from __future__ import annotations
@@ -22,23 +23,26 @@ ASCENT = 7
 # Pixel colours, each a colour of art/palette/realmforge.gpl.
 PIXELS: dict[str, Rgba] = {
     ".": (0, 0, 0, 0),
-    "W": (255, 255, 255, 255),  # white
-    "R": (222, 30, 44, 255),  # ruby 3
+    "W": (255, 255, 255, 255),  # white: drawn in the text's colour
+    "K": (11, 11, 14, 255),  # black: stays black in any colour
 }
-# The skull of the mob level label (RLM-340): a white skull with red eyes, like WoW's, shown for a mob five or more
-# levels above the player (RLM-338). Matěj approves its look in the playtest.
+# The skull of the mob level label (RLM-340), shown for a mob five or more levels above the player (RLM-338): a skull
+# in the label's blood red with black eyes (Matěj's playtest, 2026-10-22).
 SKULL_ROWS = (
     ".WWWWW..",
     "WWWWWWW.",
-    "WRRWRRW.",
-    "WRRWRRW.",
+    "WKKWKKW.",
+    "WKKWKKW.",
     "WWW.WWW.",
     ".WWWWW..",
     ".W.W.W..",
     "........",
 )
 # Each symbol: its code point and its rows, in the order the texture holds them, left to right.
-SYMBOLS: tuple[tuple[str, tuple[str, ...]], ...] = (("", SKULL_ROWS),)
+SYMBOLS: tuple[tuple[str, tuple[str, ...]], ...] = (("\ue000", SKULL_ROWS),)
+# Each space: its code point and its advance in pixels. U+E001 steps back over the bold space (4 pixels and the bold
+# pixel) that the label's "Lv. " ends with, so the skull follows the dot as the next letter would (Matěj, 2026-10-22).
+SPACES: tuple[tuple[str, int], ...] = (("\ue001", -5),)
 
 
 def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
@@ -52,7 +56,8 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
                         "file": f"{MOD_ID}:font/{FONT}.png",
                         "ascent": ASCENT,
                         "chars": ["".join(char for char, _ in SYMBOLS)],
-                    }
+                    },
+                    {"type": "space", "advances": dict(SPACES)},
                 ]
             }
         ),
