@@ -1,0 +1,14 @@
+{
+  "config_version": "2.0.43",
+  "config_datetime": "2026-10-22_23-26-49",
+  "general": {},
+  "structure_namespaces": [],
+  "structures": [
+    {
+      "name": "minecraft:stronghold",
+      "is_disabled": true
+    }
+  ],
+  "structure_sets": [],
+  "structure_template_pools": []
+}

@@ -61,13 +61,16 @@ boot the pack ([Boot test](#boot-test)).
 
 ### Release-channel exceptions
 
-Two mods have no release build for 26.1.2 and are betas on purpose (Matěj,
-RLM-65 and RLM-124):
+These mods have no release build for 26.1.2 and are betas on purpose (Matěj,
+RLM-65, RLM-124 and RLM-308):
 
 - **Regions Unexplored 0.7.0-beta2**. If it crashes or logs errors in the pack
   boot or a playtest, report it to Matěj before choosing anything else; Biomes
   O' Plenty is not wanted as a replacement.
 - **FTB Teams 26.1.2.4** (CurseForge), which FTB Quests needs.
+- **Advanced Loot Info 26.1.2-2.5.0** and **Advanced Core Info 26.1.2-1.5.0**, its library (Matěj's M1 pick,
+  RLM-308, [ADR 0044](../docs/decisions/0044-third-party-mods-by-milestone.md)): every 26.1.2 build is a beta. Both
+  are pinned, so `packwiz update --all` leaves them; update them together, by hand.
 
 ## Configuration
 
@@ -158,6 +161,52 @@ bar's of RLM-25 ([ADR 0046](../docs/decisions/0046-spell-bar-default-keys-amend-
 To find a key mapping's name, boot the pack and read the `key_` lines of the
 client's `options.txt`; Controlling's search in Key Binds finds a key by name or
 by its key.
+
+**Structurify** (`config/structurify.json`, Structurify 2.0.43, RLM-310,
+[ADR 0044](../docs/decisions/0044-third-party-mods-by-milestone.md)): vanilla strongholds are off. The file lists only
+what differs from the defaults: a structure is switched off by an entry `{"name": "<structure id>", "is_disabled":
+true}` under `structures`, and M2 places other mods' structures in their realms the same way (a structure's
+`biomes`, its `structure_sets` and their spacing). Structurify writes the file only when it is missing, and its config
+screen (Mods, Structurify) shows every option. With no stronghold, no eye of ender finds one and the End stays
+unreachable from M1. `StrongholdGameTests` checks that `/locate` finds no stronghold while villages stay.
+
+**Traveler's Titles** (`config/travelerstitles-neoforge-26_1.toml`, client, Traveler's Titles 6.1.0, RLM-308):
+`"Blacklisted Dimensions" = "[realmforge:stone, realmforge:instances]"`. A realm shows its own arrival title (W2b), so
+Traveler's Titles shows none there, and the dungeon instances, which have no name of their own, show no "???".
+Overworld keeps its title, which is the mod's own. Biome titles need open sky, which neither dimension has. A new
+realm's dimension joins the list: `tools/tests/test_pack_config.py` fails until it does.
+
+**Sword Blocking Mechanics** (Sword Blocking Mechanics 26.1.0, RLM-297): holding right click raises a two-handed
+weapon, with the mod's poses and animations; our core mod decides what a block does (the 0.5 s full block, half of a
+later hit, the 1 s cooldown, the covered arc: `config/realmforge-common.toml`, [architecture
+9.3](../docs/architecture.md#93-blocking-with-two-handed-weapons)). So the mod's own rules are off:
+
+- `config/swordblockingmechanics-server.toml`: `parrying.parry_window = 0` (no parry of its own) and
+  `blocking.blocked_damage = 0.0` (no damage reduction of its own; its formula, half of the hit plus 1, rounded down,
+  is not the half Matěj asked for). Its 20 % knockback reduction while blocking stays.
+- `config/swordblockingmechanics-client.toml`: `render_parry_indicator = false`, since it would show its own parry
+  window, which is off.
+
+## Notes on single mods
+
+- **Better Combat swings through grass**: with a Better Combat weapon in hand and a target in reach, a swing goes
+  through blocks without collision that break at once (grass, flowers); its client options `isSwingThruGrassEnabled`
+  and `isSwingThruGrassSmart` are on by default. So neither CleanCut nor Cut Through is in the pack (RLM-308).
+- **Iron's RPG Tweaks is not in the pack**: its combat module drops a hit of a damage type that hurt the same entity in
+  the tick before, a second player's melee hit or one of our spell schools' included. Our damage pipeline lets a
+  player's hits through the hurt cooldown instead ([ADR 0049](../docs/decisions/0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md)).
+- **Macaw's building mods need Nether and End materials only for their Nether and End variants** (RLM-309,
+  [ADR 0025](../docs/decisions/0025-remove-the-nether-and-end.md)). Every piece comes in the Overworld's woods and
+  stones; these variants need the matching material:
+  - crimson and warped wood (every Macaw's mod), nether bricks and red nether bricks (Bridges, Fences and Walls, Roofs,
+    Stairs, Windows), blackstone and polished blackstone (Bridges, Fences and Walls, Paths and Pavings, Roofs, Stairs,
+    Windows), netherrack and quartz blocks (Fences and Walls, Stairs, Windows), and Lights and Lamps' soul torches and
+    soul lanterns, shroomlight and glowstone. The Nether stays reachable until M4 removes it, and witches drop
+    glowstone dust in the Overworld;
+  - end stone and end stone bricks (Bridges, Fences and Walls, Windows) have no source from M1 on, because the End is
+    unreachable without strongholds ([ADR 0044](../docs/decisions/0044-third-party-mods-by-milestone.md)), until
+    [ADR 0034](../docs/decisions/0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md)'s
+    merchants sell them.
 
 ## Optional mods
 

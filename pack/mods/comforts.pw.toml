@@ -1,0 +1,13 @@
+name = "Comforts"
+filename = "comforts-neoforge-15.0.0+26.1.2.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/SaCpeal4/versions/AOqxsXuM/comforts-neoforge-15.0.0%2B26.1.2.jar"
+hash-format = "sha512"
+hash = "d62e9262268039b567ec95779d22cd3f3d4d1dd1415812fdcbca1a79ede40dcfdaba11be43c9a1ebca0836996e70aa702d9c0659999dbbeb72fa2a180aaa0fce"
+
+[update]
+[update.modrinth]
+mod-id = "SaCpeal4"
+version = "AOqxsXuM"

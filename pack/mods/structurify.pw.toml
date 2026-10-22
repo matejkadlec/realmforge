@@ -1,0 +1,13 @@
+name = "Structurify - Structure Control"
+filename = "structurify-neoforge-2.0.43+mc26.1.2.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/yz7AM2zx/versions/6AVxE0k4/structurify-neoforge-2.0.43%2Bmc26.1.2.jar"
+hash-format = "sha512"
+hash = "70a1dcb56ec40caeadda55d9f6f12ea2df20cb872e5479aeb5133b1ea978f0ccf7b76f96d4a6439e2cbf41a875c40d6175bd7d2f8743ce1bfef7ba224c1e4496"
+
+[update]
+[update.modrinth]
+mod-id = "yz7AM2zx"
+version = "6AVxE0k4"

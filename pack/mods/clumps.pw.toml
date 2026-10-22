@@ -1,0 +1,13 @@
+name = "Clumps"
+filename = "Clumps-neoforge-26.1.2-26.1.2.1.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/Wnxd13zP/versions/MYKeTBJr/Clumps-neoforge-26.1.2-26.1.2.1.jar"
+hash-format = "sha512"
+hash = "4f0986a1fa4f130ec930921c131670925499dc284bad9d980c7d8669238bb2b9b9dc2f57c8eb7e93c4385b9ea8686dfe95bb3abf5b5386c9dc4f6c6c77c31666"
+
+[update]
+[update.modrinth]
+mod-id = "Wnxd13zP"
+version = "MYKeTBJr"

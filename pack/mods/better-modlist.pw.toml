@@ -1,0 +1,13 @@
+name = "Better ModList"
+filename = "better_modlist-26.1.8.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/sbpqhzIG/versions/2QULU2YL/better_modlist-26.1.8.jar"
+hash-format = "sha512"
+hash = "edc209b41ada2ae680021cafa5ede0ea020481860b93b3590ce24e3ab4fb431f6e61571acf9076e5820d93cf1bdbf9ffa678dd4038e42989bf5526389255b0be"
+
+[update]
+[update.modrinth]
+mod-id = "sbpqhzIG"
+version = "2QULU2YL"

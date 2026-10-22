@@ -1,0 +1,13 @@
+name = "Traveler's Titles"
+filename = "TravelersTitles-26.1.2-NeoForge-6.1.0.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/JtifUr64/versions/B2suTpMt/TravelersTitles-26.1.2-NeoForge-6.1.0.jar"
+hash-format = "sha512"
+hash = "1bf9c01880c831a4f46437b3ee718049ceb39653c888c3e02cf1b1d8c84d38fc8d9d26b361c1ede0e0ca83ac045b7368c89000632ca23196706d1f1cad28124d"
+
+[update]
+[update.modrinth]
+mod-id = "JtifUr64"
+version = "B2suTpMt"

@@ -1,0 +1,13 @@
+name = "Item Highlighter"
+filename = "Highlighter-26.1.2-neoforge-1.2.1.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/cVNW5lr6/versions/v0BjmZl8/Highlighter-26.1.2-neoforge-1.2.1.jar"
+hash-format = "sha512"
+hash = "0626a09477ebd600120c643de709443edfe3e4a14c7b7446c893b6c6ffa7444ea43638f1122f228e48a4056bdcf296d0c8252a7053884bcfb13b10c3abf6579a"
+
+[update]
+[update.modrinth]
+mod-id = "cVNW5lr6"
+version = "v0BjmZl8"
