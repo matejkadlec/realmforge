@@ -3,7 +3,8 @@
 Date: 2026-10-11
 
 Status: Accepted (merge step amended by [0015](0015-merging-through-monitor-pr.md), now
-[0029](0029-independent-claude-review-before-every-merge.md))
+[0029](0029-independent-claude-review-before-every-merge.md); the `better-key-binds/` subproject added by
+[0048](0048-better-key-binds-our-own-client-mod-independent-of-realmforge.md), 2026-10-22)
 
 ## Context
 

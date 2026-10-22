@@ -222,16 +222,17 @@ every launch, so the instance always matches the repository.
    - from GitHub (what is on `master`):
      `"$INST_JAVA" -jar packwiz-installer-bootstrap.jar https://raw.githubusercontent.com/matejkadlec/realmforge/master/pack/pack.toml`
 5. Launch. The installer window lists the mods it downloads. The pack has no optional mods at the moment.
-6. Install our own mod into the instance (from WSL). Put the instance's mods folder into
-   `~/.gradle/gradle.properties` once:
+6. Install our own mods into the instance (from WSL): the core mod and Better Key Binds, our client mod with secondary
+   key binds ([ADR 0048](decisions/0048-better-key-binds-our-own-client-mod-independent-of-realmforge.md)). Put the
+   instance's mods folder into `~/.gradle/gradle.properties` once:
 
    ```properties
    realmforge.prismModsDir=/mnt/c/Users/<windows-user>/AppData/Roaming/PrismLauncher/instances/Realmforge/minecraft/mods
    ```
 
-   then run `./gradlew :mod:installToPrism` after each change. It builds the jar, removes older `realmforge-*.jar`
-   files from that folder and copies the new one. Copying to `/mnt/c` is fine; only building there is slow.
-   packwiz-installer leaves files it didn't install alone, so the jar survives pack updates. The QA mod is never
+   then run `./gradlew :mod:installToPrism :better-key-binds:installToPrism` after each change. Each builds its jar,
+   removes its older jars (`realmforge-*.jar`, `better-key-binds-*.jar`) from that folder and copies the new one. Copying to `/mnt/c` is fine; only building there is slow.
+   packwiz-installer leaves files it didn't install alone, so the jars survive pack updates. The QA mod is never
    installed into Prism.
 7. Shaders: put [Complementary Shaders](https://www.complementary.dev/shaders/) into the instance's
    `shaderpacks/` folder and enable it in Iris's video settings.

@@ -493,7 +493,7 @@ Every manual-test handoff gives complete commands Matěj can paste, under "Launc
     installed into Prism, so QA commands are missing there.
 
     ```bash
-    cd ~/projects/realmforge-worktrees/<dir>-playtest && ./gradlew :mod:installToPrism
+    cd ~/projects/realmforge-worktrees/<dir>-playtest && ./gradlew :mod:installToPrism :better-key-binds:installToPrism
     cd ~/projects/realmforge-worktrees/<dir>-playtest/pack && packwiz serve
     ```
 
@@ -650,8 +650,8 @@ conflict instead of forcing a risky batch.
 
 Every batch belongs to at least one conflict domain, decided by the primary paths it will change:
 
-- **game:** `mod/`, `qa-mod/`, `content/`, `tools/`, `art/` and `pack/`: everything that ends up in the jar or
-  the pack, and the pipeline that generates it.
+- **game:** `mod/`, `qa-mod/`, `better-key-binds/`, `content/`, `tools/`, `art/` and `pack/`: everything that ends
+  up in a jar or the pack, and the pipeline that generates it.
 - **tooling:** `.github/`, `.claude/`, `docs/` and every other tracked path neither domain names.
 
 The documents a change must keep current in the same batch are accompanying updates and add no domain:

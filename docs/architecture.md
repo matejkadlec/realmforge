@@ -1,6 +1,8 @@
 # Architecture
 
-> How the Realmforge core mod is built: code layout, registries, data flow and the main systems. Goals live in
+> How the Realmforge core mod is built: code layout, registries, data flow and the main systems. Better Key Binds
+> (`better-key-binds/`), our standalone client mod, is not part of it and follows its own
+> [README](../better-key-binds/README.md) ([ADR 0048](decisions/0048-better-key-binds-our-own-client-mod-independent-of-realmforge.md)). Goals live in
 > [vision.md](vision.md), settled decisions in the [ADRs](decisions/README.md), the order of work in
 > [roadmap.md](roadmap.md). This document describes mechanisms and boundaries, not game numbers: coefficients,
 > class kits and balance are data in `content/`.

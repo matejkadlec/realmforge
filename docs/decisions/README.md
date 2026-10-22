@@ -59,6 +59,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0045](0045-asgard-and-atlantis-amend-the-v1-realm-layout.md) | Asgard and Atlantis amend the v1 realm layout | Accepted (amends 0032) |
 | [0046](0046-spell-bar-default-keys-amend-the-pack-defaults.md) | The spell bar's default keys amend the pack's default keys | Accepted (amends 0043) |
 | [0047](0047-the-cast-slow-halves-the-casters-speed.md) | The cast slow halves the caster's speed | Accepted (amends 0039) |
+| [0048](0048-better-key-binds-our-own-client-mod-independent-of-realmforge.md) | Better Key Binds: our own client mod, independent of Realmforge | Accepted (amends 0008, 0011 and 0013) |
 
 ## Open questions (not decided)
 
