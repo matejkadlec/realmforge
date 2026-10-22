@@ -2381,7 +2381,11 @@ that agents can read. So far:
   cast it (as a mob with `/execute as`; a refusal names its reason; a cast-time or channelled spell begins), cancel
   the cast in progress, set a resource pool, end every cooldown, and print the known spells, the pools, the running
   cooldowns, the cast in progress and how the last cast-time or channelled spell ended
-  ([11.2](#112-casting-server-authoritative));
+  ([11.2](#112-casting-server-authoritative)); `/qa spell bar <slot> [<spell>]` (C3b) puts a known spell into a spell
+  bar slot (1 to 8, 9 the racial slot) or empties it;
+- `/qa run <command>; <command>; ...`: runs the commands in order as its source, so a playtest's setup takes one line;
+  chat cuts a line at 256 characters, so the line goes into an impulse command block as `execute as @p at @p run qa
+  run ...` ([flow: Reaching the state](ai-development-flow.md#reaching-the-state));
 - `/qa realm enter <realm> [<x> <z>]`, `/qa realm unlock|lock <realm>` (W2a): take the player to a realm's floor at
   x, z (0, 0 by default) the way `/tp` does, so a player without the realm's unlock is refused, and grant or revoke
   the unlock advancement as `/advancement grant|revoke @s only realmforge:realm/<realm>` does

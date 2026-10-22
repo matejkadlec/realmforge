@@ -454,7 +454,9 @@ merges). Four parts:
 1. **What to test:** one sentence on where to start (the world, the first command), then a numbered list. Each
    item opens with a bold name for the check and the state it needs, gives the steps as sub-bullets with the
    exact commands that reach that state, and says what he should see. A behavior change he must decide on comes
-   first and says so ([flow: What to test](docs/ai-development-flow.md#what-to-test)).
+   first and says so ([flow: What to test](docs/ai-development-flow.md#what-to-test)). Three or more setup commands
+   in a row go as one command for an impulse command block, `execute as @p at @p run qa run <command>; <command>;
+   ...`, with how to run it ([flow: Reaching the state](docs/ai-development-flow.md#reaching-the-state)).
 2. **Launch commands:** complete commands he can paste, in one block, with the checkout named in the heading,
    e.g. "Launch commands (your Windows clone)"
    ([flow: Launch commands](docs/ai-development-flow.md#launch-commands)).
