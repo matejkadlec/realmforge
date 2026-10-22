@@ -41,12 +41,12 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *   crit arrow, so vanilla's random crit-arrow bonus never stacks with our crit.</li>
  *   <li>{@code LivingIncomingDamageEvent}: a dodge cancels the hit (melee, projectiles and physical school hits; never
  *   magic, explosions or the world); then a raised two-handed weapon blocks it in full or in part
- *   ({@link WeaponBlocks}), before armor and resistances. A marked projectile's hit crits on its shooter's crit chance and deals 1 + crit
- *   damage. A school hit gets spell power (magic), the school's power, a crit roll (by the spell's {@link CritRule}
- *   when a {@link SchoolDamageSource} brings one) and the defender's resistance (spell resistance added for magic).
- *   The armor reduction becomes vanilla's formula on the armor the attacker's armor pierce and shred leave, except
- *   for damage in {@code #minecraft:bypasses_armor}. The defender's magic shield joins the absorption reduction
- *   ({@link MagicShields}).</li>
+ *   ({@link WeaponBlocks}), before armor and resistances. A marked projectile's hit crits on its shooter's crit
+ *   chance and deals 1 + crit damage. A school hit gets spell power (magic), the school's power, a crit roll (by the
+ *   spell's {@link CritRule} when a {@link SchoolDamageSource} brings one) and the defender's resistance (spell
+ *   resistance added for magic). The armor reduction becomes vanilla's formula on the armor the attacker's armor
+ *   pierce and shred leave, except for damage in {@code #minecraft:bypasses_armor}. The defender's magic shield
+ *   joins the absorption reduction ({@link MagicShields}).</li>
  *   <li>Hurt cooldown: a school hit lands through it ({@code #minecraft:bypasses_cooldown}) and leaves the defender's
  *   window as it was: it grants no invulnerability of its own, and {@code lastHurt}, which vanilla overwrites, is
  *   restored afterwards, so melee hits in an open window are still compared with the previous melee hit, not with a
@@ -195,8 +195,8 @@ public final class DamagePipeline {
      * Lets the hit through the defender's open hurt cooldown window, as {@code #minecraft:bypasses_cooldown} would:
      * vanilla compares a hit with {@code lastHurt} only while the invulnerable time is above 10, so at 10 the hit
      * lands in full and opens a new window. The tag cannot do it, because arrows share their damage type with
-     * skeletons'. Better Combat does the same for its swings ({@code allow_fast_attacks}); this covers the rest: arrows,
-     * tridents and attacks without a Better Combat weapon.
+     * skeletons'. Better Combat does the same for its swings ({@code allow_fast_attacks}); this covers the rest:
+     * arrows, tridents and attacks without a Better Combat weapon.
      */
     private static void landThroughCooldown(LivingEntity defender) {
         if (defender.invulnerableTime > HALF_WINDOW) {

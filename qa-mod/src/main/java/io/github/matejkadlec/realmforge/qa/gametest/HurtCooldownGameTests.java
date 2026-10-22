@@ -8,7 +8,9 @@ import static io.github.matejkadlec.realmforge.qa.gametest.CombatGameTests.settl
 import static io.github.matejkadlec.realmforge.qa.gametest.CombatGameTests.target;
 
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
+import io.github.matejkadlec.realmforge.mob.MobLevels;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
+import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -26,6 +28,7 @@ import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -67,8 +70,8 @@ public final class HurtCooldownGameTests {
 
     /**
      * A player's arrows land in full inside the window too, and so does a smaller one; a skeleton's arrow, which has
-     * the same damage type, still meets the window. Hits through the pipeline's damage sources, as an arrow's impact
-     * sends them.
+     * the same damage type, still meets the window. The skeleton is at level 1, so its level does not scale its hits.
+     * Hits through the pipeline's damage sources, as an arrow's impact sends them.
      */
     @QaGameTest
     public static void playerArrowsLandInFullAndMobArrowsMeetTheWindow(GameTestHelper helper) {
@@ -76,6 +79,7 @@ public final class HurtCooldownGameTests {
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-cooldown-arrow", EDGE);
         Skeleton skeleton = helper.spawn(EntityType.SKELETON, new BlockPos(0, 1, 0));
         skeleton.setNoAi(true);
+        MobLevels.setLevel(skeleton, EntityLevel.MIN);
         Pillager mob = target(helper);
 
         assertDealt(helper, mob, arrow(level, player), 6, 6, "a player's arrow");
@@ -93,8 +97,7 @@ public final class HurtCooldownGameTests {
     @QaGameTest
     public static void theWorldHitsAPlayerNoMoreOftenThanVanilla(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-cooldown-world", EDGE);
-        setBase(player, Attributes.MAX_HEALTH, HEALTH);
+        ServerPlayer player = hurtable(helper, "qa-cooldown-world");
         assertVanillaWindow(helper, player, List.of(() -> level.damageSources().lava()), 4, "lava");
         assertVanillaWindow(helper, player, List.of(() -> level.damageSources().inFire(),
                 () -> level.damageSources().onFire()), 1, "fire, and burning");
@@ -107,8 +110,7 @@ public final class HurtCooldownGameTests {
     @QaGameTest
     public static void aCrowdOfMobsHitsAPlayerNoMoreOftenThanVanilla(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-cooldown-crowd", EDGE);
-        setBase(player, Attributes.MAX_HEALTH, HEALTH);
+        ServerPlayer player = hurtable(helper, "qa-cooldown-crowd");
         List<Supplier<DamageSource>> crowd = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             Zombie zombie = attacker(helper);
@@ -145,6 +147,18 @@ public final class HurtCooldownGameTests {
         helper.assertTrue(fullHits <= TICKS / 10,
                 what + ": " + fullHits + " full hits in " + TICKS + " ticks, vanilla allows " + TICKS / 10);
         player.clearFire();
+    }
+
+    /**
+     * A fake player that takes damage: in survival, with its client marked as loaded (vanilla protects a player whose
+     * client is still loading), and with {@value #HEALTH} health.
+     */
+    private static ServerPlayer hurtable(GameTestHelper helper, String name) {
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, name, EDGE);
+        player.setGameMode(GameType.SURVIVAL);
+        player.connection.markClientLoaded();
+        setBase(player, Attributes.MAX_HEALTH, HEALTH);
+        return player;
     }
 
     /** A player's melee hit with full attack strength, which deals {@code expected}. */

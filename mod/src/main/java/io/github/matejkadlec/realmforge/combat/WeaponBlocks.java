@@ -47,6 +47,11 @@ public final class WeaponBlocks {
 
     /** The weapon each player had raised at the end of their last tick. */
     private static final Map<Player, ItemStack> RAISED = new WeakHashMap<>();
+    /**
+     * The use duration each player's raised weapon started with: Sword Blocking Mechanics sets it when the use starts,
+     * and the item's own (0, which {@code LivingEntity#getTicksUsingItem} reads) does not know it.
+     */
+    private static final Map<Player, Integer> RAISE_DURATION = new WeakHashMap<>();
     /** The players whose weapon goes down at the end of this server tick, after a blocked hit. */
     private static final Set<Player> TO_LOWER = Collections.newSetFromMap(new WeakHashMap<>());
 
@@ -85,7 +90,7 @@ public final class WeaponBlocks {
         if (!blockable(player, event.getSource(), rules.arcDegrees())) {
             return false;
         }
-        float left = rules.blocked(event.getAmount(), player.getTicksUsingItem());
+        float left = rules.blocked(event.getAmount(), raisedTicks(player));
         player.getCooldowns().addCooldown(player.getUseItem(), rules.cooldownTicks());
         TO_LOWER.add(player);
         level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SHIELD_BLOCK,
@@ -96,6 +101,12 @@ public final class WeaponBlocks {
         }
         event.setAmount(left);
         return false;
+    }
+
+    /** How many of the player's ticks ago the raised weapon went up. */
+    static int raisedTicks(Player player) {
+        int remaining = player.getUseItemRemainingTicks();
+        return RAISE_DURATION.getOrDefault(player, remaining) - remaining;
     }
 
     /** Whether a raised weapon can block the hit: one from the covered arc, with a source position, not magic. */
@@ -158,6 +169,14 @@ public final class WeaponBlocks {
             RAISED.put(player, player.getUseItem());
         } else if (before != null) {
             cooldown(player, before);
+        }
+    }
+
+    /** Last of the listeners, after Sword Blocking Mechanics set the use's duration: remembers it for a raise. */
+    static void onUseStart(LivingEntityUseItemEvent.Start event) {
+        if (event.getEntity() instanceof Player player && !player.level().isClientSide()
+                && event.getItem().is(RAISABLE)) {
+            RAISE_DURATION.put(player, event.getDuration());
         }
     }
 

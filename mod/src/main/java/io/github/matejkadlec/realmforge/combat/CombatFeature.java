@@ -38,6 +38,8 @@ public final class CombatFeature {
         NeoForge.EVENT_BUS.addListener(PlayerTickEvent.Post.class, MagicShields::onPlayerTick);
         NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, WeaponBlocks::onServerTick);
         NeoForge.EVENT_BUS.addListener(PlayerTickEvent.Post.class, WeaponBlocks::onPlayerTick);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, LivingEntityUseItemEvent.Start.class,
+                WeaponBlocks::onUseStart);
         NeoForge.EVENT_BUS.addListener(LivingEntityUseItemEvent.Stop.class, WeaponBlocks::onUseStop);
     }
 }

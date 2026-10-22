@@ -881,7 +881,9 @@ does**, in step 3 of the pipeline ([9.1](#91-damage-pipeline)), after the dodge:
 - a hit from the arc in front of the player within the first `fullBlockTicks` after raising the weapon is blocked in
   full (the event is cancelled); a later one loses `blockedShare` of its damage through `setAmount`, before armor and
   resistances take their share of the rest, and still reports `CombatEvent.Hit` and its combat text with what it
-  dealt;
+  dealt. The time since raising comes from the use duration Sword Blocking Mechanics gives the raise
+  (`LivingEntityUseItemEvent.Start`, read last) less the ticks remaining: `LivingEntity#getTicksUsingItem` reads the
+  item's own duration, 0;
 - after any blocked hit the weapon goes on its cooldown at once and goes down at the end of the server tick;
 - the weapon goes on its cooldown whenever it goes down, by hand (`LivingEntityUseItemEvent.Stop`, at once) or by
   switching items (the player's tick), so a new block always starts after it and spamming right click never chains
@@ -900,9 +902,10 @@ the weapon's own file or Better Combat's fallback by item id) whose right click 
 is `NONE`): a spear keeps its charge (Matěj, 2026-10-22), a bow its draw. Better Combat decides this at run time, after
 the tags have loaded, so `compat/bettercombat/TwoHandedWeapons` binds the tag into the items' holders then
 (`Holder.Reference#bindTags`, through an access transformer, [19.3](#193-mixins-and-access-transformers)): on the
-server when it starts (Better Combat loads its weapons as it is about to start) and after every reload of the tags,
+server when it starts (Better Combat loads its weapons as it is about to start) and after every reload of the data,
 and on a client of another server when it joins (`client/compat/bettercombat/TwoHandedWeaponsClient`) and after every
-tag update. `ItemStack#is` reads the holder's own set of tags; the tag's list of items, which the core mod's data
+data update (`DefaultDataComponentsBoundEvent`: a reload binds the items' tags, then their default components, which a
+stack needs). `ItemStack#is` reads the holder's own set of tags; the tag's list of items, which the core mod's data
 replaces with an empty one (Sword Blocking Mechanics' default is every sword), stays empty. The server logs the
 raised weapons when it starts. The pack has no two-handed weapon yet but the spears; the QA mod's
 `realmforge_qa:test_greatsword` is one (Better Combat's fallback reads it as a claymore). A Better Combat preset set

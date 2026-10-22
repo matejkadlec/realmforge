@@ -18,6 +18,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -126,9 +127,14 @@ public final class WeaponBlockGameTests {
         helper.succeed();
     }
 
-    /** A fake player at the platform's north edge, facing {@code yaw}, that never dodges. */
+    /**
+     * A fake player at the platform's north edge, facing {@code yaw}, that takes damage (in survival, its client marked
+     * as loaded) and never dodges.
+     */
     private static ServerPlayer blocker(GameTestHelper helper, String name, float yaw) {
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, name, EDGE);
+        player.setGameMode(GameType.SURVIVAL);
+        player.connection.markClientLoaded();
         player.snapTo(helper.absoluteVec(EDGE), yaw, 0);
         StatsCommands.setBase(player, GeneratedStats.DODGE_CHANCE, 0);
         setBase(player, Attributes.ARMOR, 0);

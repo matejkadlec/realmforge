@@ -15,7 +15,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUseAnimation;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.TagsUpdatedEvent;
+import net.neoforged.neoforge.event.DefaultDataComponentsBoundEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import org.slf4j.Logger;
 
@@ -29,8 +29,10 @@ import org.slf4j.Logger;
  * <p>Better Combat decides what is two-handed at run time, after the tags have loaded, so the tag cannot be data: the
  * core mod's data replaces Sword Blocking Mechanics' default (every sword) with an empty tag, and this class binds the
  * tag into the items' holders once Better Combat has its weapons: on the server when it starts (Better Combat loads
- * them as it is about to start) and after every reload of the tags, which binds them anew, and on a client of another
- * server when it joins and after every tag update. {@code ItemStack#is} reads a holder's own set of tags; the tag's
+ * them as it is about to start) and after every reload of the data, which binds the tags anew, and on a client of
+ * another server when it joins and after every data update: each reload binds the items' default components after
+ * their tags and then posts {@code DefaultDataComponentsBoundEvent}, and a stack needs its item's components to be
+ * read. Before the first binding nothing is bound. {@code ItemStack#is} reads a holder's own set of tags; the tag's
  * list of items stays empty. An access transformer opens {@code Holder.Reference#bindTags}. A Better Combat preset
  * set on a single stack ({@code bettercombat:weapon_preset_id}) does not count: the tag is per item. Runs only while
  * Better Combat is loaded (architecture 19.4); the core mod compiles against the pack's build.
@@ -45,7 +47,7 @@ public final class TwoHandedWeapons {
     /** Called once from {@code CompatFeature} while Better Combat is loaded. */
     public static void register() {
         NeoForge.EVENT_BUS.addListener(ServerStartingEvent.class, event -> logged(bind()));
-        NeoForge.EVENT_BUS.addListener(TagsUpdatedEvent.class, event -> {
+        NeoForge.EVENT_BUS.addListener(DefaultDataComponentsBoundEvent.class, event -> {
             if (event.shouldUpdateStaticData()) {
                 bind();
             }
@@ -54,9 +56,12 @@ public final class TwoHandedWeapons {
 
     /**
      * Binds {@link WeaponBlocks#RAISABLE} to exactly the raisable items ({@link #raisable}), keeping every other tag
-     * of every item; the items it holds, sorted.
+     * of every item; the items it holds, sorted. Does nothing while the items' default components are not bound yet.
      */
     public static List<Identifier> bind() {
+        if (BuiltInRegistries.ITEM.listElements().anyMatch(holder -> !holder.areComponentsBound())) {
+            return List.of();
+        }
         TagKey<Item> tag = WeaponBlocks.RAISABLE;
         List<Holder.Reference<Item>> raisable = BuiltInRegistries.ITEM.listElements()
                 .filter(holder -> raisable(holder.value()))

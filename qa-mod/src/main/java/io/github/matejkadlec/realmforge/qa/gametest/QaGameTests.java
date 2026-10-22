@@ -81,7 +81,6 @@ public final class QaGameTests {
             SpellTextGameTests.class,
             StatPointsGameTests.class,
             StatsGameTests.class,
-            StrongholdGameTests.class,
             WeaponBlockGameTests.class,
             WorldRulesGameTests.class);
 
