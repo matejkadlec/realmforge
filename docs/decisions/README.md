@@ -59,6 +59,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0045](0045-asgard-and-atlantis-amend-the-v1-realm-layout.md) | Asgard and Atlantis amend the v1 realm layout | Accepted (amends 0032) |
 | [0046](0046-spell-bar-default-keys-amend-the-pack-defaults.md) | The spell bar's default keys amend the pack's default keys | Accepted (amends 0043) |
 | [0047](0047-the-cast-slow-halves-the-casters-speed.md) | The cast slow halves the caster's speed | Accepted (amends 0039) |
+| [0049](0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md) | Player hits bypass the hurt cooldown in our damage pipeline, not through Iron's RPG Tweaks | Accepted (amends 0044) |
 
 ## Open questions (not decided)
 

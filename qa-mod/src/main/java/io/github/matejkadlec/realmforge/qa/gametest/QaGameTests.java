@@ -60,6 +60,7 @@ public final class QaGameTests {
             ContentStatGameTests.class,
             DungeonPlanGameTests.class,
             EffectGameTests.class,
+            HurtCooldownGameTests.class,
             DungeonPortalGameTests.class,
             DungeonRoomGameTests.class,
             InstanceGameTests.class,
@@ -80,6 +81,8 @@ public final class QaGameTests {
             SpellTextGameTests.class,
             StatPointsGameTests.class,
             StatsGameTests.class,
+            StrongholdGameTests.class,
+            WeaponBlockGameTests.class,
             WorldRulesGameTests.class);
 
     private static final DeferredRegister<Consumer<GameTestHelper>> FUNCTIONS =

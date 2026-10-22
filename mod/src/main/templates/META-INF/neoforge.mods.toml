@@ -74,6 +74,23 @@ versionRange = "*"
 ordering = "NONE"
 side = "BOTH"
 
+# Blocking with a two-handed weapon (RLM-297, architecture 9.3): compat/bettercombat puts every weapon Better Combat
+# calls two-handed into Sword Blocking Mechanics' item tag. Loading after Sword Blocking Mechanics puts our data pack
+# above its own, so our tag file replaces its default (all swords).
+[[dependencies.realmforge]]
+modId = "bettercombat"
+type = "optional"
+versionRange = "*"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.realmforge]]
+modId = "swordblockingmechanics"
+type = "optional"
+versionRange = "*"
+ordering = "AFTER"
+side = "BOTH"
+
 # stats/AttributeCaps raises vanilla's attribute caps through a mixin accessor (architecture 8.4, 19.3).
 [[mixins]]
 config = "realmforge.mixins.json"

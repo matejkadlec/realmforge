@@ -3,7 +3,9 @@
 Date: 2026-10-20
 
 Status: Accepted (amends [0004](0004-build-rpg-systems-in-house.md) and [0013](0013-modpack-composition.md);
-answers the stronghold question of [0025](0025-remove-the-nether-and-end.md) and amends its "M1 does not change them")
+answers the stronghold question of [0025](0025-remove-the-nether-and-end.md) and amends its "M1 does not change them"); amended by
+[0049](0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md) (Iron's RPG Tweaks stays out: our damage pipeline lets
+player hits through the hurt cooldown, RLM-311), 2026-10-23
 
 ## Context
 
