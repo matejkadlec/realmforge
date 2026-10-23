@@ -16,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUseAnimation;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.DefaultDataComponentsBoundEvent;
+import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import org.slf4j.Logger;
 
@@ -29,13 +30,15 @@ import org.slf4j.Logger;
  * <p>Better Combat decides what is two-handed at run time, after the tags have loaded, so the tag cannot be data: the
  * core mod's data replaces Sword Blocking Mechanics' default (every sword) with an empty tag, and this class binds the
  * tag into the items' holders once Better Combat has its weapons: on the server when it starts (Better Combat loads
- * them as it is about to start) and after every reload of the data, which binds the tags anew, and on a client of
- * another server when it joins and after every data update: each reload binds the items' default components after
- * their tags and then posts {@code DefaultDataComponentsBoundEvent}, and a stack needs its item's components to be
- * read. Before the first binding nothing is bound. {@code ItemStack#is} reads a holder's own set of tags; the tag's
- * list of items stays empty. An access transformer opens {@code Holder.Reference#bindTags}. A Better Combat preset
- * set on a single stack ({@code bettercombat:weapon_preset_id}) does not count: the tag is per item. Runs only while
- * Better Combat is loaded (architecture 19.4); the core mod compiles against the pack's build.
+ * them as it is about to start) and after every reload of the data, which binds the tags anew and then the items'
+ * default components ({@code DefaultDataComponentsBoundEvent}; a stack needs its item's components to be read). A
+ * client of another server binds it when its configuration binds the components, when it joins, and after every tag
+ * update its server sends ({@link #onTagsReceived}): a {@code /reload} there re-applies the server's tags, without
+ * this binding, and posts no {@code DefaultDataComponentsBoundEvent} on the client. Before the first binding nothing
+ * is bound. {@code ItemStack#is} reads a holder's own set of tags; the tag's list of items stays empty. An access
+ * transformer opens {@code Holder.Reference#bindTags}. A Better Combat preset set on a single stack
+ * ({@code bettercombat:weapon_preset_id}) does not count: the tag is per item. Runs only while Better Combat is loaded
+ * (architecture 19.4); the core mod compiles against the pack's build.
  */
 public final class TwoHandedWeapons {
     public static final String MOD_ID = "bettercombat";
@@ -52,6 +55,18 @@ public final class TwoHandedWeapons {
                 bind();
             }
         });
+    }
+
+    /**
+     * A client's tag update from a server it is connected to over the network, such as after a {@code /reload} there:
+     * the server's tags replace the items' own, so the tag is bound again. Over an integrated server's connection the
+     * client shares the server's items, and the server binds them. Registered by the client
+     * ({@code client/compat/bettercombat/TwoHandedWeaponsClient}).
+     */
+    public static void onTagsReceived(TagsUpdatedEvent.ClientPacketReceived event) {
+        if (event.shouldUpdateStaticData()) {
+            bind();
+        }
     }
 
     /**

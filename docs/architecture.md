@@ -902,12 +902,14 @@ the weapon's own file or Better Combat's fallback by item id) whose right click 
 is `NONE`): a spear keeps its charge (Matěj, 2026-10-22), a bow its draw. Better Combat decides this at run time, after
 the tags have loaded, so `compat/bettercombat/TwoHandedWeapons` binds the tag into the items' holders then
 (`Holder.Reference#bindTags`, through an access transformer, [19.3](#193-mixins-and-access-transformers)): on the
-server when it starts (Better Combat loads its weapons as it is about to start) and after every reload of the data,
-and on a client of another server when it joins (`client/compat/bettercombat/TwoHandedWeaponsClient`) and after every
-data update (`DefaultDataComponentsBoundEvent`: a reload binds the items' tags, then their default components, which a
-stack needs). `ItemStack#is` reads the holder's own set of tags; the tag's list of items, which the core mod's data
-replaces with an empty one (Sword Blocking Mechanics' default is every sword), stays empty. The server logs the
-raised weapons when it starts. The pack has no two-handed weapon yet but the spears; the QA mod's
+server when it starts (Better Combat loads its weapons as it is about to start) and after every reload of the data
+(`DefaultDataComponentsBoundEvent`: a reload binds the items' tags, then their default components, which a stack
+needs). A client of another server (`client/compat/bettercombat/TwoHandedWeaponsClient`) binds it when its
+configuration binds the components (the same event), when it joins, and after every tag update its server sends
+(`TagsUpdatedEvent.ClientPacketReceived`): a `/reload` there sends the server's tags, which replace the items' own
+without this binding, and posts no `DefaultDataComponentsBoundEvent` on the client. `ItemStack#is` reads the holder's
+own set of tags; the tag's list of items, which the core mod's data replaces with an empty one (Sword Blocking
+Mechanics' default is every sword), stays empty. The server logs the raised weapons when it starts. The pack has no two-handed weapon yet but the spears; the QA mod's
 `realmforge_qa:test_greatsword` is one (Better Combat's fallback reads it as a claymore). A Better Combat preset set
 on a single stack does not count, since the tag is per item.
 

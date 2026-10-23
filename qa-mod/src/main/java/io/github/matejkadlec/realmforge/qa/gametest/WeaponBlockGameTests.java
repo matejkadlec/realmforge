@@ -4,12 +4,15 @@ import static io.github.matejkadlec.realmforge.qa.gametest.CombatGameTests.close
 import static io.github.matejkadlec.realmforge.qa.gametest.CombatGameTests.setBase;
 
 import io.github.matejkadlec.realmforge.combat.WeaponBlocks;
+import io.github.matejkadlec.realmforge.compat.bettercombat.TwoHandedWeapons;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.mob.MobLevels;
 import io.github.matejkadlec.realmforge.qa.combat.QaItems;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -20,6 +23,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.event.TagsUpdatedEvent;
 
 /**
  * RLM-297: blocking with a two-handed weapon (architecture 9.3), with the rules' defaults (Matěj, 2026-10-22): a hit
@@ -51,6 +55,35 @@ public final class WeaponBlockGameTests {
         helper.assertFalse(new ItemStack(Items.IRON_SWORD).is(WeaponBlocks.RAISABLE), "a sword is one-handed");
         helper.assertFalse(new ItemStack(Items.BOW).is(WeaponBlocks.RAISABLE), "a bow keeps its draw");
         helper.succeed();
+    }
+
+    /**
+     * A client's tag update from its server over the network (a {@code /reload} there) replaces the items' tags with
+     * the server's, whose raisable tag is empty data; the handler binds it again. Over an integrated server's
+     * connection it leaves the shared items to the server. The tags are stripped and rebound within this one call on
+     * the server thread, so no other test sees them stripped.
+     */
+    @QaGameTest
+    public static void aClientRebindsTheRaisableWeaponsAfterItsServersTagUpdate(GameTestHelper helper) {
+        ItemStack greatsword = new ItemStack(QaItems.TEST_GREATSWORD.get());
+        RegistryAccess registries = helper.getLevel().registryAccess();
+        try {
+            stripRaisable();
+            TwoHandedWeapons.onTagsReceived(new TagsUpdatedEvent.ClientPacketReceived(registries, true));
+            helper.assertFalse(greatsword.is(WeaponBlocks.RAISABLE),
+                    "an integrated server's client leaves the shared items to the server");
+            TwoHandedWeapons.onTagsReceived(new TagsUpdatedEvent.ClientPacketReceived(registries, false));
+            helper.assertTrue(greatsword.is(WeaponBlocks.RAISABLE), "a remote server's tag update rebinds the tag");
+        } finally {
+            TwoHandedWeapons.bind();
+        }
+        helper.succeed();
+    }
+
+    /** What a tag update from a server does to the raisable tag: every item loses it (the server's data is empty). */
+    private static void stripRaisable() {
+        BuiltInRegistries.ITEM.listElements().forEach(holder -> holder.bindTags(
+                holder.tags().filter(tag -> !tag.equals(WeaponBlocks.RAISABLE)).toList()));
     }
 
     /**
