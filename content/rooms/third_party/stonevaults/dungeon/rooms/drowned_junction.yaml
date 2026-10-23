@@ -6,6 +6,7 @@ tags:
   - "combat"
   - "t_junction"
 weight: 1
+max_per_layout: 1
 source:
   file: "drowned_junction.nbt"
   format: nbt

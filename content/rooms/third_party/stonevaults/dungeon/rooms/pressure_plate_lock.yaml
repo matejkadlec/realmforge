@@ -6,6 +6,8 @@ tags:
   - "combat"
   - "straight"
 weight: 1
+max_per_layout: 1
+entry: north
 source:
   file: "pressure_plate_lock.nbt"
   format: nbt
