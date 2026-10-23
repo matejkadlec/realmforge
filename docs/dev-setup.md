@@ -98,8 +98,9 @@ WSL it is good only for "does it load" checks (3.3).
   `pack/config/defaultoptions/keybindings.txt` ([pack README](../pack/README.md#configuration)). A new
   `run/client/options.txt` starts with them; an existing one keeps its keys until you press **Reset Keys** in Key
   Binds (or delete the file, which also brings back `dev/options.txt`). Controlling adds a search to Key Binds.
-- **A lean client on demand.** `./gradlew runClient -PleanClient` loads only our mods, Player Animation Library (the
-  QA mod's animation library) and Yeetus Experimentus: it starts faster, for quick checks and agents' screenshot
+- **A lean client on demand.** `./gradlew runClient -PleanClient` loads only our mods, GeckoLib (the core mod's
+  model library), Player Animation Library (the QA mod's animation library) and Yeetus Experimentus: it starts
+  faster, for quick checks and agents' screenshot
   runs, and shows our code without the other mods. `-PwithBetterCombat` adds Better Combat and Cloth Config to it:
   `./gradlew runClient -PleanClient -PwithBetterCombat`. Without `-PleanClient` the flag changes nothing, because
   the whole pack has Better Combat already.

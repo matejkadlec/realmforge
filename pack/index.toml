@@ -157,6 +157,11 @@ hash = "cb69112ea7c492ee73426fb503af2d834c8bafcd8341188c99ea6dc56d38de6f"
 metafile = true
 
 [[files]]
+file = "mods/geckolib.pw.toml"
+hash = "df8c8eb2779cc3d279a8099eb06549b74bf1341783da3e6bb0ab1341147c6154"
+metafile = true
+
+[[files]]
 file = "mods/iceberg.pw.toml"
 hash = "734ab3d3e9fc95485aedc7b6f2690cdf3c21a89f617fd89bdaec07045b31abac"
 metafile = true
