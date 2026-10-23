@@ -21,7 +21,7 @@ class FakeRenderer:
     def __init__(self) -> None:
         self.calls: list[tuple[tuple[int, int, int], str, Path, int]] = []
 
-    def render(self, structure: Structure, view: View, target: Path, cut: int = 5) -> None:
+    def render(self, structure: Structure, view: View, target: Path, cut: int = 5, outlines=()) -> None:
         self.calls.append((structure.size, view.name, target, cut))
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(b"png")

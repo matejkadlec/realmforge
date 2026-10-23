@@ -9,7 +9,9 @@ read at runtime only: renders of vanilla blocks are fine for review, but no vani
 Data markers (architecture 15.3) are part of what a room is for, so every view shows them, labelled
 ([ADR 0035](../../../docs/decisions/0035-room-galleries-show-every-marker-with-its-label.md)): a marker is drawn as a
 block in its label's colour (``MARKER_STYLES``), even above a cutaway's cut, so a marker on a balcony shows in the
-plan too. The game never places a marker; the colour stands for the spot.
+plan too. The game never places a marker; the colour stands for the spot. Set-piece spots (ADR 0050) show the same
+way: each spot's floor cells as stained glass in its fit's colour (``SPOT_STYLES``), and a room with spots gets a
+fifth view, ``DRESSING``, with a piece in every pattern.
 """
 
 from __future__ import annotations
@@ -88,19 +90,35 @@ VIEWS = (
     View("cutaway_back", "Cutaway, other corner", cut=True, yaw=225.0),
     View("plan", "Plan", cut=True, top=True),
 )
+# The room with a set piece in every pattern of spots (seed 0), for a room that has spots.
+DRESSING = View("dressing", "Sample dressing", cut=True)
+
+# The colours of set-piece spots, one per fit in a room's order: none of them a marker's.
+SPOT_STYLES = (
+    ("minecraft:purple_stained_glass", "#8932b8"),
+    ("minecraft:cyan_stained_glass", "#169c9c"),
+    ("minecraft:orange_stained_glass", "#f9801d"),
+    ("minecraft:blue_stained_glass", "#3c44aa"),
+    ("minecraft:pink_stained_glass", "#f38baa"),
+    ("minecraft:brown_stained_glass", "#835432"),
+)
 
 
-def drawn_blocks(structure: Structure, view: View, cut: int = CUT_HEIGHT) -> list[tuple[Pos, str]]:
+def drawn_blocks(
+    structure: Structure, view: View, cut: int = CUT_HEIGHT, outlines: tuple[tuple[Pos, str], ...] = ()
+) -> list[tuple[Pos, str]]:
     """The blocks a view draws, as (position, block state): no air, nothing at or above a cutaway's cut, and every
-    data marker as its label's block wherever it is."""
+    data marker as its label's block and every outline block (a set-piece spot's) wherever it is."""
     height = min(structure.size[1] - 1, cut) if view.cut else structure.size[1]
     drawn = []
+    outlined = {pos for pos, _ in outlines}
     for block in structure.blocks:
         label = marker_label(block)
         if label is not None:
             drawn.append((block.pos, marker_style(label).block))
-        elif block.state.name != AIR and block.pos[1] < height:
+        elif block.state.name != AIR and block.pos[1] < height and block.pos not in outlined:
             drawn.append((block.pos, str(block.state)))
+    drawn += outlines
     return drawn
 
 
@@ -119,10 +137,17 @@ class RoomRenderer:
         except nucleation.NucleationError as e:
             raise RenderError(f"cannot read {client_jar} as a resource pack: {e}") from e
 
-    def render(self, structure: Structure, view: View, target: Path, cut: int = CUT_HEIGHT) -> None:
+    def render(
+        self,
+        structure: Structure,
+        view: View,
+        target: Path,
+        cut: int = CUT_HEIGHT,
+        outlines: tuple[tuple[Pos, str], ...] = (),
+    ) -> None:
         nucleation = self._nucleation
         schematic = nucleation.Schematic.create("room")
-        for pos, state in drawn_blocks(structure, view, cut):
+        for pos, state in drawn_blocks(structure, view, cut, outlines):
             schematic.set_block_from_string(*pos, state)
         config = nucleation.RenderConfig.create(self.size, self.size)
         if view.top:

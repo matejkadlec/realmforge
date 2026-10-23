@@ -1,0 +1,179 @@
+{
+  "$defs": {
+    "SwapDef": {
+      "additionalProperties": false,
+      "description": "What a block of the piece may become (a barrel a chest): a rule per state of the block in the template.",
+      "properties": {
+        "chance": {
+          "default": 0.5,
+          "description": "How often it becomes that block (0.5: half the time).",
+          "exclusiveMaximum": 1,
+          "exclusiveMinimum": 0,
+          "title": "Chance",
+          "type": "number"
+        },
+        "keep": {
+          "description": "Properties the new block takes over from the block it replaces (facing, waterlogged); the new block must have them.",
+          "items": {
+            "pattern": "^[a-z0-9_]+$",
+            "type": "string"
+          },
+          "title": "Keep",
+          "type": "array"
+        },
+        "to": {
+          "description": "The block state it becomes, as the template has it (unturned): the game turns it with the piece.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+(\\[[a-z0-9_]+=[a-z0-9_]+(,[a-z0-9_]+=[a-z0-9_]+)*\\])?$",
+          "title": "To",
+          "type": "string"
+        }
+      },
+      "required": [
+        "to"
+      ],
+      "title": "SwapDef",
+      "type": "object"
+    },
+    "VariantsDef": {
+      "additionalProperties": false,
+      "description": "How one build gives several pieces: mirroring, blocks that appear only by chance, and swaps.",
+      "properties": {
+        "chance": {
+          "description": "Blocks that are there only by chance (minecraft:skeleton_skull: 0.5, half the time).",
+          "patternProperties": {
+            "^[a-z0-9_.-]+:[a-z0-9_./-]+$": {
+              "exclusiveMaximum": 1,
+              "exclusiveMinimum": 0,
+              "type": "number"
+            }
+          },
+          "propertyNames": {
+            "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe."
+          },
+          "title": "Chance",
+          "type": "object"
+        },
+        "mirror": {
+          "default": false,
+          "description": "True: the builder may mirror the piece (a pair of spots mirrored across the room gets the piece mirrored). Leave it false for a piece with writing or an asymmetric story.",
+          "title": "Mirror",
+          "type": "boolean"
+        },
+        "swaps": {
+          "description": "Blocks that may become another (minecraft:barrel: {to: ..., chance: 0.3}).",
+          "patternProperties": {
+            "^[a-z0-9_.-]+:[a-z0-9_./-]+$": {
+              "$ref": "#/$defs/SwapDef"
+            }
+          },
+          "propertyNames": {
+            "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe."
+          },
+          "title": "Swaps",
+          "type": "object"
+        }
+      },
+      "title": "VariantsDef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Where a set piece fits and where it may appear. The template next to it holds the blocks, built as the mask\nshows them (the wall side to the north).",
+  "properties": {
+    "builds_walls": {
+      "default": false,
+      "description": "True: the piece brings its own W cells (its template holds them), so it needs free space in front of a flat wall there, not an existing niche.",
+      "title": "Builds Walls",
+      "type": "boolean"
+    },
+    "height": {
+      "default": 3,
+      "description": "The piece's height above the floor, its template's too.",
+      "maximum": 3,
+      "minimum": 1,
+      "title": "Height",
+      "type": "integer"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "mask": {
+      "description": "Top view, one character per cell separated by single spaces, the first row the wall side: W wall, . the piece, _ clearance that stays walkable, ? anything.",
+      "title": "Mask",
+      "type": "string"
+    },
+    "roles": {
+      "description": "The room roles it may appear in (default: hallway and combat; a treasure room, a boss's room and the entrance only take pieces that name them).",
+      "items": {
+        "enum": [
+          "entrance",
+          "hallway",
+          "combat",
+          "stairs",
+          "treasure",
+          "boss"
+        ],
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Roles",
+      "type": "array"
+    },
+    "source": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The workshop jig's save it was imported from (realmforge_qa:set_piece/<mask>_<n>), written by rf set-pieces import, so --from-world skips it next time.",
+      "title": "Source"
+    },
+    "tags": {
+      "description": "What the piece is (storage, prison, crypt, shrine, ...); dungeon types pick by tag.",
+      "items": {
+        "pattern": "^[a-z][a-z0-9_]*$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Tags",
+      "type": "array"
+    },
+    "variants": {
+      "$ref": "#/$defs/VariantsDef"
+    },
+    "walls": {
+      "description": "What the W cells may be in a generated room: theme roles (wall: the wall's base, body, patches and cornice; pillar, ...) or block ids. An imported room's blocks have no roles: any full block there counts for a role.",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Walls",
+      "type": "array"
+    },
+    "weight": {
+      "default": 1,
+      "description": "How often it is picked among the pieces that fit.",
+      "maximum": 150,
+      "minimum": 1,
+      "title": "Weight",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "mask",
+    "tags"
+  ],
+  "title": "SetPieceDef",
+  "type": "object"
+}

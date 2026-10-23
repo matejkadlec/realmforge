@@ -11,7 +11,7 @@ from pathlib import PurePosixPath
 
 from pydantic import BaseModel
 
-from realmforge_tools.content import Content, RoomEntry, load_content
+from realmforge_tools.content import Content, RoomEntry, SetPieceEntry, load_content
 from realmforge_tools.id_universe import IdUniverse, load_vanilla
 from realmforge_tools.problems import Problem, ValidationFailed
 from realmforge_tools.project import MOD_ID, RepoPaths
@@ -26,6 +26,8 @@ from realmforge_tools.rooms.check import (
 )
 from realmforge_tools.rooms.connectors import connectors, could_attach
 from realmforge_tools.rooms.generator import GENERATED_DIR, theme_blocks, unknown_blocks
+from realmforge_tools.rooms.set_pieces import piece_problems
+from realmforge_tools.rooms.structure import BlockState, StructureError
 from realmforge_tools.rooms.walk import walk_problems
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES, WORLDGEN_DIR
 from realmforge_tools.schema.block import ITEMLESS_KINDS, REALM_PORTAL_KINDS, SINGLE_BLOCK_KINDS
@@ -197,6 +199,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_room_themes(content, universe)
     problems += _check_room_specs(content)
     problems += _check_rooms(content, universe)
+    problems += _check_set_pieces(content, universe)
     problems += _check_dungeons(content)
     problems += _check_dungeon_keys(content, universe)
     problems += _check_recipes(content, universe)
@@ -243,6 +246,69 @@ def _check_rooms(content: Content, universe: IdUniverse) -> list[Problem]:
             if decision == "keep" and f"{prefix}{key}" not in room_ids:
                 problems.append(
                     Problem(review.source, key, f"kept, but there is no room content/rooms/{prefix}{key}.nbt")
+                )
+    return problems
+
+
+def _check_set_pieces(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A set piece's template is a valid template (``rooms/check.py``) and the piece its fit rule describes
+    (``rooms/set_pieces.py``), and its fit rule names blocks the template holds and the universe knows."""
+    kind = f"check-{universe_digest(universe)}"
+    problems: list[Problem] = []
+    for piece in content.set_pieces:
+        model = piece.model
+        stem = PurePosixPath(piece.source).stem
+        if model.id != stem:
+            problems.append(Problem(piece.source, "id", f"id {model.id!r} must equal the file name {stem!r}"))
+        found = piece.derived(kind, lambda structure: check_structure(structure, universe))
+        found += piece.derived(
+            f"set_piece_{model.fit().digest}", lambda structure, m=model: piece_problems(m.fit(), structure)
+        )
+        problems += [Problem(piece.template, location, message) for location, message in found]
+        problems += _set_piece_rule_problems(piece, universe)
+    return problems
+
+
+def _set_piece_rule_problems(piece: SetPieceEntry, universe: IdUniverse) -> list[Problem]:
+    model, problems = piece.model, []
+    states: dict[str, set[BlockState]] = {}
+    for block in piece.structure.blocks:
+        states.setdefault(block.state.name, set()).add(block.state)
+    for index, wall in enumerate(model.walls):
+        if ":" in wall and not universe.contains(BLOCK_REGISTRY, wall):
+            problems.append(Problem(piece.source, f"walls[{index}]", f"unknown block {wall!r}"))
+    variants = model.variants
+    for block in (*variants.chance, *variants.swaps):
+        group = "chance" if block in variants.chance else "swaps"
+        if not universe.contains(BLOCK_REGISTRY, block):
+            problems.append(Problem(piece.source, f"variants.{group}.{block}", f"unknown block {block!r}"))
+        elif block not in states:
+            problems.append(
+                Problem(piece.source, f"variants.{group}.{block}", "the template holds no such block")
+            )
+    for block, swap in variants.swaps.items():
+        where = f"variants.swaps.{block}"
+        try:
+            target = BlockState.parse(swap.to)
+        except StructureError as e:
+            problems.append(Problem(piece.source, f"{where}.to", str(e)))
+            continue
+        if not universe.contains(BLOCK_REGISTRY, target.name):
+            problems.append(Problem(piece.source, f"{where}.to", f"unknown block {target.name!r}"))
+        for name in swap.keep:
+            if any(state.get(name) is None for state in states.get(block, ())):
+                problems.append(
+                    Problem(
+                        piece.source, f"{where}.keep", f"{block} in the template has no property {name!r}"
+                    )
+                )
+            if target.get(name) is not None:
+                problems.append(
+                    Problem(
+                        piece.source,
+                        f"{where}.keep",
+                        f"{swap.to} sets {name} itself; keep it or set it, not both",
+                    )
                 )
     return problems
 

@@ -58,6 +58,7 @@ from realmforge_tools.schema.room import (
     ReviewFile,
     RoomDef,
 )
+from realmforge_tools.schema.set_piece import SET_PIECES_DIR, SetPieceDef
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES
 from realmforge_tools.yamlio import YamlLoadError, load_yaml
 
@@ -121,6 +122,35 @@ class RoomEntry:
 
 
 @dataclass(frozen=True)
+class SetPieceEntry:
+    """A set piece in ``content/set_pieces/``: its template and its fit rule (ADR 0050)."""
+
+    source: str
+    """The fit rule, repository-relative."""
+    template: str
+    """The template, repository-relative."""
+    model: SetPieceDef
+    key: str
+    """The template's cache key (``rooms/cache.py``); empty when the template was not read."""
+    load: Callable[[], Structure] = field(repr=False, compare=False)
+    cache: RoomCache = field(repr=False, compare=False)
+
+    @property
+    def id(self) -> str:
+        return self.model.id
+
+    @cached_property
+    def structure(self) -> Structure:
+        return self.load()
+
+    def derived[T](self, kind: str, compute: Callable[[Structure], T]) -> T:
+        """``compute(self.structure)``, cached under ``kind`` for this template (``RoomEntry.derived``)."""
+        if not self.key:
+            return compute(self.structure)
+        return self.cache.derived(kind, self.key, lambda: compute(self.structure))
+
+
+@dataclass(frozen=True)
 class RoomReview:
     """A ``review.yaml`` in a folder of ``content/rooms/``: decisions keyed by room path below that folder."""
 
@@ -168,6 +198,7 @@ class Content:
     rooms: tuple[RoomEntry, ...] = ()
     room_reviews: tuple[RoomReview, ...] = ()
     room_notices: tuple[RoomNotice, ...] = ()
+    set_pieces: tuple[SetPieceEntry, ...] = ()
 
     def entries(self, type_dir: str) -> tuple[Entry, ...]:
         """The entries of the YAML content type in ``content/<type_dir>/``."""
@@ -188,6 +219,7 @@ def load_content(
     loaded: dict[str, list[Entry]] = {name: [] for name in CONTENT_TYPES}
     worldgen: list[WorldgenFile] = []
     room_files: list[Path] = []
+    piece_files: list[Path] = []
 
     for file in sorted(p for p in paths.content.rglob("*") if p.is_file()):
         rel = paths.rel(file)
@@ -201,6 +233,9 @@ def load_content(
             continue
         if type_dir == ROOMS_DIR:
             room_files.append(file)
+            continue
+        if type_dir == SET_PIECES_DIR:
+            piece_files.append(file)
             continue
         if file.suffix == ".yml":
             problems.append(Problem(rel, "", "use the .yaml extension, not .yml"))
@@ -221,6 +256,7 @@ def load_content(
     rooms, reviews, notices = _load_rooms(room_files, paths, problems, cache, read_templates=read_templates)
     unbuilt: list[Problem] = []  # kept seeds the generator cannot build
     rooms += _generated_rooms(loaded["room_specs"], loaded["room_themes"], unbuilt, cache)
+    pieces = _load_set_pieces(piece_files, paths, problems, cache, read_templates=read_templates)
     if not skip_broken_kept_seeds:
         problems += unbuilt
     if problems:
@@ -253,6 +289,7 @@ def load_content(
         rooms=rooms,
         room_reviews=reviews,
         room_notices=notices,
+        set_pieces=pieces,
     )
 
 
@@ -392,6 +429,55 @@ def _load_rooms(
         RoomNotice(source, name, file.read_bytes()) for (source, name), file in sorted(license_files.items())
     )
     return tuple(rooms), tuple(sorted(reviews, key=lambda r: r.folder)), notices
+
+
+def _load_set_pieces(
+    files: list[Path], paths: RepoPaths, problems: list[Problem], cache: RoomCache, *, read_templates: bool
+) -> tuple[SetPieceEntry, ...]:
+    """Pair every template in ``content/set_pieces/`` with its fit rule, by file name, and read both."""
+    root = paths.content / SET_PIECES_DIR
+    templates: dict[str, Path] = {}
+    rules: dict[str, Path] = {}
+    for file in files:
+        rel = paths.rel(file)
+        if file.parent != root:
+            problems.append(
+                Problem(rel, "", f"set pieces go directly into content/{SET_PIECES_DIR}/, no folders")
+            )
+            continue
+        if file.suffix not in (".nbt", ".yaml"):
+            problems.append(
+                Problem(
+                    rel,
+                    "",
+                    f"unexpected file in content/{SET_PIECES_DIR}/ (a set piece is a .nbt template and a .yaml fit "
+                    "rule)",
+                )
+            )
+            continue
+        (templates if file.suffix == ".nbt" else rules)[file.stem] = file
+    pieces: list[SetPieceEntry] = []
+    for name in sorted(templates.keys() | rules.keys()):
+        template, rule = templates.get(name), rules.get(name)
+        if template is None:
+            problems.append(
+                Problem(paths.rel(rules[name]), "", "the set piece has no .nbt template next to it")
+            )
+            continue
+        if rule is None:
+            problems.append(
+                Problem(paths.rel(template), "", "the set piece has no .yaml fit rule next to it")
+            )
+            continue
+        entry = _load_entry(rule, paths.rel(rule), SetPieceDef, problems)
+        loaded = _load_template(template, cache, read_templates)
+        if isinstance(loaded, str):
+            problems.append(Problem(paths.rel(template), "", f"not a usable structure template: {loaded}"))
+            continue
+        if entry is not None:
+            key, load = loaded
+            pieces.append(SetPieceEntry(entry.source, paths.rel(template), entry.model, key, load, cache))
+    return tuple(pieces)
 
 
 def _generated_rooms(

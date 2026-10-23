@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../tools/schemas/set_pieces.schema.json
+# The set pieces' test piece (RLM-280), test content like realmforge:test_item: a barrel against a wall with a
+# skeleton skull on it half the time, and a chest instead of the barrel now and then. It gives the test dungeon's rooms
+# spots for the pipeline and the builder's GameTests (RLM-282); Matěj's own pieces come with RLM-283.
+id: test_barrel
+mask: |
+  W
+  .
+  _
+height: 2
+tags: [test, storage]
+variants:
+  mirror: true
+  chance:
+    minecraft:skeleton_skull: 0.5
+  swaps:
+    minecraft:barrel:
+      to: minecraft:chest[facing=south]
+      chance: 0.25
