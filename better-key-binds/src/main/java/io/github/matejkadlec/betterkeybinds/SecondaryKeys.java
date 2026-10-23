@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
@@ -62,6 +63,25 @@ public final class SecondaryKeys {
         dirty = true;
     }
 
+    /**
+     * Binds the secondary key of {@code primary} as the Key Binds screen does: a key bind never holds the same key
+     * twice, so when the secondary key takes its primary key (the same key and modifier), the primary key becomes
+     * unbound.
+     */
+    public static void bindFromScreen(KeyMapping primary, KeyModifier modifier, InputConstants.Key key) {
+        bind(primary, modifier, key);
+        SecondaryKeyMapping secondary = getOrCreate(primary);
+        if (!secondary.isUnbound() && secondary.getKey().equals(primary.getKey())
+                && secondary.getKeyModifier() == primary.getKeyModifier()) {
+            primary.setKeyModifierAndCode(KeyModifier.NONE, InputConstants.UNKNOWN);
+        }
+    }
+
+    /** The bound secondary keys, for Controlling's list of free keys. */
+    public static List<SecondaryKeyMapping> bound() {
+        return SECONDARY.values().stream().filter(secondary -> !secondary.isUnbound()).toList();
+    }
+
     /** Unbinds the secondary key of {@code primary}, if it has a bound one. */
     public static void unbind(KeyMapping primary) {
         SecondaryKeyMapping secondary = of(primary);
@@ -101,6 +121,36 @@ public final class SecondaryKeys {
         }
         SecondaryKeyMapping secondary = of(primary);
         return secondary != null && !secondary.isUnbound() && test.test(secondary);
+    }
+
+    /**
+     * In game, a key's primary key binds win: the key mappings vanilla's lookup found for a pressed key (it already
+     * left out those whose conflict context or modifier is not active) reach the secondary keys among them only when
+     * no primary key bind is among them. D as Strafe Right's key and Strafe Left's secondary key strafes right. Screens
+     * check keys through {@code matches} instead, which this leaves alone: L as Advancements' key and JEI's Show
+     * Recipe's secondary key still shows recipes in the inventory. A release reaches them all, so no key stays held.
+     */
+    public static List<KeyMapping> primaryKeysWin(List<KeyMapping> found, boolean releasing) {
+        if (releasing || found.stream().allMatch(SecondaryKeyMapping.class::isInstance)
+                || found.stream().noneMatch(SecondaryKeyMapping.class::isInstance)) {
+            return found;
+        }
+        return found.stream().filter(keyMapping -> !(keyMapping instanceof SecondaryKeyMapping)).toList();
+    }
+
+    /**
+     * Whether another key bind that can act now has the key of {@code secondary} as its primary key: then the key's
+     * state re-checked as a screen closes ({@code KeyMapping#setAll}) does not hold the secondary key, as a press would
+     * not reach it ({@link #primaryKeysWin}).
+     */
+    public static boolean primaryKeyTakes(SecondaryKeyMapping secondary, KeyMapping[] keyMappings) {
+        for (KeyMapping other : keyMappings) {
+            if (other != secondary.primary() && !(other instanceof SecondaryKeyMapping)
+                    && other.isActiveAndMatches(secondary.getKey())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

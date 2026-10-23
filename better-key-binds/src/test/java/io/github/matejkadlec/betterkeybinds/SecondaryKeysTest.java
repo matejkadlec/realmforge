@@ -107,6 +107,66 @@ class SecondaryKeysTest {
                 secondary -> secondary.matches(new KeyEvent(GLFW.GLFW_KEY_O, 0, 0))));
     }
 
+    // A key bind that is active whenever its key is pressed: NeoForge's modifier check asks the running game.
+    private static KeyMapping activeKeyMapping(int glfwKey, KeyConflictContext context) {
+        KeyMapping keyMapping = new KeyMapping("test.key." + NAMES.incrementAndGet(), InputConstants.Type.KEYSYM,
+                glfwKey, KeyMapping.Category.MISC) {
+            @Override
+            public boolean isActiveAndMatches(InputConstants.Key keyCode) {
+                return keyCode.equals(getKey());
+            }
+        };
+        keyMapping.setKeyConflictContext(context);
+        return keyMapping;
+    }
+
+    @Test
+    void aSecondaryKeyTakingItsOwnPrimaryKeyUnbindsThePrimary() {
+        KeyMapping jump = keyMapping(GLFW.GLFW_KEY_SPACE);
+
+        SecondaryKeys.bindFromScreen(jump, KeyModifier.NONE, key(GLFW.GLFW_KEY_SPACE));
+
+        assertTrue(jump.isUnbound(), "the primary key gave way");
+        assertEquals(key(GLFW.GLFW_KEY_SPACE), SecondaryKeys.of(jump).getKey());
+    }
+
+    @Test
+    void anotherKeyOrModifierLeavesThePrimaryKey() {
+        KeyMapping jump = keyMapping(GLFW.GLFW_KEY_SPACE);
+
+        SecondaryKeys.bindFromScreen(jump, KeyModifier.CONTROL, key(GLFW.GLFW_KEY_SPACE));
+        assertEquals(key(GLFW.GLFW_KEY_SPACE), jump.getKey(), "Ctrl+Space is another key than Space");
+
+        SecondaryKeys.bindFromScreen(jump, KeyModifier.NONE, key(GLFW.GLFW_KEY_J));
+        assertEquals(key(GLFW.GLFW_KEY_SPACE), jump.getKey());
+    }
+
+    @Test
+    void inGameAPrimaryKeyWinsOverAnotherKeyBindsSecondaryKey() {
+        KeyMapping strafeRight = keyMapping(GLFW.GLFW_KEY_D);
+        KeyMapping strafeLeft = keyMapping(GLFW.GLFW_KEY_A);
+        SecondaryKeys.bind(strafeLeft, KeyModifier.NONE, key(GLFW.GLFW_KEY_D));
+        SecondaryKeyMapping strafeLeftSecondary = SecondaryKeys.of(strafeLeft);
+
+        assertEquals(List.of(strafeRight),
+                SecondaryKeys.primaryKeysWin(List.of(strafeRight, strafeLeftSecondary), false), "pressed");
+        assertEquals(List.of(strafeRight, strafeLeftSecondary),
+                SecondaryKeys.primaryKeysWin(List.of(strafeRight, strafeLeftSecondary), true), "released: both");
+        assertEquals(List.of(strafeLeftSecondary),
+                SecondaryKeys.primaryKeysWin(List.of(strafeLeftSecondary), false), "no primary on D");
+    }
+
+    @Test
+    void theKeyReCheckedAsAScreenClosesSkipsASecondaryKeyAPrimaryKeyTakes() {
+        KeyMapping strafeLeft = keyMapping(GLFW.GLFW_KEY_A);
+        SecondaryKeys.bind(strafeLeft, KeyModifier.NONE, key(GLFW.GLFW_KEY_D));
+        SecondaryKeyMapping secondary = SecondaryKeys.of(strafeLeft);
+        KeyMapping strafeRight = activeKeyMapping(GLFW.GLFW_KEY_D, KeyConflictContext.UNIVERSAL);
+
+        assertTrue(SecondaryKeys.primaryKeyTakes(secondary, new KeyMapping[] {strafeLeft, strafeRight}));
+        assertFalse(SecondaryKeys.primaryKeyTakes(secondary, new KeyMapping[] {strafeLeft}));
+    }
+
     @Test
     void unbindingClearsKeyAndModifier() {
         KeyMapping drop = keyMapping(GLFW.GLFW_KEY_Q);

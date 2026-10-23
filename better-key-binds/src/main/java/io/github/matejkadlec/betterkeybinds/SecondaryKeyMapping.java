@@ -3,6 +3,7 @@ package io.github.matejkadlec.betterkeybinds;
 import com.mojang.blaze3d.platform.InputConstants;
 import io.github.matejkadlec.betterkeybinds.mixin.ToggleKeyMappingAccessor;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.ToggleKeyMapping;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.client.settings.IKeyConflictContext;
@@ -61,10 +62,14 @@ public final class SecondaryKeyMapping extends KeyMapping {
         }
     }
 
-    /** Like a toggle key's own: a key re-checked as a screen closes must not flip a toggle. */
+    /**
+     * Like a toggle key's own: a key re-checked as a screen closes must not flip a toggle. Nor does it hold the
+     * secondary key while another key bind's primary key takes the key ({@link SecondaryKeys#primaryKeyTakes}).
+     */
     @Override
     protected boolean shouldSetOnIngameFocus() {
-        return super.shouldSetOnIngameFocus() && !togglesPrimary();
+        return super.shouldSetOnIngameFocus() && !togglesPrimary()
+                && !SecondaryKeys.primaryKeyTakes(this, Minecraft.getInstance().options.keyMappings);
     }
 
     /** "Open Chat (secondary)", for conflict lists. */

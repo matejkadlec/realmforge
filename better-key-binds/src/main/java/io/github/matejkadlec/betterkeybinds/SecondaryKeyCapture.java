@@ -103,7 +103,7 @@ public final class SecondaryKeyCapture {
         KeyMapping primary = waitingFor;
         waitingFor = null;
         if (primary != null) {
-            SecondaryKeys.bind(primary, modifier, key);
+            SecondaryKeys.bindFromScreen(primary, modifier, key);
         }
         refresh(screen);
     }
