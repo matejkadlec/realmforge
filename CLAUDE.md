@@ -53,8 +53,9 @@ Apotheosis for gear rarity, affixes, gems and enchanting
   state (F3), stats (F4) with their names, a character sheet (F4b) and raised attribute caps (F4c), and the combat
   core (F5: spell schools, crit, dodge, resistances, our armor formula, combat text, the QA training dummy), and
   hostile mobs get levels near the nearest player's, floored per realm (W1, RLM-303), scaled by curves. The first
-  custom mobs exist (W3): the Hewn Sentinel (melee) and the Hewn Chanter (a caster that keeps its distance), from
-  `content/mobs/`, with GeckoLib placeholder models until A2's art. A new player
+  custom mobs exist (W3): Undervault's Hewn, the Hewn Sentinel (melee, of one of three gems it may drop) and the
+  Hewn Chanter (a caster of Stoneform that kites), from `content/mobs/`, with GeckoLib placeholder models until A2's
+  art, and our own sound events from `content/sounds/` (vanilla sounds remapped). A new player
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits.
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell
@@ -331,8 +332,10 @@ that compiles here.
   extracts render state like vanilla: `GeoEntityRenderer<T, R extends EntityRenderState>`. Its models and animations
   load from `assets/<ns>/geckolib/models/` and `geckolib/animations/`. Its interface injections (`GeoRenderState` on
   vanilla's render states) are not visible to our compiler, so its `RenderPassInfo` hooks don't compile against
-  `LivingEntityRenderState`; turn bones in the animation JSON (molang `query.head_x_rotation`) instead. No sources
-  jar: decompile the pack's jar to read it ([architecture 14.2](docs/architecture.md#142-custom-mobs)).
+  `LivingEntityRenderState`; turn bones in the animation JSON (molang `query.head_x_rotation`) instead. To hand a
+  model data per entity (a variant's texture), give the renderer its own render state, a non-final subclass of
+  `LivingEntityRenderState` from `createRenderState`, and cast the model's `GeoRenderState` to it. No sources jar:
+  decompile the pack's jar to read it ([architecture 14.2](docs/architecture.md#142-custom-mobs)).
 
 ## Git and branches
 
