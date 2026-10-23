@@ -2,6 +2,8 @@ package io.github.matejkadlec.realmforge.qa.gametest;
 
 import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.dungeon.DungeonAttachments;
+import io.github.matejkadlec.realmforge.dungeon.DungeonRegistries;
+import io.github.matejkadlec.realmforge.dungeon.DungeonType;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceLayout;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
@@ -53,6 +55,7 @@ public final class DungeonPortalGameTests {
     private static final int TIMEOUT = 1200;
     private static final BlockPos PORTAL = new BlockPos(2, 1, 4);
     private static final Identifier TEST_DUNGEON = Identifier.parse("realmforge:test_dungeon");
+    /** How long a run opened by hand here stays open. */
     private static final long OPEN_TICKS = 30L * 60L * 20L;
 
     private DungeonPortalGameTests() {
@@ -80,8 +83,10 @@ public final class DungeonPortalGameTests {
         Plot plot = runOf(helper, owner);
         helper.assertValueEqual(plot.portal(), Optional.of(new PortalLink(TEST_DUNGEON,
                 GlobalPos.of(helper.getLevel().dimension(), portal))), "the run's portal");
-        helper.assertValueEqual(plot.closesAt(), OptionalLong.of(openedAt + OPEN_TICKS),
-                "the run closes after the type's 30 minutes");
+        DungeonType type = helper.getLevel().registryAccess().lookupOrThrow(DungeonRegistries.DUNGEON_TYPE)
+                .getValue(TEST_DUNGEON);
+        helper.assertValueEqual(plot.closesAt(), OptionalLong.of(openedAt + type.openTicks()),
+                "the run closes after the type's open time");
 
         use(helper, stranger, portal, key(1));
         helper.assertValueEqual(stranger.getMainHandItem().getCount(), 1, "an open portal takes no second key");
