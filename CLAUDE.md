@@ -52,7 +52,9 @@ Apotheosis for gear rarity, affixes, gems and enchanting
   26.1.2 (RLM-65, RLM-123, RLM-124). The core mod has its feature skeleton (F1), datapack registries (F2), player
   state (F3), stats (F4) with their names, a character sheet (F4b) and raised attribute caps (F4c), and the combat
   core (F5: spell schools, crit, dodge, resistances, our armor formula, combat text, the QA training dummy), and
-  hostile mobs get levels near the nearest player's, floored per realm (W1, RLM-303), scaled by curves. A new player
+  hostile mobs get levels near the nearest player's, floored per realm (W1, RLM-303), scaled by curves. The first
+  custom mobs exist (W3): the Hewn Sentinel (melee) and the Hewn Chanter (a caster that keeps its distance), from
+  `content/mobs/`, with GeckoLib placeholder models until A2's art. A new player
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits.
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell
@@ -325,6 +327,12 @@ that compiles here.
   `realmforge_qa:<group>/<method>`. Templates are generated into `qa-mod/src/generated/resources/data/
   realmforge_qa/structure/` (see `tools/realmforge_tools/generate/gametest.py`). Positions are relative to the
   template's corner: the floor of `platform_5x5` is at y = 0.
+- **GeckoLib 5** (5.5.2, the custom mobs' models) lives in `com.geckolib`, not 4.x's `software.bernie.geckolib`, and
+  extracts render state like vanilla: `GeoEntityRenderer<T, R extends EntityRenderState>`. Its models and animations
+  load from `assets/<ns>/geckolib/models/` and `geckolib/animations/`. Its interface injections (`GeoRenderState` on
+  vanilla's render states) are not visible to our compiler, so its `RenderPassInfo` hooks don't compile against
+  `LivingEntityRenderState`; turn bones in the animation JSON (molang `query.head_x_rotation`) instead. No sources
+  jar: decompile the pack's jar to read it ([architecture 14.2](docs/architecture.md#142-custom-mobs)).
 
 ## Git and branches
 

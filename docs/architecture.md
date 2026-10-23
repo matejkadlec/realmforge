@@ -369,7 +369,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 
 | `content/` | Generated | Loaded as |
 | --- | --- | --- |
-| `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/` (exists: blocks with their items, loot tables, mining tags and recipes; a block's kind picks its class, below), `effects/` (exists: status effects, [11.4](#114-status-effects)), `entities/`, `sounds/` | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
+| `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/` (exists: blocks with their items, loot tables, mining tags and recipes; a block's kind picks its class, below), `effects/` (exists: status effects, [11.4](#114-status-effects)), `mobs/` (exists: entity types of an archetype with their attributes, loot tables and placeholder GeckoLib models, [14.2](#142-custom-mobs)), `sounds/` | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
 | `races/`, `classes/`, `spells/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `realms/`, `bosses/`, `dungeons/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
 | `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template, and each room's set-piece spots with the pieces that may fill them ([15.4](#154-rooms)) | the planner ([15.3](#153-generation-pure-first-then-minecraft)); the builder's set pieces (RLM-282) |
@@ -1536,12 +1536,49 @@ levels (RLM-304, RLM-305) come later.
 
 ### 14.2 Custom mobs
 
-- Entity types are static. A small Java library of archetypes (base classes with AI goal sets, such as melee brute
-  or ranged caster) plus YAML mobs that pick an archetype, attributes, spells, model and loot. A new archetype is
-  Java; a new mob of an existing archetype is YAML.
-- Models and animations: GeckoLib ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md); *verify* its 26.1.2
-  build's API and asset paths when adding it), renderers in `client/render/`.
-- Minimap icons for Xaero's maps are generated files, no code ([ADR 0002](decisions/0002-hybrid-core-mod-and-modpack.md)).
+Built in W3 (RLM-33): `content/mobs/`, `mob/custom/` and `client/render/CustomMobRenderers`. The first two are the
+Hewn of Undervault's dungeons (D11, [lore outline](lore/outline.md)): the Hewn Sentinel (melee) and the Hewn Chanter
+(caster, with its spell Shard Song).
+
+- **Entity types are static, data picks the behaviour** (principle 2). A mob in `content/mobs/<id>.yaml` picks an
+  archetype, a Java class in `mob/custom/`: `melee` (`MeleeMob`) walks up to its target and hits it with its attack
+  damage (vanilla's `MeleeAttackGoal`); `caster` (`CasterMob`) casts its spells at its target and keeps its distance.
+  The rest is the mob's data: its name, hitbox, attributes at level 1 (health, attack damage, armor, speed, follow
+  range, knockback resistance), how it idles, its sounds, a caster's spells and distance, its loot and the colour of
+  its placeholder. A new archetype is Java; a new mob of an existing one is YAML.
+- **Generated** (`generate/mobs.py`): `GeneratedMobs`, which belongs to `mob`, registers each entity type with its
+  `CustomMobSpec` (idle, sounds, spells, distance) and gives it its attributes (`EntityAttributeCreationEvent`). Its
+  loot table is vanilla's default, `realmforge:entities/<id>`, with one pool per drop, so each drop rolls on its own;
+  its name is `entity.realmforge.<id>`; `GeneratedMobExpectations` holds what the GameTests compare.
+- **Hostile:** every custom mob is a `Monster`, so it gets a level and its scaling like every hostile mob
+  ([14.1](#141-mob-levels)), and a caster's spells grow with the level's damage multiple.
+- **AI** (research BM-6, BM-22): a custom mob targets a player that hurts it or that it sees. `idle: stroll` wanders
+  as vanilla's monsters do; `idle: guard` stands at its post, the spot where it first stood on the ground (saved with
+  the mob as `realmforge:post`), and walks back to it once it has no target (`ReturnToPostGoal`). A caster
+  (`CasterFightGoal`) moves as the pure `CasterTactics` says: it backs away from a target nearer than its
+  `keep_distance`, closes in on one beyond 80 % of its spells' reach or out of sight, and holds where it is otherwise.
+  Every 5 ticks while no cast of its runs it tries its spells in order through `SpellCaster`, which refuses one on
+  cooldown, out of range or out of sight, so the cooldowns pace it (mobs pay no cost, [11.2](#112-casting-server-authoritative)).
+  Validation lets a caster name only spells that target an enemy (`enemy`, `current_target`, `random_player`,
+  `farthest_player`) and reach farther than the distance it keeps.
+- **Light does not matter to them:** vanilla's monsters prefer dark spots (`Monster#getWalkTargetValue`), which also
+  keeps a spawner from spawning them in a lit room; a custom mob values every spot the same, so it stands in torchlit
+  dungeons.
+- **No trash loot** (principle 10): validation refuses the items of `TRASH_LOOT` (`schema/mob.py`: sticks, nuggets,
+  rotten flesh, dirt, cobblestone and the like) in a mob's loot.
+- **Models and animations: GeckoLib** 5.5.2 ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md), package
+  `com.geckolib`), a required dependency on both sides, since the entity classes are its animatables (`GeoEntity`).
+  `CustomMobRenderers` registers GeckoLib's `GeoEntityRenderer` for each mob, which reads
+  `assets/realmforge/geckolib/models/entity/<id>.geo.json`, `geckolib/animations/entity/<id>.animation.json` and
+  `textures/entity/<id>.png`. The animations carry GeckoLib's default names: `misc.idle` and `move.walk` (one of them
+  always plays, and both turn the head with the mob's look through GeckoLib's molang queries), `attack.swing` for a
+  melee hit (vanilla's arm swing) and `attack.cast` while a cast-time or channelled spell runs (`CasterMob`'s synced
+  flag). Until A2 (RLM-48) brings the art, `rf gen` writes placeholders: a statue-like humanoid that fills the
+  hitbox, those animations and a speckled stone texture in the mob's colour with lighter eyes.
+- **Neat's card** is filled only by `LivingEntityRenderer`'s extraction, which GeckoLib's renderer does not run, so
+  `client/compat/neat/NeatCard` runs it for our mobs ([19.4](#194-optional-integrations)).
+- Minimap icons for Xaero's maps are generated files, no code ([ADR 0002](decisions/0002-hybrid-core-mod-and-modpack.md));
+  not yet.
 
 ### 14.3 Bosses
 
@@ -2422,6 +2459,12 @@ its name, `Lv. 20 Zombie`, from one function, `client/compat/MobLevelLabel`:
   `RegisterRenderStateModifiersEvent` after `extractRenderState` (`EntityRenderer#createRenderState`), so ours
   replaces that line. A card without a name line keeps Neat's. Neat hides vanilla's name tag while its card shows
   (its default `name_tag_render_behavior`, `WHEN_NO_HEALTHBAR`).
+- **Neat's card above a custom mob** (W3, [14.2](#142-custom-mobs)): GeckoLib's renderer is no
+  `LivingEntityRenderer`, so Neat's mixin never fills the card's state, though Neat draws a card after any
+  renderer's `submit`. `client/compat/neat/NeatCard` runs `LivingEntityRenderer#extractRenderState` of an invisible
+  living renderer (an empty model that never draws) on the mob's render state before GeckoLib's own extraction, so
+  Neat fills the card as for any vanilla mob, and then sets the level line as above. Our renderers create it only
+  while Neat is loaded.
 - **Jade** (`compat/jade/JadeCompat`, a `@WailaPlugin` that Jade finds itself, with its client part in
   `client/compat/jade/MobLevelTooltip`): an entity component provider replaces the name line that Jade's own provider
   adds (`JadeIds.CORE_OBJECT_NAME`, priority −10100), running after it at the default priority. It is required, so
