@@ -1800,25 +1800,36 @@ id: test_dungeon
 name: {en_us: Test Dungeon}
 pool: realmforge:stone_vault          # the rooms whose sidecar lists this pool
 layout:
-  main_path: [3, 6]                   # [min, max] rooms between the entrance and the ending
-  branches: [1, 2]                    # side branches off the main path's rooms
-  branch_rooms: [1, 2]                # rooms in each branch, its dead end included
+  main_path: [26, 32]                 # [min, max] rooms between the entrance and the ending
+  branches: [6, 8]                    # side branches off the main path's rooms
+  branch_rooms: [4, 7]                # rooms in each branch, its dead end included
   ending: treasure                    # the role of the room that ends the main path: boss or treasure
+  special_gap: [3, 5]                 # plain rooms between two special ones (RLM-364); optional
+  walls:                              # a wall may close a leftover doorway instead of a dead end (RLM-364); optional
+    block: minecraft:stone_bricks
+    weight: 4
 key: realmforge:test_dungeon_key      # the item that opens a dungeon portal to it, one key per type (W4d)
-open_minutes: 30                      # how long that portal stays open (W4d)
+open_minutes: 45                      # how long that portal stays open (W4d)
 ```
 
 `rf gen` resolves the pool into the entry: each room's template, size, role, weight and connectors, and its sidecar's
-`max_per_layout`, `near_start` and `explosion_breaks` where it sets them, in room id order (`generate/dungeons.py`),
-so the game plans a layout without loading a template, and JUnit fuzzes the planner on the
-same files. Since RLM-280 a room also carries its set-piece spots ([15.4](#154-rooms)) as `set_piece_spots`, a list
+`max_per_layout`, `near_start`, `explosion_breaks` and `entry` (as the index of the connector on that side) where it
+sets them, in room id order (`generate/dungeons.py`), so the game plans a layout without loading a template, and JUnit
+fuzzes the planner on the same files. A type with `walls` gets its wall last among the rooms: a template of three by
+three blocks of the wall's block, one deep, `rf gen` writes as `realmforge:dungeon_walls/<id>`, with one connector at
+the middle of its bottom row whose jigsaw turns into the same block, and the role `wall`, which only closes leftover
+doorways ([15.3](#153-generation-pure-first-then-minecraft)). Since RLM-280 a room also carries its set-piece spots ([15.4](#154-rooms)) as `set_piece_spots`, a list
 of patterns, each the pieces that may fill it and its spots (`pos`, the footprint's lowest corner at the height the
 piece stands on; `facing`, the way the piece's front faces; `mirror`), and the entry carries `set_pieces` (each
 piece's template, processor list, weight, tags and whether it may be mirrored) and `set_piece_density` (the
 `[min, max]` patterns a room of each role fills). The game ignores them until the builder places pieces (RLM-282). Validation checks that the pool holds an entrance, rooms to pass through (two connectors, a third when
 the rules always want a branch), a room for the ending and a dead end, that every room in it has exactly one role tag,
 and that every connector of every room meets some connector of the pool, that its key is an item and no other type's
-key. The keys also form the item tag `realmforge:dungeon_key`, which the client reads to know which items a portal
+key. With a `special_gap`, the rooms to pass through and the junctions that take branches must be plain ones
+(`hallway`, `stairs`), and the pool needs a plain dead end; with `walls`, the wall's block must exist and every doorway
+of the pool must be one the wall closes: no open block beside, above or below the middle three by three blocks of a
+side connector's face (`rooms/connectors.py`, `doorway_gap`; the corners do not count, as no player passes a gap that
+only touches the doorway at a corner). The keys also form the item tag `realmforge:dungeon_key`, which the client reads to know which items a portal
 takes, as the dungeon types stay on the server. `realmforge:test_dungeon` is test content like `realmforge:test_item`,
 opened with the Test Dungeon Key, and W6 brings the real types. What later tasks add, as a sketch:
 
@@ -1833,6 +1844,15 @@ level: [8, 12]
 ```
 
 The ending is a rule of the type, so "not every dungeon ends with a boss" is just another ending type.
+
+**How big a dungeon is** (RLM-363, Matěj's playtest of 2026-10-22): a run of the test dungeon should take 20 to 30
+minutes. Its old layouts of 11.4 rooms on average (8 to 16), three in four of them fights or treasure, took about 5
+minutes, some 2. With the `special_gap` of `[3, 5]` most rooms are corridors a player crosses in seconds, and a
+special room comes every four to six rooms, so the rule for W6's types, until their playtests refine it, is **about
+three rooms per minute of play**: 60 to 90 rooms for a 20 to 30 minute run, of which the main path holds about 40 %,
+the branches about 45 % and the dead ends that close leftover doorways the rest (walls not counted). The test dungeon's
+ranges give 58 to 96 rooms, 76 on average (6.7 times the old count; JUnit asserts six to eight), 17 % of them special.
+Its portal stays open about 1.5 times the intended run, 45 minutes, so a slow run is not cut off.
 
 A theme is a vanilla processor list (`worldgen/processor_list`), so it needs no registry of our own. Its rules swap
 the blocks rooms are built from for the dungeon's look; the builder applies it when placing rooms, and room
@@ -1869,7 +1889,11 @@ Steps 1 and 2 exist since W4a (`dungeon/plan/`; `DungeonType#plan(seed)` → `Du
 - **The graph** (`RoomGraph`) is a tree in placement order: the entrance, a main path of rooms a player passes
   through (role `hallway`, `combat` or `stairs`), the ending (role `boss` or `treasure`), then the branches, each
   hanging off a different room of the main path while there are enough and ending in a dead end. Lengths and counts
-  are drawn from the rules' ranges.
+  are drawn from the rules' ranges. With a `special_gap` (RLM-364) each node is also **plain** (a hallway or stairs)
+  or **special** (a fight; at a branch's end, treasure or a fight): on the way from the entrance a special node
+  follows as many plain ones as a gap drawn from the range, the main path's last special node keeps the smallest gap
+  before the ending, which is special, a branch's dead end is special once the smallest gap lies before it, and
+  branches hang off plain rooms of the main path (the pool's junctions are mostly plain).
 - **The layout** (`DungeonPlanner`) places the nodes one by one, parent first, as a depth-first search: a room that
   fits the node's slot (by role and connector count), in a random order where a heavier room tends to come first,
   turned four ways about its origin corner, with one of its connectors taking a free connector of its parent by
@@ -1878,8 +1902,22 @@ Steps 1 and 2 exist since W4a (`dungeon/plan/`; `DungeonType#plan(seed)` → `Du
   must lie inside the plot's reach (`PlotGrid#limits`) and overlap no placed room, and a node with no such placement
   sends the search back to the node before it. Once every node has a room, each connector still free meets a free
   connector of a neighbour right in front of it (a loop) or gets a dead end (slot `cap`, role `hallway`, `combat`,
-  `stairs` or `treasure`); a connector neither closes sends the search back too. The positions and boxes come from
-  `StructureTemplate.transform`, the builder's own math.
+  `stairs` or `treasure`), or a wall where the type has one; a connector neither closes sends the search back too. The
+  positions and boxes come from `StructureTemplate.transform`, the builder's own math.
+- **Plain and special rooms** (RLM-364): a plain node takes only plain rooms, a special node special rooms first and,
+  where none fits (the pool's fights are each limited to one per layout), a plain one; a `near_start` room takes
+  either at the start. With a `special_gap` the dead ends and walls that close leftover connectors are plain, so a
+  room's free doors no longer turn into treasure rooms: the lobby keeps walls or short dead-end corridors at its sides.
+- **Entries** (RLM-362): a room with an `entry` takes the room before it only through that connector, so a lock is
+  entered from its mechanism side, and a loop closes only where no room with an entry lies on the way from either end
+  up to the room both hang from: such a loop would be a second way in, from behind.
+- **Closable doorways** (RLM-363): a placement must leave every doorway that is still free closable. The space in
+  front of it (the wall's box when the pool has a wall, else the block in front, which any room that closes it holds)
+  stays inside the limits and clear of other rooms and of the other free doorways' spaces, unless a connector there
+  takes it and can close a loop, and a room has no more connectors that no dead end or wall can take (a shaft up) than
+  rooms will hang off it, which take those first. Without these rules a room boxed a doorway in and the search only
+  found out after the last node, then backtracked through unrelated rooms: at the test dungeon's new size one seed in
+  a thousand found no layout in 64 attempts, and the slowest took almost a second.
 - **Room rules** (RLM-256): a room the layout already holds as often as its `max_per_layout` allows is no candidate
   for another node or cap, and a `near_start` room is one only where it hangs off the entrance or the first room of
   the main path (node 1, which every graph has). Stonevaults' throne room (`treasure/mooshroom_king`, a dead end the
@@ -1887,15 +1925,18 @@ Steps 1 and 2 exist since W4a (`dungeon/plan/`; `DungeonType#plan(seed)` → `Du
 - **Attempts:** an attempt that runs out of steps (20,000 placements) gives up, and the next draws a new graph from
   the same random source, up to 64; no layout in 64 attempts throws `PlanningException`. The entrance's origin
   corner is the plot's origin, so every room offset is relative to it.
-- **Cost:** on the test dungeon (23 rooms, layouts of 8 to 17 rooms) planning took 3.5 ms at the median, 24 ms at
-  the 99th percentile and 44 ms at worst over 3,000 seeds, with at most 11 attempts. It reads no world, so it can
-  move off the main thread if the portal's entry path (W4d) ever needs it; so far it runs on the server thread when a
-  key opens a portal.
+- **Cost:** on the test dungeon (a pool of 47 rooms and its wall, layouts of 58 to 96 rooms) planning took 16 ms on
+  average and 107 ms at worst over 1,000 seeds, with at most 28 attempts (RLM-363); its old layouts of 8 to 16 rooms
+  took 3.5 ms at the median and 44 ms at worst. It reads no world, so it can move off the main thread if the portal's
+  entry path (W4d) ever needs it; so far it runs on the server thread when a key opens a portal.
 
 JUnit fuzzes steps 1 and 2 over thousands of seeds, on synthetic room sets and on the generated dungeon types
 (`DungeonPlannerTest`, `PlanChecks`): every rule holds, no rooms overlap, every room is reachable from the entrance,
-no connector stays open, no room appears more often than its limit or away from the start when it belongs there, and
-the same seed gives the same layout. `ContentDungeonTypeGameTests` checks in the game
+no connector stays open, no room appears more often than its limit or away from the start when it belongs there, a
+room with an entry hangs off the room before it through that connector and nothing beyond its other connectors can
+be reached without it, special rooms keep the smallest gap and no cap is special, walls only close connectors, and the
+same seed gives the same layout. On the test dungeon it also asserts that a layout holds six to eight times the old
+11.4 rooms on average and that at most one in four rooms is special. `ContentDungeonTypeGameTests` checks in the game
 that every room's connectors are the jigsaw blocks the game reads from its template in every rotation, and
 `DungeonPlanGameTests` builds a layout of every type into a plot. `/qa dungeon plan <type> [<seed>]` names a layout's
 rooms by slot and writes a top-down map and a legend to the server log; `/qa dungeon build <type> [<seed>]` builds it
@@ -1924,8 +1965,8 @@ Rooms are generated or imported; nobody has to build one by hand
 ([ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)).
 
 - **Format:** structure NBT in `content/rooms/` with a small YAML sidecar (tags, pools, weight, the room's rules for
-  dungeons, `max_per_layout`, `near_start` and `explosion_breaks` ([15.3](#153-generation-pure-first-then-minecraft),
-  [15.5](#155-instances)), and the source of an imported room). A room joins the room pools its sidecar lists, and
+  dungeons, `max_per_layout`, `near_start`, `explosion_breaks` and `entry`
+  ([15.3](#153-generation-pure-first-then-minecraft), [15.5](#155-instances)), and the source of an imported room). A room joins the room pools its sidecar lists, and
   a dungeon type is built from one pool
   ([15.2](#152-dungeon-types)); its role tag says which slots it can take. Connectors are vanilla jigsaw blocks,
   so the same rooms work in world structures later. Rooms are the second exception to YAML-only content, after
@@ -2143,7 +2184,9 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   function of the saved plot, so a restart resumes at the saved step, and a unit whose chunk is still loading waits
   for a later tick instead of loading it on the main thread. A unit that throws (a room template that no longer
   resolves after a restart) releases a plot being built and is skipped by a closing one, and is logged, instead of
-  failing the tick on every start.
+  failing the tick on every start. A test dungeon layout of 93 placements (RLM-363; `DungeonPlanGameTests` logs its
+  `BuildReport`) took 198 units in 151 ticks, about 7.5 seconds at 20 ticks a second, and 131 ms of work: 0.6 ms per
+  room at the median, 1.4 ms on average, 14 ms at worst, the longest unit 13 ms.
 - **Chunk loading:** from opening until it is free, every chunk a plot touches (its rooms with the cleanup margin)
   is held by the NeoForge `TicketController` `realmforge:instance_plots` (registered in
   `RegisterTicketControllersEvent`, owner: the plot's origin, non-ticking). Its tickets survive restarts; its
