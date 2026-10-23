@@ -17,12 +17,14 @@ depend on it, and servers don't need it ([ADR 0048](../docs/decisions/0048-bette
   on a press of either key.
 - The secondary key follows the same rules as the primary: NeoForge's key modifiers and its conflict contexts (an
   in-game key and a GUI key may share a key).
-- In game, a key's primary key bind wins: with D as Strafe Right's key and Strafe Left's (or Advancements')
-  secondary key, D only strafes right. The secondary key acts where no primary key bind takes the key, so with L as
-  Advancements' key and JEI's Show Recipe's secondary key, L opens the advancements in game and shows recipes in the
-  inventory. Screens check keys their own way (`KeyMapping#matches`, NeoForge's `isActiveAndMatches`), so there the
-  secondary key always works: with I as Open/Close Inventory's secondary key, I closes the inventory too, and Drop,
-  Pick Block, Swap Offhand and the hotbar keys work on a hovered slot with their secondary keys.
+- In game, a key's primary key bind wins: with D as Strafe Right's key and Strafe Left's (or Advancements') secondary
+  key, D only strafes right. The secondary key acts where no primary key bind takes the key, so with L as Advancements'
+  key and JEI's Show Recipe's secondary key, L opens the advancements in game and shows recipes in the inventory.
+  Vanilla's debug keys take no key: they act only with F3 held, so Open Chat's secondary key B opens the chat, and
+  F3 + B still only shows hitboxes. Screens check keys their own way (`KeyMapping#matches`, NeoForge's
+  `isActiveAndMatches`), so there the secondary key always works: with I as Open/Close Inventory's secondary key, I
+  closes the inventory too, and Drop, Pick Block, Swap Offhand and the hotbar keys work on a hovered slot with their
+  secondary keys.
 - A key bind's Reset returns both keys to their defaults; a secondary key's default is unbound. "Reset Keys" resets
   every secondary key too.
 - Conflicts show as on the primary column: `[ key ]` in yellow, a yellow stripe and a tooltip naming the other key
@@ -76,8 +78,9 @@ From the repository root ([CLAUDE.md](../CLAUDE.md#commands) has the setup):
 ./gradlew runClient                        # the dev client loads it next to Realmforge's mods
 ```
 
-The JUnit tests cover the file format, the key capture, the merge of both keys, the primary key winning a shared key,
-a secondary key taking its own primary's key, and the conflicts with secondary keys.
+The JUnit tests cover the file format, the key capture, the merge of both keys (NeoForge's key check of the container
+screens included), the primary key winning a shared key (debug keys aside), a secondary key taking its own primary's
+key, and the conflicts with secondary keys.
 
 ## Releases
 

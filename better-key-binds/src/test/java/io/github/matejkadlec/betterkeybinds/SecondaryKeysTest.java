@@ -177,6 +177,25 @@ class SecondaryKeysTest {
     }
 
     @Test
+    void aDebugKeyTakesNoKeyFromASecondaryKey() {
+        // Vanilla's debug keys sit on plain keys (F3 + B shows hitboxes) but act only while F3 is held.
+        KeyMapping showHitboxes = new KeyMapping("test.key." + NAMES.incrementAndGet(), InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_B, KeyMapping.Category.DEBUG);
+        KeyMapping chat = keyMapping(GLFW.GLFW_KEY_ENTER);
+        SecondaryKeys.bind(chat, KeyModifier.NONE, key(GLFW.GLFW_KEY_B));
+        SecondaryKeyMapping chatSecondary = SecondaryKeys.of(chat);
+
+        assertEquals(List.of(showHitboxes, chatSecondary),
+                SecondaryKeys.primaryKeysWin(List.of(showHitboxes, chatSecondary), false), "B opens the chat");
+        assertFalse(SecondaryKeys.primaryKeyTakes(chatSecondary, new KeyMapping[] {chat, showHitboxes}));
+
+        KeyMapping strafeLeft = keyMapping(GLFW.GLFW_KEY_B);
+        assertEquals(List.of(showHitboxes, strafeLeft),
+                SecondaryKeys.primaryKeysWin(List.of(showHitboxes, strafeLeft, chatSecondary), false),
+                "a real primary key bind on B still wins");
+    }
+
+    @Test
     void unbindingClearsKeyAndModifier() {
         KeyMapping drop = keyMapping(GLFW.GLFW_KEY_Q);
         SecondaryKeys.bind(drop, KeyModifier.CONTROL, key(GLFW.GLFW_KEY_D));

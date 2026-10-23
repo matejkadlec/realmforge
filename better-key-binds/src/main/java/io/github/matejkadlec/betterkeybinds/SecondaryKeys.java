@@ -142,17 +142,28 @@ public final class SecondaryKeys {
     /**
      * In game, a key's primary key binds win: the key mappings vanilla's lookup found for a pressed key (it already
      * left out those whose conflict context or modifier is not active) reach the secondary keys among them only when
-     * no primary key bind is among them. D as Strafe Right's key and Strafe Left's secondary key strafes right. Screens
-     * check keys through {@code matches} and {@code isActiveAndMatches} instead, which this leaves alone: L as
-     * Advancements' key and JEI's Show Recipe's secondary key still shows recipes in the inventory. A release reaches
-     * them all, so no key stays held.
+     * no primary key bind that {@linkplain #takesKey takes keys} is among them. D as Strafe Right's key and Strafe
+     * Left's secondary key strafes right. Screens check keys through {@code matches} and {@code isActiveAndMatches}
+     * instead, which this leaves alone: L as Advancements' key and JEI's Show Recipe's secondary key still shows
+     * recipes in the inventory. A release reaches them all, so no key stays held.
      */
     public static List<KeyMapping> primaryKeysWin(List<KeyMapping> found, boolean releasing) {
-        if (releasing || found.stream().allMatch(SecondaryKeyMapping.class::isInstance)
+        if (releasing || found.stream().noneMatch(SecondaryKeys::takesKey)
                 || found.stream().noneMatch(SecondaryKeyMapping.class::isInstance)) {
             return found;
         }
         return found.stream().filter(keyMapping -> !(keyMapping instanceof SecondaryKeyMapping)).toList();
+    }
+
+    /**
+     * Whether a key mapping is a primary key bind that takes its key from other key binds' secondary keys. Vanilla's
+     * debug keys do not: they sit on plain keys (F3 + T reloads the resource packs, F3 + B shows hitboxes), but act
+     * only while the debug modifier is held, and the keyboard handler deals with them before the key lookup: a
+     * secondary key on B opens what it should, and F3 + B still shows hitboxes alone.
+     */
+    private static boolean takesKey(KeyMapping keyMapping) {
+        return !(keyMapping instanceof SecondaryKeyMapping)
+                && !KeyMapping.Category.DEBUG.equals(keyMapping.getCategory());
     }
 
     /**
@@ -162,7 +173,7 @@ public final class SecondaryKeys {
      */
     public static boolean primaryKeyTakes(SecondaryKeyMapping secondary, KeyMapping[] keyMappings) {
         for (KeyMapping other : keyMappings) {
-            if (other != secondary.primary() && !(other instanceof SecondaryKeyMapping)
+            if (other != secondary.primary() && takesKey(other)
                     && ownKeyIsActiveAndMatches(other, secondary.getKey())) {
                 return true;
             }
