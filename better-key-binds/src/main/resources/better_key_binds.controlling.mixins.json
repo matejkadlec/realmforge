@@ -4,8 +4,10 @@
   "package": "io.github.matejkadlec.betterkeybinds.mixin.controlling",
   "compatibilityLevel": "JAVA_25",
   "client": [
+    "ControllingCategoryEntryMixin",
     "ControllingConstantsMixin",
     "ControllingDisplayModeMixin",
+    "ControllingFreeKeysListMixin",
     "ControllingKeyEntryMixin"
   ],
   "injectors": {

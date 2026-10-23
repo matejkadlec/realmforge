@@ -30,5 +30,6 @@ public final class BetterKeyBinds {
                 () -> SecondaryKeys.load(FMLPaths.CONFIGDIR.get(), Minecraft.getInstance().options.keyMappings)));
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> SecondaryKeys.saveIfDirty());
         SecondaryKeyCapture.register(NeoForge.EVENT_BUS);
+        KeyBindsScreenFocus.register(NeoForge.EVENT_BUS);
     }
 }
