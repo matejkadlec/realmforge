@@ -147,8 +147,11 @@ bar's of RLM-25 ([ADR 0046](../docs/decisions/0046-spell-bar-default-keys-amend-
   keys (C and X) and Social Interactions (P; the pause menu's Player Reporting
   still opens it) go unbound, and Apotheosis's Open World Tier Select moves from
   Ctrl+T to Alt+T, so holding Ctrl to sprint does not steal T;
-- Open Quests on `;` (the key left of 1 on a Czech keyboard), Tom's Simple
-  Storage's Open Terminal on V (RLM-25), Just Zoom's Zoom on Z (Czech QWERTZ);
+- Open Quests on `;` (the key left of 1 on a Czech keyboard), and Inventory
+  Sorting's Sort there too (RLM-308): it sorts while an inventory is open, Open
+  Quests works while none is; Inventory Sorting's Open Settings is unbound (its
+  default, P, is the spellbook's). Tom's Simple Storage's Open Terminal on V
+  (RLM-25), Just Zoom's Zoom on Z (Czech QWERTZ);
 - Xaero's Minimap (2026-10-20): Minimap Settings on `ú` (right of P on a Czech
   keyboard), Zoom In and Zoom Out Minimap on the numeric keypad's + and -, New
   Waypoint on N, Open Waypoint Screen on `,` (right of M); our Dark Vision key
@@ -168,7 +171,9 @@ what differs from the defaults: a structure is switched off by an entry `{"name"
 true}` under `structures`, and M2 places other mods' structures in their realms the same way (a structure's
 `biomes`, its `structure_sets` and their spacing). Structurify writes the file only when it is missing, and its config
 screen (Mods, Structurify) shows every option. With no stronghold, no eye of ender finds one and the End stays
-unreachable from M1. `StrongholdGameTests` checks that `/locate` finds no stronghold while villages stay.
+unreachable from M1. The GameTest world generates no structures at all, so the pack boot's dedicated server checked
+it on 2026-10-23 (RLM-310): `/locate structure minecraft:stronghold` answers that Structurify's config disables the
+structure, and `/locate structure minecraft:village_plains` finds one.
 
 **Traveler's Titles** (`config/travelerstitles-neoforge-26_1.toml`, client, Traveler's Titles 6.1.0, RLM-308):
 `"Blacklisted Dimensions" = "[realmforge:stone, realmforge:instances]"`. A realm shows its own arrival title (W2b), so

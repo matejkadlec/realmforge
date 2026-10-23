@@ -21,6 +21,12 @@ key_key.apotheosis.open_world_tier_select:key.keyboard.t:ALT
 # FTB Quests: Open Quests on ; (Czech QWERTZ).
 key_key.ftbquests.keys.quests:key.keyboard.grave.accent
 
+# Inventory Sorting: Sort on ; too, beside Open Quests: it sorts while an inventory is open, Open Quests opens the book
+# while none is (Matěj, 2026-10-19, RLM-308). Its default, P, is the spellbook's; so was Open Settings', now unbound
+# (its settings stay in the mod list).
+key_inventorysorter.key.sort:key.keyboard.grave.accent
+key_inventorysorter.key.config:key.keyboard.unknown
+
 # Tom's Simple Storage: Open Terminal on V (RLM-25).
 key_key.toms_storage.open_terminal:key.keyboard.v
 

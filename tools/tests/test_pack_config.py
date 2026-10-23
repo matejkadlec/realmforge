@@ -24,13 +24,19 @@ def blacklisted_dimensions() -> set[str]:
     """Traveler's Titles' dimension blacklist: a string that holds a list, ``"[a, b]"``."""
     config = tomllib.loads(TRAVELERS_TITLES.read_text(encoding="utf-8"))
     listed = config["Traveler's Titles"]["Dimension Titles"]["Blacklisted Dimensions"]
-    return {entry.strip() for entry in listed.strip().removeprefix("[").removesuffix("]").split(",") if entry.strip()}
+    return {
+        entry.strip()
+        for entry in listed.strip().removeprefix("[").removesuffix("]").split(",")
+        if entry.strip()
+    }
 
 
 def realm_dimensions() -> set[str]:
     """The dimensions of our realms (Overworld's entry is no realm and shows no title of ours)."""
     yaml = YAML(typ="safe")
-    dimensions = {yaml.load(path.read_text(encoding="utf-8"))["dimension"] for path in REALMS_DIR.glob("*.yaml")}
+    dimensions = {
+        yaml.load(path.read_text(encoding="utf-8"))["dimension"] for path in REALMS_DIR.glob("*.yaml")
+    }
     return dimensions - {"minecraft:overworld"}
 
 
@@ -45,7 +51,9 @@ def test_every_realm_shows_only_its_own_title() -> None:
 
 def test_the_dungeon_instances_show_no_title() -> None:
     instances = {f"realmforge:{path.stem}" for path in MOD_DIMENSIONS_DIR.glob("*.json")}
-    assert instances == {"realmforge:instances"}, "a dimension of the core mod's own data needs a decision here"
+    assert instances == {"realmforge:instances"}, (
+        "a dimension of the core mod's own data needs a decision here"
+    )
     assert instances <= blacklisted_dimensions()
 
 
