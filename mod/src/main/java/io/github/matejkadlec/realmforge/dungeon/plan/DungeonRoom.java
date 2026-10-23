@@ -25,9 +25,12 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
  * @param maxPerLayout the most times one layout holds it, if limited (RLM-256)
  * @param nearStart whether it may only hang off the entrance or the first room of the main path (RLM-256)
  * @param explosionBreaks the blocks an explosion inside it may break in an instance (RLM-257)
+ * @param entry the connector it is always entered through, if it has a way in (a lock's mechanism side, RLM-362): the
+ *     planner attaches it to the room before it through this one, and no loop leads into it from another side
  */
 public record DungeonRoom(Identifier template, Vec3i size, RoomRole role, int weight, List<Connector> connectors,
-        Optional<Integer> maxPerLayout, boolean nearStart, List<Identifier> explosionBreaks) {
+        Optional<Integer> maxPerLayout, boolean nearStart, List<Identifier> explosionBreaks,
+        Optional<Integer> entry) {
     /** The most a structure block saves per axis, which room validation allows. */
     public static final int MAX_SIZE = 48;
 
@@ -40,7 +43,8 @@ public record DungeonRoom(Identifier template, Vec3i size, RoomRole role, int we
                     Codec.intRange(1, 16).optionalFieldOf("max_per_layout").forGetter(DungeonRoom::maxPerLayout),
                     Codec.BOOL.optionalFieldOf("near_start", false).forGetter(DungeonRoom::nearStart),
                     Identifier.CODEC.listOf().optionalFieldOf("explosion_breaks", List.of())
-                            .forGetter(DungeonRoom::explosionBreaks))
+                            .forGetter(DungeonRoom::explosionBreaks),
+                    Codec.intRange(0, 63).optionalFieldOf("entry").forGetter(DungeonRoom::entry))
             .apply(instance, DungeonRoom::new)).validate(DungeonRoom::validate);
 
     public DungeonRoom {
@@ -48,9 +52,9 @@ public record DungeonRoom(Identifier template, Vec3i size, RoomRole role, int we
         explosionBreaks = List.copyOf(explosionBreaks);
     }
 
-    /** A room without limits on where and how often it goes, whose explosions break nothing. */
+    /** A room without limits on where, how often and from which side it goes, whose explosions break nothing. */
     public DungeonRoom(Identifier template, Vec3i size, RoomRole role, int weight, List<Connector> connectors) {
-        this(template, size, role, weight, connectors, Optional.empty(), false, List.of());
+        this(template, size, role, weight, connectors, Optional.empty(), false, List.of(), Optional.empty());
     }
 
     /** Whether it has one connector: it ends a branch, or closes a connector nothing else takes. */
@@ -80,6 +84,14 @@ public record DungeonRoom(Identifier template, Vec3i size, RoomRole role, int we
                 return DataResult.error(() -> room.template + ": connector at " + pos.toShortString()
                         + " lies outside the room");
             }
+        }
+        if (room.entry.isPresent() && room.entry.get() >= room.connectors.size()) {
+            return DataResult.error(() -> room.template + ": its entry is connector " + room.entry.get() + " of "
+                    + room.connectors.size());
+        }
+        if (room.role == RoomRole.WALL && !room.deadEnd()) {
+            return DataResult.error(() -> room.template + ": a wall has one connector, not "
+                    + room.connectors.size());
         }
         return DataResult.success(room);
     }

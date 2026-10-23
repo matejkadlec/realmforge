@@ -15,6 +15,7 @@ import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
 import io.github.matejkadlec.realmforge.dungeon.instance.Plot;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonPlan;
 import io.github.matejkadlec.realmforge.dungeon.plan.PlanningException;
+import io.github.matejkadlec.realmforge.dungeon.plan.RoomRole;
 import io.github.matejkadlec.realmforge.dungeon.plan.Slot;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.dungeon.LayoutMap;
@@ -151,8 +152,11 @@ final class DungeonCommands {
     /** "14 rooms: main path 5, 2 branches (3 rooms), 4 caps". */
     static String summary(DungeonPlan plan) {
         BiFunction<Slot, Slot, Long> count = (first, second) -> plan.count(first) + plan.count(second);
-        return String.format(Locale.ROOT, "%d rooms: main path %d, %d branches (%d rooms), %d caps",
-                plan.rooms().size(), plan.count(Slot.PATH), plan.count(Slot.BRANCH_END),
-                count.apply(Slot.BRANCH, Slot.BRANCH_END), plan.count(Slot.CAP));
+        long walls = plan.rooms().stream().filter(room -> room.room().role() == RoomRole.WALL).count();
+        long special = plan.rooms().stream().filter(room -> room.room().role().special()).count();
+        return String.format(Locale.ROOT,
+                "%d rooms (%d special): main path %d, %d branches (%d rooms), %d dead ends and %d walls as caps",
+                plan.rooms().size() - walls, special, plan.count(Slot.PATH), plan.count(Slot.BRANCH_END),
+                count.apply(Slot.BRANCH, Slot.BRANCH_END), plan.count(Slot.CAP) - walls, walls);
     }
 }

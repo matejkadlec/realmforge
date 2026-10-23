@@ -8,6 +8,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.InclusiveRange;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -88,20 +89,57 @@ final class PlanChecks {
             }
         }
 
-        boolean[] reached = new boolean[rooms.size()];
-        Deque<Integer> queue = new ArrayDeque<>(List.of(0));
-        reached[0] = true;
-        while (!queue.isEmpty()) {
-            for (int next : neighbours.get(queue.poll())) {
-                if (!reached[next]) {
-                    reached[next] = true;
-                    queue.add(next);
-                }
-            }
-        }
+        boolean[] reached = reached(neighbours, -1);
         for (int i = 0; i < rooms.size(); i++) {
             assertTrue(reached[i], seed + "room " + i + " cannot be reached from the entrance");
         }
+
+        // RLM-362: a room with an entry hangs off the room before it through that connector, and without it nothing
+        // beyond its other connectors can be reached from the entrance: no loop leads in from another side.
+        for (int i = 1; i < rooms.size(); i++) {
+            Optional<Integer> entry = rooms.get(i).room().entry();
+            if (entry.isEmpty()) {
+                continue;
+            }
+            String where = seed + "room " + i + " (" + rooms.get(i).room().template() + ")";
+            boolean[] without = reached(neighbours, i);
+            boolean enteredThroughEntry = false;
+            for (RoomLink link : plan.links()) {
+                boolean first = link.room() == i;
+                if (!first && link.otherRoom() != i) {
+                    continue;
+                }
+                int connector = first ? link.connector() : link.otherConnector();
+                int other = first ? link.otherRoom() : link.room();
+                if (connector == entry.get()) {
+                    enteredThroughEntry = other == parent[i];
+                } else {
+                    assertFalse(without[other], where + " can be entered through its connector " + connector
+                            + " from room " + other + ", not only through its entry " + entry.get());
+                }
+            }
+            assertTrue(enteredThroughEntry, where + " hangs off room " + parent[i] + " through its entry");
+        }
+
+        // RLM-364: special rooms keep the gap on the way from the entrance, and caps are plain rooms or walls.
+        rules.specialGap().ifPresent(gap -> {
+            long mainPath = plan.count(Slot.PATH);
+            for (int i = 1; i < rooms.size(); i++) {
+                PlannedRoom room = rooms.get(i);
+                if (!spaced(room)) {
+                    continue;
+                }
+                String where = seed + "room " + i + " (" + room.slot().label() + ", " + room.room().template() + ")";
+                assertTrue(room.slot() != Slot.CAP, where + " closes a connector, which takes no special room");
+                int plain = 0;
+                for (int up = parent[i]; up > 0 && !spaced(rooms.get(up)); up = parent[up]) {
+                    plain++;
+                }
+                boolean shortMainPath = room.slot() == Slot.ENDING && mainPath < gap.minInclusive();
+                assertTrue(plain >= gap.minInclusive() || shortMainPath,
+                        where + " follows only " + plain + " plain rooms after the last special one");
+            }
+        });
 
         for (int i = 0; i < rooms.size(); i++) {
             Slot slot = rooms.get(i).slot();
@@ -120,6 +158,27 @@ final class PlanChecks {
         }
     }
 
+    /** Which rooms the entrance reaches over the links, without passing room {@code skipped} ({@code -1}: none). */
+    private static boolean[] reached(List<List<Integer>> neighbours, int skipped) {
+        boolean[] reached = new boolean[neighbours.size()];
+        Deque<Integer> queue = new ArrayDeque<>(List.of(0));
+        reached[0] = true;
+        while (!queue.isEmpty()) {
+            for (int next : neighbours.get(queue.poll())) {
+                if (!reached[next] && next != skipped) {
+                    reached[next] = true;
+                    queue.add(next);
+                }
+            }
+        }
+        return reached;
+    }
+
+    /** A special room that the gap rule spaces out: a {@code near_start} room is placed by its own rule (RLM-256). */
+    private static boolean spaced(PlannedRoom room) {
+        return room.room().role().special() && !room.room().nearStart();
+    }
+
     /** How many rooms of {@code slot} lead from room {@code from} back towards the entrance without a break. */
     private static int chain(List<PlannedRoom> rooms, int[] parent, int from, Slot slot) {
         int count = 0;
@@ -135,7 +194,8 @@ final class PlanChecks {
             case ENTRANCE -> room.role() == RoomRole.ENTRANCE;
             case PATH, BRANCH -> room.role().passesThrough();
             case ENDING -> room.role() == rules.ending();
-            case BRANCH_END, CAP -> room.role().closesBranches() && room.deadEnd();
+            case BRANCH_END -> room.role().closesBranches() && room.deadEnd();
+            case CAP -> (room.role().closesBranches() || room.role() == RoomRole.WALL) && room.deadEnd();
         };
     }
 

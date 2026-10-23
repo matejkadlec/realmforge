@@ -819,7 +819,7 @@ def test_reimport_keeps_pools_tags_weight_and_room_rules(repo: RepoPaths, tmp_pa
         .replace('tags:\n  - "hallway"\n  - "dead_end"', "tags: [hallway]")
         .replace(
             "weight: 1",
-            "weight: 3\nmax_per_layout: 1\nnear_start: true\nexplosion_breaks: [minecraft:gravel]",
+            "weight: 3\nmax_per_layout: 1\nnear_start: true\nexplosion_breaks: [minecraft:gravel]\nentry: east",
         ),
         encoding="utf-8",
     )
@@ -831,11 +831,17 @@ def test_reimport_keeps_pools_tags_weight_and_room_rules(repo: RepoPaths, tmp_pa
         ["hallway"],
         3,
     )
-    assert (room.model.max_per_layout, room.model.near_start, room.model.explosion_breaks) == (
+    assert (
+        room.model.max_per_layout,
+        room.model.near_start,
+        room.model.explosion_breaks,
+        room.model.entry,
+    ) == (
         1,
         True,
         ["minecraft:gravel"],
-    ), "how dungeons treat the room survives a re-import (RLM-256, RLM-257)"
+        "east",
+    ), "how dungeons treat the room survives a re-import (RLM-256, RLM-257, RLM-362)"
     written = sidecar.read_text(encoding="utf-8")
     importer.import_rooms([source], target, RULES, load_vanilla(repo), repo)
     assert sidecar.read_text(encoding="utf-8") == written

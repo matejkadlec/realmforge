@@ -64,12 +64,36 @@ class DungeonPlannerTest {
     private static final DungeonRoom LANDING = room("landing", RoomRole.HALLWAY, 9, 6, 9,
             new Connector(new BlockPos(4, 5, 4), Direction.UP, Direction.NORTH, SHAFT, SHAFT, JointType.ALIGNED),
             door(4, 1, 8, Direction.SOUTH), door(8, 1, 4, Direction.EAST));
+    /** A lock entered from its north side only, where its mechanism is (RLM-362). */
+    private static final DungeonRoom LOCK = new DungeonRoom(Identifier.parse("realmforge:rooms/test/lock"),
+            new Vec3i(7, 5, 11), RoomRole.COMBAT, 3, List.of(door(3, 1, 0, Direction.NORTH),
+                    door(3, 1, 10, Direction.SOUTH)), Optional.empty(), false, List.of(), Optional.of(0));
+    /** A plug that closes a doorway, as {@code rf gen} makes it from a dungeon type's {@code walls} (RLM-364). */
+    private static final DungeonRoom WALL = room("wall", RoomRole.WALL, 3, 3, 1, door(1, 0, 0, Direction.NORTH));
+    private static final DungeonRoom HALL_CROSSING = room("hall_crossing", RoomRole.HALLWAY, 9, 5, 9,
+            door(4, 1, 0, Direction.NORTH), door(4, 1, 8, Direction.SOUTH), door(0, 1, 4, Direction.WEST),
+            door(8, 1, 4, Direction.EAST));
+    private static final DungeonRoom HALL_JUNCTION = room("hall_junction", RoomRole.HALLWAY, 11, 6, 9,
+            door(5, 1, 0, Direction.NORTH), door(0, 1, 4, Direction.WEST), door(10, 1, 4, Direction.EAST));
+    private static final DungeonRoom FIGHT = room("fight", RoomRole.COMBAT, 9, 6, 13,
+            door(4, 1, 0, Direction.NORTH), door(4, 1, 12, Direction.SOUTH));
 
     private static final List<DungeonRoom> FLAT = List.of(ENTRANCE, CORRIDOR, CURVE, CROSSING, JUNCTION, DEAD_END,
             VAULT, LAIR);
     private static final List<DungeonRoom> WITH_SHAFTS = List.of(ENTRANCE, CORRIDOR, CROSSING, DEAD_END, VAULT, LAIR,
             SHAFT_ROOM, LANDING);
+    /** Plain hallways and special rooms apart, with walls, for the special gap (RLM-364). */
+    private static final List<DungeonRoom> SPACED = List.of(ENTRANCE, CORRIDOR, CURVE, HALL_CROSSING, HALL_JUNCTION,
+            DEAD_END, FIGHT, LOCK, VAULT, LAIR, WALL);
     private static final LayoutRules RULES = rules(3, 8, 0, 4, 1, 3, RoomRole.BOSS);
+    private static final LayoutRules SPACED_RULES = new LayoutRules(new InclusiveRange<>(8, 16),
+            new InclusiveRange<>(2, 5), new InclusiveRange<>(2, 5), RoomRole.BOSS,
+            Optional.of(new InclusiveRange<>(3, 5)));
+    /**
+     * The test dungeon's mean room count over {@link #SEEDS} seeds before RLM-363 (layouts of 8 to 16 rooms, walls
+     * not counted), measured on 2026-10-23: a run is to be six to eight times as big.
+     */
+    private static final double ROOMS_BEFORE_RLM_363 = 11.36;
 
     @Test
     void sameSeedGivesTheSameLayout() {
@@ -134,7 +158,8 @@ class DungeonPlannerTest {
     @Test
     void aRoomKeepsItsLimitAndItsPlaceAtTheStart() {
         DungeonRoom throne = new DungeonRoom(Identifier.parse("realmforge:rooms/test/throne"), new Vec3i(9, 6, 9),
-                RoomRole.TREASURE, 5, List.of(door(4, 1, 0, Direction.NORTH)), Optional.of(1), true, List.of());
+                RoomRole.TREASURE, 5, List.of(door(4, 1, 0, Direction.NORTH)), Optional.of(1), true, List.of(),
+                Optional.empty());
         List<DungeonRoom> rooms = List.of(ENTRANCE, CORRIDOR, CURVE, CROSSING, JUNCTION, DEAD_END, VAULT, LAIR, throne);
         int with = 0;
         for (long seed = 0; seed < SEEDS; seed++) {
@@ -143,6 +168,84 @@ class DungeonPlannerTest {
             with += plan.rooms().stream().anyMatch(room -> room.room().equals(throne)) ? 1 : 0;
         }
         assertTrue(with > SEEDS / 10, "the throne room turned up in " + with + " of " + SEEDS + " layouts");
+    }
+
+    /**
+     * RLM-362: a lock is always entered through its mechanism side, also where crossings close loops around it
+     * ({@link PlanChecks}), and loops still close elsewhere.
+     */
+    @Test
+    void aRoomWithAnEntryIsEnteredThroughIt() {
+        List<DungeonRoom> rooms = List.of(ENTRANCE, CORRIDOR, CURVE, CROSSING, JUNCTION, DEAD_END, VAULT, LAIR, LOCK);
+        int locks = 0;
+        int locksWithLoops = 0;
+        for (long seed = 0; seed < SEEDS; seed++) {
+            DungeonPlan plan = plan(rooms, RULES, seed);
+            PlanChecks.assertValid(plan, rooms, RULES, PlotGrid.limits());
+            boolean lock = plan.rooms().stream().anyMatch(room -> room.room().equals(LOCK));
+            locks += lock ? 1 : 0;
+            locksWithLoops += lock && plan.links().size() > plan.rooms().size() - 1 ? 1 : 0;
+        }
+        assertTrue(locks > SEEDS / 2, "the lock turned up in " + locks + " of " + SEEDS + " layouts");
+        assertTrue(locksWithLoops > 0, "no layout with a lock closed a loop");
+    }
+
+    /**
+     * RLM-364: with a special gap, three to five plain rooms lie between two special ones ({@link PlanChecks}),
+     * so special rooms are at most one in four, and walls close connectors where no dead end has to.
+     */
+    @Test
+    void specialRoomsKeepTheirGap() {
+        long rooms = 0;
+        long special = 0;
+        long walls = 0;
+        for (long seed = 0; seed < SEEDS; seed++) {
+            DungeonPlan plan = plan(SPACED, SPACED_RULES, seed);
+            PlanChecks.assertValid(plan, SPACED, SPACED_RULES, PlotGrid.limits());
+            rooms += rooms(plan);
+            special += plan.rooms().stream().filter(room -> room.room().role().special()).count();
+            walls += plan.rooms().stream().filter(room -> room.room().equals(WALL)).count();
+        }
+        assertTrue(special * 4 <= rooms, special + " of " + rooms + " rooms are special");
+        assertTrue(special * 10 > rooms, "only " + special + " of " + rooms + " rooms are special");
+        assertTrue(walls > SEEDS, "walls closed only " + walls + " connectors in " + SEEDS + " layouts");
+    }
+
+    /** RLM-364: a wall closes what no dead end can, and never ends a branch. */
+    @Test
+    void wallsCloseConnectorsNoDeadEndTakes() {
+        List<DungeonRoom> rooms = List.of(ENTRANCE, CORRIDOR, CROSSING, VAULT, LAIR, WALL);
+        LayoutRules rules = rules(2, 6, 1, 3, 1, 3, RoomRole.BOSS);
+        for (long seed = 0; seed < 500; seed++) {
+            DungeonPlan plan = plan(rooms, rules, seed);
+            PlanChecks.assertValid(plan, rooms, rules, PlotGrid.limits());
+            for (PlannedRoom room : plan.rooms()) {
+                assertTrue(room.room() != WALL || room.slot() == Slot.CAP, "seed " + seed + ": a wall is a cap");
+            }
+        }
+        assertTrue(plan(List.of(ENTRANCE, CROSSING, LAIR, WALL), rules(2, 3, 0, 0, 1, 1, RoomRole.BOSS), 7)
+                .rooms().stream().anyMatch(room -> room.room().equals(WALL)), "walls close the crossings' doors");
+    }
+
+    /**
+     * RLM-363 and RLM-364 on the generated test dungeon: a run is six to eight times as big as before, and special
+     * rooms are at most one in four.
+     */
+    @Test
+    void theTestDungeonIsBigAndMostlyCorridors() throws IOException {
+        DungeonType type = generated("test_dungeon");
+        int seeds = 1000;
+        long rooms = 0;
+        long special = 0;
+        for (long seed = 0; seed < seeds; seed++) {
+            DungeonPlan plan = type.plan(seed);
+            rooms += rooms(plan);
+            special += plan.rooms().stream().filter(room -> room.room().role().special()).count();
+        }
+        double mean = rooms / (double) seeds;
+        assertTrue(mean >= 6 * ROOMS_BEFORE_RLM_363 && mean <= 8 * ROOMS_BEFORE_RLM_363,
+                "a layout holds " + mean + " rooms on average, " + mean / ROOMS_BEFORE_RLM_363 + " times as many");
+        assertTrue(special * 4 <= rooms, special + " of " + rooms + " rooms are special");
     }
 
     /** An arriving player looks at the entrance's connector to the next room of the main path (W4b). */
@@ -252,6 +355,11 @@ class DungeonPlannerTest {
         for (long seed = 0; seed < SEEDS; seed++) {
             PlanChecks.assertValid(DungeonPlanner.plan(rooms, rules, seed, limits), rooms, rules, limits);
         }
+    }
+
+    /** The rooms of a layout, its walls not counted. */
+    private static long rooms(DungeonPlan plan) {
+        return plan.rooms().stream().filter(room -> room.room().role() != RoomRole.WALL).count();
     }
 
     private static DungeonPlan plan(List<DungeonRoom> rooms, LayoutRules rules, long seed) {

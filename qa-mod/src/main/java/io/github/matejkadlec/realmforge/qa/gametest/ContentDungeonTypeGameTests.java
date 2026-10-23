@@ -59,6 +59,9 @@ public final class ContentDungeonTypeGameTests {
                             expected.branchesMax(), expected.branchRoomsMin(), expected.branchRoomsMax()),
                     expected.id() + " layout ranges");
             helper.assertValueEqual(layout.ending().getSerializedName(), expected.ending(), expected.id() + " ending");
+            helper.assertValueEqual(layout.specialGap().map(gap -> List.of(gap.minInclusive(), gap.maxInclusive()))
+                    .orElse(List.of(0, 0)), List.of(expected.specialGapMin(), expected.specialGapMax()),
+                    expected.id() + " special gap");
             helper.assertValueEqual(type.key().toString(), expected.key(), expected.id() + " key");
             helper.assertValueEqual(type.openMinutes(), expected.openMinutes(), expected.id() + " open minutes");
             helper.assertTrue(BuiltInRegistries.ITEM.getValue(type.key()).builtInRegistryHolder().is(DungeonType.KEYS),
@@ -121,7 +124,7 @@ public final class ContentDungeonTypeGameTests {
         return new RoomExpectation(room.template().toString(), room.size().getX(), room.size().getY(),
                 room.size().getZ(), room.role().getSerializedName(), room.weight(), connectors,
                 room.maxPerLayout().orElse(0), room.nearStart(),
-                room.explosionBreaks().stream().map(Identifier::toString).toList());
+                room.explosionBreaks().stream().map(Identifier::toString).toList(), room.entry().orElse(-1));
     }
 
     private static String describe(StructureTemplate.JigsawBlockInfo jigsaw) {
