@@ -29,6 +29,9 @@ texts:
   # A Scroll of Oblivion used with no point spent: nothing happens, and the item is kept.
   stat_points_none_spent:
     en_us: You have no spent stat points to unlearn.
+  # An item refused in combat (the scrolls, RLM-348): used within 10 s of the last hit dealt or taken, it is kept.
+  cannot_use_in_combat:
+    en_us: You can't use this in combat.
   # The level fell below what the spent points need (a command, a revoked chapter), so they all return (%1$s the
   # unspent points now).
   stat_points_returned:

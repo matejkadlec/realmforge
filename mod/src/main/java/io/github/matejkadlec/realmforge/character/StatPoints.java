@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.character;
 
 import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.combat.InCombat;
 import io.github.matejkadlec.realmforge.core.Curve;
 import io.github.matejkadlec.realmforge.generated.GeneratedCurves;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
@@ -215,7 +216,8 @@ public final class StatPoints {
 
     /**
      * Right-clicking an item of {@link #UNLEARN_ITEMS}: on both sides, so the client swings the arm only when points
-     * come back (the character attachment is synced); the server returns them, uses the item up and says so.
+     * come back (the character and in-combat attachments are synced); the server returns them, uses the item up and
+     * says so. In combat ({@link InCombat}, RLM-348) the scroll is refused and kept, with a message.
      */
     private static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
         ItemStack stack = event.getItemStack();
@@ -223,6 +225,14 @@ public final class StatPoints {
             return;
         }
         Player player = event.getEntity();
+        if (InCombat.isInCombat(player)) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.FAIL);
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.sendSystemMessage(Component.translatable(GeneratedTexts.MESSAGE_CANNOT_USE_IN_COMBAT));
+            }
+            return;
+        }
         boolean spent = Characters.data(player).spentStatPoints() > 0;
         event.setCanceled(true);
         event.setCancellationResult(spent ? InteractionResult.SUCCESS : InteractionResult.FAIL);

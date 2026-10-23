@@ -53,8 +53,9 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *   spell or damage-over-time tick. A player's projectile or full-strength melee hit lands through it in full too
  *   and opens a new window, as vanilla's bypass does (RLM-311, RLM-386); a weaker melee hit, and mobs' and the
  *   world's hits, keep vanilla's window.</li>
- *   <li>{@code LivingDamageEvent.Post}: reports the hit ({@link CombatEvent.Hit}), sends its combat text, and heals the
- *   attacker of a melee or ranged hit by its lifesteal.</li>
+ *   <li>{@code LivingDamageEvent.Post}: puts both sides in combat ({@link InCombat}, as a dodge and a full block do
+ *   too), reports the hit ({@link CombatEvent.Hit}), sends its combat text, and heals the attacker of a melee or
+ *   ranged hit by its lifesteal.</li>
  *   <li>{@code LivingHealEvent}, last: turns healing beyond max health into overheal ({@link Overheal}) and sends the
  *   combat text of the health a heal restores.</li>
  * </ol>
@@ -157,12 +158,14 @@ public final class DamagePipeline {
             // Since NeoForge 26.1 a cancelled hit pops its damage container (architecture 9.1).
             event.setCanceled(true);
             HitTracker.takeMeleeCrit(source, defender);
+            InCombat.mark(defender, source);
             NeoForge.EVENT_BUS.post(new CombatEvent.Dodge(defender, source));
             CombatText.dodge(defender, source);
             return;
         }
         if (WeaponBlocks.block(event, level)) {
             HitTracker.takeMeleeCrit(source, defender);
+            InCombat.mark(defender, source);
             return;
         }
         event.addReductionModifier(DamageContainer.Reduction.ARMOR,
@@ -259,6 +262,7 @@ public final class DamagePipeline {
         }
         Optional<Holder<SpellSchool>> school = hit != null ? hit.school() : Optional.empty();
         boolean crit = hit != null && hit.crit();
+        InCombat.mark(defender, source);
         NeoForge.EVENT_BUS.post(new CombatEvent.Hit(defender, source, school, crit, event.getOriginalDamage(),
                 event.getReduction(DamageContainer.Reduction.ARMOR), event.getInflictedDamage(),
                 event.getHealthDamage()));

@@ -254,6 +254,9 @@ public final class GeneratedTexts {
     /** {@code message.realmforge.bed_only_overworld} from {@code content/texts/message.yaml}: "Beds only work in Overworld" */
     public static final String MESSAGE_BED_ONLY_OVERWORLD = "message.realmforge.bed_only_overworld";
 
+    /** {@code message.realmforge.cannot_use_in_combat} from {@code content/texts/message.yaml}: "You can't use this in combat." */
+    public static final String MESSAGE_CANNOT_USE_IN_COMBAT = "message.realmforge.cannot_use_in_combat";
+
     /** {@code message.realmforge.dark_vision_off} from {@code content/texts/message.yaml}: "Dark Vision Off" */
     public static final String MESSAGE_DARK_VISION_OFF = "message.realmforge.dark_vision_off";
 

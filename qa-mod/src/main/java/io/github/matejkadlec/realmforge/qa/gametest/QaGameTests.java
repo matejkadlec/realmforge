@@ -62,6 +62,7 @@ public final class QaGameTests {
             DungeonPlanGameTests.class,
             EffectGameTests.class,
             HurtCooldownGameTests.class,
+            InCombatGameTests.class,
             DungeonPortalGameTests.class,
             DungeonRoomGameTests.class,
             InstanceGameTests.class,

@@ -327,7 +327,7 @@ public final class StatPointsGameTests {
     }
 
     /** Sets the XP for the level quietly, as {@code /realmforge xp set} does. */
-    private static void reachLevel(GameTestHelper helper, MinecraftServer server, ServerPlayer player, int level) {
+    static void reachLevel(GameTestHelper helper, MinecraftServer server, ServerPlayer player, int level) {
         run(server, player, "realmforge xp set @s "
                 + XpTable.toReach(curve(helper, GeneratedCurves.XP_TO_NEXT_LEVEL), level));
         helper.assertValueEqual(Characters.level(player), level, "level " + level);
@@ -338,7 +338,7 @@ public final class StatPointsGameTests {
                 .orElseThrow(() -> helper.assertionException(Component.literal("the sheet has no row " + id)));
     }
 
-    private static ResourceKey<Attribute> key(Holder<Attribute> attribute) {
+    static ResourceKey<Attribute> key(Holder<Attribute> attribute) {
         return attribute.unwrapKey().orElseThrow();
     }
 
@@ -347,7 +347,7 @@ public final class StatPointsGameTests {
     }
 
     /** A player who logs in and creates a character of the first race and its first class. */
-    private static ServerPlayer loginWithCharacter(GameTestHelper helper, String name) {
+    static ServerPlayer loginWithCharacter(GameTestHelper helper, String name) {
         ServerPlayer player = login(helper, new GameProfile(UUID.randomUUID(), name));
         var race = GeneratedRaceExpectations.RACES.getFirst();
         Result result = CharacterCreation.create(player,

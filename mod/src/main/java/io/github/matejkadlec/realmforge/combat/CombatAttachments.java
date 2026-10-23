@@ -22,6 +22,15 @@ public final class CombatAttachments {
             ATTACHMENTS.register("magic_shield", () -> AttachmentType.builder(() -> MagicShield.EMPTY)
                     .sync(Attachments::toOwner, MagicShield.STREAM_CODEC).build());
 
+    /**
+     * {@code realmforge:in_combat}: when a living entity last dealt or took a hit, and when that leaves it out of
+     * combat ({@link InCombat}, architecture 9.4). Transient: neither saved nor copied, so every new entity (a login,
+     * a respawn) starts out of combat. Synced to the owner, so a client knows its own player's state.
+     */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<CombatTime>> IN_COMBAT =
+            ATTACHMENTS.register("in_combat", () -> AttachmentType.builder(() -> CombatTime.NONE)
+                    .sync(Attachments::toOwner, CombatTime.STREAM_CODEC).build());
+
     private CombatAttachments() {
     }
 
