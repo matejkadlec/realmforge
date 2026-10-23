@@ -157,7 +157,7 @@ jobs:
           packwiz refresh
           git diff --exit-code .
 
-  # Spike 6 (ADR 0018): the whole pack plus our jar, installed the way players and server owners install it, must
+  # Spike 6 (ADR 0018): the whole pack plus our jars, installed the way players and server owners install it, must
   # boot without errors. `uv run rf pack-boot` runs the same locally.
   pack-boot:
     name: Full pack boots on a dedicated server
@@ -237,8 +237,9 @@ jobs:
           key: pack-boot-client-${{ hashFiles('tools/realmforge_tools/packboot.py') }}
           restore-keys: pack-boot-client-
 
-      - name: Build the core mod jar
-        run: ./gradlew :mod:jar --console=plain
+      # The client also loads Better Key Binds, our client-only mod the pack ships next to the core mod (ADR 0048).
+      - name: Build the core mod and Better Key Binds jars
+        run: ./gradlew :mod:jar :better-key-binds:jar --console=plain
 
       - name: Boot with and without the optional mods
         run: |

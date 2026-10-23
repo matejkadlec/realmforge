@@ -2,7 +2,9 @@
 
 Date: 2026-10-11
 
-Status: Accepted; config overrides noted 2026-10-13 (RLM-151)
+Status: Accepted; config overrides noted 2026-10-13 (RLM-151); amended by
+[0048](0048-better-key-binds-our-own-client-mod-independent-of-realmforge.md) (Better Key Binds' releases are tagged
+`better-key-binds-v*`, Realmforge's keep `v*`), 2026-10-22
 
 ## Context
 

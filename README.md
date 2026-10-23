@@ -17,12 +17,16 @@ test item; there is no gameplay yet. Next is M1, a small playable vertical slice
 - **Content pipeline** (`content/` + `tools/`): all game content is YAML, validated and turned into Java
   registrations, assets and data by Python. Generated files are committed and never edited by hand.
 - **QA mod** (`qa-mod/`, `realmforge_qa`): development-only GameTests and debug tools; never released.
+- **Better Key Binds** (`better-key-binds/`, `better_key_binds`): our own client-side mod that gives every key bind
+  a secondary key, as in WoW. Independent of Realmforge, released on its own `better-key-binds-v*` tags, and shipped
+  in the pack next to the core mod ([README](better-key-binds/README.md)).
 
 | Path | Contents |
 | --- | --- |
 | `content/` | YAML game content (single source of truth) |
 | `tools/` | Python pipeline: validation, generators, tests |
 | `mod/`, `qa-mod/` | NeoForge mods (Gradle, ModDevGradle) |
+| `better-key-binds/` | Better Key Binds, a standalone client mod (Gradle subproject) |
 | `pack/` | packwiz metadata and config overrides (`config/`), no jars |
 | `art/` | asset sources |
 | `docs/` | vision, [architecture](docs/architecture.md), [roadmap](docs/roadmap.md), [design documents](docs/design/README.md), [lore](docs/lore/README.md), [decisions (ADRs)](docs/decisions/README.md), [research notes](docs/research-notes.md), [dev setup](docs/dev-setup.md) |
@@ -34,7 +38,7 @@ work. Full setup, including playing the pack with Prism Launcher on Windows: [do
 
 ```bash
 uv sync && uv run rf gen && uv run pytest   # validate content, regenerate, test
-./gradlew build                             # build both mods + JUnit
+./gradlew build                             # build the mods + JUnit
 ./gradlew runGameTestServer                 # headless GameTests
 ./gradlew runClient                         # dev client
 ```

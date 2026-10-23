@@ -1,0 +1,47 @@
+# Mod metadata. Dollar-brace placeholders are expanded by the generateModMetadata Gradle task.
+modLoader = "javafml"
+loaderVersion = "${loader_version_range}"
+# Code under MPL-2.0 (LICENSE in better-key-binds/).
+license = "MPL-2.0"
+issueTrackerURL = "https://github.com/matejkadlec/realmforge/issues"
+
+[[mods]]
+modId = "better_key_binds"
+version = "${mod_version}"
+displayName = "Better Key Binds"
+authors = "Matěj Kadlec"
+displayURL = "https://github.com/matejkadlec/realmforge/tree/master/better-key-binds"
+description = '''
+Secondary key binds: every key bind can have a primary and a secondary key, and either one triggers it.
+Client-side only; servers don't need it.
+'''
+
+[[mixins]]
+config = "better_key_binds.mixins.json"
+
+# Controlling's Key Binds screen (only applied when Controlling is loaded). Not required: should a Controlling update
+# change the code these hook into, its screen loses the secondary key column instead of the game crashing.
+[[mixins]]
+config = "better_key_binds.controlling.mixins.json"
+
+[[dependencies.better_key_binds]]
+modId = "neoforge"
+type = "required"
+versionRange = "[${neo_version},)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.better_key_binds]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft_version_range}"
+ordering = "NONE"
+side = "CLIENT"
+
+# The secondary key column also works in Controlling's Key Binds screen (mixin/controlling/).
+[[dependencies.better_key_binds]]
+modId = "controlling"
+type = "optional"
+versionRange = "[26.1.2.7,)"
+ordering = "NONE"
+side = "CLIENT"

@@ -89,6 +89,10 @@ def test_allowlisted_errors_pass() -> None:
         ({"crash_reports": ("crash-2026-10-11_21.20.41-server.txt",)}, "crash report: crash-2026"),
         ({"log": None}, "the game wrote no logs/latest.log"),
         ({"mod_jar_name": "realmforge-9.9.9+mc26.1.2.jar"}, "the core mod jar realmforge-9.9.9"),
+        (
+            {"client_mod_jar_names": ("better-key-binds-0.1.0+mc26.1.2.jar",)},
+            "the mod jar better-key-binds-0.1.0+mc26.1.2.jar was not loaded",
+        ),
     ],
 )
 def test_a_broken_boot_is_reported(overrides: dict, expected: str) -> None:
@@ -196,6 +200,18 @@ def test_the_default_jar_is_the_one_gradle_builds() -> None:
     jar = packboot.default_mod_jar(RepoPaths())
     assert jar.parent == REPO_ROOT / "mod" / "build" / "libs"
     assert jar.name.startswith("realmforge-") and jar.name.endswith("+mc26.1.2.jar")
+
+
+def test_the_client_also_boots_better_key_binds_as_gradle_builds_it() -> None:
+    (jar,) = packboot.default_client_mod_jars(RepoPaths())
+    assert jar.parent == REPO_ROOT / "better-key-binds" / "build" / "libs"
+    assert jar.name.startswith("better-key-binds-") and jar.name.endswith("+mc26.1.2.jar")
+
+
+def test_a_loaded_client_mod_jar_is_no_problem() -> None:
+    jar = "better-key-binds-0.1.0+mc26.1.2.jar"
+    log = CLEAN_LOG.replace(FOUND_JAR, f"{FOUND_JAR}\n - better_key_binds (jar(mods/{jar}))")
+    assert boot_problems(_outcome(log=log, client_mod_jar_names=(jar,)), ()) == []
 
 
 def test_optional_mods_are_set_aside_and_restored(tmp_path: Path) -> None:

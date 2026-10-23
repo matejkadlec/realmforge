@@ -8,13 +8,14 @@
    installer itself (they use an install variable it does not know), so it only starts the installed version.
 2. Install the pack's mods for that side with packwiz-installer (``-g -s server`` or ``-s client``), served from
    ``pack/`` by a local HTTP server, the way a server owner or a player installs it.
-3. Copy the core mod jar from ``mod/build/libs/`` into ``mods/``.
+3. Copy the core mod jar from ``mod/build/libs/`` into ``mods/``, and on the client also the jar of Better Key Binds,
+   our client-only mod in ``better-key-binds/`` that the pack ships next to the core mod (ADR 0048).
 4. Start the game with NeoForge's self test (``NEOFORGE_DEDICATED_SERVER_SELFTEST`` or ``NEOFORGE_CLIENT_SELFTEST``),
    which writes a report file and stops the game at the server's first tick or once the client's title screen
    ticks. The client runs under Xvfb when ``xvfb-run`` exists. Each side boots twice when the pack has optional mods:
    with them, which packwiz-installer's command line always installs, and without them, the default choice for
    players (pack/README.md). Without optional mods the one boot covers both.
-5. Fail on a non-zero exit, a missing self-test report, a crash report, a core mod that was not loaded, or an
+5. Fail on a non-zero exit, a missing self-test report, a crash report, a mod jar of ours that was not loaded, or an
    ERROR or FATAL line in ``logs/latest.log`` that the side's allowlist does not cover. A game that keeps running
    after a fatal error (the client then waits on FML's error screen) is stopped instead of waiting for the timeout.
 """
@@ -147,6 +148,7 @@ class BootOutcome:
     log: str | None  # None: the game wrote no latest.log
     mod_jar_name: str
     stopped_after_fatal: bool = False
+    client_mod_jar_names: tuple[str, ...] = ()  # our client-only mods' jars, on the client
 
 
 def boot_problems(outcome: BootOutcome, allowed: tuple[tuple[str, str], ...]) -> list[str]:
@@ -167,6 +169,9 @@ def boot_problems(outcome: BootOutcome, allowed: tuple[tuple[str, str], ...]) ->
     # FML lists every mod jar it puts on the game content classloader: " - realmforge (jar(mods/<jar>))".
     if f"(jar(mods/{outcome.mod_jar_name}))" not in outcome.log:
         problems.append(f"the core mod jar {outcome.mod_jar_name} was not loaded")
+    for name in outcome.client_mod_jar_names:
+        if f"(jar(mods/{name}))" not in outcome.log:
+            problems.append(f"the mod jar {name} was not loaded")
     problems += [entry.describe() for entry in unexpected_errors(parse_log(outcome.log), allowed)]
     return problems
 
@@ -208,6 +213,21 @@ def default_mod_jar(paths: RepoPaths) -> Path:
     return paths.root / "mod" / "build" / "libs" / name
 
 
+# Our client-only mods the pack ships next to the core mod, by folder: (jar name prefix, version property). Their own
+# gradle.properties holds the version, the root's the Minecraft version.
+CLIENT_MODS = {"better-key-binds": ("better-key-binds", "better_key_binds_version")}
+
+
+def default_client_mod_jars(paths: RepoPaths) -> tuple[Path, ...]:
+    """The jars ``./gradlew :better-key-binds:jar`` (and any other client-only mod of ours) builds."""
+    minecraft = gradle_properties(paths.root)["minecraft_version"]
+    jars = []
+    for folder, (prefix, version_property) in CLIENT_MODS.items():
+        version = gradle_properties(paths.root / folder)[version_property]
+        jars.append(paths.root / folder / "build" / "libs" / f"{prefix}-{version}+mc{minecraft}.jar")
+    return tuple(jars)
+
+
 @dataclass
 class BootReport:
     label: str
@@ -243,6 +263,7 @@ def run(
     *,
     side: str = "server",
     mod_jar: Path | None = None,
+    client_mod_jars: tuple[Path, ...] | None = None,
     pack_dir: Path | None = None,
     variants: tuple[str, ...] = VARIANTS,
     log=None,
@@ -255,6 +276,12 @@ def run(
     mod_jar = mod_jar or default_mod_jar(paths)
     if not mod_jar.is_file():
         raise PackBootError(f"core mod jar {paths.rel(mod_jar)} not found; build it with ./gradlew :mod:jar")
+    client_jars = () if side == "server" else (client_mod_jars or default_client_mod_jars(paths))
+    for jar in client_jars:
+        if not jar.is_file():
+            raise PackBootError(
+                f"mod jar {paths.rel(jar)} not found; build it with ./gradlew :{jar.parts[-4]}:jar"
+            )
     pack_version = pack_neoforge_version(pack_dir)
     if pack_version != NEOFORGE_VERSION:
         raise PackBootError(
@@ -294,6 +321,11 @@ def run(
     for old in (game / "mods").glob("realmforge-*.jar"):
         old.unlink()
     shutil.copy2(mod_jar, game / "mods" / mod_jar.name)
+    for prefix, _ in CLIENT_MODS.values():
+        for old in (game / "mods").glob(f"{prefix}-*.jar"):
+            old.unlink()
+    for jar in client_jars:
+        shutil.copy2(jar, game / "mods" / jar.name)
 
     results = []
     for variant in variants:
@@ -320,6 +352,7 @@ def run(
                     game_dir=game,
                     label=label,
                     mod_jar_name=mod_jar.name,
+                    client_mod_jar_names=tuple(jar.name for jar in client_jars),
                     reports=work.reports(side) / variant,
                 )
             )
@@ -327,7 +360,14 @@ def run(
 
 
 def boot(
-    command: list[str], *, side: str, game_dir: Path, label: str, mod_jar_name: str, reports: Path
+    command: list[str],
+    *,
+    side: str,
+    game_dir: Path,
+    label: str,
+    mod_jar_name: str,
+    reports: Path,
+    client_mod_jar_names: tuple[str, ...] = (),
 ) -> BootReport:
     """Start the installed game once with the self test, then judge what it left behind."""
     for leftover in ("world", "logs", "crash-reports"):
@@ -371,6 +411,7 @@ def boot(
         log=latest_log.read_text(encoding="utf-8", errors="replace") if latest_log.is_file() else None,
         mod_jar_name=mod_jar_name,
         stopped_after_fatal=stopped_after_fatal,
+        client_mod_jar_names=client_mod_jar_names,
     )
     return BootReport(label=label, seconds=seconds, problems=boot_problems(outcome, ALLOWED_ERRORS[side]))
 

@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "io.github.matejkadlec.betterkeybinds.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "KeyBindsListKeyEntryMixin",
+    "KeyBindsListMixin",
+    "KeyBindsScreenAccessor",
+    "KeyMappingMixin",
+    "ToggleKeyMappingAccessor",
+    "ToggleKeyMappingMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
