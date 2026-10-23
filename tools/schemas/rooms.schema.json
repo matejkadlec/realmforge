@@ -44,6 +44,27 @@
   "additionalProperties": false,
   "description": "How dungeons use a room. The template next to it holds the blocks.",
   "properties": {
+    "entry": {
+      "anyOf": [
+        {
+          "enum": [
+            "north",
+            "east",
+            "south",
+            "west",
+            "up",
+            "down"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The side of the template (as saved, before any turn) whose one connector is the room's way in: a lock's mechanism side. The planner attaches the room to the room before it only through that connector, and no loop leads into the room from another side (RLM-362). Unset: any connector.",
+      "title": "Entry"
+    },
     "explosion_breaks": {
       "description": "Blocks an explosion inside this room may break in a dungeon instance, where explosions otherwise break nothing: what a trap's TNT is meant to blow open (RLM-257). Every other block of the room stays.",
       "items": {

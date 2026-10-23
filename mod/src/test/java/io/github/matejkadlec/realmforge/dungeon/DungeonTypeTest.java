@@ -40,8 +40,13 @@ class DungeonTypeTest {
             assertEquals(Identifier.parse("realmforge:stone_vault"), type.pool());
             assertEquals(RoomRole.TREASURE, type.layout().ending());
             assertTrue(type.rooms().stream().anyMatch(room -> room.role() == RoomRole.ENTRANCE), "an entrance");
-            assertTrue(type.rooms().stream().allMatch(room -> room.template().getPath().startsWith("rooms/")),
-                    "rooms name their structures");
+            assertTrue(type.rooms().stream().allMatch(room -> room.template().getPath().startsWith(
+                    room.role() == RoomRole.WALL ? "dungeon_walls/" : "rooms/")), "rooms name their structures");
+            assertTrue(type.layout().specialGap().isPresent(), "the test dungeon spaces its special rooms (RLM-364)");
+            assertEquals(1, type.rooms().stream().filter(room -> room.role() == RoomRole.WALL).count(),
+                    "the test dungeon has its wall (RLM-364)");
+            assertTrue(type.rooms().stream().anyMatch(room -> room.entry().isPresent()),
+                    "its locks have entries (RLM-362)");
         }
     }
 
@@ -64,6 +69,14 @@ class DungeonTypeTest {
         LayoutRules rules = layout("[2, 4]", "[0, 1]", "[1, 2]", "boss").getOrThrow();
         JsonElement encoded = LayoutRules.CODEC.encodeStart(JsonOps.INSTANCE, rules).getOrThrow();
         assertEquals(rules, LayoutRules.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow());
+        LayoutRules spaced = layout("[2, 4]", "[0, 1]", "[1, 2]", "boss", "[3, 5]").getOrThrow();
+        assertEquals(java.util.Optional.of(new net.minecraft.util.InclusiveRange<>(3, 5)), spaced.specialGap());
+        encoded = LayoutRules.CODEC.encodeStart(JsonOps.INSTANCE, spaced).getOrThrow();
+        assertEquals(spaced, LayoutRules.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow());
+        DungeonRoom lock = room(ROOM.replace("\"weight\": 3", "\"weight\": 3, \"entry\": 0")).getOrThrow();
+        assertEquals(java.util.Optional.of(0), lock.entry(), "RLM-362");
+        assertEquals(lock, room(DungeonRoom.CODEC.encodeStart(JsonOps.INSTANCE, lock).getOrThrow().toString())
+                .getOrThrow());
     }
 
     @Test
@@ -87,6 +100,14 @@ class DungeonTypeTest {
         assertTrue(room(ROOM.replace("\"front\": \"north\"", "\"front\": \"up\"")).isError(),
                 "a vertical connector whose top is up");
         assertTrue(room(ROOM.replace("\"weight\": 3", "\"weight\": 151")).isError(), "weight above 150");
+        assertTrue(room(ROOM.replace("\"weight\": 3", "\"weight\": 3, \"entry\": 1")).isError(),
+                "an entry the room does not have");
+        assertTrue(room(ROOM.replace("\"combat\"", "\"wall\"")).isSuccess(), "a wall with one connector");
+        assertTrue(room(ROOM.replace("\"combat\"", "\"wall\"").replace("}]}", "}, {\"pos\": [4, 1, 8], "
+                + "\"front\": \"south\", \"top\": \"up\", \"name\": \"realmforge:door\", "
+                + "\"target\": \"realmforge:door\", \"joint\": \"aligned\"}]}")).isError(), "a wall with two");
+        assertTrue(layout("[2, 4]", "[0, 1]", "[1, 2]", "boss", "[0, 3]").isError(),
+                "a special gap of no room");
     }
 
     private static DataResult<DungeonRoom> room(String json) {
@@ -95,8 +116,15 @@ class DungeonTypeTest {
 
     private static DataResult<LayoutRules> layout(String mainPath, String branches, String branchRooms,
             String ending) {
+        return layout(mainPath, branches, branchRooms, ending, null);
+    }
+
+    /** Layout rules with a {@code special_gap} ({@code null}: none). */
+    private static DataResult<LayoutRules> layout(String mainPath, String branches, String branchRooms,
+            String ending, String specialGap) {
+        String gap = specialGap == null ? "" : ", \"special_gap\": " + specialGap;
         return LayoutRules.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(
                 "{\"main_path\": " + mainPath + ", \"branches\": " + branches + ", \"branch_rooms\": " + branchRooms
-                        + ", \"ending\": \"" + ending + "\"}"));
+                        + ", \"ending\": \"" + ending + "\"" + gap + "}"));
     }
 }

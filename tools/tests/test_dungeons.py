@@ -10,7 +10,7 @@ import pytest
 from realmforge_tools.generate import generate_all
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import DATA_VERSION, REPO_ROOT, RepoPaths
-from realmforge_tools.rooms.connectors import Connector, connectors, could_attach
+from realmforge_tools.rooms.connectors import Connector, connectors, could_attach, doorway_gap
 from realmforge_tools.rooms.structure import (
     BlockState,
     Structure,
@@ -150,7 +150,9 @@ def test_dungeon_type_carries_its_pools_rooms(repo: RepoPaths) -> None:
     )
     assert "tools/schemas/dungeons.schema.json" in files
     assert (data["key"], data["open_minutes"]) == ("minecraft:tripwire_hook", 20)
-    assert '"boss",\n                    "minecraft:tripwire_hook", 20,' in java
+    assert '"boss", 0, 0,\n                    "minecraft:tripwire_hook", 20,' in java, (
+        "no special gap: 0 to 0"
+    )
     tag = json.loads(files["mod/src/generated/resources/data/realmforge/tags/item/dungeon_key.json"])
     assert tag == {"values": ["minecraft:tripwire_hook"]}, "the client reads the keys from this tag"
 
@@ -165,6 +167,161 @@ def test_a_key_is_an_item_that_opens_one_dungeon_type(repo: RepoPaths) -> None:
     ), problems
     assert any(
         "tomb.yaml" in p and "key" in p and "unknown id 'minecraft:no_such_key'" in p for p in problems
+    )
+
+
+def test_a_rooms_entry_side_reaches_the_game(repo: RepoPaths) -> None:
+    # RLM-362: the sidecar names the side, the dungeon type carries the index of the connector there.
+    crypt(repo)
+    hall = repo.content / "rooms" / "crypt" / "hall.yaml"
+    hall.write_text(hall.read_text(encoding="utf-8") + "entry: south\n", encoding="utf-8")
+    files = generate(repo)
+    rooms = {room["template"]: room for room in json.loads(files[f"{DATA}/crypt.json"])["rooms"]}
+    assert rooms["realmforge:rooms/crypt/hall"]["entry"] == 1, "north is connector 0, south connector 1"
+    assert "entry" not in rooms["realmforge:rooms/crypt/crossing"]
+    java = files[EXPECTATIONS].decode()
+    assert "0, false, List.of(), 1)" in java, "the hall's expectation names its entry"
+
+    hall.write_text(hall.read_text(encoding="utf-8").replace("entry: south", "entry: east"), encoding="utf-8")
+    entrance = repo.content / "rooms" / "crypt" / "entrance.yaml"
+    entrance.write_text(entrance.read_text(encoding="utf-8") + "entry: south\n", encoding="utf-8")
+    problems = problems_for(repo)
+    assert any(
+        "hall.yaml" in p and "entry" in p and "the entry side east holds 0 connectors" in p for p in problems
+    ), problems
+    assert any("entrance.yaml" in p and "an entrance is where players arrive" in p for p in problems), (
+        problems
+    )
+
+
+def walled(size: tuple[int, int, int], *faces: str, wide: bool = False) -> Structure:
+    """``room_structure`` with stone brick walls, floor and ceiling, each connector in a doorway three blocks wide and
+    high at its foot; ``wide``: the first doorway is a block wider on one side."""
+    room = room_structure(size, *faces)
+    x, y, z = size
+    doorway: set[tuple[int, int, int]] = set()
+    for index, block in enumerate(room.blocks):
+        bx, by, bz = block.pos
+        across = (1, 0, 0) if bz in (0, z - 1) else (0, 0, 1)
+        sides = range(-1, 3 if wide and index == 0 else 2)
+        doorway |= {(bx + d * across[0], by + up, bz + d * across[2]) for d in sides for up in range(3)}
+    jigsaws = {block.pos for block in room.blocks}
+    bricks = tuple(
+        StructureBlock(
+            (cx, cy, cz), BlockState("minecraft:air" if (cx, cy, cz) in doorway else "minecraft:stone_bricks")
+        )
+        for cx in range(x)
+        for cy in range(y)
+        for cz in range(z)
+        if (cx in (0, x - 1) or cy in (0, y - 1) or cz in (0, z - 1)) and (cx, cy, cz) not in jigsaws
+    )
+    return Structure(size, DATA_VERSION, room.blocks + bricks)
+
+
+def test_walls_close_the_doorways_nothing_else_takes(repo: RepoPaths) -> None:
+    # RLM-364: rf gen builds a type's wall and lists it last among its rooms; validation checks that it closes every
+    # doorway of the pool.
+    crypt(repo)
+    for name, faces in {"entrance": ("south",), "hall": ("north", "south"), "lair": ("north",)}.items():
+        path = repo.content / "rooms" / "crypt" / f"{name}.nbt"
+        path.write_bytes(write_structure(walled((7, 5, 7), *faces)))
+    for name in ("crossing", "nook"):
+        (repo.content / "rooms" / "crypt" / f"{name}.nbt").unlink()
+        (repo.content / "rooms" / "crypt" / f"{name}.yaml").unlink()
+    path = repo.content / "dungeons" / "crypt.yaml"
+    path.write_text(
+        dungeon(layout=LAYOUT + "  walls:\n    block: minecraft:stone_bricks\n    weight: 3\n"),
+        encoding="utf-8",
+    )
+    add_room(repo, "crypt/nook", ["hallway", "dead_end"], "north")
+    (repo.content / "rooms" / "crypt" / "nook.nbt").write_bytes(write_structure(walled((7, 5, 7), "north")))
+
+    files = generate(repo)
+    data = json.loads(files[f"{DATA}/crypt.json"])
+    assert "walls" not in data["layout"], "the wall is a room of the entry, not a layout rule"
+    wall = data["rooms"][-1]
+    assert wall == {
+        "template": "realmforge:dungeon_walls/crypt",
+        "size": [3, 3, 1],
+        "role": "wall",
+        "weight": 3,
+        "connectors": [
+            {
+                "pos": [1, 0, 0],
+                "front": "north",
+                "top": "up",
+                "name": "realmforge:door",
+                "target": "realmforge:door",
+                "joint": "aligned",
+            }
+        ],
+    }
+    template = read_structure(
+        files["mod/src/generated/resources/data/realmforge/structure/dungeon_walls/crypt.nbt"]
+    )
+    assert template.size == (3, 3, 1) and template.data_version == DATA_VERSION
+    assert sorted(block.state.name for block in template.blocks) == ["minecraft:jigsaw"] + 8 * [
+        "minecraft:stone_bricks"
+    ]
+    (jigsaw,) = [block for block in template.blocks if block.state.name == "minecraft:jigsaw"]
+    assert jigsaw.nbt is not None and jigsaw.nbt["final_state"] == "minecraft:stone_bricks", "no hole is left"
+    assert [connector.front for connector in connectors(template)] == ["north"]
+    java = files[EXPECTATIONS].decode()
+    assert 'new RoomExpectation("realmforge:dungeon_walls/crypt", 3, 3, 1, "wall", 3,' in java
+
+    (repo.content / "rooms" / "crypt" / "hall.nbt").write_bytes(
+        write_structure(walled((7, 5, 7), "north", "south", wide=True))
+    )
+    path.write_text(
+        path.read_text().replace("minecraft:stone_bricks", "minecraft:no_such_block"), encoding="utf-8"
+    )
+    problems = problems_for(repo)
+    assert any("crypt.yaml" in p and "layout.walls.block: unknown block" in p for p in problems), problems
+    assert any(
+        "hall.yaml" in p
+        and "the doorway of its connector at 3 1 0 is open at 5 1 0, wider than the 3 x 3 wall" in p
+        for p in problems
+    ), problems
+
+
+def test_a_doorways_corners_need_no_wall() -> None:
+    # A player cannot pass a gap that only touches the doorway at a corner, like item_combination_lock's.
+    room = walled((7, 5, 7), "north")
+    (door,) = connectors(room)
+    assert doorway_gap(room, door, 3, 3) is None
+    for cell, open_ in (((1, 4, 0), False), ((5, 0, 0), False), ((1, 3, 0), True), ((3, 4, 0), True)):
+        blocks = tuple(
+            StructureBlock(b.pos, BlockState("minecraft:air")) if b.pos == cell else b for b in room.blocks
+        )
+        gap = doorway_gap(Structure(room.size, DATA_VERSION, blocks), door, 3, 3)
+        assert (gap == cell) == open_, (cell, gap)
+
+
+def test_a_special_gap_spaces_plain_rooms_out(repo: RepoPaths) -> None:
+    # RLM-364: the gap reaches the game, and a spaced pool needs plain rooms to pass through, plain junctions for the
+    # branches and a plain dead end.
+    crypt(repo)
+    add_room(repo, "crypt/corner", ["hallway", "dead_end"], "north")
+    path = repo.content / "dungeons" / "crypt.yaml"
+    path.write_text(dungeon(layout=LAYOUT + "  special_gap: [3, 5]\n"), encoding="utf-8")
+    files = generate(repo)
+    assert json.loads(files[f"{DATA}/crypt.json"])["layout"]["special_gap"] == [3, 5]
+    assert '"boss", 3, 5,\n' in files[EXPECTATIONS].decode()
+
+    (repo.content / "rooms" / "crypt" / "corner.nbt").unlink()
+    (repo.content / "rooms" / "crypt" / "corner.yaml").unlink()
+    path.write_text(dungeon(layout=LAYOUT.replace("[0, 1]", "[1, 2]") + "  special_gap: [3, 5]\n"))
+    problems = problems_for(repo)
+    assert any("layout.special_gap" in p and "no plain dead end for the branches" in p for p in problems), (
+        problems
+    )
+    assert any(
+        "layout.branches" in p and "a plain one, as the special gap hangs branches off them" in p
+        for p in problems
+    ), problems
+    path.write_text(dungeon(layout=LAYOUT + "  special_gap: [5, 3]\n"))
+    assert any(
+        "special_gap" in p and "lower bound 5 is above the upper bound 3" in p for p in problems_for(repo)
     )
 
 
@@ -512,8 +669,8 @@ def test_a_rooms_planner_and_explosion_rules_reach_the_game(repo: RepoPaths) -> 
         rooms["realmforge:rooms/crypt/hall"]
     )
     java = files[EXPECTATIONS].decode()
-    assert '1, true, List.of("minecraft:gravel", "minecraft:smooth_stone"))' in java
-    assert "0, false, List.of())" in java
+    assert '1, true, List.of("minecraft:gravel", "minecraft:smooth_stone"), -1)' in java
+    assert "0, false, List.of(), -1)" in java
     nook.write_text(
         nook.read_text(encoding="utf-8").replace("minecraft:smooth_stone", "minecraft:no_such_block"),
         encoding="utf-8",

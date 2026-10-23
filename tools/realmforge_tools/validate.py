@@ -11,7 +11,7 @@ from pathlib import PurePosixPath
 
 from pydantic import BaseModel
 
-from realmforge_tools.content import Content, RoomEntry, SetPieceEntry, load_content
+from realmforge_tools.content import Content, Entry, RoomEntry, SetPieceEntry, load_content
 from realmforge_tools.id_universe import IdUniverse, load_vanilla
 from realmforge_tools.problems import Problem, ValidationFailed
 from realmforge_tools.project import MOD_ID, RepoPaths
@@ -24,7 +24,7 @@ from realmforge_tools.rooms.check import (
     is_solid,
     markers,
 )
-from realmforge_tools.rooms.connectors import connectors, could_attach
+from realmforge_tools.rooms.connectors import Connector, connectors, could_attach, doorway_gap
 from realmforge_tools.rooms.generator import GENERATED_DIR, theme_blocks, unknown_blocks
 from realmforge_tools.rooms.set_pieces import piece_problems
 from realmforge_tools.rooms.structure import BlockState, StructureError
@@ -34,7 +34,16 @@ from realmforge_tools.schema.block import ITEMLESS_KINDS, REALM_PORTAL_KINDS, SI
 from realmforge_tools.schema.chapter import advancement_id as chapter_advancement
 from realmforge_tools.schema.character import STARTING_BREAD, CharacterModifierDef
 from realmforge_tools.schema.dimension_rules import WORLDGEN_STRUCTURE_REGISTRY
-from realmforge_tools.schema.dungeon import DEAD_END_ROLES, PATH_ROLES, ROOM_ROLES, room_role
+from realmforge_tools.schema.dungeon import (
+    DEAD_END_ROLES,
+    PATH_ROLES,
+    PLAIN_ROLES,
+    ROOM_ROLES,
+    WALL_HEIGHT,
+    WALL_WIDTH,
+    DungeonTypeDef,
+    room_role,
+)
 from realmforge_tools.schema.effect import PeriodicDef, effect_id
 from realmforge_tools.schema.item import USE_TEXT_GROUP, ItemDef
 from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
@@ -211,7 +220,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_room_specs(content)
     problems += _check_rooms(content, universe)
     problems += _check_set_pieces(content, universe)
-    problems += _check_dungeons(content)
+    problems += _check_dungeons(content, universe)
     problems += _check_dungeon_keys(content, universe)
     problems += _check_recipes(content, universe)
     problems += _check_chapters(content)
@@ -249,6 +258,7 @@ def _check_rooms(content: Content, universe: IdUniverse) -> list[Problem]:
                 problems.append(
                     Problem(room.source, f"explosion_breaks[{index}]", f"unknown block {block!r}")
                 )
+        problems += _check_room_entry(room)
     # A rejected room is dropped, and its decision stays, so the next import of its source skips it.
     room_ids = {room.id for room in content.rooms}
     for review in content.room_reviews:
@@ -386,13 +396,36 @@ def _check_generated_rooms(content: Content) -> list[Problem]:
     return problems
 
 
-def _check_dungeons(content: Content) -> list[Problem]:
+def _check_room_entry(room: RoomEntry) -> list[Problem]:
+    """A room's entry side holds exactly one of its connectors, and an entrance has none: players arrive in it
+    (RLM-362)."""
+    side = room.model.entry
+    if side is None:
+        return []
+    location = _room_location(room, "entry")
+    if room_role(room.model.tags) == "entrance":
+        return [Problem(room.source, location, "an entrance is where players arrive; it has no entry side")]
+    found = [c for c in room.derived("connectors", connectors) if c.front == side]
+    if len(found) != 1:
+        return [
+            Problem(
+                room.source,
+                location,
+                f"the entry side {side} holds {len(found)} connectors; it names the side of exactly one",
+            )
+        ]
+    return []
+
+
+def _check_dungeons(content: Content, universe: IdUniverse) -> list[Problem]:
     """A room in the pool of a dungeon type has exactly one role, and the pool holds what the type's layout needs: an
     entrance, rooms to pass through, the room that ends the main path, a dead end for the branches and for the
     connectors nothing else takes, rooms that take a branch when it must have one, and only rooms whose every
-    connector meets some connector of the pool (architecture 15.3). A room in such a pool also holds no fluid at its
-    edge, and an entrance marker only if it is an entrance (``_check_pooled_room``). Whether a layout fits a plot is
-    the planner's to find; JUnit fuzzes it over the generated types."""
+    connector meets some connector of the pool (architecture 15.3). With a ``special_gap`` the rooms to pass through,
+    the junctions that take branches and a dead end are plain ones (RLM-364). A type's wall is a block, and closes every
+    doorway of its pool. A room in such a pool also holds no fluid at its edge, and an entrance marker only if it is an
+    entrance (``_check_pooled_room``). Whether a layout fits a plot is the planner's to find; JUnit fuzzes it over the
+    generated types."""
     problems: list[Problem] = []
     used_pools = {entry.model.pool for entry in content.dungeons}
     pooled: dict[str, list[RoomEntry]] = {}
@@ -424,6 +457,8 @@ def _check_dungeons(content: Content) -> list[Problem]:
             (room, room_role(room.model.tags), room.derived("connectors", connectors)) for room in rooms
         ]
         ending = dungeon.layout.ending
+        spaced = dungeon.layout.special_gap is not None
+        passing = PLAIN_ROLES if spaced else PATH_ROLES
         needs = (
             (
                 "pool",
@@ -432,8 +467,8 @@ def _check_dungeons(content: Content) -> list[Problem]:
             ),
             (
                 "pool",
-                f"room to pass through (role {', '.join(PATH_ROLES)}; two connectors)",
-                lambda role, n: role in PATH_ROLES and n >= 2,
+                f"room to pass through (role {', '.join(passing)}; two connectors)",
+                lambda role, n, passing=passing: role in passing and n >= 2,
             ),
             (
                 "layout.ending",
@@ -446,20 +481,29 @@ def _check_dungeons(content: Content) -> list[Problem]:
                 lambda role, n: role in DEAD_END_ROLES and n == 1,
             ),
         )
+        if spaced:
+            needs += (
+                (
+                    "layout.special_gap",
+                    f"plain dead end for the branches (role {', '.join(PLAIN_ROLES)}, one connector)",
+                    lambda role, n: role in PLAIN_ROLES and n == 1,
+                ),
+            )
         for location, what, fits in needs:
             if not any(fits(role, len(found)) for _, role, found in shapes):
                 problems.append(Problem(entry.source, location, f"pool {dungeon.pool} has no {what}"))
         if dungeon.layout.branches[0] > 0 and not any(
-            role in PATH_ROLES and len(found) >= 3 for _, role, found in shapes
+            role in passing and len(found) >= 3 for _, role, found in shapes
         ):
             problems.append(
                 Problem(
                     entry.source,
                     "layout.branches",
                     f"every layout has a branch, but pool {dungeon.pool} has no room to pass through with a third "
-                    "connector to take it",
+                    f"connector to take it{' (a plain one, as the special gap hangs branches off them)' if spaced else ''}",
                 )
             )
+        problems += _check_walls(entry, shapes, universe)
         everything = [connector for _, _, found in shapes for connector in found]
         for room, _, found in shapes:
             for connector in found:
@@ -473,6 +517,41 @@ def _check_dungeons(content: Content) -> list[Problem]:
                             f"meets no connector in pool {dungeon.pool}, so {entry.source} can never place it",
                         )
                     )
+    return problems
+
+
+def _check_walls(
+    entry: Entry[DungeonTypeDef],
+    shapes: list[tuple[RoomEntry, str | None, list[Connector]]],
+    universe: IdUniverse,
+) -> list[Problem]:
+    """A dungeon type's wall is a block, and closes every doorway of its pool: around the middle three by three
+    blocks of each side connector's face, the room is closed (RLM-364)."""
+    walls = entry.model.layout.walls
+    if walls is None:
+        return []
+    problems = []
+    if not universe.contains(BLOCK_REGISTRY, walls.block):
+        problems.append(Problem(entry.source, "layout.walls.block", f"unknown block {walls.block!r}"))
+    kind = f"doorway_gaps_{WALL_WIDTH}x{WALL_HEIGHT}"
+    for room, _, found in shapes:
+        gaps = room.derived(
+            kind,
+            lambda structure: [
+                doorway_gap(structure, c, WALL_WIDTH, WALL_HEIGHT) for c in connectors(structure)
+            ],
+        )
+        for connector, gap in zip(found, gaps, strict=True):
+            if gap is not None:
+                problems.append(
+                    Problem(
+                        room.source,
+                        _room_location(room, "pools"),
+                        f"the doorway of its connector at {' '.join(map(str, connector.pos))} is open at "
+                        f"{' '.join(map(str, gap))}, wider than the {WALL_WIDTH} x {WALL_HEIGHT} wall of "
+                        f"{entry.source}",
+                    )
+                )
     return problems
 
 
