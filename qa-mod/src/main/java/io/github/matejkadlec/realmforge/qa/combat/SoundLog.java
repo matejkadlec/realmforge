@@ -15,8 +15,9 @@ import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
 /**
  * The sounds the server played lately, where and when, from NeoForge's {@link PlayLevelSoundEvent}: the custom mob
- * GameTests check what mobs and spells sound like (W3, RLM-33). Server thread only; it keeps the last
- * {@value #KEPT}, and a new server starts empty.
+ * GameTests check what mobs and spells sound like (W3, RLM-33), and the weapon block GameTests that a raised weapon
+ * played its block sound or did not (RLM-387). Server thread only; it keeps the last {@value #KEPT}, and a new server
+ * starts empty.
  */
 public final class SoundLog {
     private static final int KEPT = 1024;
@@ -56,6 +57,14 @@ public final class SoundLog {
                         && played.where().closerThan(center, radius))
                 .map(Played::sound)
                 .toList();
+    }
+
+    /** How many times {@code sound} played within {@code radius} blocks of {@code center} in {@code level}. */
+    public static long count(Level level, Vec3 center, double radius, Holder<SoundEvent> sound) {
+        return sound.unwrapKey().map(key -> PLAYED.stream()
+                .filter(played -> played.level() == level && played.sound().equals(key.identifier())
+                        && played.where().closerThan(center, radius))
+                .count()).orElse(0L);
     }
 
     /** One sound the server played. */

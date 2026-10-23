@@ -50,8 +50,9 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *   <li>Hurt cooldown: a school hit lands through it ({@code #minecraft:bypasses_cooldown}) and leaves the defender's
  *   window as it was: it grants no invulnerability of its own, and {@code lastHurt}, which vanilla overwrites, is
  *   restored afterwards, so melee hits in an open window are still compared with the previous melee hit, not with a
- *   spell or damage-over-time tick. A player's melee hit or projectile lands through it in full too and opens a new
- *   window, as vanilla's bypass does; mobs' and the world's hits keep vanilla's window (RLM-311).</li>
+ *   spell or damage-over-time tick. A player's projectile or full-strength melee hit lands through it in full too
+ *   and opens a new window, as vanilla's bypass does (RLM-311, RLM-386); a weaker melee hit, and mobs' and the
+ *   world's hits, keep vanilla's window.</li>
  *   <li>{@code LivingDamageEvent.Post}: reports the hit ({@link CombatEvent.Hit}), sends its combat text, and heals the
  *   attacker of a melee or ranged hit by its lifesteal.</li>
  *   <li>{@code LivingHealEvent}, last: turns healing beyond max health into overheal ({@link Overheal}) and sends the
@@ -174,7 +175,7 @@ public final class DamagePipeline {
             schoolHit(event, level, defender, source, school.get());
             return;
         }
-        if (playerHit(source)) {
+        if (landsThroughCooldown(source)) {
             landThroughCooldown(defender);
         }
         if (HitTracker.takeMeleeCrit(source, defender) || rangedCrit(event, source)) {
@@ -184,11 +185,38 @@ public final class DamagePipeline {
     }
 
     /**
-     * Whether the hit is a player's melee hit or projectile, the damage that never loses anything to the hurt cooldown
-     * (RLM-311, ADR 0049): a school hit has its own rule, and mobs' and the world's hits keep vanilla's window.
+     * Whether the hit is a player's melee hit or projectile, the damage that loses nothing to the hurt cooldown when it
+     * {@link #landsThroughCooldown lands through it} (RLM-311, ADR 0049): a school hit has its own rule, and mobs' and
+     * the world's hits keep vanilla's window.
      */
     public static boolean playerHit(DamageSource source) {
         return source.getEntity() instanceof Player && meleeOrRanged(source);
+    }
+
+    /**
+     * Whether a hit that is no school hit lands through an open hurt cooldown window in full: a player's projectile,
+     * or a player's melee hit at full attack strength (RLM-386, ADR 0051), the strength a crit needs. A weaker melee
+     * hit is compared with the window's {@code lastHurt} as in vanilla, so spam-clicking an item without Better Combat
+     * attributes deals no more than timed hits. Neo resets the attack strength only at the end of
+     * {@code Player#attack}, so it is still this attack's here. A Multishot volley's three arrows all land in full
+     * (Matěj, 2026-10-23).
+     */
+    public static boolean landsThroughCooldown(DamageSource source) {
+        if (!playerHit(source)) {
+            return false;
+        }
+        return source.is(DamageTypeTags.IS_PROJECTILE)
+                || source.getEntity() instanceof Player player && player.getAttackStrengthScale(0.5F) > FULL_STRENGTH;
+    }
+
+    /**
+     * Whether vanilla's hurt cooldown drops the hit on {@code defender} after this pipeline: its window is open, the
+     * hit is no bigger than the window's {@code lastHurt}, and it neither bypasses the window (school hits, the tag)
+     * nor {@link #landsThroughCooldown lands through it}. Such a hit reaches no later event.
+     */
+    public static boolean droppedByCooldown(LivingEntity defender, DamageSource source, float amount) {
+        return defender.invulnerableTime > HALF_WINDOW && !source.is(DamageTypeTags.BYPASSES_COOLDOWN)
+                && !landsThroughCooldown(source) && amount <= defender.lastHurt;
     }
 
     /**
@@ -196,7 +224,7 @@ public final class DamagePipeline {
      * vanilla compares a hit with {@code lastHurt} only while the invulnerable time is above 10, so at 10 the hit
      * lands in full and opens a new window. The tag cannot do it, because arrows share their damage type with
      * skeletons'. Better Combat does the same for its swings ({@code allow_fast_attacks}); this covers the rest:
-     * arrows, tridents and attacks without a Better Combat weapon.
+     * arrows, tridents and full-strength attacks without a Better Combat weapon.
      */
     private static void landThroughCooldown(LivingEntity defender) {
         if (defender.invulnerableTime > HALF_WINDOW) {
