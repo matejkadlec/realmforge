@@ -20,7 +20,9 @@ depend on it, and servers don't need it ([ADR 0048](../docs/decisions/0048-bette
 - In game, a key's primary key bind wins: with D as Strafe Right's key and Strafe Left's (or Advancements')
   secondary key, D only strafes right. The secondary key acts where no primary key bind takes the key, so with L as
   Advancements' key and JEI's Show Recipe's secondary key, L opens the advancements in game and shows recipes in the
-  inventory. Screens check keys their own way (`KeyMapping#matches`), so there the secondary key always works.
+  inventory. Screens check keys their own way (`KeyMapping#matches`, NeoForge's `isActiveAndMatches`), so there the
+  secondary key always works: with I as Open/Close Inventory's secondary key, I closes the inventory too, and Drop,
+  Pick Block, Swap Offhand and the hotbar keys work on a hovered slot with their secondary keys.
 - A key bind's Reset returns both keys to their defaults; a secondary key's default is unbound. "Reset Keys" resets
   every secondary key too.
 - Conflicts show as on the primary column: `[ key ]` in yellow, a yellow stripe and a tooltip naming the other key
@@ -40,7 +42,7 @@ Default: every secondary key is unbound.
 | Each key bind's secondary key: a hidden `KeyMapping` with its own key and `KeyModifier` and its primary's conflict context. It is in vanilla's key lookup, never in `Options.keyMappings`, so key presses reach it like any key and neither the Key Binds screen nor `options.txt` lists it. | `SecondaryKeyMapping` |
 | The link from a key bind to its secondary key, the merge rules, loading and saving | `SecondaryKeys` |
 | The secondary key file | `SecondaryKeysFile` |
-| `isDown()` (held while either key is held), `consumeClick()` (both keys' clicks), `matches()` (a screen's key check), `isDefault()` and `setToDefault()` (both keys), and the in-game lookup of a pressed key (primary key binds win) | `mixin/KeyMappingMixin`, `mixin/ToggleKeyMappingMixin` |
+| `isDown()` (held while either key is held), `consumeClick()` (both keys' clicks), `matches()` and `isActiveAndMatches()` (a screen's key check), `isDefault()` and `setToDefault()` (both keys), and the in-game lookup of a pressed key (primary key binds win) | `mixin/KeyMappingMixin`, `mixin/ToggleKeyMappingMixin` |
 | The second key column on vanilla's Key Binds screen | `SecondaryKeyColumn`, `mixin/KeyBindsListKeyEntryMixin`, `mixin/KeyBindsListMixin` |
 | Waiting for a pressed button's key (NeoForge screen events, on any screen that extends vanilla's) | `SecondaryKeyCapture`, `KeyCapture` |
 | Focus on a Key Binds screen with a search box: closed on opening, kept in step with the box | `KeyBindsScreenFocus` |

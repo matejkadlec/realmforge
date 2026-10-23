@@ -107,17 +107,22 @@ class SecondaryKeysTest {
                 secondary -> secondary.matches(new KeyEvent(GLFW.GLFW_KEY_O, 0, 0))));
     }
 
-    // A key bind that is active whenever its key is pressed: NeoForge's modifier check asks the running game.
-    private static KeyMapping activeKeyMapping(int glfwKey, KeyConflictContext context) {
-        KeyMapping keyMapping = new KeyMapping("test.key." + NAMES.incrementAndGet(), InputConstants.Type.KEYSYM,
-                glfwKey, KeyMapping.Category.MISC) {
-            @Override
-            public boolean isActiveAndMatches(InputConstants.Key keyCode) {
-                return keyCode.equals(getKey());
-            }
-        };
-        keyMapping.setKeyConflictContext(context);
-        return keyMapping;
+    @Test
+    void neoForgesKeyCheckMatchesEitherKey() {
+        // NeoForge's container screens check Close Inventory, Drop, Pick Block, Swap Offhand and the hotbar keys
+        // this way.
+        KeyMapping inventory = keyMapping(GLFW.GLFW_KEY_E);
+        assertFalse(SecondaryKeys.isActiveAndMatches(inventory, key(GLFW.GLFW_KEY_I)), "unbound");
+        assertFalse(SecondaryKeys.isActiveAndMatches(inventory, InputConstants.UNKNOWN), "UNKNOWN never matches");
+
+        SecondaryKeys.bind(inventory, KeyModifier.NONE, key(GLFW.GLFW_KEY_I));
+
+        assertTrue(SecondaryKeys.isActiveAndMatches(inventory, key(GLFW.GLFW_KEY_E)), "the primary key");
+        assertTrue(SecondaryKeys.isActiveAndMatches(inventory, key(GLFW.GLFW_KEY_I)), "the secondary key");
+        assertFalse(SecondaryKeys.isActiveAndMatches(inventory, key(GLFW.GLFW_KEY_O)));
+        assertTrue(SecondaryKeys.isActiveAndMatches(SecondaryKeys.of(inventory), key(GLFW.GLFW_KEY_I)));
+        assertFalse(SecondaryKeys.isActiveAndMatches(SecondaryKeys.of(inventory), key(GLFW.GLFW_KEY_E)),
+                "the secondary key alone");
     }
 
     @Test
@@ -161,10 +166,14 @@ class SecondaryKeysTest {
         KeyMapping strafeLeft = keyMapping(GLFW.GLFW_KEY_A);
         SecondaryKeys.bind(strafeLeft, KeyModifier.NONE, key(GLFW.GLFW_KEY_D));
         SecondaryKeyMapping secondary = SecondaryKeys.of(strafeLeft);
-        KeyMapping strafeRight = activeKeyMapping(GLFW.GLFW_KEY_D, KeyConflictContext.UNIVERSAL);
+        KeyMapping strafeRight = keyMapping(GLFW.GLFW_KEY_D);
+        KeyMapping jump = keyMapping(GLFW.GLFW_KEY_SPACE);
+        SecondaryKeys.bind(jump, KeyModifier.NONE, key(GLFW.GLFW_KEY_D));
 
         assertTrue(SecondaryKeys.primaryKeyTakes(secondary, new KeyMapping[] {strafeLeft, strafeRight}));
         assertFalse(SecondaryKeys.primaryKeyTakes(secondary, new KeyMapping[] {strafeLeft}));
+        assertFalse(SecondaryKeys.primaryKeyTakes(secondary, new KeyMapping[] {strafeLeft, jump}),
+                "another key bind's secondary key on D");
     }
 
     @Test

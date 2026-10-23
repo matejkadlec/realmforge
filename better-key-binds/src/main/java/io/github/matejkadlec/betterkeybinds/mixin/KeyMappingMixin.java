@@ -44,6 +44,16 @@ public abstract class KeyMappingMixin implements IKeyMappingExtension {
     }
 
     /**
+     * NeoForge's key check, which its container screens use (Close Inventory, Drop, Pick Block, Swap Offhand, the
+     * hotbar keys), merged like {@code matches}. KeyMapping inherits the interface's default method, so this override
+     * is added to it.
+     */
+    @Override
+    public boolean isActiveAndMatches(InputConstants.Key keyCode) {
+        return SecondaryKeys.isActiveAndMatches(self(), keyCode);
+    }
+
+    /**
      * A pressed or clicked key reaches another key bind's secondary key only when no primary key bind takes it
      * ({@link SecondaryKeys#primaryKeysWin}): the one lookup vanilla's {@code click} and {@code set} share.
      */

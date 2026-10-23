@@ -124,11 +124,28 @@ public final class SecondaryKeys {
     }
 
     /**
+     * NeoForge's {@code IKeyMappingExtension#isActiveAndMatches} merged: a screen's check for a key bind's key while
+     * it can act, which NeoForge's container screens use for Close Inventory, Drop, Pick Block, Swap Offhand and the
+     * hotbar keys.
+     */
+    public static boolean isActiveAndMatches(KeyMapping keyMapping, InputConstants.Key key) {
+        return matches(keyMapping, ownKeyIsActiveAndMatches(keyMapping, key),
+                secondary -> ownKeyIsActiveAndMatches(secondary, key));
+    }
+
+    // IKeyMappingExtension#isActiveAndMatches for the key mapping's own key alone, without its secondary key.
+    private static boolean ownKeyIsActiveAndMatches(KeyMapping keyMapping, InputConstants.Key key) {
+        return key != InputConstants.UNKNOWN && key.equals(keyMapping.getKey())
+                && keyMapping.isConflictContextAndModifierActive();
+    }
+
+    /**
      * In game, a key's primary key binds win: the key mappings vanilla's lookup found for a pressed key (it already
      * left out those whose conflict context or modifier is not active) reach the secondary keys among them only when
      * no primary key bind is among them. D as Strafe Right's key and Strafe Left's secondary key strafes right. Screens
-     * check keys through {@code matches} instead, which this leaves alone: L as Advancements' key and JEI's Show
-     * Recipe's secondary key still shows recipes in the inventory. A release reaches them all, so no key stays held.
+     * check keys through {@code matches} and {@code isActiveAndMatches} instead, which this leaves alone: L as
+     * Advancements' key and JEI's Show Recipe's secondary key still shows recipes in the inventory. A release reaches
+     * them all, so no key stays held.
      */
     public static List<KeyMapping> primaryKeysWin(List<KeyMapping> found, boolean releasing) {
         if (releasing || found.stream().allMatch(SecondaryKeyMapping.class::isInstance)
@@ -141,12 +158,12 @@ public final class SecondaryKeys {
     /**
      * Whether another key bind that can act now has the key of {@code secondary} as its primary key: then the key's
      * state re-checked as a screen closes ({@code KeyMapping#setAll}) does not hold the secondary key, as a press would
-     * not reach it ({@link #primaryKeysWin}).
+     * not reach it ({@link #primaryKeysWin}). Another key bind's secondary key on the same key takes nothing.
      */
     public static boolean primaryKeyTakes(SecondaryKeyMapping secondary, KeyMapping[] keyMappings) {
         for (KeyMapping other : keyMappings) {
             if (other != secondary.primary() && !(other instanceof SecondaryKeyMapping)
-                    && other.isActiveAndMatches(secondary.getKey())) {
+                    && ownKeyIsActiveAndMatches(other, secondary.getKey())) {
                 return true;
             }
         }
