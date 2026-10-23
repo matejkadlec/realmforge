@@ -2,7 +2,8 @@
 
 Date: 2026-10-11
 
-Status: Accepted; amended by [0014](0014-core-mod-architecture.md) (dungeon rooms are NBT in `content/rooms/`)
+Status: Accepted; amended by [0014](0014-core-mod-architecture.md) (dungeon rooms are NBT in `content/rooms/`) and
+[0050](0050-set-pieces-hand-built-nbt-placed-at-dungeon-generation.md) (set pieces are NBT in `content/set_pieces/`)
 
 ## Context
 

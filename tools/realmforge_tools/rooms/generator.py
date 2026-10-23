@@ -89,6 +89,21 @@ def generate_room(spec: RoomSpecDef, theme: RoomThemeDef, seed: int) -> Structur
     return _Builder(spec, theme, seed).build()
 
 
+def paths(spec: RoomSpecDef) -> set[tuple[int, int]]:
+    """The columns of a spec's rooms that stay clear (x, z): a three-wide strip from each doorway to the middle, and
+    the middle. Pillars, rubble, niches and stairs keep off them, and so do set pieces (``rooms/set_pieces.py``)."""
+    width, depth = spec.footprint
+    cx, cz = (width - 1) // 2, (depth - 1) // 2
+    found = {(x, z) for x in range(cx - 1, cx + 2) for z in range(cz - 1, cz + 2)}
+    for side in spec.connectors:
+        x, z = {"north": (cx, 0), "south": (cx, depth - 1), "west": (0, cz), "east": (width - 1, cz)}[side]
+        if side in ("north", "south"):
+            found |= {(lx, lz) for lx in range(cx - 1, cx + 2) for lz in range(min(z, cz), max(z, cz) + 1)}
+        else:
+            found |= {(lx, lz) for lz in range(cz - 1, cz + 2) for lx in range(min(x, cx), max(x, cx) + 1)}
+    return {(x, z) for x, z in found if 0 < x < width - 1 and 0 < z < depth - 1}
+
+
 @dataclass(frozen=True)
 class _Door:
     side: str
@@ -157,20 +172,7 @@ class _Builder:
         return _Door(side, (x, self.floor, z), (-dx, -dz))
 
     def _paths(self) -> set[tuple[int, int]]:
-        """The columns that stay clear: a three-wide strip from each doorway to the middle, and the middle."""
-        cx, cz = (self.width - 1) // 2, (self.depth - 1) // 2
-        paths = {(x, z) for x in range(cx - 1, cx + 2) for z in range(cz - 1, cz + 2)}
-        for door in self.doors:
-            x, _, z = door.pos
-            if door.side in ("north", "south"):
-                paths |= {
-                    (lx, lz) for lx in range(cx - 1, cx + 2) for lz in range(min(z, cz), max(z, cz) + 1)
-                }
-            else:
-                paths |= {
-                    (lx, lz) for lz in range(cz - 1, cz + 2) for lx in range(min(x, cx), max(x, cx) + 1)
-                }
-        return {(x, z) for x, z in paths if self.interior(x, z)}
+        return paths(self.spec)
 
     # --- build ------------------------------------------------------------------------------------------------
 

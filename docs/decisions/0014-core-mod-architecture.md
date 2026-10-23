@@ -4,8 +4,9 @@ Date: 2026-10-11
 
 Status: Accepted; decision 9 amended by [0027](0027-client-bound-payload-handlers-through-the-client-event.md) (client-bound
 payload handlers through NeoForge's client event), decision 8 by [0028](0028-dungeon-rooms-generated-or-imported.md)
-(rooms are generated or imported, not hand-made), decision 6 by [0033](0033-vanilla-armor-formula-amends-our-own.md)
-(armor mitigation is vanilla's formula, run in our code)
+(rooms are generated or imported, not hand-made) and by [0050](0050-set-pieces-hand-built-nbt-placed-at-dungeon-generation.md)
+(set pieces are a third exception to YAML-only content), decision 6 by
+[0033](0033-vanilla-armor-formula-amends-our-own.md) (armor mitigation is vanilla's formula, run in our code)
 
 ## Context
 

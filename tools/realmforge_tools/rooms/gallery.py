@@ -9,6 +9,10 @@ copies them as YAML; ``rf rooms review DIR`` merges that text into ``DIR/review.
 (A4c) and the generator (A4d) act on: rejected imports are dropped, a kept candidate's seed is frozen. The page
 starts from the decisions already in ``review.yaml``. A generated folder (the spike rooms) can be viewed but not
 reviewed: ``rf gen`` would delete its ``review.yaml``.
+
+With set pieces in ``content/set_pieces/`` (ADR 0050), the page also shows each room's spots: its patterns as
+labelled outlines in every view and on the card (``SpotGroup``), and a sample dressing, the room with a piece in
+every pattern, as a fifth view.
 """
 
 from __future__ import annotations
@@ -17,7 +21,8 @@ import hashlib
 import html
 import json
 import shutil
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -26,14 +31,16 @@ from realmforge_tools.art.gallery import PAGE_CSS, PAGE_FONTS
 from realmforge_tools.project import RepoPaths
 from realmforge_tools.rooms.render import (
     CUT_HEIGHT,
+    DRESSING,
     MARKER_STYLES,
+    SPOT_STYLES,
     UNKNOWN_MARKER,
     VIEWS,
     RoomRenderer,
     marker_label,
     marker_style,
 )
-from realmforge_tools.rooms.structure import AIR, Structure, StructureError, read_structure
+from realmforge_tools.rooms.structure import AIR, Pos, Structure, StructureError, read_structure
 from realmforge_tools.schema.room import REVIEW_FILE, ReviewFile, RoomDef
 from realmforge_tools.yamlio import YamlLoadError, load_yaml, load_yaml_text
 
@@ -47,12 +54,40 @@ class GalleryError(ValueError):
 
 
 @dataclass(frozen=True)
+class SpotGroup:
+    """One pattern of set-piece spots as the gallery shows it: the pieces that fit it, its kind, its spots (each its
+    position and facing) and the floor cells drawn in its colour."""
+
+    label: str
+    style: int
+    """The index of its colour in ``SPOT_STYLES`` (cycled)."""
+    kind: str
+    spots: tuple[tuple[Pos, str], ...]
+    cells: tuple[Pos, ...]
+
+
+@dataclass(frozen=True)
 class GalleryRoom:
     key: str
     """The room's path below the gallery folder, without the suffix."""
     structure: Structure | None
     sidecar: RoomDef | None
     error: str | None = None
+    spots: tuple[SpotGroup, ...] = ()
+    dressed: Structure | None = None
+    """The room with a set piece in every pattern, when it has spots."""
+
+    def outlines(self) -> tuple[tuple[Pos, str], ...]:
+        """The blocks that draw its spots: each pattern's floor cells as stained glass in its colour."""
+        return tuple(
+            (pos, SPOT_STYLES[group.style % len(SPOT_STYLES)][0])
+            for group in self.spots
+            for pos in group.cells
+        )
+
+
+# What the gallery asks for each readable room: its set-piece spots and the room dressed with pieces.
+SpotsOf = Callable[[GalleryRoom], tuple[tuple[SpotGroup, ...], Structure | None]]
 
 
 def room_files(directory: Path) -> dict[str, Path]:
@@ -76,13 +111,20 @@ def collect(directory: Path) -> list[GalleryRoom]:
 
 
 def build(
-    directory: Path, out_dir: Path, renderer: RoomRenderer, title: str, cut: int = CUT_HEIGHT
+    directory: Path,
+    out_dir: Path,
+    renderer: RoomRenderer,
+    title: str,
+    cut: int = CUT_HEIGHT,
+    spots_of: SpotsOf | None = None,
 ) -> tuple[Path, list[GalleryRoom]]:
     """Render every room and write the page. ``out_dir`` is replaced: it holds only this gallery. It must not
     overlap the rooms' folder, and an existing ``out_dir`` must be an earlier gallery (or empty), so the
-    replacement never deletes anything else."""
+    replacement never deletes anything else. ``spots_of`` gives each room its set-piece spots and dressing."""
     _check_out_dir(directory, out_dir)
     rooms = collect(directory)
+    if spots_of is not None:
+        rooms = [with_spots(room, spots_of) for room in rooms]
     if out_dir.exists():
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True)
@@ -91,10 +133,21 @@ def build(
         if room.structure is None:
             continue
         for view in VIEWS:
-            renderer.render(room.structure, view, out_dir / room.key / f"{view.name}.png", cut)
+            renderer.render(
+                room.structure, view, out_dir / room.key / f"{view.name}.png", cut, room.outlines()
+            )
+        if room.dressed is not None:
+            renderer.render(room.dressed, DRESSING, out_dir / room.key / f"{DRESSING.name}.png", cut)
     page = out_dir / "index.html"
     page.write_text(render_page(title, rooms, read_review(directory), cut), encoding="utf-8")
     return page, rooms
+
+
+def with_spots(room: GalleryRoom, spots_of: SpotsOf) -> GalleryRoom:
+    if room.structure is None:
+        return room
+    spots, dressed = spots_of(room)
+    return replace(room, spots=spots, dressed=dressed if spots else None)
 
 
 def _check_out_dir(directory: Path, out_dir: Path) -> None:
@@ -192,6 +245,7 @@ def render_page(
         f"{cut} blocks above the bottom (or below the top layer of a lower room) from two corners, and a plan of the "
         "cut.</p>",
         _legend(),
+        *([_spot_legend()] if any(room.spots for room in rooms) else []),
         "</header>",
         '<div class="rooms">',
     ]
@@ -233,8 +287,10 @@ def _card(room: GalleryRoom, decision: str | None) -> str:
         facts.append(f"tags: {', '.join(room.sidecar.tags) or 'none'}")
     parts.append(f'<p class="stats">{esc(" · ".join(facts))}</p>')
     parts.append(_markers(structure))
+    if room.spots:
+        parts.append(_spots(room.spots))
     parts.append('<div class="views">')
-    for view in VIEWS:
+    for view in (*VIEWS, *([DRESSING] if room.dressed is not None else [])):
         src = f"{room.key}/{view.name}.png"
         parts.append(
             f'<figure><img src="{esc(src)}" width="256" height="256" loading="lazy" alt="{esc(view.label)}">'
@@ -268,6 +324,29 @@ def _legend() -> str:
         '<p class="muted">Connectors are the jigsaw blocks at the foot of the doorways: rooms join where two meet, and '
         "a placed room turns them into air.</p></section>"
     )
+
+
+def _spot_legend() -> str:
+    return (
+        '<section class="legend-markers"><h2 class="small">Set-piece spots</h2>'
+        '<p class="muted">Where the dungeon may put set pieces (content/set_pieces/): each pattern\'s spots drawn as '
+        "stained glass on their floor cells in the colour of the pieces that fit them, also above the cut, and listed "
+        "on the card with each spot's lowest corner (x y z) and the way the piece faces. A pattern is filled with one "
+        "piece or stays empty. The sample dressing puts a piece into every pattern.</p></section>"
+    )
+
+
+def _spots(groups: tuple[SpotGroup, ...]) -> str:
+    esc = html.escape
+    lines = []
+    for group in groups:
+        colour = SPOT_STYLES[group.style % len(SPOT_STYLES)][1]
+        where = " · ".join(f"{' '.join(map(str, pos))} {facing}" for pos, facing in group.spots)
+        lines.append(
+            f'<span class="marker"><span class="swatch" style="background:{colour}"></span> '
+            f"<code>{esc(group.label)}</code> {esc(group.kind)}: {esc(where)}</span>"
+        )
+    return f'<p class="markers">{"".join(lines)}</p>'
 
 
 def _markers(structure: Structure) -> str:

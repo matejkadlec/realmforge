@@ -12,6 +12,8 @@ uv run rf rooms import SRC --to DIR    import .nbt, .schem and .litematic rooms 
 uv run rf rooms gallery [DIR]          render the rooms in DIR (default content/rooms) for review (needs Vulkan)
 uv run rf rooms review DIR             merge decisions copied from the gallery into DIR/review.yaml
 uv run rf rooms candidates [SPEC...]   build seed candidates of the room specs into .cache/rooms/candidates
+uv run rf set-pieces report            count the spots of the jig's masks in every room (the design's mask report)
+uv run rf set-pieces import FILE --id ID   import a workshop jig save as content/set_pieces/ID (--from-world WORLD)
 """
 
 from __future__ import annotations
@@ -27,15 +29,29 @@ from realmforge_tools.art.palette import DEFAULT_PALETTE, PaletteError, load_gpl
 from realmforge_tools.art.texture import DEFAULT_SIZE, Image, TextureError, clean
 from realmforge_tools.content import load_content
 from realmforge_tools.formats.png import PngError, decode_rgba
-from realmforge_tools.generate import generate_all, sync
+from realmforge_tools.generate import dungeons, generate_all, sync
 from realmforge_tools.id_universe import IdUniverse, load_vanilla
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import MINECRAFT_VERSION, RepoPaths
 from realmforge_tools.rooms import candidates as room_candidates
 from realmforge_tools.rooms import gallery as room_gallery
 from realmforge_tools.rooms import importer
+from realmforge_tools.rooms import set_piece_import as piece_import
+from realmforge_tools.rooms.generator import paths as room_paths
 from realmforge_tools.rooms.render import CUT_HEIGHT, RenderError, RoomRenderer
+from realmforge_tools.rooms.set_pieces import (
+    NAMED_MASKS,
+    ReportRoom,
+    RoomView,
+    mask_report,
+    match,
+    pattern_cells,
+)
+from realmforge_tools.rooms.set_pieces import dressed as set_piece_dressing
+from realmforge_tools.rooms.structure import Structure
+from realmforge_tools.schema.dungeon import room_role
 from realmforge_tools.schema.room import REVIEW_FILE, ROOMS_DIR
+from realmforge_tools.schema.set_piece import SET_PIECES_DIR
 from realmforge_tools.validate import load_and_validate, universe_with_content
 
 
@@ -166,6 +182,46 @@ def main(argv: list[str] | None = None) -> int:
         "--out", type=Path, help="output folder, replaced on every run (default: .cache/rooms/candidates)"
     )
 
+    set_pieces = commands.add_parser(
+        "set-pieces",
+        help="set pieces: the mask report over the rooms, and importing the workshop jig's saves",
+    )
+    piece_commands = set_pieces.add_subparsers(dest="pieces_command", required=True)
+    pieces_report = piece_commands.add_parser(
+        "report", help="spots per mask in every room, per source and pool, and the walls they stand against"
+    )
+    pieces_report.add_argument(
+        "masks", nargs="*", help=f"jig masks to count (default: all of them: {', '.join(NAMED_MASKS)})"
+    )
+    pieces_report.add_argument(
+        "--game",
+        action="store_true",
+        help="count as rf gen does: also drop spots that would leave a lit cell dark or stand on a generated room's "
+        "paths (the design's report had neither rule)",
+    )
+    pieces_import = piece_commands.add_parser(
+        "import", help="turn a save of the workshop jig into a set piece with a drafted fit rule"
+    )
+    pieces_import.add_argument(
+        "file",
+        type=Path,
+        nargs="?",
+        help="the save: <world>/generated/realmforge_qa/structure/set_piece/<name>.nbt",
+    )
+    pieces_import.add_argument(
+        "--id", dest="piece_id", help="the piece's id, its file name in content/set_pieces/"
+    )
+    pieces_import.add_argument(
+        "--from-world",
+        type=Path,
+        dest="world",
+        help="import every save of this world (a folder, or a world name in run/client/saves) not imported yet, "
+        "each under its save's name",
+    )
+    pieces_import.add_argument(
+        "--to", type=Path, dest="target", help=f"folder for the pieces (default: content/{SET_PIECES_DIR})"
+    )
+
     gametest_log = commands.add_parser(
         "gametest-log",
         help="check the log of the last ./gradlew runGameTestServer; exit 1 on data loading errors",
@@ -180,6 +236,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "rooms":
         return _rooms(args, paths)
+
+    if args.command == "set-pieces":
+        return _set_pieces(args, paths)
 
     if args.command == "ids":
         target = vanilla.extract(args.version, paths)
@@ -207,7 +266,8 @@ def main(argv: list[str] | None = None) -> int:
             f"{len(content.dimensions)} dimension rule set(s), {len(content.races)} race(s), "
             f"{len(content.classes)} class(es), {len(content.worldgen)} worldgen file(s), "
             f"{len(content.rooms)} room(s), {len(content.room_specs)} room spec(s), "
-            f"{len(content.room_themes)} room theme(s), {len(content.dungeons)} dungeon type(s), "
+            f"{len(content.room_themes)} room theme(s), {len(content.set_pieces)} set piece(s), "
+            f"{len(content.dungeons)} dungeon type(s), "
             f"{len(content.chapters)} chapter(s), {len(content.kill_xp_multipliers)} kill XP multiplier(s), "
             f"{len(content.effects)} effect(s), {len(content.spells)} spell(s)."
         )
@@ -362,7 +422,14 @@ def _rooms_gallery(args: argparse.Namespace, paths: RepoPaths) -> int:
     started = time.monotonic()
     client_jar = vanilla.fetch_client_jar(MINECRAFT_VERSION, paths.cache / "vanilla" / MINECRAFT_VERSION)
     renderer = RoomRenderer(client_jar, args.size)
-    page, rooms = room_gallery.build(directory, out_dir, renderer, f"Rooms: {paths.rel(directory)}", args.cut)
+    page, rooms = room_gallery.build(
+        directory,
+        out_dir,
+        renderer,
+        f"Rooms: {paths.rel(directory)}",
+        args.cut,
+        _gallery_spots(paths, directory),
+    )
     unreadable = [room for room in rooms if room.structure is None]
     print(
         f"Wrote {paths.rel(page)} ({len(rooms)} room(s) in {time.monotonic() - started:.1f} s"
@@ -371,6 +438,195 @@ def _rooms_gallery(args: argparse.Namespace, paths: RepoPaths) -> int:
     for room in unreadable:
         print(f"  {room.key}: {room.error}", file=sys.stderr)
     return 1 if unreadable else 0
+
+
+def _gallery_spots(paths: RepoPaths, directory: Path) -> room_gallery.SpotsOf | None:
+    """Each gallery room's set-piece spots, by its sidecar's role (any role without one), and the room with the
+    heaviest piece of each pattern in it; None without set pieces. A candidate of a room spec reads its walls by the
+    spec's theme; any other room is read as imported."""
+    try:
+        content = load_content(paths)
+    except ValidationFailed:
+        print("Note: content/ does not load, so the gallery shows no set-piece spots.", file=sys.stderr)
+        return None
+    if not content.set_pieces:
+        return None
+    themes = {f"realmforge:{entry.model.id}": entry.model for entry in content.room_themes}
+    specs = {entry.model.id: entry.model for entry in content.room_specs}
+
+    def generated(key: str) -> tuple[dict[str, str] | None, frozenset[tuple[int, int]]]:
+        if room_candidates.is_candidates_folder(directory):
+            spec = specs.get(key.split("/")[0])
+        elif room_candidates.is_candidates_folder(directory.parent):
+            spec = specs.get(directory.name)
+        else:
+            spec = None
+        if spec is None:
+            return None, frozenset()
+        theme = themes.get(spec.theme)
+        return (theme.blocks.model_dump() if theme is not None else None), frozenset(room_paths(spec))
+
+    def spots_of(
+        room: room_gallery.GalleryRoom,
+    ) -> tuple[tuple[room_gallery.SpotGroup, ...], Structure | None]:
+        assert room.structure is not None
+        role = room_role(room.sidecar.tags) if room.sidecar is not None else None
+        fits = dungeons.room_fits(role, content.set_pieces)
+        if not fits:
+            return (), None
+        mirrorable = [any(piece.model.variants.mirror for piece in group) for _, group in fits]
+        view = RoomView(room.structure, *generated(room.key))
+        patterns = match(view, [fit for fit, _ in fits], mirrorable=mirrorable)
+        groups = []
+        picks = {}
+        for pattern in patterns:
+            pieces = dungeons.pattern_pieces(fits, pattern)
+            if not pieces:
+                continue
+            fit = fits[pattern.fit][0]
+            heaviest = min(pieces, key=lambda piece: (-piece.model.weight, piece.id))
+            picks[id(pattern)] = (heaviest.structure, heaviest.model.variants.mirror)
+            cells = tuple(
+                sorted(
+                    pos
+                    for spot in pattern.spots
+                    for pos in pattern_cells(fit, spot)[0]
+                    if pos[1] == spot.pos[1]
+                )
+            )
+            groups.append(
+                room_gallery.SpotGroup(
+                    ", ".join(piece.id for piece in pieces),
+                    pattern.fit,
+                    pattern.kind,
+                    tuple((spot.pos, spot.facing) for spot in pattern.spots),
+                    cells,
+                )
+            )
+        dressed = set_piece_dressing(room.structure, patterns, lambda pattern: picks.get(id(pattern)))
+        return tuple(groups), dressed
+
+    return spots_of
+
+
+def _set_pieces(args: argparse.Namespace, paths: RepoPaths) -> int:
+    try:
+        if args.pieces_command == "report":
+            return _set_pieces_report(args, paths)
+        return _set_pieces_import(args, paths)
+    except (OSError, piece_import.SetPieceImportError) as e:
+        print(f"rf set-pieces {args.pieces_command}: {e}", file=sys.stderr)
+        return 1
+
+
+def _set_pieces_report(args: argparse.Namespace, paths: RepoPaths) -> int:
+    unknown = [name for name in args.masks if name not in NAMED_MASKS]
+    if unknown:
+        print(
+            f"rf set-pieces report: unknown mask {', '.join(unknown)}; known: {', '.join(NAMED_MASKS)}",
+            file=sys.stderr,
+        )
+        return 1
+    try:
+        content = load_content(paths)
+    except ValidationFailed as e:
+        print(f"rf set-pieces report: content/ does not load ({len(e.problems)} problem(s))", file=sys.stderr)
+        return 1
+    generated = dungeons.generated_rooms(content)
+    rooms = []
+    for room in content.rooms:
+        parts = room.id.split("/")
+        source = (
+            "generated" if parts[0] == "generated" else parts[1] if parts[0] == "third_party" else parts[0]
+        )
+        rooms.append((source, room, generated.get(room.id, (None, frozenset()))))
+    split = {
+        source
+        for source in {s for s, _, _ in rooms}
+        if len({bool(room.model.pools) for s, room, _ in rooms if s == source}) > 1
+    }
+    report_rooms = []
+    for source, room, (theme, spec_paths) in rooms:
+        group = source
+        if source in split:
+            group = (
+                f"{source}, pool {', '.join(room.model.pools)}" if room.model.pools else f"{source}, no pool"
+            )
+        kept_clear = spec_paths if args.game else frozenset()
+        report_rooms.append(ReportRoom(room.id, group, room.structure, theme, kept_clear))
+    masks = [NAMED_MASKS[name] for name in args.masks or NAMED_MASKS]
+    started = time.monotonic()
+    rows = mask_report(report_rooms, masks, light=args.game)
+    sizes: dict[str, int] = {}
+    for room in report_rooms:
+        sizes[room.group] = sizes.get(room.group, 0) + 1
+    groups = sorted(sizes)
+    print(
+        f"Spots per mask in {len(report_rooms)} rooms, as rooms with at least one spot / spots{' (as rf gen counts them)' if args.game else ''}:"
+    )
+    print()
+    print(
+        "| Mask | "
+        + " | ".join(f"{group} ({sizes[group]})" for group in groups)
+        + f" | All ({len(report_rooms)}) |"
+    )
+    print("| --- |" + " --- |" * (len(groups) + 1))
+    for row in rows:
+        cells = [
+            f"{row.groups.get(group, (0, 0))[0]} / {row.groups.get(group, (0, 0))[1]}" for group in groups
+        ]
+        print(
+            f"| {row.label} (`{row.name}`) | "
+            + " | ".join(cells)
+            + f" | **{row.total[0]} / {row.total[1]:,}** |"
+        )
+    print()
+    print("Walls the spots stand against (block families, most spots first):")
+    print()
+    for row in rows:
+        if row.materials:
+            top = ", ".join(f"{name} {count:,}" for name, count in row.materials.most_common(4))
+            print(f"- {row.label}: {top}")
+    print()
+    print(f"Counted in {time.monotonic() - started:.1f} s.")
+    return 0
+
+
+def _set_pieces_import(args: argparse.Namespace, paths: RepoPaths) -> int:
+    target = args.target or paths.content / SET_PIECES_DIR
+    universe = _room_universe(paths)
+    if args.world is not None:
+        if args.file is not None or args.piece_id is not None:
+            print("rf set-pieces import: give a FILE with --id, or --from-world alone", file=sys.stderr)
+            return 1
+        world = args.world if args.world.is_dir() else paths.root / "run" / "client" / "saves" / args.world
+        done = piece_import.imported_sources(target)
+        saves = [save for save in piece_import.world_saves(world) if piece_import.save_name(save) not in done]
+        if not saves:
+            print(f"No new saves of the jig in {world / piece_import.JIG_FOLDER}.")
+            return 0
+        jobs = [(save, save.stem) for save in saves]
+    else:
+        if args.file is None or args.piece_id is None:
+            print("rf set-pieces import: give a FILE with --id, or --from-world alone", file=sys.stderr)
+            return 1
+        jobs = [(args.file, args.piece_id)]
+    failed = 0
+    for save, piece_id in jobs:
+        result = piece_import.import_piece(save, piece_id, target, universe)
+        if result.written:
+            drafted = "drafted its fit rule" if result.drafted else "kept its fit rule"
+            print(f"OK   {paths.rel(result.template)} (from {save.name}; {drafted})")
+        else:
+            failed += 1
+            print(f"FAIL {save}: not written, {len(result.problems)} problem(s)")
+        for problem in result.problems:
+            print(f"     {problem}")
+    print(
+        f"Imported {len(jobs) - failed} of {len(jobs)} piece(s). Next: fill in the tags of a drafted fit rule, then "
+        "uv run rf gen."
+    )
+    return 1 if failed else 0
 
 
 def _gametest_log(log: Path, paths: RepoPaths) -> int:

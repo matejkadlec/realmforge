@@ -5,21 +5,31 @@ A dungeon type names its room pool; the generated entry also carries the pool's 
 each room's template (the structure ``realmforge:rooms/<id>``), size, role, weight and connectors as the game reads
 them (``rooms/connectors.py``). The game's planner lays out a dungeon from that alone (architecture 15.3), so
 planning needs no template, and JUnit fuzzes the planner over the same files.
+
+Each room also gets its set-piece spots (``rooms/set_pieces.py``, ADR 0050): the patterns of spots the pieces that
+reach its role fit, each with the pieces that may fill it. The entry lists those pieces (template, processor list,
+weight, tags, whether they may be mirrored) and the patterns a room of each role fills by default
+(``set_piece_density``), so the builder picks pieces without reading their fit rules (RLM-282).
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 from typing import Any
 
-from realmforge_tools.content import Content, RoomEntry
+from realmforge_tools.content import Content, RoomEntry, SetPieceEntry
 from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.generate.datapack import data_dir, entry_data
 from realmforge_tools.generate.javagen import header, java_file_path, string_literal
+from realmforge_tools.generate.set_pieces import processor_list_id, template_id
 from realmforge_tools.project import MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.rooms.connectors import Connector, connectors
+from realmforge_tools.rooms.generator import GENERATED_DIR, paths
+from realmforge_tools.rooms.set_pieces import DENSITY, Fit, Pattern, RoomView, match
 from realmforge_tools.schema.common import LocalizedText
-from realmforge_tools.schema.dungeon import DungeonTypeDef, room_role
+from realmforge_tools.schema.dungeon import ROOM_ROLES, DungeonTypeDef, room_role
 from realmforge_tools.schema.room import ROOMS_DIR
 
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
@@ -61,7 +71,114 @@ def pool_rooms(dungeon: DungeonTypeDef, content: Content) -> list[RoomEntry]:
 
 def dungeon_data(dungeon: DungeonTypeDef, content: Content) -> dict[str, Any]:
     data, _ = entry_data(dungeon, REGISTRY)
-    data["rooms"] = [_room(room) for room in pool_rooms(dungeon, content)]
+    generated = generated_rooms(content)
+    rooms, used = [], set()
+    for room in pool_rooms(dungeon, content):
+        entry = _room(room)
+        spots = room_spots(room, content.set_pieces, *generated.get(room.id, (None, frozenset())))
+        if spots:
+            entry["set_piece_spots"] = spots
+            used |= {piece for pattern in spots for piece in pattern["pieces"]}
+        rooms.append(entry)
+    data["rooms"] = rooms
+    data["set_piece_density"] = {role: list(DENSITY[role]) for role in ROOM_ROLES}
+    pieces = {f"{MOD_ID}:{piece.id}": piece for piece in content.set_pieces}
+    if used:
+        data["set_pieces"] = {piece: _piece(pieces[piece]) for piece in sorted(used)}
+    return data
+
+
+def generated_rooms(content: Content) -> dict[str, tuple[dict[str, str] | None, frozenset[tuple[int, int]]]]:
+    """What the set-piece matcher knows of a generated room, by room id: its theme's block of every role (the blocks
+    it reads as walls) and its paths (which pieces keep off, ``rooms/generator.py``)."""
+    themes = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.room_themes}
+    specs = {entry.model.id: entry.model for entry in content.room_specs}
+    found = {}
+    for room in content.rooms:
+        if room.id.startswith(f"{GENERATED_DIR}/"):
+            spec = specs[room.id.split("/")[1]]
+            theme = themes.get(spec.theme)
+            found[room.id] = (
+                theme.blocks.model_dump() if theme is not None else None,
+                frozenset(paths(spec)),
+            )
+    return found
+
+
+def room_fits(role: str | None, pieces: tuple[SetPieceEntry, ...]) -> list[tuple[Fit, list[SetPieceEntry]]]:
+    """The fits of the pieces that reach a room of ``role`` (any piece for None), each with its pieces, by key."""
+    groups: dict[str, tuple[Fit, list[SetPieceEntry]]] = {}
+    for piece in pieces:
+        if role is None or role in piece.model.roles:
+            fit = piece.model.fit()
+            groups.setdefault(fit.key, (fit, []))[1].append(piece)
+    return [groups[key] for key in sorted(groups)]
+
+
+def room_patterns(
+    room: RoomEntry,
+    fits: list[tuple[Fit, list[SetPieceEntry]]],
+    theme_blocks: dict[str, str] | None,
+    room_paths: frozenset[tuple[int, int]] = frozenset(),
+) -> list[Pattern]:
+    """The room's patterns for ``fits``, cached with the room's template under a kind that names everything else
+    they depend on (the fits, which of them may be mirrored, the room's theme and paths)."""
+    if not fits:
+        return []
+    mirrorable = [any(piece.model.variants.mirror for piece in group) for _, group in fits]
+    source = [[fit.key for fit, _ in fits], mirrorable, theme_blocks, sorted(room_paths)]
+    kind = f"set_pieces_{hashlib.sha256(json.dumps(source, sort_keys=True).encode()).hexdigest()[:16]}"
+    only_fits = [fit for fit, _ in fits]
+    return room.derived(
+        kind,
+        lambda structure: match(
+            RoomView(structure, theme_blocks, room_paths), only_fits, mirrorable=mirrorable
+        ),
+    )
+
+
+def room_spots(
+    room: RoomEntry,
+    pieces: tuple[SetPieceEntry, ...],
+    theme_blocks: dict[str, str] | None,
+    room_paths: frozenset[tuple[int, int]] = frozenset(),
+) -> list[dict[str, Any]]:
+    """The room's set-piece patterns as the dungeon type entry carries them: each with the pieces that may fill it
+    and its spots."""
+    fits = room_fits(room_role(room.model.tags), pieces)
+    found = []
+    for pattern in room_patterns(room, fits, theme_blocks, room_paths):
+        candidates = pattern_pieces(fits, pattern)
+        if not candidates:
+            continue
+        found.append(
+            {
+                "pieces": [f"{MOD_ID}:{piece.id}" for piece in candidates],
+                "spots": [
+                    {"pos": list(spot.pos), "facing": spot.facing, "mirror": spot.mirror}
+                    for spot in pattern.spots
+                ],
+            }
+        )
+    return found
+
+
+def pattern_pieces(fits: list[tuple[Fit, list[SetPieceEntry]]], pattern: Pattern) -> list[SetPieceEntry]:
+    """The pieces that may fill a pattern: those of its fit, but a mirrored spot of a mask that mirroring changes
+    takes only pieces that may be mirrored."""
+    fit, group = fits[pattern.fit]
+    mirrored = any(spot.mirror for spot in pattern.spots) and not fit.mask.mirror_symmetric
+    return [piece for piece in group if piece.model.variants.mirror or not mirrored]
+
+
+def _piece(piece: SetPieceEntry) -> dict[str, Any]:
+    data: dict[str, Any] = {"template": template_id(piece)}
+    processors = processor_list_id(piece)
+    if processors is not None:
+        data["processors"] = processors
+    data["weight"] = piece.model.weight
+    data["tags"] = list(piece.model.tags)
+    data["mirror"] = piece.model.variants.mirror
     return data
 
 
