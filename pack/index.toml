@@ -13,6 +13,10 @@ file = "config/defaultoptions/keybindings.txt"
 hash = "fca7380a19cf86a2dacf470d241fd4e975bcdb164d32ba3e769126b1e5b76361"
 
 [[files]]
+file = "config/pickupnotifier-client.toml"
+hash = "b0982dc8819dd569c574f23f3f3fc971b1f2ecaf378c217f4183a7b7f1796c9b"
+
+[[files]]
 file = "config/structurify.json"
 hash = "9ed3dc79bfe3b79aa675c9deb97ac0ab1214cf23ae065558f43f3f5a2b54f404"
 

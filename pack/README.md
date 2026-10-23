@@ -181,6 +181,16 @@ Traveler's Titles shows none there, and the dungeon instances, which have no nam
 Overworld keeps its title, which is the mod's own. Biome titles need open sky, which neither dimension has. A new
 realm's dimension joins the list: `tools/tests/test_pack_config.py` fails until it does.
 
+**Pick Up Notifier** (`config/pickupnotifier-client.toml`, client, Pick Up Notifier 26.1.1, RLM-308; Matěj's
+playtest, 2026-10-23): the list of pickups starts at the middle of the screen's right edge and grows downwards, 150 %
+of the mod's size. `display.screen_corner = "TOP_RIGHT"` and `display.display_scale = 6` (the mod divides it by 6;
+its default, 4, is two thirds). The mod measures a top corner's offset from the top edge in fixed GUI pixels, so the
+core mod sets `offset_y` to half the GUI height every client tick while the corner is `TOP_RIGHT`
+(`client/compat/pickupnotifier/PickUpListPosition`,
+[architecture 19.4](../docs/architecture.md#194-optional-integrations)), and the list starts mid-screen at every
+window size and GUI scale. The mod's `display.max_height = 0.5` keeps it above the bottom edge.
+`tools/tests/test_pack_config.py` checks the three values.
+
 **Sword Blocking Mechanics** (Sword Blocking Mechanics 26.1.0, RLM-297): holding right click raises a two-handed
 weapon, with the mod's poses and animations; our core mod decides what a block does (the 0.5 s full block, half of a
 later hit, the 1 s cooldown, the covered arc: `config/realmforge-common.toml`, [architecture

@@ -2400,6 +2400,17 @@ replaces its default (every sword) with an empty tag. That is a setting of anoth
 Apothic Enchanting fix below; `neoforge.mods.toml` loads the core mod after Sword Blocking Mechanics, so our file
 wins. Both are optional dependencies.
 
+**Pick Up Notifier** (RLM-308; Matěj's playtest, 2026-10-23): its list of pickups starts at the middle of the
+screen's right edge and grows downwards. The mod anchors the list at a corner or an edge's middle; a middle anchor
+centres the whole list, which then grows both ways, and a top corner sits a fixed number of GUI pixels below the top
+edge (`offset_y`), mid-screen at one window size and GUI scale only. So the pack's config picks the top right (pack
+README, "Configuration"), and `client/compat/pickupnotifier/PickUpListPosition` sets that offset to half the GUI
+height (`Window#getGuiScaledHeight`) every client tick (`ClientTickEvent.Post`), in the mod's loaded config object
+(Puzzles Lib's `ConfigHolder`), which its renderer reads every frame; the file keeps its own value. It waits until
+the config is loaded (`ConfigDataHolder#isAvailable`; earlier, Puzzles Lib logs an error and hands out a default copy)
+and leaves any other corner alone. The core mod compiles against the pack's builds of Pick Up Notifier and Puzzles
+Lib; `neoforge.mods.toml` names Pick Up Notifier as an optional client dependency.
+
 **Apothic Attributes** (RLM-271, [ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md))
 is Apotheosis's attribute library, with a crit and a dodge of its own that would roll next to ours
 ([9.1](#91-damage-pipeline)). `compat/apothic_attributes/ApothicAttributesCompat` switches both off, looking its

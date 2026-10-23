@@ -61,3 +61,14 @@ def test_structurify_switches_strongholds_off() -> None:
     config = json.loads((REPO_ROOT / "pack" / "config" / "structurify.json").read_text(encoding="utf-8"))
     disabled = {entry["name"] for entry in config["structures"] if entry.get("is_disabled")}
     assert disabled == {"minecraft:stronghold"}
+
+
+def test_pick_up_notifier_lists_pickups_from_the_middle_of_the_right_edge() -> None:
+    """The core mod moves the list's top to mid-screen only while its corner is the top right (RLM-308)."""
+    config = tomllib.loads(
+        (REPO_ROOT / "pack" / "config" / "pickupnotifier-client.toml").read_text(encoding="utf-8")
+    )
+    display = config["display"]
+    assert display["screen_corner"] == "TOP_RIGHT", "client/compat/pickupnotifier expects the top right"
+    assert display["display_scale"] == 6, "150 % of the mod's default size, 4"
+    assert display["max_height"] <= 0.5, "a list that starts mid-screen must end above the bottom edge"
