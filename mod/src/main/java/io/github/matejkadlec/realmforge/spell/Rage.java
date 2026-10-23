@@ -1,9 +1,11 @@
 package io.github.matejkadlec.realmforge.spell;
 
 import io.github.matejkadlec.realmforge.combat.CombatEvent;
+import io.github.matejkadlec.realmforge.combat.InCombat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import net.minecraft.server.level.ServerLevel;
@@ -18,9 +20,10 @@ import net.minecraft.world.entity.player.Player;
  * deals and the damage attackers deal it, and loses it every second once it is out of combat. The rules come from
  * {@link Source}s that higher features add: {@code character} gives a rage class's from its data. A swing gives its
  * rage once, however many mobs it hits: only the holder's first melee hit in a game tick counts, so a sword's sweep or
- * Better Combat's swing through several targets (one full-strength {@code Player#attack} each) gives no more. Combat is
- * the last hit dealt or taken (a dodged one included) within the rules' {@code decayAfterTicks}; it is transient, so a
- * new player entity starts out of combat. Logical server only.
+ * Better Combat's swing through several targets (one full-strength {@code Player#attack} each) gives no more. Rage
+ * holds while the last hit dealt or taken is within the rules' {@code decayAfterTicks}, measured from the same last hit
+ * as the shared in-combat state ({@link InCombat}, RLM-348), so the two never disagree about the fight: a dodged hit
+ * and one blocked in full count, a new player entity starts with no hit. Logical server only.
  */
 public final class Rage {
     /** Gives a holder its rage rules, or nothing when it has none (a mana class, a mob). */
@@ -30,8 +33,6 @@ public final class Rage {
     }
 
     private static final List<Source> SOURCES = new CopyOnWriteArrayList<>();
-    /** Every living entity's game time of its last hit dealt or taken; weak keys, so a removed one leaves nothing. */
-    private static final Map<LivingEntity, Long> LAST_COMBAT = new WeakHashMap<>();
     /** Every rage holder's game time of its last melee hit that gave rage: one swing gives it once. */
     private static final Map<LivingEntity, Long> LAST_SWING = new WeakHashMap<>();
 
@@ -54,10 +55,10 @@ public final class Rage {
         return Optional.empty();
     }
 
-    /** Whether the holder dealt or took a hit within the last {@code ticks} game ticks. */
+    /** Whether the holder dealt or took a hit within the last {@code ticks} game ticks ({@link InCombat}). */
     public static boolean inCombat(LivingEntity holder, int ticks) {
-        Long last = LAST_COMBAT.get(holder);
-        return last != null && holder.level().getGameTime() - last < ticks;
+        OptionalLong since = InCombat.ticksSinceLastHit(holder);
+        return since.isPresent() && since.getAsLong() < ticks;
     }
 
     /** What the holder's rage pool regains every second ({@link ResourceTypes#RAGE}): minus its decay out of combat. */
@@ -71,7 +72,6 @@ public final class Rage {
                 || !(event.getSource().getEntity() instanceof LivingEntity attacker) || attacker == defender) {
             return;
         }
-        markCombat(attacker, defender);
         DamageSource source = event.getSource();
         if (event.getSchool().isEmpty() && melee(source, attacker)) {
             double strength = attacker instanceof Player player ? player.getAttackStrengthScale(0.5F) : 1;
@@ -83,13 +83,6 @@ public final class Rage {
         }
         rules(defender).ifPresent(rules -> gain(defender,
                 rules.forDamageTaken(event.getInflictedDamage(), defender.getMaxHealth())));
-    }
-
-    static void onDodge(CombatEvent.Dodge event) {
-        if (event.getEntity().level() instanceof ServerLevel
-                && event.getSource().getEntity() instanceof LivingEntity attacker && attacker != event.getEntity()) {
-            markCombat(attacker, event.getEntity());
-        }
     }
 
     /**
@@ -111,12 +104,6 @@ public final class Rage {
         long now = holder.level().getGameTime();
         Long last = LAST_SWING.put(holder, now);
         return last == null || last != now;
-    }
-
-    private static void markCombat(LivingEntity attacker, LivingEntity defender) {
-        long now = defender.level().getGameTime();
-        LAST_COMBAT.put(attacker, now);
-        LAST_COMBAT.put(defender, now);
     }
 
     private static void gain(LivingEntity holder, double rage) {
