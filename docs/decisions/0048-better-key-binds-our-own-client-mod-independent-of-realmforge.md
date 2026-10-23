@@ -49,14 +49,19 @@ follows in RLM-356.
      its own key and NeoForge `KeyModifier` and its primary's conflict context, so key presses, mouse buttons,
      modifiers and conflict contexts reach it as they reach a primary key; mixins on `KeyMapping` and
      `ToggleKeyMapping` make the key bind held while either key is held and count the clicks of both;
+   - in game, a key's primary key bind wins over another key bind's secondary key on the same key; a key bind never
+     holds the same key twice, so a secondary key given its primary's key unbinds the primary (Matěj's playtest,
+     2026-10-23);
    - the secondary keys live in `config/better_key_binds-secondary_keys.txt`, not `options.txt`, whose early startup
      save drops the lines of key binds it does not know yet; they are loaded once every mod has registered its key
      mappings;
    - the Key Binds screen gets a second key column right of the primary one, through mixins on the rows of vanilla's
      list and of Controlling's, which the pack uses ([0043](0043-default-keys-and-key-search-in-the-pack.md)): the
-     screen is never replaced. Reset, "Reset Keys", the conflict markers, Controlling's "Show Conflicts" and its
-     search by key include the secondary keys. The Controlling mixins sit in a config that is not required, so a
-     Controlling update that changes the code they hook into costs its screen the column instead of crashing the game.
+     screen is never replaced. Reset, "Reset Keys", the conflict markers, Controlling's "Show Conflicts", its search
+     by key and its "Toggle Free" include the secondary keys, and three faults of Controlling's screen are fixed along
+     the way (its search box focused on opening and dead after Esc, its category headings reaching into the next
+     row). The Controlling mixins sit in a config that is not required, so a Controlling update that changes the code
+     they hook into costs its screen the column instead of crashing the game.
 
 ## Consequences
 

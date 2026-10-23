@@ -10,17 +10,26 @@ depend on it, and servers don't need it ([ADR 0048](../docs/decisions/0048-bette
 ## Using it
 
 - Options → Controls → Key Binds shows a second key button right of each key bind's primary one. Click it and press
-  a key (with Ctrl, Shift or Alt held first for a combination) or a mouse button; Esc unbinds it.
+  a key (with Ctrl, Shift or Alt held first for a combination) or a mouse button; Esc unbinds it. A key bind never
+  holds the same key twice: giving the secondary key the primary's key (and modifier) unbinds the primary.
 - Either key works: a key bind is held while either of its keys is held (letting go of one while the other is still
   down keeps it held), and a press of either key counts as a click. A toggle key (Sneak, Sprint set to Toggle) flips
   on a press of either key.
 - The secondary key follows the same rules as the primary: NeoForge's key modifiers and its conflict contexts (an
   in-game key and a GUI key may share a key).
+- In game, a key's primary key bind wins: with D as Strafe Right's key and Strafe Left's (or Advancements')
+  secondary key, D only strafes right. The secondary key acts where no primary key bind takes the key, so with L as
+  Advancements' key and JEI's Show Recipe's secondary key, L opens the advancements in game and shows recipes in the
+  inventory. Screens check keys their own way (`KeyMapping#matches`), so there the secondary key always works.
 - A key bind's Reset returns both keys to their defaults; a secondary key's default is unbound. "Reset Keys" resets
   every secondary key too.
 - Conflicts show as on the primary column: `[ key ]` in yellow, a yellow stripe and a tooltip naming the other key
   binds. With [Controlling](https://www.curseforge.com/minecraft/mc-mods/controlling), "Show Conflicts" lists rows
-  whose conflict involves a secondary key, and the search by key (`key:T`) finds key binds by their secondary key.
+  whose conflict involves a secondary key, the search by key (`key:T`) finds key binds by their secondary key, and
+  "Toggle Free" leaves out the keys used as secondary keys.
+- Controlling's screen gets three fixes of its own: it opens with the search box unfocused (its suggestions show once
+  it is clicked), the box can be clicked again after Esc closed it, and the category headings no longer reach into
+  the first key bind's row.
 
 Default: every secondary key is unbound.
 
@@ -31,10 +40,11 @@ Default: every secondary key is unbound.
 | Each key bind's secondary key: a hidden `KeyMapping` with its own key and `KeyModifier` and its primary's conflict context. It is in vanilla's key lookup, never in `Options.keyMappings`, so key presses reach it like any key and neither the Key Binds screen nor `options.txt` lists it. | `SecondaryKeyMapping` |
 | The link from a key bind to its secondary key, the merge rules, loading and saving | `SecondaryKeys` |
 | The secondary key file | `SecondaryKeysFile` |
-| `isDown()` (held while either key is held), `consumeClick()` (both keys' clicks), `matches()` (a screen's key check), `isDefault()` and `setToDefault()` (both keys) | `mixin/KeyMappingMixin`, `mixin/ToggleKeyMappingMixin` |
+| `isDown()` (held while either key is held), `consumeClick()` (both keys' clicks), `matches()` (a screen's key check), `isDefault()` and `setToDefault()` (both keys), and the in-game lookup of a pressed key (primary key binds win) | `mixin/KeyMappingMixin`, `mixin/ToggleKeyMappingMixin` |
 | The second key column on vanilla's Key Binds screen | `SecondaryKeyColumn`, `mixin/KeyBindsListKeyEntryMixin`, `mixin/KeyBindsListMixin` |
 | Waiting for a pressed button's key (NeoForge screen events, on any screen that extends vanilla's) | `SecondaryKeyCapture`, `KeyCapture` |
-| Controlling: its rows, "Show Conflicts" and the search by key | `mixin/controlling/` |
+| Focus on a Key Binds screen with a search box: closed on opening, kept in step with the box | `KeyBindsScreenFocus` |
+| Controlling: its rows and category headings, "Show Conflicts", the search by key and "Toggle Free" | `mixin/controlling/` |
 
 The secondary keys are saved in `config/better_key_binds-secondary_keys.txt`, one key bind per line:
 
@@ -64,7 +74,8 @@ From the repository root ([CLAUDE.md](../CLAUDE.md#commands) has the setup):
 ./gradlew runClient                        # the dev client loads it next to Realmforge's mods
 ```
 
-The JUnit tests cover the file format, the key capture, the merge of both keys and the conflicts with secondary keys.
+The JUnit tests cover the file format, the key capture, the merge of both keys, the primary key winning a shared key,
+a secondary key taking its own primary's key, and the conflicts with secondary keys.
 
 ## Releases
 
