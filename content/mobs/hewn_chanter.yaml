@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../tools/schemas/mobs.schema.json
+# W3's caster archetype (RLM-33, D11): a Hewn that chants the old stone-songs (lore outline, Undervault). It keeps its
+# distance and sings shards of stone at its target; the chime it hums is its tell. Fragile up close. Placeholder model
+# and texture until A2 (RLM-48).
+id: hewn_chanter
+name: {en_us: Hewn Chanter}
+archetype: caster
+size: {width: 0.7, height: 2.0}
+attributes:
+  max_health: 18
+  attack_damage: 2
+  armor: 2
+  movement_speed: 0.25
+  follow_range: 24
+idle: guard
+caster:
+  spells: [realmforge:shard_song]
+  keep_distance: 6
+sounds:
+  ambient: minecraft:block.amethyst_block.chime
+  hurt: minecraft:block.stone.hit
+  death: minecraft:block.amethyst_cluster.break
+  step: minecraft:block.stone.step
+loot:
+  - {item: minecraft:lapis_lazuli, count: {min: 2, max: 4}, chance_percent: 50}
+  - {item: minecraft:amethyst_shard, count: {min: 1, max: 2}, chance_percent: 35}
+color: "#7E8796"

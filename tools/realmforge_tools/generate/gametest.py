@@ -23,6 +23,8 @@ PLATFORMS: dict[str, tuple[int, int, int]] = {
     "platform_5x5": (5, 5, 5),
     # Room for a realm portal's frame, 5 wide and 6 tall, with space in front of it and behind it (W2b).
     "platform_9x9": (9, 8, 9),
+    # Room for a mob to fight at range and to back away from its target (W3's caster).
+    "platform_17x17": (17, 6, 17),
 }
 
 AIR = ("minecraft:air", ())

@@ -2,7 +2,9 @@ package io.github.matejkadlec.realmforge.client.compat.neat;
 
 import com.google.common.reflect.TypeToken;
 import io.github.matejkadlec.realmforge.client.compat.MobLevelLabel;
+import java.util.Optional;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.world.entity.LivingEntity;
@@ -32,12 +34,20 @@ public final class NeatCompat {
         }
     }
 
+    /**
+     * Neat's card for a renderer that is not a {@code LivingEntityRenderer} (our custom mobs, {@link NeatCard}), while
+     * Neat is loaded.
+     */
+    public static Optional<NeatCard> card(EntityRendererProvider.Context context) {
+        return ModList.get().isLoaded(MOD_ID) ? Optional.of(new NeatCard(context)) : Optional.empty();
+    }
+
     private static void onRegisterModifiers(RegisterRenderStateModifiersEvent event) {
         event.registerEntityModifier(new TypeToken<LivingEntityRenderer<LivingEntity, LivingEntityRenderState, ?>>() {
         }, NeatCompat::showLevel);
     }
 
-    private static void showLevel(LivingEntity entity, LivingEntityRenderState state) {
+    static void showLevel(LivingEntity entity, LivingEntityRenderState state) {
         if (state instanceof NeatRenderState neat && neat.neat$nameToRender() != null) {
             MobLevelLabel.forMob(entity, Minecraft.getInstance().player)
                     .ifPresent(line -> neat.neat$setNameToRender(line.getVisualOrderText()));

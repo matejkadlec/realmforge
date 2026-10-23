@@ -152,3 +152,25 @@ def _effect_mark(category: str) -> set[tuple[int, int]]:
     if category == "harmful":
         marks = {(x, EFFECT_ICON_SIZE - 1 - y) for x, y in marks}
     return marks
+
+
+def placeholder_mob_texture(
+    seed: str, color: int, width: int, height: int, eyes: set[tuple[int, int]]
+) -> bytes:
+    """A ``width`` x ``height`` entity texture until real art exists: opaque speckled stone in the mob's colour
+    (``color``, 0xRRGGBB), the flecks from a hash of ``seed`` (the mob's id) so it is the same on every machine, with
+    lighter pixels at ``eyes`` (the face of its model's head), so it shows which way the mob looks."""
+    base = ((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF)
+    pixels: list[Rgba] = []
+    for y in range(height):
+        for x in range(width):
+            if (x, y) in eyes:
+                pixels.append(_shade(base, 1.9))
+                continue
+            cell = hashlib.sha256(f"{seed}/{x}/{y}".encode()).digest()[0]
+            # Mostly the base colour, with lighter and darker flecks, as the block placeholders.
+            factor = (
+                1.0 + ((cell % 9) - 4) * 0.035 + (0.18 if cell > 236 else 0.0) - (0.22 if cell < 16 else 0.0)
+            )
+            pixels.append(_shade(base, factor))
+    return encode_rgba(width, height, pixels)

@@ -1,0 +1,182 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.realmforge.hewn_sentinel",
+        "texture_width": 64,
+        "texture_height": 64,
+        "visible_bounds_width": 4,
+        "visible_bounds_height": 4,
+        "visible_bounds_offset": [
+          0,
+          1.09375,
+          0
+        ]
+      },
+      "bones": [
+        {
+          "name": "body",
+          "pivot": [
+            0,
+            13,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -6.0,
+                13,
+                -3.0
+              ],
+              "size": [
+                12,
+                13,
+                6
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "head",
+          "pivot": [
+            0,
+            26,
+            0
+          ],
+          "parent": "body",
+          "cubes": [
+            {
+              "origin": [
+                -4.5,
+                26,
+                -4.5
+              ],
+              "size": [
+                9,
+                9,
+                9
+              ],
+              "uv": [
+                0,
+                19
+              ]
+            }
+          ]
+        },
+        {
+          "name": "left_arm",
+          "pivot": [
+            8.0,
+            25,
+            0
+          ],
+          "parent": "body",
+          "cubes": [
+            {
+              "origin": [
+                6.0,
+                13,
+                -2.0
+              ],
+              "size": [
+                4,
+                13,
+                4
+              ],
+              "uv": [
+                36,
+                19
+              ]
+            }
+          ]
+        },
+        {
+          "name": "right_arm",
+          "pivot": [
+            -8.0,
+            25,
+            0
+          ],
+          "parent": "body",
+          "cubes": [
+            {
+              "origin": [
+                -10.0,
+                13,
+                -2.0
+              ],
+              "size": [
+                4,
+                13,
+                4
+              ],
+              "uv": [
+                0,
+                37
+              ]
+            }
+          ]
+        },
+        {
+          "name": "left_leg",
+          "pivot": [
+            3.0,
+            13,
+            0
+          ],
+          "parent": "body",
+          "cubes": [
+            {
+              "origin": [
+                0,
+                0,
+                -3.0
+              ],
+              "size": [
+                6,
+                13,
+                6
+              ],
+              "uv": [
+                16,
+                37
+              ]
+            }
+          ]
+        },
+        {
+          "name": "right_leg",
+          "pivot": [
+            -3.0,
+            13,
+            0
+          ],
+          "parent": "body",
+          "cubes": [
+            {
+              "origin": [
+                -6,
+                0,
+                -3.0
+              ],
+              "size": [
+                6,
+                13,
+                6
+              ],
+              "uv": [
+                40,
+                37
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

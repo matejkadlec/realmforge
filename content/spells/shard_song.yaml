@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# The Hewn Chanter's spell (W3, RLM-33): a telegraphed cast, then a shard of stone that flies at its target and can be
+# dodged. Arcane, so armor does not stop it; the mob's level raises its damage (architecture 14.1).
+id: shard_song
+name: {en_us: Shard Song}
+description: {en_us: "Sings a shard of stone loose and hurls it at an enemy for {damage} damage."}
+school: realmforge:arcane
+scales_with: spell_power
+targeting: {type: realmforge:current_target, range: 16}
+cast: {type: cast_time, duration_seconds: 1.5}
+cooldown_seconds: 3
+npc_only: true
+effects:
+  - type: realmforge:projectile
+    speed: 16
+    size: 0.5
+    lifetime_seconds: 2
+    effects:
+      - {type: realmforge:damage, amount: 4}

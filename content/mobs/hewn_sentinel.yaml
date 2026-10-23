@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../tools/schemas/mobs.schema.json
+# W3's melee archetype (RLM-33, D11): a Hewn, a Gatewright stone servant that fights with its fists and hammers
+# (lore outline, Undervault). It stands guard like the statue it is until a player comes near, and walks back to its
+# post when it loses them. Slow, tough and hard to push around. Placeholder model and texture until A2 (RLM-48).
+id: hewn_sentinel
+name: {en_us: Hewn Sentinel}
+archetype: melee
+size: {width: 0.9, height: 2.2}
+attributes:
+  max_health: 30
+  attack_damage: 5
+  armor: 6
+  movement_speed: 0.2
+  follow_range: 20
+  knockback_resistance_percent: 60
+idle: guard
+sounds:
+  hurt: minecraft:block.stone.hit
+  death: minecraft:block.stone.break
+  step: minecraft:block.stone.step
+loot:
+  - {item: minecraft:iron_ingot, count: {min: 1, max: 2}, chance_percent: 50}
+  - {item: minecraft:raw_gold, chance_percent: 15}
+color: "#8C8577"

@@ -34,6 +34,32 @@ public final class GeneratedSpellExpectations {
 
     public static final List<SpellExpectation> SPELLS = List.of(
             new SpellExpectation(
+                    "realmforge:shard_song",
+                    "spell.realmforge.shard_song.name",
+                    "spell.realmforge.shard_song.description",
+                    "realmforge:arcane",
+                    "spell_power",
+                    "realmforge:current_target",
+                    16.0,
+                    "cast_time",
+                    30,
+                    0,
+                    false,
+                    false,
+                    Optional.empty(),
+                    0.0,
+                    0.0,
+                    60,
+                    10,
+                    1,
+                    true,
+                    Optional.empty(),
+                    0.0,
+                    true,
+                    List.of(
+                            new EffectExpectation("realmforge:projectile", Map.of("lifetime_ticks", 40.0, "size", 0.5, "speed", 16.0), Map.of(), List.of(
+                                    new EffectExpectation("realmforge:damage", Map.of("amount", 4.0, "attack_damage", 0.0, "per_level", 0.0), Map.of(), List.of()))))),
+            new SpellExpectation(
                     "realmforge:test_blink",
                     "spell.realmforge.test_blink.name",
                     "spell.realmforge.test_blink.description",

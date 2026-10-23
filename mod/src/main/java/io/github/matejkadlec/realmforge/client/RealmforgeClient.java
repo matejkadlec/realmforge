@@ -15,6 +15,7 @@ import io.github.matejkadlec.realmforge.client.input.CharacterSheetKey;
 import io.github.matejkadlec.realmforge.client.input.DarkVisionKey;
 import io.github.matejkadlec.realmforge.client.input.SpellKeys;
 import io.github.matejkadlec.realmforge.client.network.ClientPayloadHandlers;
+import io.github.matejkadlec.realmforge.client.render.CustomMobRenderers;
 import io.github.matejkadlec.realmforge.client.render.RealmPortalColors;
 import io.github.matejkadlec.realmforge.client.render.SpellEntityRenderers;
 import io.github.matejkadlec.realmforge.client.screen.CharacterCreationScreen;
@@ -56,6 +57,7 @@ public final class RealmforgeClient {
         ClientCasts.register();
         SpellBarInput.register();
         SpellEntityRenderers.register(modBus);
+        CustomMobRenderers.register(modBus);
         RealmPortalColors.register(modBus);
     }
 }

@@ -39,6 +39,7 @@ from realmforge_tools.schema.effect import PeriodicDef, effect_id
 from realmforge_tools.schema.item import USE_TEXT_GROUP, ItemDef
 from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
+from realmforge_tools.schema.mob import TRASH_LOOT, mob_description_id
 from realmforge_tools.schema.realm import FRAME_HEIGHT, PORTAL_PARTICLES, unlock_advancement
 from realmforge_tools.schema.requirement import ChapterCompletedDef, HasAdvancementDef
 from realmforge_tools.schema.room_spec import FULL, LANTERN, SLAB, STAIRS, THEME_ROLES, WALL_TORCH
@@ -83,6 +84,8 @@ CHAPTER_REGISTRY = f"{MOD_ID}:chapter"
 STRUCTURE_REGISTRY = "minecraft:structure"
 PARTICLE_TYPE_REGISTRY = "minecraft:particle_type"
 MOB_EFFECT_REGISTRY = "minecraft:mob_effect"
+SOUND_EVENT_REGISTRY = "minecraft:sound_event"
+SPELL_REGISTRY = f"{MOD_ID}:spell"
 # Vanilla Overworld's height (net.minecraft.world.level.dimension.DimensionType, minecraft:overworld): its lowest y and
 # the number of blocks above it, for Overworld's arrival heights.
 OVERWORLD_MIN_Y = -64
@@ -98,6 +101,7 @@ REGISTRY_OF_TYPE: dict[str, str] = {
     "blocks": BLOCK_REGISTRY,
     "stats": ATTRIBUTE_REGISTRY,
     "effects": MOB_EFFECT_REGISTRY,
+    "mobs": ENTITY_TYPE_REGISTRY,
     "spell_schools": SPELL_SCHOOL_REGISTRY,
     "dungeons": DUNGEON_TYPE_REGISTRY,
     **{t.directory: f"{MOD_ID}:{t.registry}" for t in DATAPACK_TYPES},
@@ -190,6 +194,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_spell_schools(content, universe)
     problems += _check_effects(content, universe)
     problems += _check_spells(content, universe)
+    problems += _check_mobs(content, universe)
     problems += _check_characters(content, universe)
     problems += _check_worldgen_references(content, universe)
     problems += _check_dimension_rules(content, universe)
@@ -751,6 +756,80 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
                     )
                 )
             problems += _check_inner_effects(entry.source, path, effect, spell, universe, effects)
+    return problems
+
+
+# The text group of entity type names, entity.realmforge.<name>, which content/mobs/ shares.
+ENTITY_TEXT_GROUP = "entity"
+
+# The targeting types a mob's AI casts with: at its target, or at a player it picks itself (architecture 11.2).
+MOB_SPELL_TARGETING = (ENEMY, CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLAYER)
+
+
+def _check_mobs(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A mob's loot names items that exist and are worth having (no trash loot, principle 10), its sounds exist, and a
+    caster's spells exist, target an enemy and reach farther than the distance it keeps."""
+    problems: list[Problem] = []
+    spells = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spells}
+    # content/texts/entity.yaml names the hand-written entity types (the spell entities) with the same keys.
+    entity_texts = {
+        name for entry in content.texts if entry.model.id == ENTITY_TEXT_GROUP for name in entry.model.texts
+    }
+    for entry in content.mobs:
+        mob = entry.model
+        if mob.id in entity_texts:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "id",
+                    f"content/texts/{ENTITY_TEXT_GROUP}.yaml already names an entity type {mob.id}: both would be "
+                    f"{mob_description_id(mob.id)}",
+                )
+            )
+        for n, drop in enumerate(mob.loot):
+            if not universe.contains(ITEM_REGISTRY, drop.item):
+                problems.append(
+                    Problem(entry.source, f"loot.{n}.item", _unknown(drop.item, ITEM_REGISTRY, universe))
+                )
+            elif drop.item in TRASH_LOOT:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"loot.{n}.item",
+                        f"{drop.item} is trash loot: every drop is worth having (vision); drop something useful",
+                    )
+                )
+        for name, sound in mob.sounds.model_dump().items():
+            if sound is not None and not universe.contains(SOUND_EVENT_REGISTRY, sound):
+                problems.append(
+                    Problem(entry.source, f"sounds.{name}", _unknown(sound, SOUND_EVENT_REGISTRY, universe))
+                )
+        if mob.caster is None:
+            continue
+        for n, spell_id in enumerate(mob.caster.spells):
+            path = f"caster.spells.{n}"
+            spell = spells.get(spell_id)
+            if spell is None:
+                problems.append(Problem(entry.source, path, _unknown(spell_id, SPELL_REGISTRY, universe)))
+                continue
+            if spell.targeting.type not in MOB_SPELL_TARGETING:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        path,
+                        f"{spell_id} targets {spell.targeting.type}; a mob casts at an enemy: "
+                        f"{', '.join(MOB_SPELL_TARGETING)}",
+                    )
+                )
+            elif spell.targeting.range <= mob.caster.keep_distance:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        path,
+                        f"{spell_id} reaches {spell.targeting.range:g} blocks, not past the {mob.caster.keep_distance:g} "
+                        "blocks the mob keeps, so it could never cast it",
+                    )
+                )
     return problems
 
 
