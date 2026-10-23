@@ -308,7 +308,7 @@ How features cooperate without breaking the direction:
 | `realmforge:dimension_rules` | `content/dimensions/` | gameplay rules of one dimension, named in a `dimension` field (for example `minecraft:overworld`): mob levels and the access requirements ([15.1](#151-dimensions)); flags later. Validation allows one entry per dimension; the server indexes the entries by dimension | no | M1 |
 | `realmforge:realm` | `content/realms/` | a realm (owned by `world`, W2a): its dimension, name, subtitle, plain description ("stone realm"), locked hint, level band, flavour line and the icon of its unlock advancement `realmforge:realm/<id>`, and the realm portal's fields (W2b): its signet, colour, particle, sound pitch and arrival (where a trip may build a portal). Overworld has an entry too, which is no realm: no unlock, signet, description, hint or flavour, its colour the return portals'. Validation allows one entry per dimension and one realm per signet; `world/realm/Realms` indexes them by dimension and by signet, and `Realms#of` never returns Overworld's | yes | M1 |
 | `realmforge:boss` | `content/bosses/` | fixed level, attributes, phases, abilities (spells), arena, loot | no | M1 |
-| `realmforge:dungeon_type` | `content/dungeons/` | rule set: the room pool it is built from, resolved into its rooms (template, size, role, weight, connectors), and its layout rules (W4a); its key and how long a portal to it stays open (W4d); theme, encounters, loot and level range join with the tasks that use them | no | M1 |
+| `realmforge:dungeon_type` | `content/dungeons/` | rule set: the room pool it is built from, resolved into its rooms (template, size, role, weight, connectors), and its layout rules (W4a); its key and how long a portal to it stays open (W4d); each room's set-piece spots, the pieces that fill them and the density per role (RLM-280, [15.4](#154-rooms)); theme, encounters, loot and level range join with the tasks that use them | no | M1 |
 | `realmforge:affix` | `content/affixes/` | rollable modifier: item categories (tags), tiers by rarity and level | yes | M2 |
 | `realmforge:gem` | `content/gems/` | socketable gem and its bonuses | yes | M2 |
 
@@ -372,12 +372,13 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/` (exists: blocks with their items, loot tables, mining tags and recipes; a block's kind picks its class, below), `effects/` (exists: status effects, [11.4](#114-status-effects)), `entities/`, `sounds/` | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
 | `races/`, `classes/`, `spells/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `realms/`, `bosses/`, `dungeons/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
-| `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template | the planner ([15.3](#153-generation-pure-first-then-minecraft)) |
+| `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template, and each room's set-piece spots with the pieces that may fill them ([15.4](#154-rooms)) | the planner ([15.3](#153-generation-pure-first-then-minecraft)); the builder's set pieces (RLM-282) |
 | `loot/`, tags; the `recipe` of an item or block (exists, W4d) | `data/realmforge/loot_table/`, `recipe/<id>.json` (vanilla's `crafting_shaped`, the result the entry itself), `tags/` | reloadable vanilla data |
 | `chapters/`, `realms/`, `quests/` | `data/realmforge/advancement/` (a chapter's `chapter/<id>`, a realm's unlock `realm/<id>`); `pack/config/ftbquests/quests/` (SNBT, stable ids per ADR 0006) | advancements; the FTB Quests book |
 | `worldgen/<registry>/<id>.json` (JSON, [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)) | validated and copied unchanged to `data/realmforge/dimension/`, `dimension_type/`, `worldgen/<registry>/` | vanilla worldgen registries |
 | `rooms/` (NBT plus a YAML sidecar; [15.4](#154-rooms)) | validated and copied, normalized, to `data/realmforge/structure/rooms/` | structure templates |
 | `room_specs/`, `room_themes/` (exist, A4d; [15.4](#154-rooms)) | each kept seed of a spec built by the room generator into `data/realmforge/structure/rooms/generated/<spec>/seed_<n>.nbt`; themes name the blocks it builds with | structure templates |
+| `set_pieces/` (NBT plus a YAML fit rule; exist, RLM-280; [15.4](#154-rooms)) | the template, normalized, at `data/realmforge/structure/set_pieces/<id>.nbt`; its variants as the processor list `data/realmforge/worldgen/processor_list/set_pieces/<id>.json`; its spots in the dungeon type entries; QA expectations | structure templates, processor lists |
 | item YAML with a weapon preset | `data/realmforge/weapon_attributes/<item>.json` (Better Combat format) | read by Better Combat |
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
 | `texts/` (exists) | lang keys `<group>.realmforge.<name>`, `GeneratedTexts` constants | translations |
@@ -1697,7 +1698,11 @@ open_minutes: 30                      # how long that portal stays open (W4d)
 `rf gen` resolves the pool into the entry: each room's template, size, role, weight and connectors, and its sidecar's
 `max_per_layout`, `near_start` and `explosion_breaks` where it sets them, in room id order (`generate/dungeons.py`),
 so the game plans a layout without loading a template, and JUnit fuzzes the planner on the
-same files. Validation checks that the pool holds an entrance, rooms to pass through (two connectors, a third when
+same files. Since RLM-280 a room also carries its set-piece spots ([15.4](#154-rooms)) as `set_piece_spots`, a list
+of patterns, each the pieces that may fill it and its spots (`pos`, the footprint's lowest corner at the height the
+piece stands on; `facing`, the way the piece's front faces; `mirror`), and the entry carries `set_pieces` (each
+piece's template, processor list, weight, tags and whether it may be mirrored) and `set_piece_density` (the
+`[min, max]` patterns a room of each role fills). The game ignores them until the builder places pieces (RLM-282). Validation checks that the pool holds an entrance, rooms to pass through (two connectors, a third when
 the rules always want a branch), a room for the ending and a dead end, that every room in it has exactly one role tag,
 and that every connector of every room meets some connector of the pool, that its key is an item and no other type's
 key. The keys also form the item tag `realmforge:dungeon_key`, which the client reads to know which items a portal
@@ -1894,6 +1899,36 @@ Rooms are generated or imported; nobody has to build one by hand
   seed a generator change broke instead of stopping, so its reject still reaches the spec (RLM-263). Folders inside
   the generated directories are not reviewed:
   `rf gen` would delete their `review.yaml`.
+- **Set pieces** (RLM-280, RLM-281, [design](design/set-pieces.md),
+  [ADR 0050](decisions/0050-set-pieces-hand-built-nbt-placed-at-dungeon-generation.md)): small hand-built dressing
+  that the dungeon fits into rooms, `content/set_pieces/<id>.nbt` with a fit rule `<id>.yaml`
+  (`schema/set_piece.py`): the mask in Matěj's notation (`W` wall, `.` the piece, `_` clearance, `?` anything; the
+  first row the wall side, north), `height` (1 to 3), `builds_walls`, `walls` (theme roles, `wall` for the walls'
+  base, body, patches and cornice, or block ids), `tags`, `roles` (default hallway and combat), `weight` and
+  `variants` (`mirror`, `chance`, `swaps`). The template is built as the mask shows it and holds the piece's cells
+  only; validation checks its size, cells, ids and that it holds no connector, marker, spawner, redstone, fluid,
+  locked-looking door or container loot table. `rf gen` writes it normalized as `realmforge:set_pieces/<id>` and its
+  variants as a processor list of vanilla `rule` processors (a chance block becomes air, a swap is one rule per state
+  of the block in the template). **The matcher** (`rooms/set_pieces.py`) finds, for every pooled room, the spots of
+  the pieces that reach its role: the mask turned four ways and mirrored (`StructureTemplate#transform`), on a floor
+  block (no barrier), with air up to the piece's height, wall behind and beside where the mask says (a generated
+  room's wall by its theme's roles, an imported room's any full block, never a barrier), clearance a player stands
+  on and no other spot takes, two blocks or more from every connector, clear of the room's entities, one block from
+  every `mob` marker and off a generated room's paths from its doorways to its middle; with every spot filled, no
+  doorway loses a doorway it reached, every clearance cell stays reachable, and no lit cell turns dark (a piece is
+  solid up to its height and lights nothing). Spots come in patterns (ADR 0036): four that the room's mirrors map
+  onto each other, a pair (one mirror or a half turn) or one centred on a mirror, bigger fits and patterns first,
+  never overlapping; a mirrored spot of a mask that mirroring changes takes only pieces that may be mirrored. The
+  dungeon type entry carries them ([15.2](#152-dungeon-types)) with the default density (a hallway at most one
+  pattern, a combat room one or two; treasure, boss and entrance rooms only for pieces that name the role), and the
+  room cache keeps a room's patterns per set of fits. `uv run rf set-pieces report` counts the spots of the
+  workshop jig's masks in every room, as the design's mask report did (`--game` adds the light check and the paths);
+  the room gallery outlines each pattern and renders the room with a piece in each. **The workshop:**
+  `/qa setpiece jig <mask> [<wall block>]` (QA mod, `qa/setpiece/SetPieceJig`) builds the frame for one of the
+  report's masks north of the player, with a structure block in Save mode boxed to the piece's cells and named
+  `realmforge_qa:set_piece/<mask>_<n>`, and `uv run rf set-pieces import <save> --id <id>` (or `--from-world <world>`)
+  brings the save into `content/set_pieces/` with a drafted fit rule ([tools/README](../tools/README.md#set-pieces)).
+  `ContentSetPieceGameTests` loads every piece and its processor list; `SetPieceJigGameTests` runs the jig.
 - **Validation:** size limits (48 blocks per axis, a structure block's maximum), connectors on the room's boundary
   facing out, known markers, only blocks the themes can swap and only ids inside the ID universe (an imported
   room's own blocks are remapped, and a container's loot table must exist), and `LICENSE` and `NOTICE` next to
@@ -2526,6 +2561,8 @@ that agents can read. So far:
 - `/qa run <command>; <command>; ...`: runs the commands in order as its source, so a playtest's setup takes one line;
   chat cuts a line at 256 characters, so the line goes into an impulse command block as `execute as @p at @p run qa
   run ...` ([flow: Reaching the state](ai-development-flow.md#reaching-the-state));
+- `/qa setpiece jig <mask> [<wall block>]` (RLM-281): the set-piece workshop's frame for a mask north of the player,
+  with a structure block in Save mode boxed to the piece ([15.4](#154-rooms));
 - `/qa realm enter <realm> [<x> <z>]`, `/qa realm unlock|lock <realm>` (W2a): take the player to a realm's floor at
   x, z (0, 0 by default) the way `/tp` does, so a player without the realm's unlock is refused, and grant or revoke
   the unlock advancement as `/advancement grant|revoke @s only realmforge:realm/<realm>` does

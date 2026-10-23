@@ -15,6 +15,8 @@ uv run rf art gallery DIR     # review gallery for DIR/<subject>/<candidate>.png
 uv run rf rooms import SRC... --to DIR [--rules FILE]  # .nbt/.schem/.litematic -> rooms with draft sidecars
 uv run rf rooms gallery [DIR]  # render the rooms below DIR (default content/rooms) -> .cache/rooms/gallery/
 uv run rf rooms review DIR     # merge decisions pasted from the gallery (stdin or --from) into DIR/review.yaml
+uv run rf set-pieces report [MASK...] [--game]  # spots of the jig's masks in every room (the design's mask report)
+uv run rf set-pieces import FILE --id ID        # a workshop jig save -> content/set_pieces/ID (or --from-world WORLD)
 uv run pytest             # tests
 uv run ruff check && uv run ruff format --check
 ```
@@ -28,7 +30,7 @@ uv run ruff check && uv run ruff format --check
 | `realmforge_tools/generate/` | generators; `generate_all` + `sync` own the generated directories; `datapack.py` writes every type in `DATAPACK_TYPES` as datapack registry entries (translation keys, unit conversion); `spell_schools.py` writes the spell schools with their damage types, damage type tag entries and placeholder icons; `spells.py` writes the spells' `GeneratedSpells` keys and QA expectations (their data comes from `datapack.py`); `effects.py` writes the status effects' `GeneratedEffects` registrations, placeholder icons and QA expectations; `texts.py` writes the `GeneratedTexts` key constants and `lang.py` every locale's lang file; `apotheosis.py` writes the Apotheosis affixes of `content/apotheosis_affixes/` to Apotheosis's own paths; `fonts.py` writes our symbols font (`realmforge:symbols`, the mob level's skull) and its texture from the pixel rows it holds |
 | `realmforge_tools/formats/` | deterministic PNG, NBT, gzip/zlib and JSON writers; a PNG reader for generator output; an NBT reader (every tag type, the arrays included) |
 | `realmforge_tools/art/` | texture pipeline ([ADR 0023](../docs/decisions/0023-texture-generator.md)): palette, `rf art clean`, `rf art gallery` |
-| `realmforge_tools/rooms/` | dungeon rooms ([below](#rooms)): structure templates, the source readers, `rf rooms import`, the draft slot tags, dressing plain rooms, the checks, the renderer and `rf rooms gallery` |
+| `realmforge_tools/rooms/` | dungeon rooms ([below](#rooms)): structure templates, the source readers, `rf rooms import`, the draft slot tags, dressing plain rooms, the checks, the renderer and `rf rooms gallery`; set pieces ([below](#set-pieces)): the matcher and the mask report (`set_pieces.py`) and `rf set-pieces import` (`set_piece_import.py`) |
 | `realmforge_tools/packboot.py` | `rf pack-boot`: installs and boots the pack with NeoForge's self tests ([below](#pack-boot)) |
 | `realmforge_tools/gamelog.py` | NeoForge log parsing shared by `rf pack-boot` and `rf gametest-log` ([below](#gametest-log)) |
 | `realmforge_tools/client_isolation.py` | the import check that keeps client classes under `client/` (architecture 18) |
@@ -199,7 +201,11 @@ reviewed, or a folder of generated seed candidates) from four views: outside, cu
 its label's colour (`MARKER_STYLES` in `rooms/render.py`: `entrance` lime, `mob` red, `chest` yellow, `exit` light
 blue, anything else magenta), also above the cut, each card lists the room's markers by label with their positions,
 and the page opens with a legend of the labels and the connectors. A new marker gets its style in the same change (a
-test holds `MARKERS` to it). It writes the PNGs and `index.html` to
+test holds `MARKERS` to it). With set pieces in `content/set_pieces/`, each room also shows its set-piece spots
+([below](#set-pieces)): every pattern's floor cells drawn as stained glass in its fit's colour (`SPOT_STYLES`), listed
+on the card with the pieces that fit it, and a fifth view, the sample dressing, with the heaviest of those pieces in
+every pattern. A room's spots go by its sidecar's role (any role without a sidecar) and, for a candidate of a room
+spec, by the spec's theme and paths. It writes the PNGs and `index.html` to
 `.cache/rooms/gallery/<folder>/` (replaced on every run; `--out` picks another folder, which must not overlap the rooms'
 folder and is replaced only when it is empty or an earlier gallery, marked by a `.room-gallery` file). The renderer is
 [nucleation](https://github.com/Schem-at/Nucleation) (MIT, pinned in `pyproject.toml`), with block models and textures
@@ -247,3 +253,38 @@ a kept seed joins `seeds`, a rejected one `rejected_seeds`, and only those two l
 flow lists, `seeds: [2, 7]`; a spec that writes either as a block list is refused). The generator is deterministic,
 so a change to it changes every kept room: `rf gen --check` shows which, and a change a player would see goes back to
 the gallery.
+
+## Set pieces
+
+Set pieces (RLM-280, RLM-281; [design](../docs/design/set-pieces.md),
+[ADR 0050](../docs/decisions/0050-set-pieces-hand-built-nbt-placed-at-dungeon-generation.md)) are small hand-built
+pieces the dungeon fits into rooms: `content/set_pieces/<id>.nbt` with a fit rule `<id>.yaml`
+([content/README.md](../content/README.md)). `rooms/set_pieces.py` holds the mask, the matcher and its patterns
+([architecture 15.4](../docs/architecture.md#154-rooms)); `rf gen` writes each pooled room's patterns into the dungeon
+type entry (`generate/dungeons.py`) and each piece's template and processor list (`generate/set_pieces.py`), and the
+room cache keeps a room's patterns under a digest of the fits, the room's theme and paths.
+
+**`rf set-pieces report [MASK...]`** counts the spots of the workshop jig's masks (`NAMED_MASKS`: `wall_<w>x<d>`,
+`corner_<n>x<n>`, `niche_<w>x1`, `free_<n>x<n>`, `built_niche_3x1`; all of them without arguments) in every room, as
+the design's mask report did: rooms with at least one spot / spots, per source (split by pool where a source has rooms
+in and out of pools) and in all, each room's spots placed greedily one by one so they can all be filled at once, and
+the walls they stand against by block family. `--game` counts as `rf gen` does: with the light check, and off
+generated rooms' paths. All masks over the 164 rooms take about 5 seconds (about 15 with `--game`).
+
+**The workshop:** in the dev client, `/qa setpiece jig <mask> [<wall block>]` builds the frame for a mask north of you
+and turns you to face it, with a structure block in Save mode whose box is the piece's cells, three blocks high, named
+`realmforge_qa:set_piece/<mask>_<n>`. Build the piece in the box, press Save, then import the save:
+
+```bash
+uv run rf set-pieces import run/client/saves/<world>/generated/realmforge_qa/structure/set_piece/wall_3x1_1.nbt --id barrel_shelf
+uv run rf set-pieces import --from-world <world>      # every save of run/client/saves/<world> not imported yet
+```
+
+**`rf set-pieces import FILE --id ID`** reads the mask from the save's name and the height from its size, less the
+layers on top that hold only air, checks the piece (its cells, ids and blocks, as validation does), writes the template
+normalized as `content/set_pieces/<ID>.nbt` and drafts `<ID>.yaml`: the mask, the height, `builds_walls` for
+`built_niche_3x1`, empty `tags` for you to fill in (validation refuses the fit rule until then), the default roles and
+weight, and `source`, the save it came from. An existing fit rule is kept, so importing a save again replaces only its
+template. **`--from-world WORLD`** (a world folder, or a world name in `run/client/saves/`) imports every save of the
+jig in that world that no fit rule names as its `source`, each under its save's name as its id (rename the two files
+and the `id` together). `--to DIR` writes elsewhere than `content/set_pieces/`. Then `uv run rf gen`.

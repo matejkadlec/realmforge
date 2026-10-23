@@ -5,7 +5,9 @@
 > generator, 2026-10-17) and [ADR 0036](../decisions/0036-room-lights-and-decorations-form-patterns.md). The mask
 > report was run over the 164 rooms on `master` at `4e0043a`. Rooms stay generated or imported
 > ([ADR 0028](../decisions/0028-dungeon-rooms-generated-or-imported.md)); set pieces are their dressing, not rooms.
-> **Matěj approved this design on 2026-10-19** with the [decisions](#decisions) below.
+> **Matěj approved this design on 2026-10-19** with the [decisions](#decisions) below. Implemented by RLM-280 (the
+> content type, the matcher and the spots, [ADR 0050](../decisions/0050-set-pieces-hand-built-nbt-placed-at-dungeon-generation.md),
+> [architecture 15.4](../architecture.md#154-rooms)) and RLM-281 (the jig and the import); RLM-282 places the pieces.
 
 ## At a glance
 
@@ -64,7 +66,9 @@ dressing's full view of the room with the builder's variety:
    a sample dressing (seed 0), so Matěj judges both the spots and the pieces in them.
 
 The spots are data the game reads, so a room needs no change, and a new piece reaches every room at the next
-`rf gen`. Set pieces also work for the world structures of M2, which place the same rooms. The import dressing keeps
+`rf gen`. World structures (M2, [architecture 15.6](../architecture.md#156-world-structures-m2)) are vanilla jigsaw
+output and never run the dungeon builder's placement step, so set pieces reach them only with a placement step of
+their own. The import dressing keeps
 its block variety, vines and cobwebs; its barrels (which RLM-262 puts into patterns) can give way to barrel set
 pieces once those exist.
 
@@ -81,7 +85,8 @@ mask: |              # top view; the first row is the wall side, the room is bel
   W . . . W
   _ _ _ _ _
 height: 3            # the piece's blocks reach at most this high above the floor
-walls: [wall]        # theme roles (or block tags) the W cells accept
+builds_walls: true   # the template holds its W cells: it needs a flat wall and free space, not a real niche
+walls: [wall]        # theme roles (or block ids) the W cells accept
 tags: [storage, stable]
 roles: [combat, hallway, treasure]   # room roles it may appear in
 weight: 2
@@ -95,18 +100,23 @@ variants:
   - `.` is the piece: air from the floor up to `height`, over a floor block;
   - `_` is clearance: it must stay a cell a player stands on (three blocks of headroom, `rooms/walk.py`), and
     nothing else may take it;
-  - `?` (or a space) is anything.
+  - `?` is anything.
+
+  Single spaces separate the cells of a row.
   
   A mask with `W` cells on one side faces that wall, and the matcher turns it to every wall it fits. A mask without
   `W` is free-standing (any facing; the matcher may still turn it); one with `W` on two adjacent sides is a corner.
 - **A piece that brings its own walls**, like Matěj's niche, marks its walls `W` but builds them itself: the
   template holds the stone bricks, and `builds_walls: true` tells the matcher that those cells need free space in
   front of a flat wall (`.`), not an existing wall. The [mask report](#the-mask-report) shows why this matters:
-  real three-wide niches are almost absent, but 54 spots take a five-wide piece against a flat wall.
+  real three-wide niches are almost absent (four spots), but 30 spots take the niche with its walls, a piece five
+  wide and two deep, against a flat wall (the 5x2 row).
 - **Height** is 3 by default (Matěj's maximum); the matcher checks air up to it and wall behind it.
 - **Walls** name the theme roles a piece may stand against (`wall` covers `wall_base`, `wall_body` and its
-  patches, [architecture 15.4](../architecture.md#154-rooms)); for an imported room, whose blocks are not roles yet,
-  the matcher reads any full block as wall, except barriers (below).
+  patches, and `wall_cornice`, [architecture 15.4](../architecture.md#154-rooms)), or blocks by id; for an imported
+  room, whose blocks are not roles yet, the matcher reads any full block as wall for a role, except barriers (below).
+  Block tags are not offered: the ID universe knows only their names, not their blocks
+  ([ADR 0050](../decisions/0050-set-pieces-hand-built-nbt-placed-at-dungeon-generation.md)).
 - **Tags** say what a piece is (storage, prison, crypt, shrine, library, mine, kitchen, ...); a dungeon type lists
   the tags it uses, so a crypt never gets a kitchen.
 - **Roles** keep pieces out of rooms where they do not belong: none in an entrance by default, a treasure room
@@ -119,7 +129,8 @@ The matcher uses no LLM and no randomness: the same rooms and pieces always give
 
 How many spots each candidate mask gets in the 164 rooms on `master` (122 imported, 42 generated), as "rooms with
 at least one spot / spots". A room's spots are placed greedily, without overlapping, so the counts are spots that
-can be filled at once. A spot must:
+can be filled at once. `uv run rf set-pieces report` counts them again for the rooms of today, with the masks the
+workshop jig builds (RLM-280; [tools/README](../../tools/README.md#set-pieces)). A spot must:
 
 - stand on a floor block, with air up to height 3 that no marker or entity needs;
 - have a full block behind it up to height 3 (wall masks), and on its sides too (niches and corners);
@@ -156,9 +167,9 @@ The 4x1 and 5x1 rows were counted only for the whole set. Only Stonevaults' 23 r
 2. **3x1 against a wall** is the biggest wall size that still reaches a third of the rooms; it suits shelves, beds,
    tables and racks.
 3. **Niches mostly come from the generator.** The generated alcoves are one or two blocks wide (`_alcoves` picks a
-   rhythm of 2 or 3), so 1x1 and 2x1 niche pieces have 30 spots there; real three-wide niches exist in four rooms. A
-   piece like Matěj's hay niche is best built with its own walls (`builds_walls`), against a flat wall 5 wide (54
-   spots). The generator can also grow a `set_piece_niche` feature, three wide, if Matěj likes the look; that is a
+   rhythm of 2 or 3), so 1x1 and 2x1 niche pieces have 30 spots there; real three-wide niches exist in three rooms
+   (four spots). A piece like Matěj's hay niche is best built with its own walls (`builds_walls`): with them it is
+   five wide and two deep, against a flat wall (30 spots). The generator can also grow a `set_piece_niche` feature, three wide, if Matěj likes the look; that is a
    room spec change, so it goes through the gallery.
 4. **Free-standing 3x3 pieces** fit about one room in five, mostly big ones: a well, a campfire ring, a table with
    stools, a collapsed cart.
@@ -227,17 +238,20 @@ Two or three builds per piece kind are therefore enough, instead of five.
 ## The building workflow
 
 1. **The jig:** `/qa setpiece jig <mask> [<wall block>]` (QA mod, dev client) builds the frame for a mask on a flat
-   platform in front of Matěj: the `W` cells as walls of the given block (stone bricks by default), glass on the
-   clearance cells, and a structure block in Save mode already set to the piece's bounds and named
-   `realmforge_qa:set_piece/<mask>_<n>`. For a piece with its own walls (`builds_walls`) the jig leaves the `W`
-   cells inside the bounds, empty, for him to build.
+   platform north of Matěj and turns him to face it: the `W` cells as walls of the given block (stone bricks by
+   default), glass on the clearance cells, and a structure block in Save mode already set to the piece's bounds,
+   three blocks high, and named `realmforge_qa:set_piece/<mask>_<n>`. The masks are the mask report's, by name
+   (`wall_3x1`, `corner_1x1`, `niche_2x1`, `free_2x2`, `built_niche_3x1` for the hay niche, ...). For a piece with its
+   own walls (`builds_walls`) the jig leaves the `W` cells inside the bounds, empty, for him to build, and builds a flat
+   wall behind them.
 2. **Building:** he builds the piece inside the bounds (blocks outside them are not saved) and presses Save in the
    structure block. Minecraft writes the file to
    `run/client/saves/<world>/generated/realmforge_qa/structure/set_piece/<name>.nbt`.
 3. **Import:** `uv run rf set-pieces import <file> --id hay_niche` normalizes the template into
    `content/set_pieces/hay_niche.nbt` and drafts `hay_niche.yaml` with the mask the jig used (read from the name),
-   `height` from the bounds, and tags, roles and weight to fill in. `--from-world <world>` takes every new save of a
-   world at once.
+   `height` from the bounds (layers on top that hold only air are dropped, so a lower piece needs no change to the
+   structure block), and tags, roles and weight to fill in. `--from-world <world>` takes every new save of a world at
+   once, each under its save's name; importing a save again replaces only its template.
 4. **Review:** `rf gen` validates the piece (ids, size, mask, a template that keeps its clearance clear), and the
    room gallery shows it in sample rooms. Matěj keeps or rejects it like a room.
 

@@ -203,6 +203,38 @@ there while the game runs. The handoff gives the commands
 - `./gradlew runServer` starts a dev dedicated server in `run/server` with the pack's `server` and `both` mods;
   accept the EULA once in `run/server/eula.txt`.
 
+### 3.4 Building set pieces (the workshop)
+
+Set pieces are built in the dev client and imported with `rf` ([design: the building
+workflow](design/set-pieces.md#the-building-workflow), [tools/README](../tools/README.md#set-pieces)). Build on
+Windows (3.2), where mouse look works:
+
+1. In the Windows clone on `master` (or the branch you work on), `.\gradlew.bat runClient`, and create a creative
+   world, superflat is easiest (say `workshop`).
+2. `/qa setpiece jig <mask>` builds the frame for a mask north of you and turns you to face it: walls three high
+   (stone bricks; `/qa setpiece jig <mask> minecraft:deepslate_tiles` for others), glass on the cells that must stay
+   walkable, and a structure block in the floor beside the frame, in Save mode, its box set to the piece's cells.
+   The masks are the mask report's: `wall_1x1` to `wall_5x2` against a wall, `corner_1x1` and `corner_2x2`,
+   `niche_1x1` to `niche_3x1`, `free_1x1` to `free_3x3`, and `built_niche_3x1`, a niche whose walls the piece brings
+   (the hay niche); tab completion lists them.
+3. Build the piece inside the box (what stands outside it is not saved; a piece lower than three blocks needs no
+   change to the box), open the structure block and press **Save**. The game writes
+   `$HOME\projects\realmforge-win\run\client\saves\<world>\generated\realmforge_qa\structure\set_piece\<mask>_<n>.nbt`.
+4. Import in WSL, in your checkout (the Windows clone has no Python): every new save of the world at once, each under
+   its save's name, or one save under the id you choose:
+
+   ```bash
+   cd ~/projects/realmforge
+   uv run rf set-pieces import --from-world /mnt/c/Users/<you>/projects/realmforge-win/run/client/saves/workshop
+   uv run rf set-pieces import /mnt/c/Users/<you>/projects/realmforge-win/run/client/saves/workshop/generated/realmforge_qa/structure/set_piece/built_niche_3x1_1.nbt --id hay_niche
+   ```
+
+   Reading the saves from `/mnt/c/` is fine; only builds stay on their own side. In WSL's own client the path is
+   `run/client/saves/<world>`, and `--from-world <world>` alone finds it.
+5. Fill in the `tags` of each drafted fit rule in `content/set_pieces/` (what the piece is: storage, crypt, shrine,
+   ...), check its roles and weight, then `uv run rf gen`. `uv run rf rooms gallery` shows where the pieces fit, with
+   a sample dressing (needs Vulkan, section 1).
+
 ## 4. Playing the pack on Windows (Prism Launcher + packwiz-installer)
 
 The modpack lives in `pack/` as packwiz metadata. Prism downloads the mods itself with packwiz-installer on

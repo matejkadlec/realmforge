@@ -37,6 +37,7 @@ from realmforge_tools.rooms import candidates as room_candidates
 from realmforge_tools.rooms import gallery as room_gallery
 from realmforge_tools.rooms import importer
 from realmforge_tools.rooms import set_piece_import as piece_import
+from realmforge_tools.rooms.generator import paths as room_paths
 from realmforge_tools.rooms.render import CUT_HEIGHT, RenderError, RoomRenderer
 from realmforge_tools.rooms.set_pieces import (
     NAMED_MASKS,
@@ -193,9 +194,10 @@ def main(argv: list[str] | None = None) -> int:
         "masks", nargs="*", help=f"jig masks to count (default: all of them: {', '.join(NAMED_MASKS)})"
     )
     pieces_report.add_argument(
-        "--light",
+        "--game",
         action="store_true",
-        help="also drop spots that would leave a lit cell dark, as rf gen does",
+        help="count as rf gen does: also drop spots that would leave a lit cell dark or stand on a generated room's "
+        "paths (the design's report had neither rule)",
     )
     pieces_import = piece_commands.add_parser(
         "import", help="turn a save of the workshop jig into a set piece with a drafted fit rule"
@@ -452,16 +454,17 @@ def _gallery_spots(paths: RepoPaths, directory: Path) -> room_gallery.SpotsOf | 
     themes = {f"realmforge:{entry.model.id}": entry.model for entry in content.room_themes}
     specs = {entry.model.id: entry.model for entry in content.room_specs}
 
-    def theme_of(key: str) -> dict[str, str] | None:
+    def generated(key: str) -> tuple[dict[str, str] | None, frozenset[tuple[int, int]]]:
         if room_candidates.is_candidates_folder(directory):
-            spec_id = key.split("/")[0]
+            spec = specs.get(key.split("/")[0])
         elif room_candidates.is_candidates_folder(directory.parent):
-            spec_id = directory.name
+            spec = specs.get(directory.name)
         else:
-            return None
-        spec = specs.get(spec_id)
-        theme = themes.get(spec.theme) if spec is not None else None
-        return theme.blocks.model_dump() if theme is not None else None
+            spec = None
+        if spec is None:
+            return None, frozenset()
+        theme = themes.get(spec.theme)
+        return (theme.blocks.model_dump() if theme is not None else None), frozenset(room_paths(spec))
 
     def spots_of(
         room: room_gallery.GalleryRoom,
@@ -472,7 +475,7 @@ def _gallery_spots(paths: RepoPaths, directory: Path) -> room_gallery.SpotsOf | 
         if not fits:
             return (), None
         mirrorable = [any(piece.model.variants.mirror for piece in group) for _, group in fits]
-        view = RoomView(room.structure, theme_of(room.key))
+        view = RoomView(room.structure, *generated(room.key))
         patterns = match(view, [fit for fit, _ in fits], mirrorable=mirrorable)
         groups = []
         picks = {}
@@ -529,41 +532,37 @@ def _set_pieces_report(args: argparse.Namespace, paths: RepoPaths) -> int:
     except ValidationFailed as e:
         print(f"rf set-pieces report: content/ does not load ({len(e.problems)} problem(s))", file=sys.stderr)
         return 1
-    themes = {f"realmforge:{entry.model.id}": entry.model for entry in content.room_themes}
-    specs = {entry.model.id: entry.model for entry in content.room_specs}
+    generated = dungeons.generated_rooms(content)
     rooms = []
     for room in content.rooms:
         parts = room.id.split("/")
-        theme = None
-        if parts[0] == "generated":
-            source = "generated"
-            spec_theme = themes.get(specs[parts[1]].theme)
-            theme = spec_theme.blocks.model_dump() if spec_theme is not None else None
-        else:
-            source = parts[1] if parts[0] == "third_party" and len(parts) > 2 else parts[0]
-        rooms.append((source, room, theme))
+        source = (
+            "generated" if parts[0] == "generated" else parts[1] if parts[0] == "third_party" else parts[0]
+        )
+        rooms.append((source, room, generated.get(room.id, (None, frozenset()))))
     split = {
         source
         for source in {s for s, _, _ in rooms}
         if len({bool(room.model.pools) for s, room, _ in rooms if s == source}) > 1
     }
     report_rooms = []
-    for source, room, theme in rooms:
+    for source, room, (theme, spec_paths) in rooms:
         group = source
         if source in split:
             group = (
                 f"{source}, pool {', '.join(room.model.pools)}" if room.model.pools else f"{source}, no pool"
             )
-        report_rooms.append(ReportRoom(room.id, group, room.structure, theme))
+        kept_clear = spec_paths if args.game else frozenset()
+        report_rooms.append(ReportRoom(room.id, group, room.structure, theme, kept_clear))
     masks = [NAMED_MASKS[name] for name in args.masks or NAMED_MASKS]
     started = time.monotonic()
-    rows = mask_report(report_rooms, masks, light=args.light)
+    rows = mask_report(report_rooms, masks, light=args.game)
     sizes: dict[str, int] = {}
     for room in report_rooms:
         sizes[room.group] = sizes.get(room.group, 0) + 1
     groups = sorted(sizes)
     print(
-        f"Spots per mask in {len(report_rooms)} rooms, as rooms with at least one spot / spots{' (light check on)' if args.light else ''}:"
+        f"Spots per mask in {len(report_rooms)} rooms, as rooms with at least one spot / spots{' (as rf gen counts them)' if args.game else ''}:"
     )
     print()
     print(

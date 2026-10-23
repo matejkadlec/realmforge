@@ -277,6 +277,13 @@ def test_a_generated_rooms_walls_count_by_their_role() -> None:
     assert not singles(tuff, fit("wall_1x1", walls=("minecraft:deepslate_tiles",))), "but not for a block id"
 
 
+def test_pieces_keep_off_a_generated_rooms_paths() -> None:
+    lone = Fit(Mask.parse("."))
+    path = frozenset((x, z) for x in range(3, 6) for z in range(1, 8))
+    spots = [p.spots[0] for p in match(RoomView(box_room(), None, path), [lone], patterns=False, light=False)]
+    assert spots and not any((s.pos[0], s.pos[2]) in path for s in spots)
+
+
 def test_a_piece_with_its_own_walls_needs_a_flat_wall_and_free_space() -> None:
     flat = box_room(11, 9)
     assert singles(flat, fit("built_niche_3x1")), "a five-wide stretch of flat wall"
@@ -663,6 +670,13 @@ def test_the_mask_report_reproduces_the_designs_counts() -> None:
         rooms_then, spots_then = DESIGN_TOTALS[row.name]
         assert abs(row.total[0] - rooms_then) <= 0.15 * rooms_then, row
         assert abs(row.total[1] - spots_then) <= 0.2 * spots_then, row
+
+
+def test_rf_set_pieces_report_prints_the_table(capsys: pytest.CaptureFixture[str]) -> None:
+    assert cli.main(["set-pieces", "report", "niche_3x1"]) == 0
+    out = capsys.readouterr().out
+    assert "| Mask |" in out and "| 3x1 niche (`niche_3x1`) |" in out and "All (164)" in out
+    assert cli.main(["set-pieces", "report", "nope"]) == 1
 
 
 # --- the gallery ------------------------------------------------------------------------------------------------

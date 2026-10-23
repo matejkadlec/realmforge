@@ -20,8 +20,8 @@ footprint's lowest corner in the room (``pos``, at the height pieces stand on), 
 south unturned, west after a clockwise turn) and whether the piece is mirrored there. The builder places a piece so
 that its turned and mirrored box starts at ``pos``. Besides the mask, a spot keeps two blocks or more (seen from
 above) from every connector, keeps its cells free of the room's entities and one block from every ``mob`` marker,
-and leaves no doorway cut off from a doorway it reached before, nor a clearance cell from the doorways, with every
-spot of the room filled. With the light check, it also leaves no cell dark that was lit, a piece counting as solid
+leaves no doorway cut off from a doorway it reached before, nor a clearance cell from the doorways, with every spot
+of the room filled, and keeps off a generated room's paths from its doorways to its middle. With the light check, it also leaves no cell dark that was lit, a piece counting as solid
 up to its height and lighting nothing. Generated rooms (A4d) name their wall blocks by the theme's roles, so a fit
 rule's ``walls`` decide which of them count; an imported room's blocks have no roles, so any full block does.
 
@@ -359,13 +359,20 @@ def pattern_cells(fit: Fit, spot: Spot) -> tuple[set[Pos], set[Pos]]:
 
 class RoomView:
     """What the matcher reads from a room: its cells, where players stand, its connectors, markers and entities, its
-    main floor's mirrors and its light. ``theme_blocks`` maps a generated room's roles to its theme's blocks; an
-    imported room has none, and any full block of it is wall."""
+    main floor's mirrors and its light. A generated room also has its theme (``theme_blocks``: each role's block)
+    and its paths (the columns from its doorways to its middle that stay clear, ``rooms/generator.py``); an imported
+    room has neither, and any full block of it is wall."""
 
-    def __init__(self, structure: Structure, theme_blocks: dict[str, str] | None = None) -> None:
+    def __init__(
+        self,
+        structure: Structure,
+        theme_blocks: dict[str, str] | None = None,
+        paths: frozenset[tuple[int, int]] = frozenset(),
+    ) -> None:
         self.structure = structure
         self.cells = Cells.of(structure)
         self.theme_blocks = theme_blocks
+        self.paths = paths
         self.stands = walkable(self.cells)
         found = connectors(structure)
         self.connectors = [(c.pos[0], c.pos[2]) for c in found]
@@ -446,7 +453,7 @@ class RoomView:
         for dx, dz, kind in place.cells:
             x, z = x0 + dx, z0 + dz
             if kind == _PIECE:
-                if not self._floor_block((x, y0 - 1, z)):
+                if (x, z) in self.paths or not self._floor_block((x, y0 - 1, z)):
                     return False
                 for dy in range(height):
                     pos = (x, y0 + dy, z)
@@ -850,13 +857,14 @@ def dressed(
 
 @dataclass(frozen=True)
 class ReportRoom:
-    """A room the mask report counts: its id, the group it is counted in, its template and its theme's blocks (for
-    a generated room)."""
+    """A room the mask report counts: its id, the group it is counted in, its template, and for a generated room its
+    theme's blocks and its paths."""
 
     id: str
     group: str
     structure: Structure
     theme_blocks: dict[str, str] | None = None
+    paths: frozenset[tuple[int, int]] = frozenset()
 
 
 @dataclass
@@ -876,7 +884,7 @@ def mask_report(
     """How many spots each mask gets in the rooms, placed greedily one by one so they can all be filled at once (the
     design's mask report). ``light`` adds the light check; patterns are not formed."""
     rows = []
-    views = [(room, RoomView(room.structure, room.theme_blocks)) for room in rooms]
+    views = [(room, RoomView(room.structure, room.theme_blocks, room.paths)) for room in rooms]
     for named in masks:
         fit = Fit(named.mask, builds_walls=named.builds_walls)
         row = ReportRow(named.name, named.label)
