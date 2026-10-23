@@ -715,6 +715,9 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
    - **Dodge** (the defender's dodge chance) cancels a melee hit, a projectile or a physical school hit from an
      attacker; magic, explosions and damage from the world cannot be dodged. Cancelling stops a hit cleanly since
      NeoForge 26.1 (below), and `CombatEvent.Dodge` reports it.
+   - **A raised two-handed weapon** blocks a hit on a player after the dodge: in full in the first half second
+     after raising it (the event is cancelled), by half after that, before armor and resistances
+     ([9.3](#93-blocking-with-two-handed-weapons)).
    - **A ranged crit:** a projectile hit marked in step 2 crits on its shooter's crit chance and deals 1 + crit
      damage (150 % by default, as for melee and spells; Matěj, 2026-10-19), through `setAmount`, with the crit combat
      text.
@@ -755,6 +758,19 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
    ([19.3](#193-mixins-and-access-transformers)). Melee hits in an open window are therefore compared with the
    previous melee hit, as in vanilla. `CombatGameTests` measures it: melee 6, a fire tick of 1, then melee 6 again
    deals 0 (it would deal 5 without the restore); and a fire hit right after a melee hit lands in full.
+   **A player's damage never loses anything to the window either** (RLM-311,
+   [ADR 0049](decisions/0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md); Matěj: attack speed 3 and more
+   will be reachable, a hit every 6 to 7 ticks). A melee hit or projectile whose causing entity is a player, and that
+   is no school hit, lowers the defender's invulnerable time to 10 in step 3 when it is above, so vanilla deals it in
+   full and opens a new window, exactly as for a damage type in `#minecraft:bypasses_cooldown`. The tag cannot do it:
+   arrows have one damage type whoever shoots them, and a skeleton's must still meet a player's window. Better
+   Combat already does the same for its swings (`allow_fast_attacks` sets the target's invulnerable time to 0); this
+   covers arrows, tridents and attacks without a Better Combat weapon. Mobs' and the world's hits keep vanilla's
+   window, on players too: lava, fire, cactus and a crowd of mobs hurt a player at most every 10 ticks. Iron's RPG
+   Tweaks, which 0044 first chose for this, cancels a hit of a damage type that hurt the same entity the tick before,
+   a second player's hit and our school hits included, so it is not in the pack. `HurtCooldownGameTests` measures it:
+   two melee hits 6 ticks apart and a player's arrows in the window land in full, a skeleton's arrow deals only its
+   difference, and lava, fire, cactus and five zombies land a full hit at most every 10 ticks.
 5. The reductions apply: armor (our formula), enchantments, effects. **`LivingDamageEvent.Pre`** sees the damage
    before absorption hearts take their share. Then absorption hearts take what they can, the **magic shield** takes
    what they left, up to its points (`combat/MagicShields`), and health takes the rest. The shield acts in the
@@ -835,7 +851,8 @@ both pytest and JUnit, will keep the two implementations equal.
 
 ### 9.2 Better Combat
 
-Taken unchanged ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md)), with no compile-time dependency. Our
+Taken unchanged ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md)); the core mod compiles against the pack's
+build only to read which weapons are two-handed ([9.3](#93-blocking-with-two-handed-weapons)). Our
 weapons get Better Combat weapon attribute files generated from item YAML:
 `data/realmforge/weapon_attributes/<item>.json` with `"parent": "bettercombat:<preset>"`.
 
@@ -853,6 +870,54 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
   `spell/Casting` cancels the event and sets, records (`CombatState#setBetterCombatTag`, saved) and removes the tag;
   `client/spell/ClientCasts` cancels the attack key, swing included, while the local player casts. A mob attacks
   only when its AI says so, so W3's goal library keeps a casting mob from attacking (C3a-4 left it there).
+
+### 9.3 Blocking with two-handed weapons
+
+Built for RLM-297 (Matěj, 2026-10-20 and 2026-10-22). A player holding a two-handed weapon blocks by holding right
+click, as with a shield. **Sword Blocking Mechanics** raises the weapon: its use action (holding right click keeps the
+item in use), its first- and third-person poses and animations, for the items in its tag
+`swordblockingmechanics:can_perform_sword_blocking` (`combat/WeaponBlocks#RAISABLE`). The pack's config switches its
+own parry and damage reduction off (pack README, "Configuration"), and **`combat/WeaponBlocks` decides what a block
+does**, in step 3 of the pipeline ([9.1](#91-damage-pipeline)), after the dodge:
+
+- a hit from the arc in front of the player within the first `fullBlockTicks` after raising the weapon is blocked in
+  full (the event is cancelled); a later one loses `blockedShare` of its damage through `setAmount`, before armor and
+  resistances take their share of the rest, and still reports `CombatEvent.Hit` and its combat text with what it
+  dealt. The time since raising comes from the use duration Sword Blocking Mechanics gives the raise
+  (`LivingEntityUseItemEvent.Start`, read last) less the ticks remaining: `LivingEntity#getTicksUsingItem` reads the
+  item's own duration, 0;
+- after any blocked hit the weapon goes on its cooldown at once and goes down at the end of the server tick;
+- the weapon goes on its cooldown whenever it goes down, by hand (`LivingEntityUseItemEvent.Stop`, at once) or by
+  switching items (the player's tick), so a new block always starts after it and spamming right click never chains
+  full blocks. The cooldown is vanilla's item cooldown: it shows on the hotbar, and vanilla refuses the right click
+  on the client and the server while it runs;
+- like the mod, a raised weapon never blocks damage that bypasses armor or has no source position (magic, falls,
+  drowning), nor a piercing arrow.
+
+The numbers are in the common config (`combat/CombatConfig`, [19.2](#192-configuration)) for Matěj to tune in
+playtests: the full block 0.5 s, the share 50 %, the cooldown 1 s, the arc 180° (the front half). Apotheosis's shield
+affixes (Retreating, Psychic, ...) neither roll on these weapons, which are no shields, nor fire on their blocks: they
+listen to `LivingShieldBlockEvent`, which only vanilla's shield-style blocking (`minecraft:blocks_attacks`) posts.
+
+**Which weapons are raised:** every weapon Better Combat calls two-handed (`two_handed` in its weapon attributes, from
+the weapon's own file or Better Combat's fallback by item id) whose right click does nothing else (its use animation
+is `NONE`): a spear keeps its charge (Matěj, 2026-10-22), a bow its draw. Better Combat decides this at run time, after
+the tags have loaded, so `compat/bettercombat/TwoHandedWeapons` binds the tag into the items' holders then
+(`Holder.Reference#bindTags`, through an access transformer, [19.3](#193-mixins-and-access-transformers)): on the
+server when it starts (Better Combat loads its weapons as it is about to start) and after every reload of the data
+(`DefaultDataComponentsBoundEvent`: a reload binds the items' tags, then their default components, which a stack
+needs). A client of another server (`client/compat/bettercombat/TwoHandedWeaponsClient`) binds it when its
+configuration binds the components (the same event), when it joins, and after every tag update its server sends
+(`TagsUpdatedEvent.ClientPacketReceived`): a `/reload` there sends the server's tags, which replace the items' own
+without this binding, and posts no `DefaultDataComponentsBoundEvent` on the client. `ItemStack#is` reads the holder's
+own set of tags; the tag's list of items, which the core mod's data replaces with an empty one (Sword Blocking
+Mechanics' default is every sword), stays empty. The server logs the raised weapons when it starts. The pack has no two-handed weapon yet but the spears; the QA mod's
+`realmforge_qa:test_greatsword` is one (Better Combat's fallback reads it as a claymore). A Better Combat preset set
+on a single stack does not count, since the tag is per item.
+
+`WeaponBlocksTest` covers the amounts and the arc; `WeaponBlockGameTests` raises the test greatsword at a zombie's
+hits: in full within 0.5 s, half after it, the cooldown after a block and after lowering it by hand, no block from
+behind, of magic or with a one-handed sword, and the tag's members.
 
 ## 10. Character: races, classes, leveling
 
@@ -2269,7 +2334,10 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
 
 `ModConfigSpec` only for operator and UI settings (instance limits, timeouts, debug flags, HUD options). Gameplay
 numbers are content, so they are versioned, validated and tested. The client config exists (C3b): `client/ClientConfig`,
-`config/realmforge-client.toml`, holds how the spell bar's presses wait ([11.6](#116-client-side)).
+`config/realmforge-client.toml`, holds how the spell bar's presses wait ([11.6](#116-client-side)). One exception: the
+common config, `combat/CombatConfig`, `config/realmforge-common.toml`, holds the blocking rules
+([9.3](#93-blocking-with-two-handed-weapons)), because Matěj tunes them while he plays (RLM-297) and NeoForge reloads
+the file when it changes. Once they settle they can move into content.
 
 ### 19.3 Mixins and access transformers
 
@@ -2283,8 +2351,9 @@ Access transformers live in `src/main/resources/META-INF/accesstransformer.cfg`,
 Minecraft jar a project compiles against (its default location), and which `neoforge.mods.toml` lists under
 `[[accessTransformers]]`, so FML applies it when the game loads: in a dev run (the runs live in `qa-mod/`, whose own
 jar lacks the core mod's transforms), on the GameTest server and in the pack. The core mod's one opens
-`LivingEntity#lastHurt` for the hurt cooldown ([9.1](#91-damage-pipeline)) and `ServerPlayer#setShoulderEntityLeft`
-and `Right` for the shoulder entities a realm trip leaves behind ([15.1](#151-dimensions)); the QA mod's opens `lastHurt` and
+`LivingEntity#lastHurt` for the hurt cooldown ([9.1](#91-damage-pipeline)), `ServerPlayer#setShoulderEntityLeft`
+and `Right` for the shoulder entities a realm trip leaves behind ([15.1](#151-dimensions)) and `Holder.Reference#bindTags`
+for the tag of raisable weapons ([9.3](#93-blocking-with-two-handed-weapons)); the QA mod's opens `lastHurt` and
 `damageContainers` for `CombatGameTests` and `CombatStatGameTests`.
 
 ### 19.4 Optional integrations
@@ -2325,6 +2394,26 @@ its name, `Lv. 20 Zombie`, from one function, `client/compat/MobLevelLabel`:
 - The core mod compiles against the pack's builds of both (`compileOnly` in `mod/build.gradle`, read from their
   `pack/mods/*.pw.toml`), so an update that changes a hook fails the build, not the game; `neoforge.mods.toml` names
   both as optional dependencies.
+
+**Better Combat and Sword Blocking Mechanics** (RLM-297, [9.3](#93-blocking-with-two-handed-weapons)):
+`compat/bettercombat/TwoHandedWeapons` reads Better Combat's weapon registry (`WeaponRegistry#getAttributes`) to put
+its two-handed weapons into Sword Blocking Mechanics' tag of raisable weapons, compiled against the pack's Better
+Combat build like Neat and Jade. Sword Blocking Mechanics needs no code of ours: `combat/WeaponBlocks` names its tag by
+id, and a data file in the core mod's resources, `data/swordblockingmechanics/tags/item/can_perform_sword_blocking.json`,
+replaces its default (every sword) with an empty tag. That is a setting of another mod's data, not content, like the
+Apothic Enchanting fix below; `neoforge.mods.toml` loads the core mod after Sword Blocking Mechanics, so our file
+wins. Both are optional dependencies.
+
+**Pick Up Notifier** (RLM-308; Matěj's playtest, 2026-10-23): its list of pickups starts at the middle of the
+screen's right edge and grows downwards. The mod anchors the list at a corner or an edge's middle; a middle anchor
+centres the whole list, which then grows both ways, and a top corner sits a fixed number of GUI pixels below the top
+edge (`offset_y`), mid-screen at one window size and GUI scale only. So the pack's config picks the top right (pack
+README, "Configuration"), and `client/compat/pickupnotifier/PickUpListPosition` sets that offset to half the GUI
+height (`Window#getGuiScaledHeight`) every client tick (`ClientTickEvent.Post`), in the mod's loaded config object
+(Puzzles Lib's `ConfigHolder`), which its renderer reads every frame; the file keeps its own value. It waits until
+the config is loaded (`ConfigDataHolder#isAvailable`; earlier, Puzzles Lib logs an error and hands out a default copy)
+and leaves any other corner alone. The core mod compiles against the pack's builds of Pick Up Notifier and Puzzles
+Lib; `neoforge.mods.toml` names Pick Up Notifier as an optional client dependency.
 
 **Apothic Attributes** (RLM-271, [ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md))
 is Apotheosis's attribute library, with a crit and a dodge of its own that would roll next to ours

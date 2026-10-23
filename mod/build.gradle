@@ -80,6 +80,11 @@ dependencies {
     // is loaded. Neat draws the mob's card, Jade the tooltip at the top of the screen (RLM-338).
     compileOnly packModrinthMod('neat')
     compileOnly packModrinthMod('jade')
+    // Better Combat says which weapons are two-handed, the ones raised to block (compat/bettercombat, RLM-297).
+    compileOnly packModrinthMod('better-combat')
+    // Pick Up Notifier's list starts mid-screen (client/compat/pickupnotifier, RLM-308); its config is Puzzles Lib's.
+    compileOnly packModrinthMod('pick-up-notifier')
+    compileOnly packModrinthMod('puzzles-lib')
 
     testImplementation platform("org.junit:junit-bom:${junit_version}")
     testImplementation 'org.junit.jupiter:junit-jupiter'

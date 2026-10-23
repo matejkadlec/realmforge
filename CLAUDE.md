@@ -76,8 +76,11 @@ Apotheosis for gear rarity, affixes, gems and enchanting
   at 1:16, and a trip builds one set into the floor where none is near. Dungeons are entered through the Dungeon
   Portal (W4d): a dungeon key opens it for its player
   alone, for the dungeon type's open time, with warnings before it closes and sends everyone back; the Dungeon Exit
-  and `/instance leave` leave at any time, and a completed run closes 5 minutes later. Next to the core mod, the pack
-  ships Better Key Binds (RLM-372), our own client mod that gives every key bind a secondary key.
+  and `/instance leave` leave at any time, and a completed run closes 5 minutes later. Players block with two-handed
+  weapons by holding right click (RLM-297: Sword Blocking Mechanics' poses, our rules), and their hits never lose
+  anything to the hurt cooldown (RLM-311). The pack has M1's QoL, UI and building mods, and vanilla strongholds are
+  off (PK1 to PK3). Next to the core mod, the pack ships Better Key Binds (RLM-372), our own client mod that gives
+  every key bind a secondary key.
 
 ## Pinned versions
 
@@ -294,7 +297,11 @@ that compiles here.
   `#minecraft:bypasses_cooldown`. `combat/DamagePipeline` keeps such a hit out of the window: the target keeps its
   invulnerable time (`setInvulnerabilityTicks(max(1, invulnerableTime))`: 0 is refused) and its `lastHurt`, which
   vanilla overwrites and an access transformer lets us restore, so melee hits in an open window are still compared
-  with the previous melee hit ([architecture 9.1](docs/architecture.md#91-damage-pipeline)).
+  with the previous melee hit. A player's melee hit or projectile lands through an open window in full too: the
+  pipeline lowers the target's invulnerable time to 10, vanilla's bypass without the tag, which arrows (one damage
+  type for players and skeletons) cannot use; mobs' and the world's hits keep the window. No mod changes this: Iron's
+  RPG Tweaks is not in the pack ([ADR 0049](docs/decisions/0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md),
+  [architecture 9.1](docs/architecture.md#91-damage-pipeline)).
 - **Cancelling `LivingIncomingDamageEvent` stops a hit cleanly:** `LivingEntity#hurtServer` pops the
   `DamageContainer` of a cancelled hit (NeoForge 21.1 leaked it) ([architecture 9.1](docs/architecture.md#91-damage-pipeline)).
 - **Effects have no cures:** milk and a totem clear every effect (`LivingEntity#removeAllEffects`); to keep one,

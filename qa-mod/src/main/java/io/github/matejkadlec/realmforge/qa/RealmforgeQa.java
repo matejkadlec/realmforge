@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import io.github.matejkadlec.realmforge.qa.castanim.QaCastAnimation;
 import io.github.matejkadlec.realmforge.qa.combat.CastLog;
 import io.github.matejkadlec.realmforge.qa.combat.CombatLog;
+import io.github.matejkadlec.realmforge.qa.combat.QaItems;
 import io.github.matejkadlec.realmforge.qa.combat.QaProcs;
 import io.github.matejkadlec.realmforge.qa.combat.TrainingDummy;
 import io.github.matejkadlec.realmforge.qa.command.QaCommands;
@@ -29,6 +30,7 @@ public final class RealmforgeQa {
         QaCastAnimation.register(modEventBus);
         QaGameTests.register(modEventBus);
         TrainingDummy.register(modEventBus);
+        QaItems.register(modEventBus);
         CombatLog.register();
         CastLog.register();
         QaProcs.register();

@@ -40,16 +40,18 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *   or a player's crossbow) or a thrown trident is marked as one that may crit, and an arrow stops being vanilla's
  *   crit arrow, so vanilla's random crit-arrow bonus never stacks with our crit.</li>
  *   <li>{@code LivingIncomingDamageEvent}: a dodge cancels the hit (melee, projectiles and physical school hits; never
- *   magic, explosions or the world). A marked projectile's hit crits on its shooter's crit chance and deals 1 + crit
- *   damage. A school hit gets spell power (magic), the school's power, a crit roll (by the spell's {@link CritRule}
- *   when a {@link SchoolDamageSource} brings one) and the defender's resistance (spell resistance added for magic).
- *   The armor reduction becomes vanilla's formula on the armor the attacker's armor pierce and shred leave, except
- *   for damage in {@code #minecraft:bypasses_armor}. The defender's magic shield joins the absorption reduction
- *   ({@link MagicShields}).</li>
+ *   magic, explosions or the world); then a raised two-handed weapon blocks it in full or in part
+ *   ({@link WeaponBlocks}), before armor and resistances. A marked projectile's hit crits on its shooter's crit
+ *   chance and deals 1 + crit damage. A school hit gets spell power (magic), the school's power, a crit roll (by the
+ *   spell's {@link CritRule} when a {@link SchoolDamageSource} brings one) and the defender's resistance (spell
+ *   resistance added for magic). The armor reduction becomes vanilla's formula on the armor the attacker's armor
+ *   pierce and shred leave, except for damage in {@code #minecraft:bypasses_armor}. The defender's magic shield
+ *   joins the absorption reduction ({@link MagicShields}).</li>
  *   <li>Hurt cooldown: a school hit lands through it ({@code #minecraft:bypasses_cooldown}) and leaves the defender's
  *   window as it was: it grants no invulnerability of its own, and {@code lastHurt}, which vanilla overwrites, is
  *   restored afterwards, so melee hits in an open window are still compared with the previous melee hit, not with a
- *   spell or damage-over-time tick.</li>
+ *   spell or damage-over-time tick. A player's melee hit or projectile lands through it in full too and opens a new
+ *   window, as vanilla's bypass does; mobs' and the world's hits keep vanilla's window (RLM-311).</li>
  *   <li>{@code LivingDamageEvent.Post}: reports the hit ({@link CombatEvent.Hit}), sends its combat text, and heals the
  *   attacker of a melee or ranged hit by its lifesteal.</li>
  *   <li>{@code LivingHealEvent}, last: turns healing beyond max health into overheal ({@link Overheal}) and sends the
@@ -59,6 +61,8 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
 public final class DamagePipeline {
     /** Only a full-strength melee attack can crit, like vanilla's jump crit ({@code Player#attack}). */
     private static final float FULL_STRENGTH = 0.9F;
+    /** Vanilla's hurt cooldown compares a hit with the last one while the invulnerable time is above this. */
+    private static final int HALF_WINDOW = 10;
 
     private DamagePipeline() {
     }
@@ -156,6 +160,10 @@ public final class DamagePipeline {
             CombatText.dodge(defender, source);
             return;
         }
+        if (WeaponBlocks.block(event, level)) {
+            HitTracker.takeMeleeCrit(source, defender);
+            return;
+        }
         event.addReductionModifier(DamageContainer.Reduction.ARMOR,
                 (container, vanilla) -> armorReduction(defender, container, vanilla));
         if (MagicShields.applies(defender)) {
@@ -164,9 +172,35 @@ public final class DamagePipeline {
         }
         if (school.isPresent()) {
             schoolHit(event, level, defender, source, school.get());
-        } else if (HitTracker.takeMeleeCrit(source, defender) || rangedCrit(event, source)) {
+            return;
+        }
+        if (playerHit(source)) {
+            landThroughCooldown(defender);
+        }
+        if (HitTracker.takeMeleeCrit(source, defender) || rangedCrit(event, source)) {
             HitTracker.start(defender, new HitTracker.Hit(source, level.getGameTime(), Optional.empty(), true,
                     Float.NaN));
+        }
+    }
+
+    /**
+     * Whether the hit is a player's melee hit or projectile, the damage that never loses anything to the hurt cooldown
+     * (RLM-311, ADR 0049): a school hit has its own rule, and mobs' and the world's hits keep vanilla's window.
+     */
+    public static boolean playerHit(DamageSource source) {
+        return source.getEntity() instanceof Player && meleeOrRanged(source);
+    }
+
+    /**
+     * Lets the hit through the defender's open hurt cooldown window, as {@code #minecraft:bypasses_cooldown} would:
+     * vanilla compares a hit with {@code lastHurt} only while the invulnerable time is above 10, so at 10 the hit
+     * lands in full and opens a new window. The tag cannot do it, because arrows share their damage type with
+     * skeletons'. Better Combat does the same for its swings ({@code allow_fast_attacks}); this covers the rest:
+     * arrows, tridents and attacks without a Better Combat weapon.
+     */
+    private static void landThroughCooldown(LivingEntity defender) {
+        if (defender.invulnerableTime > HALF_WINDOW) {
+            defender.invulnerableTime = HALF_WINDOW;
         }
     }
 

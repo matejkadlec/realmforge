@@ -38,7 +38,7 @@ public final class Realmforge {
         CoreFeature.register(modBus);
         ProgressionFeature.register(modBus);
         StatsFeature.register(modBus);
-        CombatFeature.register(modBus);
+        CombatFeature.register(modBus, container);
         EffectFeature.register(modBus);
         SpellFeature.register(modBus);
         TalentFeature.register(modBus);

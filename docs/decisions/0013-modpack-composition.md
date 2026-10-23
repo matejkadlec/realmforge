@@ -8,7 +8,8 @@ by [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) (A
 [0041](0041-dungeon-containers-hold-loot-through-lootr.md) (Lootr, M1), 2026-10-19; amended by
 [0044](0044-third-party-mods-by-milestone.md) (the mods by milestone; nothing left to build of the small UI mods),
 2026-10-20; amended by [0048](0048-better-key-binds-our-own-client-mod-independent-of-realmforge.md) (Better Key
-Binds, our own client mod, ships next to the core mod), 2026-10-22
+Binds, our own client mod, ships next to the core mod), 2026-10-22; composition updated 2026-10-23 for the M1 pack
+tasks PK1 to PK3 and two-handed blocking (RLM-308, RLM-309, RLM-310, RLM-297)
 
 ## Context
 
@@ -25,6 +26,15 @@ The modpack wraps our core mod with third-party QoL, UI, performance and library
   - As-is: Better Combat, Distant Horizons, Iris.
   - Performance: Sodium, Lithium, FerriteCore, ModernFix, ImmediatelyFast, EntityCulling, spark.
   - Quests: FTB Quests, FTB Library, FTB Teams (CurseForge).
+  - QoL and UI for M1 (RLM-308, [0044](0044-third-party-mods-by-milestone.md)): Inventory Sorting, Advanced Loot Info
+    with Advanced Core Info (betas, pinned), Just Enough Professions, Clumps, Crafting Tweaks, Item Highlighter (needs
+    Iceberg), Pick Up Notifier, RightClickHarvest (needs JamLib), Comforts, Traveler's Titles (needs YUNG's API),
+    Better ModList, BetterF3. Neither CleanCut nor Cut Through: Better Combat already swings through grass.
+  - Building for M1 (RLM-309): Macaw's Furniture, Doors, Windows, Roofs, Bridges, Lights and Lamps, Fences and Walls,
+    Paths and Pavings, Trapdoors, Stairs.
+  - World for M1 (RLM-310): Structurify (needs YetAnotherConfigLib), which switches vanilla strongholds off.
+  - Combat (RLM-297): Sword Blocking Mechanics, which raises a two-handed weapon to block; the core mod's rules decide
+    what a block does. Iron's RPG Tweaks stays out ([0049](0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md)).
   - Our own, next to the core mod: Better Key Binds (added 2026-10-22 by RLM-372,
     [0048](0048-better-key-binds-our-own-client-mod-independent-of-realmforge.md)), secondary key binds. Like the core
     mod it is no packwiz entry: Prism gets its jar through `installToPrism`, the client pack boot copies it in.
@@ -37,7 +47,7 @@ The modpack wraps our core mod with third-party QoL, UI, performance and library
 - **Missing on NeoForge 26.1.2, to be built by us later:** EMI Trades, Damage Numbers, Lightweight Inventory Sorting.
 - **Pinned render stack:** Sodium 0.9.2 + Iris 1.11.4 + Distant Horizons 3.3.3, all releases on 26.1.2 (1.21.1 had Sodium 0.6.13 + Iris 1.8.12, the stable pair of that version). These three change only together and only after a test with a DH-capable shaderpack.
 - **Release channels:** releases only, except Regions Unexplored 0.7.0-beta2 and FTB Teams 26.1.2.4, which have no 26.1.2 release (pack README).
-- **Sides are set per mod** in each `.pw.toml`: client for rendering and UI-only mods (Sodium, Iris, Distant Horizons, ImmediatelyFast, EntityCulling, Xaero's maps, Neat, Toast Control, No Recipe Book, Just Zoom, Mouse Tweaks, Overflowing Bars, JEED, Enchantment Descriptions, Yeetus Experimentus, Better Key Binds); both for everything that adds content, syncs data or is a library. Tree Harvester only runs on the server but is installed on both sides, because singleplayer runs an integrated server.
+- **Sides are set per mod** in each `.pw.toml`: client for rendering and UI-only mods (Sodium, Iris, Distant Horizons, ImmediatelyFast, EntityCulling, Xaero's maps, Neat, Toast Control, No Recipe Book, Just Zoom, Mouse Tweaks, Overflowing Bars, JEED, Enchantment Descriptions, Yeetus Experimentus, Item Highlighter, Traveler's Titles, Better ModList, BetterF3, Better Key Binds); both for everything that adds content, syncs data or is a library. Tree Harvester and RightClickHarvest only run on the server but are installed on both sides, because singleplayer runs an integrated server.
 - **Config overrides** go into `pack/config/`, each the mod's own file as the game writes it with only the pack's values changed, listed with their reasons in the [pack README](../../pack/README.md#configuration). The first one (2026-10-13, RLM-132) keeps waystone warps cheap: no warp costs XP (Waystones 26.1.2.16 charges up to 27 XP points by distance, and a flat 27 for a warp to another dimension), and every player may make their own waystone global.
 - `packwiz refresh` must leave the committed index unchanged (CI check).
 

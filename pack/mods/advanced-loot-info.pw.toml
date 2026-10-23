@@ -1,0 +1,14 @@
+name = "Advanced Loot Info (ALI)"
+filename = "AdvancedLootInfo-neoforge-26.1.2-2.5.0.jar"
+side = "both"
+pin = true
+
+[download]
+url = "https://cdn.modrinth.com/data/PEPVViac/versions/TwpDdLUz/AdvancedLootInfo-neoforge-26.1.2-2.5.0.jar"
+hash-format = "sha512"
+hash = "59dcece259955e4158063780ace343d37506f0982bb8363183bcc7ad7b5890d054ec0da0e5b6b98be6f2b2d774142b10264280e5f43385b12cd9a8a0bb2aba0e"
+
+[update]
+[update.modrinth]
+mod-id = "PEPVViac"
+version = "TwpDdLUz"
