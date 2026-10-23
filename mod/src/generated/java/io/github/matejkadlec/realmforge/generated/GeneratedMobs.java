@@ -4,6 +4,7 @@
 package io.github.matejkadlec.realmforge.generated;
 
 import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.mob.ai.KiteRules;
 import io.github.matejkadlec.realmforge.mob.custom.CasterMob;
 import io.github.matejkadlec.realmforge.mob.custom.CustomMob;
 import io.github.matejkadlec.realmforge.mob.custom.CustomMobSpec;
@@ -22,7 +23,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 /**
  * Custom mobs generated from {@code content/mobs/} (architecture 14.2): each an entity type of the archetype it
  * picks, with its {@link CustomMobSpec}, size and attributes at level 1. Its loot table is vanilla's default,
- * {@code realmforge:entities/<id>}.
+ * {@code realmforge:entities/<id>}, or its variant's, {@code realmforge:entities/<id>/<variant>}.
  */
 public final class GeneratedMobs {
     public static final DeferredRegister.Entities ENTITY_TYPES =
@@ -30,30 +31,36 @@ public final class GeneratedMobs {
 
     /** {@code realmforge:hewn_chanter} from {@code content/mobs/hewn_chanter.yaml}: caster, "Hewn Chanter". */
     private static final CustomMobSpec HEWN_CHANTER_SPEC = new CustomMobSpec(CustomMobSpec.Idle.GUARD,
-            CustomMobSpec.sound("minecraft:block.amethyst_block.chime"),
-            CustomMobSpec.sound("minecraft:block.stone.hit"),
-            CustomMobSpec.sound("minecraft:block.amethyst_cluster.break"),
-            CustomMobSpec.sound("minecraft:block.stone.step"),
-            List.of(GeneratedSpells.SHARD_SONG), 6.0);
+            new CustomMobSpec.Sounds(CustomMobSpec.id("realmforge:entity.hewn_chanter.ambient"),
+                    CustomMobSpec.id("realmforge:entity.hewn_chanter.hurt"),
+                    CustomMobSpec.id("realmforge:entity.hewn_chanter.death"),
+                    Optional.empty(), true),
+            CustomMobSpec.id("realmforge:vaultstone"),
+            new CustomMobSpec.Melee(20, 0.0),
+            List.of(GeneratedSpells.STONEFORM), Optional.of(new KiteRules(2.0, 1.5)),
+            List.of());
 
     public static final DeferredHolder<EntityType<?>, EntityType<CasterMob>> HEWN_CHANTER =
             ENTITY_TYPES.registerEntityType("hewn_chanter",
                     (type, level) -> new CasterMob(type, level, HEWN_CHANTER_SPEC),
-                    MobCategory.MONSTER, builder -> builder.sized(0.7F, 2.0F)
+                    MobCategory.MONSTER, builder -> builder.sized(0.7F, 3.0F)
                             .clientTrackingRange(8));
 
     /** {@code realmforge:hewn_sentinel} from {@code content/mobs/hewn_sentinel.yaml}: melee, "Hewn Sentinel". */
     private static final CustomMobSpec HEWN_SENTINEL_SPEC = new CustomMobSpec(CustomMobSpec.Idle.GUARD,
-            Optional.empty(),
-            CustomMobSpec.sound("minecraft:block.stone.hit"),
-            CustomMobSpec.sound("minecraft:block.stone.break"),
-            CustomMobSpec.sound("minecraft:block.stone.step"),
-            List.of(), 0.0);
+            new CustomMobSpec.Sounds(Optional.empty(),
+                    CustomMobSpec.id("realmforge:entity.hewn_sentinel.hurt"),
+                    CustomMobSpec.id("realmforge:entity.hewn_sentinel.death"),
+                    CustomMobSpec.id("realmforge:entity.hewn_sentinel.step"), false),
+            CustomMobSpec.id("realmforge:vaultstone_bricks"),
+            new CustomMobSpec.Melee(30, 0.5),
+            List.of(), Optional.empty(),
+            List.of(new CustomMobSpec.Variant("sapphire", 1), new CustomMobSpec.Variant("ruby", 1), new CustomMobSpec.Variant("topaz", 1)));
 
     public static final DeferredHolder<EntityType<?>, EntityType<MeleeMob>> HEWN_SENTINEL =
             ENTITY_TYPES.registerEntityType("hewn_sentinel",
                     (type, level) -> new MeleeMob(type, level, HEWN_SENTINEL_SPEC),
-                    MobCategory.MONSTER, builder -> builder.sized(0.9F, 2.2F)
+                    MobCategory.MONSTER, builder -> builder.sized(1.2F, 3.0F)
                             .clientTrackingRange(8));
 
     /** Every mob above, in id order. */
@@ -80,7 +87,7 @@ public final class GeneratedMobs {
                 .build());
         event.put(HEWN_SENTINEL.get(), Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, 30.0)
-                .add(Attributes.ATTACK_DAMAGE, 5.0)
+                .add(Attributes.ATTACK_DAMAGE, 7.5)
                 .add(Attributes.ARMOR, 6.0)
                 .add(Attributes.MOVEMENT_SPEED, 0.2)
                 .add(Attributes.FOLLOW_RANGE, 20.0)

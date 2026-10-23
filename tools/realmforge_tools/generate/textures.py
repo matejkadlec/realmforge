@@ -11,16 +11,21 @@ from realmforge_tools.formats.png import Rgba, encode_rgba
 SIZE = 16
 
 
-def placeholder_texture(seed: str) -> bytes:
-    """A 16x16 checkered tile with an outline, colored by a hash of ``seed`` (the content id).
+def placeholder_texture(seed: str, color: int | None = None) -> bytes:
+    """A 16x16 checkered tile with an outline, colored by a hash of ``seed`` (the content id), or in ``color``
+    (0xRRGGBB) when given.
 
     Deliberately unlike vanilla's magenta/black "missing texture", so a placeholder is easy to tell apart
     from a broken texture reference.
     """
-    hue = hashlib.sha256(seed.encode("utf-8")).digest()[0] / 256
-    light = _rgb(hue, 0.45, 0.90)
-    dark = _rgb(hue, 0.55, 0.65)
-    outline = _rgb(hue, 0.70, 0.30)
+    if color is None:
+        hue = hashlib.sha256(seed.encode("utf-8")).digest()[0] / 256
+        light = _rgb(hue, 0.45, 0.90)
+        dark = _rgb(hue, 0.55, 0.65)
+        outline = _rgb(hue, 0.70, 0.30)
+    else:
+        base = ((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF)
+        light, dark, outline = _shade(base, 1.2), _shade(base, 0.85), _shade(base, 0.4)
     transparent: Rgba = (0, 0, 0, 0)
 
     pixels: list[Rgba] = []
@@ -154,23 +159,21 @@ def _effect_mark(category: str) -> set[tuple[int, int]]:
     return marks
 
 
-def placeholder_mob_texture(
-    seed: str, color: int, width: int, height: int, eyes: set[tuple[int, int]]
-) -> bytes:
-    """A ``width`` x ``height`` entity texture until real art exists: opaque speckled stone in the mob's colour
-    (``color``, 0xRRGGBB), the flecks from a hash of ``seed`` (the mob's id) so it is the same on every machine, with
-    lighter pixels at ``eyes`` (the face of its model's head), so it shows which way the mob looks."""
+ORB_TEXTURE_SIZE = (64, 32)
+
+
+def placeholder_orb_texture(seed: str, color: int) -> bytes:
+    """The 64x32 texture of a spell projectile's orb (vanilla's shulker bullet model, whose three slabs take its
+    upper left), until real art exists: opaque speckled stone in ``color`` (0xRRGGBB), the flecks from a hash of
+    ``seed`` (the spell's id), so it is the same on every machine."""
     base = ((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF)
+    width, height = ORB_TEXTURE_SIZE
     pixels: list[Rgba] = []
     for y in range(height):
         for x in range(width):
-            if (x, y) in eyes:
-                pixels.append(_shade(base, 1.9))
-                continue
             cell = hashlib.sha256(f"{seed}/{x}/{y}".encode()).digest()[0]
-            # Mostly the base colour, with lighter and darker flecks, as the block placeholders.
             factor = (
-                1.0 + ((cell % 9) - 4) * 0.035 + (0.18 if cell > 236 else 0.0) - (0.22 if cell < 16 else 0.0)
+                1.0 + ((cell % 9) - 4) * 0.04 + (0.2 if cell > 236 else 0.0) - (0.25 if cell < 20 else 0.0)
             )
             pixels.append(_shade(base, factor))
     return encode_rgba(width, height, pixels)

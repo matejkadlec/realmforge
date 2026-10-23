@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# The Hewn Chanter's spell (W3, RLM-33; Matěj's playtest, 2026-10-23, renamed from Shard Song): a stone forms and grows
+# in front of the Chanter's forehead while it casts, then flies at its target and can be dodged. The Chanter must keep
+# its target in sight the whole cast, and in range for the first half; past that, the stone flies even at a target
+# that stepped out of range. It flies 16 blocks and shatters on the first block or creature it meets, sparing the
+# stone creatures of Undervault. Arcane, so armor does not stop it; the mob's level raises its damage (architecture
+# 14.1).
+id: stoneform
+name: {en_us: Stoneform}
+description: {en_us: "Forms a stone and hurls it at an enemy for {damage} damage."}
+school: realmforge:arcane
+scales_with: spell_power
+targeting: {type: realmforge:current_target, range: 8}
+cast:
+  type: cast_time
+  duration_seconds: 1.5
+  keep_sight: true
+  keep_range_percent: 50
+  sound: realmforge:spell.stoneform.form
+  forms_projectile: true
+cooldown_seconds: 3
+npc_only: true
+effects:
+  - type: realmforge:projectile
+    speed: 16
+    size: 0.5
+    lifetime_seconds: 1
+    spares: realmforge:stone_creatures
+    impact: {sound: realmforge:spell.stoneform.impact, particles: realmforge:vaultstone}
+    appearance: {model: orb, color: "#8D9094"}
+    effects:
+      - {type: realmforge:damage, amount: 4}

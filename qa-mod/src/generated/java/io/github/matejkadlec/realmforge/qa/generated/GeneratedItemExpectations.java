@@ -41,11 +41,29 @@ public final class GeneratedItemExpectations {
                     List.of("minecraft:combat"),
                     ""),
             new ItemExpectation(
+                    "realmforge:magic_stone_dust",
+                    "item.realmforge.magic_stone_dust",
+                    64,
+                    List.of("minecraft:ingredients"),
+                    ""),
+            new ItemExpectation(
                     "realmforge:oblivion_scroll",
                     "item.realmforge.oblivion_scroll",
                     16,
                     List.of("minecraft:tools_and_utilities"),
                     "realmforge:use/unlearn_stat_points"),
+            new ItemExpectation(
+                    "realmforge:ruby",
+                    "item.realmforge.ruby",
+                    64,
+                    List.of("minecraft:ingredients"),
+                    ""),
+            new ItemExpectation(
+                    "realmforge:sapphire",
+                    "item.realmforge.sapphire",
+                    64,
+                    List.of("minecraft:ingredients"),
+                    ""),
             new ItemExpectation(
                     "realmforge:stone_wand",
                     "item.realmforge.stone_wand",
@@ -62,6 +80,12 @@ public final class GeneratedItemExpectations {
                     "realmforge:test_item",
                     "item.realmforge.test_item",
                     16,
+                    List.of("minecraft:ingredients"),
+                    ""),
+            new ItemExpectation(
+                    "realmforge:topaz",
+                    "item.realmforge.topaz",
+                    64,
                     List.of("minecraft:ingredients"),
                     ""),
             new ItemExpectation(

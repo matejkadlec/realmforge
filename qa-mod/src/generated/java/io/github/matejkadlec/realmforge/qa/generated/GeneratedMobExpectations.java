@@ -7,18 +7,29 @@ import java.util.List;
 
 /**
  * What {@code content/mobs/} says about every custom mob, so GameTests can check that the game agrees. Ids are
- * full resource locations, e.g. {@code realmforge:hewn_sentinel}; numbers are in game units (fractions).
+ * full resource locations, e.g. {@code realmforge:hewn_sentinel}; numbers are in game units (ticks, fractions);
+ * a sound or block the YAML leaves out is {@code ""}.
  */
 public final class GeneratedMobExpectations {
-    /** One drop of its loot table: how many of the item (from min to max) and the chance it drops at all. */
-    public record DropExpectation(String item, int min, int max, double chance) {
+    /**
+     * One drop of a loot table: how many of the item (from min to max), the chance it drops at all, and what each
+     * level of Looting adds: up to {@code lootingCount} more, {@code lootingChance} to the chance.
+     */
+    public record DropExpectation(String item, int min, int max, double chance, int lootingCount,
+            double lootingChance) {
     }
 
-    /** Expected state of one mob: its entity type, attributes at level 1, behaviour and loot. */
+    /** One variant: its weight at spawn and its loot table, the mob's own drops and its own. */
+    public record VariantExpectation(String id, int weight, String lootTable, List<DropExpectation> loot) {
+    }
+
+    /** Expected state of one mob: its entity type, attributes at level 1, behaviour, sounds and loot. */
     public record MobExpectation(String id, String descriptionId, String archetype, float width, float height,
             double maxHealth, double attackDamage, double armor, double movementSpeed, double followRange,
-            double knockbackResistance, String idle, List<String> spells, double keepDistance, String lootTable,
-            List<DropExpectation> loot) {
+            double knockbackResistance, String idle, int attackIntervalTicks, double knockUpBlocks,
+            List<String> spells, double kitingStepBlocks, double kitingSpeed, String ambientSound,
+            String hurtSound, String deathSound, String stepSound, boolean silentSteps, String deathParticles,
+            List<String> tags, String lootTable, List<DropExpectation> loot, List<VariantExpectation> variants) {
     }
 
     public static final List<MobExpectation> MOBS = List.of(
@@ -26,26 +37,48 @@ public final class GeneratedMobExpectations {
                     "realmforge:hewn_chanter",
                     "entity.realmforge.hewn_chanter",
                     "caster",
-                    0.7F, 2.0F,
+                    0.7F, 3.0F,
                     18.0, 2.0, 2.0,
                     0.25, 24.0, 0.0,
                     "guard",
-                    List.of("realmforge:shard_song"), 6.0,
+                    20, 0.0,
+                    List.of("realmforge:stoneform"),
+                    2.0, 1.5,
+                    "realmforge:entity.hewn_chanter.ambient", "realmforge:entity.hewn_chanter.hurt", "realmforge:entity.hewn_chanter.death",
+                    "", true,
+                    "realmforge:vaultstone",
+                    List.of("realmforge:stone_creatures"),
                     "realmforge:entities/hewn_chanter",
-                    List.of(new DropExpectation("minecraft:lapis_lazuli", 2, 4, 0.5),
-                            new DropExpectation("minecraft:amethyst_shard", 1, 2, 0.35))),
+                    List.of(new DropExpectation("realmforge:magic_stone_dust", 1, 2, 0.6, 1, 0.0),
+                            new DropExpectation("realmforge:vaultstone", 1, 3, 1.0, 1, 0.0)),
+                    List.of()),
             new MobExpectation(
                     "realmforge:hewn_sentinel",
                     "entity.realmforge.hewn_sentinel",
                     "melee",
-                    0.9F, 2.2F,
-                    30.0, 5.0, 6.0,
+                    1.2F, 3.0F,
+                    30.0, 7.5, 6.0,
                     0.2, 20.0, 0.6,
                     "guard",
-                    List.of(), 0.0,
+                    30, 0.5,
+                    List.of(),
+                    0.0, 0.0,
+                    "", "realmforge:entity.hewn_sentinel.hurt", "realmforge:entity.hewn_sentinel.death",
+                    "realmforge:entity.hewn_sentinel.step", false,
+                    "realmforge:vaultstone_bricks",
+                    List.of("realmforge:stone_creatures"),
                     "realmforge:entities/hewn_sentinel",
-                    List.of(new DropExpectation("minecraft:iron_ingot", 1, 2, 0.5),
-                            new DropExpectation("minecraft:raw_gold", 1, 1, 0.15))));
+                    List.of(new DropExpectation("realmforge:vaultstone_bricks", 1, 2, 0.75, 1, 0.0)),
+                    List.of(
+                            new VariantExpectation("sapphire", 1, "realmforge:entities/hewn_sentinel/sapphire",
+                                    List.of(new DropExpectation("realmforge:vaultstone_bricks", 1, 2, 0.75, 1, 0.0),
+                                    new DropExpectation("realmforge:sapphire", 1, 1, 0.2, 0, 0.05))),
+                            new VariantExpectation("ruby", 1, "realmforge:entities/hewn_sentinel/ruby",
+                                    List.of(new DropExpectation("realmforge:vaultstone_bricks", 1, 2, 0.75, 1, 0.0),
+                                    new DropExpectation("realmforge:ruby", 1, 1, 0.2, 0, 0.05))),
+                            new VariantExpectation("topaz", 1, "realmforge:entities/hewn_sentinel/topaz",
+                                    List.of(new DropExpectation("realmforge:vaultstone_bricks", 1, 2, 0.75, 1, 0.0),
+                                    new DropExpectation("realmforge:topaz", 1, 1, 0.2, 0, 0.05))))));
 
     private GeneratedMobExpectations() {
     }

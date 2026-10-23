@@ -197,8 +197,9 @@ public final class SpellCaster {
      * Why {@code target} may no longer take the effects of {@code caster}'s spell, checked again before a cast time's
      * effects and before every tick of a channel (architecture 11.2 steps 4 and 5): an entity that died or is gone, or
      * that the spell's targeting refuses now (out of range, behind blocks, no longer an enemy or ally). A spell that
-     * locks on only needs its target alive and in the caster's dimension. A ground point or a direction stays as it
-     * was resolved when the cast began.
+     * locks on only needs its target alive and in the caster's dimension; one that keeps its range for a share of the
+     * cast ({@link SpellCast#keepRange}) no longer needs it in range, only in sight. A ground point or a direction stays
+     * as it was resolved when the cast began.
      */
     static Optional<CastFailure> recheck(LivingEntity caster, Spell spell, SpellTarget spellTarget) {
         LivingEntity target = spellTarget.entityOrNull();
@@ -211,7 +212,12 @@ public final class SpellCaster {
         if (spell.cast().lockOn()) {
             return target.level() == caster.level() ? Optional.empty() : Optional.of(CastFailure.OUT_OF_RANGE);
         }
-        return spell.targeting().resolve(caster, SpellAim.at(target)).right();
+        Optional<CastFailure> failure = spell.targeting().resolve(caster, SpellAim.at(target)).right();
+        if (failure.filter(reason -> reason == CastFailure.OUT_OF_RANGE).isPresent()
+                && spell.cast().keepRange().isPresent() && target.level() == caster.level()) {
+            return caster.hasLineOfSight(target) ? Optional.empty() : Optional.of(CastFailure.NO_LINE_OF_SIGHT);
+        }
+        return failure;
     }
 
     /** Runs every effect of the spell on {@code target}, with the caster's stats as they are now. */

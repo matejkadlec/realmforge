@@ -10,7 +10,10 @@ import net.minecraft.world.entity.ai.goal.Goal;
  * for its post.
  */
 final class ReturnToPostGoal extends Goal {
-    /** Within this many blocks of its post a guard counts as standing at it. */
+    /**
+     * Within this many blocks of its post a guard counts as standing at it, and a mob wider than a block a little
+     * farther: vanilla's paths put a wide mob's corner, not its middle, on a path's block.
+     */
     private static final double AT_POST = 1.5;
     private static final double SPEED = 1.0;
 
@@ -23,7 +26,7 @@ final class ReturnToPostGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        return mob.getTarget() == null && mob.post().filter(post -> !atPost(post)).isPresent();
+        return mob.getTarget() == null && mob.post().filter(post -> !atPost(mob, post)).isPresent();
     }
 
     @Override
@@ -42,7 +45,8 @@ final class ReturnToPostGoal extends Goal {
         mob.getNavigation().stop();
     }
 
-    private boolean atPost(BlockPos post) {
-        return mob.position().closerThan(post.getBottomCenter(), AT_POST);
+    /** Whether {@code mob} stands at {@code post}. */
+    static boolean atPost(CustomMob mob, BlockPos post) {
+        return mob.position().closerThan(post.getBottomCenter(), AT_POST + Math.max(0, mob.getBbWidth() - 1));
     }
 }

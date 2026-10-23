@@ -1,17 +1,21 @@
 {
-  "name": "spell.realmforge.shard_song.name",
-  "description": "spell.realmforge.shard_song.description",
+  "name": "spell.realmforge.stoneform.name",
+  "description": "spell.realmforge.stoneform.description",
   "school": "realmforge:arcane",
   "scales_with": "spell_power",
   "targeting": {
     "type": "realmforge:current_target",
-    "range": 16.0
+    "range": 8.0
   },
   "cast": {
     "castable_while_moving": false,
     "lock_on": false,
+    "keep_sight": true,
+    "keep_range": 0.5,
+    "sound": "realmforge:spell.stoneform.form",
     "type": "cast_time",
-    "duration_ticks": 30
+    "duration_ticks": 30,
+    "forms_projectile": true
   },
   "cooldown_ticks": 60,
   "global_cooldown_ticks": 10,
@@ -26,14 +30,23 @@
       "type": "realmforge:projectile",
       "speed": 16.0,
       "size": 0.5,
-      "lifetime_ticks": 40,
+      "lifetime_ticks": 20,
       "effects": [
         {
           "amount": 4.0,
           "per_level": 0,
           "type": "realmforge:damage"
         }
-      ]
+      ],
+      "spares": "realmforge:stone_creatures",
+      "impact": {
+        "sound": "realmforge:spell.stoneform.impact",
+        "particles": "realmforge:vaultstone"
+      },
+      "appearance": {
+        "model": "orb",
+        "color": "#8D9094"
+      }
     }
   ]
 }

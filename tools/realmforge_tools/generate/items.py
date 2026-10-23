@@ -55,7 +55,9 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         files[assets / "items" / f"{item_id}.json"] = dump_json(definition)
         model = {"parent": "minecraft:item/generated", "textures": {"layer0": f"{MOD_ID}:item/{item_id}"}}
         files[assets / "models" / "item" / f"{item_id}.json"] = dump_json(model)
-        files[assets / "textures" / "item" / f"{item_id}.png"] = placeholder_texture(f"{MOD_ID}:{item_id}")
+        files[assets / "textures" / "item" / f"{item_id}.png"] = placeholder_texture(
+            f"{MOD_ID}:{item_id}", _rgb(entry.model.color)
+        )
 
     uses: dict[str, list[str]] = {}
     for entry in content.items:
@@ -207,3 +209,7 @@ def _expectations(content: Content, paths: RepoPaths) -> bytes:
         "}\n"
     )
     return source.encode("utf-8")
+
+
+def _rgb(color: str | None) -> int | None:
+    return int(color.removeprefix("#"), 16) if color is not None else None

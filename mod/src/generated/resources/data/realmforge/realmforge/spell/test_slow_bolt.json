@@ -10,8 +10,10 @@
   "cast": {
     "castable_while_moving": false,
     "lock_on": false,
+    "keep_sight": false,
     "type": "cast_time",
-    "duration_ticks": 40
+    "duration_ticks": 40,
+    "forms_projectile": false
   },
   "cost": {
     "amount": 20.0,

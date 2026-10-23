@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "V": "realmforge:vaultstone"
+  },
+  "pattern": [
+    "VV",
+    "VV"
+  ],
+  "result": {
+    "count": 4,
+    "id": "realmforge:vaultstone_bricks"
+  }
+}

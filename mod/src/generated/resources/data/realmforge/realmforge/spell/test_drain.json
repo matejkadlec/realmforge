@@ -10,6 +10,7 @@
   "cast": {
     "castable_while_moving": false,
     "lock_on": false,
+    "keep_sight": false,
     "type": "channel",
     "duration_ticks": 60,
     "interval_ticks": 20

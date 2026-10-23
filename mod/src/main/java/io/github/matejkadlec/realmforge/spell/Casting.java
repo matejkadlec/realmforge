@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -42,9 +43,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   logging out, the caster's removal and a cancel ({@link #cancel}) end it without more effects.</li>
  *   <li><b>Moving slows, it never interrupts</b> (RLM-261, ADR 0039): a cast of a spell that may not be cast while
  *   moving gives its caster {@link #CAST_SLOW}, half its movement speed, until the cast ends however it ends. A spell's {@code realmforge:knockback} still interrupts the cast ({@link #knockedBack}).</li>
+ *   <li><b>A kept target:</b> a spell that keeps sight of its target checks it every tick and ends the cast at once
+ *   when blocks come between them; one that keeps its range for a share of the cast ends at once when the target
+ *   leaves the range within that share, and past it the range no longer matters ({@link SpellCast#keepRange}).</li>
  *   <li><b>A cast time</b> completes after its duration: the cost and the target are checked again ({@link
  *   SpellCaster#recheck}), and a failed check ends it like an interrupt, without the cost, the cooldown or the effects.
  *   Otherwise it pays, starts its cooldown and runs its effects.</li>
+ *   <li><b>Its sound:</b> a spell with a cast sound plays it from the caster when the cast begins.</li>
  *   <li><b>A channel</b> already paid when it began. It runs its effects at the end of every interval, checking the
  *   target first; a failed check or an interrupt ends it, and the ticks already run stay applied.</li>
  *   <li><b>Clients</b> learn of a cast from {@link CastStartedPayload} (the caster and every tracking player, and a
@@ -108,6 +113,8 @@ public final class Casting {
         }
         RUNNING.put(caster, new Running(caster, spell, level, target, (ServerLevel) caster.level(), cast, interval));
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new CastStartedPayload(caster.getId(), cast));
+        spellCast.sound().map(BuiltInRegistries.SOUND_EVENT::getValue).ifPresent(sound -> caster.level()
+                .playSound(null, caster, sound, caster.getSoundSource(), 1.0F, 1.0F));
     }
 
     /**
@@ -165,6 +172,11 @@ public final class Casting {
         }
         long now = running.level().getGameTime();
         Spell spell = running.spell().value();
+        Optional<CastEnd> lost = lostTarget(running, now);
+        if (lost.isPresent()) {
+            end(caster, lost.get());
+            return;
+        }
         if (running.cast().channel()) {
             while (running.ticksRun < spell.cast().tickCount()
                     && now >= running.cast().startGameTime() + (long) (running.ticksRun + 1) * running.interval()) {
@@ -202,6 +214,36 @@ public final class Casting {
         end(caster, CastEnd.COMPLETED);
         SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(),
                 running.target().now(caster));
+    }
+
+    /**
+     * Why the cast loses the target it keeps, if it does: blocks between them for a spell that keeps sight, or the
+     * target beyond the range within the share of the cast that keeps it, or a target that died or left the
+     * dimension. A spell that keeps neither, a point or a direction, and a cast on the caster itself lose nothing.
+     */
+    private static Optional<CastEnd> lostTarget(Running running, long now) {
+        SpellCast spellCast = running.spell().value().cast();
+        LivingEntity caster = running.caster();
+        LivingEntity target = running.target().entityOrNull();
+        if ((!spellCast.keepSight() && spellCast.keepRange().isEmpty()) || target == null || target == caster) {
+            return Optional.empty();
+        }
+        if (!target.isAlive() || target.isRemoved()) {
+            return Optional.of(CastEnd.TARGET_LOST);
+        }
+        if (target.level() != caster.level()) {
+            return Optional.of(CastEnd.OUT_OF_RANGE);
+        }
+        if (spellCast.keepSight() && !caster.hasLineOfSight(target)) {
+            return Optional.of(CastEnd.NO_LINE_OF_SIGHT);
+        }
+        Cast cast = running.cast();
+        double share = cast.durationTicks() > 0 ? (double) (now - cast.startGameTime()) / cast.durationTicks() : 1;
+        if (spellCast.keepRange().filter(kept -> share < kept).isPresent()
+                && Targets.distance(caster, target) > running.spell().value().targeting().reach()) {
+            return Optional.of(CastEnd.OUT_OF_RANGE);
+        }
+        return Optional.empty();
     }
 
     /**

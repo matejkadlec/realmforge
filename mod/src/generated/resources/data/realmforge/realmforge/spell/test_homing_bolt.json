@@ -10,8 +10,10 @@
   "cast": {
     "castable_while_moving": true,
     "lock_on": true,
+    "keep_sight": false,
     "type": "cast_time",
-    "duration_ticks": 20
+    "duration_ticks": 20,
+    "forms_projectile": false
   },
   "cooldown_ticks": 0,
   "global_cooldown_ticks": 10,

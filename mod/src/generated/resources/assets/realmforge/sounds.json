@@ -1,0 +1,98 @@
+{
+  "entity.hewn_chanter.ambient": {
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.chime",
+        "pitch": 0.8,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.entity.hewn_chanter.ambient"
+  },
+  "entity.hewn_chanter.death": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.iron_golem.death",
+        "pitch": 1.2,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.entity.hewn_chanter.death"
+  },
+  "entity.hewn_chanter.hurt": {
+    "sounds": [
+      {
+        "name": "minecraft:block.stone.break",
+        "pitch": 0.9,
+        "type": "event"
+      },
+      {
+        "name": "minecraft:block.deepslate.break",
+        "pitch": 1.1,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.entity.hewn_chanter.hurt"
+  },
+  "entity.hewn_sentinel.death": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.iron_golem.death",
+        "pitch": 0.8,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.entity.hewn_sentinel.death"
+  },
+  "entity.hewn_sentinel.hurt": {
+    "sounds": [
+      {
+        "name": "minecraft:block.deepslate.break",
+        "pitch": 0.8,
+        "type": "event"
+      },
+      {
+        "name": "minecraft:entity.iron_golem.hurt",
+        "pitch": 0.7,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.entity.hewn_sentinel.hurt"
+  },
+  "entity.hewn_sentinel.step": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.iron_golem.step",
+        "pitch": 0.7,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.entity.hewn_sentinel.step"
+  },
+  "spell.stoneform.form": {
+    "sounds": [
+      {
+        "name": "minecraft:block.grindstone.use",
+        "pitch": 0.6,
+        "type": "event",
+        "volume": 0.8
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.stoneform.form"
+  },
+  "spell.stoneform.impact": {
+    "sounds": [
+      {
+        "name": "minecraft:block.stone.break",
+        "pitch": 1.1,
+        "type": "event"
+      },
+      {
+        "name": "minecraft:block.pointed_dripstone.break",
+        "pitch": 0.9,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.stoneform.impact"
+  }
+}

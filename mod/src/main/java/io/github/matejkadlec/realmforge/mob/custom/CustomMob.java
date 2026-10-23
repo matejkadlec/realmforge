@@ -5,13 +5,22 @@ import com.geckolib.animatable.instance.AnimatableInstanceCache;
 import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.constant.DefaultAnimations;
 import com.geckolib.util.GeckoLibUtil;
+import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
@@ -24,9 +33,12 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.loot.LootTable;
 
 /**
  * A custom mob (architecture 14.2): the base of the archetypes in {@code content/mobs/} pick ({@link MeleeMob},
@@ -38,11 +50,26 @@ import net.minecraft.world.level.storage.ValueOutput;
  * archetype does, and idles as the spec says ({@link CustomMobSpec.Idle}). Vanilla's {@code Mob} constructor
  * registers goals before a subclass's fields exist, so this class registers them itself once the spec is set.
  *
+ * <ul>
+ *   <li><b>Variants:</b> a mob with variants rolls one by weight when it is created on the server, saves it and
+ *   syncs it, so clients draw its texture; it drops its variant's loot table instead of the type's.</li>
+ *   <li><b>Sounds:</b> its spec's, played as vanilla plays a mob's; steps at full volume (the sound event carries its
+ *   own), or none for a mob that walks silently.</li>
+ *   <li><b>Breaking apart:</b> a mob with death particles bursts into its block's break particles when it dies, as a
+ *   mined block does, and its body is gone at once instead of falling over.</li>
+ * </ul>
+ *
  * <p>Light does not matter to it: vanilla's monsters prefer dark spots ({@code Monster#getWalkTargetValue}), which
  * also keeps a spawner from spawning them in a lit room; a custom mob stands in torchlit dungeons.
  */
 public abstract class CustomMob extends Monster implements GeoEntity {
     private static final String POST = "realmforge:post";
+    private static final String VARIANT = "realmforge:variant";
+    private static final EntityDataAccessor<Integer> DATA_VARIANT =
+            SynchedEntityData.defineId(CustomMob.class, EntityDataSerializers.INT);
+    /** Break particles per cubic block of the mob's hitbox, and the most a death bursts into. */
+    private static final double PARTICLES_PER_BLOCK = 40;
+    private static final int MAX_PARTICLES = 160;
 
     private final CustomMobSpec spec;
     private final AnimatableInstanceCache animations = GeckoLibUtil.createInstanceCache(this);
@@ -54,6 +81,9 @@ public abstract class CustomMob extends Monster implements GeoEntity {
         this.spec = spec;
         if (level instanceof ServerLevel) {
             addGoals();
+            if (!spec.variants().isEmpty()) {
+                entityData.set(DATA_VARIANT, rollVariant(spec.variants()));
+            }
         }
     }
 
@@ -64,6 +94,54 @@ public abstract class CustomMob extends Monster implements GeoEntity {
     /** Where a guard stands, once it has stood on the ground; empty for a mob that strolls. */
     public Optional<BlockPos> post() {
         return Optional.ofNullable(post);
+    }
+
+    /** Whether it is a guard standing at its post. */
+    public boolean atPost() {
+        return post != null && ReturnToPostGoal.atPost(this, post);
+    }
+
+    /** Its variant, on the server and on clients; empty for a mob of one kind. */
+    public Optional<CustomMobSpec.Variant> variant() {
+        List<CustomMobSpec.Variant> variants = spec.variants();
+        return variants.isEmpty() ? Optional.empty()
+                : Optional.of(variants.get(Mth.clamp(entityData.get(DATA_VARIANT), 0, variants.size() - 1)));
+    }
+
+    /** Makes it the variant {@code id}; whether it has one of that id. Tests and the QA tools pick one this way. */
+    public boolean setVariant(String id) {
+        for (int index = 0; index < spec.variants().size(); index++) {
+            if (spec.variants().get(index).id().equals(id)) {
+                entityData.set(DATA_VARIANT, index);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** The loot table of its variant, {@code realmforge:entities/<mob>/<variant>}; empty without variants. */
+    public Optional<ResourceKey<LootTable>> variantLootTable() {
+        Identifier type = BuiltInRegistries.ENTITY_TYPE.getKey(getType());
+        return variant().map(variant -> ResourceKey.create(Registries.LOOT_TABLE,
+                type.withPath("entities/" + type.getPath() + "/" + variant.id())));
+    }
+
+    private int rollVariant(List<CustomMobSpec.Variant> variants) {
+        int total = variants.stream().mapToInt(CustomMobSpec.Variant::weight).sum();
+        int roll = getRandom().nextInt(total);
+        for (int index = 0; index < variants.size(); index++) {
+            roll -= variants.get(index).weight();
+            if (roll < 0) {
+                return index;
+            }
+        }
+        return variants.size() - 1;
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder entityData) {
+        super.defineSynchedData(entityData);
+        entityData.define(DATA_VARIANT, 0);
     }
 
     @Override
@@ -107,36 +185,86 @@ public abstract class CustomMob extends Monster implements GeoEntity {
         if (post != null) {
             output.store(POST, BlockPos.CODEC, post);
         }
+        variant().ifPresent(variant -> output.putString(VARIANT, variant.id()));
     }
 
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
         post = input.read(POST, BlockPos.CODEC).orElse(null);
+        input.getString(VARIANT).ifPresent(this::setVariant);
+    }
+
+    @Override
+    protected void dropFromLootTable(ServerLevel level, DamageSource source, boolean playerKilled) {
+        Optional<ResourceKey<LootTable>> variantTable = variantLootTable();
+        // A loot table a command set (DeathLootTable) wins over the variant's, as it does over the type's.
+        if (variantTable.isPresent() && getLootTable().equals(getType().getDefaultLootTable())) {
+            dropFromLootTable(level, source, playerKilled, variantTable.get());
+        } else {
+            super.dropFromLootTable(level, source, playerKilled);
+        }
+    }
+
+    @Override
+    public void die(DamageSource source) {
+        boolean wasDead = dead;
+        super.die(source);
+        if (!wasDead && dead && level() instanceof ServerLevel level) {
+            deathParticles().ifPresent(block -> burst(level, block.defaultBlockState()));
+        }
+    }
+
+    /** Its break particles, flying to every side from all of its hitbox, as a mined block's do. */
+    private void burst(ServerLevel level, BlockState block) {
+        double volume = getBbWidth() * getBbWidth() * getBbHeight();
+        int count = Mth.clamp((int) Math.round(volume * PARTICLES_PER_BLOCK), 12, MAX_PARTICLES);
+        level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, block), getX(), getY() + getBbHeight() / 2,
+                getZ(), count, getBbWidth() / 3, getBbHeight() / 3, getBbWidth() / 3, 0.15);
+    }
+
+    /** A mob that breaks apart is gone at once: no falling over, no smoke. */
+    @Override
+    protected void tickDeath() {
+        if (deathParticles().isEmpty()) {
+            super.tickDeath();
+            return;
+        }
+        deathTime++;
+        if (!level().isClientSide() && !isRemoved()) {
+            remove(RemovalReason.KILLED);
+        }
+    }
+
+    private Optional<Block> deathParticles() {
+        return spec.deathParticles().map(BuiltInRegistries.BLOCK::getValue).filter(block -> block != Blocks.AIR);
     }
 
     @Override
     protected @Nullable SoundEvent getAmbientSound() {
-        return sound(spec.ambientSound(), super.getAmbientSound());
+        return sound(spec.sounds().ambient(), super.getAmbientSound());
     }
 
     @Override
     protected SoundEvent getHurtSound(DamageSource source) {
-        return sound(spec.hurtSound(), super.getHurtSound(source));
+        return sound(spec.sounds().hurt(), super.getHurtSound(source));
     }
 
     @Override
     protected SoundEvent getDeathSound() {
-        return sound(spec.deathSound(), super.getDeathSound());
+        return sound(spec.sounds().death(), super.getDeathSound());
     }
 
     @Override
     protected void playStepSound(BlockPos pos, BlockState block) {
-        SoundEvent step = sound(spec.stepSound(), null);
+        if (spec.sounds().silentSteps()) {
+            return;
+        }
+        SoundEvent step = sound(spec.sounds().step(), null);
         if (step == null) {
             super.playStepSound(pos, block);
         } else {
-            playSound(step, 0.15F, 1.0F);
+            playSound(step, 1.0F, 1.0F);
         }
     }
 

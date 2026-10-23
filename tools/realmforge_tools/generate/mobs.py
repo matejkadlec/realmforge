@@ -1,26 +1,37 @@
-"""Custom mobs: the entity type registrations, loot tables, placeholder models, animations and textures, and the QA
-mod's expectations (the names: the lang files, lang.py). Architecture 14.2.
+"""Custom mobs: the entity type registrations, loot tables, entity type tags, placeholder models, animations and
+textures, and the QA mod's expectations (the names: the lang files, lang.py). Architecture 14.2.
 
-The placeholder model is a statue-like humanoid sized to the mob's hitbox, with the bones the archetypes animate
-(``head``, ``body``, ``left_arm``, ``right_arm``, ``left_leg``, ``right_leg``), in the Bedrock geometry format GeckoLib
-reads; its animations are the ones the archetypes play (``misc.idle``, ``move.walk``, ``attack.swing``,
+The placeholder model fills the mob's hitbox in the build its YAML picks (``humanoid``, ``slim`` or ``golem``), with the
+bones the archetypes animate (``head``, ``body``, ``left_arm``, ``right_arm``, ``left_leg``, ``right_leg``), in the
+Bedrock geometry format GeckoLib reads; its texture paints each box by the YAML's surface, eyes and colours, one
+texture per variant; its animations are the ones the archetypes play (``misc.idle``, ``move.walk``, ``attack.swing``,
 ``attack.cast``). A2 (RLM-48) replaces them with real art.
 """
 
 from __future__ import annotations
 
+import hashlib
 import math
-from dataclasses import dataclass
+from collections.abc import Iterator
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from realmforge_tools.content import Content
 from realmforge_tools.formats.jsonfmt import dump_json
-from realmforge_tools.generate.datapack import data_dir, percent_to_fraction
+from realmforge_tools.formats.png import Rgba, encode_rgba
+from realmforge_tools.generate.datapack import data_dir, percent_to_fraction, seconds_to_ticks
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
-from realmforge_tools.generate.textures import placeholder_mob_texture
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.common import LocalizedText
-from realmforge_tools.schema.mob import MobDef, MobDropDef, mob_description_id, mob_id, mob_loot_table
+from realmforge_tools.schema.mob import (
+    MobDef,
+    MobDropDef,
+    MobVariantDef,
+    melee_of,
+    mob_description_id,
+    mob_id,
+    mob_loot_table,
+)
 
 GENERATED_PACKAGE = f"{JAVA_PACKAGE}.generated"
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
@@ -34,6 +45,7 @@ CLIENT_TRACKING_RANGE = 8
 PIXELS_PER_BLOCK = 16
 # The placeholder texture's side: the smallest of these that the model's box UVs fit.
 TEXTURE_SIZES = (64, 128, 256)
+LOOTING = "minecraft:looting"
 
 
 def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
@@ -46,19 +58,33 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
             _expectations(content)
         ),
     }
+    loot_dir = data_dir(paths) / "loot_table" / "entities"
     for entry in content.mobs:
         mob = entry.model
         model = placeholder_model(mob)
-        files[data_dir(paths) / "loot_table" / "entities" / f"{mob.id}.json"] = dump_json(loot_table(mob))
+        files[loot_dir / f"{mob.id}.json"] = dump_json(loot_table(mob))
+        for variant in mob.variants:
+            files[loot_dir / mob.id / f"{variant.id}.json"] = dump_json(loot_table(mob, variant))
         files[assets / "geckolib" / "models" / "entity" / f"{mob.id}.geo.json"] = dump_json(
             model.geometry(mob.id)
         )
         files[assets / "geckolib" / "animations" / "entity" / f"{mob.id}.animation.json"] = dump_json(
-            ANIMATIONS
+            animations(mob)
         )
-        files[assets / "textures" / "entity" / f"{mob.id}.png"] = placeholder_mob_texture(
-            mob.id, _rgb(mob.color), model.texture_size, model.texture_size, model.eyes()
+        for variant in mob.variants or [None]:
+            files[assets / "textures" / "entity" / f"{texture_name(mob, variant)}.png"] = placeholder_texture(
+                mob, model, variant
+            )
+    tags: dict[str, list[str]] = {}
+    for entry in content.mobs:
+        for tag in entry.model.tags:
+            tags.setdefault(tag, []).append(mob_id(entry.model.id))
+    for tag, mobs in sorted(tags.items()):
+        namespace, path = tag.split(":", 1)
+        tag_file = (
+            paths.mod_generated / "resources" / "data" / namespace / "tags" / "entity_type" / f"{path}.json"
         )
+        files[tag_file] = dump_json({"values": sorted(mobs)})
     return files
 
 
@@ -67,52 +93,99 @@ def translations(content: Content) -> dict[str, LocalizedText]:
     return {mob_description_id(entry.model.id): entry.model.name for entry in content.mobs}
 
 
-def loot_table(mob: MobDef) -> dict[str, object]:
-    """The mob's vanilla loot table: one pool per drop, so each drop rolls on its own."""
+def texture_name(mob: MobDef, variant: MobVariantDef | None) -> str:
+    """The texture's name under ``textures/entity/``: the mob's id, a variant's ``<id>_<variant>``."""
+    return mob.id if variant is None else f"{mob.id}_{variant.id}"
+
+
+def loot_table(mob: MobDef, variant: MobVariantDef | None = None) -> dict[str, object]:
+    """The mob's vanilla loot table, or a variant's with the mob's own drops and its own: one pool per drop, so each
+    drop rolls on its own."""
+    drops = mob.loot + (variant.loot if variant is not None else [])
     return {
         "type": "minecraft:entity",
-        "pools": [_pool(drop) for drop in mob.loot],
-        "random_sequence": mob_loot_table(mob.id),
+        "pools": [_pool(drop) for drop in drops],
+        "random_sequence": mob_loot_table(mob.id, variant.id if variant is not None else None),
     }
 
 
+def _uniform(low: float, high: float) -> dict[str, object]:
+    return {"type": "minecraft:uniform", "min": float(low), "max": float(high)}
+
+
 def _pool(drop: MobDropDef) -> dict[str, object]:
+    """One drop's pool: its count, Looting's extra count (vanilla's ``enchanted_count_increase``) and its chance,
+    which Looting raises by its points per level (vanilla's ``random_chance_with_enchanted_bonus``)."""
     entry: dict[str, object] = {"type": "minecraft:item", "name": drop.item}
+    functions: list[dict[str, object]] = []
     if drop.count.max > 1:
-        entry["functions"] = [
+        functions.append(
             {
                 "function": "minecraft:set_count",
-                "count": {
-                    "type": "minecraft:uniform",
-                    "min": float(drop.count.min),
-                    "max": float(drop.count.max),
-                },
+                "count": _uniform(drop.count.min, drop.count.max),
                 "add": False,
             }
-        ]
+        )
+    if drop.looting_count > 0:
+        functions.append(
+            {
+                "function": "minecraft:enchanted_count_increase",
+                "enchantment": LOOTING,
+                "count": _uniform(0, drop.looting_count),
+            }
+        )
+    if functions:
+        entry["functions"] = functions
     pool: dict[str, object] = {"rolls": 1.0, "bonus_rolls": 0.0, "entries": [entry]}
-    if drop.chance_percent < 100:
+    chance = percent_to_fraction(drop.chance_percent)
+    if drop.looting_chance_percent > 0:
+        bonus = percent_to_fraction(drop.looting_chance_percent)
         pool["conditions"] = [
-            {"condition": "minecraft:random_chance", "chance": percent_to_fraction(drop.chance_percent)}
+            {
+                "condition": "minecraft:random_chance_with_enchanted_bonus",
+                "enchantment": LOOTING,
+                "unenchanted_chance": chance,
+                "enchanted_chance": {
+                    "type": "minecraft:linear",
+                    "base": round(chance + bonus, 10),
+                    "per_level_above_first": bonus,
+                },
+            }
         ]
+    elif drop.chance_percent < 100:
+        pool["conditions"] = [{"condition": "minecraft:random_chance", "chance": chance}]
     return pool
 
 
 @dataclass(frozen=True)
 class Cube:
-    """One box of the placeholder model, in model pixels: its bone, origin (lowest corner), size and texture
-    corner."""
+    """One box of the placeholder model, in model pixels: its bone, origin (lowest corner), size, texture corner and
+    what its texture is painted as: ``surface`` (the mob's surface), ``shell`` (the surface, with the variant's gems in
+    holes on its front and back) or ``moss`` (moss hanging off the body)."""
 
     bone: str
     origin: tuple[float, float, float]
     size: tuple[int, int, int]
     uv: tuple[int, int] = (0, 0)
+    material: str = "surface"
+
+    def faces(self) -> Iterator[tuple[str, int, int, int, int]]:
+        """Each face's name, texture corner and size, by box UV: the top and bottom in the first row, then the
+        right side, front, left side and back."""
+        width, height, depth = self.size
+        u, v = self.uv
+        yield "top", u + depth, v, width, depth
+        yield "bottom", u + depth + width, v, width, depth
+        yield "right", u, v + depth, depth, height
+        yield "front", u + depth, v + depth, width, height
+        yield "left", u + depth + width, v + depth, depth, height
+        yield "back", u + 2 * depth + width, v + depth, width, height
 
 
 @dataclass(frozen=True)
 class PlaceholderModel:
-    """A statue-like humanoid that fills a mob's hitbox: legs, body and head stacked to its height, arms at the
-    body's sides."""
+    """A statue-like model that fills a mob's hitbox: legs, body and head stacked to its height, arms at the body's
+    sides."""
 
     cubes: tuple[Cube, ...]
     pivots: dict[str, tuple[float, float, float]]
@@ -149,13 +222,21 @@ class PlaceholderModel:
             ],
         }
 
+    def head(self) -> Cube:
+        return next(cube for cube in self.cubes if cube.bone == "head")
+
+    def eye_corners(self, eye_width: int, eye_height: int) -> list[tuple[int, int]]:
+        """The top-left texture pixel of each eye on the head's front face (box UV puts it at the texture corner
+        plus the depth), two fifths down the face and a quarter in from each side."""
+        width, height, depth = self.head().size
+        u, v = self.head().uv[0] + depth, self.head().uv[1] + depth
+        row = v + max(0, height * 2 // 5 - eye_height // 2)
+        inset = max(1, width // 4 - (eye_width - 1) // 2)
+        return [(u + inset, row), (u + width - inset - eye_width, row)]
+
     def eyes(self) -> set[tuple[int, int]]:
-        """Two texture pixels on the head's front face, which box UV puts at the texture corner plus the depth."""
-        head = next(cube for cube in self.cubes if cube.bone == "head")
-        width, height, depth = head.size
-        u, v = head.uv[0] + depth, head.uv[1] + depth
-        row = v + height * 2 // 5
-        return {(u + width // 4, row), (u + width - 1 - width // 4, row)}
+        """Every texture pixel of the eyes, for the dot eyes' size (1 x 1)."""
+        return {corner for corner in self.eye_corners(1, 1)}
 
 
 # The bones of the placeholder model, the body first: every other bone is its child.
@@ -163,11 +244,56 @@ BONES = ("body", "head", "left_arm", "right_arm", "left_leg", "right_leg")
 
 
 def placeholder_model(mob: MobDef) -> PlaceholderModel:
-    """The placeholder model of ``mob``: legs and body three eighths of its height each, the head the rest; the body
-    a little narrower than the hitbox and the arms outside it, as vanilla's humanoids. The cubes' box UVs are packed
-    in rows into the smallest texture of ``TEXTURE_SIZES`` they fit."""
+    """The placeholder model of ``mob`` in its build, the cubes' box UVs packed in rows into the smallest texture of
+    ``TEXTURE_SIZES`` they fit."""
     height = round(mob.size.height * PIXELS_PER_BLOCK)
     across = mob.size.width * PIXELS_PER_BLOCK
+    build = {"humanoid": _humanoid, "slim": _slim, "golem": _golem}[mob.model.build]
+    cubes, pivots = build(height, across, mob.id)
+    for size in TEXTURE_SIZES:
+        packed = _pack(cubes, size)
+        if packed is not None:
+            return PlaceholderModel(tuple(packed), pivots, size)
+    raise ValueError(f"the placeholder model of {mob.id} does not fit a {TEXTURE_SIZES[-1]}px texture")
+
+
+Pivots = dict[str, tuple[float, float, float]]
+
+
+def _limbs(
+    legs: int,
+    body: int,
+    body_width: int,
+    arm: tuple[int, int, int],
+    leg: tuple[int, int, int],
+    leg_gap: float,
+) -> tuple[list[Cube], Pivots]:
+    """Arms hanging from the shoulders at the body's sides and legs under it, ``leg_gap`` pixels apart, with the
+    pivots every build shares."""
+    arm_width, arm_length, arm_depth = arm
+    leg_width, _, leg_depth = leg
+    shoulder = legs + body
+    half = body_width / 2
+    cubes = [
+        Cube("left_arm", (half, shoulder - arm_length, -arm_depth / 2), arm),
+        Cube("right_arm", (-half - arm_width, shoulder - arm_length, -arm_depth / 2), arm),
+        Cube("left_leg", (leg_gap / 2, 0, -leg_depth / 2), leg),
+        Cube("right_leg", (-leg_gap / 2 - leg_width, 0, -leg_depth / 2), leg),
+    ]
+    pivots = {
+        "body": (0, legs, 0),
+        "head": (0, shoulder, 0),
+        "left_arm": (half + arm_width / 2, shoulder - 1, 0),
+        "right_arm": (-half - arm_width / 2, shoulder - 1, 0),
+        "left_leg": (leg_gap / 2 + leg_width / 2, legs, 0),
+        "right_leg": (-leg_gap / 2 - leg_width / 2, legs, 0),
+    }
+    return cubes, pivots
+
+
+def _humanoid(height: int, across: float, mob: str) -> tuple[list[Cube], Pivots]:
+    """Legs and body three eighths of the height each, the head the rest; the body a little narrower than the hitbox
+    and the arms outside it, as vanilla's humanoids."""
     legs = round(height * 3 / 8)
     body = round(height * 3 / 8)
     head = height - legs - body
@@ -176,28 +302,65 @@ def placeholder_model(mob: MobDef) -> PlaceholderModel:
     depth = max(2, round(across * 0.45))
     head_width = min(body_width, max(4, head))
     leg_width = body_width // 2
+    limbs, pivots = _limbs(legs, body, body_width, (arm, body, arm), (leg_width, legs, depth), 0)
     cubes = [
         Cube("body", (-body_width / 2, legs, -depth / 2), (body_width, body, depth)),
         Cube("head", (-head_width / 2, legs + body, -head_width / 2), (head_width, head, head_width)),
-        Cube("left_arm", (body_width / 2, legs, -arm / 2), (arm, body, arm)),
-        Cube("right_arm", (-body_width / 2 - arm, legs, -arm / 2), (arm, body, arm)),
-        Cube("left_leg", (0, 0, -depth / 2), (leg_width, legs, depth)),
-        Cube("right_leg", (-leg_width, 0, -depth / 2), (leg_width, legs, depth)),
+        *limbs,
     ]
-    shoulder = legs + body
-    pivots = {
-        "body": (0, legs, 0),
-        "head": (0, shoulder, 0),
-        "left_arm": (body_width / 2 + arm / 2, shoulder - 1, 0),
-        "right_arm": (-body_width / 2 - arm / 2, shoulder - 1, 0),
-        "left_leg": (leg_width / 2, legs, 0),
-        "right_leg": (-leg_width / 2, legs, 0),
-    }
-    for size in TEXTURE_SIZES:
-        packed = _pack(cubes, size)
-        if packed is not None:
-            return PlaceholderModel(tuple(packed), pivots, size)
-    raise ValueError(f"the placeholder model of {mob.id} does not fit a {TEXTURE_SIZES[-1]}px texture")
+    return cubes, pivots
+
+
+def _slim(height: int, across: float, mob: str) -> tuple[list[Cube], Pivots]:
+    """An enderman's proportions: long thin legs (over half the height), a short body, a tall head, and thin arms
+    that hang below the hips; no wider than the hitbox."""
+    legs = round(height * 0.54)
+    body = round(height * 0.25)
+    head = height - legs - body
+    body_width = max(4, round(across * 0.35) * 2)
+    depth = max(2, round(across * 0.35))
+    limbs, pivots = _limbs(
+        legs, body, body_width, (2, round(height * 0.5), 2), (max(2, body_width // 2 - 1), legs, 3), 1
+    )
+    cubes = [
+        Cube("body", (-body_width / 2, legs, -depth / 2), (body_width, body, depth)),
+        Cube("head", (-body_width / 2, legs + body, -body_width / 2), (body_width, head, body_width)),
+        *limbs,
+    ]
+    return cubes, pivots
+
+
+def _golem(height: int, across: float, mob: str) -> tuple[list[Cube], Pivots]:
+    """An iron golem's proportions: short thick legs, a broad body with a shell on its front and its back, a big head,
+    and long arms as thick as a player's that hang almost to the ground; moss hangs off the shells' lower edges."""
+    legs = round(height * 0.33)
+    body = round(height * 0.40)
+    head = height - legs - body
+    body_width = max(6, round(across * 0.42) * 2)
+    depth = max(4, round(across * 0.42))
+    head_width = min(body_width - 2, max(6, round(head * 0.9)))
+    shell = (max(1, body_width - 2), max(1, body - 4), 2)
+    shell_y = legs + (body - shell[1]) // 2
+    limbs, pivots = _limbs(
+        legs, body, body_width, (4, round(height * 0.65), 4), (max(2, body_width // 2 - 2), legs, 6), 2
+    )
+    cubes = [
+        Cube("body", (-body_width / 2, legs, -depth / 2), (body_width, body, depth)),
+        Cube("body", (-shell[0] / 2, shell_y, -depth / 2 - shell[2]), shell, material="shell"),
+        Cube("body", (-shell[0] / 2, shell_y, depth / 2), shell, material="shell"),
+        Cube("head", (-head_width / 2, legs + body, -head_width / 2), (head_width, head, head_width - 1)),
+        *limbs,
+    ]
+    # Strands of moss under each shell, where the hash of the mob's id puts them: 2 to 4 pixels long, never below the
+    # ground. A shell too narrow for them has none.
+    if shell[0] >= 3 and shell_y >= 1:
+        for side, z in (("front", -depth / 2 - shell[2]), ("back", depth / 2 + shell[2] - 1)):
+            for strand in range(4 if side == "front" else 3):
+                digest = hashlib.sha256(f"{mob}/moss/{side}/{strand}".encode()).digest()
+                x = -shell[0] / 2 + 1 + (digest[0] % (shell[0] - 2))
+                length = min(shell_y, 2 + digest[1] % 3)
+                cubes.append(Cube("body", (x, shell_y - length, z), (1, length, 1), material="moss"))
+    return cubes, pivots
 
 
 def _pack(cubes: list[Cube], size: int) -> list[Cube] | None:
@@ -212,10 +375,126 @@ def _pack(cubes: list[Cube], size: int) -> list[Cube] | None:
             u, v, row_height = 0, v + row_height, 0
         if unwrapped[0] > size or v + unwrapped[1] > size:
             return None
-        packed.append(Cube(cube.bone, cube.origin, cube.size, (u, v)))
+        packed.append(replace(cube, uv=(u, v)))
         u += unwrapped[0]
         row_height = max(row_height, unwrapped[1])
     return packed
+
+
+def _rgb(color: str) -> tuple[int, int, int]:
+    value = int(color.removeprefix("#"), 16)
+    return (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF
+
+
+def _shade(rgb: tuple[int, int, int], factor: float) -> Rgba:
+    r, g, b = (min(255, max(0, round(channel * factor))) for channel in rgb)
+    return r, g, b, 255
+
+
+def _hash(*parts: object) -> int:
+    """A byte from a hash of ``parts``, so a texture is the same on every machine."""
+    return hashlib.sha256("/".join(str(part) for part in parts).encode()).digest()[0]
+
+
+WHITE = (242, 242, 236)
+# Holes per face of a shell, each with a gem of the variant's accent.
+GEMS_PER_FACE = 3
+
+
+def _surface(mob: MobDef, face: str, x: int, y: int, size: tuple[int, int], px: int, py: int) -> Rgba:
+    """The colour of the pixel at ``(x, y)`` from the corner of a face of ``size`` that sits at texture pixel
+    ``(px, py)``."""
+    base = _rgb(mob.model.color)
+    cell = _hash(mob.id, px, py)
+    if mob.model.surface == "smooth":
+        # Smooth stone: barely any flecks, and a faint edge around each face, as on vanilla's smooth stone.
+        edge = x in (0, size[0] - 1) or y in (0, size[1] - 1)
+        return _shade(base, (0.9 if edge else 1.0) + ((cell % 5) - 2) * 0.012)
+    if mob.model.surface == "mossy_bricks":
+        # Bricks 4 pixels long and 3 tall between rows of mortar, every other row shifted by half a brick.
+        row = y // 4
+        shifted = x + (2 if row % 2 else 0)
+        column = shifted // 4
+        if y % 4 == 3 or shifted % 4 == 3:
+            colour = _shade(base, 0.68)  # mortar
+        else:
+            brick = _hash(mob.id, face, px - x, py - y, row, column)
+            colour = _shade(base, 0.92 + (brick % 9) * 0.02 + ((cell % 5) - 2) * 0.015)
+        moss_chance = 140 if face == "top" else max(0, 70 - y * 18)
+        if cell < moss_chance or _hash(mob.id, "moss", px, py) < 18:
+            return _shade(_rgb(mob.model.moss), 0.85 + (cell % 7) * 0.05)
+        return colour
+    # Speckled stone: the base colour with lighter and darker flecks, as the block placeholders.
+    factor = 1.0 + ((cell % 9) - 4) * 0.035 + (0.18 if cell > 236 else 0.0) - (0.22 if cell < 16 else 0.0)
+    return _shade(base, factor)
+
+
+def _paint_gems(
+    pixels: dict[tuple[int, int], Rgba], mob: MobDef, cube: Cube, accent: tuple[int, int, int]
+) -> None:
+    """Holes in a shell's front and back, each a 2x2 gem in ``accent`` with a lighter corner, in a dark rim."""
+    base = _rgb(mob.model.color)
+    for face, u, v, width, height in cube.faces():
+        if face not in ("front", "back") or width < 6 or height < 6:
+            continue
+        for gem in range(GEMS_PER_FACE):
+            gx = u + 1 + _hash(mob.id, face, cube.origin, gem, "x") % (width - 4)
+            gy = v + 1 + _hash(mob.id, face, cube.origin, gem, "y") % (height - 4)
+            for dx in range(-1, 3):
+                for dy in range(-1, 3):
+                    pixels[(gx + dx, gy + dy)] = _shade(base, 0.42)
+            pixels[(gx, gy)] = _shade(accent, 1.35)
+            pixels[(gx + 1, gy)] = _shade(accent, 1.0)
+            pixels[(gx, gy + 1)] = _shade(accent, 1.0)
+            pixels[(gx + 1, gy + 1)] = _shade(accent, 0.72)
+
+
+def _paint_eyes(
+    pixels: dict[tuple[int, int], Rgba],
+    mob: MobDef,
+    model: PlaceholderModel,
+    accent: tuple[int, int, int] | None,
+) -> None:
+    """dot: one bright pixel each; tall: two above each other; gem: 2x3 white with a pupil in its middle row, a
+    lighter and a darker pixel of the variant's accent, the lighter one on the inner side."""
+    base = _rgb(mob.model.color)
+    if mob.model.eyes == "gem" and accent is not None:
+        for n, (x, y) in enumerate(model.eye_corners(2, 3)):
+            for dx in range(2):
+                pixels[(x + dx, y)] = (*WHITE, 255)
+                pixels[(x + dx, y + 2)] = (*WHITE, 255)
+            inner, outer = (x + 1, x) if n == 0 else (x, x + 1)
+            pixels[(inner, y + 1)] = _shade(accent, 1.3)
+            pixels[(outer, y + 1)] = _shade(accent, 0.7)
+        return
+    size = (1, 2) if mob.model.eyes == "tall" else (1, 1)
+    for x, y in model.eye_corners(*size):
+        for dy in range(size[1]):
+            pixels[(x, y + dy)] = _shade(base, 1.9)
+
+
+def placeholder_texture(mob: MobDef, model: PlaceholderModel, variant: MobVariantDef | None) -> bytes:
+    """The texture of ``mob`` (of ``variant``), until real art exists: each box painted by its material, then the
+    gems in the shells and the eyes. Pixels no box uses stay clear."""
+    accent = _rgb(variant.accent) if variant is not None else None
+    pixels: dict[tuple[int, int], Rgba] = {}
+    for cube in model.cubes:
+        for face, u, v, width, height in cube.faces():
+            for y in range(height):
+                for x in range(width):
+                    px, py = u + x, v + y
+                    if cube.material == "moss":
+                        moss = _rgb(mob.model.moss)
+                        tip = 0.75 if face != "top" and y == height - 1 else 1.0
+                        pixels[(px, py)] = _shade(moss, (0.85 + _hash(mob.id, px, py) % 7 * 0.05) * tip)
+                    else:
+                        pixels[(px, py)] = _surface(mob, face, x, y, (width, height), px, py)
+        if cube.material == "shell" and accent is not None:
+            _paint_gems(pixels, mob, cube, accent)
+    _paint_eyes(pixels, mob, model, accent)
+    size = model.texture_size
+    clear: Rgba = (0, 0, 0, 0)
+    return encode_rgba(size, size, [pixels.get((x, y), clear) for y in range(size) for x in range(size)])
 
 
 def _keyframes(*frames: tuple[float, tuple[float, float, float]]) -> dict[str, list[float]]:
@@ -230,61 +509,62 @@ def _swing(amplitude: float) -> dict[str, list[float]]:
 # its pitch and its yaw from the body, and GeckoLib negates x and y rotations as Bedrock's format does.
 _LOOK = {"rotation": ["query.head_x_rotation", "query.head_y_rotation", 0]}
 
-# The placeholder animations, by the names the archetypes play (GeckoLib's DefaultAnimations): a slow sway while it
-# stands, a stiff walk, both fists hammering down for a melee hit, and both arms raised while it casts.
-ANIMATIONS: dict[str, object] = {
-    "format_version": "1.8.0",
-    "animations": {
-        "misc.idle": {
-            "loop": True,
-            "animation_length": 4.0,
-            "bones": {
-                "body": {"rotation": _keyframes((0.0, (0, 0, 0)), (2.0, (0, 0, 1.5)), (4.0, (0, 0, 0)))},
-                "head": _LOOK,
-            },
-        },
-        "move.walk": {
-            "loop": True,
-            "animation_length": 1.0,
-            "bones": {
-                "head": _LOOK,
-                "left_leg": {"rotation": _swing(25)},
-                "right_leg": {"rotation": _swing(-25)},
-                "left_arm": {"rotation": _swing(-15)},
-                "right_arm": {"rotation": _swing(15)},
-            },
-        },
-        "attack.swing": {
-            "animation_length": 0.5,
-            "bones": {
-                arm: {
-                    "rotation": _keyframes(
-                        (0.0, (0, 0, 0)), (0.2, (-150, 0, 0)), (0.35, (10, 0, 0)), (0.5, (0, 0, 0))
-                    )
-                }
-                for arm in ("left_arm", "right_arm")
-            },
-        },
-        "attack.cast": {
-            "loop": True,
-            "animation_length": 1.0,
-            "bones": {
-                "left_arm": {
-                    "rotation": _keyframes(
-                        (0.0, (-160, 0, -20)), (0.5, (-170, 0, -30)), (1.0, (-160, 0, -20))
-                    )
-                },
-                "right_arm": {
-                    "rotation": _keyframes((0.0, (-160, 0, 20)), (0.5, (-170, 0, 30)), (1.0, (-160, 0, 20)))
-                },
-            },
-        },
-    },
-}
+
+def _cast_arm(side: int) -> dict[str, object]:
+    """An arm raised forward a little above level, its hand in front of the forehead, turned in toward the other
+    hand (``side`` 1 for the left arm, -1 for the right), and swaying while the stone forms."""
+    return {
+        "rotation": _keyframes(
+            (0.0, (-105, 0, -12 * side)), (0.5, (-112, 0, -16 * side)), (1.0, (-105, 0, -12 * side))
+        )
+    }
 
 
-def _rgb(color: str) -> int:
-    return int(color.removeprefix("#"), 16)
+def animations(mob: MobDef) -> dict[str, object]:
+    """The placeholder animations, by the names the archetypes play (GeckoLib's DefaultAnimations): a slow sway while
+    it stands, a stiff walk (the long arms of a golem swing less), both fists hammering down for a melee hit, and both
+    arms raised in front of the forehead while it casts."""
+    arm_swing = 10 if mob.model.build == "golem" else 15
+    return {
+        "format_version": "1.8.0",
+        "animations": {
+            "misc.idle": {
+                "loop": True,
+                "animation_length": 4.0,
+                "bones": {
+                    "body": {"rotation": _keyframes((0.0, (0, 0, 0)), (2.0, (0, 0, 1.5)), (4.0, (0, 0, 0)))},
+                    "head": _LOOK,
+                },
+            },
+            "move.walk": {
+                "loop": True,
+                "animation_length": 1.0,
+                "bones": {
+                    "head": _LOOK,
+                    "left_leg": {"rotation": _swing(25)},
+                    "right_leg": {"rotation": _swing(-25)},
+                    "left_arm": {"rotation": _swing(-arm_swing)},
+                    "right_arm": {"rotation": _swing(arm_swing)},
+                },
+            },
+            "attack.swing": {
+                "animation_length": 0.5,
+                "bones": {
+                    arm: {
+                        "rotation": _keyframes(
+                            (0.0, (0, 0, 0)), (0.2, (-150, 0, 0)), (0.35, (10, 0, 0)), (0.5, (0, 0, 0))
+                        )
+                    }
+                    for arm in ("left_arm", "right_arm")
+                },
+            },
+            "attack.cast": {
+                "loop": True,
+                "animation_length": 1.0,
+                "bones": {"head": _LOOK, "left_arm": _cast_arm(1), "right_arm": _cast_arm(-1)},
+            },
+        },
+    }
 
 
 def _float(value: float) -> str:
@@ -301,25 +581,41 @@ def _comment(mob: MobDef) -> str:
     return f'{mob.archetype}, "{english}"'
 
 
-def _sound(sound: str | None) -> str:
-    return "Optional.empty()" if sound is None else f"CustomMobSpec.sound({string_literal(sound)})"
+def _id(value: str | None) -> str:
+    return "Optional.empty()" if value is None else f"CustomMobSpec.id({string_literal(value)})"
 
 
 def _spec(mob: MobDef) -> str:
+    caster = mob.caster
     spells = (
-        ", ".join(f"GeneratedSpells.{constant_name(spell.split(':', 1)[1])}" for spell in mob.caster.spells)
-        if mob.caster is not None
+        ", ".join(f"GeneratedSpells.{constant_name(spell.split(':', 1)[1])}" for spell in caster.spells)
+        if caster is not None
         else ""
     )
-    keep_distance = mob.caster.keep_distance if mob.caster is not None else 0
+    kiting = (
+        f"Optional.of(new KiteRules({_double(caster.kiting.step_blocks)}, "
+        f"{_double(percent_to_fraction(caster.kiting.speed_percent))}))"
+        if caster is not None and caster.kiting is not None
+        else "Optional.empty()"
+    )
     sounds = mob.sounds
+    step = None if sounds.step == "silent" else sounds.step
+    melee = melee_of(mob)
+    variants = ", ".join(
+        f"new CustomMobSpec.Variant({string_literal(variant.id)}, {variant.weight})"
+        for variant in mob.variants
+    )
     return (
         f"new CustomMobSpec(CustomMobSpec.Idle.{_IDLE[mob.idle]},\n"
-        f"            {_sound(sounds.ambient)},\n"
-        f"            {_sound(sounds.hurt)},\n"
-        f"            {_sound(sounds.death)},\n"
-        f"            {_sound(sounds.step)},\n"
-        f"            List.of({spells}), {_double(keep_distance)})"
+        f"            new CustomMobSpec.Sounds({_id(sounds.ambient)},\n"
+        f"                    {_id(sounds.hurt)},\n"
+        f"                    {_id(sounds.death)},\n"
+        f"                    {_id(step)}, {'true' if sounds.step == 'silent' else 'false'}),\n"
+        f"            {_id(mob.death_particles)},\n"
+        f"            new CustomMobSpec.Melee({seconds_to_ticks(melee.attack_interval_seconds)}, "
+        f"{_double(melee.knock_up_blocks)}),\n"
+        f"            List.of({spells}), {kiting},\n"
+        f"            List.of({variants}))"
     )
 
 
@@ -365,7 +661,8 @@ def _registrations(content: Content) -> bytes:
     source = (
         header(Path(__file__), SOURCES) + f"package {GENERATED_PACKAGE};\n"
         "\n"
-        f"import {JAVA_PACKAGE}.Realmforge;\n" + custom_imports + "import java.util.List;\n"
+        f"import {JAVA_PACKAGE}.Realmforge;\n"
+        f"import {JAVA_PACKAGE}.mob.ai.KiteRules;\n" + custom_imports + "import java.util.List;\n"
         "import java.util.Optional;\n"
         "import net.minecraft.world.entity.EntityType;\n"
         "import net.minecraft.world.entity.MobCategory;\n"
@@ -379,7 +676,7 @@ def _registrations(content: Content) -> bytes:
         "/**\n"
         " * Custom mobs generated from {@code content/mobs/} (architecture 14.2): each an entity type of the archetype it\n"
         " * picks, with its {@link CustomMobSpec}, size and attributes at level 1. Its loot table is vanilla's default,\n"
-        " * {@code realmforge:entities/<id>}.\n"
+        " * {@code realmforge:entities/<id>}, or its variant's, {@code realmforge:entities/<id>/<variant>}.\n"
         " */\n"
         "public final class GeneratedMobs {\n"
         "    public static final DeferredRegister.Entities ENTITY_TYPES =\n"
@@ -406,17 +703,33 @@ def _registrations(content: Content) -> bytes:
 def _drop_expectation(drop: MobDropDef) -> str:
     return (
         f"new DropExpectation({string_literal(drop.item)}, {drop.count.min}, {drop.count.max}, "
-        f"{_double(percent_to_fraction(drop.chance_percent))})"
+        f"{_double(percent_to_fraction(drop.chance_percent))}, {drop.looting_count}, "
+        f"{_double(percent_to_fraction(drop.looting_chance_percent))})"
     )
+
+
+def _drops(drops: list[MobDropDef], indent: str) -> str:
+    return "List.of(" + f",\n{indent}".join(_drop_expectation(drop) for drop in drops) + ")"
+
+
+def _string(value: str | None) -> str:
+    return string_literal(value if value is not None else "")
 
 
 def _expectation(mob: MobDef) -> str:
     values = mob.attributes
-    spells = ", ".join(
-        string_literal(spell) for spell in (mob.caster.spells if mob.caster is not None else [])
+    caster = mob.caster
+    spells = ", ".join(string_literal(spell) for spell in (caster.spells if caster is not None else []))
+    kiting = caster.kiting if caster is not None else None
+    melee = melee_of(mob)
+    sounds = mob.sounds
+    variants = ",\n".join(
+        f"                            new VariantExpectation({string_literal(variant.id)}, {variant.weight}, "
+        f"{string_literal(mob_loot_table(mob.id, variant.id))},\n"
+        f"                                    {_drops(mob.loot + variant.loot, '                                    ')})"
+        for variant in mob.variants
     )
-    keep_distance = mob.caster.keep_distance if mob.caster is not None else 0
-    drops = ",\n                            ".join(_drop_expectation(drop) for drop in mob.loot)
+    tags = ", ".join(string_literal(tag) for tag in mob.tags)
     return (
         "            new MobExpectation(\n"
         f"                    {string_literal(mob_id(mob.id))},\n"
@@ -427,9 +740,18 @@ def _expectation(mob: MobDef) -> str:
         f"                    {_double(values.movement_speed)}, {_double(values.follow_range)}, "
         f"{_double(percent_to_fraction(values.knockback_resistance_percent))},\n"
         f"                    {string_literal(mob.idle)},\n"
-        f"                    List.of({spells}), {_double(keep_distance)},\n"
+        f"                    {seconds_to_ticks(melee.attack_interval_seconds)}, {_double(melee.knock_up_blocks)},\n"
+        f"                    List.of({spells}),\n"
+        f"                    {_double(kiting.step_blocks if kiting else 0)}, "
+        f"{_double(percent_to_fraction(kiting.speed_percent) if kiting else 0)},\n"
+        f"                    {_string(sounds.ambient)}, {_string(sounds.hurt)}, {_string(sounds.death)},\n"
+        f"                    {_string(None if sounds.step == 'silent' else sounds.step)}, "
+        f"{'true' if sounds.step == 'silent' else 'false'},\n"
+        f"                    {_string(mob.death_particles)},\n"
+        f"                    List.of({tags}),\n"
         f"                    {string_literal(mob_loot_table(mob.id))},\n"
-        f"                    List.of({drops}))"
+        f"                    {_drops(mob.loot, '                            ')},\n"
+        f"                    List.of({chr(10) + variants if variants else ''}))"
     )
 
 
@@ -443,18 +765,29 @@ def _expectations(content: Content) -> bytes:
         "\n"
         "/**\n"
         " * What {@code content/mobs/} says about every custom mob, so GameTests can check that the game agrees. Ids are\n"
-        " * full resource locations, e.g. {@code realmforge:hewn_sentinel}; numbers are in game units (fractions).\n"
+        " * full resource locations, e.g. {@code realmforge:hewn_sentinel}; numbers are in game units (ticks, fractions);\n"
+        ' * a sound or block the YAML leaves out is {@code ""}.\n'
         " */\n"
         "public final class GeneratedMobExpectations {\n"
-        "    /** One drop of its loot table: how many of the item (from min to max) and the chance it drops at all. */\n"
-        "    public record DropExpectation(String item, int min, int max, double chance) {\n"
+        "    /**\n"
+        "     * One drop of a loot table: how many of the item (from min to max), the chance it drops at all, and what each\n"
+        "     * level of Looting adds: up to {@code lootingCount} more, {@code lootingChance} to the chance.\n"
+        "     */\n"
+        "    public record DropExpectation(String item, int min, int max, double chance, int lootingCount,\n"
+        "            double lootingChance) {\n"
         "    }\n"
         "\n"
-        "    /** Expected state of one mob: its entity type, attributes at level 1, behaviour and loot. */\n"
+        "    /** One variant: its weight at spawn and its loot table, the mob's own drops and its own. */\n"
+        "    public record VariantExpectation(String id, int weight, String lootTable, List<DropExpectation> loot) {\n"
+        "    }\n"
+        "\n"
+        "    /** Expected state of one mob: its entity type, attributes at level 1, behaviour, sounds and loot. */\n"
         "    public record MobExpectation(String id, String descriptionId, String archetype, float width, float height,\n"
         "            double maxHealth, double attackDamage, double armor, double movementSpeed, double followRange,\n"
-        "            double knockbackResistance, String idle, List<String> spells, double keepDistance, String lootTable,\n"
-        "            List<DropExpectation> loot) {\n"
+        "            double knockbackResistance, String idle, int attackIntervalTicks, double knockUpBlocks,\n"
+        "            List<String> spells, double kitingStepBlocks, double kitingSpeed, String ambientSound,\n"
+        "            String hurtSound, String deathSound, String stepSound, boolean silentSteps, String deathParticles,\n"
+        "            List<String> tags, String lootTable, List<DropExpectation> loot, List<VariantExpectation> variants) {\n"
         "    }\n"
         "\n"
         f"    public static final List<MobExpectation> MOBS = {mobs};\n"

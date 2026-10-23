@@ -2,13 +2,20 @@ package io.github.matejkadlec.realmforge.mob.custom;
 
 import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.constant.DefaultAnimations;
+import io.github.matejkadlec.realmforge.mob.ai.KnockUp;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * The melee archetype (architecture 14.2, {@code archetype: melee}): it walks up to its target and hits it with its
- * attack damage, as vanilla's melee monsters do. Each hit plays the model's {@code attack.swing} animation.
+ * attack damage, as vanilla's melee monsters do, at its own pace ({@link PacedMeleeAttackGoal}). Each hit plays the
+ * model's {@code attack.swing} animation and, with {@code knock_up_blocks}, throws its target that high on top of
+ * vanilla's push back (less the target's knockback resistance).
  */
 public class MeleeMob extends CustomMob {
     public MeleeMob(EntityType<? extends MeleeMob> type, Level level, CustomMobSpec spec) {
@@ -17,7 +24,23 @@ public class MeleeMob extends CustomMob {
 
     @Override
     protected void addFightGoals() {
-        goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0, false));
+        goalSelector.addGoal(2, new PacedMeleeAttackGoal(this, spec().melee().attackIntervalTicks()));
+    }
+
+    @Override
+    public boolean doHurtTarget(ServerLevel level, Entity target) {
+        boolean hit = super.doHurtTarget(level, target);
+        double knockUp = spec().melee().knockUpBlocks();
+        if (hit && knockUp > 0 && target instanceof LivingEntity living && living.isAlive()) {
+            double resisted = knockUp * (1 - living.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
+            if (resisted > 0) {
+                Vec3 motion = living.getDeltaMovement();
+                living.setDeltaMovement(motion.x, KnockUp.velocity(resisted), motion.z);
+                // A player moves on its client: the server sends it the new motion.
+                living.hurtMarked = true;
+            }
+        }
+        return hit;
     }
 
     @Override
