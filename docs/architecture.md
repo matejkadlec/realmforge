@@ -486,6 +486,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:visited_realms` | `world` | players | the ids of the realms the player has arrived in, so the arrival shows a realm's flavour line once (W2b); copied on death | not synced |
 | `realmforge:instance` | `dungeon` | players | the run's plot, the return point (spike 3) and the game mode to give back when entering switched it to Adventure (W4c) | not synced |
 | `realmforge:stat_tracker` | `stats` | players | when the stat modifiers were last recomputed and what a respawn owes the health ([8.2](#82-where-modifiers-come-from)); transient: not saved or copied | not synced |
+| `realmforge:in_combat` | `combat` | living entities that dealt or took a hit | the game time of the last hit dealt to, or taken from, another living entity and when its combat ends ([9.4](#94-in-combat), RLM-348); transient: not saved or copied, so a new entity starts out of combat | the owner (the time, for UI that shows it) |
 | `realmforge:magic_shield` | `combat` | players (any entity with the stat) | the points left in the magic shield and the tick count from which it refills ([9.1](#91-damage-pipeline)); transient: not saved or copied, so a new player entity starts with a full shield | the owner, points only (the HUD bar) |
 | `realmforge:pending_refill` | `mob` | mobs leveled as they spawn | a mark: refill the mob's health to its scaled maximum when it joins the level ([14.1](#141-mob-levels)); saved (a chunk-generation spawn waits in the chunk's data), not copied, removed at the join | not synced |
 
@@ -718,7 +719,7 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
      NeoForge 26.1 (below), and `CombatEvent.Dodge` reports it.
    - **A raised two-handed weapon** blocks a hit on a player after the dodge: in full in the first half second
      after raising it (the event is cancelled), by half after that, before armor and resistances
-     ([9.3](#93-blocking-with-two-handed-weapons)).
+     ([9.3](#93-blocking-with-two-handed-weapons)), unless the hurt cooldown drops the hit anyway (step 4).
    - **A ranged crit:** a projectile hit marked in step 2 crits on its shooter's crit chance and deals 1 + crit
      damage (150 % by default, as for melee and spells; Matěj, 2026-10-19), through `setAmount`, with the crit combat
      text.
@@ -761,17 +762,27 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
    deals 0 (it would deal 5 without the restore); and a fire hit right after a melee hit lands in full.
    **A player's damage never loses anything to the window either** (RLM-311,
    [ADR 0049](decisions/0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md); Matěj: attack speed 3 and more
-   will be reachable, a hit every 6 to 7 ticks). A melee hit or projectile whose causing entity is a player, and that
-   is no school hit, lowers the defender's invulnerable time to 10 in step 3 when it is above, so vanilla deals it in
-   full and opens a new window, exactly as for a damage type in `#minecraft:bypasses_cooldown`. The tag cannot do it:
-   arrows have one damage type whoever shoots them, and a skeleton's must still meet a player's window. Better
-   Combat already does the same for its swings (`allow_fast_attacks` sets the target's invulnerable time to 0); this
-   covers arrows, tridents and attacks without a Better Combat weapon. Mobs' and the world's hits keep vanilla's
-   window, on players too: lava, fire, cactus and a crowd of mobs hurt a player at most every 10 ticks. Iron's RPG
-   Tweaks, which 0044 first chose for this, cancels a hit of a damage type that hurt the same entity the tick before,
-   a second player's hit and our school hits included, so it is not in the pack. `HurtCooldownGameTests` measures it:
-   two melee hits 6 ticks apart and a player's arrows in the window land in full, a skeleton's arrow deals only its
-   difference, and lava, fire, cactus and five zombies land a full hit at most every 10 ticks.
+   will be reachable, a hit every 6 to 7 ticks). A projectile whose causing entity is a player, or a player's melee hit
+   at full attack strength (above 0.9, the strength a crit needs; RLM-386,
+   [ADR 0051](decisions/0051-player-melee-passes-the-hurt-cooldown-only-at-full-strength.md)), that is no school hit,
+   lowers the defender's invulnerable time to 10 in step 3 when it is above, so vanilla deals it in full and opens a
+   new window, exactly as for a damage type in `#minecraft:bypasses_cooldown` (`DamagePipeline#landsThroughCooldown`).
+   NeoForge resets the attack strength only at the end of `Player#attack`, so it is still the swing's there. A weaker
+   melee hit meets the window as in vanilla: no bigger than the window's `lastHurt` it is dropped, a bigger one deals
+   the difference, so spam-clicking an item without Better Combat attributes (about 10 weak hits a second, each a
+   fifth of a full one) deals no more than timed hits. All three arrows of a Multishot volley still land in full
+   (Matěj, 2026-10-23). The tag cannot do it: arrows have one damage type whoever shoots them, and a skeleton's must
+   still meet a player's window. Better Combat already does the same for its swings (`allow_fast_attacks` sets the
+   target's invulnerable time to 0); this covers arrows, tridents and full-strength attacks without a Better Combat
+   weapon. Mobs' and the world's hits keep vanilla's window, on players too: lava, fire, cactus and a crowd of mobs
+   hurt a player at most every 10 ticks. Iron's RPG Tweaks, which 0044 first chose for this, cancels a hit of a damage
+   type that hurt the same entity the tick before, a second player's hit and our school hits included, so it is not in
+   the pack. `HurtCooldownGameTests` measures it: two full-strength melee hits 6 ticks apart and a player's arrows in
+   the window land in full, a weak melee hit right after a full one deals nothing (or, from a stronger weapon, only its
+   difference) while a full-strength one in the same window lands in full, a skeleton's arrow deals only its difference,
+   and lava, fire, cactus and five zombies land a full hit at most every 10 ticks. `DamagePipeline#droppedByCooldown`
+   tells the other rules which hits the window drops anyway (a raised weapon ignores them,
+   [9.3](#93-blocking-with-two-handed-weapons)).
 5. The reductions apply: armor (our formula), enchantments, effects. **`LivingDamageEvent.Pre`** sees the damage
    before absorption hearts take their share. Then absorption hearts take what they can, the **magic shield** takes
    what they left, up to its points (`combat/MagicShields`), and health takes the rest. The shield acts in the
@@ -779,10 +790,11 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
    cooldown measures the next hit against, `lastHurt`) stays the whole hit. NeoForge subtracts the whole absorption
    reduction from the absorption hearts, which is right because the shield only takes something once they are
    empty.
-6. **`LivingDamageEvent.Post`** reports what was dealt: `combat` posts `CombatEvent.Hit` (school, crit, the
-   original damage, what armor blocked, the damage dealt and taken from health) for higher features (procs in C3a
-   and C5, threat later, the QA mod's combat log), and sends the combat text (`combat/net/CombatTextPayload`) to the
-   player who dealt the hit ([18](#18-client-code-rendering-gui-input)). A tick of a damaging effect has no attacker:
+6. **`LivingDamageEvent.Post`** puts both sides in combat ([9.4](#94-in-combat), as a dodge and a full block in
+   step 3 do) and reports what was dealt: `combat` posts `CombatEvent.Hit` (school, crit, the original damage, what armor
+   blocked, the damage dealt and taken from health) for higher features (procs in C3a and C5, threat later, the QA mod's
+   combat log), and sends the combat text (`combat/net/CombatTextPayload`) to the player who dealt the hit
+   ([18](#18-client-code-rendering-gui-input)). A tick of a damaging effect has no attacker:
    `combat/DamageOverTime` remembers the player who applied each poison or wither (from `MobEffectEvent.Added`'s
    source: the player, or the owner of the splash potion, tipped arrow or lingering cloud; the latest application
    decides, and the entry goes when the effect ends or is removed), and the tick's number goes to that player in the
@@ -893,7 +905,13 @@ does**, in step 3 of the pipeline ([9.1](#91-damage-pipeline)), after the dodge:
   full blocks. The cooldown is vanilla's item cooldown: it shows on the hotbar, and vanilla refuses the right click
   on the client and the server while it runs;
 - like the mod, a raised weapon never blocks damage that bypasses armor or has no source position (magic, falls,
-  drowning), nor a piercing arrow.
+  drowning), nor a piercing arrow;
+- **it never spends itself on a hit the hurt cooldown drops anyway** (RLM-387): `LivingIncomingDamageEvent` comes
+  before vanilla's window check, so a hit no bigger than the player's open window's `lastHurt`, which neither
+  bypasses nor lands through the window ([9.1](#91-damage-pipeline), step 4: `DamagePipeline#droppedByCooldown`),
+  is left to the window: no block sound, no cooldown, the weapon stays raised for the next real hit. Without this, a
+  second zombie's equal hit right after a first one lowered the weapon and the first zombie's next swing landed in
+  full.
 
 The numbers are in the common config (`combat/CombatConfig`, [19.2](#192-configuration)) for Matěj to tune in
 playtests: the full block 0.5 s, the share 50 %, the cooldown 1 s, the arc 180° (the front half). Apotheosis's shield
@@ -918,7 +936,37 @@ on a single stack does not count, since the tag is per item.
 
 `WeaponBlocksTest` covers the amounts and the arc; `WeaponBlockGameTests` raises the test greatsword at a zombie's
 hits: in full within 0.5 s, half after it, the cooldown after a block and after lowering it by hand, no block from
-behind, of magic or with a one-handed sword, and the tag's members.
+behind, of magic or with a one-handed sword, no reaction (no sound, no cooldown, still raised) to a hit the window
+drops while the next bigger one is still blocked, and the tag's members.
+
+### 9.4 In combat
+
+Built for RLM-348 (Matěj, 2026-10-21 and 2026-10-22), WoW's rule: **a player or mob is in combat for 10 s after the
+last hit it dealt to, or took from, another living entity**, melee, projectiles and school hits (spells, our damage
+over time) alike, and a dodged hit or one a raised weapon blocked in full too. Damage from the world (falls, fire,
+lava, drowning, a vanilla poison tick) has no attacker, so it never starts or extends combat. `combat/InCombat` is the
+one state every rule reads, instead of a timer of its own:
+
+- **The API:** `InCombat#isInCombat(entity)`, `InCombat#ticksLeft(entity)` (game ticks until it is out of combat) and
+  `InCombat#ticksSinceLastHit(entity)`. On the server for any living entity; on a client for the local player only.
+- **The state:** the transient `realmforge:in_combat` attachment ([7](#7-player-state)), a `combat/CombatTime` with
+  the game time of the last hit and the game time its combat ends, synced to the owner, so the client's UI can show
+  it; neither saved nor copied, so a new entity (a login, a respawn) starts out of combat. The game time is the
+  server's one clock, the same in every dimension. The damage pipeline marks both sides of each hit
+  (`InCombat#mark`, from `LivingDamageEvent.Post`, a dodge and a full block): a hit's causing entity (a projectile's
+  shooter, a spell's caster), never the defender itself; once per tick, since a sweep or a volley hits many times in
+  one.
+- **The window** is the common config's `combat.inCombatSeconds`, 10 by default (`combat/CombatConfig`,
+  [19.2](#192-configuration)); a hit's combat ends at its time plus the window as it was then.
+- **Its users:** rage decays measured from the same last hit ([11.5](#115-resources-cooldowns-modifiers)), so the
+  two never disagree about the fight; the Scroll of Oblivion (RLM-196) refuses to be used in combat, is kept and says
+  "You can't use this in combat." (`message.realmforge.cannot_use_in_combat`), on both sides, so the client swings no
+  arm. The Scroll of Respec (RLM-226) and the Scroll of Rebirth (RLM-228) refuse the same way when they land, and
+  later features (boss arena exits, return scrolls, the open-world dungeon mobs held in combat of RLM-305) read it too.
+
+`InCombatGameTests` covers it: a mob's hit and a player's hit put both sides in combat, 9 s after the last hit they
+are still in it and 11 s after they are out, a dodged hit counts, falls, lava, fire and drowning do not, and the Scroll
+of Oblivion fails and is kept in combat and works once the window has passed.
 
 ## 10. Character: races, classes, leveling
 
@@ -1270,10 +1318,12 @@ covers the ticks, the caster's stats, a caster that left, the modifiers and the 
   its rage once, however many mobs it hits** (RLM-278): only the holder's first melee hit in a game tick counts.
   Vanilla hurts a sword's target before its sweep, and Better Combat ([9.2](#92-better-combat)) attacks a swing's
   targets one after another in the same tick, each with its own full-strength `Player#attack`, so neither the sweep
-  nor Better Combat's further targets add rage; when the target's hit is dodged, the first hit that lands counts. A
-  hit dealt or taken, or a dodged one, puts both sides in combat; `decay_after_seconds` after the last one the pool
-  loses `decay_per_second` every second, as rage's regeneration ([`ResourceType`](#115-resources-cooldowns-modifiers))
-  is negative then. Combat is transient, so a new player entity starts out of it. The Warrior's starting numbers are 10
+  nor Better Combat's further targets add rage; when the target's hit is dodged, the first hit that lands counts. The
+  pool holds while the last hit dealt or taken (a dodged or fully blocked one included) is less than
+  `decay_after_seconds` ago; after that it loses `decay_per_second` every second, as rage's regeneration
+  ([`ResourceType`](#115-resources-cooldowns-modifiers)) is negative then. The last hit is the shared in-combat
+  state's ([9.4](#94-in-combat), RLM-348), so rage and being in combat never disagree about the fight; a new player
+  entity starts with no hit. The Warrior's starting numbers are 10
   a hit, 50 for the whole max health and 2 a second after 5 s, until the class kits (C4) tune them. Mobs pay no cost
   ([11.2](#112-casting-server-authoritative)), so no mob gains rage. `RageGameTests` and `RageRulesTest` cover it.
 - **Cooldowns:** a spell's own cooldown, shortened by Cooldown Reduction (at most 75 %, its stat's cap), and the
@@ -2371,8 +2421,9 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
 numbers are content, so they are versioned, validated and tested. The client config exists (C3b): `client/ClientConfig`,
 `config/realmforge-client.toml`, holds how the spell bar's presses wait ([11.6](#116-client-side)). One exception: the
 common config, `combat/CombatConfig`, `config/realmforge-common.toml`, holds the blocking rules
-([9.3](#93-blocking-with-two-handed-weapons)), because Matěj tunes them while he plays (RLM-297) and NeoForge reloads
-the file when it changes. Once they settle they can move into content.
+([9.3](#93-blocking-with-two-handed-weapons)) and the in-combat window ([9.4](#94-in-combat), RLM-348, whose ticket
+allowed content or config), because Matěj tunes them while he plays (RLM-297) and NeoForge reloads the file when it
+changes. Once they settle they can move into content.
 
 ### 19.3 Mixins and access transformers
 
