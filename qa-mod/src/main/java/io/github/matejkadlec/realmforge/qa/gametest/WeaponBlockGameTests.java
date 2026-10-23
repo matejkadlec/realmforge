@@ -8,13 +8,16 @@ import io.github.matejkadlec.realmforge.compat.bettercombat.TwoHandedWeapons;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.mob.MobLevels;
 import io.github.matejkadlec.realmforge.qa.combat.QaItems;
+import io.github.matejkadlec.realmforge.qa.combat.SoundLog;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -36,6 +39,8 @@ public final class WeaponBlockGameTests {
     private static final Vec3 EDGE = new Vec3(2.5, 1, 0.5);
     /** A hit's damage, before the block. */
     private static final float HIT = 10;
+    /** A smaller hit, which opens the hurt cooldown window that a later {@link #HIT} still beats. */
+    private static final float SMALL_HIT = 4;
     /** Ticks past the full-block window of 10 ticks (0.5 s). */
     private static final int AFTER_WINDOW = 12;
 
@@ -130,6 +135,39 @@ public final class WeaponBlockGameTests {
         helper.succeed();
     }
 
+    /**
+     * Done when of RLM-387: a zombie's hit opens the player's hurt cooldown window, the player raises the greatsword,
+     * and a second zombie's equal hit, which the window drops anyway, leaves the weapon alone: no block sound, no
+     * cooldown, still raised. The next real hit, bigger than the window's last one, is still blocked in full.
+     */
+    @QaGameTest
+    public static void aRaisedWeaponIgnoresAHitTheWindowDrops(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = blocker(helper, "qa-block-window", 0);
+        Zombie first = zombieInFront(helper);
+        Zombie second = zombieInFront(helper);
+        player.hurtServer(level, level.damageSources().mobAttack(first), SMALL_HIT);
+        helper.assertTrue(player.invulnerableTime > 10, "the first hit opened a window: " + player.invulnerableTime);
+        ItemStack greatsword = raise(player, new ItemStack(QaItems.TEST_GREATSWORD.get()), 2);
+        long sounds = blockSounds(helper, player);
+
+        float before = player.getHealth();
+        helper.assertFalse(player.hurtServer(level, level.damageSources().mobAttack(second), SMALL_HIT),
+                "the window dropped the second zombie's equal hit");
+        helper.assertTrue(close(player.getHealth(), before), "nothing dealt: " + (before - player.getHealth()));
+        helper.assertTrue(WeaponBlocks.isRaised(player), "the weapon is still raised");
+        helper.assertFalse(player.getCooldowns().isOnCooldown(greatsword), "the dropped hit started no cooldown");
+        helper.assertValueEqual(blockSounds(helper, player), sounds, "block sounds after the dropped hit");
+
+        helper.assertFalse(player.hurtServer(level, level.damageSources().mobAttack(first), HIT),
+                "the next, bigger hit was blocked in full");
+        helper.assertTrue(close(player.getHealth(), before), "nothing dealt: " + (before - player.getHealth()));
+        helper.assertTrue(player.getCooldowns().isOnCooldown(greatsword), "the real block started the cooldown");
+        helper.assertValueEqual(blockSounds(helper, player), sounds + 1, "block sounds after the real block");
+        level.getServer().getPlayerList().remove(player);
+        helper.succeed();
+    }
+
     /** A hit from behind is not blocked, nor one at a player holding up a one-handed sword, nor magic. */
     @QaGameTest
     public static void hitsFromBehindOrAtASwordOrOfMagicAreNotBlocked(GameTestHelper helper) {
@@ -183,6 +221,11 @@ public final class WeaponBlockGameTests {
             player.doTick();
         }
         return weapon;
+    }
+
+    /** How often the raised weapon's block sound played at the player. */
+    private static long blockSounds(GameTestHelper helper, ServerPlayer player) {
+        return SoundLog.count(helper.getLevel(), player.position(), 0.5, SoundEvents.SHIELD_BLOCK);
     }
 
     /** A zombie that stands still south of the platform's north edge, at level 1, so its hits are unscaled. */

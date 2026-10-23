@@ -6,6 +6,7 @@ import io.github.matejkadlec.realmforge.qa.combat.CastLog;
 import io.github.matejkadlec.realmforge.qa.combat.CombatLog;
 import io.github.matejkadlec.realmforge.qa.combat.QaItems;
 import io.github.matejkadlec.realmforge.qa.combat.QaProcs;
+import io.github.matejkadlec.realmforge.qa.combat.SoundLog;
 import io.github.matejkadlec.realmforge.qa.combat.TrainingDummy;
 import io.github.matejkadlec.realmforge.qa.command.QaCommands;
 import io.github.matejkadlec.realmforge.qa.gametest.QaGameTests;
@@ -33,6 +34,7 @@ public final class RealmforgeQa {
         QaItems.register(modEventBus);
         CombatLog.register();
         CastLog.register();
+        SoundLog.register();
         QaProcs.register();
         NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent.class, QaCommands::register);
         NeoForge.EVENT_BUS.addListener(ServerTickEvent.Pre.class,
