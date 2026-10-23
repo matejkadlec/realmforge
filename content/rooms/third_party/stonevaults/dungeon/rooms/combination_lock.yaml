@@ -6,12 +6,14 @@ tags:
   - "combat"
   - "straight"
 weight: 1
+max_per_layout: 1
 explosion_breaks:
   - "minecraft:smooth_stone"
   - "minecraft:gravel"
   - "minecraft:redstone_wire"
   - "minecraft:redstone_torch"
   - "minecraft:redstone_wall_torch"
+entry: west
 source:
   file: "combination_lock.nbt"
   format: nbt

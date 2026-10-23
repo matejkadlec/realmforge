@@ -6,6 +6,7 @@ tags:
   - "stairs"
   - "straight"
 weight: 1
+max_per_layout: 2
 source:
   file: "stairs.nbt"
   format: nbt
