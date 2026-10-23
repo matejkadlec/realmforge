@@ -1,0 +1,109 @@
+// Better Key Binds (mod ID `better_key_binds`): a standalone client-side mod that gives every key bind a secondary key.
+// Fully independent of Realmforge (ADR 0048): it never depends on :mod or :qa-mod, and they never depend on it. Only
+// qa-mod's dev client run loads it, as a mod next to Realmforge's.
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev'
+}
+
+// better_key_binds_version comes from this folder's gradle.properties; Minecraft and NeoForge from the root's.
+version = "${better_key_binds_version}+mc${minecraft_version}"
+group = 'io.github.matejkadlec.betterkeybinds'
+
+base {
+    archivesName = 'better-key-binds'
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+neoForge {
+    version = neo_version
+
+    // No runs here: qa-mod/'s dev client loads this mod next to Realmforge's.
+    mods {
+        better_key_binds {
+            sourceSet sourceSets.main
+        }
+    }
+
+    // JUnit runs with the game's classes (real key mappings in SecondaryKeysTest).
+    unitTest {
+        enable()
+        testedMod = mods.better_key_binds
+    }
+}
+
+repositories {
+    // Modrinth's Maven endpoint, only for the `maven.modrinth` group: the optional integrations below.
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'Modrinth'
+                url = 'https://api.modrinth.com/maven'
+            }
+        }
+        filter {
+            includeGroup 'maven.modrinth'
+        }
+    }
+}
+
+dependencies {
+    // Controlling and its library Searchables, optional: the mixins in mixin/controlling/ add the secondary key column
+    // to Controlling's Key Binds list, its conflict filter and its search. Compiled against, never shipped; a newer
+    // Controlling needs these versions moved and the column checked in game (README).
+    compileOnly 'maven.modrinth:controlling:sgKdyug3' // Controlling 26.1.2.7 (NeoForge)
+    compileOnly 'maven.modrinth:searchables:OGi2qTkh' // Searchables 1.0.2 (NeoForge)
+
+    testImplementation platform("org.junit:junit-bom:${junit_version}")
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+}
+
+// Expands ${...} properties in src/main/templates (neoforge.mods.toml).
+def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+    def replaceProperties = [
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            loader_version_range   : loader_version_range,
+            mod_version            : project.version,
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    filteringCharset = 'UTF-8'
+    from 'src/main/templates'
+    into 'build/generated/sources/modMetadata'
+}
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+tasks.named('jar', Jar) {
+    from('LICENSE') {
+        rename { 'LICENSE_better_key_binds' }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+// Copies the jar into a Prism Launcher instance for playtesting, next to the core mod's (mod/'s installToPrism).
+// Set `realmforge.prismModsDir` in ~/.gradle/gradle.properties (see docs/dev-setup.md).
+tasks.register('installToPrism', Copy) {
+    group = 'better key binds'
+    description = 'Copies the better-key-binds jar into the Prism Launcher instance mods folder (realmforge.prismModsDir).'
+    def modsDir = providers.gradleProperty('realmforge.prismModsDir')
+    from tasks.named('jar')
+    into modsDir.orElse(layout.buildDirectory.dir('prism-mods-dir-not-set').get().asFile.path)
+    doFirst {
+        if (!modsDir.isPresent()) {
+            throw new GradleException('Set realmforge.prismModsDir in ~/.gradle/gradle.properties (see docs/dev-setup.md).')
+        }
+        // Remove previously installed better-key-binds jars so only one version is loaded.
+        new File(modsDir.get()).listFiles()?.findAll { it.name ==~ /better-key-binds-.*\.jar/ }?.each { it.delete() }
+    }
+}

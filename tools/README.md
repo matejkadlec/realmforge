@@ -42,8 +42,10 @@ Generated directories (owned by `rf gen`, never edit by hand): `mod/src/generate
 ## Pack boot
 
 `uv run rf pack-boot` ([ADR 0018](../docs/decisions/0018-pack-boot-tests.md)) checks that the whole modpack plus the
-core mod jar loads, on both sides, the way players and server owners install it. Build the jar first
-(`./gradlew :mod:jar`). It works in `.cache/pack-boot/`:
+core mod jar loads, on both sides, the way players and server owners install it, and on the client with the jar of
+Better Key Binds, our client-only mod the pack ships next to the core mod
+([ADR 0048](../docs/decisions/0048-better-key-binds-our-own-client-mod-independent-of-realmforge.md)). Build the jars
+first (`./gradlew :mod:jar :better-key-binds:jar`). It works in `.cache/pack-boot/`:
 
 1. installs the game: the NeoForge server from its installer (`server/`), or the client: the same installer's
    `--installClient` puts NeoForge into `launcher/`, and the [portablemc](https://github.com/mindstorm38/portablemc)
@@ -52,9 +54,9 @@ core mod jar loads, on both sides, the way players and server owners install it.
    ([ADR 0018](../docs/decisions/0018-pack-boot-tests.md#note-2026-10-12-2612-port)). Every step runs on Java 25
    (`JAVA_HOME` or `PATH`), which the tool checks first;
 2. installs the pack's mods for that side with packwiz-installer, serving `pack/` over a local HTTP server;
-3. copies the jar into `mods/` and boots with NeoForge's self test, once with the optional mods and once without
-   (once in all while the pack has none, as now); the client runs under Xvfb when `xvfb-run` exists
-   (`sudo apt install xvfb`);
+3. copies the jars into `mods/` (Better Key Binds' on the client only) and boots with NeoForge's self test, once with
+   the optional mods and once without (once in all while the pack has none, as now); the client runs under Xvfb when
+   `xvfb-run` exists (`sudo apt install xvfb`);
 4. fails on a non-zero exit, a missing self-test report, a crash report, a jar that was not loaded, or an ERROR or
    FATAL log line that `ALLOWED_ERRORS` in `packboot.py` does not explain.
 

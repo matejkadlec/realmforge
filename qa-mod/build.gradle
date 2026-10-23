@@ -5,8 +5,9 @@ plugins {
     id 'net.neoforged.moddev'
 }
 
-// The mods { } block below references the core mod's source set.
+// The mods { } block below references the core mod's and Better Key Binds' source sets.
 evaluationDependsOn(':mod')
+evaluationDependsOn(':better-key-binds')
 
 version = "${mod_version}+mc${minecraft_version}"
 group = mod_group_id
@@ -155,10 +156,13 @@ def serverMods = configurations.named('packServerMods')
 // A run's classpath is its source set's runtime classpath, so the client and the servers each get a source set of
 // their own (without sources) that adds their pack mods to the QA mod's. ModDevGradle puts its launcher (DevLaunch,
 // DevLogin) into the run source set's own runtime classpath configuration, which therefore stays part of it.
+// The client also loads Better Key Binds (ADR 0048), which neither Realmforge mod depends on: its classes join the
+// client's classpath only, never the QA mod's compile classpath.
+def betterKeyBinds = project(':better-key-binds').sourceSets.main
 sourceSets {
     devClient {
         runtimeClasspath = sourceSets.main.runtimeClasspath + configurations.devClientRuntimeClasspath +
-                files(clientMods)
+                files(clientMods) + betterKeyBinds.output
     }
     devServer {
         runtimeClasspath = sourceSets.main.runtimeClasspath + configurations.devServerRuntimeClasspath +
@@ -210,7 +214,21 @@ def verifyPackServerMods = registerPackModCheck('verifyPackServerMods', serverMo
 neoForge {
     version = neo_version
 
-    // All dev runs live here and load both mods (core + QA) and the pack's mods for their side.
+    mods {
+        realmforge {
+            sourceSet project(':mod').sourceSets.main
+        }
+        realmforge_qa {
+            sourceSet sourceSets.main
+        }
+        // Client only (the server runs' loadedMods leave it out).
+        better_key_binds {
+            sourceSet betterKeyBinds
+        }
+    }
+
+    // All dev runs live here and load both mods (core + QA) and the pack's mods for their side; the client also loads
+    // Better Key Binds, a client-only mod of this repository (ADR 0048).
     runs {
         configureEach {
             logLevel = org.slf4j.event.Level.INFO
@@ -236,6 +254,7 @@ neoForge {
         server {
             server()
             sourceSet = sourceSets.devServer
+            loadedMods = [mods.realmforge, mods.realmforge_qa]
             programArgument '--nogui'
             gameDirectory = rootProject.file('run/server')
             taskBefore verifyPackServerMods
@@ -246,17 +265,9 @@ neoForge {
         gameTestServer {
             type = 'gameTestServer'
             sourceSet = sourceSets.devServer
+            loadedMods = [mods.realmforge, mods.realmforge_qa]
             gameDirectory = rootProject.file('run/gametest')
             taskBefore verifyPackServerMods
-        }
-    }
-
-    mods {
-        realmforge {
-            sourceSet project(':mod').sourceSets.main
-        }
-        realmforge_qa {
-            sourceSet sourceSets.main
         }
     }
 }

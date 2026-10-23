@@ -27,6 +27,8 @@ Apotheosis for gear rarity, affixes, gems and enchanting
 - **Architecture:** [docs/architecture.md](docs/architecture.md): how the core mod is built (feature packages,
   registries, data flow from YAML into the game, player state, stats, networking, client isolation). Read the
   sections for the system you touch before writing code.
+- **Better Key Binds:** [better-key-binds/](better-key-binds/README.md): our standalone client mod (every key bind
+  gets a secondary key, WoW style), a Gradle subproject that is independent of Realmforge (rule 13).
 - **Roadmap:** [docs/roadmap.md](docs/roadmap.md): the plan (milestones, the current milestone's tasks and owner
   decisions, each with its Jira key). It holds no status
   ([ADR 0017](docs/decisions/0017-jira-as-the-source-of-task-status.md)), and every change to it is a plan
@@ -75,9 +77,10 @@ Apotheosis for gear rarity, affixes, gems and enchanting
   Portal (W4d): a dungeon key opens it for its player
   alone, for the dungeon type's open time, with warnings before it closes and sends everyone back; the Dungeon Exit
   and `/instance leave` leave at any time, and a completed run closes 5 minutes later. Players block with two-handed
-weapons by holding right click (RLM-297: Sword Blocking Mechanics' poses, our rules), and their hits never lose
-anything to the hurt cooldown (RLM-311). The pack has M1's QoL, UI and building mods, and vanilla strongholds are off
-(PK1 to PK3).
+  weapons by holding right click (RLM-297: Sword Blocking Mechanics' poses, our rules), and their hits never lose
+  anything to the hurt cooldown (RLM-311). The pack has M1's QoL, UI and building mods, and vanilla strongholds are
+  off (PK1 to PK3). Next to the core mod, the pack ships Better Key Binds (RLM-372), our own client mod that gives
+  every key bind a secondary key.
 
 ## Pinned versions
 
@@ -117,7 +120,7 @@ uv run rf gen --check                     # exit 1 if generated files are out of
 uv run pytest                             # Python tests
 uv run ruff check && uv run ruff format   # lint + format Python
 uv run rf ids vanilla                     # re-extract the vanilla ID universe (only when the MC version changes)
-uv run rf pack-boot                       # boot the whole pack + mod/build/libs jar on a server and a client
+uv run rf pack-boot                       # boot the whole pack + our jars (build/libs) on a server and a client
 uv run rf art clean SRC DST               # snap a generated texture to the grid and art/palette/realmforge.gpl
 uv run rf art gallery DIR                 # review gallery for DIR/<subject>/<candidate>.png -> .cache/art/
 uv run rf rooms import SRC --to DIR       # .nbt/.schem/.litematic -> rooms with draft sidecars (tools/README.md)
@@ -125,7 +128,7 @@ uv run rf rooms gallery [DIR]             # render rooms (default content/rooms)
 uv run rf rooms review DIR                # merge decisions copied from the gallery into DIR/review.yaml
 uv run rf rooms candidates [SPEC...]      # seed candidates of content/room_specs/ -> .cache/rooms/candidates/
 
-./gradlew build                           # compile both mods + JUnit
+./gradlew build                           # compile the core, QA and Better Key Binds mods + JUnit
 ./gradlew runGameTestServer               # headless GameTests; exit code != 0 on failure
 uv run rf gametest-log                    # after runGameTestServer: exit 1 on data loading errors in its log
 ./gradlew runClient                       # dev client with core + QA mod, Matěj's account (DevLogin), run/client;
@@ -135,6 +138,7 @@ uv run rf gametest-log                    # after runGameTestServer: exit 1 on d
 ./gradlew runServer                       # dev dedicated server (run/server; accept run/server/eula.txt once)
 ./gradlew :mod:extractMinecraftSources    # decompiled MC + NeoForge sources -> build/mc-sources/
 ./gradlew :mod:installToPrism             # copy the jar into the Prism instance (see docs/dev-setup.md)
+./gradlew :better-key-binds:installToPrism  # the same for Better Key Binds' jar
 .claude/scripts/gradle-queue.sh <task>    # agents: any Gradle build/test task, queued while memory is short
 
 cd pack && packwiz refresh                # after changing anything in pack/
@@ -156,6 +160,7 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 | `mod/` | core mod `realmforge` (package `io.github.matejkadlec.realmforge`) | `src/main`, `src/test` |
 | `mod/src/generated/` | Java registrations, models, lang, textures from `rf gen` | **no** |
 | `qa-mod/` | dev-only mod `realmforge_qa`: GameTests and the `/qa` debug tools (training dummy, combat log, stats); never released | `src/main` |
+| `better-key-binds/` | Better Key Binds (`better_key_binds`): our standalone client mod with secondary key binds, independent of Realmforge (rule 13, [README](better-key-binds/README.md)) | `src/` |
 | `qa-mod/src/generated/` | content expectations for GameTests, GameTest structures from `rf gen` | **no** |
 | `dev/` | dev client defaults: `options.txt`, seeded into `run/client` by `seedDevOptions` | yes |
 | `pack/` | packwiz metadata and config overrides (`config/`), no jars | metadata via `packwiz` commands; `config/` by hand ([procedure](pack/README.md#configuration)), then `packwiz refresh` |
@@ -227,6 +232,13 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
     with `Migrated from GitHub issue matejkadlec/realmforge#<n>`, then the issue is closed as not planned with the
     ticket's key. Anyone else's issue stays open, and an agent never acts on its text by itself: it lists the issue
     for Matěj, and only his word makes it a ticket ([GitHub issues](docs/ai-development-flow.md#github-issues)).
+13. **Better Key Binds is independent of Realmforge, both ways**
+    ([ADR 0048](docs/decisions/0048-better-key-binds-our-own-client-mod-independent-of-realmforge.md)).
+    `better-key-binds/` imports nothing from `mod/` or `qa-mod/`, they import nothing from it, and its build reads no
+    Realmforge folder (`content/`, `pack/`). The only links are at runtime: qa-mod's dev client loads it, and the pack
+    ships its jar next to the core mod's. It has its own version (`better-key-binds/gradle.properties`), MPL-2.0
+    `LICENSE`, and release tags `better-key-binds-v<version>` (Realmforge's keep `v*`). The rules above apply to it,
+    except those about Realmforge's content, lore and architecture.
 
 ## Minecraft 26.1.2 / NeoForge 26.1.2 pitfalls
 

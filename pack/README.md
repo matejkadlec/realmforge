@@ -223,6 +223,22 @@ later hit, the 1 s cooldown, the covered arc: `config/realmforge-common.toml`, [
     [ADR 0034](../docs/decisions/0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md)'s
     merchants sell them.
 
+## Our mods
+
+Two mods of ours ship with the pack and are not packwiz entries, because packwiz-installer downloads only from
+Modrinth and CurseForge ([ADR 0008](../docs/decisions/0008-distribution-github-and-curseforge.md)):
+
+- **Realmforge**, the core mod (`mod/`, both sides);
+- **Better Key Binds** (`better-key-binds/`, client only): every key bind gets a secondary key, as in WoW
+  ([its README](../better-key-binds/README.md),
+  [ADR 0048](../docs/decisions/0048-better-key-binds-our-own-client-mod-independent-of-realmforge.md)). Its
+  secondary keys live in `config/better_key_binds-secondary_keys.txt`, which the pack does not ship, so each
+  player's own stay.
+
+Prism gets both jars from `./gradlew :mod:installToPrism :better-key-binds:installToPrism`
+([dev setup](../docs/dev-setup.md#4-playing-the-pack-on-windows-prism-launcher--packwiz-installer)), the pack boot
+test copies them in ([Boot test](#boot-test)), and the dev client loads both.
+
 ## Optional mods
 
 The pack has none since Quark left with the 26.1.2 port. An optional mod is
@@ -245,7 +261,8 @@ CurseForge ones from CurseMaven by `project-id` and `file-id` under
 `[download]` before a run starts. `uv run pytest`
 (`tools/tests/test_dev_run_mods.py`) fails on a `.pw.toml` that reader cannot
 take. `./gradlew runClient -PleanClient` starts a client without the pack's
-mods, except Player Animation Library and Yeetus Experimentus.
+mods, except Player Animation Library and Yeetus Experimentus. The dev client also loads Better Key Binds
+([Our mods](#our-mods)); the servers do not.
 
 Every dev run (client, server, GameTest server) also gets this folder's
 `config/`: the QA mod's `seedPackConfig` task copies it into the run's `config/`
@@ -254,12 +271,12 @@ packwiz-installer does in a player's instance.
 
 ## Boot test
 
-CI boots the whole pack plus the core mod on a dedicated server (job `pack-boot`) and on a client under Xvfb (job
-`pack-boot-client`) for every pull request (with and without the optional mods, when the pack has any). Run the
-same locally from the repository root after changing anything here, with Java 25:
+CI boots the whole pack plus the core mod on a dedicated server (job `pack-boot`) and, with Better Key Binds too, on a
+client under Xvfb (job `pack-boot-client`) for every pull request (with and without the optional mods, when the pack
+has any). Run the same locally from the repository root after changing anything here, with Java 25:
 
 ```sh
-./gradlew :mod:jar && uv run rf pack-boot
+./gradlew :mod:jar :better-key-binds:jar && uv run rf pack-boot
 ```
 
 See [tools/README.md](../tools/README.md#pack-boot) and
