@@ -411,12 +411,18 @@ public final class CustomMobGameTests {
      * Each custom mob wanders as vanilla's mobs do (Matěj's playtest, 2026-10-24): vanilla's random stroll at the
      * Zombified Piglin's priority, looking at players and around it, and no post. Its stroll walks it off at the Zombified
      * Piglin's speed, whatever its own (architecture 14.2).
+     *
+     * <p>The test triggers the stroll, instead of waiting for vanilla's roll (on average once every 6 seconds), whenever
+     * the mob stands on the ground without a path, until it has wandered a block: vanilla's ground navigation makes no
+     * path for a mob in the air (the tick it spawns), and most of the stroll's random spots lie on the ground below the
+     * raised platform, which the mob reaches only part of the way.
      */
     @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 200)
     public static void customMobsWanderAsVanillaMobsDo(GameTestHelper helper) {
         List<CustomMob> mobs = new ArrayList<>();
         Map<CustomMob, Vec3> starts = new HashMap<>();
         Map<CustomMob, Double> speeds = new HashMap<>();
+        Map<CustomMob, WaterAvoidingRandomStrollGoal> strolls = new HashMap<>();
         for (int n = 0; n < GeneratedMobs.ALL.size(); n++) {
             CustomMob mob = helper.spawn(GeneratedMobs.ALL.get(n).get(), new Vec3(4.5 + 8 * n, 1, 8.5));
             String what = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()).toString();
@@ -424,7 +430,7 @@ public final class CustomMobGameTests {
             for (WrappedGoal goal : mob.goalSelector.getAvailableGoals()) {
                 goals.merge(goal.getGoal().getClass(), goal.getPriority(), Math::min);
                 if (goal.getGoal() instanceof WaterAvoidingRandomStrollGoal stroll) {
-                    stroll.trigger();
+                    strolls.put(mob, stroll);
                 }
             }
             helper.assertValueEqual(goals.get(WaterAvoidingRandomStrollGoal.class), Wandering.PRIORITY,
@@ -444,6 +450,8 @@ public final class CustomMobGameTests {
                 if (mob.getNavigation().isInProgress()) {
                     speeds.put(mob, mob.getMoveControl().getSpeedModifier()
                             * mob.getAttributeValue(Attributes.MOVEMENT_SPEED));
+                } else if (mob.onGround() && mob.position().subtract(starts.get(mob)).horizontalDistance() <= 1) {
+                    strolls.get(mob).trigger();
                 }
             }
         });
