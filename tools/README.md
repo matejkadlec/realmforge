@@ -157,6 +157,7 @@ dress:                # variety and decorations for plain rooms (rooms/dress.py)
   ceiling: {target: 3, replace: [minecraft:stone_bricks], variants: [minecraft:mossy_stone_bricks]}
   decorations: [vines, cobwebs, barrels]
   without: {barrels: [dungeon/rooms/library]}  # rooms that do not get a decoration
+  lever_hints: minecraft:stone_brick_stairs    # the floor under each lever that must be on (a torch behind it)
 place:                # boxes of one block set into a room after the dressing, by its path (a fall cushion, RLM-276)
   dungeon/lobby/lobby_01:
     - {from: [5, 0, 5], to: [7, 0, 7], block: "minecraft:stone_brick_slab[type=bottom,waterlogged=true]"}
@@ -177,7 +178,14 @@ rooms variety: a surface (floor: air above, ceiling: air below, walls: air besid
 `target` (a family is a material whatever its shape; it counts from 5 % of the surface) gets the next variants it
 lacks, each replacing 15 % of its `replace` blocks in patches, gravel only over a block. The plainer the room was,
 the more decorations it gets: vines from the top of the walls, cobwebs where wall meets ceiling and barrels, all
-clear of the doorways and of the room's own entities; `without` leaves a decoration out of the rooms it names.
+clear of the doorways and of the room's own entities; `without` leaves a decoration out of the rooms it names. The
+dressing changes no block within one block of a mechanism (redstone, repeaters, comparators, levers, buttons,
+pressure plates, pistons, observers, dispensers, droppers, hoppers, TNT, targets, tripwires, trapped chests, note
+blocks, doors and the like), and decorates only the air a player reaches from the room's doorways, walking through
+air and what a player passes (vines, cobwebs, torches, carpets, plates, buttons, water), so no decoration jams a
+lock or a trap (RLM-364). `lever_hints` names a stairs block: under each lever on a wall whose block has a redstone
+torch behind it ([lever] [block] [torch], a lever that must be on), the floor block becomes those stairs, tall half
+towards the room, so a combination lock shows its answer.
 Barrels form a pattern ([ADR 0036](../docs/decisions/0036-room-lights-and-decorations-form-patterns.md), RLM-262):
 they stand on the room's main floor against its outer walls (a full block with no air behind it, so never on or
 beside a throne or pillar inside the room), never in a passage one block wide or where they would split the floor. A

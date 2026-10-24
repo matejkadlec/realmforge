@@ -231,7 +231,8 @@ Rules:
   sidecar names the room `pools` the room joins (a dungeon type is built from one pool), its `tags` (slot types),
   its `weight` (how often the planner picks it among the rooms that fit, 1 to 150), the rules for how dungeons treat
   it when it needs any: `max_per_layout` (the most times one layout holds it, RLM-256), `near_start: true` (it hangs
-  only off the entrance or the first room of the main path, RLM-256) and `explosion_breaks` (the blocks an explosion
+  only off the entrance or the first room of the main path, with a dungeon type's `pacing` any room of the main path's
+  approach, RLM-256) and `explosion_breaks` (the blocks an explosion
   inside it may break in an instance, where explosions otherwise break nothing: what a trap's TNT is meant to blow
   open, validated as block ids, RLM-257) and `entry` (the side of the template, as saved, whose one connector is
   the room's way in, such as a lock's mechanism side: the planner attaches the room to the room before it only
@@ -241,8 +242,11 @@ Rules:
   (`rooms/combination_lock`) lets its TNT break the smooth stone, gravel and redstone that close its way on, and its
   three locks are entered from their mechanism: `combination_lock` and `item_combination_lock` from the west,
   `pressure_plate_lock` from the north, the side of its pressure plates (its levers open the door from the south).
-  Each of its fights is limited to one per layout, as are `tiny_cap` and `drowned_junction`; `egg`, `parrot` and the
-  stairs to two (RLM-364).
+  Its fights (`husk_temple`, `skeleton_trap`, `tight_maze`, `library`) are limited to three per layout,
+  `drowned_junction`, every other combat room, the lobby and every treasure room to one, and the stairs to two
+  (RLM-364). Nine rooms of its pillager dungeon (stone bricks and dark oak like the rest: `bedroom`, `big_head`,
+  `big_library`, `cartographer`, `hallway`, `jail`, `jail_2`, `storage_2`, `temple`) join `realmforge:stone_vault` as
+  features, the trapped `hallway` tagged `combat`; their lookalikes of rooms already pooled stay out.
   `uv run rf rooms import` writes both files ([tools/README](../tools/README.md#rooms)); nobody
   edits a template by hand. Validation checks the size (at most 48 blocks per axis), the template's data version
   (required, no newer than the game's), every block, block entity and entity id and every container's loot table
@@ -309,29 +313,31 @@ Rules:
   `pillar`, `stairs`, `slab`, `rubble`, `rubble_slab`, `wall_light`, `ceiling_light`), the block it is in this
   theme: a full solid block, a stairs block, a slab, a wall torch or a lantern as the role needs, each role its own
   block, so a theme swap (W4) can tell them apart. `stone_vault` is the one theme so far.
-- `dungeons/` holds the kinds of dungeons ([architecture 15.2](../docs/architecture.md#152-dungeon-types)): a
-  `name` (a label), the room `pool` the type is built from, and the `layout` the planner follows, each range
-  written `[min, max]`: `main_path` (rooms between the entrance and the ending, 1 to 32), `branches` (side branches
-  off the main path's rooms, 0 to 16), `branch_rooms` (rooms per branch, its dead end included, 1 to 8) and
-  `ending` (`boss` or `treasure`, the role of the room that ends the main path), and two optional rules (RLM-364):
-  `special_gap` (`[min, max]`, 1 to 16: the plain rooms, hallways and stairs, between two special ones, fights,
-  treasure and the boss, on the way from the entrance; branches then hang off plain rooms, a branch's dead end is
-  special once the smallest gap lies before it, and the dead ends that close leftover connectors are plain) and
+- `dungeons/` holds the kinds of dungeons ([architecture 15.2](../docs/architecture.md#152-dungeon-types)): a `name` (a
+  label), the room `pool` the type is built from, and the `layout` the planner follows, each range written `[min, max]`:
+  `main_path` (rooms between the entrance and the ending, 1 to 96), `branches` (side branches off the main path's rooms,
+  0 to 16), `branch_rooms` (rooms per branch, its dead end included, 1 to 8) and `ending` (`boss` or `treasure`, the
+  role of the room that ends the main path), and two optional rules (RLM-364): `pacing` (the rhythm of the main path,
+  [architecture 15.3](../docs/architecture.md#153-generation-pure-first-then-minecraft): `corridors`, 1 to 8 corridors
+  in a row before a feature or a fight; `fights`, 1 to 16 rooms between two fights, both drawn binomially, so their
+  middle comes most often; `repeat`, 0 to 64 rooms the planner keeps between two copies of a room that is no corridor,
+  and half of it between two locks or two hazards; a `combat` room is a fight when its template holds a mob spawner,
+  else a feature, a hazard when it holds lava, TNT or a dispenser, and branches are corridors up to a treasure room) and
   `walls` (`block` and `weight`: `rf gen` builds a plain wall of three by three blocks, the structure
   `realmforge:dungeon_walls/<id>`, which the planner may set behind a leftover doorway instead of a dead end, picked by
-  its weight among them). The planner closes every connector left over with a dead end or a wall, so a layout holds
-  more rooms than these counts. Validation wants in the pool an entrance (role `entrance`, a connector), a room to
-  pass through (role `hallway`, `combat` or `stairs`, two connectors; three when `branches` starts above 0), a room
-  with the ending's role, and a dead end (one connector, role `hallway`, `combat`, `stairs` or `treasure`); with a
-  `special_gap` the rooms to pass through and the junctions must be plain ones, and a plain dead end is needed too.
-  Every connector of its rooms must meet one of the pool by the jigsaw rules (its `target` is the other's `name`;
-  sides meet sides, up meets down), and with `walls` every doorway of the pool must be one the wall closes: no open
-  block beside, above or below its middle three by three blocks. `rf gen` resolves the pool into
-  the entry, so the game plans without loading a template, and writes each room's set-piece spots into it: the
-  patterns where the pieces that reach the room's role fit, each with the pieces that may fill it. `test_dungeon` is
-  test content (like `items/test_item`) that only `/qa dungeon plan`, `build` and `enter` use, sized for a run of 20
-  to 30 minutes (about 75 rooms, [architecture 15.2](../docs/architecture.md#152-dungeon-types)); W6 brings the real
-  dungeon types.
+  its weight among them). The planner closes every connector left over with a dead end or a wall, so a layout holds more
+  rooms than these counts. Validation wants in the pool an entrance (role `entrance`, a connector), a room to pass
+  through (role `hallway`, `combat` or `stairs`, two connectors; three when `branches` starts above 0), a room with the
+  ending's role, and a dead end (one connector, role `hallway`, `combat`, `stairs` or `treasure`); with a `pacing` the
+  rooms to pass through and the junctions must be corridors (`hallway`, `stairs`), the pool needs a fight (a `combat`
+  room with a spawner, two connectors) and, without `walls`, a corridor's dead end. Every connector of its rooms must
+  meet one of the pool by the jigsaw rules (its `target` is the other's `name`; sides meet sides, up meets down), and
+  with `walls` every doorway of the pool must be one the wall closes: no open block beside, above or below its middle
+  three by three blocks. `rf gen` resolves the pool into the entry, so the game plans without loading a template, and
+  writes each room's set-piece spots into it: the patterns where the pieces that reach the room's role fit, each with
+  the pieces that may fill it. `test_dungeon` is test content (like `items/test_item`) that only `/qa dungeon plan`,
+  `build` and `enter` use and its key opens, about 70 rooms on one long main road with a fight after every 2 to 4 rooms
+  ([architecture 15.2](../docs/architecture.md#152-dungeon-types)); W6 brings the real dungeon types.
 - Start each YAML file with the `yaml-language-server` schema comment (see `items/test_item.yaml`) for editor
   completion.
 
