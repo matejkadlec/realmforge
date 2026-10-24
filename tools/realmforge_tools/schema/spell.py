@@ -26,7 +26,8 @@ NonNegative = Annotated[float, Field(ge=0, allow_inf_nan=False)]
 # Vanilla's line of sight check (LivingEntity#hasLineOfSight) fails beyond 128 blocks, so no range may exceed it.
 MAX_RANGE = 128.0
 # Half a second, as in WoW, so instant spells cannot be spammed (Matěj, 2026-10-19, RLM-25; it replaced research
-# SP-11's second). A spell may shorten it or switch it off (0).
+# SP-11's second). Every spell is on it, physical abilities too (Matěj, 2026-10-24): a spell may change its length,
+# never switch it off.
 DEFAULT_GLOBAL_COOLDOWN = 0.5
 MAX_SPELL_LEVEL = 100
 
@@ -478,13 +479,18 @@ class SpellDef(StrictModel):
         description="How it is cast: {type: instant}, {type: cast_time, duration_seconds: 2} or "
         "{type: channel, duration_seconds: 3, interval_seconds: 1}."
     )
-    cost: CostDef | None = Field(default=None, description="What a cast costs; leave out for a free spell.")
+    cost: CostDef | None = Field(
+        default=None,
+        description="What a cast costs, paid when it begins; a channel pays it again as each later second begins. "
+        "Leave out for a free spell.",
+    )
     cooldown_seconds: Seconds = Field(
         default=0, description="The spell's own cooldown; Cooldown Reduction shortens it."
     )
     global_cooldown_seconds: Seconds = Field(
         default=DEFAULT_GLOBAL_COOLDOWN,
-        description="How long a cast blocks every other spell (0.5 s by default, as in WoW); 0 for spells off the "
+        gt=0,
+        description="How long a cast blocks every other spell (0.5 s by default, as in WoW). Every spell is on the "
         "global cooldown.",
     )
     max_level: int = Field(default=1, ge=1, le=MAX_SPELL_LEVEL, description="Highest spell level (rank).")

@@ -45,10 +45,11 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * C3a-2 (RLM-210): cast times, channels and interrupts (architecture 11.2). Players cast the test spells of
- * {@code content/spells/} at husks that stand still: {@code test_slow_bolt} deals 10 fire damage after a 2 s cast and
- * then costs 20 mana, {@code test_drain} pays 15 mana and starts its 5 s cooldown when it begins, then deals 2 arcane
- * damage every second for 3 s, and {@code test_homing_bolt} deals 4 frost damage after 1 s, locks on and may be cast
- * while moving. The server ticks the casts, so the checks wait real ticks, with a few ticks of slack around each end.
+ * {@code content/spells/} at husks that stand still: {@code test_slow_bolt} costs 20 mana when its 2 s cast begins and
+ * deals 10 fire damage when it completes, {@code test_drain} pays 15 mana and starts its 5 s cooldown when it begins,
+ * pays 15 mana again as each later second begins (RLM-403) and deals 2 arcane damage every second for 3 s, and
+ * {@code test_homing_bolt} deals 4 frost damage after 1 s, locks on and may be cast while moving. The server ticks the
+ * casts, so the checks wait real ticks, with a few ticks of slack around each end.
  */
 public final class CastGameTests {
     private static final double TOLERANCE = 1e-4;
@@ -58,8 +59,9 @@ public final class CastGameTests {
     }
 
     /**
-     * A cast time takes its full time, less Cast Time Reduction: the effects, the cost and the cooldown come at the
-     * end, the global cooldown at the start, and a second cast meanwhile is refused.
+     * A cast time takes its full time, less Cast Time Reduction: the cost and the global cooldown come at the start
+     * (RLM-403), the effects and the cooldown at the end, and a second cast meanwhile is refused. A cancel keeps the
+     * cost spent.
      */
     @QaGameTest
     public static void aCastCompletesAfterItsCastTimeLessCastTimeReduction(GameTestHelper helper) {
@@ -74,8 +76,10 @@ public final class CastGameTests {
                 new Cast(GeneratedSpells.TEST_SLOW_BOLT, now, 40, false)), "a 2 s cast without Cast Time Reduction");
         helper.assertValueEqual(player.getData(SpellAttachments.COMBAT).globalCooldownEnd(), now + 10,
                 "the global cooldown starts with the cast");
+        assertPool(helper, player, 80, "the cost is paid when the cast begins");
         Spells.cancelCast(player);
         Spells.resetCooldowns(player);
+        assertPool(helper, player, 80, "a cancel keeps it spent");
 
         StatsCommands.setBase(player, GeneratedStats.CAST_TIME_REDUCTION, 0.5);
         long start = helper.getLevel().getGameTime();
@@ -87,7 +91,7 @@ public final class CastGameTests {
         helper.assertValueEqual(SpellCaster.cast(player, GeneratedSpells.TEST_BOLT, husk).failureOrNull(),
                 CastFailure.ALREADY_CASTING, "a second cast during the first");
         assertHealth(helper, husk, HEALTH, "nothing lands when the cast begins");
-        assertPool(helper, player, 100, "the cost is paid at the end");
+        assertPool(helper, player, 60, "the second cast paid its 20 mana at once");
         helper.runAfterDelay(15, () -> {
             helper.assertTrue(Casting.isCasting(player), "still casting after 15 of 20 ticks");
             assertHealth(helper, husk, HEALTH, "nothing lands before the cast completes");
@@ -95,26 +99,48 @@ public final class CastGameTests {
         helper.runAfterDelay(25, () -> {
             helper.assertFalse(Casting.isCasting(player), "the cast is over");
             assertHealth(helper, husk, HEALTH - 10, "test_slow_bolt landed");
-            assertPool(helper, player, 80, "and cost 20 mana");
+            assertPool(helper, player, 60, "and cost nothing more at the end");
             assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.COMPLETED);
             logout(player);
             helper.succeed();
         });
     }
 
-    /** Mana that runs out during the cast fails it at the end, without its effects or its cost. */
+    /** A cast time paid when it began (RLM-403), so mana lost during the cast takes nothing from it. */
     @QaGameTest
-    public static void aCastWhoseResourceRunsOutFailsWithoutItsEffects(GameTestHelper helper) {
+    public static void aCastTimePaidWhenItBeganCompletesWhateverTheManaLeft(GameTestHelper helper) {
         ServerPlayer player = caster(helper, "qa-cast-resource");
         Husk husk = husk(helper, new BlockPos(2, 1, 3));
         learn(helper, player, GeneratedSpells.TEST_SLOW_BOLT);
         assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, husk);
+        assertPool(helper, player, 80, "paid when the cast began");
         Resources.set(player, ResourceTypes.MANA, 5);
         helper.runAfterDelay(50, () -> {
             helper.assertFalse(Casting.isCasting(player), "the cast ended");
-            assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.NOT_ENOUGH_RESOURCE);
-            assertHealth(helper, husk, HEALTH, "the failed cast dealt nothing");
-            assertPool(helper, player, 5, "and cost nothing");
+            assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.COMPLETED);
+            assertHealth(helper, husk, HEALTH - 10, "the bolt landed");
+            assertPool(helper, player, 5, "and took no more mana at the end");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * A channel pays its cost again as each later second begins (RLM-403), after the tick due then; a pool short of the
+     * next second's cost ends it, and the ticks already run stay applied.
+     */
+    @QaGameTest
+    public static void aChannelThatCannotPayItsNextSecondEnds(GameTestHelper helper) {
+        ServerPlayer player = caster(helper, "qa-cast-channel-poor");
+        Husk husk = husk(helper, new BlockPos(2, 1, 3));
+        learn(helper, player, GeneratedSpells.TEST_DRAIN);
+        assertBegun(helper, player, GeneratedSpells.TEST_DRAIN, husk);
+        Resources.set(player, ResourceTypes.MANA, 10);
+        helper.runAfterDelay(30, () -> {
+            helper.assertFalse(Casting.isCasting(player), "10 mana do not pay the second second");
+            assertEnded(helper, player, GeneratedSpells.TEST_DRAIN, CastEnd.NOT_ENOUGH_RESOURCE);
+            assertHealth(helper, husk, HEALTH - 2, "the first second's tick, which its payment covered, landed");
+            assertPool(helper, player, 10, "the refused payment took nothing");
             logout(player);
             helper.succeed();
         });
@@ -140,7 +166,7 @@ public final class CastGameTests {
         seeker.snapTo(helper.absoluteVec(new Vec3(0.5, 1, 2.5)), 0, 0);
         helper.runAfterDelay(50, () -> {
             assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.OUT_OF_RANGE);
-            assertPool(helper, player, 100, "the failed cast cost nothing");
+            assertPool(helper, player, 80, "the failed cast keeps the cost it paid when it began");
             assertEnded(helper, seeker, GeneratedSpells.TEST_HOMING_BOLT, CastEnd.COMPLETED);
             assertHealth(helper, husk, HEALTH - 4, "only test_homing_bolt, locked on, landed beyond its range");
             logout(seeker);
@@ -150,8 +176,9 @@ public final class CastGameTests {
     }
 
     /**
-     * A channel pays and starts its cooldown when it begins, then runs its effects at every interval; moving does not
-     * end it (ADR 0039), an interrupt does, and the ticks already run stay applied.
+     * A channel pays and starts its cooldown when it begins, pays again as each later second begins (RLM-403) and runs
+     * its effects at every interval; moving does not end it (ADR 0039), an interrupt does, and the ticks already run
+     * stay applied.
      */
     @QaGameTest
     public static void aChannelTicksAtItsIntervalAndStopsWhenInterrupted(GameTestHelper helper) {
@@ -166,10 +193,17 @@ public final class CastGameTests {
         helper.assertValueEqual(Spells.currentCast(player), Optional.of(
                 new Cast(GeneratedSpells.TEST_DRAIN, now, 60, true)), "a 3 s channel");
         assertHealth(helper, husk, HEALTH, "the first tick comes after an interval");
-        helper.runAfterDelay(15, () -> assertHealth(helper, husk, HEALTH, "no tick before the first interval"));
-        helper.runAfterDelay(30, () -> assertHealth(helper, husk, HEALTH - 2, "one tick after a second"));
+        helper.runAfterDelay(15, () -> {
+            assertHealth(helper, husk, HEALTH, "no tick before the first interval");
+            assertPool(helper, player, 85, "nor a second payment");
+        });
+        helper.runAfterDelay(30, () -> {
+            assertHealth(helper, husk, HEALTH - 2, "one tick after a second");
+            assertPool(helper, player, 70, "and the second second paid");
+        });
         helper.runAfterDelay(45, () -> {
             assertHealth(helper, husk, HEALTH - 4, "two ticks after two seconds");
+            assertPool(helper, player, 55, "and the third second paid");
             walk(helper, player, new Vec3(1.5, 1, 0.5));
         });
         helper.runAfterDelay(50, () -> {
@@ -180,7 +214,7 @@ public final class CastGameTests {
             assertEnded(helper, player, GeneratedSpells.TEST_DRAIN, CastEnd.CANCELLED);
             assertSlowed(helper, player, false, "the cancel took the cast's slow away");
             assertHealth(helper, husk, HEALTH - 4, "the cancel stopped the third tick; the first two stay");
-            assertPool(helper, player, 85, "and the cost is not refunded");
+            assertPool(helper, player, 55, "and the seconds paid are not refunded");
             logout(player);
             helper.succeed();
         });
@@ -231,7 +265,10 @@ public final class CastGameTests {
         });
     }
 
-    /** Cast Time Reduction shortens a channel's interval, so it runs all its ticks in less time, then completes. */
+    /**
+     * Cast Time Reduction shortens a channel's interval and its seconds, so it runs all its ticks and pays for all its
+     * seconds in less time, then completes.
+     */
     @QaGameTest
     public static void aFasterChannelKeepsItsTicks(GameTestHelper helper) {
         ServerPlayer player = caster(helper, "qa-cast-channel-fast");
@@ -241,10 +278,14 @@ public final class CastGameTests {
         assertBegun(helper, player, GeneratedSpells.TEST_DRAIN, husk);
         helper.assertValueEqual(Spells.currentCast(player).map(Cast::durationTicks), Optional.of(30),
                 "three ticks every half second");
-        helper.runAfterDelay(15, () -> assertHealth(helper, husk, HEALTH - 2, "one tick after half a second"));
+        helper.runAfterDelay(15, () -> {
+            assertHealth(helper, husk, HEALTH - 2, "one tick after half a second");
+            assertPool(helper, player, 70, "and two seconds paid, half a second apart");
+        });
         helper.runAfterDelay(40, () -> {
             assertEnded(helper, player, GeneratedSpells.TEST_DRAIN, CastEnd.COMPLETED);
             assertHealth(helper, husk, HEALTH - 6, "all three ticks");
+            assertPool(helper, player, 55, "and all three seconds paid");
             logout(player);
             helper.succeed();
         });
@@ -318,7 +359,10 @@ public final class CastGameTests {
         helper.succeed();
     }
 
-    /** Death, a dimension change, logging out and a cancel interrupt a cast, and none of them lets it land. */
+    /**
+     * Death, a dimension change, logging out and a cancel interrupt a cast, and none of them lets it land; the cost it
+     * paid when it began stays spent (RLM-403).
+     */
     @QaGameTest
     public static void deathDimensionLogoutAndCancelInterruptACast(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
@@ -355,7 +399,7 @@ public final class CastGameTests {
 
         helper.runAfterDelay(50, () -> {
             assertHealth(helper, husk, HEALTH, "no interrupted cast landed");
-            assertPool(helper, canceller, 100, "and none cost anything");
+            assertPool(helper, canceller, 80, "the cancelled cast's cost stays paid");
             logout(canceller);
             helper.succeed();
         });

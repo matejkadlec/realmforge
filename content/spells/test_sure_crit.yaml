@@ -8,7 +8,6 @@ school: realmforge:frost
 scales_with: spell_power
 targeting: {type: realmforge:enemy, range: 16}
 cast: {type: instant}
-global_cooldown_seconds: 0
 crit: {multiplier_percent: 200, bonus_chance_percent: 100}
 effects:
   - {type: realmforge:damage, amount: 5}

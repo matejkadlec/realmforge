@@ -149,6 +149,7 @@ def test_repository_spells_are_the_engine_tests() -> None:
             "duration_seconds 0.0 is not a whole number of intervals",
         ),
         ({"cooldown_seconds": 0.01}, "not a whole number of game ticks"),
+        ({"global_cooldown_seconds": 0}, "greater than 0"),
         ({"max_level": 0}, "greater than or equal to 1"),
         ({"crit": {"can_crit": False, "multiplier_percent": 200}}, "a spell that cannot crit takes no"),
         ({"crit": {"can_crit": False, "bonus_chance_percent": 5}}, "a spell that cannot crit takes no"),

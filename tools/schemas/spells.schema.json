@@ -781,7 +781,7 @@
         }
       ],
       "default": null,
-      "description": "What a cast costs; leave out for a free spell."
+      "description": "What a cast costs, paid when it begins; a channel pays it again as each later second begins. Leave out for a free spell."
     },
     "crit": {
       "$ref": "#/$defs/CritDef",
@@ -844,7 +844,8 @@
     },
     "global_cooldown_seconds": {
       "default": 0.5,
-      "description": "How long a cast blocks every other spell (0.5 s by default, as in WoW); 0 for spells off the global cooldown.",
+      "description": "How long a cast blocks every other spell (0.5 s by default, as in WoW). Every spell is on the global cooldown.",
+      "exclusiveMinimum": 0,
       "minimum": 0,
       "title": "Global Cooldown Seconds",
       "type": "number"

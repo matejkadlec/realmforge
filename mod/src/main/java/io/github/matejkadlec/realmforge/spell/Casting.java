@@ -42,11 +42,14 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   logging out, the caster's removal and a cancel ({@link #cancel}) end it without more effects.</li>
  *   <li><b>Moving slows, it never interrupts</b> (RLM-261, ADR 0039): a cast of a spell that may not be cast while
  *   moving gives its caster {@link #CAST_SLOW}, half its movement speed, until the cast ends however it ends. A spell's {@code realmforge:knockback} still interrupts the cast ({@link #knockedBack}).</li>
- *   <li><b>A cast time</b> completes after its duration: the cost and the target are checked again ({@link
- *   SpellCaster#recheck}), and a failed check ends it like an interrupt, without the cost, the cooldown or the effects.
- *   Otherwise it pays, starts its cooldown and runs its effects.</li>
- *   <li><b>A channel</b> already paid when it began. It runs its effects at the end of every interval, checking the
- *   target first; a failed check or an interrupt ends it, and the ticks already run stay applied.</li>
+ *   <li><b>A cast time</b> paid its cost when it began (Matěj, 2026-10-24). It completes after its duration: the
+ *   target is checked again ({@link SpellCaster#recheck}), and a failed check ends it like an interrupt, without the
+ *   cooldown or the effects; the cost stays paid. Otherwise it starts its cooldown and runs its effects.</li>
+ *   <li><b>A channel</b> paid for its first second when it began, and pays its cost again as each later second begins
+ *   (Matěj, 2026-10-24: as in WoW), its seconds shortened by Cast Time Reduction as its interval is, so the number of
+ *   payments stays; a pool that falls short ends it ({@link CastEnd#NOT_ENOUGH_RESOURCE}). It runs its effects at the
+ *   end of every interval, checking the target first; a failed check or an interrupt ends it, and the ticks already
+ *   run stay applied.</li>
  *   <li><b>Clients</b> learn of a cast from {@link CastStartedPayload} (the caster and every tracking player, and a
  *   player who starts tracking the caster later, with the original start time) and of its end from
  *   {@link CastEndedPayload}. The end is also posted as a {@link CastEndedEvent}.</li>
@@ -64,6 +67,9 @@ public final class Casting {
      */
     public static final AttributeModifier CAST_SLOW = new AttributeModifier(Realmforge.id("cast_slow"), -0.5,
             AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+
+    /** A second in ticks: how often a channel pays its cost. */
+    private static final int TICKS_PER_SECOND = 20;
 
     /** Every cast in progress, by caster. Server thread only. */
     private static final Map<LivingEntity, Running> RUNNING = new HashMap<>();
@@ -85,7 +91,8 @@ public final class Casting {
 
     /**
      * Begins {@code caster}'s cast of {@code spell} at {@code target}, at game time {@code now}, after {@link
-     * SpellCaster}'s checks passed and the global cooldown (and for a channel the cost and cooldown) applied.
+     * SpellCaster}'s checks passed and the global cooldown and the cost (for a channel its first second's, and its
+     * cooldown) applied.
      */
     static void begin(LivingEntity caster, Holder.Reference<Spell> spell, int level, SpellTarget target, long now) {
         SpellCast spellCast = spell.value().cast();
@@ -94,6 +101,8 @@ public final class Casting {
         int interval = channel ? SpellScaling.castTicks(spellCast.intervalTicks(), reduction) : 0;
         int duration = channel ? interval * spellCast.tickCount()
                 : SpellScaling.castTicks(spellCast.durationTicks(), reduction);
+        int second = channel ? SpellScaling.castTicks(TICKS_PER_SECOND, reduction) : 0;
+        int payments = channel ? Math.ceilDiv(spellCast.durationTicks(), TICKS_PER_SECOND) : 0;
         Cast cast = new Cast(spell.key(), now, duration, channel);
 
         CombatState state = caster.getData(SpellAttachments.COMBAT);
@@ -106,7 +115,8 @@ public final class Casting {
         if (!spellCast.castableWhileMoving() && speed != null) {
             speed.addOrUpdateTransientModifier(CAST_SLOW);
         }
-        RUNNING.put(caster, new Running(caster, spell, level, target, (ServerLevel) caster.level(), cast, interval));
+        RUNNING.put(caster, new Running(caster, spell, level, target, (ServerLevel) caster.level(), cast, interval,
+                second, payments));
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new CastStartedPayload(caster.getId(), cast));
     }
 
@@ -182,15 +192,12 @@ public final class Casting {
             }
             if (running.ticksRun >= spell.cast().tickCount()) {
                 end(caster, CastEnd.COMPLETED);
+                return;
             }
+            paySeconds(running, now);
             return;
         }
         if (now < running.cast().endGameTime()) {
-            return;
-        }
-        CombatState state = caster.getData(SpellAttachments.COMBAT);
-        if (!SpellCaster.canPay(caster, spell, running.spellLevel(), state)) {
-            end(caster, CastEnd.NOT_ENOUGH_RESOURCE);
             return;
         }
         Optional<CastFailure> failed = SpellCaster.recheck(caster, spell, running.target());
@@ -198,10 +205,34 @@ public final class Casting {
             end(caster, CastEnd.of(failed.get()));
             return;
         }
-        SpellCaster.pay(caster, spell, running.spell().key(), running.spellLevel(), state, now);
+        SpellCaster.startCooldown(caster, spell, running.spell().key(), caster.getData(SpellAttachments.COMBAT), now);
         end(caster, CastEnd.COMPLETED);
         SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(),
                 running.target().now(caster));
+    }
+
+    /**
+     * Pays a channel's cost for every second that has begun since its last payment, the effects of the ticks due first,
+     * as the seconds before paid for them. A pool short of the cost ends the channel.
+     */
+    private static void paySeconds(Running running, long now) {
+        LivingEntity caster = running.caster();
+        Spell spell = running.spell().value();
+        CombatState state = caster.getData(SpellAttachments.COMBAT);
+        boolean paid = false;
+        while (running.paymentsMade < running.payments()
+                && now >= running.cast().startGameTime() + (long) running.paymentsMade * running.second()) {
+            if (!SpellCaster.canPay(caster, spell, running.spellLevel(), state)) {
+                end(caster, CastEnd.NOT_ENOUGH_RESOURCE);
+                return;
+            }
+            SpellCaster.payCost(caster, spell, running.spellLevel(), state);
+            running.paymentsMade++;
+            paid = true;
+        }
+        if (paid) {
+            caster.syncData(SpellAttachments.COMBAT);
+        }
     }
 
     /**
@@ -307,11 +338,15 @@ public final class Casting {
         private final ServerLevel level;
         private final Cast cast;
         private final int interval;
+        private final int second;
+        private final int payments;
         /** How many of a channel's ticks have run. */
         private int ticksRun;
+        /** How many of a channel's seconds it paid for: the first when it began. */
+        private int paymentsMade = 1;
 
         private Running(LivingEntity caster, Holder.Reference<Spell> spell, int spellLevel, SpellTarget target,
-                ServerLevel level, Cast cast, int interval) {
+                ServerLevel level, Cast cast, int interval, int second, int payments) {
             this.caster = caster;
             this.spell = spell;
             this.spellLevel = spellLevel;
@@ -319,6 +354,8 @@ public final class Casting {
             this.level = level;
             this.cast = cast;
             this.interval = interval;
+            this.second = second;
+            this.payments = payments;
         }
 
         LivingEntity caster() {
@@ -349,6 +386,16 @@ public final class Casting {
         /** A channel's ticks between two runs of its effects; 0 for a cast time. */
         int interval() {
             return interval;
+        }
+
+        /** A channel's second after Cast Time Reduction, in ticks: how often it pays; 0 for a cast time. */
+        int second() {
+            return second;
+        }
+
+        /** How many times a channel pays: once for every second its data lasts, begun or whole; 0 for a cast time. */
+        int payments() {
+            return payments;
         }
     }
 }

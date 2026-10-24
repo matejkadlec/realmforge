@@ -63,6 +63,8 @@ public final class NpcCastGameTests {
 
         Set<LivingEntity> hit = new HashSet<>();
         for (int i = 0; i < 40; i++) {
+            // Every spell is on the global cooldown (RLM-402), the mob's too.
+            Spells.resetCooldowns(zombie);
             CastResult result = SpellCaster.cast(zombie, GeneratedSpells.TEST_NPC_RANDOM_BOLT, (LivingEntity) null);
             helper.assertTrue(result.success(), "test_npc_random_bolt was refused: " + result.failure());
             hit.add(result.entity().orElseThrow());
@@ -73,6 +75,7 @@ public final class NpcCastGameTests {
 
         first.setGameMode(GameType.SPECTATOR);
         second.setGameMode(GameType.CREATIVE);
+        Spells.resetCooldowns(zombie);
         CastResult none = SpellCaster.cast(zombie, GeneratedSpells.TEST_NPC_RANDOM_BOLT, (LivingEntity) null);
         helper.assertValueEqual(none.failureOrNull(), CastFailure.NO_TARGET, "no player the zombie may attack");
         for (ServerPlayer player : List.of(first, second, creative)) {

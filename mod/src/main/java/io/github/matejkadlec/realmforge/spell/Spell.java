@@ -23,9 +23,10 @@ import net.minecraft.util.ExtraCodecs;
  * @param scalesWith what its numbers grow with: spell power for magic, attack damage for physical abilities
  * @param targeting who it can target
  * @param cast how it is cast
- * @param cost what a cast costs, if anything
+ * @param cost what a cast costs, if anything: paid when the cast begins, and by a channel again every second
  * @param cooldownTicks its own cooldown, before Cooldown Reduction
- * @param globalCooldownTicks how long a cast blocks every spell on the global cooldown; 0 for a spell off it
+ * @param globalCooldownTicks how long a cast blocks every other spell: every spell is on the global cooldown
+ *                            (Matěj, 2026-10-24), so at least a tick
  * @param maxLevel its highest level (rank)
  * @param crit how it crits
  * @param npcOnly whether only mobs and bosses may cast it
@@ -46,7 +47,7 @@ public record Spell(String name, String description, Holder<SpellSchool> school,
                     SpellCast.CODEC.fieldOf("cast").forGetter(Spell::cast),
                     SpellCost.CODEC.optionalFieldOf("cost").forGetter(Spell::cost),
                     ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("cooldown_ticks", 0).forGetter(Spell::cooldownTicks),
-                    ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("global_cooldown_ticks", DEFAULT_GLOBAL_COOLDOWN_TICKS)
+                    ExtraCodecs.POSITIVE_INT.optionalFieldOf("global_cooldown_ticks", DEFAULT_GLOBAL_COOLDOWN_TICKS)
                             .forGetter(Spell::globalCooldownTicks),
                     ExtraCodecs.POSITIVE_INT.optionalFieldOf("max_level", 1).forGetter(Spell::maxLevel),
                     CritRule.CODEC.optionalFieldOf("crit", CritRule.DEFAULT).forGetter(Spell::crit),

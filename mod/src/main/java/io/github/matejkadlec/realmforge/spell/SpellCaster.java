@@ -26,10 +26,12 @@ import net.minecraft.world.entity.player.Player;
  *   <li>its targeting finds no valid target (an entity or a point) in range and in line of sight;</li>
  *   <li>a player has less of the spell's resource than it costs.</li>
  * </ol>
- * Otherwise an instant spell pays its cost, starts its cooldowns (Cooldown Reduction shortens the spell's own, never the
- * global one) and runs every effect on the target ({@link SpellTarget}). A cast-time or channelled spell starts the global cooldown and
- * begins its cast ({@link Casting}): a cast time pays its cost and starts its own cooldown when it completes, a channel
- * when it begins. Mobs and bosses pay no cost: their cooldowns pace their spells (architecture 11.2 step 6).
+ * Otherwise the spell starts the global cooldown, which every spell is on (Matěj, 2026-10-24), and pays its cost at
+ * once, whatever its cast (Matěj, 2026-10-24: a cast time pays when it begins). An instant spell then starts its own
+ * cooldown (Cooldown Reduction shortens it, never the global one) and runs every effect on the target ({@link
+ * SpellTarget}). A cast-time or channelled spell begins its cast ({@link Casting}): a cast time starts its own cooldown
+ * when it completes, a channel when it begins, and a channel pays its cost again every second it lasts. Mobs and bosses
+ * pay no cost: their cooldowns pace their spells (architecture 11.2 step 6).
  *
  * <p>The spell bar may replace the cast in progress (C3b, RLM-25; Matěj, 2026-10-19: with spell queueing off, a new
  * spell cancels the cast and casts at once): with {@code replaceCast}, a cast of another spell skips the
@@ -115,7 +117,7 @@ public final class SpellCaster {
         if (state.isOnCooldown(spell.key(), now)) {
             return CastResult.refused(CastFailure.ON_COOLDOWN);
         }
-        if (value.globalCooldownTicks() > 0 && state.isOnGlobalCooldown(now)) {
+        if (state.isOnGlobalCooldown(now)) {
             return CastResult.refused(CastFailure.ON_GLOBAL_COOLDOWN);
         }
         Either<SpellTarget, CastFailure> resolved = value.targeting().resolve(caster, aim);
@@ -131,14 +133,13 @@ public final class SpellCaster {
             Casting.cancel(caster);
         }
 
-        if (value.globalCooldownTicks() > 0) {
-            state.setGlobalCooldownEnd(now + value.globalCooldownTicks());
-        }
+        state.setGlobalCooldownEnd(now + value.globalCooldownTicks());
+        payCost(caster, value, level, state);
         if (value.cast().type() == SpellCast.Type.CAST_TIME) {
             Casting.begin(caster, spell, level, hit, now);
             return CastResult.begun(hit);
         }
-        pay(caster, value, spell.key(), level, state, now);
+        startCooldown(caster, value, spell.key(), state, now);
         if (value.cast().type() == SpellCast.Type.CHANNEL) {
             Casting.begin(caster, spell, level, hit, now);
             return CastResult.begun(hit);
@@ -178,13 +179,17 @@ public final class SpellCaster {
         return cost <= 0 || state.resource(resource(spell)) + COST_TOLERANCE >= cost;
     }
 
-    /** Pays the cost (players only) and starts the spell's own cooldown, after Cooldown Reduction. */
-    static void pay(LivingEntity caster, Spell spell, ResourceKey<Spell> key, int level, CombatState state, long now) {
+    /** Pays the cost, players only: a cast's, or a channel's for one more second. */
+    static void payCost(LivingEntity caster, Spell spell, int level, CombatState state) {
         double cost = cost(caster, spell, level);
         if (cost > 0) {
             ResourceKey<ResourceType> type = resource(spell);
             state.setResource(type, (float) Math.max(0, state.resource(type) - cost));
         }
+    }
+
+    /** Starts the spell's own cooldown, after Cooldown Reduction. */
+    static void startCooldown(LivingEntity caster, Spell spell, ResourceKey<Spell> key, CombatState state, long now) {
         int cooldown = SpellScaling.cooldownTicks(spell.cooldownTicks(),
                 DamagePipeline.stat(caster, GeneratedStats.COOLDOWN_REDUCTION));
         state.clearEndedCooldowns(now);
