@@ -13,30 +13,38 @@ import net.minecraft.world.phys.Vec3;
  * projectile, and the texture of a projectile's appearance.
  */
 public final class SpellVisuals {
-    /** How far in front of the caster's hitbox, in blocks, a projectile forms. */
-    private static final double FORM_AHEAD = 0.7;
-    /** How far above the caster's eyes, in blocks: in front of its forehead. */
-    private static final double FORM_ABOVE = 0.1;
+    /**
+     * How far in front of the caster's hitbox, in blocks, a projectile forms: between the hands of a caster whose arms
+     * reach forward and up while it casts (the Hewn Chanter's reach about 1.1 blocks from its middle).
+     */
+    private static final double FORM_AHEAD = 0.75;
+    /**
+     * How far above the caster's eyes, in blocks, a projectile forms: in its raised hands, in front of its forehead
+     * (Matěj's playtest, 2026-10-24: 0.1 formed the stone below the Chanter's hands).
+     */
+    private static final double FORM_ABOVE = 0.4;
 
     private SpellVisuals() {
     }
 
     /**
-     * Where {@code caster} forms a projectile while it casts, in front of its forehead, given its body's yaw in
-     * degrees; the projectile flies from there.
+     * Where {@code caster} forms a projectile while it casts, in its raised hands in front of its forehead, given its
+     * body's yaw in degrees; the projectile flies from there.
      */
     public static Vec3 formPoint(LivingEntity caster, float bodyYaw) {
-        return caster.position().add(formOffset(caster.getBbWidth(), caster.getEyeHeight(), bodyYaw));
+        return caster.position()
+                .add(formOffset(caster.getBbWidth(), caster.getBbHeight(), caster.getEyeHeight(), bodyYaw));
     }
 
     /**
-     * The form point's offset from the feet of a caster {@code width} wide with its eyes {@code eyeHeight} up, facing
-     * {@code bodyYaw} degrees (vanilla's yaw: 0 faces south, +z).
+     * The form point's offset from the feet of a caster {@code width} wide and {@code height} tall with its eyes
+     * {@code eyeHeight} up, facing {@code bodyYaw} degrees (vanilla's yaw: 0 faces south, +z). It is never above the
+     * caster's height, the room the caster stands in, so a projectile never starts in the ceiling above it.
      */
-    public static Vec3 formOffset(float width, float eyeHeight, float bodyYaw) {
+    public static Vec3 formOffset(float width, float height, float eyeHeight, float bodyYaw) {
         double ahead = width / 2 + FORM_AHEAD;
         float radians = bodyYaw * Mth.DEG_TO_RAD;
-        return new Vec3(-Mth.sin(radians) * ahead, eyeHeight + FORM_ABOVE, Mth.cos(radians) * ahead);
+        return new Vec3(-Mth.sin(radians) * ahead, Math.min(eyeHeight + FORM_ABOVE, height), Mth.cos(radians) * ahead);
     }
 
     /** The texture of the projectile appearance of {@code spell}: {@code <ns>:textures/entity/spell/<path>.png}. */

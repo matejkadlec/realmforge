@@ -1190,7 +1190,7 @@ tick and ends the cast at once when blocks come between them (`CastEnd.NO_LINE_O
 once (`CastEnd.OUT_OF_RANGE`), and past it the range no longer matters, not even before the effects
 (`SpellCaster#recheck` then needs the target only alive, in the dimension and in sight). A spell that locks on keeps
 neither. A cast's `sound` plays from the caster when the cast begins, and a cast time that `forms_projectile` launches
-its first effect's projectile from in front of the caster's forehead (`SpellVisuals#formPoint`, the caster's body
+its first effect's projectile from the caster's raised hands (`SpellVisuals#formPoint`, the caster's body
 facing) toward the target's middle, where its clients drew it forming ([11.6](#116-client-side)). The Hewn Chanter's
 Stoneform keeps sight for the whole cast and range for its first half (Matěj's playtest, 2026-10-23);
 `CustomMobGameTests` covers both.
@@ -1381,9 +1381,10 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
 (three crossed slabs, spinning as the bullet does, `client/render/SpellOrbs`) with its spell's own texture,
 `textures/entity/spell/<spell>.png` (`SpellVisuals#projectileTexture`, a placeholder in the YAML's colour that
 `rf gen` draws), as wide as its hitbox. While a caster casts a spell that `forms_projectile`, the custom mob renderer
-reads the cast from `ClientCasts` and the spell from the synced registry and draws that orb in front of the caster's
-forehead (`SpellVisuals#formOffset`), from 15 % of its size at the cast's start to all of it at its end, where the
-server launches it from ([11.2](#112-casting-server-authoritative)).
+reads the cast from `ClientCasts` and the spell from the synced registry and draws that orb in the caster's raised
+hands, in front of its forehead (`SpellVisuals#formOffset`: 0.4 blocks above its eyes, never above its height), from
+15 % of its size at the cast's start to all of it at its end, where the server launches it from
+([11.2](#112-casting-server-authoritative)).
 
 ## 12. Talents
 
@@ -1641,7 +1642,7 @@ holds the same text. New feedback on a mob goes into both in the same run.
   `attack.swing` lasts half the mob's attack interval (0.75 s for the Sentinel), a stone golem's heavy swing:
   `MeleeMob#swing` triggers it on the server (`triggerAnim`, synced to clients) and it plays to its end, since
   GeckoLib's own attack controller stops with vanilla's 6-tick arm swing. While a caster casts a spell that forms its
-  projectile, the renderer draws the projectile's orb growing in front of its forehead ([11.6](#116-client-side)). Until
+  projectile, the renderer draws the projectile's orb growing in its hands ([11.6](#116-client-side)). Until
   A2 (RLM-48) brings the art, `rf gen` writes placeholders from the YAML's `model`: a build that fills the hitbox
   (`humanoid`; `slim`, an enderman's long legs and arms and a tall head; `golem`, a broad body with shells on its front
   and back, long arms as thick as a player's and a big head, moss hanging off the shells), a surface (`speckled`,

@@ -33,7 +33,7 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
  * mob's id ({@code assets/realmforge/geckolib/models/entity/<id>.geo.json}, {@code .../animations/entity/},
  * {@code textures/entity/<id>.png}, a variant's {@code <id>_<variant>.png}), and Neat's card above it as above every
  * vanilla mob ({@link NeatCard}). The animations turn the model's head to where the mob looks. While a caster casts a
- * spell that forms its projectile, the projectile's orb grows in front of its forehead ({@link SpellOrbs}), where the
+ * spell that forms its projectile, the projectile's orb grows in its raised hands ({@link SpellOrbs}), where the
  * server launches it from.
  */
 public final class CustomMobRenderers {
@@ -107,7 +107,8 @@ public final class CustomMobRenderers {
             super.submit(state, poseStack, collector, camera);
             if (state instanceof State custom && custom.forming.isPresent()) {
                 Forming forming = custom.forming.get();
-                Vec3 at = SpellVisuals.formOffset(state.boundingBoxWidth, state.eyeHeight, state.bodyRot);
+                Vec3 at = SpellVisuals.formOffset(state.boundingBoxWidth, state.boundingBoxHeight, state.eyeHeight,
+                        state.bodyRot);
                 poseStack.pushPose();
                 poseStack.translate(at.x, at.y, at.z);
                 orbs.submit(poseStack, collector, forming.texture(), forming.size(), state.ageInTicks,
