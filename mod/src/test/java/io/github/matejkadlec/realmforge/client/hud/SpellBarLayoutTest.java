@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.client.hud;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.matejkadlec.realmforge.spell.Spellbook;
 import org.junit.jupiter.api.Test;
@@ -16,14 +17,43 @@ class SpellBarLayoutTest {
     }
 
     @Test
-    void theBarSitsAboveTheItemNamesLine() {
+    void theBlockOfSlotsAndResourceBarSitsAboveTheItemNamesLine() {
         // Survival with two status rows and the XP bar: vanilla draws the item name from 270 - 63.
         assertEquals(270 - 63, SpellBarLayout.itemNameTop(270, 63, true));
-        assertEquals(270 - 63 - 2 - 24, SpellBarLayout.top(270, 63, true));
+        assertEquals(270 - 63 - 26 - 13 - 24, SpellBarLayout.top(270, 63, true));
         // A low stack still keeps vanilla's least height, 59.
-        assertEquals(270 - 59 - 2 - 24, SpellBarLayout.top(270, 40, true));
-        // Creative: vanilla draws the name 14 px lower, and the bar follows it.
-        assertEquals(270 - 77 + 14 - 2 - 24, SpellBarLayout.top(270, 77, false));
+        assertEquals(270 - 59 - 26 - 13 - 24, SpellBarLayout.top(270, 40, true));
+        // Creative: vanilla draws the name 14 px lower, and the block follows it.
+        assertEquals(270 - 77 + 14 - 26 - 13 - 24, SpellBarLayout.top(270, 77, false));
+    }
+
+    @Test
+    void theResourceBarHangsUnderTheSlotsWithItsTextInTheMiddle() {
+        int top = SpellBarLayout.top(270, 63, true);
+        int barTop = SpellBarLayout.resourceBarTop(top);
+        assertEquals(top + 24, barTop, "attached to the slots, no gap");
+        int innerTop = barTop + 1;
+        int innerRows = SpellBarLayout.RESOURCE_BAR_HEIGHT - 2;
+        assertEquals(1, innerRows % 2, "an odd inner height");
+        // The digits cover 7 rows from the text's top, the outline one more each way.
+        int outlineTop = SpellBarLayout.resourceTextTop(barTop) - 1;
+        int outlineBottom = SpellBarLayout.resourceTextTop(barTop) + 7;
+        assertEquals(outlineTop - innerTop, innerTop + innerRows - 1 - outlineBottom, "as much room above as below");
+        assertEquals(1, outlineTop - innerTop, "a free row above and below the outline");
+    }
+
+    @Test
+    void theBlockEndsThreeTimesTheOldGapAboveTheLevelText() {
+        // Survival, health and food rows only: the XP bar goes above a stack of 49 and raises it to 63.
+        int stack = 49;
+        int levelTop = XpBarLayout.textTop(XpBarLayout.barTop(270, stack));
+        int raised = XpBarLayout.raisedStack(stack, true);
+        int blockBottom = SpellBarLayout.resourceBarTop(SpellBarLayout.top(270, raised, true))
+                + SpellBarLayout.RESOURCE_BAR_HEIGHT;
+        int oldBarBottom = SpellBarLayout.itemNameTop(270, raised, true) - 2;
+        assertEquals(12, levelTop - oldBarBottom, "the spell bar's gap to the level text before the resource bar");
+        assertEquals(36, levelTop - blockBottom, "three times that");
+        assertTrue(blockBottom <= SpellBarLayout.itemNameTop(270, raised, true), "clear of the item name's line");
     }
 
     @Test
@@ -36,8 +66,8 @@ class SpellBarLayoutTest {
 
     @Test
     void theCastBarGoesTowardTheMiddleButStaysClearOfTheSpellBar() {
-        int barTop = SpellBarLayout.top(540, 63, true);
-        assertEquals((int) Math.round(540 * 0.7) - 10, SpellBarLayout.castBarTop(540, barTop), "a tall screen");
+        int barTop = SpellBarLayout.top(720, 63, true);
+        assertEquals((int) Math.round(720 * 0.7) - 10, SpellBarLayout.castBarTop(720, barTop), "a tall screen");
         int lowTop = SpellBarLayout.top(270, 63, true);
         assertEquals(lowTop - 28 - 20, SpellBarLayout.castBarTop(270, lowTop), "a short screen");
     }

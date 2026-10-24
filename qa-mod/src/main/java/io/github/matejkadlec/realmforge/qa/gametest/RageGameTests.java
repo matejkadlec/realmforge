@@ -3,6 +3,7 @@ package io.github.matejkadlec.realmforge.qa.gametest;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.character.CharacterCreation;
 import io.github.matejkadlec.realmforge.character.CharacterRegistries;
+import io.github.matejkadlec.realmforge.character.ResourceBarView;
 import io.github.matejkadlec.realmforge.combat.CombatRegistries;
 import io.github.matejkadlec.realmforge.combat.SpellSchools;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
@@ -143,6 +144,37 @@ public final class RageGameTests {
     }
 
     /** A human of {@code playerClass} at the platform's south edge, in survival, without crits or a magic shield. */
+    /**
+     * RLM-400: the resource bar reads the class's pool from the data synced to its owner. A Warrior shows "0 / 100"
+     * before the first hit and the rage a swing gives after it; a Mage shows a full mana pool once its first second has
+     * filled it; a player without a character shows no bar.
+     */
+    @QaGameTest
+    public static void theResourceBarShowsTheClassPool(GameTestHelper helper) {
+        ServerPlayer nobody = QaPlayers.loginOnPlatform(helper, "qa-bar-nobody", new Vec3(0.5, 1, 0.5));
+        helper.assertTrue(ResourceBarView.of(nobody).isEmpty(), "no character, no bar");
+        logout(nobody);
+
+        ServerPlayer warrior = character(helper, "qa-bar-warrior", "warrior");
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
+        seconds(warrior, 1);
+        ResourceBarView rage = ResourceBarView.of(warrior).orElseThrow();
+        helper.assertTrue(rage.type().is(ResourceTypes.RAGE.getKey()), "a Warrior's bar is rage");
+        helper.assertValueEqual(rage.text(), "0 / 100", "before the first hit");
+        warrior.attack(husk);
+        helper.assertValueEqual(ResourceBarView.of(warrior).orElseThrow().text(), "10 / 100", "after a full swing");
+        logout(warrior);
+
+        ServerPlayer mage = character(helper, "qa-bar-mage", "mage");
+        seconds(mage, 1);
+        ResourceBarView mana = ResourceBarView.of(mage).orElseThrow();
+        helper.assertTrue(mana.type().is(ResourceTypes.MANA.getKey()), "a Mage's bar is mana");
+        helper.assertValueEqual(mana.text(), "100 / 100", "a full pool");
+        helper.assertFalse(mana.leadingEdge(), "a full pool has no leading edge");
+        logout(mage);
+        helper.succeed();
+    }
+
     private static ServerPlayer character(GameTestHelper helper, String name, String playerClass) {
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, name, new Vec3(2.5, 1, 0.5));
         player.setGameMode(GameType.SURVIVAL);
