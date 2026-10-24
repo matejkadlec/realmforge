@@ -1561,10 +1561,17 @@ levels (RLM-304, RLM-305) come later.
 
 ### 14.2 Custom mobs
 
-Built in W3 (RLM-33) and revised after Matěj's playtest (2026-10-23): `content/mobs/`, `mob/custom/`, `mob/ai/` and
-`client/render/CustomMobRenderers`. The first two are the Hewn of Undervault (D11, [lore outline](lore/outline.md)),
-its stone creatures (`#realmforge:stone_creatures`), each about 3 blocks tall: the Hewn Sentinel (melee, of one of
-three gems: Sapphire, Ruby or Topaz) and the Hewn Chanter (caster, with its spell Stoneform).
+Built in W3 (RLM-33) and revised after Matěj's playtests (2026-10-23, 2026-10-24): `content/mobs/`, `mob/custom/`,
+`mob/ai/` and `client/render/CustomMobRenderers`. The first two are the Hewn of Undervault (D11, [lore
+outline](lore/outline.md)), its stone creatures (`#realmforge:stone_creatures`), each about 3 blocks tall: the Hewn
+Sentinel (melee, of one of three gems: Sapphire, Ruby or Topaz) and the Hewn Chanter (caster, with its spell
+Stoneform).
+
+**Before designing or changing a custom mob, read the Realmforge Mobs Guideline**: Matěj's rules for every custom
+mob (size, textures, eyes, wandering, animations, caster behaviour, sounds, drops), collected from his playtests. Its
+source of truth is its Jira copy, RLM-33 comment 22481 (or a later version in a comment of the ticket that changed
+it); the [Confluence page](https://envelopment.atlassian.net/wiki/spaces/~712020b06cd5a60c92413493fad43098103a66/pages/10420261/Realmforge+Mobs+Guideline)
+holds the same text. New feedback on a mob goes into both in the same run.
 
 - **Entity types are static, data picks the behaviour** (principle 2). A mob in `content/mobs/<id>.yaml` picks an
   archetype, a Java class in `mob/custom/`: `melee` (`MeleeMob`) walks up to its target and hits it with its attack
@@ -1586,10 +1593,15 @@ three gems: Sapphire, Ruby or Topaz) and the Hewn Chanter (caster, with its spel
   the mob's own drops and the variant's (a `DeathLootTable` a command set still wins).
 - **Hostile:** every custom mob is a `Monster`, so it gets a level and its scaling like every hostile mob
   ([14.1](#141-mob-levels)), and a caster's spells grow with the level's damage multiple.
-- **AI** (research BM-6, BM-22): a custom mob targets a player that hurts it or that it sees. `idle: stroll` wanders
-  as vanilla's monsters do; `idle: guard` stands at its post, the spot where it first stood on the ground (saved with
-  the mob as `realmforge:post`), and walks back to it once it has no target (`ReturnToPostGoal`; a mob wider than a
-  block counts as at its post a little farther away, as vanilla's paths put its corner on a path's block). A melee
+- **AI** (research BM-6, BM-22): a custom mob targets a player that hurts it or that it sees. Without a target,
+  `idle: stroll`, every mob's default (Matěj's playtest, 2026-10-24), wanders as vanilla's mobs do, with the
+  Zombified Piglin's goals and numbers: vanilla's `WaterAvoidingRandomStrollGoal` at priority 7 (it sets off on
+  average every 6 seconds, to a spot up to 10 blocks away), `LookAtPlayerGoal` (8 blocks) and `RandomLookAroundGoal`
+  at 8, at the Zombified Piglin's speed whatever the mob's own (`mob/ai/Wandering`: 0.23, a speed modifier below 1
+  for a faster mob), so a mob fights faster than it wanders. `idle: guard`, which no mob of the content uses, stands
+  at its post instead, the spot where it first stood on the ground (saved with the mob as `realmforge:post`), and
+  walks back to it once it has no target (`ReturnToPostGoal`; a mob wider than a block counts as at its post a little
+  farther away, as vanilla's paths put its corner on a path's block). A melee
   hit with `melee.knock_up_blocks` throws its target that high (`mob/ai/KnockUp`, from vanilla's gravity and drag),
   less the target's knockback resistance, on top of vanilla's push back. A caster (`CasterFightGoal`), as a Skeleton
   with spells:
@@ -1623,16 +1635,21 @@ three gems: Sapphire, Ruby or Topaz) and the Hewn Chanter (caster, with its spel
   `CustomMobRenderers` registers GeckoLib's `GeoEntityRenderer` for each mob, which reads
   `assets/realmforge/geckolib/models/entity/<id>.geo.json`, `geckolib/animations/entity/<id>.animation.json` and
   `textures/entity/<id>.png` (a variant's texture through its own model and render state). The animations carry
-  GeckoLib's default names: `misc.idle` and `move.walk` (one of them always plays, and both turn the head with the
-  mob's look through GeckoLib's molang queries), `attack.swing` for a melee hit (vanilla's arm swing) and
-  `attack.cast` while a cast-time or channelled spell runs (`CasterMob`'s synced flag; the arms raised forward, the
-  hands in front of the forehead). While a caster casts a spell that forms its projectile, the renderer draws the
-  projectile's orb growing in front of its forehead ([11.6](#116-client-side)). Until A2 (RLM-48) brings the art,
-  `rf gen` writes placeholders from the YAML's `model`: a build that fills the hitbox (`humanoid`; `slim`, an
-  enderman's long legs and arms and a tall head; `golem`, a broad body with shells on its front and back, long arms as
-  thick as a player's and a big head, moss hanging off the shells), a surface (`speckled`, `smooth`, or
-  `mossy_bricks` with gems of the variant's accent in holes of the shells) and eyes (`dot`, `tall`, or `gem`: 2x3
-  white with a lighter and a darker pupil pixel).
+  GeckoLib's default names: `misc.idle` and `move.walk` (one of them always plays, and both turn the head with the mob's
+  look through GeckoLib's molang queries), `attack.swing` for a melee hit and `attack.cast` while a cast-time or
+  channelled spell runs (`CasterMob`'s synced flag; the arms raised forward and up, the hands in front of the forehead).
+  `attack.swing` lasts half the mob's attack interval (0.75 s for the Sentinel), a stone golem's heavy swing:
+  `MeleeMob#swing` triggers it on the server (`triggerAnim`, synced to clients) and it plays to its end, since
+  GeckoLib's own attack controller stops with vanilla's 6-tick arm swing. While a caster casts a spell that forms its
+  projectile, the renderer draws the projectile's orb growing in front of its forehead ([11.6](#116-client-side)). Until
+  A2 (RLM-48) brings the art, `rf gen` writes placeholders from the YAML's `model`: a build that fills the hitbox
+  (`humanoid`; `slim`, an enderman's long legs and arms and a tall head; `golem`, a broad body with shells on its front
+  and back, long arms as thick as a player's and a big head, moss hanging off the shells), a surface (`speckled`,
+  `smooth`, or `mossy_bricks`: vanilla's brick layout of 8 by 4 pixels with grey mortar, every brick its own shade and
+  lit on its top and left edges, moss in clumps of at least 5 pixels, and on each shell's outer face a long crack after
+  Matěj's drawing, a dark grey rim round the variant's gem) and eyes (`dot`, `tall`, or `gem`: each 2x3, a white column
+  outside and the variant's colour inside, two lighter pixels above a darker one). The Sentinel's texture from Retro
+  Diffusion is RLM-401, local-only.
 - **Neat's card** is filled only by `LivingEntityRenderer`'s extraction, which GeckoLib's renderer does not run, so
   `client/compat/neat/NeatCard` runs it for our mobs ([19.4](#194-optional-integrations)).
 - Minimap icons for Xaero's maps are generated files, no code ([ADR 0002](decisions/0002-hybrid-core-mod-and-modpack.md));

@@ -75,24 +75,26 @@ Rules:
   three rows of one to three characters, all the same width, a space for an empty slot), its `key` (each character
   of the pattern, and only those, to an item id), an optional `count` (1) and recipe book `category` (`misc`). It
   becomes vanilla's `minecraft:crafting_shaped` JSON.
-- `mobs/` defines our custom mobs ([architecture 14.2](../docs/architecture.md#142-custom-mobs)). A mob picks an
-  `archetype`, `melee` or `caster`. A melee mob's `melee` sets its `attack_interval_seconds` (1 by default, vanilla's)
-  and `knock_up_blocks`, how high each hit throws its target; a caster names its `spells` (each one that targets an
-  enemy and reaches farther than one kiting step) and its `kiting` (`step_blocks`, `speed_percent` of its walking
-  speed: the quick step it takes between casts) under `caster`. `attributes` are its numbers at level 1, which its
-  level scales like every hostile mob's; `idle` is `stroll` (wanders) or `guard` (stands at the spot where it first
-  stood and walks back to it); `sounds` name sound events, ours from `sounds/` (`realmforge:entity.<mob>.<name>`) or
-  vanilla's, and `step: silent` walks without a sound; `death_particles` names the block it breaks apart into when it
-  dies (its body gone at once); `tags` puts it in our entity type tags (`realmforge:stone_creatures`, which a
-  projectile may spare). Each entry of `loot` drops on its own: an `item`, its `count` (`min` to `max`, 1 by default),
-  its `chance_percent` (100 by default), and what each level of Looting adds: `looting_count` more at most (0 to
-  that many) and `looting_chance_percent` to the chance. Two or more `variants` (`id`, `weight`, `accent`, `loot`)
-  give a mob kinds rolled at spawn, each with its own texture and its own loot table, the mob's drops and its own.
-  Trash loot is refused: every drop must be worth having (the vision), so no sticks, nuggets, rotten flesh, dirt or
-  cobblestone (`TRASH_LOOT` in `schema/mob.py`). `model` shapes the placeholder until A2's art: a `build`
-  (`humanoid`, `slim`, `golem`), a `surface` (`speckled`, `smooth`, `mossy_bricks`), `eyes` (`dot`, `tall`, or `gem`
-  in the variants' accents) and its `color` (and `moss`). A mob's id must not be one of `texts/entity.yaml`'s names,
-  which name the hand-written entity types with the same keys.
+- `mobs/` defines our custom mobs ([architecture 14.2](../docs/architecture.md#142-custom-mobs)); Matěj's rules for them
+  are the Realmforge Mobs Guideline, read it first (its Jira copy is RLM-33 comment 22481). A mob picks an `archetype`,
+  `melee` or `caster`. A melee mob's `melee` sets its `attack_interval_seconds` (1 by default, vanilla's) and
+  `knock_up_blocks`, how high each hit throws its target; a caster names its `spells` (each one that targets an enemy
+  and reaches farther than one kiting step) and its `kiting` (`step_blocks`, `speed_percent` of its walking speed: the
+  quick step it takes between casts) under `caster`. `attributes` are its numbers at level 1, which its level scales
+  like every hostile mob's; `idle` is `stroll` (the default: wanders as vanilla's mobs do, at the Zombified Piglin's
+  speed, so its `movement_speed` is how fast it fights) or `guard` (stands at the spot where it first stood and walks
+  back to it); `sounds` name sound events, ours from `sounds/` (`realmforge:entity.<mob>.<name>`) or vanilla's, and
+  `step: silent` walks without a sound; `death_particles` names the block it breaks apart into when it dies (its body
+  gone at once); `tags` puts it in our entity type tags (`realmforge:stone_creatures`, which a projectile may spare).
+  Each entry of `loot` drops on its own: an `item`, its `count` (`min` to `max`, 1 by default), its `chance_percent`
+  (100 by default), and what each level of Looting adds: `looting_count` more at most (0 to that many) and
+  `looting_chance_percent` to the chance. Two or more `variants` (`id`, `weight`, `accent`, `loot`) give a mob kinds
+  rolled at spawn, each with its own texture and its own loot table, the mob's drops and its own. Trash loot is refused:
+  every drop must be worth having (the vision), so no sticks, nuggets, rotten flesh, dirt or cobblestone (`TRASH_LOOT`
+  in `schema/mob.py`). `model` shapes the placeholder until A2's art: a `build` (`humanoid`, `slim`, `golem`), a
+  `surface` (`speckled`, `smooth`, `mossy_bricks`), `eyes` (`dot`, `tall`, or `gem` in the variants' accents) and its
+  `color` (and `moss`). A mob's id must not be one of `texts/entity.yaml`'s names, which name the hand-written entity
+  types with the same keys.
 - `sounds/` holds our sound events ([ADR 0007](../docs/decisions/0007-asset-pipeline.md), A3): one file per subject
   (a mob, a spell, a block), its `category` (`entity`, `block`, `item`, `spell`, `ambient`, `ui`) and its `events`,
   each `realmforge:<category>.<subject>.<name>` with a `subtitle` (vanilla's style: "Hewn Sentinel cracks") and the

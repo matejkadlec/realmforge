@@ -54,8 +54,10 @@ Apotheosis for gear rarity, affixes, gems and enchanting
   core (F5: spell schools, crit, dodge, resistances, our armor formula, combat text, the QA training dummy), and
   hostile mobs get levels near the nearest player's, floored per realm (W1, RLM-303), scaled by curves. The first
   custom mobs exist (W3): Undervault's Hewn, the Hewn Sentinel (melee, of one of three gems it may drop) and the
-  Hewn Chanter (a caster of Stoneform that kites), from `content/mobs/`, with GeckoLib placeholder models until A2's
-  art, and our own sound events from `content/sounds/` (vanilla sounds remapped). A new player
+  Hewn Chanter (a caster of Stoneform that kites), from `content/mobs/`, wandering as vanilla's mobs do, with
+  GeckoLib placeholder models until A2's art, and our own sound events from `content/sounds/` (vanilla sounds
+  remapped); every custom mob follows Matěj's Realmforge Mobs Guideline (Jira copy: RLM-33 comment 22481,
+  [architecture 14.2](docs/architecture.md#142-custom-mobs)). A new player
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits.
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell
