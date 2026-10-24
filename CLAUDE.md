@@ -496,7 +496,10 @@ merges). Four parts:
    ...`, with how to run it ([flow: Reaching the state](docs/ai-development-flow.md#reaching-the-state)).
 2. **Launch commands:** complete commands he can paste, in one block, with the checkout named in the heading,
    e.g. "Launch commands (your Windows clone)"
-   ([flow: Launch commands](docs/ai-development-flow.md#launch-commands)).
+   ([flow: Launch commands](docs/ai-development-flow.md#launch-commands)). For the Windows clone, always the whole
+   block, a revision's too: `cd $HOME\projects\realmforge-win`, `git fetch origin`, `git switch <branch>`, then
+   `git pull --ff-only` for a revision, and `.\gradlew.bat runClient`, one per line; never the update command alone,
+   as his clone is often on another batch by the time he tests (Matěj, 2026-10-24).
 3. **Verification ✅** (optional): what ran and passed, one bullet each; never "all checks passed" for a partial
    run.
 4. **Batch ledger**, one bullet per group:

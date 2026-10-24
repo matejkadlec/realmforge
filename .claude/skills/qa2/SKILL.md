@@ -32,5 +32,7 @@ revising; this skill may not weaken either. _qa2: changes required_ there holds 
    new head, a What to test limited to it), which makes the new head the one Matěj plays next; then move the
    tickets back to Pending User QA. The batch keeps its playtest slot through the revision.
 7. **Hand back** with the status overview from `CLAUDE.md` in its manual-test shape: _What to test_ limited to
-   what the revision changed, the command that updates Matěj's checkout (_Launch commands_), and the closing line
-   on `qa1` and `qa2`. Then wait for his next answer.
+   what the revision changed, the whole block that switches Matěj's checkout to the branch, updates it and launches
+   the game (_Launch commands_: `cd`, `git fetch origin`, `git switch <branch>`, `git pull --ff-only`, then
+   `.\gradlew.bat runClient`; never the update command alone), and the closing line on `qa1` and `qa2`. Then wait
+   for his next answer.
