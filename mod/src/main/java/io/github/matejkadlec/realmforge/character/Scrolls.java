@@ -33,7 +33,8 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
  * ({@link Scroll}, {@link #add}): the Scroll of Oblivion ({@link StatPoints}) is the first; the Scroll of Respec
  * (RLM-226) and the Scroll of Rebirth (RLM-228) add theirs. A scroll is a plain item without a use duration, so the
  * charge is the item use NeoForge starts with the duration set in {@code LivingEntityUseItemEvent.Start}, the way
- * Sword Blocking Mechanics raises a sword.
+ * Sword Blocking Mechanics raises a sword; the client draws it like a bow ({@code client/render/ScrollCharge}), for
+ * the scroll items it lists.
  */
 public final class Scrolls {
     /** How long a scroll charges: 3 s (Matěj, 2026-10-24). */
