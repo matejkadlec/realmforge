@@ -38,9 +38,9 @@
           "type": "string"
         },
         "main_path": {
-          "description": "[min, max] rooms between the entrance and the ending (1 to 32).",
+          "description": "[min, max] rooms between the entrance and the ending (1 to 96).",
           "items": {
-            "maximum": 32,
+            "maximum": 96,
             "minimum": 1,
             "type": "integer"
           },
@@ -49,26 +49,17 @@
           "title": "Main Path",
           "type": "array"
         },
-        "special_gap": {
+        "pacing": {
           "anyOf": [
             {
-              "description": "[min, max] plain rooms (hallways, stairs) between two special rooms (fights, treasure, the boss) on the way from the entrance, 1 to 16 (RLM-364).",
-              "items": {
-                "maximum": 16,
-                "minimum": 1,
-                "type": "integer"
-              },
-              "maxItems": 2,
-              "minItems": 2,
-              "type": "array"
+              "$ref": "#/$defs/PacingDef"
             },
             {
               "type": "null"
             }
           ],
           "default": null,
-          "description": "If set, a special room follows as many plain rooms as a gap drawn from this range, on the main path and the branches; a branch's dead end is special once the smallest gap lies before it, and the dead ends that close leftover connectors are plain (RLM-364). Unset: any room that fits a slot may take it.",
-          "title": "Special Gap"
+          "description": "If set, the rhythm of corridors, features and fights along the main path, and the treasure at the end of each branch (RLM-364). Unset: any room that fits a slot may take it."
         },
         "walls": {
           "anyOf": [
@@ -107,6 +98,50 @@
         "en_us"
       ],
       "title": "LocalizedText",
+      "type": "object"
+    },
+    "PacingDef": {
+      "additionalProperties": false,
+      "description": "The rhythm of a layout (RLM-364, architecture 15.3): on the main path, a fight (a combat room with a spawner)\nonce a gap drawn from ``fights`` lies behind the last one, else a feature (a combat room without one) after a run\nof corridors drawn from ``corridors``; the branches are corridors up to a treasure room.",
+      "properties": {
+        "corridors": {
+          "description": "[min, max] corridors in a row on the main path before a feature or a fight (1 to 8), drawn binomially (RLM-364).",
+          "items": {
+            "maximum": 8,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Corridors",
+          "type": "array"
+        },
+        "fights": {
+          "description": "[min, max] rooms, corridors and features, between two fights on the main path (1 to 16), drawn binomially: [2, 4] gives 2 a quarter of the time, 3 half, 4 a quarter (RLM-364).",
+          "items": {
+            "maximum": 16,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Fights",
+          "type": "array"
+        },
+        "repeat": {
+          "default": 0,
+          "description": "Rooms of distance from the entrance the planner tries to keep between two copies of a room that is no corridor, and between two locks (rooms with an entry); 0: copies may be neighbours.",
+          "maximum": 64,
+          "minimum": 0,
+          "title": "Repeat",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "corridors",
+        "fights"
+      ],
+      "title": "PacingDef",
       "type": "object"
     },
     "WallsDef": {

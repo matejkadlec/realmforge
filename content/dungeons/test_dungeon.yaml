@@ -1,21 +1,25 @@
 # yaml-language-server: $schema=../../tools/schemas/dungeons.schema.json
 # The dungeon framework's test type (W4a, RLM-178), test content like realmforge:test_item: a vault of the stone vault
 # rooms imported from Stonevaults and the room generator's corridors. Its key opens a dungeon portal to it (W4d,
-# RLM-181); `/qa dungeon plan`, `build` and `enter` show its layouts. The real dungeon types come with W6. Sized for a
-# run of 20 to 30 minutes (RLM-363): about 75 rooms, three to five corridors between fights and treasure (RLM-364). The
+# RLM-181); `/qa dungeon plan`, `build` and `enter` show its layouts. The real dungeon types come with W6. About 70
+# rooms (RLM-363): one long main road with a fight after every 2 to 4 rooms and a lock, a trap or a sight after every
+# 1 or 2 corridors, and a short branch to treasure every 11 to 14 rooms (Matěj's playtest of 2026-10-24, RLM-364). The
 # open time is a placeholder until balance.
 id: test_dungeon
 name:
   en_us: Test Dungeon
 pool: realmforge:stone_vault
 layout:
-  main_path: [26, 32]
-  branches: [6, 8]
-  branch_rooms: [4, 7]
+  main_path: [54, 60]
+  branches: [4, 5]
+  branch_rooms: [2, 3]
   ending: treasure
-  special_gap: [3, 5]
+  pacing:
+    corridors: [1, 2]
+    fights: [2, 4]
+    repeat: 15
   walls:
     block: minecraft:stone_bricks
     weight: 4
 key: realmforge:test_dungeon_key
-open_minutes: 45
+open_minutes: 60

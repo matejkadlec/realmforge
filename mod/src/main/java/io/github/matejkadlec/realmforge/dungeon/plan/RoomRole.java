@@ -41,14 +41,4 @@ public enum RoomRole implements StringRepresentable {
     public boolean endsDungeons() {
         return this == BOSS || this == TREASURE;
     }
-
-    /** The rooms a dungeon type's {@code special_gap} spaces out: fights, treasure and the boss (RLM-364). */
-    public boolean special() {
-        return this == COMBAT || this == TREASURE || this == BOSS;
-    }
-
-    /** The rooms between special ones: hallways and stairs (RLM-364). */
-    public boolean plain() {
-        return this == HALLWAY || this == STAIRS;
-    }
 }

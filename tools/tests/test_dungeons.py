@@ -150,8 +150,11 @@ def test_dungeon_type_carries_its_pools_rooms(repo: RepoPaths) -> None:
     )
     assert "tools/schemas/dungeons.schema.json" in files
     assert (data["key"], data["open_minutes"]) == ("minecraft:tripwire_hook", 20)
-    assert '"boss", 0, 0,\n                    "minecraft:tripwire_hook", 20,' in java, (
-        "no special gap: 0 to 0"
+    assert '"boss", 0, 0, 0, 0, 0,\n                    "minecraft:tripwire_hook", 20,' in java, (
+        "no pacing: zeros"
+    )
+    assert "spawners" not in hall and "chests" not in hall, (
+        "a room without spawners or chests leaves them out"
     )
     tag = json.loads(files["mod/src/generated/resources/data/realmforge/tags/item/dungeon_key.json"])
     assert tag == {"values": ["minecraft:tripwire_hook"]}, "the client reads the keys from this tag"
@@ -180,7 +183,7 @@ def test_a_rooms_entry_side_reaches_the_game(repo: RepoPaths) -> None:
     assert rooms["realmforge:rooms/crypt/hall"]["entry"] == 1, "north is connector 0, south connector 1"
     assert "entry" not in rooms["realmforge:rooms/crypt/crossing"]
     java = files[EXPECTATIONS].decode()
-    assert "0, false, List.of(), 1)" in java, "the hall's expectation names its entry"
+    assert "0, false, List.of(), 1, 0, 0, false)" in java, "the hall's expectation names its entry"
 
     hall.write_text(hall.read_text(encoding="utf-8").replace("entry: south", "entry: east"), encoding="utf-8")
     entrance = repo.content / "rooms" / "crypt" / "entrance.yaml"
@@ -297,32 +300,62 @@ def test_a_doorways_corners_need_no_wall() -> None:
         assert (gap == cell) == open_, (cell, gap)
 
 
-def test_a_special_gap_spaces_plain_rooms_out(repo: RepoPaths) -> None:
-    # RLM-364: the gap reaches the game, and a spaced pool needs plain rooms to pass through, plain junctions for the
-    # branches and a plain dead end.
-    crypt(repo)
-    add_room(repo, "crypt/corner", ["hallway", "dead_end"], "north")
-    path = repo.content / "dungeons" / "crypt.yaml"
-    path.write_text(dungeon(layout=LAYOUT + "  special_gap: [3, 5]\n"), encoding="utf-8")
-    files = generate(repo)
-    assert json.loads(files[f"{DATA}/crypt.json"])["layout"]["special_gap"] == [3, 5]
-    assert '"boss", 3, 5,\n' in files[EXPECTATIONS].decode()
+PACING = "  pacing:\n    corridors: [1, 2]\n    fights: [2, 4]\n    repeat: 6\n"
 
-    (repo.content / "rooms" / "crypt" / "corner.nbt").unlink()
-    (repo.content / "rooms" / "crypt" / "corner.yaml").unlink()
-    path.write_text(dungeon(layout=LAYOUT.replace("[0, 1]", "[1, 2]") + "  special_gap: [3, 5]\n"))
+
+def add_fight(repo: RepoPaths, room_id: str, spawners: int, chests: int) -> None:
+    """A combat room with spawners and chests in its middle row, and a door north and south."""
+    add_room(repo, room_id, ["combat", "straight"], "north", "south")
+    path = repo.content / "rooms" / f"{room_id}.nbt"
+    room = room_structure((7, 5, 7), "north", "south")
+    extra = tuple(
+        StructureBlock((1 + i, 1, 3), BlockState("minecraft:spawner")) for i in range(spawners)
+    ) + tuple(StructureBlock((1 + i, 1, 4), BlockState("minecraft:chest")) for i in range(chests))
+    path.write_bytes(write_structure(Structure(room.size, DATA_VERSION, room.blocks + extra)))
+
+
+def test_a_pacing_reaches_the_game_with_the_rooms_spawners_and_chests(repo: RepoPaths) -> None:
+    # RLM-364: the pacing reaches the game and the QA mod, and a room carries its spawners and chests.
+    crypt(repo)
+    add_fight(repo, "crypt/guard", spawners=2, chests=3)
+    add_room(repo, "crypt/end", ["hallway", "dead_end"], "north")
+    path = repo.content / "dungeons" / "crypt.yaml"
+    path.write_text(dungeon(layout=LAYOUT + PACING), encoding="utf-8")
+    files = generate(repo)
+    data = json.loads(files[f"{DATA}/crypt.json"])
+    assert data["layout"]["pacing"] == {"corridors": [1, 2], "fights": [2, 4], "repeat": 6}
+    guard = next(room for room in data["rooms"] if room["template"].endswith("/guard"))
+    assert (guard["spawners"], guard["chests"]) == (2, 3)
+    java = files[EXPECTATIONS].decode()
+    assert '"boss", 1, 2, 2, 4, 6,\n' in java
+    assert "List.of(), -1, 2, 3, false)" in java, "the guard's expectation carries its spawners and chests"
+
+
+def test_a_paced_pool_needs_corridors_a_fight_and_a_corridors_dead_end(repo: RepoPaths) -> None:
+    # RLM-364: a pacing passes through corridors, hangs branches off corridors, has fights, and without walls closes
+    # leftover doorways with a corridor's dead end.
+    crypt(repo)
+    path = repo.content / "dungeons" / "crypt.yaml"
+    path.write_text(dungeon(layout=LAYOUT.replace("[0, 1]", "[1, 2]") + PACING), encoding="utf-8")
     problems = problems_for(repo)
-    assert any("layout.special_gap" in p and "no plain dead end for the branches" in p for p in problems), (
+    assert any("layout.pacing" in p and "no fight (role combat with a mob spawner" in p for p in problems), (
         problems
     )
     assert any(
-        "layout.branches" in p and "a plain one, as the special gap hangs branches off them" in p
+        "layout.pacing" in p and "no corridor's dead end to close open connectors" in p for p in problems
+    ), problems
+    assert any(
+        "layout.branches" in p and "(a corridor, as the pacing hangs branches off them)" in p
         for p in problems
     ), problems
-    path.write_text(dungeon(layout=LAYOUT + "  special_gap: [5, 3]\n"))
-    assert any(
-        "special_gap" in p and "lower bound 5 is above the upper bound 3" in p for p in problems_for(repo)
-    )
+    add_fight(repo, "crypt/guard", spawners=1, chests=0)
+    add_room(repo, "crypt/end", ["hallway", "dead_end"], "north")
+    add_room(repo, "crypt/fork", ["hallway", "t_junction"], "north", "south", "east")
+    load_and_validate(repo)
+    path.write_text(dungeon(layout=LAYOUT + PACING.replace("[2, 4]", "[4, 2]")))
+    assert any("fights" in p and "lower bound 4 is above the upper bound 2" in p for p in problems_for(repo))
+    path.write_text(dungeon(layout=LAYOUT + PACING.replace("[1, 2]", "[0, 2]")))
+    assert any("corridors" in p for p in problems_for(repo))
 
 
 @pytest.mark.parametrize("minutes", [0, 241])
@@ -410,7 +443,7 @@ def test_every_connector_must_meet_one_in_the_pool(repo: RepoPaths) -> None:
     [
         (LAYOUT.replace("[2, 4]", "[4, 2]"), "layout.main_path"),
         (LAYOUT.replace("[2, 4]", "[0, 4]"), "layout.main_path.0"),
-        (LAYOUT.replace("[2, 4]", "[2, 33]"), "layout.main_path.1"),
+        (LAYOUT.replace("[2, 4]", "[2, 97]"), "layout.main_path.1"),
         (LAYOUT.replace("[2, 4]", "[2]"), "layout.main_path"),
         (LAYOUT.replace("[0, 1]", "[0, 17]"), "layout.branches.1"),
         (LAYOUT.replace("[1, 2]", "[1, 9]"), "layout.branch_rooms.1"),
@@ -669,8 +702,8 @@ def test_a_rooms_planner_and_explosion_rules_reach_the_game(repo: RepoPaths) -> 
         rooms["realmforge:rooms/crypt/hall"]
     )
     java = files[EXPECTATIONS].decode()
-    assert '1, true, List.of("minecraft:gravel", "minecraft:smooth_stone"), -1)' in java
-    assert "0, false, List.of(), -1)" in java
+    assert '1, true, List.of("minecraft:gravel", "minecraft:smooth_stone"), -1, 0, 0, false)' in java
+    assert "0, false, List.of(), -1, 0, 0, false)" in java
     nook.write_text(
         nook.read_text(encoding="utf-8").replace("minecraft:smooth_stone", "minecraft:no_such_block"),
         encoding="utf-8",
