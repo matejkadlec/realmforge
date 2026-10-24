@@ -78,13 +78,16 @@ final class PlanChecks {
             room.maxPerLayout().ifPresent(max -> assertTrue(count <= max,
                     seed + room.template() + " appears " + count + " times, at most " + max + " allowed"));
         }
-        int firstPath = -1;
-        for (int i = 1; i < rooms.size() && firstPath < 0; i++) {
-            firstPath = rooms.get(i).slot() == Slot.PATH && parent[i] == 0 ? i : -1;
+        // With a pacing, the start is the main path's approach (RLM-364).
+        List<Integer> start = new ArrayList<>(List.of(0));
+        for (int room : mainPath(rooms, parent)) {
+            if (start.size() <= (rules.pacing().isPresent() ? RoomGraph.APPROACH : 1)) {
+                start.add(room);
+            }
         }
         for (int i = 1; i < rooms.size(); i++) {
             if (rooms.get(i).room().nearStart()) {
-                assertTrue(parent[i] == 0 || parent[i] == firstPath, seed + "room " + i + " ("
+                assertTrue(start.contains(parent[i]), seed + "room " + i + " ("
                         + rooms.get(i).room().template() + ") hangs off room " + parent[i] + ", not at the start");
             }
         }
@@ -121,23 +124,43 @@ final class PlanChecks {
             assertTrue(enteredThroughEntry, where + " hangs off room " + parent[i] + " through its entry");
         }
 
-        // RLM-364: special rooms keep the gap on the way from the entrance, and caps are plain rooms or walls.
-        rules.specialGap().ifPresent(gap -> {
-            long mainPath = plan.count(Slot.PATH);
+        // RLM-364: with a pacing, fights on the main path keep at least the smallest gap from the entrance and from
+        // each other, a branch is corridors up to its end, caps are walls, corridors' dead ends or the room meant for
+        // the start, and a loop leads around few rooms of the tree and past no fight.
+        rules.pacing().ifPresent(pacing -> {
+            int since = 0;
+            for (int room : mainPath(rooms, parent)) {
+                if (paced(rooms.get(room), Pace.FIGHT)) {
+                    assertTrue(since >= pacing.fights().minInclusive(), seed + "the fight in room " + room
+                            + " follows only " + since + " rooms after the last fight or the entrance");
+                    since = 0;
+                } else {
+                    since++;
+                }
+            }
             for (int i = 1; i < rooms.size(); i++) {
                 PlannedRoom room = rooms.get(i);
-                if (!spaced(room)) {
+                String where = seed + "room " + i + " (" + room.slot().label() + ", " + room.room().template() + ")";
+                if (room.slot() == Slot.BRANCH) {
+                    assertTrue(paced(room, Pace.CORRIDOR), where + " is a branch's corridor");
+                } else if (room.slot() == Slot.CAP) {
+                    assertTrue(room.room().role() == RoomRole.WALL || room.room().nearStart()
+                            || paced(room, Pace.CORRIDOR), where + " closes a connector as a wall or a corridor");
+                }
+            }
+            for (RoomLink link : plan.links()) {
+                int a = link.room();
+                int b = link.otherRoom();
+                if (parent[a] == b || parent[b] == a) {
                     continue;
                 }
-                String where = seed + "room " + i + " (" + room.slot().label() + ", " + room.room().template() + ")";
-                assertTrue(room.slot() != Slot.CAP, where + " closes a connector, which takes no special room");
-                int plain = 0;
-                for (int up = parent[i]; up > 0 && !spaced(rooms.get(up)); up = parent[up]) {
-                    plain++;
+                List<Integer> way = way(parent, a, b);
+                assertTrue(way.size() - 1 <= DungeonPlanner.LOOP_REACH, seed + "the loop " + link + " leads around "
+                        + (way.size() - 1) + " rooms of the tree");
+                for (int room : way.subList(1, way.size() - 1)) {
+                    assertFalse(paced(rooms.get(room), Pace.FIGHT), seed + "the loop " + link
+                            + " leads around the fight in room " + room);
                 }
-                boolean shortMainPath = room.slot() == Slot.ENDING && mainPath < gap.minInclusive();
-                assertTrue(plain >= gap.minInclusive() || shortMainPath,
-                        where + " follows only " + plain + " plain rooms after the last special one");
             }
         });
 
@@ -174,9 +197,38 @@ final class PlanChecks {
         return reached;
     }
 
-    /** A special room that the gap rule spaces out: a {@code near_start} room is placed by its own rule (RLM-256). */
-    private static boolean spaced(PlannedRoom room) {
-        return room.room().role().special() && !room.room().nearStart();
+    private static boolean paced(PlannedRoom room, Pace pace) {
+        return room.room().pace().equals(Optional.of(pace));
+    }
+
+    /** The main path's rooms from the entrance to the ending, both left out. */
+    private static List<Integer> mainPath(List<PlannedRoom> rooms, int[] parent) {
+        List<Integer> path = new ArrayList<>();
+        for (int i = 0; i < rooms.size(); i++) {
+            if (rooms.get(i).slot() == Slot.ENDING) {
+                for (int room = parent[i]; room > 0; room = parent[room]) {
+                    path.addFirst(room);
+                }
+            }
+        }
+        return path;
+    }
+
+    /** The rooms on the tree's way from room {@code a} to room {@code b}, both included. */
+    private static List<Integer> way(int[] parent, int a, int b) {
+        List<Integer> up = new ArrayList<>();
+        for (int room = a; room >= 0; room = parent[room]) {
+            up.add(room);
+        }
+        List<Integer> down = new ArrayList<>();
+        int common = b;
+        while (!up.contains(common)) {
+            down.addFirst(common);
+            common = parent[common];
+        }
+        List<Integer> way = new ArrayList<>(up.subList(0, up.indexOf(common) + 1));
+        way.addAll(down);
+        return way;
     }
 
     /** How many rooms of {@code slot} lead from room {@code from} back towards the entrance without a break. */
@@ -194,7 +246,8 @@ final class PlanChecks {
             case ENTRANCE -> room.role() == RoomRole.ENTRANCE;
             case PATH, BRANCH -> room.role().passesThrough();
             case ENDING -> room.role() == rules.ending();
-            case BRANCH_END -> room.role().closesBranches() && room.deadEnd();
+            case BRANCH_END -> room.role().closesBranches() && (room.deadEnd() || rules.pacing().isPresent()
+                    && room.role().passesThrough() && room.chests() >= DungeonRoom.TREASURE_CHESTS);
             case CAP -> (room.role().closesBranches() || room.role() == RoomRole.WALL) && room.deadEnd();
         };
     }

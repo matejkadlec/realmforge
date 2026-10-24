@@ -6,11 +6,14 @@ each room's template (the structure ``realmforge:rooms/<id>``), size, role, weig
 them (``rooms/connectors.py``). The game's planner lays out a dungeon from that alone (architecture 15.3), so
 planning needs no template, and JUnit fuzzes the planner over the same files.
 
-A room's ``entry`` side becomes the index of its connector there (RLM-362). A type with ``walls`` also gets its wall
-(RLM-364): ``rf gen`` builds a template of 3 x 3 blocks of the wall's block, written as the structure
-``realmforge:dungeon_walls/<id>``, with one connector at the middle of its bottom row whose jigsaw turns into the same
-block, and lists it last among the rooms with the role ``wall``: the planner may close a doorway with it instead of a
-dead end.
+A room's ``entry`` side becomes the index of its connector there (RLM-362), and a room with mob spawners or chests
+carries how many (``spawners``, ``chests``): a combat room with a spawner is a fight in a layout's pacing, and the
+planner ends the main path and branches in the rooms with the most chests (RLM-364); a room with lava, TNT or a
+dispenser is a ``hazard``, which the planner keeps from the start, from right before a fight and from other hazards. A
+type with ``walls`` also gets its wall (RLM-364): ``rf gen`` builds a template of 3 x 3 blocks of the wall's block,
+written as the structure ``realmforge:dungeon_walls/<id>``, with one connector at the middle of its bottom row whose
+jigsaw turns into the same block, and lists it last among the rooms with the role ``wall``: the planner may close a
+doorway with it instead of a dead end.
 
 Each room also gets its set-piece spots (``rooms/set_pieces.py``, ADR 0050): the patterns of spots the pieces that
 reach its role fit, each with the pieces that may fill it. The entry lists those pieces (template, processor list,
@@ -34,7 +37,16 @@ from realmforge_tools.project import DATA_VERSION, MOD_ID, QA_JAVA_PACKAGE, Repo
 from realmforge_tools.rooms.connectors import Connector, connectors
 from realmforge_tools.rooms.generator import DOOR, EMPTY_POOL, GENERATED_DIR, paths
 from realmforge_tools.rooms.set_pieces import DENSITY, Fit, Pattern, RoomView, match
-from realmforge_tools.rooms.structure import JIGSAW, BlockState, Structure, StructureBlock, write_structure
+from realmforge_tools.rooms.structure import (
+    JIGSAW,
+    BlockState,
+    Structure,
+    StructureBlock,
+    count_chests,
+    count_hazards,
+    count_spawners,
+    write_structure,
+)
 from realmforge_tools.schema.common import LocalizedText
 from realmforge_tools.schema.dungeon import (
     ROOM_ROLES,
@@ -278,7 +290,28 @@ def _room(room: RoomEntry) -> dict[str, Any]:
     entry = entry_index(room)
     if entry is not None:
         data["entry"] = entry
+    if spawners(room):
+        data["spawners"] = spawners(room)
+    if chests(room):
+        data["chests"] = chests(room)
+    if hazard(room):
+        data["hazard"] = True
     return data
+
+
+def spawners(room: RoomEntry) -> int:
+    """The mob spawners in the room's template."""
+    return room.derived("spawners", count_spawners)
+
+
+def chests(room: RoomEntry) -> int:
+    """The chests, trapped ones included, in the room's template."""
+    return room.derived("chests", count_chests)
+
+
+def hazard(room: RoomEntry) -> bool:
+    """Whether the room's template holds lava, TNT or a dispenser: the planner spaces such rooms out (RLM-364)."""
+    return room.derived("hazards", count_hazards) > 0
 
 
 def _connector(connector: Connector) -> dict[str, Any]:
@@ -302,7 +335,12 @@ def _expectations(content: Content) -> bytes:
         if layout.walls is not None:
             expected.append(_wall_expectation(dungeon, layout.walls))
         rooms = ",\n".join(expected)
-        gap = layout.special_gap or [0, 0]
+        pacing = layout.pacing
+        rhythm = (
+            f"{pacing.corridors[0]}, {pacing.corridors[1]}, {pacing.fights[0]}, {pacing.fights[1]}, {pacing.repeat}"
+            if pacing is not None
+            else "0, 0, 0, 0, 0"
+        )
         rows.append(
             "            new DungeonTypeExpectation(\n"
             f"                    {string_literal(f'{MOD_ID}:{dungeon.id}')},\n"
@@ -310,7 +348,7 @@ def _expectations(content: Content) -> bytes:
             f"                    {string_literal(dungeon.pool)},\n"
             f"                    {layout.main_path[0]}, {layout.main_path[1]}, {layout.branches[0]}, "
             f"{layout.branches[1]}, {layout.branch_rooms[0]}, {layout.branch_rooms[1]},\n"
-            f"                    {string_literal(layout.ending)}, {gap[0]}, {gap[1]},\n"
+            f"                    {string_literal(layout.ending)}, {rhythm},\n"
             f"                    {string_literal(dungeon.key)}, {dungeon.open_minutes},\n"
             f"                    List.of(\n{rooms}))"
         )
@@ -333,20 +371,21 @@ def _expectations(content: Content) -> bytes:
         "    /**\n"
         "     * A room of the pool, or the type's wall: its structure id, size, role, weight, connectors, how often a layout\n"
         "     * may hold it (0: no limit), whether it stays at the start, the blocks an explosion may break in it, and the\n"
-        "     * connector it is entered through (-1: any).\n"
+        "     * connector it is entered through (-1: any), its spawners and chests, and whether it is a hazard.\n"
         "     */\n"
         "    public record RoomExpectation(String template, int sizeX, int sizeY, int sizeZ, String role, int weight,\n"
         "            List<ConnectorExpectation> connectors, int maxPerLayout, boolean nearStart,\n"
-        "            List<String> explosionBreaks, int entry) {\n"
+        "            List<String> explosionBreaks, int entry, int spawners, int chests, boolean hazard) {\n"
         "    }\n"
         "\n"
         "    /**\n"
-        "     * One dungeon type: its id, its name's translation key, its pool, its layout rules (a special gap of 0 to 0:\n"
-        "     * none), its key, how many minutes a portal to it stays open, and its rooms, its wall last.\n"
+        "     * One dungeon type: its id, its name's translation key, its pool, its layout rules (a pacing of zeros: none),\n"
+        "     * its key, how many minutes a portal to it stays open, and its rooms, its wall last.\n"
         "     */\n"
         "    public record DungeonTypeExpectation(String id, String name, String pool, int mainPathMin, int mainPathMax,\n"
         "            int branchesMin, int branchesMax, int branchRoomsMin, int branchRoomsMax, String ending,\n"
-        "            int specialGapMin, int specialGapMax, String key, int openMinutes, List<RoomExpectation> rooms) {\n"
+        "            int corridorsMin, int corridorsMax, int fightsMin, int fightsMax, int repeat, String key,\n"
+        "            int openMinutes, List<RoomExpectation> rooms) {\n"
         "    }\n"
         "\n"
         f"    public static final List<DungeonTypeExpectation> DUNGEON_TYPES = {entries};\n"
@@ -377,7 +416,8 @@ def _room_expectation(room: RoomEntry) -> str:
         f"{x}, {y}, {z}, {string_literal(room_role(room.model.tags) or '')}, {room.model.weight},\n"
         f"                                    {connector_list},\n"
         f"                                    {room.model.max_per_layout or 0}, "
-        f"{'true' if room.model.near_start else 'false'}, List.of({breaks}), {-1 if entry is None else entry})"
+        f"{'true' if room.model.near_start else 'false'}, List.of({breaks}), {-1 if entry is None else entry}, "
+        f"{spawners(room)}, {chests(room)}, {'true' if hazard(room) else 'false'})"
     )
 
 
@@ -387,5 +427,5 @@ def _wall_expectation(dungeon: DungeonTypeDef, walls: WallsDef) -> str:
         f"                            new RoomExpectation({string_literal(wall_template(dungeon))}, "
         f"{WALL_WIDTH}, {WALL_HEIGHT}, 1, {string_literal(WALL_ROLE)}, {walls.weight},\n"
         f"                                    {connector_list},\n"
-        "                                    0, false, List.of(), -1)"
+        "                                    0, false, List.of(), -1, 0, 0, false)"
     )

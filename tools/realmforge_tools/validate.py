@@ -27,7 +27,7 @@ from realmforge_tools.rooms.check import (
 from realmforge_tools.rooms.connectors import Connector, connectors, could_attach, doorway_gap
 from realmforge_tools.rooms.generator import GENERATED_DIR, theme_blocks, unknown_blocks
 from realmforge_tools.rooms.set_pieces import piece_problems
-from realmforge_tools.rooms.structure import BlockState, StructureError
+from realmforge_tools.rooms.structure import BlockState, StructureError, count_spawners
 from realmforge_tools.rooms.walk import walk_problems
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES, WORLDGEN_DIR
 from realmforge_tools.schema.block import ITEMLESS_KINDS, REALM_PORTAL_KINDS, SINGLE_BLOCK_KINDS
@@ -35,9 +35,9 @@ from realmforge_tools.schema.chapter import advancement_id as chapter_advancemen
 from realmforge_tools.schema.character import STARTING_BREAD, CharacterModifierDef
 from realmforge_tools.schema.dimension_rules import WORLDGEN_STRUCTURE_REGISTRY
 from realmforge_tools.schema.dungeon import (
+    CORRIDOR_ROLES,
     DEAD_END_ROLES,
     PATH_ROLES,
-    PLAIN_ROLES,
     ROOM_ROLES,
     WALL_HEIGHT,
     WALL_WIDTH,
@@ -421,8 +421,9 @@ def _check_dungeons(content: Content, universe: IdUniverse) -> list[Problem]:
     """A room in the pool of a dungeon type has exactly one role, and the pool holds what the type's layout needs: an
     entrance, rooms to pass through, the room that ends the main path, a dead end for the branches and for the
     connectors nothing else takes, rooms that take a branch when it must have one, and only rooms whose every
-    connector meets some connector of the pool (architecture 15.3). With a ``special_gap`` the rooms to pass through,
-    the junctions that take branches and a dead end are plain ones (RLM-364). A type's wall is a block, and closes every
+    connector meets some connector of the pool (architecture 15.3). With a ``pacing`` the rooms to pass through and
+    the junctions that take branches are corridors, the pool has a fight, and a type without walls a corridor's dead
+    end (RLM-364). A type's wall is a block, and closes every
     doorway of its pool. A room in such a pool also holds no fluid at its edge, and an entrance marker only if it is an
     entrance (``_check_pooled_room``). Whether a layout fits a plot is the planner's to find; JUnit fuzzes it over the
     generated types."""
@@ -457,40 +458,51 @@ def _check_dungeons(content: Content, universe: IdUniverse) -> list[Problem]:
             (room, room_role(room.model.tags), room.derived("connectors", connectors)) for room in rooms
         ]
         ending = dungeon.layout.ending
-        spaced = dungeon.layout.special_gap is not None
-        passing = PLAIN_ROLES if spaced else PATH_ROLES
+        paced = dungeon.layout.pacing is not None
+        passing = CORRIDOR_ROLES if paced else PATH_ROLES
         needs = (
             (
                 "pool",
                 "entrance (role entrance, a connector)",
-                lambda role, n: role == "entrance" and n >= 1,
+                lambda room, role, n: role == "entrance" and n >= 1,
             ),
             (
                 "pool",
                 f"room to pass through (role {', '.join(passing)}; two connectors)",
-                lambda role, n, passing=passing: role in passing and n >= 2,
+                lambda room, role, n, passing=passing: role in passing and n >= 2,
             ),
             (
                 "layout.ending",
                 f"room to end the main path (role {ending}, a connector)",
-                lambda role, n, ending=ending: role == ending and n >= 1,
+                lambda room, role, n, ending=ending: role == ending and n >= 1,
             ),
             (
                 "pool",
                 f"dead end for the branches and open connectors (role {', '.join(DEAD_END_ROLES)}, one connector)",
-                lambda role, n: role in DEAD_END_ROLES and n == 1,
+                lambda room, role, n: role in DEAD_END_ROLES and n == 1,
             ),
         )
-        if spaced:
+        if paced:
             needs += (
                 (
-                    "layout.special_gap",
-                    f"plain dead end for the branches (role {', '.join(PLAIN_ROLES)}, one connector)",
-                    lambda role, n: role in PLAIN_ROLES and n == 1,
+                    "layout.pacing",
+                    "fight (role combat with a mob spawner, two connectors)",
+                    lambda room, role, n: (
+                        role == "combat" and n >= 2 and room.derived("spawners", count_spawners) > 0
+                    ),
+                ),
+            )
+        if paced and dungeon.layout.walls is None:
+            needs += (
+                (
+                    "layout.pacing",
+                    f"corridor's dead end to close open connectors without walls (role {', '.join(CORRIDOR_ROLES)}, "
+                    "one connector)",
+                    lambda room, role, n: role in CORRIDOR_ROLES and n == 1,
                 ),
             )
         for location, what, fits in needs:
-            if not any(fits(role, len(found)) for _, role, found in shapes):
+            if not any(fits(room, role, len(found)) for room, role, found in shapes):
                 problems.append(Problem(entry.source, location, f"pool {dungeon.pool} has no {what}"))
         if dungeon.layout.branches[0] > 0 and not any(
             role in passing and len(found) >= 3 for _, role, found in shapes
@@ -500,7 +512,7 @@ def _check_dungeons(content: Content, universe: IdUniverse) -> list[Problem]:
                     entry.source,
                     "layout.branches",
                     f"every layout has a branch, but pool {dungeon.pool} has no room to pass through with a third "
-                    f"connector to take it{' (a plain one, as the special gap hangs branches off them)' if spaced else ''}",
+                    f"connector to take it{' (a corridor, as the pacing hangs branches off them)' if paced else ''}",
                 )
             )
         problems += _check_walls(entry, shapes, universe)

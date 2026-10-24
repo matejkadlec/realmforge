@@ -6,7 +6,7 @@ tags:
   - "treasure"
   - "dead_end"
 weight: 1
-max_per_layout: 2
+max_per_layout: 1
 source:
   file: "egg.nbt"
   format: nbt

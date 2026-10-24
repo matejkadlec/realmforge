@@ -1,10 +1,12 @@
 # yaml-language-server: $schema=../../../../../../tools/schemas/rooms.schema.json
 # Imported by `rf rooms import`: draft tags from the connectors and the name, pools with the dungeons (W4).
-pools: []
+pools:
+  - "realmforge:stone_vault"
 tags:
   - "combat"
   - "curved"
 weight: 1
+max_per_layout: 1
 source:
   file: "storage_2.nbt"
   format: nbt
