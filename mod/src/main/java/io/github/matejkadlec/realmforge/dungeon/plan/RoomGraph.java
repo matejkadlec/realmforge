@@ -183,7 +183,7 @@ final class RoomGraph {
                 while (feature - 1 - before > last && paces[feature - 1 - before] == Pace.CORRIDOR) {
                     before++;
                 }
-                if (before - 1 >= pacing.corridors().minInclusive()) {
+                if (before - 1 >= pacing.corridors().minInclusive() && feature - 1 > APPROACH) {
                     paces[feature - 1] = Pace.FEATURE;
                     paces[feature] = Pace.CORRIDOR;
                 } else if (before + 1 <= pacing.corridors().maxInclusive()) {
