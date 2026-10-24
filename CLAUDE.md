@@ -68,8 +68,9 @@ Apotheosis for gear rarity, affixes, gems and enchanting
   to clients as cast payloads; at an entity, a ground point or a direction, with damage, heals, projectiles, areas,
   status effects, teleports, dashes and knockback; rage that hits fill and that decays out of combat, procs that
   never trigger procs, and mobs choosing their target (their current target, a random or the farthest player).
-  Players cast from the spell bar (C3b): eight slots on R, T, F, G, H, C, Ů and §, the racial slot on X, a
-  WoW-style cast bar, a cooldown sweep, a spellbook (P) whose tooltips fill a spell's numbers from data, a 0.5 s global cooldown
+  Players cast from the spell bar (C3b): eight slots on R, T, F, G, H, C, Ů and §, the racial slot on X, the class
+  resource's bar (mana, rage) under it (RLM-400), a WoW-style cast bar, a cooldown sweep, a spellbook (P) whose
+  tooltips fill a spell's numbers from data, a 0.5 s global cooldown
   and an optional spell queue (client options). Our own status effects come from `content/effects/` (C3c): attribute
   modifiers and damage or healing over time from their caster's stats, remembering who applied them. The first realm
   exists (W2a): Undervault, the stone realm
@@ -84,9 +85,10 @@ Apotheosis for gear rarity, affixes, gems and enchanting
   and `/instance leave` leave at any time, and a completed run closes 5 minutes later. Players block with two-handed
   weapons by holding right click (RLM-297: Sword Blocking Mechanics' poses, our rules), and their projectiles and
   full-strength hits never lose anything to the hurt cooldown (RLM-311, RLM-386). A player or mob is in combat for 10 s
-  after the last hit dealt or taken (RLM-348), which rage and the scrolls read. The pack has M1's QoL, UI and building
-  mods, and vanilla strongholds are off (PK1 to PK3). Next to the core mod, the pack ships Better Key Binds
-  (RLM-372), our own client mod that gives every key bind a secondary key.
+  after the last hit dealt or taken (RLM-348), which rage and the scrolls read; a scroll charges for 3 s, like a bow,
+  before it works. The pack has M1's QoL, UI and building mods, and vanilla strongholds are off (PK1 to PK3). Next to
+  the core mod, the pack ships Better Key Binds (RLM-372), our own client mod that gives every key bind a secondary
+  key.
 
 ## Pinned versions
 

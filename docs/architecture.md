@@ -959,14 +959,16 @@ one state every rule reads, instead of a timer of its own:
 - **The window** is the common config's `combat.inCombatSeconds`, 10 by default (`combat/CombatConfig`,
   [19.2](#192-configuration)); a hit's combat ends at its time plus the window as it was then.
 - **Its users:** rage decays measured from the same last hit ([11.5](#115-resources-cooldowns-modifiers)), so the
-  two never disagree about the fight; the Scroll of Oblivion (RLM-196) refuses to be used in combat, is kept and says
-  "You can't use this in combat." (`message.realmforge.cannot_use_in_combat`), on both sides, so the client swings no
-  arm. The Scroll of Respec (RLM-226) and the Scroll of Rebirth (RLM-228) refuse the same way when they land, and
+  two never disagree about the fight; every scroll (`character/Scrolls`, [10.2](#102-leveling)) refuses to start in
+  combat, is kept and says "You can't use this in combat." (`message.realmforge.cannot_use_in_combat`), on both sides,
+  so the client swings no arm, and a hit dealt or taken during its 3 s charge stops the charge. The Scroll of Oblivion
+  (RLM-196) is the first; the Scroll of Respec (RLM-226) and the Scroll of Rebirth (RLM-228) refuse the same way, and
   later features (boss arena exits, return scrolls, the open-world dungeon mobs held in combat of RLM-305) read it too.
 
 `InCombatGameTests` covers it: a mob's hit and a player's hit put both sides in combat, 9 s after the last hit they
-are still in it and 11 s after they are out, a dodged hit counts, falls, lava, fire and drowning do not, and the Scroll
-of Oblivion fails and is kept in combat and works once the window has passed.
+are still in it and 11 s after they are out, a dodged hit counts, falls, lava, fire and drowning do not, the Scroll
+of Oblivion fails and is kept in combat and works after a full charge once the window has passed, and a hit or letting
+go of right click stops its charge.
 
 ## 10. Character: races, classes, leveling
 
@@ -1114,8 +1116,20 @@ of Oblivion fails and is kept in combat and works once the window has passed.
     the server checks that the player has a character, that the stat is one of our primary stats and that a point is
     unspent, then saves it and recomputes the stats. The spent points reach the player through their own
     `StatSource`, one modifier per stat. An item in the tag `realmforge:use/unlearn_stat_points` (the Scroll of
-    Oblivion; an item's `use` in content writes the tag, [13](#13-items-gear-and-loot)) returns every spent point when
-    right-clicked and is used up; with nothing spent it fails and is kept. A level that falls below what was spent
+    Oblivion; an item's `use` in content writes the tag, [13](#13-items-gear-and-loot)) is a scroll
+    (`character/Scrolls`, below): charged for 3 s out of combat, it returns every spent point and is used up; with
+    nothing spent it does not start and is kept.
+  - **Scrolls charge** (`character/Scrolls`; Matěj, 2026-10-24, like Waystones' Warp Scroll): right-clicking a scroll
+    starts a 3 s charge (`Scrolls.CHARGE_TICKS`), as a bow draws. The player holds right click, slowed as with a drawn
+    bow, while purple sparkles (`minecraft:witch`) rise around them, and only the full charge makes the scroll work and
+    uses it up. Letting go early, switching items or entering combat ([9.4](#94-in-combat)) stops it, and the scroll
+    is kept. A scroll that would be refused (in combat, nothing to undo) does not start: the arm does not swing and a
+    chat line says why, at most once a second while right click is held. A scroll is a plain item with no use
+    duration, so the charge is NeoForge's item use with its duration set in `LivingEntityUseItemEvent.Start` (as
+    Sword Blocking Mechanics raises a sword), the stop is `stopUsingItem` from `LivingEntityUseItemEvent.Tick`
+    (cancelling that event would finish the use instead) and the effect comes in `LivingEntityUseItemEvent.Finish`,
+    which checks again. Each scroll registers what it checks and does (`Scrolls.add`): the Scroll of Oblivion first,
+    the Scroll of Respec (RLM-226) and the Scroll of Rebirth (RLM-228) next. A level that falls below what was spent
     (a command, a revoked chapter, a curve that gives fewer) returns every spent point, with a message.
   - **`/realmforge xp add|set|query`** (`command/XpCommand`, permission level 2): `add` gives XP as a reward (times
     the XP multiplier, with level-ups), `set` sets the total exactly and quietly, `query` shows XP, level and cap.
@@ -1397,22 +1411,34 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
   progress only once every other check passed. A refusal goes back as `CastRefusedPayload`.
 - **HUD** (`client/hud`): the spell bar (`SpellBarHud`, drawn from `spell/SpellBarView` by `SpellSlots`) has its nine
   24 px slots side by side, the racial slot last, 216 px wide (Matěj's playtest of 2026-10-21). Its layer comes right
-  after vanilla's selected item name, which is drawn on the line above the status rows and the XP bar; the bar sits
-  above that line, then raises `Gui#leftHeight` and `Gui#rightHeight` so the action bar message stays above it
-  (`SpellBarLayout`). It shows even when empty (research SP-1). A slot is framed in its spell's school colour, a frame
-  that stays once spells have icons (Matěj, 2026-10-21), shows the spell's initials until then (C6, A1), its key in
-  the corner, a blue tint while the resource does not cover the cost, and the cooldown sweep
+  after vanilla's selected item name, which is drawn on the line above the status rows and the XP bar; the bar and
+  the resource bar under it end 26 px above that line, 36 px above the XP bar's level text (three times the gap the
+  bar had before the resource bar, Matěj 2026-10-24), then raise `Gui#leftHeight` and `Gui#rightHeight` so the action
+  bar message stays above them (`SpellBarLayout`). It shows even when empty (research SP-1). A slot is framed in its
+  spell's school colour, a frame that stays once spells have icons (Matěj, 2026-10-21), shows the spell's initials until
+  then (C6, A1), its key in the corner, a blue tint while the resource does not cover the cost, and the cooldown sweep
   (`CooldownSweep`): a dark wedge that shrinks clockwise from 12 o'clock, for the spell's own cooldown or the global
-  cooldown, whichever ends later, with the seconds left of a cooldown of 2 s or more. The cast bar (`CastBarHud`,
-  after WoW's casting bar, Matěj's playtest of 2026-10-21) sits toward the middle of the screen, 70 % of the way down
-  at most and clear of the spell bar and the action bar message: a 200 by 20 px black frame with rounded corners and a
-  2 px border, holding the spell's icon (its initials on the school's colour until icons exist) and then the bar. The
-  bar fills in the spell school's colour, shaded in steps from light at the top to dark at the bottom with an almost
-  white leading edge (`CastBarStyle`); a cast time fills from the left, a channel starts full and empties toward the
-  left. The spell's name is on the left and the seconds "elapsed / total" on the right, smaller. After a cast the bar
-  stays a moment: full and flashing toward white as it fades, or red with how it ended in place of the name
-  ("Interrupted", "Out of range"), and a refused cast's reason shows there in red (`spell/CastTexts`, research
-  SP-3).
+  cooldown, whichever ends later, with the seconds left of a cooldown of 2 s or more. The cast bar (`CastBarHud`, after
+  WoW's casting bar, Matěj's playtest of 2026-10-21) sits toward the middle of the screen, 70 % of the way down at most
+  and clear of the spell bar and the action bar message: a 200 by 20 px black frame with rounded corners and a 2 px
+  border, holding the spell's icon (its initials on the school's colour until icons exist) and then the bar. The bar
+  fills in the spell school's colour, shaded in steps from light at the top to dark at the bottom with an almost white
+  leading edge (`CastBarStyle`); a cast time fills from the left, a channel starts full and empties toward the left. The
+  spell's name is on the left and the seconds "elapsed / total" on the right, smaller. After a cast the bar stays a
+  moment: full and flashing toward white as it fades, or red with how it ended in place of the name ("Interrupted", "Out
+  of range"), and a refused cast's reason shows there in red (`spell/CastTexts`, research SP-3).
+- **The resource bar** (`client/hud/ResourceBarHud`, RLM-400; Matěj, 2026-10-24): the local player's class resource,
+  attached under the spell bar and as wide, 13 px tall: a 1 px black border whose bottom corner pixels are left out
+  (rounded, the top square where it meets the slots), a dark gray empty part and the fill in the resource's colour,
+  darker at its top and bottom rows and lighter in the middle (`ResourceBarStyle`, shaded with the cast bar's
+  `CastBarStyle#shade`), with a darker 1 px line at its leading edge while the pool is neither empty nor full. Each
+  resource type's colours are one entry of `ResourceBarStyle.COLORS` (mana #1E90FF, rage #F5241B; energy will be a
+  yellow one). "current / maximum" sits in the middle in the vanilla font, white with a black outline like vanilla's
+  experience level, rounded down and the amount kept within 0 and the maximum; the outlined text fills the 11 inner
+  rows but one free row above and below. The fill eases to a new value over 150 ms, the numbers change at once. The
+  numbers come from `character/ResourceBarView`, common code reading synced data: the pool in the owner-synced
+  `combat` attachment and the type's maximum (the synced Max Mana stat, or rage's 100), so no new sync was needed and
+  `RageGameTests` reads the same view on the server. Hidden without a character or with a maximum below 1.
 - **Texts:** a spell's description names its numbers through placeholders (`{damage}`, `{heal}`, `{duration}`,
   `{periodic}`, `{periodic_total}`, `{interval}`, `{radius}`), which `spell/SpellText` fills with the spell's data at
   the player's level and their stats as they are now, as the effects would land before the target's resistance and a
@@ -1485,7 +1511,8 @@ return; the proc engine at its end exists since C3a.
 - **M1:** fixed-stat gear from YAML: generated items with vanilla attribute modifiers (`Item.Properties#attributes`,
   per-slot ids from [8.2](#82-where-modifiers-come-from)), Better Combat presets for weapons, and vanilla's rarity
   (`Item.Properties#rarity`).
-- **Item uses** (RLM-196): an item's `use` in content says what right-clicking it does, one item used up each time.
+- **Item uses** (RLM-196): an item's `use` in content says what right-clicking it does, one item used up each time;
+  a scroll's use comes after a 3 s charge ([10.2](#102-leveling), `character/Scrolls`).
   Each use is game code in the feature it belongs to, which finds its items through the item tag
   `realmforge:use/<use>` that the pipeline writes; the code never names the items, so `character` needs no
   dependency on `item`. A use and an item's `flavor` line are its tooltip: the vanilla lore component on the item's
@@ -2461,7 +2488,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     races on the left and the classes the chosen race allows on the right, as vanilla buttons with a gold outline on
     the chosen one, each with its description and what it gives ("+5 Strength"); a class also its resource and
     starting kit. It opens and closes by itself ([10.1](#101-races-and-classes)).
-  - The spell bar and the cast bar (`client/hud/SpellBarHud`, `CastBarHud`), the spellbook
+  - The spell bar with the resource bar under it and the cast bar (`client/hud/SpellBarHud`, `ResourceBarHud`,
+    `CastBarHud`), the spellbook
     (`client/screen/SpellbookScreen`, P by default) and the spell casting options (`SpellOptionsScreen`), C3b:
     [11.6](#116-client-side).
 - **Minecraft 26.1 draws GUIs by render-state extraction:** a HUD layer (`GuiLayer`) and a screen
