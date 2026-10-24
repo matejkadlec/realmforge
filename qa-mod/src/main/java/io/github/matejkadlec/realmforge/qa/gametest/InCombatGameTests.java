@@ -4,6 +4,7 @@ import static io.github.matejkadlec.realmforge.qa.gametest.CombatGameTests.setBa
 import static io.github.matejkadlec.realmforge.qa.gametest.CombatGameTests.target;
 
 import io.github.matejkadlec.realmforge.character.Characters;
+import io.github.matejkadlec.realmforge.character.Scrolls;
 import io.github.matejkadlec.realmforge.character.StatPoints;
 import io.github.matejkadlec.realmforge.combat.CombatConfig;
 import io.github.matejkadlec.realmforge.combat.InCombat;
@@ -116,8 +117,8 @@ public final class InCombatGameTests {
     }
 
     /**
-     * Done when of RLM-348: in combat the Scroll of Oblivion fails, is kept and returns nothing; once the window has
-     * passed it returns every spent point and is used up.
+     * Done when of RLM-348: in combat the Scroll of Oblivion fails, does not charge, is kept and returns nothing; once
+     * the window has passed it charges for 3 s, then returns every spent point and is used up.
      */
     @QaGameTest(timeoutTicks = TIMEOUT)
     public static void theScrollOfOblivionIsRefusedInCombatAndWorksAfterwards(GameTestHelper helper) {
@@ -136,6 +137,7 @@ public final class InCombatGameTests {
         assertInCombat(helper, player, true, "the player after the pillager's hit");
         InteractionResult refused = player.gameMode.useItem(player, level, scrolls, InteractionHand.MAIN_HAND);
         helper.assertTrue(refused instanceof InteractionResult.Fail, "in combat the scroll fails: " + refused);
+        helper.assertFalse(player.isUsingItem(), "in combat the scroll does not charge");
         helper.assertValueEqual(player.getItemInHand(InteractionHand.MAIN_HAND).getCount(), 2, "the scroll is kept");
         helper.assertValueEqual(StatPoints.unspent(player), unspent, "the spent point stays spent");
 
@@ -145,13 +147,50 @@ public final class InCombatGameTests {
                     InteractionResult used = player.gameMode.useItem(player, level,
                             player.getItemInHand(InteractionHand.MAIN_HAND), InteractionHand.MAIN_HAND);
                     helper.assertTrue(used instanceof InteractionResult.Success,
-                            "out of combat the scroll works: " + used);
+                            "out of combat the scroll charges: " + used);
+                    StatPointsGameTests.charge(player, Scrolls.CHARGE_TICKS);
                     helper.assertValueEqual(Characters.data(player).statPoints(), Map.of(), "nothing is spent");
                     helper.assertValueEqual(player.getItemInHand(InteractionHand.MAIN_HAND).getCount(), 1,
                             "one scroll used up");
                     server.getPlayerList().remove(player);
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * RLM-348's revision: a hit taken while the Scroll of Oblivion charges stops the charge at once, and the scroll is
+     * kept with the point still spent; letting go of right click before the charge is full keeps it too.
+     */
+    @QaGameTest
+    public static void combatOrLettingGoStopsAScrollsCharge(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        MinecraftServer server = level.getServer();
+        ServerPlayer player = StatPointsGameTests.loginWithCharacter(helper, "qa-combat-charge");
+        QaPlayers.onPlatform(helper, player, EDGE);
+        makeHurtable(player);
+        StatPointsGameTests.reachLevel(helper, server, player, 4);
+        StatPoints.spend(player, StatPointsGameTests.key(GeneratedStats.STRENGTH));
+        int unspent = StatPoints.unspent(player);
+        ItemStack scrolls = new ItemStack(GeneratedItems.OBLIVION_SCROLL.get(), 2);
+        player.setItemInHand(InteractionHand.MAIN_HAND, scrolls);
+
+        player.gameMode.useItem(player, level, scrolls, InteractionHand.MAIN_HAND);
+        StatPointsGameTests.charge(player, Scrolls.CHARGE_TICKS / 2);
+        player.releaseUsingItem();
+        StatPointsGameTests.charge(player, Scrolls.CHARGE_TICKS);
+        assertKept(helper, player, unspent, "after letting go of right click");
+
+        player.gameMode.useItem(player, level, player.getItemInHand(InteractionHand.MAIN_HAND),
+                InteractionHand.MAIN_HAND);
+        StatPointsGameTests.charge(player, Scrolls.CHARGE_TICKS / 2);
+        helper.assertTrue(player.isUsingItem(), "the scroll charges again");
+        player.hurtServer(level, level.damageSources().mobAttack(target(helper)), HIT);
+        StatPointsGameTests.charge(player, 1);
+        helper.assertFalse(player.isUsingItem(), "the hit stopped the charge");
+        StatPointsGameTests.charge(player, Scrolls.CHARGE_TICKS);
+        assertKept(helper, player, unspent, "after a hit stopped the charge");
+        server.getPlayerList().remove(player);
+        helper.succeed();
     }
 
     /** A fake player at the platform's north edge that takes damage and never dodges. */
@@ -172,6 +211,14 @@ public final class InCombatGameTests {
         StatsCommands.setBase(player, GeneratedStats.DODGE_CHANCE, 0);
         setBase(player, Attributes.ARMOR, 0);
         player.setHealth(player.getMaxHealth());
+    }
+
+    /** Nothing came back and both scrolls are still in the hand. */
+    private static void assertKept(GameTestHelper helper, ServerPlayer player, int unspent, String when) {
+        helper.assertFalse(player.isUsingItem(), "no charge " + when);
+        helper.assertValueEqual(StatPoints.unspent(player), unspent, "the point stays spent " + when);
+        helper.assertValueEqual(player.getItemInHand(InteractionHand.MAIN_HAND).getCount(), 2,
+                "the scroll is kept " + when);
     }
 
     private static void assertInCombat(GameTestHelper helper, LivingEntity entity, boolean expected, String what) {

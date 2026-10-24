@@ -11,6 +11,7 @@ import io.github.matejkadlec.realmforge.character.CharacterRegistries;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView.Row;
 import io.github.matejkadlec.realmforge.character.Characters;
+import io.github.matejkadlec.realmforge.character.Scrolls;
 import io.github.matejkadlec.realmforge.character.StatPoints;
 import io.github.matejkadlec.realmforge.character.XpTable;
 import io.github.matejkadlec.realmforge.core.CoreRegistries;
@@ -119,8 +120,9 @@ public final class StatPointsGameTests {
     }
 
     /**
-     * The Scroll of Oblivion, used through vanilla's right-click path: every spent point comes back, the stat-point
-     * modifiers go, one scroll is used up; with nothing spent it fails and is kept.
+     * The Scroll of Oblivion, used through vanilla's right-click path: it charges for 3 s, like a drawn bow, and changes
+     * nothing until then (RLM-348's revision); then every spent point comes back, the stat-point modifiers go, one
+     * scroll is used up. With nothing spent it fails at once and is kept.
      */
     @QaGameTest
     public static void theScrollOfOblivionReturnsEveryPoint(GameTestHelper helper) {
@@ -138,7 +140,12 @@ public final class StatPointsGameTests {
         helper.assertTrue(scrolls.is(StatPoints.UNLEARN_ITEMS), "the scroll is in " + StatPoints.UNLEARN_ITEMS);
         player.setItemInHand(InteractionHand.MAIN_HAND, scrolls);
         InteractionResult used = player.gameMode.useItem(player, player.level(), scrolls, InteractionHand.MAIN_HAND);
-        helper.assertTrue(used instanceof InteractionResult.Success, "using the scroll succeeds: " + used);
+        helper.assertTrue(used instanceof InteractionResult.Success, "the scroll starts to charge: " + used);
+        helper.assertTrue(player.isUsingItem(), "the player holds the charging scroll");
+        charge(player, Scrolls.CHARGE_TICKS - 1);
+        helper.assertValueEqual(StatPoints.unspent(player), earned - 2, "nothing changes before the charge is full");
+        charge(player, 1);
+        helper.assertFalse(player.isUsingItem(), "the full charge used the scroll");
         helper.assertValueEqual(StatPoints.unspent(player), earned, "every point is unspent again");
         helper.assertValueEqual(Characters.data(player).statPoints(), Map.of(), "nothing is spent");
         helper.assertTrue(statPointModifiers(player).isEmpty(), "the spent points' modifiers are gone");
@@ -147,6 +154,7 @@ public final class StatPointsGameTests {
         InteractionResult again = player.gameMode.useItem(player, player.level(),
                 player.getItemInHand(InteractionHand.MAIN_HAND), InteractionHand.MAIN_HAND);
         helper.assertTrue(again instanceof InteractionResult.Fail, "with nothing spent the scroll fails: " + again);
+        helper.assertFalse(player.isUsingItem(), "and does not charge");
         helper.assertValueEqual(player.getItemInHand(InteractionHand.MAIN_HAND).getCount(), 1, "and is kept");
         server.getPlayerList().remove(player);
         helper.succeed();
@@ -324,6 +332,16 @@ public final class StatPointsGameTests {
     private static int expected(int level) {
         return GeneratedLevelingExpectations.LEVELS.stream().filter(entry -> entry.level() == level).findFirst()
                 .orElseThrow(() -> new IllegalStateException("no expectation for level " + level)).statPoints();
+    }
+
+    /**
+     * Runs {@code ticks} of the player's ticks, through which an item in use counts down: a fake player's connection
+     * never ticks it.
+     */
+    static void charge(ServerPlayer player, int ticks) {
+        for (int i = 0; i < ticks; i++) {
+            player.doTick();
+        }
     }
 
     /** Sets the XP for the level quietly, as {@code /realmforge xp set} does. */
