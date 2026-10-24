@@ -1411,12 +1411,15 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
   progress only once every other check passed. A refusal goes back as `CastRefusedPayload`.
 - **HUD** (`client/hud`): the spell bar (`SpellBarHud`, drawn from `spell/SpellBarView` by `SpellSlots`) has its nine
   24 px slots side by side, the racial slot last, 216 px wide (Matěj's playtest of 2026-10-21). Its layer comes right
-  after vanilla's selected item name, which is drawn on the line above the status rows and the XP bar; the bar and
-  the resource bar under it end 26 px above that line, 36 px above the XP bar's level text (three times the gap the
-  bar had before the resource bar, Matěj 2026-10-24), then raise `Gui#leftHeight` and `Gui#rightHeight` so the action
-  bar message stays above them (`SpellBarLayout`). It shows even when empty (research SP-1). A slot is framed in its
-  spell's school colour, a frame that stays once spells have icons (Matěj, 2026-10-21), shows the spell's initials until
-  then (C6, A1), its key in the corner, a blue tint while the resource does not cover the cost, and the cooldown sweep
+  after vanilla's selected item name, which is drawn on the line above the status rows and the XP bar. The bar and
+  the resource bar under it keep one place on the screen, whatever the status rows are (Matěj, 2026-10-24: absorption
+  hearts must not move them): 14 px above the item name's line of a survival player's usual stack (the health, armor
+  and food rows and the XP bar, 73 px), 24 px above the XP bar's level text there (twice the gap the bar had before
+  the resource bar). They raise `Gui#leftHeight` and `Gui#rightHeight` above them, unless the stack already reaches
+  higher, so the action bar message stays above them (`SpellBarLayout`); extra heart rows lift only the XP bar and the
+  item name toward the block. It shows even when empty (research SP-1). A slot is framed in its spell's school colour,
+  a frame that stays once spells have icons (Matěj, 2026-10-21), shows the spell's initials until then (C6, A1), its
+  key in the corner, a blue tint while the resource does not cover the cost, and the cooldown sweep
   (`CooldownSweep`): a dark wedge that shrinks clockwise from 12 o'clock, for the spell's own cooldown or the global
   cooldown, whichever ends later, with the seconds left of a cooldown of 2 s or more. The cast bar (`CastBarHud`, after
   WoW's casting bar, Matěj's playtest of 2026-10-21) sits toward the middle of the screen, 70 % of the way down at most
