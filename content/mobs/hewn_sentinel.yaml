@@ -1,9 +1,10 @@
 # yaml-language-server: $schema=../../tools/schemas/mobs.schema.json
 # W3's melee archetype (RLM-33, D11): a Hewn of Undervault, a Gatewright stone servant of mossy bricks that fights
-# with its long, heavy arms (lore outline, Undervault). It stands guard like the statue it is until a player comes
-# near, and walks back to its post when it loses them. Slow and hard to push around; its hits are slow, heavy and
-# throw the target up. Each Sentinel carries one of Undervault's gems in its eyes and in its bricks: Sapphire, Ruby or
-# Topaz, which it may drop. Matěj's playtest, 2026-10-23. Placeholder model and texture until A2 (RLM-48).
+# with its long, heavy arms (lore outline, Undervault). It wanders as vanilla's mobs do until a player comes near
+# (Matěj's playtest, 2026-10-24: no more standing guard). Hard to push around; it walks a little faster than it
+# wanders, and its hits are slow, heavy and throw the target up. Each Sentinel carries one of Undervault's gems in its
+# eyes and in cracks in its bricks: Sapphire, Ruby or Topaz, which it may drop. Matěj's playtests, 2026-10-23 and
+# 2026-10-24. Placeholder model and texture until A2 (RLM-48).
 id: hewn_sentinel
 name: {en_us: Hewn Sentinel}
 archetype: melee
@@ -12,10 +13,9 @@ attributes:
   max_health: 30
   attack_damage: 7.5
   armor: 6
-  movement_speed: 0.2
+  movement_speed: 0.27
   follow_range: 20
   knockback_resistance_percent: 60
-idle: guard
 melee: {attack_interval_seconds: 1.5, knock_up_blocks: 0.5}
 sounds:
   hurt: realmforge:entity.hewn_sentinel.hurt

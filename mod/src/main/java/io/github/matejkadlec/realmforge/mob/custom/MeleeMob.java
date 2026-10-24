@@ -1,9 +1,12 @@
 package io.github.matejkadlec.realmforge.mob.custom;
 
 import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.object.PlayState;
 import com.geckolib.constant.DefaultAnimations;
 import io.github.matejkadlec.realmforge.mob.ai.KnockUp;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -13,11 +16,16 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * The melee archetype (architecture 14.2, {@code archetype: melee}): it walks up to its target and hits it with its
- * attack damage, as vanilla's melee monsters do, at its own pace ({@link PacedMeleeAttackGoal}). Each hit plays the
- * model's {@code attack.swing} animation and, with {@code knock_up_blocks}, throws its target that high on top of
- * vanilla's push back (less the target's knockback resistance).
+ * attack damage, as vanilla's melee monsters do, at its own pace ({@link PacedMeleeAttackGoal}). Each attack plays the
+ * model's {@code attack.swing} animation to its end, a triggered animation: vanilla's arm swing lasts only 6 ticks, and
+ * a stone golem raises and drops its arms slower than that (Matěj's playtest, 2026-10-24). With
+ * {@code knock_up_blocks}, each hit throws its target that high on top of vanilla's push back (less the target's
+ * knockback resistance).
  */
 public class MeleeMob extends CustomMob {
+    private static final String ATTACK_CONTROLLER = "Attack";
+    private static final String SWING = "swing";
+
     public MeleeMob(EntityType<? extends MeleeMob> type, Level level, CustomMobSpec spec) {
         super(type, level, spec);
     }
@@ -43,8 +51,18 @@ public class MeleeMob extends CustomMob {
         return hit;
     }
 
+    /** Every attack swings its arms (MeleeAttackGoal swings before it hits): clients play the whole animation. */
+    @Override
+    public void swing(InteractionHand hand, boolean sendToSwingingEntity) {
+        super.swing(hand, sendToSwingingEntity);
+        if (level() instanceof ServerLevel) {
+            triggerAnim(ATTACK_CONTROLLER, SWING);
+        }
+    }
+
     @Override
     protected void addActionControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(DefaultAnimations.<MeleeMob>genericAttackAnimation(DefaultAnimations.ATTACK_SWING));
+        controllers.add(new AnimationController<MeleeMob>(ATTACK_CONTROLLER, test -> PlayState.STOP)
+                .triggerableAnim(SWING, DefaultAnimations.ATTACK_SWING));
     }
 }

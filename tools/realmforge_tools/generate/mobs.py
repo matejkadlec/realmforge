@@ -161,7 +161,7 @@ def _pool(drop: MobDropDef) -> dict[str, object]:
 class Cube:
     """One box of the placeholder model, in model pixels: its bone, origin (lowest corner), size, texture corner and
     what its texture is painted as: ``surface`` (the mob's surface), ``shell`` (the surface, with the variant's gems in
-    holes on its front and back) or ``moss`` (moss hanging off the body)."""
+    cracks of its outer face) or ``moss`` (moss hanging off the body)."""
 
     bone: str
     origin: tuple[float, float, float]
@@ -397,13 +397,36 @@ def _hash(*parts: object) -> int:
 
 
 WHITE = (242, 242, 236)
-# Holes per face of a shell, each with a gem of the variant's accent.
-GEMS_PER_FACE = 3
+# Vanilla stone bricks' layout: bricks 8 pixels long and 4 tall with their mortar (7 x 3 of brick), every other row
+# shifted by half a brick (Matěj's playtest, 2026-10-24: rectangular and bigger, like the block).
+BRICK_LENGTH = 8
+BRICK_HEIGHT = 4
+# Mortar: grey, darker than the bricks but never black.
+MORTAR = 0.78
+# Moss grows in clumps of at least this many pixels, as on mossy stone bricks: never a lone green pixel.
+MOSS_CLUMP = 5
+# Matěj's drawing of a sapphire crack (2026-10-24), from the top-left: "A" a dark grey rim, "C" a lighter grey, "D" the
+# gem's light pixels and "B" its dark ones; "." leaves the brick as it is.
+CRACK = (
+    "AA.....",
+    "ABC....",
+    "CDBA...",
+    ".CDBA..",
+    ".ADBA..",
+    "..ADBC.",
+    "...CDBC",
+    "....AA.",
+)
+# The rim is darker than the mortar, as the cracks of cracked stone bricks, and never black.
+CRACK_SHADES = {"A": 0.5, "C": 0.64}
+CRACK_GEM = {"D": 1.0, "B": 0.8}
+# Cracks with a gem on each shell's outer face, where they fit without touching each other.
+CRACKS_PER_FACE = 2
 
 
 def _surface(mob: MobDef, face: str, x: int, y: int, size: tuple[int, int], px: int, py: int) -> Rgba:
     """The colour of the pixel at ``(x, y)`` from the corner of a face of ``size`` that sits at texture pixel
-    ``(px, py)``."""
+    ``(px, py)``; mossy bricks get their moss afterwards (``_paint_moss``)."""
     base = _rgb(mob.model.color)
     cell = _hash(mob.id, px, py)
     if mob.model.surface == "smooth":
@@ -411,42 +434,134 @@ def _surface(mob: MobDef, face: str, x: int, y: int, size: tuple[int, int], px: 
         edge = x in (0, size[0] - 1) or y in (0, size[1] - 1)
         return _shade(base, (0.9 if edge else 1.0) + ((cell % 5) - 2) * 0.012)
     if mob.model.surface == "mossy_bricks":
-        # Bricks 4 pixels long and 3 tall between rows of mortar, every other row shifted by half a brick.
-        row = y // 4
-        shifted = x + (2 if row % 2 else 0)
-        column = shifted // 4
-        if y % 4 == 3 or shifted % 4 == 3:
-            colour = _shade(base, 0.68)  # mortar
-        else:
-            brick = _hash(mob.id, face, px - x, py - y, row, column)
-            colour = _shade(base, 0.92 + (brick % 9) * 0.02 + ((cell % 5) - 2) * 0.015)
-        moss_chance = 140 if face == "top" else max(0, 70 - y * 18)
-        if cell < moss_chance or _hash(mob.id, "moss", px, py) < 18:
-            return _shade(_rgb(mob.model.moss), 0.85 + (cell % 7) * 0.05)
-        return colour
+        return _shade(base, _brick_shade(mob, face, x, y, px - x, py - y, cell))
     # Speckled stone: the base colour with lighter and darker flecks, as the block placeholders.
     factor = 1.0 + ((cell % 9) - 4) * 0.035 + (0.18 if cell > 236 else 0.0) - (0.22 if cell < 16 else 0.0)
     return _shade(base, factor)
 
 
+def _brick_shade(mob: MobDef, face: str, x: int, y: int, u: int, v: int, cell: int) -> float:
+    """How light a pixel of a brick face is, against the mob's colour: grey mortar, and bricks of a dozen shades as
+    vanilla's stone bricks have (Matěj's playtest, 2026-10-24): each brick a little lighter or darker than the next, lit
+    on its top and left edges and shaded on its bottom and right ones, with soft flecks inside."""
+    row = y // BRICK_HEIGHT
+    shifted = x + (BRICK_LENGTH // 2 if row % 2 else 0)
+    column = shifted // BRICK_LENGTH
+    bx, by = shifted % BRICK_LENGTH, y % BRICK_HEIGHT
+    if by == BRICK_HEIGHT - 1 or bx == BRICK_LENGTH - 1:
+        return MORTAR + ((cell % 3) - 1) * 0.02
+    brick = _hash(mob.id, face, u, v, row, column)
+    shade = 0.94 + (brick % 5) * 0.03
+    if by == 0:
+        shade += 0.07
+    elif by == BRICK_HEIGHT - 2:
+        shade -= 0.06
+    if bx == 0:
+        shade += 0.04
+    elif bx == BRICK_LENGTH - 2:
+        shade -= 0.04
+    return shade + ((cell % 7) - 3) * 0.015
+
+
+def _blob(
+    seed: tuple[object, ...], start: tuple[int, int], length: int, inside: set[tuple[int, int]]
+) -> set[tuple[int, int]]:
+    """A clump of up to ``length`` pixels of ``inside``, grown from ``start`` one side neighbour at a time (never
+    corner to corner, which would read as separate pixels), mostly down and sideways as moss hangs, the choices from a
+    hash of ``seed``."""
+    clump = {start} if start in inside else set()
+    step = 0
+    while clump and len(clump) < length and step < length * 6:
+        step += 1
+        ordered = sorted(clump)
+        x, y = ordered[_hash(*seed, step, "at") % len(ordered)]
+        dx, dy = ((1, 0), (-1, 0), (0, 1), (0, 1), (1, 0), (-1, 0), (0, -1))[_hash(*seed, step, "to") % 7]
+        if (x + dx, y + dy) in inside:
+            clump.add((x + dx, y + dy))
+    return clump
+
+
+def _paint_moss(
+    pixels: dict[tuple[int, int], Rgba],
+    mob: MobDef,
+    cube: Cube,
+    under: dict[tuple[int, int], tuple[Rgba, Rgba]],
+) -> None:
+    """Moss on a box of mossy bricks, in clumps of at least ``MOSS_CLUMP`` pixels as on vanilla's mossy stone
+    bricks: thick on the top face, growing down from each side face's upper edge, and a few clumps lower down. Each
+    mossy pixel's brick and moss go into ``under``, for ``_clear_lone_moss``."""
+    moss = _rgb(mob.model.moss)
+    for face, u, v, width, height in cube.faces():
+        if face == "bottom" or width * height < MOSS_CLUMP * 2:
+            continue
+        inside = {(u + x, v + y) for x in range(width) for y in range(height)}
+        starts = [(u + x, v) for x in range(0, width, 3)] if face != "top" else []
+        clumps = max(1, width * height // 30) if face != "top" else max(2, width * height // 12)
+        for n in range(clumps):
+            digest = hashlib.sha256(f"{mob.id}/moss/{cube.origin}/{face}/{n}".encode()).digest()
+            starts.append((u + digest[0] % width, v + digest[1] % max(1, height * 2 // 3)))
+        for n, start in enumerate(starts):
+            if _hash(mob.id, "moss-start", cube.origin, face, n) % 3 == 0:
+                continue
+            length = MOSS_CLUMP + _hash(mob.id, "moss-size", cube.origin, face, n) % 8
+            clump = _blob((mob.id, cube.origin, face, n), start, length, inside)
+            if len(clump) < MOSS_CLUMP:
+                continue
+            for px, py in clump:
+                lit = 1.08 if (px, py - 1) not in clump else 0.92 if (px, py + 1) not in clump else 1.0
+                brick = under[(px, py)][0] if (px, py) in under else pixels[(px, py)]
+                pixels[(px, py)] = _shade(moss, lit * (0.9 + _hash(mob.id, "moss", px, py) % 4 * 0.05))
+                under[(px, py)] = (brick, pixels[(px, py)])
+
+
+def _clear_lone_moss(
+    pixels: dict[tuple[int, int], Rgba], under: dict[tuple[int, int], tuple[Rgba, Rgba]]
+) -> None:
+    """Gives back its brick to each bit of moss that a crack or an eye cut to fewer than ``MOSS_CLUMP`` pixels."""
+    left = {at for at, (_, moss) in under.items() if pixels[at] == moss}
+    while left:
+        clump, edge = set(), [left.pop()]
+        while edge:
+            x, y = edge.pop()
+            clump.add((x, y))
+            for near in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                if near in left:
+                    left.remove(near)
+                    edge.append(near)
+        if len(clump) < MOSS_CLUMP:
+            for at in clump:
+                pixels[at] = under[at][0]
+
+
 def _paint_gems(
     pixels: dict[tuple[int, int], Rgba], mob: MobDef, cube: Cube, accent: tuple[int, int, int]
 ) -> None:
-    """Holes in a shell's front and back, each a 2x2 gem in ``accent`` with a lighter corner, in a dark rim."""
+    """Cracks in a shell's outer face (the front of the front shell, the back of the back one), each Matěj's drawn
+    crack: the gem's pixels along its middle, a dark grey rim around them (never black), drawn as he drew it or
+    mirrored."""
     base = _rgb(mob.model.color)
+    outer = "front" if cube.origin[2] < 0 else "back"
     for face, u, v, width, height in cube.faces():
-        if face not in ("front", "back") or width < 6 or height < 6:
+        tall, wide = len(CRACK), len(CRACK[0])
+        if face != outer or width < wide + 2 or height < tall + 2:
             continue
-        for gem in range(GEMS_PER_FACE):
-            gx = u + 1 + _hash(mob.id, face, cube.origin, gem, "x") % (width - 4)
-            gy = v + 1 + _hash(mob.id, face, cube.origin, gem, "y") % (height - 4)
-            for dx in range(-1, 3):
-                for dy in range(-1, 3):
-                    pixels[(gx + dx, gy + dy)] = _shade(base, 0.42)
-            pixels[(gx, gy)] = _shade(accent, 1.35)
-            pixels[(gx + 1, gy)] = _shade(accent, 1.0)
-            pixels[(gx, gy + 1)] = _shade(accent, 1.0)
-            pixels[(gx + 1, gy + 1)] = _shade(accent, 0.72)
+        taken: list[tuple[int, int]] = []
+        for n in range(CRACKS_PER_FACE * 4):
+            if len(taken) == CRACKS_PER_FACE:
+                break
+            gx = 1 + _hash(mob.id, face, cube.origin, n, "x") % (width - wide - 1)
+            gy = 1 + _hash(mob.id, face, cube.origin, n, "y") % (height - tall - 1)
+            if any(abs(gx - x) < wide and abs(gy - y) < tall for x, y in taken):
+                continue
+            taken.append((gx, gy))
+            mirrored = _hash(mob.id, face, cube.origin, n, "mirror") % 2 == 1
+            for dy, line in enumerate(CRACK):
+                for dx, mark in enumerate(line):
+                    at = (u + gx + (wide - 1 - dx if mirrored else dx), v + gy + dy)
+                    if mark in CRACK_SHADES:
+                        pixels[at] = _shade(base, CRACK_SHADES[mark])
+                    elif mark in CRACK_GEM:
+                        pixels[at] = _shade(accent, CRACK_GEM[mark])
 
 
 def _paint_eyes(
@@ -455,17 +570,18 @@ def _paint_eyes(
     model: PlaceholderModel,
     accent: tuple[int, int, int] | None,
 ) -> None:
-    """dot: one bright pixel each; tall: two above each other; gem: 2x3 white with a pupil in its middle row, a
-    lighter and a darker pixel of the variant's accent, the lighter one on the inner side."""
+    """dot: one bright pixel each; tall: two above each other; gem (Matěj's edit, 2026-10-24): each eye 2x3, a column
+    of white on its outer side and a column of the variant's accent on its inner side, two lighter pixels above a
+    darker one."""
     base = _rgb(mob.model.color)
     if mob.model.eyes == "gem" and accent is not None:
         for n, (x, y) in enumerate(model.eye_corners(2, 3)):
-            for dx in range(2):
-                pixels[(x + dx, y)] = (*WHITE, 255)
-                pixels[(x + dx, y + 2)] = (*WHITE, 255)
-            inner, outer = (x + 1, x) if n == 0 else (x, x + 1)
-            pixels[(inner, y + 1)] = _shade(accent, 1.3)
-            pixels[(outer, y + 1)] = _shade(accent, 0.7)
+            white, pupil = (x, x + 1) if n == 0 else (x + 1, x)
+            for dy in range(3):
+                pixels[(white, y + dy)] = (*WHITE, 255)
+            pixels[(pupil, y)] = _shade(accent, 1.25)
+            pixels[(pupil, y + 1)] = _shade(accent, 1.25)
+            pixels[(pupil, y + 2)] = _shade(accent, 0.7)
         return
     size = (1, 2) if mob.model.eyes == "tall" else (1, 1)
     for x, y in model.eye_corners(*size):
@@ -474,10 +590,11 @@ def _paint_eyes(
 
 
 def placeholder_texture(mob: MobDef, model: PlaceholderModel, variant: MobVariantDef | None) -> bytes:
-    """The texture of ``mob`` (of ``variant``), until real art exists: each box painted by its material, then the
-    gems in the shells and the eyes. Pixels no box uses stay clear."""
+    """The texture of ``mob`` (of ``variant``), until real art exists: each box painted by its material, mossy bricks
+    with their moss, then the gems in the shells' cracks and the eyes. Pixels no box uses stay clear."""
     accent = _rgb(variant.accent) if variant is not None else None
     pixels: dict[tuple[int, int], Rgba] = {}
+    under: dict[tuple[int, int], tuple[Rgba, Rgba]] = {}
     for cube in model.cubes:
         for face, u, v, width, height in cube.faces():
             for y in range(height):
@@ -489,9 +606,12 @@ def placeholder_texture(mob: MobDef, model: PlaceholderModel, variant: MobVarian
                         pixels[(px, py)] = _shade(moss, (0.85 + _hash(mob.id, px, py) % 7 * 0.05) * tip)
                     else:
                         pixels[(px, py)] = _surface(mob, face, x, y, (width, height), px, py)
+        if mob.model.surface == "mossy_bricks" and cube.material != "moss":
+            _paint_moss(pixels, mob, cube, under)
         if cube.material == "shell" and accent is not None:
             _paint_gems(pixels, mob, cube, accent)
     _paint_eyes(pixels, mob, model, accent)
+    _clear_lone_moss(pixels, under)
     size = model.texture_size
     clear: Rgba = (0, 0, 0, 0)
     return encode_rgba(size, size, [pixels.get((x, y), clear) for y in range(size) for x in range(size)])
@@ -511,20 +631,28 @@ _LOOK = {"rotation": ["query.head_x_rotation", "query.head_y_rotation", 0]}
 
 
 def _cast_arm(side: int) -> dict[str, object]:
-    """An arm raised forward a little above level, its hand in front of the forehead, turned in toward the other
-    hand (``side`` 1 for the left arm, -1 for the right), and swaying while the stone forms."""
+    """An arm raised forward and up toward the head (30 to 37 degrees above level: Matěj's playtests, straight up
+    looked bad and level too far in front), turned in toward the other hand (``side`` 1 for the left arm, -1 for the
+    right), and swaying while the stone forms."""
     return {
         "rotation": _keyframes(
-            (0.0, (-105, 0, -12 * side)), (0.5, (-112, 0, -16 * side)), (1.0, (-105, 0, -12 * side))
+            (0.0, (-120, 0, -12 * side)), (0.5, (-127, 0, -16 * side)), (1.0, (-120, 0, -12 * side))
         )
     }
 
 
+def _swing_time(mob: MobDef) -> float:
+    """How long the melee swing takes, in seconds: half the time between two hits, so a slow hitter raises and drops
+    its arms slowly (Matěj's playtest, 2026-10-24: a stone golem's 0.5 s swing looked flashy), in whole ticks."""
+    return seconds_to_ticks(melee_of(mob).attack_interval_seconds / 2) / 20
+
+
 def animations(mob: MobDef) -> dict[str, object]:
     """The placeholder animations, by the names the archetypes play (GeckoLib's DefaultAnimations): a slow sway while
-    it stands, a stiff walk (the long arms of a golem swing less), both fists hammering down for a melee hit, and both
-    arms raised in front of the forehead while it casts."""
+    it stands, a stiff walk (the long arms of a golem swing less), both fists hammering down for a melee hit over half
+    the time between two hits, and both arms raised toward the forehead while it casts."""
     arm_swing = 10 if mob.model.build == "golem" else 15
+    swing = _swing_time(mob)
     return {
         "format_version": "1.8.0",
         "animations": {
@@ -548,11 +676,14 @@ def animations(mob: MobDef) -> dict[str, object]:
                 },
             },
             "attack.swing": {
-                "animation_length": 0.5,
+                "animation_length": swing,
                 "bones": {
                     arm: {
                         "rotation": _keyframes(
-                            (0.0, (0, 0, 0)), (0.2, (-150, 0, 0)), (0.35, (10, 0, 0)), (0.5, (0, 0, 0))
+                            (0.0, (0, 0, 0)),
+                            (round(swing * 0.4, 4), (-150, 0, 0)),
+                            (round(swing * 0.7, 4), (10, 0, 0)),
+                            (swing, (0, 0, 0)),
                         )
                     }
                     for arm in ("left_arm", "right_arm")

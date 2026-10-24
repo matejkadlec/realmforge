@@ -1,9 +1,10 @@
 # yaml-language-server: $schema=../../tools/schemas/mobs.schema.json
 # W3's caster archetype (RLM-33, D11): a Hewn of Undervault that chants the old stone-songs (lore outline, Undervault),
-# tall and slim like a carved pillar. It stands still and faces its target while a stone forms in front of its
-# forehead (Stoneform), steps quickly aside between casts, and goes after a target it lost sight or range of, as a
-# Skeleton does. It walks without a sound; the chime it hums is its tell. Fragile up close. Matěj's playtest,
-# 2026-10-23. Placeholder model and texture until A2 (RLM-48).
+# tall and slim like a carved pillar. It wanders as vanilla's mobs do until a player comes near. It stands still and
+# faces its target while a stone forms in front of its forehead (Stoneform), steps quickly aside between casts, and
+# goes after a target it lost sight or range of, as a Skeleton does. It walks without a sound; the chime it hums is
+# its tell. Fragile up close. Matěj's playtests, 2026-10-23 and 2026-10-24. Placeholder model and texture until A2
+# (RLM-48).
 id: hewn_chanter
 name: {en_us: Hewn Chanter}
 archetype: caster
@@ -14,7 +15,6 @@ attributes:
   armor: 2
   movement_speed: 0.25
   follow_range: 24
-idle: guard
 caster:
   spells: [realmforge:stoneform]
   kiting: {step_blocks: 2, speed_percent: 150}

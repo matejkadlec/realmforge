@@ -271,7 +271,7 @@
         },
         "surface": {
           "default": "speckled",
-          "description": "speckled stone; smooth stone; mossy bricks with moss hanging off and gems in holes (the variant's accent).",
+          "description": "speckled stone; smooth stone; mossy stone bricks with moss clumps and strands hanging off, and gems (the variant's accent) in long cracks of the shells.",
           "enum": [
             "speckled",
             "smooth",
@@ -479,7 +479,7 @@
     },
     "idle": {
       "default": "stroll",
-      "description": "stroll: wanders while it has no target; guard: stands at the spot where it spawned and walks back to it once it loses its target.",
+      "description": "stroll (the default): wanders while it has no target, as vanilla's mobs do, at the Zombified Piglin's speed; guard: stands at the spot where it spawned and walks back to it once it loses its target.",
       "enum": [
         "stroll",
         "guard"

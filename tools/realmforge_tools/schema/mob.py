@@ -230,8 +230,8 @@ class MobModelDef(StrictModel):
     )
     surface: Literal["speckled", "smooth", "mossy_bricks"] = Field(
         default="speckled",
-        description="speckled stone; smooth stone; mossy bricks with moss hanging off and gems in holes (the "
-        "variant's accent).",
+        description="speckled stone; smooth stone; mossy stone bricks with moss clumps and strands hanging off, and "
+        "gems (the variant's accent) in long cracks of the shells.",
     )
     eyes: Literal["dot", "tall", "gem"] = Field(
         default="dot",
@@ -255,8 +255,8 @@ class MobDef(StrictModel):
     attributes: MobAttributesDef
     idle: Literal["stroll", "guard"] = Field(
         default="stroll",
-        description="stroll: wanders while it has no target; guard: stands at the spot where it spawned and walks "
-        "back to it once it loses its target.",
+        description="stroll (the default): wanders while it has no target, as vanilla's mobs do, at the Zombified "
+        "Piglin's speed; guard: stands at the spot where it spawned and walks back to it once it loses its target.",
     )
     melee: MeleeDef | None = Field(
         default=None, description="How a melee mob hits; only for archetype melee."

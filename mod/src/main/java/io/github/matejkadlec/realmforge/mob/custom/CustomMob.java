@@ -5,6 +5,7 @@ import com.geckolib.animatable.instance.AnimatableInstanceCache;
 import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.constant.DefaultAnimations;
 import com.geckolib.util.GeckoLibUtil;
+import io.github.matejkadlec.realmforge.mob.ai.Wandering;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -23,6 +24,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
@@ -47,7 +49,8 @@ import net.minecraft.world.level.storage.loot.LootTable;
  * ({@code assets/realmforge/geckolib/}).
  *
  * <p>The goals come from its {@link CustomMobSpec}: it targets players that hurt it or that it sees, fights as its
- * archetype does, and idles as the spec says ({@link CustomMobSpec.Idle}). Vanilla's {@code Mob} constructor
+ * archetype does, and idles as the spec says ({@link CustomMobSpec.Idle}): it wanders as vanilla's mobs do
+ * ({@link Wandering}), or a guard keeps to its post. Vanilla's {@code Mob} constructor
  * registers goals before a subclass's fields exist, so this class registers them itself once the spec is set.
  *
  * <ul>
@@ -155,10 +158,12 @@ public abstract class CustomMob extends Monster implements GeoEntity {
         if (spec.idle() == CustomMobSpec.Idle.GUARD) {
             goalSelector.addGoal(5, new ReturnToPostGoal(this));
         } else {
-            goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.8));
-            goalSelector.addGoal(8, new RandomLookAroundGoal(this));
+            // Vanilla's wandering, at the Zombified Piglin's speed (mob/ai/Wandering).
+            goalSelector.addGoal(Wandering.PRIORITY, new WaterAvoidingRandomStrollGoal(this,
+                    Wandering.speedModifier(getAttributeBaseValue(Attributes.MOVEMENT_SPEED))));
+            goalSelector.addGoal(Wandering.LOOK_PRIORITY, new RandomLookAroundGoal(this));
         }
-        goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
+        goalSelector.addGoal(Wandering.LOOK_PRIORITY, new LookAtPlayerGoal(this, Player.class, Wandering.LOOK_RANGE));
         targetSelector.addGoal(1, new HurtByTargetGoal(this));
         targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
     }

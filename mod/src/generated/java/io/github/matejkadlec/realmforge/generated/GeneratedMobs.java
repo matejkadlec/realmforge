@@ -30,7 +30,7 @@ public final class GeneratedMobs {
             DeferredRegister.createEntities(Realmforge.MOD_ID);
 
     /** {@code realmforge:hewn_chanter} from {@code content/mobs/hewn_chanter.yaml}: caster, "Hewn Chanter". */
-    private static final CustomMobSpec HEWN_CHANTER_SPEC = new CustomMobSpec(CustomMobSpec.Idle.GUARD,
+    private static final CustomMobSpec HEWN_CHANTER_SPEC = new CustomMobSpec(CustomMobSpec.Idle.STROLL,
             new CustomMobSpec.Sounds(CustomMobSpec.id("realmforge:entity.hewn_chanter.ambient"),
                     CustomMobSpec.id("realmforge:entity.hewn_chanter.hurt"),
                     CustomMobSpec.id("realmforge:entity.hewn_chanter.death"),
@@ -47,7 +47,7 @@ public final class GeneratedMobs {
                             .clientTrackingRange(8));
 
     /** {@code realmforge:hewn_sentinel} from {@code content/mobs/hewn_sentinel.yaml}: melee, "Hewn Sentinel". */
-    private static final CustomMobSpec HEWN_SENTINEL_SPEC = new CustomMobSpec(CustomMobSpec.Idle.GUARD,
+    private static final CustomMobSpec HEWN_SENTINEL_SPEC = new CustomMobSpec(CustomMobSpec.Idle.STROLL,
             new CustomMobSpec.Sounds(Optional.empty(),
                     CustomMobSpec.id("realmforge:entity.hewn_sentinel.hurt"),
                     CustomMobSpec.id("realmforge:entity.hewn_sentinel.death"),
@@ -89,7 +89,7 @@ public final class GeneratedMobs {
                 .add(Attributes.MAX_HEALTH, 30.0)
                 .add(Attributes.ATTACK_DAMAGE, 7.5)
                 .add(Attributes.ARMOR, 6.0)
-                .add(Attributes.MOVEMENT_SPEED, 0.2)
+                .add(Attributes.MOVEMENT_SPEED, 0.27)
                 .add(Attributes.FOLLOW_RANGE, 20.0)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.6)
                 .build());

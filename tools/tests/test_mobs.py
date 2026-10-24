@@ -7,8 +7,18 @@ import struct
 
 import pytest
 
+from realmforge_tools.formats.png import Rgba, decode_rgba
 from realmforge_tools.generate import generate_all
-from realmforge_tools.generate.mobs import BONES, TEXTURE_SIZES, animations, placeholder_model
+from realmforge_tools.generate.mobs import (
+    BONES,
+    MOSS_CLUMP,
+    TEXTURE_SIZES,
+    WHITE,
+    PlaceholderModel,
+    animations,
+    placeholder_model,
+    placeholder_texture,
+)
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import RepoPaths
 from realmforge_tools.schema.mob import TRASH_LOOT, MobDef
@@ -378,8 +388,69 @@ def test_the_cast_animation_holds_the_hands_in_front_of_the_forehead() -> None:
     cast = animations(mob_model())["animations"]["attack.cast"]["bones"]
     for arm in ("left_arm", "right_arm"):
         pitches = [rotation[0] for rotation in cast[arm]["rotation"].values()]
-        # Forward and a little up (-90 is straight ahead, -180 straight up): not above the head.
-        assert all(-120 <= pitch <= -95 for pitch in pitches), pitches
+        # Forward and up toward the head (-90 is straight ahead, -180 straight up), about 15 degrees higher than the
+        # first version (Matěj's playtest, 2026-10-24), and still not above the head.
+        assert all(-130 <= pitch <= -115 for pitch in pitches), pitches
+
+
+@pytest.mark.parametrize(
+    ("melee", "seconds"), [({}, 0.5), ({"melee": {"attack_interval_seconds": 1.5}}, 0.75)]
+)
+def test_the_attack_swing_lasts_half_the_attack_interval(melee: dict, seconds: float) -> None:
+    # Matěj's playtest, 2026-10-24: a heavy stone swing, not vanilla's quick one; the hits stay as often.
+    swing = animations(mob_model(**melee))["animations"]["attack.swing"]
+    assert swing["animation_length"] == seconds
+    assert max(float(time) for time in swing["bones"]["right_arm"]["rotation"]) == seconds
+
+
+def sentinel_texture(variant: str) -> tuple[MobDef, PlaceholderModel, dict[tuple[int, int], Rgba]]:
+    content, _ = load_and_validate(RepoPaths())
+    sentinel = next(entry.model for entry in content.mobs if entry.model.id == "hewn_sentinel")
+    model = placeholder_model(sentinel)
+    chosen = next(entry for entry in sentinel.variants if entry.id == variant)
+    width, _, pixels = decode_rgba(placeholder_texture(sentinel, model, chosen))
+    return sentinel, model, {(n % width, n // width): pixel for n, pixel in enumerate(pixels) if pixel[3]}
+
+
+def green(pixel: Rgba) -> bool:
+    return pixel[1] > pixel[0] and pixel[1] > pixel[2]
+
+
+@pytest.mark.parametrize("variant", ["sapphire", "ruby", "topaz"])
+def test_a_sentinels_eyes_are_matejs_edit(variant: str) -> None:
+    # Each eye 2 x 3: a white column outside, the gem's column inside, two lighter pixels above a darker one.
+    _, model, pixels = sentinel_texture(variant)
+    for n, (x, y) in enumerate(model.eye_corners(2, 3)):
+        white, gem = (x, x + 1) if n == 0 else (x + 1, x)
+        assert all(pixels[(white, y + dy)][:3] == WHITE for dy in range(3))
+        top, middle, bottom = (pixels[(gem, y + dy)] for dy in range(3))
+        assert top == middle and sum(bottom[:3]) < sum(top[:3])
+
+
+@pytest.mark.parametrize("variant", ["sapphire", "ruby", "topaz"])
+def test_a_sentinels_moss_grows_in_clumps(variant: str) -> None:
+    # Matěj's playtest, 2026-10-24: moss as on mossy stone bricks, never a lone green pixel.
+    _, _, pixels = sentinel_texture(variant)
+    left = {at for at, pixel in pixels.items() if green(pixel)}
+    while left:
+        clump, edge = set(), [left.pop()]
+        while edge:
+            x, y = edge.pop()
+            clump.add((x, y))
+            for near in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                if near in left:
+                    left.remove(near)
+                    edge.append(near)
+        assert len(clump) >= MOSS_CLUMP, sorted(clump)
+
+
+@pytest.mark.parametrize("variant", ["sapphire", "ruby", "topaz"])
+def test_a_sentinels_stone_has_many_shades_and_no_black(variant: str) -> None:
+    # About ten shades of grey as vanilla's stone bricks, and grey mortar and dark grey cracks, never black.
+    _, _, pixels = sentinel_texture(variant)
+    stone = {pixel for pixel in pixels.values() if not green(pixel) and pixel[:3] != WHITE}
+    assert len(stone) >= 10
+    assert min(max(pixel[:3]) for pixel in stone) >= 48
 
 
 def test_no_mobs_still_compile(repo: RepoPaths) -> None:

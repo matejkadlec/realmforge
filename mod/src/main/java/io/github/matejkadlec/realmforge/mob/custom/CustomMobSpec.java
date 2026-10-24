@@ -25,7 +25,7 @@ public record CustomMobSpec(Idle idle, Sounds sounds, Optional<Identifier> death
         List<ResourceKey<Spell>> spells, Optional<KiteRules> kiting, List<Variant> variants) {
     /** What a custom mob does while it has no target. */
     public enum Idle {
-        /** Wanders around, as vanilla's hostile mobs do. */
+        /** Wanders around, as vanilla's mobs do, at the Zombified Piglin's speed ({@code mob/ai/Wandering}). */
         STROLL,
         /** Stands at the spot where it first stood on the ground, and walks back to it once it loses its target. */
         GUARD

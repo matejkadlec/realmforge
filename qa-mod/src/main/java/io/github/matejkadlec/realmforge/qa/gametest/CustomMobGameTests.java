@@ -5,6 +5,7 @@ import io.github.matejkadlec.realmforge.generated.GeneratedSpells;
 import io.github.matejkadlec.realmforge.mob.MobLevels;
 import io.github.matejkadlec.realmforge.mob.MobScaling;
 import io.github.matejkadlec.realmforge.mob.ai.KnockUp;
+import io.github.matejkadlec.realmforge.mob.ai.Wandering;
 import io.github.matejkadlec.realmforge.mob.custom.CasterMob;
 import io.github.matejkadlec.realmforge.mob.custom.CustomMob;
 import io.github.matejkadlec.realmforge.mob.custom.CustomMobSpec;
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -55,6 +57,10 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
+import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
+import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
+import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.ItemStack;
@@ -75,8 +81,8 @@ import net.minecraft.world.phys.Vec3;
  * the archetypes do: the Hewn Chanter stands still facing its target while it casts Stoneform, loses the cast with its
  * sight of the target or with its range in the first half of the cast, and steps aside between casts; its stone spares
  * the stone creatures and hurts any other creature in its way. The Hewn Sentinel, of one of three gems it keeps, hits
- * every 1.5 seconds and throws its target up, and walks back to its post once it has no target.
- * {@link ContentMobGameTests} checks the registrations.
+ * every 1.5 seconds and throws its target up. Without a target, both wander as vanilla's mobs do (Matěj's playtest,
+ * 2026-10-24), and a guard walks back to its post. {@link ContentMobGameTests} checks the registrations.
  *
  * <p>Other tests log their own players in, so a mob that must follow a known player spawns where that player stands:
  * nobody else is nearer.
@@ -402,12 +408,75 @@ public final class CustomMobGameTests {
     }
 
     /**
-     * The Hewn Sentinel guards: it takes the spot where it first stands as its post, and once it has no target it walks
-     * back to the post from wherever it is.
+     * Each custom mob wanders as vanilla's mobs do (Matěj's playtest, 2026-10-24): vanilla's random stroll at the
+     * Zombified Piglin's priority, looking at players and around it, and no post. Its stroll walks it off at the Zombified
+     * Piglin's speed, whatever its own (architecture 14.2).
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 200)
+    public static void customMobsWanderAsVanillaMobsDo(GameTestHelper helper) {
+        List<CustomMob> mobs = new ArrayList<>();
+        Map<CustomMob, Vec3> starts = new HashMap<>();
+        Map<CustomMob, Double> speeds = new HashMap<>();
+        for (int n = 0; n < GeneratedMobs.ALL.size(); n++) {
+            CustomMob mob = helper.spawn(GeneratedMobs.ALL.get(n).get(), new Vec3(4.5 + 8 * n, 1, 8.5));
+            String what = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()).toString();
+            Map<Class<?>, Integer> goals = new HashMap<>();
+            for (WrappedGoal goal : mob.goalSelector.getAvailableGoals()) {
+                goals.merge(goal.getGoal().getClass(), goal.getPriority(), Math::min);
+                if (goal.getGoal() instanceof WaterAvoidingRandomStrollGoal stroll) {
+                    stroll.trigger();
+                }
+            }
+            helper.assertValueEqual(goals.get(WaterAvoidingRandomStrollGoal.class), Wandering.PRIORITY,
+                    what + "'s stroll priority");
+            helper.assertValueEqual(goals.get(LookAtPlayerGoal.class), Wandering.LOOK_PRIORITY,
+                    what + "'s priority of looking at players");
+            helper.assertValueEqual(goals.get(RandomLookAroundGoal.class), Wandering.LOOK_PRIORITY,
+                    what + "'s priority of looking around");
+            // No player of another test may draw it into a fight, which would stop its stroll.
+            mob.targetSelector.removeAllGoals(goal -> true);
+            mobs.add(mob);
+            starts.put(mob, mob.position());
+        }
+        helper.onEachTick(() -> {
+            for (CustomMob mob : mobs) {
+                mob.setTarget(null);
+                if (mob.getNavigation().isInProgress()) {
+                    speeds.put(mob, mob.getMoveControl().getSpeedModifier()
+                            * mob.getAttributeValue(Attributes.MOVEMENT_SPEED));
+                }
+            }
+        });
+        helper.succeedWhen(() -> {
+            for (CustomMob mob : mobs) {
+                String what = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()).toString();
+                helper.assertTrue(mob.post().isEmpty(), what + " took a post: " + mob.post());
+                helper.assertTrue(mob.position().subtract(starts.get(mob)).horizontalDistance() > 1,
+                        what + " wandered off from " + starts.get(mob) + ": " + mob.position() + ", running "
+                                + mob.goalSelector.getAvailableGoals().stream().filter(WrappedGoal::isRunning)
+                                        .map(goal -> goal.getGoal().getClass().getSimpleName()).toList());
+                double speed = speeds.getOrDefault(mob, 0.0);
+                helper.assertTrue(Math.abs(speed - Wandering.SPEED) < TOLERANCE,
+                        what + " wandered at " + speed + ", not the Zombified Piglin's " + Wandering.SPEED);
+            }
+        });
+    }
+
+    /**
+     * A guard (a mob whose YAML says {@code idle: guard}) takes the spot where it first stands as its post, and once it
+     * has no target it walks back to the post from wherever it is. No mob of the content guards since Matěj's playtest
+     * of 2026-10-24, so the test makes a Hewn Sentinel that does.
      */
     @QaGameTest(template = QaGameTests.PLATFORM_9X9, timeoutTicks = 200)
-    public static void aHewnSentinelWalksBackToItsPost(GameTestHelper helper) {
-        MeleeMob sentinel = helper.spawn(GeneratedMobs.HEWN_SENTINEL.get(), new Vec3(2.5, 1, 2.5));
+    public static void aGuardWalksBackToItsPost(GameTestHelper helper) {
+        EntityType<MeleeMob> type = GeneratedMobs.HEWN_SENTINEL.get();
+        CustomMobSpec spec = Objects.requireNonNull(type.create(helper.getLevel(), EntitySpawnReason.STRUCTURE)).spec();
+        MeleeMob sentinel = new MeleeMob(type, helper.getLevel(), new CustomMobSpec(CustomMobSpec.Idle.GUARD,
+                spec.sounds(), spec.deathParticles(), spec.melee(), spec.spells(), spec.kiting(), spec.variants()));
+        sentinel.setPersistenceRequired();
+        Vec3 start = helper.absoluteVec(new Vec3(2.5, 1, 2.5));
+        sentinel.snapTo(start.x, start.y, start.z, 0, 0);
+        helper.getLevel().addFreshEntity(sentinel);
         BlockPos post = helper.absolutePos(new BlockPos(2, 1, 2));
         // No player of another test may draw it away.
         helper.onEachTick(() -> sentinel.setTarget(null));
