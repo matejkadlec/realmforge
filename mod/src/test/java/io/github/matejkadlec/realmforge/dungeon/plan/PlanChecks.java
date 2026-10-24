@@ -124,12 +124,17 @@ final class PlanChecks {
             assertTrue(enteredThroughEntry, where + " hangs off room " + parent[i] + " through its entry");
         }
 
-        // RLM-364: with a pacing, fights on the main path keep at least the smallest gap from the entrance and from
-        // each other, a branch is corridors up to its end, caps are walls, corridors' dead ends or the room meant for
+        // RLM-364: with a pacing, the main path opens with corridors, fights on it keep at least the smallest gap from
+        // the entrance and from each other, a branch is corridors up to its end, caps are walls, corridors' dead ends or the room meant for
         // the start, and a loop leads around few rooms of the tree and past no fight.
         rules.pacing().ifPresent(pacing -> {
+            List<Integer> path = mainPath(rooms, parent);
+            for (int place = 0; place < Math.min(RoomGraph.APPROACH, path.size()); place++) {
+                assertTrue(paced(rooms.get(path.get(place)), Pace.CORRIDOR), seed + "room " + path.get(place)
+                        + " of the main path's approach is a corridor");
+            }
             int since = 0;
-            for (int room : mainPath(rooms, parent)) {
+            for (int room : path) {
                 if (paced(rooms.get(room), Pace.FIGHT)) {
                     assertTrue(since >= pacing.fights().minInclusive(), seed + "the fight in room " + room
                             + " follows only " + since + " rooms after the last fight or the entrance");
