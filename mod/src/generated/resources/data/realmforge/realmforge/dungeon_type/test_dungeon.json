@@ -3,12 +3,12 @@
   "pool": "realmforge:stone_vault",
   "layout": {
     "main_path": [
-      54,
-      60
+      38,
+      42
     ],
     "branches": [
-      4,
-      5
+      3,
+      4
     ],
     "branch_rooms": [
       2,
@@ -24,7 +24,7 @@
         2,
         4
       ],
-      "repeat": 15
+      "repeat": 12
     }
   },
   "key": "realmforge:test_dungeon_key",
@@ -553,28 +553,10 @@
               "pos": [
                 3,
                 1,
-                1
-              ],
-              "facing": "south",
-              "mirror": false
-            },
-            {
-              "pos": [
-                9,
-                1,
-                1
-              ],
-              "facing": "south",
-              "mirror": true
-            },
-            {
-              "pos": [
-                3,
-                1,
                 11
               ],
               "facing": "north",
-              "mirror": true
+              "mirror": false
             },
             {
               "pos": [
@@ -583,7 +565,7 @@
                 11
               ],
               "facing": "north",
-              "mirror": false
+              "mirror": true
             }
           ]
         },

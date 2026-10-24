@@ -10,6 +10,7 @@ from pathlib import Path
 
 import nucleation
 import pytest
+from pydantic import ValidationError
 
 from realmforge_tools.formats import nbt
 from realmforge_tools.formats.deflate import gzip_stored
@@ -883,6 +884,32 @@ def test_place_sets_a_box_of_blocks_into_a_room(repo: RepoPaths, tmp_path: Path)
     )
     (result,) = importer.import_rooms([source], target, outside, load_vanilla(repo), repo)
     assert not result.written and "place: 5 0 4 lies outside the room" in result.problems
+
+
+def test_place_sets_a_data_marker_into_a_room(repo: RepoPaths, tmp_path: Path) -> None:
+    # The exit of the room that ends a run (RLM-363): a structure block in data mode naming the marker.
+    source = tmp_path / "hall.nbt"
+    source.write_bytes(write_structure(small_room()))
+    rules = RULES.model_copy(
+        update={
+            "place": {
+                "hall": [
+                    importer.PlacedBlocks.model_validate(
+                        {"from": [1, 1, 1], "to": [1, 1, 1], "marker": "exit"}
+                    )
+                ]
+            }
+        }
+    )
+    target = third_party(repo)
+    (result,) = importer.import_rooms([source], target, rules, load_vanilla(repo), repo)
+    assert result.written and "placed exit marker from 1 1 1 to 1 1 1" in result.notes
+    room = read_structure((target / "hall.nbt").read_bytes())
+    assert markers(room) == [("exit", (1, 1, 1))]
+    with pytest.raises(ValidationError, match="either a block or a marker"):
+        importer.PlacedBlocks.model_validate({"from": [1, 1, 1], "to": [1, 1, 1]})
+    with pytest.raises(ValidationError, match="'door' is no marker"):
+        importer.PlacedBlocks.model_validate({"from": [1, 1, 1], "to": [1, 1, 1], "marker": "door"})
 
 
 def test_import_into_content_needs_third_party_or_ours(repo: RepoPaths, tmp_path: Path) -> None:

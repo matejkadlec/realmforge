@@ -541,7 +541,8 @@ public final class DungeonPlanner {
          * wall, a {@code near_start} room) goes by whether it has more connectors than {@code needed}, which a dead end
          * or a wall then closes, then in a branch by whether it is crooked rather than straight, so the branch's end
          * shows from its junction, then by whether it has the shape of {@code host}. Any other room goes first by
-         * whether it is the node's dealt room ({@link Deal}), then by whether it is the guard's room before the guard
+         * whether it is the node's dealt room ({@link Deal}; at the guard only while no copy of it lies near, as the
+         * last climax of a short road may have taken it), then by whether it is the guard's room before the guard
          * ({@link #takesDealt}), then by whether it is dealt to a later node, then right before a fight by whether it
          * is a hazard or a lock, then by whether a copy lies near ({@link #repeats}); then a climax by the most
          * spawners, another fight by the fewest, and the ending by the most chests; then by how near its copies are,
@@ -558,11 +559,11 @@ public final class DungeonPlanner {
                 int same = host >= 0 && alike(placed.get(host).room(), room) ? 1 : 0;
                 return new int[] {group, over, crooked, same};
             }
-            int mine = deal.at(node).equals(Optional.of(room)) ? 0 : 1;
+            int repeats = repeats(room, depth);
+            int mine = deal.at(node).equals(Optional.of(room)) && !(guards(node) && repeats == 2) ? 0 : 1;
             int later = deal.later(room, node) ? 1 : 0;
             int kept = takesDealt(room, node) ? 1 : 0;
             int risky = node >= 0 && beforeFight[node] && (room.hazard() || room.entry().isPresent()) ? 1 : 0;
-            int repeats = repeats(room, depth);
             int richness = climax ? -room.spawners() : slot == Slot.ENDING ? -room.chests() : 0;
             return new int[] {group, mine, kept, later, risky, repeats == 2 ? 1 : 0, richness, repeats, over};
         }

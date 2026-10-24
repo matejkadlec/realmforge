@@ -26,6 +26,7 @@ A rules file (``--rules``, YAML, the ``ImportRules`` model) adapts a source to o
 - ``max_size``: a file whose room is bigger on any axis (a whole wing of the source's dungeon rather than a room) is
   left out like an excluded one.
 - ``dress``: block variety on the floor, walls and ceiling of plain rooms, and decorations (``rooms/dress.py``).
+- ``place``: boxes of one block state, or data markers, set into a room after its dressing, by the room's path.
 - ``data_version``: the data version of the files that state none (a Sponge v1 schematic, a template some tool
   wrote), when the source is known to be saved with it.
 
@@ -54,7 +55,14 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 
 from realmforge_tools.id_universe import IdUniverse
 from realmforge_tools.project import RepoPaths
-from realmforge_tools.rooms.check import LOOT_TABLE, check_structure, connector_face
+from realmforge_tools.rooms.check import (
+    DATA_MODE,
+    LOOT_TABLE,
+    MARKERS,
+    STRUCTURE_BLOCK,
+    check_structure,
+    connector_face,
+)
 from realmforge_tools.rooms.dress import DressRules, dress
 from realmforge_tools.rooms.slots import slot_tags
 from realmforge_tools.rooms.sources import FORMATS, read_source
@@ -109,16 +117,35 @@ class JigsawRules(_Strict):
 
 
 class PlacedBlocks(_Strict):
-    """A box of one block state set into a room after its dressing, such as a fall cushion (RLM-276)."""
+    """A box of one block state set into a room after its dressing, such as a fall cushion (RLM-276), or of data
+    markers, such as the exit of the room that ends a dungeon (RLM-363)."""
 
     model_config = ConfigDict(extra="forbid", frozen=True, populate_by_name=True)
     start: tuple[int, int, int] = Field(
         alias="from", description="One corner of the box, in the room's template."
     )
     to: tuple[int, int, int] = Field(description="The opposite corner, included.")
-    block: str = Field(
-        description="The block state, e.g. minecraft:stone_brick_slab[type=bottom,waterlogged=true]."
+    block: str | None = Field(
+        default=None,
+        description="The block state, e.g. minecraft:stone_brick_slab[type=bottom,waterlogged=true].",
     )
+    marker: str | None = Field(
+        default=None,
+        description=f"A data marker instead of a block: one of {', '.join(MARKERS)} (rooms/check.py).",
+    )
+
+    @model_validator(mode="after")
+    def _block_or_marker(self) -> PlacedBlocks:
+        if (self.block is None) == (self.marker is None):
+            raise ValueError("place: give either a block or a marker")
+        if self.marker is not None and self.marker not in MARKERS:
+            raise ValueError(f"place: {self.marker!r} is no marker: {', '.join(MARKERS)}")
+        return self
+
+    @property
+    def what(self) -> str:
+        """What the box holds, for the import's notes."""
+        return f"{self.marker} marker" if self.marker is not None else str(self.block)
 
 
 class ImportRules(_Strict):
@@ -336,7 +363,7 @@ def import_room(
     placing: list[str] = []
     for placed in rules.place.get(name or stem.name, []):
         structure, outside = place_blocks(structure, placed)
-        notes.append(f"placed {placed.block} from {_fmt(placed.start)} to {_fmt(placed.to)}")
+        notes.append(f"placed {placed.what} from {_fmt(placed.start)} to {_fmt(placed.to)}")
         placing += [f"place: {_fmt(pos)} lies outside the room" for pos in outside]
     result = ImportedRoom(file, template, sidecar, structure, False, [*source.notes, *notes])
     result.problems += placing
@@ -363,9 +390,15 @@ def import_room(
 
 
 def place_blocks(structure: Structure, placed: PlacedBlocks) -> tuple[Structure, list[Pos]]:
-    """The structure with the box of ``placed`` set to its block (block entity data there is dropped), and the
-    positions of the box that lie outside the room."""
-    state = BlockState.parse(placed.block)
+    """The structure with the box of ``placed`` set to its block (block entity data there is dropped) or to data
+    markers (structure blocks in data mode naming the marker), and the positions of the box that lie outside the
+    room."""
+    if placed.marker is not None:
+        state = BlockState(STRUCTURE_BLOCK, (("mode", "data"),))
+        data: dict[str, Any] | None = {"id": STRUCTURE_BLOCK, "metadata": placed.marker, "mode": DATA_MODE}
+    else:
+        state = BlockState.parse(placed.block or "")
+        data = None
     box = [
         (x, y, z)
         for x in range(min(placed.start[0], placed.to[0]), max(placed.start[0], placed.to[0]) + 1)
@@ -374,7 +407,7 @@ def place_blocks(structure: Structure, placed: PlacedBlocks) -> tuple[Structure,
     ]
     inside = {pos for pos in box if all(0 <= c < s for c, s in zip(pos, structure.size, strict=True))}
     blocks = [block for block in structure.blocks if block.pos not in inside]
-    blocks += [StructureBlock(pos, state) for pos in sorted(inside)]
+    blocks += [StructureBlock(pos, state, data) for pos in sorted(inside)]
     return replace(structure, blocks=tuple(blocks)), [pos for pos in box if pos not in inside]
 
 

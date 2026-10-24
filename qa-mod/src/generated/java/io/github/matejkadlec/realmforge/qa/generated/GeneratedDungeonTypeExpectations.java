@@ -40,8 +40,8 @@ public final class GeneratedDungeonTypeExpectations {
                     "realmforge:test_dungeon",
                     "dungeon_type.realmforge.test_dungeon.name",
                     "realmforge:stone_vault",
-                    54, 60, 4, 5, 2, 3,
-                    "treasure", 1, 2, 2, 4, 15,
+                    38, 42, 3, 4, 2, 3,
+                    "treasure", 1, 2, 2, 4, 12,
                     "realmforge:test_dungeon_key", 60,
                     List.of(
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/entrances/entrance_1", 7, 6, 7, "entrance", 1,

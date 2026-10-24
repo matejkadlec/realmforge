@@ -38,6 +38,40 @@ place:
     - {from: [8, 0, 4], to: [8, 0, 4], block: "minecraft:stone_brick_stairs[facing=north,half=bottom,shape=inner_right,waterlogged=true]"}
     - {from: [4, 0, 8], to: [4, 0, 8], block: "minecraft:stone_brick_stairs[facing=south,half=bottom,shape=inner_right,waterlogged=true]"}
     - {from: [8, 0, 8], to: [8, 0, 8], block: "minecraft:stone_brick_stairs[facing=south,half=bottom,shape=inner_left,waterlogged=true]"}
+  # Matěj's playtest of 2026-10-24 (RLM-364): no pooled room may lock players in or keep its chests out of reach.
+  # The zombie temple's iron doors had a button outside only, so a player who walked in could not walk out: a button
+  # inside each, on the wall block its outer button powers.
+  dungeon/rooms/zombie_three_way_temple:
+    - {from: [2, 2, 5], to: [2, 2, 5], block: "minecraft:stone_button[face=wall,facing=east,powered=false]"}
+    - {from: [10, 2, 7], to: [10, 2, 7], block: "minecraft:stone_button[face=wall,facing=west,powered=false]"}
+  # The husk temple's doorways were barred (iron bars around a 1x1 gap), though the dungeon passes through it.
+  dungeon/rooms/husk_temple:
+    - {from: [0, 1, 5], to: [0, 3, 5], block: "minecraft:air"}
+    - {from: [0, 2, 6], to: [0, 3, 6], block: "minecraft:air"}
+    - {from: [0, 1, 7], to: [0, 3, 7], block: "minecraft:air"}
+    - {from: [12, 1, 5], to: [12, 3, 5], block: "minecraft:air"}
+    - {from: [12, 2, 6], to: [12, 3, 6], block: "minecraft:air"}
+    - {from: [12, 1, 7], to: [12, 3, 7], block: "minecraft:air"}
+  # The jail's garden behind tinted glass (grass, a small house with a bed) is a sight: its iron door, which nothing
+  # opened, becomes tinted glass too.
+  pillager_dungeon/rooms/jail:
+    - {from: [8, 1, 10], to: [8, 2, 10], block: "minecraft:tinted_glass"}
+  # The cells of jail_2 hold chests behind iron doors that nothing opened: a lever above each door on both sides,
+  # on the wall block over it, so nobody is locked in a cell.
+  pillager_dungeon/rooms/jail_2:
+    - {from: [4, 3, 5], to: [4, 3, 5], block: "minecraft:lever[face=wall,facing=south,powered=false]"}
+    - {from: [8, 3, 5], to: [8, 3, 5], block: "minecraft:lever[face=wall,facing=south,powered=false]"}
+    - {from: [4, 3, 3], to: [4, 3, 3], block: "minecraft:lever[face=wall,facing=north,powered=false]"}
+    - {from: [8, 3, 3], to: [8, 3, 3], block: "minecraft:lever[face=wall,facing=north,powered=false]"}
+    - {from: [4, 3, 7], to: [4, 3, 7], block: "minecraft:lever[face=wall,facing=north,powered=false]"}
+    - {from: [8, 3, 7], to: [8, 3, 7], block: "minecraft:lever[face=wall,facing=north,powered=false]"}
+    - {from: [4, 3, 9], to: [4, 3, 9], block: "minecraft:lever[face=wall,facing=south,powered=false]"}
+    - {from: [8, 3, 9], to: [8, 3, 9], block: "minecraft:lever[face=wall,facing=south,powered=false]"}
+  # The egg treasury ends the test dungeon's run (RLM-363): its exit marker, where the builder lays the Dungeon Exit,
+  # stands against the east wall, opposite the doorway; the dressing puts no barrels in this room, so nothing stands
+  # in front of it.
+  dungeon/treasure/egg:
+    - {from: [11, 2, 6], to: [11, 2, 6], marker: exit}
 dress:
   exclude: [dungeon/entrances/*]  # approved as they are
   # Variety and decorations Matěj asked for in the gallery review (2026-10-14): the plainer a room, the more it
@@ -72,6 +106,7 @@ dress:
       - dungeon/rooms/stairs
       - dungeon/stairway/fall_01
       - dungeon/stairway/fall_long
+      - dungeon/treasure/egg       # its exit stands where the barrels went (RLM-363)
       - dungeon/treasure/tiny_cap
       - pillager_dungeon/entrances/entrance_tower
       - pillager_dungeon/entrances/entrance_tower_2

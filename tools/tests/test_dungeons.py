@@ -10,15 +10,19 @@ import pytest
 from realmforge_tools.generate import generate_all
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import DATA_VERSION, REPO_ROOT, RepoPaths
+from realmforge_tools.rooms.check import markers
 from realmforge_tools.rooms.connectors import Connector, connectors, could_attach, doorway_gap
 from realmforge_tools.rooms.structure import (
     BlockState,
     Structure,
     StructureBlock,
+    count_chests,
     read_structure,
     write_structure,
 )
+from realmforge_tools.schema.room import RoomDef
 from realmforge_tools.validate import load_and_validate
+from realmforge_tools.yamlio import load_yaml
 
 from .conftest import write
 
@@ -679,6 +683,41 @@ def test_the_lobby_cushion_reaches_past_the_ceiling_hole() -> None:
         for cell in reach
         if blocks.get((cell[0], 1, cell[1]), BlockState("minecraft:air")).name != "minecraft:air"
     } == set()
+
+
+def test_the_room_that_ends_the_test_dungeon_has_a_clear_exit() -> None:
+    # Matěj's playtest of 2026-10-24 (RLM-363): a run ends at a way out with nothing (a chest, a barrel, a cobweb) in
+    # front of it. The planner keeps the pool's treasure room with the most chests for the ending (DungeonPlanner's
+    # reserved room; the ties go by weight), so each such room holds an exit marker on a floor, clear around it.
+    folder = REPO_ROOT / "content/rooms/third_party/stonevaults"
+    treasures = []
+    for sidecar in sorted(folder.rglob("*.yaml")):
+        room = RoomDef.model_validate(load_yaml(sidecar) or {})
+        if "realmforge:stone_vault" in room.pools and "treasure" in room.tags and not room.near_start:
+            treasures.append((sidecar.stem, read_structure(sidecar.with_suffix(".nbt").read_bytes())))
+    most = max(count_chests(structure) for _, structure in treasures)
+    endings = [(name, structure) for name, structure in treasures if count_chests(structure) == most]
+    assert [name for name, _ in endings] == ["egg"]
+    for name, structure in endings:
+        blocks = {block.pos: block.state.name for block in structure.blocks}
+        exits = [pos for marker, pos in markers(structure) if marker == "exit"]
+        assert exits, f"{name} has no exit marker"
+        for x, y, z in exits:
+            assert blocks.get((x, y - 1, z), "minecraft:air") != "minecraft:air", (
+                f"{name}: no floor under the exit"
+            )
+            around = {
+                blocks.get((x + dx, y + dy, z + dz), "minecraft:air")
+                for dx in (-1, 0, 1)
+                for dz in (-1, 0, 1)
+                for dy in (0, 1)
+            }
+            assert not around & {
+                "minecraft:chest",
+                "minecraft:barrel",
+                "minecraft:cobweb",
+                "minecraft:vine",
+            }, name
 
 
 def test_a_rooms_planner_and_explosion_rules_reach_the_game(repo: RepoPaths) -> None:

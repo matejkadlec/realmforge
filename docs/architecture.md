@@ -1800,14 +1800,14 @@ id: test_dungeon
 name: {en_us: Test Dungeon}
 pool: realmforge:stone_vault          # the rooms whose sidecar lists this pool
 layout:
-  main_path: [54, 60]                 # [min, max] rooms between the entrance and the ending
-  branches: [4, 5]                    # side branches off the main path's rooms
+  main_path: [38, 42]                 # [min, max] rooms between the entrance and the ending
+  branches: [3, 4]                    # side branches off the main path's rooms
   branch_rooms: [2, 3]                # rooms in each branch, its dead end included
   ending: treasure                    # the role of the room that ends the main path: boss or treasure
   pacing:                             # the rhythm of the main path (RLM-364); optional
     corridors: [1, 2]                 #   corridors in a row before a feature or a fight, drawn binomially
     fights: [2, 4]                    #   rooms between two fights, drawn binomially: 2, 3, 3, 4
-    repeat: 15                        #   rooms kept between two copies of a room that is no corridor, or two locks
+    repeat: 12                        #   rooms kept between two copies of a room that is no corridor, or two locks
   walls:                              # a wall may close a leftover doorway instead of a dead end (RLM-364); optional
     block: minecraft:stone_bricks
     weight: 4
@@ -1856,10 +1856,10 @@ take 20 to 30 minutes. Its old layouts of 11.4 rooms on average (8 to 16), three
 took about 5 minutes, some 2. The first size (76 rooms, 17 % special, 3 to 5 corridors between fights and treasure
 and long branches) had the right size but too many corridors and dead ends: twenty rooms and more to the first
 spawner. Since the second playtest the shape is **one long main road with a few short branches**, about half of it
-functional: the test dungeon's ranges give 70 rooms on average (6.2 times the old count; JUnit asserts six to eight),
-a main path of 57 with 13 fights, 12 features and 32 corridors, and 4 or 5 branches of 2 or 3 rooms. How long it
-takes is for the next playtest to tell (fights and locks take minutes, corridors seconds), so its portal stays open
-60 minutes for now.
+functional. At 70 rooms on average (6.2 times the old count) that road felt too long in the third playtest, so the
+test dungeon's ranges now give **about 50 rooms** (51.7 on average; JUnit asserts 50 within a tenth): a main path of
+40 with 10 fights, 8 features and 21 corridors, and 3 or 4 branches of 2 or 3 rooms. Its portal stays open 60
+minutes, a placeholder until balance.
 
 A theme is a vanilla processor list (`worldgen/processor_list`), so it needs no registry of our own. Its rules swap
 the blocks rooms are built from for the dungeon's look; the builder applies it when placing rooms, and room
@@ -1934,16 +1934,17 @@ Steps 1 and 2 exist since W4a (`dungeon/plan/`; `DungeonType#plan(seed)` → `Du
     entry), then the locks, each to a random feature node at least half of `repeat` from the rooms of its kind that is
     neither the first feature after the lobby nor right before a fight, and for a hazard lies in neither the first
     section nor the last; then the other feature nodes with calm rooms first.
-  - *Rooms per node.* A node takes rooms of its pace: its dealt room first, before the guard the guard's room after the
-    others, rooms dealt to a later node last, right before a fight hazards and locks after the others, then rooms the
-    layout does not hold yet, then rooms whose copies all lie at least `repeat` rooms nearer to or farther from the
-    entrance, then the rest; a lock counts the other locks as copies. A climax takes the room with the most spawners
-    first, any other fight the fewest; a branch's end takes treasure rooms and rooms with three chests or more (whose
-    other doors get walls). A corridor with no door left over comes first, and a corridor the shape of the room before
-    it last; in a branch a straight one first, so the treasure shows from the junction; at a junction the main path
-    takes the door straight across from the one it came in by, the branch the side door. A cap takes the `near_start`
-    room at the start, then a wall, and a corridor's dead end only where no wall fits, so no cap adds a fight, a feature
-    or treasure the rhythm does not plan.
+  - *Rooms per node.* A node takes rooms of its pace: its dealt room first (at the guard only while no copy of it lies
+    within `repeat` rooms: at the end of a short road the last climax may have taken the library, and the guard then
+    takes a fight from farther back), before the guard the guard's room after the others, rooms dealt to a later node
+    last, right before a fight hazards and locks after the others, then rooms the layout does not hold yet, then rooms
+    whose copies all lie at least `repeat` rooms nearer to or farther from the entrance, then the rest; a lock counts
+    the other locks as copies. A climax takes the room with the most spawners first, any other fight the fewest; a
+    branch's end takes treasure rooms and rooms with three chests or more (whose other doors get walls). A corridor with
+    no door left over comes first, and a corridor the shape of the room before it last; in a branch a straight one
+    first, so the treasure shows from the junction; at a junction the main path takes the door straight across from the
+    one it came in by, the branch the side door. A cap takes the `near_start` room at the start, then a wall, and a
+    corridor's dead end only where no wall fits, so no cap adds a fight, a feature or treasure the rhythm does not plan.
   - *Fallbacks.* The first eight attempts are **strict**: a node takes only rooms of its pace, no room near a copy of it
     (but the guard, which may repeat a room), and no corridor with more doors than it needs (a crossing where a corridor
     would do; the hall the entrance's shafts end in excepted). Later attempts may fall back where nothing else leads to
@@ -1955,13 +1956,13 @@ Steps 1 and 2 exist since W4a (`dungeon/plan/`; `DungeonType#plan(seed)` → `Du
 
   `PacingReport` measures what a player meets over 1,000 seeds of the test dungeon and writes it, with three layouts
   written out room by room (climaxes, hazards and rooms of chests marked), to `mod/build/reports/dungeon-pacing.txt`:
-  every gap between fights is 2 to 4 rooms (10, 38 and 52 %: the pool's 13 fights stretch over 57 rooms), the first
-  fight comes after 2 to 4, no more than two corridors come in a row, every layout has its guard fight (the library in
-  about a fifth, as the search takes its copies where others do not fit, and in 42 % of all climaxes), every branch
-  ends in treasure or a room of chests with rewards rising along the run, treasure comes at least every 15 rooms of
-  the main path, a copy of a fight lies within 15 rooms of another in 1 % of pairs, a hazard stands right before a
-  fight in 0.06 runs of one and never first after the lobby, and neither a dead end nor a loop is needed in
-  practice.
+  every gap between fights is 2 to 4 rooms (35, 45 and 20 %, near Matěj's 25, 50 and 25), the first fight comes after
+  2 to 4 (25, 50 and 25 %), no more than two corridors come in a row, every layout has its guard fight (the library in
+  half of all climaxes), every branch ends in treasure or a room of chests with rewards rising along the run, treasure
+  comes at least every 15 rooms of the main path, a copy of a room lies within 10 rooms of another in 0.6 % of pairs
+  (`repeat` is 12 on the 40-room road; at 15 the pool's five fight rooms ran out and 6.5 % lay that close), a hazard
+  stands right before a fight in 0.08 runs of one and never first after the lobby, and neither a dead end nor a loop
+  is needed in practice.
 - **Entries** (RLM-362): a room with an `entry` takes the room before it only through that connector, so a lock is
   entered from its mechanism side, and a loop closes only where no room with an entry lies on the way from either end
   up to the room both hang from: such a loop would be a second way in, from behind.
@@ -1980,12 +1981,12 @@ Steps 1 and 2 exist since W4a (`dungeon/plan/`; `DungeonType#plan(seed)` → `Du
 - **Attempts:** an attempt that runs out of steps (5,000 placements) gives up, and the next draws a new graph from
   the same random source, up to 64; no layout in 64 attempts throws `PlanningException`. The entrance's origin
   corner is the plot's origin, so every room offset is relative to it.
-- **Cost:** on the test dungeon (a pool of 56 rooms and its wall, layouts of about 70 rooms) planning takes 8 ms on
-  average, 5 ms at the median, 45 ms at the 99th percentile and under 70 ms at worst over 1,000 seeds (RLM-364),
-  most of it in strict attempts that give up; before the pacing it took 16 ms on average and 107 ms at worst with
-  20,000 steps an attempt, and the old layouts of 8 to 16 rooms 3.5 ms at the median. It reads no world, so it can
-  move off the main thread if the portal's entry path (W4d) ever needs it; so far it runs on the server thread when a
-  key opens a portal.
+- **Cost:** on the test dungeon (a pool of 56 rooms and its wall, layouts of about 50 rooms) planning takes 5 ms on
+  average, 2 ms at the median, 32 ms at the 99th percentile and under 90 ms at worst over 1,000 seeds (RLM-364), most of
+  it in strict attempts that give up; at about 70 rooms it took 8 ms on average and under 70 ms at worst, before the
+  pacing 16 ms on average and 107 ms at worst with 20,000 steps an attempt, and the old layouts of 8 to 16 rooms 3.5 ms
+  at the median. It reads no world, so it can move off the main thread if the portal's entry path (W4d) ever needs it;
+  so far it runs on the server thread when a key opens a portal.
 
 JUnit fuzzes steps 1 and 2 over thousands of seeds, on synthetic room sets and on the generated dungeon types
 (`DungeonPlannerTest`, `PlanChecks`): every rule holds, no rooms overlap, every room is reachable from the entrance, no
@@ -2320,9 +2321,9 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   Leaving the End is no death and is left alone.
 - **Also inside:** no natural spawns. **The way out** (W4d): the builder lays the Dungeon Exit
   (`content/blocks/dungeon_exit.yaml`, kind `dungeon_exit`: a plate one pixel high without collision) where players
-  arrive and at every `exit` marker, where nothing stands, once the rooms stand; using it leaves the run, as
-  `/instance leave` does, the player command (`command/InstanceCommand`) that works at any time. Closing clears the
-  exit with the rooms.
+  arrive and at every `exit` marker, where nothing stands, once the rooms stand (the test dungeon's ending room, the egg
+  treasury, holds one against its far wall, RLM-363); using it leaves the run, as `/instance leave` does, the player
+  command (`command/InstanceCommand`) that works at any time. Closing clears the exit with the rooms.
 - **Leaving and disconnects:** leaving by command or exit, respawning outside the dimension (at the return point
   after the run was released, above; `PlayerEvent.PlayerRespawnEvent`) or being teleported out (`PlayerEvent.PlayerChangedDimensionEvent`) leaves the
   run; a run whose party is empty is released, built or still building. A party member who has not entered yet (the

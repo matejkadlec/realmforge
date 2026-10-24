@@ -371,7 +371,7 @@ Rules:
   three by three blocks. `rf gen` resolves the pool into the entry, so the game plans without loading a template, and
   writes each room's set-piece spots into it: the patterns where the pieces that reach the room's role fit, each with
   the pieces that may fill it. `test_dungeon` is test content (like `items/test_item`) that only `/qa dungeon plan`,
-  `build` and `enter` use and its key opens, about 70 rooms on one long main road with a fight after every 2 to 4 rooms
+  `build` and `enter` use and its key opens, about 50 rooms on one long main road with a fight after every 2 to 4 rooms
   ([architecture 15.2](../docs/architecture.md#152-dungeon-types)); W6 brings the real dungeon types.
 - Start each YAML file with the `yaml-language-server` schema comment (see `items/test_item.yaml`) for editor
   completion.

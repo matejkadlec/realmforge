@@ -96,10 +96,10 @@ class DungeonPlannerTest {
             new InclusiveRange<>(1, 3), new InclusiveRange<>(2, 3), RoomRole.BOSS, Optional.of(
                     new LayoutRules.Pacing(new InclusiveRange<>(1, 2), new InclusiveRange<>(2, 4), 2)));
     /**
-     * The test dungeon's mean room count over {@link #SEEDS} seeds before RLM-363 (layouts of 8 to 16 rooms, walls
-     * not counted), measured on 2026-10-23: a run is to be six to eight times as big.
+     * The test dungeon's mean room count (walls not counted) that RLM-363 asks for since Matěj's second playtest of
+     * 2026-10-24: about 50, where the 70 of six times the old 11.4 felt too long.
      */
-    private static final double ROOMS_BEFORE_RLM_363 = 11.36;
+    private static final double TEST_DUNGEON_ROOMS = 50;
 
     @Test
     void sameSeedGivesTheSameLayout() {
@@ -230,10 +230,10 @@ class DungeonPlannerTest {
     }
 
     /**
-     * RLM-363 and RLM-364 on the generated test dungeon: a run is six to eight times as big as before, and keeps the
-     * rhythm of Matěj's playtest of 2026-10-24: a fight after every two to four rooms, never more than two corridors in
-     * a row, a fight before the ending, treasure at the branches' ends at least every fifteen rooms. The report of what
-     * a player meets goes to {@code mod/build/reports/dungeon-pacing.txt}.
+     * RLM-363 and RLM-364 on the generated test dungeon: a run holds about 50 rooms, and keeps the rhythm of Matěj's
+     * playtest of 2026-10-24: a fight after every two to four rooms, never more than two corridors in a row, a fight
+     * before the ending, treasure at the branches' ends at least every fifteen rooms. The report of what a player
+     * meets goes to {@code mod/build/reports/dungeon-pacing.txt}.
      */
     @Test
     void theTestDungeonKeepsItsRhythm() throws IOException {
@@ -255,8 +255,8 @@ class DungeonPlannerTest {
         Files.createDirectories(out.getParent());
         Files.writeString(out, text);
         double mean = report.count("rooms (walls not counted)") / (double) seeds;
-        assertTrue(mean >= 6 * ROOMS_BEFORE_RLM_363 && mean <= 8 * ROOMS_BEFORE_RLM_363,
-                "a layout holds " + mean + " rooms on average, " + mean / ROOMS_BEFORE_RLM_363 + " times as many");
+        assertTrue(Math.abs(mean - TEST_DUNGEON_ROOMS) <= 0.1 * TEST_DUNGEON_ROOMS,
+                "a layout holds " + mean + " rooms on average, not about " + TEST_DUNGEON_ROOMS);
         assertRhythm(report, seeds, 0.9);
         assertTrue(share(report.fightGaps(), 2, 5) > 0.99, "a gap of 5 where the pool runs out of fights\n" + text);
         assertTrue(share(report.treasureGaps(), 1, 15) > 0.99, "treasure at least every 15 rooms\n" + text);
