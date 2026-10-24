@@ -135,6 +135,7 @@ public final class InstanceManager extends SavedData {
     /** Registers the chunk ticket type and the ticket controller plots load and hold their chunks with. */
     public static void register(IEventBus modBus) {
         TICKET_TYPES.register(modBus);
+        AttachedEntityProcessor.register(modBus);
         modBus.addListener(RegisterTicketControllersEvent.class, event -> event.register(TICKETS));
     }
 
