@@ -293,23 +293,17 @@ def test_no_pattern_fits_means_no_barrel() -> None:
     assert not barrels(dressed)
 
 
-def test_the_throne_room_has_no_barrel_on_or_beside_its_throne() -> None:
-    # The committed Stonevaults room after its re-import with these rules (RLM-256): the barrels stand on the main
-    # floor against the outer walls, none on the gold throne or next to it.
+def test_the_throne_room_behind_its_bars_gets_no_dressing() -> None:
+    # The committed Stonevaults room after its re-import with these rules: a player sees the throne through the iron
+    # bars across its doorway but reaches none of it, so since RLM-364 the dressing adds nothing there, and so no
+    # barrel stands on the gold throne or next to it (RLM-256).
     path = REPO_ROOT / "content/rooms/third_party/stonevaults/dungeon/treasure/mooshroom_king.nbt"
     room = read_structure(path.read_bytes())
-    gold = {b.pos for b in room.blocks if b.state.name == "minecraft:gold_block"}
-    placed = barrels(room)
-    assert gold and placed
-    assert all(pos[1] == 1 for pos in placed)
-    near = {
-        (x + dx, y + dy, z + dz)
-        for x, y, z in gold
-        for dx in (-1, 0, 1)
-        for dy in (-1, 0, 1)
-        for dz in (-1, 0, 1)
-    }
-    assert not placed & near
+    names = {b.pos: b.state.name for b in room.blocks}
+    assert {names.get((1, y, z)) for y in (1, 2, 3) for z in (5, 6, 7)} == {"minecraft:iron_bars"}
+    assert any(name == "minecraft:gold_block" for name in names.values())
+    assert not barrels(room)
+    assert not any(name in ("minecraft:cobweb", "minecraft:vine") for name in names.values())
 
 
 def with_states(room: Structure, placed: dict[Pos, str]) -> Structure:
