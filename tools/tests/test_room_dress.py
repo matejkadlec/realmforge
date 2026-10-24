@@ -310,3 +310,76 @@ def test_the_throne_room_has_no_barrel_on_or_beside_its_throne() -> None:
         for dz in (-1, 0, 1)
     }
     assert not placed & near
+
+
+def with_states(room: Structure, placed: dict[Pos, str]) -> Structure:
+    """``room`` with the blocks of ``placed`` (block states as commands write them) set."""
+    blocks = {block.pos: block for block in room.blocks}
+    for pos, state in placed.items():
+        blocks[pos] = StructureBlock(pos, BlockState.parse(state))
+    return Structure(room.size, room.data_version, tuple(blocks.values()))
+
+
+def changed(before: Structure, after: Structure) -> set[Pos]:
+    old = {block.pos: block.state for block in before.blocks}
+    return {block.pos for block in after.blocks if old.get(block.pos) != block.state}
+
+
+def test_dressing_keeps_off_mechanisms() -> None:
+    # Matěj's playtest (2026-10-24): a cobweb in a lock's redstone stopped its TNT. Nothing dressing adds or swaps
+    # lies next to, above, below or diagonally beside a mechanism block.
+    mechanisms = {
+        (3, 1, 6): "minecraft:redstone_wire",
+        (4, 1, 6): "minecraft:redstone_wire",
+        (6, 2, 1): "minecraft:lever[face=wall,facing=south,powered=false]",
+        (9, 1, 9): "minecraft:tnt",
+        (10, 4, 11): "minecraft:sticky_piston[extended=false,facing=down]",
+    }
+    room = with_states(box_room(under_floor=STONE_BRICKS), mechanisms)
+    for name in ("mechanism-a", "mechanism-b", "mechanism-c"):
+        dressed, notes = dress(room, RULES, name=name)
+        assert notes, "the plain room still gets its dressing"
+        for x, y, z in changed(room, dressed):
+            near = [p for p in mechanisms if max(abs(x - p[0]), abs(y - p[1]), abs(z - p[2])) <= 1]
+            assert not near, f"{name}: dressing changed {(x, y, z)} beside {near}"
+
+
+def test_decorations_go_only_where_a_player_reaches() -> None:
+    # A sealed pocket inside the walls, like the hidden redstone runs behind a lock's walls, gets no vine, cobweb or
+    # barrel; the room around it still does.
+    room = box_room((13, 7, 13), under_floor=STONE_BRICKS)
+    pocket = {(x, y, z) for x in range(2, 5) for y in range(2, 5) for z in range(2, 5)}
+    shell = {(x, y, z) for x in range(1, 6) for y in range(1, 6) for z in range(1, 6)} - pocket
+    room = with_states(room, {pos: STONE_BRICKS for pos in shell} | {pos: "minecraft:air" for pos in pocket})
+    decorations = ("minecraft:vine", "minecraft:cobweb", "minecraft:barrel")
+    for name in ("pocket-a", "pocket-b", "pocket-c", "pocket-d"):
+        dressed, _ = dress(room, RULES, name=name)
+        inside = [b for b in dressed.blocks if b.pos in pocket and b.state.name in decorations]
+        assert not inside, f"{name}: {inside}"
+        assert any(b.state.name in decorations for b in dressed.blocks), f"{name}: the open room got nothing"
+
+
+def test_a_lever_that_has_to_be_on_gets_stairs_under_it() -> None:
+    # Matěj's playtest (2026-10-24): [lever] [block] [torch] marks a lever that has to be on. The floor under it
+    # becomes stairs whose tall half faces the room, leaving a notch along the wall; a lever without a torch behind
+    # its block stays as it is.
+    room = with_states(
+        box_room(),
+        {
+            (3, 2, 2): "minecraft:lever[face=wall,facing=south,powered=false]",
+            (3, 2, 1): "minecraft:smooth_stone",
+            (3, 2, 0): "minecraft:redstone_wall_torch[facing=north,lit=true]",
+            (7, 2, 2): "minecraft:lever[face=wall,facing=south,powered=false]",
+            (7, 2, 1): "minecraft:smooth_stone",
+            (7, 2, 0): "minecraft:redstone_wire",
+        },
+    )
+    rules = DressRules.model_validate({"lever_hints": "minecraft:stone_brick_stairs"})
+    dressed, notes = dress(room, rules, name="levers")
+    blocks = {block.pos: block.state for block in dressed.blocks}
+    assert str(blocks[(3, 0, 2)]) == (
+        "minecraft:stone_brick_stairs[facing=south,half=bottom,shape=straight,waterlogged=false]"
+    )
+    assert blocks[(7, 0, 2)].name == COBBLESTONE, "a lever with no torch behind its block needs no hint"
+    assert notes == ["marked 1 lever(s) that have to be on"]
+    assert dress(room, DressRules(), name="levers")[1] == [], "without the rule, no hints"
