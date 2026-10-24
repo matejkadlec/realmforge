@@ -224,17 +224,18 @@ Rules:
   alone, which validation checks, the NPC types `realmforge:current_target` (the mob's attack target),
   `realmforge:random_player` and `realmforge:farthest_player` (among the players in range and sight that it may
   attack, never one in creative or spectator mode), each with a `range`, which go wherever `realmforge:enemy` does); `cast`: `{type: instant}`, `{type: cast_time, duration_seconds}`
-  (the effects, the cost and the cooldown come when the cast completes) or `{type: channel, duration_seconds,
-  interval_seconds}` (it pays and starts its cooldown when it begins, then runs its effects every interval; the
-  duration is a whole number of intervals), the timed ones with `castable_while_moving` (by default the cast slows
-  its caster to half its speed; with `true` the caster moves at full speed; moving never cancels a cast, ADR 0039,
-  ADR 0047) and `lock_on` (range and line of sight are not checked again before the effects), or instead
-  `keep_sight` (losing sight of the target ends the cast at once) and `keep_range_percent` (for that share of the
-  cast the target must stay in range or the cast ends at once; past it, range no longer matters), and `sound` (a sound
-  event the caster makes when the cast begins); a cast time may `forms_projectile` (its first effect, a projectile
-  with an `appearance`, grows in front of the caster during the cast and flies from there); an optional `cost` (`resource` `realmforge:mana` or `realmforge:rage`, `amount` at level 1, `per_level`);
-  `cooldown_seconds`; `global_cooldown_seconds` (0.5 by default, as in WoW; 0 for a spell off the global cooldown);
-  `max_level`;
+  (it pays its cost when the cast begins; the effects and the cooldown come when it completes) or `{type: channel,
+  duration_seconds, interval_seconds}` (it pays and starts its cooldown when it begins, pays its cost again as each
+  later second begins, and runs its effects every interval; the duration is a whole number of intervals), the timed
+  ones with `castable_while_moving` (by default the cast slows its caster to half its speed; with `true` the caster
+  moves at full speed; moving never cancels a cast, ADR 0039, ADR 0047) and `lock_on` (range and line of sight are not
+  checked again before the effects), or instead `keep_sight` (losing sight of the target ends the cast at once) and
+  `keep_range_percent` (for that share of the cast the target must stay in range or the cast ends at once; past it,
+  range no longer matters), and `sound` (a sound event the caster makes when the cast begins); a cast time may
+  `forms_projectile` (its first effect, a projectile with an `appearance`, grows in front of the caster during the
+  cast and flies from there); an optional `cost` (`resource` `realmforge:mana` or `realmforge:rage`, `amount` at level
+  1, `per_level`; a channel's is per second); `cooldown_seconds`; `global_cooldown_seconds` (0.5 by default, as in
+  WoW; every spell is on the global cooldown, physical abilities too, so it is more than 0); `max_level`;
   the `crit` block (`can_crit`, `multiplier_percent` instead of 1 + the caster's crit damage, `bonus_chance_percent`
   added to the caster's crit chance; every spell can crit by default, heals too); `npc_only` for mob and boss
   spells; and the `effects`, in order: `realmforge:damage` (a hit of the school on an enemy) and `realmforge:heal`

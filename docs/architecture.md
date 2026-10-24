@@ -1177,16 +1177,18 @@ lists spells granted while equipped or on use): the vision's "some from the race
    `PlayerEvent.StartTracking` listener, as a `CastStartedPayload` with the original start time, so the telegraph
    still shows. An interrupt cancels the cast; moving never does, but slows the caster
    ([ADR 0039](decisions/0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md)).
-4. When a cast-time spell completes, the server checks the resource and the target again, because both can change
-   during the cast: rage decays, effects drain mana, and the target can die, leave the caster's dimension, move out
-   of range or go behind cover. If either check fails, the cast fails like an interrupt; a spell that should lock
-   on says so in its data. Otherwise the cost and the spell's own cooldown apply first (the global cooldown started
-   with the cast), then every effect runs on the target with an `EffectContext` (caster, the entity that delivers it,
-   spell, spell level, random source). Effects read the caster's stats as they run, those that a projectile or an
-   area runs later included ([11.3](#113-spell-entities)).
-5. A channel pays its cost and starts its cooldown when it begins, then runs its effects at the tick interval its
-   data sets for as long as it lasts, checking the target before every tick as in step 4. An interrupt
-   ends it early, and the ticks already run stay applied.
+4. A cast pays its cost when it begins, a cast time too (Matěj, 2026-10-24: the bar shows the cost leave at once,
+   and an interrupted cast keeps it spent). When a cast-time spell completes, the server checks the target again,
+   because it can die, leave the caster's dimension, move out of range or go behind cover during the cast. If the
+   check fails, the cast fails like an interrupt; a spell that should lock on says so in its data. Otherwise the spell's
+   own cooldown applies first (the global cooldown started with the cast), then every effect runs on the target with an
+   `EffectContext` (caster, the entity that delivers it, spell, spell level, random source). Effects read the caster's
+   stats as they run, those that a projectile or an area runs later included ([11.3](#113-spell-entities)).
+5. A channel pays its cost and starts its cooldown when it begins, and pays the cost again as each later second
+   begins (Matěj, 2026-10-24: as in WoW; a spell paying only at the start or at another pace can come later); a pool
+   that falls short ends it. It runs its effects at the tick interval its data sets for as long as it lasts,
+   checking the target before every tick as in step 4. An interrupt ends it early, and the ticks already run stay
+   applied.
 6. Mobs and bosses use the same `SpellCaster`, without a payload. Their cooldowns and current cast live in their
    own `combat` attachment ([7](#7-player-state)), and their cast bars, the telegraphs players react to, reach
    clients only through the cast payloads.
@@ -1209,26 +1211,30 @@ spellbook knows, a mob at level 1. It refuses a cast, paying nothing and running
 does not exist, a player casts an `npc_only` spell or one their spellbook does not know, the spell's own cooldown
 runs, the global cooldown runs and the spell is on it, the targeting finds no valid target (`spell/Targets`: in range
 from the caster's eyes to the target's box, and in vanilla's line of sight), a player lacks the cost. Otherwise the
-cost and the cooldowns apply, then every effect runs on the target with an `EffectContext` (caster, spell, spell
-level, random source; C3a-3 adds the entity that delivers it, and C3a-4 the proc origin, [12](#12-talents)). Allies (`Targets#allied`) are the caster, its team mates and tamed
-pets (vanilla's `isAlliedTo`), and for a player every other player, as M1 has no PvP; everything else is an enemy.
-Mobs pay no cost (C3a-4 kept it so: their cooldowns pace them). `/qa spell` drives it until the spell bar exists.
+cost and the cooldowns apply (every spell is on the global cooldown, [11.5](#115-resources-cooldowns-modifiers)), then
+every effect runs on the target with an `EffectContext` (caster, spell, spell level, random source; C3a-3 adds the
+entity that delivers it, and C3a-4 the proc origin, [12](#12-talents)). Allies (`Targets#allied`) are the caster, its
+team mates and tamed pets (vanilla's `isAlliedTo`), and for a player every other player, as M1 has no PvP; everything
+else is an enemy. Mobs pay no cost (C3a-4 kept it so: their cooldowns pace them). `/qa spell` drives it until the spell
+bar exists.
 
 **In code (C3a-2):** a spell's `cast` (`spell/SpellCast`) is `instant`, `cast_time` (a duration) or `channel` (a
 duration that is a whole number of intervals), and the two timed types may set `castable_while_moving` and `lock_on`.
 `SpellCaster` refuses a cast while one is in progress (`already_casting`, checked before the cooldowns). After every
-other check a timed spell starts the global cooldown at once, as in WoW, so it runs during the cast; a channel also
-pays and starts its own cooldown then, a cast time only when it completes. `spell/Casting` keeps the casts in
-progress and ends them from the server tick (`ServerTickEvent.Post`): Cast Time Reduction (at most 75 %, its stat's
-cap) shortens a cast time, and a channel's interval, so a channel keeps its tick count (`SpellScaling#castTicks`,
-whole ticks, at least one). Moving more than 0.1 blocks from where the cast began, death, a dimension change, logging
-out, the caster's removal and a cancel (`Spells#cancelCast`, `/qa spell cancel`) interrupt it. At its end a cast time
-checks the cost and the target again (`SpellCaster#recheck`: alive, then the targeting's range, line of sight and
-enemy or ally; a spell that locks on only needs its target alive and in the caster's dimension), and a channel
-checks the target before every tick, run at the end of each interval. Every end is a `spell/CastEnd` (completed, an
-interrupt, or the failed check), sent to the caster and its trackers as `CastEndedPayload` and posted on the game bus
-as `CastEndedEvent`, which the QA mod logs for `/qa spell show` and the GameTests
-(`CastGameTests`). The effects run on the first server tick at or after the cast's end time.
+other check a timed spell starts the global cooldown at once, as in WoW, so it runs during the cast, and pays its
+cost (RLM-403, Matěj 2026-10-24); a channel also starts its own cooldown then, a cast time only when it completes.
+`spell/Casting` keeps the casts in progress and ends them from the server tick (`ServerTickEvent.Post`): Cast Time
+Reduction (at most 75 %, its stat's cap) shortens a cast time, and a channel's interval and its seconds, so a channel
+keeps its tick count and its number of payments (`SpellScaling#castTicks`, whole ticks, at least one): one for every
+second its data lasts, begun or whole, the first when it begins and each later one as its second begins, after the
+ticks due then; a pool short of the cost ends it as `not_enough_resource`. Moving never interrupts a cast (it slows
+the caster, ADR 0039); death, a dimension change, logging out, the caster's removal and a cancel
+(`Spells#cancelCast`, `/qa spell cancel`) do. At its end a cast time checks the target again (`SpellCaster#recheck`:
+alive, then the targeting's range, line of sight and enemy or ally; a spell that locks on only needs its target alive
+and in the caster's dimension), and a channel checks the target before every tick, run at the end of each interval.
+Every end is a `spell/CastEnd` (completed, an interrupt, or the failed check), sent to the caster and its trackers as
+`CastEndedPayload` and posted on the game bus as `CastEndedEvent`, which the QA mod logs for `/qa spell show` and the
+GameTests (`CastGameTests`). The effects run on the first server tick at or after the cast's end time.
 
 **In code (C3a-3, RLM-211 and RLM-243):** a cast aims at an entity, a point or nothing (`spell/SpellAim`, what the
 spell bar's payload will carry), and its targeting resolves that into a `spell/SpellTarget`: an entity (`self`,
@@ -1362,7 +1368,8 @@ covers the ticks, the caster's stats, a caster that left, the modifiers and the 
   ([11.2](#112-casting-server-authoritative)), so no mob gains rage. `RageGameTests` and `RageRulesTest` cover it.
 - **Cooldowns:** a spell's own cooldown, shortened by Cooldown Reduction (at most 75 %, its stat's cap), and the
   global cooldown, 0.5 s by default as in WoW (Matěj, 2026-10-19, RLM-25; it replaced research SP-11's second), which
-  a spell may shorten or switch off and which Cooldown Reduction never touches. Both are stored as the game time they
+  every spell is on, physical abilities too (Matěj, 2026-10-24, RLM-402): a spell may change its length, never switch
+  it off, and Cooldown Reduction never touches it. Both are stored as the game time they
   end.
 - Spell modifiers from talents (later glyphs and gear) are collected into a cached per-player view, invalidated
   when talents or gear change, and applied when a cast starts: cast time, cost, cooldown, damage, extra effects.
@@ -1454,10 +1461,11 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
   GUI sprite, `combat/SpellSchools#icon`: `Component.object` with an `AtlasSprite` of the `gui` atlas,
   `textures/gui/sprites/school/<id>.png`, a generated placeholder until the art exists) and draws the number in the
   school's colour, the spell's school for `{damage}` and the effect's for its damage over time; descriptions read
-  "for {damage} damage". `spell/SpellTooltip` builds the spellbook's tooltip: name, rank, cost, range, the cast after
-  Cast Time Reduction, the cooldown after Cooldown Reduction and the filled description. `SpellTextGameTests` and
-  `SpellBarGameTests` cover the server side and the texts, `CastQueueTest`, `CooldownSweepTest`, `SpellBarLayoutTest`,
-  `CastBarStyleTest`, `KeyLabelsTest`, `SpellTextTest` and `SpellBarViewTest` the client's logic.
+  "for {damage} damage". `spell/SpellTooltip` builds the spellbook's tooltip: name, rank, cost (a channel's per second),
+  range, the cast after Cast Time Reduction, the cooldown after Cooldown Reduction and the filled description.
+  `SpellTextGameTests` and `SpellBarGameTests` cover the server side and the texts, `CastQueueTest`,
+  `CooldownSweepTest`, `SpellBarLayoutTest`, `CastBarStyleTest`, `KeyLabelsTest`, `SpellTextTest` and `SpellBarViewTest`
+  the client's logic.
 
 **In code (W3 revision, RLM-33): projectile appearances.** A projectile with an `appearance` is drawn by
 `client/render/SpellProjectileRenderer` instead of its trail of sparks: the `orb` is vanilla's shulker bullet model

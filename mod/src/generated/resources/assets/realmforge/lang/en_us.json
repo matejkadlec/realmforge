@@ -275,6 +275,7 @@
   "spell.tooltip.realmforge.channel": "Channeled (%1$s sec)",
   "spell.tooltip.realmforge.cooldown": "%1$s sec cooldown",
   "spell.tooltip.realmforge.cost": "%1$s %2$s",
+  "spell.tooltip.realmforge.cost_per_second": "%1$s %2$s per sec",
   "spell.tooltip.realmforge.empty_slot": "Empty slot",
   "spell.tooltip.realmforge.instant": "Instant",
   "spell.tooltip.realmforge.racial_empty": "Your racial ability goes here",

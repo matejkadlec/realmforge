@@ -125,8 +125,8 @@ public final class SpellGameTests {
     }
 
     /**
-     * A spell's own cooldown and the global cooldown refuse casts until their end; a spell off the global cooldown
-     * goes through it.
+     * A spell's own cooldown and the global cooldown refuse casts until their end; every spell is on the global
+     * cooldown (RLM-402).
      */
     @QaGameTest(timeoutTicks = 120)
     public static void cooldownsRefuseCastsUntilTheyEnd(GameTestHelper helper) {
@@ -140,7 +140,7 @@ public final class SpellGameTests {
         assertCast(helper, player, GeneratedSpells.TEST_BOLT, husk, husk);
         assertRefused(helper, player, GeneratedSpells.TEST_BOLT, husk, CastFailure.ON_COOLDOWN);
         assertRefused(helper, player, GeneratedSpells.TEST_MEND, null, CastFailure.ON_GLOBAL_COOLDOWN);
-        assertCast(helper, player, GeneratedSpells.TEST_SURE_CRIT, husk, husk);
+        assertRefused(helper, player, GeneratedSpells.TEST_SURE_CRIT, husk, CastFailure.ON_GLOBAL_COOLDOWN);
         helper.runAfterDelay(21, () -> {
             assertCast(helper, player, GeneratedSpells.TEST_MEND, null, player);
             assertRefused(helper, player, GeneratedSpells.TEST_BOLT, husk, CastFailure.ON_COOLDOWN);
@@ -190,7 +190,7 @@ public final class SpellGameTests {
 
     /**
      * A physical ability adds the caster's attack damage, pays rage, and never crits when its data says so; spell power
-     * does nothing for it (Matěj, 2026-10-15).
+     * does nothing for it (Matěj, 2026-10-15). It is on the global cooldown, as every spell is (RLM-402).
      */
     @QaGameTest
     public static void aPhysicalAbilityAddsAttackDamageAndPaysRage(GameTestHelper helper) {
@@ -208,8 +208,12 @@ public final class SpellGameTests {
         assertHealth(helper, husk, HEALTH - (2 + attackDamage),
                 "2 + attack damage; no crit at 100 % crit chance, no spell power");
         assertPool(helper, player, ResourceTypes.RAGE, 15, "after a cast for 15 rage");
+        assertRefused(helper, player, GeneratedSpells.TEST_STRIKE, husk, CastFailure.ON_GLOBAL_COOLDOWN);
+        assertPool(helper, player, ResourceTypes.RAGE, 15, "the global cooldown refused a second strike at once");
+        Spells.resetCooldowns(player);
         assertCast(helper, player, GeneratedSpells.TEST_STRIKE, husk, husk);
-        assertPool(helper, player, ResourceTypes.RAGE, 0, "off the global cooldown, so it casts again at once");
+        assertPool(helper, player, ResourceTypes.RAGE, 0, "after the global cooldown it casts again");
+        Spells.resetCooldowns(player);
         assertRefused(helper, player, GeneratedSpells.TEST_STRIKE, husk, CastFailure.NOT_ENOUGH_RESOURCE);
         assertHealth(helper, husk, HEALTH - 2 * (2 + attackDamage), "the refused cast dealt nothing");
         logout(player);
@@ -231,8 +235,10 @@ public final class SpellGameTests {
         assertDealt(helper, player, GeneratedSpells.TEST_SURE_CRIT, husk, 5 * 2,
                 "test_sure_crit at 0 % crit chance: its 100 % bonus always crits, for its own 200 %");
         StatsCommands.setBase(player, GeneratedStats.CRIT_DAMAGE, 3);
+        Spells.resetCooldowns(player);
         assertDealt(helper, player, GeneratedSpells.TEST_SURE_CRIT, husk, 5 * 2, "its own multiplier, not crit damage");
 
+        Spells.resetCooldowns(player);
         StatsCommands.setBase(player, GeneratedStats.CRIT_DAMAGE, 0.5);
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 1);
         assertDealt(helper, player, GeneratedSpells.TEST_BOLT, husk, 6 * 1.5,

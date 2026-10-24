@@ -9,6 +9,9 @@ texts:
   # "20 Mana" (%1$s the amount, %2$s the resource's name).
   cost:
     en_us: "%1$s %2$s"
+  # A channel's cost, paid as each second of it begins: "15 Mana per sec".
+  cost_per_second:
+    en_us: "%1$s %2$s per sec"
   # %1$s in blocks.
   range:
     en_us: "%1$s block range"
