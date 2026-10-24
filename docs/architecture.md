@@ -1128,8 +1128,12 @@ go of right click stops its charge.
     duration, so the charge is NeoForge's item use with its duration set in `LivingEntityUseItemEvent.Start` (as
     Sword Blocking Mechanics raises a sword), the stop is `stopUsingItem` from `LivingEntityUseItemEvent.Tick`
     (cancelling that event would finish the use instead) and the effect comes in `LivingEntityUseItemEvent.Finish`,
-    which checks again. Each scroll registers what it checks and does (`Scrolls.add`): the Scroll of Oblivion first,
-    the Scroll of Respec (RLM-226) and the Scroll of Rebirth (RLM-228) next. A level that falls below what was spent
+    which checks again. It looks like a bow's draw (`client/render/ScrollCharge`, Matěj's playtest of 2026-10-24):
+    the bow's pose in third person, and in first person vanilla's bow transform stretched over the 3 s, the scroll
+    pulled back and shaking harder as the charge fills, through NeoForge's client item extensions on the scrolls'
+    items, as a plain item has no use animation. Each scroll registers what it checks and does (`Scrolls.add`), and
+    its item joins `ScrollCharge`: the Scroll of Oblivion first, the Scroll of Respec (RLM-226) and the Scroll of
+    Rebirth (RLM-228) next. A level that falls below what was spent
     (a command, a revoked chapter, a curve that gives fewer) returns every spent point, with a message.
   - **`/realmforge xp add|set|query`** (`command/XpCommand`, permission level 2): `add` gives XP as a reward (times
     the XP multiplier, with level-ups), `set` sets the total exactly and quietly, `query` shows XP, level and cap.
