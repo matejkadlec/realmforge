@@ -1,0 +1,13 @@
+name = "Geckolib"
+filename = "geckolib-neoforge-26.1.2-5.5.2.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/8BmcQJ2H/versions/xfVfPcoC/geckolib-neoforge-26.1.2-5.5.2.jar"
+hash-format = "sha512"
+hash = "d634390ad63372324220b14be3a70b0befca2a753fc8c0561f4162d31341182b08c102bd44432e59d884cb18d2906c1d0b36344f72c2d6e07c9b109a57c693f3"
+
+[update]
+[update.modrinth]
+mod-id = "8BmcQJ2H"
+version = "xfVfPcoC"

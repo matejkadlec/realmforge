@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../tools/schemas/mobs.schema.json
+# W3's melee archetype (RLM-33, D11): a Hewn of Undervault, a Gatewright stone servant of mossy bricks that fights
+# with its long, heavy arms (lore outline, Undervault). It wanders as vanilla's mobs do until a player comes near
+# (Matěj's playtest, 2026-10-24: no more standing guard). Hard to push around; it walks a little faster than it
+# wanders, and its hits are slow, heavy and throw the target up. Each Sentinel carries one of Undervault's gems in its
+# eyes and in cracks in its bricks: Sapphire, Ruby or Topaz, which it may drop. Matěj's playtests, 2026-10-23 and
+# 2026-10-24. Placeholder model and texture until A2 (RLM-48).
+id: hewn_sentinel
+name: {en_us: Hewn Sentinel}
+archetype: melee
+size: {width: 1.2, height: 3.0}
+attributes:
+  max_health: 30
+  attack_damage: 7.5
+  armor: 6
+  movement_speed: 0.27
+  follow_range: 20
+  knockback_resistance_percent: 60
+melee: {attack_interval_seconds: 1.5, knock_up_blocks: 0.5}
+sounds:
+  hurt: realmforge:entity.hewn_sentinel.hurt
+  death: realmforge:entity.hewn_sentinel.death
+  step: realmforge:entity.hewn_sentinel.step
+death_particles: realmforge:vaultstone_bricks
+tags: [realmforge:stone_creatures]
+loot:
+  - {item: realmforge:vaultstone_bricks, count: {min: 1, max: 2}, chance_percent: 75, looting_count: 1}
+variants:
+  - id: sapphire
+    accent: "#2F64D6"
+    loot: [{item: realmforge:sapphire, chance_percent: 20, looting_chance_percent: 5}]
+  - id: ruby
+    accent: "#C42638"
+    loot: [{item: realmforge:ruby, chance_percent: 20, looting_chance_percent: 5}]
+  - id: topaz
+    accent: "#E3A92B"
+    loot: [{item: realmforge:topaz, chance_percent: 20, looting_chance_percent: 5}]
+model: {build: golem, surface: mossy_bricks, eyes: gem, color: "#8A8A84"}

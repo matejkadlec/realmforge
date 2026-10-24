@@ -11,6 +11,9 @@ import net.minecraft.resources.ResourceKey;
 
 /** Keys of the spells in {@code content/spells/}, so Java names a spell without typing its id. */
 public final class GeneratedSpells {
+    /** {@code realmforge:stoneform} from {@code content/spells/stoneform.yaml}: arcane, current_target, projectile. */
+    public static final ResourceKey<Spell> STONEFORM = key("stoneform");
+
     /** {@code realmforge:test_blink} from {@code content/spells/test_blink.yaml}: arcane, direction, teleport. */
     public static final ResourceKey<Spell> TEST_BLINK = key("test_blink");
 
@@ -87,7 +90,7 @@ public final class GeneratedSpells {
     public static final ResourceKey<Spell> TEST_SURE_CRIT = key("test_sure_crit");
 
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Spell>> ALL = List.of(TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT);
+    public static final List<ResourceKey<Spell>> ALL = List.of(STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT);
 
     private GeneratedSpells() {
     }

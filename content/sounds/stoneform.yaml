@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../tools/schemas/sounds.schema.json
+# Stoneform's sounds (W3, RLM-33; Matěj's playtest, 2026-10-23): grinding stone while the stone forms during the cast,
+# and the stone shattering where it hits. Vanilla sounds until A3's own (RLM-126).
+id: stoneform
+category: spell
+events:
+  form:
+    subtitle: {en_us: Stone forms}
+    sounds:
+      - {event: minecraft:block.grindstone.use, volume: 0.8, pitch: 0.6}
+  impact:
+    subtitle: {en_us: Stone shatters}
+    sounds:
+      - {event: minecraft:block.stone.break, pitch: 1.1}
+      - {event: minecraft:block.pointed_dripstone.break, pitch: 0.9}

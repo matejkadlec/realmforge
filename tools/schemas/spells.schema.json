@@ -162,11 +162,53 @@
           "title": "Duration Seconds",
           "type": "number"
         },
+        "forms_projectile": {
+          "default": false,
+          "description": "Whether the spell's projectile forms in front of the caster during the cast, growing to its size, and flies from there; the spell's first effect is a projectile with an appearance.",
+          "title": "Forms Projectile",
+          "type": "boolean"
+        },
+        "keep_range_percent": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 100,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "For this share of the cast, in percent, the target must stay in range, or the cast ends at once; after it, range no longer matters. Left out: range is checked only before the effects.",
+          "title": "Keep Range Percent"
+        },
+        "keep_sight": {
+          "default": false,
+          "description": "Whether the caster must keep its target in sight for the whole cast: losing sight of it ends the cast at once.",
+          "title": "Keep Sight",
+          "type": "boolean"
+        },
         "lock_on": {
           "default": false,
           "description": "Whether the spell keeps its target once cast: the target must still be alive and in the caster's dimension, but range and line of sight are not checked again.",
           "title": "Lock On",
           "type": "boolean"
+        },
+        "sound": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A sound event the caster makes when the cast begins, e.g. its chant.",
+          "title": "Sound"
         },
         "type": {
           "const": "cast_time",
@@ -203,11 +245,47 @@
           "title": "Interval Seconds",
           "type": "number"
         },
+        "keep_range_percent": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 100,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "For this share of the cast, in percent, the target must stay in range, or the cast ends at once; after it, range no longer matters. Left out: range is checked only before the effects.",
+          "title": "Keep Range Percent"
+        },
+        "keep_sight": {
+          "default": false,
+          "description": "Whether the caster must keep its target in sight for the whole cast: losing sight of it ends the cast at once.",
+          "title": "Keep Sight",
+          "type": "boolean"
+        },
         "lock_on": {
           "default": false,
           "description": "Whether the spell keeps its target once cast: the target must still be alive and in the caster's dimension, but range and line of sight are not checked again.",
           "title": "Lock On",
           "type": "boolean"
+        },
+        "sound": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A sound event the caster makes when the cast begins, e.g. its chant.",
+          "title": "Sound"
         },
         "type": {
           "const": "channel",
@@ -582,10 +660,46 @@
       "title": "LocalizedText",
       "type": "object"
     },
+    "ProjectileAppearanceDef": {
+      "additionalProperties": false,
+      "description": "How a projectile looks; without it, a trail of sparks (until C6, RLM-29). Its placeholder texture is\ngenerated at ``textures/entity/spell/<spell>.png`` until real art exists.",
+      "properties": {
+        "color": {
+          "description": "Main colour of its placeholder texture, \"#RRGGBB\".",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Color",
+          "type": "string"
+        },
+        "model": {
+          "const": "orb",
+          "description": "orb: a small spinning orb of three crossed slabs, the shape of a shulker's bullet.",
+          "title": "Model",
+          "type": "string"
+        }
+      },
+      "required": [
+        "model",
+        "color"
+      ],
+      "title": "ProjectileAppearanceDef",
+      "type": "object"
+    },
     "ProjectileEffectDef": {
       "additionalProperties": false,
-      "description": "Launches a projectile from the caster's eyes toward the target (an enemy, a ground point or along a\ndirection). It flies straight, hits the first enemy in its way and runs its own ``effects`` on it; a block or the\nend of its lifetime ends it without them (architecture 11.3).",
+      "description": "Launches a projectile from the caster's eyes toward the target (an enemy, a ground point or along a\ndirection). It flies straight, hits the first enemy in its way and runs its own ``effects`` on it; a block or the\nend of its lifetime ends it without them (architecture 11.3). An entity of ``spares`` stops it too, untouched.",
       "properties": {
+        "appearance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProjectileAppearanceDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How it looks; without it, a trail of sparks."
+        },
         "effects": {
           "description": "What it does to the enemy it hits, in order.",
           "items": {
@@ -621,6 +735,18 @@
           "title": "Effects",
           "type": "array"
         },
+        "impact": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProjectileImpactDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Its sound and particles where it hits a block or an entity."
+        },
         "lifetime_seconds": {
           "default": 5,
           "description": "How long it flies before it fizzles; more than 0, at most 10.",
@@ -635,6 +761,21 @@
           "maximum": 4.0,
           "title": "Size",
           "type": "number"
+        },
+        "spares": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "An entity type tag, e.g. realmforge:stone_creatures: an entity in it stops the projectile but takes none of its effects.",
+          "title": "Spares"
         },
         "speed": {
           "description": "Blocks per second, at most 100.",
@@ -655,6 +796,44 @@
         "effects"
       ],
       "title": "ProjectileEffectDef",
+      "type": "object"
+    },
+    "ProjectileImpactDef": {
+      "additionalProperties": false,
+      "description": "What a projectile does where it hits a block or an entity: a sound and a block's break particles, as a mined\nblock shatters.",
+      "properties": {
+        "particles": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A block whose break particles burst where it hits, e.g. realmforge:vaultstone.",
+          "title": "Particles"
+        },
+        "sound": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A sound event, e.g. realmforge:spell.stoneform.impact.",
+          "title": "Sound"
+        }
+      },
+      "title": "ProjectileImpactDef",
       "type": "object"
     },
     "RandomPlayerTargetingDef": {

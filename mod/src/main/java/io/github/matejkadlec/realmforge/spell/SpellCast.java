@@ -3,6 +3,8 @@ package io.github.matejkadlec.realmforge.spell;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import java.util.Optional;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.StringRepresentable;
 
@@ -21,10 +23,20 @@ import net.minecraft.util.StringRepresentable;
  * @param lockOn              whether a cast-time or channelled spell keeps its target: range and line of sight are not
  *                            checked again before its effects run, only that the target lives in the caster's
  *                            dimension
+ * @param keepSight           whether the caster must keep its target entity in sight for the whole cast: losing sight
+ *                            ends the cast at once ({@link Casting})
+ * @param keepRange           for this share of the cast (more than 0, at most 1) the target entity must stay in range,
+ *                            or the cast ends at once; after it, range no longer matters, not even before the effects.
+ *                            Empty: range is checked only before the effects
+ * @param sound               the sound event the caster makes when the cast begins, if any
+ * @param formsProjectile     whether the spell's projectile (its first effect) forms in front of the caster during a
+ *                            cast time, growing to its size, and flies from there ({@link SpellVisuals})
  */
 public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean castableWhileMoving,
-        boolean lockOn) {
-    public static final SpellCast INSTANT = new SpellCast(Type.INSTANT, 0, 0, false, false);
+        boolean lockOn, boolean keepSight, Optional<Double> keepRange, Optional<Identifier> sound,
+        boolean formsProjectile) {
+    public static final SpellCast INSTANT = new SpellCast(Type.INSTANT, 0, 0, false, false, false, Optional.empty(),
+            Optional.empty(), false);
 
     public static final Codec<SpellCast> CODEC = RecordCodecBuilder.<SpellCast>create(instance -> instance.group(
                     Type.CODEC.fieldOf("type").forGetter(SpellCast::type),
@@ -34,18 +46,24 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
                             .forGetter(SpellCast::intervalTicks),
                     Codec.BOOL.optionalFieldOf("castable_while_moving", false)
                             .forGetter(SpellCast::castableWhileMoving),
-                    Codec.BOOL.optionalFieldOf("lock_on", false).forGetter(SpellCast::lockOn))
+                    Codec.BOOL.optionalFieldOf("lock_on", false).forGetter(SpellCast::lockOn),
+                    Codec.BOOL.optionalFieldOf("keep_sight", false).forGetter(SpellCast::keepSight),
+                    Codec.doubleRange(0, 1).optionalFieldOf("keep_range").forGetter(SpellCast::keepRange),
+                    Identifier.CODEC.optionalFieldOf("sound").forGetter(SpellCast::sound),
+                    Codec.BOOL.optionalFieldOf("forms_projectile", false).forGetter(SpellCast::formsProjectile))
             .apply(instance, SpellCast::new)).validate(SpellCast::validate);
 
     /** A cast time of {@code ticks} (1 or more). */
     public static SpellCast castTime(int ticks, boolean castableWhileMoving, boolean lockOn) {
-        return new SpellCast(Type.CAST_TIME, ticks, 0, castableWhileMoving, lockOn);
+        return new SpellCast(Type.CAST_TIME, ticks, 0, castableWhileMoving, lockOn, false, Optional.empty(),
+                Optional.empty(), false);
     }
 
     /** A channel of {@code durationTicks} that ticks every {@code intervalTicks}, which divides the duration. */
     public static SpellCast channel(int durationTicks, int intervalTicks, boolean castableWhileMoving,
             boolean lockOn) {
-        return new SpellCast(Type.CHANNEL, durationTicks, intervalTicks, castableWhileMoving, lockOn);
+        return new SpellCast(Type.CHANNEL, durationTicks, intervalTicks, castableWhileMoving, lockOn, false,
+                Optional.empty(), Optional.empty(), false);
     }
 
     /** Whether the effects run at once, without a current cast. */
@@ -59,11 +77,21 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
     }
 
     private static DataResult<SpellCast> validate(SpellCast cast) {
+        if (cast.lockOn && (cast.keepSight || cast.keepRange.isPresent())) {
+            return DataResult.error(() -> "A spell that locks on keeps neither sight nor range: " + cast);
+        }
+        if (cast.keepRange.filter(share -> share <= 0).isPresent()) {
+            return DataResult.error(() -> "keep_range is a share of the cast above 0: " + cast);
+        }
+        if (cast.formsProjectile && cast.type != Type.CAST_TIME) {
+            return DataResult.error(() -> "Only a cast time forms a projectile: " + cast);
+        }
         return switch (cast.type) {
             case INSTANT -> cast.durationTicks == 0 && cast.intervalTicks == 0 && !cast.castableWhileMoving
-                    && !cast.lockOn
+                    && !cast.lockOn && !cast.keepSight && cast.keepRange.isEmpty() && cast.sound.isEmpty()
                     ? DataResult.success(cast)
-                    : DataResult.error(() -> "An instant cast has no duration, interval, movement or lock-on: " + cast);
+                    : DataResult.error(() -> "An instant cast has no duration, interval, movement, lock-on, kept "
+                            + "sight or range, or sound: " + cast);
             case CAST_TIME -> cast.durationTicks > 0 && cast.intervalTicks == 0
                     ? DataResult.success(cast)
                     : DataResult.error(() -> "A cast time lasts a tick or more and has no interval: " + cast);

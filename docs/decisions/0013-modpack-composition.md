@@ -19,6 +19,8 @@ The modpack wraps our core mod with third-party QoL, UI, performance and library
 
 - **packwiz** defines the pack in `pack/` (metadata and config overrides only). Players and Prism install it with packwiz-installer. Mods come from Modrinth where possible and from CurseForge when they are CurseForge-only.
 - **Mods** (all with NeoForge 26.1.2 builds, checked on 2026-10-12; dependencies are pulled by packwiz):
+  - Libraries our code builds on ([0004](0004-build-rpg-systems-in-house.md)): GeckoLib (added 2026-10-23 by RLM-33:
+    the custom mobs' models and animations, [architecture 14.2](../architecture.md#142-custom-mobs)).
   - QoL and UI: Jade, Jade Addons, JEI, JEED, Enchantment Descriptions, Mouse Tweaks, AppleSkin, Overflowing Bars, TrashSlot, Just Zoom, Neat, Toast Control, No Recipe Book, Yeetus Experimentus (added 2026-10-12 by RLM-84: skips the experimental-settings warning our data pack dimensions cause on every new world, [architecture 15.1](../architecture.md#151-dimensions)).
   - Map and travel: Xaero's Minimap, Xaero's World Map, Waystones.
   - Storage: Sophisticated Storage, Sophisticated Backpacks, Tom's Simple Storage.

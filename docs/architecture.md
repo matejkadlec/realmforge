@@ -369,7 +369,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 
 | `content/` | Generated | Loaded as |
 | --- | --- | --- |
-| `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/` (exists: blocks with their items, loot tables, mining tags and recipes; a block's kind picks its class, below), `effects/` (exists: status effects, [11.4](#114-status-effects)), `entities/`, `sounds/` | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
+| `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/` (exists: blocks with their items, loot tables, mining tags and recipes; a block's kind picks its class, below), `effects/` (exists: status effects, [11.4](#114-status-effects)), `mobs/` (exists: entity types of an archetype with their attributes, loot tables, tags and placeholder GeckoLib models, [14.2](#142-custom-mobs)), `sounds/` (exists: our sound events `realmforge:<category>.<subject>.<name>` playing vanilla sounds by reference with their own pitch and volume, [ADR 0007](decisions/0007-asset-pipeline.md); `GeneratedSounds` belongs to `core`) | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
 | `races/`, `classes/`, `spells/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `realms/`, `bosses/`, `dungeons/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
 | `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template, and each room's set-piece spots with the pieces that may fill them ([15.4](#154-rooms)) | the planner ([15.3](#153-generation-pure-first-then-minecraft)); the builder's set pieces (RLM-282) |
@@ -1183,6 +1183,18 @@ can ignore vanilla's Slowness. A spell's `realmforge:knockback` interrupts the t
 (`CastEnd.KNOCKED_BACK`), unless it may be cast while moving. `CastGameTests` covers the slow, and
 `SpellEffectGameTests` the knockback.
 
+**Kept targets (W3 revision, RLM-33):** a timed spell may keep its entity target through the cast instead of only
+checking it before its effects. With `keep_sight`, `Casting` checks the caster's line of sight to the target every
+tick and ends the cast at once when blocks come between them (`CastEnd.NO_LINE_OF_SIGHT`); with
+`keep_range_percent`, the target must stay within the spell's range for that share of the cast, or the cast ends at
+once (`CastEnd.OUT_OF_RANGE`), and past it the range no longer matters, not even before the effects
+(`SpellCaster#recheck` then needs the target only alive, in the dimension and in sight). A spell that locks on keeps
+neither. A cast's `sound` plays from the caster when the cast begins, and a cast time that `forms_projectile` launches
+its first effect's projectile from the caster's raised hands (`SpellVisuals#formPoint`, the caster's body
+facing) toward the target's middle, where its clients drew it forming ([11.6](#116-client-side)). The Hewn Chanter's
+Stoneform keeps sight for the whole cast and range for its first half (Matěj's playtest, 2026-10-23);
+`CustomMobGameTests` covers both.
+
 ### 11.3 Spell entities
 
 Registries freeze at startup, so variety lives in data: one generic projectile entity type and one generic area
@@ -1195,7 +1207,10 @@ type only for genuinely new behaviour.
 - **`realmforge:projectile`** (`ProjectileEffect`, `SpellProjectile`): launched from the caster's eyes along the
   target's direction at its `speed` (blocks per second), straight, without gravity or drag, with a hitbox of its
   `size`. It hits the first enemy of the caster in its way (never the caster, an ally or a spectator) and runs its own
-  effects on it, then is gone; a block or the end of its `lifetime_ticks` ends it without them.
+  effects on it, then is gone; a block or the end of its `lifetime_ticks` ends it without them. An entity of the
+  entity type tag it `spares` (`#realmforge:stone_creatures`: Stoneform spares the Hewn) stops it too, untouched. Its
+  `impact` plays a sound and bursts a block's break particles where it hits a block or an entity, and its
+  `appearance` (`orb`) is how its clients draw it ([11.6](#116-client-side)).
 - **`realmforge:area`** (`AreaEffect`, `SpellArea`): a zone at the target's position (the caster's feet, an enemy's,
   a ground point) with a `radius`, which at the end of every `interval_ticks` runs its own effects on every enemy (or,
   with `affects: allies`, ally) standing within the radius of its middle, from half a block below it to 3 blocks
@@ -1206,8 +1221,9 @@ type only for genuinely new behaviour.
   caster leaves its level (logs out, changes dimension, a mob that died and was removed).
 - **Never saved:** they carry a live cast (the caster, the spell), so a chunk that unloads or a server that stops
   drops them (`shouldBeSaved` is false), they use no portal, and commands cannot summon them. Only their size is
-  synced; the client moves them and draws particles (a trail, a ring) with no-op renderers
-  (`client/render/SpellEntityRenderers`) until C6 (RLM-29) gives spells their visuals. Their names, "Spell
+  synced, and a projectile's appearance with its spawn (NeoForge's `IEntityWithComplexSpawn`: its spell's texture);
+  the client moves them and draws a projectile's appearance, or particles (a trail, a ring)
+  (`client/render/SpellEntityRenderers`), until C6 (RLM-29) gives spells their visuals. Their names, "Spell
   Projectile" and "Spell Area", come from `content/texts/entity.yaml` (RLM-259) and show where the game prints an
   entity's own name (F3, `/data`).
 - **The other effect types:** `apply_effect` (a status effect from the caster, one of ours from `content/effects/`
@@ -1359,6 +1375,16 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
   Cast Time Reduction, the cooldown after Cooldown Reduction and the filled description. `SpellTextGameTests` and
   `SpellBarGameTests` cover the server side and the texts, `CastQueueTest`, `CooldownSweepTest`, `SpellBarLayoutTest`,
   `CastBarStyleTest`, `KeyLabelsTest`, `SpellTextTest` and `SpellBarViewTest` the client's logic.
+
+**In code (W3 revision, RLM-33): projectile appearances.** A projectile with an `appearance` is drawn by
+`client/render/SpellProjectileRenderer` instead of its trail of sparks: the `orb` is vanilla's shulker bullet model
+(three crossed slabs, spinning as the bullet does, `client/render/SpellOrbs`) with its spell's own texture,
+`textures/entity/spell/<spell>.png` (`SpellVisuals#projectileTexture`, a placeholder in the YAML's colour that
+`rf gen` draws), as wide as its hitbox. While a caster casts a spell that `forms_projectile`, the custom mob renderer
+reads the cast from `ClientCasts` and the spell from the synced registry and draws that orb in the caster's raised
+hands, in front of its forehead (`SpellVisuals#formOffset`: 0.4 blocks above its eyes, never above its height), from
+15 % of its size at the cast's start to all of it at its end, where the server launches it from
+([11.2](#112-casting-server-authoritative)).
 
 ## 12. Talents
 
@@ -1536,12 +1562,99 @@ levels (RLM-304, RLM-305) come later.
 
 ### 14.2 Custom mobs
 
-- Entity types are static. A small Java library of archetypes (base classes with AI goal sets, such as melee brute
-  or ranged caster) plus YAML mobs that pick an archetype, attributes, spells, model and loot. A new archetype is
-  Java; a new mob of an existing archetype is YAML.
-- Models and animations: GeckoLib ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md); *verify* its 26.1.2
-  build's API and asset paths when adding it), renderers in `client/render/`.
-- Minimap icons for Xaero's maps are generated files, no code ([ADR 0002](decisions/0002-hybrid-core-mod-and-modpack.md)).
+Built in W3 (RLM-33) and revised after Matěj's playtests (2026-10-23, 2026-10-24): `content/mobs/`, `mob/custom/`,
+`mob/ai/` and `client/render/CustomMobRenderers`. The first two are the Hewn of Undervault (D11, [lore
+outline](lore/outline.md)), its stone creatures (`#realmforge:stone_creatures`), each about 3 blocks tall: the Hewn
+Sentinel (melee, of one of three gems: Sapphire, Ruby or Topaz) and the Hewn Chanter (caster, with its spell
+Stoneform).
+
+**Before designing or changing a custom mob, read the Realmforge Mobs Guideline**: Matěj's rules for every custom
+mob (size, textures, eyes, wandering, animations, caster behaviour, sounds, drops), collected from his playtests. Its
+source of truth is its Jira copy, RLM-33 comment 22481 (or a later version in a comment of the ticket that changed
+it); the [Confluence page](https://envelopment.atlassian.net/wiki/spaces/~712020b06cd5a60c92413493fad43098103a66/pages/10420261/Realmforge+Mobs+Guideline)
+holds the same text. New feedback on a mob goes into both in the same run.
+
+- **Entity types are static, data picks the behaviour** (principle 2). A mob in `content/mobs/<id>.yaml` picks an
+  archetype, a Java class in `mob/custom/`: `melee` (`MeleeMob`) walks up to its target and hits it with its attack
+  damage (`PacedMeleeAttackGoal`, vanilla's melee goal at the YAML's `melee.attack_interval_seconds`); `caster`
+  (`CasterMob`) casts its spells at its target and steps between its casts. The rest is the mob's data: its name,
+  hitbox, attributes at level 1 (health, attack damage, armor, speed, follow range, knockback resistance), how it
+  idles and hits, its sounds, its death particles, its entity type tags, a caster's spells and kiting, its loot, its
+  variants and its placeholder model's look. A new archetype is Java; a new mob of an existing one is YAML.
+- **Generated** (`generate/mobs.py`): `GeneratedMobs`, which belongs to `mob`, registers each entity type with its
+  `CustomMobSpec` (idle, sounds, death particles, melee, spells, kiting, variants) and gives it its attributes
+  (`EntityAttributeCreationEvent`). Its loot table is vanilla's default, `realmforge:entities/<id>`, with one pool per
+  drop, so each drop rolls on its own, and Looting raises a drop as vanilla's are raised (`looting_count`: vanilla's
+  `enchanted_count_increase`; `looting_chance_percent`: `random_chance_with_enchanted_bonus`); its tags are
+  `data/realmforge/tags/entity_type/<tag>.json`; its name is `entity.realmforge.<id>`; `GeneratedMobExpectations`
+  holds what the GameTests compare.
+- **Variants:** a mob with `variants` rolls one by weight when it is created on the server, saves it
+  (`realmforge:variant`) and syncs it, so clients draw its texture (`textures/entity/<id>_<variant>.png`, the
+  variant's accent in its eyes and gems); it drops its variant's loot table, `realmforge:entities/<id>/<variant>`,
+  the mob's own drops and the variant's (a `DeathLootTable` a command set still wins).
+- **Hostile:** every custom mob is a `Monster`, so it gets a level and its scaling like every hostile mob
+  ([14.1](#141-mob-levels)), and a caster's spells grow with the level's damage multiple.
+- **AI** (research BM-6, BM-22): a custom mob targets a player that hurts it or that it sees. Without a target,
+  `idle: stroll`, every mob's default (Matěj's playtest, 2026-10-24), wanders as vanilla's mobs do, with the
+  Zombified Piglin's goals and numbers: vanilla's `WaterAvoidingRandomStrollGoal` at priority 7 (it sets off on
+  average every 6 seconds, to a spot up to 10 blocks away), `LookAtPlayerGoal` (8 blocks) and `RandomLookAroundGoal`
+  at 8, at the Zombified Piglin's speed whatever the mob's own (`mob/ai/Wandering`: 0.23, a speed modifier below 1
+  for a faster mob), so a mob fights faster than it wanders. `idle: guard`, which no mob of the content uses, stands
+  at its post instead, the spot where it first stood on the ground (saved with the mob as `realmforge:post`), and
+  walks back to it once it has no target (`ReturnToPostGoal`; a mob wider than a block counts as at its post a little
+  farther away, as vanilla's paths put its corner on a path's block). A melee
+  hit with `melee.knock_up_blocks` throws its target that high (`mob/ai/KnockUp`, from vanilla's gravity and drag),
+  less the target's knockback resistance, on top of vanilla's push back. A caster (`CasterFightGoal`), as a Skeleton
+  with spells:
+  - **casting,** it stands still and faces its target (body, head and eyes); the spell ends the cast itself when the
+    target leaves its sight or its range in the kept share of the cast ([11.2](#112-casting-server-authoritative));
+  - **in reach and in sight** (the shortest reach of its spells), it stands and tries its spells in order every 5 ticks
+    through `SpellCaster`, which refuses one on cooldown, out of range or out of sight, so the cooldowns pace it (mobs
+    pay no cost);
+  - **out of reach or out of sight,** it closes in (the pure `CasterTactics`) until its target is within 80 % of its
+    reach and in sight;
+  - **after a completed cast,** with `caster.kiting`, it takes one quick step (`mob/ai/KiteStep`): the pure
+    `mob/ai/Kiting` offers places a step away, best first (straight away or turned 45 degrees while the step ends
+    inside the range less half a block, then round the target on its circle, then a little toward it), and the step
+    walks to the first one that a short path reaches and that keeps the target in sight, at the YAML's speed. Any
+    mob's goal can kite with the same two classes and its own `KiteRules`.
+  Validation lets a caster name only spells that target an enemy (`enemy`, `current_target`, `random_player`,
+  `farthest_player`) and reach farther than one step of its kiting.
+- **Sounds:** a mob's YAML names its sound events, our own from `content/sounds/` (`realmforge:entity.<mob>.<name>`,
+  vanilla's sounds remapped, [ADR 0007](decisions/0007-asset-pipeline.md)) or vanilla's; steps play at full volume, as
+  the event carries its own, and `step: silent` walks without a sound. Vanilla plays hurt and death sounds only for a
+  hit that counts in full past the hurt cooldown, as for every mob.
+- **Breaking apart:** a mob with `death_particles` bursts into that block's break particles from its whole hitbox
+  when it dies, as a mined block does, and its body is gone the next tick instead of falling over (`tickDeath`).
+- **Light does not matter to them:** vanilla's monsters prefer dark spots (`Monster#getWalkTargetValue`), which also
+  keeps a spawner from spawning them in a lit room; a custom mob values every spot the same, so it stands in torchlit
+  dungeons.
+- **No trash loot** (principle 10): validation refuses the items of `TRASH_LOOT` (`schema/mob.py`: sticks, nuggets,
+  rotten flesh, dirt, cobblestone and the like) in a mob's loot and its variants'.
+- **Models and animations: GeckoLib** 5.5.2 ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md), package
+  `com.geckolib`), a required dependency on both sides, since the entity classes are its animatables (`GeoEntity`).
+  `CustomMobRenderers` registers GeckoLib's `GeoEntityRenderer` for each mob, which reads
+  `assets/realmforge/geckolib/models/entity/<id>.geo.json`, `geckolib/animations/entity/<id>.animation.json` and
+  `textures/entity/<id>.png` (a variant's texture through its own model and render state). The animations carry
+  GeckoLib's default names: `misc.idle` and `move.walk` (one of them always plays, and both turn the head with the mob's
+  look through GeckoLib's molang queries), `attack.swing` for a melee hit and `attack.cast` while a cast-time or
+  channelled spell runs (`CasterMob`'s synced flag; the arms raised forward and up, the hands in front of the forehead).
+  `attack.swing` lasts half the mob's attack interval (0.75 s for the Sentinel), a stone golem's heavy swing:
+  `MeleeMob#swing` triggers it on the server (`triggerAnim`, synced to clients) and it plays to its end, since
+  GeckoLib's own attack controller stops with vanilla's 6-tick arm swing. While a caster casts a spell that forms its
+  projectile, the renderer draws the projectile's orb growing in its hands ([11.6](#116-client-side)). Until
+  A2 (RLM-48) brings the art, `rf gen` writes placeholders from the YAML's `model`: a build that fills the hitbox
+  (`humanoid`; `slim`, an enderman's long legs and arms and a tall head; `golem`, a broad body with shells on its front
+  and back, long arms as thick as a player's and a big head, moss hanging off the shells), a surface (`speckled`,
+  `smooth`, or `mossy_bricks`: vanilla's brick layout of 8 by 4 pixels with grey mortar, every brick its own shade and
+  lit on its top and left edges, moss in clumps of at least 5 pixels, and on each shell's outer face a long crack after
+  Matěj's drawing, a dark grey rim round the variant's gem) and eyes (`dot`, `tall`, or `gem`: each 2x3, a white column
+  outside and the variant's colour inside, two lighter pixels above a darker one). The Sentinel's texture from Retro
+  Diffusion is RLM-401, local-only.
+- **Neat's card** is filled only by `LivingEntityRenderer`'s extraction, which GeckoLib's renderer does not run, so
+  `client/compat/neat/NeatCard` runs it for our mobs ([19.4](#194-optional-integrations)).
+- Minimap icons for Xaero's maps are generated files, no code ([ADR 0002](decisions/0002-hybrid-core-mod-and-modpack.md));
+  not yet.
 
 ### 14.3 Bosses
 
@@ -2422,6 +2535,12 @@ its name, `Lv. 20 Zombie`, from one function, `client/compat/MobLevelLabel`:
   `RegisterRenderStateModifiersEvent` after `extractRenderState` (`EntityRenderer#createRenderState`), so ours
   replaces that line. A card without a name line keeps Neat's. Neat hides vanilla's name tag while its card shows
   (its default `name_tag_render_behavior`, `WHEN_NO_HEALTHBAR`).
+- **Neat's card above a custom mob** (W3, [14.2](#142-custom-mobs)): GeckoLib's renderer is no
+  `LivingEntityRenderer`, so Neat's mixin never fills the card's state, though Neat draws a card after any
+  renderer's `submit`. `client/compat/neat/NeatCard` runs `LivingEntityRenderer#extractRenderState` of an invisible
+  living renderer (an empty model that never draws) on the mob's render state before GeckoLib's own extraction, so
+  Neat fills the card as for any vanilla mob, and then sets the level line as above. Our renderers create it only
+  while Neat is loaded.
 - **Jade** (`compat/jade/JadeCompat`, a `@WailaPlugin` that Jade finds itself, with its client part in
   `client/compat/jade/MobLevelTooltip`): an entity component provider replaces the name line that Jade's own provider
   adds (`JadeIds.CORE_OBJECT_NAME`, priority −10100), running after it at the default priority. It is required, so

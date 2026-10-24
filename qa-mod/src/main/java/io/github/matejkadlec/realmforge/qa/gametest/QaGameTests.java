@@ -36,6 +36,8 @@ public final class QaGameTests {
     public static final String PLATFORM = "platform_5x5";
     /** A 9 x 9 floor with 7 blocks of air above it: room for a realm portal's frame and space around it. */
     public static final String PLATFORM_9X9 = "platform_9x9";
+    /** A 17 x 17 floor with 5 blocks of air above it: room for a mob to fight at range and to back away. */
+    public static final String PLATFORM_17X17 = "platform_17x17";
 
     private static final List<Class<?>> HOLDERS = List.of(
             ApothicAttributesGameTests.class,
@@ -53,12 +55,14 @@ public final class QaGameTests {
             ContentEffectGameTests.class,
             ContentItemGameTests.class,
             ContentKillXpMultiplierGameTests.class,
+            ContentMobGameTests.class,
             ContentRealmGameTests.class,
             ContentRoomGameTests.class,
             ContentSetPieceGameTests.class,
             ContentSpellGameTests.class,
             ContentSpellSchoolGameTests.class,
             ContentStatGameTests.class,
+            CustomMobGameTests.class,
             DungeonPlanGameTests.class,
             EffectGameTests.class,
             HurtCooldownGameTests.class,

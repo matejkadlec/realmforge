@@ -9,6 +9,7 @@ from pydantic import Field
 from realmforge_tools.project import MOD_ID
 from realmforge_tools.schema.common import ContentId, LocalizedText, StrictModel, UniqueResourceIds
 from realmforge_tools.schema.recipe import ShapedRecipeDef
+from realmforge_tools.schema.spell_school import HexColor
 
 # What right-clicking an item can do (architecture 13). Each use is game code in the feature it belongs to, which finds
 # its items through the item tag realmforge:use/<use> that the pipeline writes; each has its tooltip line, the text
@@ -50,4 +51,8 @@ class ItemDef(StrictModel):
     )
     recipe: ShapedRecipeDef | None = Field(
         default=None, description="Optional: the shaped crafting recipe that makes the item."
+    )
+    color: HexColor | None = Field(
+        default=None,
+        description='Main colour of its placeholder texture, "#RRGGBB"; by default a colour from a hash of its id.',
     )

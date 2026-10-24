@@ -39,9 +39,11 @@ from realmforge_tools.schema.effect import PeriodicDef, effect_id
 from realmforge_tools.schema.item import USE_TEXT_GROUP, ItemDef
 from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
+from realmforge_tools.schema.mob import TRASH_LOOT, mob_description_id
 from realmforge_tools.schema.realm import FRAME_HEIGHT, PORTAL_PARTICLES, unlock_advancement
 from realmforge_tools.schema.requirement import ChapterCompletedDef, HasAdvancementDef
 from realmforge_tools.schema.room_spec import FULL, LANTERN, SLAB, STAIRS, THEME_ROLES, WALL_TORCH
+from realmforge_tools.schema.sound import sound_id
 from realmforge_tools.schema.spell import (
     ALLY,
     APPLY_EFFECT,
@@ -83,6 +85,8 @@ CHAPTER_REGISTRY = f"{MOD_ID}:chapter"
 STRUCTURE_REGISTRY = "minecraft:structure"
 PARTICLE_TYPE_REGISTRY = "minecraft:particle_type"
 MOB_EFFECT_REGISTRY = "minecraft:mob_effect"
+SOUND_EVENT_REGISTRY = "minecraft:sound_event"
+SPELL_REGISTRY = f"{MOD_ID}:spell"
 # Vanilla Overworld's height (net.minecraft.world.level.dimension.DimensionType, minecraft:overworld): its lowest y and
 # the number of blocks above it, for Overworld's arrival heights.
 OVERWORLD_MIN_Y = -64
@@ -98,6 +102,7 @@ REGISTRY_OF_TYPE: dict[str, str] = {
     "blocks": BLOCK_REGISTRY,
     "stats": ATTRIBUTE_REGISTRY,
     "effects": MOB_EFFECT_REGISTRY,
+    "mobs": ENTITY_TYPE_REGISTRY,
     "spell_schools": SPELL_SCHOOL_REGISTRY,
     "dungeons": DUNGEON_TYPE_REGISTRY,
     **{t.directory: f"{MOD_ID}:{t.registry}" for t in DATAPACK_TYPES},
@@ -114,6 +119,7 @@ RESERVED_TEXT_GROUPS: dict[str, str] = {
     "spell_school": "content/spell_schools/",
     "death.attack": "content/spell_schools/",
     "dungeon_type": "content/dungeons/",
+    "subtitles": "content/sounds/",
     **{t.registry: f"content/{t.directory}/" for t in DATAPACK_TYPES},
 }
 
@@ -162,6 +168,9 @@ def universe_with_content(vanilla: IdUniverse, content: Content) -> IdUniverse:
             universe.add(ITEM_REGISTRY, f"{MOD_ID}:{entry.model.id}")
     for entry in content.spell_schools:
         universe.add(DAMAGE_TYPE_REGISTRY, entry.model.damage_type)
+    for entry in content.sounds:
+        for name in entry.model.events:
+            universe.add(SOUND_EVENT_REGISTRY, sound_id(entry.model, name))
     for entry in content.chapters:
         universe.add(ADVANCEMENT_REGISTRY, f"{MOD_ID}:{chapter_advancement(entry.model.id)}")
     for entry in content.realms:
@@ -190,6 +199,8 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_spell_schools(content, universe)
     problems += _check_effects(content, universe)
     problems += _check_spells(content, universe)
+    problems += _check_mobs(content, universe)
+    problems += _check_sounds(content, universe)
     problems += _check_characters(content, universe)
     problems += _check_worldgen_references(content, universe)
     problems += _check_dimension_rules(content, universe)
@@ -710,6 +721,7 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
         for entry in content.effects
         if entry.model.periodic is not None
     }
+    mob_tags = {tag for entry in content.mobs for tag in entry.model.tags}
     for entry in content.spells:
         spell = entry.model
         school = schools.get(spell.school)
@@ -751,6 +763,163 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
                     )
                 )
             problems += _check_inner_effects(entry.source, path, effect, spell, universe, effects)
+            if effect.type == PROJECTILE:
+                problems += _check_projectile(entry.source, path, effect, mob_tags, universe)
+        cast_sound = getattr(spell.cast, "sound", None)
+        if cast_sound is not None and not universe.contains(SOUND_EVENT_REGISTRY, cast_sound):
+            problems.append(
+                Problem(entry.source, "cast.sound", _unknown(cast_sound, SOUND_EVENT_REGISTRY, universe))
+            )
+    return problems
+
+
+def _check_projectile(
+    source: str, path: str, projectile: BaseModel, mob_tags: set[str], universe: IdUniverse
+) -> list[Problem]:
+    """A projectile spares a tag that our mobs fill, and its impact's sound and particle block exist."""
+    problems: list[Problem] = []
+    if projectile.spares is not None and projectile.spares not in mob_tags:
+        known = ", ".join(sorted(mob_tags)) or "none"
+        problems.append(
+            Problem(
+                source,
+                f"{path}.spares",
+                f"no mob in content/mobs/ is tagged {projectile.spares}; tags: {known}",
+            )
+        )
+    impact = projectile.impact
+    if (
+        impact is not None
+        and impact.sound is not None
+        and not universe.contains(SOUND_EVENT_REGISTRY, impact.sound)
+    ):
+        problems.append(
+            Problem(source, f"{path}.impact.sound", _unknown(impact.sound, SOUND_EVENT_REGISTRY, universe))
+        )
+    if (
+        impact is not None
+        and impact.particles is not None
+        and not universe.contains(BLOCK_REGISTRY, impact.particles)
+    ):
+        problems.append(
+            Problem(source, f"{path}.impact.particles", _unknown(impact.particles, BLOCK_REGISTRY, universe))
+        )
+    return problems
+
+
+# The text group of entity type names, entity.realmforge.<name>, which content/mobs/ shares.
+ENTITY_TEXT_GROUP = "entity"
+
+# The targeting types a mob's AI casts with: at its target, or at a player it picks itself (architecture 11.2).
+MOB_SPELL_TARGETING = (ENEMY, CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLAYER)
+
+
+def _check_mobs(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A mob's loot (its own and its variants') names items that exist and are worth having (no trash loot, principle
+    10), its sounds and death particles exist, and a caster's spells exist, target an enemy and reach farther than one
+    step of its kiting."""
+    problems: list[Problem] = []
+    spells = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spells}
+    # content/texts/entity.yaml names the hand-written entity types (the spell entities) with the same keys.
+    entity_texts = {
+        name for entry in content.texts if entry.model.id == ENTITY_TEXT_GROUP for name in entry.model.texts
+    }
+    for entry in content.mobs:
+        mob = entry.model
+        if mob.id in entity_texts:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "id",
+                    f"content/texts/{ENTITY_TEXT_GROUP}.yaml already names an entity type {mob.id}: both would be "
+                    f"{mob_description_id(mob.id)}",
+                )
+            )
+        drops = [(f"loot.{n}", drop) for n, drop in enumerate(mob.loot)] + [
+            (f"variants.{v}.loot.{n}", drop)
+            for v, variant in enumerate(mob.variants)
+            for n, drop in enumerate(variant.loot)
+        ]
+        for path, drop in drops:
+            if not universe.contains(ITEM_REGISTRY, drop.item):
+                problems.append(
+                    Problem(entry.source, f"{path}.item", _unknown(drop.item, ITEM_REGISTRY, universe))
+                )
+            elif drop.item in TRASH_LOOT:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"{path}.item",
+                        f"{drop.item} is trash loot: every drop is worth having (vision); drop something useful",
+                    )
+                )
+        for name, sound in mob.sounds.model_dump().items():
+            if sound not in (None, "silent") and not universe.contains(SOUND_EVENT_REGISTRY, sound):
+                problems.append(
+                    Problem(entry.source, f"sounds.{name}", _unknown(sound, SOUND_EVENT_REGISTRY, universe))
+                )
+        for n, tag in enumerate(mob.tags):
+            if not tag.startswith(f"{MOD_ID}:"):
+                problems.append(
+                    Problem(
+                        entry.source, f"tags.{n}", f"{tag}: a mob joins our own entity type tags ({MOD_ID}:)"
+                    )
+                )
+        if mob.death_particles is not None and not universe.contains(BLOCK_REGISTRY, mob.death_particles):
+            problems.append(
+                Problem(
+                    entry.source, "death_particles", _unknown(mob.death_particles, BLOCK_REGISTRY, universe)
+                )
+            )
+        if mob.caster is None:
+            continue
+        for n, spell_id in enumerate(mob.caster.spells):
+            path = f"caster.spells.{n}"
+            spell = spells.get(spell_id)
+            if spell is None:
+                problems.append(Problem(entry.source, path, _unknown(spell_id, SPELL_REGISTRY, universe)))
+                continue
+            if spell.targeting.type not in MOB_SPELL_TARGETING:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        path,
+                        f"{spell_id} targets {spell.targeting.type}; a mob casts at an enemy: "
+                        f"{', '.join(MOB_SPELL_TARGETING)}",
+                    )
+                )
+            elif mob.caster.kiting is not None and spell.targeting.range <= mob.caster.kiting.step_blocks:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        path,
+                        f"{spell_id} reaches {spell.targeting.range:g} blocks, no farther than one "
+                        f"{mob.caster.kiting.step_blocks:g}-block step of its kiting, so a step could never keep its "
+                        "target in range",
+                    )
+                )
+    return problems
+
+
+def _check_sounds(content: Content, universe: IdUniverse) -> list[Problem]:
+    """An event plays vanilla sound events that exist, never one of ours: a reference to one of ours could loop."""
+    problems: list[Problem] = []
+    for entry in content.sounds:
+        for name, event in entry.model.events.items():
+            for n, ref in enumerate(event.sounds):
+                path = f"events.{name}.sounds.{n}.event"
+                if not ref.event.startswith("minecraft:"):
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            path,
+                            f"{ref.event}: an event plays vanilla sound events (minecraft:)",
+                        )
+                    )
+                elif not universe.contains(SOUND_EVENT_REGISTRY, ref.event):
+                    problems.append(
+                        Problem(entry.source, path, _unknown(ref.event, SOUND_EVENT_REGISTRY, universe))
+                    )
     return problems
 
 

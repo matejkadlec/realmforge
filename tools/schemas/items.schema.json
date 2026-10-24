@@ -79,6 +79,21 @@
   "additionalProperties": false,
   "description": "A simple item. Generates its registration, model, lang entries and (for now) a placeholder texture; a use and a\nflavor line become its tooltip, and a recipe its crafting recipe.",
   "properties": {
+    "color": {
+      "anyOf": [
+        {
+          "description": "An RGB colour, \"#RRGGBB\".",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Main colour of its placeholder texture, \"#RRGGBB\"; by default a colour from a hash of its id.",
+      "title": "Color"
+    },
     "creative_tabs": {
       "description": "Creative mode tabs to list the item in, e.g. minecraft:ingredients. No duplicates.",
       "items": {

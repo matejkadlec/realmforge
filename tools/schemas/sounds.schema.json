@@ -1,0 +1,125 @@
+{
+  "$defs": {
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    },
+    "SoundEventDef": {
+      "additionalProperties": false,
+      "description": "A sound event: what it plays and the subtitle that names it.",
+      "properties": {
+        "sounds": {
+          "description": "The sounds it may play; one at random each time.",
+          "items": {
+            "$ref": "#/$defs/SoundRefDef"
+          },
+          "minItems": 1,
+          "title": "Sounds",
+          "type": "array"
+        },
+        "subtitle": {
+          "$ref": "#/$defs/LocalizedText",
+          "description": "What the subtitles show while it plays, vanilla's style: \"Hewn Sentinel cracks\"."
+        }
+      },
+      "required": [
+        "subtitle",
+        "sounds"
+      ],
+      "title": "SoundEventDef",
+      "type": "object"
+    },
+    "SoundRefDef": {
+      "additionalProperties": false,
+      "description": "One vanilla sound event the event may play, with its own volume and pitch: the game multiplies them with the\nvanilla event's. An event with several picks one at random each time, as likely as the vanilla event has\nsounds.",
+      "properties": {
+        "event": {
+          "description": "A vanilla sound event, e.g. minecraft:entity.iron_golem.hurt.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Event",
+          "type": "string"
+        },
+        "pitch": {
+          "default": 1.0,
+          "description": "Pitch, 0.5 to 2: lower is deeper.",
+          "maximum": 2.0,
+          "minimum": 0.5,
+          "title": "Pitch",
+          "type": "number"
+        },
+        "volume": {
+          "default": 1.0,
+          "description": "Volume, more than 0 and at most 1.",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Volume",
+          "type": "number"
+        }
+      },
+      "required": [
+        "event"
+      ],
+      "title": "SoundRefDef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The sound events of one subject (a mob, a spell, a block), ``realmforge:<category>.<id>.<name>``.",
+  "properties": {
+    "category": {
+      "description": "The first word of the event ids: entity for a mob, spell for a spell, block for a block.",
+      "enum": [
+        "entity",
+        "block",
+        "item",
+        "spell",
+        "ambient",
+        "ui"
+      ],
+      "title": "Category",
+      "type": "string"
+    },
+    "events": {
+      "description": "Event name (lowercase snake_case) -> the event.",
+      "minProperties": 1,
+      "patternProperties": {
+        "^[a-z][a-z0-9_]*$": {
+          "$ref": "#/$defs/SoundEventDef"
+        }
+      },
+      "propertyNames": {
+        "maxLength": 64
+      },
+      "title": "Events",
+      "type": "object"
+    },
+    "id": {
+      "description": "The subject: a mob's, spell's or block's id. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "category",
+    "events"
+  ],
+  "title": "SoundGroupDef",
+  "type": "object"
+}

@@ -1,0 +1,561 @@
+{
+  "$defs": {
+    "CasterDef": {
+      "additionalProperties": false,
+      "description": "What a caster casts and how it fights: it casts each spell at its target whenever the spell is ready and the\ntarget is in range and in sight, in the listed order. While it casts it stands still and faces its target; a\ntarget out of range or out of sight sends it after the target until it can cast again.",
+      "properties": {
+        "kiting": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KitingDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Its step between two casts; without it, it stands where it cast."
+        },
+        "spells": {
+          "description": "Its spells, by id (realmforge:<id>), most important first. Each targets an enemy.",
+          "items": {
+            "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Spells",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "spells"
+      ],
+      "title": "CasterDef",
+      "type": "object"
+    },
+    "DropCountDef": {
+      "additionalProperties": false,
+      "description": "How many of the item one drop gives: a whole number from ``min`` to ``max``, each as likely.",
+      "properties": {
+        "max": {
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Max",
+          "type": "integer"
+        },
+        "min": {
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Min",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "title": "DropCountDef",
+      "type": "object"
+    },
+    "KitingDef": {
+      "additionalProperties": false,
+      "description": "How a caster moves between two casts (research BM-22): a quick step of ``step_blocks``, away from its target\nwhen it stays in range there, otherwise around the target or a little toward it, so the next cast is in range and\nin sight again. The mob AI's reusable kiting (``mob/ai/Kiting``).",
+      "properties": {
+        "speed_percent": {
+          "default": 150,
+          "description": "How fast it steps, in percent of its walking speed: 50 to 300.",
+          "maximum": 300,
+          "minimum": 50,
+          "title": "Speed Percent",
+          "type": "number"
+        },
+        "step_blocks": {
+          "default": 2,
+          "description": "How far one step goes, in blocks: 1 to 6.",
+          "maximum": 6,
+          "minimum": 1,
+          "title": "Step Blocks",
+          "type": "number"
+        }
+      },
+      "title": "KitingDef",
+      "type": "object"
+    },
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    },
+    "MeleeDef": {
+      "additionalProperties": false,
+      "description": "How a melee mob hits.",
+      "properties": {
+        "attack_interval_seconds": {
+          "default": 1.0,
+          "description": "The time between two of its hits, in seconds: vanilla's monsters hit every 1 s.",
+          "minimum": 0,
+          "title": "Attack Interval Seconds",
+          "type": "number"
+        },
+        "knock_up_blocks": {
+          "default": 0,
+          "description": "How high each hit throws its target, in blocks, on top of vanilla's knockback; 0 for none.",
+          "maximum": 3.0,
+          "minimum": 0,
+          "title": "Knock Up Blocks",
+          "type": "number"
+        }
+      },
+      "title": "MeleeDef",
+      "type": "object"
+    },
+    "MobAttributesDef": {
+      "additionalProperties": false,
+      "description": "The mob's vanilla attributes at level 1; its level scales health, armor and damage (architecture 14.1).",
+      "properties": {
+        "armor": {
+          "default": 0,
+          "description": "Armor points, 0 to 30.",
+          "maximum": 30,
+          "minimum": 0,
+          "title": "Armor",
+          "type": "number"
+        },
+        "attack_damage": {
+          "description": "Damage of a melee hit, in health points.",
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Attack Damage",
+          "type": "number"
+        },
+        "follow_range": {
+          "default": 16,
+          "description": "How far in blocks it notices a player and follows its target.",
+          "maximum": 64,
+          "minimum": 4,
+          "title": "Follow Range",
+          "type": "number"
+        },
+        "knockback_resistance_percent": {
+          "default": 0,
+          "description": "The share of knockback it shrugs off, 0 to 100.",
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Knockback Resistance Percent",
+          "type": "number"
+        },
+        "max_health": {
+          "description": "Health points (2 per heart).",
+          "exclusiveMinimum": 0,
+          "maximum": 1024,
+          "title": "Max Health",
+          "type": "number"
+        },
+        "movement_speed": {
+          "description": "Vanilla's movement speed: a zombie's is 0.23.",
+          "maximum": 0.5,
+          "minimum": 0.05,
+          "title": "Movement Speed",
+          "type": "number"
+        }
+      },
+      "required": [
+        "max_health",
+        "attack_damage",
+        "movement_speed"
+      ],
+      "title": "MobAttributesDef",
+      "type": "object"
+    },
+    "MobDropDef": {
+      "additionalProperties": false,
+      "description": "One item the mob may drop when it dies: rolled on its own, so drops never crowd each other out. Every drop is\nworth having (the vision: no trash loot). Looting raises it as vanilla's drops: more of the item, a better\nchance, or both.",
+      "properties": {
+        "chance_percent": {
+          "default": 100,
+          "description": "The chance it drops at all, in percent: 100 by default.",
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Chance Percent",
+          "type": "number"
+        },
+        "count": {
+          "$ref": "#/$defs/DropCountDef",
+          "default": {
+            "max": 1,
+            "min": 1
+          },
+          "description": "How many: from min to max, 1 by default."
+        },
+        "item": {
+          "description": "The item, e.g. minecraft:iron_ingot.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Item",
+          "type": "string"
+        },
+        "looting_chance_percent": {
+          "default": 0,
+          "description": "Each level of Looting adds this much to the chance, in percent points.",
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Looting Chance Percent",
+          "type": "number"
+        },
+        "looting_count": {
+          "default": 0,
+          "description": "Each level of Looting adds 0 to this many more of the item (vanilla's 0 to 1 for most drops).",
+          "maximum": 8,
+          "minimum": 0,
+          "title": "Looting Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "item"
+      ],
+      "title": "MobDropDef",
+      "type": "object"
+    },
+    "MobModelDef": {
+      "additionalProperties": false,
+      "description": "The placeholder model and texture, until A2 (RLM-48) brings the art: a build that fills the hitbox, a\nsurface, eyes and colours.",
+      "properties": {
+        "build": {
+          "default": "humanoid",
+          "description": "humanoid: legs, body and head in thirds; slim: an enderman's long legs and arms, a tall head; golem: a broad body with shells on its front and back, long thick arms and a big head.",
+          "enum": [
+            "humanoid",
+            "slim",
+            "golem"
+          ],
+          "title": "Build",
+          "type": "string"
+        },
+        "color": {
+          "description": "Main colour, \"#RRGGBB\".",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Color",
+          "type": "string"
+        },
+        "eyes": {
+          "default": "dot",
+          "description": "dot: one bright pixel each; tall: two bright pixels each; gem: 2x3 white with a two-pixel pupil in the variant's accent.",
+          "enum": [
+            "dot",
+            "tall",
+            "gem"
+          ],
+          "title": "Eyes",
+          "type": "string"
+        },
+        "moss": {
+          "default": "#56702F",
+          "description": "The moss of mossy_bricks, \"#RRGGBB\".",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Moss",
+          "type": "string"
+        },
+        "surface": {
+          "default": "speckled",
+          "description": "speckled stone; smooth stone; mossy stone bricks with moss clumps and strands hanging off, and gems (the variant's accent) in long cracks of the shells.",
+          "enum": [
+            "speckled",
+            "smooth",
+            "mossy_bricks"
+          ],
+          "title": "Surface",
+          "type": "string"
+        }
+      },
+      "required": [
+        "color"
+      ],
+      "title": "MobModelDef",
+      "type": "object"
+    },
+    "MobSizeDef": {
+      "additionalProperties": false,
+      "description": "The mob's hitbox in blocks; the placeholder model fills it.",
+      "properties": {
+        "height": {
+          "description": "Height in blocks, 0.3 to 6.",
+          "maximum": 6.0,
+          "minimum": 0.3,
+          "title": "Height",
+          "type": "number"
+        },
+        "width": {
+          "description": "Width (and depth) in blocks, 0.3 to 4.",
+          "maximum": 4.0,
+          "minimum": 0.3,
+          "title": "Width",
+          "type": "number"
+        }
+      },
+      "required": [
+        "width",
+        "height"
+      ],
+      "title": "MobSizeDef",
+      "type": "object"
+    },
+    "MobSoundsDef": {
+      "additionalProperties": false,
+      "description": "The sounds it makes, by sound event id (ours from content/sounds/, or vanilla's); a sound left out is\nvanilla's for hostile mobs (none for ambient, and the step sound of the block it walks on).",
+      "properties": {
+        "ambient": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Now and then while it lives.",
+          "title": "Ambient"
+        },
+        "death": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "When it dies.",
+          "title": "Death"
+        },
+        "hurt": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "When it is hurt.",
+          "title": "Hurt"
+        },
+        "step": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "const": "silent",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Each step it takes; silent: it walks without a sound.",
+          "title": "Step"
+        }
+      },
+      "title": "MobSoundsDef",
+      "type": "object"
+    },
+    "MobVariantDef": {
+      "additionalProperties": false,
+      "description": "One kind of the mob, rolled when it spawns and kept for its life: its own accent colour in its placeholder\ntexture (eyes, gems), and drops on top of the mob's own.",
+      "properties": {
+        "accent": {
+          "description": "Its colour in the placeholder texture: pupils and gems, \"#RRGGBB\".",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Accent",
+          "type": "string"
+        },
+        "id": {
+          "description": "The variant's id, e.g. sapphire.",
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "loot": {
+          "description": "What this variant drops besides the mob's own.",
+          "items": {
+            "$ref": "#/$defs/MobDropDef"
+          },
+          "title": "Loot",
+          "type": "array"
+        },
+        "weight": {
+          "default": 1,
+          "description": "How likely it is against the other variants.",
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Weight",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "accent"
+      ],
+      "title": "MobVariantDef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A custom mob, ``realmforge:<id>``: an entity type of one archetype with its data. Its name is the entity\ntype's translation, ``entity.realmforge.<id>``, shown in Neat's card, Jade's tooltip and death messages.",
+  "properties": {
+    "archetype": {
+      "description": "melee: walks up to its target and hits it; caster: casts its spells from a distance.",
+      "enum": [
+        "melee",
+        "caster"
+      ],
+      "title": "Archetype",
+      "type": "string"
+    },
+    "attributes": {
+      "$ref": "#/$defs/MobAttributesDef"
+    },
+    "caster": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CasterDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "A caster's spells and steps; only for archetype caster."
+    },
+    "death_particles": {
+      "anyOf": [
+        {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "A block, e.g. realmforge:vaultstone: the mob breaks apart into its particles when it dies, as a mined block does, and its body is gone at once.",
+      "title": "Death Particles"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "idle": {
+      "default": "stroll",
+      "description": "stroll (the default): wanders while it has no target, as vanilla's mobs do, at the Zombified Piglin's speed; guard: stands at the spot where it spawned and walks back to it once it loses its target.",
+      "enum": [
+        "stroll",
+        "guard"
+      ],
+      "title": "Idle",
+      "type": "string"
+    },
+    "loot": {
+      "description": "What it may drop when it dies.",
+      "items": {
+        "$ref": "#/$defs/MobDropDef"
+      },
+      "title": "Loot",
+      "type": "array"
+    },
+    "melee": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/MeleeDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "How a melee mob hits; only for archetype melee."
+    },
+    "model": {
+      "$ref": "#/$defs/MobModelDef",
+      "description": "Its placeholder model and texture."
+    },
+    "name": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "The mob's name, Title Case (lore style guide)."
+    },
+    "size": {
+      "$ref": "#/$defs/MobSizeDef"
+    },
+    "sounds": {
+      "$ref": "#/$defs/MobSoundsDef",
+      "default": {
+        "ambient": null,
+        "death": null,
+        "hurt": null,
+        "step": null
+      },
+      "description": "Its sounds."
+    },
+    "tags": {
+      "description": "Our entity type tags it belongs to, e.g. realmforge:stone_creatures, which a spell's projectile may spare.",
+      "items": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "variants": {
+      "description": "Its kinds, one rolled at spawn; none: a single kind.",
+      "items": {
+        "$ref": "#/$defs/MobVariantDef"
+      },
+      "title": "Variants",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "archetype",
+    "size",
+    "attributes",
+    "model"
+  ],
+  "title": "MobDef",
+  "type": "object"
+}

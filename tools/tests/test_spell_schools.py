@@ -234,8 +234,8 @@ def test_no_school_hit_knocks_back(repo: RepoPaths) -> None:
 def test_no_magic_school_writes_no_armor_tag(repo: RepoPaths) -> None:
     for name in ("arcane", "fire", "frost"):
         (repo.content / "spell_schools" / f"{name}.yaml").unlink()
-    # The magic spells and effects name these schools, so they go too.
-    for folder in ("spells", "effects"):
+    # The magic spells and effects name these schools, so they go too, and the mobs that cast those spells.
+    for folder in ("spells", "effects", "mobs"):
         for file in (repo.content / folder).glob("*.yaml"):
             if "realmforge:physical" not in file.read_text(encoding="utf-8"):
                 file.unlink()
@@ -276,8 +276,8 @@ def test_keys_and_expectations_cover_every_school(repo: RepoPaths) -> None:
 
 
 def test_no_schools_still_compile(repo: RepoPaths) -> None:
-    # Spells and effects name their school, so they go too.
-    for folder in ("spell_schools", "spells", "effects"):
+    # Spells and effects name their school, so they go too, and the mobs that cast the spells.
+    for folder in ("spell_schools", "spells", "effects", "mobs"):
         for file in (repo.content / folder).glob("*.yaml"):
             file.unlink()
     files = generate(repo)

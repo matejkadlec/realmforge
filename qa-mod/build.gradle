@@ -128,10 +128,11 @@ def packMod = { String slug ->
     return mod
 }
 
-// The lean client: Player Animation Library, which the QA mod compiles against (dependencies below), and Yeetus
-// Experimentus, which skips the experimental-settings warning of every new world (architecture 15.1).
+// The lean client: GeckoLib, which the core mod requires (its custom mobs, architecture 14.2), Player Animation
+// Library, which the QA mod compiles against (dependencies below), and Yeetus Experimentus, which skips the
+// experimental-settings warning of every new world (architecture 15.1).
 def leanClient = providers.gradleProperty('leanClient').isPresent()
-def leanClientMods = ['player-animation-library', 'yeetus-experimentus']
+def leanClientMods = ['geckolib', 'player-animation-library', 'yeetus-experimentus']
 if (providers.gradleProperty('withBetterCombat').isPresent()) {
     leanClientMods += ['better-combat', 'cloth-config']
 }

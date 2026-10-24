@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from realmforge_tools.content import Content
 from realmforge_tools.generate.datapack import game_field, seconds_to_ticks, translation_key
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
+from realmforge_tools.generate.textures import placeholder_orb_texture
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.spell import DAMAGE, HEAL, SpellDef
 
@@ -19,12 +20,22 @@ SOURCES = "content/spells/"
 
 
 def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
-    return {
+    files = {
         java_file_path(paths.mod_generated / "java", GENERATED_PACKAGE, "GeneratedSpells"): _keys(content),
         java_file_path(paths.qa_generated / "java", QA_GENERATED_PACKAGE, "GeneratedSpellExpectations"): (
             _expectations(content)
         ),
     }
+    textures = paths.mod_generated / "resources" / "assets" / MOD_ID / "textures" / "entity" / "spell"
+    for entry in content.spells:
+        for _, effect in entry.model.all_effects():
+            appearance = getattr(effect, "appearance", None)
+            if appearance is not None:
+                # spell/SpellVisuals#projectileTexture: textures/entity/spell/<spell>.png.
+                files[textures / f"{entry.model.id}.png"] = placeholder_orb_texture(
+                    f"{MOD_ID}:{entry.model.id}", int(appearance.color.removeprefix("#"), 16)
+                )
+    return files
 
 
 def _double(value: float) -> str:
@@ -76,6 +87,10 @@ def _optional_string(value: str | None) -> str:
 
 def _optional_double(value: float | None) -> str:
     return f"Optional.of({_double(value)})" if value is not None else "Optional.empty()"
+
+
+def _fraction(percent: float | None) -> float | None:
+    return percent / 100 if percent is not None else None
 
 
 def _bool(value: bool) -> str:
@@ -137,6 +152,10 @@ def _expectation(spell: SpellDef) -> str:
         f"                    {interval},\n"
         f"                    {_bool(getattr(cast, 'castable_while_moving', False))},\n"
         f"                    {_bool(getattr(cast, 'lock_on', False))},\n"
+        f"                    {_bool(getattr(cast, 'keep_sight', False))},\n"
+        f"                    {_optional_double(_fraction(getattr(cast, 'keep_range_percent', None)))},\n"
+        f"                    {_optional_string(getattr(cast, 'sound', None))},\n"
+        f"                    {_bool(getattr(cast, 'forms_projectile', False))},\n"
         f"                    {_optional_string(cost.resource if cost is not None else None)},\n"
         f"                    {_double(cost.amount if cost is not None else 0.0)},\n"
         f"                    {_double(cost.per_level if cost is not None else 0.0)},\n"
@@ -177,11 +196,12 @@ def _expectations(content: Content) -> bytes:
         "     * Expected state of one spell, in game units (ticks, fractions). Ids are full resource locations, e.g.\n"
         "     * {@code realmforge:test_bolt}; the name and description are translation keys; {@code range} is 0 for a\n"
         "     * spell on the caster itself, the cost's amounts are 0 for a free spell, and the cast's duration and interval\n"
-        "     * are 0 where its type has none.\n"
+        "     * are 0 where its type has none; {@code keepRange} is the share of the cast that keeps the target in range.\n"
         "     */\n"
         "    public record SpellExpectation(String id, String name, String description, String school, String scalesWith,\n"
         "            String targeting, double range,\n"
         "            String cast, int castDurationTicks, int castIntervalTicks, boolean castableWhileMoving, boolean lockOn,\n"
+        "            boolean keepSight, Optional<Double> keepRange, Optional<String> castSound, boolean formsProjectile,\n"
         "            Optional<String> costResource, double costAmount, double costPerLevel, int cooldownTicks,\n"
         "            int globalCooldownTicks, int maxLevel, boolean canCrit, Optional<Double> critMultiplier,\n"
         "            double critBonusChance, boolean npcOnly, List<EffectExpectation> effects) {\n"

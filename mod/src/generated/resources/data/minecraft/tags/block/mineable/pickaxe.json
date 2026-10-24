@@ -10,6 +10,7 @@
     "realmforge:realmforge_sealstone",
     "realmforge:realmforge_stone",
     "realmforge:siltstone",
-    "realmforge:vaultstone"
+    "realmforge:vaultstone",
+    "realmforge:vaultstone_bricks"
   ]
 }

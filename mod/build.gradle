@@ -76,6 +76,13 @@ def packModrinthMod = { String slug ->
 }
 
 dependencies {
+    // GeckoLib, a required library (ADR 0004): the custom mobs' models and animations (W3, architecture 14.2). The
+    // pack ships it and the dev runs load it as a pack mod (qa-mod/build.gradle), so it is compiled against, never
+    // bundled; `compileOnlyApi` hands it to the QA mod's compile classpath, whose GameTests use the mobs.
+    compileOnlyApi packModrinthMod('geckolib')
+    // The unit tests load the core mod in FML (neoForge.unitTest), which refuses it without its required library.
+    testRuntimeOnly packModrinthMod('geckolib')
+
     // Optional integrations (compat/, client/compat/): compiled against, never bundled; each runs only when its mod
     // is loaded. Neat draws the mob's card, Jade the tooltip at the top of the screen (RLM-338).
     compileOnly packModrinthMod('neat')

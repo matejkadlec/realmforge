@@ -261,8 +261,14 @@ CurseForge ones from CurseMaven by `project-id` and `file-id` under
 `[download]` before a run starts. `uv run pytest`
 (`tools/tests/test_dev_run_mods.py`) fails on a `.pw.toml` that reader cannot
 take. `./gradlew runClient -PleanClient` starts a client without the pack's
-mods, except Player Animation Library and Yeetus Experimentus. The dev client also loads Better Key Binds
+mods, except GeckoLib (which the core mod requires), Player Animation Library
+and Yeetus Experimentus. The dev client also loads Better Key Binds
 ([Our mods](#our-mods)); the servers do not.
+
+The core mod compiles against two kinds of pack mods, both through the pack's
+`mods/<slug>.pw.toml` (`mod/build.gradle`), so it always builds against the jar
+players run: GeckoLib, a required library (its custom mobs' models and
+animations), and the optional integrations (Neat, Jade).
 
 Every dev run (client, server, GameTest server) also gets this folder's
 `config/`: the QA mod's `seedPackConfig` task copies it into the run's `config/`

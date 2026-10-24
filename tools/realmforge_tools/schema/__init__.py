@@ -16,8 +16,10 @@ from realmforge_tools.schema.dungeon import DungeonTypeDef
 from realmforge_tools.schema.effect import EffectDef
 from realmforge_tools.schema.item import ItemDef
 from realmforge_tools.schema.kill_xp_multiplier import KillXpMultiplierDef
+from realmforge_tools.schema.mob import MobDef
 from realmforge_tools.schema.realm import RealmDef
 from realmforge_tools.schema.room_spec import RoomSpecDef, RoomThemeDef
+from realmforge_tools.schema.sound import SoundGroupDef
 from realmforge_tools.schema.spell import SpellDef
 from realmforge_tools.schema.spell_school import SpellSchoolDef
 from realmforge_tools.schema.stat import StatDef
@@ -41,6 +43,8 @@ CONTENT_TYPES: dict[str, type] = {
     "kill_xp_multipliers": KillXpMultiplierDef,
     "effects": EffectDef,
     "spells": SpellDef,
+    "mobs": MobDef,
+    "sounds": SoundGroupDef,
     "room_themes": RoomThemeDef,
     "room_specs": RoomSpecDef,
     "realms": RealmDef,
@@ -90,10 +94,12 @@ __all__ = [
     "EffectDef",
     "ItemDef",
     "KillXpMultiplierDef",
+    "MobDef",
     "RaceDef",
     "RealmDef",
     "RoomSpecDef",
     "RoomThemeDef",
+    "SoundGroupDef",
     "SpellDef",
     "SpellSchoolDef",
     "StatDef",

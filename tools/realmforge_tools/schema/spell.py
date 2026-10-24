@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field, model_validator
 from realmforge_tools.project import MOD_ID
 from realmforge_tools.schema.character import ResourceType
 from realmforge_tools.schema.common import ContentId, LocalizedText, ResourceId, Seconds, StrictModel
+from realmforge_tools.schema.spell_school import HexColor
 
 FiniteNumber = Annotated[float, Field(allow_inf_nan=False)]
 NonNegative = Annotated[float, Field(ge=0, allow_inf_nan=False)]
@@ -173,10 +174,33 @@ EntityEffectDef = Annotated[
 ]
 
 
+class ProjectileImpactDef(StrictModel):
+    """What a projectile does where it hits a block or an entity: a sound and a block's break particles, as a mined
+    block shatters."""
+
+    sound: ResourceId | None = Field(
+        default=None, description="A sound event, e.g. realmforge:spell.stoneform.impact."
+    )
+    particles: ResourceId | None = Field(
+        default=None,
+        description="A block whose break particles burst where it hits, e.g. realmforge:vaultstone.",
+    )
+
+
+class ProjectileAppearanceDef(StrictModel):
+    """How a projectile looks; without it, a trail of sparks (until C6, RLM-29). Its placeholder texture is
+    generated at ``textures/entity/spell/<spell>.png`` until real art exists."""
+
+    model: Literal["orb"] = Field(
+        description="orb: a small spinning orb of three crossed slabs, the shape of a shulker's bullet."
+    )
+    color: HexColor = Field(description='Main colour of its placeholder texture, "#RRGGBB".')
+
+
 class ProjectileEffectDef(StrictModel):
     """Launches a projectile from the caster's eyes toward the target (an enemy, a ground point or along a
     direction). It flies straight, hits the first enemy in its way and runs its own ``effects`` on it; a block or the
-    end of its lifetime ends it without them (architecture 11.3)."""
+    end of its lifetime ends it without them (architecture 11.3). An entity of ``spares`` stops it too, untouched."""
 
     type: Literal["realmforge:projectile"]
     speed: float = Field(
@@ -194,6 +218,17 @@ class ProjectileEffectDef(StrictModel):
     )
     effects: list[EntityEffectDef] = Field(
         min_length=1, description="What it does to the enemy it hits, in order."
+    )
+    spares: ResourceId | None = Field(
+        default=None,
+        description="An entity type tag, e.g. realmforge:stone_creatures: an entity in it stops the projectile but "
+        "takes none of its effects.",
+    )
+    impact: ProjectileImpactDef | None = Field(
+        default=None, description="Its sound and particles where it hits a block or an entity."
+    )
+    appearance: ProjectileAppearanceDef | None = Field(
+        default=None, description="How it looks; without it, a trail of sparks."
     )
 
     @model_validator(mode="after")
@@ -363,6 +398,31 @@ class _TimedCastDef(StrictModel):
         description="Whether the spell keeps its target once cast: the target must still be alive and in the caster's "
         "dimension, but range and line of sight are not checked again.",
     )
+    keep_sight: bool = Field(
+        default=False,
+        description="Whether the caster must keep its target in sight for the whole cast: losing sight of it ends the "
+        "cast at once.",
+    )
+    keep_range_percent: float | None = Field(
+        default=None,
+        gt=0,
+        le=100,
+        allow_inf_nan=False,
+        description="For this share of the cast, in percent, the target must stay in range, or the cast ends at once; "
+        "after it, range no longer matters. Left out: range is checked only before the effects.",
+    )
+    sound: ResourceId | None = Field(
+        default=None, description="A sound event the caster makes when the cast begins, e.g. its chant."
+    )
+
+    @model_validator(mode="after")
+    def _keeps(self) -> _TimedCastDef:
+        if self.lock_on and (self.keep_sight or self.keep_range_percent is not None):
+            raise ValueError(
+                "a spell that locks on checks neither sight nor range: drop keep_sight and "
+                "keep_range_percent, or lock_on"
+            )
+        return self
 
 
 class CastTimeCastDef(_TimedCastDef):
@@ -372,6 +432,11 @@ class CastTimeCastDef(_TimedCastDef):
 
     type: Literal["cast_time"]
     duration_seconds: Seconds = Field(description="The cast time, before Cast Time Reduction; more than 0.")
+    forms_projectile: bool = Field(
+        default=False,
+        description="Whether the spell's projectile forms in front of the caster during the cast, growing to its "
+        "size, and flies from there; the spell's first effect is a projectile with an appearance.",
+    )
 
     @model_validator(mode="after")
     def _positive(self) -> CastTimeCastDef:
@@ -504,6 +569,24 @@ class SpellDef(StrictModel):
                 raise ValueError(
                     f"per_level never applies with max_level 1 ({', '.join(leveled)}): raise max_level or drop it"
                 )
+        return self
+
+    @model_validator(mode="after")
+    def _formed_projectile(self) -> SpellDef:
+        if getattr(self.cast, "forms_projectile", False):
+            first = self.effects[0]
+            if first.type != PROJECTILE or first.appearance is None:
+                raise ValueError(
+                    "forms_projectile: the spell's first effect is a projectile with an appearance"
+                )
+        appearances = [
+            path for path, effect in self.all_effects() if getattr(effect, "appearance", None) is not None
+        ]
+        if len(appearances) > 1:
+            raise ValueError(
+                f"one projectile with an appearance per spell, its texture textures/entity/spell/<spell>.png: "
+                f"{', '.join(appearances)}"
+            )
         return self
 
     @model_validator(mode="after")

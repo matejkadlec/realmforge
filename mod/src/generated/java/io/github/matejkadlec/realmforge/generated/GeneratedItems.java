@@ -35,6 +35,10 @@ public final class GeneratedItems {
     public static final DeferredItem<Item> APPRENTICE_ROBES =
             ITEMS.registerSimpleItem("apprentice_robes", properties -> properties.stacksTo(1));
 
+    /** {@code realmforge:magic_stone_dust} from {@code content/items/magic_stone_dust.yaml}. */
+    public static final DeferredItem<Item> MAGIC_STONE_DUST =
+            ITEMS.registerSimpleItem("magic_stone_dust");
+
     /** {@code realmforge:oblivion_scroll} from {@code content/items/oblivion_scroll.yaml}. */
     public static final DeferredItem<Item> OBLIVION_SCROLL =
             ITEMS.registerSimpleItem("oblivion_scroll", properties -> properties.stacksTo(16)
@@ -42,6 +46,14 @@ public final class GeneratedItems {
                             Component.translatable("item_use.realmforge.unlearn_stat_points")
                                     .withStyle(style -> style.withColor(ChatFormatting.GREEN).withItalic(false)),
                             Component.translatable("item.realmforge.oblivion_scroll.flavor")))));
+
+    /** {@code realmforge:ruby} from {@code content/items/ruby.yaml}. */
+    public static final DeferredItem<Item> RUBY =
+            ITEMS.registerSimpleItem("ruby");
+
+    /** {@code realmforge:sapphire} from {@code content/items/sapphire.yaml}. */
+    public static final DeferredItem<Item> SAPPHIRE =
+            ITEMS.registerSimpleItem("sapphire");
 
     /** {@code realmforge:stone_wand} from {@code content/items/stone_wand.yaml}. */
     public static final DeferredItem<Item> STONE_WAND =
@@ -54,6 +66,10 @@ public final class GeneratedItems {
     /** {@code realmforge:test_item} from {@code content/items/test_item.yaml}. */
     public static final DeferredItem<Item> TEST_ITEM =
             ITEMS.registerSimpleItem("test_item", properties -> properties.stacksTo(16));
+
+    /** {@code realmforge:topaz} from {@code content/items/topaz.yaml}. */
+    public static final DeferredItem<Item> TOPAZ =
+            ITEMS.registerSimpleItem("topaz");
 
     /** {@code realmforge:undervault_signet} from {@code content/items/undervault_signet.yaml}. */
     public static final DeferredItem<Item> UNDERVAULT_SIGNET =
@@ -81,7 +97,11 @@ public final class GeneratedItems {
                 event.accept(STONE_WAND);
             }
             case "minecraft:ingredients" -> {
+                event.accept(MAGIC_STONE_DUST);
+                event.accept(RUBY);
+                event.accept(SAPPHIRE);
                 event.accept(TEST_ITEM);
+                event.accept(TOPAZ);
             }
             case "minecraft:tools_and_utilities" -> {
                 event.accept(OBLIVION_SCROLL);

@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# One of Undervault's three gems (realms design, Undervault's materials): a Topaz Hewn Sentinel drops it (W3, RLM-33;
+# Matěj's playtest, 2026-10-23), and its ore comes with the realm's materials. No use yet. The generated placeholder
+# texture until the A* textures.
+id: topaz
+name:
+  en_us: Topaz
+creative_tabs:
+  - minecraft:ingredients
+color: "#E3A92B"

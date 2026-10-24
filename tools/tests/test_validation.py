@@ -31,10 +31,14 @@ def test_repository_content_is_valid() -> None:
         "apprentice_hat",
         "apprentice_pants",
         "apprentice_robes",
+        "magic_stone_dust",
         "oblivion_scroll",
+        "ruby",
+        "sapphire",
         "stone_wand",
         "test_dungeon_key",
         "test_item",
+        "topaz",
         "undervault_signet",
     ]
     assert universe.contains("minecraft:item", "realmforge:test_item")

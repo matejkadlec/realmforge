@@ -169,6 +169,17 @@ public final class GeneratedBlocks {
     /** The block item of {@link #VAULTSTONE}. */
     public static final DeferredItem<BlockItem> VAULTSTONE_ITEM = ITEMS.registerSimpleBlockItem(VAULTSTONE);
 
+    /** {@code realmforge:vaultstone_bricks} from {@code content/blocks/vaultstone_bricks.yaml}. */
+    public static final DeferredBlock<Block> VAULTSTONE_BRICKS =
+            BLOCKS.registerSimpleBlock("vaultstone_bricks", properties -> properties
+                    .mapColor(MapColor.STONE)
+                    .strength(20.0F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops());
+
+    /** The block item of {@link #VAULTSTONE_BRICKS}. */
+    public static final DeferredItem<BlockItem> VAULTSTONE_BRICKS_ITEM = ITEMS.registerSimpleBlockItem(VAULTSTONE_BRICKS);
+
     private GeneratedBlocks() {
     }
 
@@ -186,6 +197,7 @@ public final class GeneratedBlocks {
                 event.accept(DIORITE_BRICKS_ITEM);
                 event.accept(GRANITE_BRICKS_ITEM);
                 event.accept(REALMFORGE_STONE_ITEM);
+                event.accept(VAULTSTONE_BRICKS_ITEM);
             }
             case "minecraft:functional_blocks" -> {
                 event.accept(DUNGEON_PORTAL_ITEM);

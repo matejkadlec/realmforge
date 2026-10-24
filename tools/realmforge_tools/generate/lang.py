@@ -6,7 +6,17 @@ from pathlib import Path
 
 from realmforge_tools.content import Content
 from realmforge_tools.formats.jsonfmt import dump_json
-from realmforge_tools.generate import blocks, datapack, dungeons, effects, spell_schools, stats, texts
+from realmforge_tools.generate import (
+    blocks,
+    datapack,
+    dungeons,
+    effects,
+    mobs,
+    sounds,
+    spell_schools,
+    stats,
+    texts,
+)
 from realmforge_tools.generate.items import flavor_key, translation_key
 from realmforge_tools.project import MOD_ID, SUPPORTED_LOCALES, RepoPaths
 
@@ -27,6 +37,8 @@ def collect(content: Content) -> dict[str, dict[str, str]]:
         datapack.translations(content)
         | stats.translations(content)
         | effects.translations(content)
+        | mobs.translations(content)
+        | sounds.translations(content)
         | spell_schools.translations(content)
         | texts.translations(content)
         | dungeons.translations(content)

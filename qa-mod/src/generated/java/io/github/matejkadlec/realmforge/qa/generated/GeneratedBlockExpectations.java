@@ -94,7 +94,13 @@ public final class GeneratedBlockExpectations {
                     "block.realmforge.vaultstone",
                     20.0F, 6.0F, true,
                     List.of("minecraft:mineable/pickaxe"),
-                    "realmforge:blocks/vaultstone"));
+                    "realmforge:blocks/vaultstone"),
+            new BlockExpectation(
+                    "realmforge:vaultstone_bricks",
+                    "block.realmforge.vaultstone_bricks",
+                    20.0F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/vaultstone_bricks"));
 
     private GeneratedBlockExpectations() {
     }

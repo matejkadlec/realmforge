@@ -74,6 +74,12 @@ public final class ContentSpellGameTests {
             helper.assertValueEqual(spell.cast().castableWhileMoving(), expected.castableWhileMoving(),
                     id + " castable while moving");
             helper.assertValueEqual(spell.cast().lockOn(), expected.lockOn(), id + " lock on");
+            helper.assertValueEqual(spell.cast().keepSight(), expected.keepSight(), id + " keeps sight");
+            helper.assertValueEqual(spell.cast().keepRange(), expected.keepRange(), id + " keeps range");
+            helper.assertValueEqual(spell.cast().sound().map(Identifier::toString), expected.castSound(),
+                    id + " cast sound");
+            helper.assertValueEqual(spell.cast().formsProjectile(), expected.formsProjectile(),
+                    id + " forms its projectile");
             helper.assertValueEqual(spell.cost().map(cost -> cost.resource().getRegisteredName()),
                     expected.costResource(), id + " cost resource");
             helper.assertValueEqual(spell.cost().map(cost -> cost.amount()).orElse(0.0), expected.costAmount(),
@@ -151,7 +157,8 @@ public final class ContentSpellGameTests {
             case KnockbackEffect knockback -> numbers(type, Map.of("strength", knockback.strength()));
             case DashEffect dash -> numbers(type, Map.of("strength", dash.strength()));
             case ProjectileEffect projectile -> new EffectExpectation(type, Map.of("speed", projectile.speed(),
-                    "size", projectile.size(), "lifetime_ticks", (double) projectile.lifetimeTicks()), Map.of(),
+                    "size", projectile.size(), "lifetime_ticks", (double) projectile.lifetimeTicks()),
+                    projectile.spares().map(tag -> Map.of("spares", tag.location().toString())).orElse(Map.of()),
                     projectile.effects().stream().map(ContentSpellGameTests::effect).toList());
             case AreaEffect area -> new EffectExpectation(type, Map.of("radius", area.radius(), "duration_ticks",
                     (double) area.durationTicks(), "interval_ticks", (double) area.intervalTicks()),
