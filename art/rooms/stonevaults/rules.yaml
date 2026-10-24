@@ -56,6 +56,9 @@ dress:
     replace: [minecraft:stone_bricks, minecraft:cobblestone, minecraft:stone]
     variants: [minecraft:cracked_stone_bricks, minecraft:mossy_stone_bricks, minecraft:mossy_cobblestone]
   decorations: [vines, cobwebs, barrels]
+  # Matěj's playtest (2026-10-24): the combination lock's six levers by trial were no fun. A lever whose block has a
+  # redstone torch behind it has to be on, and stone brick stairs under it, tall half to the corridor, mark it.
+  lever_hints: minecraft:stone_brick_stairs
   without:
     # No added barrels in these rooms (Matěj's review of the dressing, 2026-10-14); their own barrels stay.
     barrels:

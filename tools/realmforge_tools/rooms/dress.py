@@ -26,6 +26,13 @@ plainer a surface, the more variants it gets, so a corridor gets the most and a 
   a mirror maps onto itself. Barrels never stand in a passage one block wide, nor split the main floor. A room that
   fits no pattern of its size tries the smaller ones down to two, and gets no barrel rather than a single one in a
   wall's middle.
+- **Mechanisms stay as built** (Matěj's playtest, 2026-10-24): no variant and no decoration goes on a cell next to,
+  above, below or diagonally beside a mechanism block (redstone, levers, buttons, pressure plates, pistons, TNT,
+  dispensers, tripwires, doors and the like, ``_MECHANISMS``), and decorations go only into the air a player reaches
+  from the room's doorways, so none fills the hidden cavities a room's redstone runs in.
+- **Lever hints** (``lever_hints``, the same playtest): a lever on a wall whose block has a redstone torch behind it
+  is one that has to be on, so the floor block under it becomes the rule's stairs, their tall half towards the room
+  and a quarter-block notch along the wall. A combination of levers then shows which to throw.
 
 Everything is decided by hashes of the room's path and the positions, so the same import gives the same room.
 """
@@ -35,7 +42,7 @@ from __future__ import annotations
 import hashlib
 from collections import Counter
 from collections.abc import Callable, Collection
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from fnmatch import fnmatchcase
 from typing import Literal
 
@@ -73,6 +80,18 @@ _SIDES = {"north": (0, 0, -1), "south": (0, 0, 1), "west": (-1, 0, 0), "east": (
 # Entities that hang on a wall and pop off when a block fills their space; paintings span up to 4 x 4 blocks.
 _HANGING = frozenset({"minecraft:painting", "minecraft:item_frame", "minecraft:glow_item_frame"})
 _HANGING_REACH = 2
+# Blocks of a room's mechanisms, by a part of their name: dressing keeps ``_MECHANISM_REACH`` blocks away from them.
+_MECHANISMS = (
+    "redstone", "repeater", "comparator", "lever", "button", "pressure_plate", "piston", "observer", "dispenser",
+    "dropper", "hopper", "tnt", "target", "tripwire", "daylight_detector", "trapped_chest", "note_block", "door",
+    "fence_gate", "rail", "sculk_sensor", "lightning_rod", "crafter", "bell",
+)  # fmt: skip
+_MECHANISM_REACH = 1
+# Blocks a player walks through, by a part of their name, besides air: the reach of a room's open space.
+_WALK_THROUGH = (
+    "vine", "web", "torch", "carpet", "pressure_plate", "button", "lever", "sign", "banner", "flower", "grass", "fern",
+    "rail", "tripwire", "redstone_wire", "snow", "door", "water", "ladder", "sapling",
+)  # fmt: skip
 
 Surface = Literal["floor", "walls", "ceiling"]
 Decoration = Literal["vines", "cobwebs", "barrels"]
@@ -97,6 +116,11 @@ class DressRules(_Strict):
     walls: SurfaceRules | None = None
     ceiling: SurfaceRules | None = None
     decorations: list[Decoration] = Field(default_factory=list)
+    lever_hints: str | None = Field(
+        default=None,
+        description="The stairs (e.g. minecraft:stone_brick_stairs) that become the floor under each lever that has "
+        "to be on: a lever on a wall whose block has a redstone torch behind it.",
+    )
     without: dict[Decoration, list[str]] = Field(
         default_factory=dict, description="Rooms (fnmatch on their path) that do not get a decoration."
     )
@@ -122,6 +146,10 @@ class _Room:
     doors: list[Pos]
     taken: set[Pos]
     """Air cells the room's own entities need; no decoration goes there."""
+    guarded: set[Pos] = field(default_factory=set)
+    """Cells within ``_MECHANISM_REACH`` of a mechanism block; dressing changes none of them."""
+    open: set[Pos] = field(default_factory=set)
+    """The cells a player reaches from the room's doorways; decorations go only there."""
 
     def name(self, pos: Pos) -> str | None:
         block = self.blocks.get(pos)
@@ -131,8 +159,12 @@ class _Room:
         return self.name(pos) in AIRS
 
     def is_free(self, pos: Pos) -> bool:
-        """Air that no entity of the room needs."""
-        return self.is_air(pos) and pos not in self.taken
+        """Air that no entity of the room needs, which a player reaches and no mechanism is next to."""
+        return self.is_air(pos) and pos not in self.taken and pos not in self.guarded and pos in self.open
+
+    def walkable(self, pos: Pos) -> bool:
+        name = self.name(pos)
+        return name is not None and (name in AIRS or name == JIGSAW or any(p in name for p in _WALK_THROUGH))
 
     def is_full(self, pos: Pos) -> bool:
         name = self.name(pos)
@@ -158,6 +190,8 @@ def dress(
         ],
         _taken(structure),
     )
+    room.guarded = _guarded(room)
+    room.open = _open(room)
     surfaces = _surfaces(room)
     notes: list[str] = []
     needed = possible = 0
@@ -177,7 +211,61 @@ def dress(
     placed = _decorate(room, surfaces, rules.decorations_for(name), plainness, name, set(tags or []))
     if placed:
         notes.append(f"added {', '.join(placed)}")
+    if rules.lever_hints is not None:
+        hinted = _lever_hints(room, rules.lever_hints)
+        if hinted:
+            notes.append(f"marked {hinted} lever(s) that have to be on")
     return replace(structure, blocks=tuple(room.blocks.values())), notes
+
+
+def _guarded(room: _Room) -> set[Pos]:
+    """The cells within ``_MECHANISM_REACH`` of a mechanism block, the mechanism's own included."""
+    reach = range(-_MECHANISM_REACH, _MECHANISM_REACH + 1)
+    guarded: set[Pos] = set()
+    for (x, y, z), block in room.blocks.items():
+        if any(part in block.state.name for part in _MECHANISMS):
+            guarded |= {(x + dx, y + dy, z + dz) for dx in reach for dy in reach for dz in reach}
+    return guarded
+
+
+def _open(room: _Room) -> set[Pos]:
+    """The cells a player walks through from the room's doorways, side to side and up and down."""
+    reached = set(room.doors)
+    todo = list(room.doors)
+    while todo:
+        x, y, z = todo.pop()
+        for dx, dy, dz in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)):
+            cell = (x + dx, y + dy, z + dz)
+            if cell not in reached and room.walkable(cell):
+                reached.add(cell)
+                todo.append(cell)
+    return reached
+
+
+def _lever_hints(room: _Room, stairs: str) -> int:
+    """Under each lever on a wall whose block has a redstone torch behind it, the floor block becomes ``stairs``
+    with their tall half towards the room (the way the lever points), so a notch runs along the wall under it."""
+    hinted = 0
+    for pos, block in sorted(room.blocks.items()):
+        state = block.state
+        facing = state.get("facing")
+        if state.name != "minecraft:lever" or state.get("face") != "wall" or facing not in _SIDES:
+            continue
+        dx, _, dz = _SIDES[facing]
+        behind = (pos[0] - 2 * dx, pos[1], pos[2] - 2 * dz)
+        name = room.name(behind) or ""
+        if "redstone" not in name or "torch" not in name:
+            continue
+        floor = _up(pos, -1)
+        while room.is_air(floor):
+            floor = _up(floor, -1)
+        if not room.is_full(floor):
+            continue
+        room.blocks[floor] = StructureBlock(
+            floor, BlockState.parse(f"{stairs}[facing={facing},half=bottom,shape=straight,waterlogged=false]")
+        )
+        hinted += 1
+    return hinted
 
 
 def family(name: str) -> str:
@@ -217,7 +305,9 @@ def _add_variants(
     name: str,
     kind: str,
 ) -> list[str]:
-    replaceable = [pos for pos in positions if room.blocks[pos].state.name in rules.replace]
+    replaceable = [
+        pos for pos in positions if room.blocks[pos].state.name in rules.replace and pos not in room.guarded
+    ]
     count = round(VARIANT_SHARE * len(replaceable))
     variants = [v for v in rules.variants if family(v) not in families][:missing]
     added = []
