@@ -27,8 +27,9 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 /**
  * The spell bar (architecture 11.6, 18; C3b, RLM-25): eight slots and the racial slot side by side, with the resource
- * bar under them ({@link ResourceBarHud}, RLM-400), above the status rows, the XP bar and the selected item's name
- * ({@link SpellBarLayout}), drawn from {@link SpellBarView} by {@link SpellSlots}. It shows even when empty (research SP-1), and never in spectator mode. Its layer comes right
+ * bar under them ({@link ResourceBarHud}, RLM-400), above the status rows, the XP bar and the selected item's name,
+ * in one place whatever those rows are ({@link SpellBarLayout}), drawn from {@link SpellBarView} by
+ * {@link SpellSlots}. It shows even when empty (research SP-1), and never in spectator mode. Its layer comes right
  * after vanilla's item name, which is drawn on the line below the bar, and then raises {@code Gui#leftHeight} and
  * {@code Gui#rightHeight}, so the action bar message and the cast bar ({@link CastBarHud}) stay above it.
  */
@@ -78,15 +79,14 @@ public final class SpellBarHud {
         }
         SpellBarView view = view(player);
         Gui gui = minecraft.gui;
-        int stack = Math.max(gui.leftHeight, gui.rightHeight);
-        int top = SpellBarLayout.top(graphics.guiHeight(), stack, minecraft.gameMode.canHurtPlayer());
+        int top = SpellBarLayout.top(graphics.guiHeight());
         for (int slot = 0; slot < Spellbook.SLOT_COUNT; slot++) {
             SpellSlots.draw(graphics, minecraft.font, SpellBarLayout.slotX(slot, graphics.guiWidth()), top,
                     SpellBarLayout.SLOT, view.slots().get(slot), keyLabel(slot));
         }
         ResourceBarHud.draw(graphics, minecraft.font, player, SpellBarLayout.slotX(0, graphics.guiWidth()),
                 SpellBarLayout.resourceBarTop(top));
-        int raised = SpellBarLayout.raised(graphics.guiHeight(), top);
+        int raised = SpellBarLayout.raised(graphics.guiHeight(), top, Math.max(gui.leftHeight, gui.rightHeight));
         gui.leftHeight = raised;
         gui.rightHeight = raised;
     }
