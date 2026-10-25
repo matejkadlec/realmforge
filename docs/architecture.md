@@ -19,7 +19,8 @@
 > **APIs.** Every Minecraft, NeoForge and FML API named here was checked against the pinned sources: Minecraft
 > 1.21.1 and NeoForge 21.1.259 on 2026-10-11, and again for Minecraft 26.1.2 and NeoForge 26.1.2.116 with the port of
 > 2026-10-12 ([ADR 0026](decisions/0026-platform-minecraft-26-1-2-neoforge.md)). The FTB Quests and Better Combat
-> facts were checked against their 1.21.1 jars (FTB Quests 2101.1.36, Better Combat 2.4.0), Better Combat's disable
+> facts were checked against their 1.21.1 jars (FTB Quests 2101.1.36, Better Combat 2.4.0), FTB Quests' quest book
+> format and reward claiming again against its 26.1.2 build (26.1.2.9, Q1-1, section 16), Better Combat's disable
 > tag and Player Animation Library's API against their 26.1.2 builds (Better Combat 3.2.2, PAL 1.2.8). Libraries we
 > have not added yet (GeckoLib, Curios, Jade, Xaero) are marked *verify*: check their API before first use
 > (CLAUDE.md rule 6).
@@ -132,7 +133,7 @@ generated and committed, never edited by hand
                                    data: our registries, loot tables, recipes, tags, advancements,
                                          damage types, worldgen, structures
    qa-mod/src/generated .......... expectations and structures for GameTests
-   pack/config/ftbquests ......... the quest book (FTB Quests SNBT)
+   pack/config/ftbquests/quests .. the quest book (FTB Quests' JSON5), once content/quests/ has quests
    │  ./gradlew build → realmforge jar                packwiz → modpack
    ▼
 game start .. static registries (generated and hand-written Java), then frozen
@@ -374,7 +375,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
 | `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template, and each room's set-piece spots with the pieces that may fill them ([15.4](#154-rooms)) | the planner ([15.3](#153-generation-pure-first-then-minecraft)); the builder's set pieces (RLM-282) |
 | `loot/`, tags; the `recipe` of an item or block (exists, W4d) | `data/realmforge/loot_table/`, `recipe/<id>.json` (vanilla's `crafting_shaped`, the result the entry itself), `tags/` | reloadable vanilla data |
-| `chapters/`, `realms/`, `quests/` | `data/realmforge/advancement/` (a chapter's `chapter/<id>`, a realm's unlock `realm/<id>`); `pack/config/ftbquests/quests/` (SNBT, stable ids per ADR 0006) | advancements; the FTB Quests book |
+| `chapters/`, `realms/`, `quests/` | `data/realmforge/advancement/` (a chapter's `chapter/<id>`, a realm's unlock `realm/<id>`); `pack/config/ftbquests/quests/` (FTB Quests' JSON5, stable ids per ADR 0006; exists, Q1-1, [16](#16-progression-and-quests)) | advancements; the FTB Quests book |
 | `worldgen/<registry>/<id>.json` (JSON, [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)) | validated and copied unchanged to `data/realmforge/dimension/`, `dimension_type/`, `worldgen/<registry>/` | vanilla worldgen registries |
 | `rooms/` (NBT plus a YAML sidecar; [15.4](#154-rooms)) | validated and copied, normalized, to `data/realmforge/structure/rooms/` | structure templates |
 | `room_specs/`, `room_themes/` (exist, A4d; [15.4](#154-rooms)) | each kept seed of a spec built by the room generator into `data/realmforge/structure/rooms/generated/<spec>/seed_<n>.nbt`; themes name the blocks it builds with | structure templates |
@@ -399,7 +400,9 @@ makes a block unbreakable, as vanilla's bedrock and portals.
 
 The quest book is part of the modpack (All Rights Reserved, [ADR 0009](decisions/0009-licensing.md)), so its
 files are generated into `pack/`, not into the jar. FTB Quests reads them from `config/ftbquests/quests/` in the
-instance. After `rf gen` changes files in `pack/`, run `packwiz refresh` (CI checks the pack index).
+instance. `pack/config/ftbquests/quests/` is a generated directory, owned by `rf gen` like `mod/src/generated/`, and
+its files carry the `GENERATED FILE` header. When `rf gen` changes files in `pack/`, it runs `packwiz refresh` itself,
+or, without `packwiz` on the `PATH`, exits with 1 and asks for it (CI checks the pack index).
 
 ### 6.3 Conventions
 
@@ -2462,9 +2465,10 @@ depth limit.
     it). Leveling's `AdvancementProgressEvent` listener raises the level cap (C2, [10.2](#102-leveling)). Character XP rewards use a `CommandReward` that
     runs our operator command `/realmforge xp`, so the generator writes `permission_level: 2` (FTB Quests' default
     is 0).
-  - **Every team member gets the chapter advancement** (checked in the FTB Quests 2101.1.36 jar, RLM-73). Quest
-    progress belongs to the FTB Teams team, while advancements and level caps are per player. FTB Quests records a
-    claimed reward under the claiming player, or under `Util.NIL_UUID` for a team reward (`QuestKey#forReward`),
+  - **Every team member gets the chapter advancement** (checked in the FTB Quests 2101.1.36 jar, RLM-73, and again
+    in 26.1.2.9, Q1-1). Quest progress belongs to the FTB Teams team, while advancements and level caps are per
+    player. FTB Quests records a claimed reward under the claiming player, or under `Util.NIL_UUID` for a team reward
+    (`QuestKey#forReward`),
     so a team reward is claimed once, by the player who completes the quest, and the other members never get the
     advancement. The chapter reward is therefore a per-player reward that claims itself: the generator writes
     `team_reward: false` and `auto: "enabled"` (any value but `disabled`, and never `default`, which defers to the
@@ -2481,9 +2485,32 @@ depth limit.
     player past an exact level), `boss_defeated`, `dungeon_completed`, `spell_cast`, `talent_learned`.
     Custom statistics (`Registries.CUSTOM_STAT`) count repeatable things such as dungeons cleared. FTB Quests'
     `AdvancementTask` and `StatTask` read them and are retroactive.
-- **Pipeline:** `content/chapters/` and `content/quests/` → advancements in the jar, FTB Quests SNBT in
-  `pack/config/ftbquests/quests/` (ids derived from quest keys), lang. Quest texts come from the same data (boss
-  level; where, how and with what).
+- **Pipeline** (exists since Q1-1, `generate/quests.py`): `content/chapters/` and `content/quests/` → advancements in
+  the jar (a chapter's, a realm's unlock) and the quest book in `pack/config/ftbquests/quests/`. Quest texts come from
+  the same data (boss level; where, how and with what: Q1-3).
+  - **The format:** FTB Quests 26.1.2.9 reads its quest book as JSON5, not 1.21.1's SNBT (`BaseQuestFile#readDataFull`):
+    `data.json5` (the book's settings: file version 13, rewards per player and claimed by hand by default, linear
+    progression), `chapter_groups.json5` (no groups), `chapters/<chapter>.json5` (a chapter with its quests, their
+    tasks and rewards, placed by the chapter's `order`) and `lang/en_us/` (every text, split as FTB Quests
+    saves it: chapter titles in `chapter.json5`, quest titles, subtitles, descriptions and task titles in
+    `chapters/<chapter>.json5`, reward titles in `reward.json5`, under the keys `<type>.<id>.<field>`). The generator
+    writes JSON after a comment header, which JSON5 allows. A chapter is written once it has a quest, and nothing
+    while `content/quests/` is empty. A GameTest server loaded a generated book of three quests without a problem
+    (2026-10-25). FTB Quests rewrites any book it loads (`Chapter#addQuest` marks it changed), in its own JSON5 style
+    and with its defaults added, keeping every id and value; packwiz-installer brings our files back at the next
+    launch.
+  - **Stable ids:** FTB Quests keeps progress under 16-hex-digit ids (positive Java longs, not 0 or 1) and replaces
+    an id it cannot read, or one that two objects share, with a random one, losing that progress. Every id is the
+    first 63 bits of the SHA-256 of a key (`schema/quest.object_id`): `realmforge:chapter/<id>`,
+    `realmforge:quest/<id>`, and the quest's key plus `/task/<key>` or `/reward/<key>`, where a task's or reward's key
+    defaults to its type and target (`item:minecraft:cobblestone`). Reordering tasks or changing counts, positions or
+    texts keeps every id; a new target gets a new id unless its `key` keeps the old one. Validation refuses a shared id.
+  - **Tasks:** item (detected, or consumed with `consume`), advancement (or one criterion), custom statistic, kill,
+    dimension and checkmark, as FTB Quests' own task types. **Rewards:** items, character XP (the `CommandReward`
+    above, `/realmforge xp add {p} <amount>` run quietly, titled like FTB Quests' own XP reward through its translation
+    of "XP") and our own advancements (`team_reward: false`, `auto: "enabled"`). A chapter's last quest says
+    `completes_chapter: true` and gets the chapter's advancement; validation wants exactly one per chapter with quests,
+    refuses dependency cycles and two quests on one place, and checks every id against the ID universe.
 - Procedural contracts come later (M7), in our own `contract/` package.
 
 ## 17. Networking

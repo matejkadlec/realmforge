@@ -49,6 +49,11 @@ class RepoPaths:
         return self.root / "tools" / "schemas"
 
     @property
+    def pack_quests(self) -> Path:
+        """FTB Quests' quest book among the pack's config overrides, written by ``generate/quests.py``."""
+        return self.root / "pack" / "config" / "ftbquests" / "quests"
+
+    @property
     def id_universe(self) -> Path:
         return self.root / "tools" / "id_universe"
 
@@ -58,7 +63,7 @@ class RepoPaths:
 
     def generated_roots(self) -> tuple[Path, ...]:
         """Directories fully owned by the generators: anything in them not produced by ``rf gen`` is deleted."""
-        return (self.mod_generated, self.qa_generated, self.schemas)
+        return (self.mod_generated, self.qa_generated, self.schemas, self.pack_quests)
 
     def rel(self, path: Path) -> str:
         """Repository-relative POSIX path, for messages."""

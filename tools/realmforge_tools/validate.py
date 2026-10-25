@@ -49,6 +49,21 @@ from realmforge_tools.schema.item import USE_TEXT_GROUP, ItemDef
 from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
 from realmforge_tools.schema.mob import TRASH_LOOT, mob_description_id
+from realmforge_tools.schema.quest import (
+    AdvancementRewardDef,
+    AdvancementTaskDef,
+    DimensionTaskDef,
+    ItemRewardDef,
+    ItemTaskDef,
+    KillTaskDef,
+    RewardDef,
+    StatTaskDef,
+    TaskDef,
+    chapter_key,
+    code_string,
+    object_id,
+    quest_object_keys,
+)
 from realmforge_tools.schema.realm import FRAME_HEIGHT, PORTAL_PARTICLES, unlock_advancement
 from realmforge_tools.schema.requirement import ChapterCompletedDef, HasAdvancementDef
 from realmforge_tools.schema.room_spec import FULL, LANTERN, SLAB, STAIRS, THEME_ROLES, WALL_TORCH
@@ -96,6 +111,7 @@ PARTICLE_TYPE_REGISTRY = "minecraft:particle_type"
 MOB_EFFECT_REGISTRY = "minecraft:mob_effect"
 SOUND_EVENT_REGISTRY = "minecraft:sound_event"
 SPELL_REGISTRY = f"{MOD_ID}:spell"
+CUSTOM_STAT_REGISTRY = "minecraft:custom_stat"
 # Vanilla Overworld's height (net.minecraft.world.level.dimension.DimensionType, minecraft:overworld): its lowest y and
 # the number of blocks above it, for Overworld's arrival heights.
 OVERWORLD_MIN_Y = -64
@@ -224,6 +240,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_dungeon_keys(content, universe)
     problems += _check_recipes(content, universe)
     problems += _check_chapters(content)
+    problems += _check_quests(content, universe)
     problems += _check_leveling_curves(content)
     problems += _check_kill_xp_multipliers(content, universe)
     problems += _check_apotheosis_affixes(content, universe)
@@ -1573,6 +1590,169 @@ def _check_leveling_curves(content: Content) -> list[Problem]:
                     )
                 )
     return problems
+
+
+def _check_quests(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A quest's chapter, dependencies, icon, tasks and rewards exist; dependencies form no cycle; the quests of a
+    chapter stand apart; a chapter with quests has exactly one quest that completes it; and no two objects of the quest
+    book share an id, which would cost a player's progress (architecture 16)."""
+    problems: list[Problem] = []
+    chapters = {entry.model.id for entry in content.chapters}
+    quests = {entry.model.id: entry for entry in content.quests}
+    for entry in content.quests:
+        quest = entry.model
+        if quest.chapter not in chapters:
+            problems.append(
+                Problem(entry.source, "chapter", f"unknown chapter {quest.chapter!r} (content/chapters/)")
+            )
+        for i, dependency in enumerate(quest.dependencies):
+            if dependency not in quests:
+                problems.append(
+                    Problem(
+                        entry.source, f"dependencies.{i}", f"unknown quest {dependency!r} (content/quests/)"
+                    )
+                )
+        if quest.icon is not None and not universe.contains(ITEM_REGISTRY, quest.icon):
+            problems.append(Problem(entry.source, "icon", _unknown(quest.icon, ITEM_REGISTRY, universe)))
+        for i, task in enumerate(quest.tasks):
+            problems += _quest_task_problems(entry.source, f"tasks.{i}", task, universe)
+        for i, reward in enumerate(quest.rewards):
+            problems += _quest_reward_problems(entry.source, f"rewards.{i}", reward, universe)
+    problems += _quest_cycles(content)
+
+    by_chapter: dict[str, list] = {}
+    for entry in content.quests:
+        by_chapter.setdefault(entry.model.chapter, []).append(entry)
+    for chapter, entries in sorted(by_chapter.items()):
+        placed: dict[tuple[float, float], str] = {}
+        for entry in entries:
+            position = (entry.model.position.x, entry.model.position.y)
+            if position in placed:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        "position",
+                        f"stands on {placed[position]}'s place in chapter {chapter!r}: quests of a chapter stand apart",
+                    )
+                )
+            placed.setdefault(position, entry.model.id)
+        completing = [entry.model.id for entry in entries if entry.model.completes_chapter]
+        if len(completing) != 1:
+            found = ", ".join(completing) if completing else "none"
+            problems.append(
+                Problem(
+                    "content/quests/",
+                    "",
+                    f"chapter {chapter!r} needs exactly one quest with completes_chapter: true, its last one, which "
+                    f"grants realmforge:{chapter_advancement(chapter)} (found: {found})",
+                )
+            )
+
+    owners: dict[int, str] = {}
+    keys = [chapter_key(chapter) for chapter in sorted(by_chapter)]
+    keys += [key for entry in content.quests for key in quest_object_keys(entry.model)]
+    for key in keys:
+        object_id_ = object_id(key)
+        if object_id_ in owners:
+            problems.append(
+                Problem(
+                    "content/quests/",
+                    "",
+                    f"{key} and {owners[object_id_]} share the quest book id {code_string(object_id_)}: give one of "
+                    "them another key",
+                )
+            )
+        owners.setdefault(object_id_, key)
+    return problems
+
+
+def _quest_task_problems(source: str, path: str, task: TaskDef, universe: IdUniverse) -> list[Problem]:
+    references: list[tuple[str, str, str]] = []  # field, id, registry
+    match task:
+        case ItemTaskDef():
+            references.append(("item", task.item, ITEM_REGISTRY))
+        case AdvancementTaskDef():
+            references.append(("advancement", task.advancement, ADVANCEMENT_REGISTRY))
+        case StatTaskDef():
+            references.append(("stat", task.stat, CUSTOM_STAT_REGISTRY))
+        case KillTaskDef():
+            references.append(("entity", task.entity, ENTITY_TYPE_REGISTRY))
+        case DimensionTaskDef():
+            references.append(("dimension", task.dimension, DIMENSION_REGISTRY))
+    return [
+        Problem(source, f"{path}.{field}", _unknown(id_, registry, universe))
+        for field, id_, registry in references
+        if not universe.contains(registry, id_)
+    ]
+
+
+def _quest_reward_problems(source: str, path: str, reward: RewardDef, universe: IdUniverse) -> list[Problem]:
+    match reward:
+        case ItemRewardDef() if not universe.contains(ITEM_REGISTRY, reward.item):
+            return [Problem(source, f"{path}.item", _unknown(reward.item, ITEM_REGISTRY, universe))]
+        case AdvancementRewardDef():
+            advancement = reward.advancement
+            if advancement.startswith(f"{MOD_ID}:{chapter_advancement('')}"):
+                return [
+                    Problem(
+                        source,
+                        f"{path}.advancement",
+                        "a chapter's advancement comes from completes_chapter: true on the chapter's last quest",
+                    )
+                ]
+            if not advancement.startswith(f"{MOD_ID}:"):
+                return [
+                    Problem(
+                        source,
+                        f"{path}.advancement",
+                        f"{advancement!r} is not ours: a quest grants only our own advancements (realmforge:...)",
+                    )
+                ]
+            if not universe.contains(ADVANCEMENT_REGISTRY, advancement):
+                return [
+                    Problem(
+                        source, f"{path}.advancement", _unknown(advancement, ADVANCEMENT_REGISTRY, universe)
+                    )
+                ]
+    return []
+
+
+def _quest_cycles(content: Content) -> list[Problem]:
+    """Quests whose dependencies lead back to themselves: FTB Quests could never open them."""
+    entries = {entry.model.id: entry for entry in content.quests}
+    done: set[str] = set()
+    cycles: set[tuple[str, ...]] = set()
+    # A depth-first walk with its own stack (a campaign's chains can be longer than Python's recursion limit): the
+    # path, and for each quest on it the dependencies still to follow.
+    for start_id in sorted(entries):
+        if start_id in done:
+            continue
+        path: list[str] = [start_id]
+        pending: list[list[str]] = [list(entries[start_id].model.dependencies)]
+        while path:
+            if not pending[-1]:
+                done.add(path.pop())
+                pending.pop()
+                continue
+            dependency = pending[-1].pop(0)
+            if dependency not in entries or dependency in done:
+                continue
+            if dependency in path:
+                cycle = path[path.index(dependency) :]
+                first = cycle.index(min(cycle))
+                cycles.add(tuple(cycle[first:] + cycle[:first]))
+                continue
+            path.append(dependency)
+            pending.append(list(entries[dependency].model.dependencies))
+    return [
+        Problem(
+            entries[cycle[0]].source,
+            "dependencies",
+            f"the dependencies form a cycle, so no quest of it can open (each waits for the next): "
+            f"{' -> '.join((*cycle, cycle[0]))}",
+        )
+        for cycle in sorted(cycles)
+    ]
 
 
 def _check_kill_xp_multipliers(content: Content, universe: IdUniverse) -> list[Problem]:

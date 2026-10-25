@@ -55,7 +55,7 @@ The report builds on the [vision](vision.md) and the private artifact [Design No
 
 **Technical findings that still hold:**
 
-- FTB Quests SNBT: IDs are 16-digit hex; a choice reward references its reward table by a decimal long; files are read on world start or via `/ftbquests reload`.
+- FTB Quests SNBT: IDs are 16-digit hex; a choice reward references its reward table by a decimal long; files are read on world start or via `/ftbquests reload`. (1.21.1's format: FTB Quests 26.1.2 reads JSON5 with the same 16-digit ids, [architecture 16](architecture.md#16-progression-and-quests), Q1-1.)
 - The Otherworld work produced a Python SNBT parser, a region file reader and an advancement catalog. The approach is known; they get rewritten here as part of the pipeline.
 - Generating quests from data and validating IDs is faster and safer than hand-editing.
 

@@ -43,6 +43,13 @@ UniqueResourceIds = Annotated[
     Field(json_schema_extra={"uniqueItems": True}),
 ]
 
+# A list of ContentIds without repeats, such as the quests a quest depends on.
+UniqueContentIds = Annotated[
+    list[ContentId],
+    AfterValidator(_require_unique),
+    Field(json_schema_extra={"uniqueItems": True}),
+]
+
 NonEmptyText = Annotated[str, StringConstraints(min_length=1, strip_whitespace=False)]
 
 TICKS_PER_SECOND = 20
