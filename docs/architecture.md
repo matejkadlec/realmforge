@@ -1179,9 +1179,11 @@ lists spells granted while equipped or on use): the vision's "some from the race
 
 ### 11.2 Casting (server-authoritative)
 
-1. The client sends `CastSpellPayload(spell, target entity or position)`.
-2. `SpellCaster` checks: the spell is known, off cooldown and global cooldown, the resource suffices, the target is
-   in range and line of sight, and the caster is not silenced, stunned or already casting.
+1. The client sends `CastSpellPayload(spell, target entity or position)`; a direction spell aims at nothing and flies
+   where the crosshair points ([ADR 0052](decisions/0052-spells-aim-with-the-crosshair.md)).
+2. `SpellCaster` checks: the spell is known, off cooldown and global cooldown, the resource suffices, a targeted
+   spell's target is in range and line of sight, and the caster is not silenced, stunned or already casting. A
+   direction or a ground point never refuses a cast for its target (spell aiming, below).
 3. Instant spells run now. A cast-time or channelled spell stores the current cast in the `combat` attachment and
    sends `CastStartedPayload` to the caster and tracking players (cast bar, animation). A player who starts
    tracking the caster later (walking up to a boss, reconnecting mid-cast) gets the current cast from a
@@ -1250,12 +1252,12 @@ GameTests (`CastGameTests`). The effects run on the first server tick at or afte
 **In code (C3a-3, RLM-211 and RLM-243):** a cast aims at an entity, a point or nothing (`spell/SpellAim`, what the
 spell bar's payload will carry), and its targeting resolves that into a `spell/SpellTarget`: an entity (`self`,
 `enemy`, `ally`), a point (`ground_point`) or a direction (`direction`), each with a position and a direction from
-the caster's eyes. A ground point is the point aimed at, the feet of the entity aimed at, or else the first block the
-caster looks at within range, and must be in range and in sight (`Targets#canSee`); a direction points at what was
-aimed at, or else where the caster looks, and its position is its range along it or the first block in the way. Only
-an entity target is checked again before a cast time's effects and a channel's ticks, and seen afresh then
-(`SpellTarget#now`), so a projectile flies at where the target stands at the end of the cast; a point or a direction
-stays as it began. **Moving slows, it never interrupts** (RLM-261,
+the caster's eyes. A ground point lands where spell aiming (below) puts it; a direction points at what was aimed at, or
+else where the caster looks, and its position is its range along it or the first block in the way. Only an entity
+target is checked again before a cast time's effects and a channel's ticks, and seen afresh then (`SpellTarget#now`),
+so a projectile flies at where the target stands at the end of the cast; a direction from the caster's look follows the
+look then (spell aiming, below); a point, or a direction aimed at something, stays as it began. **Moving slows, it
+never interrupts** (RLM-261,
 [ADR 0039](decisions/0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md)): a cast-time or channelled
 spell that may not be cast while moving gives its caster the transient movement speed modifier
 `Casting#CAST_SLOW` (`realmforge:cast_slow`, −50 % `ADD_MULTIPLIED_TOTAL`, [ADR 0047](decisions/0047-the-cast-slow-halves-the-casters-speed.md)) from its start until
@@ -1265,6 +1267,34 @@ Players and mobs are slowed alike. A player's client moves the player, so a modi
 can ignore vanilla's Slowness. A spell's `realmforge:knockback` interrupts the target's cast explicitly
 (`CastEnd.KNOCKED_BACK`), unless it may be cast while moving. `CastGameTests` covers the slow, and
 `SpellEffectGameTests` the knockback.
+
+**In code (spell aiming, RLM-344 and RLM-346; [ADR 0052](decisions/0052-spells-aim-with-the-crosshair.md)):** spells
+are aimed, not targeted, unless their data keeps a target (Matěj's playtest of C3b, 2026-10-21: "cast anytime, aim
+with the cursor", as Iron's Spells does).
+
+- **Directions** cast at any time. `client/spell/SpellTargetPicker` aims a direction spell at nothing, so the server
+  takes the player's look, which the crosshair shows (`DirectionTargeting` resolves it as `SpellTarget#look`). Such a
+  target follows the look through a cast time or a channel: `SpellTarget#now(caster, targeting)` resolves it again
+  from the caster's look before the effects run, so a bolt leaves where the crosshair points as the cast completes,
+  and a channel's every tick where it points then. A direction aimed at an entity or a point (a mob's AI, `/qa spell
+  cast_at`) stays as it began.
+- **Ground points** (`GroundPointTargeting`, `spell/GroundPoints`) are never refused for range. Aimed at nothing, the
+  spell lands on the block the look hits within range; with none in range (farther, or the sky), at the point at the
+  range along the look, League of Legends' clamp cast. Either way it lands on the ground below that point: the search
+  starts just out of the face the look hit (`GroundPoints#offFace`, a thousandth of a block) and goes straight down to
+  the first block that stops movement, ignoring water as the crosshair does, so a wall's face lands at its foot, a
+  ceiling on the floor beneath it and a point in the air on the ground under it, however far down; above the void, at
+  the point itself. Aimed at an entity in range it lands at its feet, if the caster sees the entity; at a point in
+  range, on the point, which must be in sight (`NO_LINE_OF_SIGHT` otherwise); at either beyond the range, clamped
+  along the line toward it (`GroundPoints#clamp`) as the look is. The landing needs no line of sight: the spell comes
+  down from above (its visuals are C6's). It is placed when the cast begins and stays, as in WoW and League of
+  Legends, so a cast-time area is a telegraph players can read.
+- **Targeted spells** (`enemy`, `ally`) keep the entity under the crosshair (an ally spell without one takes the
+  caster) until auto-aim (RLM-345), whose design Matěj reviews before code; which spells stay targeted is its
+  question.
+- `SpellAimingGameTests` casts bolts and ground spells at the sky, a wall, a ceiling, a point beyond range, a mob behind
+  a low wall, passive and hostile mobs, an invulnerable mob and an ally, and turns a caster during a cast time;
+  `GroundPointsTest` covers the clamp.
 
 **Kept targets (W3 revision, RLM-33):** a timed spell may keep its entity target through the cast instead of only
 checking it before its effects. With `keep_sight`, `Casting` checks the caster's line of sight to the target every
@@ -1289,11 +1319,20 @@ type only for genuinely new behaviour.
 
 - **`realmforge:projectile`** (`ProjectileEffect`, `SpellProjectile`): launched from the caster's eyes along the
   target's direction at its `speed` (blocks per second), straight, without gravity or drag, with a hitbox of its
-  `size`. It hits the first enemy of the caster in its way (never the caster, an ally or a spectator) and runs its own
-  effects on it, then is gone; a block or the end of its `lifetime_ticks` ends it without them. An entity of the
-  entity type tag it `spares` (`#realmforge:stone_creatures`: Stoneform spares the Hewn) stops it too, untouched. Its
-  `impact` plays a sound and bursts a block's break particles where it hits a block or an entity, and its
-  `appearance` (`orb`) is how its clients draw it ([11.6](#116-client-side)).
+  `size`. It stops at the first living entity in its way that is neither the caster nor one of its allies (who let it
+  pass, as spectators and non-living entities do) and is gone (RLM-344, [ADR
+  0052](decisions/0052-spells-aim-with-the-crosshair.md)): an entity that can be damaged, hostile or passive, takes its
+  own effects; one that cannot (`LivingEntity#canBeSeenAsEnemy` false: invulnerable, a player in creative mode) stops
+  it untouched, and so does one of the entity type tag it `spares` (`#realmforge:stone_creatures`: Stoneform spares
+  the Hewn). A block stops it without its effects. **Nothing flies forever:** it has no lifetime unless its data sets
+  `lifetime_ticks` (at most 10 s), and it is removed above the build height (its bottom above the top of the world's
+  highest block), where entities stop moving (its next position not entity-ticking,
+  `ServerLevel#isPositionEntityTicking`: beyond every player's simulation distance, which equals the render distance by
+  default, or in a chunk that is not loaded; `checkDespawn`, which the server calls even where entities no longer
+  tick, removes one left behind), and in the void (vanilla's `Entity#checkBelowWorld`, 64 blocks below the
+  bottom). Its `impact` plays a sound and bursts a
+  block's break particles where it hits a block or an entity, and its `appearance` (`orb`) is how its clients draw it
+  ([11.6](#116-client-side)).
 - **`realmforge:area`** (`AreaEffect`, `SpellArea`): a zone at the target's position (the caster's feet, an enemy's,
   a ground point) with a `radius`, which at the end of every `interval_ticks` runs its own effects on every enemy (or,
   with `affects: allies`, ally) standing within the radius of its middle, from half a block below it to 3 blocks
@@ -1428,7 +1467,8 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
   order, a new press replacing the waiting one at size 1. A held key casts its spell again whenever its cooldowns
   allow, at most every half second, and never cancels a cast; pressing the spell being cast does nothing. Two spells
   never cast at once. `client/spell/SpellBarInput` sends `CastSpellPayload` (the spell, the living entity under the
-  crosshair within its range, `client/spell/SpellTargetPicker`, and `replaceCast`); `spell/SpellBar` casts it through
+  crosshair within its range, `client/spell/SpellTargetPicker`, none for a direction spell, which flies where the
+  crosshair points, and `replaceCast`); `spell/SpellBar` casts it through
   `SpellCaster`, which with `replaceCast` skips the already-casting check for another spell and cancels the cast in
   progress only once every other check passed. A refusal goes back as `CastRefusedPayload`.
 - **HUD** (`client/hud`): the spell bar (`SpellBarHud`, drawn from `spell/SpellBarView` by `SpellSlots`) has its nine
