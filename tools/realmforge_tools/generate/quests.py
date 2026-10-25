@@ -6,7 +6,7 @@ SNBT. Every file here is JSON after a comment header, which JSON5 allows, in ``p
 - ``data.json5``: the book's settings: FTB Quests' file version and its defaults (rewards per player and claimed by
   hand, linear progression), never ``suppress_all_autoclaiming``;
 - ``chapter_groups.json5``: no groups, so every chapter is in the default group;
-- ``chapters/<chapter>.json5``: a chapter of content/chapters/, ordered by its ``order``, with its quests, their tasks
+- ``chapters/<chapter>.json5``: a chapter of content/chapters/, placed by its ``order``, with its quests, their tasks
   and their rewards;
 - ``lang/en_us/``: the texts, split as FTB Quests saves them (``TranslationTable#splitAndSerialize``): the chapters'
   titles in ``chapter.json5``, the quests' titles, subtitles and descriptions and the tasks' titles in
@@ -14,7 +14,10 @@ SNBT. Every file here is JSON after a comment header, which JSON5 allows, in ``p
   (``TranslationManager#makeKey``).
 
 A chapter is written once it has a quest, and nothing at all while content/quests/ is empty, so the pack keeps no quest
-book of ours until Q2 adds quests. Ids come from ``schema/quest.object_id``. A character XP reward is a
+book of ours until Q2 adds quests. FTB Quests rewrites the book in the instance whenever it loads it
+(``Chapter#addQuest`` marks it changed), in its own JSON5 style and with its defaults added, keeping every id and value
+written here (checked with a GameTest server, 2026-10-25); packwiz-installer brings these files back at the next
+launch. Ids come from ``schema/quest.object_id``. A character XP reward is a
 ``CommandReward`` that runs ``/realmforge xp add`` for the claiming player (FTB Quests puts the name in ``{p}``) with
 permission level 2, our command's level (FTB Quests' default is 0), quietly; its title reads as FTB Quests' own XP
 reward does ("XP: +500", in FTB Quests' translation of "XP"). An advancement reward is per player
@@ -80,9 +83,10 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     }
     chapter_titles: dict[str, Any] = {}
     reward_titles: dict[str, Any] = {}
-    for chapter in sorted((chapters[chapter_id] for chapter_id in by_chapter), key=lambda c: c.order):
+    ordered = sorted((chapters[chapter_id] for chapter_id in by_chapter), key=lambda c: c.order)
+    for index, chapter in enumerate(ordered):
         quests = sorted(by_chapter[chapter.id], key=lambda quest: quest.id)
-        files[root / "chapters" / f"{chapter.id}.json5"] = _json5(_chapter(chapter, quests))
+        files[root / "chapters" / f"{chapter.id}.json5"] = _json5(_chapter(chapter, index, quests))
         chapter_titles[_translation_key("chapter", chapter_key(chapter.id), "title")] = chapter.name.en_us
         texts: dict[str, Any] = {}
         for quest in quests:
@@ -133,11 +137,13 @@ def _data() -> dict[str, Any]:
     }
 
 
-def _chapter(chapter: ChapterDef, quests: list[QuestDef]) -> dict[str, Any]:
+def _chapter(chapter: ChapterDef, index: int, quests: list[QuestDef]) -> dict[str, Any]:
+    """A chapter; ``index`` is its place among the written chapters in story order, from 0, as FTB Quests saves
+    ``order_index`` (its place in its group)."""
     return {
         "id": _code(chapter_key(chapter.id)),
         "group": "",
-        "order_index": chapter.order,
+        "order_index": index,
         "filename": chapter.id,
         "default_quest_shape": "",
         "default_hide_dependency_lines": False,

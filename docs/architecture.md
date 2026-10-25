@@ -2491,11 +2491,14 @@ depth limit.
   - **The format:** FTB Quests 26.1.2.9 reads its quest book as JSON5, not 1.21.1's SNBT (`BaseQuestFile#readDataFull`):
     `data.json5` (the book's settings: file version 13, rewards per player and claimed by hand by default, linear
     progression), `chapter_groups.json5` (no groups), `chapters/<chapter>.json5` (a chapter with its quests, their
-    tasks and rewards, its `order_index` the chapter's `order`) and `lang/en_us/` (every text, split as FTB Quests
+    tasks and rewards, placed by the chapter's `order`) and `lang/en_us/` (every text, split as FTB Quests
     saves it: chapter titles in `chapter.json5`, quest titles, subtitles, descriptions and task titles in
     `chapters/<chapter>.json5`, reward titles in `reward.json5`, under the keys `<type>.<id>.<field>`). The generator
     writes JSON after a comment header, which JSON5 allows. A chapter is written once it has a quest, and nothing
-    while `content/quests/` is empty.
+    while `content/quests/` is empty. A GameTest server loaded a generated book of three quests without a problem
+    (2026-10-25). FTB Quests rewrites any book it loads (`Chapter#addQuest` marks it changed), in its own JSON5 style
+    and with its defaults added, keeping every id and value; packwiz-installer brings our files back at the next
+    launch.
   - **Stable ids:** FTB Quests keeps progress under 16-hex-digit ids (positive Java longs, not 0 or 1) and replaces
     an id it cannot read, or one that two objects share, with a random one, losing that progress. Every id is the
     first 63 bits of the SHA-256 of a key (`schema/quest.object_id`): `realmforge:chapter/<id>`,

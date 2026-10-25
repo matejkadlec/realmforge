@@ -1720,27 +1720,30 @@ def _quest_reward_problems(source: str, path: str, reward: RewardDef, universe: 
 def _quest_cycles(content: Content) -> list[Problem]:
     """Quests whose dependencies lead back to themselves: FTB Quests could never open them."""
     entries = {entry.model.id: entry for entry in content.quests}
-    state: dict[str, int] = {}  # 1 while on the path, 2 once every quest after it is checked
+    done: set[str] = set()
     cycles: set[tuple[str, ...]] = set()
-
-    def visit(quest_id: str, path: list[str]) -> None:
-        state[quest_id] = 1
-        path.append(quest_id)
-        for dependency in entries[quest_id].model.dependencies:
-            if dependency not in entries:
+    # A depth-first walk with its own stack (a campaign's chains can be longer than Python's recursion limit): the
+    # path, and for each quest on it the dependencies still to follow.
+    for start_id in sorted(entries):
+        if start_id in done:
+            continue
+        path: list[str] = [start_id]
+        pending: list[list[str]] = [list(entries[start_id].model.dependencies)]
+        while path:
+            if not pending[-1]:
+                done.add(path.pop())
+                pending.pop()
                 continue
-            if state.get(dependency) == 1:
+            dependency = pending[-1].pop(0)
+            if dependency not in entries or dependency in done:
+                continue
+            if dependency in path:
                 cycle = path[path.index(dependency) :]
-                start = cycle.index(min(cycle))
-                cycles.add(tuple(cycle[start:] + cycle[:start]))
-            elif dependency not in state:
-                visit(dependency, path)
-        path.pop()
-        state[quest_id] = 2
-
-    for quest_id in sorted(entries):
-        if quest_id not in state:
-            visit(quest_id, [])
+                first = cycle.index(min(cycle))
+                cycles.add(tuple(cycle[first:] + cycle[:first]))
+                continue
+            path.append(dependency)
+            pending.append(list(entries[dependency].model.dependencies))
     return [
         Problem(
             entries[cycle[0]].source,

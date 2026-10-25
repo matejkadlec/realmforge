@@ -176,7 +176,7 @@ def test_the_book_is_written_as_ftb_quests_reads_it(repo: RepoPaths) -> None:
     assert files[f"{BOOK}/chapter_groups.json5"] == {"chapter_groups": []}
 
     chapter = files[f"{BOOK}/chapters/chapter_1.json5"]
-    assert (chapter["group"], chapter["order_index"], chapter["filename"]) == ("", 1, "chapter_1")
+    assert (chapter["group"], chapter["order_index"], chapter["filename"]) == ("", 0, "chapter_1")
     assert (chapter["quest_links"], chapter["images"]) == ([], [])
     assert files[f"{LANG}/chapter.json5"] == {f"chapter.{chapter['id']}.title": "The Ominous Tale"}
 
@@ -466,10 +466,27 @@ def test_each_chapter_gets_its_file_in_story_order(repo: RepoPaths) -> None:
     )
     files = book(repo)
     second = files[f"{BOOK}/chapters/chapter_2.json5"]
-    assert (second["order_index"], second["filename"]) == (2, "chapter_2")
+    assert (second["order_index"], second["filename"]) == (1, "chapter_2")
+    assert files[f"{BOOK}/chapters/chapter_1.json5"]["order_index"] == 0
     assert [reward.get("advancement") for reward in second["quests"][0]["rewards"]] == [
         None,
         "realmforge:chapter/chapter_2",
     ]
     assert sorted(files[f"{LANG}/chapter.json5"].values()) == ["Chapter 2", "The Ominous Tale"]
     assert f"{LANG}/chapters/chapter_2.json5" in files
+
+
+def test_a_long_chain_of_quests_is_checked_without_recursion(repo: RepoPaths) -> None:
+    """A campaign's dependency chain may be longer than Python's recursion limit (1,000 frames by default)."""
+    add_book(repo)
+    previous = "into_the_undervault"
+    for n in range(1, 1201):
+        add_quests(
+            repo,
+            FIRST.replace("id: first_steps", f"id: chain_{n}")
+            .replace("x: 0, y: 0", f"x: {n % 500}, y: {9 + n // 500}")
+            .replace("tasks:", f"dependencies: [{previous}]\ntasks:"),
+        )
+        previous = f"chain_{n}"
+    content, _ = load_and_validate(repo)
+    assert len(content.quests) == 1203
