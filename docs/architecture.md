@@ -1334,9 +1334,11 @@ type only for genuinely new behaviour.
   block's break particles where it hits a block or an entity, and its `appearance` (`orb`) is how its clients draw it
   ([11.6](#116-client-side)).
 - **`realmforge:area`** (`AreaEffect`, `SpellArea`): a zone at the target's position (the caster's feet, an enemy's,
-  a ground point) with a `radius`, which at the end of every `interval_ticks` runs its own effects on every enemy (or,
-  with `affects: allies`, ally) standing within the radius of its middle, from half a block below it to 3 blocks
-  above, for `duration_ticks` (a whole number of intervals).
+  a ground point) with a `radius`, which runs its own effects on every enemy (or, with `affects: allies`, ally)
+  standing within the radius of its middle, from half a block below it to 3 blocks above: on its first tick, then
+  every `interval_ticks`, once per interval of its `duration_ticks` (a whole number of intervals). It acts as it
+  appears (RLM-436): Test Scorch, 3 s of 1 s, pulses at 0, 1 and 2 s and is gone at 3 s. Its client draws its ring
+  from its first tick.
 - Both deliver their effects themselves: the hit's direct entity is the projectile or the area, its causing entity
   the caster, so kill credit and the hit direction work as for an arrow. Their effects read the caster's stats when
   they land; no snapshot is taken at the cast, as nothing (talents, procs) needs one yet. A spell entity ends when its

@@ -276,11 +276,12 @@ Rules:
   whose entities stop it untouched; `impact`, a `sound` and a block's break `particles` where it hits; `appearance`,
   `{model: orb, color}`, its look, with a placeholder texture `textures/entity/spell/<spell>.png`, one per spell) at
   an enemy, a ground point or along a direction; `realmforge:area` (`radius`, `duration_seconds`, `interval_seconds`, `affects: enemies` or
-  `allies`, and its own `effects` on each of them inside at every interval) at the caster's feet, an enemy's or a
-  ground point; `realmforge:teleport` (the caster to a ground point, or along a direction as far as its range and
-  blocks allow); and `realmforge:dash` (`strength`, a burst of speed in blocks per tick toward an enemy, a ground
-  point or along a direction). The effects of a projectile or an area must fit whom they reach: no heal on a
-  projectile, no damage in an area for allies ([architecture 11.3](../docs/architecture.md#113-spell-entities)). A
+  `allies`, and its own `effects` on each of them inside as it appears and then at every interval, once per interval
+  of its duration) at the caster's feet, an enemy's or a ground point; `realmforge:teleport` (the caster to a ground
+  point, or along a direction as far as its range and blocks allow); and `realmforge:dash` (`strength`, a burst of
+  speed in blocks per tick toward an enemy, a ground point or along a direction). The effects of a projectile or an
+  area must fit whom they reach: no heal on a projectile, no damage in an area for allies
+  ([architecture 11.3](../docs/architecture.md#113-spell-entities)). A
   `per_level` needs a `max_level` above 1, on the effects of a projectile or an area too. The `test_*` spells are
   engine tests (like `items/test_item`), not gameplay content.
 - `worldgen/` is the one exception to YAML: Minecraft's own worldgen JSON (`dimension/`, `dimension_type/`,
