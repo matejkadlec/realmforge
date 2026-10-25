@@ -1,12 +1,13 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
-# Engine test (C3a-3): a projectile at an enemy after a 1 s cast that deals 4 fire damage when it hits. It flies at
-# the target where it stands when the cast completes. Not gameplay content; the GameTests in the QA mod cast it.
+# Engine test (C3a-3): a projectile after a 1 s cast that deals 4 fire damage when it hits. Since spell aiming
+# (RLM-344) it flies along the caster's look as the cast completes: from the spell bar, where the crosshair points at
+# the end of the cast. Not gameplay content; the GameTests in the QA mod cast it.
 id: test_slow_missile
 name: {en_us: Test Slow Missile}
 description: {en_us: "Fires a missile at an enemy for {damage} damage."}
 school: realmforge:fire
 scales_with: spell_power
-targeting: {type: realmforge:enemy, range: 16}
+targeting: {type: realmforge:direction, range: 16}
 cast: {type: cast_time, duration_seconds: 1}
 effects:
   - type: realmforge:projectile

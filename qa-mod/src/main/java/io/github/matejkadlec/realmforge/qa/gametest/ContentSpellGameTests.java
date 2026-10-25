@@ -25,6 +25,7 @@ import io.github.matejkadlec.realmforge.spell.SpellEntities;
 import io.github.matejkadlec.realmforge.spell.SpellEffect;
 import io.github.matejkadlec.realmforge.spell.SpellRegistries;
 import io.github.matejkadlec.realmforge.spell.SpellTargeting;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -156,8 +157,7 @@ public final class ContentSpellGameTests {
                     Map.of("effect", remove.effect().getRegisteredName()), List.of());
             case KnockbackEffect knockback -> numbers(type, Map.of("strength", knockback.strength()));
             case DashEffect dash -> numbers(type, Map.of("strength", dash.strength()));
-            case ProjectileEffect projectile -> new EffectExpectation(type, Map.of("speed", projectile.speed(),
-                    "size", projectile.size(), "lifetime_ticks", (double) projectile.lifetimeTicks()),
+            case ProjectileEffect projectile -> new EffectExpectation(type, projectileNumbers(projectile),
                     projectile.spares().map(tag -> Map.of("spares", tag.location().toString())).orElse(Map.of()),
                     projectile.effects().stream().map(ContentSpellGameTests::effect).toList());
             case AreaEffect area -> new EffectExpectation(type, Map.of("radius", area.radius(), "duration_ticks",
@@ -166,6 +166,13 @@ public final class ContentSpellGameTests {
                     area.effects().stream().map(ContentSpellGameTests::effect).toList());
             default -> new EffectExpectation(type, Map.of(), Map.of(), List.of());
         };
+    }
+
+    /** A projectile's numbers; its lifetime only when it has one, as the data names it only then. */
+    private static Map<String, Double> projectileNumbers(ProjectileEffect projectile) {
+        Map<String, Double> numbers = new HashMap<>(Map.of("speed", projectile.speed(), "size", projectile.size()));
+        projectile.lifetimeTicks().ifPresent(ticks -> numbers.put("lifetime_ticks", (double) ticks));
+        return Map.copyOf(numbers);
     }
 
     private static EffectExpectation numbers(String type, Map<String, Double> numbers) {

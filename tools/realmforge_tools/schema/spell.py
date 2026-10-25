@@ -6,7 +6,8 @@ RLM-210) adds cast times and channels; the third (C3a-3, RLM-211) the spell enti
 status effect, movement and knockback effect types and the ``ground_point`` and ``direction`` targeting types; the
 fourth (C3a-4, RLM-212) the NPC targeting types ``current_target``, ``random_player`` and ``farthest_player``. The spell
 bar and its tooltips (C3b, RLM-25) add the name and the description, whose numbers come from data through
-placeholders (architecture 6.3); our own status effects (C3c, RLM-26) add damage and healing over time.
+placeholders (architecture 6.3); our own status effects (C3c, RLM-26) add damage and healing over time. Spell
+aiming (RLM-344, RLM-346) lets a projectile fly without a lifetime and a ground point clamp to its range.
 """
 
 from __future__ import annotations
@@ -200,8 +201,11 @@ class ProjectileAppearanceDef(StrictModel):
 
 class ProjectileEffectDef(StrictModel):
     """Launches a projectile from the caster's eyes toward the target (an enemy, a ground point or along a
-    direction). It flies straight, hits the first enemy in its way and runs its own ``effects`` on it; a block or the
-    end of its lifetime ends it without them (architecture 11.3). An entity of ``spares`` stops it too, untouched."""
+    direction, where the crosshair points). It flies straight and stops at the first living entity in its way that is
+    not the caster or its ally: one that can be damaged, hostile or passive, takes its own ``effects``, and one that
+    cannot (invulnerable) or of ``spares`` stops it untouched. A block or the end of its lifetime ends it without them,
+    and so does leaving the world: above the build height, beyond where entities move, or in the void (architecture
+    11.3, RLM-344)."""
 
     type: Literal["realmforge:projectile"]
     speed: float = Field(
@@ -214,8 +218,10 @@ class ProjectileEffectDef(StrictModel):
         allow_inf_nan=False,
         description="Width and height of its hitbox in blocks, at most 4.",
     )
-    lifetime_seconds: Seconds = Field(
-        default=5, description="How long it flies before it fizzles; more than 0, at most 10."
+    lifetime_seconds: Seconds | None = Field(
+        default=None,
+        description="How long it flies before it fizzles; more than 0, at most 10. Without it, it flies until it hits "
+        "something or leaves the world.",
     )
     effects: list[EntityEffectDef] = Field(
         min_length=1, description="What it does to the enemy it hits, in order."
@@ -234,7 +240,7 @@ class ProjectileEffectDef(StrictModel):
 
     @model_validator(mode="after")
     def _lifetime(self) -> ProjectileEffectDef:
-        if not 0 < self.lifetime_seconds <= MAX_PROJECTILE_LIFETIME:
+        if self.lifetime_seconds is not None and not 0 < self.lifetime_seconds <= MAX_PROJECTILE_LIFETIME:
             raise ValueError(f"lifetime_seconds is more than 0 and at most {MAX_PROJECTILE_LIFETIME:g}")
         return self
 
@@ -328,16 +334,19 @@ class AllyTargetingDef(StrictModel):
 
 
 class GroundPointTargetingDef(StrictModel):
-    """A point within range and in line of sight: the one the cast aims at, or else the first block the caster looks
-    at. No entity: effects that act on one run through a projectile or an area."""
+    """Where a ground spell lands, never refused for range (RLM-346): the block the crosshair hits within range, or
+    the farthest point in range along the crosshair's line (clamp cast), on the ground below it; aimed at an entity or
+    a point in range, its feet or the point (in sight). No entity: effects that act on one run through a projectile or
+    an area."""
 
     type: Literal["realmforge:ground_point"]
     range: float = Field(gt=0, le=MAX_RANGE, allow_inf_nan=False, description="Range in blocks, at most 128.")
 
 
 class DirectionTargetingDef(StrictModel):
-    """A direction from the caster's eyes: toward what the cast aims at, or else where the caster looks. Its point is
-    ``range`` blocks along it, or the first block in the way (a teleport's destination)."""
+    """A direction from the caster's eyes: toward what the cast aims at, or else where the caster looks, which a
+    player's crosshair shows and a cast time or a channel follows until its effects run (RLM-344). Its point is
+    ``range`` blocks along it, or the first block in the way (a teleport's destination). It never refuses a cast."""
 
     type: Literal["realmforge:direction"]
     range: float = Field(gt=0, le=MAX_RANGE, allow_inf_nan=False, description="Range in blocks, at most 128.")

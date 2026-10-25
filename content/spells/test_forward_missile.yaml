@@ -1,6 +1,8 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # Engine test (C3a-3): a frost projectile along the caster's look that deals 3 damage to the first enemy in its way.
-# Not gameplay content; the GameTests in the QA mod cast it.
+# Since spell aiming (RLM-344) it has no lifetime: from the spell bar it flies where the crosshair points until it hits
+# something (and shatters there like ice) or leaves the world. Not gameplay content; the GameTests in the QA mod cast
+# it.
 id: test_forward_missile
 name: {en_us: Test Forward Missile}
 description: {en_us: "Fires a frost missile straight ahead that hits the first enemy for {damage} damage."}
@@ -11,6 +13,6 @@ cast: {type: instant}
 effects:
   - type: realmforge:projectile
     speed: 20
-    lifetime_seconds: 2
+    impact: {sound: minecraft:block.glass.break, particles: minecraft:packed_ice}
     effects:
       - {type: realmforge:damage, amount: 3}

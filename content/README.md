@@ -240,8 +240,11 @@ Rules:
   `school` whose damage they deal; what they `scales_with`, `spell_power` for a magic school and `attack_damage`
   for a physical one (off-class stats do nothing for a class's abilities, Matěj, 2026-10-15); their `targeting`
   (`{type: realmforge:self}`, or `realmforge:enemy`, `realmforge:ally`, `realmforge:ground_point` or
-  `realmforge:direction` with a `range` of at most 128 blocks; an ally spell without a target takes the caster, a
-  ground point without one the first block the caster looks at, a direction where it looks; and for `npc_only` spells
+  `realmforge:direction` with a `range` of at most 128 blocks; an ally spell without a target takes the caster; a
+  ground point lands on the block the crosshair hits within range, or beyond it, or at the sky, at the farthest point
+  in range along that line (clamp cast), on the ground below it, never refused for range; a direction flies where the
+  crosshair points, at any time, and a cast time or a channel follows the crosshair until its effects run (ADR 0052,
+  [architecture 11.2](../docs/architecture.md#112-casting-server-authoritative)); and for `npc_only` spells
   alone, which validation checks, the NPC types `realmforge:current_target` (the mob's attack target),
   `realmforge:random_player` and `realmforge:farthest_player` (among the players in range and sight that it may
   attack, never one in creative or spectator mode), each with a `range`, which go wherever `realmforge:enemy` does); `cast`: `{type: instant}`, `{type: cast_time, duration_seconds}`
@@ -267,7 +270,9 @@ Rules:
   `minecraft:instant_health`, which would apply every tick: use `realmforge:heal` or `realmforge:damage`;
   `duration_seconds` up to 60, `amplifier`) and `realmforge:remove_effect` (`effect`) on any entity target; `realmforge:knockback` (`strength`,
   0.4 is a melee hit's) on an enemy, which also interrupts its cast; `realmforge:projectile` (`speed` in blocks per
-  second, `size`, `lifetime_seconds`, and its own `effects` on the first enemy it hits; `spares`, an entity type tag
+  second, `size`, an optional `lifetime_seconds` of at most 10, without which it flies until it hits something or
+  leaves the world, and its own `effects` on the first enemy it reaches that can be damaged, hostile or passive; it
+  passes the caster's allies, and an entity that cannot be damaged stops it untouched; `spares`, an entity type tag
   whose entities stop it untouched; `impact`, a `sound` and a block's break `particles` where it hits; `appearance`,
   `{model: orb, color}`, its look, with a placeholder texture `textures/entity/spell/<spell>.png`, one per spell) at
   an enemy, a ground point or along a direction; `realmforge:area` (`radius`, `duration_seconds`, `interval_seconds`, `affects: enemies` or

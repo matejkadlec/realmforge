@@ -23,14 +23,17 @@
       "type": "realmforge:projectile",
       "speed": 20.0,
       "size": 0.5,
-      "lifetime_ticks": 40,
       "effects": [
         {
           "amount": 3.0,
           "per_level": 0,
           "type": "realmforge:damage"
         }
-      ]
+      ],
+      "impact": {
+        "sound": "minecraft:block.glass.break",
+        "particles": "minecraft:packed_ice"
+      }
     }
   ]
 }

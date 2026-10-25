@@ -266,7 +266,7 @@ public final class GeneratedSpellExpectations {
                     0.0,
                     false,
                     List.of(
-                            new EffectExpectation("realmforge:projectile", Map.of("lifetime_ticks", 40.0, "size", 0.5, "speed", 20.0), Map.of(), List.of(
+                            new EffectExpectation("realmforge:projectile", Map.of("size", 0.5, "speed", 20.0), Map.of(), List.of(
                                     new EffectExpectation("realmforge:damage", Map.of("amount", 3.0, "attack_damage", 0.0, "per_level", 0.0), Map.of(), List.of()))))),
             new SpellExpectation(
                     "realmforge:test_homing_bolt",
@@ -713,7 +713,7 @@ public final class GeneratedSpellExpectations {
                     "spell.realmforge.test_slow_missile.description",
                     "realmforge:fire",
                     "spell_power",
-                    "realmforge:enemy",
+                    "realmforge:direction",
                     16.0,
                     "cast_time",
                     20,

@@ -13,7 +13,6 @@ import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.mob.MobLevels;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import io.github.matejkadlec.realmforge.spell.CastEnd;
-import io.github.matejkadlec.realmforge.spell.CastFailure;
 import io.github.matejkadlec.realmforge.spell.CastResult;
 import io.github.matejkadlec.realmforge.spell.Casting;
 import io.github.matejkadlec.realmforge.spell.Spell;
@@ -48,7 +47,8 @@ import net.minecraft.world.phys.Vec3;
  * 3 s within 2 blocks), {@code test_mending_ring} (an area at the caster's feet: 2 healing every second for 2 s to its
  * allies within 3 blocks), {@code test_chill} (Slowness II for 3 s), {@code test_cleanse} (removes Slowness),
  * {@code test_blink} (a teleport up to 4 blocks along the look), {@code test_charge} (a dash at an enemy) and {@code
- * test_shove} (a knockback). The server ticks the spell entities, so the checks wait real ticks, with slack.
+ * test_shove} (a knockback). The server ticks the spell entities, so the checks wait real ticks, with slack. How a
+ * projectile and a ground point aim, and what stops a projectile, is {@link SpellAimingGameTests}' (RLM-344, RLM-346).
  */
 public final class SpellEffectGameTests {
     private static final double TOLERANCE = 1e-4;
@@ -73,27 +73,6 @@ public final class SpellEffectGameTests {
                     "the projectile's Slowness I for 3 s: " + slowness);
             helper.assertValueEqual(spellEntities(helper, SpellProjectile.class).size(), 0,
                     "the projectile is gone after its hit");
-            logout(player);
-            helper.succeed();
-        });
-    }
-
-    /**
-     * A cast-time projectile flies at its target where it stands when the cast completes, not where it stood when
-     * the cast began.
-     */
-    @QaGameTest
-    public static void aCastTimeProjectileFliesAtWhereItsTargetIsAtTheEnd(GameTestHelper helper) {
-        ServerPlayer player = caster(helper, "qa-effect-slow-missile");
-        Husk husk = husk(helper, new BlockPos(2, 1, 4));
-        learn(helper, player, GeneratedSpells.TEST_SLOW_MISSILE);
-        CastResult result = SpellCaster.cast(player, GeneratedSpells.TEST_SLOW_MISSILE, husk);
-        helper.assertTrue(result.begun(), "test_slow_missile did not begin: " + result);
-        // The husk steps 2 blocks aside during the cast: the line to where it stood misses it by far.
-        husk.snapTo(helper.absoluteVec(new Vec3(0.5, 1, 4.5)), 0, 0);
-        helper.runAfterDelay(45, () -> {
-            assertEnded(helper, player, GeneratedSpells.TEST_SLOW_MISSILE, CastEnd.COMPLETED);
-            assertHealth(helper, husk, HEALTH - 4, "the projectile hit the husk where it stood at the end");
             logout(player);
             helper.succeed();
         });
@@ -268,24 +247,6 @@ public final class SpellEffectGameTests {
             logout(player);
             helper.succeed();
         });
-    }
-
-    /** A ground point out of range, or one behind blocks, refuses the cast. */
-    @QaGameTest
-    public static void aGroundPointMustBeInRangeAndInSight(GameTestHelper helper) {
-        ServerPlayer player = caster(helper, "qa-effect-point");
-        learn(helper, player, GeneratedSpells.TEST_SCORCH);
-        helper.assertValueEqual(SpellCaster.cast(player, GeneratedSpells.TEST_SCORCH,
-                SpellAim.at(helper.absoluteVec(new Vec3(2.5, 1, 30)))).failureOrNull(), CastFailure.OUT_OF_RANGE,
-                "a point 30 blocks away");
-        helper.setBlock(new BlockPos(2, 1, 2), Blocks.STONE);
-        helper.setBlock(new BlockPos(2, 2, 2), Blocks.STONE);
-        helper.setBlock(new BlockPos(2, 3, 2), Blocks.STONE);
-        helper.assertValueEqual(SpellCaster.cast(player, GeneratedSpells.TEST_SCORCH,
-                SpellAim.at(helper.absoluteVec(new Vec3(2.5, 1, 3.5)))).failureOrNull(), CastFailure.NO_LINE_OF_SIGHT,
-                "a point behind a wall");
-        logout(player);
-        helper.succeed();
     }
 
     /** A husk with its physics but no AI goals, at level 1, that knockback pushes fully. */

@@ -465,7 +465,7 @@
     },
     "DirectionTargetingDef": {
       "additionalProperties": false,
-      "description": "A direction from the caster's eyes: toward what the cast aims at, or else where the caster looks. Its point is\n``range`` blocks along it, or the first block in the way (a teleport's destination).",
+      "description": "A direction from the caster's eyes: toward what the cast aims at, or else where the caster looks, which a\nplayer's crosshair shows and a cast time or a channel follows until its effects run (RLM-344). Its point is\n``range`` blocks along it, or the first block in the way (a teleport's destination). It never refuses a cast.",
       "properties": {
         "range": {
           "description": "Range in blocks, at most 128.",
@@ -537,7 +537,7 @@
     },
     "GroundPointTargetingDef": {
       "additionalProperties": false,
-      "description": "A point within range and in line of sight: the one the cast aims at, or else the first block the caster looks\nat. No entity: effects that act on one run through a projectile or an area.",
+      "description": "Where a ground spell lands, never refused for range (RLM-346): the block the crosshair hits within range, or\nthe farthest point in range along the crosshair's line (clamp cast), on the ground below it; aimed at an entity or\na point in range, its feet or the point (in sight). No entity: effects that act on one run through a projectile or\nan area.",
       "properties": {
         "range": {
           "description": "Range in blocks, at most 128.",
@@ -686,7 +686,7 @@
     },
     "ProjectileEffectDef": {
       "additionalProperties": false,
-      "description": "Launches a projectile from the caster's eyes toward the target (an enemy, a ground point or along a\ndirection). It flies straight, hits the first enemy in its way and runs its own ``effects`` on it; a block or the\nend of its lifetime ends it without them (architecture 11.3). An entity of ``spares`` stops it too, untouched.",
+      "description": "Launches a projectile from the caster's eyes toward the target (an enemy, a ground point or along a\ndirection, where the crosshair points). It flies straight and stops at the first living entity in its way that is\nnot the caster or its ally: one that can be damaged, hostile or passive, takes its own ``effects``, and one that\ncannot (invulnerable) or of ``spares`` stops it untouched. A block or the end of its lifetime ends it without them,\nand so does leaving the world: above the build height, beyond where entities move, or in the void (architecture\n11.3, RLM-344).",
       "properties": {
         "appearance": {
           "anyOf": [
@@ -748,11 +748,18 @@
           "description": "Its sound and particles where it hits a block or an entity."
         },
         "lifetime_seconds": {
-          "default": 5,
-          "description": "How long it flies before it fizzles; more than 0, at most 10.",
-          "minimum": 0,
-          "title": "Lifetime Seconds",
-          "type": "number"
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How long it flies before it fizzles; more than 0, at most 10. Without it, it flies until it hits something or leaves the world.",
+          "title": "Lifetime Seconds"
         },
         "size": {
           "default": 0.5,

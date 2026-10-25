@@ -724,6 +724,18 @@ def test_spell_entities_are_in_game_units(repo: RepoPaths) -> None:
     assert blink["effects"] == [{"type": "realmforge:teleport"}]
 
 
+def test_a_projectile_without_a_lifetime_has_none_in_its_data(repo: RepoPaths) -> None:
+    # Spell aiming (RLM-344): without lifetime_seconds a projectile flies until it hits something or leaves the world.
+    files = generate(repo)
+    forward = json.loads(files[f"{SPELL_DATA}/test_forward_missile.json"])["effects"][0]
+    assert forward["type"] == "realmforge:projectile"
+    assert "lifetime_ticks" not in forward
+    expectations = files[EXPECTATIONS].decode()
+    assert (
+        'new EffectExpectation("realmforge:projectile", Map.of("size", 0.5, "speed", 20.0), ' in expectations
+    )
+
+
 def test_expectations_of_spell_entities_hold_their_effects(repo: RepoPaths) -> None:
     expectations = generate(repo)[EXPECTATIONS].decode()
     assert (

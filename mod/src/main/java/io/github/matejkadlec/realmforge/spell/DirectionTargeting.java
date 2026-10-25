@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import java.util.Optional;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -12,7 +13,9 @@ import net.minecraft.world.phys.Vec3;
 /**
  * {@code realmforge:direction}: a direction from the caster's eyes (C3a-3), toward the middle of the entity or the
  * point the cast aimed at, or else where the caster looks. Its point is {@code range} blocks along it, or the first
- * block in the way: where a teleport goes. It never fails: a projectile flies along it whatever is there.
+ * block in the way: where a teleport goes. It never fails: a projectile flies along it whatever is there, so such a
+ * spell casts at any time (RLM-344). The spell bar aims it at nothing, so a player's flies where the crosshair points;
+ * a direction from the caster's look follows the look through a cast time or a channel ({@link SpellTarget#now}).
  *
  * @param range how far its point lies, in blocks, at most 128
  */
@@ -31,14 +34,15 @@ public record DirectionTargeting(double range) implements SpellTargeting {
         if (aim.entity().isPresent() && aim.entity().get().level() != caster.level()) {
             return Either.right(CastFailure.OUT_OF_RANGE);
         }
-        Vec3 direction = aim.point().or(() -> aim.entity().map(entity -> entity.getBoundingBox().getCenter()))
-                .map(point -> SpellTarget.toward(caster, point))
-                .orElseGet(caster::getLookAngle);
+        Optional<Vec3> aimed = aim.point().or(() -> aim.entity().map(entity -> entity.getBoundingBox().getCenter()));
+        Vec3 direction = aimed.map(point -> SpellTarget.toward(caster, point)).orElseGet(caster::getLookAngle);
         BlockHitResult hit = Targets.clip(caster, direction, range);
         Vec3 end = hit.getType() == HitResult.Type.MISS
                 ? caster.getEyePosition().add(direction.scale(range))
                 : hit.getLocation();
-        return Either.left(SpellTarget.direction(end, direction));
+        return Either.left(aimed.isPresent()
+                ? SpellTarget.direction(end, direction)
+                : SpellTarget.look(end, direction));
     }
 
     @Override

@@ -3,6 +3,7 @@ package io.github.matejkadlec.realmforge.spell;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -35,10 +36,17 @@ import net.neoforged.neoforge.event.EventHooks;
 
 /**
  * The one generic projectile of every spell (architecture 11.3), launched by {@link ProjectileEffect}: it flies
- * straight at its speed, without gravity or drag, hits the first enemy of its caster in its way and runs the
- * projectile's effects on it, delivered by itself (the hit's direct entity). An entity of the tag it spares stops it
- * too, untouched. A block, the end of its lifetime, or its caster leaving its level (logging out, a mob's death) ends it
- * without them. Where it hits a block or an entity, it makes its impact: a sound and a block's break particles.
+ * straight at its speed, without gravity or drag, and stops at the first living entity in its way that is neither its
+ * caster nor one of the caster's allies (RLM-344). That entity takes the projectile's effects, delivered by the
+ * projectile itself (the hit's direct entity), when it can be damaged, hostile and passive mobs alike; one that cannot
+ * be damaged (invulnerable, a player in creative mode) or that is of the tag it spares stops it untouched. A block
+ * stops it too, without its effects. Where it hits a block or an entity, it makes its impact: a sound and a block's
+ * break particles.
+ *
+ * <p>Nothing flies forever: it is gone at the end of its lifetime when it has one, once its caster leaves its level
+ * (logging out, a mob's death), above the build height, where entities stop moving (beyond every player's simulation
+ * distance, which equals the render distance by default, or in a chunk that is not loaded), and in the void, which
+ * vanilla removes 64 blocks below the world's bottom ({@code Entity#checkBelowWorld}).
  *
  * <ul>
  *   <li><b>Never saved:</b> it carries a live cast (the caster, the spell), so a chunk that unloads or a server that
@@ -61,6 +69,7 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
     private Optional<ProjectileEffect.Impact> impact = Optional.empty();
     /** The texture of its appearance, on the server and its clients; empty for a trail of sparks. */
     private Optional<Identifier> texture = Optional.empty();
+    /** How many ticks it flies before it fizzles; 0 for no lifetime. */
     private int lifetimeTicks;
     private int age;
 
@@ -82,7 +91,7 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
         entity.impact = projectile.impact();
         entity.texture = projectile.appearance().flatMap(appearance -> context.spell().unwrapKey())
                 .map(SpellVisuals::projectileTexture);
-        entity.lifetimeTicks = projectile.lifetimeTicks();
+        entity.lifetimeTicks = projectile.lifetimeTicks().orElse(0);
         entity.getEntityData().set(DATA_SIZE, (float) projectile.size());
         entity.setPos(origin.x, origin.y - projectile.size() / 2, origin.z);
         entity.setDeltaMovement(velocity);
@@ -127,7 +136,8 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
     @Override
     public void tick() {
         super.tick();
-        if (level() instanceof ServerLevel && (cast == null || gone(cast.caster()) || ++age > lifetimeTicks)) {
+        if (level() instanceof ServerLevel serverLevel && (cast == null || gone(cast.caster())
+                || lifetimeTicks > 0 && ++age > lifetimeTicks || aboveTheWorld(serverLevel))) {
             discard();
             return;
         }
@@ -141,11 +151,39 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
             }
         }
         Vec3 movement = getDeltaMovement();
+        if (level() instanceof ServerLevel serverLevel && !moving(serverLevel, position().add(movement))) {
+            discard();
+            return;
+        }
         setPos(getX() + movement.x, getY() + movement.y, getZ() + movement.z);
         updateRotation();
         if (level().isClientSide() && texture.isEmpty()) {
             level().addParticle(ParticleTypes.END_ROD, getX(), getY() + getBbHeight() / 2, getZ(), 0, 0, 0);
         }
+    }
+
+    /**
+     * Called every tick while its chunk is loaded, even where entities no longer move: there a projectile would hang
+     * in the air until its chunk unloads, so it goes at once.
+     */
+    @Override
+    public void checkDespawn() {
+        if (level() instanceof ServerLevel serverLevel && !moving(serverLevel, position())) {
+            discard();
+        }
+    }
+
+    /** Whether it is above the build height, where no block can be: nothing up there for it to hit. */
+    private boolean aboveTheWorld(ServerLevel level) {
+        return getY() > level.getMaxY() + 1;
+    }
+
+    /**
+     * Whether entities move at {@code where}: in a loaded chunk within a player's simulation distance (or a forced
+     * one). Beyond it nobody sees the projectile any more, and it would stop there.
+     */
+    private static boolean moving(ServerLevel level, Vec3 where) {
+        return level.isPositionEntityTicking(BlockPos.containing(where));
     }
 
     /** Whether {@code caster} left this projectile's level: logged out, changed dimension, or a mob that died. */
@@ -154,14 +192,14 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
     }
 
     /**
-     * An enemy of the caster, or an entity it spares, alive and attackable; never the caster, its allies or other
-     * spell entities.
+     * A living entity in its way, alive and no spectator, never the caster or one of its allies (who let it pass) nor
+     * another spell entity. An entity it spares is stopped by it whether it is an ally or not.
      */
     @Override
     protected boolean canHitEntity(Entity entity) {
         return cast != null && entity instanceof LivingEntity living && living != cast.caster() && living.isAlive()
-                && !living.isSpectator() && living.canBeSeenAsEnemy()
-                && (spared(living) || !Targets.allied(cast.caster(), living)) && super.canHitEntity(entity);
+                && !living.isSpectator() && (spared(living) || !Targets.allied(cast.caster(), living))
+                && super.canHitEntity(entity);
     }
 
     /** Whether {@code entity} is of the tag this projectile spares: it stops the projectile, untouched. */
@@ -169,11 +207,15 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
         return spares.filter(entity::is).isPresent();
     }
 
+    /**
+     * The entity it reached takes its effects if it can be damaged; one that cannot (invulnerable, a player in
+     * creative mode) or that it spares only stops it. Either way it makes its impact and is gone.
+     */
     @Override
     protected void onHitEntity(EntityHitResult hitResult) {
         if (cast != null && hitResult.getEntity() instanceof LivingEntity living
                 && level() instanceof ServerLevel serverLevel) {
-            if (!spared(living)) {
+            if (!spared(living) && living.canBeSeenAsEnemy()) {
                 EffectContext context = cast.through(serverLevel, this);
                 SpellTarget target = SpellTarget.hit(living, getDeltaMovement().normalize());
                 for (SpellEffect effect : effects) {

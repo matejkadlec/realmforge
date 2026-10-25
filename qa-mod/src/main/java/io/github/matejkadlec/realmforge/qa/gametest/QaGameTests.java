@@ -82,6 +82,7 @@ public final class QaGameTests {
             RealmGameTests.class,
             RealmPortalGameTests.class,
             SetPieceJigGameTests.class,
+            SpellAimingGameTests.class,
             SpellBarGameTests.class,
             SpellEffectGameTests.class,
             SpellGameTests.class,

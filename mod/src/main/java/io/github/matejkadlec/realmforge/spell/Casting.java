@@ -197,7 +197,7 @@ public final class Casting {
                 }
                 running.ticksRun++;
                 SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(),
-                        running.target().now(caster));
+                        running.target().now(caster, spell.targeting()));
                 if (RUNNING.get(caster) != running) {
                     return;
                 }
@@ -220,7 +220,7 @@ public final class Casting {
         SpellCaster.startCooldown(caster, spell, running.spell().key(), caster.getData(SpellAttachments.COMBAT), now);
         end(caster, CastEnd.COMPLETED);
         SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(),
-                running.target().now(caster));
+                running.target().now(caster, spell.targeting()));
     }
 
     /**

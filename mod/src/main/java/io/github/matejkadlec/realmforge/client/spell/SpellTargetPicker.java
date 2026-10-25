@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.client.spell;
 
 import io.github.matejkadlec.realmforge.spell.AllyTargeting;
+import io.github.matejkadlec.realmforge.spell.DirectionTargeting;
 import io.github.matejkadlec.realmforge.spell.EnemyTargeting;
 import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.Targets;
@@ -19,7 +20,8 @@ import net.minecraft.world.phys.Vec3;
  * The entity a spell bar key aims at (architecture 11.2 step 1): the first living entity under the crosshair within the
  * spell's range, not behind a block, as vanilla picks what the crosshair points at, only farther. An enemy spell sees
  * through allies and an ally spell through enemies, so a heal aimed past a mob takes the caster, as an ally spell
- * without a target does. The server checks the target again; a spell on the caster itself aims at nothing.
+ * without a target does. The server checks the target again. A spell on the caster itself aims at nothing, and so does
+ * a direction spell (RLM-344): it flies where the crosshair points, the player's look, which the server reads itself.
  */
 public final class SpellTargetPicker {
     private SpellTargetPicker() {
@@ -27,7 +29,7 @@ public final class SpellTargetPicker {
 
     public static Optional<LivingEntity> pick(LocalPlayer player, Spell spell) {
         double range = spell.targeting().reach();
-        if (range <= 0) {
+        if (range <= 0 || spell.targeting() instanceof DirectionTargeting) {
             return Optional.empty();
         }
         Vec3 eye = player.getEyePosition();
