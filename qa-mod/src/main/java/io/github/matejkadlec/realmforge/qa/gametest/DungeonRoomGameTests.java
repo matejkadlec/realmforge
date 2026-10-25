@@ -33,6 +33,7 @@ import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
@@ -225,7 +226,8 @@ public final class DungeonRoomGameTests {
 
     /**
      * RLM-362: the item combination lock is built with its two item frames, the poppy and the cornflower its
-     * comparators read, also turned a quarter; its chest opens; and clearing the plot removes the frames again.
+     * comparators read, also turned a quarter; an Adventure player's hits and an explosion leave both frames and their
+     * flowers in place, so the lock stays solvable; its chest opens; and clearing the plot removes the frames again.
      */
     @QaGameTest(timeoutTicks = TIMEOUT)
     public static void aRoomsItemFramesComeWithIt(GameTestHelper helper) {
@@ -246,6 +248,18 @@ public final class DungeonRoomGameTests {
                     helper.assertValueEqual(frames.size(), 2, "item frames in the item lock");
                     helper.assertValueEqual(frames.stream().map(frame -> frame.getItem().getItem()).collect(
                             Collectors.toSet()), Set.of(Items.POPPY, Items.CORNFLOWER), "the framed flowers");
+                    player.setGameMode(GameType.ADVENTURE);
+                    for (ItemFrame frame : frames) {
+                        player.attack(frame);
+                        player.attack(frame);
+                        instances.explode(null, frame.getX(), frame.getY(), frame.getZ(), 2.0F,
+                                Level.ExplosionInteraction.TNT);
+                    }
+                    List<ItemFrame> kept = instances.getEntitiesOfClass(ItemFrame.class, room[0]);
+                    helper.assertValueEqual(kept.size(), 2, "item frames after hits and explosions");
+                    helper.assertValueEqual(kept.stream().map(frame -> frame.getItem().getItem()).collect(
+                            Collectors.toSet()), Set.of(Items.POPPY, Items.CORNFLOWER),
+                            "the framed flowers after hits and explosions");
                     BlockPos chest = plot.origin().offset(
                             StructureTemplate.transform(ITEM_LOCK_CHEST, Mirror.NONE, Rotation.CLOCKWISE_90,
                                     BlockPos.ZERO));

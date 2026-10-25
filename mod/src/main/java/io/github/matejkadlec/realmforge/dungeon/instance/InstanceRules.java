@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.dungeon.instance;
 
+import io.github.matejkadlec.realmforge.world.GriefingProtection;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -67,12 +68,14 @@ public final class InstanceRules {
                 event.setCanGrief(false);
             }
         });
-        // The explosion still hurts and pushes entities; it breaks no block and, with the same list, lights no fire,
-        // but for the blocks its room lets explosions break (a trap's TNT blowing its way open, RLM-257).
+        // The explosion still hurts and pushes players and mobs; it breaks no block and, with the same list, lights no
+        // fire, but for the blocks its room lets explosions break (a trap's TNT blowing its way open, RLM-257), and it
+        // spares the rooms' item frames and paintings, which its push alone would break (BlockAttachedEntity#push).
         NeoForge.EVENT_BUS.addListener(ExplosionEvent.Detonate.class, event -> {
             if (event.getLevel() instanceof ServerLevel level && InstanceDimension.isInstance(level)) {
                 InstanceManager manager = InstanceManager.get(level.getServer());
                 event.getAffectedBlocks().removeIf(pos -> manager == null || !explosionBreaks(manager, level, pos));
+                event.getAffectedEntities().removeIf(GriefingProtection::isPlacedObject);
             }
         });
     }

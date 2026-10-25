@@ -5,6 +5,7 @@ import io.github.matejkadlec.realmforge.Realmforge;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessor;
@@ -15,11 +16,14 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * Moves the block a placed item frame or painting hangs at to where the room puts it (RLM-362). A template keeps
- * each such entity's {@code block_pos} as it was where the template was saved, so the entity, loaded far from there,
- * logs "Block-attached entity at invalid position" before vanilla moves it into place
+ * Moves the block a placed item frame or painting hangs at to where the room puts it (RLM-362), and makes it
+ * invulnerable. A template keeps each such entity's {@code block_pos} as it was where the template was saved, so the
+ * entity, loaded far from there, logs "Block-attached entity at invalid position" before vanilla moves it into place
  * ({@code BlockAttachedEntity#readAdditionalSaveData}, {@code StructureTemplate#addEntitiesToWorld}); this processor
  * writes the placed block into the entity's data first, through NeoForge's entity hook of a structure processor.
+ * Adventure mode protects blocks, not these entities: a player's hit or an arrow would pop a frame's item out and
+ * break it, and the item lock could no longer be solved; invulnerable, they take no such damage, while a frame still
+ * turns its item and a creative player still breaks them. Explosions spare them through {@link InstanceRules}.
  */
 final class AttachedEntityProcessor extends StructureProcessor {
     static final AttachedEntityProcessor INSTANCE = new AttachedEntityProcessor();
@@ -46,6 +50,7 @@ final class AttachedEntityProcessor extends StructureProcessor {
         CompoundTag nbt = entityInfo.nbt.copy();
         BlockPos pos = entityInfo.blockPos;
         nbt.putIntArray(BLOCK_POS, new int[] {pos.getX(), pos.getY(), pos.getZ()});
+        nbt.putBoolean(Entity.TAG_INVULNERABLE, true);
         return new StructureTemplate.StructureEntityInfo(entityInfo.pos, pos, nbt);
     }
 

@@ -2247,8 +2247,11 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   column (`StructureTemplate#placeInWorld` with entities on adds only what is inside the box it places), so each comes
   once, with the block it hangs at moved to where the room puts it (`AttachedEntityProcessor`, through NeoForge's
   entity hook of a structure processor: a template keeps it as it was where it was saved, and vanilla logs an invalid
-  position before moving the entity into place), and the plot's chunks are held non-ticking, so none falls or wanders
-  before players arrive (RLM-362: `item_combination_lock` had come without the item frames its lock reads). The
+  position before moving the entity into place) and made invulnerable (Adventure mode protects blocks, not these
+  entities: a hit or an arrow popped a frame's flower out and broke it, so the lock could no longer be solved; a frame
+  still turns its item, and a creative player still breaks it), and the plot's chunks are held non-ticking, so none
+  falls or wanders before players arrive (RLM-362: `item_combination_lock` had come without the item frames its lock
+  reads). The
   builder runs in `LevelTickEvent.Post` of
   the instance level, so its time shows in the server's tick time. Each tick, every plot being built runs one unit
   whatever the budget, then the rest of 5 ms goes round the plots with work one unit at a time, starting after the plot
@@ -2289,7 +2292,9 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   (`BlockEvent.FluidPlaceBlockEvent`: its caller ignores cancelling and places the event's new state, so the guard
   sets that back to the block that was there), trampled farmland (`BlockEvent.FarmlandTrampleEvent`), mob griefing
   (`EntityMobGriefingEvent`) and explosions (the block list of `ExplosionEvent.Detonate`, which the explosion's fire
-  uses too; it still hurts and pushes entities). The one exception is a room whose sidecar lists `explosion_breaks`
+  uses too, and its entity list, which keeps no item frame, painting or other placed object, as its push alone breaks
+  a frame; it still hurts and pushes players and mobs). The one exception is a room whose sidecar lists
+  `explosion_breaks`
   (RLM-257): the plan hands the list to each `RoomPlacement`, the plot saves it with its layout, and the guard keeps
   an affected block only when it lies in such a room's box and is on that room's list (`Plot#explosionBreaks`), so
   Stonevaults' combination lock blows its way open and nothing else breaks; the cleanup restores the room anyway.
