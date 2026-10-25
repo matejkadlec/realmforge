@@ -6,8 +6,9 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
  * Combat's common options, in {@code config/realmforge-common.toml}: the rules of blocking with a two-handed weapon
- * ({@link WeaponBlocks}, RLM-297), which Matěj tunes in playtests (architecture 19.2). NeoForge reloads the file when
- * it changes, so a running game picks up a new value at once.
+ * ({@link WeaponBlocks}, RLM-297) and how long a hit keeps both sides in combat ({@link InCombat}, RLM-348), which
+ * Matěj tunes in playtests (architecture 19.2). NeoForge reloads the file when it changes, so a running game picks up
+ * a new value at once.
  */
 public final class CombatConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder()
@@ -35,6 +36,14 @@ public final class CombatConfig {
                     + "360 every side.")
             .defineInRange("arcDegrees", 180.0, 0.0, 360.0);
 
+    /** How long a hit dealt or taken keeps both sides in combat (Matěj, 2026-10-21: 10 s, as in WoW). */
+    public static final ModConfigSpec.DoubleValue IN_COMBAT_SECONDS = BUILDER.pop()
+            .comment("Being in combat, which the scrolls and other rules check.")
+            .push("combat")
+            .comment("Seconds a player or mob stays in combat after the last hit it dealt to, or took from, another "
+                    + "one (dodged and blocked hits included; falls, fire, lava and drowning never count).")
+            .defineInRange("inCombatSeconds", 10.0, 1.0, 600.0);
+
     public static final ModConfigSpec SPEC = BUILDER.pop().build();
 
     private CombatConfig() {
@@ -49,6 +58,11 @@ public final class CombatConfig {
     public static WeaponBlocks.Rules blockingRules() {
         return new WeaponBlocks.Rules(seconds(FULL_BLOCK_SECONDS.get()), BLOCKED_SHARE.get(),
                 seconds(COOLDOWN_SECONDS.get()), ARC_DEGREES.get());
+    }
+
+    /** How many game ticks a hit keeps both sides in combat. */
+    public static int inCombatTicks() {
+        return seconds(IN_COMBAT_SECONDS.get());
     }
 
     private static int seconds(double seconds) {

@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -23,14 +24,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
 /**
  * Stat points (architecture 10.2; Matěj, 2026-10-15, RLM-196): instead of race and class stats growing with the level,
@@ -46,8 +43,9 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
  *   {@code SpendStatPointPayload}; the server checks every request. A point is spent for good until the player
  *   unlearns them all.</li>
  *   <li><b>Unlearning</b> ({@link #unlearn}): an item in the tag {@link #UNLEARN_ITEMS} (the Scroll of Oblivion, whose
- *   {@code use: unlearn_stat_points} the pipeline turns into that tag) returns every spent point and is used up. With
- *   nothing spent it does nothing and is kept.</li>
+ *   {@code use: unlearn_stat_points} the pipeline turns into that tag) is a scroll ({@link Scrolls}): charged for
+ *   3 s, out of combat, it returns every spent point and is used up. With nothing spent it does not start and is
+ *   kept.</li>
  *   <li><b>A level that falls</b> below what was spent (a command, a revoked chapter) returns every spent point
  *   ({@link #fit}), which {@link Leveling} checks on each update.</li>
  *   <li>Spent points reach the player as modifiers from their own {@link StatSource}: one per stat, adding its points,
@@ -92,7 +90,7 @@ public final class StatPoints {
     }
 
     static void register() {
-        NeoForge.EVENT_BUS.addListener(PlayerInteractEvent.RightClickItem.class, StatPoints::onRightClickItem);
+        Scrolls.add(UNLEARN_ITEMS, new Scrolls.Scroll(StatPoints::scrollRefusal, StatPoints::unlearnWithScroll));
     }
 
     /** The points reaching {@code level} gives: the curve's value there, half up, at least 0; none at level 1. */
@@ -213,31 +211,21 @@ public final class StatPoints {
         return id.getNamespace().equals(Realmforge.MOD_ID) && id.getPath().startsWith(PREFIX);
     }
 
+    /** The Scroll of Oblivion does nothing without spent points; it is then refused, read from synced data. */
+    private static Optional<Component> scrollRefusal(Player player) {
+        return Characters.data(player).spentStatPoints() > 0 ? Optional.empty()
+                : Optional.of(Component.translatable(GeneratedTexts.MESSAGE_STAT_POINTS_NONE_SPENT));
+    }
+
     /**
-     * Right-clicking an item of {@link #UNLEARN_ITEMS}: on both sides, so the client swings the arm only when points
-     * come back (the character attachment is synced); the server returns them, uses the item up and says so.
+     * A charged Scroll of Oblivion: every spent point comes back, with a message and a sound; {@link Scrolls} uses the
+     * scroll up.
      */
-    private static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
-        ItemStack stack = event.getItemStack();
-        if (!stack.is(UNLEARN_ITEMS)) {
-            return;
-        }
-        Player player = event.getEntity();
-        boolean spent = Characters.data(player).spentStatPoints() > 0;
-        event.setCanceled(true);
-        event.setCancellationResult(spent ? InteractionResult.SUCCESS : InteractionResult.FAIL);
-        if (!(player instanceof ServerPlayer serverPlayer)) {
-            return;
-        }
-        if (!spent) {
-            serverPlayer.sendSystemMessage(Component.translatable(GeneratedTexts.MESSAGE_STAT_POINTS_NONE_SPENT));
-            return;
-        }
-        unlearn(serverPlayer);
-        stack.consume(1, serverPlayer);
-        serverPlayer.sendSystemMessage(Component.translatable(GeneratedTexts.MESSAGE_STAT_POINTS_UNLEARNED,
-                unspent(serverPlayer)).withStyle(ChatFormatting.YELLOW));
-        serverPlayer.level().playSound(null, serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(),
-                SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1.0F, 1.0F);
+    private static void unlearnWithScroll(ServerPlayer player) {
+        unlearn(player);
+        player.sendSystemMessage(Component.translatable(GeneratedTexts.MESSAGE_STAT_POINTS_UNLEARNED, unspent(player))
+                .withStyle(ChatFormatting.YELLOW));
+        player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENCHANTMENT_TABLE_USE,
+                SoundSource.PLAYERS, 1.0F, 1.0F);
     }
 }

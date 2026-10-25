@@ -41,6 +41,7 @@ public final class CharacterFeature {
                 ? Characters.mainClass(player).flatMap(playerClass -> playerClass.value().rage())
                 : Optional.empty());
         Leveling.register();
+        Scrolls.register();
         StatPoints.register();
         modBus.addListener(FMLCommonSetupEvent.class,
                 event -> event.enqueueWork(CharacterSheetView::syncShownAttributes));

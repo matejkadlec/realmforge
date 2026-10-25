@@ -439,8 +439,8 @@ Matěj's `qa2` with what is wrong sends the batch back for a revision on the sam
    What to test limited to it), so its head is the one `qa1` passes next, and move the tickets back to Pending
    User QA. The batch keeps its playtest slot through the revision.
 6. **Hand back** with the status overview in its manual-test shape: What to test limited to the revision, the
-   command that updates his checkout ([Launch commands](#launch-commands)), and the closing line on `qa1` and
-   `qa2`. Then wait for his next answer.
+   whole block of commands that switches his checkout to the branch, updates it and launches the game
+   ([Launch commands](#launch-commands)), and the closing line on `qa1` and `qa2`. Then wait for his next answer.
 
 ### Reconfirmation
 
@@ -500,10 +500,23 @@ Every manual-test handoff gives complete commands Matěj can paste, under "Launc
   - Once the batch has merged, `git worktree remove ../realmforge-worktrees/<dir>-playtest` (run in
     `~/projects/realmforge`) deletes the checkout; it refuses while the checkout holds uncommitted edits.
 
-- **A revision** gives the command that moves his checkout to the new head, which refuses to discard local
+- **A revision** gives the commands that move his checkout to the new head, which refuse to discard local
   edits:
-  - the Windows clone: `git pull --ff-only`, or after a rebase `git fetch origin` and then
-    `git reset --keep origin/<branch>` (in PowerShell, one command per line);
+  - the Windows clone: always the whole block, from `cd` to the launch, never the update command alone (Matěj,
+    2026-10-24: he checks out other batches between a handoff and its test, so his clone is rarely still on the
+    branch, and he should not have to look the branch up further back in the conversation). In PowerShell, one
+    command per line:
+
+    ```powershell
+    cd $HOME\projects\realmforge-win
+    git fetch origin
+    git switch <branch>
+    git pull --ff-only
+    .\gradlew.bat runClient
+    ```
+
+    After a rebase (the remote branch was force-pushed), `git reset --keep origin/<branch>` takes the place of
+    `git pull --ff-only`.
   - a playtest checkout, with `<sha>` the new head:
 
     ```bash

@@ -4,9 +4,9 @@ import net.minecraft.util.StringRepresentable;
 
 /**
  * How a cast-time or channelled spell ended (architecture 11.2): it completed, something interrupted it, or the check
- * before its effects failed. Every end but {@link #COMPLETED} runs no more effects: a cast time then pays nothing, and a
- * channel keeps the ticks it already ran. C3b's cast bar shows the end ({@code CastEndedPayload}); its texts come with
- * the spell bar (RLM-25).
+ * before its effects failed. Every end but {@link #COMPLETED} runs no more effects: a cast time keeps the cost it paid
+ * when it began, without its cooldown, and a channel keeps the ticks it already ran and the seconds it paid for. C3b's
+ * cast bar shows the end ({@code CastEndedPayload}); its texts come with the spell bar (RLM-25).
  */
 public enum CastEnd implements StringRepresentable {
     /** The cast time is over and the effects ran, or the channel ran every tick. */
@@ -29,7 +29,7 @@ public enum CastEnd implements StringRepresentable {
     NO_LINE_OF_SIGHT("no_line_of_sight", false),
     /** The target is no longer one the spell may hit (it joined the caster's team, say). */
     INVALID_TARGET("invalid_target", false),
-    /** The caster has less of the spell's resource than it costs. */
+    /** The caster has less of the spell's resource than a channel's next second costs. */
     NOT_ENOUGH_RESOURCE("not_enough_resource", false);
 
     private final String serializedName;

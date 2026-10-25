@@ -32,9 +32,10 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * RLM-311 (ADR 0049): a player's damage never loses anything to vanilla's 10-tick hurt cooldown, melee and
- * projectiles alike, while mobs' and the world's hits on a player keep vanilla's window, so lava, fire, cactus and
- * a crowd of mobs hit a player no more often than in vanilla.
+ * RLM-311 (ADR 0049): a player's damage never loses anything to vanilla's 10-tick hurt cooldown, projectiles and
+ * full-strength melee alike (RLM-386, ADR 0051: a weaker melee hit meets the window as in vanilla), while mobs' and
+ * the world's hits on a player keep vanilla's window, so lava, fire, cactus and a crowd of mobs hit a player no more
+ * often than in vanilla.
  */
 public final class HurtCooldownGameTests {
     /** Where a player stands: the platform's north edge, facing the target in its middle. */
@@ -43,6 +44,8 @@ public final class HurtCooldownGameTests {
     private static final double HEALTH = 1000;
     /** How many ticks the hazard tests run: vanilla's window lets a hit through every 10. */
     private static final int TICKS = 40;
+    /** A stronger weapon's attack damage, whose weak hit is still bigger than a fist's full one. */
+    private static final double STRONG = 30;
 
     private HurtCooldownGameTests() {
     }
@@ -66,6 +69,32 @@ public final class HurtCooldownGameTests {
                     helper.getLevel().getServer().getPlayerList().remove(player);
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * Done when of RLM-386: a player's melee hit below full attack strength meets an open window as in vanilla. Right
+     * after a full-strength hit, a weak hit no bigger than it deals nothing, and a bigger weak one (a stronger weapon)
+     * deals only its difference; a full-strength hit in the same window still lands in full.
+     */
+    @QaGameTest
+    public static void weakPlayerMeleeMeetsTheWindowAndFullStrengthLandsInFull(GameTestHelper helper) {
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-cooldown-weak", EDGE);
+        StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
+        Pillager mob = target(helper);
+        double fist = player.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        meleeHit(helper, player, mob, fist, "the first hit, at full strength");
+        helper.assertTrue(mob.invulnerableTime > 10, "the first hit opened a window: " + mob.invulnerableTime);
+        weakHit(helper, player, mob, 0, "a weak hit no bigger than the first");
+
+        setBase(player, Attributes.ATTACK_DAMAGE, STRONG);
+        double weak = weakDamage(player);
+        helper.assertTrue(weak > fist, "the stronger weapon's weak hit is bigger than the first: " + weak);
+        weakHit(helper, player, mob, weak - fist, "a bigger weak hit deals its difference to the first");
+        helper.assertTrue(mob.invulnerableTime > 10, "the window is still open: " + mob.invulnerableTime);
+        meleeHit(helper, player, mob, player.getAttributeValue(Attributes.ATTACK_DAMAGE),
+                "a full-strength hit in the same window");
+        helper.getLevel().getServer().getPlayerList().remove(player);
+        helper.succeed();
     }
 
     /**
@@ -171,6 +200,26 @@ public final class HurtCooldownGameTests {
         player.attack(target);
         double dealt = before - target.getHealth();
         helper.assertTrue(close(dealt, expected), what + ": " + expected + " expected, dealt " + dealt);
+    }
+
+    /**
+     * A player's melee hit right after the last attack, at the attack strength that leaves (well below full), which
+     * deals {@code expected}.
+     */
+    private static void weakHit(GameTestHelper helper, ServerPlayer player, Pillager target, double expected,
+            String what) {
+        float strength = player.getAttackStrengthScale(0.5F);
+        helper.assertTrue(strength < 0.5F, what + ": the attack strength is low, " + strength);
+        float before = target.getHealth();
+        player.attack(target);
+        double dealt = before - target.getHealth();
+        helper.assertTrue(close(dealt, expected), what + ": " + expected + " expected, dealt " + dealt);
+    }
+
+    /** What the player's next melee hit deals at the attack strength it has now: vanilla's scale on the damage. */
+    private static double weakDamage(ServerPlayer player) {
+        float strength = player.getAttackStrengthScale(0.5F);
+        return player.getAttributeValue(Attributes.ATTACK_DAMAGE) * (0.2F + strength * strength * 0.8F);
     }
 
     /** An arrow hit from {@code shooter}, as an arrow's impact sends it. */

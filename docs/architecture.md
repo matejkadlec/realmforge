@@ -489,6 +489,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:visited_realms` | `world` | players | the ids of the realms the player has arrived in, so the arrival shows a realm's flavour line once (W2b); copied on death | not synced |
 | `realmforge:instance` | `dungeon` | players | the run's plot, the return point (spike 3) and the game mode to give back when entering switched it to Adventure (W4c) | not synced |
 | `realmforge:stat_tracker` | `stats` | players | when the stat modifiers were last recomputed and what a respawn owes the health ([8.2](#82-where-modifiers-come-from)); transient: not saved or copied | not synced |
+| `realmforge:in_combat` | `combat` | living entities that dealt or took a hit | the game time of the last hit dealt to, or taken from, another living entity and when its combat ends ([9.4](#94-in-combat), RLM-348); transient: not saved or copied, so a new entity starts out of combat | the owner (the time, for UI that shows it) |
 | `realmforge:magic_shield` | `combat` | players (any entity with the stat) | the points left in the magic shield and the tick count from which it refills ([9.1](#91-damage-pipeline)); transient: not saved or copied, so a new player entity starts with a full shield | the owner, points only (the HUD bar) |
 | `realmforge:pending_refill` | `mob` | mobs leveled as they spawn | a mark: refill the mob's health to its scaled maximum when it joins the level ([14.1](#141-mob-levels)); saved (a chunk-generation spawn waits in the chunk's data), not copied, removed at the join | not synced |
 
@@ -721,7 +722,7 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
      NeoForge 26.1 (below), and `CombatEvent.Dodge` reports it.
    - **A raised two-handed weapon** blocks a hit on a player after the dodge: in full in the first half second
      after raising it (the event is cancelled), by half after that, before armor and resistances
-     ([9.3](#93-blocking-with-two-handed-weapons)).
+     ([9.3](#93-blocking-with-two-handed-weapons)), unless the hurt cooldown drops the hit anyway (step 4).
    - **A ranged crit:** a projectile hit marked in step 2 crits on its shooter's crit chance and deals 1 + crit
      damage (150 % by default, as for melee and spells; Matěj, 2026-10-19), through `setAmount`, with the crit combat
      text.
@@ -764,17 +765,27 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
    deals 0 (it would deal 5 without the restore); and a fire hit right after a melee hit lands in full.
    **A player's damage never loses anything to the window either** (RLM-311,
    [ADR 0049](decisions/0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md); Matěj: attack speed 3 and more
-   will be reachable, a hit every 6 to 7 ticks). A melee hit or projectile whose causing entity is a player, and that
-   is no school hit, lowers the defender's invulnerable time to 10 in step 3 when it is above, so vanilla deals it in
-   full and opens a new window, exactly as for a damage type in `#minecraft:bypasses_cooldown`. The tag cannot do it:
-   arrows have one damage type whoever shoots them, and a skeleton's must still meet a player's window. Better
-   Combat already does the same for its swings (`allow_fast_attacks` sets the target's invulnerable time to 0); this
-   covers arrows, tridents and attacks without a Better Combat weapon. Mobs' and the world's hits keep vanilla's
-   window, on players too: lava, fire, cactus and a crowd of mobs hurt a player at most every 10 ticks. Iron's RPG
-   Tweaks, which 0044 first chose for this, cancels a hit of a damage type that hurt the same entity the tick before,
-   a second player's hit and our school hits included, so it is not in the pack. `HurtCooldownGameTests` measures it:
-   two melee hits 6 ticks apart and a player's arrows in the window land in full, a skeleton's arrow deals only its
-   difference, and lava, fire, cactus and five zombies land a full hit at most every 10 ticks.
+   will be reachable, a hit every 6 to 7 ticks). A projectile whose causing entity is a player, or a player's melee hit
+   at full attack strength (above 0.9, the strength a crit needs; RLM-386,
+   [ADR 0051](decisions/0051-player-melee-passes-the-hurt-cooldown-only-at-full-strength.md)), that is no school hit,
+   lowers the defender's invulnerable time to 10 in step 3 when it is above, so vanilla deals it in full and opens a
+   new window, exactly as for a damage type in `#minecraft:bypasses_cooldown` (`DamagePipeline#landsThroughCooldown`).
+   NeoForge resets the attack strength only at the end of `Player#attack`, so it is still the swing's there. A weaker
+   melee hit meets the window as in vanilla: no bigger than the window's `lastHurt` it is dropped, a bigger one deals
+   the difference, so spam-clicking an item without Better Combat attributes (about 10 weak hits a second, each a
+   fifth of a full one) deals no more than timed hits. All three arrows of a Multishot volley still land in full
+   (Matěj, 2026-10-23). The tag cannot do it: arrows have one damage type whoever shoots them, and a skeleton's must
+   still meet a player's window. Better Combat already does the same for its swings (`allow_fast_attacks` sets the
+   target's invulnerable time to 0); this covers arrows, tridents and full-strength attacks without a Better Combat
+   weapon. Mobs' and the world's hits keep vanilla's window, on players too: lava, fire, cactus and a crowd of mobs
+   hurt a player at most every 10 ticks. Iron's RPG Tweaks, which 0044 first chose for this, cancels a hit of a damage
+   type that hurt the same entity the tick before, a second player's hit and our school hits included, so it is not in
+   the pack. `HurtCooldownGameTests` measures it: two full-strength melee hits 6 ticks apart and a player's arrows in
+   the window land in full, a weak melee hit right after a full one deals nothing (or, from a stronger weapon, only its
+   difference) while a full-strength one in the same window lands in full, a skeleton's arrow deals only its difference,
+   and lava, fire, cactus and five zombies land a full hit at most every 10 ticks. `DamagePipeline#droppedByCooldown`
+   tells the other rules which hits the window drops anyway (a raised weapon ignores them,
+   [9.3](#93-blocking-with-two-handed-weapons)).
 5. The reductions apply: armor (our formula), enchantments, effects. **`LivingDamageEvent.Pre`** sees the damage
    before absorption hearts take their share. Then absorption hearts take what they can, the **magic shield** takes
    what they left, up to its points (`combat/MagicShields`), and health takes the rest. The shield acts in the
@@ -782,10 +793,11 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
    cooldown measures the next hit against, `lastHurt`) stays the whole hit. NeoForge subtracts the whole absorption
    reduction from the absorption hearts, which is right because the shield only takes something once they are
    empty.
-6. **`LivingDamageEvent.Post`** reports what was dealt: `combat` posts `CombatEvent.Hit` (school, crit, the
-   original damage, what armor blocked, the damage dealt and taken from health) for higher features (procs in C3a
-   and C5, threat later, the QA mod's combat log), and sends the combat text (`combat/net/CombatTextPayload`) to the
-   player who dealt the hit ([18](#18-client-code-rendering-gui-input)). A tick of a damaging effect has no attacker:
+6. **`LivingDamageEvent.Post`** puts both sides in combat ([9.4](#94-in-combat), as a dodge and a full block in
+   step 3 do) and reports what was dealt: `combat` posts `CombatEvent.Hit` (school, crit, the original damage, what armor
+   blocked, the damage dealt and taken from health) for higher features (procs in C3a and C5, threat later, the QA mod's
+   combat log), and sends the combat text (`combat/net/CombatTextPayload`) to the player who dealt the hit
+   ([18](#18-client-code-rendering-gui-input)). A tick of a damaging effect has no attacker:
    `combat/DamageOverTime` remembers the player who applied each poison or wither (from `MobEffectEvent.Added`'s
    source: the player, or the owner of the splash potion, tipped arrow or lingering cloud; the latest application
    decides, and the entry goes when the effect ends or is removed), and the tick's number goes to that player in the
@@ -896,7 +908,13 @@ does**, in step 3 of the pipeline ([9.1](#91-damage-pipeline)), after the dodge:
   full blocks. The cooldown is vanilla's item cooldown: it shows on the hotbar, and vanilla refuses the right click
   on the client and the server while it runs;
 - like the mod, a raised weapon never blocks damage that bypasses armor or has no source position (magic, falls,
-  drowning), nor a piercing arrow.
+  drowning), nor a piercing arrow;
+- **it never spends itself on a hit the hurt cooldown drops anyway** (RLM-387): `LivingIncomingDamageEvent` comes
+  before vanilla's window check, so a hit no bigger than the player's open window's `lastHurt`, which neither
+  bypasses nor lands through the window ([9.1](#91-damage-pipeline), step 4: `DamagePipeline#droppedByCooldown`),
+  is left to the window: no block sound, no cooldown, the weapon stays raised for the next real hit. Without this, a
+  second zombie's equal hit right after a first one lowered the weapon and the first zombie's next swing landed in
+  full.
 
 The numbers are in the common config (`combat/CombatConfig`, [19.2](#192-configuration)) for Matěj to tune in
 playtests: the full block 0.5 s, the share 50 %, the cooldown 1 s, the arc 180° (the front half). Apotheosis's shield
@@ -921,7 +939,39 @@ on a single stack does not count, since the tag is per item.
 
 `WeaponBlocksTest` covers the amounts and the arc; `WeaponBlockGameTests` raises the test greatsword at a zombie's
 hits: in full within 0.5 s, half after it, the cooldown after a block and after lowering it by hand, no block from
-behind, of magic or with a one-handed sword, and the tag's members.
+behind, of magic or with a one-handed sword, no reaction (no sound, no cooldown, still raised) to a hit the window
+drops while the next bigger one is still blocked, and the tag's members.
+
+### 9.4 In combat
+
+Built for RLM-348 (Matěj, 2026-10-21 and 2026-10-22), WoW's rule: **a player or mob is in combat for 10 s after the
+last hit it dealt to, or took from, another living entity**, melee, projectiles and school hits (spells, our damage
+over time) alike, and a dodged hit or one a raised weapon blocked in full too. Damage from the world (falls, fire,
+lava, drowning, a vanilla poison tick) has no attacker, so it never starts or extends combat. `combat/InCombat` is the
+one state every rule reads, instead of a timer of its own:
+
+- **The API:** `InCombat#isInCombat(entity)`, `InCombat#ticksLeft(entity)` (game ticks until it is out of combat) and
+  `InCombat#ticksSinceLastHit(entity)`. On the server for any living entity; on a client for the local player only.
+- **The state:** the transient `realmforge:in_combat` attachment ([7](#7-player-state)), a `combat/CombatTime` with
+  the game time of the last hit and the game time its combat ends, synced to the owner, so the client's UI can show
+  it; neither saved nor copied, so a new entity (a login, a respawn) starts out of combat. The game time is the
+  server's one clock, the same in every dimension. The damage pipeline marks both sides of each hit
+  (`InCombat#mark`, from `LivingDamageEvent.Post`, a dodge and a full block): a hit's causing entity (a projectile's
+  shooter, a spell's caster), never the defender itself; once per tick, since a sweep or a volley hits many times in
+  one.
+- **The window** is the common config's `combat.inCombatSeconds`, 10 by default (`combat/CombatConfig`,
+  [19.2](#192-configuration)); a hit's combat ends at its time plus the window as it was then.
+- **Its users:** rage decays measured from the same last hit ([11.5](#115-resources-cooldowns-modifiers)), so the
+  two never disagree about the fight; every scroll (`character/Scrolls`, [10.2](#102-leveling)) refuses to start in
+  combat, is kept and says "You can't use this in combat." (`message.realmforge.cannot_use_in_combat`), on both sides,
+  so the client swings no arm, and a hit dealt or taken during its 3 s charge stops the charge. The Scroll of Oblivion
+  (RLM-196) is the first; the Scroll of Respec (RLM-226) and the Scroll of Rebirth (RLM-228) refuse the same way, and
+  later features (boss arena exits, return scrolls, the open-world dungeon mobs held in combat of RLM-305) read it too.
+
+`InCombatGameTests` covers it: a mob's hit and a player's hit put both sides in combat, 9 s after the last hit they
+are still in it and 11 s after they are out, a dodged hit counts, falls, lava, fire and drowning do not, the Scroll
+of Oblivion fails and is kept in combat and works after a full charge once the window has passed, and a hit or letting
+go of right click stops its charge.
 
 ## 10. Character: races, classes, leveling
 
@@ -1077,8 +1127,24 @@ behind, of magic or with a one-handed sword, and the tag's members.
     the server checks that the player has a character, that the stat is one of our primary stats and that a point is
     unspent, then saves it and recomputes the stats. The spent points reach the player through their own
     `StatSource`, one modifier per stat. An item in the tag `realmforge:use/unlearn_stat_points` (the Scroll of
-    Oblivion; an item's `use` in content writes the tag, [13](#13-items-gear-and-loot)) returns every spent point when
-    right-clicked and is used up; with nothing spent it fails and is kept. A level that falls below what was spent
+    Oblivion; an item's `use` in content writes the tag, [13](#13-items-gear-and-loot)) is a scroll
+    (`character/Scrolls`, below): charged for 3 s out of combat, it returns every spent point and is used up; with
+    nothing spent it does not start and is kept.
+  - **Scrolls charge** (`character/Scrolls`; Matěj, 2026-10-24, like Waystones' Warp Scroll): right-clicking a scroll
+    starts a 3 s charge (`Scrolls.CHARGE_TICKS`), as a bow draws. The player holds right click, slowed as with a drawn
+    bow, while purple sparkles (`minecraft:witch`) rise around them, and only the full charge makes the scroll work and
+    uses it up. Letting go early, switching items or entering combat ([9.4](#94-in-combat)) stops it, and the scroll
+    is kept. A scroll that would be refused (in combat, nothing to undo) does not start: the arm does not swing and a
+    chat line says why, at most once a second while right click is held. A scroll is a plain item with no use
+    duration, so the charge is NeoForge's item use with its duration set in `LivingEntityUseItemEvent.Start` (as
+    Sword Blocking Mechanics raises a sword), the stop is `stopUsingItem` from `LivingEntityUseItemEvent.Tick`
+    (cancelling that event would finish the use instead) and the effect comes in `LivingEntityUseItemEvent.Finish`,
+    which checks again. It looks like a bow's draw (`client/render/ScrollCharge`, Matěj's playtest of 2026-10-24):
+    the bow's pose in third person, and in first person vanilla's bow transform stretched over the 3 s, the scroll
+    pulled back and shaking harder as the charge fills, through NeoForge's client item extensions on the scrolls'
+    items, as a plain item has no use animation. Each scroll registers what it checks and does (`Scrolls.add`), and
+    its item joins `ScrollCharge`: the Scroll of Oblivion first, the Scroll of Respec (RLM-226) and the Scroll of
+    Rebirth (RLM-228) next. A level that falls below what was spent
     (a command, a revoked chapter, a curve that gives fewer) returns every spent point, with a message.
   - **`/realmforge xp add|set|query`** (`command/XpCommand`, permission level 2): `add` gives XP as a reward (times
     the XP multiplier, with level-ups), `set` sets the total exactly and quietly, `query` shows XP, level and cap.
@@ -1122,16 +1188,18 @@ lists spells granted while equipped or on use): the vision's "some from the race
    `PlayerEvent.StartTracking` listener, as a `CastStartedPayload` with the original start time, so the telegraph
    still shows. An interrupt cancels the cast; moving never does, but slows the caster
    ([ADR 0039](decisions/0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md)).
-4. When a cast-time spell completes, the server checks the resource and the target again, because both can change
-   during the cast: rage decays, effects drain mana, and the target can die, leave the caster's dimension, move out
-   of range or go behind cover. If either check fails, the cast fails like an interrupt; a spell that should lock
-   on says so in its data. Otherwise the cost and the spell's own cooldown apply first (the global cooldown started
-   with the cast), then every effect runs on the target with an `EffectContext` (caster, the entity that delivers it,
-   spell, spell level, random source). Effects read the caster's stats as they run, those that a projectile or an
-   area runs later included ([11.3](#113-spell-entities)).
-5. A channel pays its cost and starts its cooldown when it begins, then runs its effects at the tick interval its
-   data sets for as long as it lasts, checking the target before every tick as in step 4. An interrupt
-   ends it early, and the ticks already run stay applied.
+4. A cast pays its cost when it begins, a cast time too (Matěj, 2026-10-24: the bar shows the cost leave at once,
+   and an interrupted cast keeps it spent). When a cast-time spell completes, the server checks the target again,
+   because it can die, leave the caster's dimension, move out of range or go behind cover during the cast. If the
+   check fails, the cast fails like an interrupt; a spell that should lock on says so in its data. Otherwise the spell's
+   own cooldown applies first (the global cooldown started with the cast), then every effect runs on the target with an
+   `EffectContext` (caster, the entity that delivers it, spell, spell level, random source). Effects read the caster's
+   stats as they run, those that a projectile or an area runs later included ([11.3](#113-spell-entities)).
+5. A channel pays its cost and starts its cooldown when it begins, and pays the cost again as each later second
+   begins (Matěj, 2026-10-24: as in WoW; a spell paying only at the start or at another pace can come later); a pool
+   that falls short ends it. It runs its effects at the tick interval its data sets for as long as it lasts,
+   checking the target before every tick as in step 4. An interrupt ends it early, and the ticks already run stay
+   applied.
 6. Mobs and bosses use the same `SpellCaster`, without a payload. Their cooldowns and current cast live in their
    own `combat` attachment ([7](#7-player-state)), and their cast bars, the telegraphs players react to, reach
    clients only through the cast payloads.
@@ -1154,26 +1222,30 @@ spellbook knows, a mob at level 1. It refuses a cast, paying nothing and running
 does not exist, a player casts an `npc_only` spell or one their spellbook does not know, the spell's own cooldown
 runs, the global cooldown runs and the spell is on it, the targeting finds no valid target (`spell/Targets`: in range
 from the caster's eyes to the target's box, and in vanilla's line of sight), a player lacks the cost. Otherwise the
-cost and the cooldowns apply, then every effect runs on the target with an `EffectContext` (caster, spell, spell
-level, random source; C3a-3 adds the entity that delivers it, and C3a-4 the proc origin, [12](#12-talents)). Allies (`Targets#allied`) are the caster, its team mates and tamed
-pets (vanilla's `isAlliedTo`), and for a player every other player, as M1 has no PvP; everything else is an enemy.
-Mobs pay no cost (C3a-4 kept it so: their cooldowns pace them). `/qa spell` drives it until the spell bar exists.
+cost and the cooldowns apply (every spell is on the global cooldown, [11.5](#115-resources-cooldowns-modifiers)), then
+every effect runs on the target with an `EffectContext` (caster, spell, spell level, random source; C3a-3 adds the
+entity that delivers it, and C3a-4 the proc origin, [12](#12-talents)). Allies (`Targets#allied`) are the caster, its
+team mates and tamed pets (vanilla's `isAlliedTo`), and for a player every other player, as M1 has no PvP; everything
+else is an enemy. Mobs pay no cost (C3a-4 kept it so: their cooldowns pace them). `/qa spell` drives it until the spell
+bar exists.
 
 **In code (C3a-2):** a spell's `cast` (`spell/SpellCast`) is `instant`, `cast_time` (a duration) or `channel` (a
 duration that is a whole number of intervals), and the two timed types may set `castable_while_moving` and `lock_on`.
 `SpellCaster` refuses a cast while one is in progress (`already_casting`, checked before the cooldowns). After every
-other check a timed spell starts the global cooldown at once, as in WoW, so it runs during the cast; a channel also
-pays and starts its own cooldown then, a cast time only when it completes. `spell/Casting` keeps the casts in
-progress and ends them from the server tick (`ServerTickEvent.Post`): Cast Time Reduction (at most 75 %, its stat's
-cap) shortens a cast time, and a channel's interval, so a channel keeps its tick count (`SpellScaling#castTicks`,
-whole ticks, at least one). Moving more than 0.1 blocks from where the cast began, death, a dimension change, logging
-out, the caster's removal and a cancel (`Spells#cancelCast`, `/qa spell cancel`) interrupt it. At its end a cast time
-checks the cost and the target again (`SpellCaster#recheck`: alive, then the targeting's range, line of sight and
-enemy or ally; a spell that locks on only needs its target alive and in the caster's dimension), and a channel
-checks the target before every tick, run at the end of each interval. Every end is a `spell/CastEnd` (completed, an
-interrupt, or the failed check), sent to the caster and its trackers as `CastEndedPayload` and posted on the game bus
-as `CastEndedEvent`, which the QA mod logs for `/qa spell show` and the GameTests
-(`CastGameTests`). The effects run on the first server tick at or after the cast's end time.
+other check a timed spell starts the global cooldown at once, as in WoW, so it runs during the cast, and pays its
+cost (RLM-403, Matěj 2026-10-24); a channel also starts its own cooldown then, a cast time only when it completes.
+`spell/Casting` keeps the casts in progress and ends them from the server tick (`ServerTickEvent.Post`): Cast Time
+Reduction (at most 75 %, its stat's cap) shortens a cast time, and a channel's interval and its seconds, so a channel
+keeps its tick count and its number of payments (`SpellScaling#castTicks`, whole ticks, at least one): one for every
+second its data lasts, begun or whole, the first when it begins and each later one as its second begins, after the
+ticks due then; a pool short of the cost ends it as `not_enough_resource`. Moving never interrupts a cast (it slows
+the caster, ADR 0039); death, a dimension change, logging out, the caster's removal and a cancel
+(`Spells#cancelCast`, `/qa spell cancel`) do. At its end a cast time checks the target again (`SpellCaster#recheck`:
+alive, then the targeting's range, line of sight and enemy or ally; a spell that locks on only needs its target alive
+and in the caster's dimension), and a channel checks the target before every tick, run at the end of each interval.
+Every end is a `spell/CastEnd` (completed, an interrupt, or the failed check), sent to the caster and its trackers as
+`CastEndedPayload` and posted on the game bus as `CastEndedEvent`, which the QA mod logs for `/qa spell show` and the
+GameTests (`CastGameTests`). The effects run on the first server tick at or after the cast's end time.
 
 **In code (C3a-3, RLM-211 and RLM-243):** a cast aims at an entity, a point or nothing (`spell/SpellAim`, what the
 spell bar's payload will carry), and its targeting resolves that into a `spell/SpellTarget`: an entity (`self`,
@@ -1297,15 +1369,18 @@ covers the ticks, the caster's stats, a caster that left, the modifiers and the 
   its rage once, however many mobs it hits** (RLM-278): only the holder's first melee hit in a game tick counts.
   Vanilla hurts a sword's target before its sweep, and Better Combat ([9.2](#92-better-combat)) attacks a swing's
   targets one after another in the same tick, each with its own full-strength `Player#attack`, so neither the sweep
-  nor Better Combat's further targets add rage; when the target's hit is dodged, the first hit that lands counts. A
-  hit dealt or taken, or a dodged one, puts both sides in combat; `decay_after_seconds` after the last one the pool
-  loses `decay_per_second` every second, as rage's regeneration ([`ResourceType`](#115-resources-cooldowns-modifiers))
-  is negative then. Combat is transient, so a new player entity starts out of it. The Warrior's starting numbers are 10
+  nor Better Combat's further targets add rage; when the target's hit is dodged, the first hit that lands counts. The
+  pool holds while the last hit dealt or taken (a dodged or fully blocked one included) is less than
+  `decay_after_seconds` ago; after that it loses `decay_per_second` every second, as rage's regeneration
+  ([`ResourceType`](#115-resources-cooldowns-modifiers)) is negative then. The last hit is the shared in-combat
+  state's ([9.4](#94-in-combat), RLM-348), so rage and being in combat never disagree about the fight; a new player
+  entity starts with no hit. The Warrior's starting numbers are 10
   a hit, 50 for the whole max health and 2 a second after 5 s, until the class kits (C4) tune them. Mobs pay no cost
   ([11.2](#112-casting-server-authoritative)), so no mob gains rage. `RageGameTests` and `RageRulesTest` cover it.
 - **Cooldowns:** a spell's own cooldown, shortened by Cooldown Reduction (at most 75 %, its stat's cap), and the
   global cooldown, 0.5 s by default as in WoW (Matěj, 2026-10-19, RLM-25; it replaced research SP-11's second), which
-  a spell may shorten or switch off and which Cooldown Reduction never touches. Both are stored as the game time they
+  every spell is on, physical abilities too (Matěj, 2026-10-24, RLM-402): a spell may change its length, never switch
+  it off, and Cooldown Reduction never touches it. Both are stored as the game time they
   end.
 - Spell modifiers from talents (later glyphs and gear) are collected into a cached per-player view, invalidated
   when talents or gear change, and applied when a cast starts: cast time, cost, cooldown, damage, extra effects.
@@ -1358,22 +1433,37 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
   progress only once every other check passed. A refusal goes back as `CastRefusedPayload`.
 - **HUD** (`client/hud`): the spell bar (`SpellBarHud`, drawn from `spell/SpellBarView` by `SpellSlots`) has its nine
   24 px slots side by side, the racial slot last, 216 px wide (Matěj's playtest of 2026-10-21). Its layer comes right
-  after vanilla's selected item name, which is drawn on the line above the status rows and the XP bar; the bar sits
-  above that line, then raises `Gui#leftHeight` and `Gui#rightHeight` so the action bar message stays above it
-  (`SpellBarLayout`). It shows even when empty (research SP-1). A slot is framed in its spell's school colour, a frame
-  that stays once spells have icons (Matěj, 2026-10-21), shows the spell's initials until then (C6, A1), its key in
-  the corner, a blue tint while the resource does not cover the cost, and the cooldown sweep
+  after vanilla's selected item name, which is drawn on the line above the status rows and the XP bar. The bar and
+  the resource bar under it keep one place on the screen, whatever the status rows are (Matěj, 2026-10-24: absorption
+  hearts must not move them): 14 px above the item name's line of a survival player's usual stack (the health, armor
+  and food rows and the XP bar, 73 px), 24 px above the XP bar's level text there (twice the gap the bar had before
+  the resource bar). They raise `Gui#leftHeight` and `Gui#rightHeight` above them, unless the stack already reaches
+  higher, so the action bar message stays above them (`SpellBarLayout`); extra heart rows lift only the XP bar and the
+  item name toward the block. It shows even when empty (research SP-1). A slot is framed in its spell's school colour,
+  a frame that stays once spells have icons (Matěj, 2026-10-21), shows the spell's initials until then (C6, A1), its
+  key in the corner, a blue tint while the resource does not cover the cost, and the cooldown sweep
   (`CooldownSweep`): a dark wedge that shrinks clockwise from 12 o'clock, for the spell's own cooldown or the global
-  cooldown, whichever ends later, with the seconds left of a cooldown of 2 s or more. The cast bar (`CastBarHud`,
-  after WoW's casting bar, Matěj's playtest of 2026-10-21) sits toward the middle of the screen, 70 % of the way down
-  at most and clear of the spell bar and the action bar message: a 200 by 20 px black frame with rounded corners and a
-  2 px border, holding the spell's icon (its initials on the school's colour until icons exist) and then the bar. The
-  bar fills in the spell school's colour, shaded in steps from light at the top to dark at the bottom with an almost
-  white leading edge (`CastBarStyle`); a cast time fills from the left, a channel starts full and empties toward the
-  left. The spell's name is on the left and the seconds "elapsed / total" on the right, smaller. After a cast the bar
-  stays a moment: full and flashing toward white as it fades, or red with how it ended in place of the name
-  ("Interrupted", "Out of range"), and a refused cast's reason shows there in red (`spell/CastTexts`, research
-  SP-3).
+  cooldown, whichever ends later, with the seconds left of a cooldown of 2 s or more. The cast bar (`CastBarHud`, after
+  WoW's casting bar, Matěj's playtest of 2026-10-21) sits toward the middle of the screen, 70 % of the way down at most
+  and clear of the spell bar and the action bar message: a 200 by 20 px black frame with rounded corners and a 2 px
+  border, holding the spell's icon (its initials on the school's colour until icons exist) and then the bar. The bar
+  fills in the spell school's colour, shaded in steps from light at the top to dark at the bottom with an almost white
+  leading edge (`CastBarStyle`); a cast time fills from the left, a channel starts full and empties toward the left. The
+  spell's name is on the left and the seconds "elapsed / total" on the right, smaller. After a cast the bar stays a
+  moment: full and flashing toward white as it fades, or red with how it ended in place of the name ("Interrupted", "Out
+  of range"), and a refused cast's reason shows there in red (`spell/CastTexts`, research SP-3).
+- **The resource bar** (`client/hud/ResourceBarHud`, RLM-400; Matěj, 2026-10-24): the local player's class resource,
+  attached under the spell bar and as wide, 13 px tall: a 1 px black border whose bottom corner pixels are left out
+  (rounded, the top square where it meets the slots), a dark gray empty part and the fill in the resource's colour,
+  darker at its top and bottom rows and lighter in the middle (`ResourceBarStyle`, shaded with the cast bar's
+  `CastBarStyle#shade`), with a darker 1 px line at its leading edge while the pool is neither empty nor full. Each
+  resource type's colours are one entry of `ResourceBarStyle.COLORS` (mana #1E90FF, rage #F5241B; energy will be a
+  yellow one). "current / maximum" sits in the middle in the vanilla font, white with a black outline like vanilla's
+  experience level, rounded down and the amount kept within 0 and the maximum; the outlined text fills the 11 inner
+  rows but one free row above and below. The fill eases to a new value over 150 ms, the numbers change at once. The
+  numbers come from `character/ResourceBarView`, common code reading synced data: the pool in the owner-synced
+  `combat` attachment and the type's maximum (the synced Max Mana stat, or rage's 100), so no new sync was needed and
+  `RageGameTests` reads the same view on the server. Hidden without a character or with a maximum below 1.
 - **Texts:** a spell's description names its numbers through placeholders (`{damage}`, `{heal}`, `{duration}`,
   `{periodic}`, `{periodic_total}`, `{interval}`, `{radius}`), which `spell/SpellText` fills with the spell's data at
   the player's level and their stats as they are now, as the effects would land before the target's resistance and a
@@ -1382,10 +1472,11 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
   GUI sprite, `combat/SpellSchools#icon`: `Component.object` with an `AtlasSprite` of the `gui` atlas,
   `textures/gui/sprites/school/<id>.png`, a generated placeholder until the art exists) and draws the number in the
   school's colour, the spell's school for `{damage}` and the effect's for its damage over time; descriptions read
-  "for {damage} damage". `spell/SpellTooltip` builds the spellbook's tooltip: name, rank, cost, range, the cast after
-  Cast Time Reduction, the cooldown after Cooldown Reduction and the filled description. `SpellTextGameTests` and
-  `SpellBarGameTests` cover the server side and the texts, `CastQueueTest`, `CooldownSweepTest`, `SpellBarLayoutTest`,
-  `CastBarStyleTest`, `KeyLabelsTest`, `SpellTextTest` and `SpellBarViewTest` the client's logic.
+  "for {damage} damage". `spell/SpellTooltip` builds the spellbook's tooltip: name, rank, cost (a channel's per second),
+  range, the cast after Cast Time Reduction, the cooldown after Cooldown Reduction and the filled description.
+  `SpellTextGameTests` and `SpellBarGameTests` cover the server side and the texts, `CastQueueTest`,
+  `CooldownSweepTest`, `SpellBarLayoutTest`, `CastBarStyleTest`, `KeyLabelsTest`, `SpellTextTest` and `SpellBarViewTest`
+  the client's logic.
 
 **In code (W3 revision, RLM-33): projectile appearances.** A projectile with an `appearance` is drawn by
 `client/render/SpellProjectileRenderer` instead of its trail of sparks: the `orb` is vanilla's shulker bullet model
@@ -1530,7 +1621,8 @@ return; the proc engine at its end exists since C3a.
 - **M1:** fixed-stat gear from YAML: generated items with vanilla attribute modifiers (`Item.Properties#attributes`,
   per-slot ids from [8.2](#82-where-modifiers-come-from)), Better Combat presets for weapons, and vanilla's rarity
   (`Item.Properties#rarity`).
-- **Item uses** (RLM-196): an item's `use` in content says what right-clicking it does, one item used up each time.
+- **Item uses** (RLM-196): an item's `use` in content says what right-clicking it does, one item used up each time;
+  a scroll's use comes after a 3 s charge ([10.2](#102-leveling), `character/Scrolls`).
   Each use is game code in the feature it belongs to, which finds its items through the item tag
   `realmforge:use/<use>` that the pipeline writes; the code never names the items, so `character` needs no
   dependency on `item`. A use and an item's `flavor` line are its tooltip: the vanilla lore component on the item's
@@ -1605,7 +1697,9 @@ levels (RLM-304, RLM-305) come later.
   result. Whether the level's multiple should compound instead is settled with the first other source of a mob's
   maximum health. Damage is a multiplier on `LivingIncomingDamageEvent` for every hit whose causing entity
   (`DamageSource#getEntity`) is a leveled mob, so arrows, explosions and thrown potions grow with the level too; only
-  melee reads the attack damage attribute. The shipped curves add nothing at level 1, and a curve a data pack removed
+  melee reads the attack damage attribute. It runs at `HIGH` priority, before the damage pipeline
+  ([9.1](#91-damage-pipeline)), so the pipeline's steps see the scaled hit: a raised weapon compares that one with the
+  hurt cooldown window's `lastHurt`, which vanilla set from a scaled hit too. The shipped curves add nothing at level 1, and a curve a data pack removed
   adds nothing.
 - **At spawn:** in `FinalizeSpawnEvent`, `mob` rolls the level from the rules of the mob's dimension and the player
   nearest the spawn position, writes it into `realmforge:level` and applies the scaling. A mob spawned with a new chunk
@@ -2650,7 +2744,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     races on the left and the classes the chosen race allows on the right, as vanilla buttons with a gold outline on
     the chosen one, each with its description and what it gives ("+5 Strength"); a class also its resource and
     starting kit. It opens and closes by itself ([10.1](#101-races-and-classes)).
-  - The spell bar and the cast bar (`client/hud/SpellBarHud`, `CastBarHud`), the spellbook
+  - The spell bar with the resource bar under it and the cast bar (`client/hud/SpellBarHud`, `ResourceBarHud`,
+    `CastBarHud`), the spellbook
     (`client/screen/SpellbookScreen`, P by default) and the spell casting options (`SpellOptionsScreen`), C3b:
     [11.6](#116-client-side).
 - **Minecraft 26.1 draws GUIs by render-state extraction:** a HUD layer (`GuiLayer`) and a screen
@@ -2723,8 +2818,9 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
 numbers are content, so they are versioned, validated and tested. The client config exists (C3b): `client/ClientConfig`,
 `config/realmforge-client.toml`, holds how the spell bar's presses wait ([11.6](#116-client-side)). One exception: the
 common config, `combat/CombatConfig`, `config/realmforge-common.toml`, holds the blocking rules
-([9.3](#93-blocking-with-two-handed-weapons)), because Matěj tunes them while he plays (RLM-297) and NeoForge reloads
-the file when it changes. Once they settle they can move into content.
+([9.3](#93-blocking-with-two-handed-weapons)) and the in-combat window ([9.4](#94-in-combat), RLM-348, whose ticket
+allowed content or config), because Matěj tunes them while he plays (RLM-297) and NeoForge reloads the file when it
+changes. Once they settle they can move into content.
 
 ### 19.3 Mixins and access transformers
 

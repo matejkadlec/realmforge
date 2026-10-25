@@ -38,7 +38,8 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
  * </ul>
  *
  * Like Sword Blocking Mechanics, a raised weapon never blocks damage that bypasses armor or has no source position
- * (magic, falls, drowning) or a piercing arrow. Logical server only.
+ * (magic, falls, drowning) or a piercing arrow. Nor does it spend itself on a hit that the player's hurt cooldown
+ * drops anyway (RLM-387). Logical server only.
  */
 public final class WeaponBlocks {
     /** Sword Blocking Mechanics' item tag: the items a player raises with right click to block. */
@@ -80,10 +81,13 @@ public final class WeaponBlocks {
 
     /**
      * Blocks a hit on a player with a raised weapon, from {@link DamagePipeline} after the dodge: cancels a hit
-     * blocked in full, lowers a partly blocked one, and puts the weapon on its cooldown. Whether it cancelled the hit.
+     * blocked in full, lowers a partly blocked one, and puts the weapon on its cooldown. A hit that the player's open
+     * hurt cooldown window drops anyway ({@link DamagePipeline#droppedByCooldown}) is left to it (RLM-387): the
+     * weapon stays raised and off its cooldown, without a sound, for the next real hit. Whether it cancelled the hit.
      */
     static boolean block(LivingIncomingDamageEvent event, ServerLevel level) {
-        if (!(event.getEntity() instanceof Player player) || !isRaised(player) || event.getAmount() <= 0) {
+        if (!(event.getEntity() instanceof Player player) || !isRaised(player) || event.getAmount() <= 0
+                || DamagePipeline.droppedByCooldown(player, event.getSource(), event.getAmount())) {
             return false;
         }
         Rules rules = CombatConfig.blockingRules();

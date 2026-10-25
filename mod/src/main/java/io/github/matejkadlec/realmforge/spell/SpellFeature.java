@@ -25,7 +25,6 @@ public final class SpellFeature {
         SpellAttachments.register(modBus);
         Casting.register();
         NeoForge.EVENT_BUS.addListener(CombatEvent.Hit.class, Rage::onHit);
-        NeoForge.EVENT_BUS.addListener(CombatEvent.Dodge.class, Rage::onDodge);
         NeoForge.EVENT_BUS.addListener(CombatEvent.Hit.class, Procs::onHit);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, LivingDeathEvent.class, Procs::onDeath);
         // After the stats recompute of the same tick (StatsFeature registers first), so a pool sees its maximum.

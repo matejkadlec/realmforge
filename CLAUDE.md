@@ -61,31 +61,34 @@ Apotheosis for gear rarity, affixes, gems and enchanting
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits.
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell
-  engine is done (C3a): spells as data in `content/spells/`, cast by players and mobs through one
-  `SpellCaster` (from the spell bar or `/qa spell`), with mana pools, cooldowns and spell crits,
-  instantly, with a cast time or as a channel, halving the caster's speed while it moves (moving never interrupts,
-  ADR 0039, ADR 0047), interrupted by death, a dimension change or logout, with no melee during a cast, and synced
-  to clients as cast payloads; at an entity, a ground point or a direction, with damage, heals, projectiles, areas,
-  status effects, teleports, dashes and knockback; rage that hits fill and that decays out of combat, procs that
-  never trigger procs, and mobs choosing their target (their current target, a random or the farthest player).
-  Players cast from the spell bar (C3b): eight slots on R, T, F, G, H, C, Ů and §, the racial slot on X, a
-  WoW-style cast bar, a cooldown sweep, a spellbook (P) whose tooltips fill a spell's numbers from data, a 0.5 s global cooldown
-  and an optional spell queue (client options). Our own status effects come from `content/effects/` (C3c): attribute
-  modifiers and damage or healing over time from their caster's stats, remembering who applied them. The first realm
-  exists (W2a): Undervault, the stone realm
-  (`realmforge:stone`), one giant cave of four slow custom stones (`content/blocks/`), sealed until the player's own
-  unlock advancement `realmforge:realm/stone` (`content/realms/`, access requirements in the dimension rules), with no
-  mob crossing into or out of it but through a realm portal, and every respawn in Overworld. It is entered through the
+  engine is done (C3a): spells as data in `content/spells/`, cast by players and mobs through one `SpellCaster` (from
+  the spell bar or `/qa spell`), with mana pools, cooldowns and spell crits, the cost paid when a cast begins (a
+  channel's again every second, RLM-403), instantly, with a cast time or as a channel, halving the caster's speed while
+  it moves (moving never interrupts, ADR 0039, ADR 0047), interrupted by death, a dimension change or logout, with no
+  melee during a cast, and synced to clients as cast payloads; at an entity, a ground point or a direction, with damage,
+  heals, projectiles, areas, status effects, teleports, dashes and knockback; rage that hits fill and that decays out of
+  combat, procs that never trigger procs, and mobs choosing their target (their current target, a random or the farthest
+  player). Players cast from the spell bar (C3b): eight slots on R, T, F, G, H, C, Ů and §, the racial slot on X, the
+  class resource's bar (mana, rage) under it (RLM-400), the two in one place on the screen, a WoW-style cast bar, a
+  cooldown sweep, a spellbook (P) whose tooltips fill a spell's numbers from data, a 0.5 s global cooldown that every
+  spell is on (RLM-402) and an optional spell queue (client options). Our own status effects come from
+  `content/effects/` (C3c): attribute modifiers and damage or healing over time from their caster's stats, remembering
+  who applied them. The first realm exists (W2a): Undervault, the stone realm (`realmforge:stone`), one giant cave of
+  four slow custom stones (`content/blocks/`), sealed until the player's own unlock advancement `realmforge:realm/stone`
+  (`content/realms/`, access requirements in the dimension rules), with no mob crossing into or out of it but through a
+  realm portal, and every respawn in Overworld. It is entered through the
   realm portal (W2b): a frame of Realmforge Bricks around a Realmforge Sealstone, which the Signet of the Undervault
   opens onto Undervault for a player with the unlock; every entity travels through it, portals link like the Nether's
   at 1:16, and a trip builds one set into the floor where none is near. Dungeons are entered through the Dungeon
   Portal (W4d): a dungeon key opens it for its player
   alone, for the dungeon type's open time, with warnings before it closes and sends everyone back; the Dungeon Exit
   and `/instance leave` leave at any time, and a completed run closes 5 minutes later. Players block with two-handed
-  weapons by holding right click (RLM-297: Sword Blocking Mechanics' poses, our rules), and their hits never lose
-  anything to the hurt cooldown (RLM-311). The pack has M1's QoL, UI and building mods, and vanilla strongholds are
-  off (PK1 to PK3). Next to the core mod, the pack ships Better Key Binds (RLM-372), our own client mod that gives
-  every key bind a secondary key.
+  weapons by holding right click (RLM-297: Sword Blocking Mechanics' poses, our rules), and their projectiles and
+  full-strength hits never lose anything to the hurt cooldown (RLM-311, RLM-386). A player or mob is in combat for 10 s
+  after the last hit dealt or taken (RLM-348), which rage and the scrolls read; a scroll charges for 3 s, like a bow,
+  before it works. The pack has M1's QoL, UI and building mods, and vanilla strongholds are off (PK1 to PK3). Next to
+  the core mod, the pack ships Better Key Binds (RLM-372), our own client mod that gives every key bind a secondary
+  key.
 
 ## Pinned versions
 
@@ -302,10 +305,12 @@ that compiles here.
   `#minecraft:bypasses_cooldown`. `combat/DamagePipeline` keeps such a hit out of the window: the target keeps its
   invulnerable time (`setInvulnerabilityTicks(max(1, invulnerableTime))`: 0 is refused) and its `lastHurt`, which
   vanilla overwrites and an access transformer lets us restore, so melee hits in an open window are still compared
-  with the previous melee hit. A player's melee hit or projectile lands through an open window in full too: the
-  pipeline lowers the target's invulnerable time to 10, vanilla's bypass without the tag, which arrows (one damage
-  type for players and skeletons) cannot use; mobs' and the world's hits keep the window. No mod changes this: Iron's
+  with the previous melee hit. A player's projectile, or melee hit at full attack strength, lands through an open
+  window in full too: the pipeline lowers the target's invulnerable time to 10, vanilla's bypass without the tag,
+  which arrows (one damage type for players and skeletons) cannot use; a weaker melee hit and mobs' and the world's
+  hits keep the window, and `DamagePipeline#droppedByCooldown` names the hits it drops. No mod changes this: Iron's
   RPG Tweaks is not in the pack ([ADR 0049](docs/decisions/0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md),
+  [ADR 0051](docs/decisions/0051-player-melee-passes-the-hurt-cooldown-only-at-full-strength.md),
   [architecture 9.1](docs/architecture.md#91-damage-pipeline)).
 - **Cancelling `LivingIncomingDamageEvent` stops a hit cleanly:** `LivingEntity#hurtServer` pops the
   `DamageContainer` of a cancelled hit (NeoForge 21.1 leaked it) ([architecture 9.1](docs/architecture.md#91-damage-pipeline)).
@@ -491,7 +496,10 @@ merges). Four parts:
    ...`, with how to run it ([flow: Reaching the state](docs/ai-development-flow.md#reaching-the-state)).
 2. **Launch commands:** complete commands he can paste, in one block, with the checkout named in the heading,
    e.g. "Launch commands (your Windows clone)"
-   ([flow: Launch commands](docs/ai-development-flow.md#launch-commands)).
+   ([flow: Launch commands](docs/ai-development-flow.md#launch-commands)). For the Windows clone, always the whole
+   block, a revision's too: `cd $HOME\projects\realmforge-win`, `git fetch origin`, `git switch <branch>`, then
+   `git pull --ff-only` for a revision, and `.\gradlew.bat runClient`, one per line; never the update command alone,
+   as his clone is often on another batch by the time he tests (Matěj, 2026-10-24).
 3. **Verification ✅** (optional): what ran and passed, one bullet each; never "all checks passed" for a partial
    run.
 4. **Batch ledger**, one bullet per group:

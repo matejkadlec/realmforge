@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
-# Engine test (C3a-2): a fire bolt with a 2 s cast time that costs mana when it completes; moving cancels it. Not
-# gameplay content; the GameTests in the QA mod cast it.
+# Engine test (C3a-2): a fire bolt with a 2 s cast time that costs its mana when the cast begins and starts its
+# cooldown when it completes; moving slows it. Not gameplay content; the GameTests in the QA mod cast it.
 id: test_slow_bolt
 name: {en_us: Test Slow Bolt}
 description: {en_us: "Hurls a heavy bolt of fire at an enemy for {damage} damage."}
