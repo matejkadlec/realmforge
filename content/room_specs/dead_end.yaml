@@ -7,5 +7,7 @@ footprint: [5, 7]
 height: 5
 connectors: [north]
 features: [rubble]
+pools: [realmforge:stone_vault]
+weight: 1
 seeds: [1, 2, 3, 4]
 rejected_seeds: []

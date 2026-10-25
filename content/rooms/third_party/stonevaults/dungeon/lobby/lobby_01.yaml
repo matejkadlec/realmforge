@@ -7,6 +7,7 @@ tags:
   - "crossing"
   - "vertical"
 weight: 1
+max_per_layout: 1
 source:
   file: "lobby_01.nbt"
   format: nbt

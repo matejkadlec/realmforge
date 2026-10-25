@@ -79,6 +79,12 @@ class RoomDef(StrictModel):
         "otherwise break nothing: what a trap's TNT is meant to blow open (RLM-257). Every other block of the room "
         "stays.",
     )
+    entry: Literal["north", "east", "south", "west", "up", "down"] | None = Field(
+        default=None,
+        description="The side of the template (as saved, before any turn) whose one connector is the room's way in: "
+        "a lock's mechanism side. The planner attaches the room to the room before it only through that connector, "
+        "and no loop leads into the room from another side (RLM-362). Unset: any connector.",
+    )
     source: RoomSource | None = Field(default=None, description="Set for an imported room.")
 
 

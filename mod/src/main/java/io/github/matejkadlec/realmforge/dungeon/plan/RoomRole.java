@@ -6,7 +6,7 @@ import net.minecraft.util.StringRepresentable;
 
 /**
  * The part a room plays in a dungeon layout: the role tag of its sidecar in {@code content/rooms/} (architecture
- * 15.3, 15.4).
+ * 15.3, 15.4), or {@link #WALL} for the plug that {@code rf gen} makes from a dungeon type's {@code walls}.
  */
 public enum RoomRole implements StringRepresentable {
     /** Where players arrive; the first room of every layout. */
@@ -16,7 +16,9 @@ public enum RoomRole implements StringRepresentable {
     STAIRS,
     TREASURE,
     /** The boss's lair. */
-    BOSS;
+    BOSS,
+    /** A wall that closes a doorway nothing else takes, instead of a dead end (RLM-364): no room at all. */
+    WALL;
 
     public static final Codec<RoomRole> CODEC = StringRepresentable.fromEnum(RoomRole::values);
 
@@ -30,9 +32,9 @@ public enum RoomRole implements StringRepresentable {
         return this == HALLWAY || this == COMBAT || this == STAIRS;
     }
 
-    /** Dead ends that may end a branch or close a connector: neither the entrance nor the boss's lair. */
+    /** Dead ends that may end a branch or close a connector: neither the entrance, the boss's lair nor a wall. */
     public boolean closesBranches() {
-        return this != ENTRANCE && this != BOSS;
+        return this != ENTRANCE && this != BOSS && this != WALL;
     }
 
     /** Rooms that may end the main path: the boss's lair or a treasury (architecture 15.2). */

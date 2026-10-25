@@ -10,6 +10,7 @@ import com.mojang.serialization.JsonOps;
 import io.github.matejkadlec.realmforge.dungeon.plan.Connector;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonRoom;
 import io.github.matejkadlec.realmforge.dungeon.plan.LayoutRules;
+import io.github.matejkadlec.realmforge.dungeon.plan.Pace;
 import io.github.matejkadlec.realmforge.dungeon.plan.RoomRole;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,8 +41,16 @@ class DungeonTypeTest {
             assertEquals(Identifier.parse("realmforge:stone_vault"), type.pool());
             assertEquals(RoomRole.TREASURE, type.layout().ending());
             assertTrue(type.rooms().stream().anyMatch(room -> room.role() == RoomRole.ENTRANCE), "an entrance");
-            assertTrue(type.rooms().stream().allMatch(room -> room.template().getPath().startsWith("rooms/")),
-                    "rooms name their structures");
+            assertTrue(type.rooms().stream().allMatch(room -> room.template().getPath().startsWith(
+                    room.role() == RoomRole.WALL ? "dungeon_walls/" : "rooms/")), "rooms name their structures");
+            assertTrue(type.layout().pacing().isPresent(), "the test dungeon has a pacing (RLM-364)");
+            assertTrue(type.rooms().stream().anyMatch(room -> room.spawners() > 0), "its fights have spawners");
+            assertTrue(type.rooms().stream().anyMatch(room -> room.chests() >= DungeonRoom.TREASURE_CHESTS),
+                    "its treasure has chests");
+            assertEquals(1, type.rooms().stream().filter(room -> room.role() == RoomRole.WALL).count(),
+                    "the test dungeon has its wall (RLM-364)");
+            assertTrue(type.rooms().stream().anyMatch(room -> room.entry().isPresent()),
+                    "its locks have entries (RLM-362)");
         }
     }
 
@@ -64,6 +73,26 @@ class DungeonTypeTest {
         LayoutRules rules = layout("[2, 4]", "[0, 1]", "[1, 2]", "boss").getOrThrow();
         JsonElement encoded = LayoutRules.CODEC.encodeStart(JsonOps.INSTANCE, rules).getOrThrow();
         assertEquals(rules, LayoutRules.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow());
+        LayoutRules paced = layout("[2, 4]", "[0, 1]", "[1, 2]", "boss",
+                "{\"corridors\": [1, 2], \"fights\": [2, 4], \"repeat\": 15}").getOrThrow();
+        assertEquals(java.util.Optional.of(new LayoutRules.Pacing(new net.minecraft.util.InclusiveRange<>(1, 2),
+                new net.minecraft.util.InclusiveRange<>(2, 4), 15)), paced.pacing());
+        encoded = LayoutRules.CODEC.encodeStart(JsonOps.INSTANCE, paced).getOrThrow();
+        assertEquals(paced, LayoutRules.CODEC.parse(JsonOps.INSTANCE, encoded).getOrThrow());
+        assertEquals(0, layout("[2, 4]", "[0, 1]", "[1, 2]", "boss", "{\"corridors\": [1, 2], \"fights\": [2, 4]}")
+                .getOrThrow().pacing().orElseThrow().repeat(), "repeat defaults to 0");
+        DungeonRoom lock = room(ROOM.replace("\"weight\": 3", "\"weight\": 3, \"entry\": 0")).getOrThrow();
+        assertEquals(java.util.Optional.of(0), lock.entry(), "RLM-362");
+        DungeonRoom fight = room(ROOM.replace("\"weight\": 3", "\"weight\": 3, \"spawners\": 2, \"chests\": 3"))
+                .getOrThrow();
+        assertEquals(2, fight.spawners(), "RLM-364");
+        assertEquals(3, fight.chests(), "RLM-364");
+        assertEquals(java.util.Optional.of(Pace.FIGHT), fight.pace(), "a combat room with a spawner is a fight");
+        assertEquals(java.util.Optional.of(Pace.FEATURE), lock.pace(), "one without is a feature");
+        assertEquals(fight, room(DungeonRoom.CODEC.encodeStart(JsonOps.INSTANCE, fight).getOrThrow().toString())
+                .getOrThrow());
+        assertEquals(lock, room(DungeonRoom.CODEC.encodeStart(JsonOps.INSTANCE, lock).getOrThrow().toString())
+                .getOrThrow());
     }
 
     @Test
@@ -87,6 +116,16 @@ class DungeonTypeTest {
         assertTrue(room(ROOM.replace("\"front\": \"north\"", "\"front\": \"up\"")).isError(),
                 "a vertical connector whose top is up");
         assertTrue(room(ROOM.replace("\"weight\": 3", "\"weight\": 151")).isError(), "weight above 150");
+        assertTrue(room(ROOM.replace("\"weight\": 3", "\"weight\": 3, \"entry\": 1")).isError(),
+                "an entry the room does not have");
+        assertTrue(room(ROOM.replace("\"combat\"", "\"wall\"")).isSuccess(), "a wall with one connector");
+        assertTrue(room(ROOM.replace("\"combat\"", "\"wall\"").replace("}]}", "}, {\"pos\": [4, 1, 8], "
+                + "\"front\": \"south\", \"top\": \"up\", \"name\": \"realmforge:door\", "
+                + "\"target\": \"realmforge:door\", \"joint\": \"aligned\"}]}")).isError(), "a wall with two");
+        assertTrue(layout("[2, 4]", "[0, 1]", "[1, 2]", "boss", "{\"corridors\": [0, 2], \"fights\": [2, 4]}")
+                .isError(), "a corridor run of no room");
+        assertTrue(layout("[2, 4]", "[0, 1]", "[1, 2]", "boss", "{\"corridors\": [1, 2], \"fights\": [0, 4]}")
+                .isError(), "a fight gap of no room");
     }
 
     private static DataResult<DungeonRoom> room(String json) {
@@ -95,8 +134,15 @@ class DungeonTypeTest {
 
     private static DataResult<LayoutRules> layout(String mainPath, String branches, String branchRooms,
             String ending) {
+        return layout(mainPath, branches, branchRooms, ending, null);
+    }
+
+    /** Layout rules with a {@code pacing} object ({@code null}: none). */
+    private static DataResult<LayoutRules> layout(String mainPath, String branches, String branchRooms,
+            String ending, String pacing) {
+        String gap = pacing == null ? "" : ", \"pacing\": " + pacing;
         return LayoutRules.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(
                 "{\"main_path\": " + mainPath + ", \"branches\": " + branches + ", \"branch_rooms\": " + branchRooms
-                        + ", \"ending\": \"" + ending + "\"}"));
+                        + ", \"ending\": \"" + ending + "\"" + gap + "}"));
     }
 }

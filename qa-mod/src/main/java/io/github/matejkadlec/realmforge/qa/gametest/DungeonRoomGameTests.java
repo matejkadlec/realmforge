@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
+import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.dungeon.DungeonRegistries;
 import io.github.matejkadlec.realmforge.dungeon.DungeonType;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
@@ -15,27 +16,41 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.pig.Pig;
+import net.minecraft.world.entity.decoration.ItemFrame;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * The rules of single dungeon rooms in an instance: a trap's TNT blows open only what its room lists (RLM-257), and a
- * drop down the entrance shaft lands in a fall cushion that takes all its damage (RLM-276). The rooms are the real
- * Stonevaults templates, with what {@code content/rooms/} says about them as the dungeon type carries it.
+ * The rules of single dungeon rooms in an instance: a trap's TNT blows open only what its room lists (RLM-257), a
+ * drop down the entrance shaft lands in a fall cushion that takes all its damage (RLM-276), and a room's entities come
+ * with it (RLM-362). The rooms are the real Stonevaults templates, with what {@code content/rooms/} says about them as
+ * the dungeon type carries it.
  */
 public final class DungeonRoomGameTests {
     /** Building and clearing take a few dozen ticks, a long fall about four seconds; room for a slow CI machine. */
@@ -45,6 +60,10 @@ public final class DungeonRoomGameTests {
             Identifier.parse("realmforge:rooms/third_party/stonevaults/dungeon/rooms/combination_lock");
     private static final Identifier LOBBY =
             Identifier.parse("realmforge:rooms/third_party/stonevaults/dungeon/lobby/lobby_01");
+    private static final Identifier ITEM_LOCK =
+            Identifier.parse("realmforge:rooms/third_party/stonevaults/dungeon/rooms/item_combination_lock");
+    /** The item lock's chest, behind its piston door, as the template has it. */
+    private static final BlockPos ITEM_LOCK_CHEST = new BlockPos(11, 1, 8);
     /** The combination lock's TNT, and the smooth stone wall beside it that the TNT is there to blow open. */
     private static final BlockPos LOCK_TNT = new BlockPos(8, 2, 6);
     private static final BlockPos LOCK_WALL = new BlockPos(7, 2, 6);
@@ -203,6 +222,61 @@ public final class DungeonRoomGameTests {
 
     private static BoundingBox cushion(BlockPos lobby) {
         return CUSHION.moved(lobby.getX(), lobby.getY(), lobby.getZ());
+    }
+
+    /**
+     * RLM-362: the item combination lock is built with its two item frames, the poppy and the cornflower its
+     * comparators read, also turned a quarter; an Adventure player's hits and an explosion leave both frames and their
+     * flowers in place, so the lock stays solvable; its chest opens; and clearing the plot removes the frames again.
+     */
+    @QaGameTest(timeoutTicks = TIMEOUT)
+    public static void aRoomsItemFramesComeWithIt(GameTestHelper helper) {
+        InstanceLayout layout = new InstanceLayout(
+                List.of(new RoomPlacement(ITEM_LOCK, BlockPos.ZERO, Rotation.CLOCKWISE_90)), Optional.empty());
+        InstanceManager manager = manager(helper);
+        ServerLevel instances = InstanceDimension.level(helper.getLevel().getServer());
+        Plot plot = manager.open(layout, List.of());
+        ServerPlayer player = QaPlayers.login(helper.getLevel().getServer(),
+                new GameProfile(UUID.randomUUID(), "qa-item-lock"));
+        AABB[] room = new AABB[1];
+
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.READY, "plot is " + plot.state()))
+                .thenExecute(() -> {
+                    room[0] = AABB.of(plot.rooms().getFirst());
+                    List<ItemFrame> frames = instances.getEntitiesOfClass(ItemFrame.class, room[0]);
+                    helper.assertValueEqual(frames.size(), 2, "item frames in the item lock");
+                    helper.assertValueEqual(frames.stream().map(frame -> frame.getItem().getItem()).collect(
+                            Collectors.toSet()), Set.of(Items.POPPY, Items.CORNFLOWER), "the framed flowers");
+                    player.setGameMode(GameType.ADVENTURE);
+                    for (ItemFrame frame : frames) {
+                        player.attack(frame);
+                        player.attack(frame);
+                        instances.explode(null, frame.getX(), frame.getY(), frame.getZ(), 2.0F,
+                                Level.ExplosionInteraction.TNT);
+                    }
+                    List<ItemFrame> kept = instances.getEntitiesOfClass(ItemFrame.class, room[0]);
+                    helper.assertValueEqual(kept.size(), 2, "item frames after hits and explosions");
+                    helper.assertValueEqual(kept.stream().map(frame -> frame.getItem().getItem()).collect(
+                            Collectors.toSet()), Set.of(Items.POPPY, Items.CORNFLOWER),
+                            "the framed flowers after hits and explosions");
+                    BlockPos chest = plot.origin().offset(
+                            StructureTemplate.transform(ITEM_LOCK_CHEST, Mirror.NONE, Rotation.CLOCKWISE_90,
+                                    BlockPos.ZERO));
+                    helper.assertValueEqual(instances.getBlockState(chest).getBlock(), Blocks.CHEST, "the chest");
+                    player.teleportTo(instances, chest.getX() + 0.5, chest.getY() + 1, chest.getZ() + 1.5, Set.of(),
+                            0.0F, 0.0F, true);
+                    player.gameMode.useItemOn(player, instances, ItemStack.EMPTY, InteractionHand.MAIN_HAND,
+                            new BlockHitResult(Vec3.atCenterOf(chest), Direction.UP, chest, false));
+                    helper.assertTrue(player.containerMenu instanceof ChestMenu, "the chest does not open");
+                    player.closeContainer();
+                    helper.getLevel().getServer().getPlayerList().remove(player);
+                    manager.release(plot);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.FREE, "plot is " + plot.state()))
+                .thenExecute(() -> helper.assertTrue(instances.getEntitiesOfClass(ItemFrame.class, room[0]).isEmpty(),
+                        "clearing left the item frames"))
+                .thenSucceed();
     }
 
     private static DungeonRoom poolRoom(GameTestHelper helper, Identifier template) {

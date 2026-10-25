@@ -23,6 +23,11 @@ from realmforge_tools.formats.deflate import gzip_stored
 AIR = "minecraft:air"
 STRUCTURE_VOID = "minecraft:structure_void"
 JIGSAW = "minecraft:jigsaw"
+# The blocks a room's spawners and chests are counted from (RLM-364).
+SPAWNER = "minecraft:spawner"
+CHESTS = ("minecraft:chest", "minecraft:trapped_chest")
+# The blocks that make a room a hazard for a dungeon's pacing: lava, TNT and the dispensers of traps (RLM-364).
+HAZARDS = ("minecraft:lava", "minecraft:tnt", "minecraft:dispenser")
 
 Pos = tuple[int, int, int]
 
@@ -177,6 +182,21 @@ def structure_from_nbt(root: dict[str, Any], *, first_palette: bool = False) -> 
 def count_blocks(structure: Structure, name: str) -> int:
     """How many of the structure's blocks are ``name`` (``minecraft:air``, say), whatever their properties."""
     return sum(1 for block in structure.blocks if block.state.name == name)
+
+
+def count_spawners(structure: Structure) -> int:
+    """The structure's mob spawners: in a dungeon's pacing, a combat room with one is a fight (RLM-364)."""
+    return count_blocks(structure, SPAWNER)
+
+
+def count_chests(structure: Structure) -> int:
+    """The structure's chests, trapped ones included (RLM-364)."""
+    return sum(count_blocks(structure, name) for name in CHESTS)
+
+
+def count_hazards(structure: Structure) -> int:
+    """The structure's blocks that can hurt a player who walks in: lava, TNT and dispensers (RLM-364)."""
+    return sum(count_blocks(structure, name) for name in HAZARDS)
 
 
 def write_structure(structure: Structure) -> bytes:

@@ -22,6 +22,15 @@ PATH_ROLES = ("hallway", "combat", "stairs")
 DEAD_END_ROLES = ("hallway", "combat", "stairs", "treasure")
 # The rooms that can end the main path: the boss's lair or a treasury (architecture 15.2).
 ENDING_ROLES = ("boss", "treasure")
+# The roles of the rooms a layout's pacing calls corridors; a combat room is a fight with a spawner, else a feature
+# (RLM-364, the game's Pace).
+CORRIDOR_ROLES = ("hallway", "stairs")
+# The role of the plug rf gen makes from a dungeon type's walls: it closes a doorway, and is no room (RLM-364).
+WALL_ROLE = "wall"
+# The doorway a wall closes: three blocks wide and high, its connector at the middle of the bottom row, like every
+# door of the pools so far (Stonevaults' and the room generator's, architecture 15.4).
+WALL_WIDTH = 3
+WALL_HEIGHT = 3
 
 
 def room_role(tags: list[str]) -> str | None:
@@ -38,17 +47,37 @@ def _ordered(bounds: list[int]) -> list[int]:
 
 # [min, max] with both ends included; the game reads it as an InclusiveRange.
 MainPathRange = Annotated[
-    list[Annotated[int, Field(ge=1, le=32)]],
+    list[Annotated[int, Field(ge=1, le=96)]],
     Field(
         min_length=2,
         max_length=2,
-        description="[min, max] rooms between the entrance and the ending (1 to 32).",
+        description="[min, max] rooms between the entrance and the ending (1 to 96).",
     ),
     AfterValidator(_ordered),
 ]
 BranchRange = Annotated[
     list[Annotated[int, Field(ge=0, le=16)]],
     Field(min_length=2, max_length=2, description="[min, max] side branches off the main path (0 to 16)."),
+    AfterValidator(_ordered),
+]
+CorridorRunRange = Annotated[
+    list[Annotated[int, Field(ge=1, le=8)]],
+    Field(
+        min_length=2,
+        max_length=2,
+        description="[min, max] corridors in a row on the main path before a feature or a fight (1 to 8), drawn "
+        "binomially (RLM-364).",
+    ),
+    AfterValidator(_ordered),
+]
+FightGapRange = Annotated[
+    list[Annotated[int, Field(ge=1, le=16)]],
+    Field(
+        min_length=2,
+        max_length=2,
+        description="[min, max] rooms, corridors and features, between two fights on the main path (1 to 16), "
+        "drawn binomially: [2, 4] gives 2 a quarter of the time, 3 half, 4 a quarter (RLM-364).",
+    ),
     AfterValidator(_ordered),
 ]
 BranchRoomRange = Annotated[
@@ -62,16 +91,54 @@ BranchRoomRange = Annotated[
 ]
 
 
+class WallsDef(StrictModel):
+    """A plain wall that closes a doorway nothing else takes, one block behind it: rf gen builds it as a template of
+    3 x 3 blocks with one connector and adds it to the dungeon type's rooms with the role ``wall``."""
+
+    block: ResourceId = Field(description="The block it is built of, e.g. minecraft:stone_bricks.")
+    weight: int = Field(
+        ge=1,
+        le=150,
+        description="Its weight among the dead ends that may close a doorway, like a room's weight in its pool.",
+    )
+
+
+class PacingDef(StrictModel):
+    """The rhythm of a layout (RLM-364, architecture 15.3): on the main path, a fight (a combat room with a spawner)
+    once a gap drawn from ``fights`` lies behind the last one, else a feature (a combat room without one) after a run
+    of corridors drawn from ``corridors``; the branches are corridors up to a treasure room."""
+
+    corridors: CorridorRunRange
+    fights: FightGapRange
+    repeat: int = Field(
+        default=0,
+        ge=0,
+        le=64,
+        description="Rooms of distance from the entrance the planner tries to keep between two copies of a room that "
+        "is no corridor, and between two locks (rooms with an entry); 0: copies may be neighbours.",
+    )
+
+
 class LayoutDef(StrictModel):
     """How the planner lays out a dungeon of this type (architecture 15.3): the entrance, a main path of rooms a
     player passes through, the room that ends it, and side branches off the main path, each ending in a dead end.
-    The planner closes every connector left over with a dead end, so a layout has more rooms than these counts."""
+    The planner closes every connector left over with a dead end or a wall, so a layout has more rooms than these
+    counts."""
 
     main_path: MainPathRange
     branches: BranchRange
     branch_rooms: BranchRoomRange
     ending: Literal["boss", "treasure"] = Field(
         description="The role of the room that ends the main path: the boss's lair or a treasury."
+    )
+    pacing: PacingDef | None = Field(
+        default=None,
+        description="If set, the rhythm of corridors, features and fights along the main path, and the treasure at "
+        "the end of each branch (RLM-364). Unset: any room that fits a slot may take it.",
+    )
+    walls: WallsDef | None = Field(
+        default=None,
+        description="If set, the planner may close a leftover doorway with a wall instead of a dead end (RLM-364).",
     )
 
 

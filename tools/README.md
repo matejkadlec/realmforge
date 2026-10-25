@@ -110,7 +110,7 @@ source file, its format and its data version, leaves `pools` empty and drafts th
 `curved`, `t_junction`, `crossing`, plus `vertical` for one up or down), the role from a word in the room's path
 (`boss`, `treasure`, `entrance`, `stairs`, `hallway`), else `hallway` for a straight or curved piece at most 7 blocks
 wide (measured across the passage) and `combat` for the rest. A re-import keeps the sidecar's pools, tags, weight
-and room rules (`max_per_layout`, `near_start`, `explosion_breaks`; [content/README](../content/README.md)). A room
+and room rules (`max_per_layout`, `near_start`, `explosion_breaks`, `entry`; [content/README](../content/README.md)). A room
 is written only when it validates; otherwise the command lists the problems and writes nothing for that
 room, and so does a source file that cannot be read (some jars ship a corrupt template; exclude it). A file that the
 gallery's review rejects is skipped (`SKIP` in the report): the `review.yaml` of the target folder decides, or that of
@@ -157,11 +157,16 @@ dress:                # variety and decorations for plain rooms (rooms/dress.py)
   ceiling: {target: 3, replace: [minecraft:stone_bricks], variants: [minecraft:mossy_stone_bricks]}
   decorations: [vines, cobwebs, barrels]
   without: {barrels: [dungeon/rooms/library]}  # rooms that do not get a decoration
-place:                # boxes of one block set into a room after the dressing, by its path (a fall cushion, RLM-276)
-  dungeon/lobby/lobby_01:
+  lever_hints: minecraft:stone_brick_stairs    # the floor under each lever that must be on (a torch behind it)
+place:                # boxes of one block, of data markers or of what connectors leave behind, by the room's path
+  dungeon/lobby/lobby_01:   # the fall cushion (RLM-276)
     - {from: [5, 0, 5], to: [7, 0, 7], block: "minecraft:stone_brick_slab[type=bottom,waterlogged=true]"}
     - {from: [4, 0, 5], to: [4, 0, 7], block: "minecraft:stone_brick_stairs[facing=west,half=bottom,shape=straight,waterlogged=true]"}
     # ... the other three sides and the four corners (art/rooms/stonevaults/rules.yaml)
+  dungeon/treasure/egg:     # the exit of the room that ends the test dungeon (RLM-363)
+    - {from: [11, 2, 6], to: [11, 2, 6], marker: exit}
+  dungeon/rooms/husk_temple:  # its connectors' final_state: an open doorway where the source left iron bars
+    - {from: [0, 1, 6], to: [0, 1, 6], final_state: "minecraft:air"}
 data_version: 4790    # for the files that state none, when the source is known to be saved with this version
 ```
 
@@ -177,7 +182,14 @@ rooms variety: a surface (floor: air above, ceiling: air below, walls: air besid
 `target` (a family is a material whatever its shape; it counts from 5 % of the surface) gets the next variants it
 lacks, each replacing 15 % of its `replace` blocks in patches, gravel only over a block. The plainer the room was,
 the more decorations it gets: vines from the top of the walls, cobwebs where wall meets ceiling and barrels, all
-clear of the doorways and of the room's own entities; `without` leaves a decoration out of the rooms it names.
+clear of the doorways and of the room's own entities; `without` leaves a decoration out of the rooms it names. The
+dressing changes no block within one block of a mechanism (redstone, repeaters, comparators, levers, buttons,
+pressure plates, pistons, observers, dispensers, droppers, hoppers, TNT, targets, tripwires, trapped chests, note
+blocks, doors and the like), and decorates only the air a player reaches from the room's doorways, walking through
+air and what a player passes (vines, cobwebs, torches, carpets, plates, buttons, water), so no decoration jams a
+lock or a trap (RLM-364). `lever_hints` names a stairs block: under each lever on a wall whose block has a redstone
+torch behind it ([lever] [block] [torch], a lever that must be on), the floor block becomes those stairs, tall half
+towards the room, so a combination lock shows its answer.
 Barrels form a pattern ([ADR 0036](../docs/decisions/0036-room-lights-and-decorations-form-patterns.md), RLM-262):
 they stand on the room's main floor against its outer walls (a full block with no air behind it, so never on or
 beside a throne or pillar inside the room), never in a passage one block wide or where they would split the floor. A

@@ -14,13 +14,17 @@ import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
 import io.github.matejkadlec.realmforge.dungeon.instance.Plot;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonPlan;
+import io.github.matejkadlec.realmforge.dungeon.plan.Pace;
 import io.github.matejkadlec.realmforge.dungeon.plan.PlanningException;
+import io.github.matejkadlec.realmforge.dungeon.plan.RoomRole;
 import io.github.matejkadlec.realmforge.dungeon.plan.Slot;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.dungeon.LayoutMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -148,11 +152,20 @@ final class DungeonCommands {
         }
     }
 
-    /** "14 rooms: main path 5, 2 branches (3 rooms), 4 caps". */
+    /**
+     * "71 rooms (14 fights, 13 features, 5 treasure rooms): main path 56, 4 branches (10 rooms), 0 dead ends and 3
+     * walls as caps".
+     */
     static String summary(DungeonPlan plan) {
         BiFunction<Slot, Slot, Long> count = (first, second) -> plan.count(first) + plan.count(second);
-        return String.format(Locale.ROOT, "%d rooms: main path %d, %d branches (%d rooms), %d caps",
-                plan.rooms().size(), plan.count(Slot.PATH), plan.count(Slot.BRANCH_END),
-                count.apply(Slot.BRANCH, Slot.BRANCH_END), plan.count(Slot.CAP));
+        long walls = plan.rooms().stream().filter(room -> room.room().role() == RoomRole.WALL).count();
+        Function<Pace, Long> paced = pace -> plan.rooms().stream()
+                .filter(room -> room.room().pace().equals(Optional.of(pace))).count();
+        return String.format(Locale.ROOT,
+                "%d rooms (%d fights, %d features, %d treasure rooms): main path %d, %d branches (%d rooms), %d dead"
+                        + " ends and %d walls as caps",
+                plan.rooms().size() - walls, paced.apply(Pace.FIGHT), paced.apply(Pace.FEATURE),
+                paced.apply(Pace.TREASURE), plan.count(Slot.PATH), plan.count(Slot.BRANCH_END),
+                count.apply(Slot.BRANCH, Slot.BRANCH_END), plan.count(Slot.CAP) - walls, walls);
     }
 }

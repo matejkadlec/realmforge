@@ -2,7 +2,7 @@
   "$defs": {
     "LayoutDef": {
       "additionalProperties": false,
-      "description": "How the planner lays out a dungeon of this type (architecture 15.3): the entrance, a main path of rooms a\nplayer passes through, the room that ends it, and side branches off the main path, each ending in a dead end.\nThe planner closes every connector left over with a dead end, so a layout has more rooms than these counts.",
+      "description": "How the planner lays out a dungeon of this type (architecture 15.3): the entrance, a main path of rooms a\nplayer passes through, the room that ends it, and side branches off the main path, each ending in a dead end.\nThe planner closes every connector left over with a dead end or a wall, so a layout has more rooms than these\ncounts.",
       "properties": {
         "branch_rooms": {
           "description": "[min, max] rooms in each branch, its dead end included (1 to 8).",
@@ -38,9 +38,9 @@
           "type": "string"
         },
         "main_path": {
-          "description": "[min, max] rooms between the entrance and the ending (1 to 32).",
+          "description": "[min, max] rooms between the entrance and the ending (1 to 96).",
           "items": {
-            "maximum": 32,
+            "maximum": 96,
             "minimum": 1,
             "type": "integer"
           },
@@ -48,6 +48,30 @@
           "minItems": 2,
           "title": "Main Path",
           "type": "array"
+        },
+        "pacing": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PacingDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "If set, the rhythm of corridors, features and fights along the main path, and the treasure at the end of each branch (RLM-364). Unset: any room that fits a slot may take it."
+        },
+        "walls": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WallsDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "If set, the planner may close a leftover doorway with a wall instead of a dead end (RLM-364)."
         }
       },
       "required": [
@@ -74,6 +98,75 @@
         "en_us"
       ],
       "title": "LocalizedText",
+      "type": "object"
+    },
+    "PacingDef": {
+      "additionalProperties": false,
+      "description": "The rhythm of a layout (RLM-364, architecture 15.3): on the main path, a fight (a combat room with a spawner)\nonce a gap drawn from ``fights`` lies behind the last one, else a feature (a combat room without one) after a run\nof corridors drawn from ``corridors``; the branches are corridors up to a treasure room.",
+      "properties": {
+        "corridors": {
+          "description": "[min, max] corridors in a row on the main path before a feature or a fight (1 to 8), drawn binomially (RLM-364).",
+          "items": {
+            "maximum": 8,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Corridors",
+          "type": "array"
+        },
+        "fights": {
+          "description": "[min, max] rooms, corridors and features, between two fights on the main path (1 to 16), drawn binomially: [2, 4] gives 2 a quarter of the time, 3 half, 4 a quarter (RLM-364).",
+          "items": {
+            "maximum": 16,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Fights",
+          "type": "array"
+        },
+        "repeat": {
+          "default": 0,
+          "description": "Rooms of distance from the entrance the planner tries to keep between two copies of a room that is no corridor, and between two locks (rooms with an entry); 0: copies may be neighbours.",
+          "maximum": 64,
+          "minimum": 0,
+          "title": "Repeat",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "corridors",
+        "fights"
+      ],
+      "title": "PacingDef",
+      "type": "object"
+    },
+    "WallsDef": {
+      "additionalProperties": false,
+      "description": "A plain wall that closes a doorway nothing else takes, one block behind it: rf gen builds it as a template of\n3 x 3 blocks with one connector and adds it to the dungeon type's rooms with the role ``wall``.",
+      "properties": {
+        "block": {
+          "description": "The block it is built of, e.g. minecraft:stone_bricks.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Block",
+          "type": "string"
+        },
+        "weight": {
+          "description": "Its weight among the dead ends that may close a doorway, like a room's weight in its pool.",
+          "maximum": 150,
+          "minimum": 1,
+          "title": "Weight",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "block",
+        "weight"
+      ],
+      "title": "WallsDef",
       "type": "object"
     }
   },

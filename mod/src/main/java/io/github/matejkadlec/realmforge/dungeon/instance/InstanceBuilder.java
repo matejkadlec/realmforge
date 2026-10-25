@@ -80,12 +80,16 @@ final class InstanceBuilder {
     /**
      * The settings a room is placed with; its box and its markers come from the same settings. Its jigsaw blocks
      * (connectors) become their final state, as in vanilla's jigsaw structures, and its data markers are left out, as
-     * vanilla's pool elements leave them out.
+     * vanilla's pool elements leave them out. Its entities (the paintings and item frames an import keeps, such as the
+     * framed flowers a combination lock's comparators read) come with it: each slice places those whose block lies
+     * in it, so each once (RLM-362), with the block it hangs at moved along ({@link AttachedEntityProcessor}). The
+     * plot's chunks do not tick entities while it is built, so a frame placed before the wall it hangs on stays.
      */
     static StructurePlaceSettings settings(RoomPlacement room) {
         // Rooms are built with correct block shapes, so placing skips the neighbour shape pass.
-        return new StructurePlaceSettings().setRotation(room.rotation()).setIgnoreEntities(true).setKnownShape(true)
-                .addProcessor(BlockIgnoreProcessor.STRUCTURE_BLOCK).addProcessor(JigsawReplacementProcessor.INSTANCE);
+        return new StructurePlaceSettings().setRotation(room.rotation()).setIgnoreEntities(false).setKnownShape(true)
+                .addProcessor(BlockIgnoreProcessor.STRUCTURE_BLOCK).addProcessor(JigsawReplacementProcessor.INSTANCE)
+                .addProcessor(AttachedEntityProcessor.INSTANCE);
     }
 
     /**

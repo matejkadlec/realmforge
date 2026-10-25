@@ -6,6 +6,7 @@ tags:
   - "combat"
   - "straight"
 weight: 1
+max_per_layout: 3
 source:
   file: "library.nbt"
   format: nbt

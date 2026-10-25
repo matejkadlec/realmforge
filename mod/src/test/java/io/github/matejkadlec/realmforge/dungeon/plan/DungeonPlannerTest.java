@@ -64,12 +64,42 @@ class DungeonPlannerTest {
     private static final DungeonRoom LANDING = room("landing", RoomRole.HALLWAY, 9, 6, 9,
             new Connector(new BlockPos(4, 5, 4), Direction.UP, Direction.NORTH, SHAFT, SHAFT, JointType.ALIGNED),
             door(4, 1, 8, Direction.SOUTH), door(8, 1, 4, Direction.EAST));
+    /** A lock entered from its north side only, where its mechanism is (RLM-362). */
+    private static final DungeonRoom LOCK = new DungeonRoom(Identifier.parse("realmforge:rooms/test/lock"),
+            new Vec3i(7, 5, 11), RoomRole.COMBAT, 3, List.of(door(3, 1, 0, Direction.NORTH),
+                    door(3, 1, 10, Direction.SOUTH)), Optional.empty(), false, List.of(), Optional.of(0), 0, 0, false);
+    /** A plug that closes a doorway, as {@code rf gen} makes it from a dungeon type's {@code walls} (RLM-364). */
+    private static final DungeonRoom WALL = room("wall", RoomRole.WALL, 3, 3, 1, door(1, 0, 0, Direction.NORTH));
+    private static final DungeonRoom HALL_CROSSING = room("hall_crossing", RoomRole.HALLWAY, 9, 5, 9,
+            door(4, 1, 0, Direction.NORTH), door(4, 1, 8, Direction.SOUTH), door(0, 1, 4, Direction.WEST),
+            door(8, 1, 4, Direction.EAST));
+    private static final DungeonRoom HALL_JUNCTION = room("hall_junction", RoomRole.HALLWAY, 11, 6, 9,
+            door(5, 1, 0, Direction.NORTH), door(0, 1, 4, Direction.WEST), door(10, 1, 4, Direction.EAST));
+    /** A combat room with spawners: a fight in a paced layout (RLM-364). */
+    private static final DungeonRoom FIGHT = new DungeonRoom(Identifier.parse("realmforge:rooms/test/fight"),
+            new Vec3i(9, 6, 13), RoomRole.COMBAT, 1, List.of(door(4, 1, 0, Direction.NORTH),
+                    door(4, 1, 12, Direction.SOUTH)), Optional.empty(), false, List.of(), Optional.empty(), 2, 1,
+            false);
+    /** A combat room without spawners: a feature in a paced layout. */
+    private static final DungeonRoom SIGHT = room("sight", RoomRole.COMBAT, 11, 6, 11,
+            door(5, 1, 0, Direction.NORTH), door(5, 1, 10, Direction.SOUTH));
 
     private static final List<DungeonRoom> FLAT = List.of(ENTRANCE, CORRIDOR, CURVE, CROSSING, JUNCTION, DEAD_END,
             VAULT, LAIR);
     private static final List<DungeonRoom> WITH_SHAFTS = List.of(ENTRANCE, CORRIDOR, CROSSING, DEAD_END, VAULT, LAIR,
             SHAFT_ROOM, LANDING);
+    /** Corridors, features, a fight and treasure, with walls, for a pacing (RLM-364). */
+    private static final List<DungeonRoom> PACED = List.of(ENTRANCE, CORRIDOR, CURVE, HALL_CROSSING, HALL_JUNCTION,
+            DEAD_END, FIGHT, LOCK, SIGHT, VAULT, LAIR, WALL);
     private static final LayoutRules RULES = rules(3, 8, 0, 4, 1, 3, RoomRole.BOSS);
+    private static final LayoutRules PACED_RULES = new LayoutRules(new InclusiveRange<>(8, 24),
+            new InclusiveRange<>(1, 3), new InclusiveRange<>(2, 3), RoomRole.BOSS, Optional.of(
+                    new LayoutRules.Pacing(new InclusiveRange<>(1, 2), new InclusiveRange<>(2, 4), 2)));
+    /**
+     * The test dungeon's mean room count (walls not counted) that RLM-363 asks for since Matěj's second playtest of
+     * 2026-10-24: about 50, where the 70 of six times the old 11.4 felt too long.
+     */
+    private static final double TEST_DUNGEON_ROOMS = 50;
 
     @Test
     void sameSeedGivesTheSameLayout() {
@@ -134,7 +164,8 @@ class DungeonPlannerTest {
     @Test
     void aRoomKeepsItsLimitAndItsPlaceAtTheStart() {
         DungeonRoom throne = new DungeonRoom(Identifier.parse("realmforge:rooms/test/throne"), new Vec3i(9, 6, 9),
-                RoomRole.TREASURE, 5, List.of(door(4, 1, 0, Direction.NORTH)), Optional.of(1), true, List.of());
+                RoomRole.TREASURE, 5, List.of(door(4, 1, 0, Direction.NORTH)), Optional.of(1), true, List.of(),
+                Optional.empty(), 0, 0, false);
         List<DungeonRoom> rooms = List.of(ENTRANCE, CORRIDOR, CURVE, CROSSING, JUNCTION, DEAD_END, VAULT, LAIR, throne);
         int with = 0;
         for (long seed = 0; seed < SEEDS; seed++) {
@@ -143,6 +174,123 @@ class DungeonPlannerTest {
             with += plan.rooms().stream().anyMatch(room -> room.room().equals(throne)) ? 1 : 0;
         }
         assertTrue(with > SEEDS / 10, "the throne room turned up in " + with + " of " + SEEDS + " layouts");
+    }
+
+    /**
+     * RLM-362: a lock is always entered through its mechanism side, also where crossings close loops around it
+     * ({@link PlanChecks}), and loops still close elsewhere.
+     */
+    @Test
+    void aRoomWithAnEntryIsEnteredThroughIt() {
+        List<DungeonRoom> rooms = List.of(ENTRANCE, CORRIDOR, CURVE, CROSSING, JUNCTION, DEAD_END, VAULT, LAIR, LOCK);
+        int locks = 0;
+        int locksWithLoops = 0;
+        for (long seed = 0; seed < SEEDS; seed++) {
+            DungeonPlan plan = plan(rooms, RULES, seed);
+            PlanChecks.assertValid(plan, rooms, RULES, PlotGrid.limits());
+            boolean lock = plan.rooms().stream().anyMatch(room -> room.room().equals(LOCK));
+            locks += lock ? 1 : 0;
+            locksWithLoops += lock && plan.links().size() > plan.rooms().size() - 1 ? 1 : 0;
+        }
+        assertTrue(locks > SEEDS / 2, "the lock turned up in " + locks + " of " + SEEDS + " layouts");
+        assertTrue(locksWithLoops > 0, "no layout with a lock closed a loop");
+    }
+
+    /**
+     * RLM-364: a paced layout keeps its rhythm's rules over every seed ({@link PlanChecks}): fights apart, branches of
+     * corridors, caps of walls and corridors, short loops past no fight; with a pool of fights without limits, almost
+     * every fight comes two to four rooms after the last, no more than two corridors come in a row, a fight guards the
+     * ending, and no dead end closes a connector.
+     */
+    @Test
+    void pacedLayoutsKeepTheirRhythm() {
+        PacingReport report = new PacingReport();
+        for (long seed = 0; seed < SEEDS; seed++) {
+            DungeonPlan plan = plan(PACED, PACED_RULES, seed);
+            PlanChecks.assertValid(plan, PACED, PACED_RULES, PlotGrid.limits());
+            report.add(plan);
+        }
+        assertRhythm(report, SEEDS, 0.99);
+    }
+
+    /** RLM-364: a wall closes what no dead end can, and never ends a branch. */
+    @Test
+    void wallsCloseConnectorsNoDeadEndTakes() {
+        List<DungeonRoom> rooms = List.of(ENTRANCE, CORRIDOR, CROSSING, VAULT, LAIR, WALL);
+        LayoutRules rules = rules(2, 6, 1, 3, 1, 3, RoomRole.BOSS);
+        for (long seed = 0; seed < 500; seed++) {
+            DungeonPlan plan = plan(rooms, rules, seed);
+            PlanChecks.assertValid(plan, rooms, rules, PlotGrid.limits());
+            for (PlannedRoom room : plan.rooms()) {
+                assertTrue(room.room() != WALL || room.slot() == Slot.CAP, "seed " + seed + ": a wall is a cap");
+            }
+        }
+        assertTrue(plan(List.of(ENTRANCE, CROSSING, LAIR, WALL), rules(2, 3, 0, 0, 1, 1, RoomRole.BOSS), 7)
+                .rooms().stream().anyMatch(room -> room.room().equals(WALL)), "walls close the crossings' doors");
+    }
+
+    /**
+     * RLM-363 and RLM-364 on the generated test dungeon: a run holds about 50 rooms, and keeps the rhythm of Matěj's
+     * playtest of 2026-10-24: a fight after every two to four rooms, never more than two corridors in a row, a fight
+     * before the ending, treasure at the branches' ends at least every fifteen rooms. The report of what a player
+     * meets goes to {@code mod/build/reports/dungeon-pacing.txt}.
+     */
+    @Test
+    void theTestDungeonKeepsItsRhythm() throws IOException {
+        DungeonType type = generated("test_dungeon");
+        int seeds = 1000;
+        PacingReport report = new PacingReport();
+        long[] times = new long[seeds];
+        for (int seed = 0; seed < seeds; seed++) {
+            long start = System.nanoTime();
+            report.add(type.plan(seed));
+            times[seed] = System.nanoTime() - start;
+        }
+        java.util.Arrays.sort(times);
+        String text = report.text() + String.format(java.util.Locale.ROOT, "Planning: %.1f ms on average, %.1f ms at"
+                + " the median, %.1f ms at the 99th percentile, %.1f ms at most%n",
+                java.util.Arrays.stream(times).average().orElse(0) / 1e6, times[seeds / 2] / 1e6,
+                times[seeds * 99 / 100] / 1e6, times[seeds - 1] / 1e6);
+        Path out = Path.of("..", "reports", "dungeon-pacing.txt");
+        Files.createDirectories(out.getParent());
+        Files.writeString(out, text);
+        double mean = report.count("rooms (walls not counted)") / (double) seeds;
+        assertTrue(Math.abs(mean - TEST_DUNGEON_ROOMS) <= 0.1 * TEST_DUNGEON_ROOMS,
+                "a layout holds " + mean + " rooms on average, not about " + TEST_DUNGEON_ROOMS);
+        assertRhythm(report, seeds, 0.9);
+        assertTrue(share(report.fightGaps(), 2, 5) > 0.99, "a gap of 5 where the pool runs out of fights\n" + text);
+        assertTrue(share(report.treasureGaps(), 1, 15) > 0.99, "treasure at least every 15 rooms\n" + text);
+        assertTrue(share(report.branchEnds(), "treasure room", "room with 3+ chests") > 0.99,
+                "branches end in treasure\n" + text);
+    }
+
+    /**
+     * Matěj's rhythm (RLM-364) in a report: at least {@code gaps} of the fights two to four rooms after the last, no
+     * more than two corridors in a row nearly always, a fight before nearly every ending, the first fight within four
+     * rooms, and almost no dead end closing a connector.
+     */
+    private static void assertRhythm(PacingReport report, int layouts, double gaps) {
+        String text = report.text();
+        assertTrue(share(report.fightGaps(), 2, 4) >= gaps, "fights 2 to 4 rooms apart\n" + text);
+        assertTrue(share(report.firstFights(), 2, 4) > 0.95, "the first fight within 4 rooms\n" + text);
+        assertTrue(share(report.corridorRuns(), 1, 2) > 0.99, "at most 2 corridors in a row\n" + text);
+        assertTrue(report.count("guard fight before the ending") > layouts * 0.99, "a guard fight\n" + text);
+        assertTrue(report.count("dead ends as caps") < layouts * 0.05, "walls rather than dead ends\n" + text);
+    }
+
+    /** The share of the tallies whose key is one of {@code keys}. */
+    private static double share(java.util.Map<String, Long> tallies, String... keys) {
+        long total = tallies.values().stream().mapToLong(Long::longValue).sum();
+        long within = java.util.Arrays.stream(keys).mapToLong(key -> tallies.getOrDefault(key, 0L)).sum();
+        return within / (double) Math.max(1, total);
+    }
+
+    /** The share of the tallies whose key lies within {@code min} to {@code max}. */
+    private static double share(java.util.Map<Integer, Long> tallies, int min, int max) {
+        long total = tallies.values().stream().mapToLong(Long::longValue).sum();
+        long within = tallies.entrySet().stream().filter(e -> e.getKey() >= min && e.getKey() <= max)
+                .mapToLong(java.util.Map.Entry::getValue).sum();
+        return within / (double) Math.max(1, total);
     }
 
     /** An arriving player looks at the entrance's connector to the next room of the main path (W4b). */
@@ -252,6 +400,11 @@ class DungeonPlannerTest {
         for (long seed = 0; seed < SEEDS; seed++) {
             PlanChecks.assertValid(DungeonPlanner.plan(rooms, rules, seed, limits), rooms, rules, limits);
         }
+    }
+
+    /** The rooms of a layout, its walls not counted. */
+    private static long rooms(DungeonPlan plan) {
+        return plan.rooms().stream().filter(room -> room.room().role() != RoomRole.WALL).count();
     }
 
     private static DungeonPlan plan(List<DungeonRoom> rooms, LayoutRules rules, long seed) {

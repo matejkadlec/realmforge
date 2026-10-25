@@ -13,6 +13,7 @@ import io.github.matejkadlec.realmforge.dungeon.instance.Plot;
 import io.github.matejkadlec.realmforge.dungeon.instance.PlotState;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonPlan;
 import io.github.matejkadlec.realmforge.dungeon.plan.PlannedRoom;
+import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -67,6 +68,13 @@ public final class DungeonPlanGameTests {
                 .thenWaitUntil(() -> plots.forEach(plot -> helper.assertTrue(plot.state() == PlotState.READY,
                         "plot " + plot.id() + " is " + plot.state())))
                 .thenExecute(() -> {
+                    // The builder's time per room at full size (RLM-363), for the log: architecture 15.5's numbers.
+                    for (int i = 0; i < plans.size(); i++) {
+                        int plot = plots.get(i).id();
+                        int rooms = plans.get(i).rooms().size();
+                        manager.lastReport(plot).ifPresent(report -> RealmforgeQa.LOGGER.info(
+                                "Planned layout of {} placements built: {}", rooms, report));
+                    }
                     for (int i = 0; i < plans.size(); i++) {
                         BlockPos origin = plots.get(i).origin();
                         for (PlannedRoom room : plans.get(i).rooms()) {
