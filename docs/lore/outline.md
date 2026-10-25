@@ -19,10 +19,11 @@
 - **Realmforge** is the world, and its name is its history: it was forged. Long ago its makers, the
   **Gatewrights**, split a world the **Void** was eating into separate **realms**, each forged around one element,
   and chained them in a line between Overworld and the Void.
-- **The Chain of Seals** keeps that line: every realm beyond Overworld is sealed. The first **signet** is an old
-  relic the Lodge has kept; every later main-path signet is forged from a shard held by the **guardian** of the realm
-  before it, and a side realm's signet comes from wherever its design puts it. That is why the realms open one by
-  one, in order, and why the Void realm is always the last.
+- **The Chain of Seals** keeps that line: every realm beyond Overworld is sealed, and each seal opens only to its
+  own **signet**; there is no master signet. The first, the Signet of the Undervault, is forged from a shard of the
+  old signet the Lodge kept, which broke in the Illusioner's hands; every later main-path signet is forged from a
+  shard held by the **guardian** of the realm before it, and a side realm's signet comes from wherever its design
+  puts it. That is why the realms open one by one, in order, and why the Void realm is always the last.
 - **The player** is a newcomer whom the **Wayfarers' Lodge**, a society of explorers and scholars, sends to walk
   the chain: earn each realm's passage, pass each guardian's trial, carry each shard onwards.
 - **The finale** waits in the Void realm, where the last seal has to be forged anew, so the Void realm is on the
@@ -55,10 +56,11 @@ line is the **Chain of Seals**, and it is built into the seals themselves:
 
 | Lore | What it is in the game |
 | --- | --- |
-| A realm's **seal** opens only to its **signet** | the realm portal opens onto a realm when its signet is used on the sealstone ([realm portal](../design/realm-portal.md)) |
+| A realm's **seal** opens only to its **signet**, and no signet opens more than one seal | the realm portal opens onto a realm when its signet is used on the sealstone ([realm portal](../design/realm-portal.md)); there is no master signet (RLM-395) |
 | One **gate design** for every realm | one portal frame, with the sealstone as its keystone |
 | Each sealed realm's **guardian** holds a **shard** for each seal it opens (two when twin realms follow) | the main-path boss drops, at 100%, one material per realm it opens, two for the twins of chapter 3 (RE-9, [realm portal](../design/realm-portal.md)) |
-| A signet is forged from a realm's own ore and the guardian's shard | the next signet is crafted from the current realm's ore or gem and that drop |
+| A signet is forged around its shard, with the most precious ore or gem of the realm before it and a little of the realm it opens | the next signet is crafted from that drop in the middle, 4 of the previous realm's ore or gem and 4 of the new realm's theme block (RLM-395) |
+| A traveler keeps their signet: a seal, or anyone who checks it, only needs to see it | no quest takes, cuts or sends a signet (RLM-395) |
 | The seal knows a traveler by their deeds, not by the signet in their hand | per-player unlock through the realm's unlock quest; holding someone else's signet does not let a player through (RLM-128) |
 | **Twin seals:** some realms were forged as a pair, and the next seal needs both shards | a two-realm chapter: the next main-path signet needs both realms' boss drops |
 | **Branch seals:** small realms hang off the chain like charms | optional side realms, whose signet comes from a realm on the main path |
@@ -83,9 +85,11 @@ is a link nobody had counted, and the Void stays where it always was: past the l
 The seals are thinning. Gatewright runes in Overworld's ruins have begun to glow, and the oldest stones of their gates
 have grown warm to the touch. Maren Vell, the Lodge's archivist, has read the warning the First Wright carved into those
 ruins: _when the gate stones grow warm, the chain is failing; someone must walk it and forge the last seal anew._ The
-Lodge has kept an old stone signet for generations without knowing what it was. Now it knows, and it needs someone to
-carry it. The gate plan also shows how to cut a copy from the relic, so a lost Signet of the Undervault can always be
-made again (the repeatable quest of the [realm portal spec](../design/realm-portal.md)).
+Lodge kept the stone realm's old signet in its hall, but the Illusioner, the illagers' chief, stole it, and when he
+tried to force the seal with it, it broke. Every Illusioner carries a piece, the **Stone Signet Shard**; combined with
+the most precious of Overworld's gems and some stone, it forges the Signet of the Undervault again (Matěj,
+2026-10-24, RLM-395; chapter 1 tells it in M2, RLM-351). A lost signet comes from another Illusioner's shard, or from
+the Lodge Merchant ([realm portal spec](../design/realm-portal.md#realm-signets)).
 
 ## The player
 
@@ -315,7 +319,7 @@ systems M1 builds. The order, the counts and the rewards are Q2's to set, agains
 | 6 | Realmforge Bricks | Overworld | crafts Realmforge Bricks | the plan's first page |
 | 7 | The Keystone | Overworld | crafts the sealstone | the gate's heart: a stone that remembers where it leads |
 | 8 | Raise the Gate | Overworld | builds the frame | the first gate raised in an age |
-| 9 | The Signet of the Undervault | Overworld | finishes the unlock quest and receives the Signet of the Undervault; chapter 1's advancement raises the level cap | the Lodge's old relic turns out to be the first signet; Maren cuts a copy for the player from it (and will again if it is lost); the seal will know the player now |
+| 9 | The Signet of the Undervault | Overworld | finishes the unlock quest and receives the Signet of the Undervault; chapter 1's advancement raises the level cap | the player receives the Signet of the Undervault and keeps it; nothing is cut or handed over; the seal will know the player now. M2's full chapter replaces this with the Illusioner's broken signet and its shard (RLM-395, RLM-351) |
 | 10 | Into Undervault | Undervault | enters the realm (and finds a Cairnfolk mine once mines exist) | first arrival; the Cairnfolk are surprised to see anyone from above |
 | 11 | Ore for the Cairnfolk | Undervault | mines the realm's ores | Torva trades ore for the catacomb key |
 | 12 | The Catacombs | Undervault | clears the catacombs to their treasury | the Gatewrights' dead and their riddles; the arena key lies in the treasury |
@@ -349,7 +353,7 @@ Decided rules that a line of lore makes feel natural. Texts may use these lines;
 | Unlocks are per player: without their own unlock, a player can neither open nor switch a portal to that realm with its signet, nor pass through an open one (RLM-128) | the seal knows a traveler by their deeds |
 | Portals link like the Nether's, with scaled coordinates, so arrivals stay near a realm's origin (RLM-128) | none needed: texts never explain where a portal leads inside a realm |
 | Every entity travels through a realm portal, a player only with the realm's unlock, and a mount or vehicle carrying a player without it stays out; other ways into a realm carry only players (Matěj, 2026-10-20, RLM-154, replacing RLM-128's "only players, for now") | the seals weigh only those who could one day break them; beasts, stones and driftwood pass unjudged, and a gate opens only by its own art, never by a shortcut |
-| The next signet is crafted from the current realm (RE-9) | the guardian holds the shards of the seals after it |
+| The next signet is crafted from the current realm (RE-9), around a shard its final boss drops on every kill (RLM-395) | the guardian holds the shards of the seals after it, and gives them up every time its trial is passed |
 | No flying bosses (vision) | the forge-drakes' iron wings are too heavy to fly |
 | Every realm has its own light (RE-18) | the Gatewrights forged light into every realm, the violet glow of Unmade Isles included |
 
