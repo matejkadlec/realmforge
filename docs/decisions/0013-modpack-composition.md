@@ -9,7 +9,9 @@ by [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) (A
 [0044](0044-third-party-mods-by-milestone.md) (the mods by milestone; nothing left to build of the small UI mods),
 2026-10-20; amended by [0048](0048-better-key-binds-our-own-client-mod-independent-of-realmforge.md) (Better Key
 Binds, our own client mod, ships next to the core mod), 2026-10-22; composition updated 2026-10-23 for the M1 pack
-tasks PK1 to PK3 and two-handed blocking (RLM-308, RLM-309, RLM-310, RLM-297)
+tasks PK1 to PK3 and two-handed blocking (RLM-308, RLM-309, RLM-310, RLM-297); amended by
+[0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md) (MmmMmmMmmMmm with
+Moonlight Lib, a beta exception; FTB Teams parties off), 2026-10-25
 
 ## Context
 

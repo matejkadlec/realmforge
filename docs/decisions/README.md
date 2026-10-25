@@ -24,7 +24,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0010](0010-testing-strategy.md) | Testing strategy | Accepted, amended by [0018](0018-pack-boot-tests.md) |
 | [0011](0011-repository-layout-and-workflow.md) | Repository layout and workflow | Accepted |
 | [0012](0012-procedural-dungeons-and-dimensions.md) | Procedural dungeons and dimensions | Accepted, refined by [0019](0019-dungeon-instances-in-plots.md), its Nether and End question resolved by [0025](0025-remove-the-nether-and-end.md), hand-built rooms replaced by [0028](0028-dungeon-rooms-generated-or-imported.md) |
-| [0013](0013-modpack-composition.md) | Modpack composition | Accepted (written separately), composition updated for 26.1.2 by [0026](0026-platform-minecraft-26-1-2-neoforge.md), Apotheosis added by [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md), JEI / REI Trades added by [0040](0040-coins-and-data-driven-merchant-trades.md), Lootr by [0041](0041-dungeon-containers-hold-loot-through-lootr.md), the mods by milestone by [0044](0044-third-party-mods-by-milestone.md) |
+| [0013](0013-modpack-composition.md) | Modpack composition | Accepted (written separately), composition updated for 26.1.2 by [0026](0026-platform-minecraft-26-1-2-neoforge.md), Apotheosis added by [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md), JEI / REI Trades added by [0040](0040-coins-and-data-driven-merchant-trades.md), Lootr by [0041](0041-dungeon-containers-hold-loot-through-lootr.md), the mods by milestone by [0044](0044-third-party-mods-by-milestone.md), MmmMmmMmmMmm with a beta Moonlight Lib by [0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md) |
 | [0014](0014-core-mod-architecture.md) | Core mod architecture | Accepted, decision 9 amended by [0027](0027-client-bound-payload-handlers-through-the-client-event.md), decision 8 (hand-made rooms) by [0028](0028-dungeon-rooms-generated-or-imported.md), decision 6 (armor formula) by [0033](0033-vanilla-armor-formula-amends-our-own.md), decision 8 (set pieces) by [0050](0050-set-pieces-hand-built-nbt-placed-at-dungeon-generation.md) |
 | [0015](0015-merging-through-monitor-pr.md) | Merging through monitor-pr | Superseded by [0029](0029-independent-claude-review-before-every-merge.md); was Accepted (amends 0011), holds extended by [0016](0016-jira-batch-delivery.md) and [0017](0017-jira-as-the-source-of-task-status.md), `needs-approval` removed by [0021](0021-status-overview-and-plan-changes.md), `needs-playtest` removed by [0024](0024-no-github-labels.md) |
 | [0016](0016-jira-batch-delivery.md) | Jira batch delivery with flow1 and flow2 | Accepted (extends 0011), amended by [0017](0017-jira-as-the-source-of-task-status.md), [0021](0021-status-overview-and-plan-changes.md) and [0022](0022-playtest-before-the-pull-request.md) |
@@ -55,7 +55,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0041](0041-dungeon-containers-hold-loot-through-lootr.md) | Dungeon containers hold loot through Lootr | Accepted (amends 0013) |
 | [0042](0042-the-dev-runs-load-the-whole-pack.md) | The dev runs load the whole pack | Accepted (amends 0020) |
 | [0043](0043-default-keys-and-key-search-in-the-pack.md) | Default keys and key search in the pack | Accepted (amends 0013), amended by [0046](0046-spell-bar-default-keys-amend-the-pack-defaults.md) (the spell bar's keys, chat on Enter, Dark Vision on ¨) |
-| [0044](0044-third-party-mods-by-milestone.md) | Third-party mods by milestone | Accepted (amends 0004, 0013 and 0025) |
+| [0044](0044-third-party-mods-by-milestone.md) | Third-party mods by milestone | Accepted (amends 0004, 0013 and 0025), WorldEdit for building only by [0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md) |
 | [0045](0045-asgard-and-atlantis-amend-the-v1-realm-layout.md) | Asgard and Atlantis amend the v1 realm layout | Accepted (amends 0032) |
 | [0046](0046-spell-bar-default-keys-amend-the-pack-defaults.md) | The spell bar's default keys amend the pack's default keys | Accepted (amends 0043) |
 | [0047](0047-the-cast-slow-halves-the-casters-speed.md) | The cast slow halves the caster's speed | Accepted (amends 0039) |
@@ -64,6 +64,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0050](0050-set-pieces-hand-built-nbt-placed-at-dungeon-generation.md) | Set pieces: hand-built NBT, placed at dungeon generation | Accepted (amends 0005 and 0014) |
 | [0051](0051-player-melee-passes-the-hurt-cooldown-only-at-full-strength.md) | A player's melee hit passes the hurt cooldown only at full attack strength | Accepted (amends 0049) |
 | [0052](0052-spells-aim-with-the-crosshair.md) | Spells aim with the crosshair: bolts fly where it points, ground spells clamp to their range | Accepted |
+| [0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md) | Target dummies in the pack, WorldEdit for building only, and no FTB Teams parties | Accepted (amends 0013 and 0044) |
 
 ## Open questions (not decided)
 

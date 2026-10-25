@@ -71,6 +71,10 @@ RLM-65, RLM-124 and RLM-308):
 - **Advanced Loot Info 26.1.2-2.5.0** and **Advanced Core Info 26.1.2-1.5.0**, its library (Matěj's M1 pick,
   RLM-308, [ADR 0044](../docs/decisions/0044-third-party-mods-by-milestone.md)): every 26.1.2 build is a beta. Both
   are pinned, so `packwiz update --all` leaves them; update them together, by hand.
+- **Moonlight Lib 26.1.2-4.1.1**, the library of MmmMmmMmmMmm 26.1.2-3.0.1 (a release; Matěj's pick, RLM-393,
+  [ADR 0053](../docs/decisions/0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md)):
+  every 26.1.2 build of Moonlight is a beta. It is pinned; update the two together, by hand, and take a Moonlight
+  release once one exists.
 
 ## Configuration
 
@@ -211,6 +215,24 @@ later hit, the 1 s cooldown, the covered arc: `config/realmforge-common.toml`, [
 
 ## Notes on single mods
 
+- **MmmMmmMmmMmm's target dummies are for everyone** (RLM-393): a dummy with a hay-bale head that shows the damage it
+  takes, which Maren's Trial (RLM-397) dresses in a zombie head and coloured leather armour. It does not replace the
+  QA mod's training dummy. Its licence and Moonlight Lib's (Supplementaries Team License 1.5, in the jars) allow
+  modpacks that download the unmodified jars from their official pages, as packwiz-installer does.
+- **WorldEdit is not in the pack** ([ADR 0044](../docs/decisions/0044-third-party-mods-by-milestone.md) rejects it for
+  players). Matěj builds with it in the dev client (`-PwithWorldEdit`) and in his Prism instance
+  (`./gradlew :qa-mod:installWorldEditToPrism`), neither of which touches this folder
+  ([dev setup](../docs/dev-setup.md#31-what-every-dev-client-gets),
+  [ADR 0053](../docs/decisions/0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md)).
+- **FTB Teams' parties are off** (RLM-206): FTB Quests keeps quest progress per FTB Teams team, so a party would
+  share its realm unlocks and chapter advancements with everyone who joins. FTB Teams' config has no switch for it;
+  the core mod sets FTB Teams' own API switch for packs with parties of their own
+  ([architecture 19.4](../docs/architecture.md#194-optional-integrations)), so `/ftbteams party create` and the My
+  Team screen refuse every player, and nobody can invite or join. Our own parties (RLM-68) come later.
+- **Key Binds headers some mods lack** (RLM-382): Crafting Tweaks, Apotheosis and Placebo ship only the pre-26.1 keys
+  (`key.categories.*`), so the core mod's resources add the headers Key Binds looks up
+  (`key.category.<namespace>.<path>`). The dev client's log names any other raw header
+  ([dev setup](../docs/dev-setup.md#33-in-wsl-quick-checks)).
 - **Better Combat swings through grass**: with a Better Combat weapon in hand and a target in reach, a swing goes
   through blocks without collision that break at once (grass, flowers); its client options `isSwingThruGrassEnabled`
   and `isSwingThruGrassSmart` are on by default. So neither CleanCut nor Cut Through is in the pack (RLM-308).
@@ -270,7 +292,9 @@ CurseForge ones from CurseMaven by `project-id` and `file-id` under
 take. `./gradlew runClient -PleanClient` starts a client without the pack's
 mods, except GeckoLib (which the core mod requires), Player Animation Library
 and Yeetus Experimentus. The dev client also loads Better Key Binds
-([Our mods](#our-mods)); the servers do not.
+([Our mods](#our-mods)); the servers do not. `-PwithWorldEdit` adds WorldEdit
+to the dev client for Matěj's building; it is no pack mod and never enters
+this folder ([Notes on single mods](#notes-on-single-mods)).
 
 The core mod compiles against two kinds of pack mods, both through the pack's
 `mods/<slug>.pw.toml` (`mod/build.gradle`), so it always builds against the jar

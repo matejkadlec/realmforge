@@ -2957,6 +2957,36 @@ the config is loaded (`ConfigDataHolder#isAvailable`; earlier, Puzzles Lib logs 
 and leaves any other corner alone. The core mod compiles against the pack's builds of Pick Up Notifier and Puzzles
 Lib; `neoforge.mods.toml` names Pick Up Notifier as an optional client dependency.
 
+**FTB Teams' parties are off** (RLM-206,
+[ADR 0053](decisions/0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md)): FTB Quests
+keeps quest progress per FTB Teams team ([16](#16-progression-and-quests)), so a party would hand its realm unlocks and
+chapter advancements to everyone who joins. `compat/ftbteams/FtbTeamsParties` sets FTB Teams' own switch for packs with
+parties of their own, `FTBTeamsAPI.api().setPartyCreationFromAPIOnly(true)`, at common setup (FTB Teams hands out its
+API from its constructor): `/ftbteams party create` and the My Team screen's Create a Party refuse every player,
+operators included, and only code through its API could create one, which nothing in the pack does. Without a party
+nobody can invite anyone or join one, so progress stays per player until our own parties (RLM-68) share quests by
+Matěj's rule (RLM-156). FTB Teams' server config has no such option. The core mod compiles against the pack's build
+(CurseMaven, read from `pack/mods/ftb-teams-forge.pw.toml`) and loads after it, so our wording of its refusal
+(`ftbteams.party_api_only`, below) replaces its own; `FtbTeamsGameTests` check the command, for a player and an
+operator, the My Team screen's permission and an invite.
+
+**Other mods' texts, fixed** (RLM-382, RLM-206): a text another mod lacks, or words wrongly for this pack, goes into
+`mod/src/main/resources/assets/<mod id>/lang/en_us.json`. The game merges the language files of every namespace and
+every pack, a later pack winning a key both define, so a file there adds a missing key, and replaces one when the core
+mod loads after that mod (`ordering = "AFTER"` in `neoforge.mods.toml`). Like the data fixes below, it is no content of
+ours, so it stays out of `content/` and the generated `lang/en_us.json`.
+
+- **Key Binds headers:** since 1.21.9 a key category is a `KeyMapping.Category` whose header is the translation of
+  `key.category.<namespace>.<path>` (`Category#label()`). Crafting Tweaks, Apotheosis and Placebo ship only the old
+  `key.categories.*` keys, so Key Binds showed their raw keys; the core mod adds `key.category.craftingtweaks.default`,
+  `key.category.apotheosis.keys` and `key.category.placebo.keys`. Just Zoom needs none: a mixin of its own labels its
+  category. The QA mod's dev client checks every header at the title screen (`client/keybinds/QaKeyCategories`, which
+  reads `label()` as the screen does) and logs an error for a raw one; `QaKeyBindShots` saves the screen page by page
+  for an agent ([dev setup 3.3](dev-setup.md#33-in-wsl-quick-checks)).
+- **FTB Teams' refusal:** `ftbteams.party_api_only`, which FTB Teams shows for the refused command and screen, reads
+  "Parties are off in Realmforge: your quests and realm unlocks stay your own." instead of FTB Teams' "In this modpack
+  you cannot create party teams directly!".
+
 **Apothic Attributes** (RLM-271, [ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md))
 is Apotheosis's attribute library, with a crit and a dodge of its own that would roll next to ours
 ([9.1](#91-damage-pipeline)). `compat/apothic_attributes/ApothicAttributesCompat` switches both off, looking its

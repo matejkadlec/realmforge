@@ -5,7 +5,9 @@ Date: 2026-10-20
 Status: Accepted (amends [0004](0004-build-rpg-systems-in-house.md) and [0013](0013-modpack-composition.md);
 answers the stronghold question of [0025](0025-remove-the-nether-and-end.md) and amends its "M1 does not change them"); amended by
 [0049](0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md) (Iron's RPG Tweaks stays out: our damage pipeline lets
-player hits through the hurt cooldown, RLM-311), 2026-10-23
+player hits through the hurt cooldown, RLM-311), 2026-10-23; amended by
+[0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md) (MmmMmmMmmMmm joins the pack;
+WorldEdit stays out for players and serves Matěj's building in the dev client and his Prism instance), 2026-10-25
 
 ## Context
 
