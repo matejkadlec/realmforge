@@ -89,9 +89,14 @@ def test_the_dev_client_gets_every_client_and_shared_mod() -> None:
 def test_build_gradle_reads_every_mod_from_the_pack() -> None:
     script = BUILD_GRADLE.read_text(encoding="utf-8")
     assert "rootProject.file('pack/mods')" in script
-    # A coordinate written by hand would be a second list that can drift from the pack.
-    # The reader's own templates ("maven.modrinth:${...}") are fine.
-    assert re.findall(r"""['"](?:maven\.modrinth|curse\.maven):[^$'"]+""", script) == []
+    # A coordinate written by hand would be a second list that can drift from the pack. The reader's own templates
+    # ("maven.modrinth:${...}") are fine, and so is WorldEdit, which is no pack mod: -PwithWorldEdit adds it to the
+    # dev client for Matěj's building only (RLM-393, ADR 0053), so there is no pack entry it could drift from.
+    hand_written = re.findall(r"""['"](?:maven\.modrinth|curse\.maven):[^$'"]+""", script)
+    assert hand_written == ["'maven.modrinth:worldedit:gjsLvJfW"]
+    assert not (MODS_DIR / "worldedit.pw.toml").exists(), (
+        "WorldEdit never joins the pack (ADR 0044, ADR 0053)"
+    )
     # The mods it names: packMod('<slug>') and the lean client's lists (leanClientMods = [...] and += [...]).
     named = set(re.findall(r"packMod\('([a-z0-9-]+)'\)", script))
     for listed in re.findall(r"leanClientMods \+?= \[([^\]]*)\]", script):
