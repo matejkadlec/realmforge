@@ -2,6 +2,7 @@ package io.github.matejkadlec.realmforge.compat;
 
 import io.github.matejkadlec.realmforge.compat.apothic_attributes.ApothicAttributesCompat;
 import io.github.matejkadlec.realmforge.compat.bettercombat.TwoHandedWeapons;
+import io.github.matejkadlec.realmforge.compat.ftbteams.FtbTeamsParties;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
 
@@ -17,6 +18,9 @@ public final class CompatFeature {
         }
         if (ModList.get().isLoaded(TwoHandedWeapons.MOD_ID)) {
             TwoHandedWeapons.register();
+        }
+        if (ModList.get().isLoaded(FtbTeamsParties.MOD_ID)) {
+            FtbTeamsParties.register(modBus);
         }
     }
 }

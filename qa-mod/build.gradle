@@ -345,6 +345,9 @@ dependencies {
     // Player Animation Library, the animation library Better Combat uses: the QA mod's test cast animation (/qa cast).
     // The pack's build, as every pack mod above; the client and the servers load it as a pack mod as well.
     implementation packMod('player-animation-library').coordinate
+    // FTB Teams, whose parties the core mod turns off (FtbTeamsGameTests, RLM-206); the GameTest server loads it as a
+    // pack mod.
+    compileOnly packMod('ftb-teams-forge').coordinate
 }
 
 def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
