@@ -2,6 +2,8 @@ package io.github.matejkadlec.realmforge.qa.client;
 
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.client.castanim.QaCastAnimationClient;
+import io.github.matejkadlec.realmforge.qa.client.keybinds.QaKeyBindShots;
+import io.github.matejkadlec.realmforge.qa.client.keybinds.QaKeyCategories;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -11,5 +13,7 @@ import net.neoforged.fml.common.Mod;
 public final class RealmforgeQaClient {
     public RealmforgeQaClient(IEventBus modEventBus) {
         QaCastAnimationClient.register(modEventBus);
+        QaKeyCategories.register();
+        QaKeyBindShots.registerIfRequested();
     }
 }
