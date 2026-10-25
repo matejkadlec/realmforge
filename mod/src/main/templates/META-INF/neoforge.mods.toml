@@ -42,6 +42,15 @@ versionRange = "[5.5.2,6)"
 ordering = "NONE"
 side = "BOTH"
 
+# The cast animation on the caster's arms (client/animation, ADR 0020, RLM-435); a dedicated server needs none of it.
+# The pack ships 1.2.8.
+[[dependencies.realmforge]]
+modId = "player_animation_library"
+type = "required"
+versionRange = "[1.2.8,)"
+ordering = "NONE"
+side = "CLIENT"
+
 # Apotheosis's attribute library: compat/apothic_attributes switches its crit and dodge off when it is loaded
 # (architecture 19.4). The pack ships it; the core mod runs without it.
 [[dependencies.realmforge]]

@@ -1433,14 +1433,25 @@ D4 (a separate spell bar with its own keys, leaving the item hotbar alone); tool
 numbers; animations and particles start on `CastStartedPayload`. `client/spell/ClientCasts` (C3a-2) keeps
 every cast in progress the client was told of, the local player's and every tracked caster's, by entity id, from
 `CastStartedPayload` until `CastEndedPayload` (or until 20 ticks after its end, for a caster the player stopped
-tracking), so the cast bar and the animations read one store (`CurrentCasts#progress` for the bar). Cast animations are Emotecraft JSON
-files in `assets/realmforge/player_animations/`, played by `client/animation` on the caster's PAL layer
+tracking), so the cast bar and the animations read one store (`CurrentCasts#progress` for the bar). Cast animations are
+Emotecraft JSON files in `assets/realmforge/player_animations/`, played by `client/animation` on the caster's PAL layer
 for the caster and every tracking player, with the third-person model's arms in first person
 ([ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)). The arms aim where the player looks, since
 the model's arms hang on a body that never pitches and trails the head by up to 50 degrees: in first person they
 turn rigidly with the camera about the eye (rotation and shoulder pivots), so the hands keep their place on screen;
-seen from outside only their rotation follows the head, like vanilla's bow pose. The QA mod's test cast does this in
-`QaCastAimAnimation` (RLM-108), which C6 moves into `client/animation`.
+seen from outside only their rotation follows the head, like vanilla's bow pose.
+
+**In code (C6-1, RLM-435): the cast animation.** Every cast-time and channelled spell raises the hands with one
+animation, `realmforge:cast` (`player_animations/cast.json`, the QA mod's former test cast), until C6's spell visuals
+(epic RLM-434) give spells their own. `client/animation/CastAnimation` registers one PAL layer per player at priority
+3000 at client setup and shows or lowers it with a 4-tick fade; `ClientCasts` raises it on `CastStartedPayload` and
+lowers it on `CastEndedPayload`, unless a newer cast of the caster already started, so it shows for the caster and
+every tracking player, one who starts tracking mid-cast included (the server sends them the cast in progress).
+`AimedCastAnimation` wraps the animation with the aim above, and `CastArms` holds its math (decomposing the turned
+rotation into the part's angles, the short way round, and the pivot turned about the eye), which `CastArmsTest`
+covers. Player Animation Library is a required dependency on the client only (`side = "CLIENT"`); every PAL call of
+the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays the same animation through
+`CastAnimation#show`.
 
 **In code (C3b, RLM-25): the spell bar.**
 

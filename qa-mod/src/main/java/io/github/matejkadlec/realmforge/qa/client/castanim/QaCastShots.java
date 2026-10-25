@@ -34,10 +34,10 @@ final class QaCastShots {
     static final String ENVIRONMENT_VARIABLE = "REALMFORGE_QA_CAST_SHOTS";
 
     /**
-     * cast_test.json: the arms finish rising at tick 6, pulse at tick 14 and are back at the hold pose at tick 22,
-     * where the loop returns to tick 6. PAL reads the playerAnimator file as it played there: once the animation
-     * reaches tick 22 it goes on from tick 5 ({@code returnTick - 1}, {@code PlayerAnimatorLoader}), so a loop takes
-     * 17 ticks (RLM-108; a 16-tick guess drifts one tick per loop and lands on the pulse after eight).
+     * The core mod's cast.json: the arms finish rising at tick 6, pulse at tick 14 and are back at the hold pose at
+     * tick 22, where the loop returns to tick 6. PAL reads the playerAnimator file as it played there: once the
+     * animation reaches tick 22 it goes on from tick 5 ({@code returnTick - 1}, {@code PlayerAnimatorLoader}), so a
+     * loop takes 17 ticks (RLM-108; a 16-tick guess drifts one tick per loop and lands on the pulse after eight).
      */
     private static final int HOLD_TICK = 6;
     private static final int PULSE_TICK = 14;

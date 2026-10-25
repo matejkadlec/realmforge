@@ -10,9 +10,9 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 /**
  * Spike 4 prototype (ADR 0020): {@code /qa cast <ticks>} makes the player cast for that long. The caster's client and
- * every tracking client play a test animation through Player Animation Library, and melee swings, vanilla and Better
- * Combat, are blocked until the cast ends or {@code /qa cast stop}. Dev-only: real casting is the core mod's
- * {@code spell} feature (C3a, C3b), real animations come with C6.
+ * every tracking client play the core mod's cast animation, which real cast-time and channelled spells play too
+ * (RLM-435), and melee swings, vanilla and Better Combat, are blocked until the cast ends or {@code /qa cast stop}.
+ * Dev-only: real casting is the core mod's {@code spell} feature (C3a, C3b); a spell's own animation comes with C6.
  */
 public final class QaCastAnimation {
     private static final int MAX_TICKS = 6000;
