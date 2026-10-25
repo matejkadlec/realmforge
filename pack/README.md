@@ -232,7 +232,7 @@ later hit, the 1 s cooldown, the covered arc: `config/realmforge-common.toml`, [
 - **Key Binds headers some mods lack** (RLM-382): Crafting Tweaks, Apotheosis and Placebo ship only the pre-26.1 keys
   (`key.categories.*`), so the core mod's resources add the headers Key Binds looks up
   (`key.category.<namespace>.<path>`). The dev client's log names any other raw header
-  ([dev setup](../docs/dev-setup.md#33-in-wsl-quick-checks)).
+  ([dev setup](../docs/dev-setup.md#31-what-every-dev-client-gets)).
 - **Better Combat swings through grass**: with a Better Combat weapon in hand and a target in reach, a swing goes
   through blocks without collision that break at once (grass, flowers); its client options `isSwingThruGrassEnabled`
   and `isSwingThruGrassSmart` are on by default. So neither CleanCut nor Cut Through is in the pack (RLM-308).
