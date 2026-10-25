@@ -132,14 +132,32 @@ Matěj's direction for armour (2026-10-15), designed step by step as sets, weapo
 
 - **Melee:** vanilla armour (armour and armour toughness).
 - **Caster:** robes in leather, iron, diamond and netherite tiers, made mainly from a magic cloth, with magic shield,
-  spell power and mana. A full diamond-tier caster set costs about as much effort as a full diamond set (24
-  diamonds); whether the tier's base material is part of the recipe is open.
+  spell power and mana, and no armour. A full diamond-tier caster set costs about as much effort as a full diamond
+  set (24 diamonds). The cloths keep half of their tier's base material (an iron ingot in Spellweave, a diamond in
+  Arcane Silk; Claude's decision, 2026-10-15), and the netherite step is vanilla's smithing upgrade (Matěj). The sets
+  are Apprentice's (wool), Spellweave, Arcane Silk and Netherite (RLM-197); a caster's weapon is a wand in vanilla's
+  seven materials, wood to netherite (RLM-172).
 - **Ranged and rogue:** less armour than melee, dodge chance and movement speed; partly base materials plus an
   advanced leather from animals that are hard to kill and spawn only in some biomes (that leather plus diamonds
   makes the diamond-tier set).
 - Claude's first proposal for Overworld and Undervault:
   [Realmforge: gear v1 – Overworld a Undervault (návrh)](https://claude.ai/code/artifact/bbef7300-4ccc-4901-8cac-4e18005d2f22)
-  (Czech). Implementation tickets follow once Matěj has tuned it.
+  (Czech), which Matěj tuned on 2026-10-15.
+
+**Piece names by archetype** (Matěj, 2026-10-23, RLM-377): the default names of armour pieces follow the archetype,
+the play style rather than the class (a Warrior plays melee). They apply to every set crafted from shared core
+materials (Spellweave, Arcane Silk, netherite robes, the Twins set of Sunsteel and Icesteel); unique and loot-only
+items may have names of their own. The set's name goes in front: "Spellweave Cap", "Twins Robes". Item ids may keep
+older names (the Apprentice's `apprentice_hat` is the Apprentice's Cap).
+
+| Slot | Melee | Caster | Ranged |
+| --- | --- | --- | --- |
+| Head | Helmet | Cap | Hood |
+| Chest | Chestplate | Robes | Tunic |
+| Legs | Leggings | Pants | Greaves |
+| Feet | Boots | Sandals | Tabi |
+
+Melee keeps vanilla's names.
 
 ### Dungeons
 
