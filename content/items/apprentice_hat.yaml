@@ -1,10 +1,28 @@
 # yaml-language-server: $schema=../../tools/schemas/items.schema.json
-# A placeholder in the Mage's starting kit (Matěj, 2026-10-14): the Apprentice's Clothing set, the caster's
-# counterpart of the Warrior's Leather Armor. Its stats (Magic Shield, Spell Power, no armor) come with C4 (RLM-27);
-# it keeps its id then.
+# The Apprentice's set, the caster's counterpart of the Warrior's Leather Armor and the Mage's starting kit
+# (Matěj, 2026-10-14). It keeps the id of C1's placeholder; its name follows the caster's piece names (Cap,
+# Robes, Pants, Sandals: Matěj, 2026-10-23, RLM-377).
+# No armor: robes protect with Magic Shield, as much as the same tier's vanilla piece has armor, and give Spell
+# Power and Max Mana (Matěj, 2026-10-15). Durability and enchantability
+# as vanilla's leather armor. The generated placeholder textures until A1's art.
 id: apprentice_hat
 name:
-  en_us: Apprentice's Hat (WIP)
-max_stack_size: 1
+  en_us: Apprentice's Cap
 creative_tabs:
   - minecraft:combat
+color: "#6F7FA6"
+gear:
+  kind: head
+  durability: 55
+  enchantability: 15
+  repair_with: "#minecraft:wool"
+  look: apprentice
+  modifiers:
+    - {attribute: realmforge:magic_shield, operation: add_value, amount: 1}
+    - {attribute: realmforge:spell_power, operation: add_value, amount_percent: 2}
+    - {attribute: realmforge:max_mana, operation: add_value, amount: 10}
+recipe:
+  pattern: ['XXX', 'X X']
+  key:
+    X: "#minecraft:wool"
+  category: equipment

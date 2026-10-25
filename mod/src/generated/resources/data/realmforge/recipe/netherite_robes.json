@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "#minecraft:netherite_tool_materials",
+  "base": "realmforge:arcane_silk_robes",
+  "result": {
+    "id": "realmforge:netherite_robes"
+  },
+  "template": "minecraft:netherite_upgrade_smithing_template"
+}

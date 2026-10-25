@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "realmforge:apprentice"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "realmforge:apprentice"
+      }
+    ]
+  }
+}

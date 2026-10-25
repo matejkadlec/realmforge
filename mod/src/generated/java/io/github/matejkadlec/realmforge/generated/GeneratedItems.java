@@ -6,10 +6,27 @@ package io.github.matejkadlec.realmforge.generated;
 import io.github.matejkadlec.realmforge.Realmforge;
 import java.util.List;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EquipmentSlotGroup;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.ItemLore;
+import net.minecraft.world.item.component.Weapon;
+import net.minecraft.world.item.enchantment.Repairable;
+import net.minecraft.world.item.equipment.EquipmentAssets;
+import net.minecraft.world.item.equipment.Equippable;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -21,23 +38,307 @@ public final class GeneratedItems {
 
     /** {@code realmforge:apprentice_boots} from {@code content/items/apprentice_boots.yaml}. */
     public static final DeferredItem<Item> APPRENTICE_BOOTS =
-            ITEMS.registerSimpleItem("apprentice_boots", properties -> properties.stacksTo(1));
+            ITEMS.registerSimpleItem("apprentice_boots", properties -> properties
+                    .durability(65)
+                    .enchantable(15)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            context.getOrThrow(TagKey.create(Registries.ITEM, Identifier.parse("minecraft:wool")))))
+                    .delayedComponent(DataComponents.EQUIPPABLE, context -> Equippable.builder(EquipmentSlot.FEET)
+                            .setEquipSound(context.getOrThrow(ResourceKey.create(Registries.SOUND_EVENT, Identifier.parse("minecraft:item.armor.equip_leather"))))
+                            .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.parse("realmforge:apprentice")))
+                            .build())
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/feet/0", 1.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/feet/1", 0.02, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/feet/2", 10.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .build()));
 
     /** {@code realmforge:apprentice_hat} from {@code content/items/apprentice_hat.yaml}. */
     public static final DeferredItem<Item> APPRENTICE_HAT =
-            ITEMS.registerSimpleItem("apprentice_hat", properties -> properties.stacksTo(1));
+            ITEMS.registerSimpleItem("apprentice_hat", properties -> properties
+                    .durability(55)
+                    .enchantable(15)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            context.getOrThrow(TagKey.create(Registries.ITEM, Identifier.parse("minecraft:wool")))))
+                    .delayedComponent(DataComponents.EQUIPPABLE, context -> Equippable.builder(EquipmentSlot.HEAD)
+                            .setEquipSound(context.getOrThrow(ResourceKey.create(Registries.SOUND_EVENT, Identifier.parse("minecraft:item.armor.equip_leather"))))
+                            .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.parse("realmforge:apprentice")))
+                            .build())
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/head/0", 1.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/head/1", 0.02, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/head/2", 10.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .build()));
 
     /** {@code realmforge:apprentice_pants} from {@code content/items/apprentice_pants.yaml}. */
     public static final DeferredItem<Item> APPRENTICE_PANTS =
-            ITEMS.registerSimpleItem("apprentice_pants", properties -> properties.stacksTo(1));
+            ITEMS.registerSimpleItem("apprentice_pants", properties -> properties
+                    .durability(75)
+                    .enchantable(15)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            context.getOrThrow(TagKey.create(Registries.ITEM, Identifier.parse("minecraft:wool")))))
+                    .delayedComponent(DataComponents.EQUIPPABLE, context -> Equippable.builder(EquipmentSlot.LEGS)
+                            .setEquipSound(context.getOrThrow(ResourceKey.create(Registries.SOUND_EVENT, Identifier.parse("minecraft:item.armor.equip_leather"))))
+                            .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.parse("realmforge:apprentice")))
+                            .build())
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/legs/0", 2.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/legs/1", 0.02, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/legs/2", 10.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .build()));
 
     /** {@code realmforge:apprentice_robes} from {@code content/items/apprentice_robes.yaml}. */
     public static final DeferredItem<Item> APPRENTICE_ROBES =
-            ITEMS.registerSimpleItem("apprentice_robes", properties -> properties.stacksTo(1));
+            ITEMS.registerSimpleItem("apprentice_robes", properties -> properties
+                    .durability(80)
+                    .enchantable(15)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            context.getOrThrow(TagKey.create(Registries.ITEM, Identifier.parse("minecraft:wool")))))
+                    .delayedComponent(DataComponents.EQUIPPABLE, context -> Equippable.builder(EquipmentSlot.CHEST)
+                            .setEquipSound(context.getOrThrow(ResourceKey.create(Registries.SOUND_EVENT, Identifier.parse("minecraft:item.armor.equip_leather"))))
+                            .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.parse("realmforge:apprentice")))
+                            .build())
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/chest/0", 3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/chest/1", 0.02, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/chest/2", 10.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .build()));
+
+    /** {@code realmforge:arcane_dust} from {@code content/items/arcane_dust.yaml}. */
+    public static final DeferredItem<Item> ARCANE_DUST =
+            ITEMS.registerSimpleItem("arcane_dust");
+
+    /** {@code realmforge:arcane_silk} from {@code content/items/arcane_silk.yaml}. */
+    public static final DeferredItem<Item> ARCANE_SILK =
+            ITEMS.registerSimpleItem("arcane_silk");
+
+    /** {@code realmforge:arcane_silk_cap} from {@code content/items/arcane_silk_cap.yaml}. */
+    public static final DeferredItem<Item> ARCANE_SILK_CAP =
+            ITEMS.registerSimpleItem("arcane_silk_cap", properties -> properties
+                    .durability(363)
+                    .enchantable(10)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            HolderSet.direct(context.getOrThrow(ResourceKey.create(Registries.ITEM, Identifier.parse("realmforge:arcane_silk"))))))
+                    .delayedComponent(DataComponents.EQUIPPABLE, context -> Equippable.builder(EquipmentSlot.HEAD)
+                            .setEquipSound(context.getOrThrow(ResourceKey.create(Registries.SOUND_EVENT, Identifier.parse("minecraft:item.armor.equip_leather"))))
+                            .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.parse("realmforge:arcane_silk")))
+                            .build())
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/head/0", 3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/head/1", 0.07, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/head/2", 25.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/head/3", 0.03, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .build()));
+
+    /** {@code realmforge:arcane_silk_pants} from {@code content/items/arcane_silk_pants.yaml}. */
+    public static final DeferredItem<Item> ARCANE_SILK_PANTS =
+            ITEMS.registerSimpleItem("arcane_silk_pants", properties -> properties
+                    .durability(495)
+                    .enchantable(10)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            HolderSet.direct(context.getOrThrow(ResourceKey.create(Registries.ITEM, Identifier.parse("realmforge:arcane_silk"))))))
+                    .delayedComponent(DataComponents.EQUIPPABLE, context -> Equippable.builder(EquipmentSlot.LEGS)
+                            .setEquipSound(context.getOrThrow(ResourceKey.create(Registries.SOUND_EVENT, Identifier.parse("minecraft:item.armor.equip_leather"))))
+                            .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.parse("realmforge:arcane_silk")))
+                            .build())
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/legs/0", 6.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/legs/1", 0.07, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/legs/2", 25.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/legs/3", 0.03, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .build()));
+
+    /** {@code realmforge:arcane_silk_robes} from {@code content/items/arcane_silk_robes.yaml}. */
+    public static final DeferredItem<Item> ARCANE_SILK_ROBES =
+            ITEMS.registerSimpleItem("arcane_silk_robes", properties -> properties
+                    .durability(528)
+                    .enchantable(10)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            HolderSet.direct(context.getOrThrow(ResourceKey.create(Registries.ITEM, Identifier.parse("realmforge:arcane_silk"))))))
+                    .delayedComponent(DataComponents.EQUIPPABLE, context -> Equippable.builder(EquipmentSlot.CHEST)
+                            .setEquipSound(context.getOrThrow(ResourceKey.create(Registries.SOUND_EVENT, Identifier.parse("minecraft:item.armor.equip_leather"))))
+                            .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.parse("realmforge:arcane_silk")))
+                            .build())
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/chest/0", 8.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/chest/1", 0.07, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/chest/2", 25.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/chest/3", 0.03, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .build()));
+
+    /** {@code realmforge:arcane_silk_sandals} from {@code content/items/arcane_silk_sandals.yaml}. */
+    public static final DeferredItem<Item> ARCANE_SILK_SANDALS =
+            ITEMS.registerSimpleItem("arcane_silk_sandals", properties -> properties
+                    .durability(429)
+                    .enchantable(10)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            HolderSet.direct(context.getOrThrow(ResourceKey.create(Registries.ITEM, Identifier.parse("realmforge:arcane_silk"))))))
+                    .delayedComponent(DataComponents.EQUIPPABLE, context -> Equippable.builder(EquipmentSlot.FEET)
+                            .setEquipSound(context.getOrThrow(ResourceKey.create(Registries.SOUND_EVENT, Identifier.parse("minecraft:item.armor.equip_leather"))))
+                            .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.parse("realmforge:arcane_silk")))
+                            .build())
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/feet/0", 3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/feet/1", 0.07, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/feet/2", 25.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/feet/3", 0.03, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .build()));
+
+    /** {@code realmforge:copper_wand} from {@code content/items/copper_wand.yaml}. */
+    public static final DeferredItem<Item> COPPER_WAND =
+            ITEMS.registerSimpleItem("copper_wand", properties -> properties
+                    .durability(190)
+                    .enchantable(13)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            context.getOrThrow(TagKey.create(Registries.ITEM, Identifier.parse("minecraft:copper_tool_materials")))))
+                    .component(DataComponents.WEAPON, new Weapon(1))
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, 1.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, -3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 0.15, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:cast_time_reduction"), modifier("realmforge:gear/mainhand/1", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .build()));
+
+    /** {@code realmforge:diamond_wand} from {@code content/items/diamond_wand.yaml}. */
+    public static final DeferredItem<Item> DIAMOND_WAND =
+            ITEMS.registerSimpleItem("diamond_wand", properties -> properties
+                    .durability(1561)
+                    .enchantable(10)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            context.getOrThrow(TagKey.create(Registries.ITEM, Identifier.parse("minecraft:diamond_tool_materials")))))
+                    .component(DataComponents.WEAPON, new Weapon(1))
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, 3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, -3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 0.3, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:cast_time_reduction"), modifier("realmforge:gear/mainhand/1", 0.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .build()));
+
+    /** {@code realmforge:golden_wand} from {@code content/items/golden_wand.yaml}. */
+    public static final DeferredItem<Item> GOLDEN_WAND =
+            ITEMS.registerSimpleItem("golden_wand", properties -> properties
+                    .durability(32)
+                    .enchantable(22)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            context.getOrThrow(TagKey.create(Registries.ITEM, Identifier.parse("minecraft:gold_tool_materials")))))
+                    .component(DataComponents.WEAPON, new Weapon(1))
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, 2.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, -3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 0.2, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:cast_time_reduction"), modifier("realmforge:gear/mainhand/1", 0.08, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.08, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .build()));
+
+    /** {@code realmforge:iron_wand} from {@code content/items/iron_wand.yaml}. */
+    public static final DeferredItem<Item> IRON_WAND =
+            ITEMS.registerSimpleItem("iron_wand", properties -> properties
+                    .durability(250)
+                    .enchantable(14)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            context.getOrThrow(TagKey.create(Registries.ITEM, Identifier.parse("minecraft:iron_tool_materials")))))
+                    .component(DataComponents.WEAPON, new Weapon(1))
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, 2.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, -3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 0.2, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:cast_time_reduction"), modifier("realmforge:gear/mainhand/1", 0.08, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.08, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .build()));
 
     /** {@code realmforge:magic_stone_dust} from {@code content/items/magic_stone_dust.yaml}. */
     public static final DeferredItem<Item> MAGIC_STONE_DUST =
             ITEMS.registerSimpleItem("magic_stone_dust");
+
+    /** {@code realmforge:netherite_cap} from {@code content/items/netherite_cap.yaml}. */
+    public static final DeferredItem<Item> NETHERITE_CAP =
+            ITEMS.registerSimpleItem("netherite_cap", properties -> properties.fireResistant()
+                    .durability(407)
+                    .enchantable(15)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            context.getOrThrow(TagKey.create(Registries.ITEM, Identifier.parse("minecraft:repairs_netherite_armor")))))
+                    .delayedComponent(DataComponents.EQUIPPABLE, context -> Equippable.builder(EquipmentSlot.HEAD)
+                            .setEquipSound(context.getOrThrow(ResourceKey.create(Registries.SOUND_EVENT, Identifier.parse("minecraft:item.armor.equip_netherite"))))
+                            .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.parse("realmforge:netherite")))
+                            .build())
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/head/0", 3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/head/1", 0.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/head/2", 40.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/head/3", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .build()));
+
+    /** {@code realmforge:netherite_pants} from {@code content/items/netherite_pants.yaml}. */
+    public static final DeferredItem<Item> NETHERITE_PANTS =
+            ITEMS.registerSimpleItem("netherite_pants", properties -> properties.fireResistant()
+                    .durability(555)
+                    .enchantable(15)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            context.getOrThrow(TagKey.create(Registries.ITEM, Identifier.parse("minecraft:repairs_netherite_armor")))))
+                    .delayedComponent(DataComponents.EQUIPPABLE, context -> Equippable.builder(EquipmentSlot.LEGS)
+                            .setEquipSound(context.getOrThrow(ResourceKey.create(Registries.SOUND_EVENT, Identifier.parse("minecraft:item.armor.equip_netherite"))))
+                            .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.parse("realmforge:netherite")))
+                            .build())
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/legs/0", 6.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/legs/1", 0.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/legs/2", 40.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/legs/3", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .build()));
+
+    /** {@code realmforge:netherite_robes} from {@code content/items/netherite_robes.yaml}. */
+    public static final DeferredItem<Item> NETHERITE_ROBES =
+            ITEMS.registerSimpleItem("netherite_robes", properties -> properties.fireResistant()
+                    .durability(592)
+                    .enchantable(15)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            context.getOrThrow(TagKey.create(Registries.ITEM, Identifier.parse("minecraft:repairs_netherite_armor")))))
+                    .delayedComponent(DataComponents.EQUIPPABLE, context -> Equippable.builder(EquipmentSlot.CHEST)
+                            .setEquipSound(context.getOrThrow(ResourceKey.create(Registries.SOUND_EVENT, Identifier.parse("minecraft:item.armor.equip_netherite"))))
+                            .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.parse("realmforge:netherite")))
+                            .build())
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/chest/0", 8.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/chest/1", 0.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/chest/2", 40.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/chest/3", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .build()));
+
+    /** {@code realmforge:netherite_sandals} from {@code content/items/netherite_sandals.yaml}. */
+    public static final DeferredItem<Item> NETHERITE_SANDALS =
+            ITEMS.registerSimpleItem("netherite_sandals", properties -> properties.fireResistant()
+                    .durability(481)
+                    .enchantable(15)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            context.getOrThrow(TagKey.create(Registries.ITEM, Identifier.parse("minecraft:repairs_netherite_armor")))))
+                    .delayedComponent(DataComponents.EQUIPPABLE, context -> Equippable.builder(EquipmentSlot.FEET)
+                            .setEquipSound(context.getOrThrow(ResourceKey.create(Registries.SOUND_EVENT, Identifier.parse("minecraft:item.armor.equip_netherite"))))
+                            .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.parse("realmforge:netherite")))
+                            .build())
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/feet/0", 3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/feet/1", 0.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/feet/2", 40.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/feet/3", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .build()));
+
+    /** {@code realmforge:netherite_wand} from {@code content/items/netherite_wand.yaml}. */
+    public static final DeferredItem<Item> NETHERITE_WAND =
+            ITEMS.registerSimpleItem("netherite_wand", properties -> properties.fireResistant()
+                    .durability(2031)
+                    .enchantable(15)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            context.getOrThrow(TagKey.create(Registries.ITEM, Identifier.parse("minecraft:netherite_tool_materials")))))
+                    .component(DataComponents.WEAPON, new Weapon(1))
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, 4.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, -3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 0.4, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:cast_time_reduction"), modifier("realmforge:gear/mainhand/1", 0.15, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.15, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .build()));
 
     /** {@code realmforge:oblivion_scroll} from {@code content/items/oblivion_scroll.yaml}. */
     public static final DeferredItem<Item> OBLIVION_SCROLL =
@@ -55,9 +356,93 @@ public final class GeneratedItems {
     public static final DeferredItem<Item> SAPPHIRE =
             ITEMS.registerSimpleItem("sapphire");
 
+    /** {@code realmforge:spellweave} from {@code content/items/spellweave.yaml}. */
+    public static final DeferredItem<Item> SPELLWEAVE =
+            ITEMS.registerSimpleItem("spellweave");
+
+    /** {@code realmforge:spellweave_cap} from {@code content/items/spellweave_cap.yaml}. */
+    public static final DeferredItem<Item> SPELLWEAVE_CAP =
+            ITEMS.registerSimpleItem("spellweave_cap", properties -> properties
+                    .durability(165)
+                    .enchantable(9)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            HolderSet.direct(context.getOrThrow(ResourceKey.create(Registries.ITEM, Identifier.parse("realmforge:spellweave"))))))
+                    .delayedComponent(DataComponents.EQUIPPABLE, context -> Equippable.builder(EquipmentSlot.HEAD)
+                            .setEquipSound(context.getOrThrow(ResourceKey.create(Registries.SOUND_EVENT, Identifier.parse("minecraft:item.armor.equip_leather"))))
+                            .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.parse("realmforge:spellweave")))
+                            .build())
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/head/0", 2.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/head/1", 0.04, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/head/2", 15.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .build()));
+
+    /** {@code realmforge:spellweave_pants} from {@code content/items/spellweave_pants.yaml}. */
+    public static final DeferredItem<Item> SPELLWEAVE_PANTS =
+            ITEMS.registerSimpleItem("spellweave_pants", properties -> properties
+                    .durability(225)
+                    .enchantable(9)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            HolderSet.direct(context.getOrThrow(ResourceKey.create(Registries.ITEM, Identifier.parse("realmforge:spellweave"))))))
+                    .delayedComponent(DataComponents.EQUIPPABLE, context -> Equippable.builder(EquipmentSlot.LEGS)
+                            .setEquipSound(context.getOrThrow(ResourceKey.create(Registries.SOUND_EVENT, Identifier.parse("minecraft:item.armor.equip_leather"))))
+                            .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.parse("realmforge:spellweave")))
+                            .build())
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/legs/0", 5.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/legs/1", 0.04, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/legs/2", 15.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .build()));
+
+    /** {@code realmforge:spellweave_robes} from {@code content/items/spellweave_robes.yaml}. */
+    public static final DeferredItem<Item> SPELLWEAVE_ROBES =
+            ITEMS.registerSimpleItem("spellweave_robes", properties -> properties
+                    .durability(240)
+                    .enchantable(9)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            HolderSet.direct(context.getOrThrow(ResourceKey.create(Registries.ITEM, Identifier.parse("realmforge:spellweave"))))))
+                    .delayedComponent(DataComponents.EQUIPPABLE, context -> Equippable.builder(EquipmentSlot.CHEST)
+                            .setEquipSound(context.getOrThrow(ResourceKey.create(Registries.SOUND_EVENT, Identifier.parse("minecraft:item.armor.equip_leather"))))
+                            .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.parse("realmforge:spellweave")))
+                            .build())
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/chest/0", 6.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/chest/1", 0.04, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/chest/2", 15.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .build()));
+
+    /** {@code realmforge:spellweave_sandals} from {@code content/items/spellweave_sandals.yaml}. */
+    public static final DeferredItem<Item> SPELLWEAVE_SANDALS =
+            ITEMS.registerSimpleItem("spellweave_sandals", properties -> properties
+                    .durability(195)
+                    .enchantable(9)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            HolderSet.direct(context.getOrThrow(ResourceKey.create(Registries.ITEM, Identifier.parse("realmforge:spellweave"))))))
+                    .delayedComponent(DataComponents.EQUIPPABLE, context -> Equippable.builder(EquipmentSlot.FEET)
+                            .setEquipSound(context.getOrThrow(ResourceKey.create(Registries.SOUND_EVENT, Identifier.parse("minecraft:item.armor.equip_leather"))))
+                            .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.parse("realmforge:spellweave")))
+                            .build())
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/feet/0", 2.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/feet/1", 0.04, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/feet/2", 15.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .build()));
+
     /** {@code realmforge:stone_wand} from {@code content/items/stone_wand.yaml}. */
     public static final DeferredItem<Item> STONE_WAND =
-            ITEMS.registerSimpleItem("stone_wand", properties -> properties.stacksTo(1));
+            ITEMS.registerSimpleItem("stone_wand", properties -> properties
+                    .durability(131)
+                    .enchantable(5)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            context.getOrThrow(TagKey.create(Registries.ITEM, Identifier.parse("minecraft:stone_tool_materials")))))
+                    .component(DataComponents.WEAPON, new Weapon(1))
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, 1.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, -3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 0.15, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:cast_time_reduction"), modifier("realmforge:gear/mainhand/1", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .build()));
 
     /** {@code realmforge:test_dungeon_key} from {@code content/items/test_dungeon_key.yaml}. */
     public static final DeferredItem<Item> TEST_DUNGEON_KEY =
@@ -78,6 +463,22 @@ public final class GeneratedItems {
                             Component.translatable("tooltip.realmforge.signet_not_consumed")
                                     .withStyle(style -> style.withColor(ChatFormatting.GRAY).withItalic(false))))));
 
+    /** {@code realmforge:wooden_wand} from {@code content/items/wooden_wand.yaml}. */
+    public static final DeferredItem<Item> WOODEN_WAND =
+            ITEMS.registerSimpleItem("wooden_wand", properties -> properties
+                    .durability(59)
+                    .enchantable(15)
+                    .delayedComponent(DataComponents.REPAIRABLE, context -> new Repairable(
+                            context.getOrThrow(TagKey.create(Registries.ITEM, Identifier.parse("minecraft:wooden_tool_materials")))))
+                    .component(DataComponents.WEAPON, new Weapon(1))
+                    .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
+                            .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, 0.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, -3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 0.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:cast_time_reduction"), modifier("realmforge:gear/mainhand/1", 0.03, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.03, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .build()));
+
     private GeneratedItems() {
     }
 
@@ -94,12 +495,33 @@ public final class GeneratedItems {
                 event.accept(APPRENTICE_HAT);
                 event.accept(APPRENTICE_PANTS);
                 event.accept(APPRENTICE_ROBES);
+                event.accept(ARCANE_SILK_CAP);
+                event.accept(ARCANE_SILK_PANTS);
+                event.accept(ARCANE_SILK_ROBES);
+                event.accept(ARCANE_SILK_SANDALS);
+                event.accept(COPPER_WAND);
+                event.accept(DIAMOND_WAND);
+                event.accept(GOLDEN_WAND);
+                event.accept(IRON_WAND);
+                event.accept(NETHERITE_CAP);
+                event.accept(NETHERITE_PANTS);
+                event.accept(NETHERITE_ROBES);
+                event.accept(NETHERITE_SANDALS);
+                event.accept(NETHERITE_WAND);
+                event.accept(SPELLWEAVE_CAP);
+                event.accept(SPELLWEAVE_PANTS);
+                event.accept(SPELLWEAVE_ROBES);
+                event.accept(SPELLWEAVE_SANDALS);
                 event.accept(STONE_WAND);
+                event.accept(WOODEN_WAND);
             }
             case "minecraft:ingredients" -> {
+                event.accept(ARCANE_DUST);
+                event.accept(ARCANE_SILK);
                 event.accept(MAGIC_STONE_DUST);
                 event.accept(RUBY);
                 event.accept(SAPPHIRE);
+                event.accept(SPELLWEAVE);
                 event.accept(TEST_ITEM);
                 event.accept(TOPAZ);
             }
@@ -111,5 +533,15 @@ public final class GeneratedItems {
             default -> {
             }
         }
+    }
+
+    /** The attribute {@code id} names, from the registries the item's components are built with. */
+    private static Holder<Attribute> attribute(HolderLookup.Provider context, String id) {
+        return context.getOrThrow(ResourceKey.create(Registries.ATTRIBUTE, Identifier.parse(id)));
+    }
+
+    /** A gear modifier with its id per slot and position (architecture 8.2). */
+    private static AttributeModifier modifier(String id, double amount, AttributeModifier.Operation operation) {
+        return new AttributeModifier(Identifier.parse(id), amount, operation);
     }
 }

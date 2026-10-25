@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "#minecraft:netherite_tool_materials",
+  "base": "realmforge:diamond_wand",
+  "result": {
+    "id": "realmforge:netherite_wand"
+  },
+  "template": "minecraft:netherite_upgrade_smithing_template"
+}

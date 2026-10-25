@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "L": "minecraft:lapis_lazuli",
+    "M": "#minecraft:copper_tool_materials",
+    "S": "minecraft:stick"
+  },
+  "pattern": [
+    "M",
+    "L",
+    "S"
+  ],
+  "result": {
+    "id": "realmforge:copper_wand"
+  }
+}

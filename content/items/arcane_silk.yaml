@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# The cloth of the Arcane Silk set, the caster's diamond tier (RLM-197): two string, a diamond and Arcane Dust make
+# two, so a full set costs 12 diamonds, 12 Arcane Dust and 24 string, about a diamond set's effort (Matěj,
+# 2026-10-15). The generated placeholder texture until A1's art.
+id: arcane_silk
+name:
+  en_us: Arcane Silk
+creative_tabs:
+  - minecraft:ingredients
+color: "#8A4FD0"
+recipe:
+  ingredients: [minecraft:string, minecraft:string, minecraft:diamond, realmforge:arcane_dust]
+  count: 2

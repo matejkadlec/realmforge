@@ -1,9 +1,32 @@
 # yaml-language-server: $schema=../../tools/schemas/items.schema.json
-# A placeholder in the Mage's starting kit (Matěj's playtest of C1, 2026-10-14): the real wands, from wood to
-# netherite, with their spell stats come later. It keeps its id when it becomes the real Stone Wand.
+# The Mage's starting wand (Matěj's playtest of C1, 2026-10-14: "something like a Stone Wand"), one of the seven
+# wands of RLM-172. Its id is the one C1's placeholder had, so the Mage's kit (content/classes/mage.yaml) keeps it.
+# Spell Power, Cast Time Reduction and Cooldown Reduction are Matěj's (2026-10-15); attack damage, durability,
+# enchantability and the repair material are vanilla's tool of the same material (attack damage: Claude's, Matěj
+# delegated it). Attack speed 1.0, so swinging one is never worth it. Its stats count in the main hand only.
+# Recipe (Claude's proposal from the gear proposal, RLM-172): the material over lapis lazuli over a stick.
+# The generated placeholder texture until A1's art.
 id: stone_wand
 name:
-  en_us: Stone Wand (WIP)
-max_stack_size: 1
+  en_us: Stone Wand
 creative_tabs:
   - minecraft:combat
+color: "#8A8A8A"
+gear:
+  kind: wand
+  durability: 131
+  enchantability: 5
+  repair_with: "#minecraft:stone_tool_materials"
+  attack_damage: 2
+  attack_speed: 1.0
+  modifiers:
+    - {attribute: realmforge:spell_power, operation: add_value, amount_percent: 15}
+    - {attribute: realmforge:cast_time_reduction, operation: add_value, amount_percent: 5}
+    - {attribute: realmforge:cooldown_reduction, operation: add_value, amount_percent: 5}
+recipe:
+  pattern: [M, L, S]
+  key:
+    M: "#minecraft:stone_tool_materials"
+    L: minecraft:lapis_lazuli
+    S: minecraft:stick
+  category: equipment

@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# The cloth of the Spellweave set, the caster's iron tier (RLM-197): two wool, an iron ingot and lapis lazuli make
+# two. It keeps half of the tier's iron, so the caster sets follow the melee armor's progression (Claude's decision,
+# 2026-10-15). The generated placeholder texture until A1's art.
+id: spellweave
+name:
+  en_us: Spellweave
+creative_tabs:
+  - minecraft:ingredients
+color: "#2F4FA8"
+recipe:
+  ingredients: ["#minecraft:wool", "#minecraft:wool", minecraft:iron_ingot, minecraft:lapis_lazuli]
+  count: 2

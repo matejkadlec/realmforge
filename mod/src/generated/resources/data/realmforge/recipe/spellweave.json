@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "#minecraft:wool",
+    "#minecraft:wool",
+    "minecraft:iron_ingot",
+    "minecraft:lapis_lazuli"
+  ],
+  "result": {
+    "count": 2,
+    "id": "realmforge:spellweave"
+  }
+}

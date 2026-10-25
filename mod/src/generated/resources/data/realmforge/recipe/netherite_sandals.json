@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "#minecraft:netherite_tool_materials",
+  "base": "realmforge:arcane_silk_sandals",
+  "result": {
+    "id": "realmforge:netherite_sandals"
+  },
+  "template": "minecraft:netherite_upgrade_smithing_template"
+}

@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "#minecraft:netherite_tool_materials",
+  "base": "realmforge:arcane_silk_cap",
+  "result": {
+    "id": "realmforge:netherite_cap"
+  },
+  "template": "minecraft:netherite_upgrade_smithing_template"
+}
