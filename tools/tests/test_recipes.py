@@ -73,3 +73,72 @@ def test_the_pattern_and_key_must_fit_a_crafting_grid(
     write(repo.content / "items" / "test_key.yaml", ITEM + f"recipe:\n  pattern: {pattern}\n  key: {key}\n")
     problems = problems_for(repo)
     assert any("test_key.yaml" in p and message in p for p in problems), problems
+
+
+def test_a_tag_stands_for_any_of_its_items(repo: RepoPaths) -> None:
+    write(
+        repo.content / "items" / "test_key.yaml",
+        ITEM + "recipe:\n  pattern: ['WWW', 'W W']\n  key: {W: '#minecraft:wool'}\n",
+    )
+    assert json.loads(generate(repo)[f"{RECIPES}/test_key.json"])["key"] == {"W": "#minecraft:wool"}
+
+
+def test_an_unknown_tag_is_refused_with_close_matches(repo: RepoPaths) -> None:
+    write(
+        repo.content / "items" / "test_key.yaml",
+        ITEM + "recipe:\n  pattern: [W]\n  key: {W: '#minecraft:wol'}\n",
+    )
+    problems = problems_for(repo)
+    assert any(
+        "recipe.key.W" in p and "unknown tag '#minecraft:wol'" in p and "#minecraft:wool" in p
+        for p in problems
+    )
+
+
+def test_a_shapeless_recipe_lists_its_ingredients(repo: RepoPaths) -> None:
+    write(
+        repo.content / "items" / "test_key.yaml",
+        ITEM
+        + "recipe:\n  ingredients: ['#minecraft:wool', minecraft:string, minecraft:string]\n  count: 2\n",
+    )
+    assert json.loads(generate(repo)[f"{RECIPES}/test_key.json"]) == {
+        "type": "minecraft:crafting_shapeless",
+        "category": "misc",
+        "ingredients": ["#minecraft:wool", "minecraft:string", "minecraft:string"],
+        "result": {"count": 2, "id": "realmforge:test_key"},
+    }, "as vanilla's purple_dye.json"
+
+
+def test_a_smithing_recipe_upgrades_another_item(repo: RepoPaths) -> None:
+    write(
+        repo.content / "items" / "test_key.yaml",
+        ITEM
+        + "recipe:\n  template: minecraft:netherite_upgrade_smithing_template\n  base: minecraft:diamond_sword\n"
+        "  addition: '#minecraft:netherite_tool_materials'\n",
+    )
+    assert json.loads(generate(repo)[f"{RECIPES}/test_key.json"]) == {
+        "type": "minecraft:smithing_transform",
+        "addition": "#minecraft:netherite_tool_materials",
+        "base": "minecraft:diamond_sword",
+        "result": {"id": "realmforge:test_key"},
+        "template": "minecraft:netherite_upgrade_smithing_template",
+    }, "as vanilla's netherite_sword_smithing.json"
+
+
+@pytest.mark.parametrize(
+    ("recipe", "message"),
+    [
+        (
+            "  template: minecraft:netherite_upgrade_smithing_template\n  base: realmforge:test_key\n"
+            "  addition: minecraft:netherite_ingot\n",
+            "makes the item from another one",
+        ),
+        ("  ingredients: [minecraft:sting]\n", "recipe.ingredients.0"),
+        ("  ingredients: []\n", "ingredients"),
+        ("  count: 2\n", "a pattern (shaped), ingredients (shapeless) or a template (smithing)"),
+    ],
+)
+def test_shapeless_and_smithing_recipes_are_checked(repo: RepoPaths, recipe: str, message: str) -> None:
+    write(repo.content / "items" / "test_key.yaml", ITEM + "recipe:\n" + recipe)
+    problems = problems_for(repo)
+    assert any("test_key.yaml" in p and message in p for p in problems), problems

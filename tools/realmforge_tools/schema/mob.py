@@ -146,9 +146,10 @@ class MeleeDef(StrictModel):
 
 
 class DropCountDef(StrictModel):
-    """How many of the item one drop gives: a whole number from ``min`` to ``max``, each as likely."""
+    """How many of the item one drop gives: a whole number from ``min`` to ``max``, each as likely. A ``min`` of 0
+    sometimes gives none, as vanilla's witch drops 0 to 2 glowstone dust; Looting's extra still counts then."""
 
-    min: int = Field(ge=1, le=MAX_DROP_COUNT)
+    min: int = Field(ge=0, le=MAX_DROP_COUNT)
     max: int = Field(ge=1, le=MAX_DROP_COUNT)
 
     @model_validator(mode="after")
@@ -158,12 +159,10 @@ class DropCountDef(StrictModel):
         return self
 
 
-class MobDropDef(StrictModel):
-    """One item the mob may drop when it dies: rolled on its own, so drops never crowd each other out. Every drop is
-    worth having (the vision: no trash loot). Looting raises it as vanilla's drops: more of the item, a better
-    chance, or both."""
+class DropDef(StrictModel):
+    """How one drop rolls when a mob dies: on its own, so drops never crowd each other out. Looting raises it as
+    vanilla's drops: more of the item, a better chance, or both."""
 
-    item: ResourceId = Field(description="The item, e.g. minecraft:iron_ingot.")
     count: DropCountDef = Field(
         default=DropCountDef(min=1, max=1), description="How many: from min to max, 1 by default."
     )
@@ -189,10 +188,16 @@ class MobDropDef(StrictModel):
     )
 
     @model_validator(mode="after")
-    def _looting(self) -> MobDropDef:
+    def _looting(self) -> DropDef:
         if self.looting_chance_percent > 0 and self.chance_percent >= 100:
             raise ValueError("looting_chance_percent raises a chance below 100 percent")
         return self
+
+
+class MobDropDef(DropDef):
+    """One item the mob may drop when it dies. Every drop is worth having (the vision: no trash loot)."""
+
+    item: ResourceId = Field(description="The item, e.g. minecraft:iron_ingot.")
 
 
 class MobSoundsDef(StrictModel):

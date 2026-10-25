@@ -1,5 +1,252 @@
 {
   "$defs": {
+    "DropCountDef": {
+      "additionalProperties": false,
+      "description": "How many of the item one drop gives: a whole number from ``min`` to ``max``, each as likely. A ``min`` of 0\nsometimes gives none, as vanilla's witch drops 0 to 2 glowstone dust; Looting's extra still counts then.",
+      "properties": {
+        "max": {
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Max",
+          "type": "integer"
+        },
+        "min": {
+          "maximum": 64,
+          "minimum": 0,
+          "title": "Min",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "title": "DropCountDef",
+      "type": "object"
+    },
+    "GearDef": {
+      "additionalProperties": false,
+      "description": "What makes the item a piece of gear (architecture 13): its kind and slot, its durability, how it is enchanted\nand repaired, and its fixed stats, vanilla attribute modifiers with one id per slot and modifier\n(``realmforge:gear/<slot>/<n>``, architecture 8.2). Gear stacks to 1.",
+      "properties": {
+        "attack_damage": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A wand's attack damage, as its tooltip shows it (a bare hand is 1). Wands only, and required.",
+          "title": "Attack Damage"
+        },
+        "attack_speed": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A wand's attacks per second, as its tooltip shows it (a bare hand is 4). Wands only, and required.",
+          "title": "Attack Speed"
+        },
+        "durability": {
+          "description": "Uses before it breaks (vanilla's max damage).",
+          "maximum": 100000,
+          "minimum": 1,
+          "title": "Durability",
+          "type": "integer"
+        },
+        "enchantability": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Vanilla's enchantment value: higher gets better enchantments at the table (iron armor 9, gold tools 22). Unset: the enchanting table refuses it. A wand takes the durability enchantments (Unbreaking, Mending), armor those of its slot's vanilla armor.",
+          "title": "Enchantability"
+        },
+        "equip_sound": {
+          "default": "minecraft:item.armor.equip_leather",
+          "description": "Armor only: the sound of putting it on, leather's by default.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Equip Sound",
+          "type": "string"
+        },
+        "kind": {
+          "description": "wand: a caster's weapon, its stats in the main hand only, worn down by every spell its holder casts and every hit, as a sword by hits; head, chest, legs, feet: armor worn in that slot, worn down by hits taken.",
+          "enum": [
+            "wand",
+            "head",
+            "chest",
+            "legs",
+            "feet"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "look": {
+          "anyOf": [
+            {
+              "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9_]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Armor only, and required: how it looks worn, assets/realmforge/equipment/<look>.json, shared by a set (spellweave). Its texture is a placeholder in the item's colour until the set's art exists.",
+          "title": "Look"
+        },
+        "modifiers": {
+          "description": "Its fixed stats while in its slot, e.g. {attribute: realmforge:spell_power, operation: add_value, amount_percent: 15}.",
+          "items": {
+            "$ref": "#/$defs/GearModifierDef"
+          },
+          "title": "Modifiers",
+          "type": "array"
+        },
+        "repair_with": {
+          "anyOf": [
+            {
+              "description": "An item (minecraft:stick) or an item tag (#minecraft:wool). Validated against the ID universe.",
+              "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The material that repairs it in an anvil: an item (realmforge:spellweave) or an item tag ('#minecraft:stone_tool_materials'). Unset: only two of it combine.",
+          "title": "Repair With"
+        }
+      },
+      "required": [
+        "kind",
+        "durability"
+      ],
+      "title": "GearDef",
+      "type": "object"
+    },
+    "GearModifierDef": {
+      "additionalProperties": false,
+      "description": "A fixed stat the gear gives while it is in its slot: a wand in the main hand, armor where it is worn. Units\nfollow the stat rules: ``add_value`` on one of our stats takes its unit (``amount_percent`` for a share, ``amount``\nfor points); multiplied operations take ``amount_percent``.",
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The amount, in game units.",
+          "title": "Amount"
+        },
+        "amount_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The amount in percent (5 means 5 %, the fraction 0.05).",
+          "title": "Amount Percent"
+        },
+        "attribute": {
+          "description": "The attribute it modifies, e.g. realmforge:strength.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Attribute",
+          "type": "string"
+        },
+        "operation": {
+          "description": "How the amount applies (vanilla's attribute modifier operations).",
+          "enum": [
+            "add_value",
+            "add_multiplied_base",
+            "add_multiplied_total"
+          ],
+          "title": "Operation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "attribute",
+        "operation"
+      ],
+      "title": "GearModifierDef",
+      "type": "object"
+    },
+    "ItemDropDef": {
+      "additionalProperties": false,
+      "description": "The item dropped by a mob that is not ours (a vanilla witch): added to the mob's own loot by a NeoForge loot\nmodifier, which leaves its loot table as it is. Our own mobs list their drops in their ``loot``\n(``content/mobs/``).",
+      "properties": {
+        "chance_percent": {
+          "default": 100,
+          "description": "The chance it drops at all, in percent: 100 by default.",
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Chance Percent",
+          "type": "number"
+        },
+        "count": {
+          "$ref": "#/$defs/DropCountDef",
+          "default": {
+            "max": 1,
+            "min": 1
+          },
+          "description": "How many: from min to max, 1 by default."
+        },
+        "entity": {
+          "description": "The mob, e.g. minecraft:witch.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Entity",
+          "type": "string"
+        },
+        "looting_chance_percent": {
+          "default": 0,
+          "description": "Each level of Looting adds this much to the chance, in percent points.",
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Looting Chance Percent",
+          "type": "number"
+        },
+        "looting_count": {
+          "default": 0,
+          "description": "Each level of Looting adds 0 to this many more of the item (vanilla's 0 to 1 for most drops).",
+          "maximum": 8,
+          "minimum": 0,
+          "title": "Looting Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "entity"
+      ],
+      "title": "ItemDropDef",
+      "type": "object"
+    },
     "LocalizedText": {
       "additionalProperties": false,
       "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
@@ -19,7 +266,7 @@
     },
     "ShapedRecipeDef": {
       "additionalProperties": false,
-      "description": "A shaped crafting recipe that makes the entry: its rows of the crafting grid and the item each character\nstands for.",
+      "description": "A shaped crafting recipe that makes the entry: its rows of the crafting grid and the ingredient each character\nstands for.",
       "properties": {
         "category": {
           "default": "misc",
@@ -42,12 +289,12 @@
           "type": "integer"
         },
         "key": {
-          "description": "Character -> the item it stands for, e.g. S: minecraft:stone_bricks. Every character is used.",
+          "description": "Character -> the ingredient it stands for, e.g. S: minecraft:stone_bricks or W: '#minecraft:wool'. Every character is used.",
           "minProperties": 1,
           "patternProperties": {
             "^\\S$": {
-              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
-              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "description": "An item (minecraft:stick) or an item tag (#minecraft:wool). Validated against the ID universe.",
+              "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$",
               "type": "string"
             }
           },
@@ -73,11 +320,85 @@
       ],
       "title": "ShapedRecipeDef",
       "type": "object"
+    },
+    "ShapelessRecipeDef": {
+      "additionalProperties": false,
+      "description": "A shapeless crafting recipe that makes the entry: its ingredients go anywhere in the grid.",
+      "properties": {
+        "category": {
+          "default": "misc",
+          "description": "Its tab in the recipe book.",
+          "enum": [
+            "building",
+            "redstone",
+            "equipment",
+            "misc"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "count": {
+          "default": 1,
+          "description": "How many the recipe makes.",
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "ingredients": {
+          "description": "One entry per grid slot it fills (1 to 9), repeated for two of the same: ['#minecraft:wool', '#minecraft:wool', minecraft:iron_ingot].",
+          "items": {
+            "description": "An item (minecraft:stick) or an item tag (#minecraft:wool). Validated against the ID universe.",
+            "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$",
+            "type": "string"
+          },
+          "maxItems": 9,
+          "minItems": 1,
+          "title": "Ingredients",
+          "type": "array"
+        }
+      },
+      "required": [
+        "ingredients"
+      ],
+      "title": "ShapelessRecipeDef",
+      "type": "object"
+    },
+    "SmithingRecipeDef": {
+      "additionalProperties": false,
+      "description": "A smithing table upgrade that makes the entry from ``base``, as vanilla's diamond-to-netherite upgrade: the\nresult keeps the base's enchantments, damage and name.",
+      "properties": {
+        "addition": {
+          "description": "The material it adds, e.g. '#minecraft:netherite_tool_materials'.",
+          "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Addition",
+          "type": "string"
+        },
+        "base": {
+          "description": "The item it upgrades, e.g. realmforge:diamond_wand.",
+          "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Base",
+          "type": "string"
+        },
+        "template": {
+          "description": "The smithing template, e.g. minecraft:netherite_upgrade_smithing_template.",
+          "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Template",
+          "type": "string"
+        }
+      },
+      "required": [
+        "template",
+        "base",
+        "addition"
+      ],
+      "title": "SmithingRecipeDef",
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "A simple item. Generates its registration, model, lang entries and (for now) a placeholder texture; a use and a\nflavor line become its tooltip, and a recipe its crafting recipe.",
+  "description": "A simple item. Generates its registration, model, lang entries and (for now) a placeholder texture; a use and a\nflavor line become its tooltip, a recipe its recipe, and gear its durability, slot and fixed stats.",
   "properties": {
     "color": {
       "anyOf": [
@@ -105,6 +426,14 @@
       "type": "array",
       "uniqueItems": true
     },
+    "dropped_by": {
+      "description": "Mobs that are not ours (vanilla's) that drop the item, one entry per mob.",
+      "items": {
+        "$ref": "#/$defs/ItemDropDef"
+      },
+      "title": "Dropped By",
+      "type": "array"
+    },
     "fire_resistant": {
       "default": false,
       "description": "Fire and lava do not destroy the dropped item, as netherite's.",
@@ -123,6 +452,18 @@
       "default": null,
       "description": "A flavor line in the tooltip: one sentence, no mechanics, at most 12 words (lore style guide)."
     },
+    "gear": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/GearDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional: makes the item a wand or a piece of armor, with its fixed stats."
+    },
     "id": {
       "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
       "maxLength": 64,
@@ -132,7 +473,7 @@
     },
     "max_stack_size": {
       "default": 64,
-      "description": "Maximum stack size (1-99).",
+      "description": "Maximum stack size (1-99); gear always stacks to 1.",
       "maximum": 99,
       "minimum": 1,
       "title": "Max Stack Size",
@@ -145,14 +486,25 @@
     "recipe": {
       "anyOf": [
         {
-          "$ref": "#/$defs/ShapedRecipeDef"
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ShapedRecipeDef"
+            },
+            {
+              "$ref": "#/$defs/ShapelessRecipeDef"
+            },
+            {
+              "$ref": "#/$defs/SmithingRecipeDef"
+            }
+          ]
         },
         {
           "type": "null"
         }
       ],
       "default": null,
-      "description": "Optional: the shaped crafting recipe that makes the item."
+      "description": "Optional: the recipe that makes the item: shaped, shapeless or a smithing upgrade.",
+      "title": "Recipe"
     },
     "use": {
       "anyOf": [

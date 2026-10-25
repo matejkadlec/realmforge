@@ -19,7 +19,7 @@
     },
     "ShapedRecipeDef": {
       "additionalProperties": false,
-      "description": "A shaped crafting recipe that makes the entry: its rows of the crafting grid and the item each character\nstands for.",
+      "description": "A shaped crafting recipe that makes the entry: its rows of the crafting grid and the ingredient each character\nstands for.",
       "properties": {
         "category": {
           "default": "misc",
@@ -42,12 +42,12 @@
           "type": "integer"
         },
         "key": {
-          "description": "Character -> the item it stands for, e.g. S: minecraft:stone_bricks. Every character is used.",
+          "description": "Character -> the ingredient it stands for, e.g. S: minecraft:stone_bricks or W: '#minecraft:wool'. Every character is used.",
           "minProperties": 1,
           "patternProperties": {
             "^\\S$": {
-              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
-              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "description": "An item (minecraft:stick) or an item tag (#minecraft:wool). Validated against the ID universe.",
+              "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$",
               "type": "string"
             }
           },
@@ -72,6 +72,80 @@
         "key"
       ],
       "title": "ShapedRecipeDef",
+      "type": "object"
+    },
+    "ShapelessRecipeDef": {
+      "additionalProperties": false,
+      "description": "A shapeless crafting recipe that makes the entry: its ingredients go anywhere in the grid.",
+      "properties": {
+        "category": {
+          "default": "misc",
+          "description": "Its tab in the recipe book.",
+          "enum": [
+            "building",
+            "redstone",
+            "equipment",
+            "misc"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "count": {
+          "default": 1,
+          "description": "How many the recipe makes.",
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "ingredients": {
+          "description": "One entry per grid slot it fills (1 to 9), repeated for two of the same: ['#minecraft:wool', '#minecraft:wool', minecraft:iron_ingot].",
+          "items": {
+            "description": "An item (minecraft:stick) or an item tag (#minecraft:wool). Validated against the ID universe.",
+            "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$",
+            "type": "string"
+          },
+          "maxItems": 9,
+          "minItems": 1,
+          "title": "Ingredients",
+          "type": "array"
+        }
+      },
+      "required": [
+        "ingredients"
+      ],
+      "title": "ShapelessRecipeDef",
+      "type": "object"
+    },
+    "SmithingRecipeDef": {
+      "additionalProperties": false,
+      "description": "A smithing table upgrade that makes the entry from ``base``, as vanilla's diamond-to-netherite upgrade: the\nresult keeps the base's enchantments, damage and name.",
+      "properties": {
+        "addition": {
+          "description": "The material it adds, e.g. '#minecraft:netherite_tool_materials'.",
+          "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Addition",
+          "type": "string"
+        },
+        "base": {
+          "description": "The item it upgrades, e.g. realmforge:diamond_wand.",
+          "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Base",
+          "type": "string"
+        },
+        "template": {
+          "description": "The smithing template, e.g. minecraft:netherite_upgrade_smithing_template.",
+          "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Template",
+          "type": "string"
+        }
+      },
+      "required": [
+        "template",
+        "base",
+        "addition"
+      ],
+      "title": "SmithingRecipeDef",
       "type": "object"
     }
   },
@@ -151,14 +225,25 @@
     "recipe": {
       "anyOf": [
         {
-          "$ref": "#/$defs/ShapedRecipeDef"
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ShapedRecipeDef"
+            },
+            {
+              "$ref": "#/$defs/ShapelessRecipeDef"
+            },
+            {
+              "$ref": "#/$defs/SmithingRecipeDef"
+            }
+          ]
         },
         {
           "type": "null"
         }
       ],
       "default": null,
-      "description": "Optional: the shaped crafting recipe that makes the block's item."
+      "description": "Optional: the recipe that makes the block's item: shaped, shapeless or a smithing upgrade.",
+      "title": "Recipe"
     },
     "requires_tool": {
       "default": false,

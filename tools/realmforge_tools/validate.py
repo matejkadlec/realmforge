@@ -45,7 +45,7 @@ from realmforge_tools.schema.dungeon import (
     room_role,
 )
 from realmforge_tools.schema.effect import PeriodicDef, effect_id
-from realmforge_tools.schema.item import USE_TEXT_GROUP, ItemDef
+from realmforge_tools.schema.item import GEAR_FORBIDDEN_ATTRIBUTES, USE_TEXT_GROUP, ItemDef, entity_loot_table
 from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
 from realmforge_tools.schema.mob import TRASH_LOOT, mob_description_id
@@ -65,6 +65,7 @@ from realmforge_tools.schema.quest import (
     quest_object_keys,
 )
 from realmforge_tools.schema.realm import FRAME_HEIGHT, PORTAL_PARTICLES, unlock_advancement
+from realmforge_tools.schema.recipe import is_tag
 from realmforge_tools.schema.requirement import ChapterCompletedDef, HasAdvancementDef
 from realmforge_tools.schema.room_spec import FULL, LANTERN, SLAB, STAIRS, THEME_ROLES, WALL_TORCH
 from realmforge_tools.schema.sound import sound_id
@@ -112,6 +113,7 @@ MOB_EFFECT_REGISTRY = "minecraft:mob_effect"
 SOUND_EVENT_REGISTRY = "minecraft:sound_event"
 SPELL_REGISTRY = f"{MOD_ID}:spell"
 CUSTOM_STAT_REGISTRY = "minecraft:custom_stat"
+LOOT_TABLE_REGISTRY = "minecraft:loot_table"
 # Vanilla Overworld's height (net.minecraft.world.level.dimension.DimensionType, minecraft:overworld): its lowest y and
 # the number of blocks above it, for Overworld's arrival heights.
 OVERWORLD_MIN_Y = -64
@@ -239,6 +241,8 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_dungeons(content, universe)
     problems += _check_dungeon_keys(content, universe)
     problems += _check_recipes(content, universe)
+    problems += _check_gear(content, universe)
+    problems += _check_item_drops(content, universe)
     problems += _check_chapters(content)
     problems += _check_quests(content, universe)
     problems += _check_leveling_curves(content)
@@ -1353,16 +1357,114 @@ def _check_dungeon_keys(content: Content, universe: IdUniverse) -> list[Problem]
 
 
 def _check_recipes(content: Content, universe: IdUniverse) -> list[Problem]:
-    """Every ingredient of an item's or block's recipe is an item."""
+    """Every ingredient of an item's or block's recipe is an item or a vanilla item tag, and a smithing upgrade
+    starts from another item than the one it makes."""
     problems: list[Problem] = []
     for entry in [*content.items, *content.blocks]:
         recipe = entry.model.recipe
         if recipe is None:
             continue
-        for char, ingredient in sorted(recipe.key.items()):
-            if not universe.contains(ITEM_REGISTRY, ingredient):
+        for path, ingredient in recipe.ingredients_by_path():
+            unknown = _unknown_ingredient(ingredient, universe)
+            if unknown is not None:
+                problems.append(Problem(entry.source, f"recipe.{path}", unknown))
+        if getattr(recipe, "base", None) == f"{MOD_ID}:{entry.model.id}":
+            problems.append(
+                Problem(entry.source, "recipe.base", "a smithing upgrade makes the item from another one")
+            )
+    return problems
+
+
+def _unknown_ingredient(ingredient: str, universe: IdUniverse) -> str | None:
+    """Why a recipe ingredient or repair material, an item or an item tag (``#`` first), is not in the ID universe,
+    or None when it is."""
+    if not is_tag(ingredient):
+        return (
+            None
+            if universe.contains(ITEM_REGISTRY, ingredient)
+            else _unknown(ingredient, ITEM_REGISTRY, universe)
+        )
+    tag = ingredient.removeprefix("#")
+    if universe.contains_tag(ITEM_REGISTRY, tag):
+        return None
+    message = f"unknown tag {ingredient!r} in registry {ITEM_REGISTRY}"
+    close = difflib.get_close_matches(tag, universe.tags.get(ITEM_REGISTRY, set()), n=3)
+    if close:
+        message += f" (did you mean: {', '.join('#' + match for match in close)}?)"
+    return message
+
+
+def _check_gear(content: Content, universe: IdUniverse) -> list[Problem]:
+    """Gear's fixed stats name attributes that exist, in their unit as for stat rules (architecture 8.3), and never
+    max health, attack damage or attack speed; its repair material and equip sound exist; the items that share a
+    look are armor of one colour, so its placeholder texture has one."""
+    problems: list[Problem] = []
+    stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
+    colors: dict[str, tuple[str | None, str]] = {}
+    for entry in content.items:
+        gear = entry.model.gear
+        if gear is None:
+            continue
+        for n, modifier in enumerate(gear.modifiers):
+            path = f"gear.modifiers.{n}"
+            forbidden = GEAR_FORBIDDEN_ATTRIBUTES.get(modifier.attribute)
+            if forbidden is not None:
+                problems.append(Problem(entry.source, f"{path}.attribute", forbidden))
+            else:
+                problems += _check_modifier(entry.source, path, modifier, stats, universe)
+        if gear.repair_with is not None:
+            unknown = _unknown_ingredient(gear.repair_with, universe)
+            if unknown is not None:
+                problems.append(Problem(entry.source, "gear.repair_with", unknown))
+        if not universe.contains(SOUND_EVENT_REGISTRY, gear.equip_sound):
+            problems.append(
+                Problem(
+                    entry.source,
+                    "gear.equip_sound",
+                    _unknown(gear.equip_sound, SOUND_EVENT_REGISTRY, universe),
+                )
+            )
+        if gear.look is not None:
+            seen = colors.setdefault(gear.look, (entry.model.color, entry.source))
+            if seen[0] != entry.model.color:
                 problems.append(
-                    Problem(entry.source, f"recipe.key.{char}", _unknown(ingredient, ITEM_REGISTRY, universe))
+                    Problem(
+                        entry.source,
+                        "color",
+                        f"the items of look {gear.look} share one colour, its placeholder's: {seen[1]} has "
+                        f"{seen[0] or 'none'}, this one {entry.model.color or 'none'}",
+                    )
+                )
+    return problems
+
+
+def _check_item_drops(content: Content, universe: IdUniverse) -> list[Problem]:
+    """An item's ``dropped_by`` names mobs that are not ours and have a loot table, which its loot modifier adds to;
+    our own mobs list the item in their ``loot`` (content/mobs/)."""
+    problems: list[Problem] = []
+    for entry in content.items:
+        for n, drop in enumerate(entry.model.dropped_by):
+            path = f"dropped_by.{n}.entity"
+            namespace, entity_path = drop.entity.split(":", 1)
+            if namespace == MOD_ID:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        path,
+                        f"{drop.entity} is ours: list the item in its loot (content/mobs/{entity_path}.yaml)",
+                    )
+                )
+            elif not universe.contains(ENTITY_TYPE_REGISTRY, drop.entity):
+                problems.append(
+                    Problem(entry.source, path, _unknown(drop.entity, ENTITY_TYPE_REGISTRY, universe))
+                )
+            elif not universe.contains(LOOT_TABLE_REGISTRY, entity_loot_table(drop.entity)):
+                problems.append(
+                    Problem(
+                        entry.source,
+                        path,
+                        f"{drop.entity} has no loot table {entity_loot_table(drop.entity)}",
+                    )
                 )
     return problems
 

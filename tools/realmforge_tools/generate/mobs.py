@@ -24,6 +24,7 @@ from realmforge_tools.generate.javagen import constant_name, header, java_file_p
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.common import LocalizedText
 from realmforge_tools.schema.mob import (
+    DropDef,
     MobDef,
     MobDropDef,
     MobVariantDef,
@@ -104,7 +105,7 @@ def loot_table(mob: MobDef, variant: MobVariantDef | None = None) -> dict[str, o
     drops = mob.loot + (variant.loot if variant is not None else [])
     return {
         "type": "minecraft:entity",
-        "pools": [_pool(drop) for drop in drops],
+        "pools": [drop_pool(drop.item, drop) for drop in drops],
         "random_sequence": mob_loot_table(mob.id, variant.id if variant is not None else None),
     }
 
@@ -113,12 +114,12 @@ def _uniform(low: float, high: float) -> dict[str, object]:
     return {"type": "minecraft:uniform", "min": float(low), "max": float(high)}
 
 
-def _pool(drop: MobDropDef) -> dict[str, object]:
-    """One drop's pool: its count, Looting's extra count (vanilla's ``enchanted_count_increase``) and its chance,
-    which Looting raises by its points per level (vanilla's ``random_chance_with_enchanted_bonus``)."""
-    entry: dict[str, object] = {"type": "minecraft:item", "name": drop.item}
+def drop_pool(item: str, drop: DropDef) -> dict[str, object]:
+    """One drop's pool of ``item``: its count, Looting's extra count (vanilla's ``enchanted_count_increase``) and its
+    chance, which Looting raises by its points per level (vanilla's ``random_chance_with_enchanted_bonus``)."""
+    entry: dict[str, object] = {"type": "minecraft:item", "name": item}
     functions: list[dict[str, object]] = []
-    if drop.count.max > 1:
+    if (drop.count.min, drop.count.max) != (1, 1):
         functions.append(
             {
                 "function": "minecraft:set_count",
@@ -831,16 +832,17 @@ def _registrations(content: Content) -> bytes:
     return source.encode("utf-8")
 
 
-def _drop_expectation(drop: MobDropDef) -> str:
+def drop_expectation(item: str, drop: DropDef) -> str:
+    """The QA mod's {@code DropExpectation} of one drop of ``item``, as Java."""
     return (
-        f"new DropExpectation({string_literal(drop.item)}, {drop.count.min}, {drop.count.max}, "
+        f"new DropExpectation({string_literal(item)}, {drop.count.min}, {drop.count.max}, "
         f"{_double(percent_to_fraction(drop.chance_percent))}, {drop.looting_count}, "
         f"{_double(percent_to_fraction(drop.looting_chance_percent))})"
     )
 
 
 def _drops(drops: list[MobDropDef], indent: str) -> str:
-    return "List.of(" + f",\n{indent}".join(_drop_expectation(drop) for drop in drops) + ")"
+    return "List.of(" + f",\n{indent}".join(drop_expectation(drop.item, drop) for drop in drops) + ")"
 
 
 def _string(value: str | None) -> str:
