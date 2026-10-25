@@ -97,7 +97,8 @@ became the water realm Atlantis (2026-10-19, RLM-265).
   chapter 1's main questline, whose last step is the realm's unlock quest and also gives the Signet of the Undervault
   ([realm portal spec](realm-portal.md#access-and-unlocks)). Overworld's own final boss gates Undervault once it exists
   (Matěj, 2026-10-16; [Overworld](#the-overworld)). The item rule of [Opening the next realm](#opening-the-next-realm)
-  (RE-9) starts with the second realm, because Overworld has neither a realm ore nor a boss drop to craft the item from.
+  (RE-9) covers Undervault too once that boss exists (M2): the Illusioner drops the Stone Signet Shard, crafted with
+  diamonds, Overworld's most precious gem, and stone into the Signet of the Undervault (RLM-395).
 - 1 stat point (Matěj, 2026-10-15, RLM-196) and about 1 skill point per level; spell limits per chapter as in D4
   (RLM-54).
 - Each chapter ends in a short main quest chain whose last step opens the next band (PR-1); everything else is
@@ -221,11 +222,21 @@ Puzzles are welcome under these rules (Matěj, 2026-10-12, replacing the earlier
 
 - **A realm has no completion flag of its own.** The main path runs through its instanced dungeons and the chapter's
   quest chain.
-- **The next realm's item comes from the realm the player leaves:** crafted from the current realm's ore or gem plus
-  the guaranteed drop of its main-path boss, with the recipe shown in the quest log (RE-9). The item is never
-  consumed. It opens the portal; the realm itself unlocks for each player through the realm's unlock quest (Matěj,
-  RLM-128). The portal itself, the item per realm and the access rules are the
-  [realm portal spec](realm-portal.md)'s job (RLM-41).
+- **The next realm's item comes from the realm the player leaves:** its signet is crafted around the shard that the
+  realm's final boss drops, with the recipe shown in the quest log (RE-9). The item is never consumed, and the player
+  keeps it: no quest takes, cuts or sends it. It opens the portal onto its own realm only, and there is no master
+  signet; the realm itself unlocks for each player through the realm's unlock quest (Matěj, RLM-128). The portal
+  itself, the item per realm and the access rules are the [realm portal spec](realm-portal.md)'s job (RLM-41).
+- **Final bosses drop shards, never signets** (Matěj, 2026-10-23 and 2026-10-24, RLM-395). Each realm's final boss
+  drops, at 100% and on every kill, the unique material the next signet's recipe needs, so the boss is always a
+  source. Every signet takes its realm's shard in the middle, 4 of the previous realm's ore or gem on the sides and 4
+  of the new realm's theme block in the corners: the Signet of the Undervault the Illusioner's Stone Signet Shard, 4
+  diamonds and 4 stone (M2; in M1 chapter 1's last quest still gives it), the Signet of the Sunwastes its shard, 4
+  netherite scraps and 4 sand. What Undervault's boss drops for the twins is open
+  ([realm portal spec, open question 2](realm-portal.md#open-questions)).
+- **A quest shop sells a lost signet:** after a realm's final boss quest, the quest journal's shop (the Lodge Merchant
+  tab, RLM-407) sells the signet of the realm that boss unlocks, whole, up to 3 times, for a price relative to the
+  signet's level that never rises: 50 copper coins for the Signet of the Undervault. After that only the boss is left.
 
 ### Travel
 

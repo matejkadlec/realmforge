@@ -955,6 +955,14 @@ behind, of magic or with a one-handed sword, and the tag's members.
   specialization, a dual spec. M1 has one specialization per class; the other two, and dual spec, come in M3
   (Matěj, 2026-10-16). The `character` attachment still stores the class in a list from when dual class was
   planned; the specialization work (the spell tree model, C5, RLM-333) decides what it stores instead.
+  - **The Warrior's** (Matěj, 2026-10-23/24, RLM-392) follow WotLK: **Arms** starts with Slam, **Fury** with
+    Reckless Strike and **Protection** with Shield Bash. Each also gets one stance, a little later in its tree.
+  - **The Mage's** (Matěj, 2026-10-23/24, RLM-391) are named after their schools: **Fire** (damage over time, the
+    most DPS) starts with Fireball, **Frost** (utility) with Frostbolt and **Arcane** (burst: more damage and higher
+    mana costs in general) with Arcane Missiles.
+  - **Every specialization's first spell has max rank 5**, and every rank raises its damage and its effect, never
+    its cooldown. The spells, their stances and the rules that come with them are in
+    [11.7](#117-class-spells-and-stances). Which tree each class gets in M1 is open (C5).
 - **Changing race or class:** a QA command in M1, an in-game way later.
 - **In code (C1):** `character/Race` and `character/PlayerClass` are the entries of `realmforge:race` and
   `realmforge:class` (`CharacterRegistries`, both synced). A race names its classes by id, so a missing class fails
@@ -1385,6 +1393,90 @@ reads the cast from `ClientCasts` and the spell from the synced registry and dra
 hands, in front of its forehead (`SpellVisuals#formOffset`: 0.4 blocks above its eyes, never above its height), from
 15 % of its size at the cast's start to all of it at its end, where the server launches it from
 ([11.2](#112-casting-server-authoritative)).
+
+### 11.7 Class spells and stances
+
+Decided, not built yet (Matěj, 2026-10-23/24, RLM-391 and RLM-392): C4 Class kits (RLM-27) builds these spells
+and their first balance pass, C5 (RLM-333) the specialization trees they start ([10.1](#101-races-and-classes)).
+The stun, spell penetration, stances and the crit overflow below are new to the engine, so C4 builds them too.
+Damage labels (Low, Medium, High) compare a spell with the other spells; they are not numbers.
+
+- **Ranks:** every specialization's first spell has max rank 5 (its maximum level, [11.1](#111-model)). A rank
+  raises the spell's damage and its effect. **Cooldowns don't shrink with rank:** a spell gets a lower base cooldown
+  instead of a high one that shrinks later, since Cooldown Reduction lowers it as the player progresses
+  ([11.5](#115-resources-cooldowns-modifiers)).
+- **Who is limited by what:** the Warrior's spells are instant with longer cooldowns; the Mage's main spells are
+  limited by their cast time and have short or no cooldowns, as in WoW. For casters Cast Time Reduction does much
+  what Cooldown Reduction does: it sets how often a spell can be cast. Cooldown Reduction is primarily a caster stat;
+  it also shortens Warrior spells, but a full-CDR Protection Warrior would have plenty of utility and little damage
+  or durability. The global cooldown (0.5 s, [11.5](#115-resources-cooldowns-modifiers)) still applies to all of
+  them, so no spell can be spammed even when its cast time drops very low.
+
+**The Mage's first spells** (RLM-391):
+
+| Specialization | First spell | Damage | Cast and cooldown | Effect by rank 1 / 2 / 3 / 4 / 5 |
+| --- | --- | --- | --- | --- |
+| Fire | Fireball | Medium | 1.5 s cast at every rank, no cooldown | Burning (fire damage over time) I / I / I / I / II |
+| Frost | Frostbolt | Medium | 1.5 s cast at every rank, no cooldown | Slowness I / I / I / I / II |
+| Arcane | Arcane Missiles | High | a 3 s channel of 3 missiles at every rank, no cooldown; costs more mana than Fireball or Frostbolt | spell penetration 5 / 10 / 15 / 20 / 25 % |
+
+- Only the cast time limits Fireball and Frostbolt. Cast Time Reduction later brings them to about 0.5 s: in the
+  early and mid game they are the main damage, and later the player casts many other spells around them.
+- Cast Time Reduction shortens Arcane Missiles' channel and keeps its 3 missiles: about 66 % casts them in 1 s late
+  in the game. That is enough scaling: fewer seconds and more missiles together could be a problem, and not reducing
+  a channel's time would be wrong globally.
+- "No cooldown" is only for these base spells: many other Mage spells, Ice Block above all, keep normal cooldowns.
+- This replaced the proposal of 2026-10-19 (a 1 s cast at rank 1 down to instant at rank 5, and 3 / 3 / 4 / 4 / 5
+  missiles).
+
+**The Warrior's first spells** (RLM-392; rage costs approximate, confirmed by Matěj on 2026-10-24):
+
+| Specialization | First spell | Damage | Cast and cooldown | Rage | Effect by rank 1 / 2 / 3 / 4 / 5 |
+| --- | --- | --- | --- | --- | --- |
+| Arms | Slam | High | instant, about 6 s | about 30 | that hit has an extra 5 / 10 / 15 / 20 / 25 % Armor Shred |
+| Fury | Reckless Strike | Medium | instant, about 4 s | about 20 | that hit has an extra 10 / 15 / 20 / 25 / 30 % Crit Chance |
+| Protection | Shield Bash | Medium | instant, about 6 s | about 15 | stuns its targets for 0.5 / 0.75 / 1 / 1.25 / 1.5 s |
+
+- **Instant** means the spell starts at once, without a cast bar (Matěj, 2026-10-24). It still plays out over its
+  animation (about 0.5 to 1.5 s) and deals its damage at the hit moment during it: Slam at the middle of its swing
+  of about 1 s, Reckless Strike and Shield Bash at first contact after about 0.25 s (their animations last about 1 s
+  and 0.5 s).
+- **Areas:** most melee spells hit an area, and single target stays for spells like Execute (Matěj, 2026-10-24).
+  Slam is D4's Warrior starting spell, "a Slam but AoE", and Shield Bash's stun hits an area too. Their hit shapes,
+  and a splash explosion for the Mage's bolts, come in RLM-399 with the animations (C6, RLM-29).
+- **Shield Bash** hits with the shield, not the weapon: it needs a shield in either hand and no weapon.
+- **Crit overflow:** a hit's crit chance above 100 % (Reckless Strike's bonus can take it there) turns into crit
+  damage 1:1: every 1 % of chance above 100 % adds 1 % crit damage ([9.1](#91-damage-pipeline)).
+- **Rage:** the cost is the same at every rank (spent per second of cooldown: Slam and Reckless Strike 5, Shield
+  Bash 2.5; Protection also gains rage from damage taken, [11.5](#115-resources-cooldowns-modifiers)). C4 tunes the
+  costs together with the rage gain. A spell may cost 0 rage, but these first spells don't.
+- **Later in the trees:** Mortal Strike (Arms) will reduce healing, since our custom mobs and especially bosses heal;
+  Bloodthirst (Fury) becomes a self-buff; Lifesteal comes later in the kit.
+- **Stuns:** ordinary mobs get no stun immunity or diminishing returns for now (outside boss fights the player rarely
+  fights one mob alone), nerfed in the playtest if needed. Bosses are set one by one: by default neither immune nor
+  shortened, but many get stun immunity, a stun only once in a while, or stuns only in some phases.
+- **No pure tank or pure healer:** every class stands on its own; Protection and the Paladin (RLM-162) are bruisers
+  that also deal damage.
+
+**Stances** (RLM-392, a first draft): each Warrior specialization gets one stance, a little later in its tree, as an
+aura spell.
+
+| Stance | Specialization | Bonus | Weapon condition |
+| --- | --- | --- | --- |
+| Fighter | Arms | + % Attack Damage | a two-handed weapon |
+| Berserker | Fury | + % Attack Speed and + % Lifesteal; the player takes X % more damage | no shield: one one-handed weapon, two one-handed weapons or a two-handed weapon |
+| Defensive | Protection | + % damage reduction and − % damage dealt | a one-handed weapon and a shield |
+
+- **One stance at a time:** a player with several stance spells (through dual spec, say) has only one active.
+- **Once every 5 minutes** a stance can be turned on, turned off or switched, so fast stance swapping can't be
+  abused.
+- **The weapon condition pauses, never ends, a stance:** while it is not met (a torch in the offhand), the stance
+  stays on and only its bonuses pause; that neither turns it off nor starts the 5 minutes.
+
+**Open, for C4 and C5:** base damage and damage per rank; how Burning's damage and Slowness's strength or duration
+grow between ranks 1 and 4; mana costs; the stance percentages (X); exact rage costs and cooldowns; which tree each
+class gets in M1; whether the Mage's D4 starting spell ("a Frostbolt-like fast single-target cast that slows",
+RLM-54) is Frostbolt itself.
 
 ## 12. Talents
 

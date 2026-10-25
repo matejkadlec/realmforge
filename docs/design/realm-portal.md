@@ -18,7 +18,8 @@
 > W2b (2026-10-20) named the frame's blocks Realmforge Bricks and the Realmforge Sealstone and the realms' keys
 > signets (the first version's Portal Stone, realm selector and sigils), changed their recipes, let every entity
 > travel and set trip-built frames into the floor, with Realmforge Bricks in their corners ([Decisions](#decisions),
-> 12 to 14). Other block and item names
+> 12 to 14). RLM-395 (2026-10-23 and 2026-10-24) made every signet a recipe around a shard that its realm's final
+> boss drops, and let a quest shop sell a lost signet ([Decisions](#decisions), 15 to 17). Other block and item names
 > are working names; realm names are the approved ones of the [lore outline](../lore/outline.md#the-realms)
 > (RLM-139, RLM-188), without an article. The v1 realm layout (RLM-188, 2026-10-16) moved the stone realm to
 > chapter 2 (levels 6–18) and its unlock to the end of chapter 1's main questline. APIs named here were checked
@@ -50,9 +51,9 @@
 | Realm | Signet (working name) | How a player gets the signet | What unlocks the realm | Portal colour |
 | --- | --- | --- | --- | --- |
 | Overworld | none | - | always open | green `#5DBB63` |
-| Stone realm (Undervault) | Signet of the Undervault | reward of chapter 1's last main quest, the realm's unlock quest; a repeatable quest replaces a lost one | that quest, at about level 6 | slate blue `#7A8FB0` |
-| Desert realm (Sunwastes) | Desert Signet | crafted from a stone realm ore plus the stone realm boss's guaranteed drop (RE-9) | its main-chain quest after the stone realm boss | gold `#E8B84A` |
-| Tundra realm (Everwinter) | Tundra Signet | the same, with a different stone realm ore | its own quest after the same boss | ice white `#BFF4FF` |
+| Stone realm (Undervault) | Signet of the Undervault | in M1 the reward of chapter 1's last main quest, the realm's unlock quest; from M2 crafted from the Illusioner's Stone Signet Shard, 4 diamonds and 4 stone (RLM-395); the quest shop sells a lost one, up to 3 times | that quest, at about level 6 | slate blue `#7A8FB0` |
+| Desert realm (Sunwastes) | Desert Signet | crafted around its shard from the stone realm boss's guaranteed drop, with 4 of a stone realm ore or gem and 4 sand (RE-9, RLM-395) | its main-chain quest after the stone realm boss | gold `#E8B84A` |
+| Tundra realm (Everwinter) | Tundra Signet | the same, with its own shard and the tundra realm's theme block | its own quest after the same boss | ice white `#BFF4FF` |
 | Fire realm (Ashfire) | Fire Signet | from the realm before it, by the same rule | the quest after that realm's boss | red `#E0502C` |
 | Void realm (Unmade Isles) | Void Signet | from the realm before it, by the same rule (RLM-95) | the quest after that realm's boss | deep purple `#4B1F6F` |
 
@@ -141,30 +142,49 @@ hoppers have nothing to take.
 - **A signet is a key, not the unlock.** Every copy of a realm's signet is the same item, whoever obtained it, and
   anyone may hold one (Matěj, RLM-128). A player needs a signet to open or switch a portal, and their own unlock
   ([Access and unlocks](#access-and-unlocks)) to use it.
-- **Where signets come from** (RE-9, LE-1):
-  - **the Signet of the Undervault** is a reward of the stone realm's unlock quest, the last quest of chapter 1's main
-    questline (the roadmap's "locked until chapter 1's main questline unlocks it"; Undervault opens at about level 6,
-    with no hard level lock, [realm design](realms.md#chapters-and-levels)). The same quest grants the unlock;
-  - **a lost Signet of the Undervault** comes back through a repeatable quest that opens once that first quest is
-    complete and gives a new signet for a few copper ingots (FTB Quests' repeatable quests; Q1 checks the field). A
-    player who lost the signet before or after opening a portal is never stuck;
-  - **every later main-path signet is crafted** from an ore or gem of the realm the player is leaving plus the
-    guaranteed drop of that realm's main-path boss. The recipe is shown in the quest log, and crafting the signet is
-    a step of the chapter's main chain. Beating that boss is what "completing" a realm means; the realm itself has
-    no completion flag ([realm design](realms.md#opening-the-next-realm));
+- **A signet opens its own realm only** (Matěj, 2026-10-23, RLM-395): the Signet of the Undervault opens Undervault,
+  in the game and in the lore, and there is no master signet that opens several.
+- **Players keep their signets** (Matěj, 2026-10-23, RLM-395): no quest takes, cuts or sends one. A quest that needs
+  a signet only confirms that the player holds the right one, and the player keeps it.
+- **Where signets come from** (RE-9, LE-1; Matěj, 2026-10-23 and 2026-10-24, RLM-395):
+  - **final bosses never drop signets.** Each realm's final boss drops, at 100%, a unique crafting material that the
+    next signet's recipe needs, its **shard**, and every kill gives another, so the boss is always a source;
+  - **every signet's recipe follows one rule:** its realm's shard in the middle, 4 of the previous realm's ore or gem
+    on the sides and 4 of the new realm's theme block in the corners, with no ring step. The Signet of the Undervault
+    takes the Stone Signet Shard, 4 diamonds and 4 stone ("combine the shard with the most precious of the
+    Overworld's gems and some stone", as the lore puts it); the Signet of the Sunwastes takes its shard, 4 netherite
+    scraps and 4 sand. The recipe is shown in the quest log, and crafting the signet is a step of the chapter's main
+    chain. Beating the boss is what "completing" a realm means; the realm itself has no completion flag
+    ([realm design](realms.md#opening-the-next-realm));
+  - **the Signet of the Undervault** is crafted around the **Stone Signet Shard**, the Illusioner's piece of the old
+    signet: Overworld's final boss (M2, RLM-321) drops it. In M1 there is no Illusioner, so the signet stays a reward
+    of the stone realm's unlock quest, the last quest of chapter 1's main questline, The Ominous Chief (the roadmap's
+    "locked until chapter 1's main questline unlocks it"; Undervault opens at about level 6, with no hard level lock,
+    [realm design](realms.md#chapters-and-levels)). The same quest grants the unlock in both milestones;
+  - **a lost signet comes back from the quest shop** or from its boss. After a realm's final boss quest, a shop in the
+    quest journal (the Lodge Merchant tab, RLM-407, M2) sells the signet of the realm that boss unlocks, as a whole
+    item, not its shard: repeatable up to 3 times, for a price relative to the signet's level that does not rise
+    with purchases. The Signet of the Undervault costs 50 copper coins, the lowest of RLM-284's coins (Matěj,
+    2026-10-24), and its quest stays locked until the Illusioner quest is done. After 3 purchases only the boss is
+    left; with keep inventory, losing a signet 4 times should be rare. This replaces the first version's repeatable
+    quest that gave a new Signet of the Undervault for a few copper ingots. M1's case is
+    [open question 4](#open-questions);
   - **when the next chapter has two realms** (chapter 3: Sunwastes and Everwinter), the boss before them
-    (Undervault's) drops one material per realm it opens, two, every kill;
+    (Undervault's) drops one material per realm it opens, two, every kill. Which materials those are is
+    [open question 2](#open-questions);
   - **when two realms share a chapter, the next main-path signet needs both:** its recipe takes the guaranteed drop
     of each realm's main-path boss (for the realm after chapter 3: Sunwastes' and Everwinter's), so finishing one
     branch never opens the next realm. Both realms are needed for further progress
-    ([realm design](realms.md#the-desert-realm));
+    ([realm design](realms.md#the-desert-realm)); how that fits a recipe with one shard is
+    [open question 3](#open-questions);
   - **an optional side realm's signet** comes from wherever its design puts it: a chest at 100% in an instanced
     dungeon, which is rebuilt for every run, or a trade that restocks; never a random drop, and never a chest found
     only once (PR-15).
-- **Nothing depends on luck, and every signet can be replaced:** each source is a quest reward, a guaranteed drop or a
-  recipe. The Signet of the Undervault has its repeatable quest; every later signet is crafted again from a boss the
-  player can always replay, since an NPC sells the keys of dungeons already done (LE-2). A lost signet never locks the
-  realm again, because the unlock belongs to the player.
+- **Nothing depends on luck, and every signet can be replaced:** each source is a quest reward, a guaranteed drop, a
+  recipe or the quest shop. A lost signet is bought back, up to 3 times, or crafted again from a boss the player can
+  always replay: another Illusioner kill gives another Stone Signet Shard, and every later boss waits in its dungeon,
+  since an NPC sells the keys of dungeons already done (LE-2). A lost signet never locks the realm again, because the
+  unlock belongs to the player.
 
 ## Access and unlocks
 
@@ -183,8 +203,8 @@ hoppers have nothing to take.
   other member, one who joins later included, at their next login. Whether that exception stays is an
   [open question](#open-questions). Its tasks are the player's own progress, never "have the signet", which a trade
   could complete:
-  - **the stone realm's:** the last quest of chapter 1's main questline; it also rewards the Signet of the Undervault.
-    Q2 writes it;
+  - **the stone realm's:** the last quest of chapter 1's main questline; in M1 it also rewards the Signet of the
+    Undervault, which the player crafts from M2 on ([Realm signets](#realm-signets)). Q2 writes it;
   - **a later main-path realm's:** the main-chain step after the boss or bosses whose drops its signet takes, with a
     task such as defeating that boss (`realmforge:boss_defeated`). The chapter that adds the realm writes it.
 - **The access requirement:** the realm dimension's entry in `realmforge:dimension_rules` holds it
@@ -663,8 +683,10 @@ W2 is split in two (Matěj, RLM-128; the roadmap holds the plan):
   linking and building (trip-built frames drop nothing), the sealstone's gestures, the look and the sounds. It uses
   vanilla particles and sounds; textures are placeholders until the art pipeline makes them.
 - **Q2** (chapters 1 and 2) adds the stone realm's unlock quest, which rewards the unlock and the Signet of the
-  Undervault, the quests that walk through the frame, and the repeatable quest that replaces a lost signet. Until then
-  `/give`, `/advancement grant` and the QA mod stand in.
+  Undervault, and the quests that walk through the frame. Until then `/give`, `/advancement grant` and the QA mod
+  stand in.
+- **M2** brings the Illusioner and his Stone Signet Shard (RLM-321), the signet's recipe, and the quest shop that
+  sells a lost signet (the Lodge Merchant tab, RLM-407), whose buy quests the quest pipeline generates (Q1, RLM-37).
 - **Later:** the "Return to last death" scroll (RLM-155); the desert and tundra signets with M4's realms; a tinted
   overlay; our own sounds (A3); a realm map; shared quests in a party (RLM-156).
 
@@ -708,14 +730,37 @@ His playtest of W2b (2026-10-20, RLM-154) added:
     without jumping (Matěj's reconfirmation of 2026-10-20; the first revision of that day stood it on top of the
     floor). The corners stay optional for a player's own frame.
 
+His decisions of 2026-10-23 and 2026-10-24 on signets (RLM-395, from RLM-351's story beats) added:
+
+15. **One signet, one realm, and the player keeps it:** the Signet of the Undervault opens Undervault only, with no
+    master signet, and no quest takes, cuts or sends a signet ([Realm signets](#realm-signets)).
+16. **Final bosses drop shards, never signets:** at 100%, every kill, the shard the next signet's recipe takes in its
+    middle, with 4 of the previous realm's ore or gem and 4 of the new realm's theme block. The Illusioner's is the
+    Stone Signet Shard (M2); in M1 the last quest of chapter 1 still gives the Signet of the Undervault.
+17. **A quest shop sells a lost signet,** up to 3 times, after the boss quest: the Signet of the Undervault for 50
+    copper coins, locked until the Illusioner quest is done. It replaces the repeatable quest of the first version.
+
 ## Open questions
 
 Matěj answered every question of the first version (RLM-128). The numbers marked as proposals (the materials, the
 stone realm's level rule and its 1:16 scale, Overworld's arrival `y` range) are checked in his playtests of W2a
-and W2b. One question is open:
+and W2b. Four questions are open:
 
 1. **FTB Teams parties share realm unlocks.** FTB Quests keeps progress per FTB Teams team, so a player who joins
    someone's party (`/ftbteams party`) gets that team's realm unlocks and chapter advancements at their next login
    ([Access and unlocks](#access-and-unlocks)), an exception to "unlocks are per player, for now". Keep that
    exception, or disable FTB Teams parties in the pack until our own parties (RLM-68) exist? It belongs to the
    party quest sharing of RLM-156; until Matěj answers, the spec describes the pack as it is.
+2. **What Undervault's final boss drops** (RLM-395, raised on 2026-10-25). Matěj's rule of 2026-10-23 has it drop
+   the Stone Heart for the twins' signets. That clashes with his signet rule of 2026-10-24, which puts the realm's
+   own shard in the middle of every signet, and with the [realm design](realms.md#the-hub-realm), where the Stone
+   Heart goes into the Asgard Medallion (RLM-245). Proposal: the boss drops all three at 100%, every kill: the Stone
+   Heart for the medallion, and two shards, the Sun Signet Shard and the Ice Signet Shard, one for each twin signet.
+   It waits for his answer on RLM-351's story beats page (chapter 2, question 1).
+3. **The signet after the twins** needs the guaranteed drop of both twin bosses
+   ([Realm signets](#realm-signets)), but the recipe rule has one shard in the middle. Proposal: each twin boss drops
+   one half of the next realm's shard, and the two halves craft into the shard. It matters with M4's twin realms.
+4. **A lost Signet of the Undervault in M1.** M1 has neither the Illusioner nor the Lodge Merchant, so its signet
+   has only the one quest reward, and the signet source check ([Data](#data-contentrealms)) asks for a renewable
+   source. Proposal: M1 already gets the shop's one signet quest (50 copper, up to 3 times, unlocked by The Ominous
+   Chief), since coins (RLM-284) and the quest pipeline (Q1) are M1 work; the rest of the tab stays M2.
