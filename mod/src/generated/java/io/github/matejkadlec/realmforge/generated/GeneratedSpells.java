@@ -80,7 +80,7 @@ public final class GeneratedSpells {
     /** {@code realmforge:test_slow_bolt} from {@code content/spells/test_slow_bolt.yaml}: fire, enemy, damage. */
     public static final ResourceKey<Spell> TEST_SLOW_BOLT = key("test_slow_bolt");
 
-    /** {@code realmforge:test_slow_missile} from {@code content/spells/test_slow_missile.yaml}: fire, enemy, projectile. */
+    /** {@code realmforge:test_slow_missile} from {@code content/spells/test_slow_missile.yaml}: fire, direction, projectile. */
     public static final ResourceKey<Spell> TEST_SLOW_MISSILE = key("test_slow_missile");
 
     /** {@code realmforge:test_strike} from {@code content/spells/test_strike.yaml}: physical, enemy, damage. */

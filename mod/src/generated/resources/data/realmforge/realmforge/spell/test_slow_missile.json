@@ -4,7 +4,7 @@
   "school": "realmforge:fire",
   "scales_with": "spell_power",
   "targeting": {
-    "type": "realmforge:enemy",
+    "type": "realmforge:direction",
     "range": 16.0
   },
   "cast": {

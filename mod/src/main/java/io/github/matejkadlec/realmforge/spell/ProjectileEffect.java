@@ -17,19 +17,21 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * {@code realmforge:projectile}: launches a {@link SpellProjectile} from the caster's eyes along the target's direction
- * (toward an enemy, a ground point, or along a direction), which runs its own {@code effects} on the first enemy it
- * hits (architecture 11.3). A spell that forms it during its cast ({@link SpellCast#formsProjectile}) launches it from
- * where it formed, in front of the caster ({@link SpellVisuals#formPoint}), toward the target.
+ * (toward an enemy, a ground point, or along a direction: where the crosshair points, RLM-344), which runs its own
+ * {@code effects} on the first enemy it hits (architecture 11.3). A spell that forms it during its cast
+ * ({@link SpellCast#formsProjectile}) launches it from where it formed, in front of the caster
+ * ({@link SpellVisuals#formPoint}), toward the target.
  *
  * @param speed blocks per second
  * @param size the width and height of its hitbox, in blocks
- * @param lifetimeTicks how long it flies before it fizzles
+ * @param lifetimeTicks how long it flies before it fizzles; without one it flies until it hits something or leaves
+ *     the world ({@link SpellProjectile})
  * @param effects what it does to the enemy it hits, in order
  * @param spares an entity type tag whose entities stop it but take none of its effects
  * @param impact its sound and particles where it hits a block or an entity
  * @param appearance how it looks; without it, a trail of sparks
  */
-public record ProjectileEffect(double speed, double size, int lifetimeTicks, List<SpellEffect> effects,
+public record ProjectileEffect(double speed, double size, Optional<Integer> lifetimeTicks, List<SpellEffect> effects,
         Optional<TagKey<EntityType<?>>> spares, Optional<Impact> impact, Optional<Appearance> appearance)
         implements SpellEffect {
     public static final double MAX_SPEED = 100;
@@ -39,7 +41,7 @@ public record ProjectileEffect(double speed, double size, int lifetimeTicks, Lis
     public static final MapCodec<ProjectileEffect> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                     Codec.doubleRange(0, MAX_SPEED).fieldOf("speed").forGetter(ProjectileEffect::speed),
                     Codec.doubleRange(0, MAX_SIZE).optionalFieldOf("size", 0.5).forGetter(ProjectileEffect::size),
-                    Codec.intRange(1, MAX_LIFETIME_TICKS).optionalFieldOf("lifetime_ticks", 100)
+                    Codec.intRange(1, MAX_LIFETIME_TICKS).optionalFieldOf("lifetime_ticks")
                             .forGetter(ProjectileEffect::lifetimeTicks),
                     ExtraCodecs.nonEmptyList(SpellEffect.CODEC.listOf()).fieldOf("effects")
                             .forGetter(ProjectileEffect::effects),

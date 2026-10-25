@@ -49,8 +49,8 @@ import net.neoforged.neoforge.registries.DeferredHolder;
  *   <li>{@code /qa spell cast <spell> [<target>]} casts it at the target (none by default: a self or ally spell then
  *   takes the caster, a ground point or a direction follows where the caster looks) and says why when the cast is
  *   refused; a cast-time or channelled spell begins (C3a-2).</li>
- *   <li>{@code /qa spell cast_at <spell> <pos>} casts it at a point: a ground point there, or a direction toward it
- *   (C3a-3).</li>
+ *   <li>{@code /qa spell cast_at <spell> <pos>} casts it at a point: a ground point there, clamped to its range along
+ *   the line toward it when farther (RLM-346), or a direction toward it (C3a-3).</li>
  *   <li>{@code /qa spell cancel} cancels the cast in progress.</li>
  *   <li>{@code /qa spell resource <mana|rage> <amount>} sets a resource pool, within its maximum.</li>
  *   <li>{@code /qa spell reset} ends every cooldown, the global one included.</li>
