@@ -168,6 +168,33 @@ public final class WeaponBlockGameTests {
         helper.succeed();
     }
 
+    /**
+     * The window check sees a leveled mob's hit as the level scaled it (MobLevels before the pipeline): a level-1
+     * zombie's hit opens the window, and a level-10 zombie's hit of the same base damage, 1.5 times as big after its
+     * level, beats the window and is blocked in full, not let through by the difference.
+     */
+    @QaGameTest
+    public static void aRaisedWeaponBlocksAHigherLevelMobsHitInTheWindow(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = blocker(helper, "qa-block-levels", 0);
+        Zombie low = zombieInFront(helper);
+        Zombie high = zombieInFront(helper);
+        MobLevels.setLevel(high, 10);
+        player.hurtServer(level, level.damageSources().mobAttack(low), SMALL_HIT);
+        helper.assertTrue(player.invulnerableTime > 10, "the first hit opened a window: " + player.invulnerableTime);
+        ItemStack greatsword = raise(player, new ItemStack(QaItems.TEST_GREATSWORD.get()), 2);
+        long sounds = blockSounds(helper, player);
+
+        float before = player.getHealth();
+        helper.assertFalse(player.hurtServer(level, level.damageSources().mobAttack(high), SMALL_HIT),
+                "the level-10 zombie's scaled hit was blocked in full");
+        helper.assertTrue(close(player.getHealth(), before), "nothing dealt: " + (before - player.getHealth()));
+        helper.assertTrue(player.getCooldowns().isOnCooldown(greatsword), "the block started the cooldown");
+        helper.assertValueEqual(blockSounds(helper, player), sounds + 1, "block sounds after the block");
+        level.getServer().getPlayerList().remove(player);
+        helper.succeed();
+    }
+
     /** A hit from behind is not blocked, nor one at a player holding up a one-handed sword, nor magic. */
     @QaGameTest
     public static void hitsFromBehindOrAtASwordOrOfMagicAreNotBlocked(GameTestHelper helper) {

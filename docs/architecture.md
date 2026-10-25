@@ -1602,7 +1602,9 @@ levels (RLM-304, RLM-305) come later.
   result. Whether the level's multiple should compound instead is settled with the first other source of a mob's
   maximum health. Damage is a multiplier on `LivingIncomingDamageEvent` for every hit whose causing entity
   (`DamageSource#getEntity`) is a leveled mob, so arrows, explosions and thrown potions grow with the level too; only
-  melee reads the attack damage attribute. The shipped curves add nothing at level 1, and a curve a data pack removed
+  melee reads the attack damage attribute. It runs at `HIGH` priority, before the damage pipeline
+  ([9.1](#91-damage-pipeline)), so the pipeline's steps see the scaled hit: a raised weapon compares that one with the
+  hurt cooldown window's `lastHurt`, which vanilla set from a scaled hit too. The shipped curves add nothing at level 1, and a curve a data pack removed
   adds nothing.
 - **At spawn:** in `FinalizeSpawnEvent`, `mob` rolls the level from the rules of the mob's dimension and the player
   nearest the spawn position, writes it into `realmforge:level` and applies the scaling. A mob spawned with a new chunk

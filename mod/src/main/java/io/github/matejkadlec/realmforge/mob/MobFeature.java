@@ -31,6 +31,9 @@ public final class MobFeature {
         NeoForge.EVENT_BUS.addListener(MobSplitEvent.class, MobLevels::onMobSplit);
         // After NeoForge's own listener has copied the old mob's attachments, the level among them.
         NeoForge.EVENT_BUS.addListener(EventPriority.LOW, LivingConversionEvent.Post.class, MobLevels::onConversion);
-        NeoForge.EVENT_BUS.addListener(LivingIncomingDamageEvent.class, MobLevels::onIncomingDamage);
+        // Before the combat pipeline, so its steps (the raised weapon's check against the hurt cooldown window
+        // above all) see the hit the level scaled; every other step of the pipeline scales with the amount.
+        NeoForge.EVENT_BUS.addListener(EventPriority.HIGH, LivingIncomingDamageEvent.class,
+                MobLevels::onIncomingDamage);
     }
 }
