@@ -1,0 +1,652 @@
+{
+  "$defs": {
+    "AdvancementRewardDef": {
+      "additionalProperties": false,
+      "description": "One of our own advancements, such as a realm's unlock ``realmforge:realm/<id>``; per player and claimed by\nitself. A chapter's advancement comes from ``completes_chapter`` instead.",
+      "properties": {
+        "advancement": {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Advancement",
+          "type": "string"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "description": "Keeps the task's or reward's id stable. Defaults to its type and target (item:minecraft:diamond); set it only to tell two tasks or rewards of one quest apart, or to keep the old id after the target changes.",
+              "maxLength": 128,
+              "pattern": "^[a-z0-9_.:/-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key"
+        },
+        "type": {
+          "const": "advancement",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "advancement"
+      ],
+      "title": "AdvancementRewardDef",
+      "type": "object"
+    },
+    "AdvancementTaskDef": {
+      "additionalProperties": false,
+      "description": "Have an advancement, or one of its criteria. Retroactive: an advancement earned before counts.",
+      "properties": {
+        "advancement": {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Advancement",
+          "type": "string"
+        },
+        "criterion": {
+          "default": "",
+          "description": "One criterion of the advancement; empty for the whole advancement.",
+          "maxLength": 128,
+          "title": "Criterion",
+          "type": "string"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "description": "Keeps the task's or reward's id stable. Defaults to its type and target (item:minecraft:diamond); set it only to tell two tasks or rewards of one quest apart, or to keep the old id after the target changes.",
+              "maxLength": 128,
+              "pattern": "^[a-z0-9_.:/-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalizedText"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Replaces FTB Quests' own title for the task (e.g. 'Kill 10 Zombie')."
+        },
+        "type": {
+          "const": "advancement",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "advancement"
+      ],
+      "title": "AdvancementTaskDef",
+      "type": "object"
+    },
+    "CheckmarkTaskDef": {
+      "additionalProperties": false,
+      "description": "A checkmark the player clicks, for a quest that only tells something.",
+      "properties": {
+        "key": {
+          "anyOf": [
+            {
+              "description": "Keeps the task's or reward's id stable. Defaults to its type and target (item:minecraft:diamond); set it only to tell two tasks or rewards of one quest apart, or to keep the old id after the target changes.",
+              "maxLength": 128,
+              "pattern": "^[a-z0-9_.:/-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalizedText"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Replaces FTB Quests' own title for the task (e.g. 'Kill 10 Zombie')."
+        },
+        "type": {
+          "const": "checkmark",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "CheckmarkTaskDef",
+      "type": "object"
+    },
+    "DimensionTaskDef": {
+      "additionalProperties": false,
+      "description": "Enter a dimension.",
+      "properties": {
+        "dimension": {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Dimension",
+          "type": "string"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "description": "Keeps the task's or reward's id stable. Defaults to its type and target (item:minecraft:diamond); set it only to tell two tasks or rewards of one quest apart, or to keep the old id after the target changes.",
+              "maxLength": 128,
+              "pattern": "^[a-z0-9_.:/-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalizedText"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Replaces FTB Quests' own title for the task (e.g. 'Kill 10 Zombie')."
+        },
+        "type": {
+          "const": "dimension",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "dimension"
+      ],
+      "title": "DimensionTaskDef",
+      "type": "object"
+    },
+    "ItemRewardDef": {
+      "additionalProperties": false,
+      "description": "Items, given when the player claims the reward.",
+      "properties": {
+        "count": {
+          "default": 1,
+          "maximum": 8192,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "item": {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Item",
+          "type": "string"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "description": "Keeps the task's or reward's id stable. Defaults to its type and target (item:minecraft:diamond); set it only to tell two tasks or rewards of one quest apart, or to keep the old id after the target changes.",
+              "maxLength": 128,
+              "pattern": "^[a-z0-9_.:/-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key"
+        },
+        "type": {
+          "const": "item",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "item"
+      ],
+      "title": "ItemRewardDef",
+      "type": "object"
+    },
+    "ItemTaskDef": {
+      "additionalProperties": false,
+      "description": "Have items in the inventory: FTB Quests detects them, and takes them only with ``consume``.",
+      "properties": {
+        "consume": {
+          "default": false,
+          "description": "Take the items when the task completes; otherwise they stay with the player.",
+          "title": "Consume",
+          "type": "boolean"
+        },
+        "count": {
+          "default": 1,
+          "maximum": 2147483647,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "item": {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Item",
+          "type": "string"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "description": "Keeps the task's or reward's id stable. Defaults to its type and target (item:minecraft:diamond); set it only to tell two tasks or rewards of one quest apart, or to keep the old id after the target changes.",
+              "maxLength": 128,
+              "pattern": "^[a-z0-9_.:/-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalizedText"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Replaces FTB Quests' own title for the task (e.g. 'Kill 10 Zombie')."
+        },
+        "type": {
+          "const": "item",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "item"
+      ],
+      "title": "ItemTaskDef",
+      "type": "object"
+    },
+    "KillTaskDef": {
+      "additionalProperties": false,
+      "description": "Kill mobs of a type after the quest opens (not retroactive: prefer an advancement or a statistic where one\nexists, research notes 3).",
+      "properties": {
+        "count": {
+          "default": 1,
+          "maximum": 2147483647,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "entity": {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Entity",
+          "type": "string"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "description": "Keeps the task's or reward's id stable. Defaults to its type and target (item:minecraft:diamond); set it only to tell two tasks or rewards of one quest apart, or to keep the old id after the target changes.",
+              "maxLength": 128,
+              "pattern": "^[a-z0-9_.:/-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalizedText"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Replaces FTB Quests' own title for the task (e.g. 'Kill 10 Zombie')."
+        },
+        "type": {
+          "const": "kill",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "entity"
+      ],
+      "title": "KillTaskDef",
+      "type": "object"
+    },
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    },
+    "PositionDef": {
+      "additionalProperties": false,
+      "description": "Where the quest stands on its chapter's page, in FTB Quests' grid units (one quest is 1 wide).",
+      "properties": {
+        "x": {
+          "description": "Right is positive.",
+          "maximum": 1000.0,
+          "minimum": -1000.0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "description": "Down is positive.",
+          "maximum": 1000.0,
+          "minimum": -1000.0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "PositionDef",
+      "type": "object"
+    },
+    "StatTaskDef": {
+      "additionalProperties": false,
+      "description": "Reach a value of a custom statistic (``minecraft:custom``, e.g. minecraft:mob_kills). Retroactive.",
+      "properties": {
+        "key": {
+          "anyOf": [
+            {
+              "description": "Keeps the task's or reward's id stable. Defaults to its type and target (item:minecraft:diamond); set it only to tell two tasks or rewards of one quest apart, or to keep the old id after the target changes.",
+              "maxLength": 128,
+              "pattern": "^[a-z0-9_.:/-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key"
+        },
+        "stat": {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Stat",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalizedText"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Replaces FTB Quests' own title for the task (e.g. 'Kill 10 Zombie')."
+        },
+        "type": {
+          "const": "stat",
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "stat",
+        "value"
+      ],
+      "title": "StatTaskDef",
+      "type": "object"
+    },
+    "XpRewardDef": {
+      "additionalProperties": false,
+      "description": "Character XP: ``/realmforge xp add``, with the player's XP multiplier and level-ups (architecture 10.2).",
+      "properties": {
+        "amount": {
+          "maximum": 9223372036854775807,
+          "minimum": 1,
+          "title": "Amount",
+          "type": "integer"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "description": "Keeps the task's or reward's id stable. Defaults to its type and target (item:minecraft:diamond); set it only to tell two tasks or rewards of one quest apart, or to keep the old id after the target changes.",
+              "maxLength": 128,
+              "pattern": "^[a-z0-9_.:/-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key"
+        },
+        "type": {
+          "const": "xp",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "amount"
+      ],
+      "title": "XpRewardDef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A quest in the quest book: where it stands, what opens it, what completes it and what it gives.",
+  "properties": {
+    "chapter": {
+      "description": "The chapter of content/chapters/ whose page shows the quest.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Chapter",
+      "type": "string"
+    },
+    "completes_chapter": {
+      "default": false,
+      "description": "The chapter's last quest: it grants the chapter's advancement realmforge:chapter/<chapter>, per player and claimed by itself, which raises the level cap.",
+      "title": "Completes Chapter",
+      "type": "boolean"
+    },
+    "dependencies": {
+      "description": "Quests that must be completed before this one opens.",
+      "items": {
+        "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_]*$",
+        "type": "string"
+      },
+      "title": "Dependencies",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "description": {
+      "description": "The quest's text, one entry per paragraph.",
+      "items": {
+        "$ref": "#/$defs/LocalizedText"
+      },
+      "title": "Description",
+      "type": "array"
+    },
+    "icon": {
+      "anyOf": [
+        {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "An item shown as the quest's icon; FTB Quests picks one from the tasks without it.",
+      "title": "Icon"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "optional": {
+      "default": false,
+      "description": "Optional quests do not count towards the chapter's progress.",
+      "title": "Optional",
+      "type": "boolean"
+    },
+    "position": {
+      "$ref": "#/$defs/PositionDef"
+    },
+    "rewards": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "advancement": "#/$defs/AdvancementRewardDef",
+            "item": "#/$defs/ItemRewardDef",
+            "xp": "#/$defs/XpRewardDef"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/ItemRewardDef"
+          },
+          {
+            "$ref": "#/$defs/XpRewardDef"
+          },
+          {
+            "$ref": "#/$defs/AdvancementRewardDef"
+          }
+        ]
+      },
+      "title": "Rewards",
+      "type": "array"
+    },
+    "subtitle": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LocalizedText"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "One line under the title."
+    },
+    "tasks": {
+      "description": "Every task must be done to complete the quest.",
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "advancement": "#/$defs/AdvancementTaskDef",
+            "checkmark": "#/$defs/CheckmarkTaskDef",
+            "dimension": "#/$defs/DimensionTaskDef",
+            "item": "#/$defs/ItemTaskDef",
+            "kill": "#/$defs/KillTaskDef",
+            "stat": "#/$defs/StatTaskDef"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/ItemTaskDef"
+          },
+          {
+            "$ref": "#/$defs/AdvancementTaskDef"
+          },
+          {
+            "$ref": "#/$defs/StatTaskDef"
+          },
+          {
+            "$ref": "#/$defs/KillTaskDef"
+          },
+          {
+            "$ref": "#/$defs/DimensionTaskDef"
+          },
+          {
+            "$ref": "#/$defs/CheckmarkTaskDef"
+          }
+        ]
+      },
+      "minItems": 1,
+      "title": "Tasks",
+      "type": "array"
+    },
+    "title": {
+      "$ref": "#/$defs/LocalizedText"
+    }
+  },
+  "required": [
+    "id",
+    "chapter",
+    "title",
+    "position",
+    "tasks"
+  ],
+  "title": "QuestDef",
+  "type": "object"
+}

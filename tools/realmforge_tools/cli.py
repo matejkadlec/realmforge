@@ -19,6 +19,8 @@ uv run rf set-pieces import FILE --id ID   import a workshop jig save as content
 from __future__ import annotations
 
 import argparse
+import shutil
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -268,7 +270,8 @@ def main(argv: list[str] | None = None) -> int:
             f"{len(content.rooms)} room(s), {len(content.room_specs)} room spec(s), "
             f"{len(content.room_themes)} room theme(s), {len(content.set_pieces)} set piece(s), "
             f"{len(content.dungeons)} dungeon type(s), "
-            f"{len(content.chapters)} chapter(s), {len(content.kill_xp_multipliers)} kill XP multiplier(s), "
+            f"{len(content.chapters)} chapter(s), {len(content.quests)} quest(s), "
+            f"{len(content.kill_xp_multipliers)} kill XP multiplier(s), "
             f"{len(content.effects)} effect(s), {len(content.spells)} spell(s), {len(content.mobs)} mob(s), "
             f"{len(content.sounds)} sound group(s)."
         )
@@ -286,6 +289,21 @@ def main(argv: list[str] | None = None) -> int:
     for line in result.lines():
         print(line)
     print("Generated files are up to date." if result.clean else f"Updated {len(result.lines())} file(s).")
+    if any(path.startswith("pack/") for path in result.added + result.changed + result.removed):
+        return _refresh_pack(paths)
+    return 0
+
+
+def _refresh_pack(paths: RepoPaths) -> int:
+    """``packwiz refresh`` once ``rf gen`` changed files in pack/ (the quest book), so pack/index.toml lists them as
+    CI expects (architecture 6.2)."""
+    packwiz = shutil.which("packwiz")
+    if packwiz is None:
+        print("pack/ changed and packwiz is not on PATH: run `cd pack && packwiz refresh`", file=sys.stderr)
+        return 1
+    if subprocess.run([packwiz, "refresh"], cwd=paths.root / "pack", check=False).returncode != 0:
+        print("packwiz refresh failed in pack/", file=sys.stderr)
+        return 1
     return 0
 
 

@@ -38,6 +38,7 @@ from realmforge_tools.schema import (
     ItemDef,
     KillXpMultiplierDef,
     MobDef,
+    QuestDef,
     RaceDef,
     RealmDef,
     RoomSpecDef,
@@ -189,6 +190,7 @@ class Content:
     texts: tuple[Entry[TextGroupDef], ...]
     dungeons: tuple[Entry[DungeonTypeDef], ...]
     chapters: tuple[Entry[ChapterDef], ...]
+    quests: tuple[Entry[QuestDef], ...]
     kill_xp_multipliers: tuple[Entry[KillXpMultiplierDef], ...]
     effects: tuple[Entry[EffectDef], ...]
     spells: tuple[Entry[SpellDef], ...]
@@ -282,6 +284,7 @@ def load_content(
         texts=by_id(loaded["texts"]),
         dungeons=by_id(loaded["dungeons"]),
         chapters=by_id(loaded["chapters"]),
+        quests=by_id(loaded["quests"]),
         kill_xp_multipliers=by_id(loaded["kill_xp_multipliers"]),
         effects=by_id(loaded["effects"]),
         spells=by_id(loaded["spells"]),
