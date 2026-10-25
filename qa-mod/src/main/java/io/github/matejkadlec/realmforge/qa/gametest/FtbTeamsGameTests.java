@@ -46,7 +46,8 @@ public final class FtbTeamsGameTests {
     public static void theMyTeamScreenOffersNoParty(GameTestHelper helper) {
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-party-screen");
         try {
-            helper.assertTrue(!PlayerPermissions.forPlayer(player).createParty(), "the My Team screen offers no Create a Party");
+            helper.assertTrue(!PlayerPermissions.forPlayer(player).createParty(),
+                    "the My Team screen offers no Create a Party");
         } finally {
             helper.getLevel().getServer().getPlayerList().remove(player);
         }

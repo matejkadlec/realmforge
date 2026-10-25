@@ -141,10 +141,12 @@ if (providers.gradleProperty('withBetterCombat').isPresent()) {
     leanClientMods += ['better-combat', 'cloth-config']
 }
 
-// WorldEdit 7.4.3, the NeoForge 26.1.2 release on Modrinth (version id gjsLvJfW), named and hashed as Modrinth serves it.
-def worldEdit = [slug: 'worldedit', coordinate: 'maven.modrinth:worldedit:gjsLvJfW', fileName: 'worldedit-mod-7.4.3.jar',
-                 hashFormat: 'sha512', source: 'qa-mod/build.gradle',
-                 hash: 'de51a1a319e057f1312ec54de2f08df5d0c00a78718080a3284e0c1ffadffb47d5353e0e538d9334b72eb7260df5a6f2c4bf8373eec8d5a4f6cdfaae1ff4524e']
+// WorldEdit 7.4.3, the NeoForge 26.1.2 release on Modrinth (version id gjsLvJfW), named and hashed as Modrinth
+// serves it.
+def worldEdit = [slug: 'worldedit', coordinate: 'maven.modrinth:worldedit:gjsLvJfW',
+                 fileName: 'worldedit-mod-7.4.3.jar', source: 'qa-mod/build.gradle', hashFormat: 'sha512',
+                 hash: 'de51a1a319e057f1312ec54de2f08df5d0c00a78718080a3284e0c1ffadffb47d5353e0e538d9334b72eb7' +
+                         '260df5a6f2c4bf8373eec8d5a4f6cdfaae1ff4524e']
 def withWorldEdit = providers.gradleProperty('withWorldEdit').isPresent()
 
 configurations {
@@ -226,8 +228,9 @@ def verifyPackClientMods = registerPackModCheck('verifyPackClientMods', clientMo
 def verifyPackServerMods = registerPackModCheck('verifyPackServerMods', serverMods)
 def verifyWorldEdit = registerPackModCheck('verifyWorldEdit', worldEditMods, [worldEdit])
 
-// Copies WorldEdit into a Prism Launcher instance for Matěj's building (RLM-393), next to the jars installToPrism copies
-// (mod/build.gradle). packwiz-installer deletes only files it installed itself, so the jar survives pack updates.
+// Copies WorldEdit into a Prism Launcher instance for Matěj's building (RLM-393), next to the jars installToPrism
+// copies (mod/build.gradle). packwiz-installer deletes only files it installed itself, so the jar survives pack
+// updates.
 // Set `realmforge.prismModsDir` in ~/.gradle/gradle.properties (see docs/dev-setup.md).
 tasks.register('installWorldEditToPrism', Copy) {
     group = 'realmforge'
