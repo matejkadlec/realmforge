@@ -39,7 +39,9 @@ uv run ruff check && uv run ruff format --check
 | `tests/` | pytest |
 
 Generated directories (owned by `rf gen`, never edit by hand): `mod/src/generated/`, `qa-mod/src/generated/`,
-`tools/schemas/`. `tools/id_universe/` is written by `rf ids vanilla`.
+`tools/schemas/`, and FTB Quests' quest book `pack/config/ftbquests/quests/` (`generate/quests.py`, JSON5, written once
+`content/quests/` has a quest). When `rf gen` changes files in `pack/`, it runs `packwiz refresh` in `pack/`; without
+`packwiz` on the `PATH` it exits with 1 and asks for it. `tools/id_universe/` is written by `rf ids vanilla`.
 
 ## Pack boot
 
