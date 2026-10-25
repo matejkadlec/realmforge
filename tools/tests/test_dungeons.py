@@ -720,6 +720,21 @@ def test_the_room_that_ends_the_test_dungeon_has_a_clear_exit() -> None:
             }, name
 
 
+def test_the_stone_vault_pools_connectors_leave_open_doorways() -> None:
+    # Matěj's playtest of 2026-10-25 (RLM-364): the husk temple's connectors left iron bars in its doorways, which the
+    # dungeon passes through. Every connector of the pool's rooms leaves air behind.
+    folder = REPO_ROOT / "content/rooms/third_party/stonevaults"
+    barred = []
+    for sidecar in sorted(folder.rglob("*.yaml")):
+        if "realmforge:stone_vault" not in RoomDef.model_validate(load_yaml(sidecar) or {}).pools:
+            continue
+        for block in read_structure(sidecar.with_suffix(".nbt").read_bytes()).blocks:
+            final_state = (block.nbt or {}).get("final_state")
+            if block.state.name == "minecraft:jigsaw" and final_state != "minecraft:air":
+                barred.append((sidecar.stem, block.pos, final_state))
+    assert barred == []
+
+
 def test_a_rooms_planner_and_explosion_rules_reach_the_game(repo: RepoPaths) -> None:
     # RLM-256 and RLM-257: the sidecar's rules go into the dungeon type's rooms and the QA mod's expectations.
     crypt(repo)

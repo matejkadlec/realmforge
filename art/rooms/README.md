@@ -68,8 +68,9 @@ The rooms of Stonevaults' dungeons and pillager dungeon and of Dungeon Now Loadi
 were imported again when the barrels became patterns (RLM-262): only the added barrels moved. Stonevaults' rules
 also `place` the fall cushion into `lobby_01`, where every drop down its entrance shaft lands (RLM-276), and, after
 Matěj's playtest of 2026-10-24 (RLM-363, RLM-364), mend the rooms that locked players in or kept loot out of reach
-(buttons inside `zombie_three_way_temple`'s iron doors, no bars in `husk_temple`'s doorways, levers over `jail_2`'s
-cell doors, tinted glass for the door of `jail`'s garden) and set the exit marker of `treasure/egg`, the room that ends
-the test dungeon, where its dressing adds no barrels.
+(buttons inside `zombie_three_way_temple`'s iron doors, no bars in `husk_temple`'s doorways, nor in what its
+connectors leave behind, levers over `jail_2`'s cell doors, tinted glass for the door of `jail`'s garden), set a chest
+and a barrel on its side at the end of `jail`'s passage, its only containers (Matěj, 2026-10-25), and set the exit
+marker of `treasure/egg`, the room that ends the test dungeon, where its dressing adds no barrels.
 
 A newer version of a source updates its `NOTICE` (version, file, what changed) and this table.

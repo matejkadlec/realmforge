@@ -2430,6 +2430,7 @@
         }
       ],
       "max_per_layout": 1,
+      "chests": 1,
       "set_piece_spots": [
         {
           "pieces": [
@@ -2610,31 +2611,6 @@
               ],
               "facing": "east",
               "mirror": false
-            }
-          ]
-        },
-        {
-          "pieces": [
-            "realmforge:test_barrel"
-          ],
-          "spots": [
-            {
-              "pos": [
-                11,
-                1,
-                1
-              ],
-              "facing": "south",
-              "mirror": false
-            },
-            {
-              "pos": [
-                11,
-                1,
-                11
-              ],
-              "facing": "north",
-              "mirror": true
             }
           ]
         }

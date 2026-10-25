@@ -158,13 +158,15 @@ dress:                # variety and decorations for plain rooms (rooms/dress.py)
   decorations: [vines, cobwebs, barrels]
   without: {barrels: [dungeon/rooms/library]}  # rooms that do not get a decoration
   lever_hints: minecraft:stone_brick_stairs    # the floor under each lever that must be on (a torch behind it)
-place:                # boxes of one block, or of data markers, set into a room after the dressing, by its path
+place:                # boxes of one block, of data markers or of what connectors leave behind, by the room's path
   dungeon/lobby/lobby_01:   # the fall cushion (RLM-276)
     - {from: [5, 0, 5], to: [7, 0, 7], block: "minecraft:stone_brick_slab[type=bottom,waterlogged=true]"}
     - {from: [4, 0, 5], to: [4, 0, 7], block: "minecraft:stone_brick_stairs[facing=west,half=bottom,shape=straight,waterlogged=true]"}
     # ... the other three sides and the four corners (art/rooms/stonevaults/rules.yaml)
   dungeon/treasure/egg:     # the exit of the room that ends the test dungeon (RLM-363)
     - {from: [11, 2, 6], to: [11, 2, 6], marker: exit}
+  dungeon/rooms/husk_temple:  # its connectors' final_state: an open doorway where the source left iron bars
+    - {from: [0, 1, 6], to: [0, 1, 6], final_state: "minecraft:air"}
 data_version: 4790    # for the files that state none, when the source is known to be saved with this version
 ```
 

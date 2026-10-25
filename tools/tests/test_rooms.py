@@ -906,10 +906,37 @@ def test_place_sets_a_data_marker_into_a_room(repo: RepoPaths, tmp_path: Path) -
     assert result.written and "placed exit marker from 1 1 1 to 1 1 1" in result.notes
     room = read_structure((target / "hall.nbt").read_bytes())
     assert markers(room) == [("exit", (1, 1, 1))]
-    with pytest.raises(ValidationError, match="either a block or a marker"):
+    with pytest.raises(ValidationError, match="one of a block, a marker or a final_state"):
         importer.PlacedBlocks.model_validate({"from": [1, 1, 1], "to": [1, 1, 1]})
+    with pytest.raises(ValidationError, match="one of a block, a marker or a final_state"):
+        importer.PlacedBlocks.model_validate(
+            {"from": [1, 1, 1], "to": [1, 1, 1], "marker": "exit", "block": "minecraft:stone"}
+        )
     with pytest.raises(ValidationError, match="'door' is no marker"):
         importer.PlacedBlocks.model_validate({"from": [1, 1, 1], "to": [1, 1, 1], "marker": "door"})
+
+
+def test_place_sets_what_a_rooms_connectors_leave_behind(repo: RepoPaths, tmp_path: Path) -> None:
+    # The husk temple's connectors left iron bars in its doorways (RLM-364): a final_state box changes the block its
+    # connectors leave behind and nothing else, and a position in it without a connector is a problem.
+    source = tmp_path / "hall.nbt"
+    source.write_bytes(write_structure(small_room()))
+
+    def placed(box: dict[str, object]) -> importer.ImportRules:
+        return RULES.model_copy(update={"place": {"hall": [importer.PlacedBlocks.model_validate(box)]}})
+
+    target = third_party(repo)
+    rules = placed({"from": [4, 1, 2], "to": [4, 1, 2], "final_state": "minecraft:stone_bricks"})
+    (result,) = importer.import_rooms([source], target, rules, load_vanilla(repo), repo)
+    assert result.written, result.problems
+    room = read_structure((target / "hall.nbt").read_bytes())
+    jigsaws = [b for b in room.blocks if b.state.name == "minecraft:jigsaw"]
+    assert [(b.pos, b.nbt and b.nbt["final_state"]) for b in jigsaws] == [
+        ((4, 1, 2), "minecraft:stone_bricks")
+    ]
+    rules = placed({"from": [3, 1, 2], "to": [4, 1, 2], "final_state": "minecraft:air"})
+    (result,) = importer.import_rooms([source], target, rules, load_vanilla(repo), repo)
+    assert not result.written and "place: 3 1 2 holds no connector" in result.problems
 
 
 def test_import_into_content_needs_third_party_or_ours(repo: RepoPaths, tmp_path: Path) -> None:

@@ -117,8 +117,9 @@ class JigsawRules(_Strict):
 
 
 class PlacedBlocks(_Strict):
-    """A box of one block state set into a room after its dressing, such as a fall cushion (RLM-276), or of data
-    markers, such as the exit of the room that ends a dungeon (RLM-363)."""
+    """A box of one block state set into a room after its dressing, such as a fall cushion (RLM-276), of data
+    markers, such as the exit of the room that ends a dungeon (RLM-363), or the block its connectors leave behind,
+    such as an open doorway where the source barred it (RLM-364)."""
 
     model_config = ConfigDict(extra="forbid", frozen=True, populate_by_name=True)
     start: tuple[int, int, int] = Field(
@@ -133,11 +134,16 @@ class PlacedBlocks(_Strict):
         default=None,
         description=f"A data marker instead of a block: one of {', '.join(MARKERS)} (rooms/check.py).",
     )
+    final_state: str | None = Field(
+        default=None,
+        description="The block the box's connectors leave behind (their final_state), the rest unchanged, e.g. "
+        "minecraft:air for an open doorway.",
+    )
 
     @model_validator(mode="after")
-    def _block_or_marker(self) -> PlacedBlocks:
-        if (self.block is None) == (self.marker is None):
-            raise ValueError("place: give either a block or a marker")
+    def _one_kind(self) -> PlacedBlocks:
+        if sum(value is not None for value in (self.block, self.marker, self.final_state)) != 1:
+            raise ValueError("place: give one of a block, a marker or a final_state")
         if self.marker is not None and self.marker not in MARKERS:
             raise ValueError(f"place: {self.marker!r} is no marker: {', '.join(MARKERS)}")
         return self
@@ -145,7 +151,11 @@ class PlacedBlocks(_Strict):
     @property
     def what(self) -> str:
         """What the box holds, for the import's notes."""
-        return f"{self.marker} marker" if self.marker is not None else str(self.block)
+        if self.marker is not None:
+            return f"{self.marker} marker"
+        if self.final_state is not None:
+            return f"connectors leaving {self.final_state}"
+        return str(self.block)
 
 
 class ImportRules(_Strict):
@@ -362,9 +372,9 @@ def import_room(
         notes += dressed
     placing: list[str] = []
     for placed in rules.place.get(name or stem.name, []):
-        structure, outside = place_blocks(structure, placed)
+        structure, problems = place_blocks(structure, placed)
         notes.append(f"placed {placed.what} from {_fmt(placed.start)} to {_fmt(placed.to)}")
-        placing += [f"place: {_fmt(pos)} lies outside the room" for pos in outside]
+        placing += problems
     result = ImportedRoom(file, template, sidecar, structure, False, [*source.notes, *notes])
     result.problems += placing
     if stem.name == REVIEW_FILE.removesuffix(".yaml"):
@@ -389,16 +399,10 @@ def import_room(
     return result
 
 
-def place_blocks(structure: Structure, placed: PlacedBlocks) -> tuple[Structure, list[Pos]]:
-    """The structure with the box of ``placed`` set to its block (block entity data there is dropped) or to data
-    markers (structure blocks in data mode naming the marker), and the positions of the box that lie outside the
-    room."""
-    if placed.marker is not None:
-        state = BlockState(STRUCTURE_BLOCK, (("mode", "data"),))
-        data: dict[str, Any] | None = {"id": STRUCTURE_BLOCK, "metadata": placed.marker, "mode": DATA_MODE}
-    else:
-        state = BlockState.parse(placed.block or "")
-        data = None
+def place_blocks(structure: Structure, placed: PlacedBlocks) -> tuple[Structure, list[str]]:
+    """The structure with the box of ``placed`` set to its block (block entity data there is dropped), to data
+    markers (structure blocks in data mode naming the marker) or, for its connectors, to their new final state; and
+    the problems: positions of the box that lie outside the room, or that hold no connector for a final state."""
     box = [
         (x, y, z)
         for x in range(min(placed.start[0], placed.to[0]), max(placed.start[0], placed.to[0]) + 1)
@@ -406,9 +410,28 @@ def place_blocks(structure: Structure, placed: PlacedBlocks) -> tuple[Structure,
         for z in range(min(placed.start[2], placed.to[2]), max(placed.start[2], placed.to[2]) + 1)
     ]
     inside = {pos for pos in box if all(0 <= c < s for c, s in zip(pos, structure.size, strict=True))}
+    problems = [f"place: {_fmt(pos)} lies outside the room" for pos in box if pos not in inside]
+    if placed.final_state is not None:
+        connectors = {
+            block.pos for block in structure.blocks if block.pos in inside and block.state.name == JIGSAW
+        }
+        problems += [f"place: {_fmt(pos)} holds no connector" for pos in sorted(inside - connectors)]
+        blocks = [
+            replace(block, nbt={**(block.nbt or {}), "final_state": placed.final_state})
+            if block.pos in connectors
+            else block
+            for block in structure.blocks
+        ]
+        return replace(structure, blocks=tuple(blocks)), problems
+    if placed.marker is not None:
+        state = BlockState(STRUCTURE_BLOCK, (("mode", "data"),))
+        data: dict[str, Any] | None = {"id": STRUCTURE_BLOCK, "metadata": placed.marker, "mode": DATA_MODE}
+    else:
+        state = BlockState.parse(placed.block or "")
+        data = None
     blocks = [block for block in structure.blocks if block.pos not in inside]
     blocks += [StructureBlock(pos, state, data) for pos in sorted(inside)]
-    return replace(structure, blocks=tuple(blocks)), [pos for pos in box if pos not in inside]
+    return replace(structure, blocks=tuple(blocks)), problems
 
 
 def _fmt(pos: Pos) -> str:

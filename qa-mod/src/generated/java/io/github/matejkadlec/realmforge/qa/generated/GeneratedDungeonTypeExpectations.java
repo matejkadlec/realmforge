@@ -187,7 +187,7 @@ public final class GeneratedDungeonTypeExpectations {
                                     List.of(
                                     new ConnectorExpectation(0, 1, 2, "west", "up", "realmforge:door", "realmforge:door", "rollable"),
                                     new ConnectorExpectation(12, 1, 3, "east", "up", "realmforge:door", "realmforge:door", "rollable")),
-                                    1, false, List.of(), -1, 0, 0, false),
+                                    1, false, List.of(), -1, 0, 1, false),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/pillager_dungeon/rooms/jail_2", 13, 6, 13, "combat", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 1, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"),

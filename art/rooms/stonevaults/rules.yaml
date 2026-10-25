@@ -44,8 +44,11 @@ place:
   dungeon/rooms/zombie_three_way_temple:
     - {from: [2, 2, 5], to: [2, 2, 5], block: "minecraft:stone_button[face=wall,facing=east,powered=false]"}
     - {from: [10, 2, 7], to: [10, 2, 7], block: "minecraft:stone_button[face=wall,facing=west,powered=false]"}
-  # The husk temple's doorways were barred (iron bars around a 1x1 gap), though the dungeon passes through it.
+  # The husk temple's doorways were barred (iron bars around a 1x1 gap, its connectors leaving iron bars in the gap),
+  # though the dungeon passes through it.
   dungeon/rooms/husk_temple:
+    - {from: [0, 1, 6], to: [0, 1, 6], final_state: "minecraft:air"}
+    - {from: [12, 1, 6], to: [12, 1, 6], final_state: "minecraft:air"}
     - {from: [0, 1, 5], to: [0, 3, 5], block: "minecraft:air"}
     - {from: [0, 2, 6], to: [0, 3, 6], block: "minecraft:air"}
     - {from: [0, 1, 7], to: [0, 3, 7], block: "minecraft:air"}
@@ -56,6 +59,10 @@ place:
   # opened, becomes tinted glass too.
   pillager_dungeon/rooms/jail:
     - {from: [8, 1, 10], to: [8, 2, 10], block: "minecraft:tinted_glass"}
+    # The far end of its passage beside the garden always holds a chest and a barrel on its side, its lid to the
+    # passage, and the room no other container (Matěj, 2026-10-25).
+    - {from: [10, 1, 11], to: [10, 1, 11], block: "minecraft:chest[facing=north,type=single,waterlogged=false]"}
+    - {from: [11, 1, 11], to: [11, 1, 11], block: "minecraft:barrel[facing=north,open=false]"}
   # The cells of jail_2 hold chests behind iron doors that nothing opened: a lever above each door on both sides,
   # on the wall block over it, so nobody is locked in a cell.
   pillager_dungeon/rooms/jail_2:

@@ -126,7 +126,7 @@ public final class GeneratedRoomExpectations {
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/pillager_dungeon/rooms/cartographer", 13, 6, 13, 3, 446),
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/pillager_dungeon/rooms/hallway", 13, 7, 9, 2, 202),
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/pillager_dungeon/rooms/item_combination_lock", 13, 6, 13, 2, 244),
-            new RoomExpectation("realmforge:rooms/third_party/stonevaults/pillager_dungeon/rooms/jail", 13, 6, 13, 2, 379),
+            new RoomExpectation("realmforge:rooms/third_party/stonevaults/pillager_dungeon/rooms/jail", 13, 6, 13, 2, 377),
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/pillager_dungeon/rooms/jail_2", 13, 6, 13, 2, 342),
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/pillager_dungeon/rooms/jail_3", 13, 6, 13, 2, 330),
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/pillager_dungeon/rooms/library", 13, 6, 13, 2, 368),
