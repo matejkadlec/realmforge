@@ -353,6 +353,9 @@ public final class GeneratedTexts {
     /** {@code message.realmforge.realm_portal_unknown_realm} from {@code content/texts/message.yaml}: "The portal opens onto an unknown realm" */
     public static final String MESSAGE_REALM_PORTAL_UNKNOWN_REALM = "message.realmforge.realm_portal_unknown_realm";
 
+    /** {@code message.realmforge.shield_locked} from {@code content/texts/message.yaml}: "You can't use this now." */
+    public static final String MESSAGE_SHIELD_LOCKED = "message.realmforge.shield_locked";
+
     /** {@code message.realmforge.stat_points_none_spent} from {@code content/texts/message.yaml}: "You have no spent stat points to unlearn." */
     public static final String MESSAGE_STAT_POINTS_NONE_SPENT = "message.realmforge.stat_points_none_spent";
 

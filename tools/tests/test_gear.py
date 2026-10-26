@@ -31,6 +31,7 @@ gear:
   repair_with: '#minecraft:stone_tool_materials'
   attack_damage: 2
   attack_speed: 1.0
+  two_handed: true
   modifiers:
     - {attribute: realmforge:spell_power, operation: add_value, amount_percent: 15}
     - {attribute: realmforge:magic_shield, operation: add_value, amount: 3}
@@ -108,8 +109,12 @@ def test_a_wand_gets_durability_its_attack_and_its_stats_in_the_main_hand(repo: 
         "realmforge:test_wand"
         in json.loads(files[f"{DATA}/minecraft/tags/item/enchantable/durability.json"])["values"]
     )
+    assert (
+        "realmforge:test_wand" in json.loads(files[f"{DATA}/realmforge/tags/item/two_handed.json"])["values"]
+    )
     expectations = files[EXPECTATIONS_JAVA].decode()
     assert '"wand", "mainhand", 131, 5, "#minecraft:stone_tool_materials",' in expectations
+    assert '2.0, 1.0, "", true,' in expectations, "the wand is two-handed"
     assert (
         'new GearModifier("realmforge:gear/mainhand/0", "realmforge:spell_power", "add_value", 0.15)'
         in expectations
@@ -144,6 +149,10 @@ def test_armor_gets_its_slot_look_and_placeholder_textures(repo: RepoPaths) -> N
             "realmforge:test_cap" in json.loads(files[f"{DATA}/minecraft/tags/item/{tag}.json"])["values"]
         ), tag
     assert "realmforge:test_cap" not in json.loads(files[f"{DATA}/realmforge/tags/item/wands.json"])["values"]
+    assert (
+        "realmforge:test_cap"
+        not in json.loads(files[f"{DATA}/realmforge/tags/item/two_handed.json"])["values"]
+    )
 
 
 @pytest.mark.parametrize(
@@ -163,6 +172,7 @@ def test_armor_gets_its_slot_look_and_placeholder_textures(repo: RepoPaths) -> N
             "held, not worn",
         ),
         ("  kind: chest\n  durability: 10\n", "chest armor needs a look"),
+        ("  kind: head\n  durability: 10\n  look: x\n  two_handed: true\n", "only a wand is two-handed"),
         ("  kind: feet\n  durability: 10\n  look: x\n  attack_speed: 1\n", "are a wand's"),
         ("  kind: head\n  durability: 0\n  look: x\n", "durability"),
         (

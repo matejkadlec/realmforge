@@ -28,6 +28,7 @@ from realmforge_tools.schema.item import (
     ARMOR_KINDS,
     PLAYER_ATTACK_DAMAGE,
     PLAYER_ATTACK_SPEED,
+    TWO_HANDED_TAG,
     USE_TEXT_GROUP,
     WANDS_TAG,
     GearDef,
@@ -151,12 +152,12 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
 
 
 def _gear_tags(gear: GearDef | None) -> list[str]:
-    """The item tags gear joins: a wand ``realmforge:wands``; all gear vanilla's durability enchantments, and armor
-    its slot's armor enchantments and the Curse of Binding."""
+    """The item tags gear joins: a wand ``realmforge:wands``, and ``realmforge:two_handed`` when it is; all gear
+    vanilla's durability enchantments, and armor its slot's armor enchantments and the Curse of Binding."""
     if gear is None:
         return []
     if gear.kind == "wand":
-        return [WANDS_TAG, ENCHANTABLE_DURABILITY_TAG]
+        return [WANDS_TAG, *([TWO_HANDED_TAG] if gear.two_handed else []), ENCHANTABLE_DURABILITY_TAG]
     return [ENCHANTABLE_ARMOR_TAGS[gear.kind], ENCHANTABLE_DURABILITY_TAG, ENCHANTABLE_EQUIPPABLE_TAG]
 
 
@@ -418,7 +419,7 @@ def _gear_expectation(gear: GearDef | None) -> str:
         f"{indent}{string_literal(gear.kind)}, {string_literal(gear.slot)}, {gear.durability}, "
         f"{gear.enchantability or 0}, {string_literal(gear.repair_with or '')},\n"
         f"{indent}{_double(gear.attack_damage or 0)}, {_double(gear.attack_speed or 0)}, "
-        f"{string_literal(f'{MOD_ID}:{gear.look}' if gear.look else '')},\n"
+        f"{string_literal(f'{MOD_ID}:{gear.look}' if gear.look else '')}, {str(gear.two_handed).lower()},\n"
         f"{indent}{_java_list(modifiers, indent + ' ' * 8)}))"
     )
 
@@ -472,10 +473,11 @@ def _expectations(content: Content, paths: RepoPaths) -> bytes:
         "     * A piece of gear: its kind ({@code wand}, {@code head}, ...), the slot its stats count in ({@code mainhand}\n"
         "     * or the armor slot), its durability, enchantability (0: none) and repair material (an item, a {@code #}tag\n"
         "     * or empty), a wand's attack damage and speed as the tooltip shows them (0 for armor), armor's equipment\n"
-        "     * asset (empty for a wand) and its fixed stats.\n"
+        "     * asset (empty for a wand), whether it is two-handed, and its fixed stats.\n"
         "     */\n"
         "    public record Gear(String kind, String slot, int durability, int enchantability, String repairWith,\n"
-        "            double attackDamage, double attackSpeed, String look, List<GearModifier> modifiers) {\n"
+        "            double attackDamage, double attackSpeed, String look, boolean twoHanded,\n"
+        "            List<GearModifier> modifiers) {\n"
         "    }\n"
         "\n"
         "    /** One fixed stat: its modifier id, attribute, operation (as in YAML) and amount in game units. */\n"

@@ -135,6 +135,12 @@
           "default": null,
           "description": "The material that repairs it in an anvil: an item (realmforge:spellweave) or an item tag ('#minecraft:stone_tool_materials'). Unset: only two of it combine.",
           "title": "Repair With"
+        },
+        "two_handed": {
+          "default": false,
+          "description": "Wands only: it takes both hands, so no shield can be held with it. While it is in the main hand every shield is locked and stays locked for 3 minutes after; a locked shield taken in hand drops.",
+          "title": "Two Handed",
+          "type": "boolean"
         }
       },
       "required": [

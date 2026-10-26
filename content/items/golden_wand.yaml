@@ -2,8 +2,9 @@
 # One of the seven wands of RLM-172, a caster's weapon from wood to netherite.
 # Spell Power, Cast Time Reduction and Cooldown Reduction are Matěj's (2026-10-15); attack damage, durability,
 # enchantability and the repair material are vanilla's tool of the same material (attack damage: Claude's, Matěj
-# delegated it). Attack speed 1.0, so swinging one is never worth it. Its stats count in the main hand only.
-# Recipe (Claude's proposal from the gear proposal, RLM-172): the material over lapis lazuli over a stick.
+# delegated it). Attack speed 1.0, so swinging one is never worth it. Its stats count in the main hand only. It
+# takes both hands: no shield with it, and every shield stays locked for 3 minutes after (Matěj, 2026-10-26).
+# Recipe (Matěj, 2026-10-26): an amethyst shard over the material over a stick.
 # The generated placeholder texture until A1's art.
 id: golden_wand
 name:
@@ -18,14 +19,15 @@ gear:
   repair_with: "#minecraft:gold_tool_materials"
   attack_damage: 3
   attack_speed: 1.0
+  two_handed: true
   modifiers:
     - {attribute: realmforge:spell_power, operation: add_value, amount_percent: 20}
     - {attribute: realmforge:cast_time_reduction, operation: add_value, amount_percent: 8}
     - {attribute: realmforge:cooldown_reduction, operation: add_value, amount_percent: 8}
 recipe:
-  pattern: [M, L, S]
+  pattern: [A, M, S]
   key:
+    A: minecraft:amethyst_shard
     M: "#minecraft:gold_tool_materials"
-    L: minecraft:lapis_lazuli
     S: minecraft:stick
   category: equipment

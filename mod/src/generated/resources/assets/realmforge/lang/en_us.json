@@ -225,6 +225,7 @@
   "message.realmforge.realm_portal_only_back": "This portal leads only back to Overworld",
   "message.realmforge.realm_portal_opens_onto": "The portal opens onto %1$s",
   "message.realmforge.realm_portal_unknown_realm": "The portal opens onto an unknown realm",
+  "message.realmforge.shield_locked": "You can't use this now.",
   "message.realmforge.stat_points_none_spent": "You have no spent stat points to unlearn.",
   "message.realmforge.stat_points_returned": "Your level fell, so your stat points are unspent again. Unspent stat points: %1$s.",
   "message.realmforge.stat_points_unlearned": "Your stat points are unspent again. Unspent stat points: %1$s.",

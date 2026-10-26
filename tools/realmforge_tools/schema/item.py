@@ -32,6 +32,10 @@ GearKind = Literal["wand", "head", "chest", "legs", "feet"]
 ARMOR_KINDS: tuple[str, ...] = ("head", "chest", "legs", "feet")
 # The item tag of every wand: the spell engine reads it, so casting a spell wears the wand in the main hand (RLM-172).
 WANDS_TAG = f"{MOD_ID}:wands"
+# The item tag of two-handed gear: while one is in a player's main hand, no shield can be held, and every shield stays
+# locked for 3 minutes after (item/TwoHandedGear; Matěj, 2026-10-26). Not Better Combat's two-handed weapons, which a
+# player raises with right click to block (combat/WeaponBlocks).
+TWO_HANDED_TAG = f"{MOD_ID}:two_handed"
 # A player's attack damage and attack speed without a weapon (vanilla's base values): a weapon's tooltip numbers are
 # its modifiers plus these.
 PLAYER_ATTACK_DAMAGE = 1.0
@@ -122,6 +126,13 @@ class GearDef(StrictModel):
         default=LEATHER_EQUIP_SOUND,
         description="Armor only: the sound of putting it on, leather's by default.",
     )
+    two_handed: bool = Field(
+        default=False,
+        description=(
+            "Wands only: it takes both hands, so no shield can be held with it. While it is in the main hand every "
+            "shield is locked and stays locked for 3 minutes after; a locked shield taken in hand drops."
+        ),
+    )
     modifiers: list[GearModifierDef] = Field(
         default_factory=list,
         description="Its fixed stats while in its slot, e.g. {attribute: realmforge:spell_power, operation: add_value, amount_percent: 15}.",
@@ -139,6 +150,8 @@ class GearDef(StrictModel):
                 raise ValueError(f"{self.kind} armor needs a look: how it looks worn")
             if self.attack_damage is not None or self.attack_speed is not None:
                 raise ValueError("attack_damage and attack_speed are a wand's")
+            if self.two_handed:
+                raise ValueError("only a wand is two-handed: armor is worn, not held")
         attributes = [modifier.attribute for modifier in self.modifiers]
         repeated = sorted({attribute for attribute in attributes if attributes.count(attribute) > 1})
         if repeated:

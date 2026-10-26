@@ -3,6 +3,7 @@ package io.github.matejkadlec.realmforge.qa.gametest;
 import io.github.matejkadlec.realmforge.generated.GeneratedItems;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpells;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
+import io.github.matejkadlec.realmforge.item.TwoHandedGear;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedItemExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedItemExpectations.Gear;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -42,6 +44,7 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -104,6 +107,8 @@ public final class GearGameTests {
             Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
             if (gear.kind().equals("wand")) {
                 helper.assertTrue(stack.is(SpellCaster.WANDS), id + " is not in the wand tag the spell engine reads");
+                helper.assertValueEqual(stack.is(TwoHandedGear.TWO_HANDED), gear.twoHanded(),
+                        id + " in the two-handed tag the shield lock reads");
                 helper.assertTrue(stack.get(DataComponents.WEAPON) != null, id + " wears down with hits");
                 helper.assertTrue(equippable == null, id + " is held, not worn");
                 ItemAttributeModifiers modifiers = stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS,
@@ -294,6 +299,68 @@ public final class GearGameTests {
     }
 
     /**
+     * RLM-172 (Matěj, 2026-10-26): a two-handed wand coming into the main hand drops the shield in the off hand and
+     * locks every shield, on vanilla's item cooldown; while the wand stays there the lock keeps starting again, and
+     * after it leaves the lock runs down from where it was, while a shield taken in hand still drops.
+     */
+    @QaGameTest(timeoutTicks = 100)
+    public static void aTwoHandedWandLocksEveryShield(GameTestHelper helper) {
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-gear-two-handed");
+        player.setGameMode(GameType.SURVIVAL);
+        ItemStack shield = new ItemStack(Items.SHIELD);
+        player.setItemInHand(InteractionHand.OFF_HAND, shield.copy());
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(GeneratedItems.STONE_WAND.get()));
+        player.doTick();
+        helper.assertTrue(player.getOffhandItem().isEmpty(), "the wand took the shield out of the off hand");
+        helper.assertValueEqual(clearDroppedShields(helper, player), 1, "the shield dropped to the ground");
+        long locked = helper.getLevel().getGameTime();
+        helper.assertValueEqual(TwoHandedGear.lockEnd(player), OptionalLong.of(locked + TwoHandedGear.LOCK_TICKS),
+                "a 3-minute lock");
+        helper.assertTrue(player.getCooldowns().isOnCooldown(shield), "every shield shows the lock as its cooldown");
+
+        helper.runAfterDelay(30, () -> {
+            player.doTick();
+            long now = helper.getLevel().getGameTime();
+            helper.assertTrue(TwoHandedGear.lockEnd(player).orElse(0) > now + TwoHandedGear.LOCK_TICKS - 20,
+                    "the lock started again while the wand stayed in the main hand");
+            player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            player.setItemInHand(InteractionHand.OFF_HAND, shield.copy());
+            player.doTick();
+            helper.assertTrue(player.getOffhandItem().isEmpty(), "a shield taken in hand during the lock drops");
+            helper.assertValueEqual(clearDroppedShields(helper, player), 1, "the second shield dropped");
+            helper.assertTrue(TwoHandedGear.lockEnd(player).isPresent(), "the lock lasts after the wand left");
+        });
+        helper.runAfterDelay(60, () -> {
+            OptionalLong end = TwoHandedGear.lockEnd(player);
+            player.doTick();
+            helper.assertValueEqual(TwoHandedGear.lockEnd(player), end, "without the wand, the lock runs down");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * A shield on vanilla's cooldown without the lock, as after an axe disabled it, stays in hand: only the lock of a
+     * two-handed item drops shields.
+     */
+    @QaGameTest
+    public static void aShieldOnItsOwnCooldownStaysInHand(GameTestHelper helper) {
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-gear-shield-cooldown");
+        try {
+            player.setGameMode(GameType.SURVIVAL);
+            ItemStack shield = new ItemStack(Items.SHIELD);
+            player.setItemInHand(InteractionHand.OFF_HAND, shield);
+            player.getCooldowns().addCooldown(shield, 100);
+            player.doTick();
+            helper.assertTrue(player.getOffhandItem().is(Items.SHIELD), "an axe-disabled shield stays in the off hand");
+            helper.assertTrue(TwoHandedGear.lockEnd(player).isEmpty(), "and no lock started");
+        } finally {
+            logout(player);
+        }
+        helper.succeed();
+    }
+
+    /**
      * RLM-197: a mob that is not ours drops the items whose {@code dropped_by} names it, added to its own loot by a
      * loot modifier: each in its count and about as often as its chance ({@link CustomMobGameTests#expectedShare}),
      * without and with Looting.
@@ -356,6 +423,14 @@ public final class GearGameTests {
         double expected = CustomMobGameTests.expectedShare(drop, looting);
         helper.assertTrue(Math.abs(share - expected) <= CustomMobGameTests.SHARE_TOLERANCE,
                 what + " dropped " + drop.item() + " in " + share + " of the rolls, not about " + expected);
+    }
+
+    /** Removes the shields lying near the player, so none is picked up again, and returns how many there were. */
+    private static int clearDroppedShields(GameTestHelper helper, ServerPlayer player) {
+        List<ItemEntity> shields = helper.getLevel().getEntitiesOfClass(ItemEntity.class,
+                player.getBoundingBox().inflate(4), item -> item.getItem().is(Items.SHIELD));
+        shields.forEach(ItemEntity::discard);
+        return shields.size();
     }
 
     private static void assertRepairable(GameTestHelper helper, String id, ItemStack stack, String material) {
