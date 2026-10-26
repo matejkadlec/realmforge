@@ -1686,7 +1686,13 @@ return; the proc engine at its end exists since C3a.
   - a **wand** (`kind: wand`) adds a base attack damage and speed (vanilla's base modifier ids) and vanilla's `WEAPON`
     component, so a hit wears it by one as a sword's does; casting a spell wears the wand in the caster's main hand
     by one too, once per cast, when it begins (`spell/SpellCaster#wearWand`, through the item tag `realmforge:wands`
-    the pipeline writes, so `spell` never names an item and needs no dependency on `item`);
+    the pipeline writes, so `spell` never names an item and needs no dependency on `item`). A wand is
+    **two-handed** (`gear.two_handed`, item tag `realmforge:two_handed`; Matěj, 2026-10-26): while one is in a
+    player's main hand, every shield (`c:tools/shield`) is locked, and stays locked for 3 minutes after it leaves the
+    hand. `item/TwoHandedGear` keeps the lock per player, shows it as vanilla's item cooldown on every shield (which
+    also refuses blocking), and drops a shield held in either hand while it lasts, with a message in the action bar.
+    The lock is its own, not the cooldown, so a shield an axe disabled stays in hand. It is not Better Combat's
+    two-handed weapons, which block with right click ([9.3](#93-blocking-with-two-handed-weapons));
   - **armor** (`head`, `chest`, `legs`, `feet`) gets vanilla's `EQUIPPABLE` component with its slot, equip sound and
     look: an equipment asset `assets/realmforge/equipment/<look>.json` with a body and a leggings layer, placeholder
     textures until A1's art. Caster robes give no armor: magic shield, spell power, max mana and cooldown reduction;

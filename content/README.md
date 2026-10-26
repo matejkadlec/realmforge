@@ -91,7 +91,9 @@ Rules:
   in the units of the stat rules: `amount_percent` for a share, `amount` for points), which count only in its slot,
   each with the id `realmforge:gear/<slot>/<n>` ([8.2](../docs/architecture.md#82-where-modifiers-come-from)). Gear
   never modifies max health (it comes from vitality), attack damage or attack speed (a wand's own fields). A wand
-  joins `realmforge:wands`, which the spell engine reads; gear joins vanilla's enchantable tags of its kind (Unbreaking
+  joins `realmforge:wands`, which the spell engine reads, and with `two_handed: true` (every wand) also
+  `realmforge:two_handed`: no shield can be held while it is in the main hand, and every shield stays locked for 3
+  minutes after; gear joins vanilla's enchantable tags of its kind (Unbreaking
   and Mending, and armor its slot's enchantments and the Curse of Binding). Armor pieces are named by their archetype
   ([realms design, Gear archetypes](../docs/design/realms.md#gear-archetypes)): a caster's Cap, Robes, Pants and
   Sandals.

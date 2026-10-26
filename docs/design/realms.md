@@ -136,7 +136,9 @@ Matěj's direction for armour (2026-10-15), designed step by step as sets, weapo
   set (24 diamonds). The cloths keep half of their tier's base material (an iron ingot in Spellweave, a diamond in
   Arcane Silk; Claude's decision, 2026-10-15), and the netherite step is vanilla's smithing upgrade (Matěj). The sets
   are Apprentice's (wool), Spellweave, Arcane Silk and Netherite (RLM-197); a caster's weapon is a wand in vanilla's
-  seven materials, wood to netherite (RLM-172).
+  seven materials, wood to netherite (RLM-172), made from an amethyst shard over the material over a stick. A wand
+  takes both hands: no shield while it is held, and every shield stays locked for 3 minutes after (Matěj,
+  2026-10-26).
 - **Ranged and rogue:** less armour than melee, dodge chance and movement speed; partly base materials plus an
   advanced leather from animals that are hard to kill and spawn only in some biomes (that leather plus diamonds
   makes the diamond-tier set).
