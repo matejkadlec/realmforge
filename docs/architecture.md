@@ -2006,7 +2006,8 @@ loot: realmforge:boss/hollow_warden
     the lowest height for a chunk that is not fully loaded). Where nothing fits, the frame is carved out set into a
     floor of the arrival block with a pocket kept free of fluids and falling blocks. A built frame has Realmforge Bricks
     in its corners too, all `generated`, dropping nothing. The entity arrives in front of the exit portal, facing away
-    from it, or in the opening; the vanilla travel sound plays at the realm's pitch, and vanilla's portal ticket loads
+    from it (at the opening's height, or one step lower for a frame a player stood on top of the floor), or in the
+    opening; the vanilla travel sound plays at the realm's pitch, and vanilla's portal ticket loads
     the exit's chunks for a short time;
   - **arrival** (`RealmArrivals`): on every arrival in a realm, a 2-second title with its name, element and level
     band (the realm entry's `levels`); the first arrival also shows its flavour line in chat (`realmforge:visited_realms`);

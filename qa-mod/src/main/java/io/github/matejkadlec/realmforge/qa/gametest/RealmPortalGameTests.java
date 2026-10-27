@@ -364,8 +364,8 @@ public final class RealmPortalGameTests {
 
     /**
      * A trip from a realm portal with no Overworld portal near its scaled-back position builds one there. Over the
-     * flat GameTest world nothing fits at Overworld's arrival heights (64 to 310), so it is carved out set into a
-     * platform at y 64, with Realmforge Bricks in its corners; the trip back arrives at the realm portal it came from.
+     * flat GameTest world nothing fits at Overworld's arrival heights (63 to 310), so it is carved out set into a
+     * platform at y 63, with Realmforge Bricks in its corners; the trip back arrives at the realm portal it came from.
      */
     @QaGameTest(timeoutTicks = 200)
     public static void aWayBackWithNoPortalNearBuildsOneOnAPlatform(GameTestHelper helper) {
@@ -386,11 +386,11 @@ public final class RealmPortalGameTests {
             helper.assertTrue(player.level() == level, "the way back leads to Overworld");
 
             // The realm opening's centre, x and z 2,700.5, times 16.
-            BlockPos scaled = new BlockPos(2_700 * 16 + 8, 64, 2_700 * 16 + 8);
+            BlockPos scaled = new BlockPos(2_700 * 16 + 8, 63, 2_700 * 16 + 8);
             Optional<PortalFrame.Frame> built = RealmPortalLinker.findPortal(level, scaled,
                     RealmPortalLinker.OVERWORLD_BUILD_RADIUS, id(stone));
             helper.assertTrue(built.isPresent(), "the way back built an Overworld portal near " + scaled);
-            helper.assertValueEqual(built.get().sealstone().getY(), 64, "the built frame's bottom row is at y 64");
+            helper.assertValueEqual(built.get().sealstone().getY(), 63, "the built frame's bottom row is at y 63");
             helper.assertTrue(level.getBlockState(built.get().sealstone()).getValue(RealmforgeBricksBlock.GENERATED),
                     "the built frame is marked generated");
             helper.assertTrue(level.getBlockState(built.get().at(1, -1).relative(built.get().front())).is(Blocks.STONE_BRICKS),

@@ -342,12 +342,14 @@ When no portal leads the right way within the search radius, the trip builds one
   `y` range of the dimension's realm entry (`arrival.y`, [Data](#data-contentrealms)), which keeps arrivals in the depth
   band of the realm's lowest levels. The source portal's height, clamped into that range, decides between spots at the
   same distance.
-- **Overworld's `y` range** is 64 to 310 (a proposal): the frame's bottom row lies at least one block above
-  sea level (63), so a way back over deep ocean, from a realm portal at y 30 say, finds no floor in the spiral and
-  builds on a platform at the surface instead of carving a frame under the seabed. Vanilla's own fallback in
-  `PortalForcer#createPortal` keeps y ≥ 70; 64 also lets a frame stand on beaches and plains, which lie between 63
-  and 70. The top, 310, is that fallback's ceiling (the highest buildable y less 9), so a mountain's surface is a
-  spot too, where a lower ceiling would carve the frame into the rock.
+- **Overworld's `y` range** is 63 to 310 (a proposal): the frame's bottom row, set into the ground, lies at
+  least at sea level (63), the first block above the sea's top water block (62). Water is no floor, so a way back over
+  deep ocean, from a realm portal at y 30 say, finds no floor in the spiral and builds on a platform at the surface
+  instead of carving a frame under the seabed. Vanilla's own fallback in `PortalForcer#createPortal` keeps y ≥ 70; 63
+  also lets a frame be set into beaches, river banks and plains, which lie between 63 and 70 (RLM-341: the range
+  started at 64 while frames stood on top of the floor, and ground at 63 then took no frame set into it). The top,
+  310, is that fallback's ceiling (the highest buildable y less 9), so a mountain's surface is a spot too, where a
+  lower ceiling would carve the frame into the rock.
 - **Where nothing fits** (the stone realm has a bedrock ceiling; a realm can have a void below or water), the frame is
   carved out at the scaled position, clamped into the `y` range: set into a floor of the entry's arrival block
   (`arrival.floor`) that reaches in front of it, and air around it. A safe pocket of `arrival.pocket_radius` blocks
@@ -550,7 +552,7 @@ dimension: minecraft:overworld
 name: {en_us: Overworld}
 # W2b adds the portal's fields:
 colour: "#5DBB63"                    # return portals
-arrival: {y: [64, 310], floor: minecraft:stone_bricks, pocket_radius: 3}   # portals built on the way back
+arrival: {y: [63, 310], floor: minecraft:stone_bricks, pocket_radius: 3}   # portals built on the way back
 ```
 
 - **The name in messages:** a realm's name takes no article (Matěj, RLM-188), so it reads the same alone (the
@@ -634,8 +636,10 @@ dimension rules and access:
   - the build radius of each side, ⌊128 ÷ scale⌋ − 1 in a realm: from every Overworld x in one 16-block cell,
     a realm portal at either end of the radius aims back within 128 blocks;
   - the spot search for a built portal (a ceiling, a void, water, a full column, the `y` range), including a way
-    back from a realm portal at y 30 to Overworld columns of deep ocean, which builds on a platform at y 64, not
-    under the seabed.
+    back from a realm portal at y 30 to Overworld columns of deep ocean, which builds on a platform at y 63, not
+    under the seabed, and Overworld ground at y 63, which takes a frame set into it (RLM-341);
+  - the arrival in front of a frame a player stood on top of the floor, on that floor one step below the opening
+    (RLM-341).
 - **pytest:** the schema, the references, the generated advancement (criterion `minecraft:impossible`), the access
   requirement check, the dimension type checks (scale, bed rule).
 - **GameTests** (W2a's and W2b's "Done when"):

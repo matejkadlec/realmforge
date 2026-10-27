@@ -73,7 +73,8 @@ public record Realm(ResourceKey<Level> dimension, String name, String subtitle, 
      *
      * @param minY the lowest height of a built frame's bottom row
      * @param maxY the highest
-     * @param floor the block under and in front of a frame carved out where no spot fits, an id in the block registry
+     * @param floor the floor a carved frame is set into, reaching in front of it, where no spot fits, an id in the
+     *     block registry
      * @param pocketRadius blocks of safe space around a carved frame, free of fluids and falling blocks
      */
     public record Arrival(int minY, int maxY, Identifier floor, int pocketRadius) {
