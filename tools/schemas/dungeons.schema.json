@@ -172,7 +172,7 @@
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "A kind of dungeon: the room pool it is built from, the rules of its layout, the key that opens a portal to it\nand how long that portal stays open (W4d). Encounters, loot, its level range and its theme come with the tasks\nthat use them.",
+  "description": "A kind of dungeon: the room pool it is built from, the rules of its layout, the key that opens a portal to it,\nhow long that portal stays open (W4d) and its base level (RLM-459). Encounters, loot and its theme come with the\ntasks that use them.",
   "properties": {
     "id": {
       "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
@@ -189,6 +189,13 @@
     },
     "layout": {
       "$ref": "#/$defs/LayoutDef"
+    },
+    "level": {
+      "description": "Its base level: the level of its boss, where the campaign places it (its chapter and its order in the chapter); a type without a boss names the level its end stands for. A run's level is this base raised to the highest level of its party when it opens, and holds for the run: bosses (#c:bosses) are at it, minibosses (#realmforge:minibosses) one below, every other mob two or three below (RLM-240, RLM-459).",
+      "maximum": 1000,
+      "minimum": 1,
+      "title": "Level",
+      "type": "integer"
     },
     "name": {
       "$ref": "#/$defs/LocalizedText",
@@ -214,7 +221,8 @@
     "pool",
     "layout",
     "key",
-    "open_minutes"
+    "open_minutes",
+    "level"
   ],
   "title": "DungeonTypeDef",
   "type": "object"

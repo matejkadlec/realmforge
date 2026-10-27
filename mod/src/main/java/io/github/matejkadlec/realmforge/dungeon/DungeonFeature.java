@@ -2,8 +2,10 @@ package io.github.matejkadlec.realmforge.dungeon;
 
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
+import io.github.matejkadlec.realmforge.dungeon.instance.InstanceMobLevels;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceRules;
 import io.github.matejkadlec.realmforge.dungeon.portal.DungeonBlocks;
+import io.github.matejkadlec.realmforge.mob.MobLevels;
 import java.util.function.BiConsumer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -29,6 +31,8 @@ public final class DungeonFeature {
         InstanceManager.register(modBus);
         InstanceRules.register();
         DungeonBlocks.register(modBus);
+        // A mob in a run's plot takes the run's level, which the instance dimension's missing rule would not give it.
+        MobLevels.addSource(InstanceMobLevels::levelFor);
 
         // Inside the level tick, so the builder's time counts in the server's tick time (and /tick query, spark).
         NeoForge.EVENT_BUS.addListener(LevelTickEvent.Post.class, event -> {

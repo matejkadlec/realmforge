@@ -35,7 +35,7 @@ LAYOUT = "layout:\n  main_path: [2, 4]\n  branches: [0, 1]\n  branch_rooms: [1, 
 def dungeon(
     entry_id: str = "crypt", pool: str = POOL, layout: str = LAYOUT, key: str = "minecraft:tripwire_hook"
 ) -> str:
-    return f"id: {entry_id}\nname:\n  en_us: Crypt\npool: {pool}\n{layout}key: {key}\nopen_minutes: 20\n"
+    return f"id: {entry_id}\nname:\n  en_us: Crypt\npool: {pool}\n{layout}key: {key}\nopen_minutes: 20\nlevel: 14\n"
 
 
 def room_structure(
@@ -153,9 +153,9 @@ def test_dungeon_type_carries_its_pools_rooms(repo: RepoPaths) -> None:
         in java
     )
     assert "tools/schemas/dungeons.schema.json" in files
-    assert (data["key"], data["open_minutes"]) == ("minecraft:tripwire_hook", 20)
-    assert '"boss", 0, 0, 0, 0, 0,\n                    "minecraft:tripwire_hook", 20,' in java, (
-        "no pacing: zeros"
+    assert (data["key"], data["open_minutes"], data["level"]) == ("minecraft:tripwire_hook", 20, 14)
+    assert '"boss", 0, 0, 0, 0, 0,\n                    "minecraft:tripwire_hook", 20, 14,' in java, (
+        "no pacing: zeros; then the key, the open time and the base level"
     )
     assert "spawners" not in hall and "chests" not in hall, (
         "a room without spawners or chests leaves them out"
@@ -368,6 +368,21 @@ def test_a_portal_stays_open_between_1_and_240_minutes(repo: RepoPaths, minutes:
     path = repo.content / "dungeons" / "crypt.yaml"
     path.write_text(path.read_text().replace("open_minutes: 20", f"open_minutes: {minutes}"))
     assert any("crypt.yaml" in p and "open_minutes" in p for p in problems_for(repo))
+
+
+@pytest.mark.parametrize("level", [0, 1001])
+def test_a_base_level_is_a_level_a_character_can_have(repo: RepoPaths, level: int) -> None:
+    crypt(repo)
+    path = repo.content / "dungeons" / "crypt.yaml"
+    path.write_text(path.read_text().replace("level: 14", f"level: {level}"))
+    assert any("crypt.yaml" in p and "level" in p for p in problems_for(repo))
+
+
+def test_every_dungeon_type_names_its_base_level(repo: RepoPaths) -> None:
+    crypt(repo)
+    path = repo.content / "dungeons" / "crypt.yaml"
+    path.write_text(path.read_text().replace("level: 14\n", ""))
+    assert any("crypt.yaml" in p and "level" in p for p in problems_for(repo))
 
 
 def test_a_pool_without_rooms_is_a_problem(repo: RepoPaths) -> None:

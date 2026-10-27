@@ -4,7 +4,10 @@
 # RLM-181); `/qa dungeon plan`, `build` and `enter` show its layouts. The real dungeon types come with W6. About 50
 # rooms (RLM-363; 70 felt too long in Matěj's second playtest of 2026-10-24): one long main road with a fight after
 # every 2 to 4 rooms and a lock, a trap or a sight after every 1 or 2 corridors, and a short branch to treasure every
-# 10 or so rooms (his first playtest of 2026-10-24, RLM-364). The open time is a placeholder until balance.
+# 10 or so rooms (his first playtest of 2026-10-24, RLM-364). The open time is a placeholder until balance, and so is
+# the level (RLM-459): 10, the end of chapter 1, as this testing dungeon becomes a real one in the Overworld (Matěj,
+# 2026-10-27, RLM-36). A run is at least that level, raised to its party's highest, so its other mobs are 7 or 8 for
+# a player up to level 10.
 id: test_dungeon
 name:
   en_us: Test Dungeon
@@ -23,3 +26,4 @@ layout:
     weight: 4
 key: realmforge:test_dungeon_key
 open_minutes: 60
+level: 10

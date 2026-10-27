@@ -63,6 +63,7 @@ public final class QaGameTests {
             ContentSpellSchoolGameTests.class,
             ContentStatGameTests.class,
             CustomMobGameTests.class,
+            DungeonLevelGameTests.class,
             DungeonPlanGameTests.class,
             EffectGameTests.class,
             GearGameTests.class,

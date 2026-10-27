@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.character.Characters;
 import io.github.matejkadlec.realmforge.dungeon.DungeonAttachments;
 import io.github.matejkadlec.realmforge.dungeon.DungeonRegistries;
 import io.github.matejkadlec.realmforge.dungeon.DungeonType;
@@ -27,7 +28,9 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
@@ -212,18 +215,18 @@ public final class InstanceManager extends SavedData {
 
     /**
      * Takes a plot and starts building {@code layout} in it over the next ticks, after its chunks have loaded in the
-     * background. Online party members enter when it is built. The run has no timer.
+     * background. Online party members enter when it is built. The run has no timer and no level.
      *
      * @throws IllegalArgumentException when a room template is unknown or a room reaches outside the plot
      */
     public Plot open(InstanceLayout layout, List<UUID> party) {
-        return open(layout, party, null, 0L);
+        return open(layout, party, null, 0L, OptionalInt.empty());
     }
 
     /**
      * Opens a run of {@code type} for {@code player} through the dungeon portal at {@code portal} (W4d): plans a layout
-     * from a new seed and starts building it. The run closes after the type's open time; the player enters through
-     * the portal once it is built, not by themselves.
+     * from a new seed and starts building it. The run closes after the type's open time, and its level is the type's
+     * base raised to the player's (RLM-459); the player enters through the portal once it is built, not by themselves.
      *
      * @throws PlanningException when no layout of the type fits a plot
      * @throws IllegalArgumentException when a room template is unknown or a room reaches outside the plot
@@ -232,7 +235,7 @@ public final class InstanceManager extends SavedData {
         DungeonType dungeon = type.value();
         DungeonPlan plan = dungeon.plan(level().getRandom().nextLong());
         return open(plan.toInstanceLayout(), List.of(player.getUUID()),
-                new PortalLink(type.key().identifier(), portal), dungeon.openTicks());
+                new PortalLink(type.key().identifier(), portal), dungeon.openTicks(), OptionalInt.of(dungeon.level()));
     }
 
     /**
@@ -240,6 +243,17 @@ public final class InstanceManager extends SavedData {
      * after now; public for the GameTests, which open portal runs of layouts of their own.
      */
     public Plot open(InstanceLayout layout, List<UUID> party, @Nullable PortalLink portal, long openTicks) {
+        return open(layout, party, portal, openTicks, OptionalInt.empty());
+    }
+
+    /**
+     * {@link #open(InstanceLayout, List, PortalLink, long)} for a run of a dungeon type whose base level is
+     * {@code baseLevel}: the run's level is that base raised to the highest level of the party members online now,
+     * and holds for the whole run (RLM-459). No portal ({@code null}) means no timer. Public for the QA commands and
+     * GameTests, which open runs of a type's or of their own layouts.
+     */
+    public Plot open(InstanceLayout layout, List<UUID> party, @Nullable PortalLink portal, long openTicks,
+            OptionalInt baseLevel) {
         ServerLevel level = level();
         List<BoundingBox> relativeRooms = new ArrayList<>();
         List<DataMarker> markers = new ArrayList<>();
@@ -267,10 +281,16 @@ public final class InstanceManager extends SavedData {
                 .map(box -> box.moved(origin.getX(), origin.getY(), origin.getZ()))
                 .toList();
         Long closesAt = portal == null ? null : level.getGameTime() + openTicks;
-        plot.startBuilding(layout, rooms, markers, party, nextRun++, portal, closesAt);
+        Integer runLevel = null;
+        if (baseLevel.isPresent()) {
+            runLevel = RunLevels.runLevel(baseLevel.getAsInt(), party.stream()
+                    .map(level.getServer().getPlayerList()::getPlayer).filter(Objects::nonNull)
+                    .mapToInt(Characters::level));
+        }
+        plot.startBuilding(layout, rooms, markers, party, nextRun++, portal, closesAt, runLevel);
         holdChunks(plot);
         setDirty();
-        LOGGER.debug("Opened instance plot {} at {} for {}", plot.id(), origin, party);
+        LOGGER.debug("Opened instance plot {} at {} for {} at level {}", plot.id(), origin, party, runLevel);
         return plot;
     }
 

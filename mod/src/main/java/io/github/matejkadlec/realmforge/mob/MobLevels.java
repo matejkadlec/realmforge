@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.concurrent.CopyOnWriteArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.SectionPos;
@@ -37,6 +38,7 @@ import net.neoforged.neoforge.event.entity.living.MobSplitEvent;
 
 /**
  * Mob levels and the scaling they bring (architecture 14.1). Every hostile mob ({@link #getsLevel}) gets its level
+ * from a {@link Source} of a feature above {@code mob} that has one for its place (a dungeon run's, RLM-459), or else
  * from the rules of its dimension ({@link DimensionRules}), which follow the nearest player ({@link #levelAt}) above
  * the floor of the realm or of a structure holding the mob ({@link #floorAt}), and the {@link MobScaling} of that
  * level, and no mob carries a level without its scaling. A mob keeps the level it got:
@@ -47,7 +49,7 @@ import net.neoforged.neoforge.event.entity.living.MobSplitEvent;
  *   its join instead.</li>
  *   <li>A slime's split children take the parent's level ({@code MobSplitEvent}).</li>
  *   <li>A mob that joins without a level, because its spawn skipped {@code finalizeSpawn} (silverfish from infested
- *   blocks, {@code GameTestHelper#spawn}) or it was saved before mob levels existed, is leveled from the rules then.</li>
+ *   blocks, {@code GameTestHelper#spawn}) or it was saved before mob levels existed, is leveled from its place then.</li>
  *   <li>A converted mob keeps the level NeoForge copies onto it ({@code LivingConversionEvent.Post}) and gets that
  *   level's scaling; a mob converted into one that gets no level (a cured zombie villager) loses it.</li>
  *   <li>A mob loaded from disk gets its scaling again from its level and the current curves, so a changed curve
@@ -56,12 +58,29 @@ import net.neoforged.neoforge.event.entity.living.MobSplitEvent;
  * Rescaling keeps a mob's share of health. The damage multiplier applies to every hit a leveled mob causes.
  */
 public final class MobLevels {
+    /**
+     * Gives the mobs of some places their levels, ahead of the dimension's rule: a feature above {@code mob} provides
+     * one (architecture 4.4: lower asks higher through provider interfaces), as {@code dungeon} does for its runs.
+     */
+    @FunctionalInterface
+    public interface Source {
+        /** The level of {@code mob}, getting its level at this position, or empty when the source has none there. */
+        OptionalInt levelFor(ServerLevel level, Mob mob, double x, double y, double z);
+    }
+
+    private static final List<Source> SOURCES = new CopyOnWriteArrayList<>();
+
     private MobLevels() {
+    }
+
+    /** Adds a source of mob levels; the first source with a level for a mob decides. Called at mod construction. */
+    public static void addSource(Source source) {
+        SOURCES.add(source);
     }
 
     /**
      * Whether a mob gets a level: every hostile mob (vanilla's {@link Enemy} marker, which our mobs will carry too).
-     * Bosses take theirs from their definition (W5).
+     * Bosses take theirs from their definition (W5), or from the dungeon run they stand in.
      */
     public static boolean getsLevel(Entity entity) {
         return entity instanceof Mob && entity instanceof Enemy;
@@ -88,6 +107,20 @@ public final class MobLevels {
         Player nearest = level.getNearestPlayer(x, y, z, -1, EntitySelector.NO_SPECTATORS);
         int playerLevel = nearest != null ? level(nearest).orElse(EntityLevel.MIN) : floor;
         return OptionalInt.of(rule.get().levelFor(playerLevel, floor, random));
+    }
+
+    /**
+     * The level {@code mob} gets at a position: the first {@link Source}'s that has one for it there, or else
+     * {@link #levelAt}'s, drawn from the mob's random; empty when neither gives one.
+     */
+    public static OptionalInt levelFor(ServerLevel level, Mob mob, double x, double y, double z) {
+        for (Source source : SOURCES) {
+            OptionalInt sourced = source.levelFor(level, mob, x, y, z);
+            if (sourced.isPresent()) {
+                return sourced;
+            }
+        }
+        return levelAt(level, x, y, z, mob.getRandom());
     }
 
     /**
@@ -158,8 +191,8 @@ public final class MobLevels {
     }
 
     /**
-     * Levels a spawning mob from the rules and the player nearest its spawn position and marks it, so its health is
-     * refilled when it joins. A mob spawned with a new chunk ({@code NaturalSpawner#spawnMobsForChunkGeneration}, structure pieces) is
+     * Levels a spawning mob from its place ({@link #levelFor}: a source's level, or the rules and the player nearest
+     * its spawn position) and marks it, so its health is refilled when it joins. A mob spawned with a new chunk ({@code NaturalSpawner#spawnMobsForChunkGeneration}, structure pieces) is
      * finalized on a world generation thread, where setting the synced level would read the server's entity tracking
      * from that thread: it is only marked, and its join, on the server thread, levels it.
      */
@@ -172,7 +205,7 @@ public final class MobLevels {
             mob.setData(MobAttachments.PENDING_REFILL, Boolean.TRUE);
             return;
         }
-        OptionalInt rolled = levelAt(level, event.getX(), event.getY(), event.getZ(), mob.getRandom());
+        OptionalInt rolled = levelFor(level, mob, event.getX(), event.getY(), event.getZ());
         if (rolled.isPresent()) {
             setLevel(mob, rolled.getAsInt());
             mob.setData(MobAttachments.PENDING_REFILL, Boolean.TRUE);
@@ -194,8 +227,7 @@ public final class MobLevels {
         }
         OptionalInt level = level(mob);
         if (level.isEmpty()) {
-            levelAt(serverLevel, mob.getX(), mob.getY(), mob.getZ(), mob.getRandom())
-                    .ifPresent(rolled -> setLevel(mob, rolled));
+            levelFor(serverLevel, mob, mob.getX(), mob.getY(), mob.getZ()).ifPresent(rolled -> setLevel(mob, rolled));
         } else if (event.loadedFromDisk() && !refill) {
             applyScaling(mob, level.getAsInt());
         }

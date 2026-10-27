@@ -23,6 +23,7 @@ import io.github.matejkadlec.realmforge.qa.dungeon.LayoutMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import net.minecraft.ChatFormatting;
@@ -99,9 +100,10 @@ final class DungeonCommands {
 
     private static int build(CommandContext<CommandSourceStack> context, long seed) throws CommandSyntaxException {
         Identifier id = IdentifierArgument.getId(context, "type");
-        DungeonPlan plan = plan(context, id, seed);
+        DungeonType type = type(context, id);
+        DungeonPlan plan = plan(type, seed);
         InstanceManager manager = manager(context);
-        Plot plot = manager.open(plan.toInstanceLayout(), List.of());
+        Plot plot = manager.open(plan.toInstanceLayout(), List.of(), null, 0L, OptionalInt.of(type.level()));
         BoundingBox entrance = plan.entrance().box();
         Vec3 above = Vec3.atLowerCornerOf(plot.origin()).add(entrance.getCenter().getX() + 0.5, entrance.maxY() + 2,
                 entrance.getCenter().getZ() + 0.5);
@@ -110,8 +112,8 @@ final class DungeonCommands {
         Component link = Component.literal("[fly over it]").withStyle(style -> style
                 .withColor(ChatFormatting.GREEN).withClickEvent(new ClickEvent.RunCommand(teleport)));
         context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
-                "Building %s seed %d (%s) in plot %d at %s ", id, seed, summary(plan), plot.id(),
-                plot.origin().toShortString())).append(link), true);
+                "Building %s seed %d (%s) at level %d in plot %d at %s ", id, seed, summary(plan),
+                plot.level().orElse(0), plot.id(), plot.origin().toShortString())).append(link), true);
         return plot.id();
     }
 
@@ -122,11 +124,13 @@ final class DungeonCommands {
         if (manager.plotOf(player).isPresent()) {
             throw ALREADY_IN_RUN.create();
         }
-        DungeonPlan plan = plan(context, id, seed);
-        Plot plot = manager.open(plan.toInstanceLayout(), List.of(player.getUUID()));
+        DungeonType type = type(context, id);
+        DungeonPlan plan = plan(type, seed);
+        Plot plot = manager.open(plan.toInstanceLayout(), List.of(player.getUUID()), null, 0L,
+                OptionalInt.of(type.level()));
         context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
-                "Building %s seed %d (%s) in plot %d; you enter when it is built", id, seed, summary(plan),
-                plot.id())), true);
+                "Building %s seed %d (%s) at level %d in plot %d; you enter when it is built", id, seed,
+                summary(plan), plot.level().orElse(0), plot.id())), true);
         return plot.id();
     }
 
@@ -140,11 +144,20 @@ final class DungeonCommands {
 
     private static DungeonPlan plan(CommandContext<CommandSourceStack> context, Identifier id, long seed)
             throws CommandSyntaxException {
+        return plan(type(context, id), seed);
+    }
+
+    private static DungeonType type(CommandContext<CommandSourceStack> context, Identifier id)
+            throws CommandSyntaxException {
         DungeonType type = context.getSource().getServer().registryAccess()
                 .lookupOrThrow(DungeonRegistries.DUNGEON_TYPE).getValue(id);
         if (type == null) {
             throw UNKNOWN_TYPE.create(id);
         }
+        return type;
+    }
+
+    private static DungeonPlan plan(DungeonType type, long seed) throws CommandSyntaxException {
         try {
             return type.plan(seed);
         } catch (PlanningException e) {
