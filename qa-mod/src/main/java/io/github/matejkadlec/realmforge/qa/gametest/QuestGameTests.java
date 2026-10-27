@@ -1,11 +1,5 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
-import dev.ftb.mods.ftbquests.quest.Chapter;
-import dev.ftb.mods.ftbquests.quest.Quest;
-import dev.ftb.mods.ftbquests.quest.QuestObjectBase;
-import dev.ftb.mods.ftbquests.quest.ServerQuestFile;
-import dev.ftb.mods.ftbquests.quest.reward.Reward;
-import dev.ftb.mods.ftbquests.quest.task.Task;
 import io.github.matejkadlec.realmforge.character.Characters;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
 import io.github.matejkadlec.realmforge.dungeon.instance.Plot;
@@ -14,10 +8,6 @@ import io.github.matejkadlec.realmforge.dungeon.instance.PortalLink;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpells;
 import io.github.matejkadlec.realmforge.progression.ProgressionStats;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedQuestBookExpectations;
-import io.github.matejkadlec.realmforge.qa.generated.GeneratedQuestBookExpectations.ChapterExpectation;
-import io.github.matejkadlec.realmforge.qa.generated.GeneratedQuestBookExpectations.QuestExpectation;
-import io.github.matejkadlec.realmforge.qa.generated.GeneratedQuestBookExpectations.RewardExpectation;
-import io.github.matejkadlec.realmforge.qa.generated.GeneratedQuestBookExpectations.TaskExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedQuestBookExpectations.TaskSample;
 import io.github.matejkadlec.realmforge.qa.instance.SpikeLayouts;
 import io.github.matejkadlec.realmforge.spell.CastResult;
@@ -27,12 +17,10 @@ import io.github.matejkadlec.realmforge.spell.SpellAim;
 import io.github.matejkadlec.realmforge.spell.SpellCaster;
 import io.github.matejkadlec.realmforge.spell.SpellRegistries;
 import io.github.matejkadlec.realmforge.spell.Spells;
-import java.util.Collection;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -194,49 +182,34 @@ public final class QuestGameTests {
     /**
      * The quest book FTB Quests loaded is the pipeline's: the same chapters, each with its quests, and each quest with
      * its dependencies, tasks and rewards, by id and type, every reward per player and auto-claimed as the pipeline
-     * says (architecture 16). While {@code content/quests/} is empty, no chapter is loaded at all.
+     * says (architecture 16). While {@code content/quests/} is empty, no chapter is loaded at all. The comparison and
+     * its FTB Quests types live in {@link QuestBook}.
      */
     @QaGameTest
     public static void theLoadedQuestBookMatchesThePipeline(GameTestHelper helper) {
-        helper.assertTrue(ServerQuestFile.exists(), "FTB Quests loaded no quest book");
-        Map<String, Chapter> chapters = byCode(ServerQuestFile.getInstance().getAllChapters());
-        Map<String, ChapterExpectation> expected = GeneratedQuestBookExpectations.CHAPTERS.stream()
-                .collect(Collectors.toMap(ChapterExpectation::code, Function.identity()));
-        helper.assertValueEqual(chapters.keySet(), expected.keySet(), "the loaded chapters");
-        for (ChapterExpectation chapter : GeneratedQuestBookExpectations.CHAPTERS) {
-            Map<String, Quest> quests = byCode(chapters.get(chapter.code()).getQuests());
-            helper.assertValueEqual(quests.keySet(), chapter.quests().stream().map(QuestExpectation::code)
-                    .collect(Collectors.toSet()), "the quests of " + chapter.id());
-            for (QuestExpectation quest : chapter.quests()) {
-                assertQuest(helper, quests.get(quest.code()), quest);
-            }
-        }
+        QuestBook.assertMatchesThePipeline(helper);
         helper.succeed();
     }
 
-    private static void assertQuest(GameTestHelper helper, Quest loaded, QuestExpectation quest) {
-        helper.assertValueEqual(loaded.isOptional(), quest.optional(), quest.id() + " optional");
-        helper.assertValueEqual(loaded.streamDependencies().map(object -> object.getCodeString()).sorted().toList(),
-                quest.dependencies().stream().sorted().toList(), quest.id() + "'s dependencies");
-        Map<String, String> tasks = loaded.getTasks().stream().collect(Collectors.toMap(task -> task.getCodeString(),
-                task -> task.getType().getTypeForSerialization()));
-        helper.assertValueEqual(tasks, quest.tasks().stream().collect(Collectors.toMap(TaskExpectation::code,
-                TaskExpectation::type)), quest.id() + "'s tasks");
-        Map<String, Reward> rewards = byCode(loaded.getRewards());
-        helper.assertValueEqual(rewards.keySet(), quest.rewards().stream().map(RewardExpectation::code)
-                .collect(Collectors.toSet()), quest.id() + "'s rewards");
-        for (RewardExpectation expected : quest.rewards()) {
-            Reward reward = rewards.get(expected.code());
-            String name = quest.id() + "'s reward " + expected.code();
-            helper.assertValueEqual(reward.getType().getTypeForSerialization(), expected.type(), name + " type");
-            helper.assertValueEqual(reward.isTeamReward(), expected.team(), name + " is a team reward");
-            helper.assertValueEqual(reward.getAutoClaimType().getId(), expected.autoClaim(), name + " auto-claim");
+    /**
+     * No GameTest class names a type of a compile-only pack mod (FTB Quests, FTB Library, FTB Teams) in its methods'
+     * signatures, lambdas included: the QA mod lists those methods when it is constructed ({@link QaGameTests}), which
+     * resolves those types, and the lean dev client ({@code -PleanClient}) has none of these mods, so it would not
+     * start. Such a type belongs in a helper class that a test calls, as {@link QuestBook} is.
+     */
+    @QaGameTest
+    public static void gameTestClassesNameNoPackModTypeInTheirMethods(GameTestHelper helper) {
+        for (Class<?> holder : QaGameTests.holders()) {
+            for (Method method : holder.getDeclaredMethods()) {
+                List<Class<?>> types = new ArrayList<>(List.of(method.getParameterTypes()));
+                types.add(method.getReturnType());
+                for (Class<?> type : types) {
+                    helper.assertFalse(type.getTypeName().startsWith("dev.ftb."),
+                            holder.getSimpleName() + "#" + method.getName() + " names " + type.getTypeName());
+                }
+            }
         }
-    }
-
-    private static <T extends QuestObjectBase> Map<String, T> byCode(Collection<T> objects) {
-        // A lambda: QuestObjectBase::getCodeString would also name its static getCodeString(QuestObjectBase).
-        return objects.stream().collect(Collectors.toMap(object -> object.getCodeString(), Function.identity()));
+        helper.succeed();
     }
 
     /** The sample of a kind with a target (a level always has one), or the one for any. */

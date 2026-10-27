@@ -147,6 +147,11 @@ public final class QaGameTests {
         return List.copyOf(tests);
     }
 
+    /** The classes whose {@link QaGameTest} methods are registered. */
+    static List<Class<?>> holders() {
+        return HOLDERS;
+    }
+
     /** {@code contentItemsAreListed} -> {@code content_items_are_listed}. */
     static String snakeCase(String camelCase) {
         return camelCase.replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase(Locale.ROOT);

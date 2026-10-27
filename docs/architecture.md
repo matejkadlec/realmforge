@@ -2776,7 +2776,10 @@ depth limit.
     our custom statistics) and, from sample tasks, advancements in the QA mod's data
     (`realmforge_qa:quest_task/<name>`). `QuestGameTests` completes the samples through a level-up, a dungeon run and
     casts, counts the statistic, and compares the book FTB Quests loaded in the GameTest server (which gets the pack's
-    config, `seedPackConfig`) with the expectations: while `content/quests/` is empty, it holds no chapter.
+    config, `seedPackConfig`) with the expectations: while `content/quests/` is empty, it holds no chapter. The
+    comparison's FTB Quests types live in `QuestBook`, out of every GameTest class: the QA mod lists those classes'
+    methods when it is constructed, which resolves the types in their signatures, and the lean dev client has no FTB
+    mod (a GameTest checks that no GameTest class names a `dev.ftb` type there).
 - Procedural contracts come later (M7), in our own `contract/` package.
 
 ## 17. Networking
