@@ -177,3 +177,27 @@ def placeholder_orb_texture(seed: str, color: int) -> bytes:
             )
             pixels.append(_shade(base, factor))
     return encode_rgba(width, height, pixels)
+
+
+EQUIPMENT_TEXTURE_SIZE = (64, 32)
+
+
+def placeholder_equipment_texture(seed: str, color: int | None = None) -> bytes:
+    """The 64x32 texture of worn armor (vanilla's humanoid armor layout, one for the body and one for the leggings),
+    until real art exists: opaque cloth in ``color`` (0xRRGGBB), or a colour from a hash of ``seed`` (the look's id),
+    woven in 2-pixel checks with a darker weft every fourth row, so it is the same on every machine."""
+    if color is None:
+        hue = hashlib.sha256(seed.encode("utf-8")).digest()[0] / 256
+        light, dark, weft = _rgb(hue, 0.45, 0.85), _rgb(hue, 0.55, 0.70), _rgb(hue, 0.65, 0.45)
+    else:
+        base = ((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF)
+        light, dark, weft = _shade(base, 1.1), _shade(base, 0.9), _shade(base, 0.6)
+    width, height = EQUIPMENT_TEXTURE_SIZE
+    pixels: list[Rgba] = []
+    for y in range(height):
+        for x in range(width):
+            if y % 4 == 3:
+                pixels.append(weft)
+            else:
+                pixels.append(light if (x // 2 + y // 2) % 2 == 0 else dark)
+    return encode_rgba(width, height, pixels)

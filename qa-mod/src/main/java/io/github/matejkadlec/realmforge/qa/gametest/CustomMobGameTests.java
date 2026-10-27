@@ -89,13 +89,13 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class CustomMobGameTests {
     /** Rolls of a mob's loot: a 15 % drop misses all of them with a chance of 0.85^400. */
-    private static final int ROLLS = 400;
+    static final int ROLLS = 400;
     /** How far a drop's share of the rolls may stray from its chance: more than five standard deviations. */
-    private static final double SHARE_TOLERANCE = 0.1;
+    static final double SHARE_TOLERANCE = 0.1;
     private static final double TOLERANCE = 1e-4;
-    private static final int LOOTING = 3;
+    static final int LOOTING = 3;
     /** Apotheosis adds its gems to a player's kills through its own loot modifier, whatever the mob. */
-    private static final String APOTHEOSIS = "apotheosis";
+    static final String APOTHEOSIS = "apotheosis";
     /** Sentinels created to see each of its three gems: one gem misses all of them with a chance of (2/3)^60. */
     private static final int SENTINELS = 60;
     /** Ticks the step test walks its mobs, a tenth of a block each. */
@@ -194,7 +194,7 @@ public final class CustomMobGameTests {
 
     /**
      * Rolls {@code table} {@value #ROLLS} times: only {@code loot}'s items, each in its count (with {@code looting}
-     * levels' extra) and as often as its chance (raised by its Looting chance per level); with Looting, a drop that
+     * levels' extra) and as often as its chance ({@link #expectedShare}); with Looting, a drop that
      * Looting may raise beyond its count does so at least once.
      */
     private static void rollLoot(GameTestHelper helper, CustomMob mob, DamageSource source, ResourceKey<LootTable> table,
@@ -208,6 +208,9 @@ public final class CustomMobGameTests {
             List<ItemStack> stacks = new ArrayList<>();
             mob.dropFromLootTable(level, source, false, table, stacks::add);
             for (ItemStack stack : stacks) {
+                if (stack.isEmpty()) {
+                    continue; // a count of 0 (vanilla's own drops spawn nothing for it)
+                }
                 Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
                 if (id.getNamespace().equals(APOTHEOSIS)) {
                     continue;
@@ -225,7 +228,7 @@ public final class CustomMobGameTests {
             }
         }
         for (DropExpectation drop : loot) {
-            double chance = Math.min(1, drop.chance() + looting * drop.lootingChance());
+            double chance = expectedShare(drop, looting);
             double share = rolled.getOrDefault(drop.item(), 0) / (double) ROLLS;
             helper.assertTrue(Math.abs(share - chance) <= SHARE_TOLERANCE,
                     what + " dropped " + drop.item() + " in " + share + " of " + ROLLS + " rolls, not about " + chance);
@@ -234,6 +237,23 @@ public final class CustomMobGameTests {
                         what + " never dropped more than " + drop.max() + " " + drop.item() + " with Looting");
             }
         }
+    }
+
+    /**
+     * The share of rolls in which {@code drop} gives any of its item with {@code looting} levels: its chance (raised by
+     * its Looting chance per level), less the rolls whose count stays 0. A count from 0 to max gives none in one of
+     * {@code max + 1} rolls, unless Looting's extra adds some: vanilla's {@code enchanted_count_increase} adds the levels
+     * times a draw from 0 to {@code lootingCount}, rounded, which is 0 for a draw below 0.5 / levels.
+     */
+    static double expectedShare(DropExpectation drop, int looting) {
+        double chance = Math.min(1, drop.chance() + looting * drop.lootingChance());
+        if (drop.min() > 0) {
+            return chance;
+        }
+        double noBonus = looting == 0 || drop.lootingCount() == 0
+                ? 1
+                : Math.min(1, 0.5 / (looting * drop.lootingCount()));
+        return chance * (1 - noBonus / (drop.max() + 1));
     }
 
     /**

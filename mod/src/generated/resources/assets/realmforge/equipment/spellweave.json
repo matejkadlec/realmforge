@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "realmforge:spellweave"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "realmforge:spellweave"
+      }
+    ]
+  }
+}

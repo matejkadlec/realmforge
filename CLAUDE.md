@@ -59,6 +59,10 @@ Apotheosis for gear rarity, affixes, gems and enchanting
   remapped); every custom mob follows Matěj's Realmforge Mobs Guideline (Jira copy: RLM-33 comment 22481,
   [architecture 14.2](docs/architecture.md#142-custom-mobs)). A new player
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits.
+  Casters have their gear (RLM-172, RLM-197), from an item's `gear` in YAML: seven two-handed wands from wood to
+  netherite whose stats count in the main hand, which every cast wears and which lock shields, and four robe sets (Apprentice's, Spellweave, Arcane Silk,
+  Netherite) with magic shield, spell power and mana instead of armor; Arcane Dust drops from witches, evokers and
+  illusioners through a NeoForge loot modifier.
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell
   engine is done (C3a): spells as data in `content/spells/`, cast by players and mobs through one `SpellCaster` (from

@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# The Netherite set, the caster's netherite-tier armor (RLM-197); piece names as RLM-377.
+# No armor: robes protect with Magic Shield, as much as the same tier's vanilla piece has armor, and give Spell
+# Power and Max Mana and, from diamond on, Cooldown Reduction (Matěj, 2026-10-15). Durability and enchantability
+# as vanilla's netherite armor. The generated placeholder textures until A1's art.
+# Upgraded from the Arcane Silk piece at the smithing table, as vanilla's netherite armor (Matěj, 2026-10-15).
+id: netherite_pants
+name:
+  en_us: Netherite Pants
+fire_resistant: true
+creative_tabs:
+  - minecraft:combat
+color: "#3B2E3A"
+gear:
+  kind: legs
+  durability: 555
+  enchantability: 15
+  repair_with: "#minecraft:repairs_netherite_armor"
+  look: netherite
+  equip_sound: minecraft:item.armor.equip_netherite
+  modifiers:
+    - {attribute: realmforge:magic_shield, operation: add_value, amount: 6}
+    - {attribute: realmforge:spell_power, operation: add_value, amount_percent: 10}
+    - {attribute: realmforge:max_mana, operation: add_value, amount: 40}
+    - {attribute: realmforge:cooldown_reduction, operation: add_value, amount_percent: 5}
+recipe:
+  template: minecraft:netherite_upgrade_smithing_template
+  base: realmforge:arcane_silk_pants
+  addition: "#minecraft:netherite_tool_materials"

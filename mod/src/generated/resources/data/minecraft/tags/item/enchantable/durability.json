@@ -1,0 +1,27 @@
+{
+  "values": [
+    "realmforge:apprentice_boots",
+    "realmforge:apprentice_hat",
+    "realmforge:apprentice_pants",
+    "realmforge:apprentice_robes",
+    "realmforge:arcane_silk_cap",
+    "realmforge:arcane_silk_pants",
+    "realmforge:arcane_silk_robes",
+    "realmforge:arcane_silk_sandals",
+    "realmforge:copper_wand",
+    "realmforge:diamond_wand",
+    "realmforge:golden_wand",
+    "realmforge:iron_wand",
+    "realmforge:netherite_cap",
+    "realmforge:netherite_pants",
+    "realmforge:netherite_robes",
+    "realmforge:netherite_sandals",
+    "realmforge:netherite_wand",
+    "realmforge:spellweave_cap",
+    "realmforge:spellweave_pants",
+    "realmforge:spellweave_robes",
+    "realmforge:spellweave_sandals",
+    "realmforge:stone_wand",
+    "realmforge:wooden_wand"
+  ]
+}

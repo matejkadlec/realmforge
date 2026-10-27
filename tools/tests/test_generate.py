@@ -83,7 +83,7 @@ def test_item_use_and_flavor_become_tooltip_lines_and_a_use_tag(repo: RepoPaths)
         files["mod/src/generated/resources/data/realmforge/tags/item/use/unlearn_stat_points.json"]
     )
     assert tag == {"values": ["realmforge:oblivion_scroll", "realmforge:wiper"]}
-    assert '"realmforge:use/unlearn_stat_points")' in files[EXPECTATIONS_JAVA].decode()
+    assert '"realmforge:use/unlearn_stat_points",' in files[EXPECTATIONS_JAVA].decode()
 
 
 def test_items_without_lore_import_nothing_for_it(repo: RepoPaths) -> None:

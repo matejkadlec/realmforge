@@ -3,16 +3,38 @@
 // Change the content or the generator, then run: uv run rf gen
 package io.github.matejkadlec.realmforge.qa.generated;
 
+import io.github.matejkadlec.realmforge.qa.generated.GeneratedMobExpectations.DropExpectation;
 import java.util.List;
+import java.util.Optional;
 
 /** What {@code content/items/} says about every item, so GameTests can check that the game agrees. */
 public final class GeneratedItemExpectations {
     /**
      * Expected state of one item. Ids are full resource locations, e.g. {@code realmforge:test_item}; the use
-     * tag is the item tag of its use, empty for an item without one.
+     * tag is the item tag of its use, empty for an item without one; gear is empty for an item that is no
+     * gear; drops are the mobs that are not ours that drop it.
      */
     public record ItemExpectation(String id, String translationKey, int maxStackSize, List<String> creativeTabs,
-            String useTag) {
+            String useTag, Optional<Gear> gear, List<ItemDrop> drops) {
+    }
+
+    /**
+     * A piece of gear: its kind ({@code wand}, {@code head}, ...), the slot its stats count in ({@code mainhand}
+     * or the armor slot), its durability, enchantability (0: none) and repair material (an item, a {@code #}tag
+     * or empty), a wand's attack damage and speed as the tooltip shows them (0 for armor), armor's equipment
+     * asset (empty for a wand), whether it is two-handed, and its fixed stats.
+     */
+    public record Gear(String kind, String slot, int durability, int enchantability, String repairWith,
+            double attackDamage, double attackSpeed, String look, boolean twoHanded,
+            List<GearModifier> modifiers) {
+    }
+
+    /** One fixed stat: its modifier id, attribute, operation (as in YAML) and amount in game units. */
+    public record GearModifier(String id, String attribute, String operation, double amount) {
+    }
+
+    /** The item dropped by a mob that is not ours, through a loot modifier on the mob's own loot table. */
+    public record ItemDrop(String entity, String lootTable, DropExpectation drop) {
     }
 
     public static final List<ItemExpectation> ITEMS = List.of(
@@ -21,79 +43,425 @@ public final class GeneratedItemExpectations {
                     "item.realmforge.apprentice_boots",
                     1,
                     List.of("minecraft:combat"),
-                    ""),
+                    "",
+                    Optional.of(new Gear(
+                            "feet", "feet", 65, 15, "#minecraft:wool",
+                            0.0, 0.0, "realmforge:apprentice", false,
+                            List.of(
+                                    new GearModifier("realmforge:gear/feet/0", "realmforge:magic_shield", "add_value", 1.0),
+                                    new GearModifier("realmforge:gear/feet/1", "realmforge:spell_power", "add_value", 0.02),
+                                    new GearModifier("realmforge:gear/feet/2", "realmforge:max_mana", "add_value", 10.0)))),
+                    List.of()),
             new ItemExpectation(
                     "realmforge:apprentice_hat",
                     "item.realmforge.apprentice_hat",
                     1,
                     List.of("minecraft:combat"),
-                    ""),
+                    "",
+                    Optional.of(new Gear(
+                            "head", "head", 55, 15, "#minecraft:wool",
+                            0.0, 0.0, "realmforge:apprentice", false,
+                            List.of(
+                                    new GearModifier("realmforge:gear/head/0", "realmforge:magic_shield", "add_value", 1.0),
+                                    new GearModifier("realmforge:gear/head/1", "realmforge:spell_power", "add_value", 0.02),
+                                    new GearModifier("realmforge:gear/head/2", "realmforge:max_mana", "add_value", 10.0)))),
+                    List.of()),
             new ItemExpectation(
                     "realmforge:apprentice_pants",
                     "item.realmforge.apprentice_pants",
                     1,
                     List.of("minecraft:combat"),
-                    ""),
+                    "",
+                    Optional.of(new Gear(
+                            "legs", "legs", 75, 15, "#minecraft:wool",
+                            0.0, 0.0, "realmforge:apprentice", false,
+                            List.of(
+                                    new GearModifier("realmforge:gear/legs/0", "realmforge:magic_shield", "add_value", 2.0),
+                                    new GearModifier("realmforge:gear/legs/1", "realmforge:spell_power", "add_value", 0.02),
+                                    new GearModifier("realmforge:gear/legs/2", "realmforge:max_mana", "add_value", 10.0)))),
+                    List.of()),
             new ItemExpectation(
                     "realmforge:apprentice_robes",
                     "item.realmforge.apprentice_robes",
                     1,
                     List.of("minecraft:combat"),
-                    ""),
+                    "",
+                    Optional.of(new Gear(
+                            "chest", "chest", 80, 15, "#minecraft:wool",
+                            0.0, 0.0, "realmforge:apprentice", false,
+                            List.of(
+                                    new GearModifier("realmforge:gear/chest/0", "realmforge:magic_shield", "add_value", 3.0),
+                                    new GearModifier("realmforge:gear/chest/1", "realmforge:spell_power", "add_value", 0.02),
+                                    new GearModifier("realmforge:gear/chest/2", "realmforge:max_mana", "add_value", 10.0)))),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:arcane_dust",
+                    "item.realmforge.arcane_dust",
+                    64,
+                    List.of("minecraft:ingredients"),
+                    "",
+                    Optional.empty(),
+                    List.of(
+                            new ItemDrop("minecraft:witch", "minecraft:entities/witch",
+                                    new DropExpectation("realmforge:arcane_dust", 0, 2, 1.0, 1, 0.0)),
+                            new ItemDrop("minecraft:evoker", "minecraft:entities/evoker",
+                                    new DropExpectation("realmforge:arcane_dust", 2, 4, 1.0, 1, 0.0)),
+                            new ItemDrop("minecraft:illusioner", "minecraft:entities/illusioner",
+                                    new DropExpectation("realmforge:arcane_dust", 2, 4, 1.0, 1, 0.0)))),
+            new ItemExpectation(
+                    "realmforge:arcane_silk",
+                    "item.realmforge.arcane_silk",
+                    64,
+                    List.of("minecraft:ingredients"),
+                    "",
+                    Optional.empty(),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:arcane_silk_cap",
+                    "item.realmforge.arcane_silk_cap",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "head", "head", 363, 10, "realmforge:arcane_silk",
+                            0.0, 0.0, "realmforge:arcane_silk", false,
+                            List.of(
+                                    new GearModifier("realmforge:gear/head/0", "realmforge:magic_shield", "add_value", 3.0),
+                                    new GearModifier("realmforge:gear/head/1", "realmforge:spell_power", "add_value", 0.07),
+                                    new GearModifier("realmforge:gear/head/2", "realmforge:max_mana", "add_value", 25.0),
+                                    new GearModifier("realmforge:gear/head/3", "realmforge:cooldown_reduction", "add_value", 0.03)))),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:arcane_silk_pants",
+                    "item.realmforge.arcane_silk_pants",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "legs", "legs", 495, 10, "realmforge:arcane_silk",
+                            0.0, 0.0, "realmforge:arcane_silk", false,
+                            List.of(
+                                    new GearModifier("realmforge:gear/legs/0", "realmforge:magic_shield", "add_value", 6.0),
+                                    new GearModifier("realmforge:gear/legs/1", "realmforge:spell_power", "add_value", 0.07),
+                                    new GearModifier("realmforge:gear/legs/2", "realmforge:max_mana", "add_value", 25.0),
+                                    new GearModifier("realmforge:gear/legs/3", "realmforge:cooldown_reduction", "add_value", 0.03)))),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:arcane_silk_robes",
+                    "item.realmforge.arcane_silk_robes",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "chest", "chest", 528, 10, "realmforge:arcane_silk",
+                            0.0, 0.0, "realmforge:arcane_silk", false,
+                            List.of(
+                                    new GearModifier("realmforge:gear/chest/0", "realmforge:magic_shield", "add_value", 8.0),
+                                    new GearModifier("realmforge:gear/chest/1", "realmforge:spell_power", "add_value", 0.07),
+                                    new GearModifier("realmforge:gear/chest/2", "realmforge:max_mana", "add_value", 25.0),
+                                    new GearModifier("realmforge:gear/chest/3", "realmforge:cooldown_reduction", "add_value", 0.03)))),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:arcane_silk_sandals",
+                    "item.realmforge.arcane_silk_sandals",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "feet", "feet", 429, 10, "realmforge:arcane_silk",
+                            0.0, 0.0, "realmforge:arcane_silk", false,
+                            List.of(
+                                    new GearModifier("realmforge:gear/feet/0", "realmforge:magic_shield", "add_value", 3.0),
+                                    new GearModifier("realmforge:gear/feet/1", "realmforge:spell_power", "add_value", 0.07),
+                                    new GearModifier("realmforge:gear/feet/2", "realmforge:max_mana", "add_value", 25.0),
+                                    new GearModifier("realmforge:gear/feet/3", "realmforge:cooldown_reduction", "add_value", 0.03)))),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:copper_wand",
+                    "item.realmforge.copper_wand",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "wand", "mainhand", 190, 13, "#minecraft:copper_tool_materials",
+                            2.0, 1.0, "", true,
+                            List.of(
+                                    new GearModifier("realmforge:gear/mainhand/0", "realmforge:spell_power", "add_value", 0.15),
+                                    new GearModifier("realmforge:gear/mainhand/1", "realmforge:cast_time_reduction", "add_value", 0.05),
+                                    new GearModifier("realmforge:gear/mainhand/2", "realmforge:cooldown_reduction", "add_value", 0.05)))),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:diamond_wand",
+                    "item.realmforge.diamond_wand",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "wand", "mainhand", 1561, 10, "#minecraft:diamond_tool_materials",
+                            4.0, 1.0, "", true,
+                            List.of(
+                                    new GearModifier("realmforge:gear/mainhand/0", "realmforge:spell_power", "add_value", 0.3),
+                                    new GearModifier("realmforge:gear/mainhand/1", "realmforge:cast_time_reduction", "add_value", 0.1),
+                                    new GearModifier("realmforge:gear/mainhand/2", "realmforge:cooldown_reduction", "add_value", 0.1)))),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:golden_wand",
+                    "item.realmforge.golden_wand",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "wand", "mainhand", 32, 22, "#minecraft:gold_tool_materials",
+                            3.0, 1.0, "", true,
+                            List.of(
+                                    new GearModifier("realmforge:gear/mainhand/0", "realmforge:spell_power", "add_value", 0.2),
+                                    new GearModifier("realmforge:gear/mainhand/1", "realmforge:cast_time_reduction", "add_value", 0.08),
+                                    new GearModifier("realmforge:gear/mainhand/2", "realmforge:cooldown_reduction", "add_value", 0.08)))),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:iron_wand",
+                    "item.realmforge.iron_wand",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "wand", "mainhand", 250, 14, "#minecraft:iron_tool_materials",
+                            3.0, 1.0, "", true,
+                            List.of(
+                                    new GearModifier("realmforge:gear/mainhand/0", "realmforge:spell_power", "add_value", 0.2),
+                                    new GearModifier("realmforge:gear/mainhand/1", "realmforge:cast_time_reduction", "add_value", 0.08),
+                                    new GearModifier("realmforge:gear/mainhand/2", "realmforge:cooldown_reduction", "add_value", 0.08)))),
+                    List.of()),
             new ItemExpectation(
                     "realmforge:magic_stone_dust",
                     "item.realmforge.magic_stone_dust",
                     64,
                     List.of("minecraft:ingredients"),
-                    ""),
+                    "",
+                    Optional.empty(),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:netherite_cap",
+                    "item.realmforge.netherite_cap",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "head", "head", 407, 15, "#minecraft:repairs_netherite_armor",
+                            0.0, 0.0, "realmforge:netherite", false,
+                            List.of(
+                                    new GearModifier("realmforge:gear/head/0", "realmforge:magic_shield", "add_value", 3.0),
+                                    new GearModifier("realmforge:gear/head/1", "realmforge:spell_power", "add_value", 0.1),
+                                    new GearModifier("realmforge:gear/head/2", "realmforge:max_mana", "add_value", 40.0),
+                                    new GearModifier("realmforge:gear/head/3", "realmforge:cooldown_reduction", "add_value", 0.05)))),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:netherite_pants",
+                    "item.realmforge.netherite_pants",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "legs", "legs", 555, 15, "#minecraft:repairs_netherite_armor",
+                            0.0, 0.0, "realmforge:netherite", false,
+                            List.of(
+                                    new GearModifier("realmforge:gear/legs/0", "realmforge:magic_shield", "add_value", 6.0),
+                                    new GearModifier("realmforge:gear/legs/1", "realmforge:spell_power", "add_value", 0.1),
+                                    new GearModifier("realmforge:gear/legs/2", "realmforge:max_mana", "add_value", 40.0),
+                                    new GearModifier("realmforge:gear/legs/3", "realmforge:cooldown_reduction", "add_value", 0.05)))),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:netherite_robes",
+                    "item.realmforge.netherite_robes",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "chest", "chest", 592, 15, "#minecraft:repairs_netherite_armor",
+                            0.0, 0.0, "realmforge:netherite", false,
+                            List.of(
+                                    new GearModifier("realmforge:gear/chest/0", "realmforge:magic_shield", "add_value", 8.0),
+                                    new GearModifier("realmforge:gear/chest/1", "realmforge:spell_power", "add_value", 0.1),
+                                    new GearModifier("realmforge:gear/chest/2", "realmforge:max_mana", "add_value", 40.0),
+                                    new GearModifier("realmforge:gear/chest/3", "realmforge:cooldown_reduction", "add_value", 0.05)))),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:netherite_sandals",
+                    "item.realmforge.netherite_sandals",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "feet", "feet", 481, 15, "#minecraft:repairs_netherite_armor",
+                            0.0, 0.0, "realmforge:netherite", false,
+                            List.of(
+                                    new GearModifier("realmforge:gear/feet/0", "realmforge:magic_shield", "add_value", 3.0),
+                                    new GearModifier("realmforge:gear/feet/1", "realmforge:spell_power", "add_value", 0.1),
+                                    new GearModifier("realmforge:gear/feet/2", "realmforge:max_mana", "add_value", 40.0),
+                                    new GearModifier("realmforge:gear/feet/3", "realmforge:cooldown_reduction", "add_value", 0.05)))),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:netherite_wand",
+                    "item.realmforge.netherite_wand",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "wand", "mainhand", 2031, 15, "#minecraft:netherite_tool_materials",
+                            5.0, 1.0, "", true,
+                            List.of(
+                                    new GearModifier("realmforge:gear/mainhand/0", "realmforge:spell_power", "add_value", 0.4),
+                                    new GearModifier("realmforge:gear/mainhand/1", "realmforge:cast_time_reduction", "add_value", 0.15),
+                                    new GearModifier("realmforge:gear/mainhand/2", "realmforge:cooldown_reduction", "add_value", 0.15)))),
+                    List.of()),
             new ItemExpectation(
                     "realmforge:oblivion_scroll",
                     "item.realmforge.oblivion_scroll",
                     16,
                     List.of("minecraft:tools_and_utilities"),
-                    "realmforge:use/unlearn_stat_points"),
+                    "realmforge:use/unlearn_stat_points",
+                    Optional.empty(),
+                    List.of()),
             new ItemExpectation(
                     "realmforge:ruby",
                     "item.realmforge.ruby",
                     64,
                     List.of("minecraft:ingredients"),
-                    ""),
+                    "",
+                    Optional.empty(),
+                    List.of()),
             new ItemExpectation(
                     "realmforge:sapphire",
                     "item.realmforge.sapphire",
                     64,
                     List.of("minecraft:ingredients"),
-                    ""),
+                    "",
+                    Optional.empty(),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:spellweave",
+                    "item.realmforge.spellweave",
+                    64,
+                    List.of("minecraft:ingredients"),
+                    "",
+                    Optional.empty(),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:spellweave_cap",
+                    "item.realmforge.spellweave_cap",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "head", "head", 165, 9, "realmforge:spellweave",
+                            0.0, 0.0, "realmforge:spellweave", false,
+                            List.of(
+                                    new GearModifier("realmforge:gear/head/0", "realmforge:magic_shield", "add_value", 2.0),
+                                    new GearModifier("realmforge:gear/head/1", "realmforge:spell_power", "add_value", 0.04),
+                                    new GearModifier("realmforge:gear/head/2", "realmforge:max_mana", "add_value", 15.0)))),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:spellweave_pants",
+                    "item.realmforge.spellweave_pants",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "legs", "legs", 225, 9, "realmforge:spellweave",
+                            0.0, 0.0, "realmforge:spellweave", false,
+                            List.of(
+                                    new GearModifier("realmforge:gear/legs/0", "realmforge:magic_shield", "add_value", 5.0),
+                                    new GearModifier("realmforge:gear/legs/1", "realmforge:spell_power", "add_value", 0.04),
+                                    new GearModifier("realmforge:gear/legs/2", "realmforge:max_mana", "add_value", 15.0)))),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:spellweave_robes",
+                    "item.realmforge.spellweave_robes",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "chest", "chest", 240, 9, "realmforge:spellweave",
+                            0.0, 0.0, "realmforge:spellweave", false,
+                            List.of(
+                                    new GearModifier("realmforge:gear/chest/0", "realmforge:magic_shield", "add_value", 6.0),
+                                    new GearModifier("realmforge:gear/chest/1", "realmforge:spell_power", "add_value", 0.04),
+                                    new GearModifier("realmforge:gear/chest/2", "realmforge:max_mana", "add_value", 15.0)))),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:spellweave_sandals",
+                    "item.realmforge.spellweave_sandals",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "feet", "feet", 195, 9, "realmforge:spellweave",
+                            0.0, 0.0, "realmforge:spellweave", false,
+                            List.of(
+                                    new GearModifier("realmforge:gear/feet/0", "realmforge:magic_shield", "add_value", 2.0),
+                                    new GearModifier("realmforge:gear/feet/1", "realmforge:spell_power", "add_value", 0.04),
+                                    new GearModifier("realmforge:gear/feet/2", "realmforge:max_mana", "add_value", 15.0)))),
+                    List.of()),
             new ItemExpectation(
                     "realmforge:stone_wand",
                     "item.realmforge.stone_wand",
                     1,
                     List.of("minecraft:combat"),
-                    ""),
+                    "",
+                    Optional.of(new Gear(
+                            "wand", "mainhand", 131, 5, "#minecraft:stone_tool_materials",
+                            2.0, 1.0, "", true,
+                            List.of(
+                                    new GearModifier("realmforge:gear/mainhand/0", "realmforge:spell_power", "add_value", 0.15),
+                                    new GearModifier("realmforge:gear/mainhand/1", "realmforge:cast_time_reduction", "add_value", 0.05),
+                                    new GearModifier("realmforge:gear/mainhand/2", "realmforge:cooldown_reduction", "add_value", 0.05)))),
+                    List.of()),
             new ItemExpectation(
                     "realmforge:test_dungeon_key",
                     "item.realmforge.test_dungeon_key",
                     16,
                     List.of("minecraft:tools_and_utilities"),
-                    ""),
+                    "",
+                    Optional.empty(),
+                    List.of()),
             new ItemExpectation(
                     "realmforge:test_item",
                     "item.realmforge.test_item",
                     16,
                     List.of("minecraft:ingredients"),
-                    ""),
+                    "",
+                    Optional.empty(),
+                    List.of()),
             new ItemExpectation(
                     "realmforge:topaz",
                     "item.realmforge.topaz",
                     64,
                     List.of("minecraft:ingredients"),
-                    ""),
+                    "",
+                    Optional.empty(),
+                    List.of()),
             new ItemExpectation(
                     "realmforge:undervault_signet",
                     "item.realmforge.undervault_signet",
                     1,
                     List.of("minecraft:tools_and_utilities"),
-                    ""));
+                    "",
+                    Optional.empty(),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:wooden_wand",
+                    "item.realmforge.wooden_wand",
+                    1,
+                    List.of("minecraft:combat"),
+                    "",
+                    Optional.of(new Gear(
+                            "wand", "mainhand", 59, 15, "#minecraft:wooden_tool_materials",
+                            1.0, 1.0, "", true,
+                            List.of(
+                                    new GearModifier("realmforge:gear/mainhand/0", "realmforge:spell_power", "add_value", 0.1),
+                                    new GearModifier("realmforge:gear/mainhand/1", "realmforge:cast_time_reduction", "add_value", 0.03),
+                                    new GearModifier("realmforge:gear/mainhand/2", "realmforge:cooldown_reduction", "add_value", 0.03)))),
+                    List.of()));
 
     private GeneratedItemExpectations() {
     }

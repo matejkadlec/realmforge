@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:string",
+    "minecraft:string",
+    "minecraft:diamond",
+    "realmforge:arcane_dust"
+  ],
+  "result": {
+    "count": 2,
+    "id": "realmforge:arcane_silk"
+  }
+}

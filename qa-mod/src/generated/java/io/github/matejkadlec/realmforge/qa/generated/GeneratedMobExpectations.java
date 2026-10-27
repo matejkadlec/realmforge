@@ -50,7 +50,8 @@ public final class GeneratedMobExpectations {
                     List.of("realmforge:stone_creatures"),
                     "realmforge:entities/hewn_chanter",
                     List.of(new DropExpectation("realmforge:magic_stone_dust", 1, 2, 0.6, 1, 0.0),
-                            new DropExpectation("realmforge:vaultstone", 1, 3, 1.0, 1, 0.0)),
+                            new DropExpectation("realmforge:vaultstone", 1, 3, 1.0, 1, 0.0),
+                            new DropExpectation("realmforge:arcane_dust", 0, 1, 1.0, 1, 0.0)),
                     List.of()),
             new MobExpectation(
                     "realmforge:hewn_sentinel",

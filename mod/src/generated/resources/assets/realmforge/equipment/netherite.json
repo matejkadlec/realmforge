@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "realmforge:netherite"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "realmforge:netherite"
+      }
+    ]
+  }
+}

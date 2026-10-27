@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "realmforge:arcane_silk"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "realmforge:arcane_silk"
+      }
+    ]
+  }
+}

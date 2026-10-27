@@ -1,8 +1,8 @@
 # yaml-language-server: $schema=../../tools/schemas/classes.schema.json
 # The M1 caster (decision D1, RLM-51): intellect. A caster starts with 100 Max Mana and 5 Mana Regeneration, 5 mana a
-# second (Matěj, 2026-10-14). Its spells come in C4, its wand and Apprentice's Clothing later; the kit holds
-# placeholders until then. The stats stay the same at every level: each level gives a stat point to spend instead,
-# and the class keeps these as its starting identity until Matěj decides on them (2026-10-15, RLM-196).
+# second (Matěj, 2026-10-14). Its spells come in C4; it starts with the Stone Wand (RLM-172) and the Apprentice's
+# set (RLM-197). The stats stay the same at every level: each level gives a stat point to spend instead, and the
+# class keeps these as its starting identity until Matěj decides on them (2026-10-15, RLM-196).
 id: mage
 name:
   en_us: Mage

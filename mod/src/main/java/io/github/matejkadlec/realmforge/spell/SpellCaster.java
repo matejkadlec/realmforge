@@ -1,16 +1,22 @@
 package io.github.matejkadlec.realmforge.spell;
 
 import com.mojang.datafixers.util.Either;
+import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * Casts spells, the same for players, mobs and bosses (architecture 11.2). Server-authoritative: a client's intent (the
@@ -31,7 +37,8 @@ import net.minecraft.world.entity.player.Player;
  * cooldown (Cooldown Reduction shortens it, never the global one) and runs every effect on the target ({@link
  * SpellTarget}). A cast-time or channelled spell begins its cast ({@link Casting}): a cast time starts its own cooldown
  * when it completes, a channel when it begins, and a channel pays its cost again every second it lasts. Mobs and bosses
- * pay no cost: their cooldowns pace their spells (architecture 11.2 step 6).
+ * pay no cost: their cooldowns pace their spells (architecture 11.2 step 6). A player's wand in the main hand loses a
+ * point of durability with the cost, once per cast, as a sword does per hit (RLM-172).
  *
  * <p>The spell bar may replace the cast in progress (C3b, RLM-25; Matěj, 2026-10-19: with spell queueing off, a new
  * spell cancels the cast and casts at once): with {@code replaceCast}, a cast of another spell skips the
@@ -41,6 +48,11 @@ import net.minecraft.world.entity.player.Player;
  * <p>A proc casts its spell through {@link #castProc}: at once and for free, whatever the caster is doing.
  */
 public final class SpellCaster {
+    /**
+     * The item tag of every wand, which the pipeline writes from {@code content/items/} (RLM-172): casting a spell wears
+     * the one in the caster's main hand.
+     */
+    public static final TagKey<Item> WANDS = TagKey.create(Registries.ITEM, Realmforge.id("wands"));
     /** Leaves room for float rounding, so a pool of exactly the cost pays it. */
     private static final double COST_TOLERANCE = 1e-4;
 
@@ -135,6 +147,7 @@ public final class SpellCaster {
 
         state.setGlobalCooldownEnd(now + value.globalCooldownTicks());
         payCost(caster, value, level, state);
+        wearWand(caster);
         if (value.cast().type() == SpellCast.Type.CAST_TIME) {
             Casting.begin(caster, spell, level, hit, now);
             return CastResult.begun(hit);
@@ -185,6 +198,19 @@ public final class SpellCaster {
         if (cost > 0) {
             ResourceKey<ResourceType> type = resource(spell);
             state.setResource(type, (float) Math.max(0, state.resource(type) - cost));
+        }
+    }
+
+    /**
+     * A player's wand in the main hand loses a point of durability, as a sword does per hit (RLM-172): once per cast,
+     * when it begins, whatever its cast type. A creative player's wand never wears.
+     */
+    static void wearWand(LivingEntity caster) {
+        if (caster instanceof Player) {
+            ItemStack wand = caster.getMainHandItem();
+            if (wand.is(WANDS)) {
+                wand.hurtAndBreak(1, caster, EquipmentSlot.MAINHAND);
+            }
         }
     }
 

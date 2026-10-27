@@ -599,7 +599,7 @@ would remove both bonuses.
 | spent stat points | `stats/CharacterStats`, from `character`'s `StatSource` (`character/StatPoints`, [10.2](#102-leveling)): one modifier per primary stat with points, adding them | `realmforge:stat_points/<namespace>/<path>` for the stat `<namespace>:<path>` | saved, recomputed |
 | talents | `stats/CharacterStats`, from `talent`'s provider | `realmforge:talent/<tree>/<node>/<n>` | saved, recomputed |
 | derived from primary stats | `stats/CharacterStats`, from stat rules ([8.3](#83-derived-stats-and-milestones)) | `realmforge:stat/<rule namespace>/<entry>/<rule path>`: `<entry>` is `<n>` per point, `at_<points>_<n>` per milestone; the rule's path comes last, as only it may contain slashes | saved, recomputed |
-| gear with fixed stats | vanilla, from the item's attribute modifiers | `realmforge:gear/<slot>/<n>` (generated) | while equipped |
+| gear with fixed stats | vanilla, from the item's attribute modifiers ([13](#13-items-gear-and-loot)) | `realmforge:gear/<slot>/<n>` (generated: `<slot>` is `mainhand` or the armor slot); a wand's attack damage and speed use vanilla's base ids (`Item.BASE_ATTACK_DAMAGE_ID`, `BASE_ATTACK_SPEED_ID`), as vanilla's weapons, so the tooltip shows them as its base numbers | while equipped |
 | affixes and gems (M2) | vanilla slots: `ItemAttributeModifierEvent` adds them to the stack's modifiers; curio slots (rings, trinkets): Curios' own modifier API, because Curios ignores vanilla equipment modifiers in its slots (*verify* in M2) | `realmforge:affix/<affix>/<slot>/<k>/<n>`: `<k>` counts repeats of the same affix or gem on one stack (two sockets with the same gem), and curio slots use their slot id and index as `<slot>` | while equipped |
 | status effects | vanilla, `MobEffect#addAttributeModifier` | the effect's | while active |
 | mob level | `mob`, when the mob gets its level ([14.1](#141-mob-levels)): health and armor (damage multiplies each hit instead) | `realmforge:mob_level/<attribute>` (`max_health`, `armor`) | saved with the mob, reapplied from its level and the current curves when it loads |
@@ -1193,7 +1193,8 @@ lists spells granted while equipped or on use): the vision's "some from the race
    still shows. An interrupt cancels the cast; moving never does, but slows the caster
    ([ADR 0039](decisions/0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md)).
 4. A cast pays its cost when it begins, a cast time too (Matěj, 2026-10-24: the bar shows the cost leave at once,
-   and an interrupted cast keeps it spent). When a cast-time spell completes, the server checks the target again,
+   and an interrupted cast keeps it spent). A player's wand in the main hand loses a point of durability then, once
+   per cast, as a sword per hit (RLM-172, [13](#13-items-gear-and-loot)). When a cast-time spell completes, the server checks the target again,
    because it can die, leave the caster's dimension, move out of range or go behind cover during the cast. If the
    check fails, the cast fails like an interrupt; a spell that should lock on says so in its data. Otherwise the spell's
    own cooldown applies first (the global cooldown started with the cast), then every effect runs on the target with an
@@ -1673,9 +1674,36 @@ return; the proc engine at its end exists since C3a.
 
 ## 13. Items, gear and loot
 
-- **M1:** fixed-stat gear from YAML: generated items with vanilla attribute modifiers (`Item.Properties#attributes`,
-  per-slot ids from [8.2](#82-where-modifiers-come-from)), Better Combat presets for weapons, and vanilla's rarity
-  (`Item.Properties#rarity`).
+- **M1:** fixed-stat gear from YAML (RLM-172, RLM-197): an item's `gear` (`content/items/`) makes it a wand or a piece
+  of armor, a plain `Item` with vanilla's components, so no gear class of our own exists:
+  - durability (`Item.Properties#durability`, which stacks it to 1), enchantability (`enchantable`) and its repair
+    material (the `REPAIRABLE` component, an item or a tag);
+  - its fixed stats as vanilla attribute modifiers (`ATTRIBUTE_MODIFIERS`) in its slot's `EquipmentSlotGroup`, with
+    per-slot ids from [8.2](#82-where-modifiers-come-from), so they count only in that slot and vanilla applies and
+    removes them with the equipment. NeoForge's tooltip lists them under "When in Main Hand" or "When on Head", the
+    base attack lines first in green and our stats after them in blue (`AttributeUtil`);
+  - components that name registry entries (the attributes, a repair tag, an equip sound) are built once the
+    registries exist (`Item.Properties#delayedComponent`, whose context is the full registry lookup), so generated
+    code never depends on registration order;
+  - a **wand** (`kind: wand`) adds a base attack damage and speed (vanilla's base modifier ids) and vanilla's `WEAPON`
+    component, so a hit wears it by one as a sword's does; casting a spell wears the wand in the caster's main hand
+    by one too, once per cast, when it begins (`spell/SpellCaster#wearWand`, through the item tag `realmforge:wands`
+    the pipeline writes, so `spell` never names an item and needs no dependency on `item`). A wand is
+    **two-handed** (`gear.two_handed`, item tag `realmforge:two_handed`; Matěj, 2026-10-26): while one is in a
+    player's main hand, every shield (`c:tools/shield`) is locked, and stays locked for 3 minutes after it leaves the
+    hand. `item/TwoHandedGear` keeps the lock per player, shows it as vanilla's item cooldown on every shield (which
+    also refuses blocking), and drops a shield held in either hand while it lasts, with a message in the action bar.
+    The lock is its own, not the cooldown, so a shield an axe disabled stays in hand. It is not Better Combat's
+    two-handed weapons, which block with right click ([9.3](#93-blocking-with-two-handed-weapons));
+  - **armor** (`head`, `chest`, `legs`, `feet`) gets vanilla's `EQUIPPABLE` component with its slot, equip sound and
+    look: an equipment asset `assets/realmforge/equipment/<look>.json` with a body and a leggings layer, placeholder
+    textures until A1's art. Caster robes give no armor: magic shield, spell power, max mana and cooldown reduction;
+  - gear joins vanilla's enchantable tags of its kind (`minecraft:enchantable/durability`, and armor its slot's tag and
+    `enchantable/equippable`), not vanilla's armor tags, so robes take armor enchantments but no armor trims.
+
+  Recipes come in vanilla's three kinds (shaped, shapeless, smithing upgrade), with vanilla item tags as ingredients.
+  Better Combat presets for weapons and vanilla's rarity (`Item.Properties#rarity`) come with the first weapons that
+  need them.
 - **Item uses** (RLM-196): an item's `use` in content says what right-clicking it does, one item used up each time;
   a scroll's use comes after a 3 s charge ([10.2](#102-leveling), `character/Scrolls`).
   Each use is game code in the feature it belongs to, which finds its items through the item tag
@@ -1692,7 +1720,12 @@ return; the proc engine at its end exists since C3a.
   world tier follows our realms ([Apotheosis design](design/apotheosis.md)). Apothic Attributes' own crit and dodge
   are switched off ([19.4](#194-optional-integrations)).
 - **Loot:** loot tables generated from YAML, with our own loot functions (`Registries.LOOT_FUNCTION_TYPE`) where
-  vanilla's and Apotheosis's are not enough, so other mods and data packs see ordinary loot tables. "No trash loot"
+  vanilla's and Apotheosis's are not enough, so other mods and data packs see ordinary loot tables. A vanilla mob's
+  loot keeps its own table: an item's `dropped_by` adds a drop to it through NeoForge's loot modifier
+  `neoforge:add_table`, conditioned on the mob's table (`neoforge:loot_table_id`) and rolling a table of ours
+  (`data/realmforge/loot_modifiers/item_drops/<item>/<namespace>/<entity>.json`, which NeoForge 26.1 loads one file per
+  modifier, without the old `global_loot_modifiers.json` list). Arcane Dust from witches, evokers and illusioners is
+  the first (RLM-197). "No trash loot"
   is a validation rule: a denylist plus a minimum value per tier.
 - **Rewards:** quest choice rewards are pre-rolled stacks written into the quest files (ADR 0006). RNG item chests
   (M2) are items that roll a loot table when opened.

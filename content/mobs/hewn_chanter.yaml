@@ -28,4 +28,6 @@ tags: [realmforge:stone_creatures]
 loot:
   - {item: realmforge:magic_stone_dust, count: {min: 1, max: 2}, chance_percent: 60, looting_count: 1}
   - {item: realmforge:vaultstone, count: {min: 1, max: 3}, looting_count: 1}
+  # Undervault's caster drops 0 to 1 Arcane Dust for Arcane Silk (RLM-197).
+  - {item: realmforge:arcane_dust, count: {min: 0, max: 1}, looting_count: 1}
 model: {build: slim, surface: smooth, eyes: tall, color: "#8E9297"}

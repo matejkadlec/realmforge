@@ -153,10 +153,11 @@ public final class RealmGameTests {
     /**
      * A parrot on a player's shoulder stays in the level the player leaves, on a trip into the realm and at a death in
      * it, also when it landed on the shoulder in the same tick (vanilla's own drop waits 20 ticks). The second parrot
-     * perches once the realm's chunk has loaded its entities, so it is a real entity there before it sits down.
-     * Generating that cave chunk and loading its entities runs off the server thread and took over 200 ticks on a CI
-     * runner busy with the other GameTests' chunks (PR #100's instance plots among them); the timeout leaves room for
-     * that.
+     * perches once the realm's chunk has loaded its entities, so it is a real entity there before it sits down. The
+     * GameTest server runs its ticks back to back, so the test generates that cave chunk on the server thread, as
+     * {@code MobLevelGameTests} does: generated in the background, it was ready in time only when an earlier test had
+     * made it, and the test alone timed out on tick 602. Loading its entities still runs off the server thread (about
+     * 70 ticks alone); the timeout leaves room for a CI runner busy with the other GameTests' chunks.
      */
     @QaGameTest(timeoutTicks = 600)
     public static void shoulderParrotsStayBehind(GameTestHelper helper) {
@@ -176,6 +177,7 @@ public final class RealmGameTests {
         helper.assertTrue(realm.getEntity(first) == null, "the parrot did not come along");
 
         long chunk = ChunkPos.containing(BlockPos.containing(IN_REALM)).pack();
+        realm.getChunk(ChunkPos.getX(chunk), ChunkPos.getZ(chunk));
         helper.startSequence()
                 .thenWaitUntil(() -> helper.assertTrue(realm.areEntitiesLoaded(chunk), "the realm's chunk is loading"))
                 .thenExecute(() -> {

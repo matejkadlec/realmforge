@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# The Spellweave set, the caster's iron-tier armor (RLM-197); piece names as RLM-377.
+# No armor: robes protect with Magic Shield, as much as the same tier's vanilla piece has armor, and give Spell
+# Power and Max Mana (Matěj, 2026-10-15). Durability and enchantability
+# as vanilla's iron armor. The generated placeholder textures until A1's art.
+id: spellweave_cap
+name:
+  en_us: Spellweave Cap
+creative_tabs:
+  - minecraft:combat
+color: "#2F4FA8"
+gear:
+  kind: head
+  durability: 165
+  enchantability: 9
+  repair_with: "realmforge:spellweave"
+  look: spellweave
+  modifiers:
+    - {attribute: realmforge:magic_shield, operation: add_value, amount: 2}
+    - {attribute: realmforge:spell_power, operation: add_value, amount_percent: 4}
+    - {attribute: realmforge:max_mana, operation: add_value, amount: 15}
+recipe:
+  pattern: ['XXX', 'X X']
+  key:
+    X: "realmforge:spellweave"
+  category: equipment

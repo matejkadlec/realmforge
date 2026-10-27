@@ -17,7 +17,7 @@ from typing import Literal, get_args
 from pydantic import Field, model_validator
 
 from realmforge_tools.schema.common import ContentId, LocalizedText, StrictModel, UniqueResourceIds
-from realmforge_tools.schema.recipe import ShapedRecipeDef
+from realmforge_tools.schema.recipe import RecipeDef
 
 # The tool that mines a block at full speed; each is vanilla's block tag minecraft:mineable/<tool>.
 Tool = Literal["pickaxe", "axe", "shovel", "hoe"]
@@ -112,8 +112,9 @@ class BlockDef(StrictModel):
         default_factory=list,
         description="Creative mode tabs to list the block's item in, e.g. minecraft:natural_blocks. No duplicates.",
     )
-    recipe: ShapedRecipeDef | None = Field(
-        default=None, description="Optional: the shaped crafting recipe that makes the block's item."
+    recipe: RecipeDef | None = Field(
+        default=None,
+        description="Optional: the recipe that makes the block's item: shaped, shapeless or a smithing upgrade.",
     )
 
     @model_validator(mode="after")

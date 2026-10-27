@@ -37,7 +37,7 @@
     },
     "DropCountDef": {
       "additionalProperties": false,
-      "description": "How many of the item one drop gives: a whole number from ``min`` to ``max``, each as likely.",
+      "description": "How many of the item one drop gives: a whole number from ``min`` to ``max``, each as likely. A ``min`` of 0\nsometimes gives none, as vanilla's witch drops 0 to 2 glowstone dust; Looting's extra still counts then.",
       "properties": {
         "max": {
           "maximum": 64,
@@ -47,7 +47,7 @@
         },
         "min": {
           "maximum": 64,
-          "minimum": 1,
+          "minimum": 0,
           "title": "Min",
           "type": "integer"
         }
@@ -183,7 +183,7 @@
     },
     "MobDropDef": {
       "additionalProperties": false,
-      "description": "One item the mob may drop when it dies: rolled on its own, so drops never crowd each other out. Every drop is\nworth having (the vision: no trash loot). Looting raises it as vanilla's drops: more of the item, a better\nchance, or both.",
+      "description": "One item the mob may drop when it dies. Every drop is worth having (the vision: no trash loot).",
       "properties": {
         "chance_percent": {
           "default": 100,

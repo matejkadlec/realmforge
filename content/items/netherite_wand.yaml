@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# One of the seven wands of RLM-172, a caster's weapon from wood to netherite.
+# Spell Power, Cast Time Reduction and Cooldown Reduction are Matěj's (2026-10-15); attack damage, durability,
+# enchantability and the repair material are vanilla's tool of the same material (attack damage: Claude's, Matěj
+# delegated it). Attack speed 1.0, so swinging one is never worth it. Its stats count in the main hand only. It
+# takes both hands: no shield with it, and every shield stays locked for 3 minutes after (Matěj, 2026-10-26).
+# Upgraded from the Diamond Wand at the smithing table, as vanilla's netherite tools (Claude's decision).
+# The generated placeholder texture until A1's art.
+id: netherite_wand
+name:
+  en_us: Netherite Wand
+fire_resistant: true
+creative_tabs:
+  - minecraft:combat
+color: "#4A3F3F"
+gear:
+  kind: wand
+  durability: 2031
+  enchantability: 15
+  repair_with: "#minecraft:netherite_tool_materials"
+  attack_damage: 5
+  attack_speed: 1.0
+  two_handed: true
+  modifiers:
+    - {attribute: realmforge:spell_power, operation: add_value, amount_percent: 40}
+    - {attribute: realmforge:cast_time_reduction, operation: add_value, amount_percent: 15}
+    - {attribute: realmforge:cooldown_reduction, operation: add_value, amount_percent: 15}
+recipe:
+  template: minecraft:netherite_upgrade_smithing_template
+  base: realmforge:diamond_wand
+  addition: "#minecraft:netherite_tool_materials"

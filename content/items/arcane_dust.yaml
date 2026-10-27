@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# What casters leave behind (RLM-197), the magic in Arcane Silk: witches drop 0 to 2, evokers and illusioners 2 to 4,
+# and Undervault's Hewn Chanter 0 to 1 (its own loot, content/mobs/hewn_chanter.yaml); each level of Looting adds up
+# to one more, as vanilla's drops. The generated placeholder texture until A1's art.
+id: arcane_dust
+name:
+  en_us: Arcane Dust
+creative_tabs:
+  - minecraft:ingredients
+color: "#B58CE8"
+dropped_by:
+  - {entity: minecraft:witch, count: {min: 0, max: 2}, looting_count: 1}
+  - {entity: minecraft:evoker, count: {min: 2, max: 4}, looting_count: 1}
+  - {entity: minecraft:illusioner, count: {min: 2, max: 4}, looting_count: 1}

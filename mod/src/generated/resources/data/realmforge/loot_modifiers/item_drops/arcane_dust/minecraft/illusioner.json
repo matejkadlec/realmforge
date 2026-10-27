@@ -1,0 +1,10 @@
+{
+  "type": "neoforge:add_table",
+  "conditions": [
+    {
+      "condition": "neoforge:loot_table_id",
+      "loot_table_id": "minecraft:entities/illusioner"
+    }
+  ],
+  "table": "realmforge:item_drops/arcane_dust/minecraft/illusioner"
+}

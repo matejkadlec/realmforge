@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# The Arcane Silk set, the caster's diamond-tier armor (RLM-197); piece names as RLM-377.
+# No armor: robes protect with Magic Shield, as much as the same tier's vanilla piece has armor, and give Spell
+# Power and Max Mana and, from diamond on, Cooldown Reduction (Matěj, 2026-10-15). Durability and enchantability
+# as vanilla's diamond armor. The generated placeholder textures until A1's art.
+id: arcane_silk_sandals
+name:
+  en_us: Arcane Silk Sandals
+creative_tabs:
+  - minecraft:combat
+color: "#8A4FD0"
+gear:
+  kind: feet
+  durability: 429
+  enchantability: 10
+  repair_with: "realmforge:arcane_silk"
+  look: arcane_silk
+  modifiers:
+    - {attribute: realmforge:magic_shield, operation: add_value, amount: 3}
+    - {attribute: realmforge:spell_power, operation: add_value, amount_percent: 7}
+    - {attribute: realmforge:max_mana, operation: add_value, amount: 25}
+    - {attribute: realmforge:cooldown_reduction, operation: add_value, amount_percent: 3}
+recipe:
+  pattern: ['X X', 'X X']
+  key:
+    X: "realmforge:arcane_silk"
+  category: equipment
