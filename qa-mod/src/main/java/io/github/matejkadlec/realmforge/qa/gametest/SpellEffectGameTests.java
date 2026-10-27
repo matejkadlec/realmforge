@@ -98,8 +98,9 @@ public final class SpellEffectGameTests {
     }
 
     /**
-     * An area at a ground point runs its effects on the enemies inside at the end of every interval for its duration,
-     * and on nobody outside it or allied to the caster; then it is gone.
+     * An area at a ground point runs its effects on the enemies inside as it appears and then once every interval, as
+     * many times as its duration holds intervals (RLM-436), and on nobody outside it or allied to the caster; then it
+     * is gone.
      */
     @QaGameTest(timeoutTicks = 120)
     public static void anAreaRunsItsEffectsOnTheEnemiesInsideAtItsInterval(GameTestHelper helper) {
@@ -114,11 +115,12 @@ public final class SpellEffectGameTests {
         helper.assertValueEqual(areas.size(), 1, "areas placed");
         helper.assertTrue(areas.getFirst().position().distanceTo(point) < TOLERANCE, "the area lies at the point");
         float playerHealth = player.getHealth();
-        helper.runAfterDelay(12, () -> assertHealth(helper, inside, HEALTH, "no tick before the first interval"));
-        helper.runAfterDelay(30, () -> assertHealth(helper, inside, HEALTH - 2, "one tick after a second"));
-        helper.runAfterDelay(50, () -> assertHealth(helper, inside, HEALTH - 4, "two ticks after two seconds"));
+        helper.runAfterDelay(2, () -> assertHealth(helper, inside, HEALTH - 2, "the first pulse as it appears"));
+        helper.runAfterDelay(12, () -> assertHealth(helper, inside, HEALTH - 2, "no second pulse within the interval"));
+        helper.runAfterDelay(30, () -> assertHealth(helper, inside, HEALTH - 4, "the second pulse after a second"));
+        helper.runAfterDelay(50, () -> assertHealth(helper, inside, HEALTH - 6, "the third after two seconds"));
         helper.runAfterDelay(75, () -> {
-            assertHealth(helper, inside, HEALTH - 6, "three ticks in its 3 s");
+            assertHealth(helper, inside, HEALTH - 6, "three pulses in its 3 s");
             assertHealth(helper, outside, HEALTH, "the husk beyond its radius");
             assertHealth(helper, player, playerHealth, "the caster, its own ally, inside its reach");
             helper.assertValueEqual(spellEntities(helper, SpellArea.class).size(), 0, "the area is gone");

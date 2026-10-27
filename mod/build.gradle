@@ -82,6 +82,9 @@ dependencies {
     compileOnlyApi packModrinthMod('geckolib')
     // The unit tests load the core mod in FML (neoForge.unitTest), which refuses it without its required library.
     testRuntimeOnly packModrinthMod('geckolib')
+    // Player Animation Library, required on the client (ADR 0020): the cast animation on the caster's arms
+    // (client/animation, RLM-435). The pack ships it and the dev runs load it as a pack mod (qa-mod/build.gradle).
+    compileOnly packModrinthMod('player-animation-library')
 
     // Optional integrations (compat/, client/compat/): compiled against, never bundled; each runs only when its mod
     // is loaded. Neat draws the mob's card, Jade the tooltip at the top of the screen (RLM-338).

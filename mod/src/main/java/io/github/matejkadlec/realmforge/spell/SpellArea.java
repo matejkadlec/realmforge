@@ -22,9 +22,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * The one generic area of every spell (architecture 11.3), a ground zone placed by {@link AreaEffect}: at the end of
- * every interval it runs the area's effects on each enemy (or ally) of its caster inside it, delivered by itself (the
- * hit's direct entity), until its duration is over. Inside means standing within its radius of its middle, at most
+ * The one generic area of every spell (architecture 11.3), a ground zone placed by {@link AreaEffect}: on its first
+ * tick and at the start of every interval after it (RLM-436) it runs the area's effects on each enemy (or ally) of its
+ * caster inside it, delivered by itself (the hit's direct entity), as many times as its duration holds intervals. Inside means standing within its radius of its middle, at most
  * {@value #BELOW} blocks below it and {@value #ABOVE} above. Its caster leaving its level (logging out, a mob's death)
  * ends it.
  *
@@ -93,7 +93,8 @@ public final class SpellArea extends Entity {
         super.tick();
         if (level() instanceof ServerLevel serverLevel) {
             serverTick(serverLevel);
-        } else if (tickCount % PARTICLE_INTERVAL == 0) {
+        } else if (tickCount % PARTICLE_INTERVAL == 1) {
+            // tickCount is 1 on the first tick, so the ring shows as the area appears.
             drawRing();
         }
     }
@@ -103,10 +104,11 @@ public final class SpellArea extends Entity {
             discard();
             return;
         }
-        age++;
+        // A duration is a whole number of intervals: Test Scorch's 3 s of 1 s pulse at 0, 1 and 2 s, gone at 3 s.
         if (age % area.intervalTicks() == 0) {
             pulse(level, cast, area);
         }
+        age++;
         if (age >= area.durationTicks()) {
             discard();
         }

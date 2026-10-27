@@ -23,10 +23,10 @@ import net.neoforged.neoforge.common.NeoForge;
 
 /**
  * Screenshots of the test cast for an agent (RLM-89): with the environment variable {@code REALMFORGE_QA_CAST_SHOTS}
- * set, the dev client creates a fresh superflat creative world from the title screen, casts with {@code /qa cast},
- * saves the cast pose in every camera at two fields of view to {@code run/client/screenshots/}, and quits. Besides
- * the level look it shoots looking up, looking down and right after a turn, and besides the vanilla cameras it has a
- * still one beside the player (RLM-108). It needs no input, so it also runs in WSL, where mouse look does not work.
+ * set, the dev client creates a fresh superflat creative world from the title screen and a Human Mage in it (character
+ * creation would otherwise stay open, C1), casts with {@code /qa cast}, saves the cast pose in every camera at two
+ * fields of view to {@code run/client/screenshots/}, and quits. Besides the level look it shoots looking up, looking
+ * down and right after a turn, and besides the vanilla cameras it has a still one beside the player (RLM-108). It needs no input, so it also runs in WSL, where mouse look does not work.
  * The variable's value starts every file name. DevLogin still runs before the game starts: without a cached login it
  * waits for its console prompt.
  */
@@ -34,10 +34,10 @@ final class QaCastShots {
     static final String ENVIRONMENT_VARIABLE = "REALMFORGE_QA_CAST_SHOTS";
 
     /**
-     * cast_test.json: the arms finish rising at tick 6, pulse at tick 14 and are back at the hold pose at tick 22,
-     * where the loop returns to tick 6. PAL reads the playerAnimator file as it played there: once the animation
-     * reaches tick 22 it goes on from tick 5 ({@code returnTick - 1}, {@code PlayerAnimatorLoader}), so a loop takes
-     * 17 ticks (RLM-108; a 16-tick guess drifts one tick per loop and lands on the pulse after eight).
+     * The core mod's cast.json: the arms finish rising at tick 6, pulse at tick 14 and are back at the hold pose at
+     * tick 22, where the loop returns to tick 6. PAL reads the playerAnimator file as it played there: once the
+     * animation reaches tick 22 it goes on from tick 5 ({@code returnTick - 1}, {@code PlayerAnimatorLoader}), so a
+     * loop takes 17 ticks (RLM-108; a 16-tick guess drifts one tick per loop and lands on the pulse after eight).
      */
     private static final int HOLD_TICK = 6;
     private static final int PULSE_TICK = 14;
@@ -100,6 +100,7 @@ final class QaCastShots {
     private final List<Shot> shots = new ArrayList<>();
     private Stage stage = Stage.TITLE;
     private int ticksInWorld;
+    private boolean characterCreated;
     private int castTicks;
     private View view = View.LEVEL;
 
@@ -127,7 +128,17 @@ final class QaCastShots {
                 }
             }
             case WORLD -> {
-                if (minecraft.player == null || minecraft.level == null || minecraft.screen != null) {
+                if (minecraft.player == null || minecraft.level == null) {
+                    return;
+                }
+                if (!characterCreated) {
+                    // A new world opens character creation (C1), which closes once the player has a character; the
+                    // starting kit goes again, so the hands are empty as before.
+                    minecraft.player.connection.sendCommand("qa character create realmforge:human realmforge:mage");
+                    minecraft.player.connection.sendCommand("clear");
+                    characterCreated = true;
+                }
+                if (minecraft.screen != null) {
                     return;
                 }
                 ticksInWorld++;

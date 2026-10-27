@@ -1334,9 +1334,11 @@ type only for genuinely new behaviour.
   block's break particles where it hits a block or an entity, and its `appearance` (`orb`) is how its clients draw it
   ([11.6](#116-client-side)).
 - **`realmforge:area`** (`AreaEffect`, `SpellArea`): a zone at the target's position (the caster's feet, an enemy's,
-  a ground point) with a `radius`, which at the end of every `interval_ticks` runs its own effects on every enemy (or,
-  with `affects: allies`, ally) standing within the radius of its middle, from half a block below it to 3 blocks
-  above, for `duration_ticks` (a whole number of intervals).
+  a ground point) with a `radius`, which runs its own effects on every enemy (or, with `affects: allies`, ally)
+  standing within the radius of its middle, from half a block below it to 3 blocks above: on its first tick, then
+  every `interval_ticks`, once per interval of its `duration_ticks` (a whole number of intervals). It acts as it
+  appears (RLM-436): Test Scorch, 3 s of 1 s, pulses at 0, 1 and 2 s and is gone at 3 s. Its client draws its ring
+  from its first tick.
 - Both deliver their effects themselves: the hit's direct entity is the projectile or the area, its causing entity
   the caster, so kill credit and the hit direction work as for an arrow. Their effects read the caster's stats when
   they land; no snapshot is taken at the cast, as nothing (talents, procs) needs one yet. A spell entity ends when its
@@ -1431,14 +1433,25 @@ D4 (a separate spell bar with its own keys, leaving the item hotbar alone); tool
 numbers; animations and particles start on `CastStartedPayload`. `client/spell/ClientCasts` (C3a-2) keeps
 every cast in progress the client was told of, the local player's and every tracked caster's, by entity id, from
 `CastStartedPayload` until `CastEndedPayload` (or until 20 ticks after its end, for a caster the player stopped
-tracking), so the cast bar and the animations read one store (`CurrentCasts#progress` for the bar). Cast animations are Emotecraft JSON
-files in `assets/realmforge/player_animations/`, played by `client/animation` on the caster's PAL layer
+tracking), so the cast bar and the animations read one store (`CurrentCasts#progress` for the bar). Cast animations are
+Emotecraft JSON files in `assets/realmforge/player_animations/`, played by `client/animation` on the caster's PAL layer
 for the caster and every tracking player, with the third-person model's arms in first person
 ([ADR 0020](decisions/0020-cast-animations-and-melee-while-casting.md)). The arms aim where the player looks, since
 the model's arms hang on a body that never pitches and trails the head by up to 50 degrees: in first person they
 turn rigidly with the camera about the eye (rotation and shoulder pivots), so the hands keep their place on screen;
-seen from outside only their rotation follows the head, like vanilla's bow pose. The QA mod's test cast does this in
-`QaCastAimAnimation` (RLM-108), which C6 moves into `client/animation`.
+seen from outside only their rotation follows the head, like vanilla's bow pose.
+
+**In code (C6-1, RLM-435): the cast animation.** Every cast-time and channelled spell raises the hands with one
+animation, `realmforge:cast` (`player_animations/cast.json`, the QA mod's former test cast), until C6's spell visuals
+(epic RLM-434) give spells their own. `client/animation/CastAnimation` registers one PAL layer per player at priority
+3000 at client setup and shows or lowers it with a 4-tick fade; `ClientCasts` raises it on `CastStartedPayload` and
+lowers it on `CastEndedPayload`, unless a newer cast of the caster already started, so it shows for the caster and
+every tracking player, one who starts tracking mid-cast included (the server sends them the cast in progress).
+`AimedCastAnimation` wraps the animation with the aim above, and `CastArms` holds its math (decomposing the turned
+rotation into the part's angles, the short way round, and the pivot turned about the eye), which `CastArmsTest`
+covers. Player Animation Library is a required dependency on the client only (`side = "CLIENT"`); every PAL call of
+the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays the same animation through
+`CastAnimation#show`.
 
 **In code (C3b, RLM-25): the spell bar.**
 
