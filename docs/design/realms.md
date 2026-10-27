@@ -6,7 +6,11 @@
 > RE-9). Updated on 2026-10-16 with the v1 realm layout (RLM-188): Matěj's decisions of 2026-10-14 to 2026-10-16 on
 > level bands, chapters and caps, realm names, new and dropped realms and realm tool tiers. Updated on 2026-10-20 with
 > two renames: Olympus became Asgard, opened from about level 15 (RLM-245), and Prestoria became Atlantis, a water
-> realm (RLM-265). It is a first version: Matěj expects to change it after playing, so it sets rules and direction,
+> realm (RLM-265). Updated on 2026-10-27 with Matěj's names of 2026-10-22 (RLM-357,
+> [ADR 0054](../decisions/0054-skyhearth-and-deepholm-amend-asgard-and-atlantis.md)): Asgard is Skyhearth, its king
+> Taveth, and Atlantis Deepholm; and with his chapter 2 decisions of 2026-10-25 to 2026-10-27 (RLM-432): Astone, the
+> Unbroken and her drops, Cairnfolk houses, and no tool speed rule. It is a first version: Matěj expects to change
+> it after playing, so it sets rules and direction,
 > not every detail. Realm names are the names players read, approved by Matěj with the
 > [lore outline](../lore/outline.md) (RLM-139, RLM-188); mob and
 > place names are working names. The [Void realm](#the-void-realm) section is RLM-95's design, which waits for his
@@ -24,18 +28,18 @@ optional dungeon.
 | Realm | Name | Levels | Chapter | Milestone | Identity | Signature content |
 | --- | --- | --- | --- | --- | --- | --- |
 | [Overworld](#the-overworld) | Overworld | 1–10 | 1 | M1 | home | the first story realm; realm portals built anywhere |
-| [Stone realm](#the-stone-realm) | Undervault | 6–18 | 2 | M1 | earth and stone | one giant cave, the mine of the whole game, mines with friendly NPCs, catacombs, a boss arena, ancient debris |
+| [Stone realm](#the-stone-realm) | Undervault | 6–18 | 2 | M1 | earth and stone | one giant cave, the mine of the whole game, Cairnfolk houses and the Hewn's Mine, catacombs, a boss arena, ancient debris |
 | [Desert realm](#the-desert-realm) | Sunwastes | 16–24 | 3 (twin) | M4 | sun and sand | dunes and big oases, pyramid and sphinx dungeons |
 | [Tundra realm](#the-tundra-realm) | Everwinter | 20–30 | 3 (twin) | M4 | frost | frozen lakes with something beneath, a nordic fortress, an ice castle |
-| [Hub realm](#the-hub-realm) | Asgard | from about 15 | none | later | the heavens | a celestial city and palace full of NPCs, the centre of the game: quests into Sunwastes, Everwinter and every later realm, trading |
-| [Water realm](#the-water-realm) | Atlantis | 26–40 | 4 | later | water | under water up to about y 128: sand hills, coral reefs, kelp and shipwrecks on the seabed, an underwater city, the Ocean Monument |
+| [Hub realm](#the-hub-realm) | Skyhearth | from about 15 | none | later | the heavens | a celestial city and palace full of NPCs, the centre of the game: quests into Sunwastes, Everwinter and every later realm, trading |
+| [Water realm](#the-water-realm) | Deepholm | 26–40 | 4 | later | water | under water up to about y 128: sand hills, coral reefs, kelp and shipwrecks on the seabed, an underwater city, the Ocean Monument |
 | [Swamp realm](#the-swamp-realm) | Quagmire | 36–44 | 5 | later | slime | slime-block biomes, several kinds of slime, a slime dungeon |
 | [Fire realm](#the-fire-realm) | Ashfire | 40–52 | 6 | later | fire | black and red plains, burnt trees, lava lakes, volcanoes, grounded dragons |
 | [Void realm](#the-void-realm) | Unmade Isles | 48–60 | 7, the last of v1 | later | void | islands joined by bridges and chains, guard towers, the Void Cathedral and the finale, malachite gear |
 
 **Names** (Matěj, RLM-139 and RLM-188): the names players read, from the [lore outline](../lore/outline.md#the-realms).
 **A realm's name has no article** (Matěj, 2026-10-15 and 2026-10-16): Overworld, Undervault, Sunwastes,
-Everwinter, Asgard, Atlantis, Quagmire, Ashfire, Unmade Isles, in every text and every document, as a name, a label
+Everwinter, Skyhearth, Deepholm, Quagmire, Ashfire, Unmade Isles, in every text and every document, as a name, a label
 or a title. **A sentence that refers to the realm takes "the" where it reads naturally,** as with the Nether ("Enter
 the Nether", "I was at the Nether"), and **every realm's entry quest is titled "Enter the {realm}"** (Matěj,
 2026-10-19, RLM-265, refining RLM-188's "never 'the', anywhere"; [style guide](../lore/style.md#text-types)). Where a
@@ -44,7 +48,9 @@ player first meets one (the guide, the arrival title), it carries a plain subtit
 so does the refusal at the realm portal's sealstone: "You are not eligible to open a portal to the stone realm."
 (Matěj, 2026-10-20). Renamed on 2026-10-15: the Rimefields became Everwinter, the Forgefire Ashfire, and the Brink
 Unmade Isles (RLM-164). Renamed later: Olympus became Asgard (2026-10-17, RLM-245), and the prehistoric Prestoria
-became the water realm Atlantis (2026-10-19, RLM-265).
+became the water realm Atlantis (2026-10-19, RLM-265); on 2026-10-22 Asgard became Skyhearth and Atlantis Deepholm,
+to drop borrowed mythology (RLM-357,
+[ADR 0054](../decisions/0054-skyhearth-and-deepholm-amend-asgard-and-atlantis.md)).
 
 ## Progression rules
 
@@ -73,15 +79,15 @@ became the water realm Atlantis (2026-10-19, RLM-265).
   - spawn tables per biome with passive, ambient and hostile mobs, so no realm has only hostile life (WF-14);
   - a friendly or neutral faction next to a hostile one, each with its own settlements (WF-3);
   - one identity element visible on the realm's mobs and drops (RE-5), and music and ambience from the start (RE-8);
-  - Asgard is the exception: a small, passive realm of NPCs ([The hub realm](#the-hub-realm)).
+  - Skyhearth is the exception: a small, passive realm of NPCs ([The hub realm](#the-hub-realm)).
 - **No horror realm with limited visibility** (RE-18). Every realm has its own light (glowstone, crystals, a sky),
   so Dark Vision is a comfort, not a requirement.
 
 ### Chapters and levels
 
 - **A realm is a chapter, and the twins share one** (Matěj, RLM-188): chapter 1 is Overworld, chapter 2
-  Undervault, chapter 3 Sunwastes and Everwinter together, then Atlantis, Quagmire, Ashfire and Unmade Isles as
-  chapters 4 to 7. Asgard is no chapter. The twins each have dungeons across their own band, and the player
+  Undervault, chapter 3 Sunwastes and Everwinter together, then Deepholm, Quagmire, Ashfire and Unmade Isles as
+  chapters 4 to 7. Skyhearth is no chapter. The twins each have dungeons across their own band, and the player
   alternates between them (waystones make that easy). The old rule "10 levels per chapter" is gone; Matěj expects to
   change the numbers at least once after playing.
 - **A chapter's level cap is its last level:** 10, 18, 30, 40, 44, 52 and 60, raised by the chapter's main
@@ -104,27 +110,32 @@ became the water realm Atlantis (2026-10-19, RLM-265).
 - Each chapter ends in a short main quest chain whose last step opens the next band (PR-1); everything else is
   optional.
 
-### Realm tool tiers
+<a id="realm-tool-tiers"></a>
 
-Matěj's rule (2026-10-15, RLM-188; RLM-194 implements it, in M4):
+### Tool tiers and gated ores
 
-- **A realm's own blocks** (stone, wood, ores) are mined at full efficiency only by tools made from that realm's
-  materials or a later realm's. A pickaxe from realm N+1 is fully effective in N+1, N, N−1 and every realm below.
-- **A tool from an earlier realm** still works, at a reduced efficiency (first guess 25 %, to tune), whatever its
-  enchantments or mining-speed gems, because it is not made of that realm's materials. Target feel: mining a new
-  realm with the previous realm's pickaxe is about as fast as mining vanilla stone with an iron pickaxe. Slow, not
-  painful.
-- **So an effective tool for a realm** needs that realm's materials, mined there first with the old tool, plus other
-  items. The recipes are open ([open question 13](#open-questions)).
-- **The tiers** (Matěj, 2026-10-15): vanilla tools from wood to diamond are Overworld's tier; netherite is
-  Undervault's, so no tier sits between diamond and netherite; the twins get two tiers in band order, Sunwastes then
-  Everwinter; Unmade Isles' tools are the top tier (this replaces the Void section's earlier "no malachite tools:
-  netherite stays the best tool tier").
-- **Undervault is the exception:** every pickaxe is 100 % effective there. Its common stone is slow instead and
-  never breaks instantly ([The stone realm](#the-stone-realm)). Its high-tier ores drop nothing for a pickaxe below
-  their tier, like obsidian mined with an iron pickaxe ([open question 14](#open-questions)).
-- **In M1** the reduced efficiency never applies, since no realm after Undervault exists yet; M1 keeps Undervault's
-  stone hardness and its ancient debris (W2a) and the netherite templates in its dungeon loot (W6).
+**No tool speed rule** (Matěj, 2026-10-26, RLM-194, RLM-450): every pickaxe mines every realm's blocks at its normal
+speed. This drops the realm tool rule of 2026-10-15 in every form, both its reduced efficiency for an earlier realm's
+tool (a first guess of 25 %) and its "Undervault is the exception: every pickaxe is 100 % effective there", which
+Matěj never meant as an exception (2026-10-25). His reasons: vanilla's and other mods' blocks fill the realms (sand in
+Sunwastes, structures of vanilla blocks, gravel and tuff in Undervault), a per-block rule cannot work as intended, and
+he likes a per-dimension rule less than none. Undervault's own blocks are harder than vanilla's instead
+([The stone realm](#the-stone-realm), RLM-450).
+
+What stays (RLM-194, M4, where the first pickaxe above netherite comes):
+
+- **The tiers follow Apotheosis's world tiers, not realms** (Matěj, 2026-10-26; [apotheosis.md](apotheosis.md)):
+  Haven, vanilla pickaxes from wood to diamond; Frontier, netherite, unlocked in Undervault; Ascent, unlocked in
+  Everwinter; Summit, unlocked in Quagmire; Pinnacle, unlocked in Unmade Isles, perhaps malachite. Sunwastes, Deepholm
+  and Ashfire add no tier, and Skyhearth has nothing to mine. This replaces the tier per realm of 2026-10-15 and the
+  twins' two tiers.
+- **Gated ores** (Matěj, 2026-10-15 and 2026-10-16): some of Undervault's ores drop nothing for a pickaxe below their
+  tier, like obsidian mined with an iron pickaxe, so players come back for them. There is one per world tier from
+  Ascent on, each needing that tier's pickaxe; they spawn from the start, so a first visitor sees ores they cannot
+  mine yet, and they are probably curio materials, not gear. The recipes of the pickaxes above netherite are open
+  ([open question 13](#open-questions)).
+- **In M1** nothing is gated: no pickaxe above netherite exists yet. M1 keeps Undervault's harder blocks (RLM-450), its
+  ancient debris (W2a) and the netherite templates in its dungeon loot (W6).
 
 ### Gear archetypes
 
@@ -196,13 +207,13 @@ never also in Overworld.** Vanilla strongholds are off from M1.
 | Undervault | Dungeons Enhanced: Deep Crypt, Dungeon Variant (set into the cave walls); Golem Dungeons: Abandoned Factory | M2 (RLM-316) |
 | Sunwastes | Dungeons Enhanced: Desert Tomb, Desert Temple, Hay Storage; YUNG's Cave Biomes: Lost Caves | M4 (RLM-325) |
 | Everwinter | Dungeons Enhanced: Castle, Ice Pit, Witch Tower, Watch Tower; YUNG's Cave Biomes: Frosted Caves; The Lost Castle in the tundra | M4 (RLM-325) |
-| Atlantis | Dungeons Enhanced: Elders Temple, Sunken Shrine, Flying Dutchman (a ghost ship 20–40 blocks above the seabed, through a start-height override); the vanilla Ocean Monument, through YUNG's Better Ocean Monuments (RLM-265) | with the realm |
+| Deepholm | Dungeons Enhanced: Elders Temple, Sunken Shrine, Flying Dutchman (a ghost ship 20–40 blocks above the seabed, through a start-height override); the vanilla Ocean Monument, through YUNG's Better Ocean Monuments (RLM-265) | with the realm |
 | Quagmire | Dungeons Enhanced: Tall Witch Hut; Grim Kingdoms (a ruined castle in the swamp) | with the realm |
 | Ashfire | Dungeons Enhanced: Black Citadel; Golem Dungeons: Piglin Factory | with the realm |
 | Unmade Isles | MSS – Moog's Soaring Structures | with the realm |
 
-YUNG's Cave Biomes generates in neither Overworld nor Undervault. The Ocean Monument leaves Overworld for Atlantis, so
-prismarine, and with it Apothic Enchanting's seashelves, comes only from Atlantis: Matěj accepts that, since he finds
+YUNG's Cave Biomes generates in neither Overworld nor Undervault. The Ocean Monument leaves Overworld for Deepholm, so
+prismarine, and with it Apothic Enchanting's seashelves, comes only from Deepholm: Matěj accepts that, since he finds
 seashelves unbalanced for the pack's early game (2026-10-19, RLM-265). Dungeons Enhanced's Pirate Ship and Fishing
 Ship stay in Overworld. Paintings in a dungeon come from its theme's
 own set, never random across themes (RLM-322).
@@ -251,9 +262,13 @@ Puzzles are welcome under these rules (Matěj, 2026-10-12, replacing the earlier
   drops, at 100% and on every kill, the unique material the next signet's recipe needs, so the boss is always a
   source. Every signet takes its realm's shard in the middle, 4 of the previous realm's ore or gem on the sides and 4
   of the new realm's theme block in the corners: the Signet of the Undervault the Illusioner's Stone Signet Shard, 4
-  diamonds and 4 stone (M2; in M1 chapter 1's last quest still gives it), the Signet of the Sunwastes its shard, 4
-  netherite scraps and 4 sand. What Undervault's boss drops for the twins is open
-  ([realm portal spec, open question 2](realm-portal.md#open-questions)).
+  diamonds and 4 stone (M2; in M1 chapter 1's last quest still gives it).
+- **The twins' signets** (Matěj, 2026-10-26, RLM-432) keep the shard in the middle and take two of each ingredient:
+  the Signet of the Sunwastes 2 Rubies at the top and bottom, 2 Netherite Scraps left and right, 2 Sand in the top left
+  and bottom right corners and 2 Red Sand in the other two; the Signet of the Everwinter 2 Sapphires, 2 Netherite
+  Scraps, 2 Snow Blocks and 2 Ice in the same places. Undervault's final boss, **Astone, the Unbroken**, drops their
+  two shards, the Sun Signet Shard and the Ice Signet Shard, with the Stone Heart for the Skyhearth Medallion
+  ([The hub realm](#the-hub-realm)): all three at 100%, on every kill (Matěj, 2026-10-25 and 2026-10-27, RLM-432).
 - **A quest shop sells a lost signet:** after a realm's final boss quest, the quest journal's shop (the Lodge Merchant
   tab, RLM-407) sells the signet of the realm that boss unlocks, whole, up to 3 times, for a price relative to the
   signet's level that never rises: 50 copper coins for the Signet of the Undervault. After that only the boss is left.
@@ -295,7 +310,7 @@ Chapter 1 (levels 1–10), the realm of M1. Identity: home.
   Overworld the node between realms (TR-7). With cheap waystones the hub costs no walking. As a place, the hub
   waits (Matěj, RLM-139): in M1 the Wayfarers' Lodge is a voice in the quest book, and a Lodge house in a village,
   with NPCs and services that grow each chapter (WF-8), may come with the M4 village overhaul
-  ([lore outline](../lore/outline.md#decisions)). Asgard, from about level 15, is the second hub: the place of
+  ([lore outline](../lore/outline.md#decisions)). Skyhearth, from about level 15, is the second hub: the place of
   quests, not of portals ([The hub realm](#the-hub-realm)).
 
 ### The stone realm
@@ -328,8 +343,9 @@ it offers most of what the Nether offered ([ADR 0025](../decisions/0025-remove-t
     Undervault's tier or higher, so the armour upgrade is never a gem's only use;
   - **ancient debris** (Matěj, 2026-10-15): netherite is Undervault's tier, so the debris generates here, only below
     the walkable floor's Y, never in walls or ceilings;
-  - **high-tier ores** that drop only for a pickaxe from a higher realm ([Realm tool tiers](#realm-tool-tiers)), so
-    players come back to mine; probably materials for curios and the like, not gear;
+  - **gated ores** that drop only for a pickaxe of a later world tier
+    ([Tool tiers and gated ores](#tool-tiers-and-gated-ores)), so players come back to mine; probably materials for
+    curios and the like, not gear;
   - quartz set in stone (quartz early, because other mods expect it);
   - glowstone near the ceiling;
   - no nether wart: the Ancient Specialist sells it (RLM-241,
@@ -338,30 +354,37 @@ it offers most of what the Nether offered ([ADR 0025](../decisions/0025-remove-t
 - **Mobs:** stone-looking mobs and animated statues, each variant with one clear role (BM-11); a rock mob that climbs
   and a timid critter that flees into the rock; animals too, such as a "Stoneshroom" stone cow; shulkers with grey as
   their default colour (the source of shulker shells).
-- **Natural structures:** 2–3 kinds of mines, some with friendly NPCs who take the realm's ores and gems and trade
-  back the item that unlocks a dungeon; mineshafts like vanilla's but larger and more structured (Matěj, RLM-188);
-  bone structures like the Nether's fossils, which suit a giant cave; Stonehenge-like rings and big boulders as
-  landmarks. The NPC mine near the boss site is the realm's friendly settlement next to danger (WF-9).
+- **Natural structures:** the **Hewn's Mine** (M2, RLM-429), hostile: Hewn Miners dig the Gatewrights' ore and Hewn
+  Overseers guard it; **Cairnfolk houses** (M4, RLM-448), friendly, cut into the cave walls, sometimes 2–3 together as
+  a hamlet, each with a generated **Keykeeper** who trades the realm's ores for a dungeon's key, like a villager with a
+  profession. The two look nothing alike (Matěj, 2026-10-25, RLM-432: Cairnfolk houses replace the mines with friendly
+  NPCs). Also mineshafts like vanilla's but larger and more structured (Matěj, RLM-188); bone structures like the
+  Nether's fossils, which suit a giant cave; Stonehenge-like rings and big boulders as landmarks. The Cairnfolk houses
+  are the realm's friendly settlements next to danger (WF-9).
 - **Dungeons:**
 
   | Dungeon | Kind | Ending | Bosses |
   | --- | --- | --- | --- |
   | Catacombs, an open catacomb like the interior part of Mine Cells | instanced, procedural | a treasury | none, or minibosses |
   | Stone arena with an altar, a procedural run whose end room is the altar arena | instanced, procedural | the boss, summoned at the altar | 1 |
-  | Dwarf-like fortress in the rock | open-world structure | none (no completion) | 0–2 minibosses |
+  | Dwarf-like fortress in the rock, the Cairnfolk's old hold (RLM-317) | open-world structure | none (no completion) | 0–2 minibosses: one is **Rubia**, an optional boss of living ruby and stone, who drops the Living Ruby (M3 or later, RLM-253; the fortress itself can come in M2) |
 
   The netherite upgrade smithing template is a fairly common item in every Undervault dungeon's loot (Matěj,
   2026-10-15).
-- **The chain:** a mine NPC trades realm ores for the catacombs key; the catacombs' treasury holds the arena key at
-  100%; inside the arena instance an NPC gives the item that summons the boss at the altar; the boss drops, at 100%,
-  the material for the next realm's item (RE-9) and finishes the chapter's main chain. The mine NPC sells the keys
-  again for repeat runs (LE-2).
+- **The chain:** a Cairnfolk Keykeeper trades 16 Emeralds and 8 Ancient Debris for the catacombs key (Matěj,
+  2026-10-27; a quest in the quest book until M4's houses, RLM-448); the catacombs' treasury holds the arena key at
+  100%; inside the arena instance an NPC gives the item that summons the boss at the altar; the boss, **Astone, the
+  Unbroken** (she/her), drops, at 100% and on every kill, the Sun Signet Shard and the Ice Signet Shard for the twins'
+  signets and the Stone Heart for the Skyhearth Medallion (RE-9, [Opening the next realm](#opening-the-next-realm)),
+  and finishes the chapter's main chain. The Keykeepers sell the keys again for repeat runs (LE-2). The catacombs are
+  a dungeon type of their own (W6), separate from Prisoner's Kingdom, a real Overworld dungeon (Matěj, 2026-10-25 and
+  2026-10-27, RLM-456).
 - **What M1 takes from this** (a proposal for the M1 tasks, not a plan change): W2a's dimension is this realm's
   worldgen (the one-floor cave, the stone types and their hardness, the ancient debris, the sub-regions); W3's 1–2
   custom mobs (D11) are two animated statues (a melee and a caster archetype); W6's type A (ends in the boss's lair)
   is the stone arena and type B (ends in a treasury) the catacombs, both with netherite templates in their loot;
-  W5's boss fights in the arena. The fortress waits for M2's world-structure dungeons (RLM-317), and the NPC mines,
-  the gems and the full material set grow as later tasks need them.
+  W5's boss fights in the arena. The fortress waits for M2's world-structure dungeons (RLM-317), the Cairnfolk houses
+  for M4 (RLM-448), and the gems and the full material set grow as later tasks need them.
 
 ### The desert realm
 
@@ -376,7 +399,8 @@ Identity: sun and sand.
   desert-themed gems and enchanted books (no longer for refining: reforging takes Apotheosis's own materials,
   [apotheosis.md](apotheosis.md#the-materials-loop), RLM-199). Ancient debris and netherite scrap moved to Undervault (Matěj,
   2026-10-15, [ADR 0032](../decisions/0032-v1-realm-layout-amends-the-nether-and-end-removal.md)); what Sunwastes
-  gets instead is open ([open question 16](#open-questions)). Its tools are the first of the twins' two tiers.
+  gets instead is open ([open question 16](#open-questions)). It adds no tool tier
+  ([Tool tiers and gated ores](#tool-tiers-and-gated-ores)).
 
 ### The tundra realm
 
@@ -388,17 +412,19 @@ mechanic: the vision rules it out).
   ice plus a tundra with spruce forests, where The Lost Castle stands (Matěj, 2026-10-19, RLM-264).
 - **Dungeons:** a nordic fortress, a big igloo or a group of igloos, an ice castle.
 - **Visual hints:** ice spikes and a campfire mark a cave worth entering (WF-5).
-- **Tools:** the second of the twins' two tiers.
+- **Tools:** it unlocks Apotheosis's Ascent world tier and its pickaxe
+  ([Tool tiers and gated ores](#tool-tiers-and-gated-ores)).
 
 ### The hub realm
 
-Name: **Asgard**, and its king is **Odin** (Matěj, 2026-10-17, RLM-245; renamed from Olympus). Open from about
+Name: **Skyhearth**, and its king is **Taveth** (Matěj, 2026-10-22, RLM-357; it was Olympus, then Asgard with Odin
+from 2026-10-17, RLM-245). Open from about
 level 15, no chapter. Identity: the heavens. Matěj's rules (2026-10-15, RLM-188, and 2026-10-17, RLM-245):
 
 - **The centre of the whole game** (2026-10-17): the hub matters for progress, story and items, so players reach it
   much earlier than the old level 30, with many stories, quests, trades, dialogues and relationships.
-- **The way in: the Asgard Medallion,** crafted, not a quest reward. Undervault's final boss, a stone giant or golem,
-  drops the **Stone Heart** directly, so in practice Asgard opens when that boss falls, at about level 15. Recipe
+- **The way in: the Skyhearth Medallion,** crafted, not a quest reward. Undervault's final boss, Astone, the
+  Unbroken, drops the **Stone Heart** directly, so in practice Skyhearth opens when she falls, at about level 15. Recipe
   (shaped; Ruby, Sapphire, Topaz and netherite are all Undervault materials, so it is craftable once the boss dies):
 
   | | | |
@@ -408,23 +434,31 @@ level 15, no chapter. Identity: the heavens. Matěj's rules (2026-10-15, RLM-188
   | Iron Ingot | Gold Ingot | Netherite Ingot |
 
   RLM-245 decided this recipe for a "Sigil of Asgard"; on 2026-10-20 Matěj made the item the Asgard Medallion
-  instead of a sigil, with its own portal of Holy Stone bricks (RLM-302), so the recipe carries over as a proposal
-  ([open question 17](#open-questions)).
+  (the Skyhearth Medallion since 2026-10-22) instead of a sigil, with its own portal of Holy Stone bricks (RLM-302), so
+  the recipe carries over as a proposal ([open question 17](#open-questions)).
+
+- **Chapter 2's way in differs** (RLM-465; RLM-302's design is not rewritten here). Chapter 2's approved text says:
+  "You craft the Skyhearth Medallion from the Stone Heart and the three Undervault gems, build the platform, stand in
+  its middle, and rise" ([chapter 2](../lore/chapters/02-the-weight-of-stone.md#later-m3-or-later-rise-to-skyhearth)).
+  Against this section and RLM-302 that is two differences: the player builds a platform and rises from it, where
+  RLM-302 has a portal of Holy Stone bricks; and the text names only the Stone Heart and the three gems, where the
+  recipe above also takes a diamond, an emerald, an iron, a gold and a netherite ingot (the text may simply leave
+  them out). Both wait for RLM-302.
 
 - **A small, finite, passive realm in the heavens,** built like one giant dungeon: a celestial city and palace full
   of NPCs, inspired by Hytale's Forgotten Temple and WoW's Dalaran (also a flying city). Technically a dimension, but
   more like a dungeon.
 - **Nothing can be broken or built there,** it is bounded, and there is no flight. The only ways out are the portal
   the player came through, or a jump into the void (death).
-- **What it offers:** quests into Sunwastes and Everwinter (Matěj, 2026-10-17) and every later realm, Atlantis,
+- **What it offers:** quests into Sunwastes and Everwinter (Matěj, 2026-10-17) and every later realm, Deepholm,
   Quagmire, Ashfire and Unmade Isles (sometimes into lower realms or dungeons), a share of those realms' quests
   ([leveling.md](leveling.md#content-budget-per-realm)); trading, profession levelling, dialogues, and campaign hints
-  the guide leaves out (the guide only says something like "… the citizens of Asgard could know more about this
+  the guide leaves out (the guide only says something like "… the citizens of Skyhearth could know more about this
   realm."). Players keep coming back until level 60.
-- **Unique NPCs live only in Asgard.** They matter to the story and give unique quests. One of them sells keys to
-  late-game dungeons (early dungeon keys stay craftable, RLM-181): Matěj left the name open ("it can be Torva"), and
-  Claude's pick is **Torva Flintmark**, the Cairnfolk forewoman of chapter 2, who already keeps the catacomb keys in
-  the lore outline.
+- **Unique NPCs live only in Skyhearth.** They matter to the story and give unique quests. One of them sells keys to
+  late-game dungeons (early dungeon keys stay craftable, RLM-181): **Torva Flintmark**, a Cairnfolk ("it can be
+  Torva", Matěj; RLM-188, part 3). She is no longer chapter 2's forewoman: in Undervault the generated Cairnfolk
+  Keykeepers sell the catacomb keys (Matěj, 2026-10-25, RLM-432, RLM-448; [The stone realm](#the-stone-realm)).
 - **Everywhere else** (RLM-147): NPCs generated in structures, with random names and simple quests ("do a task, get
   a reward"). A few important campaign NPCs keep one title-like name in every structure, as bosses do (for example
   "The Wanderer"), like Twilight Forest's Questing Ram, who sets a task the campaign needs.
@@ -432,12 +466,12 @@ level 15, no chapter. Identity: the heavens. Matěj's rules (2026-10-15, RLM-188
 
 ### The water realm
 
-Name: **Atlantis**. Chapter 4 (levels 26–40), later. Identity: water. It replaced Prestoria, the prehistoric realm of
-dinosaurs, on 2026-10-19 (Matěj, RLM-265): Prestoria was the one realm whose theme he was unsure of, a water realm is
-truly unique, and this band is short, so players need not stay long if they don't want to. The level band and the
-world tier stay. Themes he weighed for the slot: prehistoric, giants, sculk and water; not wanted: a forest realm. This
-reverses RLM-188's "underwater realm dropped, an underwater instanced dungeon instead" ([Candidate
-realms](#candidate-realms)). "The rest will be refined later."
+Name: **Deepholm** (Matěj, 2026-10-22, RLM-357; Atlantis from 2026-10-19). Chapter 4 (levels 26–40), later. Identity:
+water. It replaced Prestoria, the prehistoric realm of dinosaurs, on 2026-10-19 (Matěj, RLM-265): Prestoria was the
+one realm whose theme he was unsure of, a water realm is truly unique, and this band is short, so players need not
+stay long if they don't want to. The level band and the world tier stay. Themes he weighed for the slot: prehistoric,
+giants, sculk and water; not wanted: a forest realm. This reverses RLM-188's "underwater realm dropped, an underwater
+instanced dungeon instead" ([Candidate realms](#candidate-realms)). "The rest will be refined later."
 
 - **Shape** (Matěj): mostly under water. Water up to about y 128, and above it an empty surface: no islands, just
   water. No bedrock ceiling ("it wouldn't look good").
@@ -449,7 +483,7 @@ realms](#candidate-realms)). "The rest will be refined later."
   surface dungeon can be adapted and moved under water.
 - **Prismarine comes only from here,** and with it Apothic Enchanting's seashelves; Matěj accepts that, since he
   finds seashelves unbalanced for the pack's early game.
-- **The entry quest "Enter the Atlantis"** is read-only: it explains the realm and rewards the **Breath of Atlantis**,
+- **The entry quest "Enter the Deepholm"** is read-only: it explains the realm and rewards the **Breath of Deepholm**,
   a charm-slot curio that gives infinite breath (like the Aether's), with an enchanted book of **Depth Strider IV** and
   one of **Aqua Affinity** (Matěj, 2026-10-19).
 - **Seeing under water:** Night Vision (Matěj, 2026-10-19). Vanilla's underwater fog is short; whether the realm's
@@ -461,14 +495,14 @@ realms](#candidate-realms)). "The rest will be refined later."
   levels to be better. Proposal (Claude, from Apothic Enchanting's 26.1 source): our data pack overrides vanilla's
   `minecraft:depth_strider` enchantment file (enchantments are data since 1.21), so each level above III also adds
   swim speed, for example through NeoForge's swim speed attribute; the numbers are tuned in a playtest.
-- **Poseidon's Bow,** the ranged answer, made for Atlantis (Matěj, 2026-10-19): "Arrows shot by this bow ignore
+- **Poseidon's Bow,** the ranged answer, made for Deepholm (Matěj, 2026-10-19): "Arrows shot by this bow ignore
   water collision." It is not anti-gravity: its arrows fly the normal arc, as if shot out of water.
   - **Recipe:** an Everwinter boss drop, 2 Everwinter ores and 3 Reinforced Sticks; the boss drop and the ore are
     still open.
   - **Reinforced Stick:** a common material, made at the smithing table from a Reinforced Smithing Template, a stick
     and a steel ingot.
   - **Reinforced Smithing Template:** loot from Undervault's dungeons, used with steel ingots to reinforce various
-    items, the stick among them. Both are general materials of Undervault's gear, not only Atlantis's.
+    items, the stick among them. Both are general materials of Undervault's gear, not only Deepholm's.
   - **Steel:** probably an ore from Undervault.
 - **Still open** ([open questions 18–21](#open-questions)): the portal's arrival on the seabed, mounts, the realm's
   mobs, and whether vanilla shipwrecks generate here too.
@@ -587,7 +621,7 @@ art or assets of other games.
   3. the Chainkeepers trade voidglass for the Cathedral's key, and sell the key again for repeat runs (LE-2);
   4. in the Cathedral, two minibosses drop the keys to the nave (DU-7). One bigger light-beam puzzle with the
      realm's crystal lies on the way ([Puzzles and traps](#puzzles-and-traps)), and a Sealbound Gatewright opens
-     the nave, as the Scribe in the Stone does in the stone realm;
+     the nave, as the Stonebound does in the stone realm;
   5. the First Wright fights on the ground, in phases, with no flying phase (vision);
   6. **the last seal** (proposed, [open question 10](#open-questions)): at the Cathedral's heart the player shows
      every main-path signet, which is never consumed ("a signet is shown, not paid"), and forges the last seal. That
@@ -595,8 +629,8 @@ art or assets of other games.
 - **Malachite gear** (proposed, [open question 11](#open-questions)): the best craftable gear.
   - **The set:** helmet, chestplate, leggings and boots, plus one weapon per play style that exists when the realm
     is built: a sword, a bow once a ranged class exists, and a caster's weapon if casters use one by then. Malachite
-    tools are the top tool tier ([Realm tool tiers](#realm-tool-tiers); Matěj, 2026-10-15, superseding "no
-    malachite tools: netherite stays the best tool tier").
+    tools are perhaps the top world tier's, Pinnacle ([Tool tiers and gated ores](#tool-tiers-and-gated-ores);
+    Matěj, 2026-10-15 and 2026-10-26, superseding "no malachite tools: netherite stays the best tool tier").
   - **Single pieces** are about as strong as the best boss drops of the chapter before, and the First Wright's drops
     are better. A player who swaps in a boss piece gives up the full set's bonus, so a full set is the strongest
     choice for most players and strongly endgame (Matěj).
@@ -616,13 +650,14 @@ Themes Matěj described for later realms, to pick from if v1 grows. What the v1 
 RLM-188):
 
 - **Taken:** the sky islands' celestial palace and Olympus-like theme of gods became the hub realm, now
-  [Asgard](#the-hub-realm); **underwater** (a coral reef, sunken ships, an Atlantis-like city), dropped by RLM-188 for
-  an underwater instanced dungeon, became [Atlantis](#the-water-realm) (Matěj, 2026-10-19, RLM-265).
+  [Skyhearth](#the-hub-realm); **underwater** (a coral reef, sunken ships, an Atlantis-like city), dropped by RLM-188
+  for an underwater instanced dungeon, became the water realm (Matěj, 2026-10-19, RLM-265), now
+  [Deepholm](#the-water-realm).
 - **Dropped:**
   - **the dense forest** (a giant tree as a dungeon, varied tree biomes): too close to Overworld;
   - **a labyrinth realm** (AoA's realm made of rooms): perhaps a dungeon instead.
 - **Still open:**
-  - **prehistoric:** Advent of Ascension's dinosaur theme, which was Prestoria until Atlantis took its slot
+  - **prehistoric:** Advent of Ascension's dinosaur theme, which was Prestoria until the water realm took its slot
     (RLM-265); giants and sculk, the other themes Matěj weighed for that slot;
   - **sky islands** as a realm of their own: large, well-connected islands (no mini islands, no clouds), a whole
     island as one dungeon with paths woven vertically and horizontally; a void rescue keeps a fall from being a lost
@@ -635,9 +670,9 @@ RLM-188):
   boss.
 - **M2:** Overworld's dungeons, questline and final boss, and the first world structures in Overworld and Undervault
   (RLM-264, [ADR 0044](../decisions/0044-third-party-mods-by-milestone.md)).
-- **M4:** Sunwastes and Everwinter (dimensions 2 and 3, chapter 3), with their world structures, realm tool tiers
+- **M4:** Sunwastes and Everwinter (dimensions 2 and 3, chapter 3), with their world structures, the gated ores
   (RLM-194), and the removal of the Nether and End.
-- **Later:** Asgard, Atlantis, Quagmire, Ashfire, and the Void realm as the
+- **Later:** Skyhearth, Deepholm, Quagmire, Ashfire, and the Void realm as the
   last one. The Void realm may be built earlier than other realms, and still stays last on the main path
   ([Realms](#realms)).
 
@@ -660,7 +695,7 @@ For Matěj; each has a proposal so the design can go on.
    opens (DU-6).
 5. **The realm for chapter 3.** **Decided 2026-10-15 (Matěj, RLM-188):** chapter 3 is the twin chapter, Sunwastes
    and Everwinter (levels 16–30); the forest and underwater realms are dropped (the underwater realm came back as
-   Atlantis on 2026-10-19, RLM-265).
+   Atlantis on 2026-10-19, RLM-265, now Deepholm).
 6. **The fire realm's chapter.** **Decided 2026-10-15 (Matěj, RLM-188):** chapter 6 (levels 40–52), after the
    elytra, so its dragons can be strong.
 7. **Elytra or flying mounts first?** Asked once, in the mount decision RLM-115, question 4
@@ -689,32 +724,33 @@ For Matěj; each has a proposal so the design can go on.
 12. **The fall rule.** Proposal: the Void pulls a falling player back to their last solid ground at no cost.
     Alternatives: the same with a cost in health that never kills, or vanilla's void damage (death and a respawn in
     Overworld).
-13. **Realm tool recipes** ([Realm tool tiers](#realm-tool-tiers)): some like vanilla's diamond tools, some unique,
-    some at the smithing table, to discuss with Matěj (RLM-188). Proposal: a realm's tools take its main ore or gem
-    in the vanilla tool shapes, and a smithing-table upgrade from the previous tier for the pickaxe, so the first
-    effective pickaxe needs the old one. The tiers themselves are decided (Matěj, 2026-10-15): vanilla tools from
-    wood to diamond are Overworld's tier, netherite Undervault's, and the twins get two tiers in band order.
-14. **The reduced efficiency** of an earlier realm's tool: 25 % is a first guess. Proposal: keep it until RLM-194's
-    playtest measures the target feel (the previous realm's pickaxe about as fast as an iron pickaxe on vanilla
-    stone).
+13. **The recipes of the pickaxes above netherite** ([Tool tiers and gated ores](#tool-tiers-and-gated-ores)): some
+    like vanilla's diamond tools, some unique, some at the smithing table, to discuss with Matěj (RLM-188). Proposal: a
+    world tier's tools take the main ore or gem of the realm that unlocks it in the vanilla tool shapes, and a
+    smithing-table upgrade from the previous tier for the pickaxe. The tiers themselves are decided (Matěj,
+    2026-10-26): Apotheosis's world tiers, Haven (wood to diamond), Frontier (netherite), Ascent, Summit and Pinnacle.
+14. **The reduced efficiency** of an earlier realm's tool. **Dropped 2026-10-26 (Matěj, RLM-194, RLM-450): no tool
+    speed rule at all**; Undervault's own blocks are harder than vanilla's instead.
 15. **Knock-on of the v1 layout** (to check with Matěj, not changed here): mount tiers unlock by chapter quests
     (RLM-115), so tier 2's flight now comes from Undervault's chapter while mounts are planned for M4; elytra come
     from chapter 3's final boss (RLM-138), and chapter 3 is now the twin chapter with two guardians; spell and talent
     unlocks per chapter (research PR-8) follow the new chapters. Proposal: elytra from the second of the twins'
     guardians a player beats, so either order works.
 16. **Sunwastes' material** now that ancient debris and netherite scrap moved to Undervault (Matěj,
-    2026-10-15). Proposal: the twins' first tool tier comes from a desert gem or metal of its own, and the brushing
-    loot keeps its gems and books.
-17. **How a player reaches Asgard.** **Decided 2026-10-17 (Matěj, RLM-245): a crafted item** from the Stone Heart,
-    the guaranteed drop of Undervault's final boss, so Asgard opens at about level 15 ([The hub realm](#the-hub-realm)).
-    On 2026-10-20 the item became the Asgard Medallion, with Asgard's own portal of Holy Stone bricks (RLM-302).
+    2026-10-15). Proposal: a desert gem or metal of its own for its gear (it adds no tool tier, RLM-194), and the
+    brushing loot keeps its gems and books.
+17. **How a player reaches Skyhearth.** **Decided 2026-10-17 (Matěj, RLM-245): a crafted item** from the Stone
+    Heart, the guaranteed drop of Undervault's final boss, so Skyhearth opens at about level 15
+    ([The hub realm](#the-hub-realm)). On 2026-10-20 the item became the Asgard Medallion, now the Skyhearth Medallion
+    (RLM-357), with the hub's own portal of Holy Stone bricks (RLM-302); chapter 2's text has a platform the player
+    rises from instead, which RLM-302 settles.
     Proposal: the medallion takes RLM-245's recipe unchanged. Open on RLM-302: how Holy Stone, "findable in
     Everwinter" (chapter 3, levels 20–30), fits a portal a player builds at about level 15.
-18. **Arriving in Atlantis.** The realm portal links to the seabed, so a player arrives under water. Proposal: an air
+18. **Arriving in Deepholm.** The realm portal links to the seabed, so a player arrives under water. Proposal: an air
     dome around the arrival, as AoA 1.21 does for L'Borean
     ([research notes](../research/notes/aoa-dimensions-h-to-z.md)); alternative: a platform.
-19. **Mounts in Atlantis.** Ground mounts don't swim, and flying mounts can only cross the empty surface. No proposal
+19. **Mounts in Deepholm.** Ground mounts don't swim, and flying mounts can only cross the empty surface. No proposal
     yet: it belongs to the mount design (RLM-115).
-20. **Atlantis's mobs.** Proposal: drowned and guardians at first, our own sea mobs later.
-21. **Vanilla shipwrecks in Atlantis.** The seabed has shipwrecks (Matěj); whether they are vanilla's, generating
+20. **Deepholm's mobs.** Proposal: drowned and guardians at first, our own sea mobs later.
+21. **Vanilla shipwrecks in Deepholm.** The seabed has shipwrecks (Matěj); whether they are vanilla's, generating
     here too (and still in Overworld), is open. Proposal: yes, in both.

@@ -93,7 +93,7 @@ Undervault (levels 6-18), about 12 hours for an average player by the [XP model]
 **Not in M1:** a second race, more classes, each class's other two specializations and dual spec (M1 has one
 specialization per class; RLM-218), talents and glyphs (postponed indefinitely, RLM-28), affixes, gems, reforging,
 professions, pets, mounts, villages, the enchanting overhaul, contracts, world-structure dungeons, Overworld's own
-dungeons and final boss (Matěj, 2026-10-16; both in M2 since 2026-10-19, RLM-264), realm tool tiers (RLM-194, M4),
+dungeons and final boss (Matěj, 2026-10-16; both in M2 since 2026-10-19, RLM-264), the gated ores (RLM-194, M4),
 custom NPCs, changes to the Nether and End (apart from strongholds off, which leaves the End unreachable,
 [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)), and dungeon parties: instances are solo in M1
 (decision D8); parties come later (RLM-68).
@@ -375,7 +375,7 @@ stays (RLM-323; [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)). Gl
 ## M4: The world grows
 
 Outline: dimensions 2 and 3, Sunwastes and Everwinter, the twin realms of chapter 3 (levels 16-30,
-[realm design](design/realms.md)); realm tool tiers (RLM-194, [realm design](design/realms.md#realm-tool-tiers));
+[realm design](design/realms.md)); the gated ores (RLM-194, [realm design](design/realms.md#tool-tiers-and-gated-ores));
 the Nether and End removed and their items given new sources (D10,
 [ADR 0025](decisions/0025-remove-the-nether-and-end.md)); the twin realms' world structures, each only in its realm
 (RLM-325: Dungeons Enhanced, YUNG's Cave Biomes, The Lost Castle, Alex's Mobs Continued; Overworld's and Undervault's

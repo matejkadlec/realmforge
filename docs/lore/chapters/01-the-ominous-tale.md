@@ -289,6 +289,11 @@ The bond on your strength loosens. The seals have weighed you, and they let you 
   corners make the Signet of the Undervault. Every signet follows the same rule: its shard in the middle, 4 of the
   previous realm's ore or gem on the sides, and 4 of the new realm's theme block in the corners (the Signet of the
   Sunwastes: 4 netherite scraps and 4 sand). Maren's Image only confirms it, and nothing is handed over or sent.
+
+  _Later decision (Matěj, 2026-10-26, RLM-432):_ the twins' signets keep the shard in the middle but take 2 of each
+  ingredient instead: the Signet of the Sunwastes 2 Rubies, 2 Netherite Scraps, 2 Sand and 2 Red Sand; the Signet of
+  the Everwinter 2 Sapphires, 2 Netherite Scraps, 2 Snow Blocks and 2 Ice. The Signet of the Undervault keeps the
+  rule above ([chapter 2](02-the-weight-of-stone.md)).
 - **The sealstone wakes** (RLM-406): the Gatewright Sealstone lights up smoothly while a player holding a signet stands
   near it.
 - **The chapter's end:** the final boss quest grants chapter 1's advancement, so the level cap rises.

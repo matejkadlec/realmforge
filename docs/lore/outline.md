@@ -18,8 +18,8 @@
 > Elenyor, the Unforger for the First Wright, Netherius, the Worldburner and Hearthvale) and the "Decided so far" list
 > of the Realmforge Story Outline doc, the working draft (draft 8) the chapters were written from. That draft as a
 > whole still waits for Matěj's review, so this outline takes from it only what he decided and what the approved
-> chapters tell. Where the two chapters say more than this outline, the chapters win. The design documents still use
-> Asgard and Atlantis until RLM-465.
+> chapters tell. Where the two chapters say more than this outline, the chapters win. The design documents use the
+> new names since RLM-465.
 
 ## At a glance
 
@@ -73,9 +73,9 @@ never from distance (Matěj, 2026-10-22).
 | Lore | What it is in the game |
 | --- | --- |
 | A realm's **seal** opens only to its **signet**, and no signet opens more than one seal | the realm portal opens onto a realm when its signet is used on the sealstone ([realm portal](../design/realm-portal.md)); there is no master signet (RLM-395) |
-| One **gate design** for every realm, raised only in Overworld | one portal frame of Gatewright Bricks, with the Gatewright Sealstone as its keystone (RLM-394); a frame inside a realm opens only back to Overworld (RLM-188) |
+| One **gate design** for every realm, raised only in Overworld | one portal frame of Gatewright Bricks, with the Gatewright Sealstone as its keystone (RLM-394; the in-game names stay Realmforge Bricks and Realmforge Sealstone until RLM-394 renames them in `content/`); a frame inside a realm opens only back to Overworld (RLM-188) |
 | Each realm's **guardian** holds a **shard** for each seal it opens (two when twin realms follow) | the main-path boss drops, at 100% on every kill, one material per realm it opens, two for the twins (RE-9, RLM-395) |
-| A signet is forged around its shard, with the most precious ore or gem of the realm before it and a little of the realm it opens | the next signet is crafted from that drop in the middle, 4 of the previous realm's ore or gem and 4 of the new realm's theme block; the twins' signets take 2 gems, 2 Netherite Scraps and 4 theme blocks (RLM-395, RLM-432) |
+| A signet is forged around its shard, with an ore or gem of the realm before it and a little of the realm it opens | the next signet is crafted from that drop in the middle, 4 of the previous realm's ore or gem and 4 of the new realm's theme block; the twins' signets each take a different Undervault gem, 2 Rubies for the Sunwastes' and 2 Sapphires for the Everwinter's, with 2 Netherite Scraps and 4 theme blocks (RLM-395, RLM-432) |
 | A traveler keeps their signet: a seal, or anyone who checks it, only needs to see it | no quest takes, cuts or sends a signet (RLM-395) |
 | The seal knows a traveler by their deeds, not by the signet in their hand | per-player unlock through the realm's unlock quest; holding someone else's signet does not let a player through (RLM-128) |
 | **Twin seals:** two realms were stamped as a pair, sun and ice, and the next seal needs both their shards | the twins Sunwastes and Everwinter share level cap 30, and the next signet needs both final bosses' drops (RLM-367) |
@@ -154,8 +154,7 @@ shard, or from the Lodge Merchant ([realm portal spec](../design/realm-portal.md
   3. **Skyhearth (from about level 15, a mandatory side quest, M3 or later):** the player rises to Skyhearth with
      the Skyhearth Medallion, meets Maren in person and Taveth, and is sent on to the twins.
   4. **The twins (chapters 3 and 4):** Sunwastes and Everwinter, under one level cap (RLM-367).
-  5. **Deepholm, Quagmire and Ashfire (chapters 5 to 7):** each realm's crisis comes from the strain on its seal, and
-     Ashfire's guardian is Netherius, the Worldburner.
+  5. **Deepholm, Quagmire and Ashfire (chapters 5 to 7):** Ashfire's final boss is Netherius, the Worldburner.
   6. **Unmade Isles (chapter 8, the last of v1):** the finale.
 - **The finale (Matěj, RLM-139, RLM-357):** in the Void Cathedral on Unmade Isles the player faces Elenyor, the
   Unforger, the founder taken by the Void. How it ends, and whether the last seal is forged anew from the main
@@ -166,7 +165,7 @@ shard, or from the Lodge Merchant ([realm portal spec](../design/realm-portal.md
 ## The realms
 
 The realms of the [realm design](../design/realms.md), in the road's order. Realm names are the names players read,
-approved by Matěj (RLM-139, RLM-188, RLM-357); the design documents use Asgard and Atlantis until RLM-465. A realm
+approved by Matěj (RLM-139, RLM-188, RLM-357), and the design documents use them (RLM-465). A realm
 name never takes an article (Matěj, 2026-10-15). Where a player first meets one, it carries a plain subtitle with its
 element, such as "Undervault — Stone Realm" ([style guide](style.md#text-types)). Colours are the portal colours of
 the [realm portal spec](../design/realm-portal.md).
@@ -180,7 +179,7 @@ the [realm portal spec](../design/realm-portal.md).
 | Hub realm | Skyhearth | none (from about 15) | the Ithari's floating city | Hearthvale's refugees, under their king Taveth | none | none: no seal |
 | Water realm | Deepholm | 5 (26–40) | the deep | open | open | open |
 | Swamp realm | Quagmire | 6 (36–44) | the mire, slime | open | the slimes | open |
-| Fire realm | Ashfire | 7 (40–52) | fire | the Emberwrights | Netherius's army of Nether beings | Netherius, the Worldburner |
+| Fire realm | Ashfire | 7 (40–52) | fire | the Emberwrights | Netherius's army of Nether beings | its final boss, Netherius, the Worldburner (RLM-357), is no guardian: he was the Nether's guardian (Matěj, 2026-10-22) |
 | Void realm | Unmade Isles | 8 (48–60) | void | the Chainkeepers | the Unforged | Elenyor, the Unforger (finale) |
 
 Each paragraph below gives the realm's history, its peoples and its threat; the dungeons, mobs and materials it
@@ -292,13 +291,14 @@ slime of many kinds, in swamps and in banks of slime. Its peoples and guardian a
 Hearthvale, the Ithari's own old world of green plains, rivers and mountains, until Netherius, the Worldburner burned
 it 700 years ago (Matěj, 2026-10-22, RLM-357). Now its plains are black and red stone under burnt trees, with lava
 lakes and volcanoes, and it comes deliberately late on the road: what burns here is too strong for a newcomer. It is
-not the Nether, and nothing in it is (Matěj, 2026-10-16), though its burner was the Nether's dragon.
+not the Nether, though its burner was the Nether's dragon. ("Nothing in it is" the Nether's, Matěj said on 2026-10-16,
+before Netherius's army of Nether beings came into the story on 2026-10-22.)
 
 - **The Emberwrights** are its friendly people (RLM-139); who they are now that Ashfire is Hearthvale is written
   with the chapter.
 - **Netherius's army** of Nether beings (Matěj, 2026-10-22); its kinds are written with the chapter.
-- **The guardian** is **Netherius, the Worldburner**, a fire dragon who fights on the ground (vision). His story is
-  written with the chapter.
+- **The final boss** is **Netherius, the Worldburner** (RLM-357), a fire dragon who fights on the ground (vision).
+  He was the Nether's guardian, not Ashfire's (Matěj, 2026-10-22). His story is written with the chapter.
 
 ### The Void realm: Unmade Isles
 
@@ -375,6 +375,8 @@ gives repeatable trades (the Cairnfolk taking ore) is also a natural home for th
 - **Elenyor, the Unforger**, the First Gatewright: heard throughout the road in the inscriptions and letters he left,
   seen in his statues, met only at the end.
 
+<a id="chapters-1-and-2-for-q2"></a>
+
 ## Chapters 1 and 2
 
 M1 ships chapters 1 and 2 (RLM-188), and Q2 builds their quests (RLM-38). Their full texts are the approved chapters,
@@ -393,7 +395,7 @@ version of each, with Maren's lines as letters (each chapter's "In M1" part).
 | 4. The Hall Over the Breach | the five cracked seals; the empty vault; Maren's memory | the Lodge's hall (RLM-393, RLM-408) |
 | 5. The Gate | the first gate a Wayfarer has raised in an age, dark without a signet | gather, craft and raise the gate (RLM-394) |
 | 6. The Ominous Chief | the Illusioner's tower and his own dark gate | Illusioner, the Ominous Chief (RLM-321) |
-| 7. The Signet of the Undervault | the Stone Signet Shard forges the Signet of the Undervault; the gate lights | the signet (RLM-395, RLM-406); the chapter's end |
+| 7. The Signet of the Undervault | the Stone Signet Shard forges the Signet of the Undervault; the gate lights | the signet (RLM-395, RLM-406); the chapter's end. M1 has no Illusioner, so its short version's last quest gives the signet whole, with no story for where it comes from ([chapter 1, In M1](chapters/01-the-ominous-tale.md#in-m1)) |
 
 **Chapter 2, The Weight of Stone** (Undervault, levels 6–18), its main quests as the text numbers them:
 
@@ -441,7 +443,7 @@ Decided rules that a line of lore makes feel natural. Texts may use these lines;
 | The next signet is crafted from the current realm (RE-9), around a shard its final boss drops on every kill (RLM-395) | the guardian holds the shards of the seals after it, and gives them up every time its trial is passed |
 | A dungeon boss returns in every new instance (RLM-35) | none needed: once a boss is defeated in the story, it stays defeated, and the game's repeats need no story reason ([practices](practices.md)) |
 | No flying bosses (vision) | every dragon in Realmforge fights on the ground; the reason is written with Netherius's chapter |
-| Every realm has its own light (RE-18) | the Gatewrights forged light into every realm, and the Void glows violet on Unmade Isles |
+| Every realm has its own light (RE-18) | the Gatewrights forged light into every realm they made, and the Void glows violet on Unmade Isles |
 | No Nether or End in the game (ADR 0025) | both were lost in the war: the Nether destroyed with its gates, the End reshaped into Unmade Isles; netherite comes from Undervault's forge-stock, and the Ancient merchants still sell the Nether's stone (chapter 2, RLM-241) |
 
 ## What the lore leaves open

@@ -43,8 +43,8 @@ meets Pinnacle mobs.
 | Undervault | unlocks Frontier |
 | Sunwastes | no change |
 | Everwinter | unlocks Ascent |
-| Atlantis | no change |
-| Asgard | no change (no hostile mobs) |
+| Deepholm | no change |
+| Skyhearth | no change (no hostile mobs) |
 | Quagmire | unlocks Summit |
 | Ashfire | no change |
 | Unmade Isles | unlocks Pinnacle |
