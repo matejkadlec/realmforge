@@ -1,7 +1,7 @@
 """Items: Java registrations, item model definitions and models, placeholder textures, the item tags of item uses
 (``data/realmforge/tags/item/use/<use>.json``), and the QA mod's expectations. An item's use and flavor line become
 its tooltip: the vanilla lore component, set on the item's default components. A realm's signet (``content/realms/``)
-names its realm there, with the realm's element, and says it is never used up (realm portal spec, "Realm signets").
+has one tooltip line instead, "Does not consume on use" (Matěj, 2026-10-20; realm portal spec, "Realm signets").
 
 Gear (architecture 13) gets its durability, enchantability, repair material and fixed stats as vanilla components:
 attribute modifiers with ids per slot (architecture 8.2), a wand's attack damage and speed as vanilla's base

@@ -54,15 +54,15 @@
 | --- | --- | --- | --- | --- |
 | Overworld | none | - | always open | green `#5DBB63` |
 | Stone realm (Undervault) | Signet of the Undervault | in M1 the reward of chapter 1's last main quest, the realm's unlock quest; from M2 crafted from the Illusioner's Stone Signet Shard, 4 diamonds and 4 stone (RLM-395); the quest shop sells a lost one, up to 3 times | that quest, at about level 6 | slate blue `#7A8FB0` |
-| Desert realm (Sunwastes) | Desert Signet | crafted around its shard from the stone realm boss's guaranteed drop, with 4 of a stone realm ore or gem and 4 sand (RE-9, RLM-395) | its main-chain quest after the stone realm boss | gold `#E8B84A` |
-| Tundra realm (Everwinter) | Tundra Signet | the same, with its own shard and the tundra realm's theme block | its own quest after the same boss | ice white `#BFF4FF` |
+| Desert realm (Sunwastes) | Signet of the Sunwastes | crafted around the Sun Signet Shard, which the stone realm's boss drops at 100%, with 2 Rubies, 2 Netherite Scraps, 2 Sand and 2 Red Sand (RE-9, RLM-395; the twins' recipe, Matěj, 2026-10-26, RLM-432) | its main-chain quest after the stone realm boss | gold `#E8B84A` |
+| Tundra realm (Everwinter) | Signet of the Everwinter | the same, around the Ice Signet Shard, with a different stone realm gem: 2 Sapphires, 2 Netherite Scraps, 2 Snow Blocks and 2 Ice | its own quest after the same boss | ice white `#BFF4FF` |
 | Fire realm (Ashfire) | Fire Signet | from the realm before it, by the same rule | the quest after that realm's boss | red `#E0502C` |
 | Void realm (Unmade Isles) | Void Signet | from the realm before it, by the same rule (RLM-95) | the quest after that realm's boss | deep purple `#4B1F6F` |
 
-Asgard, Atlantis and Quagmire ([realm design](realms.md#at-a-glance)) get their rows when they are designed. Asgard
-opens with the Asgard Medallion, crafted from the Stone Heart of Undervault's final boss (RLM-245), and gets its own
-portal of Holy Stone bricks (RLM-302). Colours are proposals and live in data ([Data](#data-contentrealms)). Purple
-is kept for the Void realm, which comes after M4 removes the nether portals
+Skyhearth, Deepholm and Quagmire ([realm design](realms.md#at-a-glance)) get their rows when they are designed.
+Skyhearth opens with the Skyhearth Medallion, crafted from the Stone Heart of Undervault's final boss (RLM-245), and
+gets its own portal of Holy Stone bricks (RLM-302). Colours are proposals and live in data
+([Data](#data-contentrealms)). Purple is kept for the Void realm, which comes after M4 removes the nether portals
 ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)), so no realm portal looks like a nether portal.
 
 ## The frame
@@ -156,15 +156,22 @@ hoppers have nothing to take.
 - **A signet opens its own realm only** (Matěj, 2026-10-23, RLM-395): the Signet of the Undervault opens Undervault,
   in the game and in the lore, and there is no master signet that opens several.
 - **Players keep their signets** (Matěj, 2026-10-23, RLM-395): no quest takes, cuts or sends one. A quest that needs
-  a signet only confirms that the player holds the right one, and the player keeps it.
+  a signet only confirms that the player holds the right one, and the player keeps it. The same decision's second
+  half is a **story rule**: items do not travel between Skyhearth and the Overworld, and Skyhearth's Mirror is the
+  exception (RLM-395; the story texts carry it, [lore outline](../lore/outline.md)). It says why nothing is sent up or
+  down in the story; it is no travel rule, and in the game every entity travels through a realm portal
+  ([Multiplayer](#multiplayer)).
 - **Where signets come from** (RE-9, LE-1; Matěj, 2026-10-23 and 2026-10-24, RLM-395):
   - **final bosses never drop signets.** Each realm's final boss drops, at 100%, a unique crafting material that the
     next signet's recipe needs, its **shard**, and every kill gives another, so the boss is always a source;
   - **every signet's recipe follows one rule:** its realm's shard in the middle, 4 of the previous realm's ore or gem
     on the sides and 4 of the new realm's theme block in the corners, with no ring step. The Signet of the Undervault
     takes the Stone Signet Shard, 4 diamonds and 4 stone ("combine the shard with the most precious of the
-    Overworld's gems and some stone", as the lore puts it); the Signet of the Sunwastes takes its shard, 4 netherite
-    scraps and 4 sand. The recipe is shown in the quest log, and crafting the signet is a step of the chapter's main
+    Overworld's gems and some stone", as the lore puts it). The twins' signets keep the shard in the middle and take
+    two of each ingredient instead (Matěj, 2026-10-26, RLM-432): the Signet of the Sunwastes 2 Rubies at the top and
+    bottom, 2 Netherite Scraps left and right, 2 Sand in the top left and bottom right corners and 2 Red Sand in the
+    other two; the Signet of the Everwinter 2 Sapphires, 2 Netherite Scraps, 2 Snow Blocks and 2 Ice in the same
+    places. The recipe is shown in the quest log, and crafting the signet is a step of the chapter's main
     chain. Beating the boss is what "completing" a realm means; the realm itself has no completion flag
     ([realm design](realms.md#opening-the-next-realm));
   - **the Signet of the Undervault** is crafted around the **Stone Signet Shard**, the Illusioner's piece of the old
@@ -180,9 +187,10 @@ hoppers have nothing to take.
     left; with keep inventory, losing a signet 4 times should be rare. This replaces the first version's repeatable
     quest that gave a new Signet of the Undervault for a few copper ingots. M1's case is
     [open question 4](#open-questions);
-  - **when the next chapter has two realms** (chapter 3: Sunwastes and Everwinter), the boss before them
-    (Undervault's) drops one material per realm it opens, two, every kill. Which materials those are is
-    [open question 2](#open-questions);
+  - **when the next chapter has two realms** (chapter 3: Sunwastes and Everwinter), the boss before them drops one
+    shard per realm it opens: Undervault's final boss, Astone, the Unbroken, drops the Sun Signet Shard and the Ice
+    Signet Shard, with the Stone Heart for the Skyhearth Medallion, all three at 100% on every kill (Matěj, 2026-10-25
+    and 2026-10-27, RLM-432; [open question 2](#open-questions));
   - **when two realms share a chapter, the next main-path signet needs both:** its recipe takes the guaranteed drop
     of each realm's main-path boss (for the realm after chapter 3: Sunwastes' and Everwinter's), so finishing one
     branch never opens the next realm. Both realms are needed for further progress
@@ -191,11 +199,12 @@ hoppers have nothing to take.
   - **an optional side realm's signet** comes from wherever its design puts it: a chest at 100% in an instanced
     dungeon, which is rebuilt for every run, or a trade that restocks; never a random drop, and never a chest found
     only once (PR-15).
-- **Nothing depends on luck, and every signet can be replaced:** each source is a quest reward, a guaranteed drop, a
-  recipe or the quest shop. A lost signet is bought back, up to 3 times, or crafted again from a boss the player can
-  always replay: another Illusioner kill gives another Stone Signet Shard, and every later boss waits in its dungeon,
-  since an NPC sells the keys of dungeons already done (LE-2). A lost signet never locks the realm again, because the
-  unlock belongs to the player.
+- **Nothing depends on luck, and from M2 every signet can be replaced** (M1's lost Signet of the Undervault is
+  [open question 4](#open-questions)): each source is a quest reward, a guaranteed drop, a recipe or the quest shop. A
+  lost signet is bought back, up to 3 times, or crafted again from a boss the player can always replay: another
+  Illusioner kill gives another Stone Signet Shard, and every later boss waits in its dungeon, since an NPC sells the
+  keys of dungeons already done (LE-2). A lost signet never locks the realm again, because the unlock belongs to the
+  player.
 
 ## Access and unlocks
 
@@ -773,11 +782,21 @@ His later requests added:
     player holding a signet is near ([The sealstone](#the-sealstone)). Its radius (5 blocks), which signets light it
     and its light level (15) are proposals for his playtest.
 
+His answers on chapter 2 (2026-10-25 to 2026-10-27, RLM-351, recorded by RLM-432) added:
+
+20. **Undervault's final boss, Astone, the Unbroken, drops three items** at 100% on every kill: the Stone Heart for
+    the Skyhearth Medallion, and the Sun Signet Shard and the Ice Signet Shard for the twins' signets (2026-10-25,
+    confirmed 2026-10-27). This answers [open question 2](#open-questions).
+21. **The twins' signets take two of each ingredient** around their shard (2026-10-26): the Signet of the Sunwastes 2
+    Rubies, 2 Netherite Scraps, 2 Sand and 2 Red Sand; the Signet of the Everwinter 2 Sapphires, 2 Netherite Scraps, 2
+    Snow Blocks and 2 Ice ([Realm signets](#realm-signets)). This replaces 16's rule for the twins; the Signet of the
+    Undervault keeps it.
+
 ## Open questions
 
 Matěj answered every question of the first version (RLM-128). The numbers marked as proposals (the materials, the
 stone realm's level rule and its 1:16 scale, Overworld's arrival `y` range) are checked in his playtests of W2a
-and W2b. Four questions are open:
+and W2b. Three questions are open, and question 2 is decided:
 
 1. **FTB Teams parties share realm unlocks.** FTB Quests keeps progress per FTB Teams team, so a player who joins
    someone's party (`/ftbteams party`) gets that team's realm unlocks and chapter advancements at their next login
@@ -787,13 +806,14 @@ and W2b. Four questions are open:
 2. **What Undervault's final boss drops** (RLM-395, raised on 2026-10-25). Matěj's rule of 2026-10-23 has it drop
    the Stone Heart for the twins' signets. That clashes with his signet rule of 2026-10-24, which puts the realm's
    own shard in the middle of every signet, and with the [realm design](realms.md#the-hub-realm), where the Stone
-   Heart goes into the Asgard Medallion (RLM-245). Proposal: the boss drops all three at 100%, every kill: the Stone
-   Heart for the medallion, and two shards, the Sun Signet Shard and the Ice Signet Shard, one for each twin signet.
-   It waits for his answer on RLM-351's story beats page (chapter 2, question 1).
+   Heart goes into the Skyhearth Medallion (RLM-245). **Decided 2026-10-25 (Matěj, RLM-351 chapter 2 question 1,
+   RLM-432): the boss, Astone, the Unbroken, drops all three at 100%, every kill:** the Stone Heart for the medallion,
+   and two shards, the Sun Signet Shard and the Ice Signet Shard, one for each twin signet (decision 20).
 3. **The signet after the twins** needs the guaranteed drop of both twin bosses
    ([Realm signets](#realm-signets)), but the recipe rule has one shard in the middle. Proposal: each twin boss drops
    one half of the next realm's shard, and the two halves craft into the shard. It matters with M4's twin realms.
-4. **A lost Signet of the Undervault in M1.** M1 has neither the Illusioner nor the Lodge Merchant, so its signet
-   has only the one quest reward, and the signet source check ([Data](#data-contentrealms)) asks for a renewable
-   source. Proposal: M1 already gets the shop's one signet quest (50 copper, up to 3 times, unlocked by The Ominous
-   Chief), since coins (RLM-284) and the quest pipeline (Q1) are M1 work; the rest of the tab stays M2.
+4. **A lost Signet of the Undervault in M1.** M1 has neither the Illusioner (M2, RLM-321) nor the Lodge Merchant
+   (M2, in RLM-407's own description), so its signet has only the one quest reward, and the signet source check
+   ([Data](#data-contentrealms)) asks for a renewable source. Proposal: M1 already gets the shop's one signet quest
+   (50 copper, up to 3 times, unlocked by The Ominous Chief), since coins (RLM-284, labelled `m1`) and the quest
+   pipeline (Q1) are M1 work; the rest of the tab stays M2.

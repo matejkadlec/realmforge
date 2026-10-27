@@ -1548,8 +1548,11 @@ hands, in front of its forehead (`SpellVisuals#formOffset`: 0.4 blocks above its
 
 Decided, not built yet (Matěj, 2026-10-23/24, RLM-391 and RLM-392): C4 Class kits (RLM-27) builds these spells
 and their first balance pass, C5 (RLM-333) the specialization trees they start ([10.1](#101-races-and-classes)).
-The stun, spell penetration, stances and the crit overflow below are new to the engine, so C4 builds them too.
-Damage labels (Low, Medium, High) compare a spell with the other spells; they are not numbers.
+The stun, spell penetration and the crit overflow below are new to the engine, so C4 builds them too. The stances
+come a little later in each tree, so the specialization trees build them (C5, RLM-333). The hit moment of the instant
+Warrior spells (below) comes with their animations (RLM-399, in C6, RLM-29) and changes
+[11.2](#112-casting-server-authoritative) step 3, "Instant spells run now"; until then C4 may deal their damage at
+once. Damage labels (Low, Medium, High) compare a spell with the other spells; they are not numbers.
 
 - **Ranks:** every specialization's first spell has max rank 5 (its maximum level, [11.1](#111-model)). A rank
   raises the spell's damage and its effect. **Cooldowns don't shrink with rank:** a spell gets a lower base cooldown
@@ -1594,7 +1597,9 @@ Damage labels (Low, Medium, High) compare a spell with the other spells; they ar
 - **Areas:** most melee spells hit an area, and single target stays for spells like Execute (Matěj, 2026-10-24).
   Slam is D4's Warrior starting spell, "a Slam but AoE", and Shield Bash's stun hits an area too. Their hit shapes,
   and a splash explosion for the Mage's bolts, come in RLM-399 with the animations (C6, RLM-29).
-- **Shield Bash** hits with the shield, not the weapon: it needs a shield in either hand and no weapon.
+- **Shield Bash** hits with the shield, not the weapon: it needs a shield in either hand and needs no weapon. The
+  other hand may hold a one-handed weapon or nothing, so it works in the Defensive stance (Matěj, 2026-10-27,
+  RLM-418).
 - **Crit overflow:** a hit's crit chance above 100 % (Reckless Strike's bonus can take it there) turns into crit
   damage 1:1: every 1 % of chance above 100 % adds 1 % crit damage ([9.1](#91-damage-pipeline)).
 - **Rage:** the cost is the same at every rank (spent per second of cooldown: Slam and Reckless Strike 5, Shield

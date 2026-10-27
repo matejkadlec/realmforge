@@ -76,8 +76,8 @@ Matěj, 2026-10-19: **each structure only in its realm, never also in Overworld.
   loot goes through loot tables or Global Loot Modifiers, spawners through `ametrin_structures/spawner_profile` and
   `trial_spawner` data ([customizing guide](https://github.com/Ametrin-Studios/DungeonsEnhanced/blob/main/customizing.md)).
 - **Flying Dutchman** spawns 64+ blocks above the surface in the mod; our data pack overrides its start height so it
-  floats 20–40 blocks above Atlantis's seabed (open question 2; details on RLM-265).
-- **Ocean Monuments** (vanilla, through YUNG's Better Ocean Monuments) generate only in Atlantis, never in Overworld
+  floats 20–40 blocks above Deepholm's seabed (open question 2; details on RLM-265).
+- **Ocean Monuments** (vanilla, through YUNG's Better Ocean Monuments) generate only in Deepholm, never in Overworld
   (Matěj, 2026-10-19, RLM-265), so prismarine and Apothic Enchanting's seashelves come only from there.
 - **Strongholds** are off completely from M1 (Structurify), and neither YUNG's Better Strongholds nor D&T's
   Stronghold splinter comes in.
@@ -110,7 +110,7 @@ Matěj's answers to RLM-264's open questions, and two more decisions (the commen
 
 1. **YUNG's Better Dungeons: in.** "A very common dungeon mod, but good and lightweight." RLM-221 had ruled it out on
    2026-10-15 as filler.
-2. **Flying Dutchman:** in Atlantis, as a ghost ship floating 20–40 blocks above the seabed (above).
+2. **Flying Dutchman:** in Deepholm, as a ghost ship floating 20–40 blocks above the seabed (above).
 3. **Immersive Paintings: No.** We draw our own painting variants; no player-uploaded textures are needed.
 4. **Camera Overhaul: Yes**, with Shoulder Surfing Reloaded in M8 (v2). **Villager Names: Yes**, in M2.
 

@@ -133,8 +133,8 @@ def packMod = { String slug ->
 }
 
 // The lean client: GeckoLib, which the core mod requires (its custom mobs, architecture 14.2), Player Animation
-// Library, which the QA mod compiles against (dependencies below), and Yeetus Experimentus, which skips the
-// experimental-settings warning of every new world (architecture 15.1).
+// Library, which the core mod requires on the client (its cast animation, client/animation, RLM-435), and Yeetus
+// Experimentus, which skips the experimental-settings warning of every new world (architecture 15.1).
 def leanClient = providers.gradleProperty('leanClient').isPresent()
 def leanClientMods = ['geckolib', 'player-animation-library', 'yeetus-experimentus']
 if (providers.gradleProperty('withBetterCombat').isPresent()) {
@@ -345,9 +345,6 @@ repositories {
 dependencies {
     implementation project(':mod')
 
-    // Player Animation Library, the animation library Better Combat uses: the QA mod's test cast animation (/qa cast).
-    // The pack's build, as every pack mod above; the client and the servers load it as a pack mod as well.
-    implementation packMod('player-animation-library').coordinate
     // FTB Teams, whose parties the core mod turns off (FtbTeamsGameTests, RLM-206); the GameTest server loads it as a
     // pack mod.
     compileOnly packMod('ftb-teams-forge').coordinate

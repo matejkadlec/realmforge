@@ -66,7 +66,7 @@
 | seal | a realm's lock | barrier, ward |
 | gate | a realm portal, in story texts | door, rift |
 | keystone | the sealstone, in story texts | switch, controller |
-| Gatewright Bricks, Gatewright Sealstone | the gate's blocks (RLM-394) | Realmforge Bricks, Realmforge Sealstone, Realmforge Stone (the old names) |
+| Gatewright Bricks, Gatewright Sealstone | the gate's blocks (RLM-394); the in-game names stay Realmforge Bricks and Realmforge Sealstone until RLM-394 renames them in `content/`, and a text that names the item in the game uses the in-game name until then | Realmforge Bricks, Realmforge Sealstone, Realmforge Stone (the old names) |
 | keeper (a Sealbound) | an Ithari bound into a realm's seal, such as the Stonebound | guardian (that is the trial), warden, prisoner |
 | the Stonebound | Undervault's keeper | the Scribe in the Stone (the old name) |
 | guardian | a realm's main-path boss in story texts, a trial the Gatewrights set | final boss, keeper (that is the Sealbound) |
@@ -148,7 +148,7 @@ for the story around it.
 | The Emberwrights | a given name and a craft name | - |
 | The Chainkeepers | named by the link they keep | the Keeper of the Ninth Link |
 | The Unforged | no names: what they look like | - |
-| Bosses and guardians | "Name, the Title", or a title alone (Matěj, 2026-10-22, RLM-357) | Astone, the Unbroken; Halcyar, the Dust-Crowned; Illusioner, the Ominous Chief |
+| Bosses and guardians | "Name, the Title"; every final boss has both (RLM-357); another boss may use a title alone (Matěj, 2026-10-22) | Astone, the Unbroken; Halcyar, the Dust-Crowned; Illusioner, the Ominous Chief |
 
 Names are filled in as each realm's chapter is written. Matěj approved the outline's names (RLM-139, RLM-188); every
 new name follows the [name rules](#name-rules) and weighs their recommendations.

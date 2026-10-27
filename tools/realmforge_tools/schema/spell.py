@@ -247,8 +247,8 @@ class ProjectileEffectDef(StrictModel):
 
 class AreaEffectDef(StrictModel):
     """Places a ground zone at the target (the caster's feet, an enemy's or a ground point) that runs its own
-    ``effects`` on every enemy (or ally) inside it at the end of every interval, for ``duration_seconds``
-    (architecture 11.3)."""
+    ``effects`` on every enemy (or ally) inside it as it appears and then every interval, once per interval of
+    ``duration_seconds`` (architecture 11.3)."""
 
     type: Literal["realmforge:area"]
     radius: float = Field(gt=0, le=MAX_AREA_RADIUS, allow_inf_nan=False, description="In blocks, at most 16.")
@@ -260,7 +260,7 @@ class AreaEffectDef(StrictModel):
         default="enemies", description="Whom its effects act on: the caster's enemies or its allies."
     )
     effects: list[EntityEffectDef] = Field(
-        min_length=1, description="What it does to each entity inside at every interval, in order."
+        min_length=1, description="What it does to each entity inside each time it acts, in order."
     )
 
     @model_validator(mode="after")
