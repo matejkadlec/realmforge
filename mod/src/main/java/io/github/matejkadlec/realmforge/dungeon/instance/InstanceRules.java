@@ -38,7 +38,8 @@ public final class InstanceRules {
      * spawners, cobwebs and vines (Matěj's allowlist of 2026-10-24, RLM-360). Everything else stays as the room was
      * built. {@code data/realmforge/tags/block/breakable_in_instances.json} in the core mod's resources.
      */
-    public static final TagKey<Block> BREAKABLE = TagKey.create(Registries.BLOCK, Realmforge.id("breakable_in_instances"));
+    public static final TagKey<Block> BREAKABLE =
+            TagKey.create(Registries.BLOCK, Realmforge.id("breakable_in_instances"));
 
     private InstanceRules() {
     }

@@ -25,9 +25,10 @@ public record RoomContainers(List<Spot> spots, List<Integer> chests, List<Intege
     /** A room whose containers all stay. */
     public static final RoomContainers NONE = new RoomContainers(List.of(), List.of(), List.of());
 
-    public static final Codec<RoomContainers> CODEC = RecordCodecBuilder.<RoomContainers>create(instance -> instance.group(
-                    Spot.CODEC.listOf().fieldOf("spots").forGetter(RoomContainers::spots),
-                    Codec.intRange(0, 100).listOf().optionalFieldOf("chests", List.of()).forGetter(RoomContainers::chests),
+    public static final Codec<RoomContainers> CODEC = RecordCodecBuilder.<RoomContainers>create(instance -> instance
+            .group(Spot.CODEC.listOf().fieldOf("spots").forGetter(RoomContainers::spots),
+                    Codec.intRange(0, 100).listOf().optionalFieldOf("chests", List.of())
+                            .forGetter(RoomContainers::chests),
                     Codec.intRange(0, 100).listOf().optionalFieldOf("barrels", List.of())
                             .forGetter(RoomContainers::barrels))
             .apply(instance, RoomContainers::new)).validate(RoomContainers::validate);

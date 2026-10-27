@@ -110,7 +110,7 @@ class RoomContainersTest {
         assertEquals(room, read);
     }
 
-    /** {@code chests} chests in a row at y 1, each leaving air, and {@code barrels} barrels at y 2, leaving stone bricks. */
+    /** {@code chests} chests in a row at y 1, each leaving air, and {@code barrels} at y 2, leaving stone bricks. */
     private static List<RoomContainers.Spot> spots(int chests, int barrels) {
         List<RoomContainers.Spot> spots = new java.util.ArrayList<>();
         for (int x = 0; x < chests; x++) {

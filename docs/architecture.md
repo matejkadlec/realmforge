@@ -2328,7 +2328,8 @@ room's connectors are the jigsaw blocks the game reads from its template in ever
 builds a layout of every type into a plot. `/qa dungeon plan <type> [<seed>]` names a layout's rooms by slot and writes
 a top-down map and a legend to the server log; `/qa dungeon build <type> [<seed>]` builds it into a plot for a
 fly-through, and `/qa dungeon enter <type> [<seed>]` builds it and moves you in at its entrance ([15.5](#155-instances),
-[20](#20-tests-per-layer)).
+[20](#20-tests-per-layer)); inside, `/qa dungeon room <name> [<n>]` moves you onto the floor of the run's `n`th room
+of that name, for a playtest of one room (RLM-412).
 
 Step 3 exists since W4b ([15.5](#155-instances)), with the **data markers**: a room marks spots with structure blocks in
 data mode whose metadata names the marker (`DataMarker.Kind`):

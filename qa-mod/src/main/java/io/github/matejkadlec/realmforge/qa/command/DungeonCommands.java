@@ -1,10 +1,13 @@
 package io.github.matejkadlec.realmforge.qa.command;
 
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
@@ -13,6 +16,8 @@ import io.github.matejkadlec.realmforge.dungeon.DungeonType;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
 import io.github.matejkadlec.realmforge.dungeon.instance.Plot;
+import io.github.matejkadlec.realmforge.dungeon.instance.RoomPlacement;
+import io.github.matejkadlec.realmforge.dungeon.instance.SpawnFinder;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonPlan;
 import io.github.matejkadlec.realmforge.dungeon.plan.Pace;
 import io.github.matejkadlec.realmforge.dungeon.plan.PlanningException;
@@ -20,6 +25,7 @@ import io.github.matejkadlec.realmforge.dungeon.plan.RoomRole;
 import io.github.matejkadlec.realmforge.dungeon.plan.Slot;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.dungeon.LayoutMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -31,10 +37,15 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.IdentifierArgument;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
 
@@ -48,6 +59,9 @@ import net.minecraft.world.phys.Vec3;
  *   a link that teleports you above its entrance; {@code /qa instance free <plot>} clears it again.</li>
  *   <li>{@code /qa dungeon enter <type> [<seed>]} plans a layout, builds it for you and moves you in at its entrance
  *   once it stands, as a dungeon portal will (W4d); {@code /qa instance leave} brings you back.</li>
+ *   <li>{@code /qa dungeon room <name> [<n>]} moves you, inside your run, into its {@code n}th room (1 by default)
+ *   whose template is named {@code name} ({@code egg}, {@code husk_temple}), onto the floor nearest the room's middle:
+ *   the rooms a playtest looks at lie anywhere in a run of fifty (RLM-412, RLM-361, RLM-365).</li>
  * </ul>
  */
 final class DungeonCommands {
@@ -64,6 +78,22 @@ final class DungeonCommands {
             new SimpleCommandExceptionType(Component.literal("This world has no realmforge:instances dimension"));
     private static final SimpleCommandExceptionType ALREADY_IN_RUN =
             new SimpleCommandExceptionType(Component.literal("You are already in an instance run; leave it first"));
+    private static final SimpleCommandExceptionType NOT_IN_RUN =
+            new SimpleCommandExceptionType(Component.literal("You are not in a built instance run"));
+    private static final Dynamic2CommandExceptionType NO_SUCH_ROOM = new Dynamic2CommandExceptionType(
+            (name, count) -> Component.literal("Your run has " + count + " room(s) named " + name));
+    private static final SimpleCommandExceptionType NO_FLOOR =
+            new SimpleCommandExceptionType(Component.literal("That room has no floor to stand on"));
+    /** The names of the rooms in the player's run, for {@code /qa dungeon room}. */
+    private static final SuggestionProvider<CommandSourceStack> ROOM_NAMES = (context, builder) -> {
+        InstanceManager manager = InstanceManager.get(context.getSource().getServer());
+        ServerPlayer player = context.getSource().getPlayer();
+        List<String> names = manager == null || player == null ? List.of() : manager.plotOf(player)
+                .flatMap(Plot::layout).map(layout -> layout.rooms().stream().map(DungeonCommands::name).distinct()
+                        .sorted().toList())
+                .orElse(List.of());
+        return SharedSuggestionProvider.suggest(names, builder);
+    };
 
     private DungeonCommands() {
     }
@@ -72,7 +102,11 @@ final class DungeonCommands {
         return Commands.literal("dungeon")
                 .then(Commands.literal("plan").then(typeAndSeed(DungeonCommands::plan)))
                 .then(Commands.literal("build").then(typeAndSeed(DungeonCommands::build)))
-                .then(Commands.literal("enter").then(typeAndSeed(DungeonCommands::enter)));
+                .then(Commands.literal("enter").then(typeAndSeed(DungeonCommands::enter)))
+                .then(Commands.literal("room").then(Commands.argument("name", StringArgumentType.word())
+                        .suggests(ROOM_NAMES).executes(context -> room(context, 1))
+                        .then(Commands.argument("n", IntegerArgumentType.integer(1))
+                                .executes(context -> room(context, IntegerArgumentType.getInteger(context, "n"))))));
     }
 
     private interface Action {
@@ -132,6 +166,52 @@ final class DungeonCommands {
                 "Building %s seed %d (%s) at level %d in plot %d; you enter when it is built", id, seed,
                 summary(plan), plot.level().orElse(0), plot.id())), true);
         return plot.id();
+    }
+
+    private static int room(CommandContext<CommandSourceStack> context, int n) throws CommandSyntaxException {
+        String name = StringArgumentType.getString(context, "name");
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        Plot plot = manager(context).plotOf(player).filter(run -> run.layout().isPresent())
+                .orElseThrow(NOT_IN_RUN::create);
+        List<RoomPlacement> rooms = plot.layout().orElseThrow().rooms();
+        List<Integer> named = new ArrayList<>();
+        for (int i = 0; i < rooms.size(); i++) {
+            if (name(rooms.get(i)).equals(name)) {
+                named.add(i);
+            }
+        }
+        if (n > named.size()) {
+            throw NO_SUCH_ROOM.create(name, named.size());
+        }
+        int index = named.get(n - 1);
+        ServerLevel level = InstanceDimension.level(context.getSource().getServer());
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        BlockPos spot = SpawnFinder.find(plot.rooms().get(index), new SpawnFinder.Blocks() {
+            @Override
+            public boolean floor(int x, int y, int z) {
+                pos.set(x, y, z);
+                BlockState state = level.getBlockState(pos);
+                return state.isFaceSturdy(level, pos, Direction.UP) && !state.is(Blocks.SPAWNER);
+            }
+
+            @Override
+            public boolean open(int x, int y, int z) {
+                pos.set(x, y, z);
+                BlockState state = level.getBlockState(pos);
+                return state.getCollisionShape(level, pos).isEmpty() && state.getFluidState().isEmpty();
+            }
+        }).orElseThrow(NO_FLOOR::create);
+        player.teleportTo(level, spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5, java.util.Set.of(),
+                player.getYRot(), player.getXRot(), true);
+        context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT, "Moved to %s (%d of %d in"
+                + " your run), room %d of the layout", rooms.get(index).template(), n, named.size(), index)), false);
+        return index;
+    }
+
+    /** A room's name in {@code /qa dungeon room}: the last part of its template's id. */
+    private static String name(RoomPlacement room) {
+        String path = room.template().getPath();
+        return path.substring(path.lastIndexOf('/') + 1);
     }
 
     private static InstanceManager manager(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

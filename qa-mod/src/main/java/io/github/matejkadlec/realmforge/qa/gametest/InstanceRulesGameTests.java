@@ -244,8 +244,9 @@ public final class InstanceRulesGameTests {
                     helper.assertFalse(player.gameMode.destroyBlock(floor), "an empty hand broke the floor");
                     helper.assertTrue(instances.getBlockState(vine.above()).is(Blocks.STONE_BRICKS),
                             "the block the vine hung from broke");
-                    List<ItemEntity> drops = instances.getEntitiesOfClass(ItemEntity.class, AABB.encapsulatingFullBlocks(
-                            origin.offset(SPAWNER).offset(-2, -1, -2), origin.offset(VINE).offset(2, 2, 2)));
+                    AABB around = AABB.encapsulatingFullBlocks(origin.offset(SPAWNER).offset(-2, -1, -2),
+                            origin.offset(VINE).offset(2, 2, 2));
+                    List<ItemEntity> drops = instances.getEntitiesOfClass(ItemEntity.class, around);
                     helper.assertTrue(drops.isEmpty(), "breaking dropped " + drops.stream()
                             .map(item -> item.getItem().toString()).toList());
                     helper.assertTrue(manager.leave(player), "the player can leave");
