@@ -29,6 +29,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.AdventureModePredicate;
 import net.minecraft.world.item.Item;
@@ -38,9 +39,11 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.VineBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.CommonHooks;
@@ -49,7 +52,8 @@ import net.neoforged.neoforge.event.EventHooks;
 
 /**
  * W4c: the rules inside an instance (architecture 15.5). Survival players play in Adventure mode and get their game
- * mode back when they leave, creative ones keep theirs; nothing a player or anything else does changes the rooms; a
+ * mode back when they leave, creative ones keep theirs; nothing a player or anything else does changes the rooms, but
+ * for the spawners, cobwebs and vines players break, which drop nothing (RLM-412); a
  * death inside respawns at the entrance, and a run released while its player lay dead respawns them at their return
  * point, also after a logout and login (RLM-258).
  *
@@ -70,6 +74,12 @@ public final class InstanceRulesGameTests {
     private static final BlockPos FLOOR_PLACE = new BlockPos(9, 0, 5);
     private static final BlockPos FLOOR_BREAK = new BlockPos(9, 0, 9);
     private static final BlockPos FLOOR_PUNCH = new BlockPos(10, 0, 10);
+    /** Blocks of the break allowlist that a test sets into the start room's air, a row away from the arrival spot. */
+    private static final BlockPos SPAWNER = new BlockPos(4, 1, 11);
+    private static final BlockPos SHORN_COBWEB = new BlockPos(6, 1, 11);
+    private static final BlockPos CUT_COBWEB = new BlockPos(8, 1, 11);
+    /** A vine hanging from a stone brick block set above it. */
+    private static final BlockPos VINE = new BlockPos(10, 1, 11);
 
     private InstanceRulesGameTests() {
     }
@@ -178,6 +188,66 @@ public final class InstanceRulesGameTests {
                             "an empty hand broke the floor");
 
                     assertUnchanged(helper, instances, before, room);
+                    helper.assertTrue(manager.leave(player), "the player can leave");
+                })
+                .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.FREE, "plot is " + plot.state()))
+                .thenExecute(() -> server.getPlayerList().remove(player))
+                .thenSucceed();
+    }
+
+    /**
+     * Done when of RLM-412: in Adventure mode inside an instance, a player breaks spawners, cobwebs and vines (the tag
+     * {@code realmforge:breakable_in_instances}, ADR 0055), by hand or with a tool, and nothing they break drops: no
+     * cobweb or string from a cobweb, with shears or a sword, and no vine with shears. Adventure mode still restricts
+     * every other block there, and the same spawner outside the dimension.
+     */
+    @QaGameTest(timeoutTicks = TIMEOUT)
+    public static void playersBreakSpawnersCobwebsAndVinesWhichDropNothing(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        InstanceManager manager = manager(helper);
+        ServerLevel instances = InstanceDimension.level(server);
+        ServerPlayer player = login(helper, "qa-rules-breaks", GameType.ADVENTURE);
+
+        BlockPos outside = helper.absolutePos(new BlockPos(3, 1, 3));
+        helper.getLevel().setBlockAndUpdate(outside, Blocks.SPAWNER.defaultBlockState());
+        helper.assertTrue(player.blockActionRestricted(helper.getLevel(), outside, GameType.ADVENTURE),
+                "Adventure mode lets a spawner outside an instance break");
+        helper.assertFalse(player.gameMode.destroyBlock(outside), "a spawner outside an instance broke");
+        helper.assertBlockPresent(Blocks.SPAWNER, new BlockPos(3, 1, 3));
+        player.setGameMode(GameType.SURVIVAL);
+        Plot plot = manager.open(SpikeLayouts.spike(), List.of(player.getUUID()));
+
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.ACTIVE, "plot is " + plot.state()))
+                .thenExecute(() -> {
+                    helper.assertValueEqual(player.gameMode(), GameType.ADVENTURE, "game mode inside");
+                    BlockPos origin = plot.origin();
+                    BlockPos spawner = origin.offset(SPAWNER);
+                    BlockPos shornWeb = origin.offset(SHORN_COBWEB);
+                    BlockPos cutWeb = origin.offset(CUT_COBWEB);
+                    BlockPos vine = origin.offset(VINE);
+                    instances.setBlockAndUpdate(spawner, Blocks.SPAWNER.defaultBlockState());
+                    instances.setBlockAndUpdate(shornWeb, Blocks.COBWEB.defaultBlockState());
+                    instances.setBlockAndUpdate(cutWeb, Blocks.COBWEB.defaultBlockState());
+                    instances.setBlockAndUpdate(vine.above(), Blocks.STONE_BRICKS.defaultBlockState());
+                    instances.setBlockAndUpdate(vine, Blocks.VINE.defaultBlockState().setValue(VineBlock.UP, true));
+                    BlockPos floor = origin.offset(FLOOR_BREAK);
+                    helper.assertTrue(player.blockActionRestricted(instances, floor, GameType.ADVENTURE),
+                            "Adventure mode lets the floor break");
+                    helper.assertFalse(player.blockActionRestricted(instances, spawner, GameType.ADVENTURE),
+                            "Adventure mode restricts a spawner inside");
+
+                    assertBroken(helper, player, spawner, ItemStack.EMPTY, "a spawner, by hand");
+                    assertBroken(helper, player, shornWeb, new ItemStack(Items.SHEARS), "a cobweb, with shears");
+                    assertBroken(helper, player, cutWeb, new ItemStack(Items.IRON_SWORD), "a cobweb, with a sword");
+                    assertBroken(helper, player, vine, new ItemStack(Items.SHEARS), "a vine, with shears");
+                    helper.assertFalse(player.gameMode.destroyBlock(floor), "an empty hand broke the floor");
+                    helper.assertTrue(instances.getBlockState(vine.above()).is(Blocks.STONE_BRICKS),
+                            "the block the vine hung from broke");
+                    List<ItemEntity> drops = instances.getEntitiesOfClass(ItemEntity.class, AABB.encapsulatingFullBlocks(
+                            origin.offset(SPAWNER).offset(-2, -1, -2), origin.offset(VINE).offset(2, 2, 2)));
+                    helper.assertTrue(drops.isEmpty(), "breaking dropped " + drops.stream()
+                            .map(item -> item.getItem().toString()).toList());
                     helper.assertTrue(manager.leave(player), "the player can leave");
                 })
                 .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.FREE, "plot is " + plot.state()))
@@ -384,6 +454,15 @@ public final class InstanceRulesGameTests {
         Item before = bucket.getItem();
         player.gameMode.useItem(player, player.level(), bucket, InteractionHand.MAIN_HAND);
         helper.assertTrue(player.getMainHandItem().is(before), what + " was emptied or filled");
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+    }
+
+    /** Breaks {@code target} with {@code tool} in the main hand, as the server does once mining finishes. */
+    private static void assertBroken(GameTestHelper helper, ServerPlayer player, BlockPos target, ItemStack tool,
+            String what) {
+        player.setItemInHand(InteractionHand.MAIN_HAND, tool);
+        helper.assertTrue(player.gameMode.destroyBlock(target), what + " did not break");
+        helper.assertTrue(player.level().getBlockState(target).isAir(), what + " is still there");
         player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
     }
 
