@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../../tools/schemas/recipes.schema.json
+# Copying the Netherite Upgrade Smithing Template takes Vaultstone instead of netherrack (Matěj, 2026-10-25, RLM-447):
+# netherite comes from Undervault, and the Nether is gone (ADR 0025, ADR 0032). Vanilla's shape and count otherwise:
+# 7 diamonds, 1 Vaultstone and 1 template make 2 templates.
+id: netherite_upgrade_smithing_template
+replaces: minecraft:netherite_upgrade_smithing_template
+result: minecraft:netherite_upgrade_smithing_template
+recipe:
+  pattern:
+    - '#S#'
+    - '#V#'
+    - '###'
+  key:
+    '#': minecraft:diamond
+    S: minecraft:netherite_upgrade_smithing_template
+    V: realmforge:vaultstone
+  count: 2
+  category: misc

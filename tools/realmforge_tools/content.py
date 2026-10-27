@@ -41,6 +41,7 @@ from realmforge_tools.schema import (
     QuestDef,
     RaceDef,
     RealmDef,
+    RecipeOverrideDef,
     RoomSpecDef,
     RoomThemeDef,
     SoundGroupDef,
@@ -200,6 +201,7 @@ class Content:
     room_themes: tuple[Entry[RoomThemeDef], ...]
     realms: tuple[Entry[RealmDef], ...]
     apotheosis_affixes: tuple[Entry[ApotheosisAffixDef], ...]
+    recipes: tuple[Entry[RecipeOverrideDef], ...]
     worldgen: tuple[WorldgenFile, ...]
     rooms: tuple[RoomEntry, ...] = ()
     room_reviews: tuple[RoomReview, ...] = ()
@@ -294,6 +296,7 @@ def load_content(
         room_themes=by_id(loaded["room_themes"]),
         realms=by_id(loaded["realms"]),
         apotheosis_affixes=by_id(loaded["apotheosis_affixes"]),
+        recipes=by_id(loaded["recipes"]),
         worldgen=tuple(sorted(worldgen, key=lambda f: (f.directory, f.id))),
         rooms=rooms,
         room_reviews=reviews,

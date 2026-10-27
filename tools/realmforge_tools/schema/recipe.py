@@ -1,9 +1,14 @@
-"""Recipes: the ``recipe`` of an item or block (``content/items/``, ``content/blocks/``), how a player makes it.
+"""Recipes: the ``recipe`` of an item or block (``content/items/``, ``content/blocks/``), how a player makes it, and
+the vanilla recipes ``content/recipes/`` replaces.
 
 A recipe whose result is the entry itself, in one of three kinds, told apart by their keys: a shaped crafting recipe
 (``pattern`` and ``key``), a shapeless one (``ingredients``) or a smithing table upgrade (``template``, ``base`` and
 ``addition``). It becomes ``data/realmforge/recipe/<id>.json`` in vanilla's format (``minecraft:crafting_shaped``,
 ``minecraft:crafting_shapeless``, ``minecraft:smithing_transform``; ``generate/recipes.py``).
+
+A ``content/recipes/<id>.yaml`` entry replaces a vanilla recipe (``RecipeOverrideDef``): it becomes
+``data/minecraft/recipe/<path>.json``, the vanilla recipe's own path. The core mod's data pack sits above vanilla's, so
+the game loads that file instead of vanilla's and merges nothing: the entry holds the whole recipe, its result included.
 """
 
 from __future__ import annotations
@@ -12,7 +17,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import Discriminator, Field, StringConstraints, Tag, model_validator
 
-from realmforge_tools.schema.common import StrictModel
+from realmforge_tools.schema.common import ContentId, ResourceId, StrictModel
 
 # A row of the crafting grid: one to three characters, a space for an empty slot.
 PatternRow = Annotated[str, StringConstraints(min_length=1, max_length=3)]
@@ -133,3 +138,34 @@ RecipeDef = Annotated[
         custom_error_message="a recipe has a pattern (shaped), ingredients (shapeless) or a template (smithing)",
     ),
 ]
+
+
+# A vanilla recipe a content/recipes/ entry replaces: minecraft:<path>.
+VanillaRecipeId = Annotated[
+    str,
+    StringConstraints(pattern=r"^minecraft:[a-z0-9_]+(/[a-z0-9_]+)*$"),
+    Field(
+        description=(
+            "The vanilla recipe it replaces, e.g. minecraft:netherite_upgrade_smithing_template. "
+            "Validated against the ID universe."
+        )
+    ),
+]
+
+
+class RecipeOverrideDef(StrictModel):
+    """A vanilla recipe, replaced by this one in the same place: ``data/minecraft/recipe/<path>.json``."""
+
+    id: ContentId
+    replaces: VanillaRecipeId
+    result: ResourceId = Field(
+        description="The item it makes, e.g. minecraft:netherite_upgrade_smithing_template. Validated as an item."
+    )
+    recipe: RecipeDef = Field(
+        description="The whole recipe, as an item's: shaped, shapeless or a smithing upgrade (count and category too)."
+    )
+
+    @property
+    def data_path(self) -> str:
+        """The recipe file's path below ``data/``: vanilla's own, ``minecraft/recipe/<path>.json``."""
+        return f"minecraft/recipe/{self.replaces.removeprefix('minecraft:')}.json"

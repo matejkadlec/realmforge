@@ -19,6 +19,7 @@ from realmforge_tools.schema.kill_xp_multiplier import KillXpMultiplierDef
 from realmforge_tools.schema.mob import MobDef
 from realmforge_tools.schema.quest import QuestDef
 from realmforge_tools.schema.realm import RealmDef
+from realmforge_tools.schema.recipe import RecipeOverrideDef
 from realmforge_tools.schema.room_spec import RoomSpecDef, RoomThemeDef
 from realmforge_tools.schema.sound import SoundGroupDef
 from realmforge_tools.schema.spell import SpellDef
@@ -51,6 +52,7 @@ CONTENT_TYPES: dict[str, type] = {
     "room_specs": RoomSpecDef,
     "realms": RealmDef,
     "apotheosis_affixes": ApotheosisAffixDef,
+    "recipes": RecipeOverrideDef,
 }
 
 # content/worldgen/ holds vanilla worldgen JSON instead of YAML; it is validated and copied (content.py, validate.py).
@@ -100,6 +102,7 @@ __all__ = [
     "QuestDef",
     "RaceDef",
     "RealmDef",
+    "RecipeOverrideDef",
     "RoomSpecDef",
     "RoomThemeDef",
     "SoundGroupDef",

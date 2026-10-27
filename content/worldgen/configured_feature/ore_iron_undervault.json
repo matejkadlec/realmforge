@@ -12,6 +12,33 @@
           "predicate_type": "minecraft:block_match",
           "block": "realmforge:vaultstone"
         }
+      },
+      {
+        "state": {
+          "Name": "minecraft:iron_ore"
+        },
+        "target": {
+          "predicate_type": "minecraft:block_match",
+          "block": "realmforge:mottlestone"
+        }
+      },
+      {
+        "state": {
+          "Name": "minecraft:iron_ore"
+        },
+        "target": {
+          "predicate_type": "minecraft:block_match",
+          "block": "realmforge:siltstone"
+        }
+      },
+      {
+        "state": {
+          "Name": "minecraft:deepslate_iron_ore"
+        },
+        "target": {
+          "predicate_type": "minecraft:block_match",
+          "block": "realmforge:coreslate"
+        }
       }
     ]
   }

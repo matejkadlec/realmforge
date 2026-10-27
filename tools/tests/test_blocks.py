@@ -46,12 +46,12 @@ def generate(repo: RepoPaths) -> dict[str, bytes]:
 def test_repository_blocks_are_undervaults_stones_their_bricks_and_the_portal_materials() -> None:
     content, universe = load_and_validate(RepoPaths())
     hardness = {e.model.id: e.model.hardness for e in content.blocks if e.model.kind == "simple"}
-    # Matěj, 2026-10-15: four stones of hardness 25, 20, 18 and 12; the common one has 20.
-    stones = {"coreslate": 25, "mottlestone": 18, "siltstone": 12, "vaultstone": 20}
+    # Matěj, 2026-10-26 (RLM-450): the common stone twice deepslate's 3, the others between 3 and 6.
+    stones = {"coreslate": 5, "mottlestone": 4.5, "siltstone": 4, "vaultstone": 6}
     # Matěj, 2026-10-20: Realmforge Stone from 8 Overworld bricks, three of them ours, with vanilla's brick hardness.
     materials = {"realmforge_stone": 3, "diorite_bricks": 1.5, "granite_bricks": 1.5, "andesite_bricks": 1.5}
     # Matěj's playtest of W3, 2026-10-23: Undervault's stone bricks, the Hewn Sentinel's, as hard as Vaultstone.
-    bricks = {"vaultstone_bricks": 20}
+    bricks = {"vaultstone_bricks": 6}
     assert hardness == stones | materials | bricks
     assert universe.contains("minecraft:block", "realmforge:vaultstone")
     assert universe.contains("minecraft:item", "realmforge:vaultstone")

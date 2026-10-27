@@ -5,12 +5,15 @@ import io.github.matejkadlec.realmforge.generated.GeneratedBlocks;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedRealmExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedRealmExpectations.RealmExpectation;
 import io.github.matejkadlec.realmforge.world.realm.Realms;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
@@ -26,6 +29,7 @@ import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
@@ -42,7 +46,8 @@ import org.slf4j.Logger;
  * The stone realm, Undervault (W2a, RLM-32; realm portal spec, "Access and unlocks", "Multiplayer", "Respawn"): a
  * player teleported into the realm is refused before its unlock and let in after it, a mob is kept out of the realm
  * and inside it, a death in the realm respawns in Overworld, a parrot on the shoulder stays behind, beds there set no
- * spawn and do not explode, and the realm's terrain is one walkable cave floor under a ceiling.
+ * spawn and do not explode, the realm's terrain is one walkable cave floor under a ceiling, and its ores are Matěj's
+ * ore table (RLM-449).
  *
  * <p>Positions in the realm are absolute: {@code /execute in} would scale relative ones by the realm's coordinate
  * scale. The realm's chunks at its origin are generated on first use, on the server thread.
@@ -300,6 +305,81 @@ public final class RealmGameTests {
         helper.assertTrue(mottlestone > 0, "patches of mottlestone");
         assertCaveShape(helper, realm);
         helper.succeed();
+    }
+
+    /**
+     * Matěj's ore table (2026-10-25, RLM-449): iron, gold and emerald anywhere, in the stones of the walkable cave and
+     * as their deepslate ores in the coreslate below the floor; ancient debris only below the floor, about twice the
+     * Nether's rate; no coal and no diamond, which stay Overworld's. Logs each ore per chunk, and how many of them
+     * touch air in their chunk (what a player walking the cave sees; the coreslate's ores are found by digging down),
+     * for tuning the frequencies.
+     */
+    @QaGameTest(timeoutTicks = 400)
+    public static void theRealmGeneratesMatejsOreTable(GameTestHelper helper) {
+        ServerLevel realm = realm(helper, stone());
+        Map<Block, int[]> ores = new LinkedHashMap<>();
+        for (Block ore : List.of(Blocks.IRON_ORE, Blocks.DEEPSLATE_IRON_ORE, Blocks.GOLD_ORE, Blocks.DEEPSLATE_GOLD_ORE,
+                Blocks.EMERALD_ORE, Blocks.DEEPSLATE_EMERALD_ORE, Blocks.ANCIENT_DEBRIS, Blocks.COAL_ORE,
+                Blocks.DEEPSLATE_COAL_ORE, Blocks.DIAMOND_ORE, Blocks.DEEPSLATE_DIAMOND_ORE)) {
+            ores.put(ore, new int[2]); // blocks, and those touching air in their chunk
+        }
+        int chunks = 0;
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (int chunkX = -2; chunkX < 2; chunkX++) {
+            for (int chunkZ = -2; chunkZ < 2; chunkZ++) {
+                ChunkAccess chunk = realm.getChunk(chunkX, chunkZ);
+                chunks++;
+                ChunkPos chunkPos = chunk.getPos();
+                for (int x = 0; x < 16; x++) {
+                    for (int z = 0; z < 16; z++) {
+                        for (int y = 1; y < 127; y++) {
+                            int[] count = ores.get(chunk.getBlockState(
+                                    pos.set(chunkPos.getMinBlockX() + x, y, chunkPos.getMinBlockZ() + z)).getBlock());
+                            if (count == null) {
+                                continue;
+                            }
+                            count[0]++;
+                            count[1] += touchesAir(chunk, pos) ? 1 : 0;
+                        }
+                    }
+                }
+            }
+        }
+        StringBuilder table = new StringBuilder();
+        for (Map.Entry<Block, int[]> ore : ores.entrySet()) {
+            table.append(String.format(" %s %.1f (%.1f seen)", BuiltInRegistries.BLOCK.getKey(ore.getKey()).getPath(),
+                    ore.getValue()[0] / (double) chunks, ore.getValue()[1] / (double) chunks));
+        }
+        LOGGER.info("Undervault's ores per chunk over {} chunks:{}", chunks, table);
+        for (Block absent : List.of(Blocks.COAL_ORE, Blocks.DEEPSLATE_COAL_ORE, Blocks.DIAMOND_ORE,
+                Blocks.DEEPSLATE_DIAMOND_ORE)) {
+            helper.assertValueEqual(ores.get(absent)[0], 0, absent + " in Undervault");
+        }
+        for (Block inTheCave : List.of(Blocks.IRON_ORE, Blocks.GOLD_ORE, Blocks.EMERALD_ORE)) {
+            helper.assertTrue(ores.get(inTheCave)[1] > 0, inTheCave + " where a player sees it");
+        }
+        for (Block belowTheFloor : List.of(Blocks.DEEPSLATE_IRON_ORE, Blocks.DEEPSLATE_GOLD_ORE,
+                Blocks.DEEPSLATE_EMERALD_ORE)) {
+            helper.assertTrue(ores.get(belowTheFloor)[0] > 0, belowTheFloor + " in the coreslate below the floor");
+        }
+        // Two veins of each size per chunk lay about 3.8 blocks a chunk; W2a's one of each, half that.
+        helper.assertTrue(ores.get(Blocks.ANCIENT_DEBRIS)[0] >= chunks * 2,
+                "ancient debris at about twice the Nether's rate: " + ores.get(Blocks.ANCIENT_DEBRIS)[0] + " in "
+                        + chunks + " chunks");
+        helper.assertValueEqual(ores.get(Blocks.ANCIENT_DEBRIS)[1], 0, "ancient debris touching air");
+        helper.succeed();
+    }
+
+    /** Whether a side of the block at {@code pos} faces air inside its chunk. */
+    private static boolean touchesAir(ChunkAccess chunk, BlockPos pos) {
+        ChunkPos chunkPos = chunk.getPos();
+        for (Direction direction : Direction.values()) {
+            BlockPos side = pos.relative(direction);
+            if (chunkPos.contains(side) && chunk.getBlockState(side).isAir()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -384,6 +384,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
 | `texts/` (exists) | lang keys `<group>.realmforge.<name>`, `GeneratedTexts` constants | translations |
 | `apotheosis_affixes/` (exists, RLM-271) | `data/apotheosis/apotheosis/affixes/<path>.json`, replacing Apotheosis's affix at that path ([19.4](#194-optional-integrations)) | Apotheosis's affix registry |
+| `recipes/` (exists, RLM-447) | `data/minecraft/recipe/<path>.json`, replacing the vanilla recipe at that path, since the core mod's data pack sits above vanilla's (`generate/recipes.py`) | reloadable vanilla data |
 | every type | `tools/schemas/<type>.schema.json` | editor completion |
 
 **Block kinds.** A block in `content/blocks/` is `simple` (a full block) unless its `kind` names behavior that is game
@@ -2008,11 +2009,14 @@ loot: realmforge:boss/hollow_warden
   `realmforge:undervault`, built from `content/worldgen/`. Its final density is one giant cave: a floor at about
   y 32 (a 2D noise moves it a few blocks), a ceiling at about y 100, and pillars from floor to ceiling where a broad
   2D noise is high (about 8 % of the columns), with narrow 3D tunnels through them; bedrock below and above. The
-  surface rule lays coreslate (hardness 25) below the floor and siltstone (12) in the ceiling, vaultstone (20) is the
-  default block, and features add mottlestone (18) patches, glowstone in the ceiling, ancient debris only in the
-  coreslate under the floor (never exposed), vanilla ores and the Nether's bone fossils. Its dimension type links at
+  surface rule lays coreslate (hardness 5) below the floor and siltstone (4) in the ceiling, vaultstone (6, twice
+  deepslate's; RLM-450) is the default block, and features add mottlestone (4.5) patches, glowstone in the ceiling,
+  ancient debris only in the coreslate under the floor (never exposed, two veins of each size per chunk), vanilla's
+  iron, gold and emerald ores at every height (their deepslate ores in the coreslate; no coal or diamond, RLM-449) and
+  the Nether's bone fossils. Its dimension type links at
   `coordinate_scale` 16, has no skylight, beds that set no spawn and do not explode, and no respawn anchors. A
-  GameTest samples the density function over 2,048 blocks and generates the chunks at the origin.
+  GameTest samples the density function over 2,048 blocks and generates the chunks at the origin, and another counts
+  their ores.
 - **The realm portal** (W2b, RLM-154; the [realm portal spec](design/realm-portal.md)), in `world/realm/`:
   - **blocks:** Realmforge Bricks (`RealmforgeBricksBlock`), the sealstone (`SealstoneBlock`, with
     `SealstoneBlockEntity`) and the portal block (`RealmPortalBlock`), the block kinds of `RealmPortalBlocks`, which
