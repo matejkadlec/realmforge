@@ -109,6 +109,15 @@ versionRange = "*"
 ordering = "AFTER"
 side = "BOTH"
 
+# FTB Teams' parties are off, so quest progress stays per player (RLM-206, architecture 19.4). Loading after it puts
+# our resources above its own, so our wording of its refusal replaces its own.
+[[dependencies.realmforge]]
+modId = "ftbteams"
+type = "optional"
+versionRange = "*"
+ordering = "AFTER"
+side = "BOTH"
+
 # Pick Up Notifier's list of pickups starts mid-screen at the right edge (RLM-308, architecture 19.4).
 [[dependencies.realmforge]]
 modId = "pickupnotifier"

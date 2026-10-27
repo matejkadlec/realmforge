@@ -11,6 +11,7 @@ import io.github.matejkadlec.realmforge.world.realm.RealmPortalBlocks;
 import io.github.matejkadlec.realmforge.world.realm.RealmPortalLinker;
 import io.github.matejkadlec.realmforge.world.realm.RealmPortals;
 import io.github.matejkadlec.realmforge.world.realm.Realms;
+import io.github.matejkadlec.realmforge.world.realm.SealstoneBlock;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -33,6 +34,7 @@ import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -46,7 +48,8 @@ import org.slf4j.Logger;
  * the realm's unlock; the sealstone's gestures; a broken frame closes; the portal refuses a player without the unlock
  * and lets them travel after it; trips into the realm and back link to the portals at the scaled positions or build
  * them standing on the floor, also in the worst rounding; trip-built frames drop nothing; fluids never pass; every
- * other entity travels, but not a vehicle carrying a player without the unlock.
+ * other entity travels, but not a vehicle carrying a player without the unlock; a player travels on their first tick
+ * in the portal and does not bounce straight back (RLM-335).
  *
  * <p>Trips use far-away places of their own, so no two tests find each other's portals: Overworld x and z in their own
  * 16-block cells around 40,000, realm x and z around 2,500. Positions in the realm are absolute. A trip runs the
@@ -218,6 +221,60 @@ public final class RealmPortalGameTests {
         helper.succeed();
     }
 
+    /**
+     * Done when of RLM-406: a dark sealstone lights up while a player holding a signet, in either hand, stands within 5
+     * blocks of it, rising over 15 ticks, and fades once they step 5.5 blocks away; with empty hands it stays dark. A
+     * lit portal glows only for its own realm's signet: a return portal, open onto Overworld, stays dark. The glow is
+     * the sealstone's block light.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_9X9, timeoutTicks = 200)
+    public static void theSealstoneGlowsWhileAPlayerWithASignetIsNear(GameTestHelper helper) {
+        RealmExpectation stone = RealmGameTests.stone();
+        ServerLevel level = helper.getLevel();
+        PortalFrame.Frame frame = new PortalFrame.Frame(helper.absolutePos(SEALSTONE), Direction.Axis.X);
+        buildFrame(level, frame);
+        BlockPos sealstone = frame.sealstone();
+        // 3 blocks in front of the sealstone's centre, and 5.5 blocks: just outside the glow's radius.
+        Vec3 near = new Vec3(4.5, 1, 7.5);
+        Vec3 away = new Vec3(4.5, 1, 10.0);
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-glow", near);
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        player.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+        helper.startSequence()
+                .thenExecuteAfter(20, () -> {
+                    assertGlow(helper, level, sealstone, 0, "with empty hands the sealstone stays dark");
+                    player.setItemInHand(InteractionHand.OFF_HAND, signet(stone));
+                })
+                .thenExecuteAfter(5, () -> {
+                    int glow = level.getBlockState(sealstone).getValue(SealstoneBlock.GLOW);
+                    helper.assertTrue(glow > 0 && glow < SealstoneBlock.MAX_GLOW,
+                            "a few ticks after the signet came out, the glow is rising: " + glow);
+                })
+                .thenExecuteAfter(15, () -> assertGlow(helper, level, sealstone, SealstoneBlock.MAX_GLOW,
+                        "a signet in the off hand lights the dark sealstone fully"))
+                .thenWaitUntil(() -> helper.assertValueEqual(level.getBrightness(LightLayer.BLOCK, sealstone.above()),
+                        SealstoneBlock.MAX_GLOW - 1, "the block light in the dark opening above the glowing sealstone"))
+                .thenExecute(() -> QaPlayers.onPlatform(helper, player, away))
+                .thenExecuteAfter(20, () -> assertGlow(helper, level, sealstone, 0,
+                        "the sealstone faded once the player stepped out of its radius"))
+                .thenExecute(() -> {
+                    RealmPortals.light(level, frame, Realmforge.id("overworld"));
+                    player.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+                    player.setItemInHand(InteractionHand.MAIN_HAND, signet(stone));
+                    QaPlayers.onPlatform(helper, player, near);
+                })
+                .thenExecuteAfter(20, () -> {
+                    assertGlow(helper, level, sealstone, 0, "a return portal stays dark for the stone realm's signet");
+                    RealmPortals.light(level, frame, id(stone));
+                })
+                .thenExecuteAfter(20, () -> {
+                    assertGlow(helper, level, sealstone, SealstoneBlock.MAX_GLOW,
+                            "a portal open onto the stone realm glows for its signet in the main hand");
+                    level.getServer().getPlayerList().remove(player);
+                })
+                .thenSucceed();
+    }
+
     // Travel -------------------------------------------------------------------------------------------------------
 
     /**
@@ -364,8 +421,8 @@ public final class RealmPortalGameTests {
 
     /**
      * A trip from a realm portal with no Overworld portal near its scaled-back position builds one there. Over the
-     * flat GameTest world nothing fits at Overworld's arrival heights (64 to 310), so it is carved out set into a
-     * platform at y 64, with Realmforge Bricks in its corners; the trip back arrives at the realm portal it came from.
+     * flat GameTest world nothing fits at Overworld's arrival heights (63 to 310), so it is carved out set into a
+     * platform at y 63, with Realmforge Bricks in its corners; the trip back arrives at the realm portal it came from.
      */
     @QaGameTest(timeoutTicks = 200)
     public static void aWayBackWithNoPortalNearBuildsOneOnAPlatform(GameTestHelper helper) {
@@ -386,11 +443,11 @@ public final class RealmPortalGameTests {
             helper.assertTrue(player.level() == level, "the way back leads to Overworld");
 
             // The realm opening's centre, x and z 2,700.5, times 16.
-            BlockPos scaled = new BlockPos(2_700 * 16 + 8, 64, 2_700 * 16 + 8);
+            BlockPos scaled = new BlockPos(2_700 * 16 + 8, 63, 2_700 * 16 + 8);
             Optional<PortalFrame.Frame> built = RealmPortalLinker.findPortal(level, scaled,
                     RealmPortalLinker.OVERWORLD_BUILD_RADIUS, id(stone));
             helper.assertTrue(built.isPresent(), "the way back built an Overworld portal near " + scaled);
-            helper.assertValueEqual(built.get().sealstone().getY(), 64, "the built frame's bottom row is at y 64");
+            helper.assertValueEqual(built.get().sealstone().getY(), 63, "the built frame's bottom row is at y 63");
             helper.assertTrue(level.getBlockState(built.get().sealstone()).getValue(RealmforgeBricksBlock.GENERATED),
                     "the built frame is marked generated");
             helper.assertTrue(level.getBlockState(built.get().at(1, -1).relative(built.get().front())).is(Blocks.STONE_BRICKS),
@@ -459,8 +516,9 @@ public final class RealmPortalGameTests {
     }
 
     /**
-     * Every entity steps into the portal (Matěj, 2026-10-20): a mob and an item start at once, a player after 2
-     * seconds. A pig carrying a player without the unlock does not, and a passenger never starts a trip itself.
+     * Every entity steps into the portal (Matěj, 2026-10-20) and starts its trip at once, a player in survival or
+     * creative too (RLM-335). A pig carrying a player without the unlock does not, and a passenger never starts a trip
+     * itself.
      */
     @QaGameTest(template = QaGameTests.PLATFORM_9X9)
     public static void everyEntityStepsInExceptOneCarryingPlayersWithoutAccess(GameTestHelper helper) {
@@ -487,11 +545,11 @@ public final class RealmPortalGameTests {
         try {
             boolean invulnerable = player.getAbilities().invulnerable;
             player.getAbilities().invulnerable = false;
-            helper.assertValueEqual(block.getPortalTransitionTime(level, player), RealmPortalBlock.TRANSITION_TICKS,
-                    "a player's trip takes 2 seconds");
+            helper.assertValueEqual(block.getPortalTransitionTime(level, player), 0,
+                    "a player's trip in survival starts at once");
             player.getAbilities().invulnerable = true;
-            helper.assertValueEqual(block.getPortalTransitionTime(level, player),
-                    RealmPortalBlock.CREATIVE_TRANSITION_TICKS, "a creative player's trip takes one tick");
+            helper.assertValueEqual(block.getPortalTransitionTime(level, player), 0,
+                    "a player's trip in creative starts at once");
             player.getAbilities().invulnerable = invulnerable;
             Pig pig = helper.spawn(EntityType.PIG, new BlockPos(4, 1, 6));
             helper.assertTrue(player.startRiding(pig, true, false), "the player mounts the pig");
@@ -503,6 +561,59 @@ public final class RealmPortalGameTests {
             helper.assertTrue(pig.portalProcess != null, "with the unlock, the pig steps in with its rider");
             portal.entityInside(level, entry, player, InsideBlockEffectApplier.NOOP, true);
             helper.assertTrue(player.portalProcess == null, "the rider itself starts no trip: its pig takes it along");
+        } finally {
+            level.getServer().getPlayerList().remove(player);
+        }
+        helper.succeed();
+    }
+
+    /**
+     * Done when of RLM-335: a player in survival travels on the first tick they spend in the portal, through vanilla's
+     * own portal processing. The portal cooldown vanilla sets after the trip keeps them from bouncing straight back
+     * while they stand in the exit portal, and once they stepped out for half a second, stepping in takes them back at
+     * once too.
+     */
+    @QaGameTest(timeoutTicks = 200)
+    public static void aPlayerTravelsTheTickTheyStepInAndDoesNotBounceBack(GameTestHelper helper) {
+        RealmExpectation stone = RealmGameTests.stone();
+        ServerLevel level = helper.getLevel();
+        ServerLevel realm = RealmGameTests.realm(helper, stone);
+        int cellX = 3_100;
+        int cellZ = 3_100;
+        PortalFrame.Frame first = litOverworldFrame(level, cellX * 16 + 1, cellZ * 16 + 1, stone);
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-instant");
+        try {
+            RealmGameTests.award(helper, player, stone.unlockAdvancement());
+            player.getAbilities().invulnerable = false;
+            standIn(player, level, first);
+            stepIn(player, level, first);
+            helper.assertTrue(player.level() == realm, "one tick in the portal took the player into the realm");
+            PortalFrame.Frame built = realmPortalNear(helper, realm, new BlockPos(cellX, REALM_FLOOR, cellZ));
+            assertArrivedAt(helper, player, built);
+            Vec3 arrival = player.position();
+            helper.assertValueEqual(player.getPortalCooldown(), player.getDimensionChangingDelay(),
+                    "the trip set vanilla's portal cooldown");
+            // The cooldown waits while the client loads the new dimension; a real client's teleport confirmation ends
+            // that, which a fake player never sends.
+            player.hasChangedDimension();
+
+            // Straight back into the exit portal: every tick inside starts the cooldown again, so no trip starts.
+            standIn(player, realm, built);
+            for (int tick = 0; tick < 3 * player.getDimensionChangingDelay(); tick++) {
+                stepIn(player, realm, built);
+            }
+            helper.assertTrue(player.level() == realm, "the player standing in the exit portal did not bounce back");
+
+            // Out of the portal until the cooldown is over, then in again: the trip back starts at once.
+            player.teleportTo(realm, arrival.x, arrival.y, arrival.z, Set.of(), 0.0F, 0.0F, true);
+            for (int tick = 0; tick < player.getDimensionChangingDelay(); tick++) {
+                serverTick(player);
+            }
+            helper.assertFalse(player.isOnPortalCooldown(), "the cooldown is over half a second after stepping out");
+            standIn(player, realm, built);
+            stepIn(player, realm, built);
+            helper.assertTrue(player.level() == level, "one tick in the portal took the player back to Overworld");
+            assertArrivedAt(helper, player, first);
         } finally {
             level.getServer().getPlayerList().remove(player);
         }
@@ -617,6 +728,29 @@ public final class RealmPortalGameTests {
     }
 
     /**
+     * One server tick of the player standing in the frame's opening: the portal block at its bottom middle sees them
+     * inside, as moving there does, and the player's tick processes the portal, as vanilla's portal processing does.
+     */
+    private static void stepIn(ServerPlayer player, ServerLevel level, PortalFrame.Frame frame) {
+        BlockPos entry = frame.at(1, 0);
+        BlockState portal = level.getBlockState(entry);
+        if (portal.getBlock() instanceof RealmPortalBlock) {
+            portal.entityInside(level, entry, player, InsideBlockEffectApplier.NOOP, true);
+        }
+        serverTick(player);
+    }
+
+    /**
+     * One server tick of a fake player, which no connection ticks: the level sets its old position first, as
+     * {@code ServerLevel#tickNonPassenger} does, so the tick checks the blocks it moved through since the last one,
+     * not since the test began, and then the player ticks.
+     */
+    private static void serverTick(ServerPlayer player) {
+        player.setOldPosAndRot();
+        player.doTick();
+    }
+
+    /**
      * The trip through the portal block at {@code entry}, as vanilla makes it once the portal's time is up, and how
      * long it took: finding or building the exit portal (with the chunks it generates), then the teleport. Returns the
      * entity in the new level: a player stays the same, any other entity is copied there.
@@ -673,6 +807,13 @@ public final class RealmPortalGameTests {
     private static long sealstonesNear(ServerLevel level, BlockPos centre, int radius) {
         return level.getPoiManager().getInSquare(type -> type.is(RealmPortalBlocks.SEALSTONE_POI), centre, radius,
                 PoiManager.Occupancy.ANY).count();
+    }
+
+    private static void assertGlow(GameTestHelper helper, ServerLevel level, BlockPos sealstone, int glow,
+            String message) {
+        BlockState state = level.getBlockState(sealstone);
+        helper.assertValueEqual(state.getValue(SealstoneBlock.GLOW), glow, message);
+        helper.assertValueEqual(state.getLightEmission(), glow, message + " (its block light)");
     }
 
     private static boolean lit(ServerLevel level, PortalFrame.Frame frame) {

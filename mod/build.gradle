@@ -51,12 +51,23 @@ repositories {
             includeGroup 'maven.modrinth'
         }
     }
+    // CurseMaven serves CurseForge files by project and file id, only for the `curse.maven` group: the integrations
+    // with the pack's CurseForge-only mods (FTB Teams).
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'CurseMaven'
+                url = 'https://cursemaven.com'
+            }
+        }
+        filter {
+            includeGroup 'curse.maven'
+        }
+    }
 }
 
-// The Modrinth coordinate of the build the pack ships of pack/mods/<slug>.pw.toml, from its [update.modrinth] mod-id
-// and version, so an integration always compiles against the build players run. The dev runs load the same jar as a
-// pack mod (qa-mod/build.gradle).
-def packModrinthMod = { String slug ->
+// The fields of one section of pack/mods/<slug>.pw.toml, the flat TOML packwiz writes.
+def packModSection = { String slug, String wanted ->
     def file = rootProject.file("pack/mods/${slug}.pw.toml")
     def section = ''
     def fields = [:]
@@ -65,14 +76,31 @@ def packModrinthMod = { String slug ->
         def entry = line.trim() =~ /^([A-Za-z0-9_-]+)\s*=\s*"?(.*?)"?$/
         if (header.matches()) {
             section = header.group(1)
-        } else if (entry.matches() && section == 'update.modrinth') {
+        } else if (entry.matches() && section == wanted) {
             fields[entry.group(1)] = entry.group(2)
         }
     }
+    return fields
+}
+
+// The Modrinth coordinate of the build the pack ships of pack/mods/<slug>.pw.toml, from its [update.modrinth] mod-id
+// and version, so an integration always compiles against the build players run. The dev runs load the same jar as a
+// pack mod (qa-mod/build.gradle).
+def packModrinthMod = { String slug ->
+    def fields = packModSection(slug, 'update.modrinth')
     if (!fields['mod-id'] || !fields.version) {
         throw new GradleException("pack/mods/${slug}.pw.toml: no [update.modrinth] mod-id and version")
     }
     return "maven.modrinth:${fields['mod-id']}:${fields.version}"
+}
+
+// The same for a CurseForge mod: its CurseMaven coordinate from [update.curseforge] project-id and file-id.
+def packCurseForgeMod = { String slug ->
+    def fields = packModSection(slug, 'update.curseforge')
+    if (!fields['project-id'] || !fields['file-id']) {
+        throw new GradleException("pack/mods/${slug}.pw.toml: no [update.curseforge] project-id and file-id")
+    }
+    return "curse.maven:${slug}-${fields['project-id']}:${fields['file-id']}"
 }
 
 dependencies {
@@ -95,6 +123,8 @@ dependencies {
     // Pick Up Notifier's list starts mid-screen (client/compat/pickupnotifier, RLM-308); its config is Puzzles Lib's.
     compileOnly packModrinthMod('pick-up-notifier')
     compileOnly packModrinthMod('puzzles-lib')
+    // FTB Teams' parties are off, so quest progress stays per player (compat/ftbteams, RLM-206).
+    compileOnly packCurseForgeMod('ftb-teams-forge')
 
     testImplementation platform("org.junit:junit-bom:${junit_version}")
     testImplementation 'org.junit.jupiter:junit-jupiter'

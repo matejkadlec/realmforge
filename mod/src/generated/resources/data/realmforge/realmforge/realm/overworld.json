@@ -5,7 +5,7 @@
   "sound_pitch": 1.0,
   "arrival": {
     "y": [
-      64,
+      63,
       310
     ],
     "floor": "minecraft:stone_bricks",

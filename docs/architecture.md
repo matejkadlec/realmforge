@@ -394,7 +394,9 @@ when the mod is constructed (`dungeon/portal/DungeonBlocks`, `world/realm/RealmP
 blockstate and models (`generate/blocks.py`), and `BlockKinds#blocks(kind)` hands the owner its blocks, for a block
 entity type, a point-of-interest type or for placing one. Kinds the game uses one block of (`dungeon_exit` and the realm
 portal's three) allow one block each. `realmforge_bricks` and `realmforge_sealstone` have the blockstate property
-`generated`, which a trip sets on the frames it builds, and their loot tables drop the block only without it.
+`generated`, which a trip sets on the frames it builds, and their loot tables drop the block only without it. The
+sealstone also has `glow` (0 to 15), its block light, which its block entity's ticker sets (RLM-406); its blockstate
+names `generated` alone, which matches every `glow`.
 `realm_portal` has no item: no block item, no loot table (`noLootTable`), no recipe and no creative tab. `hardness: -1`
 makes a block unbreakable, as vanilla's bedrock and portals.
 
@@ -2021,12 +2023,18 @@ loot: realmforge:boss/hollow_warden
     opens the frame onto Overworld, while in Overworld it closes the portal. A common
     `PlayerInteractEvent.RightClickBlock` listener sets `useBlock` to `TRUE` for that gesture, so an item in the off
     hand never blocks it (RLM-133). Dimensions without an entry (the instances, the Nether, other mods') refuse. An
-    incomplete frame is marked with red dust for 3 seconds. Messages go to the action bar;
+    incomplete frame is marked with red dust for 3 seconds. Messages go to the action bar. The sealstone glows while
+    a player holding a signet that lights it, in either hand, stands within 5 blocks of its centre (RLM-406): the
+    signet of the realm its lit portal opens onto, or any signet while the portal is dark. A server-side block entity
+    ticker (`RealmPortals.tickGlow`) moves its `glow` one level a tick towards 15 or 0, so it rises or fades over 15
+    ticks; the block state is its light (`lightLevel`), so every player sees it, and it is set without shape updates;
   - **the portal block:** like vanilla's nether portal it has an axis and no collision, and checks its frame on every
     neighbour update, so a broken frame block takes the whole opening with it. It implements `Portal`: every entity
     that is no passenger steps in (a vehicle takes its passengers along), unless it or a player riding it has no
-    access to the destination (then the realm refusal, so the countdown never starts); a player's trip takes 2
-    seconds (1 tick in creative), any other entity's starts at once, with no vanilla overlay (`Transition.NONE`). It
+    access to the destination (then the realm refusal, so no trip starts); every entity's trip starts on its first
+    tick inside, a player's too (RLM-335), with no vanilla overlay (`Transition.NONE`). Vanilla's portal cooldown
+    after a trip (half a second for a player) starts again on every tick spent in a portal, so a player who arrives in
+    the exit portal or steps straight back into it does not bounce back until they stepped out and in again. It
     refuses every fluid (`LiquidBlockContainer#canPlaceLiquid` and `canBeReplaced(BlockState, Fluid)` answer false);
   - **linking** (`RealmPortalLinker`): the source opening's centre times the dimension types' teleportation scale,
     clamped into the target's world border, as the nether portal does; the nearest lit portal leading back where the
@@ -2039,7 +2047,8 @@ loot: realmforge:boss/hollow_warden
     the lowest height for a chunk that is not fully loaded). Where nothing fits, the frame is carved out set into a
     floor of the arrival block with a pocket kept free of fluids and falling blocks. A built frame has Realmforge Bricks
     in its corners too, all `generated`, dropping nothing. The entity arrives in front of the exit portal, facing away
-    from it, or in the opening; the vanilla travel sound plays at the realm's pitch, and vanilla's portal ticket loads
+    from it (at the opening's height, or one step lower for a frame a player stood on top of the floor), or in the
+    opening; the vanilla travel sound plays at the realm's pitch, and vanilla's portal ticket loads
     the exit's chunks for a short time;
   - **arrival** (`RealmArrivals`): on every arrival in a realm, a 2-second title with its name, element and level
     band (the realm entry's `levels`); the first arrival also shows its flavour line in chat (`realmforge:visited_realms`);
@@ -2734,6 +2743,7 @@ depth limit.
 | boss phase | the boss bar's title (`ServerBossEvent#setName`) |
 | events: cast started or ended, combat text, dungeon status | payloads, for example `PacketDistributor.sendToPlayersTrackingEntityAndSelf` |
 | the sealstone's destination | its block entity's update tag with the chunk, and its update packet on every change (`Level#sendBlockUpdated`) |
+| the sealstone's glow | its block state (`glow`), sent like any block change; each client lights it with its own light engine |
 
 Cast bars and cooldowns are drawn from a start time and a duration, so they need no per-tick packets.
 
@@ -2989,6 +2999,36 @@ height (`Window#getGuiScaledHeight`) every client tick (`ClientTickEvent.Post`),
 the config is loaded (`ConfigDataHolder#isAvailable`; earlier, Puzzles Lib logs an error and hands out a default copy)
 and leaves any other corner alone. The core mod compiles against the pack's builds of Pick Up Notifier and Puzzles
 Lib; `neoforge.mods.toml` names Pick Up Notifier as an optional client dependency.
+
+**FTB Teams' parties are off** (RLM-206,
+[ADR 0053](decisions/0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md)): FTB Quests
+keeps quest progress per FTB Teams team ([16](#16-progression-and-quests)), so a party would hand its realm unlocks and
+chapter advancements to everyone who joins. `compat/ftbteams/FtbTeamsParties` sets FTB Teams' own switch for packs with
+parties of their own, `FTBTeamsAPI.api().setPartyCreationFromAPIOnly(true)`, at common setup (FTB Teams hands out its
+API from its constructor): `/ftbteams party create` and the My Team screen's Create a Party refuse every player,
+operators included, and only code through its API could create one, which nothing in the pack does. Without a party
+nobody can invite anyone or join one, so progress stays per player until our own parties (RLM-68) share quests by
+Matěj's rule (RLM-156). FTB Teams' server config has no such option. The core mod compiles against the pack's build
+(CurseMaven, read from `pack/mods/ftb-teams-forge.pw.toml`) and loads after it, so our wording of its refusal
+(`ftbteams.party_api_only`, below) replaces its own; `FtbTeamsGameTests` check the command, for a player and an
+operator, the My Team screen's permission and an invite.
+
+**Other mods' texts, fixed** (RLM-382, RLM-206): a text another mod lacks, or words wrongly for this pack, goes into
+`mod/src/main/resources/assets/<mod id>/lang/en_us.json`. The game merges the language files of every namespace and
+every pack, a later pack winning a key both define, so a file there adds a missing key, and replaces one when the core
+mod loads after that mod (`ordering = "AFTER"` in `neoforge.mods.toml`). Like the data fixes below, it is no content of
+ours, so it stays out of `content/` and the generated `lang/en_us.json`.
+
+- **Key Binds headers:** since 1.21.9 a key category is a `KeyMapping.Category` whose header is the translation of
+  `key.category.<namespace>.<path>` (`Category#label()`). Crafting Tweaks, Apotheosis and Placebo ship only the old
+  `key.categories.*` keys, so Key Binds showed their raw keys; the core mod adds `key.category.craftingtweaks.default`,
+  `key.category.apotheosis.keys` and `key.category.placebo.keys`. Just Zoom needs none: a mixin of its own labels its
+  category. The QA mod's dev client checks every header at the title screen (`client/keybinds/QaKeyCategories`, which
+  reads `label()` as the screen does) and logs an error for a raw one; `QaKeyBindShots` saves the screen page by page
+  for an agent ([dev setup 3.3](dev-setup.md#33-in-wsl-quick-checks)).
+- **FTB Teams' refusal:** `ftbteams.party_api_only`, which FTB Teams shows for the refused command and screen, reads
+  "Parties are off in Realmforge: your quests and realm unlocks stay your own." instead of FTB Teams' "In this modpack
+  you cannot create party teams directly!".
 
 **Apothic Attributes** (RLM-271, [ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md))
 is Apotheosis's attribute library, with a crit and a dodge of its own that would roll next to ours

@@ -1,8 +1,8 @@
 # yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
 # The realm portal's portal block (W2b, realm portal spec "Look and sound"): it fills a lit frame's opening, tinted with
 # the colour of the realm its sealstone opens onto (content/realms/). Like a nether portal it has no item, drops
-# nothing, nothing breaks it but a broken frame, and it has no collision; every entity that steps in travels, a player
-# after 2 seconds. It holds back water and lava. A greyscale placeholder swirl until the A* textures.
+# nothing, nothing breaks it but a broken frame, and it has no collision; every entity that steps in travels at once, a
+# player too (RLM-335). It holds back water and lava. A greyscale placeholder swirl until the A* textures.
 id: realm_portal
 name:
   en_us: Realm Portal

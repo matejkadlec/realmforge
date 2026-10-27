@@ -1595,16 +1595,16 @@ def _realm_signet_problems(
 
 
 def _arrival_height_problems(source: str, heights: list[int], min_y: int, height: int) -> list[Problem]:
-    """A built frame stands on a floor below its bottom row and reaches FRAME_HEIGHT blocks up, all inside the
-    dimension."""
-    lowest, highest = min_y + 1, min_y + height - FRAME_HEIGHT
+    """A built frame's bottom row is set into the floor, so it is the lowest block the frame needs, and the frame
+    reaches FRAME_HEIGHT blocks up from it, all inside the dimension."""
+    lowest, highest = min_y, min_y + height - FRAME_HEIGHT
     if heights[0] < lowest or heights[1] > highest:
         return [
             Problem(
                 source,
                 "arrival.y",
                 f"a built frame's bottom row stands at y {lowest} to {highest} in this dimension, "
-                f"with a floor below it and its top row inside: not {heights[0]} to {heights[1]}",
+                f"set into the floor with its top row inside: not {heights[0]} to {heights[1]}",
             )
         ]
     return []

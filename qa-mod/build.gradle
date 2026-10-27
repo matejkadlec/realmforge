@@ -78,6 +78,9 @@ def seedPackConfig = tasks.register('seedPackConfig') {
 //
 // `-PleanClient` starts the client with only the mods in leanClientMods, for quick checks and agents' screenshot
 // runs; `-PwithBetterCombat` adds Better Combat and its config library to it: ./gradlew runClient -PleanClient
+//
+// `-PwithWorldEdit` adds WorldEdit to the dev client, full or lean, for Matěj's own building (RLM-393). It is no pack
+// mod, so players never get it; installWorldEditToPrism copies the same jar into his Prism instance.
 
 // Reads the flat TOML packwiz writes: `[section]` headers and `key = value` lines, values as strings.
 static Map<String, Map<String, String>> readPackwizToml(File file) {
@@ -118,7 +121,8 @@ def packMods = rootProject.file('pack/mods').listFiles().findAll { it.name.endsW
             if (!(download['hash-format'] in ['sha1', 'sha256', 'sha512']) || !download.hash) {
                 throw new GradleException("pack/mods/${file.name}: no sha1, sha256 or sha512 hash under [download]")
             }
-            [slug: slug, side: side, coordinate: coordinate, hashFormat: download['hash-format'], hash: download.hash]
+            [slug: slug, side: side, coordinate: coordinate, hashFormat: download['hash-format'], hash: download.hash,
+             source: "pack/mods/${file.name}"]
         }
 def packMod = { String slug ->
     def mod = packMods.find { it.slug == slug }
@@ -137,11 +141,21 @@ if (providers.gradleProperty('withBetterCombat').isPresent()) {
     leanClientMods += ['better-combat', 'cloth-config']
 }
 
+// WorldEdit 7.4.3, the NeoForge 26.1.2 release on Modrinth (version id gjsLvJfW), named and hashed as Modrinth
+// serves it.
+def worldEdit = [slug: 'worldedit', coordinate: 'maven.modrinth:worldedit:gjsLvJfW',
+                 fileName: 'worldedit-mod-7.4.3.jar', source: 'qa-mod/build.gradle', hashFormat: 'sha512',
+                 hash: 'de51a1a319e057f1312ec54de2f08df5d0c00a78718080a3284e0c1ffadffb47d5353e0e538d9334b72eb7' +
+                         '260df5a6f2c4bf8373eec8d5a4f6cdfaae1ff4524e']
+def withWorldEdit = providers.gradleProperty('withWorldEdit').isPresent()
+
 configurations {
     packClientMods { canBeConsumed = false; transitive = false }
     packServerMods { canBeConsumed = false; transitive = false }
     packLeanClientMods { canBeConsumed = false; transitive = false }
+    worldEditMod { canBeConsumed = false; transitive = false }
 }
+dependencies.add('worldEditMod', worldEdit.coordinate)
 packMods.each { mod ->
     if (mod.side != 'server') {
         dependencies.add('packClientMods', mod.coordinate)
@@ -153,6 +167,7 @@ packMods.each { mod ->
 leanClientMods.each { dependencies.add('packLeanClientMods', packMod(it).coordinate) }
 def clientMods = configurations.named(leanClient ? 'packLeanClientMods' : 'packClientMods')
 def serverMods = configurations.named('packServerMods')
+def worldEditMods = configurations.named('worldEditMod')
 
 // A run's classpath is its source set's runtime classpath, so the client and the servers each get a source set of
 // their own (without sources) that adds their pack mods to the QA mod's. ModDevGradle puts its launcher (DevLaunch,
@@ -163,7 +178,7 @@ def betterKeyBinds = project(':better-key-binds').sourceSets.main
 sourceSets {
     devClient {
         runtimeClasspath = sourceSets.main.runtimeClasspath + configurations.devClientRuntimeClasspath +
-                files(clientMods) + betterKeyBinds.output
+                files(clientMods) + betterKeyBinds.output + (withWorldEdit ? files(worldEditMods) : files())
     }
     devServer {
         runtimeClasspath = sourceSets.main.runtimeClasspath + configurations.devServerRuntimeClasspath +
@@ -172,24 +187,24 @@ sourceSets {
 }
 
 // Checks every pack mod jar a run loads against the hash its .pw.toml records, so a run never loads another file
-// than packwiz-installer gives a player. Runs again only when the jars change.
+// than packwiz-installer gives a player, and WorldEdit's against the hash above. Runs again only when the jars change.
 // Configuration-cache safe: the action uses only the values captured here, never `project`.
-def registerPackModCheck = { String name, configuration ->
+def registerPackModCheck = { String name, configuration, List mods = packMods ->
     tasks.register(name) {
         group = 'realmforge'
-        description = "Checks the jars of ${configuration.name} against the hashes in pack/mods/*.pw.toml."
+        description = "Checks the jars of ${configuration.name} against the hashes their sources record."
         // Each jar with its Maven coordinate (group:module:version), as plain values the configuration cache stores.
         def artifacts = configuration.flatMap { it.incoming.artifacts.resolvedArtifacts }.map { results ->
             results.collect { [it.id.componentIdentifier.displayName, it.file] }
         }
-        def expected = packMods.collectEntries { [(it.coordinate): [it.slug, it.hashFormat, it.hash]] }
+        def expected = mods.collectEntries { [(it.coordinate): [it.slug, it.source, it.hashFormat, it.hash]] }
         inputs.files(configuration)
         inputs.property('expected', expected)
         def marker = layout.buildDirectory.file("pack-mods/${name}.txt")
         outputs.file(marker)
         doLast {
             def checked = artifacts.get().collect { coordinate, jar ->
-                def (slug, format, hash) = expected[coordinate]
+                def (slug, source, format, hash) = expected[coordinate]
                 def algorithm = ['sha1': 'SHA-1', 'sha256': 'SHA-256', 'sha512': 'SHA-512'][format]
                 def digest = java.security.MessageDigest.getInstance(algorithm)
                 jar.withInputStream { stream ->
@@ -200,8 +215,8 @@ def registerPackModCheck = { String name, configuration ->
                 }
                 def actual = digest.digest().encodeHex().toString()
                 if (actual != hash) {
-                    throw new GradleException("${jar.name} is not the build pack/mods/${slug}.pw.toml " +
-                            "names: its ${format} is ${actual}, the pack's is ${hash}")
+                    throw new GradleException("${jar.name} is not the build ${source} " +
+                            "names: its ${format} is ${actual}, the recorded one is ${hash}")
                 }
                 "${slug} ${jar.name}"
             }
@@ -211,6 +226,29 @@ def registerPackModCheck = { String name, configuration ->
 }
 def verifyPackClientMods = registerPackModCheck('verifyPackClientMods', clientMods)
 def verifyPackServerMods = registerPackModCheck('verifyPackServerMods', serverMods)
+def verifyWorldEdit = registerPackModCheck('verifyWorldEdit', worldEditMods, [worldEdit])
+
+// Copies WorldEdit into a Prism Launcher instance for Matěj's building (RLM-393), next to the jars installToPrism
+// copies (mod/build.gradle). packwiz-installer deletes only files it installed itself, so the jar survives pack
+// updates.
+// Set `realmforge.prismModsDir` in ~/.gradle/gradle.properties (see docs/dev-setup.md).
+tasks.register('installWorldEditToPrism', Copy) {
+    group = 'realmforge'
+    description = 'Copies WorldEdit into the Prism Launcher instance mods folder (realmforge.prismModsDir).'
+    dependsOn verifyWorldEdit
+    def modsDir = providers.gradleProperty('realmforge.prismModsDir')
+    def fileName = worldEdit.fileName
+    from worldEditMods
+    rename { fileName }
+    into modsDir.orElse(layout.buildDirectory.dir('prism-mods-dir-not-set').get().asFile.path)
+    doFirst {
+        if (!modsDir.isPresent()) {
+            throw new GradleException('Set realmforge.prismModsDir in ~/.gradle/gradle.properties (see docs/dev-setup.md).')
+        }
+        // Remove previously installed WorldEdit jars so only one version is loaded.
+        new File(modsDir.get()).listFiles()?.findAll { it.name ==~ /worldedit-.*\.jar/ }?.each { it.delete() }
+    }
+}
 
 neoForge {
     version = neo_version
@@ -245,6 +283,9 @@ neoForge {
             gameDirectory = rootProject.file('run/client')
             taskBefore seedDevOptions
             taskBefore verifyPackClientMods
+            if (withWorldEdit) {
+                taskBefore verifyWorldEdit
+            }
             // Logs in with a real Minecraft account (covers1624's DevLogin, built into ModDevGradle) instead of
             // the offline `Dev` profile; the first launch prints a Microsoft login link in the console.
             // `-PofflineClient` starts as the offline `Dev` player instead, without the login prompt that an
@@ -307,6 +348,9 @@ dependencies {
     // Player Animation Library, the animation library Better Combat uses: the QA mod's test cast animation (/qa cast).
     // The pack's build, as every pack mod above; the client and the servers load it as a pack mod as well.
     implementation packMod('player-animation-library').coordinate
+    // FTB Teams, whose parties the core mod turns off (FtbTeamsGameTests, RLM-206); the GameTest server loads it as a
+    // pack mod.
+    compileOnly packMod('ftb-teams-forge').coordinate
 }
 
 def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {

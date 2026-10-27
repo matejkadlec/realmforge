@@ -104,6 +104,16 @@ WSL it is good only for "does it load" checks (3.3).
   `-PwithBetterCombat` adds Better Combat and Cloth Config to it:
   `./gradlew runClient -PleanClient -PwithBetterCombat`. Without `-PleanClient` the flag changes nothing, because
   the whole pack has Better Combat already.
+- **WorldEdit on demand, for building** (RLM-393,
+  [ADR 0053](decisions/0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md)):
+  `./gradlew runClient -PwithWorldEdit` (`.\gradlew.bat runClient -PwithWorldEdit` on Windows) adds WorldEdit 7.4.3
+  to the client, full or lean. It is no pack mod, so players never get it; `qa-mod/build.gradle` pins it and checks its
+  hash like the pack's mods (`verifyWorldEdit`). WorldEdit's commands need a world with commands allowed. Matěj's guide
+  is the Confluence page "WorldEdit guide (RLM-393)" in his space; section 4 installs it into Prism.
+- **The Key Binds headers are checked.** Once the title screen shows, the QA mod logs every key category Key Binds
+  lists with its header (`Key categories in Key Binds (...)`), and an error for each header that shows a raw
+  translation key (`Key category ... has no translation`, RLM-382). The core mod's resources carry the headers the
+  pack's mods lack ([architecture 19.4](architecture.md#194-optional-integrations)).
 - **No `@OnlyIn` warning screen.** A dev run (never a player's game) would stop at a loading screen listing every
   mod that still uses NeoForge's `@OnlyIn` (Jade Addons); the runs set `neoforge.warnings.onlyin.hide`, and the log
   keeps the `OnlyInWarningsHandler` lines.
@@ -201,6 +211,13 @@ there while the game runs. The handoff gives the commands
   use it to check the framing of cast animations (RLM-89, RLM-108). Agents add `-PofflineClient` (3.1), usually
   with `-PleanClient`: `REALMFORGE_QA_CAST_SHOTS=<label> ./gradlew runClient -PofflineClient -PleanClient`.
   Without `-PofflineClient` DevLogin runs first, and without a cached login it waits for the console prompt.
+- **Key Binds screenshots without input.** `REALMFORGE_QA_KEY_BINDS_SHOTS=<label> ./gradlew runClient -PofflineClient`
+  makes the QA mod open Key Binds from the title screen (Controlling's screen, as a player sees it), save it page by
+  page from the top of its list to the bottom, each page sharing a row with the one before, to
+  `run/client/screenshots/<label>-keybinds-<page>.png` in a 1280×960 window, and quit, in about a minute with the whole
+  pack (RLM-382). It needs no world and no mouse, so it runs headless too:
+  `xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew runClient -PofflineClient` with the variable set (cloud sessions
+  have Xvfb and Mesa).
 - `./gradlew runServer` starts a dev dedicated server in `run/server` with the pack's `server` and `both` mods;
   accept the EULA once in `run/server/eula.txt`.
 
@@ -211,7 +228,8 @@ workflow](design/set-pieces.md#the-building-workflow), [tools/README](../tools/R
 Windows (3.2), where mouse look works:
 
 1. In the Windows clone on `master` (or the branch you work on), `.\gradlew.bat runClient`, and create a creative
-   world, superflat is easiest (say `workshop`).
+   world, superflat is easiest (say `workshop`). `.\gradlew.bat runClient -PwithWorldEdit` adds WorldEdit for faster
+   building inside the frame (3.1); the structure block below still saves the piece.
 2. `/qa setpiece jig <mask>` builds the frame for a mask north of you and turns you to face it: walls three high
    (stone bricks; `/qa setpiece jig <mask> minecraft:deepslate_tiles` for others), glass on the cells that must stay
    walkable, and a structure block in the floor beside the frame, in Save mode, its box set to the piece's cells.
@@ -267,6 +285,11 @@ every launch, so the instance always matches the repository.
    removes its older jars (`realmforge-*.jar`, `better-key-binds-*.jar`) from that folder and copies the new one.
    Copying to `/mnt/c` is fine; only building there is slow. packwiz-installer leaves files it didn't install alone,
    so the jars survive pack updates. The QA mod is never installed into Prism.
+
+   WorldEdit, for your own building only (3.1): `./gradlew :qa-mod:installWorldEditToPrism` copies the dev client's
+   WorldEdit jar (`worldedit-mod-7.4.3.jar`) into the same folder and removes older `worldedit-*.jar` files there. It is
+   not in the pack, so packwiz-installer leaves it alone like our jars (it deletes only the files its manifest lists,
+   checked in packwiz-installer 0.5.14). Delete the jar from the folder to remove WorldEdit.
 7. Shaders: put [Complementary Shaders](https://www.complementary.dev/shaders/) into the instance's
    `shaderpacks/` folder and enable it in Iris's video settings.
 
