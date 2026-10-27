@@ -40,9 +40,11 @@ Rules this design keeps from elsewhere:
 - **The vanilla look:** pixel art on the 16 x 16 grid, snapped to the project palette; no shaders of our own
   ([architecture 18](../architecture.md#18-client-code-rendering-gui-input)); no vanilla texture files or recolours,
   not even as generator input (CLAUDE.md rule 8).
-- **Bolts fly where the crosshair points** ([ADR 0052](../decisions/0052-spells-aim-with-the-crosshair.md)), with
-  aim assistance curving an assisted bolt gently toward its target (RLM-345). Visuals never move the line a bolt
-  flies on unless its trajectory is gameplay, decided by the server.
+- **Bolts fly where the crosshair points,** straight and without gravity
+  ([ADR 0052](../decisions/0052-spells-aim-with-the-crosshair.md)), and an assisted bolt curves gently toward its
+  target (Matěj's decision of 2026-10-27 on RLM-345, whose batch amends ADR 0052 and the aiming design). Visuals
+  never move the line a projectile flies on; the one part that does, the `curve` trajectory, is gameplay decided by
+  the server, and it amends ADR 0052 too ([trajectories](#trajectories)).
 - **Variety lives in data** ([architecture 11.3](../architecture.md#113-spell-entities)): one projectile entity type
   and one area entity type; a new Java type only for genuinely new behaviour.
 
@@ -79,7 +81,7 @@ area style with the fire look.
 | Model | a projectile or forming model: its Blockbench source, size, which way it points, spin, its locators (`tail`, `core`) | `content/spell_models/<id>.yaml`, source `art/models/spell/<id>.bbmodel` | GeckoLib model asset |
 | Material | a look's texture: one tileable 16 x 16 tile that every model is mapped onto, as a block's texture is | `art/` source, `textures/spell/material/<look>.png` | texture, from Retro Diffusion Fast |
 | Particle | a particle shape: a few greyscale 8 x 8 frames, tinted per spawn from the look's palette, with its motion (gravity, drag, spin), lifetime and whether it is lit by the world | `content/particles/<id>.yaml` | a generated `ParticleType` registration |
-| Trajectory | how a projectile flies: a kind (`straight`, `curve`, `arc`) with its numbers | `content/spell_trajectories/<id>.yaml` | a synced datapack registry; kinds in Java |
+| Trajectory | how a projectile flies: a kind (`straight`, `curve`) with its numbers | `content/spell_trajectories/<id>.yaml` | a synced datapack registry; kinds in Java |
 | Forming style | how a projectile appears during the cast: `grow`, `storm` or `hands` ([below](#forming-during-a-cast)) | a field of the spell's visuals | Java, client only |
 | Cast animation | a player animation: the hands while casting, a release, a weapon move | `assets/realmforge/player_animations/<id>.json` | Emotecraft JSON on the cast layer (ADR 0020) |
 | Impact | what a hit looks like: the look's burst, sized to the hit (a splash's radius), and its sound | a field of the projectile | client particles from one entity event |
@@ -177,12 +179,16 @@ the client computing the same path for smooth drawing.
   or what the crosshair points at within range), so the projectile still arrives where the player aimed. Its numbers
   are the bend's size, its direction (left, right, up) and where along the way it peaks. Past the aim point it flies
   straight on.
-- **`arc`:** a lob under gravity, for a thrown weapon (Axe Throw, later).
+- **`curve` amends ADR 0052.** ADR 0052 and [architecture 11.3](../architecture.md#113-spell-entities) have every
+  projectile fly straight without gravity (Matěj's rule). A `curve` projectile gives up straight flight on its way
+  to the aim point, so the engine's ADR amends 0052 for the projectiles whose data names a curve, as RLM-345's ADR
+  does for aim assistance ([question 11](#open-questions-for-matěj)). Nothing flies under gravity: a lob for a thrown
+  weapon (Axe Throw) would be a later decision of its own.
 - **Deterministic:** a trajectory is a pure function of the launch point, the aim, the time since launch and a seed
   sent with the projectile's spawn, so the client draws the same curve the server moves along, and the server's
   position updates only correct drift.
-- **Aim assistance on top:** RLM-345's gentle homing of an assisted bolt bends the line toward the target; a
-  trajectory's offset is added to that line, so the two never fight.
+- **Aim assistance on top:** RLM-345's gentle homing of an assisted bolt (Matěj, 2026-10-27) bends the line toward
+  the target; a trajectory's offset is added to that line, so the two never fight.
 
 ### Cast animations
 
@@ -198,12 +204,6 @@ first person as `realmforge:cast` does today (architecture 11.6).
 | `cast_one_hand` | one hand forward, quick | instants that fire a projectile (Ice Lance) |
 | `slam`, `stab`, `shield_bash` | the Warrior's weapon moves (RLM-444) | their spells |
 
-A spell names an animation only to differ from its cast type's default. **Hit moments** (RLM-399): the server deals a
-Warrior spell's damage at its hit moments, so the spell's data holds the animation's length and the hit moments as
-shares of it (Slam 1 s, hit at 0.5); validation reads the animation file and refuses a length that disagrees, so the
-server's timing and what the player sees never drift apart.
-
-### Impacts
 **Instant spells need a signal.** Today only a cast time or a channel reaches the clients: `Casting` sends
 `CastStartedPayload` to the caster and every tracking player, which raises the cast layer. An instant spell runs its
 effects at once and tells no client, not even the caster's own, that the server accepted it. So the engine sends
@@ -212,6 +212,12 @@ carrying the animation's length, and `ClientCasts` plays it on the cast layer fo
 player as it plays a timed cast. RLM-399's "instant spells play out over their animation" already makes such a
 spell a short cast in all but its bar.
 
+A spell names an animation only to differ from its cast type's default. **Hit moments** (RLM-399): the server deals a
+Warrior spell's damage at its hit moments, so the spell's data holds the animation's length and the hit moments as
+shares of it (Slam 1 s, hit at 0.5); validation reads the animation file and refuses a length that disagrees, so the
+server's timing and what the player sees never drift apart.
+
+### Impacts
 
 - **One entity event per hit:** before a projectile is removed, the server sends vanilla's entity event, as a snowball
   does when it breaks (`Level#broadcastEntityEvent`); each client then bursts the look's particles where it is. A
@@ -361,7 +367,7 @@ The M1 mapping, for Matěj to approve. Damage, ranks and hit shapes are C4's and
 - **Frostbolt and Fireball differ only in `look`:** the material, the particles and the sounds. That is RLM-441's
   "its data differs from Frostbolt's only in texture and particles".
 - **Burning and Slowness** show their look's aura on the target: embers and black smoke, drifting snowflakes.
-- **Arcane Missiles' paths:** the first bends left, the second rises in a low arc, the third bends right, all three
+- **Arcane Missiles' paths:** the first bends left, the second bends upward, the third bends right, all three
   arriving at the aim point, so three missiles in a row are visibly different and still land where the player aims
   (with RLM-345's assistance). Each explodes (RLM-399).
 - **The Warrior's spells** are only their animations and sounds, as Matěj said; the weapon in the hand moves with the
@@ -407,6 +413,8 @@ RLM-439 files this as the next free ADR once Matěj approves the design, adjuste
 
 > **NNNN. Spell visuals are reusable parts in data, drawn with GeckoLib, our own particles and the cast layer**
 >
+> Status: Accepted (amends [0052](../decisions/0052-spells-aim-with-the-crosshair.md): curved projectiles)
+>
 > **Context.** Every spell needs its own look (RLM-434): a cast animation, what forms in the hands, a projectile's
 > model, texture and trajectory, particles, its impact and its sounds, built from reusable parts so dozens of spells
 > stay feasible. Today a projectile has an inline `appearance` (vanilla's shulker bullet model with a per-spell
@@ -427,7 +435,8 @@ RLM-439 files this as the next free ADR once Matěj approves the design, adjuste
 >    on the client from state it already has. Emitters are capped by validation, and nothing a player must react to
 >    is only particles.
 > 5. Trajectories are gameplay: the server moves a projectile along a deterministic path, and the client computes
->    the same path from its spawn data.
+>    the same path from its spawn data. A `curve` projectile bends on its way to the aim point, which amends
+>    ADR 0052's straight flight for the projectiles whose data names a curve; nothing flies under gravity.
 > 6. Forming styles `grow`, `storm` and `hands` run on the client from the cast payloads, drawn for every caster by
 >    one renderer at the caster's hands; in first person the forming model is drawn smaller, below the crosshair.
 > 7. Cast animations stay on the cast layer of
@@ -473,3 +482,7 @@ What each RLM-434 ticket takes from this design once Matěj approves it, so thei
 9. **An interrupted cast:** one interrupt sound for every spell, and the forming model bursting into its particles
    (proposed), or fading out?
 10. **The Warrior:** no particles at all, not even a faint trail behind the weapon (proposed, as you said)?
+11. **Curved missiles:** `curve` lets a projectile bend on its way to the aim point, so Arcane Missiles' three paths
+    differ. That amends ADR 0052's "projectiles fly straight without gravity" (your rule) for the projectiles that
+    name a curve, still without gravity: agreed (proposed), or do Arcane Missiles fly straight too, differing only
+    in where they leave the hands?
