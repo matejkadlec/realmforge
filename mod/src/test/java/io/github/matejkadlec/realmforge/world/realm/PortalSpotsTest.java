@@ -7,10 +7,15 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 /** Where a trip builds a portal, and the link-back arithmetic (realm portal spec, "Linking", "Building a portal"). */
 class PortalSpotsTest {
+    /** Overworld's arrival, as {@code content/realms/overworld.yaml} gives it. */
+    private static final Realm.Arrival OVERWORLD = new Realm.Arrival(63, 310, Identifier.withDefaultNamespace(
+            "stone_bricks"), 3);
+
     /** Terrain from a rule: solid where {@code solid} says so, free above, nothing else in the way. */
     private record Terrain(Predicate<BlockPos> solid, Predicate<BlockPos> water, int border, int top)
             implements PortalSpots.Terrain {
@@ -59,6 +64,18 @@ class PortalSpotsTest {
                 PortalSpots.arrival(cave(32), spot.get()));
     }
 
+    /**
+     * A frame a player built on top of the floor, its bottom row one block above it, as most player-built frames stand
+     * (RLM-341): no side has floor at the opening's height, so the player arrives one step lower, on the floor in front
+     * of the frame, not in the opening.
+     */
+    @Test
+    void aPlayerArrivesOnTheFloorInFrontOfAFrameBuiltOnTopOfIt() {
+        PortalFrame.Frame onTop = new PortalFrame.Frame(new BlockPos(40, 33, -12), Direction.Axis.X);
+        assertEquals(Optional.of(new PortalSpots.Arrival(Direction.SOUTH, new BlockPos(40, 33, -11))),
+                PortalSpots.arrival(cave(32), onTop));
+    }
+
     @Test
     void aFrameNeedsItsWholeHeightAboveTheFloor() {
         // Floor up to y 32: the frame takes y 32 (its bottom row, in the floor) to 37, so a ceiling at y 37 leaves no
@@ -101,17 +118,27 @@ class PortalSpotsTest {
 
     /**
      * The way back from a realm portal at y 30 to Overworld columns of deep ocean finds no spot at Overworld's arrival
-     * heights, so the trip carves a frame on a platform at y 64, never under the seabed.
+     * heights, so the trip carves a frame on a platform at y 63, the first block above the water, never under the
+     * seabed.
      */
     @Test
-    void deepOceanHasNoSpotSoTheWayBackBuildsAPlatformAtSixtyFour() {
+    void deepOceanHasNoSpotSoTheWayBackBuildsAPlatformAtSixtyThree() {
         Terrain ocean = new Terrain(pos -> pos.getY() <= 30, pos -> pos.getY() > 30 && pos.getY() <= 62, 1_000_000,
                 63);
-        Realm.Arrival overworld = new Realm.Arrival(64, 310, net.minecraft.resources.Identifier.withDefaultNamespace(
-                "stone_bricks"), 3);
-        assertEquals(Optional.empty(), PortalSpots.find(ocean, BlockPos.ZERO, 16, overworld.minY(), overworld.maxY(),
-                overworld.clampY(30)));
-        assertEquals(64, overworld.clampY(30));
+        assertEquals(Optional.empty(), PortalSpots.find(ocean, BlockPos.ZERO, 16, OVERWORLD.minY(), OVERWORLD.maxY(),
+                OVERWORLD.clampY(30)));
+        assertEquals(63, OVERWORLD.clampY(30));
+    }
+
+    /**
+     * Low Overworld ground, a plains or a shore whose grass is at y 63 just above the sea's water at 62, takes a frame
+     * set into it (RLM-341): the way back builds there instead of carving a platform one block above the grass.
+     */
+    @Test
+    void lowOverworldGroundAtSixtyThreeTakesAFrame() {
+        Terrain plains = new Terrain(pos -> pos.getY() <= 63, pos -> false, 1_000_000, 64);
+        assertEquals(63, PortalSpots.find(plains, BlockPos.ZERO, 16, OVERWORLD.minY(), OVERWORLD.maxY(),
+                OVERWORLD.clampY(30)).orElseThrow().sealstone().getY());
     }
 
     @Test

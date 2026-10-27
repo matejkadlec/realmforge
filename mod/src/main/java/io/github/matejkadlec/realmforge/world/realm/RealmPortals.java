@@ -19,11 +19,14 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.TriState;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
@@ -41,6 +44,9 @@ public final class RealmPortals {
     private static final int MARK_INTERVAL = 10;
     /** Red dust over each missing or wrong block. */
     private static final DustParticleOptions MARK = new DustParticleOptions(0xFF3030, 1.5F);
+
+    /** How far from the sealstone's centre a player holding a signet lights it: 5 blocks (RLM-406). */
+    public static final double GLOW_RADIUS = 5.0;
 
     /** The incomplete frames being marked; touched only on the server thread. */
     private static final List<Mark> MARKS = new ArrayList<>();
@@ -244,6 +250,44 @@ public final class RealmPortals {
                 RealmPortalBlocks.sealstone().defaultBlockState().setValue(RealmforgeBricksBlock.GENERATED, true),
                 Block.UPDATE_ALL);
         light(level, frame, destination);
+    }
+
+    /**
+     * The sealstone's glow, every server tick (RLM-406, Matěj: "the Sealstone block would smoothly light up if player
+     * with Signet item in hand"): one light level a tick towards {@link SealstoneBlock#MAX_GLOW} while a player holding
+     * a signet that lights it ({@link #lightsSealstone}) in either hand stands within {@link #GLOW_RADIUS} of its centre,
+     * and towards dark otherwise, so it rises or fades over 15 ticks, about a second. Spectators count for nothing. The
+     * new state goes to clients without shape updates, so nothing next to it reacts to the glow.
+     */
+    static void tickGlow(Level level, BlockPos pos, BlockState state, SealstoneBlockEntity entity) {
+        Optional<Identifier> destination = isLit(level, pos) ? entity.storedDestination() : Optional.empty();
+        Vec3 centre = Vec3.atCenterOf(pos);
+        boolean near = false;
+        for (Player player : level.players()) {
+            if (!player.isSpectator() && player.distanceToSqr(centre) <= GLOW_RADIUS * GLOW_RADIUS
+                    && (lightsSealstone(level, player.getMainHandItem(), destination)
+                            || lightsSealstone(level, player.getOffhandItem(), destination))) {
+                near = true;
+                break;
+            }
+        }
+        int glow = state.getValue(SealstoneBlock.GLOW);
+        int target = near ? SealstoneBlock.MAX_GLOW : 0;
+        if (glow != target) {
+            level.setBlock(pos, state.setValue(SealstoneBlock.GLOW, glow + Integer.signum(target - glow)),
+                    Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+        }
+    }
+
+    /**
+     * Whether {@code stack} is a signet that lights a sealstone whose portal opens onto {@code destination}: the signet
+     * of that realm, or any signet while the portal is dark, as a frame that was never opened is (RLM-406). A return
+     * portal, open onto Overworld, which has no signet, stays dark.
+     */
+    public static boolean lightsSealstone(Level level, ItemStack stack, Optional<Identifier> destination) {
+        return Realms.bySignet(level.registryAccess(), stack.getItem())
+                .filter(realm -> destination.isEmpty() || destination.get().equals(realm.key().identifier()))
+                .isPresent();
     }
 
     /** Marks {@code positions} with particles for {@link #MARK_TICKS} ticks. */

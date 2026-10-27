@@ -19,7 +19,9 @@
 > signets (the first version's Portal Stone, realm selector and sigils), changed their recipes, let every entity
 > travel and set trip-built frames into the floor, with Realmforge Bricks in their corners ([Decisions](#decisions),
 > 12 to 14). RLM-395 (2026-10-23 and 2026-10-24) made every signet a recipe around a shard that its realm's final
-> boss drops, and let a quest shop sell a lost signet ([Decisions](#decisions), 15 to 17). Other block and item names
+> boss drops, and let a quest shop sell a lost signet ([Decisions](#decisions), 15 to 17). RLM-335 and RLM-406
+> (2026-10-27) let players travel at once and made the sealstone glow near a signet ([Decisions](#decisions), 18 and
+> 19), and RLM-341 let Overworld frames stand on ground at y 63. Other block and item names
 > are working names; realm names are the approved ones of the [lore outline](../lore/outline.md#the-realms)
 > (RLM-139, RLM-188), without an article. The v1 realm layout (RLM-188, 2026-10-16) moved the stone realm to
 > chapter 2 (levels 6–18) and its unlock to the end of chapter 1's main questline. APIs named here were checked
@@ -123,6 +125,15 @@ hoppers have nothing to take.
 
 - **Who may switch a portal:** anyone holding a signet they are eligible to use (Matěj, RLM-128). Unlocks are per
   player ([Multiplayer](#multiplayer)), so switching changes only where the portal leads, never who may enter.
+- **It glows near a signet** (Matěj, 2026-10-24, RLM-406: "the Sealstone block would smoothly light up if player with
+  Signet item in hand"; chapter 1's "the gate lights"). While a player holding a signet in either hand stands within
+  5 blocks of its centre, the sealstone lights up, one light level a tick to light level 15, so it rises over 15
+  ticks, about a second, and fades the same way once they walk away or put the signet away. A portal open onto a
+  realm glows for that realm's signet; a dark one, as a frame that was never opened is, for any signet; a return
+  portal, open onto Overworld, which has no signet, stays dark. The glow is the block's own light (a block state,
+  `glow`), so every player sees it, also on a dedicated server; spectators light nothing. The radius, the signet rule
+  and the full light level are proposals for Matěj's playtest. Its look, an emissive texture, comes with the frame's
+  retexture (RLM-301).
 - **The sneak gesture with something in the off hand** (RLM-133). Vanilla skips a block's use while the player
   sneaks with anything in either hand that does not bypass the sneak (`ServerPlayerGameMode#useItemOn` on the server,
   `MultiPlayerGameMode#performUseItemOn` on the client; `IItemStackExtension#doesSneakBypassUse` is true only for an
@@ -342,12 +353,14 @@ When no portal leads the right way within the search radius, the trip builds one
   `y` range of the dimension's realm entry (`arrival.y`, [Data](#data-contentrealms)), which keeps arrivals in the depth
   band of the realm's lowest levels. The source portal's height, clamped into that range, decides between spots at the
   same distance.
-- **Overworld's `y` range** is 64 to 310 (a proposal): the frame's bottom row lies at least one block above
-  sea level (63), so a way back over deep ocean, from a realm portal at y 30 say, finds no floor in the spiral and
-  builds on a platform at the surface instead of carving a frame under the seabed. Vanilla's own fallback in
-  `PortalForcer#createPortal` keeps y ≥ 70; 64 also lets a frame stand on beaches and plains, which lie between 63
-  and 70. The top, 310, is that fallback's ceiling (the highest buildable y less 9), so a mountain's surface is a
-  spot too, where a lower ceiling would carve the frame into the rock.
+- **Overworld's `y` range** is 63 to 310 (a proposal): the frame's bottom row, set into the ground, lies at
+  least at sea level (63), the first block above the sea's top water block (62). Water is no floor, so a way back over
+  deep ocean, from a realm portal at y 30 say, finds no floor in the spiral and builds on a platform at the surface
+  instead of carving a frame under the seabed. Vanilla's own fallback in `PortalForcer#createPortal` keeps y ≥ 70; 63
+  also lets a frame be set into beaches, river banks and plains, which lie between 63 and 70 (RLM-341: the range
+  started at 64 while frames stood on top of the floor, and ground at 63 then took no frame set into it). The top,
+  310, is that fallback's ceiling (the highest buildable y less 9), so a mountain's surface is a spot too, where a
+  lower ceiling would carve the frame into the rock.
 - **Where nothing fits** (the stone realm has a bedrock ceiling; a realm can have a void below or water), the frame is
   carved out at the scaled position, clamped into the `y` range: set into a floor of the entry's arrival block
   (`arrival.floor`) that reaches in front of it, and air around it. A safe pocket of `arrival.pocket_radius` blocks
@@ -372,9 +385,13 @@ When no portal leads the right way within the search radius, the trip builds one
 ### Arriving
 
 - **The player arrives in front of the exit portal, facing away from it,** when one side of the opening has floor and
-  two blocks of air at the opening's height: on the floor the frame is set into, so they walk straight back in.
-  Otherwise they arrive in the opening, as a nether portal places them, and the portal cooldown vanilla sets after every
-  trip (`Entity#setPortalCooldown`) keeps them from bouncing straight back.
+  two blocks of air at the opening's height: on the floor the frame is set into, so they walk straight back in, or,
+  for a frame a player stood on top of the floor, on that floor one step below the opening (RLM-341). Otherwise they
+  arrive in the opening, as a nether portal places them, and the portal cooldown vanilla sets after every trip
+  (`Entity#setPortalCooldown`, half a second for a player, counted down only once their client has loaded the new
+  dimension) keeps them from bouncing straight back: it starts again on every tick spent in a portal, so a player who
+  arrives in the opening, or steps straight back into it, travels only once they stepped out for half a second and in
+  again (RLM-335).
 - **A title** shows the realm's name with its element subtitle, and its level band (the realm entry's `levels`,
   "Stone Realm · Levels 6–18"), for 2 seconds on every arrival in a realm (RLM-139); the player's first arrival also
   shows its flavour line.
@@ -436,8 +453,10 @@ without one; never in a realm. This answers the realm design's
 - **No vanilla portal overlay:** `Portal.Transition.CONFUSION` makes the client draw the nether portal's purple
   texture over the screen (`LocalPlayer#handlePortalTransitionEffect` and `Gui`), so the realm portal uses
   `Portal.Transition.NONE`. A tinted overlay of our own in `client/` is polish for later.
-- **Travel takes 2 seconds** standing in the portal (the nether portal takes 4), and one tick in creative
-  (`Portal#getPortalTransitionTime`).
+- **Travel starts at once** for every entity, a player in survival too (Matěj's playtest of W2b, 2026-10-20, RLM-335:
+  "entities and items are teleported instantly, but I still have to wait in the portal"; the nether portal takes 4
+  seconds): `Portal#getPortalTransitionTime` answers 0, as vanilla's nether portal does for a creative player
+  (`players_nether_portal_creative_delay`).
 
 ## Multiplayer
 
@@ -550,7 +569,7 @@ dimension: minecraft:overworld
 name: {en_us: Overworld}
 # W2b adds the portal's fields:
 colour: "#5DBB63"                    # return portals
-arrival: {y: [64, 310], floor: minecraft:stone_bricks, pocket_radius: 3}   # portals built on the way back
+arrival: {y: [63, 310], floor: minecraft:stone_bricks, pocket_radius: 3}   # portals built on the way back
 ```
 
 - **The name in messages:** a realm's name takes no article (Matěj, RLM-188), so it reads the same alone (the
@@ -634,8 +653,10 @@ dimension rules and access:
   - the build radius of each side, ⌊128 ÷ scale⌋ − 1 in a realm: from every Overworld x in one 16-block cell,
     a realm portal at either end of the radius aims back within 128 blocks;
   - the spot search for a built portal (a ceiling, a void, water, a full column, the `y` range), including a way
-    back from a realm portal at y 30 to Overworld columns of deep ocean, which builds on a platform at y 64, not
-    under the seabed.
+    back from a realm portal at y 30 to Overworld columns of deep ocean, which builds on a platform at y 63, not
+    under the seabed, and Overworld ground at y 63, which takes a frame set into it (RLM-341);
+  - the arrival in front of a frame a player stood on top of the floor, on that floor one step below the opening
+    (RLM-341).
 - **pytest:** the schema, the references, the generated advancement (criterion `minecraft:impossible`), the access
   requirement check, the dimension type checks (scale, bed rule).
 - **GameTests** (W2a's and W2b's "Done when"):
@@ -660,6 +681,10 @@ dimension rules and access:
     leave its portal blocks in place;
   - the sealstone refuses in the instance dimension;
   - an item and a mob step into a portal and travel, and a pig carrying a player without the unlock does not;
+  - a player in survival travels on the first tick in the portal, and standing in the exit portal right after does
+    not take them back, until they stepped out for half a second and in again (RLM-335);
+  - the sealstone glows while a player holding a signet stands within 5 blocks, rising over 15 ticks, fades once
+    they step away, stays dark with empty hands, and a return portal stays dark for a realm's signet (RLM-406);
     a mob moved into or out of a realm with
     `Entity#teleport(TeleportTransition)`, and one moved with `/tp` (`Entity#teleportTo`), stays where it is
     (RLM-133), while a mob teleported within the realm moves;
@@ -739,6 +764,14 @@ His decisions of 2026-10-23 and 2026-10-24 on signets (RLM-395, from RLM-351's s
     Stone Signet Shard (M2); in M1 the last quest of chapter 1 still gives the Signet of the Undervault.
 17. **A quest shop sells a lost signet,** up to 3 times, after the boss quest: the Signet of the Undervault for 50
     copper coins, locked until the Illusioner quest is done. It replaces the repeatable quest of the first version.
+
+His later requests added:
+
+18. **Players travel at once** (his playtest of W2b, 2026-10-20, RLM-335), as every other entity does, instead of the
+    first version's 2 seconds ([Look and sound](#look-and-sound)).
+19. **The sealstone glows near a signet** (2026-10-24, RLM-406, on chapter 1's text): it lights up smoothly while a
+    player holding a signet is near ([The sealstone](#the-sealstone)). Its radius (5 blocks), which signets light it
+    and its light level (15) are proposals for his playtest.
 
 ## Open questions
 

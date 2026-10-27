@@ -62,13 +62,13 @@ class ArrivalDef(StrictModel):
         max_length=2,
         description=(
             "[lowest, highest]: the heights a built frame's bottom row may stand at, which keep arrivals in the "
-            "depth band of the realm's lowest levels; Overworld [64, 310], above sea level."
+            "depth band of the realm's lowest levels; Overworld [63, 310], from the first block above the sea."
         ),
     )
     floor: ResourceId = Field(
         description=(
-            "The block under and in front of a frame carved out where no spot fits, e.g. minecraft:stone_bricks. It "
-            "drops as usual."
+            "The floor a carved frame is set into, reaching in front of it, where no spot fits, e.g. "
+            "minecraft:stone_bricks. It drops as usual."
         )
     )
     pocket_radius: int = Field(

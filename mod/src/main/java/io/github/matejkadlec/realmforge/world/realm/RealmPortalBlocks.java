@@ -59,8 +59,8 @@ public final class RealmPortalBlocks {
         // Frame blocks cannot be pushed, so no contraption moves a lit frame apart.
         BlockKinds.provide(BRICKS_KIND,
                 properties -> new RealmforgeBricksBlock(properties.pushReaction(PushReaction.BLOCK)));
-        BlockKinds.provide(SEALSTONE_KIND,
-                properties -> new SealstoneBlock(properties.pushReaction(PushReaction.BLOCK)));
+        BlockKinds.provide(SEALSTONE_KIND, properties -> new SealstoneBlock(properties.pushReaction(PushReaction.BLOCK)
+                .lightLevel(state -> state.getValue(SealstoneBlock.GLOW))));
         BlockKinds.provide(PORTAL_KIND, properties -> new RealmPortalBlock(properties.noCollision()
                 .lightLevel(state -> PORTAL_LIGHT).pushReaction(PushReaction.BLOCK)));
         BLOCK_ENTITIES.register(modBus);

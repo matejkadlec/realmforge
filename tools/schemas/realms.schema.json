@@ -5,7 +5,7 @@
       "description": "Where a trip may build a portal in the dimension when none is near (realm portal spec, \"Building a portal\").",
       "properties": {
         "floor": {
-          "description": "The block under and in front of a frame carved out where no spot fits, e.g. minecraft:stone_bricks. It drops as usual.",
+          "description": "The floor a carved frame is set into, reaching in front of it, where no spot fits, e.g. minecraft:stone_bricks. It drops as usual.",
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
           "title": "Floor",
           "type": "string"
@@ -19,7 +19,7 @@
           "type": "integer"
         },
         "y": {
-          "description": "[lowest, highest]: the heights a built frame's bottom row may stand at, which keep arrivals in the depth band of the realm's lowest levels; Overworld [64, 310], above sea level.",
+          "description": "[lowest, highest]: the heights a built frame's bottom row may stand at, which keep arrivals in the depth band of the realm's lowest levels; Overworld [63, 310], from the first block above the sea.",
           "items": {
             "type": "integer"
           },

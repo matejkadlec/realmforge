@@ -173,7 +173,7 @@ def test_overworlds_entry_is_no_realm(repo: RepoPaths) -> None:
         "name": "realm.realmforge.overworld.name",
         "colour": "#5DBB63",
         "sound_pitch": 1.0,
-        "arrival": {"y": [64, 310], "floor": "minecraft:stone_bricks", "pocket_radius": 3},
+        "arrival": {"y": [63, 310], "floor": "minecraft:stone_bricks", "pocket_radius": 3},
     }
     assert f"{DATA}/advancement/realm/overworld.json" not in files
     assert (
@@ -231,7 +231,7 @@ def test_a_signet_is_one_of_our_items_that_stacks_to_one(repo: RepoPaths) -> Non
     [
         ("particle: minecraft:ash", "particle: minecraft:dust", "particle: minecraft:dust is not a particle"),
         ("floor: realmforge:vaultstone", "floor: realmforge:vaultstne", "arrival.floor: unknown id"),
-        ("y: [20, 90]", "y: [20, 125]", "arrival.y: a built frame's bottom row stands at y 1 to 122"),
+        ("y: [20, 90]", "y: [20, 125]", "arrival.y: a built frame's bottom row stands at y 0 to 122"),
         ("y: [20, 90]", "y: [90, 20]", "y is [lowest, highest]"),
         ('colour: "#7A8FB0"', "colour: slate", "colour"),
     ],

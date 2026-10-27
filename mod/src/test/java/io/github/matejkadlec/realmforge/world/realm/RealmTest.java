@@ -29,7 +29,7 @@ class RealmTest {
             0.8F, new Realm.Arrival(20, 90, Realmforge.id("vaultstone"), 3));
     private static final Realm OVERWORLD = new Realm(Level.OVERWORLD, "realm.realmforge.overworld.name", "", "", "",
             Optional.empty(), "", Optional.empty(), Optional.empty(), 0xFF5DBB63, Optional.empty(), 1.0F,
-            new Realm.Arrival(64, 310, Identifier.withDefaultNamespace("stone_bricks"), 3));
+            new Realm.Arrival(63, 310, Identifier.withDefaultNamespace("stone_bricks"), 3));
 
     @Test
     void codecRoundTrips() {
