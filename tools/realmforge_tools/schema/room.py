@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import Field, RootModel, StringConstraints
+from pydantic import AfterValidator, Field, RootModel, StringConstraints
 
 from realmforge_tools.schema.common import StrictModel, UniqueResourceIds
 
@@ -30,6 +30,35 @@ GPL_TITLE = "GNU GENERAL PUBLIC LICENSE"
 ROOM_SEGMENT = r"[a-z0-9][a-z0-9_]*"
 
 Tag = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]*$")]
+
+# The most chests or barrels of one kind a chance table may ask a room for (RLM-365).
+MAX_CONTAINERS = 64
+
+
+def _whole(table: dict[int, int]) -> dict[int, int]:
+    if sum(table.values()) != 100:
+        raise ValueError(f"the chances add up to {sum(table.values())} %, not 100 %")
+    return dict(sorted(table.items()))
+
+
+ChanceTable = Annotated[
+    dict[Annotated[int, Field(ge=0, le=MAX_CONTAINERS)], Annotated[int, Field(ge=1, le=100)]],
+    Field(
+        min_length=1,
+        description="The chance in percent of each count (0 to 64), adding up to 100, e.g. {1: 75, 2: 20, 3: 5}.",
+    ),
+    AfterValidator(_whole),
+]
+
+
+class ContainerTables(StrictModel):
+    """How many of a room's chests and barrels a dungeon places (RLM-365): for each kind, the chance of each count.
+    A room's candidates are its template's single chests and its barrels (trapped chests and double chests always
+    stay); the builder keeps that many of them, at most as many as the room holds, and the rest become the block
+    around them. A kind without a table keeps all of its candidates."""
+
+    chests: ChanceTable | None = Field(default=None, description="How many of its single chests stay.")
+    barrels: ChanceTable | None = Field(default=None, description="How many of its barrels stay.")
 
 
 class RoomSource(StrictModel):
@@ -84,6 +113,11 @@ class RoomDef(StrictModel):
         description="The side of the template (as saved, before any turn) whose one connector is the room's way in: "
         "a lock's mechanism side. The planner attaches the room to the room before it only through that connector, "
         "and no loop leads into the room from another side (RLM-362). Unset: any connector.",
+    )
+    containers: ContainerTables | None = Field(
+        default=None,
+        description="How many of its chests and barrels a dungeon places, where the dungeon type's table for its "
+        "role does not fit it (RLM-365). A kind it leaves out follows the dungeon type.",
     )
     source: RoomSource | None = Field(default=None, description="Set for an imported room.")
 

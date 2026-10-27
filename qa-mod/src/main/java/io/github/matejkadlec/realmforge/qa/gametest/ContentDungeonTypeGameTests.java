@@ -128,7 +128,8 @@ public final class ContentDungeonTypeGameTests {
                 room.size().getZ(), room.role().getSerializedName(), room.weight(), connectors,
                 room.maxPerLayout().orElse(0), room.nearStart(),
                 room.explosionBreaks().stream().map(Identifier::toString).toList(), room.entry().orElse(-1),
-                room.spawners(), room.chests(), room.hazard());
+                room.spawners(), room.chests(), room.hazard(), room.containers().spots().size(),
+                room.containers().chests(), room.containers().barrels());
     }
 
     private static String describe(StructureTemplate.JigsawBlockInfo jigsaw) {

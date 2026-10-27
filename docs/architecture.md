@@ -2105,8 +2105,8 @@ loot: realmforge:boss/hollow_warden
 
 A dungeon type (`content/dungeons/<id>.yaml`, the registry `realmforge:dungeon_type`, W4a) names the room pool it is
 built from, the rules of its layout ([15.3](#153-generation-pure-first-then-minecraft)), since W4d its key and how
-long a portal to it stays open ([15.5](#155-instances)), and since RLM-459 its base level
-([14.1](#141-mob-levels)):
+long a portal to it stays open ([15.5](#155-instances)), since RLM-459 its base level
+([14.1](#141-mob-levels)), and since RLM-365 the chance tables that decide how many chests and barrels its rooms keep:
 
 ```yaml
 # content/dungeons/test_dungeon.yaml (exists)
@@ -2126,6 +2126,13 @@ layout:
     block: minecraft:stone_bricks
     weight: 4
 key: realmforge:test_dungeon_key      # the item that opens a dungeon portal to it, one key per type (W4d)
+containers:                           # how many chests and barrels a room keeps, by role (RLM-365); optional
+  treasure:                           #   a role's tables; `default` for every role without its own
+    chests: {2: 25, 3: 40, 4: 25, 5: 10}   # the chance in percent of each count, adding up to 100
+    barrels: {0: 40, 1: 40, 2: 20}
+  default:
+    chests: {1: 60, 2: 30, 3: 10}
+    barrels: {0: 20, 1: 40, 2: 30, 3: 10}
 open_minutes: 60                      # how long that portal stays open (W4d)
 level: 10                             # its base level, its boss's in the campaign; runs raise it to their party
 ```
@@ -2136,7 +2143,13 @@ sets them, the `spawners` and `chests` its template holds where it has any, and 
 reaches from its doorways, TNT or a dispenser (RLM-364; lava sealed over the egg room's glass ceiling hurts nobody,
 RLM-361), in room id order
 (`generate/dungeons.py`), so the game plans a layout without loading a template, and JUnit
-fuzzes the planner on the same files. A type with `walls` gets its wall last among the rooms: a template of three by
+fuzzes the planner on the same files. A room with chests or barrels carries `containers` (RLM-365): its candidates
+(`rooms/containers.py`: each single chest and barrel with the block it leaves behind, the full block most of its
+neighbours are where it sits in a floor or a wall or carries another container, else air; trapped and double chests
+always stay) and, per kind, the chance table that decides how many stay, as weights by count. The table is the
+sidecar's own for that kind, else the type's for the room's role, else the type's `default`; a kind without one lists
+no candidates and keeps them all, and the type's own `containers` is left out of its entry. A type with `walls` gets
+its wall last among the rooms: a template of three by
 three blocks of the wall's block, one deep, `rf gen` writes as `realmforge:dungeon_walls/<id>`, with one connector at
 the middle of its bottom row whose jigsaw turns into the same block, and the role `wall`, which only closes leftover
 doorways ([15.3](#153-generation-pure-first-then-minecraft)). Since RLM-280 a room also carries its set-piece spots ([15.4](#154-rooms)) as `set_piece_spots`, a list
@@ -2339,8 +2352,9 @@ Rooms are generated or imported; nobody has to build one by hand
 ([ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)).
 
 - **Format:** structure NBT in `content/rooms/` with a small YAML sidecar (tags, pools, weight, the room's rules for
-  dungeons, `max_per_layout`, `near_start`, `explosion_breaks` and `entry`
-  ([15.3](#153-generation-pure-first-then-minecraft), [15.5](#155-instances)), and the source of an imported room). A room joins the room pools its sidecar lists, and
+  dungeons, `max_per_layout`, `near_start`, `explosion_breaks`, `entry` and `containers`
+  ([15.2](#152-dungeon-types), [15.3](#153-generation-pure-first-then-minecraft), [15.5](#155-instances)), and the
+  source of an imported room). A room joins the room pools its sidecar lists, and
   a dungeon type is built from one pool
   ([15.2](#152-dungeon-types)); its role tag says which slots it can take. Connectors are vanilla jigsaw blocks,
   so the same rooms work in world structures later. Rooms are the second exception to YAML-only content, after
@@ -2561,7 +2575,13 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   queued behind the task (`InstanceManager#preloadAfterReload`).
 - **Building over ticks:** placing a room and clearing a box are cut into units of one chunk column each (`PlotWork`;
   placing uses `StructurePlaceSettings#setBoundingBox`, known shapes and update flag 2 like structure blocks, and
-  `JigsawReplacementProcessor`, so every connector becomes its final state as in vanilla's jigsaw structures). A room's
+  `JigsawReplacementProcessor`, so every connector becomes its final state as in vanilla's jigsaw structures). **A
+  room's containers** follow its dungeon's chance tables (RLM-365, [15.2](#152-dungeon-types),
+  [design](design/container-loot.md#how-many-containers-a-room-keeps)): `DungeonPlan#toInstanceLayout` draws, room by
+  room from the layout's seed (salted apart from the planner's draws), a count per kind from the room's table, at most
+  as many as it holds, keeps that many candidates at random (`plan/RoomContainers#draw`) and gives the plot's
+  `RoomPlacement` a swap for each other one: the block it leaves behind, which `ContainerSwapProcessor` places instead
+  of the container and its data. The swaps are saved with the plot's layout, so a restart builds the same room. A room's
   entities (item frames with their items, paintings) are placed with it: a unit places those whose block lies in its
   column (`StructureTemplate#placeInWorld` with entities on adds only what is inside the box it places), so each comes
   once, with the block it hangs at moved to where the room puts it (`AttachedEntityProcessor`, through NeoForge's

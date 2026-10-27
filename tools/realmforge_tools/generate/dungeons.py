@@ -16,6 +16,12 @@ written as the structure ``realmforge:dungeon_walls/<id>``, with one connector a
 jigsaw turns into the same block, and lists it last among the rooms with the role ``wall``: the planner may close a
 doorway with it instead of a dead end.
 
+A room with chests or barrels gets ``containers`` (RLM-365): its candidates (``rooms/containers.py``: each single
+chest and barrel, with the block it leaves behind) and, for each kind, the chance table that decides how many stay,
+as weights by count. The table is the sidecar's own for that kind, else the dungeon type's for the room's role, else
+the type's ``default``; a kind without one keeps its containers and lists none. The type's own ``containers`` is
+resolved into its rooms and left out of its entry.
+
 Each room also gets its set-piece spots (``rooms/set_pieces.py``, ADR 0050): the patterns of spots the pieces that
 reach its role fit, each with the pieces that may fill it. The entry lists those pieces (template, processor list,
 weight, tags, whether they may be mirrored) and the patterns a room of each role fills by default
@@ -36,13 +42,12 @@ from realmforge_tools.generate.javagen import header, java_file_path, string_lit
 from realmforge_tools.generate.set_pieces import processor_list_id, template_id
 from realmforge_tools.project import DATA_VERSION, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.rooms.connectors import Connector, connectors
-from realmforge_tools.rooms.dress import reach
+from realmforge_tools.rooms.containers import KINDS, Candidate, Kind, candidates
+from realmforge_tools.rooms.dress import reachable_hazards
 from realmforge_tools.rooms.generator import DOOR, EMPTY_POOL, GENERATED_DIR, paths
 from realmforge_tools.rooms.set_pieces import DENSITY, Fit, Pattern, RoomView, match
 from realmforge_tools.rooms.structure import (
-    HAZARDS,
     JIGSAW,
-    LAVA,
     BlockState,
     Structure,
     StructureBlock,
@@ -52,6 +57,7 @@ from realmforge_tools.rooms.structure import (
 )
 from realmforge_tools.schema.common import LocalizedText
 from realmforge_tools.schema.dungeon import (
+    DEFAULT_CONTAINERS,
     ROOM_ROLES,
     WALL_HEIGHT,
     WALL_ROLE,
@@ -113,11 +119,15 @@ def dungeon_data(dungeon: DungeonTypeDef, content: Content) -> dict[str, Any]:
     rooms, used = [], set()
     for room in pool_rooms(dungeon, content):
         entry = _room(room)
+        containers = container_data(room, dungeon)
+        if containers is not None:
+            entry["containers"] = containers
         spots = room_spots(room, content.set_pieces, *generated.get(room.id, (None, frozenset())))
         if spots:
             entry["set_piece_spots"] = spots
             used |= {piece for pattern in spots for piece in pattern["pieces"]}
         rooms.append(entry)
+    data.pop("containers", None)
     walls = dungeon.layout.walls
     if walls is not None:
         del data["layout"]["walls"]
@@ -127,6 +137,60 @@ def dungeon_data(dungeon: DungeonTypeDef, content: Content) -> dict[str, Any]:
     pieces = {f"{MOD_ID}:{piece.id}": piece for piece in content.set_pieces}
     if used:
         data["set_pieces"] = {piece: _piece(pieces[piece]) for piece in sorted(used)}
+    return data
+
+
+def container_table(room: RoomEntry, dungeon: DungeonTypeDef, kind: Kind) -> dict[int, int] | None:
+    """The chance table of the room's ``kind`` of containers: its sidecar's, else the dungeon type's for its role, else
+    the type's default; None keeps them all (RLM-365)."""
+    field = f"{kind}s"
+    own = room.model.containers
+    if own is not None and getattr(own, field) is not None:
+        return getattr(own, field)
+    for key in (room_role(room.model.tags), DEFAULT_CONTAINERS):
+        tables = dungeon.containers.get(key) if key is not None else None
+        if tables is not None and getattr(tables, field) is not None:
+            return getattr(tables, field)
+    return None
+
+
+def container_data(room: RoomEntry, dungeon: DungeonTypeDef) -> dict[str, Any] | None:
+    """The room's ``containers`` in the entry: the candidates of each kind a table decides, and the tables as weights
+    by count (index 0: none stays); None when no table decides any of them."""
+    found: list[Candidate] = room.derived("container_candidates", candidates)
+    tables = {}
+    for kind in KINDS:
+        table = container_table(room, dungeon, kind)
+        if table is not None and any(candidate.kind == kind for candidate in found):
+            tables[kind] = table
+    if not tables:
+        return None
+    data: dict[str, Any] = {
+        "spots": [
+            {
+                "pos": list(candidate.pos),
+                "kind": candidate.kind,
+                "instead": block_state_data(candidate.instead),
+            }
+            for candidate in found
+            if candidate.kind in tables
+        ]
+    }
+    for kind, table in tables.items():
+        data[f"{kind}s"] = weights(table)
+    return data
+
+
+def weights(table: dict[int, int]) -> list[int]:
+    """A chance table as the game reads it: the chance of each count, by count from 0."""
+    return [table.get(count, 0) for count in range(max(table) + 1)]
+
+
+def block_state_data(state: BlockState) -> dict[str, Any]:
+    """A block state as vanilla's BlockState codec reads it."""
+    data: dict[str, Any] = {"Name": state.name}
+    if state.properties:
+        data["Properties"] = dict(state.properties)
     return data
 
 
@@ -318,21 +382,6 @@ def hazard(room: RoomEntry) -> bool:
     return room.derived("reachable_hazards", reachable_hazards) > 0
 
 
-def reachable_hazards(structure: Structure) -> int:
-    """The template's TNT and dispensers, and its lava that touches a cell a player reaches from the doorways
-    (``rooms/dress.py``'s ``reach``): lava sealed away, over the egg room's glass ceiling (RLM-361), hurts nobody."""
-    reached = reach(structure)
-    count = 0
-    for block in structure.blocks:
-        if block.state.name not in HAZARDS:
-            continue
-        x, y, z = block.pos
-        sides = ((x + 1, y, z), (x - 1, y, z), (x, y + 1, z), (x, y - 1, z), (x, y, z + 1), (x, y, z - 1))
-        if block.state.name != LAVA or any(side in reached for side in sides):
-            count += 1
-    return count
-
-
 def _connector(connector: Connector) -> dict[str, Any]:
     return {
         "pos": list(connector.pos),
@@ -350,7 +399,7 @@ def _expectations(content: Content) -> bytes:
         dungeon = entry.model
         layout = dungeon.layout
         name_key = entry_data(dungeon, REGISTRY)[0]["name"]
-        expected = [_room_expectation(room) for room in pool_rooms(dungeon, content)]
+        expected = [_room_expectation(room, dungeon) for room in pool_rooms(dungeon, content)]
         if layout.walls is not None:
             expected.append(_wall_expectation(dungeon, layout.walls))
         rooms = ",\n".join(expected)
@@ -390,11 +439,13 @@ def _expectations(content: Content) -> bytes:
         "    /**\n"
         "     * A room of the pool, or the type's wall: its structure id, size, role, weight, connectors, how often a layout\n"
         "     * may hold it (0: no limit), whether it stays at the start, the blocks an explosion may break in it, and the\n"
-        "     * connector it is entered through (-1: any), its spawners and chests, and whether it is a hazard.\n"
+        "     * connector it is entered through (-1: any), its spawners and chests, whether it is a hazard, the chests and\n"
+        "     * barrels a chance table decides and the tables, as weights by count (empty: none; RLM-365).\n"
         "     */\n"
         "    public record RoomExpectation(String template, int sizeX, int sizeY, int sizeZ, String role, int weight,\n"
         "            List<ConnectorExpectation> connectors, int maxPerLayout, boolean nearStart,\n"
-        "            List<String> explosionBreaks, int entry, int spawners, int chests, boolean hazard) {\n"
+        "            List<String> explosionBreaks, int entry, int spawners, int chests, boolean hazard,\n"
+        "            int containerSpots, List<Integer> chestTable, List<Integer> barrelTable) {\n"
         "    }\n"
         "\n"
         "    /**\n"
@@ -425,18 +476,22 @@ def _connector_expectations(found: list[Connector]) -> str:
     return "List.of(\n" + ",\n".join(f"                                    {c}" for c in rows) + ")"
 
 
-def _room_expectation(room: RoomEntry) -> str:
+def _room_expectation(room: RoomEntry, dungeon: DungeonTypeDef) -> str:
     x, y, z = room.size
     connector_list = _connector_expectations(room.derived("connectors", connectors))
     breaks = ", ".join(string_literal(block) for block in room.model.explosion_breaks)
     entry = entry_index(room)
+    containers = container_data(room, dungeon) or {}
+    tables = [", ".join(map(str, containers.get(f"{kind}s", []))) for kind in KINDS]
     return (
         f"                            new RoomExpectation({string_literal(f'{MOD_ID}:{ROOMS_DIR}/{room.id}')}, "
         f"{x}, {y}, {z}, {string_literal(room_role(room.model.tags) or '')}, {room.model.weight},\n"
         f"                                    {connector_list},\n"
         f"                                    {room.model.max_per_layout or 0}, "
         f"{'true' if room.model.near_start else 'false'}, List.of({breaks}), {-1 if entry is None else entry}, "
-        f"{spawners(room)}, {chests(room)}, {'true' if hazard(room) else 'false'})"
+        f"{spawners(room)}, {chests(room)}, {'true' if hazard(room) else 'false'},\n"
+        f"                                    {len(containers.get('spots', []))}, List.of({tables[0]}), "
+        f"List.of({tables[1]}))"
     )
 
 
@@ -446,5 +501,5 @@ def _wall_expectation(dungeon: DungeonTypeDef, walls: WallsDef) -> str:
         f"                            new RoomExpectation({string_literal(wall_template(dungeon))}, "
         f"{WALL_WIDTH}, {WALL_HEIGHT}, 1, {string_literal(WALL_ROLE)}, {walls.weight},\n"
         f"                                    {connector_list},\n"
-        "                                    0, false, List.of(), -1, 0, 0, false)"
+        "                                    0, false, List.of(), -1, 0, 0, false, 0, List.of(), List.of())"
     )

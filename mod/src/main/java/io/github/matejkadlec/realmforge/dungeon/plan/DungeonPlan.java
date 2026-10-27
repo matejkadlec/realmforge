@@ -5,6 +5,7 @@ import io.github.matejkadlec.realmforge.dungeon.instance.RoomPlacement;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
 /**
@@ -15,6 +16,9 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
  * @param attempt which of the planner's attempts found it, from 1
  */
 public record DungeonPlan(long seed, int attempt, List<PlannedRoom> rooms, List<RoomLink> links) {
+    /** Keeps the containers' draws apart from the planner's, which starts from the same seed. */
+    private static final long CONTAINER_SALT = 0x2B7E151628AED2A6L;
+
     public DungeonPlan {
         rooms = List.copyOf(rooms);
         links = List.copyOf(links);
@@ -35,13 +39,16 @@ public record DungeonPlan(long seed, int attempt, List<PlannedRoom> rooms, List<
 
     /**
      * What the builder places: every room's template, offset and rotation with the blocks an explosion may break
-     * there, and the entrance's connector to the next room on the main path, which an arriving player looks at. Where
-     * players arrive comes from the entrance room (its entrance marker, or a spot the builder finds there).
+     * there and the containers its chance tables drop (RLM-365, drawn in room order from the layout's seed, so the same
+     * seed always gives the same rooms), and the entrance's connector to the next room on the main path, which an
+     * arriving player looks at. Where players arrive comes from the entrance room (its entrance marker, or a spot the
+     * builder finds there).
      */
     public InstanceLayout toInstanceLayout() {
+        RandomSource containers = RandomSource.create(seed ^ CONTAINER_SALT);
         List<RoomPlacement> placements = rooms.stream()
                 .map(room -> new RoomPlacement(room.room().template(), room.offset(), room.rotation(),
-                        room.room().explosionBreaks()))
+                        room.room().explosionBreaks(), room.room().containers().draw(containers)))
                 .toList();
         Optional<BlockPos> wayOn = links.stream()
                 .filter(link -> link.room() == 0 && link.otherRoom() == 1 || link.room() == 1 && link.otherRoom() == 0)

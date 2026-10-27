@@ -7,6 +7,9 @@ tags:
   - "straight"
 weight: 1
 max_per_layout: 1
+containers:
+  chests: {1: 100}
+  barrels: {1: 100}
 source:
   file: "jail.nbt"
   format: nbt

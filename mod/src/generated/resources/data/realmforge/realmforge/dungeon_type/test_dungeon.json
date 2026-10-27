@@ -151,6 +151,27 @@
         }
       ],
       "max_per_layout": 1,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              2,
+              1,
+              2
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "barrels": [
+          20,
+          40,
+          30,
+          10
+        ]
+      },
       "set_piece_spots": [
         {
           "pieces": [
@@ -360,7 +381,28 @@
       ],
       "entry": 0,
       "chests": 1,
-      "hazard": true
+      "hazard": true,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              11,
+              2,
+              9
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:stone_bricks"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          60,
+          30,
+          10
+        ]
+      }
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/drowned_junction",
@@ -411,7 +453,28 @@
       ],
       "max_per_layout": 1,
       "spawners": 1,
-      "chests": 1
+      "chests": 1,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              1,
+              1,
+              9
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          60,
+          30,
+          10
+        ]
+      }
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/husk_temple",
@@ -451,6 +514,27 @@
       "max_per_layout": 3,
       "spawners": 1,
       "chests": 1,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              1,
+              1,
+              2
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          60,
+          30,
+          10
+        ]
+      },
       "set_piece_spots": [
         {
           "pieces": [
@@ -677,7 +761,28 @@
       ],
       "max_per_layout": 1,
       "entry": 0,
-      "chests": 1
+      "chests": 1,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              11,
+              1,
+              8
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          60,
+          30,
+          10
+        ]
+      }
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/lava_parkour",
@@ -716,7 +821,28 @@
       ],
       "max_per_layout": 1,
       "chests": 1,
-      "hazard": true
+      "hazard": true,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              11,
+              2,
+              11
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          60,
+          30,
+          10
+        ]
+      }
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/lava_trap",
@@ -794,6 +920,77 @@
       "max_per_layout": 3,
       "spawners": 2,
       "chests": 2,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              2,
+              1,
+              3
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              2,
+              1,
+              11
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              5,
+              1,
+              11
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              6,
+              1,
+              11
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              7,
+              1,
+              11
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          60,
+          30,
+          10
+        ],
+        "barrels": [
+          20,
+          40,
+          30,
+          10
+        ]
+      },
       "set_piece_spots": [
         {
           "pieces": [
@@ -1189,6 +1386,49 @@
       ],
       "max_per_layout": 1,
       "entry": 0,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              11,
+              2,
+              5
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              11,
+              2,
+              6
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              11,
+              2,
+              7
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "barrels": [
+          20,
+          40,
+          30,
+          10
+        ]
+      },
       "set_piece_spots": [
         {
           "pieces": [
@@ -1389,7 +1629,39 @@
         }
       ],
       "max_per_layout": 3,
-      "spawners": 1
+      "spawners": 1,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              11,
+              1,
+              3
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              11,
+              1,
+              9
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "barrels": [
+          20,
+          40,
+          30,
+          10
+        ]
+      }
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/stairs",
@@ -1465,7 +1737,56 @@
       ],
       "max_per_layout": 3,
       "spawners": 1,
-      "chests": 1
+      "chests": 1,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              7,
+              1,
+              3
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:stone_bricks"
+            }
+          },
+          {
+            "pos": [
+              11,
+              1,
+              10
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:stone_bricks"
+            }
+          },
+          {
+            "pos": [
+              11,
+              1,
+              11
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          60,
+          30,
+          10
+        ],
+        "barrels": [
+          20,
+          40,
+          30,
+          10
+        ]
+      }
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/tnt_plate_trap",
@@ -1505,6 +1826,55 @@
       "max_per_layout": 1,
       "chests": 1,
       "hazard": true,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              6,
+              1,
+              6
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:sand"
+            }
+          },
+          {
+            "pos": [
+              1,
+              2,
+              1
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              1,
+              2,
+              2
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          60,
+          30,
+          10
+        ],
+        "barrels": [
+          20,
+          40,
+          30,
+          10
+        ]
+      },
       "set_piece_spots": [
         {
           "pieces": [
@@ -1568,7 +1938,39 @@
           "joint": "rollable"
         }
       ],
-      "max_per_layout": 1
+      "max_per_layout": 1,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              10,
+              1,
+              1
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              10,
+              1,
+              11
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "barrels": [
+          20,
+          40,
+          30,
+          10
+        ]
+      }
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/stairway/fall_01",
@@ -1667,7 +2069,41 @@
       ],
       "max_per_layout": 1,
       "spawners": 1,
-      "chests": 2
+      "chests": 2,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              10,
+              2,
+              3
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              10,
+              2,
+              10
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          0,
+          25,
+          40,
+          25,
+          10
+        ]
+      }
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/treasure/mooshroom_king",
@@ -1694,7 +2130,86 @@
       ],
       "max_per_layout": 1,
       "near_start": true,
-      "chests": 6
+      "chests": 6,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              4,
+              1,
+              1
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              4,
+              1,
+              11
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              8,
+              1,
+              1
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              8,
+              1,
+              11
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              11,
+              1,
+              5
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              11,
+              1,
+              7
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          100
+        ]
+      }
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/treasure/parrot",
@@ -1720,7 +2235,145 @@
         }
       ],
       "max_per_layout": 1,
-      "chests": 5
+      "chests": 5,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              1,
+              2,
+              7
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:stone_bricks"
+            }
+          },
+          {
+            "pos": [
+              2,
+              2,
+              7
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              5,
+              2,
+              7
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              6,
+              2,
+              6
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              6,
+              2,
+              7
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:stone_bricks"
+            }
+          },
+          {
+            "pos": [
+              7,
+              2,
+              5
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              7,
+              2,
+              6
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:stone_bricks"
+            }
+          },
+          {
+            "pos": [
+              7,
+              2,
+              7
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:stone_bricks"
+            }
+          },
+          {
+            "pos": [
+              6,
+              3,
+              7
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              7,
+              3,
+              6
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              7,
+              3,
+              7
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          0,
+          25,
+          40,
+          25,
+          10
+        ],
+        "barrels": [
+          40,
+          40,
+          20
+        ]
+      }
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/treasure/tiny_cap",
@@ -1746,7 +2399,50 @@
         }
       ],
       "max_per_layout": 1,
-      "chests": 3
+      "chests": 3,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              1,
+              1,
+              2
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:stone_bricks"
+            }
+          },
+          {
+            "pos": [
+              1,
+              2,
+              1
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              1,
+              2,
+              3
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          75,
+          20,
+          5
+        ]
+      }
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/pillager_dungeon/rooms/bedroom",
@@ -1785,6 +2481,49 @@
       ],
       "max_per_layout": 1,
       "chests": 3,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              2,
+              1,
+              7
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              9,
+              1,
+              1
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:dark_oak_planks"
+            }
+          },
+          {
+            "pos": [
+              9,
+              1,
+              7
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:dark_oak_planks"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          60,
+          30,
+          10
+        ]
+      },
       "set_piece_spots": [
         {
           "pieces": [
@@ -1997,6 +2736,88 @@
       ],
       "max_per_layout": 1,
       "chests": 4,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              1,
+              1,
+              1
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              11,
+              1,
+              10
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              11,
+              1,
+              11
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              3,
+              2,
+              9
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:light_gray_wool"
+            }
+          },
+          {
+            "pos": [
+              4,
+              2,
+              9
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              5,
+              2,
+              9
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:light_gray_wool"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          60,
+          30,
+          10
+        ],
+        "barrels": [
+          20,
+          40,
+          30,
+          10
+        ]
+      },
       "set_piece_spots": [
         {
           "pieces": [
@@ -2128,6 +2949,88 @@
       ],
       "max_per_layout": 1,
       "chests": 3,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              1,
+              1,
+              4
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              9,
+              1,
+              2
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              10,
+              1,
+              2
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              11,
+              1,
+              2
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              15,
+              2,
+              1
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              15,
+              6,
+              1
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          60,
+          30,
+          10
+        ],
+        "barrels": [
+          20,
+          40,
+          30,
+          10
+        ]
+      },
       "set_piece_spots": [
         {
           "pieces": [
@@ -2304,6 +3207,38 @@
         }
       ],
       "max_per_layout": 1,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              2,
+              2,
+              11
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              11,
+              2,
+              2
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "barrels": [
+          20,
+          40,
+          30,
+          10
+        ]
+      },
       "set_piece_spots": [
         {
           "pieces": [
@@ -2394,7 +3329,39 @@
       ],
       "max_per_layout": 1,
       "chests": 2,
-      "hazard": true
+      "hazard": true,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              1,
+              2,
+              1
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              10,
+              2,
+              1
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          60,
+          30,
+          10
+        ]
+      }
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/pillager_dungeon/rooms/jail",
@@ -2433,6 +3400,40 @@
       ],
       "max_per_layout": 1,
       "chests": 1,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              10,
+              1,
+              11
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              11,
+              1,
+              11
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          100
+        ],
+        "barrels": [
+          0,
+          100
+        ]
+      },
       "set_piece_spots": [
         {
           "pieces": [
@@ -2655,6 +3656,60 @@
       ],
       "max_per_layout": 1,
       "chests": 4,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              5,
+              1,
+              1
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              5,
+              1,
+              11
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              7,
+              1,
+              2
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:air"
+            }
+          },
+          {
+            "pos": [
+              11,
+              1,
+              9
+            ],
+            "kind": "chest",
+            "instead": {
+              "Name": "minecraft:cobblestone"
+            }
+          }
+        ],
+        "chests": [
+          0,
+          60,
+          30,
+          10
+        ]
+      },
       "set_piece_spots": [
         {
           "pieces": [
@@ -2760,6 +3815,181 @@
         }
       ],
       "max_per_layout": 1,
+      "containers": {
+        "spots": [
+          {
+            "pos": [
+              3,
+              1,
+              1
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:oak_planks"
+            }
+          },
+          {
+            "pos": [
+              6,
+              1,
+              2
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:oak_planks"
+            }
+          },
+          {
+            "pos": [
+              9,
+              1,
+              11
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:oak_planks"
+            }
+          },
+          {
+            "pos": [
+              1,
+              2,
+              2
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:oak_planks"
+            }
+          },
+          {
+            "pos": [
+              5,
+              2,
+              1
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:oak_planks"
+            }
+          },
+          {
+            "pos": [
+              6,
+              2,
+              4
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:oak_planks"
+            }
+          },
+          {
+            "pos": [
+              7,
+              2,
+              11
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:oak_planks"
+            }
+          },
+          {
+            "pos": [
+              3,
+              3,
+              1
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:oak_planks"
+            }
+          },
+          {
+            "pos": [
+              6,
+              3,
+              2
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:oak_planks"
+            }
+          },
+          {
+            "pos": [
+              9,
+              3,
+              11
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:oak_planks"
+            }
+          },
+          {
+            "pos": [
+              1,
+              4,
+              2
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:oak_planks"
+            }
+          },
+          {
+            "pos": [
+              5,
+              4,
+              1
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:oak_planks"
+            }
+          },
+          {
+            "pos": [
+              5,
+              4,
+              11
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:oak_planks"
+            }
+          },
+          {
+            "pos": [
+              6,
+              4,
+              4
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:oak_planks"
+            }
+          },
+          {
+            "pos": [
+              7,
+              4,
+              11
+            ],
+            "kind": "barrel",
+            "instead": {
+              "Name": "minecraft:oak_planks"
+            }
+          }
+        ],
+        "barrels": [
+          20,
+          40,
+          30,
+          10
+        ]
+      },
       "set_piece_spots": [
         {
           "pieces": [

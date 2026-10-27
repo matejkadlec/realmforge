@@ -8,12 +8,12 @@ import json
 import pytest
 
 from realmforge_tools.generate import generate_all
-from realmforge_tools.generate.dungeons import reachable_hazards
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import DATA_VERSION, REPO_ROOT, RepoPaths
 from realmforge_tools.rooms.check import markers
 from realmforge_tools.rooms.connectors import Connector, connectors, could_attach, doorway_gap
-from realmforge_tools.rooms.dress import reach
+from realmforge_tools.rooms.containers import candidates
+from realmforge_tools.rooms.dress import reach, reachable_hazards
 from realmforge_tools.rooms.structure import (
     BlockState,
     Structure,
@@ -189,7 +189,7 @@ def test_a_rooms_entry_side_reaches_the_game(repo: RepoPaths) -> None:
     assert rooms["realmforge:rooms/crypt/hall"]["entry"] == 1, "north is connector 0, south connector 1"
     assert "entry" not in rooms["realmforge:rooms/crypt/crossing"]
     java = files[EXPECTATIONS].decode()
-    assert "0, false, List.of(), 1, 0, 0, false)" in java, "the hall's expectation names its entry"
+    assert "0, false, List.of(), 1, 0, 0, false,\n" in java, "the hall's expectation names its entry"
 
     hall.write_text(hall.read_text(encoding="utf-8").replace("entry: south", "entry: east"), encoding="utf-8")
     entrance = repo.content / "rooms" / "crypt" / "entrance.yaml"
@@ -334,7 +334,98 @@ def test_a_pacing_reaches_the_game_with_the_rooms_spawners_and_chests(repo: Repo
     assert (guard["spawners"], guard["chests"]) == (2, 3)
     java = files[EXPECTATIONS].decode()
     assert '"boss", 1, 2, 2, 4, 6,\n' in java
-    assert "List.of(), -1, 2, 3, false)" in java, "the guard's expectation carries its spawners and chests"
+    assert "List.of(), -1, 2, 3, false,\n" in java, "the guard's expectation carries its spawners and chests"
+
+
+def test_containers_leave_the_block_around_them() -> None:
+    # RLM-365: a candidate is a single chest or a barrel; a dropped one becomes the full block most of its neighbours
+    # are where it sits in a floor or a wall or carries another container, and air where it stands in the room.
+    stone, planks = BlockState("minecraft:stone_bricks"), BlockState("minecraft:oak_planks")
+    blocks = [StructureBlock((x, 0, z), stone) for x in range(7) for z in range(7)]
+    blocks += [
+        StructureBlock((1, 1, 1), BlockState("minecraft:chest", (("type", "single"),))),  # on the floor
+        StructureBlock((3, 0, 3), BlockState("minecraft:barrel")),  # set into the floor
+        StructureBlock((5, 1, 5), BlockState("minecraft:barrel")),  # carries a chest
+        StructureBlock((5, 2, 5), BlockState("minecraft:chest")),
+        StructureBlock((1, 1, 5), BlockState("minecraft:trapped_chest")),  # a trap's: stays
+        StructureBlock(
+            (3, 1, 5), BlockState("minecraft:chest", (("type", "left"),))
+        ),  # a double chest: stays
+        StructureBlock((4, 1, 5), BlockState("minecraft:chest", (("type", "right"),))),
+        StructureBlock((6, 1, 5), planks),
+        StructureBlock((5, 1, 6), planks),
+    ]
+    found = {
+        candidate.pos: candidate
+        for candidate in candidates(Structure((7, 3, 7), DATA_VERSION, tuple(blocks)))
+    }
+    assert sorted(found) == [(1, 1, 1), (3, 0, 3), (5, 1, 5), (5, 2, 5)]
+    assert found[(1, 1, 1)].kind == "chest" and found[(1, 1, 1)].instead == BlockState("minecraft:air")
+    assert found[(3, 0, 3)].kind == "barrel" and found[(3, 0, 3)].instead == stone
+    assert found[(5, 1, 5)].instead == planks, "a container that carries another leaves its neighbours' block"
+    assert found[(5, 2, 5)].instead == BlockState("minecraft:air")
+
+
+def test_chance_tables_reach_the_game_resolved_per_room(repo: RepoPaths) -> None:
+    # RLM-365: a room's table is its sidecar's for a kind, else the dungeon type's for its role, else the type's
+    # default; the entry lists the candidates of each kind a table decides, with the tables as weights by count.
+    crypt(repo)
+    add_fight(repo, "crypt/guard", spawners=1, chests=3)
+    add_fight(repo, "crypt/vault", spawners=0, chests=2)
+    sidecar = repo.content / "rooms" / "crypt" / "vault.yaml"
+    sidecar.write_text(sidecar.read_text() + "containers:\n  chests: {1: 50, 2: 50}\n", encoding="utf-8")
+    tables = (
+        "containers:\n"
+        "  combat:\n    chests: {0: 20, 1: 80}\n"
+        "  default:\n    chests: {1: 100}\n    barrels: {0: 50, 1: 50}\n"
+    )
+    (repo.content / "dungeons" / "crypt.yaml").write_text(dungeon() + tables, encoding="utf-8")
+    files = generate(repo)
+    data = json.loads(files[f"{DATA}/crypt.json"])
+    assert "containers" not in data, "the type's tables are resolved into its rooms"
+    rooms = {room["template"].rsplit("/", 1)[1]: room for room in data["rooms"]}
+    guard, vault = rooms["guard"]["containers"], rooms["vault"]["containers"]
+    assert guard["chests"] == [20, 80] and "barrels" not in guard
+    assert [spot["kind"] for spot in guard["spots"]] == ["chest"] * 3
+    assert guard["spots"][0]["instead"] == {"Name": "minecraft:air"}
+    assert vault["chests"] == [0, 50, 50], "the sidecar's own table"
+    assert "containers" not in rooms["hall"], "a room without containers lists none"
+    java = files[EXPECTATIONS].decode()
+    assert (
+        "List.of(), -1, 1, 3, false,\n                                    3, List.of(20, 80), List.of())"
+        in java
+    )
+
+
+@pytest.mark.parametrize(
+    ("yaml", "location", "message"),
+    [
+        (
+            "containers:\n  default:\n    chests: {1: 60, 2: 30}\n",
+            "containers.default.chests",
+            "add up to 90 %",
+        ),
+        ("containers:\n  lobby:\n    chests: {1: 100}\n", "containers.lobby", "Input should be"),
+    ],
+)
+def test_a_dungeon_types_chance_tables_are_checked(
+    repo: RepoPaths, yaml: str, location: str, message: str
+) -> None:
+    crypt(repo)
+    (repo.content / "dungeons" / "crypt.yaml").write_text(dungeon() + yaml, encoding="utf-8")
+    problems = problems_for(repo)
+    assert any(location in problem and message in problem for problem in problems), problems
+
+
+def test_a_rooms_own_table_asks_for_no_more_than_it_holds(repo: RepoPaths) -> None:
+    crypt(repo)
+    add_fight(repo, "crypt/vault", spawners=0, chests=2)
+    sidecar = repo.content / "rooms" / "crypt" / "vault.yaml"
+    sidecar.write_text(sidecar.read_text() + "containers:\n  chests: {2: 50, 3: 50}\n", encoding="utf-8")
+    problems = problems_for(repo)
+    assert any("containers.chests" in p and "up to 3 chests, but the room holds 2" in p for p in problems), (
+        problems
+    )
 
 
 def test_a_paced_pool_needs_corridors_a_fight_and_a_corridors_dead_end(repo: RepoPaths) -> None:
@@ -850,8 +941,8 @@ def test_a_rooms_planner_and_explosion_rules_reach_the_game(repo: RepoPaths) -> 
         rooms["realmforge:rooms/crypt/hall"]
     )
     java = files[EXPECTATIONS].decode()
-    assert '1, true, List.of("minecraft:gravel", "minecraft:smooth_stone"), -1, 0, 0, false)' in java
-    assert "0, false, List.of(), -1, 0, 0, false)" in java
+    assert '1, true, List.of("minecraft:gravel", "minecraft:smooth_stone"), -1, 0, 0, false,\n' in java
+    assert "0, false, List.of(), -1, 0, 0, false,\n" in java
     nook.write_text(
         nook.read_text(encoding="utf-8").replace("minecraft:smooth_stone", "minecraft:no_such_block"),
         encoding="utf-8",

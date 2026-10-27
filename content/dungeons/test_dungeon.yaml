@@ -25,5 +25,16 @@ layout:
     block: minecraft:stone_bricks
     weight: 4
 key: realmforge:test_dungeon_key
+# How many chests and barrels each room keeps (RLM-365): Matěj's target is about 6 containers per 2 spawners, "for
+# any room that can generate chest". Treasure rooms take his table; every other room the default, which keeps a
+# room's one chest (a lock's reward) and cuts the big ones: about 41 containers to about 14 spawners in a run
+# (docs/design/container-loot.md). Rooms with their own table set it in their sidecar.
+containers:
+  treasure:
+    chests: {2: 25, 3: 40, 4: 25, 5: 10}
+    barrels: {0: 40, 1: 40, 2: 20}
+  default:
+    chests: {1: 60, 2: 30, 3: 10}
+    barrels: {0: 20, 1: 40, 2: 30, 3: 10}
 open_minutes: 60
 level: 10
