@@ -14,8 +14,11 @@ import io.github.matejkadlec.realmforge.dungeon.instance.PlotState;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonPlan;
 import io.github.matejkadlec.realmforge.dungeon.plan.PlannedRoom;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
+import io.github.matejkadlec.realmforge.stats.EntityLevel;
+import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
@@ -89,7 +92,10 @@ public final class DungeonPlanGameTests {
                 .thenSucceed();
     }
 
-    /** {@code /qa dungeon plan} and {@code build}, as typed: the same layout as the type plans for the seed. */
+    /**
+     * {@code /qa dungeon plan} and {@code build}, as typed: the same layout as the type plans for the seed, built at
+     * the type's level.
+     */
     @QaGameTest(timeoutTicks = TIMEOUT)
     public static void qaCommandsPlanAndBuildALayout(GameTestHelper helper) throws CommandSyntaxException {
         MinecraftServer server = helper.getLevel().getServer();
@@ -115,6 +121,8 @@ public final class DungeonPlanGameTests {
                 .orElseThrow();
         helper.assertValueEqual(plot.layout().orElseThrow(), plan.toInstanceLayout(),
                 "/qa dungeon build builds the planned layout");
+        helper.assertValueEqual(plot.level(), OptionalInt.of(type.level()),
+                "/qa dungeon build's run, with nobody in its party, is at the type's base (RLM-459)");
 
         helper.startSequence()
                 .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.READY, "plot is " + plot.state()))
@@ -126,7 +134,8 @@ public final class DungeonPlanGameTests {
     /**
      * Done when of W4b: {@code /qa dungeon enter} builds an instance of a dungeon type and moves the player in at its
      * entrance: on a floor inside the entrance room with room for their head (the test dungeon's entrances have no
-     * entrance marker), looking at the way on; {@code /qa instance leave} brings them back.
+     * entrance marker), looking at the way on, in a run at the type's level raised to theirs (RLM-459);
+     * {@code /qa instance leave} brings them back.
      */
     @QaGameTest(timeoutTicks = TIMEOUT)
     public static void aDungeonIsBuiltAndEnteredAtItsEntrance(GameTestHelper helper) throws CommandSyntaxException {
@@ -143,11 +152,14 @@ public final class DungeonPlanGameTests {
         DungeonType type = helper.getLevel().registryAccess().lookupOrThrow(DungeonRegistries.DUNGEON_TYPE)
                 .getValue(Identifier.parse("realmforge:test_dungeon"));
         helper.assertTrue(type != null, "realmforge:test_dungeon is not loaded");
+        player.setData(StatsAttachments.LEVEL, new EntityLevel(type.level() + 5));
 
         Plot plot = manager.plot(dispatcher.execute("qa dungeon enter realmforge:test_dungeon " + SEED, source))
                 .orElseThrow();
         InstanceLayout layout = type.plan(SEED).toInstanceLayout();
         helper.assertValueEqual(plot.layout().orElseThrow(), layout, "/qa dungeon enter builds the planned layout");
+        helper.assertValueEqual(plot.level(), OptionalInt.of(type.level() + 5),
+                "/qa dungeon enter's run is at the type's base raised to the player's level (RLM-459)");
         helper.assertTrue(layout.lookAt().isPresent(), "the layout knows the way on");
         try {
             dispatcher.execute("qa dungeon enter realmforge:test_dungeon " + SEED, source);

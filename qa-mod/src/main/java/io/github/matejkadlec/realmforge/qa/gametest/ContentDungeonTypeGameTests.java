@@ -66,6 +66,7 @@ public final class ContentDungeonTypeGameTests {
                     expected.id() + " pacing");
             helper.assertValueEqual(type.key().toString(), expected.key(), expected.id() + " key");
             helper.assertValueEqual(type.openMinutes(), expected.openMinutes(), expected.id() + " open minutes");
+            helper.assertValueEqual(type.level(), expected.level(), expected.id() + " level");
             helper.assertTrue(BuiltInRegistries.ITEM.getValue(type.key()).builtInRegistryHolder().is(DungeonType.KEYS),
                     expected.id() + "'s key is in the item tag " + DungeonType.KEYS.location());
             helper.assertValueEqual(type.rooms().stream().map(ContentDungeonTypeGameTests::asWritten).toList(),

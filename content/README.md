@@ -134,8 +134,13 @@ Rules:
   become `assets/realmforge/sounds.json` entries that play vanilla's events by reference (never copies of vanilla's
   files), `GeneratedSounds` registrations and the subtitles `subtitles.realmforge.<...>`. New sounds (RLM-126) later
   replace what an event plays, never its id.
-- `dungeons/` names each type's `key`, the item that opens a dungeon portal to it (one type per key), and
-  `open_minutes`, how long that portal stays open (1 to 240).
+- `dungeons/` names each type's `key`, the item that opens a dungeon portal to it (one type per key),
+  `open_minutes`, how long that portal stays open (1 to 240), and `level`, its base level (RLM-459): the level of its
+  boss where the campaign places it (its chapter and its order in the chapter), or for a type without a boss the level
+  its end stands for. A run of the type is at that level, raised to its party's highest when it opens, and holds it for
+  the whole run; a mob that gets its level in the run's plot is at the run's level when it is a boss (`#c:bosses`),
+  one below when it is a miniboss (`#realmforge:minibosses`) and two or three below otherwise, never below 1
+  ([architecture 14.1](../docs/architecture.md#141-mob-levels)). The instance dimension has no `dimensions/` rule.
 - Human units in YAML, game units in data: a field named `<name>_seconds` is written as `<name>_ticks`, one named
   `<name>_percent` as the fraction `<name>` ([architecture 6.3](../docs/architecture.md#63-conventions)).
 - `stats/` defines our attributes ([architecture 8.1](../docs/architecture.md#81-the-attribute-set)). Every stat

@@ -1744,12 +1744,13 @@ return; the proc engine at its end exists since C3a.
 
 Built in W1 (RLM-31): `world/DimensionRules`, `world/MobLevelRule` and `mob/MobLevels`, with the scaling in
 `mob/MobScaling`. Since RLM-303 (part 1 of RLM-240) the level follows the nearest player instead of the distance
-from the dimension's origin, and since RLM-342 (part 4) a structure can raise the floor of the mobs it holds; dungeon
-levels (RLM-304, RLM-305) come later.
+from the dimension's origin, since RLM-342 (part 4) a structure can raise the floor of the mobs it holds, and since
+RLM-459 (part 5) a dungeon run gives the mobs in its plot its own level; the bosses' own campaign levels and the
+party lock (RLM-304) and open-world dungeons (RLM-305) come later.
 
 - **Which mobs:** every hostile mob, vanilla's and later ours: a `Mob` that carries vanilla's `Enemy` marker
   (`MobLevels#getsLevel`). Animals, villagers and golems get none. Bosses take the fixed level from their definition
-  (W5).
+  (W5), or in a dungeon run the run's (below).
 - **The rule:** `realmforge:dimension_rules` (owned by `world`, server only) gives a dimension an optional mob level
   rule (`content/dimensions/`, [content README](../content/README.md)), which follows the nearest player (Matěj,
   2026-10-16, RLM-240): a mob is up to 3 levels below or above the player's level, each offset by its weight in
@@ -1761,7 +1762,23 @@ levels (RLM-304, RLM-305) come later.
   the cap. So a level 5 zombie never meets a level 60 player, and exploring far punishes nobody. `MobLevelRule` is
   plain Java, and the pipeline computes the same (`MobLevelRuleDef.chances`); a GameTest compares the two at sample
   player levels around the floor, the middle and the cap. A dimension without a rule (the Nether, the End and the
-  dungeon instances for now) gives no level, and its mobs read as level 1.
+  dungeon instances) gives no level, and its mobs read as level 1; in the instances a run's level takes its place.
+- **Sources ahead of the rule:** a feature above `mob` can give the mobs of some places their levels
+  (`MobLevels.Source`, added at mod construction with `MobLevels#addSource`; lower asks higher,
+  [4.4](#44-dependencies-between-features)). `MobLevels#levelFor` asks every source in turn and falls back to the
+  dimension's rule; the spawn and the join below level a mob through it. `dungeon` is the one source today.
+- **Dungeon runs** (Matěj, 2026-10-16, RLM-240 section 2; RLM-459): a dungeon type names its base `level`, the level
+  of its boss where the campaign places it ([15.2](#152-dungeon-types)). A run's level is that base raised to the
+  highest level of its party members online when it opens (`InstanceManager#open`, the pure `RunLevels#runLevel`):
+  the base is a minimum, so the level 18 boss of a story dungeon is 50 for a level 50 player. The plot saves it
+  ([15.5](#155-instances)), and it holds for the whole run: a member's level-up or a restart changes nothing, and a
+  lower level needs a new run. Every mob that gets its level in the plot's cell (spawner mobs, mobs placed with the
+  rooms, seal mobs, a summoned mob) takes the run's level by its rank (`dungeon/instance/InstanceMobLevels`, a
+  `MobLevels.Source`; `RunLevels#mobLevel`): a boss (NeoForge's `#c:bosses`) at it, a miniboss
+  (`#realmforge:minibosses`, which W5 and W6 fill) one below, every other mob two or three below, as likely, never
+  below 1: boss 40, minibosses 39, the rest 37 and 38. A run opened without a dungeon type (the QA tests' spike
+  rooms) has no level, so its mobs get none. The party lock while a run is active (RLM-68) and a boss-ending type's
+  base taken from its boss's definition (W5, W6) are RLM-304.
 - **Structure floors** (Matěj, 2026-10-19, RLM-342): the rule's optional `structure_floors` name a world generation
   structure (`minecraft:ancient_city`) or a structure tag (`#minecraft:village`, read with vanilla's
   `ExtraCodecs.TAG_OR_ELEMENT_ID`), each with a floor above `entry_level` and at most `max_level`. A mob that gets its
@@ -1795,8 +1812,9 @@ levels (RLM-304, RLM-305) come later.
   ([9.1](#91-damage-pipeline)), so the pipeline's steps see the scaled hit: a raised weapon compares that one with the
   hurt cooldown window's `lastHurt`, which vanilla set from a scaled hit too. The shipped curves add nothing at level 1, and a curve a data pack removed
   adds nothing.
-- **At spawn:** in `FinalizeSpawnEvent`, `mob` rolls the level from the rules of the mob's dimension and the player
-  nearest the spawn position, writes it into `realmforge:level` and applies the scaling. A mob spawned with a new chunk
+- **At spawn:** in `FinalizeSpawnEvent`, `mob` rolls the level from its place (`MobLevels#levelFor`: a source's, or
+  the rules of the mob's dimension and the player nearest the spawn position), writes it into `realmforge:level` and
+  applies the scaling. A mob spawned with a new chunk
   (`NaturalSpawner#spawnMobsForChunkGeneration`, structure pieces such as a monument's guardians) is finalized on a
   world generation thread, in a `WorldGenRegion`; setting the synced level there would read the server's entity
   tracking (`ChunkMap#getPlayersWatching`) from that thread, so the event only marks such a mob, and its join, on
@@ -1813,9 +1831,9 @@ levels (RLM-304, RLM-305) come later.
 - **Spawns without `finalizeSpawn`** skip the event: slime splits (`Slime#remove`), silverfish from infested
   blocks, `GameTestHelper#spawn`. Split children copy the parent's level and get its scaling in `MobSplitEvent`
   (`getParent`, `getChildren`). Any other mob that joins without a level (checked with `hasData`) is leveled in
-  `EntityJoinLevelEvent` the same way: the level from the rules and the nearest player, and its scaling, keeping its
-  share of health (a fresh mob's is all of it). So the default level never passes for an assigned one, and no mob
-  carries a level without its scaling. A mob saved before W1 is leveled this way when it loads.
+  `EntityJoinLevelEvent` the same way: the level from its place (a source's, or the rules and the nearest player),
+  and its scaling, keeping its share of health (a fresh mob's is all of it). So the default level never passes for an
+  assigned one, and no mob carries a level without its scaling. A mob saved before W1 is leveled this way when it loads.
 - **Conversions** (`Mob#convertTo`: a zombie drowns, a skeleton turns into a stray, a piglin or hoglin zombifies, a
   zombie villager is cured). In 26.1.2 every vanilla caller posts `LivingConversionEvent.Post` from the conversion's
   callback, which `convertTo` runs before it adds the new mob with `addFreshEntity`. NeoForge's own listener
@@ -2084,8 +2102,9 @@ loot: realmforge:boss/hollow_warden
 ### 15.2 Dungeon types
 
 A dungeon type (`content/dungeons/<id>.yaml`, the registry `realmforge:dungeon_type`, W4a) names the room pool it is
-built from, the rules of its layout ([15.3](#153-generation-pure-first-then-minecraft)), and since W4d its key and how
-long a portal to it stays open ([15.5](#155-instances)):
+built from, the rules of its layout ([15.3](#153-generation-pure-first-then-minecraft)), since W4d its key and how
+long a portal to it stays open ([15.5](#155-instances)), and since RLM-459 its base level
+([14.1](#141-mob-levels)):
 
 ```yaml
 # content/dungeons/test_dungeon.yaml (exists)
@@ -2106,6 +2125,7 @@ layout:
     weight: 4
 key: realmforge:test_dungeon_key      # the item that opens a dungeon portal to it, one key per type (W4d)
 open_minutes: 60                      # how long that portal stays open (W4d)
+level: 10                             # its base level, its boss's in the campaign; runs raise it to their party
 ```
 
 `rf gen` resolves the pool into the entry: each room's template, size, role, weight and connectors, its sidecar's
@@ -2139,7 +2159,6 @@ theme: realmforge:crypt              # block palette: a processor list (see belo
 ending: {type: realmforge:boss_lair, boss: realmforge:hollow_warden}   # or realmforge:treasury, ... (W5, W6)
 encounters: {budget_per_room: [2, 4], mobs: realmforge:crypt}           # W6
 loot: {chests: [2, 4], table: realmforge:dungeon/sunken_crypt}          # W6
-level: [8, 12]
 ```
 
 The ending is a rule of the type, so "not every dungeon ends with a boss" is just another ending type.
@@ -2489,7 +2508,8 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   same spacing), filled row by row, each plot's rooms within 256 blocks of its origin at y 64. Each plot has its
   state (building, ready, active, completed, closing, free), layout (its rooms and the block an arriving player looks
   at), its data markers, where players arrive, the boxes of its rooms and of blocks still to clear, its work
-  progress, its party and the chunks it holds. The party is a list of players: solo in M1 (decision D8), parties
+  progress, its party, the chunks it holds, and its run's level (RLM-459: its dungeon type's base raised to the
+  party's highest level when it opened, held for the run, [14.1](#141-mob-levels)). The party is a list of players: solo in M1 (decision D8), parties
   later (RLM-68) without a data migration. Each player's run and return point live in the player's
   `realmforge:instance` attachment ([7](#7-player-state)), with the game mode entering took from them (W4c).
 - **Entry:** a dungeon portal opened with a dungeon key (W4d, D8; below) → allocate a plot
@@ -2501,13 +2521,15 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   where a player stands on a sturdy floor with two free blocks (no collision, no fluid), the lowest of equally near
   ones, and the middle of its roof when there is none. A run opened through a portal does not move anyone: its owner
   enters through the portal once it is built. `/qa dungeon enter <type> [<seed>]` builds a planned dungeon and moves
-  you in when it stands, without a portal or a timer; `/qa instance enter` builds the spike test rooms in a row.
+  you in when it stands, without a portal or a timer, at the type's level raised to yours (its message names it);
+  `/qa instance enter` builds the spike test rooms in a row, which have no level.
 - **The dungeon portal** (W4d, RLM-181; Matěj's decision of 2026-10-11 in RLM-34): a craftable, reusable block
   (`content/blocks/dungeon_portal.yaml`, kind `dungeon_portal`; code in `dungeon/portal/`). A dungeon type's key used
   on it (`DungeonPortals#useKey`) plans a layout of that type from a new seed and opens a run for the player who used
   it, alone (D8): `InstanceManager#openPortal` takes a plot as above and records on the plot its run id (unique in the
   world, so a later run in the same plot is never taken for it), the portal (`PortalLink`: the type and the block's
-  position) and the game time it closes at, the type's `open_minutes` from now. The key is used up only once the run
+  position), the game time it closes at, the type's `open_minutes` from now, and the run's level, the type's `level`
+  raised to the player's. The key is used up only once the run
   is open: inside a dungeon, on a portal already open, for a player who already has a run, or when the type has no
   layout that fits a plot, the player keeps it and is told why. The portal's block entity
   (`DungeonPortalBlockEntity`) remembers the plot and run id; the block is lit (`open=true`) while that run is being

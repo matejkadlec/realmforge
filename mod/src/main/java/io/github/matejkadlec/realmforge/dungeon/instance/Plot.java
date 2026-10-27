@@ -7,12 +7,14 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
 
@@ -34,7 +36,8 @@ public final class Plot {
             Codec.LONG.listOf().optionalFieldOf("chunks", List.of()).forGetter(plot -> List.copyOf(plot.chunks)),
             Codec.LONG.optionalFieldOf("run", 0L).forGetter(Plot::run),
             PortalLink.CODEC.optionalFieldOf("portal").forGetter(Plot::portal),
-            Codec.LONG.optionalFieldOf("closes_at").forGetter(plot -> Optional.ofNullable(plot.closesAt))
+            Codec.LONG.optionalFieldOf("closes_at").forGetter(plot -> Optional.ofNullable(plot.closesAt)),
+            ExtraCodecs.POSITIVE_INT.optionalFieldOf("level").forGetter(plot -> Optional.ofNullable(plot.level))
     ).apply(instance, Plot::new));
 
     private final int id;
@@ -63,6 +66,9 @@ public final class Plot {
     /** The game time at which the current run is released, if it has a timer (W4d). */
     @Nullable
     private Long closesAt;
+    /** The current run's level, set when it opened, if its dungeon type gives one (RLM-459). */
+    @Nullable
+    private Integer level;
     /** Derived from the saved state; rebuilt after a restart. */
     @Nullable
     private List<PlotWork.Unit> units;
@@ -73,12 +79,13 @@ public final class Plot {
 
     Plot(int id) {
         this(id, PlotState.FREE, Optional.empty(), List.of(), List.of(), Optional.empty(), List.of(), 0, List.of(),
-                List.of(), 0L, Optional.empty(), Optional.empty());
+                List.of(), 0L, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     private Plot(int id, PlotState state, Optional<InstanceLayout> layout, List<BoundingBox> rooms,
             List<DataMarker> markers, Optional<Vec3> spawn, List<BoundingBox> dirty, int step, List<UUID> party,
-            List<Long> chunks, long run, Optional<PortalLink> portal, Optional<Long> closesAt) {
+            List<Long> chunks, long run, Optional<PortalLink> portal, Optional<Long> closesAt,
+            Optional<Integer> level) {
         this.id = id;
         this.state = state;
         this.layout = layout.orElse(null);
@@ -92,6 +99,7 @@ public final class Plot {
         this.run = run;
         this.portal = portal.orElse(null);
         this.closesAt = closesAt.orElse(null);
+        this.level = level.orElse(null);
     }
 
     public int id() {
@@ -173,6 +181,15 @@ public final class Plot {
         return closesAt == null ? OptionalLong.empty() : OptionalLong.of(closesAt);
     }
 
+    /**
+     * The current run's level (RLM-459): its dungeon type's base raised to its party's highest level when it opened,
+     * and held for the whole run. Mobs in the plot get theirs from it ({@link InstanceMobLevels}). Empty while the
+     * plot holds no run, and for a run opened without a dungeon type (a QA test layout).
+     */
+    public OptionalInt level() {
+        return level == null ? OptionalInt.empty() : OptionalInt.of(level);
+    }
+
     /** The chunks it holds loaded, as {@code ChunkPos#pack} values. */
     public LongSet chunks() {
         return chunks;
@@ -213,10 +230,11 @@ public final class Plot {
     }
 
     void startBuilding(InstanceLayout layout, List<BoundingBox> rooms, List<DataMarker> markers, List<UUID> party,
-            long run, @Nullable PortalLink portal, @Nullable Long closesAt) {
+            long run, @Nullable PortalLink portal, @Nullable Long closesAt, @Nullable Integer level) {
         this.run = run;
         this.portal = portal;
         this.closesAt = closesAt;
+        this.level = level;
         this.layout = layout;
         this.rooms = List.copyOf(rooms);
         this.markers = List.copyOf(markers);
@@ -285,6 +303,7 @@ public final class Plot {
         run = 0L;
         portal = null;
         closesAt = null;
+        level = null;
     }
 
     private void enter(PlotState next) {

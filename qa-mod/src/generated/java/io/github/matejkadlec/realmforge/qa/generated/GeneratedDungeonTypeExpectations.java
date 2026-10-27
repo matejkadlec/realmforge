@@ -27,12 +27,12 @@ public final class GeneratedDungeonTypeExpectations {
 
     /**
      * One dungeon type: its id, its name's translation key, its pool, its layout rules (a pacing of zeros: none),
-     * its key, how many minutes a portal to it stays open, and its rooms, its wall last.
+     * its key, how many minutes a portal to it stays open, its base level, and its rooms, its wall last.
      */
     public record DungeonTypeExpectation(String id, String name, String pool, int mainPathMin, int mainPathMax,
             int branchesMin, int branchesMax, int branchRoomsMin, int branchRoomsMax, String ending,
             int corridorsMin, int corridorsMax, int fightsMin, int fightsMax, int repeat, String key,
-            int openMinutes, List<RoomExpectation> rooms) {
+            int openMinutes, int level, List<RoomExpectation> rooms) {
     }
 
     public static final List<DungeonTypeExpectation> DUNGEON_TYPES = List.of(
@@ -42,7 +42,7 @@ public final class GeneratedDungeonTypeExpectations {
                     "realmforge:stone_vault",
                     38, 42, 3, 4, 2, 3,
                     "treasure", 1, 2, 2, 4, 12,
-                    "realmforge:test_dungeon_key", 60,
+                    "realmforge:test_dungeon_key", 60, 10,
                     List.of(
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/entrances/entrance_1", 7, 6, 7, "entrance", 1,
                                     List.of(

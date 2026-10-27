@@ -508,7 +508,7 @@ def test_generated_rooms_can_make_up_a_dungeon_pool(repo: RepoPaths) -> None:
         repo.content / "dungeons/gen.yaml",
         "id: gen\nname:\n  en_us: Gen\npool: realmforge:gen_vault\nlayout:\n  main_path: [2, 4]\n"
         "  branches: [1, 1]\n  branch_rooms: [1, 2]\n  ending: boss\nkey: minecraft:tripwire_hook\n"
-        "open_minutes: 20\n",
+        "open_minutes: 20\nlevel: 14\n",
     )
     content, _ = load_and_validate(repo)
     assert len(content.rooms) == 5

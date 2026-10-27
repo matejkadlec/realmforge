@@ -12,6 +12,7 @@ from typing import Annotated, Literal
 
 from pydantic import AfterValidator, Field
 
+from realmforge_tools.schema.chapter import MAX_LEVEL
 from realmforge_tools.schema.common import ContentId, LocalizedText, ResourceId, StrictModel
 
 # The role a room plays in a layout: exactly one of these is among a pooled room's tags (content/README.md).
@@ -143,9 +144,9 @@ class LayoutDef(StrictModel):
 
 
 class DungeonTypeDef(StrictModel):
-    """A kind of dungeon: the room pool it is built from, the rules of its layout, the key that opens a portal to it
-    and how long that portal stays open (W4d). Encounters, loot, its level range and its theme come with the tasks
-    that use them."""
+    """A kind of dungeon: the room pool it is built from, the rules of its layout, the key that opens a portal to it,
+    how long that portal stays open (W4d) and its base level (RLM-459). Encounters, loot and its theme come with the
+    tasks that use them."""
 
     id: ContentId
     name: LocalizedText = Field(description="The dungeon's name, a label (Title Case).")
@@ -162,4 +163,14 @@ class DungeonTypeDef(StrictModel):
         ge=1,
         le=240,
         description="How long a portal to it stays open, in minutes; then everyone inside is sent back (W4d).",
+    )
+    level: int = Field(
+        ge=1,
+        le=MAX_LEVEL,
+        description=(
+            "Its base level: the level of its boss, where the campaign places it (its chapter and its order in the "
+            "chapter); a type without a boss names the level its end stands for. A run's level is this base raised "
+            "to the highest level of its party when it opens, and holds for the run: bosses (#c:bosses) are at it, "
+            "minibosses (#realmforge:minibosses) one below, every other mob two or three below (RLM-240, RLM-459)."
+        ),
     )
