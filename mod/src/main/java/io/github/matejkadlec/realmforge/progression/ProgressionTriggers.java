@@ -15,6 +15,12 @@ public final class ProgressionTriggers {
     /** {@code realmforge:level_reached}: a player's character level changed, or they logged in. */
     public static final DeferredHolder<CriterionTrigger<?>, LevelReachedTrigger> LEVEL_REACHED =
             TRIGGERS.register("level_reached", LevelReachedTrigger::new);
+    /** {@code realmforge:dungeon_completed}: a dungeon run the player was in the party of was completed. */
+    public static final DeferredHolder<CriterionTrigger<?>, DungeonCompletedTrigger> DUNGEON_COMPLETED =
+            TRIGGERS.register("dungeon_completed", DungeonCompletedTrigger::new);
+    /** {@code realmforge:spell_cast}: the player's cast of a spell went off. */
+    public static final DeferredHolder<CriterionTrigger<?>, SpellCastTrigger> SPELL_CAST =
+            TRIGGERS.register("spell_cast", SpellCastTrigger::new);
 
     private ProgressionTriggers() {
     }

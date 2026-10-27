@@ -81,6 +81,7 @@ public final class QaGameTests {
             ProcGameTests.class,
             QaCastGameTests.class,
             QaCommandGameTests.class,
+            QuestGameTests.class,
             RageGameTests.class,
             RealmGameTests.class,
             RealmPortalGameTests.class,

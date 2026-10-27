@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Either;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
+import io.github.matejkadlec.realmforge.progression.ProgressionTriggers;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
@@ -11,6 +12,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -159,6 +161,7 @@ public final class SpellCaster {
         }
         caster.syncData(SpellAttachments.COMBAT);
         runEffects(serverLevel, caster, spell, level, hit);
+        wentOff(caster, spell);
         return CastResult.cast(hit);
     }
 
@@ -184,6 +187,17 @@ public final class SpellCaster {
         SpellTarget hit = resolved.left().orElseThrow();
         runEffects(serverLevel, caster, spell, level, hit, Optional.of(origin));
         return CastResult.cast(hit);
+    }
+
+    /**
+     * {@code caster}'s cast of {@code spell} went off: an instant spell was cast, or a cast time or channel completed
+     * (never an interrupted one, nor a proc's spell). A player's advancements hear of it through
+     * {@code realmforge:spell_cast}, which quests read (architecture 16).
+     */
+    static void wentOff(LivingEntity caster, Holder.Reference<Spell> spell) {
+        if (caster instanceof ServerPlayer player) {
+            ProgressionTriggers.SPELL_CAST.get().trigger(player, spell.key().identifier());
+        }
     }
 
     /** Whether {@code caster} has enough of the spell's resource for a cast at {@code level}; mobs always do. */

@@ -359,6 +359,10 @@ dependencies {
     // FTB Teams, whose parties the core mod turns off (FtbTeamsGameTests, RLM-206); the GameTest server loads it as a
     // pack mod.
     compileOnly packMod('ftb-teams-forge').coordinate
+    // FTB Quests and FTB Library, whose loaded quest book QuestBookGameTests compares with the pipeline's (Q1-2); the
+    // GameTest server loads them as pack mods.
+    compileOnly packMod('ftb-quests-forge').coordinate
+    compileOnly packMod('ftb-library-forge').coordinate
 }
 
 def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {

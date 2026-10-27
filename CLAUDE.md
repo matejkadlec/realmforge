@@ -93,7 +93,9 @@ Apotheosis for gear rarity, affixes, gems and enchanting
   weapons by holding right click (RLM-297: Sword Blocking Mechanics' poses, our rules), and their projectiles and
   full-strength hits never lose anything to the hurt cooldown (RLM-311, RLM-386). A player or mob is in combat for 10 s
   after the last hit dealt or taken (RLM-348), which rage and the scrolls read; a scroll charges for 3 s, like a bow,
-  before it works. The pack has M1's QoL, UI and building mods, and vanilla strongholds are off (PK1 to PK3). Next to
+  before it works. The quest pipeline (Q1) writes FTB Quests' quest book from `content/quests/` (no quests yet), with
+  stable ids, tasks of our own (a level, a dungeon, a spell) through our criteria triggers, and every quest's where and
+  with what from data. The pack has M1's QoL, UI and building mods, and vanilla strongholds are off (PK1 to PK3). Next to
   the core mod, the pack ships Better Key Binds (RLM-372), our own client mod that gives every key bind a secondary
   key.
 
