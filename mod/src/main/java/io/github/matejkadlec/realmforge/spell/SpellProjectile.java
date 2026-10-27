@@ -43,6 +43,10 @@ import net.neoforged.neoforge.event.EventHooks;
  * stops it too, without its effects. Where it hits a block or an entity, it makes its impact: a sound and a block's
  * break particles.
  *
+ * <p>A player's projectile can home in on the enemy aim assistance gave it (RLM-345, ADR 0055): every tick it turns
+ * toward that enemy's middle by at most {@link AimAssist#TURN_PER_TICK}, at the same speed, a gentle curve that hits a
+ * mob on the move; a block still stops it. It flies on straight once the enemy is dead, gone or behind it.
+ *
  * <p>Nothing flies forever: it is gone at the end of its lifetime when it has one, once its caster leaves its level
  * (logging out, a mob's death), above the build height, where entities stop moving (beyond every player's simulation
  * distance, which equals the render distance by default, or in a chunk that is not loaded), and in the void, which
@@ -72,6 +76,9 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
     /** How many ticks it flies before it fizzles; 0 for no lifetime. */
     private int lifetimeTicks;
     private int age;
+    /** The enemy it homes in on, on the server; none for a straight flight. */
+    @Nullable
+    private LivingEntity homing;
 
     public SpellProjectile(EntityType<? extends SpellProjectile> type, Level level) {
         super(type, level);
@@ -79,9 +86,10 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
 
     /**
      * Launches {@code projectile}'s projectile from {@code origin} (its middle) at {@code velocity} (blocks per
-     * tick).
+     * tick), homing in on {@code homing} if it is not null.
      */
-    static void launch(EffectContext context, ProjectileEffect projectile, Vec3 origin, Vec3 velocity) {
+    static void launch(EffectContext context, ProjectileEffect projectile, Vec3 origin, Vec3 velocity,
+            @Nullable LivingEntity homing) {
         LivingEntity caster = context.caster();
         SpellProjectile entity = new SpellProjectile(SpellEntities.PROJECTILE.get(), context.level());
         entity.setOwner(caster);
@@ -92,11 +100,17 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
         entity.texture = projectile.appearance().flatMap(appearance -> context.spell().unwrapKey())
                 .map(SpellVisuals::projectileTexture);
         entity.lifetimeTicks = projectile.lifetimeTicks().orElse(0);
+        entity.homing = homing;
         entity.getEntityData().set(DATA_SIZE, (float) projectile.size());
         entity.setPos(origin.x, origin.y - projectile.size() / 2, origin.z);
         entity.setDeltaMovement(velocity);
         entity.updateRotation();
         context.level().addFreshEntity(entity);
+    }
+
+    /** The enemy it homes in on, if any; on the server. */
+    public Optional<LivingEntity> homing() {
+        return Optional.ofNullable(homing);
     }
 
     /** The texture its client draws it with; empty for a trail of sparks. */
@@ -142,6 +156,7 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
             return;
         }
         if (!level().isClientSide()) {
+            home();
             HitResult hit = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
             if (hit.getType() != HitResult.Type.MISS && !EventHooks.onProjectileImpact(this, hit)) {
                 hitTargetOrDeflectSelf(hit);
@@ -159,6 +174,28 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
         updateRotation();
         if (level().isClientSide() && texture.isEmpty()) {
             level().addParticle(ParticleTypes.END_ROD, getX(), getY() + getBbHeight() / 2, getZ(), 0, 0, 0);
+        }
+    }
+
+    /**
+     * Turns toward the enemy it homes in on, by at most {@link AimAssist#TURN_PER_TICK}, and tells its clients at once,
+     * so they draw the curve the server flies. An enemy that died, left, or that it passed ends the homing.
+     */
+    private void home() {
+        LivingEntity target = homing;
+        if (target == null) {
+            return;
+        }
+        Vec3 velocity = getDeltaMovement();
+        Vec3 toward = target.getBoundingBox().getCenter().subtract(position().add(0, getBbHeight() / 2, 0));
+        if (!target.isAlive() || target.isRemoved() || target.level() != level() || toward.dot(velocity) <= 0) {
+            homing = null;
+            return;
+        }
+        Vec3 turned = AimAssist.turn(velocity, toward, AimAssist.TURN_PER_TICK);
+        if (!turned.equals(velocity)) {
+            setDeltaMovement(turned);
+            needsSync = true;
         }
     }
 

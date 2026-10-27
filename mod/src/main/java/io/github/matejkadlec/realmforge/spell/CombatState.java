@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -65,6 +66,10 @@ public final class CombatState {
     @Nullable
     private Cast currentCast;
     private boolean setBetterCombatTag;
+    /** The server's bookkeeping for aim assistance (rule 4): neither saved, synced nor compared. */
+    @Nullable
+    private UUID currentTarget;
+    private long currentTargetTime;
 
     /** A fresh state: no resource pools, no cooldowns, not casting. Each holder gets its own instance. */
     public CombatState() {
@@ -172,6 +177,21 @@ public final class CombatState {
 
     public void setSetBetterCombatTag(boolean setBetterCombatTag) {
         this.setBetterCombatTag = setBetterCombatTag;
+    }
+
+    /**
+     * Makes the entity with {@code uuid} the holder's current target as of game time {@code now}: the one a targeted
+     * spell of theirs aimed at, or the last one they hit (aim assistance, rule 4, {@link AimAssist}). Server only, and
+     * never saved or synced: a login starts without one.
+     */
+    public void setCurrentTarget(UUID uuid, long now) {
+        this.currentTarget = Objects.requireNonNull(uuid, "uuid");
+        this.currentTargetTime = now;
+    }
+
+    /** Whether the entity with {@code uuid} became the current target no more than {@code window} ticks before now. */
+    public boolean isCurrentTarget(UUID uuid, long now, int window) {
+        return uuid.equals(currentTarget) && now - currentTargetTime <= window;
     }
 
     @Override

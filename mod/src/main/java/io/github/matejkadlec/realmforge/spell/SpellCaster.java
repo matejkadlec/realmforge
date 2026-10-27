@@ -6,6 +6,7 @@ import io.github.matejkadlec.realmforge.combat.DamagePipeline;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.progression.ProgressionTriggers;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -57,6 +58,8 @@ public final class SpellCaster {
     public static final TagKey<Item> WANDS = TagKey.create(Registries.ITEM, Realmforge.id("wands"));
     /** Leaves room for float rounding, so a pool of exactly the cost pays it. */
     private static final double COST_TOLERANCE = 1e-4;
+    /** How many times the spell's range a player's sticky target may go away before the cast loses it (RLM-345). */
+    static final double STICKY_RANGE_FACTOR = 2;
 
     private SpellCaster() {
     }
@@ -147,6 +150,10 @@ public final class SpellCaster {
             Casting.cancel(caster);
         }
 
+        LivingEntity aimedAt = hit.entityOrNull();
+        if (caster instanceof Player && aimedAt != null && aimedAt != caster && !Targets.allied(caster, aimedAt)) {
+            state.setCurrentTarget(aimedAt.getUUID(), now);
+        }
         state.setGlobalCooldownEnd(now + value.globalCooldownTicks());
         payCost(caster, value, level, state);
         wearWand(caster);
@@ -243,8 +250,9 @@ public final class SpellCaster {
      * effects and before every tick of a channel (architecture 11.2 steps 4 and 5): an entity that died or is gone, or
      * that the spell's targeting refuses now (out of range, behind blocks, no longer an enemy or ally). A spell that
      * locks on only needs its target alive and in the caster's dimension; one that keeps its range for a share of the
-     * cast ({@link SpellCast#keepRange}) no longer needs it in range, only in sight. A ground point or a direction stays
-     * as it was resolved when the cast began.
+     * cast ({@link SpellCast#keepRange}) no longer needs it in range, only in sight. A player's sticky target ({@link
+     * #stickyRange}) may be up to twice the spell's range away. A ground point or a direction stays as it was resolved
+     * when the cast began.
      */
     static Optional<CastFailure> recheck(LivingEntity caster, Spell spell, SpellTarget spellTarget) {
         LivingEntity target = spellTarget.entityOrNull();
@@ -257,12 +265,28 @@ public final class SpellCaster {
         if (spell.cast().lockOn()) {
             return target.level() == caster.level() ? Optional.empty() : Optional.of(CastFailure.OUT_OF_RANGE);
         }
+        OptionalDouble sticky = stickyRange(caster, spell);
+        boolean inStickyRange = target.level() == caster.level()
+                && sticky.isPresent() && Targets.distance(caster, target) <= sticky.getAsDouble();
         Optional<CastFailure> failure = spell.targeting().resolve(caster, SpellAim.at(target)).right();
         if (failure.filter(reason -> reason == CastFailure.OUT_OF_RANGE).isPresent()
-                && spell.cast().keepRange().isPresent() && target.level() == caster.level()) {
+                && (spell.cast().keepRange().isPresent() && target.level() == caster.level() || inStickyRange)) {
             return caster.hasLineOfSight(target) ? Optional.empty() : Optional.of(CastFailure.NO_LINE_OF_SIGHT);
         }
         return failure;
+    }
+
+    /**
+     * How far a player's targeted cast keeps its target (aim assistance's sticky target, RLM-345): a cast-time or
+     * channelled spell on an enemy or an ally keeps the target it picked until the cast ends, even beyond the spell's
+     * range, and loses it only beyond twice the range ({@link Casting} checks it every tick). Empty for a spell that
+     * locks on, which keeps its target wherever it goes in the caster's dimension, and for a mob's or a boss's cast,
+     * whose kept targets their spell's data sets ({@link SpellCast#keepRange}).
+     */
+    static OptionalDouble stickyRange(LivingEntity caster, Spell spell) {
+        return caster instanceof Player && !spell.cast().lockOn()
+                && (spell.targeting() instanceof EnemyTargeting || spell.targeting() instanceof AllyTargeting)
+                ? OptionalDouble.of(STICKY_RANGE_FACTOR * spell.targeting().reach()) : OptionalDouble.empty();
     }
 
     /** Runs every effect of the spell on {@code target}, with the caster's stats as they are now. */

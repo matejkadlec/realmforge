@@ -24,6 +24,7 @@ public final class SpellFeature {
         SpellEntities.register(modBus);
         SpellAttachments.register(modBus);
         Casting.register();
+        AimAssist.register();
         NeoForge.EVENT_BUS.addListener(CombatEvent.Hit.class, Rage::onHit);
         NeoForge.EVENT_BUS.addListener(CombatEvent.Hit.class, Procs::onHit);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, LivingDeathEvent.class, Procs::onDeath);

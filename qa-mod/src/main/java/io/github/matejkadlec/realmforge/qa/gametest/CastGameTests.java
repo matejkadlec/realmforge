@@ -147,8 +147,9 @@ public final class CastGameTests {
     }
 
     /**
-     * A target that leaves the spell's range during the cast fails it at the end, without its effects; a spell that
-     * locks on keeps its target wherever it goes in the caster's dimension.
+     * A target that goes more than twice the spell's range away during a player's cast ends it at once, without its
+     * effects (the sticky target, RLM-345: up to twice the range it is kept); a spell that locks on keeps its target
+     * wherever it goes in the caster's dimension. The husk goes 40 blocks up, clear of the tests beside this one.
      */
     @QaGameTest
     public static void aCastWhoseTargetLeavesRangeFailsWithoutItsEffects(GameTestHelper helper) {
@@ -160,7 +161,7 @@ public final class CastGameTests {
         learn(helper, seeker, GeneratedSpells.TEST_HOMING_BOLT);
         assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, husk);
         assertBegun(helper, seeker, GeneratedSpells.TEST_HOMING_BOLT, husk);
-        husk.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 19.5)), 0, 0);
+        husk.snapTo(helper.absoluteVec(new Vec3(2.5, 41, 3.5)), 0, 0);
         // The seeker may move during its cast, at full speed (ADR 0039).
         assertSlowed(helper, seeker, false, "a spell castable while moving does not slow");
         seeker.snapTo(helper.absoluteVec(new Vec3(0.5, 1, 2.5)), 0, 0);
