@@ -405,7 +405,9 @@ The quest book is part of the modpack (All Rights Reserved, [ADR 0009](decisions
 files are generated into `pack/`, not into the jar. FTB Quests reads them from `config/ftbquests/quests/` in the
 instance. `pack/config/ftbquests/quests/` is a generated directory, owned by `rf gen` like `mod/src/generated/`, and
 its files carry the `GENERATED FILE` header. When `rf gen` changes files in `pack/`, it runs `packwiz refresh` itself,
-or, without `packwiz` on the `PATH`, exits with 1 and asks for it (CI checks the pack index).
+or, without `packwiz` on the `PATH`, exits with 1 and asks for it (CI checks the pack index). The dev runs get the
+book with the rest of `pack/config/` (`seedPackConfig`), which deletes each run's copy first, so a chapter file
+`rf gen` removed leaves the runs too (RLM-425).
 
 ### 6.3 Conventions
 

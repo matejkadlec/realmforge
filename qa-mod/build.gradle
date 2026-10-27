@@ -45,18 +45,29 @@ def seedDevOptions = tasks.register('seedDevOptions') {
 // Gives every dev run the pack's config overrides: copies pack/config/ into the run's config/ folder before it starts,
 // replacing the files the mods wrote, as packwiz-installer does on every launch of the pack (pack/README.md), so the
 // dev runs and the GameTests play with the pack's settings (Apothic Attributes' formulas, RLM-271).
+// The quest book, config/ftbquests/quests/, is generated: `rf gen` owns it and deletes what it no longer writes. So the
+// run's copy is deleted first and mirrors the pack's: a chapter file `rf gen` removed would otherwise stay in the run,
+// and FTB Quests would load its quests twice (RLM-425).
 // Configuration-cache safe: the action uses only the folders captured here, never `project`.
 def seedPackConfig = tasks.register('seedPackConfig') {
     group = 'realmforge'
     description = 'Copies the pack config overrides (pack/config/) into the config folder of every dev run.'
     def source = rootProject.file('pack/config')
     def targets = ['client', 'server', 'gametest'].collect { rootProject.file("run/${it}/config") }
+    def generated = 'ftbquests/quests'
     inputs.dir(source)
     // A mod may rewrite its file while a run plays, so the copy runs before every launch.
     outputs.upToDateWhen { false }
     doLast {
         def root = source.toPath()
         targets.each { target ->
+            def stale = target.toPath().resolve(generated)
+            if (java.nio.file.Files.exists(stale, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+                // Deepest first, and never through a link: a link is deleted, not what it points at.
+                java.nio.file.Files.walk(stale).withCloseable { paths ->
+                    paths.sorted(Comparator.reverseOrder()).forEach { java.nio.file.Files.delete(it) }
+                }
+            }
             java.nio.file.Files.walk(root).withCloseable { paths ->
                 paths.filter { java.nio.file.Files.isRegularFile(it) }.forEach { file ->
                     def copy = target.toPath().resolve(root.relativize(file).toString())

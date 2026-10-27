@@ -178,7 +178,8 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 | `better-key-binds/` | Better Key Binds (`better_key_binds`): our standalone client mod with secondary key binds, independent of Realmforge (rule 13, [README](better-key-binds/README.md)) | `src/` |
 | `qa-mod/src/generated/` | content expectations for GameTests, GameTest structures from `rf gen` | **no** |
 | `dev/` | dev client defaults: `options.txt`, seeded into `run/client` by `seedDevOptions` | yes |
-| `pack/` | packwiz metadata and config overrides (`config/`), no jars | metadata via `packwiz` commands; `config/` by hand ([procedure](pack/README.md#configuration)), then `packwiz refresh` |
+| `pack/` | packwiz metadata and config overrides (`config/`), no jars | metadata via `packwiz` commands; `config/` by hand ([procedure](pack/README.md#configuration)), except the quest book (next row), then `packwiz refresh` |
+| `pack/config/ftbquests/quests/` | FTB Quests' quest book from `rf gen` (`content/quests/`, `content/chapters/`); `rf gen` deletes what it did not write | **no** |
 | `art/` | asset sources: the project palette, generator candidates, prompts, Blockbench files, room import rules | yes |
 | `docs/` | vision, architecture, roadmap, design documents, lore, research, research notes, ADRs, dev setup | yes |
 | `.github/workflows/ci.yml` | CI | yes |

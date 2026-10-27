@@ -46,9 +46,9 @@ Report only material problems that the change introduces or exposes:
 
 Risk areas specific to this repository:
 
-- **Generated files.** `mod/src/generated/`, `qa-mod/src/generated/`, `tools/schemas/`, `tools/id_universe/`
-  and `pack/index.toml` are produced by tools. A hand edit there, or a change to `content/` or a generator
-  whose regenerated output is missing from the diff, is a defect.
+- **Generated files.** `mod/src/generated/`, `qa-mod/src/generated/`, `tools/schemas/`, `tools/id_universe/`,
+  FTB Quests' quest book `pack/config/ftbquests/quests/` and `pack/index.toml` are produced by tools. A hand edit
+  there, or a change to `content/` or a generator whose regenerated output is missing from the diff, is a defect.
 - **Content validation.** Every id in `content/` must be validated against the ID universe. Generator output
   must stay byte-identical across machines (stored deflate in `tools/realmforge_tools/formats/`).
 - **Minecraft 26.1.2 APIs.** Watch for APIs from other versions or loaders, above all 1.21.1 names that no longer

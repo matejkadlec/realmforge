@@ -311,7 +311,9 @@ only, RLM-435), and the optional integrations (Neat, Jade).
 Every dev run (client, server, GameTest server) also gets this folder's
 `config/`: the QA mod's `seedPackConfig` task copies it into the run's `config/`
 folder before each launch, replacing the files the mods wrote, as
-packwiz-installer does in a player's instance.
+packwiz-installer does in a player's instance. It deletes the run's quest book
+(`config/ftbquests/quests/`) first, so a file `rf gen` removed leaves the run
+too (RLM-425).
 
 ## Boot test
 
