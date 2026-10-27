@@ -23,20 +23,21 @@
 
 ## At a glance
 
-- **Realmforge** is the world, and its name is its history: it was forged. Around it lies the **Void**, an endless
-  nothing that wears away any world nobody holds. About 5,000 years ago the **Gatewrights**, the guild of makers of
-  a long-lived people, the **Ithari**, stamped five **realms** into the Void around Overworld: stone, the twins sun
-  and ice, the deep and the mire. Side by side they close Overworld's whole shore: **the Wall**.
-- **Seals and keepers:** each realm's first gate was shut for good. That gate is its **seal**, and an Ithari
-  **keeper** (a Sealbound) is bound into it and holds it. Keepers are relieved now and then, like a changing of the
-  guard. Since the war, 700 years ago, reliefs have been rare, the oldest keepers are tiring, and their seals crack.
+- **Realmforge** is the world, and its name is its history: it was forged. At its edges lies the **Void**, not darkness
+  but nothing at all, which unmakes what it touches. About 5,000 years ago the **Gatewrights**, the guild of makers of a
+  long-lived people, the **Ithari**, stamped five **realms** into the Void around Overworld: stone, the twins sun and
+  ice, the deep and the mire. They stand around Overworld like a sea wall against the Void: **the Wall**.
+- **Seals and keepers:** each realm's first gate was shut for good. That gate is its **seal**, and an Ithari **keeper**
+  (a Sealbound) is bound into it and holds it. Keepers are relieved now and then, like a changing of the guard. The
+  oldest are tiring, and their seals crack; Undervault's keeper has had no relief since the war, 700 years ago.
 - **The Chain of Seals,** which the Ithari call the road: the Ithari pass every gate, but the trials stand aside for
   them, so they never grow stronger. For someone who can, the Gatewrights left one **signet** in the Lodge's hall, and
   behind every seal a **guardian**, a trial that holds the **shards** of the next signets. Every signet opens only its
   own seal; there is no master signet. That is why the realms open one by one, in order.
-- **The player** is a human whom the **Wayfarers' Lodge**, the Ithari's order of road-wardens, calls a **Wayfarer**.
-  Only a human grows stronger with every trial passed, and a fallen human is pulled home to Overworld.
-- **Maren Vell**, the Lodge's archivist, lives in **Skyhearth**, the Gatewrights' floating city, and reaches the
+- **The player** is a newcomer from Overworld whom the **Wayfarers' Lodge**, the Ithari's order of road-wardens, calls a
+  **Wayfarer**. The road never changes the Ithari, but the player grows with every trial passed, and when they fall, the
+  world pulls them home (chapter 1).
+- **Maren Vell**, the Lodge's archivist, lives in **Skyhearth**, the Ithari's floating city, and reaches the
   player through **Skyhearth's Mirror** as **Maren's Image**.
 - **The finale** waits on Unmade Isles: its final boss is **Elenyor, the Unforger**, whom history calls the First
   Gatewright, the Gatewrights' founder (Matěj, RLM-139, RLM-357). The player learns who he is only there.
@@ -49,28 +50,25 @@
 
 ### Realmforge and the Void
 
-The Void is an endless nothing, and the worlds float in it like islands in a sea. It wears away any world that
-nobody holds, and it comes through any gate or door that opens onto it. Four old worlds were never made by anyone:
-**Overworld**, **Hearthvale**, **the Nether** and **the End**. Each but Overworld was held by the will born with it:
-the Nether by its fire dragon, Netherius, the End by his brother, Enderius, and the beings of the End, and Hearthvale
-by its long-lived people, the Ithari. Overworld has only short lives, humans and beasts, and nothing to hold it, so the
-Void wore away its shores, deepest at **the breach** (Matěj, 2026-10-22, the Story Outline's "Decided so far").
+The Void is not darkness but nothing at all, and it unmakes what it touches (RLM-139). Four old worlds were never made
+by anyone: **Overworld**, **Hearthvale**, **the Nether** and **the End**. Hearthvale was the Ithari's own world, the
+Nether's guardian was its fire dragon, Netherius, and the End's holders were his brother, Enderius, and the beings of
+the End. Of the four, Overworld was the most exposed to the Void, which ate deepest into its edge at **the breach**
+(Matěj, 2026-10-22, the Story Outline's "Decided so far"; chapter 1).
 
-The Ithari of Hearthvale saw where that ended, and their guild of makers, the **Gatewrights**, made worlds that could
-be held. A Gatewright raises a gate in Overworld, sets a signet (a ring carrying one pattern) into its sealstone and
+To protect Overworld, the Ithari's guild of makers, the **Gatewrights**, made new realms that stand between it and the
+Void, all around it (Matěj, 2026-10-22). A Gatewright raises a gate in Overworld, sets a signet into its sealstone and
 opens it onto the Void. The signet presses its pattern into the Void like a ring into wax, and a realm takes shape
 there, its people included (Matěj's idea; chapter 2 tells it on the seal chamber's murals). The first was the stone
-signet, and the realm it made is Undervault. The Gatewrights called their work, and the world it made,
-**Realmforge**.
+signet, and the realm it made is Undervault. The Gatewrights called their work, and the world it made, **Realmforge**.
 
 ### The Wall, the seals and the road
 
-The five forged realms stand side by side around Overworld and close its whole shore: **the Wall**. Each realm's
-first gate was shut forever, so that the realm would set: that gate is its **seal**, with one side in the Lodge's
-great hall in Overworld and one in the realm's seal chamber, where the keeper's face shows in the frame. Held realms
-don't wear, so the Void meets the Wall, not Overworld. Every realm is one gate from Overworld, and a gate can only be
-raised there: the order of the realms comes from the signets and the level caps, never from distance (Matěj,
-2026-10-22).
+The five forged realms stand around Overworld like a sea wall against the Void: **the Wall** (chapter 1). Each realm's
+first gate was shut behind a seal: that gate is its **seal**, with one side in the Lodge's great hall in Overworld and
+one in the realm's seal chamber, where the keeper's face shows in the frame (chapters 1 and 2). Every realm is one gate
+from Overworld, and a gate can only be raised there: the order of the realms comes from the signets and the level caps,
+never from distance (Matěj, 2026-10-22).
 
 | Lore | What it is in the game |
 | --- | --- |
@@ -81,45 +79,45 @@ raised there: the order of the realms comes from the signets and the level caps,
 | A traveler keeps their signet: a seal, or anyone who checks it, only needs to see it | no quest takes, cuts or sends a signet (RLM-395) |
 | The seal knows a traveler by their deeds, not by the signet in their hand | per-player unlock through the realm's unlock quest; holding someone else's signet does not let a player through (RLM-128) |
 | **Twin seals:** two realms were stamped as a pair, sun and ice, and the next seal needs both their shards | the twins Sunwastes and Everwinter share level cap 30, and the next signet needs both final bosses' drops (RLM-367) |
-| **The binding:** the seals weigh the strength of everyone on the road and let a human grow with each guardian beaten | the level caps, raised by each chapter's last quest (D2, RLM-188, RLM-367) |
+| **The binding:** the seals weigh the strength of everyone on the road and let a Wayfarer grow with each guardian beaten | the level caps, raised by each chapter's last quest (D2, RLM-188, RLM-367) |
 
 ### The keepers
 
-A **keeper** is an Ithari bound into a seal, and every sealed realm has one: the Sealbound. A keeper gives his name
-to the stone, which is why keepers' names are never spoken ("Our name was given to the stone, as is the custom",
-chapter 2). He can't let go except into the hand of a relief, who comes from Skyhearth and takes his place, like a
-changing of the guard, and the cracks in his seal are his tiredness made visible. The Wayfarers walk the gates and
-check on the keepers (Matěj, 2026-10-22: keepers rotate, so no keeper "has failed"). Undervault's keeper is
-**the Stonebound**.
+A **keeper** is an Ithari bound into a seal, and every sealed realm has one: the Sealbound. A keeper gives his name to
+the stone, which is why keepers' names are never spoken ("Our name was given to the stone, as is the custom",
+chapter 2). In time every keeper is relieved: a new one comes from Skyhearth and takes his place, like a changing of the
+guard (chapters 1 and 2), and the cracks in his seal are his tiredness made visible. The Wayfarers walk the gates and
+check on the keepers (Matěj, 2026-10-22: keepers rotate, so no keeper "has failed"). Undervault's keeper is **the
+Stonebound**.
 
 ### The Gatewrights and the Ithari
 
-- **The Ithari** are a long-lived people (thousands of years), human in shape but taller, with faintly gold eyes:
-  the Gatewrights, the Wayfarers and Skyhearth's people are all Ithari (Matěj, 2026-10-22, RLM-357).
+- **The Ithari** are a long-lived people (thousands of years), not humans: the Gatewrights, the Wayfarers and
+  Skyhearth's people are all Ithari (Matěj, 2026-10-22, RLM-357). Maren's Image shows one: taller than anyone the player
+  knows, with a faint gold in her eyes (chapter 1).
 - **The Gatewrights** are the Ithari's guild of makers ("wright" is an old word for a maker). Their works are
   everywhere: ruins, gate frames, vaults, catacombs, statues, murals, and inscriptions in a blocky script that the
   Lodge has slowly learned to read. They left the gate design, the signet craft, the guardians and their trials, the
   Hewn (stone servants), the hall of welcome before Undervault's keeper, and their writings, which are the lore's
   main carrier (WF-7).
-- **The founder,** the First Gatewright, opened the first gates himself. Every hall the Gatewrights built has his
-  statue, a Gatewright holding a signet up to the light, and the keepers remember his visits: he asked what the Void
-  looked like from their seal (chapter 2). His name is **Elenyor**, and in the finale he is **Elenyor, the
-  Unforger** (Matěj, RLM-357).
-- **The Wayfarers' Lodge** is the Ithari's old order of road-wardens: they walk the gates, check on the keepers and
-  escort the reliefs. Its great hall stands in Overworld over the breach, with the five seals' Overworld sides in a
-  ring and the stone signet's vault behind them. Since the war its archive and its last Wayfarers live in Skyhearth
-  (chapter 1).
-- **Skyhearth** is the Gatewrights' council city of white stone with gold between its bricks. It floated in
-  Hearthvale's sky; since the war it floats above Overworld and the whole Wall, home to Hearthvale's refugees under
-  their king, **Taveth** (Matěj, 2026-10-22). Its platforms are lifts, not gates: they rise to it from any realm
-  ([The hub realm: Skyhearth](#the-hub-realm-skyhearth)).
+- **The founder,** the First Gatewright, raised the first gate and set the stone signet into it (the seal chamber's
+  murals, chapter 2). Every hall the Gatewrights built has his statue, a Gatewright holding a signet up to the light,
+  and the keepers remember his visits: he asked what the Void looked like from their seal (chapter 2). His name is
+  **Elenyor**, and in the finale he is **Elenyor, the Unforger** (Matěj, RLM-357).
+- **The Wayfarers' Lodge** is the Ithari's old order of road-wardens: they walk the gates and check on the keepers. Its
+  great hall stands in Overworld over the breach, with the five seals' Overworld sides in a ring and the stone signet's
+  vault behind them. Since the war its archive and its last Wayfarers live in Skyhearth (chapter 1).
+- **Skyhearth** is the Ithari's city of white stone with gold between its bricks, the seat of their council. It floated
+  above Hearthvale; since the war it floats above Overworld (Matěj, 2026-10-22), home to Hearthvale's refugees under
+  their king, **Taveth** (chapter 2). Its platforms reach it from any realm (Matěj, 2026-10-22; RLM-302) ([The hub
+  realm: Skyhearth](#the-hub-realm-skyhearth)).
 
 ### The war, 700 years ago
 
-Within a few decades, about 700 years ago, three old worlds were lost. The Nether was destroyed, and its gates with
-it. Netherius, the Worldburner burned Hearthvale into **Ashfire**, and most of the Ithari who survived fled to
-Skyhearth. The End was reshaped into **Unmade Isles**. When the war came, the Wayfarers went up to Skyhearth and left
-behind the humans who had worked at the Lodge's hall, who were forced to stay, fight and hide: the illagers
+About 700 years ago, three old worlds were lost. The Nether was destroyed, and its gates with it (chapter 2). Netherius,
+the Worldburner burned Hearthvale into **Ashfire** (RLM-357), and its refugees live in Skyhearth (chapter 2). The End
+was reshaped into **Unmade Isles** (Matěj, 2026-10-22). When the war came, the Wayfarers went up to Skyhearth and left
+behind the Overworld folk who had worked at the Lodge's hall, who were forced to stay, fight and hide: the illagers
 (chapter 1).
 
 The truth is Matěj's decision of 2026-10-22 and stays hidden until the finale: the founder listened to the Void until
@@ -130,11 +128,11 @@ Taveth hides, are the Story Outline draft's, waiting for Matěj.
 
 ### Why now
 
-Since the war, reliefs have been rare: too few Ithari are left to give a keeper's years. The oldest keepers are past
-their strength, and their seals crack, in the realms and in the Lodge's hall. The cracks shake Overworld too, and old
-crypts split open (chapter 1); in the realms the tremors wake things the Ithari can't fight, such as the Hewn
-(chapter 2). Maren Vell reads it plainly: someone has to walk the road again, clear each realm so that reliefs can
-follow, and pass each guardian's trial for the next signet.
+The oldest keepers are tiring, and their seals crack, in the realms and in the Lodge's hall (chapter 1); Undervault's
+keeper has had no relief since the war (chapter 2). The cracks shake Overworld too, and old crypts split open
+(chapter 1); in the realms the tremors wake things such as the Hewn (chapter 2). Maren Vell reads it plainly: someone
+has to walk the road again, clear each realm so that reliefs can follow, and pass each guardian's trial for the next
+signet.
 
 The road's first signet, the stone signet, waited in the vault of the Lodge's hall. The Illusioner, the illagers'
 chief, stole it to reach the Gatewrights' storehouse, and when he tried to force the seal with it, it broke in his
@@ -144,10 +142,10 @@ shard, or from the Lodge Merchant ([realm portal spec](../design/realm-portal.md
 
 ## The player
 
-- **Role:** a human newcomer, capable and curious, whom the Lodge calls a **Wayfarer**. Not a chosen one: the seals
-  accept anyone who passes their trials, and only a human grows stronger by passing them ("My people pass every
-  gate, and the trials stand aside for us, so the road never changes us. You grow with every trial you pass",
-  chapter 1). Texts never assume the player's race, class, gender or name ([style guide](style.md#the-player)).
+- **Role:** a newcomer from Overworld, capable and curious, whom the Lodge calls a **Wayfarer**. Not a chosen one: the
+  seals accept anyone who passes their trials, and the road changes the player where it never changes the Ithari ("My
+  people pass every gate, and the trials stand aside for us, so the road never changes us. You grow with every trial you
+  pass", chapter 1). Texts never assume the player's race, class, gender or name ([style guide](style.md#the-player)).
 - **The arc,** a prologue and one chapter per main realm (Matěj, 2026-10-22; how the game numbers them is RLM-466):
   1. **Overworld (chapter 1, The Ominous Tale, levels 1–10):** Maren's trial, the open crypts, the illagers, the
      Lodge's hall, the first gate and the Illusioner ([chapter 1](chapters/01-the-ominous-tale.md)).
@@ -190,13 +188,13 @@ names are the realm design's.
 
 ### Overworld
 
-The heart of the world and the hub: every gate opens into it, and a gate can only be raised here. It is the humans'
-home and has no seal and no signet. The Lodge's great hall stands over the breach, with the five seals' Overworld
-sides in a ring, and long-abandoned Wayfarer outposts dot the land. Its danger is the ordinary wild (night monsters,
-crypts the cracks broke open) and the **illagers**: the humans the Wayfarers left behind in the war, bitter for 700
+The heart of the world and the hub: every gate opens into it, and a gate can only be raised here. It is the player's
+home and has no seal and no signet. The Lodge's great hall stands over the breach, with the five seals' Overworld sides
+in a ring, and long-abandoned Wayfarer outposts dot the land. Its danger is the ordinary wild (night monsters, crypts
+the cracks broke open) and the **illagers**: the Overworld folk the Wayfarers left behind in the war, bitter for 700
 years, who now claim the gates and are bad on their own, serving nobody (Matěj, 2026-10-22). Their chief, Illusioner,
-the Ominous Chief, stole the stone signet. [Chapter 1](chapters/01-the-ominous-tale.md) tells it. In M1 the Lodge is
-a voice in the quest book; the Lodge's hall is a unique structure in M2 (RLM-393), and Maren's Image comes with
+the Ominous Chief, stole the stone signet. [Chapter 1](chapters/01-the-ominous-tale.md) tells it. In M1 the Lodge is a
+voice in the quest book; the Lodge's hall is a unique structure in M2 (RLM-393), and Maren's Image comes with
 Skyhearth's Mirror in M2.
 
 ### The stone realm: Undervault
@@ -261,14 +259,14 @@ and a sea-raiding people slept under the ice for an age.
 
 ### The hub realm: Skyhearth
 
-The Gatewrights' council city of white stone with gold between its bricks, which floated in Hearthvale's sky until
-the war and now floats above Overworld and the whole Wall, over the Lodge's hall. It has no seal, no guardian and no
-trial. Its people are Hearthvale's refugees under their king, **Taveth**, the name the refugees gave him; the Lodge's
-archive and its last Wayfarers live there, Maren Vell among them. Unique NPCs live only here (Matěj, 2026-10-15):
-Edric, the Explorer, who remembers the green land and the dragon in the fire, Bonnie, the Jeweler, and, once the
-player opens the way, Torva Flintmark. Its people know the realms beyond Undervault and send Wayfarers into them from
-about level 15, and it is the centre of the game: its stories, quests, trades and friendships run through every
-later chapter (Matěj, 2026-10-17). Nothing there can be built or broken.
+The Ithari's city of white stone with gold between its bricks, the seat of their council, which floated above Hearthvale
+until the war and now floats above Overworld (Matěj, 2026-10-22). It has no seal, no guardian and no trial. Its people
+are Hearthvale's refugees under their king, **Taveth**, the name the refugees gave him; the Lodge's archive and its last
+Wayfarers live there, Maren Vell among them. Unique NPCs live only here (Matěj, 2026-10-15): Edric, the Explorer, who
+remembers the green land and the dragon in the fire, Bonnie, the Jeweler, and, once the player opens the way, Torva
+Flintmark. Its people know the realms beyond Undervault and send Wayfarers into them from about level 15, and it is the
+centre of the game: its stories, quests, trades and friendships run through every later chapter (Matěj, 2026-10-17).
+Nothing there can be built or broken.
 
 Skyhearth admits from below only those who carry a guardian's heart: a Wayfarer crafts the Skyhearth Medallion from
 the Stone Heart and the three Undervault gems, builds the platform, stands in its middle and rises (chapter 2, M3 or
@@ -296,9 +294,9 @@ it 700 years ago (Matěj, 2026-10-22, RLM-357). Now its plains are black and red
 lakes and volcanoes, and it comes deliberately late on the road: what burns here is too strong for a newcomer. It is
 not the Nether, and nothing in it is (Matěj, 2026-10-16), though its burner was the Nether's dragon.
 
-- **The Emberwrights** are the Ithari who stayed in burnt Hearthvale, the best crafters on the road; their staying
-  still holds the realm.
-- **Netherius's army** of Nether beings still roams it; its kinds are written with the chapter.
+- **The Emberwrights** are its friendly people (RLM-139); who they are now that Ashfire is Hearthvale is written
+  with the chapter.
+- **Netherius's army** of Nether beings (Matěj, 2026-10-22); its kinds are written with the chapter.
 - **The guardian** is **Netherius, the Worldburner**, a fire dragon who fights on the ground (vision). His story is
   written with the chapter.
 
@@ -310,11 +308,12 @@ dark: it glows violet, under a pale moon, and the isles' purple stone, dark wood
 (RE-18). Where the Void touches forged stone a green ore grows, malachite, the one thing the Void seems unable to
 unmake.
 
-- **The Chainkeepers** are the End's survivors, who chain the drifting isles together and still hold them, each
-  keeping one link from a link-house where a chain is anchored. They are solemn, few and very glad to see anyone. They
-  say the chains catch whoever falls, and the Void gives them back (the realm design's fall rule).
-- **The Unforged** are the beings of the End, half unforged: half-made shapes, faded and wrong in colour and
-  material. Where they strike, the Void unmakes a little of what a Wayfarer wears, unless it is malachite. They are
+- **The Chainkeepers** are the last order on the islands, each keeping one link of the great chains from a link-house
+  where a chain is anchored. They are solemn, few and very glad to see anyone. They say the chains catch whoever falls,
+  and the Void gives them back (the realm design's fall rule).
+- **The Unforged** are things of the Void: half-made shapes that copy what they see of the realms and get it slightly
+  wrong. Each copies a people of an earlier realm, a Hewn or a Gilded, with one detail out of place (RLM-139, the realm
+  design). Where they strike, the Void unmakes a little of what a Wayfarer wears, unless it is malachite. They are
   strange rather than gruesome.
 - **Enderius, the Worldender,** Netherius's brother and the End's dragon, still serves the founder there as a boss
   (about level 57, RLM-357).
@@ -346,7 +345,7 @@ people; a guardian holding the shards of the seals after it; and a reason it exi
 | The Gilded | the pyramids of Sunwastes | hostile | - |
 | The Kettlefolk | the hot-spring villages of Everwinter | friendly | fishing, the frozen lakes, the shipwrecks |
 | The Thawed | the fortress and ships of Everwinter | hostile | - |
-| The Emberwrights | the mountain holds of Ashfire | friendly | crafting, Netherius |
+| The Emberwrights | Ashfire | friendly | crafting, Netherius |
 | Netherius's army | Ashfire | hostile | - |
 | The Chainkeepers | the islands of Unmade Isles | friendly | the chains, the Cathedral |
 | The Unforged | Unmade Isles and the Void | hostile | - |
@@ -388,7 +387,7 @@ version of each, with Maren's lines as letters (each chapter's "In M1" part).
 
 | Part | Story | Main quests |
 | --- | --- | --- |
-| 1. A Letter From the Sky | a Skyhearth raven brings Maren's letter and Skyhearth's Mirror; Maren's trial; why it has to be a human | the raven, Maren's Trial (RLM-397), "The More You Know" |
+| 1. A Letter From the Sky | a Skyhearth raven brings Maren's letter and Skyhearth's Mirror; Maren's trial; why it has to be someone from Overworld | the raven, Maren's Trial (RLM-397), "The More You Know" |
 | 2. The Open Crypts | the cracks split old crypts open; the Wayfarer's Compass; the evoker paid in Gatewright brick | the crypt quests (RLM-320), the Tower of the Undead, the Illager Hideout, the Monster Maze |
 | 3. The Raiders | the illagers' history; raids; the Bastille freed | a pillager outpost, the raids, the Illager Fort, the Bastille (RLM-398) |
 | 4. The Hall Over the Breach | the five cracked seals; the empty vault; Maren's memory | the Lodge's hall (RLM-393, RLM-408) |
@@ -430,10 +429,10 @@ Decided rules that a line of lore makes feel natural. Texts may use these lines;
 
 | Rule (source) | Lore |
 | --- | --- |
-| Respawn always at the bed in Overworld or at world spawn, never in a realm (RLM-128) | the pull of home: wherever a human falls, the world pulls them home to Overworld ("when one of you falls, the world pulls you home", chapter 1) |
+| Respawn always at the bed in Overworld or at world spawn, never in a realm (RLM-128) | the pull of home: wherever the player falls, the world pulls them home to Overworld ("when one of you falls, the world pulls you home", chapter 1) |
 | Keep inventory on death (vision) | the pull of home brings back what the traveler carried, too |
 | "Return to last death" scroll (RLM-128) | a scroll that follows the thread the traveler's spirit left on the way home |
-| Level cap per chapter, its last level, raised when the chapter is done (D2, RLM-188, RLM-367) | the binding: the seals weigh the strength of everyone on the road, so nobody could grow strong enough to break one by force, and they let a human grow once a chapter's trials are passed (both twins' guardians for the twins' shared cap): "The bond on your strength loosens. The seals have weighed you, and they let you grow." |
+| Level cap per chapter, its last level, raised when the chapter is done (D2, RLM-188, RLM-367) | the binding: the seals weigh the strength of everyone on the road, so nobody could grow strong enough to break one by force, and they let a Wayfarer grow once a chapter's trials are passed (both twins' guardians for the twins' shared cap): "The bond on your strength loosens. The seals have weighed you, and they let you grow." |
 | Signets are never used up; one signet opens any number of portals (RLM-128) | a seal asks for its signet every time and never takes it: a signet is shown, not paid |
 | Unlocks are per player: without their own unlock, a player can neither open nor switch a portal to that realm with its signet, nor pass through an open one (RLM-128) | the seal knows a traveler by their deeds; the Illusioner held the stone signet for months and never got through |
 | Portals link like the Nether's, with scaled coordinates, so arrivals stay near a realm's origin (RLM-128) | none needed: texts never explain where a portal leads inside a realm |
@@ -443,7 +442,7 @@ Decided rules that a line of lore makes feel natural. Texts may use these lines;
 | A dungeon boss returns in every new instance (RLM-35) | none needed: once a boss is defeated in the story, it stays defeated, and the game's repeats need no story reason ([practices](practices.md)) |
 | No flying bosses (vision) | every dragon in Realmforge fights on the ground; the reason is written with Netherius's chapter |
 | Every realm has its own light (RE-18) | the Gatewrights forged light into every realm, and the Void glows violet on Unmade Isles |
-| No Nether or End in the game (ADR 0025) | both were lost in the war: the Nether destroyed with its gates, the End reshaped into Unmade Isles; netherite comes from Undervault's forge-stock, and the Ancient merchants sell what was saved (RLM-241) |
+| No Nether or End in the game (ADR 0025) | both were lost in the war: the Nether destroyed with its gates, the End reshaped into Unmade Isles; netherite comes from Undervault's forge-stock, and the Ancient merchants still sell the Nether's stone (chapter 2, RLM-241) |
 
 ## What the lore leaves open
 

@@ -101,7 +101,7 @@ for the story around it.
 - **The Nether and the End appear in lore only as worlds lost in the war,** 700 years ago: the Nether was destroyed
   with its gates, and the End was reshaped into Unmade Isles (Matěj, 2026-10-22 and 2026-10-27, RLM-351). The game
   has neither ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)), so no text sends a player there:
-  netherite comes from Undervault's forge-stock, and the Ancient merchants sell what was saved.
+  netherite comes from Undervault's forge-stock, and the Ancient merchants still sell the Nether's stone.
 - **Tone, not the real world:** no politics, modern slang, memes or emoji. A modern word may stay only as a
   deliberate reference inside the world, when Matěj gives it that reason: "Hella tough" in "The Right Tool" is a nod
   to the Nether (2026-10-27, [practices](practices.md#3-story-rules)).
