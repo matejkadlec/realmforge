@@ -8,6 +8,7 @@ import json
 import pytest
 
 from realmforge_tools.generate import generate_all
+from realmforge_tools.generate.dungeons import reachable_hazards
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import DATA_VERSION, REPO_ROOT, RepoPaths
 from realmforge_tools.rooms.check import markers
@@ -704,7 +705,8 @@ def test_the_lobby_cushion_reaches_past_the_ceiling_hole() -> None:
 def test_the_room_that_ends_the_test_dungeon_has_a_clear_exit() -> None:
     # Matěj's playtest of 2026-10-24 (RLM-363): a run ends at a way out with nothing (a chest, a barrel, a cobweb) in
     # front of it. The planner keeps the pool's treasure room with the most chests for the ending (DungeonPlanner's
-    # reserved room; the ties go by weight), so each such room holds an exit marker on a floor, clear around it.
+    # reserved room; the ties go by weight), so each such room holds an exit marker on a floor, clear around it. Since
+    # the egg room keeps two chests (RLM-361), that is the parrot treasury.
     folder = REPO_ROOT / "content/rooms/third_party/stonevaults"
     treasures = []
     for sidecar in sorted(folder.rglob("*.yaml")):
@@ -713,7 +715,7 @@ def test_the_room_that_ends_the_test_dungeon_has_a_clear_exit() -> None:
             treasures.append((sidecar.stem, read_structure(sidecar.with_suffix(".nbt").read_bytes())))
     most = max(count_chests(structure) for _, structure in treasures)
     endings = [(name, structure) for name, structure in treasures if count_chests(structure) == most]
-    assert [name for name, _ in endings] == ["egg"]
+    assert [name for name, _ in endings] == ["parrot"]
     for name, structure in endings:
         blocks = {block.pos: block.state.name for block in structure.blocks}
         exits = [pos for marker, pos in markers(structure) if marker == "exit"]
@@ -759,6 +761,57 @@ def test_the_stone_vault_pools_spawners_can_be_seen_and_broken() -> None:
                 hidden.append(f"{sidecar.relative_to(folder).with_suffix('')} {block.pos}")
     assert checked >= 6
     assert hidden == []
+
+
+def test_the_egg_room_holds_lava_overhead_a_spider_spawner_and_two_chests() -> None:
+    # RLM-361 (Matěj's playtest of 2026-10-22): lava over every glass block of the egg room's ceiling, in a rim of stone
+    # bricks, a cave spider spawner in the quartz egg, and no more than two chests and two barrels.
+    structure = read_structure(
+        (REPO_ROOT / "content/rooms/third_party/stonevaults/dungeon/treasure/egg.nbt").read_bytes()
+    )
+    blocks = {block.pos: block for block in structure.blocks}
+    glass = {(x, z) for (x, y, z), block in blocks.items() if block.state.name == "minecraft:glass"}
+    lava = {(x, y, z) for (x, y, z), block in blocks.items() if block.state.name == "minecraft:lava"}
+    assert len(glass) == 29
+    assert {(x, z) for x, _, z in lava} == glass and {y for _, y, _ in lava} == {structure.size[1] - 1}
+    for x, y, z in lava:
+        for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            side = blocks.get((x + dx, y, z + dz))
+            assert side is not None and side.state.name in ("minecraft:lava", "minecraft:stone_bricks")
+    (spawner,) = [block for block in blocks.values() if block.state.name == "minecraft:spawner"]
+    assert spawner.nbt is not None and spawner.nbt["SpawnData"] == {"id": "minecraft:cave_spider"}
+    assert count_chests(structure) <= 2
+    assert sum(block.state.name == "minecraft:barrel" for block in blocks.values()) <= 2
+
+
+def test_lava_a_player_cannot_reach_is_no_hazard() -> None:
+    # The planner keeps hazards apart (RLM-364); the egg room's lava lies sealed over its glass ceiling (RLM-361), so it
+    # is no hazard, while the lava parkour's pool is.
+    folder = REPO_ROOT / "content/rooms/third_party/stonevaults/dungeon"
+    egg = read_structure((folder / "treasure/egg.nbt").read_bytes())
+    parkour = read_structure((folder / "rooms/lava_parkour.nbt").read_bytes())
+    assert any(block.state.name == "minecraft:lava" for block in egg.blocks)
+    assert reachable_hazards(egg) == 0
+    assert reachable_hazards(parkour) > 0
+
+
+def test_the_stone_vault_pools_spawners_spawn_one_mob() -> None:
+    # Stonevaults' skeleton trap named skeletons for its first spawn and pigs in its potentials, which vanilla draws
+    # from after every spawn (BaseSpawner#delay): every spawner of the pool names one mob in both (RLM-412).
+    folder = REPO_ROOT / "content/rooms/third_party/stonevaults"
+    mixed = []
+    for sidecar in sorted(folder.rglob("*.yaml")):
+        room = RoomDef.model_validate(load_yaml(sidecar) or {})
+        if "realmforge:stone_vault" not in room.pools:
+            continue
+        for block in read_structure(sidecar.with_suffix(".nbt").read_bytes()).blocks:
+            if block.state.name != "minecraft:spawner" or block.nbt is None:
+                continue
+            first = block.nbt["SpawnData"]["id"]
+            later = {entry["Entity"]["id"] for entry in block.nbt["SpawnPotentials"].items}
+            if later != {first}:
+                mixed.append(f"{sidecar.stem} {block.pos}: {first} then {sorted(later)}")
+    assert mixed == []
 
 
 def test_the_stone_vault_pools_connectors_leave_open_doorways() -> None:

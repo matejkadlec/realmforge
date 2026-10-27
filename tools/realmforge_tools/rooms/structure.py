@@ -27,7 +27,8 @@ JIGSAW = "minecraft:jigsaw"
 SPAWNER = "minecraft:spawner"
 CHESTS = ("minecraft:chest", "minecraft:trapped_chest")
 # The blocks that make a room a hazard for a dungeon's pacing: lava, TNT and the dispensers of traps (RLM-364).
-HAZARDS = ("minecraft:lava", "minecraft:tnt", "minecraft:dispenser")
+LAVA = "minecraft:lava"
+HAZARDS = (LAVA, "minecraft:tnt", "minecraft:dispenser")
 
 Pos = tuple[int, int, int]
 
@@ -192,11 +193,6 @@ def count_spawners(structure: Structure) -> int:
 def count_chests(structure: Structure) -> int:
     """The structure's chests, trapped ones included (RLM-364)."""
     return sum(count_blocks(structure, name) for name in CHESTS)
-
-
-def count_hazards(structure: Structure) -> int:
-    """The structure's blocks that can hurt a player who walks in: lava, TNT and dispensers (RLM-364)."""
-    return sum(count_blocks(structure, name) for name in HAZARDS)
 
 
 def write_structure(structure: Structure) -> bytes:

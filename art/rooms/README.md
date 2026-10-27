@@ -71,9 +71,12 @@ Matěj's playtest of 2026-10-24 (RLM-363, RLM-364), mend the rooms that locked p
 (buttons inside `zombie_three_way_temple`'s iron doors, no bars in `husk_temple`'s doorways, nor in what its
 connectors leave behind, levers over `jail_2`'s cell doors, tinted glass for the door of `jail`'s garden), set a chest
 and a barrel on its side at the end of `jail`'s passage, its only containers (Matěj, 2026-10-25), and set the exit
-marker of `treasure/egg`, the room that ends the test dungeon, where its dressing adds no barrels. Players break
-spawners in instances (RLM-412, ADR 0055), so the rules also expose the two spawners the rooms hid: a cobweb takes the
-place of the slab over `skeleton_trap`'s, and `husk_temple`'s sandstone monument is opened on its east side above its
-bottom layer.
+marker of the room that ends the test dungeon, `treasure/parrot` (RLM-363; the egg room ended it until it kept two
+chests). Players break spawners in instances (RLM-412, ADR 0055), so the rules also expose the two spawners the rooms
+hid: a cobweb takes the place of the slab over `skeleton_trap`'s, and `husk_temple`'s sandstone monument is opened on
+its east side above its bottom layer; `skeleton_trap`'s spawner, which turned to pigs after its first spawn, spawns
+skeletons alone. The egg room (`treasure/egg`, RLM-361) grows a layer for lava over its glass ceiling, in a rim of
+stone bricks, gets a cave spider spawner in its quartz egg, opened towards the doorway, and keeps two of its six
+chests.
 
 A newer version of a source updates its `NOTICE` (version, file, what changed) and this table.

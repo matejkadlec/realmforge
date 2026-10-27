@@ -141,10 +141,10 @@ public final class GeneratedDungeonTypeExpectations {
                                     new ConnectorExpectation(2, 0, 2, "down", "north", "realmforge:shaft", "realmforge:shaft", "rollable"),
                                     new ConnectorExpectation(2, 31, 2, "up", "west", "realmforge:shaft", "realmforge:shaft", "rollable")),
                                     0, false, List.of(), -1, 0, 0, false),
-                            new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/treasure/egg", 13, 8, 13, "treasure", 1,
+                            new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/treasure/egg", 13, 9, 13, "treasure", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 2, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable")),
-                                    1, false, List.of(), -1, 0, 6, false),
+                                    1, false, List.of(), -1, 1, 2, false),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/treasure/mooshroom_king", 13, 6, 13, "treasure", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 1, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable")),

@@ -26,7 +26,12 @@ A rules file (``--rules``, YAML, the ``ImportRules`` model) adapts a source to o
 - ``max_size``: a file whose room is bigger on any axis (a whole wing of the source's dungeon rather than a room) is
   left out like an excluded one.
 - ``dress``: block variety on the floor, walls and ceiling of plain rooms, and decorations (``rooms/dress.py``).
-- ``place``: boxes of one block state, or data markers, set into a room after its dressing, by the room's path.
+- ``grow``: layers added on top of a room's template after its dressing, by the room's path, for blocks ``place``
+  sets above it (the lava over the egg room's glass ceiling, RLM-361); the new layers hold nothing until then.
+- ``place``: boxes of one block state, of data markers, of mob spawners or of what connectors leave behind, set into a
+  room after its dressing, by the room's path. A spawner box makes every block a spawner of one mob, keeping the
+  delays, counts and ranges of a spawner already there and vanilla's otherwise, in the form of the template's data
+  version.
 - ``data_version``: the data version of the files that state none (a Sponge v1 schematic, a template some tool
   wrote), when the source is known to be saved with it.
 
@@ -53,6 +58,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from realmforge_tools.formats import nbt
 from realmforge_tools.id_universe import IdUniverse
 from realmforge_tools.project import RepoPaths
 from realmforge_tools.rooms.check import (
@@ -90,6 +96,22 @@ EMPTY_POOL = "minecraft:empty"
 KEPT_RULES = ("max_per_layout", "near_start", "explosion_breaks", "entry")
 # The seed a container keeps next to its loot table (RandomizableContainer.LOOT_TABLE_SEED_TAG).
 _LOOT_TABLE_SEED = "LootTableSeed"
+SPAWNER = "minecraft:spawner"
+# A spawner's block entity id, and the data version from which its mob sits in SpawnData.entity and SpawnPotentials
+# entries in data.entity with a weight (SpawnerDataFix, schema V2831); before, SpawnData is the entity itself and an
+# entry holds Entity and Weight. A template keeps its own version, so a placed spawner is written in that form.
+_SPAWNER_ENTITY = "minecraft:mob_spawner"
+_SPAWNER_DATA_FIX = 2831
+# Vanilla's spawner settings (BaseSpawner's fields) for a spawner placed where none was.
+_SPAWNER_DEFAULTS = {
+    "Delay": 20,
+    "MinSpawnDelay": 200,
+    "MaxSpawnDelay": 800,
+    "SpawnCount": 4,
+    "MaxNearbyEntities": 6,
+    "RequiredPlayerRange": 16,
+    "SpawnRange": 4,
+}
 
 
 class RoomImportError(ValueError):
@@ -118,8 +140,9 @@ class JigsawRules(_Strict):
 
 class PlacedBlocks(_Strict):
     """A box of one block state set into a room after its dressing, such as a fall cushion (RLM-276), of data
-    markers, such as the exit of the room that ends a dungeon (RLM-363), or the block its connectors leave behind,
-    such as an open doorway where the source barred it (RLM-364)."""
+    markers, such as the exit of the room that ends a dungeon (RLM-363), of mob spawners, such as the cave spiders in
+    the egg room (RLM-361), or the block its connectors leave behind, such as an open doorway where the source barred
+    it (RLM-364)."""
 
     model_config = ConfigDict(extra="forbid", frozen=True, populate_by_name=True)
     start: tuple[int, int, int] = Field(
@@ -139,11 +162,17 @@ class PlacedBlocks(_Strict):
         description="The block the box's connectors leave behind (their final_state), the rest unchanged, e.g. "
         "minecraft:air for an open doorway.",
     )
+    spawner: str | None = Field(
+        default=None,
+        pattern=r"^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        description="A mob spawner of this mob (an entity type id, e.g. minecraft:cave_spider) on every block of the "
+        "box. A spawner already there keeps its delays, counts and ranges; its mob alone changes.",
+    )
 
     @model_validator(mode="after")
     def _one_kind(self) -> PlacedBlocks:
-        if sum(value is not None for value in (self.block, self.marker, self.final_state)) != 1:
-            raise ValueError("place: give one of a block, a marker or a final_state")
+        if sum(value is not None for value in (self.block, self.marker, self.final_state, self.spawner)) != 1:
+            raise ValueError("place: give one of a block, a marker, a spawner or a final_state")
         if self.marker is not None and self.marker not in MARKERS:
             raise ValueError(f"place: {self.marker!r} is no marker: {', '.join(MARKERS)}")
         return self
@@ -155,7 +184,15 @@ class PlacedBlocks(_Strict):
             return f"{self.marker} marker"
         if self.final_state is not None:
             return f"connectors leaving {self.final_state}"
+        if self.spawner is not None:
+            return f"{self.spawner} spawner"
         return str(self.block)
+
+
+class GrowRule(_Strict):
+    """Layers added on top of a room's template, where ``place`` can then set blocks above its old top."""
+
+    up: int = Field(ge=1, le=16, description="Layers to add above the template's top.")
 
 
 class ImportRules(_Strict):
@@ -170,6 +207,11 @@ class ImportRules(_Strict):
     exclude: list[str] = Field(default_factory=list)
     max_size: int | None = Field(default=None, ge=1, description="Leave out rooms bigger on any axis.")
     dress: DressRules | None = None
+    grow: dict[str, GrowRule] = Field(
+        default_factory=dict,
+        description="Layers added on top of rooms after their dressing and before place, by the room's path below "
+        "the source folder.",
+    )
     place: dict[str, list[PlacedBlocks]] = Field(
         default_factory=dict,
         description="Blocks set into rooms after their dressing, by the room's path below the source folder.",
@@ -371,10 +413,17 @@ def import_room(
         structure, dressed = dress(structure, rules.dress, name=name or stem.name, tags=tags)
         notes += dressed
     placing: list[str] = []
+    grown = rules.grow.get(name or stem.name)
+    if grown is not None:
+        x, y, z = structure.size
+        structure = replace(structure, size=(x, y + grown.up, z))
+        notes.append(f"grew the template by {grown.up} layer(s) on top")
     for placed in rules.place.get(name or stem.name, []):
         structure, problems = place_blocks(structure, placed)
         notes.append(f"placed {placed.what} from {_fmt(placed.start)} to {_fmt(placed.to)}")
         placing += problems
+        if placed.spawner is not None and not universe.contains("minecraft:entity_type", placed.spawner):
+            placing.append(f"place: {placed.spawner} is no entity type in the ID universe")
     result = ImportedRoom(file, template, sidecar, structure, False, [*source.notes, *notes])
     result.problems += placing
     if stem.name == REVIEW_FILE.removesuffix(".yaml"):
@@ -401,8 +450,9 @@ def import_room(
 
 def place_blocks(structure: Structure, placed: PlacedBlocks) -> tuple[Structure, list[str]]:
     """The structure with the box of ``placed`` set to its block (block entity data there is dropped), to data
-    markers (structure blocks in data mode naming the marker) or, for its connectors, to their new final state; and
-    the problems: positions of the box that lie outside the room, or that hold no connector for a final state."""
+    markers (structure blocks in data mode naming the marker), to spawners of its mob or, for its connectors, to their
+    new final state; and the problems: positions of the box that lie outside the room, or that hold no connector for
+    a final state."""
     box = [
         (x, y, z)
         for x in range(min(placed.start[0], placed.to[0]), max(placed.start[0], placed.to[0]) + 1)
@@ -423,6 +473,15 @@ def place_blocks(structure: Structure, placed: PlacedBlocks) -> tuple[Structure,
             for block in structure.blocks
         ]
         return replace(structure, blocks=tuple(blocks)), problems
+    if placed.spawner is not None:
+        old = {block.pos: block for block in structure.blocks if block.pos in inside}
+        blocks = [block for block in structure.blocks if block.pos not in inside]
+        for pos in sorted(inside):
+            before = old.get(pos)
+            kept = before.nbt if before is not None and before.state.name == SPAWNER else None
+            data = spawner_data(placed.spawner, structure.data_version, kept)
+            blocks.append(StructureBlock(pos, BlockState(SPAWNER), data))
+        return replace(structure, blocks=tuple(blocks)), problems
     if placed.marker is not None:
         state = BlockState(STRUCTURE_BLOCK, (("mode", "data"),))
         data: dict[str, Any] | None = {"id": STRUCTURE_BLOCK, "metadata": placed.marker, "mode": DATA_MODE}
@@ -432,6 +491,25 @@ def place_blocks(structure: Structure, placed: PlacedBlocks) -> tuple[Structure,
     blocks = [block for block in structure.blocks if block.pos not in inside]
     blocks += [StructureBlock(pos, state, data) for pos in sorted(inside)]
     return replace(structure, blocks=tuple(blocks)), problems
+
+
+def spawner_data(mob: str, data_version: int | None, kept: dict[str, Any] | None = None) -> dict[str, Any]:
+    """A spawner's block entity data that spawns only ``mob``: the settings of ``kept`` (a spawner's data already
+    there) or vanilla's, with SpawnData and SpawnPotentials naming the mob in the form of ``data_version``. Both name it:
+    vanilla spawns SpawnData first and then draws from SpawnPotentials after every spawn (BaseSpawner#delay), so a
+    stale potential turns the spawner into another mob's (Stonevaults' skeleton trap spawned pigs, RLM-412)."""
+    data = {key: value for key, value in (kept or {}).items() if key not in ("SpawnData", "SpawnPotentials")}
+    if kept is None:
+        data.update({key: nbt.Short(value) for key, value in _SPAWNER_DEFAULTS.items()})
+    data["id"] = _SPAWNER_ENTITY
+    if data_version is not None and data_version >= _SPAWNER_DATA_FIX:
+        data["SpawnData"] = {"entity": {"id": mob}}
+        entry: dict[str, Any] = {"data": {"entity": {"id": mob}}, "weight": nbt.Int(1)}
+    else:
+        data["SpawnData"] = {"id": mob}
+        entry = {"Entity": {"id": mob}, "Weight": nbt.Int(1)}
+    data["SpawnPotentials"] = nbt.NbtList(nbt.TAG_COMPOUND, (entry,))
+    return data
 
 
 def _fmt(pos: Pos) -> str:

@@ -8,8 +8,9 @@ planning needs no template, and JUnit fuzzes the planner over the same files.
 
 A room's ``entry`` side becomes the index of its connector there (RLM-362), and a room with mob spawners or chests
 carries how many (``spawners``, ``chests``): a combat room with a spawner is a fight in a layout's pacing, and the
-planner ends the main path and branches in the rooms with the most chests (RLM-364); a room with lava, TNT or a
-dispenser is a ``hazard``, which the planner keeps from the start, from right before a fight and from other hazards. A
+planner ends the main path and branches in the rooms with the most chests (RLM-364); a room with lava a player
+reaches, TNT or a dispenser is a ``hazard``, which the planner keeps from the start, from right before a fight and from
+other hazards (lava sealed away, as over the egg room's glass ceiling, hurts nobody: RLM-361). A
 type with ``walls`` also gets its wall (RLM-364): ``rf gen`` builds a template of 3 x 3 blocks of the wall's block,
 written as the structure ``realmforge:dungeon_walls/<id>``, with one connector at the middle of its bottom row whose
 jigsaw turns into the same block, and lists it last among the rooms with the role ``wall``: the planner may close a
@@ -35,15 +36,17 @@ from realmforge_tools.generate.javagen import header, java_file_path, string_lit
 from realmforge_tools.generate.set_pieces import processor_list_id, template_id
 from realmforge_tools.project import DATA_VERSION, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.rooms.connectors import Connector, connectors
+from realmforge_tools.rooms.dress import reach
 from realmforge_tools.rooms.generator import DOOR, EMPTY_POOL, GENERATED_DIR, paths
 from realmforge_tools.rooms.set_pieces import DENSITY, Fit, Pattern, RoomView, match
 from realmforge_tools.rooms.structure import (
+    HAZARDS,
     JIGSAW,
+    LAVA,
     BlockState,
     Structure,
     StructureBlock,
     count_chests,
-    count_hazards,
     count_spawners,
     write_structure,
 )
@@ -310,8 +313,24 @@ def chests(room: RoomEntry) -> int:
 
 
 def hazard(room: RoomEntry) -> bool:
-    """Whether the room's template holds lava, TNT or a dispenser: the planner spaces such rooms out (RLM-364)."""
-    return room.derived("hazards", count_hazards) > 0
+    """Whether the room's template holds lava a player reaches, TNT or a dispenser: the planner spaces such rooms out
+    (RLM-364)."""
+    return room.derived("reachable_hazards", reachable_hazards) > 0
+
+
+def reachable_hazards(structure: Structure) -> int:
+    """The template's TNT and dispensers, and its lava that touches a cell a player reaches from the doorways
+    (``rooms/dress.py``'s ``reach``): lava sealed away, over the egg room's glass ceiling (RLM-361), hurts nobody."""
+    reached = reach(structure)
+    count = 0
+    for block in structure.blocks:
+        if block.state.name not in HAZARDS:
+            continue
+        x, y, z = block.pos
+        sides = ((x + 1, y, z), (x - 1, y, z), (x, y + 1, z), (x, y - 1, z), (x, y, z + 1), (x, y, z - 1))
+        if block.state.name != LAVA or any(side in reached for side in sides):
+            count += 1
+    return count
 
 
 def _connector(connector: Connector) -> dict[str, Any]:

@@ -1646,7 +1646,7 @@
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/treasure/egg",
       "size": [
         13,
-        8,
+        9,
         13
       ],
       "role": "treasure",
@@ -1666,7 +1666,8 @@
         }
       ],
       "max_per_layout": 1,
-      "chests": 6
+      "spawners": 1,
+      "chests": 2
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/treasure/mooshroom_king",

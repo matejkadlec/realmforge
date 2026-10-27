@@ -438,7 +438,7 @@ Rules:
   in a row before a feature or a fight; `fights`, 1 to 16 rooms between two fights, both drawn binomially, so their
   middle comes most often; `repeat`, 0 to 64 rooms the planner keeps between two copies of a room that is no corridor,
   and half of it between two locks or two hazards; a `combat` room is a fight when its template holds a mob spawner,
-  else a feature, a hazard when it holds lava, TNT or a dispenser, and branches are corridors up to a treasure room) and
+  else a feature, a hazard when it holds lava a player reaches, TNT or a dispenser, and branches are corridors up to a treasure room) and
   `walls` (`block` and `weight`: `rf gen` builds a plain wall of three by three blocks, the structure
   `realmforge:dungeon_walls/<id>`, which the planner may set behind a leftover doorway instead of a dead end, picked by
   its weight among them). The planner closes every connector left over with a dead end or a wall, so a layout holds more

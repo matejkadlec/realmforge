@@ -19,6 +19,8 @@ loot_tables:
   stonevaults:*: null # the dungeon fills its chests (W4)
 entities:
   keep: [minecraft:painting, minecraft:item_frame, minecraft:glow_item_frame, minecraft:armor_stand]
+grow:
+  dungeon/treasure/egg: {up: 1}  # a layer over the glass ceiling for its lava (RLM-361)
 place:
   # The fall cushion (RLM-276): a player who drops down the entrance shaft (the entrance, then any stack of the
   # stairway's fall rooms) lands in lobby_01, the one room under it, below its 3x3 ceiling hole. Its floor there
@@ -60,9 +62,11 @@ place:
     - {from: [7, 2, 5], to: [7, 2, 7], block: "minecraft:air"}
     - {from: [6, 2, 6], to: [6, 3, 6], block: "minecraft:air"}
   # The skeleton trap's spawner sat under a 3x3 of stone brick slabs: the slab above it becomes a cobweb, which shows
-  # the spawner and which players break, like the spawner (Matěj, 2026-10-24, RLM-412).
+  # the spawner and which players break, like the spawner (Matěj, 2026-10-24, RLM-412). Its spawner named skeletons
+  # for the first spawn only and pigs in its potentials, which vanilla draws from after every spawn: skeletons alone.
   dungeon/rooms/skeleton_trap:
     - {from: [6, 2, 6], to: [6, 2, 6], block: "minecraft:cobweb"}
+    - {from: [6, 1, 6], to: [6, 1, 6], spawner: minecraft:skeleton}
   # The jail's garden behind tinted glass (grass, a small house with a bed) is a sight: its iron door, which nothing
   # opened, becomes tinted glass too.
   pillager_dungeon/rooms/jail:
@@ -82,11 +86,41 @@ place:
     - {from: [8, 3, 7], to: [8, 3, 7], block: "minecraft:lever[face=wall,facing=north,powered=false]"}
     - {from: [4, 3, 9], to: [4, 3, 9], block: "minecraft:lever[face=wall,facing=south,powered=false]"}
     - {from: [8, 3, 9], to: [8, 3, 9], block: "minecraft:lever[face=wall,facing=south,powered=false]"}
-  # The egg treasury ends the test dungeon's run (RLM-363): its exit marker, where the builder lays the Dungeon Exit,
-  # stands against the east wall, opposite the doorway; the dressing puts no barrels in this room, so nothing stands
-  # in front of it.
+  # The egg room (Matěj's playtest of 2026-10-22, RLM-361): lava over its glass ceiling, cell for cell, in a rim of
+  # stone bricks that holds it, the catacombs' look he built; the template grows a layer for it (grow, above). A cave
+  # spider spawner sits in the quartz egg's upper hollow, which opens towards the doorway, so players see it and break
+  # it (RLM-412); the hollow under it is filled, so no spider spawns shut in. Of its six chests it keeps the two on
+  # the east wall: a fight, not a loot room. With them it no longer ends the run (RLM-363's exit moved to parrot).
   dungeon/treasure/egg:
-    - {from: [11, 2, 6], to: [11, 2, 6], marker: exit}
+    - {from: [6, 8, 3], to: [6, 8, 3], block: "minecraft:lava[level=0]"}
+    - {from: [4, 8, 4], to: [8, 8, 5], block: "minecraft:lava[level=0]"}
+    - {from: [3, 8, 6], to: [9, 8, 6], block: "minecraft:lava[level=0]"}
+    - {from: [4, 8, 7], to: [8, 8, 8], block: "minecraft:lava[level=0]"}
+    - {from: [6, 8, 9], to: [6, 8, 9], block: "minecraft:lava[level=0]"}
+    - {from: [6, 8, 2], to: [6, 8, 2], block: "minecraft:stone_bricks"}
+    - {from: [4, 8, 3], to: [5, 8, 3], block: "minecraft:stone_bricks"}
+    - {from: [7, 8, 3], to: [8, 8, 3], block: "minecraft:stone_bricks"}
+    - {from: [3, 8, 4], to: [3, 8, 5], block: "minecraft:stone_bricks"}
+    - {from: [9, 8, 4], to: [9, 8, 5], block: "minecraft:stone_bricks"}
+    - {from: [2, 8, 6], to: [2, 8, 6], block: "minecraft:stone_bricks"}
+    - {from: [10, 8, 6], to: [10, 8, 6], block: "minecraft:stone_bricks"}
+    - {from: [3, 8, 7], to: [3, 8, 8], block: "minecraft:stone_bricks"}
+    - {from: [9, 8, 7], to: [9, 8, 8], block: "minecraft:stone_bricks"}
+    - {from: [4, 8, 9], to: [5, 8, 9], block: "minecraft:stone_bricks"}
+    - {from: [7, 8, 9], to: [8, 8, 9], block: "minecraft:stone_bricks"}
+    - {from: [6, 8, 10], to: [6, 8, 10], block: "minecraft:stone_bricks"}
+    - {from: [6, 2, 6], to: [6, 3, 6], block: "minecraft:smooth_quartz"}
+    - {from: [6, 4, 6], to: [6, 4, 6], spawner: minecraft:cave_spider}
+    - {from: [5, 4, 6], to: [5, 4, 6], block: "minecraft:air"}
+    - {from: [6, 2, 1], to: [6, 2, 1], block: "minecraft:air"}
+    - {from: [2, 2, 2], to: [2, 2, 2], block: "minecraft:air"}
+    - {from: [11, 2, 8], to: [11, 2, 8], block: "minecraft:air"}
+    - {from: [7, 2, 11], to: [7, 2, 11], block: "minecraft:air"}
+  # The parrot treasury ends the test dungeon's run since the egg room keeps two chests (RLM-361; the planner keeps the
+  # pool's treasure room with the most chests for the ending, RLM-363): its exit marker, where the builder lays the
+  # Dungeon Exit, stands in the room's open middle, where no container, cobweb or vine is near it.
+  dungeon/treasure/parrot:
+    - {from: [5, 2, 3], to: [5, 2, 3], marker: exit}
 dress:
   exclude: [dungeon/entrances/*]  # approved as they are
   # Variety and decorations Matěj asked for in the gallery review (2026-10-14): the plainer a room, the more it
@@ -121,7 +155,7 @@ dress:
       - dungeon/rooms/stairs
       - dungeon/stairway/fall_01
       - dungeon/stairway/fall_long
-      - dungeon/treasure/egg       # its exit stands where the barrels went (RLM-363)
+      - dungeon/treasure/egg       # two chests and no barrels: a fight, not a loot room (RLM-361)
       - dungeon/treasure/tiny_cap
       - pillager_dungeon/entrances/entrance_tower
       - pillager_dungeon/entrances/entrance_tower_2

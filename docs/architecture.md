@@ -2132,8 +2132,9 @@ level: 10                             # its base level, its boss's in the campai
 
 `rf gen` resolves the pool into the entry: each room's template, size, role, weight and connectors, its sidecar's
 `max_per_layout`, `near_start`, `explosion_breaks` and `entry` (as the index of the connector on that side) where it
-sets them, the `spawners` and `chests` its template holds where it has any, and `hazard` where it holds lava, TNT
-or a dispenser (RLM-364), in room id order
+sets them, the `spawners` and `chests` its template holds where it has any, and `hazard` where it holds lava a player
+reaches from its doorways, TNT or a dispenser (RLM-364; lava sealed over the egg room's glass ceiling hurts nobody,
+RLM-361), in room id order
 (`generate/dungeons.py`), so the game plans a layout without loading a template, and JUnit
 fuzzes the planner on the same files. A type with `walls` gets its wall last among the rooms: a template of three by
 three blocks of the wall's block, one deep, `rf gen` writes as `realmforge:dungeon_walls/<id>`, with one connector at
@@ -2244,8 +2245,8 @@ Steps 1 and 2 exist since W4a (`dungeon/plan/`; `DungeonType#plan(seed)` → `Du
     along the run; the ending keeps the room of its role with the most chests. Fights: the guard first, the room with
     the most spawners (the library), then the others from the entrance on, in turn: none within `repeat` rooms of a copy
     while another fits, a climax the heaviest of those, then the room whose last copy lies farthest back (a rotation).
-    Features: first the **hazards** (a room whose template holds lava, TNT or a dispenser, `hazard` in the generated
-    entry), then the locks, each to a random feature node at least half of `repeat` from the rooms of its kind that is
+    Features: first the **hazards** (a room whose template holds lava a player reaches, TNT or a dispenser, `hazard` in
+    the generated entry), then the locks, each to a random feature node at least half of `repeat` from the rooms of its kind that is
     neither the first feature after the lobby nor right before a fight, and for a hazard lies in neither the first
     section nor the last; then the other feature nodes with calm rooms first.
   - *Rooms per node.* A node takes rooms of its pace: its dealt room first (at the guard only while no copy of it lies
@@ -2475,7 +2476,8 @@ Rooms are generated or imported; nobody has to build one by hand
   room's box, past what cleanup clears ([15.5](#155-instances)). `fluid_edges` follows each fluid down and sideways
   through every cell a flowing fluid can enter (`FlowingFluid#canHoldFluid`), so a fluid beside a floor hole or a
   wall gap fails too, but not down out of a waterlogged bottom slab or bottom-half stair, whose whole underside holds
-  the water (a fall cushion set into the floor layer, RLM-276); leaving through a connector is fine, as the next room
+  the water (a fall cushion set into the floor layer, RLM-276), nor out of lava laid over a glass ceiling in a rim of
+  full blocks (the egg room, RLM-361); leaving through a connector is fine, as the next room
   continues there (RLM-217), but only
   through the connector's own face: a step down out of a side connector in the floor layer, or sideways out of one
   on an edge, leaves beside the next room and fails (RLM-255). Python knows
@@ -2658,8 +2660,8 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   Leaving the End is no death and is left alone.
 - **Also inside:** no natural spawns. **The way out** (W4d): the builder lays the Dungeon Exit
   (`content/blocks/dungeon_exit.yaml`, kind `dungeon_exit`: a plate one pixel high without collision) where players
-  arrive and at every `exit` marker, where nothing stands, once the rooms stand (the test dungeon's ending room, the egg
-  treasury, holds one against its far wall, RLM-363); using it leaves the run, as `/instance leave` does, the player
+  arrive and at every `exit` marker, where nothing stands, once the rooms stand (the test dungeon's ending room, the
+  parrot treasury since the egg room keeps two chests, holds one in its open middle, RLM-363, RLM-361); using it leaves the run, as `/instance leave` does, the player
   command (`command/InstanceCommand`) that works at any time. Closing clears the exit with the rooms.
 - **Leaving and disconnects:** leaving by command or exit, respawning outside the dimension (at the return point
   after the run was released, above; `PlayerEvent.PlayerRespawnEvent`) or being teleported out (`PlayerEvent.PlayerChangedDimensionEvent`) leaves the
