@@ -313,12 +313,35 @@ it offers most of what the Nether offered ([ADR 0025](../decisions/0025-remove-t
 - **No weather and no environmental rule** (wind, sandstorm): it is an enclosed cave (Matěj, 2026-10-15).
 - **Stone:** many custom stone types (no vanilla stone; variants in the spirit of diorite, granite and andesite)
   mixed on floor, walls and ceiling, with Y-range rules (this ore or gem only at Y 10–30, that stone only near the
-  ceiling). **The common stone is slow** (Matěj, 2026-10-15): it never breaks instantly, and with a diamond pickaxe
-  (Efficiency IV and some mining-speed bonuses) it takes about half as long as obsidian, a hardness of about 25
-  (obsidian has 50).
+  ceiling). **Undervault's own blocks are harder than vanilla's** (Matěj, 2026-10-26, RLM-450; it replaces his
+  slower stone of 2026-10-15 and any tool-tier rule): every pickaxe mines them at its normal speed, and nothing breaks
+  them instantly.
+  - **Vaultstone**, the common stone, and Vaultstone Bricks: hardness 6, twice deepslate's 3. A diamond pickaxe
+    takes about 1.15 s a block, 0.4 s with Efficiency IV.
+  - **The other stones** between 3 and 6: Coreslate 5, Mottlestone 4.5, Siltstone 4.
+  - **Blocks to come:** ores set in Undervault's stones, the gem ores included, 3 (deepslate's; RLM-266, RLM-433);
+    the Vaultwood set twice its oak counterparts, and the Vaultgrass Block and a Vaultdirt twice vanilla's grass block
+    and dirt (RLM-268).
+  - **Vanilla's and other mods' blocks** that generate in Undervault keep their own hardness: glowstone, ancient
+    debris, gravel, tuff, and the vanilla ores until RLM-266 sets ores into Undervault's stones.
 - **Light and life:** glowstone near the ceiling, as in the Nether; grassy pockets where things grow; special oases
   with water.
 - **Materials:**
+  - **the ore table** (Matěj, 2026-10-25, RLM-449):
+
+    | Ore | Where | Frequency |
+    | --- | --- | --- |
+    | Iron, Gold, Emerald | anywhere, below the walkable floor too | high to medium |
+    | Ruby, Sapphire, Topaz | anywhere, below the walkable floor too | medium to low (RLM-433) |
+    | Ancient Debris | only below the walkable floor | medium |
+    | Coal, Diamond | none: they stay Overworld's | |
+
+    The first numbers, per chunk (`content/worldgen/`): iron 16 veins of up to 9, gold and emerald 10 each, at every
+    height; ancient debris two small and two large veins, about twice the Nether's rate: beds don't explode here, so
+    nobody farms it with them. Until RLM-266 sets ores into Undervault's stones they are vanilla's ore blocks, their
+    deepslate ores in the coreslate below the floor;
+  - **Vaultstone copies the netherite template** (Matěj, 2026-10-25, RLM-447): 7 diamonds, 1 Vaultstone and 1
+    Netherite Upgrade Smithing Template make 2 templates, in vanilla's shape, with Vaultstone in netherrack's place;
   - at least 3 new ores or gems for gear, weapons and curios, one of them the crystal the light-beam puzzles use
     (no refining or reforging materials: Apotheosis's salvaging supplies those,
     [apotheosis.md](apotheosis.md#the-materials-loop), RLM-199);
