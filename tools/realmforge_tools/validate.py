@@ -114,6 +114,7 @@ SOUND_EVENT_REGISTRY = "minecraft:sound_event"
 SPELL_REGISTRY = f"{MOD_ID}:spell"
 CUSTOM_STAT_REGISTRY = "minecraft:custom_stat"
 LOOT_TABLE_REGISTRY = "minecraft:loot_table"
+RECIPE_REGISTRY = "minecraft:recipe"
 # Vanilla Overworld's height (net.minecraft.world.level.dimension.DimensionType, minecraft:overworld): its lowest y and
 # the number of blocks above it, for Overworld's arrival heights.
 OVERWORLD_MIN_Y = -64
@@ -1358,9 +1359,10 @@ def _check_dungeon_keys(content: Content, universe: IdUniverse) -> list[Problem]
 
 def _check_recipes(content: Content, universe: IdUniverse) -> list[Problem]:
     """Every ingredient of an item's or block's recipe is an item or a vanilla item tag, and a smithing upgrade
-    starts from another item than the one it makes."""
+    starts from another item than the one it makes. A replaced vanilla recipe exists and is replaced once, and makes an
+    item."""
     problems: list[Problem] = []
-    for entry in [*content.items, *content.blocks]:
+    for entry in [*content.items, *content.blocks, *content.recipes]:
         recipe = entry.model.recipe
         if recipe is None:
             continue
@@ -1371,6 +1373,26 @@ def _check_recipes(content: Content, universe: IdUniverse) -> list[Problem]:
         if getattr(recipe, "base", None) == f"{MOD_ID}:{entry.model.id}":
             problems.append(
                 Problem(entry.source, "recipe.base", "a smithing upgrade makes the item from another one")
+            )
+    replaced: dict[str, str] = {}
+    for entry in content.recipes:
+        override = entry.model
+        if not universe.contains(RECIPE_REGISTRY, override.replaces):
+            problems.append(
+                Problem(entry.source, "replaces", _unknown(override.replaces, RECIPE_REGISTRY, universe))
+            )
+        if override.replaces in replaced:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "replaces",
+                    f"{override.replaces} is already replaced by {replaced[override.replaces]}",
+                )
+            )
+        replaced.setdefault(override.replaces, entry.source)
+        if not universe.contains(ITEM_REGISTRY, override.result):
+            problems.append(
+                Problem(entry.source, "result", _unknown(override.result, ITEM_REGISTRY, universe))
             )
     return problems
 

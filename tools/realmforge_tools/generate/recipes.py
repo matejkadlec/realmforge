@@ -1,6 +1,7 @@
 """Recipes: the ``recipe`` of an item or block -> ``data/realmforge/recipe/<id>.json``, a vanilla recipe whose result
 is the entry itself: ``minecraft:crafting_shaped``, ``minecraft:crafting_shapeless`` or ``minecraft:smithing_transform``
-(``schema/recipe.py``). A tag ingredient keeps vanilla's ``#namespace:path`` form."""
+(``schema/recipe.py``). A tag ingredient keeps vanilla's ``#namespace:path`` form. A ``content/recipes/`` entry ->
+``data/minecraft/recipe/<path>.json``, which replaces the vanilla recipe at that path."""
 
 from __future__ import annotations
 
@@ -17,13 +18,17 @@ from realmforge_tools.schema.recipe import ShapedRecipeDef, ShapelessRecipeDef, 
 def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     folder = data_dir(paths) / "recipe"
     entries = [*content.items, *content.blocks]
-    return {
+    files = {
         folder / f"{entry.model.id}.json": dump_json(
             recipe_data(f"{MOD_ID}:{entry.model.id}", entry.model.recipe)
         )
         for entry in entries
         if entry.model.recipe is not None
     }
+    data = paths.mod_generated / "resources" / "data"
+    for entry in content.recipes:
+        files[data / entry.model.data_path] = dump_json(recipe_data(entry.model.result, entry.model.recipe))
+    return files
 
 
 def recipe_data(

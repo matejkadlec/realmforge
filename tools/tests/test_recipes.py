@@ -1,4 +1,5 @@
-"""The recipe of an item or block: a shaped crafting recipe that makes it (schema/recipe.py, generate/recipes.py)."""
+"""The recipe of an item or block: a shaped crafting recipe that makes it, and the vanilla recipes content/recipes/
+replaces (schema/recipe.py, generate/recipes.py)."""
 
 from __future__ import annotations
 
@@ -14,6 +15,18 @@ from realmforge_tools.validate import load_and_validate
 from .conftest import write
 
 RECIPES = "mod/src/generated/resources/data/realmforge/recipe"
+VANILLA_RECIPES = "mod/src/generated/resources/data/minecraft/recipe"
+# Vanilla's lodestone (data/minecraft/recipe/lodestone.json) with an iron ingot in the netherite ingot's place.
+OVERRIDE = """id: test_lodestone
+replaces: minecraft:lodestone
+result: minecraft:lodestone
+recipe:
+  pattern: [SSS, 'S#S', SSS]
+  key:
+    S: minecraft:chiseled_stone_bricks
+    '#': minecraft:iron_ingot
+  category: building
+"""
 ITEM = "id: test_key\nname: {en_us: Test Key}\n"
 BLOCK = "id: test_rock\nname: {en_us: Test Rock}\nhardness: 1.5\n"
 RECIPE = "recipe:\n  pattern: [SSS, 'S#S', SSS]\n  key:\n    S: minecraft:stone_bricks\n    '#': minecraft:iron_ingot\n"
@@ -142,3 +155,67 @@ def test_shapeless_and_smithing_recipes_are_checked(repo: RepoPaths, recipe: str
     write(repo.content / "items" / "test_key.yaml", ITEM + "recipe:\n" + recipe)
     problems = problems_for(repo)
     assert any("test_key.yaml" in p and message in p for p in problems), problems
+
+
+def test_a_replaced_vanilla_recipe_takes_vanillas_own_path(repo: RepoPaths) -> None:
+    write(repo.content / "recipes" / "test_lodestone.yaml", OVERRIDE)
+    files = generate(repo)
+    assert json.loads(files[f"{VANILLA_RECIPES}/lodestone.json"]) == {
+        "type": "minecraft:crafting_shaped",
+        "category": "building",
+        "key": {"#": "minecraft:iron_ingot", "S": "minecraft:chiseled_stone_bricks"},
+        "pattern": ["SSS", "S#S", "SSS"],
+        "result": {"id": "minecraft:lodestone"},
+    }, "the whole recipe at vanilla's path, its result the named item"
+    assert not any(path.startswith(f"{RECIPES}/test_lodestone") for path in files), (
+        "nothing under our namespace"
+    )
+
+
+def test_the_repository_copies_the_netherite_template_with_vaultstone() -> None:
+    content, _ = load_and_validate(RepoPaths())
+    (entry,) = [
+        e for e in content.recipes if e.model.replaces == "minecraft:netherite_upgrade_smithing_template"
+    ]
+    recipe = entry.model.recipe
+    assert entry.model.result == "minecraft:netherite_upgrade_smithing_template"
+    assert sorted(recipe.key.values()) == [
+        "minecraft:diamond",
+        "minecraft:netherite_upgrade_smithing_template",
+        "realmforge:vaultstone",
+    ], "Matěj, 2026-10-25 (RLM-447): Vaultstone in netherrack's place"
+    assert (recipe.pattern, recipe.count) == (["#S#", "#V#", "###"], 2), "vanilla's shape and count"
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        (
+            ("replaces: minecraft:lodestone", "replaces: minecraft:no_such_recipe"),
+            "replaces: unknown id 'minecraft:no_such_recipe'",
+        ),
+        (("replaces: minecraft:", "replaces: realmforge:"), "replaces"),
+        (
+            ("result: minecraft:lodestone", "result: minecraft:no_such_item"),
+            "result: unknown id 'minecraft:no_such_item'",
+        ),
+        (("S: minecraft:chiseled_stone_bricks", "S: minecraft:chiseled_stone_brick"), "recipe.key.S"),
+    ],
+)
+def test_a_replaced_recipe_is_checked(repo: RepoPaths, change: tuple[str, str], message: str) -> None:
+    write(repo.content / "recipes" / "test_lodestone.yaml", OVERRIDE.replace(*change))
+    problems = problems_for(repo)
+    assert any("test_lodestone.yaml" in p and message in p for p in problems), problems
+
+
+def test_a_vanilla_recipe_is_replaced_once(repo: RepoPaths) -> None:
+    write(repo.content / "recipes" / "test_lodestone.yaml", OVERRIDE)
+    write(
+        repo.content / "recipes" / "test_lodestone_2.yaml",
+        OVERRIDE.replace("test_lodestone", "test_lodestone_2"),
+    )
+    problems = problems_for(repo)
+    assert any(
+        "test_lodestone_2.yaml" in p and "already replaced by content/recipes/test_lodestone.yaml" in p
+        for p in problems
+    ), problems

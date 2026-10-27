@@ -1,26 +1,37 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
 import io.github.matejkadlec.realmforge.character.StatPoints;
+import io.github.matejkadlec.realmforge.generated.GeneratedBlocks;
 import io.github.matejkadlec.realmforge.generated.GeneratedItems;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedItemExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedItemExpectations.ItemExpectation;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.CraftingRecipe;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Blocks;
 
 /**
  * Checks that every item defined in {@code content/items/} is in the game exactly as the content says,
- * using expectations generated from the same YAML ({@link GeneratedItemExpectations}).
+ * using expectations generated from the same YAML ({@link GeneratedItemExpectations}), and that a vanilla recipe
+ * {@code content/recipes/} replaces makes its item the new way.
  *
  * <p>Coordinates are relative to the template's corner: its stone floor is at y = 0.
  */
@@ -72,6 +83,38 @@ public final class ContentItemGameTests {
             }
         }
         helper.succeed();
+    }
+
+    /**
+     * Copying the Netherite Upgrade Smithing Template takes Vaultstone instead of netherrack (Matěj, 2026-10-25,
+     * RLM-447): our data pack replaces vanilla's recipe under its own id, so 7 diamonds, 1 Vaultstone and 1 template
+     * make 2 templates, and netherrack in Vaultstone's place makes nothing.
+     */
+    @QaGameTest
+    public static void copyingTheNetheriteTemplateTakesVaultstone(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        RecipeManager recipes = level.getServer().getRecipeManager();
+        CraftingInput withVaultstone = templateCopy(GeneratedBlocks.VAULTSTONE_ITEM.get());
+        Optional<RecipeHolder<CraftingRecipe>> recipe = recipes.getRecipeFor(RecipeType.CRAFTING, withVaultstone, level);
+        helper.assertTrue(recipe.isPresent(), "7 diamonds, 1 Vaultstone and 1 template make a recipe");
+        ResourceKey<Recipe<?>> vanillaId = ResourceKey.create(Registries.RECIPE,
+                Identifier.withDefaultNamespace("netherite_upgrade_smithing_template"));
+        helper.assertValueEqual(recipe.get().id(), vanillaId, "the recipe that copies the template");
+        ItemStack made = recipe.get().value().assemble(withVaultstone);
+        helper.assertTrue(made.is(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE) && made.getCount() == 2,
+                "the copy makes 2 templates, not " + made);
+        helper.assertTrue(recipes.getRecipeFor(RecipeType.CRAFTING, templateCopy(Items.NETHERRACK), level).isEmpty(),
+                "netherrack no longer copies the template");
+        helper.succeed();
+    }
+
+    /** Vanilla's shape of the template copy, with {@code middle} under the template. */
+    private static CraftingInput templateCopy(Item middle) {
+        return CraftingInput.of(3, 3, List.of(
+                new ItemStack(Items.DIAMOND), new ItemStack(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE),
+                new ItemStack(Items.DIAMOND),
+                new ItemStack(Items.DIAMOND), new ItemStack(middle), new ItemStack(Items.DIAMOND),
+                new ItemStack(Items.DIAMOND), new ItemStack(Items.DIAMOND), new ItemStack(Items.DIAMOND)));
     }
 
     /** The test item behaves like a normal item in the world: a hopper picks it up and moves it into a chest. */
