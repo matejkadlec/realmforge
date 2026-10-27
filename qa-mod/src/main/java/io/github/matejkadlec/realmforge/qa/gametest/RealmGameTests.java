@@ -311,7 +311,8 @@ public final class RealmGameTests {
      * Matěj's ore table (2026-10-25, RLM-449): iron, gold and emerald anywhere, in the stones of the walkable cave and
      * as their deepslate ores in the coreslate below the floor; ancient debris only below the floor, about twice the
      * Nether's rate; no coal and no diamond, which stay Overworld's. Logs each ore per chunk, and how many of them
-     * touch air in their chunk (what a player sees), for tuning the frequencies.
+     * touch air in their chunk (what a player walking the cave sees; the coreslate's ores are found by digging down),
+     * for tuning the frequencies.
      */
     @QaGameTest(timeoutTicks = 400)
     public static void theRealmGeneratesMatejsOreTable(GameTestHelper helper) {
@@ -354,11 +355,15 @@ public final class RealmGameTests {
                 Blocks.DEEPSLATE_DIAMOND_ORE)) {
             helper.assertValueEqual(ores.get(absent)[0], 0, absent + " in Undervault");
         }
-        for (Block present : List.of(Blocks.IRON_ORE, Blocks.DEEPSLATE_IRON_ORE, Blocks.GOLD_ORE,
-                Blocks.DEEPSLATE_GOLD_ORE, Blocks.EMERALD_ORE, Blocks.DEEPSLATE_EMERALD_ORE)) {
-            helper.assertTrue(ores.get(present)[1] > 0, present + " where a player sees it");
+        for (Block inTheCave : List.of(Blocks.IRON_ORE, Blocks.GOLD_ORE, Blocks.EMERALD_ORE)) {
+            helper.assertTrue(ores.get(inTheCave)[1] > 0, inTheCave + " where a player sees it");
         }
-        helper.assertTrue(ores.get(Blocks.ANCIENT_DEBRIS)[0] >= chunks * 4,
+        for (Block belowTheFloor : List.of(Blocks.DEEPSLATE_IRON_ORE, Blocks.DEEPSLATE_GOLD_ORE,
+                Blocks.DEEPSLATE_EMERALD_ORE)) {
+            helper.assertTrue(ores.get(belowTheFloor)[0] > 0, belowTheFloor + " in the coreslate below the floor");
+        }
+        // Two veins of each size per chunk lay about 3.8 blocks a chunk; W2a's one of each, half that.
+        helper.assertTrue(ores.get(Blocks.ANCIENT_DEBRIS)[0] >= chunks * 2,
                 "ancient debris at about twice the Nether's rate: " + ores.get(Blocks.ANCIENT_DEBRIS)[0] + " in "
                         + chunks + " chunks");
         helper.assertValueEqual(ores.get(Blocks.ANCIENT_DEBRIS)[1], 0, "ancient debris touching air");
