@@ -374,9 +374,13 @@ When no portal leads the right way within the search radius, the trip builds one
 ### Arriving
 
 - **The player arrives in front of the exit portal, facing away from it,** when one side of the opening has floor and
-  two blocks of air at the opening's height: on the floor the frame is set into, so they walk straight back in.
-  Otherwise they arrive in the opening, as a nether portal places them, and the portal cooldown vanilla sets after every
-  trip (`Entity#setPortalCooldown`) keeps them from bouncing straight back.
+  two blocks of air at the opening's height: on the floor the frame is set into, so they walk straight back in, or,
+  for a frame a player stood on top of the floor, on that floor one step below the opening (RLM-341). Otherwise they
+  arrive in the opening, as a nether portal places them, and the portal cooldown vanilla sets after every trip
+  (`Entity#setPortalCooldown`, half a second for a player, counted down only once their client has loaded the new
+  dimension) keeps them from bouncing straight back: it starts again on every tick spent in a portal, so a player who
+  arrives in the opening, or steps straight back into it, travels only once they stepped out for half a second and in
+  again (RLM-335).
 - **A title** shows the realm's name with its element subtitle, and its level band (the realm entry's `levels`,
   "Stone Realm · Levels 6–18"), for 2 seconds on every arrival in a realm (RLM-139); the player's first arrival also
   shows its flavour line.
@@ -438,8 +442,10 @@ without one; never in a realm. This answers the realm design's
 - **No vanilla portal overlay:** `Portal.Transition.CONFUSION` makes the client draw the nether portal's purple
   texture over the screen (`LocalPlayer#handlePortalTransitionEffect` and `Gui`), so the realm portal uses
   `Portal.Transition.NONE`. A tinted overlay of our own in `client/` is polish for later.
-- **Travel takes 2 seconds** standing in the portal (the nether portal takes 4), and one tick in creative
-  (`Portal#getPortalTransitionTime`).
+- **Travel starts at once** for every entity, a player in survival too (Matěj's playtest of W2b, 2026-10-20, RLM-335:
+  "entities and items are teleported instantly, but I still have to wait in the portal"; the nether portal takes 4
+  seconds): `Portal#getPortalTransitionTime` answers 0, as vanilla's nether portal does for a creative player
+  (`players_nether_portal_creative_delay`).
 
 ## Multiplayer
 

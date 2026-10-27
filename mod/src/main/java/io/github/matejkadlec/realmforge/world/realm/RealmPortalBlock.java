@@ -16,7 +16,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.InsideBlockEffectApplier;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -48,8 +47,10 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * <ul>
  *   <li>a player without access to the destination is refused when they step in, so the countdown never starts; so is
  *       a vehicle or a mount carrying one ({@link #entityInside}). Every other entity travels (Matěj, 2026-10-20);
- *   <li>a player's trip takes 2 seconds, one tick in creative, and shows no vanilla portal overlay
- *       ({@link Portal.Transition#NONE}); any other entity's starts at once, as through a nether portal;
+ *   <li>every entity's trip starts at once, a player's too (RLM-335), with no vanilla portal overlay
+ *       ({@link Portal.Transition#NONE}). The portal cooldown vanilla sets after every trip
+ *       ({@code Entity#setPortalCooldown}, half a second for a player) keeps a player who arrives in the exit portal,
+ *       or steps back into it at once, from bouncing straight back: it starts again on every tick spent inside;
  *   <li>it refuses every fluid, flowing or from a bucket or a dispenser ({@link LiquidBlockContainer},
  *       {@link #canBeReplaced(BlockState, Fluid)}), so no fluid washes the opening away;
  *   <li>its colour, particles and hum are the destination realm's, read from the frame's sealstone on the client.
@@ -58,10 +59,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 public final class RealmPortalBlock extends Block implements Portal, LiquidBlockContainer {
     public static final MapCodec<RealmPortalBlock> CODEC = simpleCodec(RealmPortalBlock::new);
     public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.HORIZONTAL_AXIS;
-    /** How long a player stands in the portal before the trip: 2 seconds (the nether portal takes 4). */
-    public static final int TRANSITION_TICKS = 40;
-    /** The same, in creative mode. */
-    public static final int CREATIVE_TRANSITION_TICKS = 1;
 
     private static final Map<Direction.Axis, VoxelShape> SHAPES =
             Shapes.rotateHorizontalAxis(Block.column(4.0, 16.0, 0.0, 16.0));
@@ -120,12 +117,10 @@ public final class RealmPortalBlock extends Block implements Portal, LiquidBlock
         }
     }
 
+    /** Every entity, a player in survival too, travels on the first tick it spends in the portal (RLM-335). */
     @Override
     public int getPortalTransitionTime(ServerLevel level, Entity entity) {
-        if (!(entity instanceof Player player)) {
-            return 0;
-        }
-        return player.getAbilities().invulnerable ? CREATIVE_TRANSITION_TICKS : TRANSITION_TICKS;
+        return 0;
     }
 
     @Override
