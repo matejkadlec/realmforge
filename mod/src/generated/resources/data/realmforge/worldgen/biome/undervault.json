@@ -31,10 +31,9 @@
     [],
     [
       "realmforge:ore_mottlestone",
-      "realmforge:ore_coal_undervault",
       "realmforge:ore_iron_undervault",
       "realmforge:ore_gold_undervault",
-      "realmforge:ore_diamond_undervault",
+      "realmforge:ore_emerald_undervault",
       "realmforge:ore_debris_undervault_large",
       "realmforge:ore_debris_undervault_small"
     ],
