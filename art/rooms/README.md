@@ -71,6 +71,9 @@ Matěj's playtest of 2026-10-24 (RLM-363, RLM-364), mend the rooms that locked p
 (buttons inside `zombie_three_way_temple`'s iron doors, no bars in `husk_temple`'s doorways, nor in what its
 connectors leave behind, levers over `jail_2`'s cell doors, tinted glass for the door of `jail`'s garden), set a chest
 and a barrel on its side at the end of `jail`'s passage, its only containers (Matěj, 2026-10-25), and set the exit
-marker of `treasure/egg`, the room that ends the test dungeon, where its dressing adds no barrels.
+marker of `treasure/egg`, the room that ends the test dungeon, where its dressing adds no barrels. Players break
+spawners in instances (RLM-412, ADR 0055), so the rules also expose the two spawners the rooms hid: a cobweb takes the
+place of the slab over `skeleton_trap`'s, and `husk_temple`'s sandstone monument is opened on its east side above its
+bottom layer.
 
 A newer version of a source updates its `NOTICE` (version, file, what changed) and this table.

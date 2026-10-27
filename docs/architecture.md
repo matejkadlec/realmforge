@@ -2598,7 +2598,8 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   Use '/instance leave' to exit immediately." For each party member online it counts in the statistic
   `realmforge:dungeons_completed` and fires `realmforge:dungeon_completed` with the run's dungeon type, which quests
   read ([16](#16-progression-and-quests)).
-- **Rules inside: nobody edits the rooms** (W4c, `dungeon/instance/InstanceRules`). Survival players are switched to
+- **Rules inside: nobody edits the rooms** but for an allowlist (W4c, `dungeon/instance/InstanceRules`; the allowlist
+  below). Survival players are switched to
   Adventure mode when they enter (creative operators keep theirs, and so do players in Adventure or spectator mode);
   their visit remembers survival, and leaving gives it back, unless something else changed the game mode since (an
   operator's `/gamemode`). Every way out restores it: `leave`, the respawn and teleport below, and the next login
@@ -2617,10 +2618,20 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   (RLM-257): the plan hands the list to each `RoomPlacement`, the plot saves it with its layout, and the guard keeps
   an affected block only when it lies in such a room's box and is on that room's list (`Plot#explosionBreaks`), so
   Stonevaults' combination lock blows its way open and nothing else breaks; the cleanup restores the room anyway.
-  `DungeonRoomGameTests` explodes TNT in that room and in a copy without the list. Adventure mode still
-  lets an item with the `can_break` or `can_place_on` component (`DataComponents.CAN_BREAK`, `CAN_PLACE_ON`) edit
+  `DungeonRoomGameTests` explodes TNT in that room and in a copy without the list. **Players break an allowlist**
+  (RLM-412, [ADR 0055](decisions/0055-players-break-an-allowlist-of-blocks-in-instances.md),
+  [design](design/instance-block-rules.md)): spawners, cobwebs and vines, the block tag
+  `realmforge:breakable_in_instances` in the core mod's resources (`data/realmforge/tags/block/`), by hand or with any
+  item, at vanilla's speed; iron bars join it with the gold bars that keep the throne room shut (RLM-469). Adventure
+  mode refuses a break in `Player#blockActionRestricted`, on the server and in the client's prediction, before
+  `BreakBlockEvent`, so `mixin/PlayerBlockActionMixin` makes it return false for a player in Adventure mode inside the
+  dimension when the block is in the tag (`InstanceRules#mayBreak`); the client knows its dimension and the synced
+  tag, so it predicts the break. Nothing broken inside the dimension drops an item (`BlockDropsEvent`'s drops are
+  cleared; a spawner's experience stays), so cobwebs and vines are no string farm, even with shears. The block
+  outline stays hidden on every block, as Adventure mode draws it only for an item with `can_break` or
+  `can_place_on`; the cracks show while breaking. Adventure mode still lets an item with the `can_break` or `can_place_on` component (`DataComponents.CAN_BREAK`, `CAN_PLACE_ON`) edit
   matching blocks, and commands, data packs or other mods can hand out such items, so block breaks
-  (`BreakBlockEvent`, posted on both sides, so the client predicts it) and placements
+  (`BreakBlockEvent`, posted on both sides, so the client predicts it) of blocks outside the allowlist and placements
   (`BlockEvent.EntityPlaceEvent`) by players who are not in creative mode are cancelled there too. Buckets get past
   both events: `BucketItem#use` (`MobBucketItem` included) checks
   `Level#mayInteract` (spawn protection, which covers only Overworld, and the world border) and
@@ -2632,9 +2643,11 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   event fires on the client too (`MultiPlayerGameMode#useItem`), so the same listener stops the client's
   prediction and no ghost fluid appears. `InstanceRulesGameTests` use a bucket (a plain one, and water, lava and
   empty buckets with `can_place_on` matching a room block, placing and picking up), flint and steel, an axe, a hoe, a
-  tool with `can_break`, and place and break blocks inside an instance, and expect the room unchanged; an explosion
-  with fire, a fluid's block, a mob's placement and griefing, and trampling are checked inside and outside the
-  dimension.
+  tool with `can_break`, and place and break blocks inside an instance, and expect the room unchanged; break a
+  spawner by hand, cobwebs with shears and a sword and a vine with shears inside one and find no drops, and the same
+  spawner unbreakable outside the dimension; an explosion with fire, a fluid's block, a mob's placement and griefing,
+  and trampling are checked inside and outside the dimension. A pytest keeps every spawner of the stone vault pool
+  where a player reaches it from the room's doorways (`rooms/dress.py`'s `reach`).
 - **Respawn at the entrance** (W4c, Matěj's decision of 2026-10-11): `PlayerRespawnPositionEvent` (posted by
   `PlayerList#respawn` before it makes the new player entity) moves a player who died in a playable run to its
   arrival spot, still inside and in the same run, looking along the way on; the visit is copied on death, and the
@@ -3002,8 +3015,9 @@ changes. Once they settle they can move into content.
 
 Last resort, only where no event or API exists. Each one sits in `mixin/` (or the access transformer file) with a
 comment saying why, and gets a test. A mod lists its mixins in `<modid>.mixins.json`, which `neoforge.mods.toml`
-names under `[[mixins]]`. The core mod's one is `RangedAttributeAccessor`, which raises attribute caps
-([8.4](#84-caps)) and caps two of Apothic Attributes' down ([19.4](#194-optional-integrations)). The QA mod has one too, for tests only: `GameTestServerMixin` gives the GameTest world the data
+names under `[[mixins]]`. The core mod has two: `RangedAttributeAccessor`, which raises attribute caps
+([8.4](#84-caps)) and caps two of Apothic Attributes' down ([19.4](#194-optional-integrations)), and
+`PlayerBlockActionMixin`, which lets Adventure mode break the allowlist inside instances ([15.5](#155-instances)). The QA mod has one too, for tests only: `GameTestServerMixin` gives the GameTest world the data
 pack dimensions, which vanilla leaves out ([20](#20-tests-per-layer)).
 
 Access transformers live in `src/main/resources/META-INF/accesstransformer.cfg`, which ModDevGradle applies to the
