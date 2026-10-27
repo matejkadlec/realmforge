@@ -422,8 +422,9 @@ RLM-439 files this as the next free ADR once Matěj approves the design, adjuste
 >    the same path from its spawn data.
 > 6. Forming styles `grow`, `storm` and `hands` run on the client from the cast payloads, drawn for every caster by
 >    one renderer at the caster's hands; in first person the forming model is drawn smaller, below the crosshair.
-> 7. Cast animations stay on the cast layer of [ADR 0020](0020-cast-animations-and-melee-while-casting.md); a
->    spell's hit moments live in its data, checked against the animation's length.
+> 7. Cast animations stay on the cast layer of
+>    [ADR 0020](../decisions/0020-cast-animations-and-melee-while-casting.md); a spell's hit moments live in its
+>    data, checked against the animation's length.
 >
 > **Consequences.** A new spell is mostly YAML; a new element is a look, a material and colours; a new model is a
 > Blockbench file. The projectile becomes a GeckoLib animatable, and Stoneform moves to the kit. GeckoLib's API is
