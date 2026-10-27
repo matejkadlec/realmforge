@@ -1,11 +1,11 @@
 # yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
 # Undervault's stone bricks (Matěj's playtest of W3, 2026-10-23, RLM-33): what a Hewn Sentinel, a statue of them, is
-# built of and drops. 4 Vaultstone make 4, as vanilla makes stone bricks; as hard as Vaultstone. The generated
-# placeholder texture until the A* textures.
+# built of and drops. 4 Vaultstone make 4, as vanilla makes stone bricks; as hard as Vaultstone (6, RLM-450). The
+# generated placeholder texture until the A* textures.
 id: vaultstone_bricks
 name:
   en_us: Vaultstone Bricks
-hardness: 20
+hardness: 6
 blast_resistance: 6
 tool: pickaxe
 requires_tool: true

@@ -35,7 +35,7 @@ public final class GeneratedBlocks {
     public static final DeferredBlock<Block> CORESLATE =
             BLOCKS.registerSimpleBlock("coreslate", properties -> properties
                     .mapColor(MapColor.DEEPSLATE)
-                    .strength(25.0F, 9.0F)
+                    .strength(5.0F, 9.0F)
                     .sound(SoundType.DEEPSLATE)
                     .requiresCorrectToolForDrops());
 
@@ -93,7 +93,7 @@ public final class GeneratedBlocks {
     public static final DeferredBlock<Block> MOTTLESTONE =
             BLOCKS.registerSimpleBlock("mottlestone", properties -> properties
                     .mapColor(MapColor.COLOR_LIGHT_GRAY)
-                    .strength(18.0F, 6.0F)
+                    .strength(4.5F, 6.0F)
                     .sound(SoundType.TUFF)
                     .requiresCorrectToolForDrops());
 
@@ -151,7 +151,7 @@ public final class GeneratedBlocks {
     public static final DeferredBlock<Block> SILTSTONE =
             BLOCKS.registerSimpleBlock("siltstone", properties -> properties
                     .mapColor(MapColor.TERRACOTTA_WHITE)
-                    .strength(12.0F, 6.0F)
+                    .strength(4.0F, 6.0F)
                     .sound(SoundType.CALCITE)
                     .requiresCorrectToolForDrops());
 
@@ -162,7 +162,7 @@ public final class GeneratedBlocks {
     public static final DeferredBlock<Block> VAULTSTONE =
             BLOCKS.registerSimpleBlock("vaultstone", properties -> properties
                     .mapColor(MapColor.STONE)
-                    .strength(20.0F, 6.0F)
+                    .strength(6.0F, 6.0F)
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops());
 
@@ -173,7 +173,7 @@ public final class GeneratedBlocks {
     public static final DeferredBlock<Block> VAULTSTONE_BRICKS =
             BLOCKS.registerSimpleBlock("vaultstone_bricks", properties -> properties
                     .mapColor(MapColor.STONE)
-                    .strength(20.0F, 6.0F)
+                    .strength(6.0F, 6.0F)
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops());
 

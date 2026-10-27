@@ -26,7 +26,7 @@ public final class GeneratedBlockExpectations {
             new BlockExpectation(
                     "realmforge:coreslate",
                     "block.realmforge.coreslate",
-                    25.0F, 9.0F, true,
+                    5.0F, 9.0F, true,
                     List.of("minecraft:mineable/pickaxe"),
                     "realmforge:blocks/coreslate"),
             new BlockExpectation(
@@ -56,7 +56,7 @@ public final class GeneratedBlockExpectations {
             new BlockExpectation(
                     "realmforge:mottlestone",
                     "block.realmforge.mottlestone",
-                    18.0F, 6.0F, true,
+                    4.5F, 6.0F, true,
                     List.of("minecraft:mineable/pickaxe"),
                     "realmforge:blocks/mottlestone"),
             new BlockExpectation(
@@ -86,19 +86,19 @@ public final class GeneratedBlockExpectations {
             new BlockExpectation(
                     "realmforge:siltstone",
                     "block.realmforge.siltstone",
-                    12.0F, 6.0F, true,
+                    4.0F, 6.0F, true,
                     List.of("minecraft:mineable/pickaxe"),
                     "realmforge:blocks/siltstone"),
             new BlockExpectation(
                     "realmforge:vaultstone",
                     "block.realmforge.vaultstone",
-                    20.0F, 6.0F, true,
+                    6.0F, 6.0F, true,
                     List.of("minecraft:mineable/pickaxe"),
                     "realmforge:blocks/vaultstone"),
             new BlockExpectation(
                     "realmforge:vaultstone_bricks",
                     "block.realmforge.vaultstone_bricks",
-                    20.0F, 6.0F, true,
+                    6.0F, 6.0F, true,
                     List.of("minecraft:mineable/pickaxe"),
                     "realmforge:blocks/vaultstone_bricks"));
 
