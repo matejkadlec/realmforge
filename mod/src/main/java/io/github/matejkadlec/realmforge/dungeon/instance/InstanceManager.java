@@ -13,6 +13,8 @@ import io.github.matejkadlec.realmforge.dungeon.plan.DungeonRoom;
 import io.github.matejkadlec.realmforge.dungeon.plan.PlanningException;
 import io.github.matejkadlec.realmforge.dungeon.portal.DungeonBlocks;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
+import io.github.matejkadlec.realmforge.progression.ProgressionStats;
+import io.github.matejkadlec.realmforge.progression.ProgressionTriggers;
 import io.github.matejkadlec.realmforge.world.BlockKinds;
 import it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -386,8 +388,10 @@ public final class InstanceManager extends SavedData {
     /**
      * Marks an active run's goal as done: the entry point for its final boss's death and its objectives (W5, W6), and
      * {@code /qa instance complete}. Its players stay until they leave or the plot closes, which is now 5 minutes from
-     * now, however much time the run had left ({@link PortalTimer#COMPLETED_TICKS}); the party is told so. False for a
-     * plot that is not active.
+     * now, however much time the run had left ({@link PortalTimer#COMPLETED_TICKS}); the party is told so. Each party
+     * member online completed it: their {@code realmforge:dungeons_completed} statistic counts it, and
+     * {@code realmforge:dungeon_completed} fires with the run's dungeon type (architecture 16). False for a plot that is
+     * not active.
      */
     public boolean complete(Plot plot) {
         if (plot.state() != PlotState.ACTIVE) {
@@ -396,6 +400,14 @@ public final class InstanceManager extends SavedData {
         plot.complete();
         plot.setClosesAt(level().getGameTime() + PortalTimer.COMPLETED_TICKS);
         tell(plot, Component.translatable(GeneratedTexts.MESSAGE_DUNGEON_COMPLETED));
+        Optional<Identifier> type = plot.portal().map(PortalLink::type);
+        for (UUID member : plot.party()) {
+            ServerPlayer player = level().getServer().getPlayerList().getPlayer(member);
+            if (player != null) {
+                ProgressionStats.dungeonCompleted(player);
+                ProgressionTriggers.DUNGEON_COMPLETED.get().trigger(player, type);
+            }
+        }
         setDirty();
         return true;
     }

@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# Names of our custom statistics in the Statistics screen (stat.realmforge.<name>; progression/ProgressionStats, Q1-2).
+id: stat
+texts:
+  # Runs a player was in the party of when the dungeon's goal was done, for repeatable quests.
+  dungeons_completed:
+    en_us: Dungeons Completed

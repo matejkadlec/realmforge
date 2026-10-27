@@ -50,18 +50,23 @@ from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
 from realmforge_tools.schema.mob import TRASH_LOOT, mob_description_id
 from realmforge_tools.schema.quest import (
+    CUSTOM_STATS,
     AdvancementRewardDef,
     AdvancementTaskDef,
     DimensionTaskDef,
+    DungeonTaskDef,
     ItemRewardDef,
     ItemTaskDef,
     KillTaskDef,
+    QuestDef,
     RewardDef,
+    SpellTaskDef,
     StatTaskDef,
     TaskDef,
     chapter_key,
     code_string,
     object_id,
+    quest_dependencies,
     quest_object_keys,
 )
 from realmforge_tools.schema.realm import FRAME_HEIGHT, PORTAL_PARTICLES, unlock_advancement
@@ -115,6 +120,7 @@ SPELL_REGISTRY = f"{MOD_ID}:spell"
 CUSTOM_STAT_REGISTRY = "minecraft:custom_stat"
 LOOT_TABLE_REGISTRY = "minecraft:loot_table"
 RECIPE_REGISTRY = "minecraft:recipe"
+BIOME_REGISTRY = "minecraft:worldgen/biome"
 # Vanilla Overworld's height (net.minecraft.world.level.dimension.DimensionType, minecraft:overworld): its lowest y and
 # the number of blocks above it, for Overworld's arrival heights.
 OVERWORLD_MIN_Y = -64
@@ -201,6 +207,8 @@ def universe_with_content(vanilla: IdUniverse, content: Content) -> IdUniverse:
             universe.add(SOUND_EVENT_REGISTRY, sound_id(entry.model, name))
     for entry in content.chapters:
         universe.add(ADVANCEMENT_REGISTRY, f"{MOD_ID}:{chapter_advancement(entry.model.id)}")
+    for stat in CUSTOM_STATS:
+        universe.add(CUSTOM_STAT_REGISTRY, f"{MOD_ID}:{stat}")
     for entry in content.realms:
         if not entry.model.is_overworld:
             universe.add(ADVANCEMENT_REGISTRY, f"{MOD_ID}:{unlock_advancement(entry.model.id)}")
@@ -1721,14 +1729,21 @@ def _check_quests(content: Content, universe: IdUniverse) -> list[Problem]:
     chapter stand apart; a chapter with quests has exactly one quest that completes it; and no two objects of the quest
     book share an id, which would cost a player's progress (architecture 16)."""
     problems: list[Problem] = []
-    chapters = {entry.model.id for entry in content.chapters}
+    chapters = {entry.model.id: entry.model for entry in content.chapters}
+    realms = {entry.model.id: entry.model for entry in content.realms}
     quests = {entry.model.id: entry for entry in content.quests}
+    npc_spells = {f"{MOD_ID}:{entry.model.id}" for entry in content.spells if entry.model.npc_only}
     for entry in content.quests:
         quest = entry.model
         if quest.chapter not in chapters:
             problems.append(
                 Problem(entry.source, "chapter", f"unknown chapter {quest.chapter!r} (content/chapters/)")
             )
+        if quest.realm not in realms:
+            problems.append(
+                Problem(entry.source, "realm", f"unknown realm {quest.realm!r} (content/realms/)")
+            )
+        problems += _quest_where_and_with_what(entry.source, quest, content, universe)
         for i, dependency in enumerate(quest.dependencies):
             if dependency not in quests:
                 problems.append(
@@ -1740,6 +1755,10 @@ def _check_quests(content: Content, universe: IdUniverse) -> list[Problem]:
             problems.append(Problem(entry.source, "icon", _unknown(quest.icon, ITEM_REGISTRY, universe)))
         for i, task in enumerate(quest.tasks):
             problems += _quest_task_problems(entry.source, f"tasks.{i}", task, universe)
+            if isinstance(task, SpellTaskDef) and task.spell is not None and task.spell in npc_spells:
+                problems.append(
+                    Problem(entry.source, f"tasks.{i}.spell", f"{task.spell} is npc_only: no player casts it")
+                )
         for i, reward in enumerate(quest.rewards):
             problems += _quest_reward_problems(entry.source, f"rewards.{i}", reward, universe)
     problems += _quest_cycles(content)
@@ -1790,6 +1809,74 @@ def _check_quests(content: Content, universe: IdUniverse) -> list[Problem]:
     return problems
 
 
+def _quest_where_and_with_what(
+    source: str, quest: QuestDef, content: Content, universe: IdUniverse
+) -> list[Problem]:
+    """Where and with what (Q1-3): the place and the items exist, every item to craft has a recipe, and the
+    recommended level lies in the realm's level band and below the cap the quest's chapter leaves."""
+    problems: list[Problem] = []
+    if quest.place is not None:
+        for field, id_, registry in (
+            ("structure", quest.place.structure, WORLDGEN_STRUCTURE_REGISTRY),
+            ("biome", quest.place.biome, BIOME_REGISTRY),
+        ):
+            if id_ is not None and not universe.contains(registry, id_):
+                problems.append(Problem(source, f"place.{field}", _unknown(id_, registry, universe)))
+    for field, items in (("bring", quest.bring), ("craft", quest.craft)):
+        for i, item in enumerate(items):
+            if not universe.contains(ITEM_REGISTRY, item):
+                problems.append(Problem(source, f"{field}.{i}", _unknown(item, ITEM_REGISTRY, universe)))
+            elif field == "craft" and not _has_recipe(item, content, universe):
+                problems.append(
+                    Problem(
+                        source,
+                        f"craft.{i}",
+                        f"no recipe makes {item}: name an item with a recipe (content/items/, content/blocks/, "
+                        "content/recipes/ or vanilla's)",
+                    )
+                )
+    if quest.level is not None:
+        realm = next((entry.model for entry in content.realms if entry.model.id == quest.realm), None)
+        if (
+            realm is not None
+            and realm.levels is not None
+            and not realm.levels[0] <= quest.level <= realm.levels[1]
+        ):
+            problems.append(
+                Problem(
+                    source,
+                    "level",
+                    f"level {quest.level} lies outside {quest.realm}'s level band {realm.levels[0]}-{realm.levels[1]}",
+                )
+            )
+        chapter = next((entry.model for entry in content.chapters if entry.model.id == quest.chapter), None)
+        if chapter is not None and quest.level > chapter.completed_level_cap:
+            problems.append(
+                Problem(
+                    source,
+                    "level",
+                    f"level {quest.level} lies above {quest.chapter}'s cap once completed, "
+                    f"{chapter.completed_level_cap}: a player on its page never gets there",
+                )
+            )
+    return problems
+
+
+def _has_recipe(item: str, content: Content, universe: IdUniverse) -> bool:
+    """Whether a recipe makes the item: our item's or block's own recipe, a content/recipes/ override's result, or a
+    vanilla recipe named after it (``minecraft:iron_pickaxe``, ``minecraft:iron_ingot_from_smelting_iron_ore``)."""
+    namespace, path = item.split(":", 1)
+    if namespace == MOD_ID:
+        return any(
+            entry.model.id == path and entry.model.recipe is not None
+            for entry in (*content.items, *content.blocks)
+        )
+    if any(entry.model.result == item for entry in content.recipes):
+        return True
+    recipes = universe.registries.get(RECIPE_REGISTRY, set())
+    return item in recipes or any(recipe.startswith(f"{item}_from_") for recipe in recipes)
+
+
 def _quest_task_problems(source: str, path: str, task: TaskDef, universe: IdUniverse) -> list[Problem]:
     references: list[tuple[str, str, str]] = []  # field, id, registry
     match task:
@@ -1803,6 +1890,10 @@ def _quest_task_problems(source: str, path: str, task: TaskDef, universe: IdUniv
             references.append(("entity", task.entity, ENTITY_TYPE_REGISTRY))
         case DimensionTaskDef():
             references.append(("dimension", task.dimension, DIMENSION_REGISTRY))
+        case DungeonTaskDef() if task.dungeon is not None:
+            references.append(("dungeon", task.dungeon, DUNGEON_TYPE_REGISTRY))
+        case SpellTaskDef() if task.spell is not None:
+            references.append(("spell", task.spell, SPELL_REGISTRY))
     return [
         Problem(source, f"{path}.{field}", _unknown(id_, registry, universe))
         for field, id_, registry in references
@@ -1842,8 +1933,11 @@ def _quest_reward_problems(source: str, path: str, reward: RewardDef, universe: 
 
 
 def _quest_cycles(content: Content) -> list[Problem]:
-    """Quests whose dependencies lead back to themselves: FTB Quests could never open them."""
+    """Quests whose dependencies, a final boss quest's mandatory quests included, lead back to themselves: FTB Quests
+    could never open them."""
     entries = {entry.model.id: entry for entry in content.quests}
+    models = [entry.model for entry in content.quests]
+    dependencies = {quest.id: quest_dependencies(quest, models) for quest in models}
     done: set[str] = set()
     cycles: set[tuple[str, ...]] = set()
     # A depth-first walk with its own stack (a campaign's chains can be longer than Python's recursion limit): the
@@ -1852,7 +1946,7 @@ def _quest_cycles(content: Content) -> list[Problem]:
         if start_id in done:
             continue
         path: list[str] = [start_id]
-        pending: list[list[str]] = [list(entries[start_id].model.dependencies)]
+        pending: list[list[str]] = [list(dependencies[start_id])]
         while path:
             if not pending[-1]:
                 done.add(path.pop())
@@ -1867,7 +1961,7 @@ def _quest_cycles(content: Content) -> list[Problem]:
                 cycles.add(tuple(cycle[first:] + cycle[:first]))
                 continue
             path.append(dependency)
-            pending.append(list(entries[dependency].model.dependencies))
+            pending.append(list(dependencies[dependency]))
     return [
         Problem(
             entries[cycle[0]].source,

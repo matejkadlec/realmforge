@@ -375,7 +375,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
 | `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template, and each room's set-piece spots with the pieces that may fill them ([15.4](#154-rooms)) | the planner ([15.3](#153-generation-pure-first-then-minecraft)); the builder's set pieces (RLM-282) |
 | `loot/`, tags; the `recipe` of an item or block (exists, W4d) | `data/realmforge/loot_table/`, `recipe/<id>.json` (vanilla's `crafting_shaped`, the result the entry itself), `tags/` | reloadable vanilla data |
-| `chapters/`, `realms/`, `quests/` | `data/realmforge/advancement/` (a chapter's `chapter/<id>`, a realm's unlock `realm/<id>`); `pack/config/ftbquests/quests/` (FTB Quests' JSON5, stable ids per ADR 0006; exists, Q1-1, [16](#16-progression-and-quests)) | advancements; the FTB Quests book |
+| `chapters/`, `realms/`, `quests/` | `data/realmforge/advancement/` (a chapter's `chapter/<id>`, a realm's unlock `realm/<id>`, a quest task of ours `quest/<quest>/<key>`); `pack/config/ftbquests/quests/` (FTB Quests' JSON5, stable ids per ADR 0006; exists, Q1-1, [16](#16-progression-and-quests)) | advancements; the FTB Quests book |
 | `worldgen/<registry>/<id>.json` (JSON, [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)) | validated and copied unchanged to `data/realmforge/dimension/`, `dimension_type/`, `worldgen/<registry>/` | vanilla worldgen registries |
 | `rooms/` (NBT plus a YAML sidecar; [15.4](#154-rooms)) | validated and copied, normalized, to `data/realmforge/structure/rooms/` | structure templates |
 | `room_specs/`, `room_themes/` (exist, A4d; [15.4](#154-rooms)) | each kept seed of a spec built by the room generator into `data/realmforge/structure/rooms/generated/<spec>/seed_<n>.nbt`; themes name the blocks it builds with | structure templates |
@@ -405,7 +405,9 @@ The quest book is part of the modpack (All Rights Reserved, [ADR 0009](decisions
 files are generated into `pack/`, not into the jar. FTB Quests reads them from `config/ftbquests/quests/` in the
 instance. `pack/config/ftbquests/quests/` is a generated directory, owned by `rf gen` like `mod/src/generated/`, and
 its files carry the `GENERATED FILE` header. When `rf gen` changes files in `pack/`, it runs `packwiz refresh` itself,
-or, without `packwiz` on the `PATH`, exits with 1 and asks for it (CI checks the pack index).
+or, without `packwiz` on the `PATH`, exits with 1 and asks for it (CI checks the pack index). The dev runs get the
+book with the rest of `pack/config/` (`seedPackConfig`), which deletes each run's copy first, so a chapter file
+`rf gen` removed leaves the runs too (RLM-425).
 
 ### 6.3 Conventions
 
@@ -2593,7 +2595,9 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   boss's death and the objectives of W5 and W6, and `/qa instance complete` until then): its players stay until they
   leave or the plot closes, which is now 5 minutes from then, however much time was left (`PortalTimer
   #COMPLETED_TICKS`), and they read "You completed the instance and will be automatically teleported out in 5 minutes.
-  Use '/instance leave' to exit immediately."
+  Use '/instance leave' to exit immediately." For each party member online it counts in the statistic
+  `realmforge:dungeons_completed` and fires `realmforge:dungeon_completed` with the run's dungeon type, which quests
+  read ([16](#16-progression-and-quests)).
 - **Rules inside: nobody edits the rooms** (W4c, `dungeon/instance/InstanceRules`). Survival players are switched to
   Adventure mode when they enter (creative operators keep theirs, and so do players in Adventure or spectator mode);
   their visit remembers survival, and leaving gives it back, unless something else changed the game mode since (an
@@ -2699,15 +2703,28 @@ depth limit.
     (`markRewardAsClaimed`). No FTB Quests API is needed, so decision 7 of
     [ADR 0014](decisions/0014-core-mod-architecture.md) stands. Q1's pytest checks that every generated chapter
     reward is per player and auto-claimed.
-  - **Our mod → quests:** our criteria triggers (`Registries.TRIGGER_TYPE`) complete advancements generated from
-    content: `realmforge:level_reached` (exists since C2: `progression/LevelReachedTrigger`, fired with the
-    character level whenever it changes and on login; a criterion names `"level": {"min": 5}`, as the cap can lift a
-    player past an exact level), `boss_defeated`, `dungeon_completed`, `spell_cast`, `talent_learned`.
-    Custom statistics (`Registries.CUSTOM_STAT`) count repeatable things such as dungeons cleared. FTB Quests'
-    `AdvancementTask` and `StatTask` read them and are retroactive.
+  - **Our mod → quests:** our criteria triggers (`Registries.TRIGGER_TYPE`, all in `progression/ProgressionTriggers`)
+    complete advancements generated from content:
+    - `realmforge:level_reached` (C2, `progression/LevelReachedTrigger`): fired with the character level whenever it
+      changes and on login; a criterion names `"level": {"min": 5}`, as the cap can lift a player past an exact level;
+    - `realmforge:dungeon_completed` (Q1-2, `DungeonCompletedTrigger`): fired by `InstanceManager#complete` for every
+      party member online, with the run's dungeon type (a portal run's; a QA command's run has none); a criterion
+      names `"dungeon"`, any when left out;
+    - `realmforge:spell_cast` (Q1-2, `SpellCastTrigger`): fired by `SpellCaster` for a player's cast that goes off, an
+      instant spell when it is cast and a cast time or channel when it ends `COMPLETED` (`Casting#end`), never an
+      interrupted cast or a proc's spell; a criterion names `"spell"`, any when left out;
+    - `boss_defeated` comes with the boss (W5, RLM-35), `talent_learned` with talents.
+
+    Custom statistics (`Registries.CUSTOM_STAT`, `progression/ProgressionStats`) count repeatable things:
+    `realmforge:dungeons_completed` (Q1-2), awarded with `dungeon_completed`. `Stats.CUSTOM` keeps a statistic by
+    the identity of its registered `Identifier`, so the registry holds the instance `ProgressionStats` names, and
+    common setup makes its `Stat` on both sides (vanilla's `Stats#makeCustomStat`), so the Statistics screen lists it
+    under `stat.realmforge.<name>` (`content/texts/stat.yaml`). The pipeline names the same statistics
+    (`schema/quest.CUSTOM_STATS`), so a stat task may name them. FTB Quests' `AdvancementTask` and `StatTask` read
+    them and are retroactive.
 - **Pipeline** (exists since Q1-1, `generate/quests.py`): `content/chapters/` and `content/quests/` → advancements in
-  the jar (a chapter's, a realm's unlock) and the quest book in `pack/config/ftbquests/quests/`. Quest texts come from
-  the same data (boss level; where, how and with what: Q1-3).
+  the jar (a chapter's, a realm's unlock, one per task of ours) and the quest book in `pack/config/ftbquests/quests/`.
+  Quest texts come from the same data (Q1-3, below; boss levels once W5 exists).
   - **The format:** FTB Quests 26.1.2.9 reads its quest book as JSON5, not 1.21.1's SNBT (`BaseQuestFile#readDataFull`):
     `data.json5` (the book's settings: file version 13, rewards per player and claimed by hand by default, linear
     progression), `chapter_groups.json5` (no groups), `chapters/<chapter>.json5` (a chapter with its quests, their
@@ -2726,11 +2743,43 @@ depth limit.
     defaults to its type and target (`item:minecraft:cobblestone`). Reordering tasks or changing counts, positions or
     texts keeps every id; a new target gets a new id unless its `key` keeps the old one. Validation refuses a shared id.
   - **Tasks:** item (detected, or consumed with `consume`), advancement (or one criterion), custom statistic, kill,
-    dimension and checkmark, as FTB Quests' own task types. **Rewards:** items, character XP (the `CommandReward`
+    dimension and checkmark, as FTB Quests' own task types, and our own (Q1-2): a character level, a dungeon (a type,
+    or any) and a spell (one, or any). FTB Quests has no task type of ours (ADR 0006), so each becomes an advancement
+    in the core mod's data, `realmforge:quest/<quest>/<key>` (the task's key with its colons as slashes, so it keeps
+    its id as long as the task keeps its key), without a display (no toast, no advancement screen entry), with one
+    criterion of the triggers above, and the quest's task is FTB Quests' advancement task on it. Its title comes from
+    data: a text component (FTB Quests reads a title or description line that is JSON as one,
+    `TextUtils#parseRawText`) of our `quest.realmforge.task_*` texts with the dungeon's or spell's name key. **Rewards:** items, character XP (the `CommandReward`
     above, `/realmforge xp add {p} <amount>` run quietly, titled like FTB Quests' own XP reward through its translation
     of "XP") and our own advancements (`team_reward: false`, `auto: "enabled"`). A chapter's last quest says
     `completes_chapter: true` and gets the chapter's advancement; validation wants exactly one per chapter with quests,
     refuses dependency cycles and two quests on one place, and checks every id against the ID universe.
+  - **Where, how, with what** (Q1-3, research notes 3: "find X" quests with no location or recipe): every quest names
+    its `realm` and may name a `place` (a world structure with the name the text gives it, a biome, or both); the how
+    is its tasks; the with what is its recommended `level`, the items to `bring` and the items to `craft`, each with a
+    recipe (ours, a `content/recipes/` override's or vanilla's, whose recipe ids start with the item's). An errand (any
+    task but a checkmark, a level or a spell) needs the level, which lies in the realm's level band (v1 bands, RLM-188)
+    and at most at the cap the quest's chapter leaves once completed. The validation demands no locator, summon item
+    or vendor for a target (research PR-17). The generator ends the description with "where, with what" lines,
+    text components of our `quest.realmforge.*` texts and the game's names: the realm's (`realm.realmforge.<id>.name`),
+    a biome's (`biome.<ns>.<path>`), an item's (ours from content; vanilla's `block.minecraft.<path>` for a block's
+    item, except wheat, nether wart and resin clump, which `Items` registers as items, and `item.minecraft.<path>`
+    otherwise, checked in the 26.1.2 sources). Levels come from data only: validation refuses a level typed into a
+    quest's own text ("level 12", "Lv. 12").
+  - **Mandatory quests** (RLM-367): a realm's final boss quest says `requires_mandatory`, and its dependencies then
+    include every mandatory (non-optional) quest of its realm in its chapter (`schema/quest.quest_dependencies`),
+    except the quests that come after it and any other such quest, so the rule closes no cycle; the cycle check runs on
+    these dependencies too. Killing the boss early still drops its items, but its quest, and with it the next realm and
+    cap, waits.
+  - **Checked in the game:** the pipeline writes `GeneratedQuestBookExpectations` (every chapter, quest, task and
+    reward with its FTB Quests id and type, each reward's team flag and auto-claim as FTB Quests resolves them, and
+    our custom statistics) and, from sample tasks, advancements in the QA mod's data
+    (`realmforge_qa:quest_task/<name>`). `QuestGameTests` completes the samples through a level-up, a dungeon run and
+    casts, counts the statistic, and compares the book FTB Quests loaded in the GameTest server (which gets the pack's
+    config, `seedPackConfig`) with the expectations: while `content/quests/` is empty, it holds no chapter. The
+    comparison's FTB Quests types live in `QuestBook`, out of every GameTest class: the QA mod lists those classes'
+    methods when it is constructed, which resolves the types in their signatures, and the lean dev client has no FTB
+    mod (a GameTest checks that no GameTest class names a `dev.ftb` type there).
 - Procedural contracts come later (M7), in our own `contract/` package.
 
 ## 17. Networking

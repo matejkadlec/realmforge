@@ -1,0 +1,15 @@
+{
+  "criteria": {
+    "done": {
+      "trigger": "realmforge:spell_cast",
+      "conditions": {
+        "spell": "realmforge:test_mending_ring"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

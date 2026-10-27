@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# The quest book's texts from data (quest.realmforge.<name>, architecture 16): generate/quests.py writes them into
+# FTB Quests' book as text components, which translate on the player's client.
+id: quest
+texts:
+  # Where, with what (Q1-3): the lines the generator adds to every quest's description.
+  # %1$s the quest's realm.
+  where:
+    en_us: "Where: %1$s"
+  # %1$s the realm, %2$s the place in it: a structure, a biome, or structure_in_biome.
+  where_place:
+    en_us: "Where: %1$s, %2$s"
+  # %1$s a structure's name from the quest, %2$s a biome.
+  structure_in_biome:
+    en_us: "%1$s in %2$s"
+  # %1$s the quest's recommended character level.
+  level:
+    en_us: "Recommended level: %1$s"
+  # %1$s the items, separated by commas.
+  bring:
+    en_us: "Bring: %1$s"
+  craft:
+    en_us: "Craft: %1$s"
+  # The titles of our own tasks (Q1-2). %1$s the character level to reach.
+  task_level:
+    en_us: Reach level %1$s
+  # %1$s the dungeon's name.
+  task_dungeon:
+    en_us: Complete %1$s
+  task_any_dungeon:
+    en_us: Complete a dungeon
+  # %1$s the spell's name.
+  task_spell:
+    en_us: Cast %1$s
+  task_any_spell:
+    en_us: Cast a spell

@@ -323,6 +323,9 @@ public final class Casting {
         } else {
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, payload);
         }
+        if (end.completed()) {
+            SpellCaster.wentOff(caster, running.spell());
+        }
         NeoForge.EVENT_BUS.post(new CastEndedEvent(caster, running.spell(), end));
         return true;
     }

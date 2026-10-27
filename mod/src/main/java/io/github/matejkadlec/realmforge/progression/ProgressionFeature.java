@@ -4,6 +4,7 @@ import com.mojang.serialization.MapCodec;
 import io.github.matejkadlec.realmforge.core.Requirement;
 import io.github.matejkadlec.realmforge.core.RequirementTypes;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -24,6 +25,8 @@ public final class ProgressionFeature {
     public static void register(IEventBus modBus) {
         modBus.addListener(DataPackRegistryEvent.NewRegistry.class, ProgressionRegistries::registerDataPackRegistries);
         ProgressionTriggers.register(modBus);
+        ProgressionStats.register(modBus);
+        modBus.addListener(FMLCommonSetupEvent.class, event -> event.enqueueWork(ProgressionStats::createStats));
         REQUIREMENT_TYPES.register(modBus);
     }
 }

@@ -93,7 +93,9 @@ Apotheosis for gear rarity, affixes, gems and enchanting
   weapons by holding right click (RLM-297: Sword Blocking Mechanics' poses, our rules), and their projectiles and
   full-strength hits never lose anything to the hurt cooldown (RLM-311, RLM-386). A player or mob is in combat for 10 s
   after the last hit dealt or taken (RLM-348), which rage and the scrolls read; a scroll charges for 3 s, like a bow,
-  before it works. The pack has M1's QoL, UI and building mods, and vanilla strongholds are off (PK1 to PK3). Next to
+  before it works. The quest pipeline (Q1) writes FTB Quests' quest book from `content/quests/` (no quests yet), with
+  stable ids, tasks of our own (a level, a dungeon, a spell) through our criteria triggers, and every quest's where and
+  with what from data. The pack has M1's QoL, UI and building mods, and vanilla strongholds are off (PK1 to PK3). Next to
   the core mod, the pack ships Better Key Binds (RLM-372), our own client mod that gives every key bind a secondary
   key.
 
@@ -178,7 +180,8 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 | `better-key-binds/` | Better Key Binds (`better_key_binds`): our standalone client mod with secondary key binds, independent of Realmforge (rule 13, [README](better-key-binds/README.md)) | `src/` |
 | `qa-mod/src/generated/` | content expectations for GameTests, GameTest structures from `rf gen` | **no** |
 | `dev/` | dev client defaults: `options.txt`, seeded into `run/client` by `seedDevOptions` | yes |
-| `pack/` | packwiz metadata and config overrides (`config/`), no jars | metadata via `packwiz` commands; `config/` by hand ([procedure](pack/README.md#configuration)), then `packwiz refresh` |
+| `pack/` | packwiz metadata and config overrides (`config/`), no jars | metadata via `packwiz` commands; `config/` by hand ([procedure](pack/README.md#configuration)), except the quest book (next row), then `packwiz refresh` |
+| `pack/config/ftbquests/quests/` | FTB Quests' quest book from `rf gen` (`content/quests/`, `content/chapters/`); `rf gen` deletes what it did not write | **no** |
 | `art/` | asset sources: the project palette, generator candidates, prompts, Blockbench files, room import rules | yes |
 | `docs/` | vision, architecture, roadmap, design documents, lore, research, research notes, ADRs, dev setup | yes |
 | `.github/workflows/ci.yml` | CI | yes |

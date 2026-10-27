@@ -1,0 +1,12 @@
+{
+  "criteria": {
+    "done": {
+      "trigger": "realmforge:dungeon_completed"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

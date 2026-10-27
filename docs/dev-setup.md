@@ -81,7 +81,9 @@ WSL it is good only for "does it load" checks (3.3).
 - **The pack's config.** Before every launch, `seedPackConfig` copies the pack's config overrides
   (`pack/config/`) into `run/client/config/`, replacing the files the mods wrote, as packwiz-installer does for a
   player; the dev server and the GameTest server get them too. So a mod's settings changed in game last only until
-  the next launch: change them in `pack/config/` ([pack README](../pack/README.md#configuration)).
+  the next launch: change them in `pack/config/` ([pack README](../pack/README.md#configuration)). The quest book
+  (`config/ftbquests/quests/`) is replaced whole, so the run holds exactly what `rf gen` wrote, and a quest edited
+  in game is gone at the next launch: change `content/quests/` instead.
 - **The whole pack.** Every mod in `pack/mods/` whose `side` is `client` or `both` (JEI, Jade, Better Combat,
   FTB Quests, Sodium, Iris, Distant Horizons and the rest), at the exact build the pack ships
   ([ADR 0042](decisions/0042-the-dev-runs-load-the-whole-pack.md)). `qa-mod/build.gradle` reads the list from

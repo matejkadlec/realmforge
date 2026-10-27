@@ -1,0 +1,12 @@
+{
+  "criteria": {
+    "done": {
+      "trigger": "realmforge:spell_cast"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

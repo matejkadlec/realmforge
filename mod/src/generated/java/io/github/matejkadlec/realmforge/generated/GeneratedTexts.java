@@ -371,6 +371,39 @@ public final class GeneratedTexts {
     /** {@code message.realmforge.xp_gained} from {@code content/texts/message.yaml}: "+%1$s XP" */
     public static final String MESSAGE_XP_GAINED = "message.realmforge.xp_gained";
 
+    /** {@code quest.realmforge.bring} from {@code content/texts/quest.yaml}: "Bring: %1$s" */
+    public static final String QUEST_BRING = "quest.realmforge.bring";
+
+    /** {@code quest.realmforge.craft} from {@code content/texts/quest.yaml}: "Craft: %1$s" */
+    public static final String QUEST_CRAFT = "quest.realmforge.craft";
+
+    /** {@code quest.realmforge.level} from {@code content/texts/quest.yaml}: "Recommended level: %1$s" */
+    public static final String QUEST_LEVEL = "quest.realmforge.level";
+
+    /** {@code quest.realmforge.structure_in_biome} from {@code content/texts/quest.yaml}: "%1$s in %2$s" */
+    public static final String QUEST_STRUCTURE_IN_BIOME = "quest.realmforge.structure_in_biome";
+
+    /** {@code quest.realmforge.task_any_dungeon} from {@code content/texts/quest.yaml}: "Complete a dungeon" */
+    public static final String QUEST_TASK_ANY_DUNGEON = "quest.realmforge.task_any_dungeon";
+
+    /** {@code quest.realmforge.task_any_spell} from {@code content/texts/quest.yaml}: "Cast a spell" */
+    public static final String QUEST_TASK_ANY_SPELL = "quest.realmforge.task_any_spell";
+
+    /** {@code quest.realmforge.task_dungeon} from {@code content/texts/quest.yaml}: "Complete %1$s" */
+    public static final String QUEST_TASK_DUNGEON = "quest.realmforge.task_dungeon";
+
+    /** {@code quest.realmforge.task_level} from {@code content/texts/quest.yaml}: "Reach level %1$s" */
+    public static final String QUEST_TASK_LEVEL = "quest.realmforge.task_level";
+
+    /** {@code quest.realmforge.task_spell} from {@code content/texts/quest.yaml}: "Cast %1$s" */
+    public static final String QUEST_TASK_SPELL = "quest.realmforge.task_spell";
+
+    /** {@code quest.realmforge.where} from {@code content/texts/quest.yaml}: "Where: %1$s" */
+    public static final String QUEST_WHERE = "quest.realmforge.where";
+
+    /** {@code quest.realmforge.where_place} from {@code content/texts/quest.yaml}: "Where: %1$s, %2$s" */
+    public static final String QUEST_WHERE_PLACE = "quest.realmforge.where_place";
+
     /** {@code resource.realmforge.mana} from {@code content/texts/resource.yaml}: "Mana" */
     public static final String RESOURCE_MANA = "resource.realmforge.mana";
 
@@ -409,6 +442,9 @@ public final class GeneratedTexts {
 
     /** {@code spell.tooltip.realmforge.self} from {@code content/texts/spell.tooltip.yaml}: "On yourself" */
     public static final String SPELL_TOOLTIP_SELF = "spell.tooltip.realmforge.self";
+
+    /** {@code stat.realmforge.dungeons_completed} from {@code content/texts/stat.yaml}: "Dungeons Completed" */
+    public static final String STAT_DUNGEONS_COMPLETED = "stat.realmforge.dungeons_completed";
 
     /** {@code tooltip.realmforge.signet_not_consumed} from {@code content/texts/tooltip.yaml}: "Does not consume on use" */
     public static final String TOOLTIP_SIGNET_NOT_CONSUMED = "tooltip.realmforge.signet_not_consumed";

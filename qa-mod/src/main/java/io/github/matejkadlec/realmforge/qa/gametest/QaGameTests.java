@@ -81,6 +81,7 @@ public final class QaGameTests {
             ProcGameTests.class,
             QaCastGameTests.class,
             QaCommandGameTests.class,
+            QuestGameTests.class,
             RageGameTests.class,
             RealmGameTests.class,
             RealmPortalGameTests.class,
@@ -144,6 +145,11 @@ public final class QaGameTests {
         }
         tests.sort(Comparator.comparing(Test::id));
         return List.copyOf(tests);
+    }
+
+    /** The classes whose {@link QaGameTest} methods are registered. */
+    static List<Class<?>> holders() {
+        return HOLDERS;
     }
 
     /** {@code contentItemsAreListed} -> {@code content_items_are_listed}. */

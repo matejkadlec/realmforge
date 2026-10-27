@@ -1,0 +1,17 @@
+{
+  "criteria": {
+    "done": {
+      "trigger": "realmforge:level_reached",
+      "conditions": {
+        "level": {
+          "min": 5
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}
