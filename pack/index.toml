@@ -13,6 +13,10 @@ file = "config/defaultoptions/keybindings.txt"
 hash = "fca7380a19cf86a2dacf470d241fd4e975bcdb164d32ba3e769126b1e5b76361"
 
 [[files]]
+file = "config/dummmmmmy-client.toml"
+hash = "d4053daa6079c98f47beeda2ab6d953d0a2737fed9ba2c49a0559d793d3cec26"
+
+[[files]]
 file = "config/pickupnotifier-client.toml"
 hash = "b0982dc8819dd569c574f23f3f3fc971b1f2ecaf378c217f4183a7b7f1796c9b"
 

@@ -21,8 +21,8 @@ Three pack tickets of one batch (RLM-393, RLM-206, RLM-382, 2026-10-25):
   (RLM-156, 2026-10-15) shares a quest only with members who have it unlocked and are in the party when it is
   completed, which FTB Teams' parties break.
 
-The beta library conflicts with 0013, so the batch names it to Matěj as the first item of its playtest; it merges
-only after his `qa1` of that playtest, which confirms it (CLAUDE.md, rule 10).
+The beta library conflicts with 0013, so the batch named it to Matěj as the first item of its playtest, and he
+accepted the exception in his answer to it (2026-10-27; CLAUDE.md, rule 10).
 
 ## Decision
 
@@ -30,7 +30,9 @@ only after his `qa1` of that playtest, which confirms it (CLAUDE.md, rule 10).
    new release-channel exception, pinned like Advanced Loot Info, so `packwiz update --all` leaves it; they are
    updated together, by hand ([pack README](../../pack/README.md#release-channel-exceptions)). Both come from
    Modrinth; their licence (Supplementaries Team License 1.5, in the jars) allows modpacks that download the
-   unmodified jar from the official pages, which is what packwiz-installer does.
+   unmodified jar from the official pages, which is what packwiz-installer does. The dummy's own floating damage
+   numbers are off in the pack's config (`damage_numbers.enabled = false`): our combat text already shows every hit,
+   and Matěj's playtest (2026-10-27) wants only ours.
 2. **WorldEdit stays out of the pack** (0044's rejection holds for players) and serves Matěj's building only:
    - the dev client loads WorldEdit 7.4.3 (NeoForge 26.1.2, GPL-3.0) with `-PwithWorldEdit`, full or lean;
      `qa-mod/build.gradle` pins it by Modrinth version id and checks its hash like the pack's mods;

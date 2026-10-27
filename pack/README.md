@@ -186,6 +186,11 @@ unreachable from M1. The GameTest world generates no structures at all, so the p
 it on 2026-10-23 (RLM-310): `/locate structure minecraft:stronghold` answers that Structurify's config disables the
 structure, and `/locate structure minecraft:village_plains` finds one.
 
+**MmmMmmMmmMmm** (`config/dummmmmmy-client.toml`, client, MmmMmmMmmMmm 26.1.2-3.0.1, RLM-393; Matěj's playtest,
+2026-10-27): `damage_numbers.enabled = false`. The target dummy's own floating numbers would show every hit a second
+time, in white, next to our combat text; only ours stay. Its DPS line under the dummy (`dummmmmmy-common.toml`,
+`general.DPS_mode`) keeps its default. `tools/tests/test_pack_config.py` checks the value.
+
 **Traveler's Titles** (`config/travelerstitles-neoforge-26_1.toml`, client, Traveler's Titles 6.1.0, RLM-308):
 `"Blacklisted Dimensions" = "[realmforge:stone, realmforge:instances]"`. A realm shows its own arrival title (W2b), so
 Traveler's Titles shows none there, and the dungeon instances, which have no name of their own, show no "???".
@@ -216,7 +221,8 @@ later hit, the 1 s cooldown, the covered arc: `config/realmforge-common.toml`, [
 ## Notes on single mods
 
 - **MmmMmmMmmMmm's target dummies are for everyone** (RLM-393): a dummy with a hay-bale head that shows the damage it
-  takes, which Maren's Trial (RLM-397) dresses in a zombie head and coloured leather armour. It does not replace the
+  takes through our combat text (its own numbers are off, [Configuration](#configuration)), which Maren's Trial
+  (RLM-397) dresses in a zombie head and coloured leather armour. It does not replace the
   QA mod's training dummy. Its licence and Moonlight Lib's (Supplementaries Team License 1.5, in the jars) allow
   modpacks that download the unmodified jars from their official pages, as packwiz-installer does.
 - **WorldEdit is not in the pack** ([ADR 0044](../docs/decisions/0044-third-party-mods-by-milestone.md) rejects it for

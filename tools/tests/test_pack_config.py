@@ -72,3 +72,11 @@ def test_pick_up_notifier_lists_pickups_from_the_middle_of_the_right_edge() -> N
     assert display["screen_corner"] == "TOP_RIGHT", "client/compat/pickupnotifier expects the top right"
     assert display["display_scale"] == 6, "150 % of the mod's default size, 4"
     assert display["max_height"] <= 0.5, "a list that starts mid-screen must end above the bottom edge"
+
+
+def test_the_target_dummy_shows_only_our_combat_text() -> None:
+    """MmmMmmMmmMmm's own floating numbers stay off: our combat text shows every hit (RLM-393, Matěj's playtest)."""
+    config = tomllib.loads(
+        (REPO_ROOT / "pack" / "config" / "dummmmmmy-client.toml").read_text(encoding="utf-8")
+    )
+    assert config["damage_numbers"]["enabled"] is False
