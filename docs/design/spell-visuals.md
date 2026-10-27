@@ -204,6 +204,14 @@ shares of it (Slam 1 s, hit at 0.5); validation reads the animation file and ref
 server's timing and what the player sees never drift apart.
 
 ### Impacts
+**Instant spells need a signal.** Today only a cast time or a channel reaches the clients: `Casting` sends
+`CastStartedPayload` to the caster and every tracking player, which raises the cast layer. An instant spell runs its
+effects at once and tells no client, not even the caster's own, that the server accepted it. So the engine sends
+`CastStartedPayload` for an instant spell with an animation too (Slam, Ice Lance), marked to show no cast bar and
+carrying the animation's length, and `ClientCasts` plays it on the cast layer for the caster and every tracking
+player as it plays a timed cast. RLM-399's "instant spells play out over their animation" already makes such a
+spell a short cast in all but its bar.
+
 
 - **One entity event per hit:** before a projectile is removed, the server sends vanilla's entity event, as a snowball
   does when it breaks (`Level#broadcastEntityEvent`); each client then bursts the look's particles where it is. A
@@ -305,8 +313,8 @@ data if the playtest says the cubes look wrong. First person at about 40 % of th
 - **Particles:** our `ParticleType`s with sprite sets (`assets/realmforge/particles/<id>.json`), their providers
   registered in `RegisterParticleProvidersEvent#registerSpriteSet`, their options carrying a colour, a size and a
   lifetime.
-- **Nothing new on the network** but the impact's entity event: casts, projectiles and areas already reach their
-  clients.
+- **On the network:** timed casts, projectiles and areas already reach their clients. New are only the instant
+  spells' `CastStartedPayload` ([cast animations](#cast-animations)) and the impact's entity event.
 - **Client isolation:** every renderer, particle provider and GeckoLib render call sits under `client/`; looks,
   models' ids, trajectories and hit moments are common data.
 - **Placeholders:** until a part's art exists, `rf gen` writes a placeholder material (noise in the look's colours),
@@ -423,8 +431,9 @@ RLM-439 files this as the next free ADR once Matěj approves the design, adjuste
 > 6. Forming styles `grow`, `storm` and `hands` run on the client from the cast payloads, drawn for every caster by
 >    one renderer at the caster's hands; in first person the forming model is drawn smaller, below the crosshair.
 > 7. Cast animations stay on the cast layer of
->    [ADR 0020](../decisions/0020-cast-animations-and-melee-while-casting.md); a spell's hit moments live in its
->    data, checked against the animation's length.
+>    [ADR 0020](../decisions/0020-cast-animations-and-melee-while-casting.md), started by `CastStartedPayload`,
+>    which an instant spell with an animation now sends too, marked to show no cast bar. A spell's hit moments live
+>    in its data, checked against the animation's length.
 >
 > **Consequences.** A new spell is mostly YAML; a new element is a look, a material and colours; a new model is a
 > Blockbench file. The projectile becomes a GeckoLib animatable, and Stoneform moves to the kit. GeckoLib's API is
@@ -437,12 +446,12 @@ What each RLM-434 ticket takes from this design once Matěj approves it, so thei
 
 | Ticket | Takes |
 | --- | --- |
-| RLM-439 engine | the content types (looks, models, particles, trajectories), the GeckoLib projectile, the forming renderer with `grow`, `storm` and `hands`, first person at reduced size and the blended launch, `straight` and `curve`, the impact event, the `release` and `channel` animations, the emitters and their caps, placeholders, Stoneform moved to the kit, the ADR, architecture 11.3 and 11.6, the content README |
+| RLM-439 engine | the content types (looks, models, particles, trajectories), the GeckoLib projectile, the forming renderer with `grow`, `storm` and `hands`, first person at reduced size and the blended launch, `straight` and `curve`, the impact event, `CastStartedPayload` for instant spells with an animation, the `release` and `channel` animations, the emitters and their caps, placeholders, Stoneform moved to the kit, the ADR, architecture 11.3 and 11.6, the content README |
 | RLM-440 Frostbolt | the glacier model, the frost material, the frost particles and colours, Slowness's aura |
 | RLM-441 Fireball | the fire material, particles and colours, Burning's aura; no new model |
 | RLM-442 Arcane Missiles | the missile model, the arcane material and particles, its three `curve` trajectories |
 | RLM-443 areas (M3) | the area style: the ring, the fill, the storm; the ice and fire variants as looks |
-| RLM-444 Warrior | `slam`, `stab`, `shield_bash`, with their lengths and hit moments in data (with RLM-399) |
+| RLM-444 Warrior | `slam`, `stab`, `shield_bash`, with their lengths and hit moments in data (with RLM-399), played from the instant spells' `CastStartedPayload` |
 | RLM-445 sounds | each look's forming, release and impact sounds, the Warrior moves, the interrupt sound |
 
 ## Open questions for Matěj
