@@ -394,7 +394,9 @@ when the mod is constructed (`dungeon/portal/DungeonBlocks`, `world/realm/RealmP
 blockstate and models (`generate/blocks.py`), and `BlockKinds#blocks(kind)` hands the owner its blocks, for a block
 entity type, a point-of-interest type or for placing one. Kinds the game uses one block of (`dungeon_exit` and the realm
 portal's three) allow one block each. `realmforge_bricks` and `realmforge_sealstone` have the blockstate property
-`generated`, which a trip sets on the frames it builds, and their loot tables drop the block only without it.
+`generated`, which a trip sets on the frames it builds, and their loot tables drop the block only without it. The
+sealstone also has `glow` (0 to 15), its block light, which its block entity's ticker sets (RLM-406); its blockstate
+names `generated` alone, which matches every `glow`.
 `realm_portal` has no item: no block item, no loot table (`noLootTable`), no recipe and no creative tab. `hardness: -1`
 makes a block unbreakable, as vanilla's bedrock and portals.
 
@@ -1988,12 +1990,18 @@ loot: realmforge:boss/hollow_warden
     opens the frame onto Overworld, while in Overworld it closes the portal. A common
     `PlayerInteractEvent.RightClickBlock` listener sets `useBlock` to `TRUE` for that gesture, so an item in the off
     hand never blocks it (RLM-133). Dimensions without an entry (the instances, the Nether, other mods') refuse. An
-    incomplete frame is marked with red dust for 3 seconds. Messages go to the action bar;
+    incomplete frame is marked with red dust for 3 seconds. Messages go to the action bar. The sealstone glows while
+    a player holding a signet that lights it, in either hand, stands within 5 blocks of its centre (RLM-406): the
+    signet of the realm its lit portal opens onto, or any signet while the portal is dark. A server-side block entity
+    ticker (`RealmPortals.tickGlow`) moves its `glow` one level a tick towards 15 or 0, so it rises or fades over 15
+    ticks; the block state is its light (`lightLevel`), so every player sees it, and it is set without shape updates;
   - **the portal block:** like vanilla's nether portal it has an axis and no collision, and checks its frame on every
     neighbour update, so a broken frame block takes the whole opening with it. It implements `Portal`: every entity
     that is no passenger steps in (a vehicle takes its passengers along), unless it or a player riding it has no
-    access to the destination (then the realm refusal, so the countdown never starts); a player's trip takes 2
-    seconds (1 tick in creative), any other entity's starts at once, with no vanilla overlay (`Transition.NONE`). It
+    access to the destination (then the realm refusal, so no trip starts); every entity's trip starts on its first
+    tick inside, a player's too (RLM-335), with no vanilla overlay (`Transition.NONE`). Vanilla's portal cooldown
+    after a trip (half a second for a player) starts again on every tick spent in a portal, so a player who arrives in
+    the exit portal or steps straight back into it does not bounce back until they stepped out and in again. It
     refuses every fluid (`LiquidBlockContainer#canPlaceLiquid` and `canBeReplaced(BlockState, Fluid)` answer false);
   - **linking** (`RealmPortalLinker`): the source opening's centre times the dimension types' teleportation scale,
     clamped into the target's world border, as the nether portal does; the nearest lit portal leading back where the
@@ -2702,6 +2710,7 @@ depth limit.
 | boss phase | the boss bar's title (`ServerBossEvent#setName`) |
 | events: cast started or ended, combat text, dungeon status | payloads, for example `PacketDistributor.sendToPlayersTrackingEntityAndSelf` |
 | the sealstone's destination | its block entity's update tag with the chunk, and its update packet on every change (`Level#sendBlockUpdated`) |
+| the sealstone's glow | its block state (`glow`), sent like any block change; each client lights it with its own light engine |
 
 Cast bars and cooldowns are drawn from a start time and a duration, so they need no per-tick packets.
 

@@ -11,6 +11,7 @@ import io.github.matejkadlec.realmforge.world.realm.RealmPortalBlocks;
 import io.github.matejkadlec.realmforge.world.realm.RealmPortalLinker;
 import io.github.matejkadlec.realmforge.world.realm.RealmPortals;
 import io.github.matejkadlec.realmforge.world.realm.Realms;
+import io.github.matejkadlec.realmforge.world.realm.SealstoneBlock;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -33,6 +34,7 @@ import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -217,6 +219,60 @@ public final class RealmPortalGameTests {
             helper.getLevel().getServer().getPlayerList().remove(player);
         }
         helper.succeed();
+    }
+
+    /**
+     * Done when of RLM-406: a dark sealstone lights up while a player holding a signet, in either hand, stands within 5
+     * blocks of it, rising over 15 ticks, and fades once they step 5.5 blocks away; with empty hands it stays dark. A
+     * lit portal glows only for its own realm's signet: a return portal, open onto Overworld, stays dark. The glow is
+     * the sealstone's block light.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_9X9, timeoutTicks = 200)
+    public static void theSealstoneGlowsWhileAPlayerWithASignetIsNear(GameTestHelper helper) {
+        RealmExpectation stone = RealmGameTests.stone();
+        ServerLevel level = helper.getLevel();
+        PortalFrame.Frame frame = new PortalFrame.Frame(helper.absolutePos(SEALSTONE), Direction.Axis.X);
+        buildFrame(level, frame);
+        BlockPos sealstone = frame.sealstone();
+        // 3 blocks in front of the sealstone's centre, and 5.5 blocks: just outside the glow's radius.
+        Vec3 near = new Vec3(4.5, 1, 7.5);
+        Vec3 away = new Vec3(4.5, 1, 10.0);
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-glow", near);
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        player.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+        helper.startSequence()
+                .thenExecuteAfter(20, () -> {
+                    assertGlow(helper, level, sealstone, 0, "with empty hands the sealstone stays dark");
+                    player.setItemInHand(InteractionHand.OFF_HAND, signet(stone));
+                })
+                .thenExecuteAfter(5, () -> {
+                    int glow = level.getBlockState(sealstone).getValue(SealstoneBlock.GLOW);
+                    helper.assertTrue(glow > 0 && glow < SealstoneBlock.MAX_GLOW,
+                            "a few ticks after the signet came out, the glow is rising: " + glow);
+                })
+                .thenExecuteAfter(15, () -> assertGlow(helper, level, sealstone, SealstoneBlock.MAX_GLOW,
+                        "a signet in the off hand lights the dark sealstone fully"))
+                .thenWaitUntil(() -> helper.assertValueEqual(level.getBrightness(LightLayer.BLOCK, sealstone.above()),
+                        SealstoneBlock.MAX_GLOW - 1, "the block light in the dark opening above the glowing sealstone"))
+                .thenExecute(() -> QaPlayers.onPlatform(helper, player, away))
+                .thenExecuteAfter(20, () -> assertGlow(helper, level, sealstone, 0,
+                        "the sealstone faded once the player stepped out of its radius"))
+                .thenExecute(() -> {
+                    RealmPortals.light(level, frame, Realmforge.id("overworld"));
+                    player.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+                    player.setItemInHand(InteractionHand.MAIN_HAND, signet(stone));
+                    QaPlayers.onPlatform(helper, player, near);
+                })
+                .thenExecuteAfter(20, () -> {
+                    assertGlow(helper, level, sealstone, 0, "a return portal stays dark for the stone realm's signet");
+                    RealmPortals.light(level, frame, id(stone));
+                })
+                .thenExecuteAfter(20, () -> {
+                    assertGlow(helper, level, sealstone, SealstoneBlock.MAX_GLOW,
+                            "a portal open onto the stone realm glows for its signet in the main hand");
+                    level.getServer().getPlayerList().remove(player);
+                })
+                .thenSucceed();
     }
 
     // Travel -------------------------------------------------------------------------------------------------------
@@ -751,6 +807,13 @@ public final class RealmPortalGameTests {
     private static long sealstonesNear(ServerLevel level, BlockPos centre, int radius) {
         return level.getPoiManager().getInSquare(type -> type.is(RealmPortalBlocks.SEALSTONE_POI), centre, radius,
                 PoiManager.Occupancy.ANY).count();
+    }
+
+    private static void assertGlow(GameTestHelper helper, ServerLevel level, BlockPos sealstone, int glow,
+            String message) {
+        BlockState state = level.getBlockState(sealstone);
+        helper.assertValueEqual(state.getValue(SealstoneBlock.GLOW), glow, message);
+        helper.assertValueEqual(state.getLightEmission(), glow, message + " (its block light)");
     }
 
     private static boolean lit(ServerLevel level, PortalFrame.Frame frame) {

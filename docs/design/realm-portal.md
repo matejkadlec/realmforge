@@ -19,7 +19,9 @@
 > signets (the first version's Portal Stone, realm selector and sigils), changed their recipes, let every entity
 > travel and set trip-built frames into the floor, with Realmforge Bricks in their corners ([Decisions](#decisions),
 > 12 to 14). RLM-395 (2026-10-23 and 2026-10-24) made every signet a recipe around a shard that its realm's final
-> boss drops, and let a quest shop sell a lost signet ([Decisions](#decisions), 15 to 17). Other block and item names
+> boss drops, and let a quest shop sell a lost signet ([Decisions](#decisions), 15 to 17). RLM-335 and RLM-406
+> (2026-10-27) let players travel at once and made the sealstone glow near a signet ([Decisions](#decisions), 18 and
+> 19), and RLM-341 let Overworld frames stand on ground at y 63. Other block and item names
 > are working names; realm names are the approved ones of the [lore outline](../lore/outline.md#the-realms)
 > (RLM-139, RLM-188), without an article. The v1 realm layout (RLM-188, 2026-10-16) moved the stone realm to
 > chapter 2 (levels 6–18) and its unlock to the end of chapter 1's main questline. APIs named here were checked
@@ -123,6 +125,15 @@ hoppers have nothing to take.
 
 - **Who may switch a portal:** anyone holding a signet they are eligible to use (Matěj, RLM-128). Unlocks are per
   player ([Multiplayer](#multiplayer)), so switching changes only where the portal leads, never who may enter.
+- **It glows near a signet** (Matěj, 2026-10-24, RLM-406: "the Sealstone block would smoothly light up if player with
+  Signet item in hand"; chapter 1's "the gate lights"). While a player holding a signet in either hand stands within
+  5 blocks of its centre, the sealstone lights up, one light level a tick to light level 15, so it rises over 15
+  ticks, about a second, and fades the same way once they walk away or put the signet away. A portal open onto a
+  realm glows for that realm's signet; a dark one, as a frame that was never opened is, for any signet; a return
+  portal, open onto Overworld, which has no signet, stays dark. The glow is the block's own light (a block state,
+  `glow`), so every player sees it, also on a dedicated server; spectators light nothing. The radius, the signet rule
+  and the full light level are proposals for Matěj's playtest. Its look, an emissive texture, comes with the frame's
+  retexture (RLM-301).
 - **The sneak gesture with something in the off hand** (RLM-133). Vanilla skips a block's use while the player
   sneaks with anything in either hand that does not bypass the sneak (`ServerPlayerGameMode#useItemOn` on the server,
   `MultiPlayerGameMode#performUseItemOn` on the client; `IItemStackExtension#doesSneakBypassUse` is true only for an
@@ -670,6 +681,10 @@ dimension rules and access:
     leave its portal blocks in place;
   - the sealstone refuses in the instance dimension;
   - an item and a mob step into a portal and travel, and a pig carrying a player without the unlock does not;
+  - a player in survival travels on the first tick in the portal, and standing in the exit portal right after does
+    not take them back, until they stepped out for half a second and in again (RLM-335);
+  - the sealstone glows while a player holding a signet stands within 5 blocks, rising over 15 ticks, fades once
+    they step away, stays dark with empty hands, and a return portal stays dark for a realm's signet (RLM-406);
     a mob moved into or out of a realm with
     `Entity#teleport(TeleportTransition)`, and one moved with `/tp` (`Entity#teleportTo`), stays where it is
     (RLM-133), while a mob teleported within the realm moves;
@@ -749,6 +764,14 @@ His decisions of 2026-10-23 and 2026-10-24 on signets (RLM-395, from RLM-351's s
     Stone Signet Shard (M2); in M1 the last quest of chapter 1 still gives the Signet of the Undervault.
 17. **A quest shop sells a lost signet,** up to 3 times, after the boss quest: the Signet of the Undervault for 50
     copper coins, locked until the Illusioner quest is done. It replaces the repeatable quest of the first version.
+
+His later requests added:
+
+18. **Players travel at once** (his playtest of W2b, 2026-10-20, RLM-335), as every other entity does, instead of the
+    first version's 2 seconds ([Look and sound](#look-and-sound)).
+19. **The sealstone glows near a signet** (2026-10-24, RLM-406, on chapter 1's text): it lights up smoothly while a
+    player holding a signet is near ([The sealstone](#the-sealstone)). Its radius (5 blocks), which signets light it
+    and its light level (15) are proposals for his playtest.
 
 ## Open questions
 
