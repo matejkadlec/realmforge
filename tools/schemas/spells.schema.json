@@ -64,7 +64,7 @@
     },
     "AreaEffectDef": {
       "additionalProperties": false,
-      "description": "Places a ground zone at the target (the caster's feet, an enemy's or a ground point) that runs its own\n``effects`` on every enemy (or ally) inside it at the end of every interval, for ``duration_seconds``\n(architecture 11.3).",
+      "description": "Places a ground zone at the target (the caster's feet, an enemy's or a ground point) that runs its own\n``effects`` on every enemy (or ally) inside it as it appears and then every interval, once per interval of\n``duration_seconds`` (architecture 11.3).",
       "properties": {
         "affects": {
           "default": "enemies",
@@ -83,7 +83,7 @@
           "type": "number"
         },
         "effects": {
-          "description": "What it does to each entity inside at every interval, in order.",
+          "description": "What it does to each entity inside each time it acts, in order.",
           "items": {
             "discriminator": {
               "mapping": {

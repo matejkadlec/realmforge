@@ -10,14 +10,14 @@ import net.minecraft.util.StringRepresentable;
 
 /**
  * {@code realmforge:area}: places a {@link SpellArea} at the target's position (the caster's feet, an enemy's, a
- * ground point), which runs its own {@code effects} on every enemy (or ally) inside it at the end of every interval
- * for its duration (architecture 11.3).
+ * ground point), which runs its own {@code effects} on every enemy (or ally) inside it as it appears and then every
+ * interval, once per interval of its duration (architecture 11.3).
  *
  * @param radius in blocks
  * @param durationTicks how long it lasts, a whole number of intervals
  * @param intervalTicks the ticks between two runs of its effects
  * @param affects whom its effects act on
- * @param effects what it does to each entity inside at every interval, in order
+ * @param effects what it does to each entity inside each time it acts, in order
  */
 public record AreaEffect(double radius, int durationTicks, int intervalTicks, Affects affects,
         List<SpellEffect> effects) implements SpellEffect {
