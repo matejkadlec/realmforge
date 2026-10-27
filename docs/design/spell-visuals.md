@@ -207,10 +207,20 @@ first person as `realmforge:cast` does today (architecture 11.6).
 **Instant spells need a signal.** Today only a cast time or a channel reaches the clients: `Casting` sends
 `CastStartedPayload` to the caster and every tracking player, which raises the cast layer. An instant spell runs its
 effects at once and tells no client, not even the caster's own, that the server accepted it. So the engine sends
-`CastStartedPayload` for an instant spell with an animation too (Slam, Ice Lance), marked to show no cast bar and
+`CastStartedPayload` for an instant spell with an animation too (Slam, Ice Lance), marked as an instant and
 carrying the animation's length, and `ClientCasts` plays it on the cast layer for the caster and every tracking
-player as it plays a timed cast. RLM-399's "instant spells play out over their animation" already makes such a
-spell a short cast in all but its bar.
+player.
+
+- **Not a cast:** it shows no cast bar, and the client keeps it apart from the casts in progress, which block the
+  attack key ([ADR 0020](../decisions/0020-cast-animations-and-melee-while-casting.md) decision 3: "instant spells
+  have no such window").
+- **Its end:** the client lowers the arms when the animation's length has passed; an interrupt before then (a death,
+  a stun; what it does to the hit is RLM-399's open point) sends `CastEndedPayload`, as a cast's does.
+- **Melee during the animation** is RLM-399's open point, so it is [question 12](#open-questions-for-matěj).
+  Proposed: no melee for the animation's length, as during a cast, so a Better Combat swing (layer 2000) never lands
+  a free hit under Slam's swing (layer 3000), the reason ADR 0020 gives for casts. That amends ADR 0020 decision 3,
+  and the server enforces it as it does for casts: the `combat` attachment keeps the animation's window, and the
+  melee checks read it.
 
 A spell names an animation only to differ from its cast type's default. **Hit moments** (RLM-399): the server deals a
 Warrior spell's damage at its hit moments, so the spell's data holds the animation's length and the hit moments as
@@ -320,7 +330,8 @@ data if the playtest says the cubes look wrong. First person at about 40 % of th
   registered in `RegisterParticleProvidersEvent#registerSpriteSet`, their options carrying a colour, a size and a
   lifetime.
 - **On the network:** timed casts, projectiles and areas already reach their clients. New are only the instant
-  spells' `CastStartedPayload` ([cast animations](#cast-animations)) and the impact's entity event.
+  spells' `CastStartedPayload`, and their `CastEndedPayload` when an interrupt cuts the animation short
+  ([cast animations](#cast-animations)), and the impact's entity event.
 - **Client isolation:** every renderer, particle provider and GeckoLib render call sits under `client/`; looks,
   models' ids, trajectories and hit moments are common data.
 - **Placeholders:** until a part's art exists, `rf gen` writes a placeholder material (noise in the look's colours),
@@ -441,8 +452,10 @@ RLM-439 files this as the next free ADR once Matěj approves the design, adjuste
 >    one renderer at the caster's hands; in first person the forming model is drawn smaller, below the crosshair.
 > 7. Cast animations stay on the cast layer of
 >    [ADR 0020](../decisions/0020-cast-animations-and-melee-while-casting.md), started by `CastStartedPayload`,
->    which an instant spell with an animation now sends too, marked to show no cast bar. A spell's hit moments live
->    in its data, checked against the animation's length.
+>    which an instant spell with an animation now sends too, marked as an instant: no cast bar, and it ends after
+>    the animation's length unless an interrupt sends `CastEndedPayload`. If Matěj answers question 12 with no melee
+>    during the animation, this amends ADR 0020 decision 3, and the server enforces it from the `combat`
+>    attachment as for casts. A spell's hit moments live in its data, checked against the animation's length.
 >
 > **Consequences.** A new spell is mostly YAML; a new element is a look, a material and colours; a new model is a
 > Blockbench file. The projectile becomes a GeckoLib animatable, and Stoneform moves to the kit. GeckoLib's API is
@@ -455,7 +468,7 @@ What each RLM-434 ticket takes from this design once Matěj approves it, so thei
 
 | Ticket | Takes |
 | --- | --- |
-| RLM-439 engine | the content types (looks, models, particles, trajectories), the GeckoLib projectile, the forming renderer with `grow`, `storm` and `hands`, first person at reduced size and the blended launch, `straight` and `curve`, the impact event, `CastStartedPayload` for instant spells with an animation, the `release` and `channel` animations, the emitters and their caps, placeholders, Stoneform moved to the kit, the ADR, architecture 11.3 and 11.6, the content README |
+| RLM-439 engine | the content types (looks, models, particles, trajectories), the GeckoLib projectile, the forming renderer with `grow`, `storm` and `hands`, first person at reduced size and the blended launch, `straight` and `curve`, the impact event, `CastStartedPayload` for instant spells with an animation (and its melee window, per question 12), the `release` and `channel` animations, the emitters and their caps, placeholders, Stoneform moved to the kit, the ADR, architecture 11.3 and 11.6, the content README |
 | RLM-440 Frostbolt | the glacier model, the frost material, the frost particles and colours, Slowness's aura |
 | RLM-441 Fireball | the fire material, particles and colours, Burning's aura; no new model |
 | RLM-442 Arcane Missiles | the missile model, the arcane material and particles, its three `curve` trajectories |
@@ -486,3 +499,6 @@ What each RLM-434 ticket takes from this design once Matěj approves it, so thei
     differ. That amends ADR 0052's "projectiles fly straight without gravity" (your rule) for the projectiles that
     name a curve, still without gravity: agreed (proposed), or do Arcane Missiles fly straight too, differing only
     in where they leave the hands?
+12. **Melee during a Warrior spell's animation** (RLM-399's open point): blocked for the animation's length, as
+    during a cast (proposed; it amends ADR 0020, which leaves instants free), or allowed, with a swing able to land
+    a hit while Slam's animation plays?
