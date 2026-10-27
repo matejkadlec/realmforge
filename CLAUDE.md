@@ -22,8 +22,10 @@ Apotheosis for gear rarity, affixes, gems and enchanting
   Hytale) with Adopt / Adapt / Avoid recommendations by ID (`RE-9`, `DU-4`, …) that tickets cite.
 - **Design:** [docs/design/](docs/design/README.md): game design documents written from Matěj's decisions (the
   realms, the realm portal, the in-game guide), each with its open questions for him.
-- **Lore:** [docs/lore/](docs/lore/README.md): the story outline (the Gatewrights, the Chain of Seals, the realms'
-  peoples, chapter 1's beats) and the style guide that every player-facing text follows.
+- **Lore:** [docs/lore/](docs/lore/README.md): the story outline (the Gatewrights, the Wall and its seals, the
+  Ithari and Skyhearth, the realms' peoples), the approved chapter texts (`docs/lore/chapters/`: chapter 1, The
+  Ominous Tale, and chapter 2, The Weight of Stone), the style guide that every player-facing text follows, and the
+  [storyline and quest practices](docs/lore/practices.md) that every session writing story or quests reads first.
 - **Architecture:** [docs/architecture.md](docs/architecture.md): how the core mod is built (feature packages,
   registries, data flow from YAML into the game, player state, stats, networking, client isolation). Read the
   sections for the system you touch before writing code.

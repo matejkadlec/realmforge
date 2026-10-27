@@ -2,7 +2,8 @@
 
 Date: 2026-10-20
 
-Status: Accepted (amends [0032](0032-v1-realm-layout-amends-the-nether-and-end-removal.md))
+Status: Accepted (amends [0032](0032-v1-realm-layout-amends-the-nether-and-end-removal.md)); the names amended by
+[0054](0054-skyhearth-and-deepholm-amend-asgard-and-atlantis.md)
 
 ## Context
 

@@ -56,7 +56,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0042](0042-the-dev-runs-load-the-whole-pack.md) | The dev runs load the whole pack | Accepted (amends 0020) |
 | [0043](0043-default-keys-and-key-search-in-the-pack.md) | Default keys and key search in the pack | Accepted (amends 0013), amended by [0046](0046-spell-bar-default-keys-amend-the-pack-defaults.md) (the spell bar's keys, chat on Enter, Dark Vision on ¨) |
 | [0044](0044-third-party-mods-by-milestone.md) | Third-party mods by milestone | Accepted (amends 0004, 0013 and 0025), WorldEdit for building only by [0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md) |
-| [0045](0045-asgard-and-atlantis-amend-the-v1-realm-layout.md) | Asgard and Atlantis amend the v1 realm layout | Accepted (amends 0032) |
+| [0045](0045-asgard-and-atlantis-amend-the-v1-realm-layout.md) | Asgard and Atlantis amend the v1 realm layout | Accepted (amends 0032), the names amended by [0054](0054-skyhearth-and-deepholm-amend-asgard-and-atlantis.md) |
 | [0046](0046-spell-bar-default-keys-amend-the-pack-defaults.md) | The spell bar's default keys amend the pack's default keys | Accepted (amends 0043) |
 | [0047](0047-the-cast-slow-halves-the-casters-speed.md) | The cast slow halves the caster's speed | Accepted (amends 0039) |
 | [0048](0048-better-key-binds-our-own-client-mod-independent-of-realmforge.md) | Better Key Binds: our own client mod, independent of Realmforge | Accepted (amends 0008, 0011 and 0013) |
@@ -65,6 +65,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0051](0051-player-melee-passes-the-hurt-cooldown-only-at-full-strength.md) | A player's melee hit passes the hurt cooldown only at full attack strength | Accepted (amends 0049) |
 | [0052](0052-spells-aim-with-the-crosshair.md) | Spells aim with the crosshair: bolts fly where it points, ground spells clamp to their range | Accepted |
 | [0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md) | Target dummies in the pack, WorldEdit for building only, and no FTB Teams parties | Accepted (amends 0013 and 0044) |
+| [0054](0054-skyhearth-and-deepholm-amend-asgard-and-atlantis.md) | Skyhearth and Deepholm amend Asgard and Atlantis | Accepted (amends 0045) |
 
 ## Open questions (not decided)
 
