@@ -45,7 +45,9 @@ place:
     - {from: [2, 2, 5], to: [2, 2, 5], block: "minecraft:stone_button[face=wall,facing=east,powered=false]"}
     - {from: [10, 2, 7], to: [10, 2, 7], block: "minecraft:stone_button[face=wall,facing=west,powered=false]"}
   # The husk temple's doorways were barred (iron bars around a 1x1 gap, its connectors leaving iron bars in the gap),
-  # though the dungeon passes through it.
+  # though the dungeon passes through it. Its spawner sat sealed inside the sandstone monument in the middle; players
+  # break spawners in instances (RLM-412), so the monument is opened on its east side above its bottom layer (Matěj,
+  # 2026-10-24): the spawner keeps the sandstone around it at floor level and shows from above and from the east.
   dungeon/rooms/husk_temple:
     - {from: [0, 1, 6], to: [0, 1, 6], final_state: "minecraft:air"}
     - {from: [12, 1, 6], to: [12, 1, 6], final_state: "minecraft:air"}
@@ -55,6 +57,12 @@ place:
     - {from: [12, 1, 5], to: [12, 3, 5], block: "minecraft:air"}
     - {from: [12, 2, 6], to: [12, 3, 6], block: "minecraft:air"}
     - {from: [12, 1, 7], to: [12, 3, 7], block: "minecraft:air"}
+    - {from: [7, 2, 5], to: [7, 2, 7], block: "minecraft:air"}
+    - {from: [6, 2, 6], to: [6, 3, 6], block: "minecraft:air"}
+  # The skeleton trap's spawner sat under a 3x3 of stone brick slabs: the slab above it becomes a cobweb, which shows
+  # the spawner and which players break, like the spawner (Matěj, 2026-10-24, RLM-412).
+  dungeon/rooms/skeleton_trap:
+    - {from: [6, 2, 6], to: [6, 2, 6], block: "minecraft:cobweb"}
   # The jail's garden behind tinted glass (grass, a small house with a bed) is a sight: its iron door, which nothing
   # opened, becomes tinted glass too.
   pillager_dungeon/rooms/jail:

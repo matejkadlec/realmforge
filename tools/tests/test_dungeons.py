@@ -12,6 +12,7 @@ from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import DATA_VERSION, REPO_ROOT, RepoPaths
 from realmforge_tools.rooms.check import markers
 from realmforge_tools.rooms.connectors import Connector, connectors, could_attach, doorway_gap
+from realmforge_tools.rooms.dress import reach
 from realmforge_tools.rooms.structure import (
     BlockState,
     Structure,
@@ -733,6 +734,31 @@ def test_the_room_that_ends_the_test_dungeon_has_a_clear_exit() -> None:
                 "minecraft:cobweb",
                 "minecraft:vine",
             }, name
+
+
+def test_the_stone_vault_pools_spawners_can_be_seen_and_broken() -> None:
+    # Matěj's playtest of 2026-10-24 (RLM-360, RLM-412): players break spawners in instances, so no pooled room hides
+    # one. Each spawner touches a cell a player reaches from the room's doorways, air or a cobweb they break too
+    # (skeleton_trap's cobweb over its spawner, husk_temple's monument opened on one side).
+    folder = REPO_ROOT / "content/rooms/third_party/stonevaults"
+    hidden = []
+    checked = 0
+    for sidecar in sorted(folder.rglob("*.yaml")):
+        room = RoomDef.model_validate(load_yaml(sidecar) or {})
+        if "realmforge:stone_vault" not in room.pools:
+            continue
+        structure = read_structure(sidecar.with_suffix(".nbt").read_bytes())
+        reached = reach(structure)
+        for block in structure.blocks:
+            if block.state.name != "minecraft:spawner":
+                continue
+            checked += 1
+            x, y, z = block.pos
+            faces = [(x + 1, y, z), (x - 1, y, z), (x, y + 1, z), (x, y - 1, z), (x, y, z + 1), (x, y, z - 1)]
+            if not any(face in reached for face in faces):
+                hidden.append(f"{sidecar.relative_to(folder).with_suffix('')} {block.pos}")
+    assert checked >= 6
+    assert hidden == []
 
 
 def test_the_stone_vault_pools_connectors_leave_open_doorways() -> None:

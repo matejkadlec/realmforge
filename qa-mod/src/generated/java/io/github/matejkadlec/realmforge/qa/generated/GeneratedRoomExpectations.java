@@ -97,7 +97,7 @@ public final class GeneratedRoomExpectations {
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/lobby/lobby_01", 13, 6, 13, 5, 433),
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/combination_lock", 13, 6, 13, 2, 96),
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/drowned_junction", 13, 6, 13, 3, 346),
-            new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/husk_temple", 13, 6, 13, 2, 369),
+            new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/husk_temple", 13, 6, 13, 2, 374),
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/item_combination_lock", 13, 6, 13, 2, 132),
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/lava_parkour", 13, 6, 13, 2, 358),
             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/lava_trap", 13, 6, 13, 2, 142),
