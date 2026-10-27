@@ -436,7 +436,7 @@ Decided rules that a line of lore makes feel natural. Texts may use these lines;
 | Signets are never used up; one signet opens any number of portals (RLM-128) | a seal asks for its signet every time and never takes it: a signet is shown, not paid |
 | Unlocks are per player: without their own unlock, a player can neither open nor switch a portal to that realm with its signet, nor pass through an open one (RLM-128) | the seal knows a traveler by their deeds; the Illusioner held the stone signet for months and never got through |
 | Portals link like the Nether's, with scaled coordinates, so arrivals stay near a realm's origin (RLM-128) | none needed: texts never explain where a portal leads inside a realm |
-| Every entity travels through a realm portal, a player only with the realm's unlock, and a mount or vehicle carrying a player without it stays out; other ways into a realm carry only players (Matěj, 2026-10-20, RLM-154, replacing RLM-128's "only players, for now") | the seals weigh only those who could one day break them; beasts, stones and driftwood pass unjudged, and a gate opens only by its own art, never by a shortcut |
+| Every entity travels through a realm portal, a player only with the realm's unlock, and a mount or vehicle carrying a player without it stays out; other ways into a realm carry only players (Matěj, 2026-10-20, RLM-154, replacing RLM-128's "only players, for now") | the seals weigh only travelers; beasts, stones and driftwood pass a gate unjudged, but only a traveler the seal knows finds another road into a realm |
 | A frame inside a realm opens only back to Overworld, and no portal links two realms (RLM-188) | every gate opens into Overworld, and a gate can only be raised there (Matěj, 2026-10-22) |
 | The next signet is crafted from the current realm (RE-9), around a shard its final boss drops on every kill (RLM-395) | the guardian holds the shards of the seals after it, and gives them up every time its trial is passed |
 | A dungeon boss returns in every new instance (RLM-35) | none needed: once a boss is defeated in the story, it stays defeated, and the game's repeats need no story reason ([practices](practices.md)) |
@@ -477,8 +477,9 @@ Matěj's answers of 2026-10-13 and 2026-10-14 (RLM-139), and the decisions since
    Maren Vell, Torva Flintmark, the Cairnfolk, the Hewn, the Unbroken, the Scribe in the Stone and the other
    peoples in the tables (the Scribe became the Stonebound, and the Unbroken Astone, the Unbroken: item 10).
    - **Realm names:** Undervault, Sunwastes, Rimefields, Forgefire and Brink; Overworld stays Overworld (three were
-     renamed on 2026-10-15, item 7). Where a player first meets a realm's name (the guide, the signet tooltip, the
-     arrival title), it carries a plain subtitle with its element, such as "Undervault — Stone Realm". The
+     renamed on 2026-10-15, item 7). Where a player first meets a realm's name (the guide, the arrival title), it
+     carries a plain subtitle with its element, such as "Undervault — Stone Realm"; the signet's tooltip dropped it
+     on 2026-10-20 and has one line, "Does not consume on use" (RLM-154). The
      [realm design](../design/realms.md) uses these names.
    - **"Maren Vell" stays** (2026-10-14). Said aloud it is "Ma-ren Vell", not Marvel's "Mar-Vell", and "Vell"
      echoes vellum, which suits an archivist.

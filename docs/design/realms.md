@@ -60,8 +60,8 @@ became the water realm Atlantis (2026-10-19, RLM-265).
   realms a player must visit to reach it (PR-15).
 - **The Void realm is always the last realm on the main path** (Matěj, RLM-95). A new main-path realm joins the
   chain before it, never after it, so its chapter is always the last one and its level band the game's highest.
-  Its place is data, not code: adding a realm before it moves its level band (its `dimension_rules`) and its signet's
-  recipe down the chain ([The Void realm](#the-void-realm)).
+  Its place is data, not code: adding a realm before it moves its level band (its realm entry's `levels` and its
+  `dimension_rules`' `entry_level`) and its signet's recipe down the chain ([The Void realm](#the-void-realm)).
 - **Portals start in Overworld** (Matěj, RLM-188): a portal in Overworld opens onto any realm the player has
   unlocked, and a portal built inside a realm opens only back to Overworld, so a trip between realms goes through
   Overworld ([realm portal spec](realm-portal.md#edge-cases)).
