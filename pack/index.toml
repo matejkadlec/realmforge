@@ -13,6 +13,10 @@ file = "config/defaultoptions/keybindings.txt"
 hash = "fca7380a19cf86a2dacf470d241fd4e975bcdb164d32ba3e769126b1e5b76361"
 
 [[files]]
+file = "config/dummmmmmy-client.toml"
+hash = "d4053daa6079c98f47beeda2ab6d953d0a2737fed9ba2c49a0559d793d3cec26"
+
+[[files]]
 file = "config/pickupnotifier-client.toml"
 hash = "b0982dc8819dd569c574f23f3f3fc971b1f2ecaf378c217f4183a7b7f1796c9b"
 
@@ -287,8 +291,18 @@ hash = "279c5b62a01a864c5423ca747acbb2221d61c5b19c4f0b5018f99fc7f1458974"
 metafile = true
 
 [[files]]
+file = "mods/mmmmmmmmmmmm.pw.toml"
+hash = "7a50255ac7aec7adac53394361be059c00d30d5ea5a5fc80419448d2fce59541"
+metafile = true
+
+[[files]]
 file = "mods/modernfix.pw.toml"
 hash = "80e4eb18cc090541dbcb80bc1c18a54e11aabf3eef0dc92b70c2c879e5ff7e3c"
+metafile = true
+
+[[files]]
+file = "mods/moonlight.pw.toml"
+hash = "51695ccd91e321564a154a7abdc91382f7c1dd9955efc1f463329ada1772760d"
 metafile = true
 
 [[files]]
