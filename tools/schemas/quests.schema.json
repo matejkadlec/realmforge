@@ -188,6 +188,64 @@
       "title": "DimensionTaskDef",
       "type": "object"
     },
+    "DungeonTaskDef": {
+      "additionalProperties": false,
+      "description": "Complete a run of a dungeon type, or of any dungeon: be in its party when its goal is done\n(``realmforge:dungeon_completed``). A run completed before the quest opened counts, as for every advancement.",
+      "properties": {
+        "dungeon": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The dungeon type (content/dungeons/), e.g. realmforge:test_dungeon; any without it.",
+          "title": "Dungeon"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "description": "Keeps the task's or reward's id stable. Defaults to its type and target (item:minecraft:diamond); set it only to tell two tasks or rewards of one quest apart, or to keep the old id after the target changes.",
+              "maxLength": 128,
+              "pattern": "^[a-z0-9_.:/-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalizedText"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Replaces FTB Quests' own title for the task (e.g. 'Kill 10 Zombie')."
+        },
+        "type": {
+          "const": "dungeon",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "DungeonTaskDef",
+      "type": "object"
+    },
     "ItemRewardDef": {
       "additionalProperties": false,
       "description": "Items, given when the player claims the reward.",
@@ -353,6 +411,56 @@
       "title": "KillTaskDef",
       "type": "object"
     },
+    "LevelTaskDef": {
+      "additionalProperties": false,
+      "description": "Reach a character level or a higher one (``realmforge:level_reached``, which fires at every level change and\nlogin, so a level reached before counts).",
+      "properties": {
+        "key": {
+          "anyOf": [
+            {
+              "description": "Keeps the task's or reward's id stable. Defaults to its type and target (item:minecraft:diamond); set it only to tell two tasks or rewards of one quest apart, or to keep the old id after the target changes.",
+              "maxLength": 128,
+              "pattern": "^[a-z0-9_.:/-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key"
+        },
+        "level": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Level",
+          "type": "integer"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalizedText"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Replaces FTB Quests' own title for the task (e.g. 'Kill 10 Zombie')."
+        },
+        "type": {
+          "const": "level",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "level"
+      ],
+      "title": "LevelTaskDef",
+      "type": "object"
+    },
     "LocalizedText": {
       "additionalProperties": false,
       "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
@@ -368,6 +476,56 @@
         "en_us"
       ],
       "title": "LocalizedText",
+      "type": "object"
+    },
+    "PlaceDef": {
+      "additionalProperties": false,
+      "description": "Where in its realm the quest sends the player: a structure, a biome, or a structure in a biome.",
+      "properties": {
+        "biome": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A biome (minecraft:worldgen/biome), e.g. minecraft:dripstone_caves.",
+          "title": "Biome"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalizedText"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How the text names the structure, which has no name of its own in the game: 'the Trial Chambers'. Required with a structure."
+        },
+        "structure": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A world structure (minecraft:worldgen/structure), e.g. minecraft:trial_chambers.",
+          "title": "Structure"
+        }
+      },
+      "title": "PlaceDef",
       "type": "object"
     },
     "PositionDef": {
@@ -394,6 +552,64 @@
         "y"
       ],
       "title": "PositionDef",
+      "type": "object"
+    },
+    "SpellTaskDef": {
+      "additionalProperties": false,
+      "description": "Cast a spell, or any spell: an instant spell when it is cast, a cast time or a channel when it completes\n(``realmforge:spell_cast``). A cast before the quest opened counts, as for every advancement.",
+      "properties": {
+        "key": {
+          "anyOf": [
+            {
+              "description": "Keeps the task's or reward's id stable. Defaults to its type and target (item:minecraft:diamond); set it only to tell two tasks or rewards of one quest apart, or to keep the old id after the target changes.",
+              "maxLength": 128,
+              "pattern": "^[a-z0-9_.:/-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key"
+        },
+        "spell": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The spell (content/spells/), e.g. realmforge:firebolt; any spell without it.",
+          "title": "Spell"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalizedText"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Replaces FTB Quests' own title for the task (e.g. 'Kill 10 Zombie')."
+        },
+        "type": {
+          "const": "spell",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "SpellTaskDef",
       "type": "object"
     },
     "StatTaskDef": {
@@ -496,6 +712,17 @@
   "additionalProperties": false,
   "description": "A quest in the quest book: where it stands, what opens it, what completes it and what it gives.",
   "properties": {
+    "bring": {
+      "description": "With what: items the player should have with them.",
+      "items": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        "type": "string"
+      },
+      "title": "Bring",
+      "type": "array",
+      "uniqueItems": true
+    },
     "chapter": {
       "description": "The chapter of content/chapters/ whose page shows the quest.",
       "maxLength": 64,
@@ -508,6 +735,17 @@
       "description": "The chapter's last quest: it grants the chapter's advancement realmforge:chapter/<chapter>, per player and claimed by itself, which raises the level cap.",
       "title": "Completes Chapter",
       "type": "boolean"
+    },
+    "craft": {
+      "description": "With what: items the player crafts on the way; each needs a recipe (ours or vanilla).",
+      "items": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        "type": "string"
+      },
+      "title": "Craft",
+      "type": "array",
+      "uniqueItems": true
     },
     "dependencies": {
       "description": "Quests that must be completed before this one opens.",
@@ -551,14 +789,54 @@
       "title": "Id",
       "type": "string"
     },
+    "level": {
+      "anyOf": [
+        {
+          "maximum": 1000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "With what: the recommended character level, within the realm's level band and at most the cap its chapter leaves. Required for an errand (any task but a checkmark, a level or a spell).",
+      "title": "Level"
+    },
     "optional": {
       "default": false,
       "description": "Optional quests do not count towards the chapter's progress.",
       "title": "Optional",
       "type": "boolean"
     },
+    "place": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PlaceDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Where, more precisely: the structure or biome in the realm the quest sends to."
+    },
     "position": {
       "$ref": "#/$defs/PositionDef"
+    },
+    "realm": {
+      "description": "Where: the realm of content/realms/ the quest takes place in (overworld for the Overworld). Its mandatory quests are its non-optional quests of the same chapter (requires_mandatory).",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Realm",
+      "type": "string"
+    },
+    "requires_mandatory": {
+      "default": false,
+      "description": "The realm's final boss quest (RLM-367): it also waits for every mandatory (non-optional) quest of its realm in its chapter, so killing the boss alone opens nothing.",
+      "title": "Requires Mandatory",
+      "type": "boolean"
     },
     "rewards": {
       "items": {
@@ -605,8 +883,11 @@
             "advancement": "#/$defs/AdvancementTaskDef",
             "checkmark": "#/$defs/CheckmarkTaskDef",
             "dimension": "#/$defs/DimensionTaskDef",
+            "dungeon": "#/$defs/DungeonTaskDef",
             "item": "#/$defs/ItemTaskDef",
             "kill": "#/$defs/KillTaskDef",
+            "level": "#/$defs/LevelTaskDef",
+            "spell": "#/$defs/SpellTaskDef",
             "stat": "#/$defs/StatTaskDef"
           },
           "propertyName": "type"
@@ -629,6 +910,15 @@
           },
           {
             "$ref": "#/$defs/CheckmarkTaskDef"
+          },
+          {
+            "$ref": "#/$defs/LevelTaskDef"
+          },
+          {
+            "$ref": "#/$defs/DungeonTaskDef"
+          },
+          {
+            "$ref": "#/$defs/SpellTaskDef"
           }
         ]
       },
@@ -643,6 +933,7 @@
   "required": [
     "id",
     "chapter",
+    "realm",
     "title",
     "position",
     "tasks"

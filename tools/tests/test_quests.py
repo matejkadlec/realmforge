@@ -31,6 +31,7 @@ HEX_ID = re.compile(r"^[0-9A-F]{16}$")
 FIRST = """\
 id: first_steps
 chapter: chapter_1
+realm: overworld
 title: {en_us: First Steps}
 subtitle: {en_us: Where it all begins}
 description:
@@ -48,6 +49,8 @@ rewards:
 SECOND = """\
 id: stone_hunter
 chapter: chapter_1
+realm: overworld
+level: 3
 title: {en_us: Stone Hunter}
 icon: minecraft:cobblestone
 position: {x: 2, y: 0.5}
@@ -68,6 +71,8 @@ rewards:
 LAST = """\
 id: into_the_undervault
 chapter: chapter_1
+realm: overworld
+level: 8
 title: {en_us: Into the Undervault}
 position: {x: 4, y: 0}
 dependencies: [stone_hunter]
@@ -263,9 +268,14 @@ def test_texts_go_into_ftb_quests_lang_files(repo: RepoPaths) -> None:
     first = quests["First Steps"]
     texts = files[f"{LANG}/chapters/chapter_1.json5"]
     assert texts[f"quest.{first['id']}.quest_subtitle"] == "Where it all begins"
-    assert texts[f"quest.{first['id']}.quest_desc"] == ["Realmforge is wide.", "", "Look around."]
+    where = '{"translate":"quest.realmforge.where","with":[{"translate":"realm.realmforge.overworld.name"}]}'
+    assert texts[f"quest.{first['id']}.quest_desc"] == ["Realmforge is wide.", "", "Look around.", "", where]
     assert texts[f"task.{first['tasks'][0]['id']}.title"] == "I am ready"
-    assert f"quest.{quests['Stone Hunter']['id']}.quest_desc" not in texts
+    # Without a description of its own, a quest's text is the generated block alone.
+    assert texts[f"quest.{quests['Stone Hunter']['id']}.quest_desc"] == [
+        where,
+        '{"translate":"quest.realmforge.level","with":[3]}',
+    ]
     xp_title = files[f"{LANG}/reward.json5"][f"reward.{first['rewards'][0]['id']}.title"]
     assert json.loads(xp_title) == [
         {"translate": "ftbquests.reward.ftbquests.xp"},
