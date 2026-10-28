@@ -2147,7 +2147,7 @@ the rules always want a branch), a room for the ending and a dead end, that ever
 and that every connector of every room meets some connector of the pool, that its key is an item and no other type's
 key. With a `pacing`, the rooms to pass through and the junctions that take branches must be corridors (`hallway`,
 `stairs`), the pool needs a fight (a `combat` room with a spawner) and, without walls, a corridor's dead end; with
-`walls`, the wall's block must exist and every doorway
+`walls`, the wall's block must be a full solid block (no pane, fence or air, RLM-419) and every doorway
 of the pool must be one the wall closes: no open block beside, above or below the middle three by three blocks of a
 side connector's face (`rooms/connectors.py`, `doorway_gap`; the corners do not count, as no player passes a gap that
 only touches the doorway at a corner). The keys also form the item tag `realmforge:dungeon_key`, which the client reads to know which items a portal
