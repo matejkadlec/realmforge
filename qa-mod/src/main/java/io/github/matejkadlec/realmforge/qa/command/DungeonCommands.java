@@ -137,7 +137,7 @@ final class DungeonCommands {
         DungeonType type = type(context, id);
         DungeonPlan plan = plan(type, seed);
         InstanceManager manager = manager(context);
-        Plot plot = manager.open(plan.toInstanceLayout(), List.of(), null, 0L, OptionalInt.of(type.level()));
+        Plot plot = manager.open(plan.toInstanceLayout(), List.of(), null, 0L, OptionalInt.of(type.level()), id);
         BoundingBox entrance = plan.entrance().box();
         Vec3 above = Vec3.atLowerCornerOf(plot.origin()).add(entrance.getCenter().getX() + 0.5, entrance.maxY() + 2,
                 entrance.getCenter().getZ() + 0.5);
@@ -161,7 +161,7 @@ final class DungeonCommands {
         DungeonType type = type(context, id);
         DungeonPlan plan = plan(type, seed);
         Plot plot = manager.open(plan.toInstanceLayout(), List.of(player.getUUID()), null, 0L,
-                OptionalInt.of(type.level()));
+                OptionalInt.of(type.level()), id);
         context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
                 "Building %s seed %d (%s) at level %d in plot %d; you enter when it is built", id, seed,
                 summary(plan), plot.level().orElse(0), plot.id())), true);

@@ -11,6 +11,7 @@ from realmforge_tools.generate import (
     datapack,
     dungeons,
     effects,
+    instance_biomes,
     mobs,
     sounds,
     spell_schools,
@@ -42,6 +43,7 @@ def collect(content: Content) -> dict[str, dict[str, str]]:
         | spell_schools.translations(content)
         | texts.translations(content)
         | dungeons.translations(content)
+        | instance_biomes.translations(content)
     )
     for key, localized in every.items():
         for locale, text in localized.translations().items():

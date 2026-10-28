@@ -249,7 +249,7 @@ Rules:
   of any dungeon without one) and `spell` (cast the `spell`, or any spell: an instant one when cast, a cast time or
   channel when it completes; never an `npc_only` spell). FTB Quests has no task type of ours, so each of these becomes
   an advancement without a display, `realmforge:quest/<quest>/<key with : as />`, that one of our triggers completes and
-  FTB Quests' advancement task reads; it is titled from data ("Reach level 5", "Complete Test Dungeon", "Cast a
+  FTB Quests' advancement task reads; it is titled from data ("Reach level 5", "Complete Prisoner's Kingdom", "Cast a
   spell"). Any task may give a `title` instead of FTB Quests' own or ours. Every quest says where, how and with what
   (Q1-3): its `realm` (of `realms/`, `overworld` for the Overworld) and, optionally, its `place` (a `structure` of
   `minecraft:worldgen/structure` with the `name` the text calls it, as a structure has no name in the game, a `biome`,
@@ -476,7 +476,11 @@ Rules:
   writes each room's set-piece spots into it: the patterns where the pieces that reach the room's role fit, each with
   the pieces that may fill it. `test_dungeon` is test content (like `items/test_item`) that only `/qa dungeon plan`,
   `build` and `enter` use and its key opens, about 50 rooms on one long main road with a fight after every 2 to 4 rooms
-  ([architecture 15.2](../docs/architecture.md#152-dungeon-types)); W6 brings the real dungeon types.
+  ([architecture 15.2](../docs/architecture.md#152-dungeon-types)); W6 brings the real dungeon types. Each type also
+  gets the biome `realmforge:dungeon_<id>`, named like the type, which its runs' rooms stand in: the arrival title
+  shows the dungeon's name, and Xaero's Minimap shows it as the biome (RLM-409,
+  [architecture 15.5](../docs/architecture.md#155-instances)). A new type's biome joins Traveler's Titles' biome
+  blacklist in `pack/config/` (a pytest says so), so its own title stays the only one.
 - Start each YAML file with the `yaml-language-server` schema comment (see `items/test_item.yaml`) for editor
   completion.
 

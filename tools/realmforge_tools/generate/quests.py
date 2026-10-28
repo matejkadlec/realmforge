@@ -26,7 +26,7 @@ reward does ("XP: +500", in FTB Quests' translation of "XP"). An advancement rew
 Our own tasks (Q1-2: a level, a dungeon, a spell) become advancements in the core mod's data,
 ``data/realmforge/advancement/quest/<quest>/<key>.json``, without a display, so no toast and no advancement screen
 entry. Each has one criterion of our triggers, and the quest's task is FTB Quests' advancement task on it, titled from
-data ("Reach level 5", "Complete Test Dungeon", "Cast Firebolt"). FTB Quests reads a title or a description line that
+data ("Reach level 5", "Complete Prisoner's Kingdom", "Cast Firebolt"). FTB Quests reads a title or a description line that
 is a JSON text component as one (``TextUtils#parseRawText``), so these titles and the description's generated "where,
 with what" block (Q1-3) are components that translate through our own texts (``content/texts/quest.yaml``) and the
 game's names of realms, items, biomes, dungeons and spells. A final boss quest's dependencies include its realm's
@@ -259,7 +259,7 @@ def _listed(components: list[dict[str, Any]]) -> list[Any]:
 
 
 def task_title(task: OwnTaskDef) -> dict[str, Any]:
-    """The title of one of our own tasks, from data: "Reach level 5", "Complete Test Dungeon", "Cast a spell"."""
+    """The title of one of our own tasks, from data: "Reach level 5", "Complete Prisoner's Kingdom", "Cast a spell"."""
     match task:
         case LevelTaskDef():
             return _text("task_level", task.level)

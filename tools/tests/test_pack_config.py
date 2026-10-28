@@ -3,7 +3,8 @@
 Traveler's Titles shows a dimension's name when a player enters it, and "???" for a dimension it has no name for. Our
 realms show their own arrival title (W2b), so every realm's dimension, and the dungeon instances' (no name of its
 own), is on its dimension blacklist (RLM-308): a realm never shows two titles. A new realm fails this test until its
-dimension joins the list.
+dimension joins the list. A dungeon run shows its own arrival title too (RLM-409), named after its dungeon type's
+biome, so every dungeon type's biome is on the biome blacklist, and a new dungeon type fails until its biome joins.
 """
 
 from __future__ import annotations
@@ -13,17 +14,28 @@ import tomllib
 
 from ruamel.yaml import YAML
 
+from realmforge_tools.generate.instance_biomes import biome_id
 from realmforge_tools.project import REPO_ROOT
 
 TRAVELERS_TITLES = REPO_ROOT / "pack" / "config" / "travelerstitles-neoforge-26_1.toml"
 REALMS_DIR = REPO_ROOT / "content" / "realms"
+DUNGEONS_DIR = REPO_ROOT / "content" / "dungeons"
 MOD_DIMENSIONS_DIR = REPO_ROOT / "mod" / "src" / "main" / "resources" / "data" / "realmforge" / "dimension"
 
 
 def blacklisted_dimensions() -> set[str]:
     """Traveler's Titles' dimension blacklist: a string that holds a list, ``"[a, b]"``."""
+    return _blacklist("Dimension Titles", "Blacklisted Dimensions")
+
+
+def blacklisted_biomes() -> set[str]:
+    """Traveler's Titles' biome blacklist, written like the dimension blacklist."""
+    return _blacklist("Biome Titles", "Blacklisted Biomes")
+
+
+def _blacklist(section: str, key: str) -> set[str]:
     config = tomllib.loads(TRAVELERS_TITLES.read_text(encoding="utf-8"))
-    listed = config["Traveler's Titles"]["Dimension Titles"]["Blacklisted Dimensions"]
+    listed = config["Traveler's Titles"][section][key]
     return {
         entry.strip()
         for entry in listed.strip().removeprefix("[").removesuffix("]").split(",")
@@ -55,6 +67,17 @@ def test_the_dungeon_instances_show_no_title() -> None:
         "a dimension of the core mod's own data needs a decision here"
     )
     assert instances <= blacklisted_dimensions()
+
+
+def test_a_dungeon_run_shows_only_its_own_title() -> None:
+    yaml = YAML(typ="safe")
+    biomes = {
+        f"realmforge:{biome_id(yaml.load(path.read_text(encoding='utf-8'))['id'])}"
+        for path in DUNGEONS_DIR.glob("*.yaml")
+    }
+    assert biomes, "no dungeon type found"
+    missing = biomes - blacklisted_biomes()
+    assert not missing, f"add these dungeon biomes to Traveler's Titles' biome blacklist: {sorted(missing)}"
 
 
 def test_structurify_switches_strongholds_off() -> None:

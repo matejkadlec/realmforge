@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=../../tools/schemas/items.schema.json
 # The key of realmforge:test_dungeon (W4d, RLM-181), test content like the type: used on a dungeon portal, it opens a
-# portal to a Test Dungeon. Crafted early on (Matěj, 2026-10-15); a placeholder recipe until balance.
+# portal to Prisoner's Kingdom. Crafted early on (Matěj, 2026-10-15); a placeholder recipe until balance.
 id: test_dungeon_key
 name:
-  en_us: Test Dungeon Key
+  en_us: Prisoner's Kingdom Key
 max_stack_size: 16
 creative_tabs:
   - minecraft:tools_and_utilities

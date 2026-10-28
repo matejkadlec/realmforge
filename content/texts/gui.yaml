@@ -117,3 +117,6 @@ texts:
     en_us: Spells Queue Size
   spells_queue_size_tooltip:
     en_us: "How many spells can wait. At 1, a newer spell replaces the waiting one; above 1, it waits after them."
+  # The arrival title's subtitle in a dungeon run, under the dungeon's name (RLM-409; client/hud/InstanceArrivalTitle).
+  instance_subtitle:
+    en_us: Realmforge Instance

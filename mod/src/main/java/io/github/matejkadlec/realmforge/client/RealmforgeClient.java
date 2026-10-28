@@ -8,6 +8,7 @@ import io.github.matejkadlec.realmforge.client.compat.pickupnotifier.PickUpListP
 import io.github.matejkadlec.realmforge.client.hud.CastBarHud;
 import io.github.matejkadlec.realmforge.client.hud.CombatTextHud;
 import io.github.matejkadlec.realmforge.client.hud.HitDirectionHud;
+import io.github.matejkadlec.realmforge.client.hud.InstanceArrivalTitle;
 import io.github.matejkadlec.realmforge.client.hud.MagicShieldHud;
 import io.github.matejkadlec.realmforge.client.hud.RealmRefusalHud;
 import io.github.matejkadlec.realmforge.client.hud.SpellBarHud;
@@ -65,5 +66,6 @@ public final class RealmforgeClient {
         CustomMobRenderers.register(modBus);
         RealmPortalColors.register(modBus);
         ScrollCharge.register(modBus);
+        InstanceArrivalTitle.register();
     }
 }

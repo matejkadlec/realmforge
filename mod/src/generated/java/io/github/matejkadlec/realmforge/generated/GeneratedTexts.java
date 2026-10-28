@@ -95,6 +95,9 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.entity_reach} from {@code content/texts/gui.yaml}: "Entity Reach" */
     public static final String GUI_ENTITY_REACH = "gui.realmforge.entity_reach";
 
+    /** {@code gui.realmforge.instance_subtitle} from {@code content/texts/gui.yaml}: "Realmforge Instance" */
+    public static final String GUI_INSTANCE_SUBTITLE = "gui.realmforge.instance_subtitle";
+
     /** {@code gui.realmforge.kit_item} from {@code content/texts/gui.yaml}: "%1$s ×%2$s" */
     public static final String GUI_KIT_ITEM = "gui.realmforge.kit_item";
 
