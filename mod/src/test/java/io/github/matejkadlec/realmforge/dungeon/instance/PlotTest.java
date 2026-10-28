@@ -36,7 +36,7 @@ class PlotTest {
     @Test
     void aBuildingPlotSurvivesSavingWithItsProgress() {
         Plot plot = new Plot(3);
-        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null, null);
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null, null, null);
         plot.advance();
         plot.advance();
 
@@ -58,7 +58,7 @@ class PlotTest {
     @Test
     void aBuiltPlotKeepsItsSpawnAndMustBeClearedOfItsRoomsAndTheirMargin() {
         Plot plot = new Plot(0);
-        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null, null);
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null, null, null);
         Vec3 spawn = new Vec3(7.5, 1, 7.5);
         plot.finishBuilding(spawn);
         assertEquals(PlotState.READY, plot.state());
@@ -83,7 +83,7 @@ class PlotTest {
     @Test
     void closingAnUnfinishedBuildAlsoClearsItsRoomsAndTheirMargin() {
         Plot plot = new Plot(0);
-        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null, null);
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null, null, null);
         plot.advance();
         plot.startClosing();
         assertEquals(PlotWork.withMargin(ROOMS), plot.dirty());
@@ -92,7 +92,7 @@ class PlotTest {
     @Test
     void closingABuildBeforeAnyUnitRanClearsNothing() {
         Plot plot = new Plot(0);
-        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null, null);
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null, null, null);
         plot.startClosing();
         assertEquals(List.of(), plot.dirty());
         assertEquals(List.of(), plot.units(), "nothing to clear, so the plot is free at its next turn");
@@ -102,7 +102,7 @@ class PlotTest {
     @Test
     void aPlotWantsTheChunksOfItsRoomsWithTheirMarginFromOpeningToClosing() {
         Plot plot = new Plot(0);
-        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null, null);
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null, null, null);
         assertEquals(PlotWork.chunks(PlotWork.withMargin(ROOMS)), plot.wantedChunks());
         assertTrue(plot.wantedChunks().size() > PlotWork.chunks(ROOMS).size(),
                 "the margin reaches into chunks the rooms do not touch");
@@ -115,7 +115,7 @@ class PlotTest {
     @Test
     void aCompletedRunStaysPlayableAndCompleted() {
         Plot plot = new Plot(0);
-        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null, null);
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 7L, null, null, null, null);
         plot.finishBuilding(Vec3.ZERO);
         plot.activate();
         assertEquals(PlotState.ACTIVE, plot.state());
@@ -132,7 +132,7 @@ class PlotTest {
         PortalLink portal = new PortalLink(Identifier.parse("realmforge:test_dungeon"),
                 GlobalPos.of(Level.OVERWORLD, new BlockPos(10, 70, -4)));
         Plot plot = new Plot(2);
-        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 42L, portal, 36_000L, null);
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 42L, portal, 36_000L, null, null);
         Plot loaded = reload(plot);
         assertEquals(42L, loaded.run());
         assertEquals(Optional.of(portal), loaded.portal());
@@ -153,7 +153,7 @@ class PlotTest {
     @Test
     void aRunWithoutAPortalHasNoTimer() {
         Plot plot = new Plot(0);
-        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 1L, null, null, null);
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 1L, null, null, null, null);
         Plot loaded = reload(plot);
         assertEquals(Optional.empty(), loaded.portal());
         assertEquals(OptionalLong.empty(), loaded.closesAt());
@@ -162,7 +162,7 @@ class PlotTest {
     @Test
     void aRunKeepsItsLevelUntilItCloses() {
         Plot plot = new Plot(0);
-        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 3L, null, null, 25);
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 3L, null, null, 25, null);
         assertEquals(OptionalInt.of(25), reload(plot).level(), "the level is saved with the run");
         plot.finishBuilding(Vec3.ZERO);
         plot.activate();
@@ -174,9 +174,23 @@ class PlotTest {
     }
 
     @Test
+    void aRunKeepsItsDungeonTypeUntilItCloses() {
+        Identifier type = Identifier.parse("realmforge:test_dungeon");
+        Plot plot = new Plot(0);
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 3L, null, null, 25, type);
+        assertEquals(Optional.of(type), reload(plot).dungeonType(), "a resumed build still gives its rooms the biome");
+        plot.finishBuilding(Vec3.ZERO);
+        assertEquals(Optional.of(type), reload(plot).dungeonType());
+
+        plot.startClosing();
+        assertEquals(Optional.empty(), plot.dungeonType(), "clearing gives the void back, whatever the type");
+        assertEquals(Optional.empty(), reload(plot).dungeonType());
+    }
+
+    @Test
     void aRunOpenedWithoutADungeonTypeHasNoLevel() {
         Plot plot = new Plot(0);
-        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 1L, null, null, null);
+        plot.startBuilding(LAYOUT, ROOMS, MARKERS, List.of(PLAYER), 1L, null, null, null, null);
         assertEquals(OptionalInt.empty(), reload(plot).level());
     }
 

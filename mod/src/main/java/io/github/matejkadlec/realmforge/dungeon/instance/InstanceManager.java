@@ -252,10 +252,21 @@ public final class InstanceManager extends SavedData {
      * {@link #open(InstanceLayout, List, PortalLink, long)} for a run of a dungeon type whose base level is
      * {@code baseLevel}: the run's level is that base raised to the highest level of the party members online now,
      * and holds for the whole run (RLM-459). No portal ({@code null}) means no timer. Public for the QA commands and
-     * GameTests, which open runs of a type's or of their own layouts.
+     * GameTests, which open runs of a type's or of their own layouts. A run through a portal stands in its portal's
+     * dungeon type's biome.
      */
     public Plot open(InstanceLayout layout, List<UUID> party, @Nullable PortalLink portal, long openTicks,
             OptionalInt baseLevel) {
+        return open(layout, party, portal, openTicks, baseLevel, portal == null ? null : portal.type());
+    }
+
+    /**
+     * {@link #open(InstanceLayout, List, PortalLink, long, OptionalInt)} for a run planned from the dungeon type
+     * {@code dungeonType}, whose rooms stand in that type's biome (RLM-409, {@link InstanceBiomes}); {@code null}
+     * leaves them in the void. Public for the QA commands and GameTests, which open runs of a type without a portal.
+     */
+    public Plot open(InstanceLayout layout, List<UUID> party, @Nullable PortalLink portal, long openTicks,
+            OptionalInt baseLevel, @Nullable Identifier dungeonType) {
         ServerLevel level = level();
         List<BoundingBox> relativeRooms = new ArrayList<>();
         List<DataMarker> markers = new ArrayList<>();
@@ -289,7 +300,7 @@ public final class InstanceManager extends SavedData {
                     .map(level.getServer().getPlayerList()::getPlayer).filter(Objects::nonNull)
                     .mapToInt(Characters::level));
         }
-        plot.startBuilding(layout, rooms, markers, party, nextRun++, portal, closesAt, runLevel);
+        plot.startBuilding(layout, rooms, markers, party, nextRun++, portal, closesAt, runLevel, dungeonType);
         holdChunks(plot);
         setDirty();
         LOGGER.debug("Opened instance plot {} at {} for {} at level {}", plot.id(), origin, party, runLevel);
@@ -578,6 +589,7 @@ public final class InstanceManager extends SavedData {
             long start = System.nanoTime();
             try {
                 long cleared = InstanceBuilder.run(level, plot, unit);
+                InstanceBiomes.apply(level, plot, unit);
                 int room = unit instanceof PlotWork.Place place ? place.room() : -1;
                 plot.recorder().unit(level.getGameTime(), room, System.nanoTime() - start, cleared);
             } catch (RuntimeException e) {

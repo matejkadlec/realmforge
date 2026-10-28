@@ -1,15 +1,18 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
 import com.mojang.authlib.GameProfile;
+import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.dungeon.DungeonAttachments;
 import io.github.matejkadlec.realmforge.dungeon.DungeonRegistries;
 import io.github.matejkadlec.realmforge.dungeon.DungeonType;
 import io.github.matejkadlec.realmforge.dungeon.instance.DataMarker;
+import io.github.matejkadlec.realmforge.dungeon.instance.InstanceBiomes;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceLayout;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
 import io.github.matejkadlec.realmforge.dungeon.instance.Plot;
 import io.github.matejkadlec.realmforge.dungeon.instance.PlotState;
+import io.github.matejkadlec.realmforge.dungeon.instance.PortalLink;
 import io.github.matejkadlec.realmforge.dungeon.instance.RoomPlacement;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonRoom;
 import io.github.matejkadlec.realmforge.generated.GeneratedBlocks;
@@ -20,18 +23,25 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
@@ -53,6 +63,7 @@ import net.minecraft.world.phys.Vec3;
 public final class InstanceGameTests {
     /** Building and clearing take a few dozen ticks; this leaves room for a slow CI machine. */
     private static final int TIMEOUT = 600;
+    private static final Identifier TEST_DUNGEON = Realmforge.id("test_dungeon");
 
     private InstanceGameTests() {
     }
@@ -149,6 +160,48 @@ public final class InstanceGameTests {
                             "clearing the chest dropped nothing");
                     helper.assertTrue(plot.chunks().isEmpty(), "a free plot holds no chunks");
                     server.getPlayerList().remove(player);
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * RLM-409: a run of a dungeon type stands in the type's biome, which Traveler's Titles and Xaero's Minimap name
+     * after the type, while the dimension around its rooms stays the void; clearing the plot gives the void back. A run
+     * through a portal takes its portal's dungeon type.
+     */
+    @QaGameTest(timeoutTicks = TIMEOUT)
+    public static void aRunStandsInItsDungeonTypesBiome(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        InstanceManager manager = manager(helper);
+        ServerLevel instances = InstanceDimension.level(server);
+        ResourceKey<Biome> biome = InstanceBiomes.biome(TEST_DUNGEON);
+        helper.assertTrue(instances.registryAccess().lookupOrThrow(Registries.BIOME).get(biome).isPresent(),
+                biome.identifier() + " is not loaded");
+
+        PortalLink portal = new PortalLink(TEST_DUNGEON, GlobalPos.of(Level.OVERWORLD, BlockPos.ZERO));
+        Plot portalRun = manager.open(SpikeLayouts.spike(), List.of(), portal, 1200L, OptionalInt.empty());
+        helper.assertValueEqual(portalRun.dungeonType(), Optional.of(TEST_DUNGEON), "a portal run's dungeon type");
+        manager.release(portalRun);
+
+        Plot plot = manager.open(SpikeLayouts.spike(), List.of(), null, 0L, OptionalInt.empty(), TEST_DUNGEON);
+        BlockPos origin = plot.origin();
+        BlockPos inside = origin.offset(SpikeLayouts.ENTRANCE);
+        // Eight blocks west of the start room's wall: past the biome cells its room touches.
+        BlockPos outside = origin.offset(-8, 1, 7);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.READY, "plot is " + plot.state()))
+                .thenExecute(() -> {
+                    helper.assertTrue(instances.getBiome(inside).is(biome),
+                            "the start room stands in " + instances.getBiome(inside).getRegisteredName());
+                    helper.assertTrue(instances.getBiome(outside).is(Biomes.THE_VOID),
+                            "beside the rooms stands " + instances.getBiome(outside).getRegisteredName());
+                    manager.release(plot);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.FREE, "plot is " + plot.state()))
+                .thenExecute(() -> {
+                    helper.assertTrue(instances.getBiome(inside).is(Biomes.THE_VOID),
+                            "the cleared plot stands in " + instances.getBiome(inside).getRegisteredName());
+                    helper.assertTrue(plot.dungeonType().isEmpty(), "a free plot has no dungeon type");
                 })
                 .thenSucceed();
     }

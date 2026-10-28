@@ -37,7 +37,8 @@ public final class Plot {
             Codec.LONG.optionalFieldOf("run", 0L).forGetter(Plot::run),
             PortalLink.CODEC.optionalFieldOf("portal").forGetter(Plot::portal),
             Codec.LONG.optionalFieldOf("closes_at").forGetter(plot -> Optional.ofNullable(plot.closesAt)),
-            ExtraCodecs.POSITIVE_INT.optionalFieldOf("level").forGetter(plot -> Optional.ofNullable(plot.level))
+            ExtraCodecs.POSITIVE_INT.optionalFieldOf("level").forGetter(plot -> Optional.ofNullable(plot.level)),
+            Identifier.CODEC.optionalFieldOf("dungeon_type").forGetter(Plot::dungeonType)
     ).apply(instance, Plot::new));
 
     private final int id;
@@ -69,6 +70,9 @@ public final class Plot {
     /** The current run's level, set when it opened, if its dungeon type gives one (RLM-459). */
     @Nullable
     private Integer level;
+    /** The dungeon type the current run was planned from, if any, whose biome its rooms get (RLM-409). */
+    @Nullable
+    private Identifier dungeonType;
     /** Derived from the saved state; rebuilt after a restart. */
     @Nullable
     private List<PlotWork.Unit> units;
@@ -79,13 +83,13 @@ public final class Plot {
 
     Plot(int id) {
         this(id, PlotState.FREE, Optional.empty(), List.of(), List.of(), Optional.empty(), List.of(), 0, List.of(),
-                List.of(), 0L, Optional.empty(), Optional.empty(), Optional.empty());
+                List.of(), 0L, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     private Plot(int id, PlotState state, Optional<InstanceLayout> layout, List<BoundingBox> rooms,
             List<DataMarker> markers, Optional<Vec3> spawn, List<BoundingBox> dirty, int step, List<UUID> party,
             List<Long> chunks, long run, Optional<PortalLink> portal, Optional<Long> closesAt,
-            Optional<Integer> level) {
+            Optional<Integer> level, Optional<Identifier> dungeonType) {
         this.id = id;
         this.state = state;
         this.layout = layout.orElse(null);
@@ -100,6 +104,7 @@ public final class Plot {
         this.portal = portal.orElse(null);
         this.closesAt = closesAt.orElse(null);
         this.level = level.orElse(null);
+        this.dungeonType = dungeonType.orElse(null);
     }
 
     public int id() {
@@ -190,6 +195,14 @@ public final class Plot {
         return level == null ? OptionalInt.empty() : OptionalInt.of(level);
     }
 
+    /**
+     * The dungeon type the current run was planned from (RLM-409), whose biome its rooms get ({@link InstanceBiomes}).
+     * Empty while the plot holds no run, and for a run of a QA test layout.
+     */
+    public Optional<Identifier> dungeonType() {
+        return Optional.ofNullable(dungeonType);
+    }
+
     /** The chunks it holds loaded, as {@code ChunkPos#pack} values. */
     public LongSet chunks() {
         return chunks;
@@ -230,11 +243,13 @@ public final class Plot {
     }
 
     void startBuilding(InstanceLayout layout, List<BoundingBox> rooms, List<DataMarker> markers, List<UUID> party,
-            long run, @Nullable PortalLink portal, @Nullable Long closesAt, @Nullable Integer level) {
+            long run, @Nullable PortalLink portal, @Nullable Long closesAt, @Nullable Integer level,
+            @Nullable Identifier dungeonType) {
         this.run = run;
         this.portal = portal;
         this.closesAt = closesAt;
         this.level = level;
+        this.dungeonType = dungeonType;
         this.layout = layout;
         this.rooms = List.copyOf(rooms);
         this.markers = List.copyOf(markers);
@@ -304,6 +319,7 @@ public final class Plot {
         portal = null;
         closesAt = null;
         level = null;
+        dungeonType = null;
     }
 
     private void enter(PlotState next) {

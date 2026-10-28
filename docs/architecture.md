@@ -375,7 +375,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/` (exists: blocks with their items, loot tables, mining tags and recipes; a block's kind picks its class, below), `effects/` (exists: status effects, [11.4](#114-status-effects)), `mobs/` (exists: entity types of an archetype with their attributes, loot tables, tags and placeholder GeckoLib models, [14.2](#142-custom-mobs)), `sounds/` (exists: our sound events `realmforge:<category>.<subject>.<name>` playing vanilla sounds by reference with their own pitch and volume, [ADR 0007](decisions/0007-asset-pipeline.md); `GeneratedSounds` belongs to `core`) | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
 | `races/`, `classes/`, `spells/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `realms/`, `bosses/`, `dungeons/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
-| `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template, and each room's set-piece spots with the pieces that may fill them ([15.4](#154-rooms)) | the planner ([15.3](#153-generation-pure-first-then-minecraft)); the builder's set pieces (RLM-282) |
+| `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template, and each room's set-piece spots with the pieces that may fill them ([15.4](#154-rooms)); a biome per type, `worldgen/biome/dungeon_<id>.json`, named like it (`generate/instance_biomes.py`, [15.5](#155-instances)) | the planner ([15.3](#153-generation-pure-first-then-minecraft)); the builder's set pieces (RLM-282) |
 | `loot/`, tags; the `recipe` of an item or block (exists, W4d) | `data/realmforge/loot_table/`, `recipe/<id>.json` (vanilla's `crafting_shaped`, the result the entry itself), `tags/` | reloadable vanilla data |
 | `chapters/`, `realms/`, `quests/` | `data/realmforge/advancement/` (a chapter's `chapter/<id>`, a realm's unlock `realm/<id>`, a quest task of ours `quest/<quest>/<key>`); `pack/config/ftbquests/quests/` (FTB Quests' JSON5, stable ids per ADR 0006; exists, Q1-1, [16](#16-progression-and-quests)) | advancements; the FTB Quests book |
 | `worldgen/<registry>/<id>.json` (JSON, [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)) | validated and copied unchanged to `data/realmforge/dimension/`, `dimension_type/`, `worldgen/<registry>/` | vanilla worldgen registries |
@@ -2627,6 +2627,18 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   enters through the portal once it is built. `/qa dungeon enter <type> [<seed>]` builds a planned dungeon and moves
   you in when it stands, without a portal or a timer, at the type's level raised to yours (its message names it);
   `/qa instance enter` builds the spike test rooms in a row, which have no level.
+- **The run's biome** (RLM-409): every run lives in the one instance dimension, whose generator fills it with
+  `minecraft:the_void`, so the run's rooms get their dungeon type's biome instead. `rf gen` writes a biome per
+  dungeon type, `realmforge:dungeon_<id>` (`generate/instance_biomes.py`: the void's settings without its spawn
+  platform, its name the type's `name`), and the plot remembers the type it was planned from (a portal's, or the one
+  `/qa dungeon build` and `enter` name; a QA test layout has none). As each unit places a slice of a room,
+  `InstanceBiomes` sets the type's biome in every 4 x 4 x 4 biome cell the slice touches and sends the chunk's biomes
+  to the players who see it, as `/fillbiome` does; each slice cleanup clears gets the void back, so a released plot
+  stands in the void again. Traveler's Titles shows the biome's name (`biome.realmforge.dungeon_<id>`) as the
+  arrival title, and Xaero's Minimap shows it as the biome. The pack keeps Traveler's Titles' dimension title off for
+  `realmforge:instances`, so the dungeon's name is the one title on arrival, and Xaero's Minimap and World Map show a
+  dimension only by its id (`realmforge:instances`), as neither reads a name for it. `InstanceGameTests` checks the
+  biome inside and beside the rooms after a build and after the release, and `PlotTest` that the type is saved.
 - **The dungeon portal** (W4d, RLM-181; Matěj's decision of 2026-10-11 in RLM-34): a craftable, reusable block
   (`content/blocks/dungeon_portal.yaml`, kind `dungeon_portal`; code in `dungeon/portal/`). A dungeon type's key used
   on it (`DungeonPortals#useKey`) plans a layout of that type from a new seed and opens a run for the player who used
