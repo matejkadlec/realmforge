@@ -282,40 +282,33 @@ public final class RealmPortalGameTests {
     }
 
     /**
-     * The sealstone glows inside a realm for that realm's own signet, which opens its frame back onto Overworld
-     * (RLM-458; Matěj, 2026-10-28: "I'd add the glowing effect as well"): a dark frame in the stone realm lights up for
-     * the Signet of the Undervault, stays lit once the portal opens onto Overworld, and fades when the signet is put
-     * away.
+     * Which signets light a sealstone, by its dimension (RLM-458; Matěj, 2026-10-28: "I'd add the glowing effect as
+     * well"): inside the stone realm its own signet does, dark or open onto Overworld, as it opens the frame back onto
+     * Overworld there; in the instance dimension, which has no realm entry, no signet does; nothing else is a signet.
+     * Overworld's glow over ticks is {@link #theSealstoneGlowsWhileAPlayerWithASignetIsNear}. This asks the rule
+     * itself, with no player kept in the realm: a player there for the glow's ticks loads realm chunks in the
+     * background, which held up the light and chunk work of the tests running beside it.
      */
-    @QaGameTest(timeoutTicks = 200)
+    @QaGameTest
     public static void aSealstoneInARealmGlowsForTheRealmsSignet(GameTestHelper helper) {
         RealmExpectation stone = RealmGameTests.stone();
         ServerLevel realm = RealmGameTests.realm(helper, stone);
-        PortalFrame.Frame frame = new PortalFrame.Frame(new BlockPos(2_340, REALM_FLOOR, 2_340), Direction.Axis.X);
-        clearSpot(realm, frame);
-        buildFrame(realm, frame);
-        BlockPos sealstone = frame.sealstone();
-        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-realm-glow");
-        RealmGameTests.award(helper, player, stone.unlockAdvancement());
-        Vec3 near = Vec3.atBottomCenterOf(frame.at(1, 0).relative(frame.front(), 2));
-        helper.assertTrue(player.teleportTo(realm, near.x, near.y, near.z, Set.of(), 0.0F, 0.0F, true),
-                "the unlocked player enters the realm");
-        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-        player.setItemInHand(InteractionHand.OFF_HAND, signet(stone));
-        helper.startSequence()
-                .thenWaitUntil(() -> assertGlow(helper, realm, sealstone, SealstoneBlock.MAX_GLOW,
-                        "a dark frame inside the realm glows for the realm's signet"))
-                .thenExecute(() -> RealmPortals.light(realm, frame, Realmforge.id("overworld")))
-                .thenExecuteAfter(20, () -> {
-                    assertGlow(helper, realm, sealstone, SealstoneBlock.MAX_GLOW,
-                            "a portal inside the realm open onto Overworld still glows for the realm's signet");
-                    player.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
-                })
-                .thenExecuteAfter(20, () -> {
-                    assertGlow(helper, realm, sealstone, 0, "the sealstone faded once the signet was put away");
-                    realm.getServer().getPlayerList().remove(player);
-                })
-                .thenSucceed();
+        ServerLevel instances = InstanceDimension.level(helper.getLevel().getServer());
+        helper.assertTrue(instances != null, "the instance dimension is loaded");
+        Optional<Identifier> overworld = Optional.of(Realmforge.id("overworld"));
+        helper.assertTrue(RealmPortals.lightsSealstone(realm, signet(stone), Optional.empty()),
+                "a dark sealstone inside the realm glows for the realm's signet");
+        helper.assertTrue(RealmPortals.lightsSealstone(realm, signet(stone), overworld),
+                "a sealstone inside the realm open onto Overworld glows for the realm's signet");
+        helper.assertFalse(RealmPortals.lightsSealstone(realm, new ItemStack(Items.SHIELD), Optional.empty()),
+                "a shield is no signet");
+        helper.assertFalse(RealmPortals.lightsSealstone(instances, signet(stone), Optional.empty()),
+                "a sealstone in the instance dimension stays dark for every signet");
+        helper.assertTrue(RealmPortals.lightsSealstone(helper.getLevel(), signet(stone), Optional.empty()),
+                "a dark sealstone in Overworld glows for any signet");
+        helper.assertFalse(RealmPortals.lightsSealstone(helper.getLevel(), signet(stone), overworld),
+                "an Overworld sealstone open onto Overworld stays dark for the stone realm's signet");
+        helper.succeed();
     }
 
     // Travel -------------------------------------------------------------------------------------------------------
@@ -431,26 +424,36 @@ public final class RealmPortalGameTests {
         int scale = scale(realm);
         int radius = RealmPortalLinker.buildRadius(realm);
         PortalFrame.Frame first = litOverworldFrame(level, cellX * scale + scale - 1, cellZ * scale + scale / 2, stone);
-        // Solid rock all around the scaled position, but for one spot the build radius west of it: a frame across x set
-        // into the rock at y 40, arrived at from the east.
-        BlockState rock = Blocks.STONE.defaultBlockState();
+        // No free block all around the scaled position, but for one spot the build radius west of it: a frame across x
+        // set into the floor at y 40, arrived at from the east. Every free block there becomes a barrier, which counts
+        // as floor and is never free, as rock is, and the cave's own stone stays. A barrier dampens light as air does,
+        // so the fill queues no light update: filling the cave with stone queued tens of thousands, and on CI's two
+        // cores the other tests' light and chunk work waited behind them.
+        BlockState barrier = Blocks.BARRIER.defaultBlockState();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         for (int x = cellX - radius - 2; x <= cellX + radius + 2; x++) {
             for (int z = cellZ - radius - 2; z <= cellZ + radius + 2; z++) {
                 for (int y = 19; y <= 91; y++) {
-                    realm.setBlock(new BlockPos(x, y, z), rock, Block.UPDATE_CLIENTS);
+                    BlockState state = realm.getBlockState(pos.set(x, y, z));
+                    if (state.canBeReplaced() && state.getFluidState().isEmpty()) {
+                        realm.setBlock(pos, barrier, Block.UPDATE_CLIENTS);
+                    }
                 }
             }
         }
         PortalFrame.Frame only = new PortalFrame.Frame(new BlockPos(cellX - radius, REALM_FLOOR, cellZ), Direction.Axis.Z);
+        BlockState floor = Blocks.STONE.defaultBlockState();
         for (int across = -1; across <= PortalFrame.WIDTH; across++) {
+            realm.setBlock(only.at(across, -1), floor, Block.UPDATE_CLIENTS);
             for (int up = 0; up <= PortalFrame.HEIGHT; up++) {
                 realm.setBlock(only.at(across, up), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
             }
         }
         for (int across = 0; across < PortalFrame.WIDTH; across++) {
+            BlockPos front = only.at(across, 0).relative(only.front().getOpposite());
+            realm.setBlock(front.below(), floor, Block.UPDATE_CLIENTS);
             for (int up = 0; up <= 1; up++) {
-                realm.setBlock(only.at(across, up).relative(only.front().getOpposite()), Blocks.AIR.defaultBlockState(),
-                        Block.UPDATE_CLIENTS);
+                realm.setBlock(front.above(up), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
             }
         }
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-rounding");
