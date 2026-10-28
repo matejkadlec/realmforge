@@ -177,7 +177,7 @@ io.github.matejkadlec.realmforge
 ├─ world/             dimension rules and access, realms, world blocks, world defaults, Dark Vision, griefing
 │                     protection
 ├─ mob/               mob levels and scaling, AI goal library, custom mobs
-├─ boss/              boss definitions, phase machine, boss entity
+├─ boss/              boss definitions, phase machine, boss entity, the boss bar
 ├─ dungeon/           dungeon types, planner, layout, builder, instances
 ├─ command/           `/realmforge` operator commands (developer commands live in the QA mod)
 ├─ compat/            optional integrations, one subpackage per mod (client parts: client/compat/)
@@ -2041,8 +2041,18 @@ loot: realmforge:boss/hollow_warden
 - **Boss entity:** one base class runs the abilities through the spell engine, so every boss attack is a readable,
   telegraphed cast that player tools can answer. Ground movement only: no flying bosses (a validation rule). Pulled
   out of its arena, the boss resets.
-- **Boss bar:** a `ServerBossEvent` whose title carries the phase name; `ServerBossEvent#setName` sends title changes
-  to the players, so M1 needs no payload and no custom drawing for it.
+- **Boss bar** (exists, RLM-173; Matěj, 2026-10-14): vanilla's big bar at the top of the screen, a `ServerBossEvent`
+  the boss owns, the Wither's pattern, through the shared helper `boss/BossBar`. The boss builds it with its colour
+  and hands it its tracking calls (`BossBar#startSeenBy` from `Entity#startSeenByPlayer`, `#stopSeenBy` from
+  `#stopSeenByPlayer`), so a player sees the bar exactly while their client tracks the boss: within its entity type's
+  client tracking range and the server's view distance, in its dimension, logged in. `BossBar#update`, every server
+  tick, keeps the progress at the boss's share of health and the title at its name, or at the title the boss set
+  (`BossBar#setTitle`, W5's phase name); from the boss's death on, nobody sees it. `ServerBossEvent` sends only
+  changes, and the client draws the bar itself, so it needs no payload and no drawing of ours, and other mods treat it
+  as the Wither's. Every boss's entity type goes into NeoForge's `c:bosses` tag (W5's with its type; the QA mod's
+  test boss already is, [20](#20-tests-per-layer)), which Neat reads (its purple boss card stays above bosses, with
+  their level: Matěj, 2026-10-21) and our levels read (bosses at a run's level, [14.1](#141-mob-levels)). Our own
+  styled bar in the guide's look is RLM-174.
 - **Level and lore** come from the same data as the quest texts.
 - **GameTests:** spawn the boss, set its health, assert the phase changes and their effects.
 
@@ -3310,6 +3320,10 @@ that agents can read. So far:
   and a dummy from an older world loses the text display that labelled it before. The hitter sees each hit on the
   action bar, `/qa dummy reset|remove`. Pillagers carry our stats in the dev game, so
   `/attribute @n[type=pillager] realmforge:dodge_chance base set 0.5` sets a dummy's dodge chance or resistances;
+- `/summon realmforge_qa:test_boss` (RLM-173): the test boss, a zombie half again as big with 200 health at level 1,
+  in `c:bosses`, that carries the core mod's boss bar ([14.3](#143-bosses)) until W5's boss exists. It is always an
+  adult on foot and never a zombie leader, and it neither burns in daylight nor turns into a drowned;
+  `BossBarGameTests` test the bar on it;
 - `/qa spell learn <spell> [<level>]`, `/qa spell cast <spell> [<target>]`, `/qa spell cancel`, `/qa spell resource
   <mana|rage> <amount>`, `/qa spell reset` and `/qa spell show` (C3a-1, C3a-2): teach the executing player a spell,
   cast it (as a mob with `/execute as`; a refusal names its reason; a cast-time or channelled spell begins), cancel
@@ -3339,7 +3353,9 @@ can be sent to it. `PlayerList#respawn(player, false, ...)` stands in for a resp
 copy-on-death attachments (`PlayerStateGameTests`, and `WorldRulesGameTests` for Dark Vision), and
 `PlayerList#respawn(player, true, ...)` for leaving the End. The connection never ticks the player, so a test that
 needs player ticks plays them with `ServerPlayer#doTick`, the call the network handler makes once per tick
-(`StatsGameTests`). A new player logs in at the world spawn, where the GameTest server starts its grid of tests, so a
+(`StatsGameTests`). For the same reason a moved fake player's entity tracking follows only when the test calls
+`ServerChunkCache#move`, the call the network handler makes when a client's move arrives (`BossBarGameTests`). A new
+player logs in at the world spawn, where the GameTest server starts its grid of tests, so a
 tick there can put it inside another test's blocks and suffocate it: tests log new players in with
 `QaPlayers#loginOnPlatform`, which puts them on their own test's platform, and move a player a respawn puts back at
 the spawn with `QaPlayers#onPlatform` before they tick it (RLM-242). `QaPlayers#login` alone is for a returning player,

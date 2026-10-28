@@ -2,7 +2,7 @@ package io.github.matejkadlec.realmforge.boss;
 
 import net.neoforged.bus.api.IEventBus;
 
-/** Boss definitions, the phase machine and the boss entity (architecture 14.3). */
+/** Boss definitions, the phase machine, the boss entity and its boss bar ({@link BossBar}) (architecture 14.3). */
 public final class BossFeature {
     private BossFeature() {
     }

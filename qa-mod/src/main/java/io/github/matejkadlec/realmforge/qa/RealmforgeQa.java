@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.qa;
 
 import com.mojang.logging.LogUtils;
+import io.github.matejkadlec.realmforge.qa.boss.QaBosses;
 import io.github.matejkadlec.realmforge.qa.castanim.QaCastAnimation;
 import io.github.matejkadlec.realmforge.qa.combat.CastLog;
 import io.github.matejkadlec.realmforge.qa.combat.SoundLog;
@@ -32,6 +33,7 @@ public final class RealmforgeQa {
         QaGameTests.register(modEventBus);
         TrainingDummy.register(modEventBus);
         QaItems.register(modEventBus);
+        QaBosses.register(modEventBus);
         CombatLog.register();
         CastLog.register();
         SoundLog.register();
