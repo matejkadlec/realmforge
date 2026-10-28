@@ -217,12 +217,11 @@ hoppers have nothing to take.
 - **The unlock quest** grants it through an `AdvancementReward` that is per player and claims itself
   (`team_reward: false`, `auto: "enabled"`), the rule every chapter reward follows
   ([architecture 16](../architecture.md#16-progression-and-quests)). FTB Quests keeps quest progress per FTB Teams
-  team, and every player is a team of their own until they join a party, so the unlock is per player. A player who
-  joins someone's FTB Teams party gets that team's realm unlocks, as they get its chapter advancements, at their
-  next login: FTB Quests claims a per-player reward for the members online when the quest completes, and for every
-  other member, one who joins later included, at their next login. Whether that exception stays is an
-  [open question](#open-questions). Its tasks are the player's own progress, never "have the signet", which a trade
-  could complete:
+  team, and every player stays a team of their own: FTB Teams parties are off in the pack (RLM-206,
+  [ADR 0053](../decisions/0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md)), as the
+  core mod sets FTB Teams' `setPartyCreationFromAPIOnly(true)`, so nobody joins a party and gets its realm unlocks and
+  chapter advancements. The unlock is per player. Its tasks are the player's own progress, never "have the signet",
+  which a trade could complete:
   - **the stone realm's:** the last quest of chapter 1's main questline; in M1 it also rewards the Signet of the
     Undervault, which the player crafts from M2 on ([Realm signets](#realm-signets)). Q2 writes it;
   - **a later main-path realm's:** the main-chain step after the boss or bosses whose drops its signet takes, with a
@@ -470,12 +469,13 @@ without one; never in a realm. This answers the realm design's
 ## Multiplayer
 
 - **Unlocks are per player and permanent** (Matěj, RLM-128: "for now"). Each player completes the realm's unlock
-  quest, so a server where one player is in chapter 2 does not open chapter 2's realms to a newcomer. The exception
-  is FTB Teams, the team system FTB Quests runs on: its progress belongs to the team, so a newcomer who joins that
-  player's FTB Teams party gets the team's unlocks at their next login, as they get its chapter advancements
-  ([architecture 16](../architecture.md#16-progression-and-quests); an [open question](#open-questions)). Shared
-  quests in our own parties come later, with low priority (RLM-156, on top of RLM-68's parties): when one member
-  completes a quest, the members who can complete it get it too, the unlock included.
+  quest, so a server where one player is in chapter 2 does not open chapter 2's realms to a newcomer. FTB Teams, the
+  team system FTB Quests runs on, keeps progress per team, so its parties are off in the pack (RLM-206): creating one
+  is refused for every player, and nobody can invite or join ([architecture
+  19.4](../architecture.md#194-optional-integrations)). Shared quests in our own parties come later, with low
+  priority (RLM-156, on top of RLM-68's parties), by Matěj's rule of 2026-10-15: when one member completes a quest
+  that unlocks a realm or a chapter, another member gets it only if they have that quest unlocked themselves and both
+  are in the party at that moment; a player who joins later finishes it themselves.
 - **Signets change hands freely,** but a friend's signet opens nothing for a player without their own unlock.
 - **A player without access** in a portal someone else opened is refused as in
   [Access and unlocks](#access-and-unlocks), while their friends pass through.
@@ -744,7 +744,8 @@ Matěj's answers of 2026-10-13 (RLM-128), which this version records:
    landing and the home point fit instanced dungeons, not realms.
 8. **Respawn:** always at the player's bed in Overworld, or at the world spawn; never in a realm.
 9. **Only players travel,** and unlocks are per player and permanent, for now; shared party quests come later with
-   low priority.
+   low priority. FTB Teams parties are off in the pack until then (RLM-206, from his sharing rule of 2026-10-15,
+   RLM-156), which answers [open question 1](#open-questions).
 10. **Waystones:** crafted and placed by players, global or private by each player's choice; no waystone is placed
     at an arrival point, and a warp into a realm the player has not unlocked never works.
 11. **Portals inside a realm lead only back to Overworld** (Matěj, 2026-10-15, RLM-188 item 8): a portal opens onto
@@ -799,10 +800,10 @@ stone realm's level rule and its 1:16 scale, Overworld's arrival `y` range) are 
 and W2b. Three questions are open, and question 2 is decided:
 
 1. **FTB Teams parties share realm unlocks.** FTB Quests keeps progress per FTB Teams team, so a player who joins
-   someone's party (`/ftbteams party`) gets that team's realm unlocks and chapter advancements at their next login
-   ([Access and unlocks](#access-and-unlocks)), an exception to "unlocks are per player, for now". Keep that
-   exception, or disable FTB Teams parties in the pack until our own parties (RLM-68) exist? It belongs to the
-   party quest sharing of RLM-156; until Matěj answers, the spec describes the pack as it is.
+   someone's party (`/ftbteams party`) would get that team's realm unlocks and chapter advancements at their next
+   login, an exception to "unlocks are per player, for now". **Decided 2026-10-15 (Matěj's sharing rule, RLM-156;
+   built by RLM-206): FTB Teams parties are off in the pack** until our own parties (RLM-68) share quests by that rule
+   ([Access and unlocks](#access-and-unlocks), [Multiplayer](#multiplayer)).
 2. **What Undervault's final boss drops** (RLM-395, raised on 2026-10-25). Matěj's rule of 2026-10-23 has it drop
    the Stone Heart for the twins' signets. That clashes with his signet rule of 2026-10-24, which puts the realm's
    own shard in the middle of every signet, and with the [realm design](realms.md#the-hub-realm), where the Stone
