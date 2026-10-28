@@ -6,7 +6,7 @@
 > revised on 2026-10-28 from his playtest of RLM-360, RLM-412, RLM-361 and RLM-365 (iron bars stay, the spawners show
 > on a side away from the way in). **Decided:** the allowlist, its blocks, no drops and exposed spawners are Matěj's;
 > the scope, the mechanism and the speed are this note's recommendations, which RLM-412 left to it and his playtest
-> passed ([ADR 0055](../decisions/0055-players-break-an-allowlist-of-blocks-in-instances.md)). **Open:** lighting TNT
+> passed ([ADR 0056](../decisions/0056-players-break-an-allowlist-of-blocks-in-instances.md)). **Open:** lighting TNT
 > (RLM-470). Implemented by RLM-412 (spawners, cobwebs, vines, the exposed spawners, room openings); the egg's spawner
 > comes with RLM-361.
 
@@ -106,7 +106,7 @@ list.
 **Recommended and built: one block tag**, in the core mod's resources
 (`data/realmforge/tags/block/breakable_in_instances.json`), next to the instance dimension it belongs to. A room's
 `explosion_breaks` stays per room, since only rooms with TNT walls need it. A later dungeon type that needs other
-blocks can add a per-type list then (an ADR amending 0055).
+blocks can add a per-type list then (an ADR amending 0056).
 
 ## 5. How Adventure mode breaks them, and how fast
 

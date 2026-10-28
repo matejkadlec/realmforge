@@ -1185,7 +1185,9 @@ lists spells granted while equipped or on use): the vision's "some from the race
 ### 11.2 Casting (server-authoritative)
 
 1. The client sends `CastSpellPayload(spell, target entity or position)`; a direction spell aims at nothing and flies
-   where the crosshair points ([ADR 0052](decisions/0052-spells-aim-with-the-crosshair.md)).
+   where the crosshair points ([ADR 0052](decisions/0052-spells-aim-with-the-crosshair.md)). Aim assistance helps a
+   player's spells aimed at an enemy: the server picks the mob near the crosshair for a targeted spell that names none,
+   and a bolt homes in on it ([ADR 0055](decisions/0055-aim-assistance-for-a-players-enemy-spells.md), below).
 2. `SpellCaster` checks: the spell is known, off cooldown and global cooldown, the resource suffices, a targeted
    spell's target is in range and line of sight, and the caster is not silenced, stunned or already casting. A
    direction or a ground point never refuses a cast for its target (spell aiming, below).
@@ -1295,12 +1297,52 @@ with the cursor", as Iron's Spells does).
   along the line toward it (`GroundPoints#clamp`) as the look is. The landing needs no line of sight: the spell comes
   down from above (its visuals are C6's). It is placed when the cast begins and stays, as in WoW and League of
   Legends, so a cast-time area is a telegraph players can read.
-- **Targeted spells** (`enemy`, `ally`) keep the entity under the crosshair (an ally spell without one takes the
-  caster) until auto-aim (RLM-345), whose design Matěj reviews before code; which spells stay targeted is its
-  question.
+- **Targeted spells** (`enemy`, `ally`) take the entity the client finds under the crosshair (an ally spell without
+  one takes the caster), or the one aim assistance picks (below).
 - `SpellAimingGameTests` casts bolts and ground spells at the sky, a wall, a ceiling, a point beyond range, a mob behind
   a low wall, passive and hostile mobs, an invulnerable mob and an ally, and turns a caster during a cast time;
   `GroundPointsTest` covers the clamp.
+
+**In code (aim assistance, RLM-345; [ADR 0055](decisions/0055-aim-assistance-for-a-players-enemy-spells.md)):** every
+spell a player aims at an enemy goes to a hostile mob near the crosshair (Matěj, 2026-10-27, the answers to
+[the design document](design/spell-aiming.md)'s questions). `spell/AimAssist` picks, always on the server.
+
+- **The pick** (`AimAssist#enemy`, `#ally`): the first entity under the crosshair in front of every block (direct aim,
+  `ClipContext.Block.OUTLINE` as the crosshair's own pick) wins, a passive one too. Otherwise the candidates in sight
+  (`hasLineOfSight`) within 32 blocks (`AimAssist#REACH`), alive, visible, pickable, and enemies that can be damaged
+  (`canBeSeenAsEnemy`) or allies (`canBeSeenByAnyone`), whose hitbox (with its pick radius) the look misses by at most
+  its distance along the look / 8 (`AimAssist#MISS_PER_BLOCK`, `#miss`: the smallest growth of the box that the look's
+  line meets). An enemy must be hostile (`AimAssist#hostile`): a neutral mob (`NeutralMob`) only while angry at the
+  player or targeting them, any other mob while it targets them, every other monster (`Enemy`); passive mobs get no
+  help (Q6). `AimAssist#choose` ranks them in order, each rule breaking only the ties above (Q2): a boss's priority
+  adds (a flag W5's boss framework sets; none yet), a boss (`#c:bosses`), below 25 % health, the current target (the
+  `combat` attachment's `CombatState#isCurrentTarget`: the entity a player's targeted cast aimed at, or their last
+  `CombatEvent.Hit` victim, within the in-combat time, server only, never saved or synced), a higher rank (the kill XP
+  multiplier, which `character` hands over through `AimAssist#rankBy`, [4.4](#44-dependencies-between-features)), a
+  higher level, the smallest miss for its distance, then the nearest. `AimAssistTest` covers the cone, the ranking and
+  the passive-mob rule.
+- **Targeted spells:** `spell/SpellBar` assists an `enemy` or `ally` spell whose payload names no entity, up to the
+  spell's range or 32 blocks, whichever is shorter; with none, an enemy spell is refused (`no_target`) and an ally
+  spell takes the caster. An entity the client names must lie in front of the player (`SpellBar#inView`: within 90
+  degrees of the look, the widest view a client can have), or the cast is refused as `invalid_target`. Mobs, procs and
+  `/qa spell` casts aim as before.
+- **Bolts** (`ProjectileEffect#homing`): a player's projectile, launched by the player themselves, that follows the
+  look is assisted as it leaves (an instant bolt at the cast, a cast time's at its end, each missile of a channel at
+  its tick, all from the look then), and one aimed at an enemy entity homes in on that enemy. It leaves toward the
+  enemy's middle and turns toward it every tick ([11.3](#113-spell-entities)). A mob's projectile, a direction aimed at
+  an entity or a point, and one an area or another projectile launches fly straight.
+- **The sticky target** (`SpellCaster#stickyRange`): a player's cast-time or channelled spell on an `enemy` or `ally`
+  that does not lock on keeps its entity until the cast ends, beyond the spell's range, and `Casting` ends it at once as
+  `out_of_range` when the target goes more than twice the range away, or as `target_lost` when it dies (Q3: no new
+  pick; its text stays "You have no target" until RLM-468). `SpellCaster#recheck` then accepts the target up to twice
+  the range, in sight. A spell that locks on keeps its target anywhere in the caster's dimension, as before.
+- **The target circle:** while a player casts a cast-time or channelled spell, `Casting` names to their client, when
+  it changes, the mob the spell will hit (`CastTargetPayload`): the cast's entity target, or for a direction from the
+  look whose spell launches a projectile, the mob `AimAssist#enemy` picks now, every tick, so the circle follows the
+  crosshair through Fireball's cast ([11.6](#116-client-side)).
+- `SpellAimingGameTests` covers an assisted bolt beside the crosshair, one beyond the cone or toward a cow, one after a
+  moving husk, the bar's assisted pick and its view check, the sticky target beyond the range and beyond twice it, and
+  a sticky target that dies. The Show target key and the "Target lost" text come with RLM-468.
 
 **Kept targets (W3 revision, RLM-33):** a timed spell may keep its entity target through the cast instead of only
 checking it before its effects. With `keep_sight`, `Casting` checks the caster's line of sight to the target every
@@ -1330,8 +1372,12 @@ type only for genuinely new behaviour.
   0052](decisions/0052-spells-aim-with-the-crosshair.md)): an entity that can be damaged, hostile or passive, takes its
   own effects; one that cannot (`LivingEntity#canBeSeenAsEnemy` false: invulnerable, a player in creative mode) stops
   it untouched, and so does one of the entity type tag it `spares` (`#realmforge:stone_creatures`: Stoneform spares
-  the Hewn). A block stops it without its effects. **Nothing flies forever:** it has no lifetime unless its data sets
-  `lifetime_ticks` (at most 10 s), and it is removed above the build height (its bottom above the top of the world's
+  the Hewn). A block stops it without its effects. **Homing** (aim assistance, RLM-345,
+  [11.2](#112-casting-server-authoritative)): a player's projectile can home in on an enemy (`SpellProjectile#homing`,
+  server only): every tick it turns toward the enemy's middle by at most 6 degrees (`AimAssist#TURN_PER_TICK`,
+  `AimAssist#turn`) at the same speed and sets `needsSync`, so its clients get the turned velocity and position at once
+  and draw the curve; it flies on straight once the enemy is dead, gone, in another level or behind it. **Nothing flies
+  forever:** it has no lifetime unless its data sets `lifetime_ticks` (at most 10 s), and it is removed above the build height (its bottom above the top of the world's
   highest block), where entities stop moving (its next position not entity-ticking,
   `ServerLevel#isPositionEntityTicking`: beyond every player's simulation distance, which equals the render distance by
   default, or in a chunk that is not loaded; `checkDespawn`, which the server calls even where entities no longer
@@ -1474,8 +1520,9 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   (`assets/realmforge/font/keys.json`), which maps a private codepoint to the section sign of vanilla's font sheet.
   NeoForge's Key Binds screen marks a key yellow when any other mapping shares it, even one that works only in a
   screen (JEI's Show Recipe on R) or with F3 held; in game only the spell bar's key acts.
-- **Learning and placing:** `Spells#learn` puts a learned spell into the bar's first empty slot, unless it is on the
-  bar or is a mob's. The spellbook (`client/screen/SpellbookScreen`) moves a known spell into a slot, swapping with
+- **Learning and placing:** `Spells#learn` puts a newly learned spell into the bar's first empty slot, unless it is a
+  mob's. Learning a known spell again, at any level (a class level, C4, or a specialization point, C5), leaves the bar
+  as the player arranged it, so a spell taken off stays off (RLM-374). The spellbook (`client/screen/SpellbookScreen`) moves a known spell into a slot, swapping with
   the one there, or empties one, through `SetSpellBarSlotPayload` and `Spells#placeOnBar`, which refuses another slot
   or an unknown spell.
 - **Casting** (Matěj, 2026-10-19): `client/spell/CastQueue` decides every client tick, from the presses and the held
@@ -1487,9 +1534,9 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   allow, at most every half second, and never cancels a cast; pressing the spell being cast does nothing. Two spells
   never cast at once. `client/spell/SpellBarInput` sends `CastSpellPayload` (the spell, the living entity under the
   crosshair within its range, `client/spell/SpellTargetPicker`, none for a direction spell, which flies where the
-  crosshair points, and `replaceCast`); `spell/SpellBar` casts it through
-  `SpellCaster`, which with `replaceCast` skips the already-casting check for another spell and cancels the cast in
-  progress only once every other check passed. A refusal goes back as `CastRefusedPayload`.
+  crosshair points, and `replaceCast`); `spell/SpellBar` picks a targeted spell's target by aim assistance when it names
+  none ([11.2](#112-casting-server-authoritative)) and casts it through `SpellCaster`, which with `replaceCast` skips
+  the already-casting check for another spell and cancels the cast in progress only once every other check passed. A refusal goes back as `CastRefusedPayload`.
 - **HUD** (`client/hud`): the spell bar (`SpellBarHud`, drawn from `spell/SpellBarView` by `SpellSlots`) has its nine
   24 px slots side by side, the racial slot last, 216 px wide (Matěj's playtest of 2026-10-21). Its layer comes right
   after vanilla's selected item name, which is drawn on the line above the status rows and the XP bar. The bar and
@@ -1546,6 +1593,12 @@ reads the cast from `ClientCasts` and the spell from the synced registry and dra
 hands, in front of its forehead (`SpellVisuals#formOffset`: 0.4 blocks above its eyes, never above its height), from
 15 % of its size at the cast's start to all of it at its end, where the server launches it from
 ([11.2](#112-casting-server-authoritative)).
+
+**In code (aim assistance, RLM-345): the target circle.** During the local player's cast-time or channelled spell,
+`client/spell/TargetCircle` draws a ring of dust in the spell school's colour on the ground under the mob the server
+named in `CastTargetPayload` ([11.2](#112-casting-server-authoritative)), its hitbox's half width plus 0.35 blocks out,
+every second tick; never outside a cast (Q4), and gone with the local player's `CastEndedPayload` or a logout.
+Particles until the spell visuals (C6) give it its art. The Show target key that shows it without a cast is RLM-468's.
 
 ### 11.7 Class spells and stances
 
@@ -2163,7 +2216,7 @@ the rules always want a branch), a room for the ending and a dead end, that ever
 and that every connector of every room meets some connector of the pool, that its key is an item and no other type's
 key. With a `pacing`, the rooms to pass through and the junctions that take branches must be corridors (`hallway`,
 `stairs`), the pool needs a fight (a `combat` room with a spawner) and, without walls, a corridor's dead end; with
-`walls`, the wall's block must exist and every doorway
+`walls`, the wall's block must be a full solid block (no pane, fence or air, RLM-419) and every doorway
 of the pool must be one the wall closes: no open block beside, above or below the middle three by three blocks of a
 side connector's face (`rooms/connectors.py`, `doorway_gap`; the corners do not count, as no player passes a gap that
 only touches the doorway at a corner). The keys also form the item tag `realmforge:dungeon_key`, which the client reads to know which items a portal
@@ -2649,7 +2702,7 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   an affected block only when it lies in such a room's box and is on that room's list (`Plot#explosionBreaks`), so
   Stonevaults' combination lock blows its way open and nothing else breaks; the cleanup restores the room anyway.
   `DungeonRoomGameTests` explodes TNT in that room and in a copy without the list. **Players break an allowlist**
-  (RLM-412, [ADR 0055](decisions/0055-players-break-an-allowlist-of-blocks-in-instances.md),
+  (RLM-412, [ADR 0056](decisions/0056-players-break-an-allowlist-of-blocks-in-instances.md),
   [design](design/instance-block-rules.md)): spawners, cobwebs and vines, the block tag
   `realmforge:breakable_in_instances` in the core mod's resources (`data/realmforge/tags/block/`), by hand or with any
   item, at vanilla's speed; iron bars stay off it, so the throne room stays behind its bars (Matěj, 2026-10-28).
@@ -2880,7 +2933,9 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   `world/net/ToggleDarkVisionPayload`, sent by `client/input/DarkVisionKey`).
 - Server → client: `CastStarted` and `CastEnded` (exist: `spell/net/CastStartedPayload` and `CastEndedPayload`, kept
   by `client/spell/ClientCasts`, the local player's end also shown by `client/hud/CastBarHud`), `CastRefused` (exists:
-  `spell/net/CastRefusedPayload`, the reason shown by `client/hud/CastBarHud`), `CombatText` (exists: `combat/net/CombatTextPayload`, shown by
+  `spell/net/CastRefusedPayload`, the reason shown by `client/hud/CastBarHud`), `CastTarget` (exists:
+  `spell/net/CastTargetPayload`, the mob under the target circle of the player's own cast, drawn by
+  `client/spell/TargetCircle`), `CombatText` (exists: `combat/net/CombatTextPayload`, shown by
   `client/hud/CombatTextHud`), `HitDirection` (exists: `combat/net/HitDirectionPayload`, shown by
   `client/hud/HitDirectionHud`), `RealmRefused` (exists: `world/net/RealmRefusedPayload`, the realm's hint, shown by
   `client/hud/RealmRefusalHud`, [15.1](#151-dimensions)), `DungeonStatus`.

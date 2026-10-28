@@ -197,7 +197,7 @@ public final class InstanceRulesGameTests {
 
     /**
      * Done when of RLM-412: in Adventure mode inside an instance, a player breaks spawners, cobwebs and vines (the tag
-     * {@code realmforge:breakable_in_instances}, ADR 0055), by hand or with a tool, and nothing they break drops: no
+     * {@code realmforge:breakable_in_instances}, ADR 0056), by hand or with a tool, and nothing they break drops: no
      * cobweb or string from a cobweb, with shears or a sword, and no vine with shears. Adventure mode still restricts
      * every other block there, and the same spawner outside the dimension.
      */

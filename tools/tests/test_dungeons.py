@@ -293,6 +293,17 @@ def test_walls_close_the_doorways_nothing_else_takes(repo: RepoPaths) -> None:
         for p in problems
     ), problems
 
+    # RLM-419: a wall players could walk or see through closes nothing.
+    for block in ("minecraft:glass_pane", "minecraft:oak_fence", "minecraft:air"):
+        path.write_text(
+            dungeon(layout=LAYOUT + f"  walls:\n    block: {block}\n    weight: 3\n"), encoding="utf-8"
+        )
+        problems = problems_for(repo)
+        assert any(
+            "crypt.yaml" in p and f"layout.walls.block: {block} is not a full solid block" in p
+            for p in problems
+        ), problems
+
 
 def test_a_doorways_corners_need_no_wall() -> None:
     # A player cannot pass a gap that only touches the doorway at a corner, like item_combination_lock's.

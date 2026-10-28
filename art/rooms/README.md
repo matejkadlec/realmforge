@@ -72,7 +72,7 @@ Matěj's playtest of 2026-10-24 (RLM-363, RLM-364), mend the rooms that locked p
 connectors leave behind, levers over `jail_2`'s cell doors, tinted glass for the door of `jail`'s garden), set a chest
 and a barrel on its side at the end of `jail`'s passage, its only containers (Matěj, 2026-10-25), and set the exit
 marker of the room that ends the test dungeon, `treasure/parrot` (RLM-363; the egg room ended it until it kept two
-chests). Players break spawners in instances (RLM-412, ADR 0055), so the rules also expose the two spawners the rooms
+chests). Players break spawners in instances (RLM-412, ADR 0056), so the rules also expose the two spawners the rooms
 hid: a cobweb takes the place of the slab over `skeleton_trap`'s, and `husk_temple`'s sandstone monument stays whole,
 since its sidecar's `openings` take out the chiseled sandstone on the side of its spawner a run opens (Matěj's img1,
 2026-10-28); `skeleton_trap`'s spawner, which turned to pigs after its first spawn, spawns skeletons alone. The egg

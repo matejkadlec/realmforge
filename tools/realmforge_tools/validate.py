@@ -603,14 +603,19 @@ def _check_walls(
     shapes: list[tuple[RoomEntry, str | None, list[Connector]]],
     universe: IdUniverse,
 ) -> list[Problem]:
-    """A dungeon type's wall is a block, and closes every doorway of its pool: around the middle three by three
-    blocks of each side connector's face, the room is closed (RLM-364)."""
+    """A dungeon type's wall is a full solid block, and closes every doorway of its pool: around the middle three by
+    three blocks of each side connector's face, the room is closed (RLM-364). A pane, a fence or air would leave
+    every closed doorway open to walk or see through (RLM-419)."""
     walls = entry.model.layout.walls
     if walls is None:
         return []
     problems = []
     if not universe.contains(BLOCK_REGISTRY, walls.block):
         problems.append(Problem(entry.source, "layout.walls.block", f"unknown block {walls.block!r}"))
+    elif not is_solid(walls.block):
+        problems.append(
+            Problem(entry.source, "layout.walls.block", f"{walls.block} is not a full solid block")
+        )
     kind = f"doorway_gaps_{WALL_WIDTH}x{WALL_HEIGHT}"
     for room, _, found in shapes:
         gaps = room.derived(

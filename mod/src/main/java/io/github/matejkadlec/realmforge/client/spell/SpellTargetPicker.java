@@ -20,8 +20,10 @@ import net.minecraft.world.phys.Vec3;
  * The entity a spell bar key aims at (architecture 11.2 step 1): the first living entity under the crosshair within the
  * spell's range, not behind a block, as vanilla picks what the crosshair points at, only farther. An enemy spell sees
  * through allies and an ally spell through enemies, so a heal aimed past a mob takes the caster, as an ally spell
- * without a target does. The server checks the target again. A spell on the caster itself aims at nothing, and so does
- * a direction spell (RLM-344): it flies where the crosshair points, the player's look, which the server reads itself.
+ * without a target does. The server checks the target again, and when this finds none it picks the mob near the
+ * crosshair itself (aim assistance, RLM-345, {@code spell/AimAssist}). A spell on the caster itself aims at nothing,
+ * and so does a direction spell (RLM-344): it flies where the crosshair points, the player's look, which the server
+ * reads itself, and the server assists it as it leaves.
  */
 public final class SpellTargetPicker {
     private SpellTargetPicker() {

@@ -15,8 +15,9 @@ import net.minecraft.resources.ResourceKey;
  * server checks everything ({@code spell/SpellBar}) and answers a refusal with {@link CastRefusedPayload}.
  *
  * @param spell the spell in the slot
- * @param target the entity under the crosshair within the spell's range, if any; the targeting decides what to do
- *               without one (the caster for an ally spell, where the player looks for a ground point)
+ * @param target the entity under the crosshair within the spell's range, if any; without one the server's aim
+ *               assistance picks a targeted spell's target near the crosshair, and the targeting decides the rest (the
+ *               caster for an ally spell, where the player looks for a ground point)
  * @param replaceCast whether the spell may cancel another spell's cast in progress (a fresh press with spell queueing
  *                    off); a held key never does
  */

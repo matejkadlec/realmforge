@@ -27,7 +27,7 @@ import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 
 /**
  * The rules inside the instance dimension: nobody edits the rooms (architecture 15.5), but for the blocks a room lets
- * explosions break and the blocks of {@link #BREAKABLE} that players break (ADR 0055). Survival players play in
+ * explosions break and the blocks of {@link #BREAKABLE} that players break (ADR 0056). Survival players play in
  * Adventure mode there, which makes vanilla refuse their edits and lets the client predict the refusal; these guards
  * stop what Adventure mode lets through (items with {@code can_break} or {@code can_place_on}, buckets) and every edit
  * by anything that is not a player. Creative players keep their game mode and may edit.
@@ -67,7 +67,7 @@ public final class InstanceRules {
             }
         });
         // Nothing broken inside an instance drops an item: the dungeon's blocks are not loot, and its cobwebs and vines
-        // would be a string farm, even with shears (ADR 0055). A spawner's experience still drops.
+        // would be a string farm, even with shears (ADR 0056). A spawner's experience still drops.
         NeoForge.EVENT_BUS.addListener(BlockDropsEvent.class, event -> {
             if (isInstance(event.getLevel())) {
                 event.getDrops().clear();

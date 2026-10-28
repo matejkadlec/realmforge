@@ -1,4 +1,4 @@
-# 0055. Players break an allowlist of blocks in instances
+# 0056. Players break an allowlist of blocks in instances
 
 Date: 2026-10-27
 

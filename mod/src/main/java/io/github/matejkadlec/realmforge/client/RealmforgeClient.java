@@ -23,6 +23,7 @@ import io.github.matejkadlec.realmforge.client.render.SpellEntityRenderers;
 import io.github.matejkadlec.realmforge.client.screen.CharacterCreationScreen;
 import io.github.matejkadlec.realmforge.client.spell.ClientCasts;
 import io.github.matejkadlec.realmforge.client.spell.SpellBarInput;
+import io.github.matejkadlec.realmforge.client.spell.TargetCircle;
 import io.github.matejkadlec.realmforge.client.tooltip.RightAlignedLines;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -59,6 +60,7 @@ public final class RealmforgeClient {
         ClientCasts.register();
         CastAnimation.register(modBus);
         SpellBarInput.register();
+        TargetCircle.register();
         SpellEntityRenderers.register(modBus);
         CustomMobRenderers.register(modBus);
         RealmPortalColors.register(modBus);

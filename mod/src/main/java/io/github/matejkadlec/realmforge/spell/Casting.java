@@ -6,10 +6,12 @@ import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.spell.CombatState.Cast;
 import io.github.matejkadlec.realmforge.spell.net.CastEndedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastStartedPayload;
+import io.github.matejkadlec.realmforge.spell.net.CastTargetPayload;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
@@ -120,9 +122,11 @@ public final class Casting {
         if (!spellCast.castableWhileMoving() && speed != null) {
             speed.addOrUpdateTransientModifier(CAST_SLOW);
         }
-        RUNNING.put(caster, new Running(caster, spell, level, target, (ServerLevel) caster.level(), cast, interval,
-                second, payments));
+        Running running = new Running(caster, spell, level, target, (ServerLevel) caster.level(), cast, interval,
+                second, payments);
+        RUNNING.put(caster, running);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new CastStartedPayload(caster.getId(), cast));
+        showCircle(running);
         spellCast.sound().map(BuiltInRegistries.SOUND_EVENT::getValue).ifPresent(sound -> caster.level()
                 .playSound(null, caster, sound, caster.getSoundSource(), 1.0F, 1.0F));
     }
@@ -187,6 +191,7 @@ public final class Casting {
             end(caster, lost.get());
             return;
         }
+        showCircle(running);
         if (running.cast().channel()) {
             while (running.ticksRun < spell.cast().tickCount()
                     && now >= running.cast().startGameTime() + (long) (running.ticksRun + 1) * running.interval()) {
@@ -226,19 +231,24 @@ public final class Casting {
     /**
      * Why the cast loses the target it keeps, if it does: blocks between them for a spell that keeps sight, or the
      * target beyond the range within the share of the cast that keeps it, or a target that died or left the
-     * dimension. A spell that keeps neither, a point or a direction, and a cast on the caster itself lose nothing.
+     * dimension. A player's sticky target ({@link SpellCaster#stickyRange}) is lost at once when it dies, leaves the
+     * dimension or goes more than twice the spell's range away. A spell that keeps nothing, a point or a direction,
+     * and a cast on the caster itself lose nothing.
      */
     private static Optional<CastEnd> lostTarget(Running running, long now) {
         SpellCast spellCast = running.spell().value().cast();
         LivingEntity caster = running.caster();
         LivingEntity target = running.target().entityOrNull();
-        if ((!spellCast.keepSight() && spellCast.keepRange().isEmpty()) || target == null || target == caster) {
+        OptionalDouble sticky = SpellCaster.stickyRange(caster, running.spell().value());
+        if ((!spellCast.keepSight() && spellCast.keepRange().isEmpty() && sticky.isEmpty()) || target == null
+                || target == caster) {
             return Optional.empty();
         }
         if (!target.isAlive() || target.isRemoved()) {
             return Optional.of(CastEnd.TARGET_LOST);
         }
-        if (target.level() != caster.level()) {
+        if (target.level() != caster.level()
+                || sticky.isPresent() && Targets.distance(caster, target) > sticky.getAsDouble()) {
             return Optional.of(CastEnd.OUT_OF_RANGE);
         }
         if (spellCast.keepSight() && !caster.hasLineOfSight(target)) {
@@ -249,6 +259,40 @@ public final class Casting {
         if (spellCast.keepRange().filter(kept -> share < kept).isPresent()
                 && Targets.distance(caster, target) > running.spell().value().targeting().reach()) {
             return Optional.of(CastEnd.OUT_OF_RANGE);
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Tells a casting player's client where the target circle goes (RLM-345, Q4: only during a cast-time or channelled
+     * spell), when that changed: under the cast's target, or, for a bolt that follows the crosshair, under the mob aim
+     * assistance would send it to if it left now ({@link #circleTarget}). The client draws it until the cast ends.
+     */
+    private static void showCircle(Running running) {
+        if (!(running.caster() instanceof ServerPlayer player)) {
+            return;
+        }
+        Optional<LivingEntity> under = circleTarget(player, running);
+        int id = under.map(Entity::getId).orElse(Running.NO_CIRCLE);
+        if (id != running.circle) {
+            running.circle = id;
+            PacketDistributor.sendToPlayer(player, new CastTargetPayload(under.map(Entity::getId)));
+        }
+    }
+
+    /**
+     * What the target circle of {@code player}'s cast goes under: the entity the cast keeps, unless it is the player;
+     * for a direction from their look whose spell launches a projectile, the mob that projectile would be assisted to
+     * now ({@link AimAssist#enemy}); else nothing.
+     */
+    private static Optional<LivingEntity> circleTarget(ServerPlayer player, Running running) {
+        SpellTarget target = running.target();
+        if (target.entity().isPresent()) {
+            return target.entity().filter(entity -> entity != player);
+        }
+        if (target.followsLook() && running.spell().value().effects().stream()
+                .anyMatch(ProjectileEffect.class::isInstance)) {
+            return AimAssist.enemy(player, AimAssist.REACH);
         }
         return Optional.empty();
     }
@@ -376,6 +420,9 @@ public final class Casting {
 
     /** What the server keeps of a cast in progress beyond the {@link Cast} its clients see. */
     private static final class Running {
+        /** {@link #circle} when the client was told of no target circle. */
+        private static final int NO_CIRCLE = -1;
+
         private final LivingEntity caster;
         private final Holder.Reference<Spell> spell;
         private final int spellLevel;
@@ -389,6 +436,8 @@ public final class Casting {
         private int ticksRun;
         /** How many of a channel's seconds it paid for: the first when it began. */
         private int paymentsMade = 1;
+        /** The entity id a casting player's client was last told the target circle is under. */
+        private int circle = NO_CIRCLE;
 
         private Running(LivingEntity caster, Holder.Reference<Spell> spell, int spellLevel, SpellTarget target,
                 ServerLevel level, Cast cast, int interval, int second, int payments) {

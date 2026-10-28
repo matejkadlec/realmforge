@@ -461,7 +461,8 @@ Rules:
   rooms to pass through and the junctions must be corridors (`hallway`, `stairs`), the pool needs a fight (a `combat`
   room with a spawner, two connectors) and, without `walls`, a corridor's dead end. Every connector of its rooms must
   meet one of the pool by the jigsaw rules (its `target` is the other's `name`; sides meet sides, up meets down), and
-  with `walls` every doorway of the pool must be one the wall closes: no open block beside, above or below its middle
+  with `walls` the wall's block must be a full solid block and every doorway of the pool one the wall closes: no open
+  block beside, above or below its middle
   three by three blocks. `rf gen` resolves the pool into the entry, so the game plans without loading a template, and
   writes each room's set-piece spots into it: the patterns where the pieces that reach the room's role fit, each with
   the pieces that may fill it. `test_dungeon` is test content (like `items/test_item`) that only `/qa dungeon plan`,

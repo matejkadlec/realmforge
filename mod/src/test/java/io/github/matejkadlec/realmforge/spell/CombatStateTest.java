@@ -11,6 +11,7 @@ import io.github.matejkadlec.realmforge.spell.CombatState.Cast;
 import io.github.matejkadlec.realmforge.testing.RoundTrip;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.resources.ResourceKey;
 import org.junit.jupiter.api.Test;
 
@@ -156,6 +157,20 @@ class CombatStateTest {
         CombatState state = sample();
         assertThrows(UnsupportedOperationException.class, () -> state.cooldowns().put(BLINK, 1L));
         assertThrows(UnsupportedOperationException.class, () -> state.resources().put(RAGE, 1.0F));
+    }
+
+    /** The current target (aim assistance, rule 4) lasts its window, and is neither saved nor synced. */
+    @Test
+    void theCurrentTargetLastsItsWindowAndIsNeverSavedOrSynced() {
+        UUID mob = UUID.randomUUID();
+        CombatState state = new CombatState();
+        assertFalse(state.isCurrentTarget(mob, 100, 200), "no current target yet");
+        state.setCurrentTarget(mob, 100);
+        assertTrue(state.isCurrentTarget(mob, 300, 200), "200 ticks later");
+        assertFalse(state.isCurrentTarget(mob, 301, 200), "201 ticks later");
+        assertFalse(state.isCurrentTarget(UUID.randomUUID(), 100, 200), "another mob");
+        assertFalse(RoundTrip.nbt(CombatState.CODEC, state).isCurrentTarget(mob, 100, 200), "saved");
+        assertFalse(RoundTrip.stream(CombatState.STREAM_CODEC, state).isCurrentTarget(mob, 100, 200), "synced");
     }
 
     /** Each holder gets its own fresh state: the default supplier must never hand out a shared instance. */
