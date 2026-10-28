@@ -115,7 +115,9 @@
    our registries stops it; errors in vanilla data (loot tables, recipes, advancements, tags) are only logged, so
    CI fails on those log lines. GameTests compare the running game with generated expectations.
 8. **Integrate through standard surfaces:** advancements, statistics, data files and public APIs, never another
-   mod's internals ([ADR 0006](decisions/0006-quests-ftb-quests-generated-from-data.md)).
+   mod's internals ([ADR 0006](decisions/0006-quests-ftb-quests-generated-from-data.md)). The one exception is Neat's
+   render state hook: Neat has no API, Matěj chose it for the mob level (RLM-166, RLM-338), and
+   [19.4](#194-optional-integrations) describes the hook and how its version range guards it.
 9. **Performance is a requirement:** event-driven work with early exits, no per-tick scans of all entities,
    world generation spread over ticks, throttled network sync.
 10. **Hard no's are validation rules.** Where a hard no from the vision can be checked mechanically (no flying
@@ -230,7 +232,7 @@ trees, so `character` sits above `spell` and `talent`). "May use" includes whate
 | `boss` | `mob` |
 | `dungeon` | `boss`, `character` |
 | `Realmforge` (entry point), `command`, `compat`, `network` | public APIs of any feature |
-| `client` | anything; nothing outside `client/` uses `client/` |
+| `client` | anything; nothing outside `client/` uses `client/`, except a `compat/<mod>` plugin calling its `client/compat/<mod>` part from a client-only entry point, such as Jade's `registerClient` ([19.4](#194-optional-integrations)) |
 
 Generated classes belong to the feature that owns their content type (`GeneratedItems` to `item`, `GeneratedBlocks`
 to `world`, generated status effects to `effect`) and follow that feature's row.
@@ -3171,7 +3173,12 @@ its name, `Lv. 20 Zombie`, from one function, `client/compat/MobLevelLabel`:
   Jade's settings list no switch for it and it needs no text of ours.
 - The core mod compiles against the pack's builds of both (`compileOnly` in `mod/build.gradle`, read from their
   `pack/mods/*.pw.toml`), so an update that changes a hook fails the build, not the game; `neoforge.mods.toml` names
-  both as optional dependencies.
+  both as optional dependencies. Neat's is bounded, `[26.1.2-48,26.2)` (RLM-380): the core mod is also released on
+  its own (ADR 0008), and a Neat build outside the range stops the game at load with a dependency error, where a
+  changed `NeatRenderState` would fail with a `NoSuchMethodError` the first time an entity renders. The range is the
+  smaller guard than catching a `LinkageError` in `NeatCompat`: one line, checked before any code runs, and Neat's
+  builds for another Minecraft version need a recompile anyway. A later 26.1 build that changed the interface would
+  still pass it; the pack's own Neat updates are caught at compile time.
 
 **Better Combat and Sword Blocking Mechanics** (RLM-297, [9.3](#93-blocking-with-two-handed-weapons)):
 `compat/bettercombat/TwoHandedWeapons` reads Better Combat's weapon registry (`WeaponRegistry#getAttributes`) to put
