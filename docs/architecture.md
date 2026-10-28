@@ -1008,7 +1008,8 @@ go of right click stops its charge.
   kit. Race and
   class stats stay the same at every level: each level gives stat points the player spends instead
   ([10.2](#102-leveling); Matěj, 2026-10-15, RLM-196: classes are for skills and abilities, not fixed stat
-  growth). Whether races and classes keep their starting stats is open; they keep them until Matěj decides.
+  growth). **Decided 2026-10-21 (Matěj, RLM-170):** races and classes keep small starting stats that differ between
+  them, so a Warrior and a Mage already differ at level 1; this is no growth with the level.
 - **Specializations, no dual class** (Matěj, 2026-10-15, RLM-218): a player has one class, never two. Every class
   has three specializations (the word replaces "subclass"), each with its own spell tree of active and passive
   spells. The player picks one in game, in a spell trees window, after creating the character (race and class),
