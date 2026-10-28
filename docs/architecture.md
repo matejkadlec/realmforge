@@ -1378,7 +1378,8 @@ type only for genuinely new behaviour.
   `AimAssist#turn`) at the same speed and sets `needsSync`, so its clients get the turned velocity and position at once
   and draw the curve; it flies on straight once the enemy is dead, gone, in another level or behind it. **Nothing flies
   forever:** it has no lifetime unless its data sets `lifetime_ticks` (at most 10 s), and it is removed above the build height (its bottom above the top of the world's
-  highest block), where entities stop moving (its next position not entity-ticking,
+  highest block) while it does not fly down (RLM-446: a caster on the top block layer, or flying above it, still hits a
+  mob below), where entities stop moving (its next position not entity-ticking,
   `ServerLevel#isPositionEntityTicking`: beyond every player's simulation distance, which equals the render distance by
   default, or in a chunk that is not loaded; `checkDespawn`, which the server calls even where entities no longer
   tick, removes one left behind), and in the void (vanilla's `Entity#checkBelowWorld`, 64 blocks below the
@@ -1434,7 +1435,10 @@ effects, so a modifier finds its attribute, ours included), an 18 by 18 placehol
 `effect.realmforge.<id>` and `GeneratedEffectExpectations`, which `ContentEffectGameTests` checks. Each is an
 `effect/StatusEffect`: vanilla's modifiers, multiplied by the amplifier + 1, and an `effect/Periodic` that ticks at the
 end of every interval since the effect began (an effect of 4 s and 1 s intervals ticks 4 times, the first after a
-second; validation keeps a spell's durations whole intervals), each level adding the amount again.
+second; validation keeps a spell's durations whole intervals), each level adding the amount again. It counts the
+remaining duration (`Periodic#ticksAt`), which every application resets, so an area or a channel that applies it again
+sooner than it ticks would keep it from ticking at all: validation refuses an interval shorter than the effect's
+(RLM-376); an equal one loses only the partial interval, as in Classic.
 `effect/EffectTicks` deals a tick as a hit of the school from the effect's caster, so the damage pipeline raises it by
 the caster's spell power (a magic school) and school power as they are when it ticks, the target's resistance lowers
 it, a kill counts for the caster and the caster sees its numbers; ticks never crit (`CritRule.NONE`) and never knock
@@ -1442,8 +1446,13 @@ back. Healing ticks are raised the same way. Once the caster is gone (dead, logg
 ticks go on at the bare amount. `apply_effect` applies an effect through `effect/Effects#apply`, which records its
 `effect/EffectSource` (the caster's UUID, the spell's id, the proc origin) in the holder's `realmforge:effect_sources`
 attachment; the latest application decides, so the same effect from a potion or a command forgets the source, and the
-effect's removal or expiry does too. `Effects#source` is what dispels and talents (C4, C5) read. `EffectGameTests`
-covers the ticks, the caster's stats, a caster that left, the modifiers and the sources.
+effect's removal or expiry does too. An application that changes nothing (`MobEffectInstance#update` keeps the
+effect as it is, and it ends no later) keeps it: `MobEffectEvent.Added` fires before that update, so `Effects` asks a
+copy of the old instance (RLM-373). A weaker but longer one forgets it too, though `update` keeps the effect: vanilla
+holds it as the hidden effect, which takes over without an event once the stronger one ends. `Effects#source` is what dispels and talents (C4, C5) read. An
+effect a proc's spell applied keeps the proc origin, and its ticks carry it, so they trigger no proc
+([12](#12-talents)). `EffectGameTests` covers the ticks, the caster's stats, a caster that left, the modifiers, the
+sources and a proc's damage over time.
 
 ### 11.5 Resources, cooldowns, modifiers
 
