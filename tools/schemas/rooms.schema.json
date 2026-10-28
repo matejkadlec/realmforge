@@ -1,5 +1,53 @@
 {
   "$defs": {
+    "ContainerTables": {
+      "additionalProperties": false,
+      "description": "How many of a room's chests and barrels a dungeon places (RLM-365): for each kind, the chance of each count.\nA room's candidates are its template's single chests and its barrels (trapped chests and double chests always\nstay); the builder keeps that many of them, at most as many as the room holds, and the rest become the block\naround them. A kind without a table keeps all of its candidates.",
+      "properties": {
+        "barrels": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "description": "The chance in percent of each count (0 to 64), adding up to 100, e.g. {1: 75, 2: 20, 3: 5}.",
+              "minProperties": 1,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How many of its barrels stay.",
+          "title": "Barrels"
+        },
+        "chests": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "description": "The chance in percent of each count (0 to 64), adding up to 100, e.g. {1: 75, 2: 20, 3: 5}.",
+              "minProperties": 1,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How many of its single chests stay.",
+          "title": "Chests"
+        }
+      },
+      "title": "ContainerTables",
+      "type": "object"
+    },
     "RoomSource": {
       "additionalProperties": false,
       "description": "Where an imported room came from, written by ``rf rooms import``.",
@@ -44,6 +92,18 @@
   "additionalProperties": false,
   "description": "How dungeons use a room. The template next to it holds the blocks.",
   "properties": {
+    "containers": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ContainerTables"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "How many of its chests and barrels a dungeon places, where the dungeon type's table for its role does not fit it (RLM-365). A kind it leaves out follows the dungeon type."
+    },
     "entry": {
       "anyOf": [
         {
@@ -96,6 +156,32 @@
       "description": "True: the planner places this room only next to the entrance or the first room of the main path, at the dungeon's start (RLM-256).",
       "title": "Near Start",
       "type": "boolean"
+    },
+    "openings": {
+      "additionalProperties": {
+        "items": {
+          "items": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "minItems": 1,
+        "type": "array"
+      },
+      "description": "Sides of the template (as saved, before any turn) that a run may open, each with the blocks it turns to air there, e.g. {north: [[6, 1, 5]]}: the block in front of a spawner the room hides. A run opens one side at random among those that are not the side it enters the room from (RLM-412), so list two sides or more. Positions hold plain blocks: no connector, spawner, chest or barrel.",
+      "propertyNames": {
+        "enum": [
+          "north",
+          "east",
+          "south",
+          "west"
+        ]
+      },
+      "title": "Openings",
+      "type": "object"
     },
     "pools": {
       "description": "The room pools the room joins (e.g. realmforge:stone_vault): a dungeon type is built from the rooms of one pool. Empty for a room that is not used yet, such as a fresh import.",

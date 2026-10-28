@@ -25,7 +25,10 @@ from realmforge_tools.rooms.check import (
     markers,
 )
 from realmforge_tools.rooms.connectors import Connector, connectors, could_attach, doorway_gap
+from realmforge_tools.rooms.containers import KINDS, candidates
 from realmforge_tools.rooms.generator import GENERATED_DIR, theme_blocks, unknown_blocks
+from realmforge_tools.rooms.openings import digest as opening_digest
+from realmforge_tools.rooms.openings import problems as opening_problems
 from realmforge_tools.rooms.set_pieces import piece_problems
 from realmforge_tools.rooms.structure import BlockState, StructureError, count_spawners
 from realmforge_tools.rooms.walk import walk_problems
@@ -289,6 +292,8 @@ def _check_rooms(content: Content, universe: IdUniverse) -> list[Problem]:
                     Problem(room.source, f"explosion_breaks[{index}]", f"unknown block {block!r}")
                 )
         problems += _check_room_entry(room)
+        problems += _check_room_containers(room)
+        problems += _check_room_openings(room)
     # A rejected room is dropped, and its decision stays, so the next import of its source skips it.
     room_ids = {room.id for room in content.rooms}
     for review in content.room_reviews:
@@ -299,6 +304,37 @@ def _check_rooms(content: Content, universe: IdUniverse) -> list[Problem]:
                     Problem(review.source, key, f"kept, but there is no room content/rooms/{prefix}{key}.nbt")
                 )
     return problems
+
+
+def _check_room_containers(room: RoomEntry) -> list[Problem]:
+    """A sidecar's chance table asks for no more chests or barrels than the room holds (RLM-365): such a count is a
+    slip, which the dungeon would quietly cap. The dungeon type's tables are capped per room."""
+    tables = room.model.containers
+    if tables is None:
+        return []
+    found = room.derived("container_candidates", candidates)
+    problems = []
+    for kind in KINDS:
+        table = getattr(tables, f"{kind}s")
+        held = sum(candidate.kind == kind for candidate in found)
+        if table is not None and max(table) > held:
+            problems.append(
+                Problem(
+                    room.source,
+                    f"containers.{kind}s",
+                    f"the table asks for up to {max(table)} {kind}s, but the room holds {held}",
+                )
+            )
+    return problems
+
+
+def _check_room_openings(room: RoomEntry) -> list[Problem]:
+    """Each block a sidecar's opening clears is a plain block inside the room (RLM-412, ``rooms/openings.py``)."""
+    openings = room.model.openings
+    if not openings:
+        return []
+    found = room.derived(f"openings_{opening_digest(openings)}", lambda s: opening_problems(s, openings))
+    return [Problem(room.source, where, message) for where, message in found]
 
 
 def _check_set_pieces(content: Content, universe: IdUniverse) -> list[Problem]:

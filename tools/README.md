@@ -112,7 +112,8 @@ source file, its format and its data version, leaves `pools` empty and drafts th
 `curved`, `t_junction`, `crossing`, plus `vertical` for one up or down), the role from a word in the room's path
 (`boss`, `treasure`, `entrance`, `stairs`, `hallway`), else `hallway` for a straight or curved piece at most 7 blocks
 wide (measured across the passage) and `combat` for the rest. A re-import keeps the sidecar's pools, tags, weight
-and room rules (`max_per_layout`, `near_start`, `explosion_breaks`, `entry`; [content/README](../content/README.md)). A room
+and room rules (`max_per_layout`, `near_start`, `explosion_breaks`, `entry`, `containers`, `openings`;
+[content/README](../content/README.md)). A room
 is written only when it validates; otherwise the command lists the problems and writes nothing for that
 room, and so does a source file that cannot be read (some jars ship a corrupt template; exclude it). A file that the
 gallery's review rejects is skipped (`SKIP` in the report): the `review.yaml` of the target folder decides, or that of
@@ -160,20 +161,28 @@ dress:                # variety and decorations for plain rooms (rooms/dress.py)
   decorations: [vines, cobwebs, barrels]
   without: {barrels: [dungeon/rooms/library]}  # rooms that do not get a decoration
   lever_hints: minecraft:stone_brick_stairs    # the floor under each lever that must be on (a torch behind it)
-place:                # boxes of one block, of data markers or of what connectors leave behind, by the room's path
+grow:                 # layers added on top of a room after its dressing, before place, by the room's path
+  dungeon/treasure/egg: {up: 1}   # room for the lava over its glass ceiling (RLM-361)
+place:                # boxes of one block, of data markers, of spawners or of what connectors leave behind
   dungeon/lobby/lobby_01:   # the fall cushion (RLM-276)
     - {from: [5, 0, 5], to: [7, 0, 7], block: "minecraft:stone_brick_slab[type=bottom,waterlogged=true]"}
     - {from: [4, 0, 5], to: [4, 0, 7], block: "minecraft:stone_brick_stairs[facing=west,half=bottom,shape=straight,waterlogged=true]"}
     # ... the other three sides and the four corners (art/rooms/stonevaults/rules.yaml)
-  dungeon/treasure/egg:     # the exit of the room that ends the test dungeon (RLM-363)
-    - {from: [11, 2, 6], to: [11, 2, 6], marker: exit}
+  dungeon/treasure/parrot:  # the exit of the room that ends the test dungeon (RLM-363, RLM-361)
+    - {from: [5, 2, 3], to: [5, 2, 3], marker: exit}
+  dungeon/treasure/egg:     # a spawner of one mob: a spawner already there keeps its settings, others get vanilla's
+    - {from: [6, 4, 6], to: [6, 4, 6], spawner: minecraft:cave_spider}
   dungeon/rooms/husk_temple:  # its connectors' final_state: an open doorway where the source left iron bars
     - {from: [0, 1, 6], to: [0, 1, 6], final_state: "minecraft:air"}
 data_version: 4790    # for the files that state none, when the source is known to be saved with this version
 ```
 
 `blocks` also applies to the block a jigsaw leaves behind (its `final_state`), and validation checks that block's id
-like any other. A connector is a jigsaw on the room's boundary, pointing out; one inside the room pulls a sub-piece
+like any other. A `spawner` box writes its mob into both a spawner's `SpawnData` and its `SpawnPotentials`, in the
+form of the template's data version (from 2831 the mob sits in `entity`, before it is the entity itself): vanilla
+draws from the potentials after every spawn, so a stale one turns the spawner into another mob's (Stonevaults'
+skeleton trap spawned pigs, RLM-412); the mob must be in the ID universe. `grow` adds empty layers on top of a
+template, where `place` can set blocks the source had no room for; a box outside the template is a problem. A connector is a jigsaw on the room's boundary, pointing out; one inside the room pulls a sub-piece
 in (a prop, a mob, a loot pile), which our dungeons do their own way, and validation refuses it, so
 `jigsaws.interior: drop` replaces it with its `final_state`. `jigsaws.normalize` gives every connector the neutral
 names our layout reads instead of the source's (it leaves no room for `connectors` and `pools`). A container's loot

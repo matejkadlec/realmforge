@@ -1,5 +1,53 @@
 {
   "$defs": {
+    "ContainerTables": {
+      "additionalProperties": false,
+      "description": "How many of a room's chests and barrels a dungeon places (RLM-365): for each kind, the chance of each count.\nA room's candidates are its template's single chests and its barrels (trapped chests and double chests always\nstay); the builder keeps that many of them, at most as many as the room holds, and the rest become the block\naround them. A kind without a table keeps all of its candidates.",
+      "properties": {
+        "barrels": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "description": "The chance in percent of each count (0 to 64), adding up to 100, e.g. {1: 75, 2: 20, 3: 5}.",
+              "minProperties": 1,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How many of its barrels stay.",
+          "title": "Barrels"
+        },
+        "chests": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "description": "The chance in percent of each count (0 to 64), adding up to 100, e.g. {1: 75, 2: 20, 3: 5}.",
+              "minProperties": 1,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How many of its single chests stay.",
+          "title": "Chests"
+        }
+      },
+      "title": "ContainerTables",
+      "type": "object"
+    },
     "LayoutDef": {
       "additionalProperties": false,
       "description": "How the planner lays out a dungeon of this type (architecture 15.3): the entrance, a main path of rooms a\nplayer passes through, the room that ends it, and side branches off the main path, each ending in a dead end.\nThe planner closes every connector left over with a dead end or a wall, so a layout has more rooms than these\ncounts.",
@@ -174,6 +222,25 @@
   "additionalProperties": false,
   "description": "A kind of dungeon: the room pool it is built from, the rules of its layout, the key that opens a portal to it,\nhow long that portal stays open (W4d) and its base level (RLM-459). Encounters, loot and its theme come with the\ntasks that use them.",
   "properties": {
+    "containers": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ContainerTables"
+      },
+      "description": "How many of a room's chests and barrels its dungeons place, by the room's role, and under default for every role without its own (a kind a role leaves out follows default; RLM-365). A room's sidecar may set its own. Without a table, a room keeps all of its containers.",
+      "propertyNames": {
+        "enum": [
+          "entrance",
+          "hallway",
+          "combat",
+          "stairs",
+          "treasure",
+          "boss",
+          "default"
+        ]
+      },
+      "title": "Containers",
+      "type": "object"
+    },
     "id": {
       "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
       "maxLength": 64,

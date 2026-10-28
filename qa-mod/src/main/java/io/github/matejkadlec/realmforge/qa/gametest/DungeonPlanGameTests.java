@@ -135,7 +135,8 @@ public final class DungeonPlanGameTests {
      * Done when of W4b: {@code /qa dungeon enter} builds an instance of a dungeon type and moves the player in at its
      * entrance: on a floor inside the entrance room with room for their head (the test dungeon's entrances have no
      * entrance marker), looking at the way on, in a run at the type's level raised to theirs (RLM-459);
-     * {@code /qa instance leave} brings them back.
+     * {@code /qa dungeon room} moves them onto a room's floor (RLM-412), and {@code /qa instance leave} brings them
+     * back.
      */
     @QaGameTest(timeoutTicks = TIMEOUT)
     public static void aDungeonIsBuiltAndEnteredAtItsEntrance(GameTestHelper helper) throws CommandSyntaxException {
@@ -188,6 +189,21 @@ public final class DungeonPlanGameTests {
                     helper.assertTrue(Math.abs(player.getYRot() - layout.yawFrom(relative)) < 0.01F,
                             "the player looks at the way on, not at yaw " + player.getYRot());
                     try {
+                        // /qa dungeon room: into the run's parrot treasury, which every test dungeon run ends in.
+                        int parrot = dispatcher.execute("qa dungeon room parrot", source);
+                        helper.assertTrue(layout.rooms().get(parrot).template().getPath().endsWith("/parrot"),
+                                "/qa dungeon room returns the room it moved to");
+                        BlockPos inside = player.blockPosition();
+                        helper.assertTrue(plot.rooms().get(parrot).isInside(inside)
+                                && instances.getBlockState(inside.below()).isFaceSturdy(instances, inside.below(),
+                                        Direction.UP), "/qa dungeon room put the player on the parrot room's floor");
+                        try {
+                            dispatcher.execute("qa dungeon room parrot 2", source);
+                            helper.fail("a second parrot treasury was found");
+                        } catch (CommandSyntaxException expected) {
+                            helper.assertTrue(expected.getMessage().contains("1 room(s) named parrot"),
+                                    expected.getMessage());
+                        }
                         helper.assertValueEqual(dispatcher.execute("qa instance leave", source), 1,
                                 "/qa instance leave");
                     } catch (CommandSyntaxException e) {

@@ -14,6 +14,7 @@ from pydantic import AfterValidator, Field
 
 from realmforge_tools.schema.chapter import MAX_LEVEL
 from realmforge_tools.schema.common import ContentId, LocalizedText, ResourceId, StrictModel
+from realmforge_tools.schema.room import ContainerTables
 
 # The role a room plays in a layout: exactly one of these is among a pooled room's tags (content/README.md).
 ROOM_ROLES = ("entrance", "hallway", "combat", "stairs", "treasure", "boss")
@@ -26,6 +27,9 @@ ENDING_ROLES = ("boss", "treasure")
 # The roles of the rooms a layout's pacing calls corridors; a combat room is a fight with a spawner, else a feature
 # (RLM-364, the game's Pace).
 CORRIDOR_ROLES = ("hallway", "stairs")
+# The key of a dungeon type's container tables for every role without its own (RLM-365).
+DEFAULT_CONTAINERS = "default"
+ContainerRole = Literal["entrance", "hallway", "combat", "stairs", "treasure", "boss", "default"]
 # The role of the plug rf gen makes from a dungeon type's walls: it closes a doorway, and is no room (RLM-364).
 WALL_ROLE = "wall"
 # The doorway a wall closes: three blocks wide and high, its connector at the middle of the bottom row, like every
@@ -172,5 +176,13 @@ class DungeonTypeDef(StrictModel):
             "chapter); a type without a boss names the level its end stands for. A run's level is this base raised "
             "to the highest level of its party when it opens, and holds for the run: bosses (#c:bosses) are at it, "
             "minibosses (#realmforge:minibosses) one below, every other mob two or three below (RLM-240, RLM-459)."
+        ),
+    )
+    containers: dict[ContainerRole, ContainerTables] = Field(
+        default_factory=dict,
+        description=(
+            "How many of a room's chests and barrels its dungeons place, by the room's role, and under default for "
+            "every role without its own (a kind a role leaves out follows default; RLM-365). A room's sidecar may "
+            "set its own. Without a table, a room keeps all of its containers."
         ),
     )

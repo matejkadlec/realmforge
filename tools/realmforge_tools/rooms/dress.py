@@ -50,7 +50,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from realmforge_tools.rooms.check import connector_face
 from realmforge_tools.rooms.structure import (
+    HAZARDS,
     JIGSAW,
+    LAVA,
     BlockState,
     Pos,
     Structure,
@@ -179,17 +181,7 @@ def dress(
 ) -> tuple[Structure, list[str]]:
     """The room with variety and decorations added, and what was added. ``name`` (the room's path below its
     source) seeds every choice; ``tags`` (its slot tags) keep barrels out of stairs and down to one in a hallway."""
-    room = _Room(
-        structure.size,
-        {block.pos: block for block in structure.blocks},
-        [
-            block.pos
-            for block in structure.blocks
-            if block.state.name == JIGSAW
-            and connector_face(block.pos, block.state.get("orientation"), structure.size) is not None
-        ],
-        _taken(structure),
-    )
+    room = _room(structure)
     room.guarded = _guarded(room)
     room.open = _open(room)
     surfaces = _surfaces(room)
@@ -216,6 +208,42 @@ def dress(
         if hinted:
             notes.append(f"marked {hinted} lever(s) that have to be on")
     return replace(structure, blocks=tuple(room.blocks.values())), notes
+
+
+def reach(structure: Structure) -> set[Pos]:
+    """The cells a player walks through from the room's doorways (through air, doors, cobwebs, vines, water and the
+    like), side to side and up and down: where dressing decorates, and from where players see and break a room's
+    spawners (RLM-412)."""
+    return _open(_room(structure))
+
+
+def reachable_hazards(structure: Structure) -> int:
+    """The template's TNT and dispensers, and its lava that touches a cell a player reaches from the doorways
+    (``reach``): lava sealed away, over the egg room's glass ceiling (RLM-361), hurts nobody."""
+    reached = reach(structure)
+    count = 0
+    for block in structure.blocks:
+        if block.state.name not in HAZARDS:
+            continue
+        x, y, z = block.pos
+        sides = ((x + 1, y, z), (x - 1, y, z), (x, y + 1, z), (x, y - 1, z), (x, y, z + 1), (x, y, z - 1))
+        if block.state.name != LAVA or any(side in reached for side in sides):
+            count += 1
+    return count
+
+
+def _room(structure: Structure) -> _Room:
+    return _Room(
+        structure.size,
+        {block.pos: block for block in structure.blocks},
+        [
+            block.pos
+            for block in structure.blocks
+            if block.state.name == JIGSAW
+            and connector_face(block.pos, block.state.get("orientation"), structure.size) is not None
+        ],
+        _taken(structure),
+    )
 
 
 def _guarded(room: _Room) -> set[Pos]:

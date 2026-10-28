@@ -10,12 +10,14 @@ import io.github.matejkadlec.realmforge.qa.generated.GeneratedDungeonTypeExpecta
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedDungeonTypeExpectations.ConnectorExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedDungeonTypeExpectations.DungeonTypeExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedDungeonTypeExpectations.RoomExpectation;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -128,7 +130,19 @@ public final class ContentDungeonTypeGameTests {
                 room.size().getZ(), room.role().getSerializedName(), room.weight(), connectors,
                 room.maxPerLayout().orElse(0), room.nearStart(),
                 room.explosionBreaks().stream().map(Identifier::toString).toList(), room.entry().orElse(-1),
-                room.spawners(), room.chests(), room.hazard());
+                room.spawners(), room.chests(), room.hazard(), room.containers().spots().size(),
+                room.containers().chests(), room.containers().barrels(), openings(room));
+    }
+
+    /** The room's openings as written: "side x y z" per block, the sides in the order the game draws from. */
+    private static List<String> openings(DungeonRoom room) {
+        List<String> found = new ArrayList<>();
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            for (BlockPos pos : room.openings().sides().getOrDefault(side, List.of())) {
+                found.add(side.getSerializedName() + " " + pos.getX() + " " + pos.getY() + " " + pos.getZ());
+            }
+        }
+        return found;
     }
 
     private static String describe(StructureTemplate.JigsawBlockInfo jigsaw) {

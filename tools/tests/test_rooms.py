@@ -820,7 +820,8 @@ def test_reimport_keeps_pools_tags_weight_and_room_rules(repo: RepoPaths, tmp_pa
         .replace('tags:\n  - "hallway"\n  - "dead_end"', "tags: [hallway]")
         .replace(
             "weight: 1",
-            "weight: 3\nmax_per_layout: 1\nnear_start: true\nexplosion_breaks: [minecraft:gravel]\nentry: east",
+            "weight: 3\nmax_per_layout: 1\nnear_start: true\nexplosion_breaks: [minecraft:gravel]\nentry: east\n"
+            "containers:\n  chests: {1: 100}\nopenings:\n  south: [[3, 0, 3]]\n  north: [[2, 0, 2], [2, 0, 1]]",
         ),
         encoding="utf-8",
     )
@@ -843,6 +844,8 @@ def test_reimport_keeps_pools_tags_weight_and_room_rules(repo: RepoPaths, tmp_pa
         ["minecraft:gravel"],
         "east",
     ), "how dungeons treat the room survives a re-import (RLM-256, RLM-257, RLM-362)"
+    assert room.model.containers is not None and room.model.containers.chests == {1: 100}, "RLM-365"
+    assert room.model.openings == {"south": [[3, 0, 3]], "north": [[2, 0, 2], [2, 0, 1]]}, "RLM-412"
     written = sidecar.read_text(encoding="utf-8")
     importer.import_rooms([source], target, RULES, load_vanilla(repo), repo)
     assert sidecar.read_text(encoding="utf-8") == written
@@ -906,14 +909,95 @@ def test_place_sets_a_data_marker_into_a_room(repo: RepoPaths, tmp_path: Path) -
     assert result.written and "placed exit marker from 1 1 1 to 1 1 1" in result.notes
     room = read_structure((target / "hall.nbt").read_bytes())
     assert markers(room) == [("exit", (1, 1, 1))]
-    with pytest.raises(ValidationError, match="one of a block, a marker or a final_state"):
+    with pytest.raises(ValidationError, match="one of a block, a marker, a spawner or a final_state"):
         importer.PlacedBlocks.model_validate({"from": [1, 1, 1], "to": [1, 1, 1]})
-    with pytest.raises(ValidationError, match="one of a block, a marker or a final_state"):
+    with pytest.raises(ValidationError, match="one of a block, a marker, a spawner or a final_state"):
         importer.PlacedBlocks.model_validate(
             {"from": [1, 1, 1], "to": [1, 1, 1], "marker": "exit", "block": "minecraft:stone"}
         )
     with pytest.raises(ValidationError, match="'door' is no marker"):
         importer.PlacedBlocks.model_validate({"from": [1, 1, 1], "to": [1, 1, 1], "marker": "door"})
+
+
+def test_place_sets_spawners_of_one_mob(repo: RepoPaths, tmp_path: Path) -> None:
+    # The egg room's cave spiders (RLM-361) and the skeleton trap's potentials (RLM-412): a spawner box writes a spawner
+    # of one mob in the form of the template's data version, keeping a spawner's own settings.
+    def imported(room: Structure, box: dict[str, object]) -> tuple[importer.ImportedRoom, Structure | None]:
+        source = tmp_path / "hall.nbt"
+        source.write_bytes(write_structure(room))
+        rules = RULES.model_copy(update={"place": {"hall": [importer.PlacedBlocks.model_validate(box)]}})
+        target = third_party(repo)
+        (result,) = importer.import_rooms([source], target, rules, load_vanilla(repo), repo)
+        return result, read_structure((target / "hall.nbt").read_bytes()) if result.written else None
+
+    def spawner(room: Structure) -> StructureBlock:
+        (block,) = [b for b in room.blocks if b.state.name == "minecraft:spawner"]
+        return block
+
+    box = {"from": [2, 1, 2], "to": [2, 1, 2], "spawner": "minecraft:cave_spider"}
+    result, room = imported(small_room(), box)
+    assert result.written and "placed minecraft:cave_spider spawner from 2 1 2 to 2 1 2" in result.notes
+    assert room is not None
+    placed = spawner(room)
+    assert placed.pos == (2, 1, 2) and placed.nbt is not None
+    assert placed.nbt["SpawnData"] == {"entity": {"id": "minecraft:cave_spider"}}
+    assert placed.nbt["SpawnPotentials"] == nbt.NbtList(
+        nbt.TAG_COMPOUND, ({"data": {"entity": {"id": "minecraft:cave_spider"}}, "weight": nbt.Int(1)},)
+    )
+    assert placed.nbt["Delay"] == nbt.Short(20) and placed.nbt["id"] == "minecraft:mob_spawner"
+
+    # A 1.17 template (Stonevaults' 2724) keeps the old form, and a spawner already there keeps its settings.
+    old = {
+        "id": "minecraft:mob_spawner",
+        "Delay": nbt.Short(0),
+        "SpawnData": {"id": "minecraft:skeleton"},
+        "SpawnPotentials": nbt.NbtList(
+            nbt.TAG_COMPOUND, ({"Entity": {"id": "minecraft:pig"}, "Weight": nbt.Int(1)},)
+        ),
+    }
+    trap = small_room(data_version=2724)
+    trap = replace(
+        trap,
+        blocks=(
+            *(b for b in trap.blocks if b.pos != (2, 1, 2)),
+            StructureBlock((2, 1, 2), BlockState("minecraft:spawner"), old),
+        ),
+    )
+    result, room = imported(trap, {**box, "spawner": "minecraft:skeleton"})
+    assert result.written and room is not None
+    data = spawner(room).nbt
+    assert data is not None and data["Delay"] == nbt.Short(0) and "SpawnCount" not in data
+    assert data["SpawnData"] == {"id": "minecraft:skeleton"}
+    assert data["SpawnPotentials"] == nbt.NbtList(
+        nbt.TAG_COMPOUND, ({"Entity": {"id": "minecraft:skeleton"}, "Weight": nbt.Int(1)},)
+    )
+
+    result, _ = imported(small_room(), {**box, "spawner": "minecraft:dragon_pig"})
+    assert not result.written
+    assert "place: minecraft:dragon_pig is no entity type in the ID universe" in result.problems
+
+
+def test_grow_adds_layers_on_top_of_a_room(repo: RepoPaths, tmp_path: Path) -> None:
+    # The lava over the egg room's glass ceiling (RLM-361) goes into a layer the template did not have.
+    source = tmp_path / "hall.nbt"
+    source.write_bytes(write_structure(small_room()))
+    lava = importer.PlacedBlocks.model_validate(
+        {"from": [1, 4, 1], "to": [3, 4, 3], "block": "minecraft:lava[level=0]"}
+    )
+    target = third_party(repo)
+    rules = RULES.model_copy(update={"place": {"hall": [lava]}})
+    (result,) = importer.import_rooms([source], target, rules, load_vanilla(repo), repo)
+    assert not result.written and "place: 1 4 1 lies outside the room" in result.problems
+    rules = RULES.model_copy(
+        update={"grow": {"hall": importer.GrowRule.model_validate({"up": 1})}, "place": {"hall": [lava]}}
+    )
+    (result,) = importer.import_rooms([source], target, rules, load_vanilla(repo), repo)
+    assert result.written and "grew the template by 1 layer(s) on top" in result.notes
+    room = read_structure((target / "hall.nbt").read_bytes())
+    assert room.size == (5, 5, 5)
+    assert sum(b.state.name == "minecraft:lava" for b in room.blocks) == 9
+    with pytest.raises(ValidationError):
+        importer.GrowRule.model_validate({"up": 0})
 
 
 def test_place_sets_what_a_rooms_connectors_leave_behind(repo: RepoPaths, tmp_path: Path) -> None:

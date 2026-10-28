@@ -1,11 +1,14 @@
 package io.github.matejkadlec.realmforge.dungeon.instance;
 
+import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.world.GriefingProtection;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -13,22 +16,42 @@ import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityMobGriefingEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.ExplosionEvent;
 import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 
 /**
  * The rules inside the instance dimension: nobody edits the rooms (architecture 15.5), but for the blocks a room lets
- * explosions break. Survival players play in
+ * explosions break and the blocks of {@link #BREAKABLE} that players break (ADR 0056). Survival players play in
  * Adventure mode there, which makes vanilla refuse their edits and lets the client predict the refusal; these guards
  * stop what Adventure mode lets through (items with {@code can_break} or {@code can_place_on}, buckets) and every edit
  * by anything that is not a player. Creative players keep their game mode and may edit.
  */
 public final class InstanceRules {
+    /**
+     * The blocks a player breaks inside an instance, in Adventure mode, by hand or with any item, at vanilla's speed:
+     * spawners, cobwebs and vines (Matěj's allowlist of 2026-10-24, RLM-360). Everything else stays as the room was
+     * built. {@code data/realmforge/tags/block/breakable_in_instances.json} in the core mod's resources.
+     */
+    public static final TagKey<Block> BREAKABLE =
+            TagKey.create(Registries.BLOCK, Realmforge.id("breakable_in_instances"));
+
     private InstanceRules() {
+    }
+
+    /**
+     * Whether a player in this game mode may break the block at {@code pos} although Adventure mode refuses it: only
+     * inside an instance, for a block of {@link #BREAKABLE}. {@code mixin/PlayerBlockActionMixin} asks this on both
+     * sides, so the client predicts the break.
+     */
+    public static boolean mayBreak(Level level, BlockPos pos, GameType gameType) {
+        return gameType == GameType.ADVENTURE && InstanceDimension.isInstance(level)
+                && level.getBlockState(pos).is(BREAKABLE);
     }
 
     /** Registers the edit guards; the block break and bucket guards run on both sides, so the client predicts them. */
@@ -39,8 +62,15 @@ public final class InstanceRules {
             }
         });
         NeoForge.EVENT_BUS.addListener(BreakBlockEvent.class, event -> {
-            if (isInstance(event.getLevel()) && !event.getPlayer().isCreative()) {
+            if (isInstance(event.getLevel()) && !event.getPlayer().isCreative() && !event.getState().is(BREAKABLE)) {
                 event.setCanceled(true);
+            }
+        });
+        // Nothing broken inside an instance drops an item: the dungeon's blocks are not loot, and its cobwebs and vines
+        // would be a string farm, even with shears (ADR 0056). A spawner's experience still drops.
+        NeoForge.EVENT_BUS.addListener(BlockDropsEvent.class, event -> {
+            if (isInstance(event.getLevel())) {
+                event.getDrops().clear();
             }
         });
         NeoForge.EVENT_BUS.addListener(PlayerInteractEvent.RightClickItem.class, event -> {

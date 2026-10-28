@@ -141,6 +141,10 @@ Rules:
   the whole run; a mob that gets its level in the run's plot is at the run's level when it is a boss (`#c:bosses`),
   one below when it is a miniboss (`#realmforge:minibosses`) and two or three below otherwise, never below 1
   ([architecture 14.1](../docs/architecture.md#141-mob-levels)). The instance dimension has no `dimensions/` rule.
+  Its `containers` (RLM-365) decide how many of a room's chests and barrels a run keeps: per role (`entrance`,
+  `hallway`, `combat`, `stairs`, `treasure`, `boss`) and under `default` for every role without its own, a table per
+  kind (`chests`, `barrels`) of the chance in percent of each count (0 to 64), adding up to 100. A room keeps at most
+  what it holds; the rest become the block around them ([architecture 15.2](../docs/architecture.md#152-dungeon-types)).
 - Human units in YAML, game units in data: a field named `<name>_seconds` is written as `<name>_ticks`, one named
   `<name>_percent` as the fraction `<name>` ([architecture 6.3](../docs/architecture.md#63-conventions)).
 - `stats/` defines our attributes ([architecture 8.1](../docs/architecture.md#81-the-attribute-set)). Every stat
@@ -353,11 +357,20 @@ Rules:
   open, validated as block ids, RLM-257) and `entry` (the side of the template, as saved, whose one connector is
   the room's way in, such as a lock's mechanism side: the planner attaches the room to the room before it only
   through that connector, and no loop leads into it from another side; validation wants exactly one connector on that
-  side and none on an entrance, RLM-362), and, for an imported room, its `source`. Stonevaults' throne room
+  side and none on an entrance, RLM-362) and `containers` (its own chance tables for its chests and barrels, which
+  take the place of its dungeon type's for each kind it names; a table may not ask for more than the room holds,
+  RLM-365) and `openings` (per side of the template, `north`, `east`, `south` or `west`, the blocks a run turns to air
+  there, such as the block in front of a spawner the room hides: a run opens one side at random that is not the side
+  it enters the room from, so list two sides or more; each position holds a plain block, no connector, spawner, chest
+  or barrel, RLM-412), and, for an imported room, its `source`. Stonevaults' throne room
   (`treasure/mooshroom_king`) is limited to one per layout at the start, its combination lock
   (`rooms/combination_lock`) lets its TNT break the smooth stone, gravel and redstone that close its way on, and its
   three locks are entered from their mechanism: `combination_lock` and `item_combination_lock` from the west,
   `pressure_plate_lock` from the north, the side of its pressure plates (its levers open the door from the south).
+  Its `tiny_cap` keeps one to three chests by its own table (75, 20 and 5 %), the pillager `jail` always its one chest
+  and one barrel (Matěj, 2026-10-25), and the throne room all six of its chests, a sight behind bars (RLM-365). Its
+  `husk_temple` and egg room (`treasure/egg`) open one side of their spawner's casing, away from their way in
+  (RLM-412).
   Its fights (`husk_temple`, `skeleton_trap`, `tight_maze`, `library`) are limited to three per layout,
   `drowned_junction`, every other combat room, the lobby and every treasure room to one, and the stairs to two
   (RLM-364). Nine rooms of its pillager dungeon (stone bricks and dark oak like the rest: `bedroom`, `big_head`,
@@ -438,7 +451,7 @@ Rules:
   in a row before a feature or a fight; `fights`, 1 to 16 rooms between two fights, both drawn binomially, so their
   middle comes most often; `repeat`, 0 to 64 rooms the planner keeps between two copies of a room that is no corridor,
   and half of it between two locks or two hazards; a `combat` room is a fight when its template holds a mob spawner,
-  else a feature, a hazard when it holds lava, TNT or a dispenser, and branches are corridors up to a treasure room) and
+  else a feature, a hazard when it holds lava a player reaches, TNT or a dispenser, and branches are corridors up to a treasure room) and
   `walls` (`block` and `weight`: `rf gen` builds a plain wall of three by three blocks, the structure
   `realmforge:dungeon_walls/<id>`, which the planner may set behind a leftover doorway instead of a dead end, picked by
   its weight among them). The planner closes every connector left over with a dead end or a wall, so a layout holds more

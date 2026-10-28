@@ -8,6 +8,8 @@ tags:
 weight: 1
 max_per_layout: 1
 near_start: true
+containers:
+  chests: {6: 100}
 source:
   file: "mooshroom_king.nbt"
   format: nbt

@@ -4,6 +4,7 @@ architecture 15.2-15.4)."""
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 
 import pytest
 
@@ -12,6 +13,8 @@ from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import DATA_VERSION, REPO_ROOT, RepoPaths
 from realmforge_tools.rooms.check import markers
 from realmforge_tools.rooms.connectors import Connector, connectors, could_attach, doorway_gap
+from realmforge_tools.rooms.containers import candidates
+from realmforge_tools.rooms.dress import reach, reachable_hazards
 from realmforge_tools.rooms.structure import (
     BlockState,
     Structure,
@@ -187,7 +190,7 @@ def test_a_rooms_entry_side_reaches_the_game(repo: RepoPaths) -> None:
     assert rooms["realmforge:rooms/crypt/hall"]["entry"] == 1, "north is connector 0, south connector 1"
     assert "entry" not in rooms["realmforge:rooms/crypt/crossing"]
     java = files[EXPECTATIONS].decode()
-    assert "0, false, List.of(), 1, 0, 0, false)" in java, "the hall's expectation names its entry"
+    assert "0, false, List.of(), 1, 0, 0, false,\n" in java, "the hall's expectation names its entry"
 
     hall.write_text(hall.read_text(encoding="utf-8").replace("entry: south", "entry: east"), encoding="utf-8")
     entrance = repo.content / "rooms" / "crypt" / "entrance.yaml"
@@ -343,7 +346,163 @@ def test_a_pacing_reaches_the_game_with_the_rooms_spawners_and_chests(repo: Repo
     assert (guard["spawners"], guard["chests"]) == (2, 3)
     java = files[EXPECTATIONS].decode()
     assert '"boss", 1, 2, 2, 4, 6,\n' in java
-    assert "List.of(), -1, 2, 3, false)" in java, "the guard's expectation carries its spawners and chests"
+    assert "List.of(), -1, 2, 3, false,\n" in java, "the guard's expectation carries its spawners and chests"
+
+
+def test_containers_leave_the_block_around_them() -> None:
+    # RLM-365: a candidate is a single chest or a barrel; a dropped one becomes the full block most of its neighbours
+    # are where it sits in a floor or a wall or carries another container, and air where it stands in the room.
+    stone, planks = BlockState("minecraft:stone_bricks"), BlockState("minecraft:oak_planks")
+    blocks = [StructureBlock((x, 0, z), stone) for x in range(7) for z in range(7)]
+    blocks += [
+        StructureBlock((1, 1, 1), BlockState("minecraft:chest", (("type", "single"),))),  # on the floor
+        StructureBlock((3, 0, 3), BlockState("minecraft:barrel")),  # set into the floor
+        StructureBlock((5, 1, 5), BlockState("minecraft:barrel")),  # carries a chest
+        StructureBlock((5, 2, 5), BlockState("minecraft:chest")),
+        StructureBlock((1, 1, 5), BlockState("minecraft:trapped_chest")),  # a trap's: stays
+        StructureBlock(
+            (3, 1, 5), BlockState("minecraft:chest", (("type", "left"),))
+        ),  # a double chest: stays
+        StructureBlock((4, 1, 5), BlockState("minecraft:chest", (("type", "right"),))),
+        StructureBlock((6, 1, 5), planks),
+        StructureBlock((5, 1, 6), planks),
+    ]
+    found = {
+        candidate.pos: candidate
+        for candidate in candidates(Structure((7, 3, 7), DATA_VERSION, tuple(blocks)))
+    }
+    assert sorted(found) == [(1, 1, 1), (3, 0, 3), (5, 1, 5), (5, 2, 5)]
+    assert found[(1, 1, 1)].kind == "chest" and found[(1, 1, 1)].instead == BlockState("minecraft:air")
+    assert found[(3, 0, 3)].kind == "barrel" and found[(3, 0, 3)].instead == stone
+    assert found[(5, 1, 5)].instead == planks, "a container that carries another leaves its neighbours' block"
+    assert found[(5, 2, 5)].instead == BlockState("minecraft:air")
+
+
+def test_chance_tables_reach_the_game_resolved_per_room(repo: RepoPaths) -> None:
+    # RLM-365: a room's table is its sidecar's for a kind, else the dungeon type's for its role, else the type's
+    # default; the entry lists the candidates of each kind a table decides, with the tables as weights by count.
+    crypt(repo)
+    add_fight(repo, "crypt/guard", spawners=1, chests=3)
+    add_fight(repo, "crypt/vault", spawners=0, chests=2)
+    sidecar = repo.content / "rooms" / "crypt" / "vault.yaml"
+    sidecar.write_text(sidecar.read_text() + "containers:\n  chests: {1: 50, 2: 50}\n", encoding="utf-8")
+    tables = (
+        "containers:\n"
+        "  combat:\n    chests: {0: 20, 1: 80}\n"
+        "  default:\n    chests: {1: 100}\n    barrels: {0: 50, 1: 50}\n"
+    )
+    (repo.content / "dungeons" / "crypt.yaml").write_text(dungeon() + tables, encoding="utf-8")
+    files = generate(repo)
+    data = json.loads(files[f"{DATA}/crypt.json"])
+    assert "containers" not in data, "the type's tables are resolved into its rooms"
+    rooms = {room["template"].rsplit("/", 1)[1]: room for room in data["rooms"]}
+    guard, vault = rooms["guard"]["containers"], rooms["vault"]["containers"]
+    assert guard["chests"] == [20, 80] and "barrels" not in guard
+    assert [spot["kind"] for spot in guard["spots"]] == ["chest"] * 3
+    assert guard["spots"][0]["instead"] == {"Name": "minecraft:air"}
+    assert vault["chests"] == [0, 50, 50], "the sidecar's own table"
+    assert "containers" not in rooms["hall"], "a room without containers lists none"
+    java = files[EXPECTATIONS].decode()
+    assert (
+        "List.of(), -1, 1, 3, false,\n                                    3, List.of(20, 80), List.of(), List.of())"
+        in java
+    )
+
+
+@pytest.mark.parametrize(
+    ("yaml", "location", "message"),
+    [
+        (
+            "containers:\n  default:\n    chests: {1: 60, 2: 30}\n",
+            "containers.default.chests",
+            "add up to 90 %",
+        ),
+        ("containers:\n  lobby:\n    chests: {1: 100}\n", "containers.lobby", "Input should be"),
+    ],
+)
+def test_a_dungeon_types_chance_tables_are_checked(
+    repo: RepoPaths, yaml: str, location: str, message: str
+) -> None:
+    crypt(repo)
+    (repo.content / "dungeons" / "crypt.yaml").write_text(dungeon() + yaml, encoding="utf-8")
+    problems = problems_for(repo)
+    assert any(location in problem and message in problem for problem in problems), problems
+
+
+def test_a_rooms_own_table_asks_for_no_more_than_it_holds(repo: RepoPaths) -> None:
+    crypt(repo)
+    add_fight(repo, "crypt/vault", spawners=0, chests=2)
+    sidecar = repo.content / "rooms" / "crypt" / "vault.yaml"
+    sidecar.write_text(sidecar.read_text() + "containers:\n  chests: {2: 50, 3: 50}\n", encoding="utf-8")
+    problems = problems_for(repo)
+    assert any("containers.chests" in p and "up to 3 chests, but the room holds 2" in p for p in problems), (
+        problems
+    )
+
+
+def add_hidden_spawner(repo: RepoPaths, room_id: str, openings: str) -> None:
+    """A combat room whose spawner at (3, 1, 3) stone walls in on its four sides, with the sidecar's ``openings``."""
+    add_room(repo, room_id, ["combat", "straight"], "north", "south")
+    path = repo.content / "rooms" / f"{room_id}.nbt"
+    room = room_structure((7, 5, 7), "north", "south")
+    stone = BlockState("minecraft:stone_bricks")
+    extra = (
+        StructureBlock((3, 1, 3), BlockState("minecraft:spawner")),
+        *(StructureBlock(pos, stone) for pos in ((3, 1, 2), (4, 1, 3), (3, 1, 4), (2, 1, 3))),
+    )
+    path.write_bytes(write_structure(Structure(room.size, DATA_VERSION, room.blocks + extra)))
+    sidecar = path.with_suffix(".yaml")
+    sidecar.write_text(sidecar.read_text() + openings, encoding="utf-8")
+
+
+def test_openings_reach_the_game_by_side(repo: RepoPaths) -> None:
+    # RLM-412: a room's openings go into its entry by side, in the order the game draws from, and into the QA mod's
+    # expectations; a room without any lists none.
+    crypt(repo)
+    add_hidden_spawner(
+        repo,
+        "crypt/guard",
+        "openings:\n  west: [[2, 1, 3]]\n  south: [[3, 1, 4]]\n  north: [[3, 1, 2]]\n  east: [[4, 1, 3]]\n",
+    )
+    files = generate(repo)
+    data = json.loads(files[f"{DATA}/crypt.json"])
+    rooms = {room["template"].rsplit("/", 1)[1]: room for room in data["rooms"]}
+    openings = rooms["guard"]["openings"]
+    assert list(openings) == ["north", "east", "south", "west"]
+    assert openings["west"] == [[2, 1, 3]]
+    assert "openings" not in rooms["hall"]
+    java = files[EXPECTATIONS].decode()
+    assert 'List.of("north 3 1 2", "east 4 1 3", "south 3 1 4", "west 2 1 3"))' in java
+
+
+@pytest.mark.parametrize(
+    ("openings", "message"),
+    [
+        (
+            "  north: [[3, 1, 9]]\n  south: [[3, 1, 4]]\n",
+            "openings.north[0]: [3, 1, 9] lies outside the room",
+        ),
+        (
+            "  north: [[1, 1, 1]]\n  south: [[3, 1, 4]]\n",
+            "openings.north[0]: [1, 1, 1] holds nothing to clear",
+        ),
+        (
+            "  north: [[3, 1, 2], [3, 1, 3]]\n  south: [[3, 1, 4]]\n",
+            "openings.north[1]: [3, 1, 3] holds minecraft:spawner, which an opening must leave",
+        ),
+        (
+            "  north: [[3, 1, 0]]\n  south: [[3, 1, 4]]\n",
+            "openings.north[0]: [3, 1, 0] holds minecraft:jigsaw, which an opening must leave",
+        ),
+        ("  north: [[3, 1, 2]]\n", "lists two sides or more"),
+        ("  up: [[3, 1, 2]]\n  north: [[3, 1, 2]]\n", "openings.up"),
+    ],
+)
+def test_an_opening_clears_plain_blocks_of_the_room(repo: RepoPaths, openings: str, message: str) -> None:
+    crypt(repo)
+    add_hidden_spawner(repo, "crypt/guard", "openings:\n" + openings)
+    problems = problems_for(repo)
+    assert any("guard.yaml" in p and message in p for p in problems), problems
 
 
 def test_a_paced_pool_needs_corridors_a_fight_and_a_corridors_dead_end(repo: RepoPaths) -> None:
@@ -714,7 +873,8 @@ def test_the_lobby_cushion_reaches_past_the_ceiling_hole() -> None:
 def test_the_room_that_ends_the_test_dungeon_has_a_clear_exit() -> None:
     # Matěj's playtest of 2026-10-24 (RLM-363): a run ends at a way out with nothing (a chest, a barrel, a cobweb) in
     # front of it. The planner keeps the pool's treasure room with the most chests for the ending (DungeonPlanner's
-    # reserved room; the ties go by weight), so each such room holds an exit marker on a floor, clear around it.
+    # reserved room; the ties go by weight), so each such room holds an exit marker on a floor, clear around it. Since
+    # the egg room keeps two chests (RLM-361), that is the parrot treasury.
     folder = REPO_ROOT / "content/rooms/third_party/stonevaults"
     treasures = []
     for sidecar in sorted(folder.rglob("*.yaml")):
@@ -723,7 +883,7 @@ def test_the_room_that_ends_the_test_dungeon_has_a_clear_exit() -> None:
             treasures.append((sidecar.stem, read_structure(sidecar.with_suffix(".nbt").read_bytes())))
     most = max(count_chests(structure) for _, structure in treasures)
     endings = [(name, structure) for name, structure in treasures if count_chests(structure) == most]
-    assert [name for name, _ in endings] == ["egg"]
+    assert [name for name, _ in endings] == ["parrot"]
     for name, structure in endings:
         blocks = {block.pos: block.state.name for block in structure.blocks}
         exits = [pos for marker, pos in markers(structure) if marker == "exit"]
@@ -744,6 +904,122 @@ def test_the_room_that_ends_the_test_dungeon_has_a_clear_exit() -> None:
                 "minecraft:cobweb",
                 "minecraft:vine",
             }, name
+
+
+def opened(structure: Structure, positions: list[list[int]]) -> Structure:
+    """The structure with an opening's blocks turned to air, as a run places it (RLM-412)."""
+    cleared = {(x, y, z) for x, y, z in positions}
+    air = BlockState("minecraft:air")
+    blocks = tuple(replace(b, state=air, nbt=None) if b.pos in cleared else b for b in structure.blocks)
+    return replace(structure, blocks=blocks)
+
+
+def test_the_stone_vault_pools_spawners_can_be_seen_and_broken() -> None:
+    # Matěj's playtest of 2026-10-24 (RLM-360, RLM-412): players break spawners in instances, so no pooled room hides
+    # one. Each spawner touches a cell a player reaches from the room's doorways, air or a cobweb they break too
+    # (skeleton_trap's cobweb over its spawner); a room with openings shows it whichever side a run opens (husk_temple's
+    # monument and the egg, Matěj's playtest of 2026-10-28).
+    folder = REPO_ROOT / "content/rooms/third_party/stonevaults"
+    hidden = []
+    checked = set()
+    for sidecar in sorted(folder.rglob("*.yaml")):
+        room = RoomDef.model_validate(load_yaml(sidecar) or {})
+        if "realmforge:stone_vault" not in room.pools:
+            continue
+        template = read_structure(sidecar.with_suffix(".nbt").read_bytes())
+        variants = {side: opened(template, positions) for side, positions in room.openings.items()} or {
+            "": template
+        }
+        for side, structure in variants.items():
+            reached = reach(structure)
+            for block in structure.blocks:
+                if block.state.name != "minecraft:spawner":
+                    continue
+                checked.add((sidecar, block.pos))
+                x, y, z = block.pos
+                faces = [
+                    (x + 1, y, z),
+                    (x - 1, y, z),
+                    (x, y + 1, z),
+                    (x, y - 1, z),
+                    (x, y, z + 1),
+                    (x, y, z - 1),
+                ]
+                if not any(face in reached for face in faces):
+                    hidden.append(
+                        f"{sidecar.relative_to(folder).with_suffix('')} {block.pos} {side}".rstrip()
+                    )
+    assert len(checked) >= 7
+    assert hidden == []
+
+
+def test_the_husk_temple_and_the_egg_hide_their_spawners_until_a_run_opens_a_side() -> None:
+    # Matěj's playtest of 2026-10-28 (RLM-412, RLM-361): the template keeps the spawner closed in, and each side's
+    # opening shows it: the husk temple's chiseled sandstone in front of it (his img1), the egg's quartz beside it with
+    # one corner's block and slab.
+    folder = REPO_ROOT / "content/rooms/third_party/stonevaults/dungeon"
+    for name, size in (("rooms/husk_temple", 1), ("treasure/egg", 3)):
+        room = RoomDef.model_validate(load_yaml(folder / f"{name}.yaml"))
+        template = read_structure((folder / f"{name}.nbt").read_bytes())
+        (spawner,) = [block.pos for block in template.blocks if block.state.name == "minecraft:spawner"]
+        assert list(room.openings) == ["north", "east", "south", "west"], name
+        assert all(len(positions) == size for positions in room.openings.values()), name
+        x, y, z = spawner
+        faces = [(x + 1, y, z), (x - 1, y, z), (x, y + 1, z), (x, y - 1, z), (x, y, z + 1), (x, y, z - 1)]
+        assert not any(face in reach(template) for face in faces), (
+            f"{name} shows its spawner without an opening"
+        )
+
+
+def test_the_egg_room_holds_lava_overhead_a_spider_spawner_and_two_chests() -> None:
+    # RLM-361 (Matěj's playtest of 2026-10-22): lava over every glass block of the egg room's ceiling, in a rim of stone
+    # bricks, a cave spider spawner in the quartz egg, and no more than two chests and two barrels.
+    structure = read_structure(
+        (REPO_ROOT / "content/rooms/third_party/stonevaults/dungeon/treasure/egg.nbt").read_bytes()
+    )
+    blocks = {block.pos: block for block in structure.blocks}
+    glass = {(x, z) for (x, y, z), block in blocks.items() if block.state.name == "minecraft:glass"}
+    lava = {(x, y, z) for (x, y, z), block in blocks.items() if block.state.name == "minecraft:lava"}
+    assert len(glass) == 29
+    assert {(x, z) for x, _, z in lava} == glass and {y for _, y, _ in lava} == {structure.size[1] - 1}
+    for x, y, z in lava:
+        for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            side = blocks.get((x + dx, y, z + dz))
+            assert side is not None and side.state.name in ("minecraft:lava", "minecraft:stone_bricks")
+    (spawner,) = [block for block in blocks.values() if block.state.name == "minecraft:spawner"]
+    assert spawner.nbt is not None and spawner.nbt["SpawnData"] == {"id": "minecraft:cave_spider"}
+    assert count_chests(structure) <= 2
+    assert sum(block.state.name == "minecraft:barrel" for block in blocks.values()) <= 2
+
+
+def test_lava_a_player_cannot_reach_is_no_hazard() -> None:
+    # The planner keeps hazards apart (RLM-364); the egg room's lava lies sealed over its glass ceiling (RLM-361), so it
+    # is no hazard, while the lava parkour's pool is.
+    folder = REPO_ROOT / "content/rooms/third_party/stonevaults/dungeon"
+    egg = read_structure((folder / "treasure/egg.nbt").read_bytes())
+    parkour = read_structure((folder / "rooms/lava_parkour.nbt").read_bytes())
+    assert any(block.state.name == "minecraft:lava" for block in egg.blocks)
+    assert reachable_hazards(egg) == 0
+    assert reachable_hazards(parkour) > 0
+
+
+def test_the_stone_vault_pools_spawners_spawn_one_mob() -> None:
+    # Stonevaults' skeleton trap named skeletons for its first spawn and pigs in its potentials, which vanilla draws
+    # from after every spawn (BaseSpawner#delay): every spawner of the pool names one mob in both (RLM-412).
+    folder = REPO_ROOT / "content/rooms/third_party/stonevaults"
+    mixed = []
+    for sidecar in sorted(folder.rglob("*.yaml")):
+        room = RoomDef.model_validate(load_yaml(sidecar) or {})
+        if "realmforge:stone_vault" not in room.pools:
+            continue
+        for block in read_structure(sidecar.with_suffix(".nbt").read_bytes()).blocks:
+            if block.state.name != "minecraft:spawner" or block.nbt is None:
+                continue
+            first = block.nbt["SpawnData"]["id"]
+            later = {entry["Entity"]["id"] for entry in block.nbt["SpawnPotentials"].items}
+            if later != {first}:
+                mixed.append(f"{sidecar.stem} {block.pos}: {first} then {sorted(later)}")
+    assert mixed == []
 
 
 def test_the_stone_vault_pools_connectors_leave_open_doorways() -> None:
@@ -782,8 +1058,8 @@ def test_a_rooms_planner_and_explosion_rules_reach_the_game(repo: RepoPaths) -> 
         rooms["realmforge:rooms/crypt/hall"]
     )
     java = files[EXPECTATIONS].decode()
-    assert '1, true, List.of("minecraft:gravel", "minecraft:smooth_stone"), -1, 0, 0, false)' in java
-    assert "0, false, List.of(), -1, 0, 0, false)" in java
+    assert '1, true, List.of("minecraft:gravel", "minecraft:smooth_stone"), -1, 0, 0, false,\n' in java
+    assert "0, false, List.of(), -1, 0, 0, false,\n" in java
     nook.write_text(
         nook.read_text(encoding="utf-8").replace("minecraft:smooth_stone", "minecraft:no_such_block"),
         encoding="utf-8",

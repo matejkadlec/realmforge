@@ -2158,8 +2158,8 @@ loot: realmforge:boss/hollow_warden
 
 A dungeon type (`content/dungeons/<id>.yaml`, the registry `realmforge:dungeon_type`, W4a) names the room pool it is
 built from, the rules of its layout ([15.3](#153-generation-pure-first-then-minecraft)), since W4d its key and how
-long a portal to it stays open ([15.5](#155-instances)), and since RLM-459 its base level
-([14.1](#141-mob-levels)):
+long a portal to it stays open ([15.5](#155-instances)), since RLM-459 its base level
+([14.1](#141-mob-levels)), and since RLM-365 the chance tables that decide how many chests and barrels its rooms keep:
 
 ```yaml
 # content/dungeons/test_dungeon.yaml (exists)
@@ -2179,16 +2179,32 @@ layout:
     block: minecraft:stone_bricks
     weight: 4
 key: realmforge:test_dungeon_key      # the item that opens a dungeon portal to it, one key per type (W4d)
+containers:                           # how many chests and barrels a room keeps, by role (RLM-365); optional
+  treasure:                           #   a role's tables; `default` for every role without its own
+    chests: {2: 25, 3: 40, 4: 25, 5: 10}   # the chance in percent of each count, adding up to 100
+    barrels: {0: 40, 1: 40, 2: 20}
+  default:
+    chests: {1: 60, 2: 30, 3: 10}
+    barrels: {0: 20, 1: 40, 2: 30, 3: 10}
 open_minutes: 60                      # how long that portal stays open (W4d)
 level: 10                             # its base level, its boss's in the campaign; runs raise it to their party
 ```
 
 `rf gen` resolves the pool into the entry: each room's template, size, role, weight and connectors, its sidecar's
 `max_per_layout`, `near_start`, `explosion_breaks` and `entry` (as the index of the connector on that side) where it
-sets them, the `spawners` and `chests` its template holds where it has any, and `hazard` where it holds lava, TNT
-or a dispenser (RLM-364), in room id order
+sets them, the `spawners` and `chests` its template holds where it has any, and `hazard` where it holds lava a player
+reaches from its doorways, TNT or a dispenser (RLM-364; lava sealed over the egg room's glass ceiling hurts nobody,
+RLM-361), in room id order
 (`generate/dungeons.py`), so the game plans a layout without loading a template, and JUnit
-fuzzes the planner on the same files. A type with `walls` gets its wall last among the rooms: a template of three by
+fuzzes the planner on the same files. A room with chests or barrels carries `containers` (RLM-365): its candidates
+(`rooms/containers.py`: each single chest and barrel with the block it leaves behind, the full block most of its
+neighbours are where it sits in a floor or a wall or carries another container, else air; trapped and double chests
+always stay) and, per kind, the chance table that decides how many stay, as weights by count. The table is the
+sidecar's own for that kind, else the type's for the room's role, else the type's `default`; a kind without one lists
+no candidates and keeps them all, and the type's own `containers` is left out of its entry. A room's `openings` go
+into its entry as written, by side (RLM-412): per side of the template, the blocks a run turns to air there. A type
+with `walls` gets
+its wall last among the rooms: a template of three by
 three blocks of the wall's block, one deep, `rf gen` writes as `realmforge:dungeon_walls/<id>`, with one connector at
 the middle of its bottom row whose jigsaw turns into the same block, and the role `wall`, which only closes leftover
 doorways ([15.3](#153-generation-pure-first-then-minecraft)). Since RLM-280 a room also carries its set-piece spots ([15.4](#154-rooms)) as `set_piece_spots`, a list
@@ -2297,8 +2313,8 @@ Steps 1 and 2 exist since W4a (`dungeon/plan/`; `DungeonType#plan(seed)` → `Du
     along the run; the ending keeps the room of its role with the most chests. Fights: the guard first, the room with
     the most spawners (the library), then the others from the entrance on, in turn: none within `repeat` rooms of a copy
     while another fits, a climax the heaviest of those, then the room whose last copy lies farthest back (a rotation).
-    Features: first the **hazards** (a room whose template holds lava, TNT or a dispenser, `hazard` in the generated
-    entry), then the locks, each to a random feature node at least half of `repeat` from the rooms of its kind that is
+    Features: first the **hazards** (a room whose template holds lava a player reaches, TNT or a dispenser, `hazard` in
+    the generated entry), then the locks, each to a random feature node at least half of `repeat` from the rooms of its kind that is
     neither the first feature after the lobby nor right before a fight, and for a hazard lies in neither the first
     section nor the last; then the other feature nodes with calm rooms first.
   - *Rooms per node.* A node takes rooms of its pace: its dealt room first (at the guard only while no copy of it lies
@@ -2367,7 +2383,8 @@ room's connectors are the jigsaw blocks the game reads from its template in ever
 builds a layout of every type into a plot. `/qa dungeon plan <type> [<seed>]` names a layout's rooms by slot and writes
 a top-down map and a legend to the server log; `/qa dungeon build <type> [<seed>]` builds it into a plot for a
 fly-through, and `/qa dungeon enter <type> [<seed>]` builds it and moves you in at its entrance ([15.5](#155-instances),
-[20](#20-tests-per-layer)).
+[20](#20-tests-per-layer)); inside, `/qa dungeon room <name> [<n>]` moves you onto the floor of the run's `n`th room
+of that name, for a playtest of one room (RLM-412).
 
 Step 3 exists since W4b ([15.5](#155-instances)), with the **data markers**: a room marks spots with structure blocks in
 data mode whose metadata names the marker (`DataMarker.Kind`):
@@ -2391,8 +2408,9 @@ Rooms are generated or imported; nobody has to build one by hand
 ([ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)).
 
 - **Format:** structure NBT in `content/rooms/` with a small YAML sidecar (tags, pools, weight, the room's rules for
-  dungeons, `max_per_layout`, `near_start`, `explosion_breaks` and `entry`
-  ([15.3](#153-generation-pure-first-then-minecraft), [15.5](#155-instances)), and the source of an imported room). A room joins the room pools its sidecar lists, and
+  dungeons, `max_per_layout`, `near_start`, `explosion_breaks`, `entry`, `containers` and `openings`
+  ([15.2](#152-dungeon-types), [15.3](#153-generation-pure-first-then-minecraft), [15.5](#155-instances)), and the
+  source of an imported room). A room joins the room pools its sidecar lists, and
   a dungeon type is built from one pool
   ([15.2](#152-dungeon-types)); its role tag says which slots it can take. Connectors are vanilla jigsaw blocks,
   so the same rooms work in world structures later. Rooms are the second exception to YAML-only content, after
@@ -2528,7 +2546,8 @@ Rooms are generated or imported; nobody has to build one by hand
   room's box, past what cleanup clears ([15.5](#155-instances)). `fluid_edges` follows each fluid down and sideways
   through every cell a flowing fluid can enter (`FlowingFluid#canHoldFluid`), so a fluid beside a floor hole or a
   wall gap fails too, but not down out of a waterlogged bottom slab or bottom-half stair, whose whole underside holds
-  the water (a fall cushion set into the floor layer, RLM-276); leaving through a connector is fine, as the next room
+  the water (a fall cushion set into the floor layer, RLM-276), nor out of lava laid over a glass ceiling in a rim of
+  full blocks (the egg room, RLM-361); leaving through a connector is fine, as the next room
   continues there (RLM-217), but only
   through the connector's own face: a step down out of a side connector in the floor layer, or sideways out of one
   on an edge, leaves beside the next room and fails (RLM-255). Python knows
@@ -2612,7 +2631,18 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   queued behind the task (`InstanceManager#preloadAfterReload`).
 - **Building over ticks:** placing a room and clearing a box are cut into units of one chunk column each (`PlotWork`;
   placing uses `StructurePlaceSettings#setBoundingBox`, known shapes and update flag 2 like structure blocks, and
-  `JigsawReplacementProcessor`, so every connector becomes its final state as in vanilla's jigsaw structures). A room's
+  `JigsawReplacementProcessor`, so every connector becomes its final state as in vanilla's jigsaw structures). **A
+  room's containers** follow its dungeon's chance tables (RLM-365, [15.2](#152-dungeon-types),
+  [design](design/container-loot.md#how-many-containers-a-room-keeps)): `DungeonPlan#toInstanceLayout` draws, room by
+  room from the layout's seed (salted apart from the planner's draws), a count per kind from the room's table, at most
+  as many as it holds, keeps that many candidates at random (`plan/RoomContainers#draw`) and gives the plot's
+  `RoomPlacement` a swap for each other one: the block it leaves behind, which `BlockSwapProcessor` places instead
+  of the container and its data. **A room's openings** (RLM-412, [design](design/instance-block-rules.md#7-hidden-spawners))
+  are drawn the same way from their own salt: `DungeonPlan#wayIn` names the connector each room is entered through
+  (the one it hangs off the room before it by, the first link that reaches it from an earlier room), and
+  `plan/RoomOpenings#draw` picks one listed side at random that is not that connector's side (any side for a room
+  entered from above or below) and swaps its blocks for air, so a hidden spawner shows to the left, the right or
+  across the room. The swaps are saved with the plot's layout, so a restart builds the same room. A room's
   entities (item frames with their items, paintings) are placed with it: a unit places those whose block lies in its
   column (`StructureTemplate#placeInWorld` with entities on adds only what is inside the box it places), so each comes
   once, with the block it hangs at moved to where the room puts it (`AttachedEntityProcessor`, through NeoForge's
@@ -2651,7 +2681,8 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   Use '/instance leave' to exit immediately." For each party member online it counts in the statistic
   `realmforge:dungeons_completed` and fires `realmforge:dungeon_completed` with the run's dungeon type, which quests
   read ([16](#16-progression-and-quests)).
-- **Rules inside: nobody edits the rooms** (W4c, `dungeon/instance/InstanceRules`). Survival players are switched to
+- **Rules inside: nobody edits the rooms** but for an allowlist (W4c, `dungeon/instance/InstanceRules`; the allowlist
+  below). Survival players are switched to
   Adventure mode when they enter (creative operators keep theirs, and so do players in Adventure or spectator mode);
   their visit remembers survival, and leaving gives it back, unless something else changed the game mode since (an
   operator's `/gamemode`). Every way out restores it: `leave`, the respawn and teleport below, and the next login
@@ -2670,10 +2701,20 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   (RLM-257): the plan hands the list to each `RoomPlacement`, the plot saves it with its layout, and the guard keeps
   an affected block only when it lies in such a room's box and is on that room's list (`Plot#explosionBreaks`), so
   Stonevaults' combination lock blows its way open and nothing else breaks; the cleanup restores the room anyway.
-  `DungeonRoomGameTests` explodes TNT in that room and in a copy without the list. Adventure mode still
-  lets an item with the `can_break` or `can_place_on` component (`DataComponents.CAN_BREAK`, `CAN_PLACE_ON`) edit
+  `DungeonRoomGameTests` explodes TNT in that room and in a copy without the list. **Players break an allowlist**
+  (RLM-412, [ADR 0056](decisions/0056-players-break-an-allowlist-of-blocks-in-instances.md),
+  [design](design/instance-block-rules.md)): spawners, cobwebs and vines, the block tag
+  `realmforge:breakable_in_instances` in the core mod's resources (`data/realmforge/tags/block/`), by hand or with any
+  item, at vanilla's speed; iron bars stay off it, so the throne room stays behind its bars (Matěj, 2026-10-28).
+  Adventure mode refuses a break in `Player#blockActionRestricted`, on the server and in the client's prediction, before
+  `BreakBlockEvent`, so `mixin/PlayerBlockActionMixin` makes it return false for a player in Adventure mode inside the
+  dimension when the block is in the tag (`InstanceRules#mayBreak`); the client knows its dimension and the synced
+  tag, so it predicts the break. Nothing broken inside the dimension drops an item (`BlockDropsEvent`'s drops are
+  cleared; a spawner's experience stays), so cobwebs and vines are no string farm, even with shears. The block
+  outline stays hidden on every block, as Adventure mode draws it only for an item with `can_break` or
+  `can_place_on`; the cracks show while breaking. Adventure mode still lets an item with the `can_break` or `can_place_on` component (`DataComponents.CAN_BREAK`, `CAN_PLACE_ON`) edit
   matching blocks, and commands, data packs or other mods can hand out such items, so block breaks
-  (`BreakBlockEvent`, posted on both sides, so the client predicts it) and placements
+  (`BreakBlockEvent`, posted on both sides, so the client predicts it) of blocks outside the allowlist and placements
   (`BlockEvent.EntityPlaceEvent`) by players who are not in creative mode are cancelled there too. Buckets get past
   both events: `BucketItem#use` (`MobBucketItem` included) checks
   `Level#mayInteract` (spawn protection, which covers only Overworld, and the world border) and
@@ -2685,9 +2726,11 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   event fires on the client too (`MultiPlayerGameMode#useItem`), so the same listener stops the client's
   prediction and no ghost fluid appears. `InstanceRulesGameTests` use a bucket (a plain one, and water, lava and
   empty buckets with `can_place_on` matching a room block, placing and picking up), flint and steel, an axe, a hoe, a
-  tool with `can_break`, and place and break blocks inside an instance, and expect the room unchanged; an explosion
-  with fire, a fluid's block, a mob's placement and griefing, and trampling are checked inside and outside the
-  dimension.
+  tool with `can_break`, and place and break blocks inside an instance, and expect the room unchanged; break a
+  spawner by hand, cobwebs with shears and a sword and a vine with shears inside one and find no drops, and the same
+  spawner unbreakable outside the dimension; an explosion with fire, a fluid's block, a mob's placement and griefing,
+  and trampling are checked inside and outside the dimension. A pytest keeps every spawner of the stone vault pool
+  where a player reaches it from the room's doorways (`rooms/dress.py`'s `reach`).
 - **Respawn at the entrance** (W4c, Matěj's decision of 2026-10-11): `PlayerRespawnPositionEvent` (posted by
   `PlayerList#respawn` before it makes the new player entity) moves a player who died in a playable run to its
   arrival spot, still inside and in the same run, looking along the way on; the visit is copied on death, and the
@@ -2698,8 +2741,8 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   Leaving the End is no death and is left alone.
 - **Also inside:** no natural spawns. **The way out** (W4d): the builder lays the Dungeon Exit
   (`content/blocks/dungeon_exit.yaml`, kind `dungeon_exit`: a plate one pixel high without collision) where players
-  arrive and at every `exit` marker, where nothing stands, once the rooms stand (the test dungeon's ending room, the egg
-  treasury, holds one against its far wall, RLM-363); using it leaves the run, as `/instance leave` does, the player
+  arrive and at every `exit` marker, where nothing stands, once the rooms stand (the test dungeon's ending room, the
+  parrot treasury since the egg room keeps two chests, holds one in its open middle, RLM-363, RLM-361); using it leaves the run, as `/instance leave` does, the player
   command (`command/InstanceCommand`) that works at any time. Closing clears the exit with the rooms.
 - **Leaving and disconnects:** leaving by command or exit, respawning outside the dimension (at the return point
   after the run was released, above; `PlayerEvent.PlayerRespawnEvent`) or being teleported out (`PlayerEvent.PlayerChangedDimensionEvent`) leaves the
@@ -3057,8 +3100,9 @@ changes. Once they settle they can move into content.
 
 Last resort, only where no event or API exists. Each one sits in `mixin/` (or the access transformer file) with a
 comment saying why, and gets a test. A mod lists its mixins in `<modid>.mixins.json`, which `neoforge.mods.toml`
-names under `[[mixins]]`. The core mod's one is `RangedAttributeAccessor`, which raises attribute caps
-([8.4](#84-caps)) and caps two of Apothic Attributes' down ([19.4](#194-optional-integrations)). The QA mod has one too, for tests only: `GameTestServerMixin` gives the GameTest world the data
+names under `[[mixins]]`. The core mod has two: `RangedAttributeAccessor`, which raises attribute caps
+([8.4](#84-caps)) and caps two of Apothic Attributes' down ([19.4](#194-optional-integrations)), and
+`PlayerBlockActionMixin`, which lets Adventure mode break the allowlist inside instances ([15.5](#155-instances)). The QA mod has one too, for tests only: `GameTestServerMixin` gives the GameTest world the data
 pack dimensions, which vanilla leaves out ([20](#20-tests-per-layer)).
 
 Access transformers live in `src/main/resources/META-INF/accesstransformer.cfg`, which ModDevGradle applies to the

@@ -7,6 +7,11 @@ tags:
   - "dead_end"
 weight: 1
 max_per_layout: 1
+openings:
+  north: [[6, 4, 5], [5, 4, 5], [5, 3, 5]]
+  east: [[7, 4, 6], [7, 4, 5], [7, 3, 5]]
+  south: [[6, 4, 7], [7, 4, 7], [7, 3, 7]]
+  west: [[5, 4, 6], [5, 4, 7], [5, 3, 7]]
 source:
   file: "egg.nbt"
   format: nbt
