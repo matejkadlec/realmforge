@@ -2114,9 +2114,9 @@ loot: realmforge:boss/hollow_warden
   ancient debris only in the coreslate under the floor (never exposed, two veins of each size per chunk), vanilla's
   iron, gold and emerald ores at every height (their deepslate ores in the coreslate; no coal or diamond, RLM-449) and
   the Nether's bone fossils. Its dimension type links at
-  `coordinate_scale` 16, has no skylight, beds that set no spawn and do not explode, and no respawn anchors. A
-  GameTest samples the density function over 2,048 blocks and generates the chunks at the origin, and another counts
-  their ores.
+  `coordinate_scale` 8 (the Nether's; Matěj, 2026-10-28), has no skylight, beds that set no spawn and do not explode,
+  and no respawn anchors. A GameTest samples the density function over 2,048 blocks and generates the chunks at the
+  origin, and another counts their ores.
 - **The realm portal** (W2b, RLM-154; the [realm portal spec](design/realm-portal.md)), in `world/realm/`:
   - **blocks:** Realmforge Bricks (`RealmforgeBricksBlock`), the sealstone (`SealstoneBlock`, with
     `SealstoneBlockEntity`) and the portal block (`RealmPortalBlock`), the block kinds of `RealmPortalBlocks`, which
@@ -2128,13 +2128,16 @@ loot: realmforge:boss/hollow_warden
   - **the sealstone** (`RealmPortals`): its block entity holds the entry of `realmforge:realm` it opens onto (a realm's,
     or Overworld's for a return portal), which counts only while the opening holds portal blocks, so a frame that
     went dark leads nowhere. A realm's signet opens a complete frame onto that realm for a player with its unlock,
-    or switches a lit one; inside a realm every signet is refused, and the sneak gesture with an empty main hand
-    opens the frame onto Overworld, while in Overworld it closes the portal. A common
+    or switches a lit one; inside a realm that realm's own signet and the sneak gesture with an empty main hand open
+    the frame onto Overworld (Matěj, 2026-10-28), another realm's signet is refused, and in Overworld the gesture
+    closes the portal. A common
     `PlayerInteractEvent.RightClickBlock` listener sets `useBlock` to `TRUE` for that gesture, so an item in the off
     hand never blocks it (RLM-133). Dimensions without an entry (the instances, the Nether, other mods') refuse. An
     incomplete frame is marked with red dust for 3 seconds. Messages go to the action bar. The sealstone glows while
     a player holding a signet that lights it, in either hand, stands within 5 blocks of its centre (RLM-406): the
-    signet of the realm its lit portal opens onto, or any signet while the portal is dark. A server-side block entity
+    signet of the realm its lit portal opens onto, or any signet while the portal is dark, in Overworld; inside a
+    realm, that realm's own signet, dark or lit (`RealmPortals.lightsSealstone`); in a dimension without an entry,
+    none (RLM-458). A server-side block entity
     ticker (`RealmPortals.tickGlow`) moves its `glow` one level a tick towards 15 or 0, so it rises or fades over 15
     ticks; the block state is its light (`lightLevel`), so every player sees it, and it is set without shape updates;
   - **the portal block:** like vanilla's nether portal it has an axis and no collision, and checks its frame on every
@@ -2148,7 +2151,7 @@ loot: realmforge:boss/hollow_warden
   - **linking** (`RealmPortalLinker`): the source opening's centre times the dimension types' teleportation scale,
     clamped into the target's world border, as the nether portal does; the nearest lit portal leading back where the
     player came from within the search radius (point-of-interest data), or one built within the build radius: 128 and 16
-    in Overworld, ⌊128 ÷ scale⌋ and one less in a realm (8 and 7 at 1:16), so a pair a trip built always links back. The
+    in Overworld, ⌊128 ÷ scale⌋ and one less in a realm (16 and 15 at 1:8), so a pair a trip built always links back. The
     spot (`PortalSpots`, plain Java over the terrain, JUnit `PortalSpotsTest`) is the one nearest the scaled position
     where the frame is set into the floor: its bottom row replaces solid floor, the frame's space above is free, and
     floor with two free blocks lies in front of the opening at its height on one side; at the realm entry's arrival

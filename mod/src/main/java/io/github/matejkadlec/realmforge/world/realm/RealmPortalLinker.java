@@ -54,12 +54,12 @@ public final class RealmPortalLinker {
     private RealmPortalLinker() {
     }
 
-    /** The search radius in {@code target}: 128 in Overworld, ⌊128 ÷ scale⌋ in a realm (8 at 1:16). */
+    /** The search radius in {@code target}: 128 in Overworld, ⌊128 ÷ scale⌋ in a realm (16 at 1:8). */
     public static int searchRadius(ServerLevel target) {
         return target.dimension() == Level.OVERWORLD ? OVERWORLD_SEARCH_RADIUS : realmSearchRadius(target.dimensionType());
     }
 
-    /** The build radius in {@code target}: 16 in Overworld, ⌊128 ÷ scale⌋ − 1 in a realm (7 at 1:16). */
+    /** The build radius in {@code target}: 16 in Overworld, ⌊128 ÷ scale⌋ − 1 in a realm (15 at 1:8). */
     public static int buildRadius(ServerLevel target) {
         return target.dimension() == Level.OVERWORLD ? OVERWORLD_BUILD_RADIUS : realmSearchRadius(target.dimensionType()) - 1;
     }

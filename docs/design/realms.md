@@ -323,8 +323,9 @@ it offers most of what the Nether offered ([ADR 0025](../decisions/0025-remove-t
   give or take a few blocks, with narrower caves in the walls. No further floor layers, no chasms, no floating
   islands: open space that is easy to cross, unlike the Nether. Sub-regions of rising level from the realm's origin
   outwards (about 6–10, 10–14 and 14–18), with a crystal grotto as one sub-zone (RE-11). Portals arrive near the
-  origin: they link at 1:16, so every Overworld portal within 20,000 blocks of Overworld's origin arrives in the
-  first band ([realm portal spec](realm-portal.md#the-coordinate-scale)).
+  origin: they link at 1:8, as the Nether does (Matěj, 2026-10-28; 1:16 before), so every Overworld portal within
+  10,000 blocks of Overworld's origin arrives within 1,250 blocks of it
+  ([realm portal spec](realm-portal.md#the-coordinate-scale)).
 - **No weather and no environmental rule** (wind, sandstorm): it is an enclosed cave (Matěj, 2026-10-15).
 - **Stone:** many custom stone types (no vanilla stone; variants in the spirit of diorite, granite and andesite)
   mixed on floor, walls and ceiling, with Y-range rules (this ore or gem only at Y 10–30, that stone only near the

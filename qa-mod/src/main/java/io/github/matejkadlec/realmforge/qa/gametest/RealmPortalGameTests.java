@@ -52,10 +52,11 @@ import org.slf4j.Logger;
  * in the portal and does not bounce straight back (RLM-335).
  *
  * <p>Trips use far-away places of their own, so no two tests find each other's portals: Overworld x and z in their own
- * 16-block cells around 40,000, realm x and z around 2,500. Positions in the realm are absolute. A trip runs the
- * portal's own {@code getPortalDestination} and teleports the entity with it, as vanilla's portal processing does
- * once the portal's time is up. Each trip logs how long it took on the server thread: a trip that builds a portal
- * generates the chunks around it there, as vanilla's nether portal does (realm portal spec, "Arriving").
+ * cells of the realm's scale (8 blocks at 1:8) around 20,000, realm x and z around 2,500. Positions in the realm are
+ * absolute. A trip runs the portal's own {@code getPortalDestination} and teleports the entity with it, as vanilla's
+ * portal processing does once the portal's time is up. Each trip logs how long it took on the server thread: a trip
+ * that builds a portal generates the chunks around it there, as vanilla's nether portal does (realm portal spec,
+ * "Arriving").
  */
 public final class RealmPortalGameTests {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -173,8 +174,9 @@ public final class RealmPortalGameTests {
     }
 
     /**
-     * A frame inside a realm opens only back to Overworld (RLM-188): every signet is refused, and the sneak gesture,
-     * a shield in the off hand, opens it onto return.
+     * A frame inside a realm opens only back to Overworld (RLM-188): the realm's own signet opens it onto return
+     * (Matěj, 2026-10-28: "the portal in the Undervault would get activated by the same signet"), and so does the sneak
+     * gesture, a shield in the off hand.
      */
     @QaGameTest
     public static void aFrameInARealmOpensOnlyBackToOverworld(GameTestHelper helper) {
@@ -190,8 +192,12 @@ public final class RealmPortalGameTests {
             helper.assertTrue(player.teleportTo(realm, inFront.x, inFront.y, inFront.z, Set.of(), 0.0F, 0.0F, true),
                     "the unlocked player enters the realm");
             use(player, realm, frame.sealstone(), signet(stone), ItemStack.EMPTY, false);
-            helper.assertFalse(lit(realm, frame), "a signet is refused on a frame inside a realm");
+            helper.assertTrue(lit(realm, frame), "the realm's own signet opens a frame inside the realm");
+            helper.assertValueEqual(RealmPortals.destination(realm, frame.sealstone()),
+                    Optional.of(Realmforge.id("overworld")), "the realm's signet opens the frame onto Overworld");
 
+            RealmPortals.close(realm, frame.sealstone());
+            helper.assertTrue(dark(realm, frame), "the frame is dark again");
             use(player, realm, frame.sealstone(), ItemStack.EMPTY, new ItemStack(Items.SHIELD), true);
             helper.assertTrue(lit(realm, frame), "the sneak gesture with a shield in the off hand opens the frame");
             helper.assertValueEqual(RealmPortals.destination(realm, frame.sealstone()),
@@ -275,6 +281,36 @@ public final class RealmPortalGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * Which signets light a sealstone, by its dimension (RLM-458; Matěj, 2026-10-28: "I'd add the glowing effect as
+     * well"): inside the stone realm its own signet does, dark or open onto Overworld, as it opens the frame back onto
+     * Overworld there; in the instance dimension, which has no realm entry, no signet does; nothing else is a signet.
+     * Overworld's glow over ticks is {@link #theSealstoneGlowsWhileAPlayerWithASignetIsNear}. This asks the rule
+     * itself, with no player kept in the realm: a player there for the glow's ticks loads realm chunks in the
+     * background, which held up the light and chunk work of the tests running beside it.
+     */
+    @QaGameTest
+    public static void aSealstoneInARealmGlowsForTheRealmsSignet(GameTestHelper helper) {
+        RealmExpectation stone = RealmGameTests.stone();
+        ServerLevel realm = RealmGameTests.realm(helper, stone);
+        ServerLevel instances = InstanceDimension.level(helper.getLevel().getServer());
+        helper.assertTrue(instances != null, "the instance dimension is loaded");
+        Optional<Identifier> overworld = Optional.of(Realmforge.id("overworld"));
+        helper.assertTrue(RealmPortals.lightsSealstone(realm, signet(stone), Optional.empty()),
+                "a dark sealstone inside the realm glows for the realm's signet");
+        helper.assertTrue(RealmPortals.lightsSealstone(realm, signet(stone), overworld),
+                "a sealstone inside the realm open onto Overworld glows for the realm's signet");
+        helper.assertFalse(RealmPortals.lightsSealstone(realm, new ItemStack(Items.SHIELD), Optional.empty()),
+                "a shield is no signet");
+        helper.assertFalse(RealmPortals.lightsSealstone(instances, signet(stone), Optional.empty()),
+                "a sealstone in the instance dimension stays dark for every signet");
+        helper.assertTrue(RealmPortals.lightsSealstone(helper.getLevel(), signet(stone), Optional.empty()),
+                "a dark sealstone in Overworld glows for any signet");
+        helper.assertFalse(RealmPortals.lightsSealstone(helper.getLevel(), signet(stone), overworld),
+                "an Overworld sealstone open onto Overworld stays dark for the stone realm's signet");
+        helper.succeed();
+    }
+
     // Travel -------------------------------------------------------------------------------------------------------
 
     /**
@@ -286,7 +322,8 @@ public final class RealmPortalGameTests {
         RealmExpectation stone = RealmGameTests.stone();
         ServerLevel level = helper.getLevel();
         ServerLevel realm = RealmGameTests.realm(helper, stone);
-        PortalFrame.Frame frame = litOverworldFrame(level, 2_400 * 16 + 1, 2_400 * 16 + 1, stone);
+        int scale = scale(realm);
+        PortalFrame.Frame frame = litOverworldFrame(level, 2_400 * scale + 1, 2_400 * scale + 1, stone);
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-refusal");
         try {
             BlockPos entry = frame.at(1, 1);
@@ -307,9 +344,10 @@ public final class RealmPortalGameTests {
     }
 
     /**
-     * Done when of W2b: a trip into the realm builds a return portal within 7 blocks of the scaled position, with frame
-     * blocks that drop nothing, and arrives in front of it; the trip back arrives at the Overworld portal it came from;
-     * a second Overworld portal within 128 blocks of the first arrives at that same realm portal.
+     * Done when of W2b: a trip into the realm builds a return portal within the realm's build radius (15 blocks at 1:8)
+     * of the scaled position, with frame blocks that drop nothing, and arrives in front of it; the trip back arrives at
+     * the Overworld portal it came from; a second Overworld portal within 128 blocks of the first arrives at that same
+     * realm portal.
      */
     @QaGameTest(timeoutTicks = 200)
     public static void aTripIntoTheRealmBuildsAPortalAndTheWayBackLinksToIt(GameTestHelper helper) {
@@ -318,7 +356,9 @@ public final class RealmPortalGameTests {
         ServerLevel realm = RealmGameTests.realm(helper, stone);
         int cellX = 2_500;
         int cellZ = 2_500;
-        PortalFrame.Frame first = litOverworldFrame(level, cellX * 16 + 1, cellZ * 16 + 1, stone);
+        int scale = scale(realm);
+        int radius = RealmPortalLinker.buildRadius(realm);
+        PortalFrame.Frame first = litOverworldFrame(level, cellX * scale + 1, cellZ * scale + 1, stone);
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-trip");
         try {
             RealmGameTests.award(helper, player, stone.unlockAdvancement());
@@ -326,8 +366,9 @@ public final class RealmPortalGameTests {
             helper.assertTrue(player.level() == realm, "the trip leads into the realm");
 
             PortalFrame.Frame built = realmPortalNear(helper, realm, new BlockPos(cellX, REALM_FLOOR, cellZ));
-            helper.assertTrue(Math.abs(built.sealstone().getX() - cellX) <= 7 && Math.abs(built.sealstone().getZ() - cellZ) <= 7,
-                    "the return portal stands within 7 blocks of the scaled position: " + built.sealstone());
+            helper.assertTrue(Math.abs(built.sealstone().getX() - cellX) <= radius
+                            && Math.abs(built.sealstone().getZ() - cellZ) <= radius,
+                    "the return portal stands within " + radius + " blocks of the scaled position: " + built.sealstone());
             helper.assertTrue(built.sealstone().getY() >= 20 && built.sealstone().getY() <= 90,
                     "the built frame stands at the realm's arrival heights: " + built.sealstone());
             // The realm's chunks there were never loaded: the trip still finds the cave floor (about y 32) instead
@@ -350,8 +391,8 @@ public final class RealmPortalGameTests {
                     1L, "the way back built no second Overworld portal");
 
             // A second Overworld portal, within 128 blocks of the first, aiming at the realm portal's own cell.
-            PortalFrame.Frame second = litOverworldFrame(level, built.sealstone().getX() * 16 + 8,
-                    built.sealstone().getZ() * 16 + 8, stone);
+            PortalFrame.Frame second = litOverworldFrame(level, built.sealstone().getX() * scale + scale / 2,
+                    built.sealstone().getZ() * scale + scale / 2, stone);
             helper.assertTrue(second.sealstone().distManhattan(first.sealstone()) > 4
                             && Math.abs(second.sealstone().getX() - first.sealstone().getX()) <= 128
                             && Math.abs(second.sealstone().getZ() - first.sealstone().getZ()) <= 128,
@@ -359,7 +400,7 @@ public final class RealmPortalGameTests {
             travel(helper, player, level, second.at(1, 1));
             helper.assertTrue(player.level() == realm, "the second portal leads into the realm");
             assertArrivedAt(helper, player, built);
-            helper.assertValueEqual(sealstonesNear(realm, built.sealstone(), 16), 1L,
+            helper.assertValueEqual(sealstonesNear(realm, built.sealstone(), RealmPortalLinker.searchRadius(realm)), 1L,
                     "both Overworld portals lead to one realm portal");
         } finally {
             level.getServer().getPlayerList().remove(player);
@@ -368,9 +409,10 @@ public final class RealmPortalGameTests {
     }
 
     /**
-     * The worst rounding: an Overworld portal centred at x 15 of its cell aims at the cell's realm x, and the only free
-     * spot in the realm lies 7 blocks towards negative x. The trip builds the return portal there, and the way back
-     * still arrives at the Overworld portal it came from (realm portal spec, "Linking").
+     * The worst rounding: an Overworld portal centred at the last block of its cell (x 7 at 1:8) aims at the cell's realm
+     * x, and the only free spot in the realm lies the realm's build radius (15 blocks at 1:8) towards negative x. The
+     * trip builds the return portal there, and the way back still arrives at the Overworld portal it came from (realm
+     * portal spec, "Linking").
      */
     @QaGameTest(timeoutTicks = 200)
     public static void theWorstRoundingStillLinksBack(GameTestHelper helper) {
@@ -379,27 +421,39 @@ public final class RealmPortalGameTests {
         ServerLevel realm = RealmGameTests.realm(helper, stone);
         int cellX = 2_600;
         int cellZ = 2_600;
-        PortalFrame.Frame first = litOverworldFrame(level, cellX * 16 + 15, cellZ * 16 + 8, stone);
-        // Solid rock all around the scaled position, but for one spot 7 blocks west of it: a frame across x set into
-        // the rock at y 40, arrived at from the east.
-        BlockState rock = Blocks.STONE.defaultBlockState();
-        for (int x = cellX - 9; x <= cellX + 9; x++) {
-            for (int z = cellZ - 9; z <= cellZ + 9; z++) {
+        int scale = scale(realm);
+        int radius = RealmPortalLinker.buildRadius(realm);
+        PortalFrame.Frame first = litOverworldFrame(level, cellX * scale + scale - 1, cellZ * scale + scale / 2, stone);
+        // No free block all around the scaled position, but for one spot the build radius west of it: a frame across x
+        // set into the floor at y 40, arrived at from the east. Every free block there becomes a barrier, which counts
+        // as floor and is never free, as rock is, and the cave's own stone stays. A barrier dampens light as air does,
+        // so the fill queues no light update: filling the cave with stone queued tens of thousands, and on CI's two
+        // cores the other tests' light and chunk work waited behind them.
+        BlockState barrier = Blocks.BARRIER.defaultBlockState();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (int x = cellX - radius - 2; x <= cellX + radius + 2; x++) {
+            for (int z = cellZ - radius - 2; z <= cellZ + radius + 2; z++) {
                 for (int y = 19; y <= 91; y++) {
-                    realm.setBlock(new BlockPos(x, y, z), rock, Block.UPDATE_CLIENTS);
+                    BlockState state = realm.getBlockState(pos.set(x, y, z));
+                    if (state.canBeReplaced() && state.getFluidState().isEmpty()) {
+                        realm.setBlock(pos, barrier, Block.UPDATE_CLIENTS);
+                    }
                 }
             }
         }
-        PortalFrame.Frame only = new PortalFrame.Frame(new BlockPos(cellX - 7, REALM_FLOOR, cellZ), Direction.Axis.Z);
+        PortalFrame.Frame only = new PortalFrame.Frame(new BlockPos(cellX - radius, REALM_FLOOR, cellZ), Direction.Axis.Z);
+        BlockState floor = Blocks.STONE.defaultBlockState();
         for (int across = -1; across <= PortalFrame.WIDTH; across++) {
+            realm.setBlock(only.at(across, -1), floor, Block.UPDATE_CLIENTS);
             for (int up = 0; up <= PortalFrame.HEIGHT; up++) {
                 realm.setBlock(only.at(across, up), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
             }
         }
         for (int across = 0; across < PortalFrame.WIDTH; across++) {
+            BlockPos front = only.at(across, 0).relative(only.front().getOpposite());
+            realm.setBlock(front.below(), floor, Block.UPDATE_CLIENTS);
             for (int up = 0; up <= 1; up++) {
-                realm.setBlock(only.at(across, up).relative(only.front().getOpposite()), Blocks.AIR.defaultBlockState(),
-                        Block.UPDATE_CLIENTS);
+                realm.setBlock(front.above(up), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
             }
         }
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-rounding");
@@ -442,8 +496,9 @@ public final class RealmPortalGameTests {
             travel(helper, player, realm, start.at(1, 1));
             helper.assertTrue(player.level() == level, "the way back leads to Overworld");
 
-            // The realm opening's centre, x and z 2,700.5, times 16.
-            BlockPos scaled = new BlockPos(2_700 * 16 + 8, 63, 2_700 * 16 + 8);
+            // The realm opening's centre, x and z 2,700.5, times the realm's scale.
+            int scale = scale(realm);
+            BlockPos scaled = new BlockPos(2_700 * scale + scale / 2, 63, 2_700 * scale + scale / 2);
             Optional<PortalFrame.Frame> built = RealmPortalLinker.findPortal(level, scaled,
                     RealmPortalLinker.OVERWORLD_BUILD_RADIUS, id(stone));
             helper.assertTrue(built.isPresent(), "the way back built an Overworld portal near " + scaled);
@@ -580,7 +635,7 @@ public final class RealmPortalGameTests {
         ServerLevel realm = RealmGameTests.realm(helper, stone);
         int cellX = 3_100;
         int cellZ = 3_100;
-        PortalFrame.Frame first = litOverworldFrame(level, cellX * 16 + 1, cellZ * 16 + 1, stone);
+        PortalFrame.Frame first = litOverworldFrame(level, cellX * scale(realm) + 1, cellZ * scale(realm) + 1, stone);
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-instant");
         try {
             RealmGameTests.award(helper, player, stone.unlockAdvancement());
@@ -631,7 +686,7 @@ public final class RealmPortalGameTests {
         ServerLevel realm = RealmGameTests.realm(helper, stone);
         int cellX = 2_800;
         int cellZ = 2_800;
-        PortalFrame.Frame first = litOverworldFrame(level, cellX * 16 + 1, cellZ * 16 + 1, stone);
+        PortalFrame.Frame first = litOverworldFrame(level, cellX * scale(realm) + 1, cellZ * scale(realm) + 1, stone);
         Vec3 inside = Vec3.atBottomCenterOf(first.at(1, 0));
 
         Zombie zombie = EntityType.ZOMBIE.create(level, EntitySpawnReason.COMMAND);
@@ -776,6 +831,11 @@ public final class RealmPortalGameTests {
             helper.assertTrue(state.is(RealmPortalBlocks.bricks()) && state.getValue(RealmforgeBricksBlock.GENERATED),
                     "the built frame has generated Realmforge Bricks in its corner at " + corner + ", not " + state);
         }
+    }
+
+    /** The realm's coordinate scale: 8, as the Nether's (Matěj, 2026-10-28), which {@code RealmGameTests} checks. */
+    private static int scale(ServerLevel realm) {
+        return (int) realm.dimensionType().coordinateScale();
     }
 
     /** The lowest height a frame built in the stone realm may stand at, where a trip from the flat world carves. */

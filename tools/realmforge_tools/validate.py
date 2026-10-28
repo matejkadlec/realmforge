@@ -1729,7 +1729,7 @@ def _realm_dimension_type_problems(source: str, data: dict) -> list[Problem]:
     if not isinstance(scale, int | float) or isinstance(scale, bool) or scale <= 1:
         problems.append(
             Problem(
-                source, "coordinate_scale", "a realm links to Overworld by a coordinate scale above 1 (1:16)"
+                source, "coordinate_scale", "a realm links to Overworld by a coordinate scale above 1 (1:8)"
             )
         )
     attributes = data.get("attributes")
