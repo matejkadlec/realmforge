@@ -2678,7 +2678,8 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   whatever the budget, then the rest of 5 ms goes round the plots with work one unit at a time, starting after the plot
   served last; some unit always runs. Plots opened together build side by side, and clearing a closed plot never holds
   back a run's build. The unit list is a pure function of the saved plot, so a restart resumes at the saved step, and a
-  unit whose chunk is still loading waits for a later tick instead of loading it on the main thread. A unit that throws
+  unit whose chunk is still loading waits for a later tick instead of loading it on the main thread; one that places
+  rooms or removes entities also waits for the chunk's entities (below, "Chunk loading"). A unit that throws
   (a room template that no longer resolves after a restart) releases a plot being built and is skipped by a closing one,
   and is logged, instead of failing the tick on every start. A test dungeon layout of 93 placements (RLM-363;
   `DungeonPlanGameTests` logs its `BuildReport`) took 198 units in 151 ticks, about 7.5 seconds at 20 ticks a second,
@@ -2691,7 +2692,9 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   and 0.3-1 s the first time a plot cell is used, as vanilla generates and saves the neighbours of a forced chunk
   too, 3-4 MB per cell). So a plot first asks for its chunks with a background ticket of our own
   (`realmforge:instance_loading`: loading only, renewed every tick until the chunk has loaded and gone 20 ticks
-  later, not saved), and the controller holds each chunk only once it has loaded. After a restart, a plot asks again
+  later, not saved), and the controller holds each chunk only once it has loaded, its entities included
+  (`ServerLevel#areEntitiesLoaded`: the entity manager makes a chunk's entity sections accessible after its blocks, and a
+  room's item frames placed before that stay hidden from every entity query, RLM-483). After a restart, a plot asks again
   for the chunks it does not hold, and a build released before any of its units ran loads none. The GameTest server
   runs its ticks back to back, so the background loading of a new plot cell (seconds) would outlast the tests' tick
   timeouts; there the QA mod loads the chunks plots wait for before each tick (`GameTestChunkLoads`).

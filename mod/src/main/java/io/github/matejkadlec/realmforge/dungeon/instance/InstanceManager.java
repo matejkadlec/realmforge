@@ -818,7 +818,9 @@ public final class InstanceManager extends SavedData {
     /**
      * Holds the plot's wanted chunks that have loaded, and asks for the others to load in the background. Holding a
      * chunk loads it on the main thread when it is not loaded yet (spike 3: up to a second for a new plot cell), so a
-     * chunk is held only once it has loaded. Returns whether it took any.
+     * chunk is held only once it has loaded, its entities included: the entity manager makes a chunk's entity
+     * sections accessible after its blocks, and a room's item frames placed before that would stay hidden (RLM-483).
+     * Returns whether it took any.
      */
     private boolean holdChunks(Plot plot) {
         LongSet wanted = plot.wantedChunks();
@@ -833,7 +835,7 @@ public final class InstanceManager extends SavedData {
             }
             int chunkX = ChunkPos.getX(chunk);
             int chunkZ = ChunkPos.getZ(chunk);
-            if (level.getChunkSource().getChunkNow(chunkX, chunkZ) != null) {
+            if (level.getChunkSource().getChunkNow(chunkX, chunkZ) != null && level.areEntitiesLoaded(chunk)) {
                 TICKETS.forceChunk(level, plot.origin(), chunkX, chunkZ, true, false);
                 plot.chunks().add(chunk);
                 held = true;
