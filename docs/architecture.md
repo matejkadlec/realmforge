@@ -115,7 +115,9 @@
    our registries stops it; errors in vanilla data (loot tables, recipes, advancements, tags) are only logged, so
    CI fails on those log lines. GameTests compare the running game with generated expectations.
 8. **Integrate through standard surfaces:** advancements, statistics, data files and public APIs, never another
-   mod's internals ([ADR 0006](decisions/0006-quests-ftb-quests-generated-from-data.md)).
+   mod's internals ([ADR 0006](decisions/0006-quests-ftb-quests-generated-from-data.md)). The one exception is Neat's
+   render state hook: Neat has no API, Matěj chose it for the mob level (RLM-166, RLM-338), and
+   [19.4](#194-optional-integrations) describes the hook and how its version range guards it.
 9. **Performance is a requirement:** event-driven work with early exits, no per-tick scans of all entities,
    world generation spread over ticks, throttled network sync.
 10. **Hard no's are validation rules.** Where a hard no from the vision can be checked mechanically (no flying
@@ -230,7 +232,7 @@ trees, so `character` sits above `spell` and `talent`). "May use" includes whate
 | `boss` | `mob` |
 | `dungeon` | `boss`, `character` |
 | `Realmforge` (entry point), `command`, `compat`, `network` | public APIs of any feature |
-| `client` | anything; nothing outside `client/` uses `client/` |
+| `client` | anything; nothing outside `client/` uses `client/`, except a `compat/<mod>` plugin calling its `client/compat/<mod>` part from a client-only entry point, such as Jade's `registerClient` ([19.4](#194-optional-integrations)) |
 
 Generated classes belong to the feature that owns their content type (`GeneratedItems` to `item`, `GeneratedBlocks`
 to `world`, generated status effects to `effect`) and follow that feature's row.
@@ -298,10 +300,10 @@ How features cooperate without breaking the direction:
 | Registry | Content | One entry | Synced | Milestone |
 | --- | --- | --- | --- | --- |
 | `realmforge:race` | `content/races/` | playable race: base modifiers, innate spells, allowed classes | yes | M1 |
-| `realmforge:class` | `content/classes/` | class: resource type, starting stats, spells by level, talent trees, starting kit | yes | M1 |
+| `realmforge:class` | `content/classes/` | class: resource type, starting stats, spells by level, its specializations' spell trees (C5), starting kit | yes | M1 |
 | `realmforge:spell_school` | `content/spell_schools/` | school (owned by `combat`): kind (physical or magic), colour, its damage type, and the stats that are its power and resistance (attributes from `content/stats/`, static registrations, so a new school's stats need a game restart) | yes | M1 |
 | `realmforge:spell` | `content/spells/` | spell for players or NPCs: school, what it scales with, targeting, cast, cost, cooldowns, crit rules, typed effects with values per spell level (C3a-1), its name and description with placeholders (C3b) | yes | M1 |
-| `realmforge:talent_tree` | `content/talents/` | WoW-style tree: nodes on a grid, ranks, prerequisites, typed effects per rank | yes | M1 |
+| `realmforge:talent_tree` | `content/talents/` | WoW-style tree: nodes on a grid, ranks, prerequisites, typed effects per rank | yes | postponed ([12](#12-talents)) |
 | `realmforge:stat_rule` | `content/stat_rules/` | what a primary stat gives: per-point modifiers, milestone bonuses | yes | M1 |
 | `realmforge:curve` | `content/curves/` | named table of points (level → value), linearly interpolated: XP per level, mob scaling, item budgets | yes | M1 |
 | `realmforge:chapter` | `content/chapters/` | story chapter (owned by `progression`, C2): order, the level cap while it is the player's current chapter and the one once it is completed; its advancement `realmforge:chapter/<id>` marks it completed (what a chapter unlocks names the chapter through `chapter_completed`) | yes | M1 |
@@ -327,7 +329,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | --- | --- | --- |
 | `realmforge:spell_effect_type` | damage, heal (C3a-1, `spell/SpellEffectTypes`); apply_effect, remove_effect, projectile, area, teleport, dash, knockback (C3a-3); summon later | spells, so also boss abilities and procs |
 | `realmforge:targeting_type` | self, enemy, ally (C3a-1, `spell/TargetingTypes`); ground point, direction (C3a-3); for NPCs current target, random player, farthest player (C3a-4), arena point (W5) | spells, boss abilities |
-| `realmforge:talent_effect_type` | attribute_modifier, spell_modifier, grant_spell, proc | talents; later glyphs and set bonuses |
+| `realmforge:talent_effect_type` | attribute_modifier, spell_modifier, grant_spell, proc | talents (postponed, [12](#12-talents)); later glyphs and set bonuses |
 | `realmforge:resource_type` | mana, rage (`spell/ResourceTypes`; C1 gave them ids and names, C3a-1 their pools, C3a-4 rage's gain and decay) | classes, spell costs |
 | `realmforge:phase_trigger_type` | health_below, time_in_phase, adds_defeated | bosses |
 | `realmforge:dungeon_ending_type` | boss_lair, treasury; later puzzle, wave_arena, escape, mounted_run, exploration | dungeon types |
@@ -532,13 +534,13 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   (`stats/StatsAttachments`, `character/CharacterAttachments`, `spell/SpellAttachments`,
   `talent/TalentAttachments`), registered from its `<Name>Feature`. The values are `stats/EntityLevel`,
   `character/CharacterData`, `spell/Spellbook`, `spell/CombatState` and `talent/TalentAllocation`; owner-only data
-  syncs with `core/Attachments#toOwner`. Talent trees are named by `Identifier` until their registry exists (C5);
-  races and classes are `ResourceKey`s since C1, and spells since C3a-1, which save the same string, so F3's saves
-  stay readable. `CombatState` keeps one pool per resource type (`resources`, by the type's id), absent until the
-  type's pool first fills ([11.5](#115-resources-cooldowns-modifiers)). Leveling (C2, [10.2](#102-leveling)) caches
-  the level cap there for players with a character, and stat points (RLM-196) save the points spent on each primary
-  stat by the stat's id; the unspent points are derived, never saved. Every saved field is optional with a default,
-  so an empty save reads as the default value.
+  syncs with `core/Attachments#toOwner`. Talent trees are named by `Identifier` until their registry exists (postponed
+  with talents, [12](#12-talents)); races and classes are `ResourceKey`s since C1, and spells since C3a-1, which save
+  the same string, so F3's saves stay readable. `CombatState` keeps one pool per resource type (`resources`, by the
+  type's id), absent until the type's pool first fills ([11.5](#115-resources-cooldowns-modifiers)). Leveling (C2,
+  [10.2](#102-leveling)) caches the level cap there for players with a character, and stat points (RLM-196) save the
+  points spent on each primary stat by the stat's id; the unspent points are derived, never saved. Every saved field is
+  optional with a default, so an empty save reads as the default value.
 - `level` is copied on death, and NeoForge copies the same attachments when a mob converts (a zombie drowns,
   `LivingConversionEvent.Post`), so the converted mob keeps its level, and `mob` gives it that level's scaling
   ([14.1](#141-mob-levels)).
@@ -800,7 +802,7 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
    empty.
 6. **`LivingDamageEvent.Post`** puts both sides in combat ([9.4](#94-in-combat), as a dodge and a full block in
    step 3 do) and reports what was dealt: `combat` posts `CombatEvent.Hit` (school, crit, the original damage, what armor
-   blocked, the damage dealt and taken from health) for higher features (procs in C3a and C5, threat later, the QA mod's
+   blocked, the damage dealt and taken from health) for higher features (procs since C3a, threat later, the QA mod's
    combat log), and sends the combat text (`combat/net/CombatTextPayload`) to the player who dealt the hit
    ([18](#18-client-code-rendering-gui-input)). A tick of a damaging effect has no attacker:
    `combat/DamageOverTime` remembers the player who applied each poison or wither (from `MobEffectEvent.Added`'s
@@ -945,7 +947,8 @@ on a single stack does not count, since the tag is per item.
 `WeaponBlocksTest` covers the amounts and the arc; `WeaponBlockGameTests` raises the test greatsword at a zombie's
 hits: in full within 0.5 s, half after it, the cooldown after a block and after lowering it by hand, no block from
 behind, of magic or with a one-handed sword, no reaction (no sound, no cooldown, still raised) to a hit the window
-drops while the next bigger one is still blocked, and the tag's members.
+drops while the next bigger one is still blocked, the tag's members, and the client's rebind after its server's tag
+update.
 
 ### 9.4 In combat
 
@@ -1005,7 +1008,8 @@ go of right click stops its charge.
   kit. Race and
   class stats stay the same at every level: each level gives stat points the player spends instead
   ([10.2](#102-leveling); Matěj, 2026-10-15, RLM-196: classes are for skills and abilities, not fixed stat
-  growth). Whether races and classes keep their starting stats is open; they keep them until Matěj decides.
+  growth). **Decided 2026-10-21 (Matěj, RLM-170):** races and classes keep small starting stats that differ between
+  them, so a Warrior and a Mage already differ at level 1; this is no growth with the level.
 - **Specializations, no dual class** (Matěj, 2026-10-15, RLM-218): a player has one class, never two. Every class
   has three specializations (the word replaces "subclass"), each with its own spell tree of active and passive
   spells. The player picks one in game, in a spell trees window, after creating the character (race and class),
@@ -1120,9 +1124,10 @@ go of right click stops its charge.
     (vanilla's title packets), plays the challenge fanfare to the player alone, bursts totem particles that everyone
     nearby sees, says in chat how many stat points are unspent and which key opens the sheet (a keybind component),
     and fires `realmforge:level_reached`. A level-up that reaches the cap says in chat which chapter raises it.
-    Talent points and class spells join with C4 and C5. A login updates the level quietly and leaves the stat
-    recompute to the player's first tick ([8.2](#82-where-modifiers-come-from), RLM-202); every other update
-    (kills, rewards, commands, chapters) recomputes at once.
+    Class spells join with C4 and specialization points with C5; talent points wait with talents (RLM-28). A login
+    updates the level quietly and leaves the stat recompute to the player's first tick
+    ([8.2](#82-where-modifiers-come-from), RLM-202); every other update (kills, rewards, commands, chapters) recomputes
+    at once.
   - **Stat points** (`character/StatPoints`, RLM-196): the points a player has earned are derived, never saved:
     those of every level from 2 to theirs, each level's the curve `stat_points_per_level` rounded half up and at
     least 0 (`tools/realmforge_tools/schema/leveling.py` computes the same, and a GameTest compares the two). The
@@ -1177,7 +1182,8 @@ Its name and description are translation keys from C3b, the description's number
   a spell pushes its target only through a `realmforge:knockback` effect (C3a-3).
 - **Crits** (Matěj, 2026-10-15): every spell can crit, heals too, on the caster's crit chance for 1 + the caster's
   crit damage (150 % with the base 50 %), crit damage being shared with melee. A spell's `crit` data may switch
-  crits off, add a bonus chance, or set its own multiplier (`combat/CritRule`); talents (C5) will change all three.
+  crits off, add a bonus chance, or set its own multiplier (`combat/CritRule`); talents (postponed, RLM-28) will change
+  all three.
 
 A player knows a spell through their class (by level), race, talents (`grant_spell`) or items (an item component
 lists spells granted while equipped or on use): the vision's "some from the race or class, some from items".
@@ -1378,7 +1384,8 @@ type only for genuinely new behaviour.
   `AimAssist#turn`) at the same speed and sets `needsSync`, so its clients get the turned velocity and position at once
   and draw the curve; it flies on straight once the enemy is dead, gone, in another level or behind it. **Nothing flies
   forever:** it has no lifetime unless its data sets `lifetime_ticks` (at most 10 s), and it is removed above the build height (its bottom above the top of the world's
-  highest block), where entities stop moving (its next position not entity-ticking,
+  highest block) while it does not fly down (RLM-446: a caster on the top block layer, or flying above it, still hits a
+  mob below), where entities stop moving (its next position not entity-ticking,
   `ServerLevel#isPositionEntityTicking`: beyond every player's simulation distance, which equals the render distance by
   default, or in a chunk that is not loaded; `checkDespawn`, which the server calls even where entities no longer
   tick, removes one left behind), and in the void (vanilla's `Entity#checkBelowWorld`, 64 blocks below the
@@ -1434,7 +1441,12 @@ effects, so a modifier finds its attribute, ours included), an 18 by 18 placehol
 `effect.realmforge.<id>` and `GeneratedEffectExpectations`, which `ContentEffectGameTests` checks. Each is an
 `effect/StatusEffect`: vanilla's modifiers, multiplied by the amplifier + 1, and an `effect/Periodic` that ticks at the
 end of every interval since the effect began (an effect of 4 s and 1 s intervals ticks 4 times, the first after a
-second; validation keeps a spell's durations whole intervals), each level adding the amount again.
+second; validation keeps a spell's durations whole intervals), each level adding the amount again. It counts the
+remaining duration (`Periodic#ticksAt`), which every application resets, so an area or a channel that applies it again
+sooner than it ticks would keep it from ticking at all: validation refuses an interval shorter than the effect's
+(RLM-376); an equal one loses only the partial interval, as in Classic. Cast Time Reduction shortens a channel's
+interval, and validation cannot see it, so a hasted channel that applies such an effect at every interval still keeps
+it from ticking.
 `effect/EffectTicks` deals a tick as a hit of the school from the effect's caster, so the damage pipeline raises it by
 the caster's spell power (a magic school) and school power as they are when it ticks, the target's resistance lowers
 it, a kill counts for the caster and the caster sees its numbers; ticks never crit (`CritRule.NONE`) and never knock
@@ -1442,8 +1454,13 @@ back. Healing ticks are raised the same way. Once the caster is gone (dead, logg
 ticks go on at the bare amount. `apply_effect` applies an effect through `effect/Effects#apply`, which records its
 `effect/EffectSource` (the caster's UUID, the spell's id, the proc origin) in the holder's `realmforge:effect_sources`
 attachment; the latest application decides, so the same effect from a potion or a command forgets the source, and the
-effect's removal or expiry does too. `Effects#source` is what dispels and talents (C4, C5) read. `EffectGameTests`
-covers the ticks, the caster's stats, a caster that left, the modifiers and the sources.
+effect's removal or expiry does too. An application that changes nothing (`MobEffectInstance#update` keeps the
+effect as it is, and it ends no later) keeps it: `MobEffectEvent.Added` fires before that update, so `Effects` asks a
+copy of the old instance (RLM-373). A weaker but longer one forgets it too, though `update` keeps the effect: vanilla
+holds it as the hidden effect, which takes over without an event once the stronger one ends. `Effects#source` is what dispels and talents (C4, C5) read. An
+effect a proc's spell applied keeps the proc origin, and its ticks carry it, so they trigger no proc
+([12](#12-talents)). `EffectGameTests` covers the ticks, the caster's stats, a caster that left, the modifiers, the
+sources and a proc's damage over time.
 
 ### 11.5 Resources, cooldowns, modifiers
 
@@ -1722,9 +1739,9 @@ return; the proc engine at its end exists since C3a.
   the holder) or apply a status effect (`ApplyEffect`, to the holder or the other entity). `spell/Procs` reacts to
   `CombatEvent.Hit` (every hit with an attacker: melee, ranged and spells, a dodged one never) and to kills
   (`LivingDeathEvent`, last, so a totem's save counts), and fires the procs that every `Procs.Source` gives the
-  entities involved; talents (C5) and items will add theirs, and the QA mod adds `QaProcs` for its tests. A proc
-  fires at its chance outside its internal cooldown, which starts once its spell was cast or its effect took hold.
-  Its spell goes through `SpellCaster#castProc`: at once and free, whatever its cast type, without the spell's
+  entities involved; items and talents (postponed, RLM-28) will add theirs, and the QA mod adds `QaProcs` for its tests.
+  A proc fires at its chance outside its internal cooldown, which starts once its spell was cast or its effect took
+  hold. Its spell goes through `SpellCaster#castProc`: at once and free, whatever its cast type, without the spell's
   cooldowns or the global cooldown, while another cast runs. The proc origin is the proc's id: `EffectContext`
   carries it to every effect, a projectile or an area keeps it, `DamageEffect` puts it into its
   `combat/SchoolDamageSource`, and `Procs` ignores every hit and kill whose source carries one. Vanilla status
@@ -2670,7 +2687,8 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   whatever the budget, then the rest of 5 ms goes round the plots with work one unit at a time, starting after the plot
   served last; some unit always runs. Plots opened together build side by side, and clearing a closed plot never holds
   back a run's build. The unit list is a pure function of the saved plot, so a restart resumes at the saved step, and a
-  unit whose chunk is still loading waits for a later tick instead of loading it on the main thread. A unit that throws
+  unit whose chunk is still loading waits for a later tick instead of loading it on the main thread; one that places
+  rooms or removes entities also waits for the chunk's entities (below, "Chunk loading"). A unit that throws
   (a room template that no longer resolves after a restart) releases a plot being built and is skipped by a closing one,
   and is logged, instead of failing the tick on every start. A test dungeon layout of 93 placements (RLM-363;
   `DungeonPlanGameTests` logs its `BuildReport`) took 198 units in 151 ticks, about 7.5 seconds at 20 ticks a second,
@@ -2683,7 +2701,9 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   and 0.3-1 s the first time a plot cell is used, as vanilla generates and saves the neighbours of a forced chunk
   too, 3-4 MB per cell). So a plot first asks for its chunks with a background ticket of our own
   (`realmforge:instance_loading`: loading only, renewed every tick until the chunk has loaded and gone 20 ticks
-  later, not saved), and the controller holds each chunk only once it has loaded. After a restart, a plot asks again
+  later, not saved), and the controller holds each chunk only once it has loaded, its entities included
+  (`ServerLevel#areEntitiesLoaded`: the entity manager makes a chunk's entity sections accessible after its blocks, and a
+  room's item frames placed before that stay hidden from every entity query, RLM-483). After a restart, a plot asks again
   for the chunks it does not hold, and a build released before any of its units ran loads none. The GameTest server
   runs its ticks back to back, so the background loading of a new plot cell (seconds) would outlast the tests' tick
   timeouts; there the QA mod loads the chunks plots wait for before each tick (`GameTestChunkLoads`).
@@ -3124,8 +3144,9 @@ Minecraft jar a project compiles against (its default location), and which `neof
 jar lacks the core mod's transforms), on the GameTest server and in the pack. The core mod's one opens
 `LivingEntity#lastHurt` for the hurt cooldown ([9.1](#91-damage-pipeline)), `ServerPlayer#setShoulderEntityLeft`
 and `Right` for the shoulder entities a realm trip leaves behind ([15.1](#151-dimensions)) and `Holder.Reference#bindTags`
-for the tag of raisable weapons ([9.3](#93-blocking-with-two-handed-weapons)); the QA mod's opens `lastHurt` and
-`damageContainers` for `CombatGameTests` and `CombatStatGameTests`.
+for the tag of raisable weapons ([9.3](#93-blocking-with-two-handed-weapons)); the QA mod's opens `lastHurt` for
+`CombatGameTests` and `CombatStatGameTests`, `damageContainers` for `CombatGameTests` and `WeaponBlockGameTests`, and
+`Holder.Reference#bindTags` for `WeaponBlockGameTests`, whose client rebinds the tag after its server's tag update.
 
 ### 19.4 Optional integrations
 
@@ -3170,7 +3191,12 @@ its name, `Lv. 20 Zombie`, from one function, `client/compat/MobLevelLabel`:
   Jade's settings list no switch for it and it needs no text of ours.
 - The core mod compiles against the pack's builds of both (`compileOnly` in `mod/build.gradle`, read from their
   `pack/mods/*.pw.toml`), so an update that changes a hook fails the build, not the game; `neoforge.mods.toml` names
-  both as optional dependencies.
+  both as optional dependencies. Neat's is bounded, `[26.1.2-48,26.2)` (RLM-380): the core mod is also released on
+  its own (ADR 0008), and a Neat build outside the range stops the game at load with a dependency error, where a
+  changed `NeatRenderState` would fail with a `NoSuchMethodError` the first time an entity renders. The range is the
+  smaller guard than catching a `LinkageError` in `NeatCompat`: one line, checked before any code runs, and Neat's
+  builds for another Minecraft version need a recompile anyway. A later 26.1 build that changed the interface would
+  still pass it; the pack's own Neat updates are caught at compile time.
 
 **Better Combat and Sword Blocking Mechanics** (RLM-297, [9.3](#93-blocking-with-two-handed-weapons)):
 `compat/bettercombat/TwoHandedWeapons` reads Better Combat's weapon registry (`WeaponRegistry#getAttributes`) to put

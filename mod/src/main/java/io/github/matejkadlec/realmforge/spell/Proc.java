@@ -8,7 +8,7 @@ import net.minecraft.world.effect.MobEffect;
 
 /**
  * A proc (architecture 12): when its holder hits, crits, kills or is hit, it may cast a spell or apply a status effect,
- * then waits out its internal cooldown (research SP-15). Talents (C5) and items give procs through a
+ * then waits out its internal cooldown (research SP-15). Items and talents (postponed, RLM-28) give procs through a
  * {@link Procs.Source}; {@link Procs} runs them.
  *
  * @param id names the proc: its internal cooldown and the proc origin its spell's hits carry

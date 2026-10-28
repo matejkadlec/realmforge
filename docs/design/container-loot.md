@@ -94,10 +94,11 @@ The test dungeon's tables (`content/dungeons/test_dungeon.yaml`):
 
 ## Open questions
 
-For Matěj; each has a proposal so the work can go on.
+Both are answered.
 
-1. **Budget ranges for the treasure table.** Proposal: about 750 to 3,000 points, in the same ratio to the normal
-   table as Matěj's kill-equivalents (5 to 20 against 2 to 10).
+1. **Budget ranges for the treasure table.** **Decided 2026-10-21 (left to Claude by Matěj, RLM-289): about 750 to
+   3,000 points,** in the same ratio to the normal table as Matěj's kill-equivalents (5 to 20 against 2 to 10), tuned
+   after a playtest.
 2. ~~**How many containers a room may hold.**~~ Answered by Matěj's chance tables (RLM-365,
    [above](#how-many-containers-a-room-keeps)). Set-piece containers (RLM-282) count towards a room's candidates
    when the builder places them, or get their own table then.

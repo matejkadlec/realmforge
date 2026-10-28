@@ -48,7 +48,8 @@ import net.neoforged.neoforge.event.EventHooks;
  * mob on the move; a block still stops it. It flies on straight once the enemy is dead, gone or behind it.
  *
  * <p>Nothing flies forever: it is gone at the end of its lifetime when it has one, once its caster leaves its level
- * (logging out, a mob's death), above the build height, where entities stop moving (beyond every player's simulation
+ * (logging out, a mob's death), above the build height unless it flies down (RLM-446: a caster on the top block
+ * layer, or flying above it, still hits a mob below), where entities stop moving (beyond every player's simulation
  * distance, which equals the render distance by default, or in a chunk that is not loaded), and in the void, which
  * vanilla removes 64 blocks below the world's bottom ({@code Entity#checkBelowWorld}).
  *
@@ -210,9 +211,12 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
         }
     }
 
-    /** Whether it is above the build height, where no block can be: nothing up there for it to hit. */
+    /**
+     * Whether it is above the build height, where no block can be, and not flying down: nothing up there for it to
+     * hit, and it is not coming back. One that flies down from up there flies on to what is below (RLM-446).
+     */
     private boolean aboveTheWorld(ServerLevel level) {
-        return getY() > level.getMaxY() + 1;
+        return getY() > level.getMaxY() + 1 && getDeltaMovement().y >= 0;
     }
 
     /**

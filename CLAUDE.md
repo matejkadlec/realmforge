@@ -10,7 +10,9 @@ Classic, TBC and WotLK alike, Classic the main reference; never Cataclysm or lat
 our own core mod holds the custom core (realms, quests, races, classes, spells, professions, semi-custom dungeons);
 the modpack adds third-party QoL, performance and library mods, and gameplay mods fitted to our stats, such as
 Apotheosis for gear rarity, affixes, gems and enchanting
-([ADR 0038](docs/decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)).
+([ADR 0038](docs/decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)). World-generated
+dungeons and their mobs may come from mods too; instanced dungeons stay ours
+([ADR 0044](docs/decisions/0044-third-party-mods-by-milestone.md)).
 
 - **Owner:** Matěj, a Python full-stack (Django) developer with little Java and modding experience. The project is
   vibe-coded: agents do most of the work, Matěj sets direction, reviews and playtests. **Communicate in English.**
@@ -37,11 +39,12 @@ Apotheosis for gear rarity, affixes, gems and enchanting
   change, which agents make only as Matěj decided it
   ([ADR 0021](docs/decisions/0021-status-overview-and-plan-changes.md)).
 - **Jira:** the work queue and the source of task status: space Realmforge, key `RLM`, one Task per roadmap task or
-  other piece of work, milestone epics RLM-6 to RLM-12 (M1 to M7), RLM-1 for developer workflow and tooling,
-  RLM-30 for the storyline, `Blocks` links for the roadmap's "after" order. Work on a ticket always goes through
-  it: `flow1` takes a batch of tickets from the active sprint, `flow2` turns Matěj's task description into a
-  ticket, and direct work uses the flow's intake claim; the key goes into the branch name and the PR title, and
-  `finalize-pr` moves the ticket to Done after the merge ([ADR 0016](docs/decisions/0016-jira-batch-delivery.md)).
+  other piece of work, milestone epics RLM-6 to RLM-12 (M1 to M7) and RLM-307 (M8, v2), RLM-1 for developer
+  workflow and tooling, RLM-30 for the storyline, `Blocks` links for the roadmap's "after" order. Work on a ticket
+  always goes through it: `flow1` takes a batch of tickets from the active sprint, `flow2` turns Matěj's task
+  description into a ticket, and direct work uses the flow's intake claim; the key goes into the branch name and the
+  PR title, and `finalize-pr` moves the ticket to Done after the merge
+  ([ADR 0016](docs/decisions/0016-jira-batch-delivery.md)).
   A batch that needs Matěj's playtest opens no PR while it waits for him: he answers `qa1` (passed: publish it)
   or `qa2` (changes required: revise it) ([ADR 0022](docs/decisions/0022-playtest-before-the-pull-request.md)).
   Follow-ups a change does not fix (review findings, gaps found on the way) become RLM tickets, not GitHub issues
@@ -145,14 +148,18 @@ uv run rf rooms import SRC --to DIR       # .nbt/.schem/.litematic -> rooms with
 uv run rf rooms gallery [DIR]             # render rooms (default content/rooms) -> .cache/rooms/gallery/ (Vulkan)
 uv run rf rooms review DIR                # merge decisions copied from the gallery into DIR/review.yaml
 uv run rf rooms candidates [SPEC...]      # seed candidates of content/room_specs/ -> .cache/rooms/candidates/
+uv run rf set-pieces report [MASK...] [--game]  # spots of the workshop jig's masks in every room (mask report)
+uv run rf set-pieces import FILE --id ID  # a jig save -> content/set_pieces/ID; --from-world WORLD: every new save
 
 ./gradlew build                           # compile the core, QA and Better Key Binds mods + JUnit
 ./gradlew runGameTestServer               # headless GameTests; exit code != 0 on failure
 uv run rf gametest-log                    # after runGameTestServer: exit 1 on data loading errors in its log
-./gradlew runClient                       # dev client with core + QA mod, Matěj's account (DevLogin), run/client;
+./gradlew runClient                       # dev client: core + QA mod and the whole pack's client and shared mods
+                                          # (pack/mods/, ADR 0042), Matěj's account (DevLogin), run/client;
                                           # playtests run it from his Windows clone (docs/dev-setup.md, 3.2)
-./gradlew runClient -PwithBetterCombat    # the same plus Better Combat (ADR 0020); /qa cast <ticks> in game
-./gradlew runClient -PofflineClient       # the offline `Dev` player, no login prompt: agents' screenshot runs
+./gradlew runClient -PleanClient          # only our mods, GeckoLib, Player Animation Library, Yeetus Experimentus;
+                                          # add -PwithBetterCombat for Better Combat (ADR 0020, /qa cast <ticks>)
+./gradlew runClient -PofflineClient -PleanClient  # offline `Dev` player, no login prompt: agents' screenshot runs
 ./gradlew runServer                       # dev dedicated server (run/server; accept run/server/eula.txt once)
 ./gradlew :mod:extractMinecraftSources    # decompiled MC + NeoForge sources -> build/mc-sources/
 ./gradlew :mod:installToPrism             # copy the jar into the Prism instance (see docs/dev-setup.md)

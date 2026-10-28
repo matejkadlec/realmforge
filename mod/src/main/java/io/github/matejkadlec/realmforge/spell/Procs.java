@@ -25,13 +25,13 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
  * <p><b>Procs never trigger procs:</b> a proc's spell runs with the proc as its origin, which its hits carry in their
  * damage source ({@link SchoolDamageSource#procOrigin}), and this engine ignores every hit and kill that carries one.
  * Otherwise a sure on-hit proc that deals damage would trigger itself until the server's stack overflows. A vanilla
- * status effect's ticks have no attacker, so no proc reacts to them either; our own status effects (C3c) will keep
- * the origin of the proc that applied them.
+ * status effect's ticks have no attacker, so no proc reacts to them either; our own status effects keep the origin of
+ * the proc whose spell applied them ({@code EffectSource#procOrigin}), and their ticks carry it.
  *
  * <p>Internal cooldowns are transient, by holder and proc id, with weak keys. Logical server only.
  */
 public final class Procs {
-    /** Gives a holder its procs: talents (C5) and items fill it, the QA mod adds one for its tests. */
+    /** Gives a holder its procs: items and talents (postponed, RLM-28) fill it, the QA mod adds one for its tests. */
     @FunctionalInterface
     public interface Source {
         List<Proc> procs(LivingEntity holder);

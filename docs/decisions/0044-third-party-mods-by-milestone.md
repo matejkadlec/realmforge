@@ -53,9 +53,10 @@ answered the open questions the same night (RLM-264). The candidates and every p
     Ancient City Overhaul (the late Overworld questline).
   - **M8 (v2), after v1:** Shoulder Surfing Reloaded and Camera Overhaul (both off by default, switched on in an
     optional-features screen), Apothic Spawners, Trims Overhaul, Gateways to Eternity, Yggdrasil.
-  - **Watchlist:** Supplementaries with Amendments, Polymorph, Relics and Farmer's Delight add-ons join when they reach
-    26.1.2; Enhanced Boss Bars, Simply Swords and Mowzie's Mobs too, with our own solutions until then. Re-checked when
-    each milestone starts.
+  - **Watchlist:** Supplementaries with Amendments, Polymorph, Relics (SSKirillSS's, Modrinth `relics-mod`, not the
+    RPG Series' Relics, which is rejected) and Farmer's Delight add-ons join when they reach 26.1.2; Enhanced Boss
+    Bars, Simply Swords and Mowzie's Mobs too, with our own solutions until then. Re-checked when each milestone
+    starts.
   - **Rejected:** every mod Matěj marked No (the research note lists them), among them Explorer's Compass and
     Nature's Compass (our own Structure Compass instead), Immersive Paintings (our own painting variants instead),
     Corpse and GraveStone (keepInventory stays on) and the RPG Series gear.

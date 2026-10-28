@@ -29,7 +29,7 @@ mirrors it, plus work outside the roadmap, and the only source of task status
 | Project | space Realmforge, key `RLM`. Scope every read and write to `RLM` and check the key prefix before each write |
 | Tools | the Atlassian MCP server `atlassian` from `.mcp.json` ([setup](dev-setup.md#5-claude-code)); a cloud session uses the claude.ai Atlassian connector, which has the same tools |
 | Sprint | field `customfield_10020`, which takes the numeric sprint id. Read the active sprint from Jira every time: JQL `project = RLM AND sprint in openSprints()`, the `customfield_10020` entry with `state: active`. Never reuse an old id |
-| Epics | RLM-6 to RLM-12: milestones M1 to M7. RLM-1: developer workflow and tooling outside the roadmap. RLM-30: Storyline (realms, lore) |
+| Epics | RLM-6 to RLM-12: milestones M1 to M7; RLM-307: M8 (v2, after v1). RLM-1: developer workflow and tooling outside the roadmap. RLM-30: Storyline (realms, lore) |
 | Statuses | To Do, Next, In Progress, Pending User QA, Pending CR, Done, Rejected |
 | Transitions | all global (Jira accepts each one from every status): `11` To Do, `21` Next, `31` In Progress, `41` Pending User QA, `51` Pending CR, `61` Rejected, `71` Done |
 | Dependencies | link type `Blocks`. "A is blocked by B" is `createIssueLink` with `type: Blocks`, `inwardIssue: B`, `outwardIssue: A`. A ticket's `issuelinks` lists each blocker as an `inwardIssue` of type `Blocks` |
@@ -46,12 +46,12 @@ mirrors it, plus work outside the roadmap, and the only source of task status
   - **Type:** Task for planned work, Bug only for confirmed broken behavior, Epic only when Matěj asks for one.
   - **Title:** a roadmap task keeps its roadmap id (`F1: Feature skeleton`); other tickets use sentence case
     (`Pack: replace beta library builds with stable releases`).
-  - **Parent:** the milestone epic the work belongs to (RLM-6 for M1). Work outside the roadmap goes under the
-    epic whose description covers it (RLM-1 for workflow and tooling, RLM-30 for storyline).
+  - **Parent:** the milestone epic the work belongs to (RLM-6 for M1, RLM-307 for M8). Work outside the roadmap goes
+    under the epic whose description covers it (RLM-1 for workflow and tooling, RLM-30 for storyline).
   - **Labels:** lowercase. One or more area labels, preferring existing ones (`foundations`, `pipeline`,
     `character`, `stats`, `combat`, `spells`, `talents`, `world`, `mobs`, `dungeons`, `boss`, `quests`, `assets`,
     `ci`, `release`, `tooling`, `docs`, `ui`, `realms`, `storyline`, `lore`, `design`, `research`); the milestone
-    label of its epic (`m1` to `m7`); and `spike`, `decision` or `backlog` where they apply.
+    label of its epic (`m1` to `m8`); and `spike`, `decision` or `backlog` where they apply.
   - **Priority:** High, Medium or Low, relative to the sprint.
   - **Description:** English Markdown in one of the two existing shapes, both with a "Done when" section:
     - a roadmap task: `**Size:** S|M|L. After <task> (RLM-<n>). Waits for decision <Dn> (RLM-<n>).`, a paragraph

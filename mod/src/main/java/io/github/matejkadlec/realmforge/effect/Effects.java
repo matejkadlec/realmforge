@@ -15,8 +15,9 @@ import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
  * source back for dispels, talents and the ticks of damage and healing over time.
  *
  * <p>The latest application decides: an effect a spell applies through {@link #apply} remembers its caster and spell,
- * and the same effect applied any other way (a potion, a command, vanilla) forgets them. Its removal or expiry forgets
- * them too. Logical server only.
+ * and the same effect applied any other way (a potion, a command, vanilla) forgets them, unless that application
+ * changes nothing because the effect is already at least as strong and as long (RLM-373). Its removal or expiry
+ * forgets them too. Logical server only.
  */
 public final class Effects {
     /** The application {@link #apply} is making, so its own {@code MobEffectEvent.Added} keeps the source. */
@@ -60,10 +61,23 @@ public final class Effects {
     static void onEffectAdded(MobEffectEvent.Added event) {
         LivingEntity entity = event.getEntity();
         Holder<MobEffect> effect = event.getEffectInstance().getEffect();
-        if (entity.level().isClientSide() || (pending != null && pending.matches(entity, effect))) {
+        if (entity.level().isClientSide() || (pending != null && pending.matches(entity, effect))
+                || !changes(event.getOldEffectInstance(), event.getEffectInstance())) {
             return;
         }
         forget(entity, effect);
+    }
+
+    /**
+     * Whether applying {@code added} over {@code old} changes the effect, now or later. {@code LivingEntity#addEffect}
+     * posts {@code MobEffectEvent.Added} before it updates the old instance, so this asks a copy (which leaves out the
+     * old one's hidden effect, as {@code update}'s answer does) what the update will do, leaving the live instance
+     * untouched. An application that outlasts it changes it later, though {@code update} says no: a weaker one waits
+     * hidden until the stronger one ends and then takes its place, and its ticks are not the spell's.
+     */
+    private static boolean changes(@Nullable MobEffectInstance old, MobEffectInstance added) {
+        return old == null || new MobEffectInstance(old).update(added) || !old.isInfiniteDuration()
+                && (added.isInfiniteDuration() || added.getDuration() > old.getDuration());
     }
 
     /** Runs last, and only when no listener kept the effect. */

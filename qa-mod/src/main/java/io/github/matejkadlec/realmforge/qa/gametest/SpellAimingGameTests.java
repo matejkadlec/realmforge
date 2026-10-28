@@ -77,6 +77,53 @@ public final class SpellAimingGameTests {
     }
 
     /**
+     * A bolt fired down from above the build height flies on and hits the mob below (RLM-446): the caster stands
+     * higher than any block can be, as on the top block layer or flying above it.
+     */
+    @QaGameTest
+    public static void aBoltFiredDownFromAboveTheBuildHeightHitsTheMobBelow(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = caster(helper, "qa-aim-down");
+        learn(helper, player, GeneratedSpells.TEST_FORWARD_MISSILE);
+        Vec3 ground = helper.absoluteVec(new Vec3(2.5, 1, 0.5));
+        Husk husk = husk(helper, new BlockPos(2, 1, 0));
+        husk.setNoGravity(true);
+        husk.snapTo(new Vec3(ground.x, level.getMaxY() - 3, ground.z), 0, 0);
+        player.snapTo(new Vec3(ground.x, level.getMaxY() + 3, ground.z), 0, 90);
+        SpellProjectile bolt = castBolt(helper, player);
+        helper.assertTrue(bolt.getY() > level.getMaxY() + 1, "it starts above the build height, " + level.getMaxY()
+                + ": at " + bolt.position());
+        helper.runAfterDelay(15, () -> {
+            helper.assertTrue(bolt.isRemoved(), "the bolt stopped at the husk: at " + bolt.position());
+            assertHealth(helper, husk, HEALTH - 3, "the husk below took the bolt");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /** Above the build height, a bolt fired level or up is removed on its first tick: it is not coming back down. */
+    @QaGameTest
+    public static void aBoltFiredLevelOrUpAboveTheBuildHeightIsRemovedAtOnce(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = caster(helper, "qa-aim-level");
+        learn(helper, player, GeneratedSpells.TEST_FORWARD_MISSILE);
+        Vec3 ground = helper.absoluteVec(new Vec3(2.5, 1, 0.5));
+        player.snapTo(new Vec3(ground.x, level.getMaxY() + 3, ground.z), 0, 0);
+        SpellProjectile levelBolt = castBolt(helper, player);
+        helper.runAfterDelay(2, () -> {
+            helper.assertTrue(levelBolt.isRemoved(), "the level bolt is gone: at " + levelBolt.position());
+            Spells.resetCooldowns(player);
+            player.snapTo(new Vec3(ground.x, level.getMaxY() + 3, ground.z), 0, -90);
+            SpellProjectile up = castBolt(helper, player);
+            helper.runAfterDelay(2, () -> {
+                helper.assertTrue(up.isRemoved(), "the bolt fired up is gone: at " + up.position());
+                logout(player);
+                helper.succeed();
+            });
+        });
+    }
+
+    /**
      * A bolt that leaves the chunks where entities move (a player's simulation distance; here the test's forced chunks)
      * is removed there, instead of hanging in the air: fired level above everything, nothing else can stop it.
      */

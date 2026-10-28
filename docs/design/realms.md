@@ -715,8 +715,8 @@ For Matěj; each has a proposal so the design can go on.
    sandstorm in the desert, each with a cheap counter item that arrives with the realm. Proposal: yes, from M4.
    Undervault has none (Matěj, 2026-10-15).
 4. **Completing an instance without a boss.** The rule says an instance completes when its final boss dies, but the
-   catacombs (W6's type B) end in a treasury without one. Proposal: a bossless instance completes when its treasury
-   opens (DU-6).
+   catacombs (W6's type B) end in a treasury without one. **Decided 2026-10-15 (Matěj, RLM-36): a catacombs run
+   completes when its treasury opens** (DU-6); that moment calls W4d's completion entry point (RLM-181).
 5. **The realm for chapter 3.** **Decided 2026-10-15 (Matěj, RLM-188):** chapter 3 is the twin chapter, Sunwastes
    and Everwinter (levels 16–30); the forest and underwater realms are dropped (the underwater realm came back as
    Atlantis on 2026-10-19, RLM-265, now Deepholm).
