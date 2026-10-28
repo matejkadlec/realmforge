@@ -228,6 +228,9 @@ public final class DungeonRoomGameTests {
      * RLM-362: the item combination lock is built with its two item frames, the poppy and the cornflower its
      * comparators read, also turned a quarter; an Adventure player's hits and an explosion leave both frames and their
      * flowers in place, so the lock stays solvable; its chest opens; and clearing the plot removes the frames again.
+     * Each explosion goes off a block in front of its frame, so it pushes the frame (an explosion at the frame itself
+     * pushes nothing, as a frame's eyes are at its position), and only the instance's explosion guard keeps the push
+     * from breaking it (RLM-420).
      */
     @QaGameTest(timeoutTicks = TIMEOUT)
     public static void aRoomsItemFramesComeWithIt(GameTestHelper helper) {
@@ -252,8 +255,8 @@ public final class DungeonRoomGameTests {
                     for (ItemFrame frame : frames) {
                         player.attack(frame);
                         player.attack(frame);
-                        instances.explode(null, frame.getX(), frame.getY(), frame.getZ(), 2.0F,
-                                Level.ExplosionInteraction.TNT);
+                        Vec3 blast = frame.position().relative(frame.getDirection(), 1.0);
+                        instances.explode(null, blast.x, blast.y, blast.z, 2.0F, Level.ExplosionInteraction.TNT);
                     }
                     List<ItemFrame> kept = instances.getEntitiesOfClass(ItemFrame.class, room[0]);
                     helper.assertValueEqual(kept.size(), 2, "item frames after hits and explosions");
