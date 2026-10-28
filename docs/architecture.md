@@ -945,7 +945,8 @@ on a single stack does not count, since the tag is per item.
 `WeaponBlocksTest` covers the amounts and the arc; `WeaponBlockGameTests` raises the test greatsword at a zombie's
 hits: in full within 0.5 s, half after it, the cooldown after a block and after lowering it by hand, no block from
 behind, of magic or with a one-handed sword, no reaction (no sound, no cooldown, still raised) to a hit the window
-drops while the next bigger one is still blocked, and the tag's members.
+drops while the next bigger one is still blocked, the tag's members, and the client's rebind after its server's tag
+update.
 
 ### 9.4 In combat
 
@@ -3123,8 +3124,9 @@ Minecraft jar a project compiles against (its default location), and which `neof
 jar lacks the core mod's transforms), on the GameTest server and in the pack. The core mod's one opens
 `LivingEntity#lastHurt` for the hurt cooldown ([9.1](#91-damage-pipeline)), `ServerPlayer#setShoulderEntityLeft`
 and `Right` for the shoulder entities a realm trip leaves behind ([15.1](#151-dimensions)) and `Holder.Reference#bindTags`
-for the tag of raisable weapons ([9.3](#93-blocking-with-two-handed-weapons)); the QA mod's opens `lastHurt` and
-`damageContainers` for `CombatGameTests` and `CombatStatGameTests`.
+for the tag of raisable weapons ([9.3](#93-blocking-with-two-handed-weapons)); the QA mod's opens `lastHurt` for
+`CombatGameTests` and `CombatStatGameTests`, `damageContainers` for `CombatGameTests` and `WeaponBlockGameTests`, and
+`Holder.Reference#bindTags` for `WeaponBlockGameTests`, whose client rebinds the tag after its server's tag update.
 
 ### 19.4 Optional integrations
 
