@@ -13,6 +13,7 @@ import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -20,7 +21,8 @@ import net.minecraft.world.phys.Vec3;
  * (toward an enemy, a ground point, or along a direction: where the crosshair points, RLM-344), which runs its own
  * {@code effects} on the first enemy it hits (architecture 11.3). A spell that forms it during its cast
  * ({@link SpellCast#formsProjectile}) launches it from where it formed, in front of the caster
- * ({@link SpellVisuals#formPoint}), toward the target.
+ * ({@link SpellVisuals#formPoint}), toward the target. A player's projectile is aim assisted (RLM-345): it leaves
+ * toward the enemy it homes in on and curves after it ({@link #homing}).
  *
  * @param speed blocks per second
  * @param size the width and height of its hitbox, in blocks
@@ -67,11 +69,31 @@ public record ProjectileEffect(double speed, double size, Optional<Integer> life
         LivingEntity caster = context.caster();
         Vec3 origin = formed ? SpellVisuals.formPoint(caster, caster.yBodyRot) : caster.getEyePosition();
         Vec3 direction = target.direction();
-        if (formed && target.entity().isPresent()) {
-            Vec3 toward = target.entity().get().getBoundingBox().getCenter().subtract(origin);
-            direction = toward.lengthSqr() < 1e-8 ? direction : toward.normalize();
+        Optional<LivingEntity> homing = homing(context, target);
+        Optional<LivingEntity> toward = homing.isPresent() ? homing : target.entity().filter(entity -> formed);
+        if (toward.isPresent()) {
+            Vec3 offset = toward.get().getBoundingBox().getCenter().subtract(origin);
+            direction = offset.lengthSqr() < 1e-8 ? direction : offset.normalize();
         }
-        SpellProjectile.launch(context, this, origin, direction.scale(speed / SharedConstants.TICKS_PER_SECOND));
+        SpellProjectile.launch(context, this, origin, direction.scale(speed / SharedConstants.TICKS_PER_SECOND),
+                homing.orElse(null));
+    }
+
+    /**
+     * The enemy a player's projectile homes in on (aim assistance, RLM-345, ADR 0055), launched by the player
+     * themselves: for a bolt that follows the crosshair, the mob {@link AimAssist#enemy} picks where they look as it
+     * leaves; for a spell aimed at an enemy, that enemy. A mob's projectile, a direction aimed at an entity or a point,
+     * and one an area or another projectile launches fly straight.
+     */
+    private static Optional<LivingEntity> homing(EffectContext context, SpellTarget target) {
+        LivingEntity caster = context.caster();
+        if (!(caster instanceof Player player) || context.direct() != caster) {
+            return Optional.empty();
+        }
+        if (target.followsLook()) {
+            return AimAssist.enemy(player, AimAssist.REACH);
+        }
+        return target.entity().filter(entity -> entity != caster && !Targets.allied(caster, entity));
     }
 
     /**

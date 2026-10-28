@@ -1,12 +1,13 @@
 # Spell aiming
 
 > How a player aims spells: bolts that fly where the crosshair points (RLM-344), ground spells that land at the
-> crosshair with clamp cast (RLM-346), and smart auto-aim for the spells that keep a target (RLM-345). Written on
-> 2026-10-25 from Matěj's playtest of C3b (RLM-25, `qa2` of 2026-10-21, point 7). The first two are decided and built
-> ([ADR 0052](../decisions/0052-spells-aim-with-the-crosshair.md), [architecture
-> 11.2](../architecture.md#112-casting-server-authoritative) and [11.3](../architecture.md#113-spell-entities)). The
-> auto-aim is a **proposal for Matěj's review**: its rules are his draft with its holes settled, and no code is
-> written before he approves this document.
+> crosshair with clamp cast (RLM-346), and aim assistance for every spell aimed at an enemy (RLM-345). Written on
+> 2026-10-25 from Matěj's playtest of C3b (RLM-25, `qa2` of 2026-10-21, point 7); the aim assistance from his answers
+> of 2026-10-27 to this document's proposal (Q1 to Q6) and four follow-ups. All three are decided and built
+> ([ADR 0052](../decisions/0052-spells-aim-with-the-crosshair.md),
+> [ADR 0055](../decisions/0055-aim-assistance-for-a-players-enemy-spells.md), [architecture
+> 11.2](../architecture.md#112-casting-server-authoritative) and [11.3](../architecture.md#113-spell-entities)), apart
+> from the Show target key and the "Target lost" text, which RLM-468 builds.
 
 ## Goals
 
@@ -42,106 +43,102 @@ Matěj, 2026-10-21:
 - A mob under the crosshair puts it at the mob's feet. The spot is chosen when the cast begins and stays there, as in
   WoW and League of Legends, so a cast-time area is something other players can see coming.
 
-## Proposal: auto-aim for targeted spells (RLM-345)
+## Decided: aim assistance (RLM-345)
 
-### Which spells stay targeted
+Matěj's answers (2026-10-27) turned the proposal's screen-wide auto-aim into aim assistance, a narrow cone around the
+crosshair, for every spell aimed at an enemy, the bolts included (Q5): "A cast aimed slightly beside a mob targets it
+anyway, purely for QoL (far shots would be hard without it)". Aimed too far beside it, the spell misses.
 
-A spell stays targeted when its effect lands on one creature without flying there, or when it must reach one:
+### The cone
 
-| Kind | Aims | First spells (C4, architecture 11.7) |
-| --- | --- | --- |
-| Bolts and missiles that fly | crosshair (RLM-344) | Fireball, Frostbolt |
-| Areas on the ground | crosshair, clamp cast (RLM-346) | none of the first spells |
-| Melee abilities that hit an area in front | the caster's facing (RLM-399) | Slam, Reckless Strike, Shield Bash |
-| Spells on one enemy: hits, debuffs, homing missiles, a charge | **auto-aim** | Arcane Missiles (Q5) |
-| Heals and buffs on one ally | **auto-aim**, else the caster | none of the first spells |
+1. **Direct aim first:** the first mob under the crosshair, in front of every block, is the target, whatever the rules
+   below say. It is the one way to choose among several mobs, and it reaches passive mobs too (Q1).
+2. **The cone:** otherwise a hostile mob in sight whose hitbox the crosshair misses by at most its distance / 8 is the
+   target. That is about 7 degrees around the crosshair, one number that tunes it:
 
-### Candidates
+   | Distance | Allowed miss |
+   | --- | --- |
+   | right next to the player | none: the crosshair must be on the mob |
+   | 4 blocks | 0.5 block |
+   | 8 blocks | 1 block |
+   | 16 blocks | 2 blocks |
+   | 32 blocks | 4 blocks |
 
-1. **Enemies:** living creatures that are not the caster's allies and can be damaged, within the spell's range (16
-   blocks for most) and in its line of sight, on the screen.
-2. **Hostile before passive:** auto-aim picks only hostile mobs and mobs angry at the player (a wolf or an iron golem
-   that attacks). A passive or calm neutral mob (a cow, a villager, a calm enderman) is a target only when the
-   crosshair is right on it, so an auto-aimed spell never jumps to a cow beside the fight. (Q6)
-3. **Not picked:** invisible mobs, and mobs the player cannot see on the screen (behind them, off screen).
+   Matěj made up these numbers and does not know yet whether they are too strict or too generous: the playtest
+   decides.
+3. **Reach:** 32 blocks (follow-up 3: "16 seems too restrictive"). Farther away a bolt still flies, unassisted; a
+   targeted spell's reach is its range or 32 blocks, whichever is shorter.
+4. **Passive and calm neutral mobs** get no assistance at any distance; the player must aim right at them (Q6). A
+   neutral mob (a wolf, an iron golem, an enderman) counts as hostile only while it is angry at the player or targets
+   them.
+5. **No screen-wide cast zone:** the proposal's three vertical strips are dropped (follow-up 2).
 
-### The cast zone and direct aim
+### Choosing among mobs in the cone
 
-1. **Direct aim first:** a mob right under the crosshair, today's picking, is the target, whatever the rules below
-   say. It is the one way to choose among several mobs in the cast zone. (Q1)
-2. **The cast zone:** the screen in three vertical strips of the same width, the full height of the screen. While a
-   hostile candidate is in the middle strip, the target comes from the middle strip only.
-3. **Otherwise** the target comes from every candidate on the screen, the side strips included.
+The rules go **in order**, each breaking only the ties left by those above (Q2), so the player can tell why a mob was
+picked:
 
-### Choosing among candidates
-
-The draft says both "in order" and "they add up", which disagree (Q2). Proposed: the rules go **in order**, each
-deciding only between candidates the rules above it tie, which keeps the choice predictable. The draft's example (a
-boss's add close to death beats the boss) holds because the boss's adds rank above the boss while they are the point
-of the fight:
-
-1. adds the boss fight wants killed first: while the boss is invulnerable, or while its phase asks the player to
-   clear them (the boss framework, W5, says which);
+1. adds the boss fight wants killed first: while the boss is invulnerable, or while its phase asks the player to clear
+   them (the boss framework, W5, says which);
 2. a boss;
 3. close to death: below 25 % of its maximum health;
 4. the current target: the mob the player's last targeted spell aimed at, or that the player last hit, within the
    last 10 s (the in-combat time, RLM-348);
 5. a higher rank: a higher kill XP multiplier (the XP model's rank, architecture 10.2);
 6. a higher level;
-7. **added:** nearest to the crosshair (the smallest angle from the look), so a choice is always made.
+7. nearest to the crosshair: the smallest miss for its distance.
 
-An invulnerable boss is no candidate at all (it cannot be damaged), so rule 1's first case also follows from the
-candidate rules.
+### Bolts
 
-### Friendly spells
+- **An assisted bolt curves gently toward its target** (follow-up 1), so it hits a mob on the move: it leaves toward
+  the mob and turns toward it by at most 6 degrees a tick. A block still stops it, and it flies on straight once the
+  mob is dead, gone or behind it.
+- It is assisted as it leaves the caster's hands, from where the player looks then: an instant bolt at the cast, a
+  cast time's at its end, a channel's every missile (Arcane Missiles) at its tick.
+- **No mob in the cone:** a bolt flies where the crosshair points (RLM-344).
 
-1. **Direct aim first:** an ally right under the crosshair.
-2. **Heals:** otherwise the injured ally in the cast zone with the lowest share of their health; an ally at full
-   health is skipped, so a heal is never wasted while the caster bleeds. Then the caster.
-3. **Buffs and cleanses:** otherwise the ally in the cast zone nearest to the crosshair, then the caster.
+### Targeted spells
+
+- **Enemy spells** take the mob under the crosshair, else the one the cone picks; with none, they are refused ("You
+  have no target").
+- **Ally spells** (heals, buffs) take the ally under the crosshair, with the same assistance, else the caster
+  (follow-up 2).
 
 ### Sticky target
 
-1. A cast-time or channelled spell keeps the target it picked until the cast ends, even when the target leaves the
-   zone, the screen or the spell's range.
-2. The cast is interrupted when the target gets more than twice the spell's range away (32 blocks for a 16-block
-   spell, the draft's number), checked every tick as the Hewn Chanter's kept range is.
-3. Line of sight is still checked when the effects land: a target behind a wall at the end fails the cast ("No line
-   of sight"), unless the spell locks on (homing missiles do).
-4. **A target that dies during the cast:** the spell picks a new target with the same rules when its effects land,
-   instead of failing, so a friend's kill never wastes the Fireball you were about to finish. With none, the cast
-   fails as "Target lost". (Q3)
+For a cast-time or channelled spell that lands on its target:
 
-### The highlight
+1. it keeps the target until the cast ends, even when the target leaves the cone or the spell's range;
+2. it is interrupted at once when the target gets more than twice the spell's range away (32 blocks for a 16-block
+   spell);
+3. line of sight is still checked when the effects land; a spell that locks on (a homing missile) keeps its target
+   wherever it goes in the caster's dimension, as its data says;
+4. a target that dies during the cast fails it: no new target is picked (Q3). The cast bar says "Target lost" once
+   RLM-468 gives it the text; until then "You have no target".
 
-1. **During a cast:** a circle on the ground under the sticky target, in the spell school's colour, until the cast
-   ends.
-2. **Before a cast:** a fainter circle under the mob an enemy spell would pick now, at the usual 16 blocks, so the
-   player sees the target before pressing a key. (Q4)
-3. The circle is drawn by the client and is purely visual; its art comes with the spell visuals (C6).
+### The target circle
+
+1. **Only during a cast-time or channelled spell** (Q4, follow-up 4), never all the time: with one targeted spell on
+   the bar, a circle under mobs all the time would be annoying. It lies under the mob the spell will hit: the cast's
+   target, or the mob a bolt would be assisted to if it left now, so it follows the crosshair through Fireball's cast.
+2. **The Show target key** (RLM-468; Left Alt by default, rebindable): while it is held, the circle shows under the mob
+   an enemy spell would pick now, without a cast and without a targeted spell on the bar. In Matěj's words, it "can
+   also help player to understand how the targeting works, or to be sure that their targeted spell will land at the
+   target they want, and not e.g. a mob close next to it".
+3. The circle is purely visual: a ring of dust in the spell school's colour until the spell visuals (C6) give it its
+   art.
 
 ### Built so
 
-- The client picks the target, since only it knows the screen (field of view, aspect ratio). It sends the entity in
-  `CastSpellPayload`, as today.
-- The server checks what it can: the range, line of sight, an enemy that can be damaged (or an ally), and that the
-  target lies within the widest view a client can have, so a modified client cannot target behind the player.
-- The ranking is a pure function over what the client knows of each candidate (health share, boss and add flags, the
-  current target, rank, level, angle), with JUnit for the ranking, the cast zone and the sticky target. A GameTest
-  covers the 32-block interrupt.
-- Mob health is synced already, and so are mob levels. The boss and add flags come with W5's boss framework.
-
-## Open questions for Matěj
-
-1. **Direct aim:** should a mob right under the crosshair always win, as proposed? Without it, the player cannot
-   choose between two mobs in the middle strip.
-2. **In order or added up?** Proposed: in order, each rule deciding only ties of the rules above, so the player can
-   tell why a mob was picked. Added up as points (say 6 for a boss down to 1 for a higher level) would let a current
-   target of a higher rank beat a mob close to death.
-3. **A target that dies mid-cast:** pick a new one (proposed), or fail the cast as today?
-4. **The highlight before a cast:** show the faint circle all the time (proposed), only while a spell key is held, or
-   only during a cast?
-5. **The split:** are Fireball and Frostbolt crosshair bolts, and Arcane Missiles an auto-aimed channel of homing
-   missiles, as proposed? Or are Arcane Missiles crosshair missiles too?
-6. **Passive mobs:** auto-aim skips them unless the crosshair is right on them (proposed). Should a cow under the
-   crosshair be hit at all, or never by a targeted spell?
+- **The server picks**, not the client as the proposal had it: the cone needs only the player's look, which the server
+  has, and a cast-time or channelled bolt leaves at a moment only the server sees. The client still names the entity
+  under its crosshair for a targeted spell (direct aim), and the server picks in the cone when it names none.
+- The server checks what a client names: the range, line of sight, an enemy that can be damaged (or an ally), and that
+  the target lies in front of the player, the widest view a client can have, so a modified client cannot target behind
+  the player.
+- The ranking is a pure function over what the server knows of each candidate (the add and boss flags, the health
+  share, the current target, rank, level, the miss for its distance), with JUnit for the cone, the ranking and the
+  passive-mob rule; GameTests cover assisted bolts beside the crosshair, beyond the cone and after a moving mob, and
+  the sticky target.
+- The server names the circle's mob to the caster's client during the cast, so the circle shows exactly where the
+  spell will go.

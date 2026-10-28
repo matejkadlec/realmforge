@@ -12,6 +12,7 @@ import io.github.matejkadlec.realmforge.spell.net.CastEndedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastRefusedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastSpellPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastStartedPayload;
+import io.github.matejkadlec.realmforge.spell.net.CastTargetPayload;
 import io.github.matejkadlec.realmforge.spell.net.SetSpellBarSlotPayload;
 import io.github.matejkadlec.realmforge.world.DarkVision;
 import io.github.matejkadlec.realmforge.world.net.RealmRefusedPayload;
@@ -81,6 +82,7 @@ public final class RealmforgeNetwork {
         registrar.playToClient(CastStartedPayload.TYPE, CastStartedPayload.STREAM_CODEC);
         registrar.playToClient(CastEndedPayload.TYPE, CastEndedPayload.STREAM_CODEC);
         registrar.playToClient(CastRefusedPayload.TYPE, CastRefusedPayload.STREAM_CODEC);
+        registrar.playToClient(CastTargetPayload.TYPE, CastTargetPayload.STREAM_CODEC);
         registrar.playToClient(RealmRefusedPayload.TYPE, RealmRefusedPayload.STREAM_CODEC);
     }
 }

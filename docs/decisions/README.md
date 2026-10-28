@@ -66,6 +66,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0052](0052-spells-aim-with-the-crosshair.md) | Spells aim with the crosshair: bolts fly where it points, ground spells clamp to their range | Accepted |
 | [0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md) | Target dummies in the pack, WorldEdit for building only, and no FTB Teams parties | Accepted (amends 0013 and 0044) |
 | [0054](0054-skyhearth-and-deepholm-amend-asgard-and-atlantis.md) | Skyhearth and Deepholm amend Asgard and Atlantis | Accepted (amends 0045) |
+| [0055](0055-aim-assistance-for-a-players-enemy-spells.md) | Aim assistance for a player's enemy spells: a cone around the crosshair, homing bolts, a sticky target | Accepted (amends 0052) |
 
 ## Open questions (not decided)
 

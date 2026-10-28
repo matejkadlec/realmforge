@@ -16,11 +16,13 @@ import io.github.matejkadlec.realmforge.spell.CastResult;
 import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.SpellAim;
 import io.github.matejkadlec.realmforge.spell.SpellArea;
+import io.github.matejkadlec.realmforge.spell.SpellBar;
 import io.github.matejkadlec.realmforge.spell.SpellCaster;
 import io.github.matejkadlec.realmforge.spell.SpellProjectile;
 import io.github.matejkadlec.realmforge.spell.SpellTarget;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
@@ -37,11 +39,13 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Spell aiming (RLM-344, RLM-346; architecture 11.2, 11.3). Players cast the test spells of {@code content/spells/}:
- * {@code test_forward_missile} (an instant frost bolt along the caster's look, 20 blocks a second, no lifetime, 3
- * damage, shattering like ice where it hits), {@code test_slow_missile} (the same after a 1 s cast, 4 damage, a 2 s
- * lifetime) and {@code test_scorch} (an area at a ground point within 16 blocks). They aim as the spell bar does: at
- * nothing, so the bolt flies where the caster looks and the area lands where it looks, or at an entity or a point.
+ * Spell aiming (RLM-344, RLM-346) and aim assistance (RLM-345; architecture 11.2, 11.3). Players cast the test
+ * spells of {@code content/spells/}: {@code test_forward_missile} (an instant frost bolt along the caster's look, 20
+ * blocks a second, no lifetime, 3 damage, shattering like ice where it hits), {@code test_slow_missile} (the same after
+ * a 1 s cast, 4 damage, a 2 s lifetime), {@code test_scorch} (an area at a ground point within 16 blocks), and the
+ * targeted {@code test_bolt} (instant, 6 damage) and {@code test_slow_bolt} (a 2 s cast, 10 damage), both 16 blocks.
+ * They aim as the spell bar does: at nothing, so the bolt flies where the caster looks and the area lands where it
+ * looks, or at an entity or a point.
  *
  * <p>A bolt without a lifetime flies until something stops it, so the tests that could miss put a wall behind their
  * mobs: a stray bolt must not reach a test beside this one.
@@ -200,6 +204,141 @@ public final class SpellAimingGameTests {
         });
     }
 
+    /**
+     * Aim assistance (RLM-345): a bolt cast where the crosshair points goes to a hostile mob beside it. At 12 blocks
+     * the cone allows 1.5 blocks, and the husk's near side is 0.7 blocks beside the crosshair; the bolt homes in on it.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17)
+    public static void anAssistedBoltHitsAHostileMobBesideTheCrosshair(GameTestHelper helper) {
+        ServerPlayer player = assistedCaster(helper, "qa-assist-beside");
+        Husk husk = husk(helper, new BlockPos(9, 1, 12));
+        SpellProjectile bolt = castBolt(helper, player);
+        helper.assertValueEqual(bolt.homing(), Optional.<LivingEntity>of(husk), "the bolt homes in on the husk");
+        helper.runAfterDelay(20, () -> {
+            assertHealth(helper, husk, HEALTH - 3, "the husk beside the crosshair");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Beyond the cone (a husk 2.7 blocks beside the crosshair at 12 blocks, where the cone allows 1.5) and for a
+     * passive mob in it (a cow 0.55 blocks beside it at 8 blocks, Q6), a bolt gets no assistance: it flies straight
+     * where the crosshair points and crashes into the wall behind them.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17)
+    public static void aBoltGetsNoAssistanceBeyondTheConeOrTowardAPassiveMob(GameTestHelper helper) {
+        ServerPlayer player = assistedCaster(helper, "qa-assist-beyond");
+        Husk husk = husk(helper, new BlockPos(11, 1, 12));
+        Cow cow = helper.spawn(EntityType.COW, new BlockPos(9, 1, 8));
+        cow.setNoAi(true);
+        cow.snapTo(helper.absoluteVec(new Vec3(9.5, 1, 8.5)), 0, 0);
+        SpellProjectile bolt = castBolt(helper, player);
+        helper.assertValueEqual(bolt.homing(), Optional.<LivingEntity>empty(), "the bolt homes in on");
+        helper.runAfterDelay(20, () -> {
+            assertHealth(helper, husk, HEALTH, "the husk beyond the cone");
+            helper.assertValueEqual(cow.getHealth(), cow.getMaxHealth(), "the cow's health");
+            helper.assertValueEqual(spellEntities(helper, SpellProjectile.class).size(), 0, "bolts in flight");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * An assisted bolt follows a mob on the move: the husk walks east 3 blocks a second, so a straight bolt at where
+     * it stood would miss it by more than a block when it gets there; the homing bolt curves after it and hits.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17)
+    public static void anAssistedBoltFollowsAMovingMob(GameTestHelper helper) {
+        ServerPlayer player = assistedCaster(helper, "qa-assist-moving");
+        Husk husk = husk(helper, new BlockPos(9, 1, 12));
+        Vec3 start = husk.position();
+        long cast = helper.getLevel().getGameTime();
+        castBolt(helper, player);
+        helper.onEachTick(() -> {
+            long ticks = Math.min(helper.getLevel().getGameTime() - cast, 20);
+            husk.setPos(start.x + 0.15 * ticks, start.y, start.z);
+        });
+        helper.succeedWhen(() -> {
+            assertHealth(helper, husk, HEALTH - 3, "the moving husk");
+            logout(player);
+        });
+    }
+
+    /**
+     * A player's targeted cast-time spell keeps its target beyond the spell's range (the sticky target, RLM-345):
+     * Test Slow Bolt (16 blocks, 2 s) cast at a husk 6 blocks away lands after the husk went 22 blocks away. A second
+     * cast ends at once, out of range, when the husk goes more than twice the range away (40 blocks up).
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 200)
+    public static void aStickyTargetIsKeptBeyondTheRangeAndLostBeyondTwiceIt(GameTestHelper helper) {
+        ServerPlayer player = caster(helper, "qa-assist-sticky");
+        player.snapTo(helper.absoluteVec(new Vec3(0.5, 1, 0.5)), 0, 0);
+        learn(helper, player, GeneratedSpells.TEST_SLOW_BOLT);
+        Husk husk = husk(helper, new BlockPos(0, 1, 6));
+        Vec3 near = husk.position();
+        CastGameTests.assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, husk);
+        helper.runAfterDelay(5, () -> husk.teleportTo(near.x + 16, near.y, near.z + 10));
+        helper.runAfterDelay(50, () -> {
+            assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.COMPLETED);
+            assertHealth(helper, husk, HEALTH - 10, "the husk 22 blocks away took the bolt");
+            Spells.resetCooldowns(player);
+            husk.teleportTo(near.x, near.y, near.z);
+            CastGameTests.assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, husk);
+        });
+        helper.runAfterDelay(55, () -> husk.teleportTo(near.x, near.y + 40, near.z));
+        helper.runAfterDelay(57, () -> {
+            assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.OUT_OF_RANGE);
+            assertHealth(helper, husk, HEALTH - 10, "the second bolt never landed");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * A sticky target that dies during the cast ends it at once, the target lost, and the cast picks no other: Q3.
+     * Its text is still "You have no target" (RLM-468 gives it its own).
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17)
+    public static void aStickyTargetThatDiesEndsTheCastAtOnce(GameTestHelper helper) {
+        ServerPlayer player = caster(helper, "qa-assist-dies");
+        learn(helper, player, GeneratedSpells.TEST_SLOW_BOLT);
+        Husk husk = husk(helper, new BlockPos(2, 1, 6));
+        Husk other = husk(helper, new BlockPos(3, 1, 6));
+        CastGameTests.assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, husk);
+        helper.runAfterDelay(5, () -> husk.kill(helper.getLevel()));
+        helper.runAfterDelay(7, () -> {
+            assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.TARGET_LOST);
+            assertHealth(helper, other, HEALTH, "the husk beside it");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * From the spell bar, a targeted spell whose client named no target goes to the hostile mob beside the crosshair
+     * (Test Bolt, 6 damage; 0.7 blocks beside at 8 blocks, where the cone allows 1). A target the client names behind
+     * the player is refused: the server checks the widest view a client can have.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17)
+    public static void theSpellBarAssistsATargetedSpellAndRefusesATargetBehindThePlayer(GameTestHelper helper) {
+        ServerPlayer player = caster(helper, "qa-assist-bar");
+        player.snapTo(helper.absoluteVec(new Vec3(8.5, 1, 4.5)), 0, 0);
+        learn(helper, player, GeneratedSpells.TEST_BOLT);
+        Husk ahead = husk(helper, new BlockPos(9, 1, 12));
+        Husk behind = husk(helper, new BlockPos(8, 1, 1));
+        CastResult assisted = SpellBar.cast(player, GeneratedSpells.TEST_BOLT, Optional.empty(), false);
+        helper.assertTrue(assisted.success(), "test_bolt was refused: " + assisted.failure());
+        helper.assertTrue(assisted.entity().orElse(null) == ahead, "it went to " + assisted.target());
+        assertHealth(helper, ahead, HEALTH - 6, "the husk beside the crosshair");
+        Spells.resetCooldowns(player);
+        CastResult refused = SpellBar.cast(player, GeneratedSpells.TEST_BOLT, Optional.of(behind.getId()), false);
+        helper.assertValueEqual(refused.failureOrNull(), CastFailure.INVALID_TARGET, "a target behind the player");
+        assertHealth(helper, behind, HEALTH, "the husk behind the player");
+        logout(player);
+        helper.succeed();
+    }
+
     /** A ground spell aimed at the floor within its range lands where the caster looks. */
     @QaGameTest(template = QaGameTests.PLATFORM_17X17)
     public static void aGroundSpellLandsWhereTheCasterLooks(GameTestHelper helper) {
@@ -297,6 +436,22 @@ public final class SpellAimingGameTests {
                 CastFailure.NO_LINE_OF_SIGHT, "a point in range behind a wall");
         logout(player);
         helper.succeed();
+    }
+
+    /**
+     * A player with {@code test_forward_missile} at the 17 x 17 platform's north edge, in the middle, facing south, and
+     * a wall across the platform 15 blocks ahead, which stops every bolt that misses.
+     */
+    private static ServerPlayer assistedCaster(GameTestHelper helper, String name) {
+        ServerPlayer player = caster(helper, name);
+        player.snapTo(helper.absoluteVec(new Vec3(8.5, 1, 0.5)), 0, 0);
+        learn(helper, player, GeneratedSpells.TEST_FORWARD_MISSILE);
+        for (int x = 0; x < 17; x++) {
+            for (int y = 1; y <= 4; y++) {
+                helper.setBlock(new BlockPos(x, y, 15), Blocks.STONE);
+            }
+        }
+        return player;
     }
 
     /** A player with {@code test_scorch} at the 17 x 17 platform's north edge, in the middle, facing south. */
