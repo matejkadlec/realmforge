@@ -256,19 +256,22 @@ public final class RealmPortals {
      * The sealstone's glow, every server tick (RLM-406, Matěj: "the Sealstone block would smoothly light up if player
      * with Signet item in hand"): one light level a tick towards {@link SealstoneBlock#MAX_GLOW} while a player holding
      * a signet that lights it ({@link #lightsSealstone}) in either hand stands within {@link #GLOW_RADIUS} of its centre,
-     * and towards dark otherwise, so it rises or fades over 15 ticks, about a second. Spectators count for nothing. The
-     * new state goes to clients without shape updates, so nothing next to it reacts to the glow.
+     * and towards dark otherwise, so it rises or fades over 15 ticks, about a second. It stays dark where no signet
+     * opens a portal ({@link #signetsOpenPortalsIn}, RLM-458). Spectators count for nothing. The new state goes to
+     * clients without shape updates, so nothing next to it reacts to the glow.
      */
     static void tickGlow(Level level, BlockPos pos, BlockState state, SealstoneBlockEntity entity) {
-        Optional<Identifier> destination = isLit(level, pos) ? entity.storedDestination() : Optional.empty();
-        Vec3 centre = Vec3.atCenterOf(pos);
         boolean near = false;
-        for (Player player : level.players()) {
-            if (!player.isSpectator() && player.distanceToSqr(centre) <= GLOW_RADIUS * GLOW_RADIUS
-                    && (lightsSealstone(level, player.getMainHandItem(), destination)
-                            || lightsSealstone(level, player.getOffhandItem(), destination))) {
-                near = true;
-                break;
+        if (signetsOpenPortalsIn(level)) {
+            Optional<Identifier> destination = isLit(level, pos) ? entity.storedDestination() : Optional.empty();
+            Vec3 centre = Vec3.atCenterOf(pos);
+            for (Player player : level.players()) {
+                if (!player.isSpectator() && player.distanceToSqr(centre) <= GLOW_RADIUS * GLOW_RADIUS
+                        && (lightsSealstone(level, player.getMainHandItem(), destination)
+                                || lightsSealstone(level, player.getOffhandItem(), destination))) {
+                    near = true;
+                    break;
+                }
             }
         }
         int glow = state.getValue(SealstoneBlock.GLOW);
@@ -277,6 +280,17 @@ public final class RealmPortals {
             level.setBlock(pos, state.setValue(SealstoneBlock.GLOW, glow + Integer.signum(target - glow)),
                     Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
         }
+    }
+
+    /**
+     * Whether a signet opens a portal in {@code level}'s dimension, the rule {@link #useSignet} applies first: only in a
+     * dimension with a realm entry that is no realm, so in Overworld. Inside a realm a frame opens only back to
+     * Overworld, and the instances, the Nether and other mods' dimensions have no entry (RLM-458).
+     */
+    static boolean signetsOpenPortalsIn(Level level) {
+        RegistryAccess registries = level.registryAccess();
+        return Realms.entry(registries, level.dimension()).isPresent()
+                && !Realms.isRealm(registries, level.dimension());
     }
 
     /**

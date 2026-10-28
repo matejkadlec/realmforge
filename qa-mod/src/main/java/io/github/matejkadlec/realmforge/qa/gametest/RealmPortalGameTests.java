@@ -275,6 +275,40 @@ public final class RealmPortalGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * Done when of RLM-458: a sealstone inside a realm stays dark for every signet, because no signet opens a portal
+     * there. A player holding the stone realm's signet in both hands stands 2 blocks in front of a dark frame in the
+     * stone realm. A glow set by hand fades, which shows that the sealstone ticks there and aims for dark, and it then
+     * stays dark.
+     */
+    @QaGameTest(timeoutTicks = 200)
+    public static void aSealstoneInARealmStaysDarkForEverySignet(GameTestHelper helper) {
+        RealmExpectation stone = RealmGameTests.stone();
+        ServerLevel realm = RealmGameTests.realm(helper, stone);
+        PortalFrame.Frame frame = new PortalFrame.Frame(new BlockPos(2_340, REALM_FLOOR, 2_340), Direction.Axis.X);
+        clearSpot(realm, frame);
+        buildFrame(realm, frame);
+        BlockPos sealstone = frame.sealstone();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-realm-glow");
+        RealmGameTests.award(helper, player, stone.unlockAdvancement());
+        Vec3 near = Vec3.atBottomCenterOf(frame.at(1, 0).relative(frame.front(), 2));
+        helper.assertTrue(player.teleportTo(realm, near.x, near.y, near.z, Set.of(), 0.0F, 0.0F, true),
+                "the unlocked player enters the realm");
+        player.setItemInHand(InteractionHand.MAIN_HAND, signet(stone));
+        player.setItemInHand(InteractionHand.OFF_HAND, signet(stone));
+        realm.setBlockAndUpdate(sealstone,
+                realm.getBlockState(sealstone).setValue(SealstoneBlock.GLOW, SealstoneBlock.MAX_GLOW));
+        helper.startSequence()
+                .thenWaitUntil(() -> assertGlow(helper, realm, sealstone, 0,
+                        "a glow set by hand fades inside the realm, with the realm's signet near"))
+                .thenExecuteAfter(20, () -> {
+                    assertGlow(helper, realm, sealstone, 0,
+                            "the dark frame inside the realm stays dark for the realm's signet");
+                    realm.getServer().getPlayerList().remove(player);
+                })
+                .thenSucceed();
+    }
+
     // Travel -------------------------------------------------------------------------------------------------------
 
     /**

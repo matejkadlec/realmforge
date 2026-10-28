@@ -2117,7 +2117,9 @@ loot: realmforge:boss/hollow_warden
     hand never blocks it (RLM-133). Dimensions without an entry (the instances, the Nether, other mods') refuse. An
     incomplete frame is marked with red dust for 3 seconds. Messages go to the action bar. The sealstone glows while
     a player holding a signet that lights it, in either hand, stands within 5 blocks of its centre (RLM-406): the
-    signet of the realm its lit portal opens onto, or any signet while the portal is dark. A server-side block entity
+    signet of the realm its lit portal opens onto, or any signet while the portal is dark. It stays dark where no
+    signet opens a portal, the dimension rule the signet's use applies first (`RealmPortals.signetsOpenPortalsIn`:
+    a dimension with an entry that is no realm, so Overworld; RLM-458). A server-side block entity
     ticker (`RealmPortals.tickGlow`) moves its `glow` one level a tick towards 15 or 0, so it rises or fades over 15
     ticks; the block state is its light (`lightLevel`), so every player sees it, and it is set without shape updates;
   - **the portal block:** like vanilla's nether portal it has an axis and no collision, and checks its frame on every

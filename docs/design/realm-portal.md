@@ -126,11 +126,13 @@ hoppers have nothing to take.
 - **Who may switch a portal:** anyone holding a signet they are eligible to use (Matěj, RLM-128). Unlocks are per
   player ([Multiplayer](#multiplayer)), so switching changes only where the portal leads, never who may enter.
 - **It glows near a signet** (Matěj, 2026-10-24, RLM-406: "the Sealstone block would smoothly light up if player with
-  Signet item in hand"; chapter 1's "the gate lights"). While a player holding a signet in either hand stands within
-  5 blocks of its centre, the sealstone lights up, one light level a tick to light level 15, so it rises over 15
-  ticks, about a second, and fades the same way once they walk away or put the signet away. A portal open onto a
-  realm glows for that realm's signet; a dark one, as a frame that was never opened is, for any signet; a return
-  portal, open onto Overworld, which has no signet, stays dark. The glow is the block's own light (a block state,
+  Signet item in hand"; chapter 1's "the gate lights"). While a player holding a signet in either hand stands within 5
+  blocks of its centre, the sealstone lights up, one light level a tick to light level 15, so it rises over 15 ticks,
+  about a second, and fades the same way once they walk away or put the signet away. A portal open onto a realm glows
+  for that realm's signet; a dark one, as a frame that was never opened is, for any signet; a return portal, open onto
+  Overworld, which has no signet, stays dark. It glows only where a signet opens a portal, so in Overworld: a
+  sealstone inside a realm, where every signet is refused, and one in a dimension without an entry (the instances, the
+  Nether, other mods'), stays dark for every signet (RLM-458). The glow is the block's own light (a block state,
   `glow`), so every player sees it, also on a dedicated server; spectators light nothing. The radius, the signet rule
   and the full light level are proposals for Matěj's playtest. Its look, an emissive texture, comes with the frame's
   retexture (RLM-301).
@@ -694,6 +696,7 @@ dimension rules and access:
     not take them back, until they stepped out for half a second and in again (RLM-335);
   - the sealstone glows while a player holding a signet stands within 5 blocks, rising over 15 ticks, fades once
     they step away, stays dark with empty hands, and a return portal stays dark for a realm's signet (RLM-406);
+    a dark frame inside the stone realm stays dark for that realm's signet (RLM-458);
     a mob moved into or out of a realm with
     `Entity#teleport(TeleportTransition)`, and one moved with `/tp` (`Entity#teleportTo`), stays where it is
     (RLM-133), while a mob teleported within the realm moves;
