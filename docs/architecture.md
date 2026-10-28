@@ -3353,8 +3353,10 @@ can be sent to it. `PlayerList#respawn(player, false, ...)` stands in for a resp
 copy-on-death attachments (`PlayerStateGameTests`, and `WorldRulesGameTests` for Dark Vision), and
 `PlayerList#respawn(player, true, ...)` for leaving the End. The connection never ticks the player, so a test that
 needs player ticks plays them with `ServerPlayer#doTick`, the call the network handler makes once per tick
-(`StatsGameTests`). For the same reason a moved fake player's entity tracking follows only when the test calls
-`ServerChunkCache#move`, the call the network handler makes when a client's move arrives (`BossBarGameTests`). A new
+(`StatsGameTests`). For the same reason a fake player tracks an entity (`Entity#startSeenByPlayer`) only when the test
+plays its client's part every tick, as `BossBarGameTests` does: acknowledging the chunk batches the server sent
+(`PlayerChunkSender#onChunkBatchReceivedByClient`; without an answer the server stops after one batch) and reporting
+where it stands (`ServerChunkCache#move`, the call the network handler makes when a client's move arrives). A new
 player logs in at the world spawn, where the GameTest server starts its grid of tests, so a
 tick there can put it inside another test's blocks and suffocate it: tests log new players in with
 `QaPlayers#loginOnPlatform`, which puts them on their own test's platform, and move a player a respawn puts back at
