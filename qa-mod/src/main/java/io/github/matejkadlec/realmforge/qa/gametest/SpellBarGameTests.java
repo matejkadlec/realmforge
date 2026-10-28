@@ -25,15 +25,15 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.monster.zombie.Husk;
 
 /**
- * C3b (RLM-25): the spell bar's server side (architecture 11.2 step 1, 11.6). A learned spell takes the bar's first
- * empty slot; the spellbook moves, swaps and empties slots; a cast from the bar may replace the cast in progress, but
+ * C3b (RLM-25): the spell bar's server side (architecture 11.2 step 1, 11.6). A newly learned spell takes the bar's
+ * first empty slot, and learning it again leaves the bar alone (RLM-374); the spellbook moves, swaps and empties slots; a cast from the bar may replace the cast in progress, but
  * only once every other check passed, and never with the same spell; the bar's view knows what the player can afford.
  */
 public final class SpellBarGameTests {
     private SpellBarGameTests() {
     }
 
-    /** A learned spell goes into the first empty slot, once; a mob's spell never does. */
+    /** A newly learned spell goes into the first empty slot, once; a mob's spell never does. */
     @QaGameTest
     public static void aLearnedSpellTakesTheFirstEmptySlot(GameTestHelper helper) {
         ServerPlayer player = CastGameTests.caster(helper, "qa-bar-learn");
@@ -41,9 +41,34 @@ public final class SpellBarGameTests {
         learn(helper, player, GeneratedSpells.TEST_MEND, 1);
         learn(helper, player, GeneratedSpells.TEST_NPC_BOLT, 1);
         learn(helper, player, GeneratedSpells.TEST_BOLT, 2);
-        helper.assertValueEqual(player.getData(SpellAttachments.SPELLBOOK).bar(),
-                Map.of(0, GeneratedSpells.TEST_BOLT, 1, GeneratedSpells.TEST_MEND),
+        helper.assertValueEqual(bar(player), Map.of(0, GeneratedSpells.TEST_BOLT, 1, GeneratedSpells.TEST_MEND),
                 "bolt in the first slot, mend in the second, the creature's bolt nowhere, bolt once");
+        logout(player);
+        helper.succeed();
+    }
+
+    /**
+     * RLM-374: learning a known spell again, at a higher level (a class level, C4, or a specialization point, C5),
+     * never changes the bar: a spell taken off stays off, a moved one stays where the player put it. A spell the
+     * player did not know still takes the first empty slot.
+     */
+    @QaGameTest
+    public static void aKnownSpellLearnedAgainLeavesTheBarAsArranged(GameTestHelper helper) {
+        ServerPlayer player = CastGameTests.caster(helper, "qa-bar-relearn");
+        learn(helper, player, GeneratedSpells.TEST_BOLT, 1);
+        learn(helper, player, GeneratedSpells.TEST_MEND, 1);
+        helper.assertTrue(Spells.placeOnBar(player, 0, Optional.empty()), "bolt taken off the bar");
+        helper.assertTrue(Spells.placeOnBar(player, 4, Optional.of(GeneratedSpells.TEST_MEND)), "mend moved to 4");
+        learn(helper, player, GeneratedSpells.TEST_BOLT, 2);
+        learn(helper, player, GeneratedSpells.TEST_MEND, 2);
+        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
+        helper.assertValueEqual(book.bar(), Map.of(4, GeneratedSpells.TEST_MEND),
+                "bolt stays off and mend stays in slot 4 after both rank up");
+        helper.assertValueEqual(book.level(GeneratedSpells.TEST_BOLT), Optional.of(2), "bolt is known at level 2");
+        helper.assertValueEqual(book.level(GeneratedSpells.TEST_MEND), Optional.of(2), "mend is known at level 2");
+        learn(helper, player, GeneratedSpells.TEST_SCORCH, 1);
+        helper.assertValueEqual(bar(player), Map.of(0, GeneratedSpells.TEST_SCORCH, 4, GeneratedSpells.TEST_MEND),
+                "a new spell still takes the first empty slot");
         logout(player);
         helper.succeed();
     }

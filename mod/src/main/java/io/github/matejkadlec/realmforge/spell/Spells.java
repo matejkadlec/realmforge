@@ -22,18 +22,20 @@ public final class Spells {
     }
 
     /**
-     * Teaches {@code player} {@code spell} at {@code level}, replacing the level they knew, and puts it into the spell
-     * bar's first empty slot unless it is on the bar already (C3b, RLM-25). The level must lie between 1 and the spell's
-     * {@code max_level}. Character (C4: spells by class level) and talents (C5) call this.
+     * Teaches {@code player} {@code spell} at {@code level}, replacing the level they knew. A spell they did not know
+     * goes into the spell bar's first empty slot (C3b, RLM-25); learning a known one again, at any level, leaves the
+     * bar as the player arranged it (RLM-374), so a rank-up never brings back a spell they took off. The level must lie
+     * between 1 and the spell's {@code max_level}. Character (C4: spells by class level) and talents (C5) call this.
      */
     public static void learn(Player player, Holder.Reference<Spell> spell, int level) {
         if (level < 1 || level > spell.value().maxLevel()) {
             throw new IllegalArgumentException("Spell level " + level + " is outside 1 to " + spell.value().maxLevel()
                     + " for " + spell.key().identifier());
         }
-        Spellbook book = player.getData(SpellAttachments.SPELLBOOK).withSpell(spell.key(), level);
-        player.setData(SpellAttachments.SPELLBOOK,
-                spell.value().npcOnly() ? book : book.withSpellOnBar(spell.key()));
+        Spellbook old = player.getData(SpellAttachments.SPELLBOOK);
+        Spellbook book = old.withSpell(spell.key(), level);
+        boolean placed = old.level(spell.key()).isEmpty() && !spell.value().npcOnly();
+        player.setData(SpellAttachments.SPELLBOOK, placed ? book.withSpellOnBar(spell.key()) : book);
     }
 
     /**
