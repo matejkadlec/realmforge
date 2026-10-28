@@ -7,6 +7,11 @@ tags:
   - "straight"
 weight: 1
 max_per_layout: 3
+openings:
+  north: [[6, 1, 5]]
+  east: [[7, 1, 6]]
+  south: [[6, 1, 7]]
+  west: [[5, 1, 6]]
 source:
   file: "husk_temple.nbt"
   format: nbt

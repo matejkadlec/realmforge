@@ -157,6 +157,32 @@
       "title": "Near Start",
       "type": "boolean"
     },
+    "openings": {
+      "additionalProperties": {
+        "items": {
+          "items": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "minItems": 1,
+        "type": "array"
+      },
+      "description": "Sides of the template (as saved, before any turn) that a run may open, each with the blocks it turns to air there, e.g. {north: [[6, 1, 5]]}: the block in front of a spawner the room hides. A run opens one side at random among those that are not the side it enters the room from (RLM-412), so list two sides or more. Positions hold plain blocks: no connector, spawner, chest or barrel.",
+      "propertyNames": {
+        "enum": [
+          "north",
+          "east",
+          "south",
+          "west"
+        ]
+      },
+      "title": "Openings",
+      "type": "object"
+    },
     "pools": {
       "description": "The room pools the room joins (e.g. realmforge:stone_vault): a dungeon type is built from the rooms of one pool. Empty for a room that is not used yet, such as a fresh import.",
       "items": {

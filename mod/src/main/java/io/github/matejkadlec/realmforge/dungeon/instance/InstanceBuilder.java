@@ -92,7 +92,7 @@ final class InstanceBuilder {
                 .setIgnoreEntities(false).setKnownShape(true).addProcessor(BlockIgnoreProcessor.STRUCTURE_BLOCK)
                 .addProcessor(JigsawReplacementProcessor.INSTANCE).addProcessor(AttachedEntityProcessor.INSTANCE);
         if (!room.swaps().isEmpty()) {
-            settings.addProcessor(new ContainerSwapProcessor(room.swaps()));
+            settings.addProcessor(new BlockSwapProcessor(room.swaps()));
         }
         return settings;
     }

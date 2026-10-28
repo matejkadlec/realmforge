@@ -18,22 +18,23 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * Places a room's dropped containers as the blocks they leave behind (RLM-365, {@link RoomPlacement#swaps}): a block
- * of the template at a swapped position comes out as the swap's state, without the container's data. It works on the
- * template's own positions, so a room cut into chunk slices swaps each block in the slice that places it.
+ * Places a room's swaps ({@link RoomPlacement#swaps}): the blocks its dropped containers leave behind (RLM-365) and the
+ * air of the side it opens (RLM-412). A block of the template at a swapped position comes out as the swap's state,
+ * without the block's data. It works on the template's own positions, so a room cut into chunk slices swaps each
+ * block in the slice that places it.
  */
-public final class ContainerSwapProcessor extends StructureProcessor {
+public final class BlockSwapProcessor extends StructureProcessor {
     private static final DeferredRegister<StructureProcessorType<?>> TYPES =
             DeferredRegister.create(Registries.STRUCTURE_PROCESSOR, Realmforge.MOD_ID);
-    private static final MapCodec<ContainerSwapProcessor> CODEC = RoomPlacement.Swap.CODEC.listOf().fieldOf("swaps")
-            .xmap(ContainerSwapProcessor::new, processor -> processor.swaps.entrySet().stream()
+    private static final MapCodec<BlockSwapProcessor> CODEC = RoomPlacement.Swap.CODEC.listOf().fieldOf("swaps")
+            .xmap(BlockSwapProcessor::new, processor -> processor.swaps.entrySet().stream()
                     .map(entry -> new RoomPlacement.Swap(entry.getKey(), entry.getValue())).toList());
-    private static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<ContainerSwapProcessor>>
-            TYPE = TYPES.register("container_swap", () -> () -> CODEC);
+    private static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<BlockSwapProcessor>>
+            TYPE = TYPES.register("block_swap", () -> () -> CODEC);
 
     private final Map<BlockPos, BlockState> swaps = new HashMap<>();
 
-    ContainerSwapProcessor(List<RoomPlacement.Swap> swaps) {
+    BlockSwapProcessor(List<RoomPlacement.Swap> swaps) {
         swaps.forEach(swap -> this.swaps.put(swap.pos(), swap.state()));
     }
 

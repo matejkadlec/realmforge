@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, Field, RootModel, StringConstraints
+from pydantic import AfterValidator, Field, NonNegativeInt, RootModel, StringConstraints
 
 from realmforge_tools.schema.common import StrictModel, UniqueResourceIds
 
@@ -48,6 +48,24 @@ ChanceTable = Annotated[
         description="The chance in percent of each count (0 to 64), adding up to 100, e.g. {1: 75, 2: 20, 3: 5}.",
     ),
     AfterValidator(_whole),
+]
+
+
+TemplatePos = Annotated[list[NonNegativeInt], Field(min_length=3, max_length=3)]
+Side = Literal["north", "east", "south", "west"]
+
+
+def _sides(openings: dict[Side, list[TemplatePos]]) -> dict[Side, list[TemplatePos]]:
+    if len(openings) == 1:
+        raise ValueError(
+            "a run opens a side that is not the room's way in, so a room lists two sides or more"
+        )
+    return openings
+
+
+Openings = Annotated[
+    dict[Side, Annotated[list[TemplatePos], Field(min_length=1)]],
+    AfterValidator(_sides),
 ]
 
 
@@ -118,6 +136,13 @@ class RoomDef(StrictModel):
         default=None,
         description="How many of its chests and barrels a dungeon places, where the dungeon type's table for its "
         "role does not fit it (RLM-365). A kind it leaves out follows the dungeon type.",
+    )
+    openings: Openings = Field(
+        default_factory=dict,
+        description="Sides of the template (as saved, before any turn) that a run may open, each with the blocks "
+        "it turns to air there, e.g. {north: [[6, 1, 5]]}: the block in front of a spawner the room hides. A run "
+        "opens one side at random among those that are not the side it enters the room from (RLM-412), so list "
+        "two sides or more. Positions hold plain blocks: no connector, spawner, chest or barrel.",
     )
     source: RoomSource | None = Field(default=None, description="Set for an imported room.")
 

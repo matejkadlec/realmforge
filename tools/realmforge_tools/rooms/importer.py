@@ -93,7 +93,7 @@ DOOR = "realmforge:door"
 SHAFT = "realmforge:shaft"
 EMPTY_POOL = "minecraft:empty"
 # Sidecar fields a re-import keeps besides pools, tags and weight: how dungeons treat the room.
-KEPT_RULES = ("max_per_layout", "near_start", "explosion_breaks", "entry", "containers")
+KEPT_RULES = ("max_per_layout", "near_start", "explosion_breaks", "entry", "containers", "openings")
 # The seed a container keeps next to its loot table (RandomizableContainer.LOOT_TABLE_SEED_TAG).
 _LOOT_TABLE_SEED = "LootTableSeed"
 SPAWNER = "minecraft:spawner"
@@ -664,6 +664,10 @@ def sidecar_text(room: RoomDef, sidecar: Path, paths: RepoPaths) -> str:
             if table is not None:
                 chances = ", ".join(f"{count}: {chance}" for count, chance in table.items())
                 lines.append(f"  {kind}: {{{chances}}}")
+    if room.openings:
+        lines.append("openings:")
+        for side, positions in room.openings.items():
+            lines.append(f"  {side}: [{', '.join(json.dumps(list(pos)) for pos in positions)}]")
     if source is not None:
         lines += [
             "source:",

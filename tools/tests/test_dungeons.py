@@ -4,6 +4,7 @@ architecture 15.2-15.4)."""
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 
 import pytest
 
@@ -392,7 +393,7 @@ def test_chance_tables_reach_the_game_resolved_per_room(repo: RepoPaths) -> None
     assert "containers" not in rooms["hall"], "a room without containers lists none"
     java = files[EXPECTATIONS].decode()
     assert (
-        "List.of(), -1, 1, 3, false,\n                                    3, List.of(20, 80), List.of())"
+        "List.of(), -1, 1, 3, false,\n                                    3, List.of(20, 80), List.of(), List.of())"
         in java
     )
 
@@ -426,6 +427,71 @@ def test_a_rooms_own_table_asks_for_no_more_than_it_holds(repo: RepoPaths) -> No
     assert any("containers.chests" in p and "up to 3 chests, but the room holds 2" in p for p in problems), (
         problems
     )
+
+
+def add_hidden_spawner(repo: RepoPaths, room_id: str, openings: str) -> None:
+    """A combat room whose spawner at (3, 1, 3) stone walls in on its four sides, with the sidecar's ``openings``."""
+    add_room(repo, room_id, ["combat", "straight"], "north", "south")
+    path = repo.content / "rooms" / f"{room_id}.nbt"
+    room = room_structure((7, 5, 7), "north", "south")
+    stone = BlockState("minecraft:stone_bricks")
+    extra = (
+        StructureBlock((3, 1, 3), BlockState("minecraft:spawner")),
+        *(StructureBlock(pos, stone) for pos in ((3, 1, 2), (4, 1, 3), (3, 1, 4), (2, 1, 3))),
+    )
+    path.write_bytes(write_structure(Structure(room.size, DATA_VERSION, room.blocks + extra)))
+    sidecar = path.with_suffix(".yaml")
+    sidecar.write_text(sidecar.read_text() + openings, encoding="utf-8")
+
+
+def test_openings_reach_the_game_by_side(repo: RepoPaths) -> None:
+    # RLM-412: a room's openings go into its entry by side, in the order the game draws from, and into the QA mod's
+    # expectations; a room without any lists none.
+    crypt(repo)
+    add_hidden_spawner(
+        repo,
+        "crypt/guard",
+        "openings:\n  west: [[2, 1, 3]]\n  south: [[3, 1, 4]]\n  north: [[3, 1, 2]]\n  east: [[4, 1, 3]]\n",
+    )
+    files = generate(repo)
+    data = json.loads(files[f"{DATA}/crypt.json"])
+    rooms = {room["template"].rsplit("/", 1)[1]: room for room in data["rooms"]}
+    openings = rooms["guard"]["openings"]
+    assert list(openings) == ["north", "east", "south", "west"]
+    assert openings["west"] == [[2, 1, 3]]
+    assert "openings" not in rooms["hall"]
+    java = files[EXPECTATIONS].decode()
+    assert 'List.of("north 3 1 2", "east 4 1 3", "south 3 1 4", "west 2 1 3"))' in java
+
+
+@pytest.mark.parametrize(
+    ("openings", "message"),
+    [
+        (
+            "  north: [[3, 1, 9]]\n  south: [[3, 1, 4]]\n",
+            "openings.north[0]: [3, 1, 9] lies outside the room",
+        ),
+        (
+            "  north: [[1, 1, 1]]\n  south: [[3, 1, 4]]\n",
+            "openings.north[0]: [1, 1, 1] holds nothing to clear",
+        ),
+        (
+            "  north: [[3, 1, 2], [3, 1, 3]]\n  south: [[3, 1, 4]]\n",
+            "openings.north[1]: [3, 1, 3] holds minecraft:spawner, which an opening must leave",
+        ),
+        (
+            "  north: [[3, 1, 0]]\n  south: [[3, 1, 4]]\n",
+            "openings.north[0]: [3, 1, 0] holds minecraft:jigsaw, which an opening must leave",
+        ),
+        ("  north: [[3, 1, 2]]\n", "lists two sides or more"),
+        ("  up: [[3, 1, 2]]\n  north: [[3, 1, 2]]\n", "openings.up"),
+    ],
+)
+def test_an_opening_clears_plain_blocks_of_the_room(repo: RepoPaths, openings: str, message: str) -> None:
+    crypt(repo)
+    add_hidden_spawner(repo, "crypt/guard", "openings:\n" + openings)
+    problems = problems_for(repo)
+    assert any("guard.yaml" in p and message in p for p in problems), problems
 
 
 def test_a_paced_pool_needs_corridors_a_fight_and_a_corridors_dead_end(repo: RepoPaths) -> None:
@@ -829,29 +895,69 @@ def test_the_room_that_ends_the_test_dungeon_has_a_clear_exit() -> None:
             }, name
 
 
+def opened(structure: Structure, positions: list[list[int]]) -> Structure:
+    """The structure with an opening's blocks turned to air, as a run places it (RLM-412)."""
+    cleared = {(x, y, z) for x, y, z in positions}
+    air = BlockState("minecraft:air")
+    blocks = tuple(replace(b, state=air, nbt=None) if b.pos in cleared else b for b in structure.blocks)
+    return replace(structure, blocks=blocks)
+
+
 def test_the_stone_vault_pools_spawners_can_be_seen_and_broken() -> None:
     # Matěj's playtest of 2026-10-24 (RLM-360, RLM-412): players break spawners in instances, so no pooled room hides
     # one. Each spawner touches a cell a player reaches from the room's doorways, air or a cobweb they break too
-    # (skeleton_trap's cobweb over its spawner, husk_temple's monument opened on one side).
+    # (skeleton_trap's cobweb over its spawner); a room with openings shows it whichever side a run opens (husk_temple's
+    # monument and the egg, Matěj's playtest of 2026-10-28).
     folder = REPO_ROOT / "content/rooms/third_party/stonevaults"
     hidden = []
-    checked = 0
+    checked = set()
     for sidecar in sorted(folder.rglob("*.yaml")):
         room = RoomDef.model_validate(load_yaml(sidecar) or {})
         if "realmforge:stone_vault" not in room.pools:
             continue
-        structure = read_structure(sidecar.with_suffix(".nbt").read_bytes())
-        reached = reach(structure)
-        for block in structure.blocks:
-            if block.state.name != "minecraft:spawner":
-                continue
-            checked += 1
-            x, y, z = block.pos
-            faces = [(x + 1, y, z), (x - 1, y, z), (x, y + 1, z), (x, y - 1, z), (x, y, z + 1), (x, y, z - 1)]
-            if not any(face in reached for face in faces):
-                hidden.append(f"{sidecar.relative_to(folder).with_suffix('')} {block.pos}")
-    assert checked >= 6
+        template = read_structure(sidecar.with_suffix(".nbt").read_bytes())
+        variants = {side: opened(template, positions) for side, positions in room.openings.items()} or {
+            "": template
+        }
+        for side, structure in variants.items():
+            reached = reach(structure)
+            for block in structure.blocks:
+                if block.state.name != "minecraft:spawner":
+                    continue
+                checked.add((sidecar, block.pos))
+                x, y, z = block.pos
+                faces = [
+                    (x + 1, y, z),
+                    (x - 1, y, z),
+                    (x, y + 1, z),
+                    (x, y - 1, z),
+                    (x, y, z + 1),
+                    (x, y, z - 1),
+                ]
+                if not any(face in reached for face in faces):
+                    hidden.append(
+                        f"{sidecar.relative_to(folder).with_suffix('')} {block.pos} {side}".rstrip()
+                    )
+    assert len(checked) >= 7
     assert hidden == []
+
+
+def test_the_husk_temple_and_the_egg_hide_their_spawners_until_a_run_opens_a_side() -> None:
+    # Matěj's playtest of 2026-10-28 (RLM-412, RLM-361): the template keeps the spawner closed in, and each side's
+    # opening shows it: the husk temple's chiseled sandstone in front of it (his img1), the egg's quartz beside it with
+    # one corner's block and slab.
+    folder = REPO_ROOT / "content/rooms/third_party/stonevaults/dungeon"
+    for name, size in (("rooms/husk_temple", 1), ("treasure/egg", 3)):
+        room = RoomDef.model_validate(load_yaml(folder / f"{name}.yaml"))
+        template = read_structure((folder / f"{name}.nbt").read_bytes())
+        (spawner,) = [block.pos for block in template.blocks if block.state.name == "minecraft:spawner"]
+        assert list(room.openings) == ["north", "east", "south", "west"], name
+        assert all(len(positions) == size for positions in room.openings.values()), name
+        x, y, z = spawner
+        faces = [(x + 1, y, z), (x - 1, y, z), (x, y + 1, z), (x, y - 1, z), (x, y, z + 1), (x, y, z - 1)]
+        assert not any(face in reach(template) for face in faces), (
+            f"{name} shows its spawner without an opening"
+        )
 
 
 def test_the_egg_room_holds_lava_overhead_a_spider_spawner_and_two_chests() -> None:

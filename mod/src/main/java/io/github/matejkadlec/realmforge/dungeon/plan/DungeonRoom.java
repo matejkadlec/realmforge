@@ -34,10 +34,13 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
  *     start of the main path, from right before a fight and from other hazards (RLM-364)
  * @param containers the chests and barrels its dungeon's chance tables decide, which the builder draws from
  *     (RLM-365)
+ * @param openings the sides a run may open, such as the one in front of a hidden spawner: a run opens one that is
+ *     not its way in (RLM-412)
  */
 public record DungeonRoom(Identifier template, Vec3i size, RoomRole role, int weight, List<Connector> connectors,
         Optional<Integer> maxPerLayout, boolean nearStart, List<Identifier> explosionBreaks,
-        Optional<Integer> entry, int spawners, int chests, boolean hazard, RoomContainers containers) {
+        Optional<Integer> entry, int spawners, int chests, boolean hazard, RoomContainers containers,
+        RoomOpenings openings) {
     /** The most a structure block saves per axis, which room validation allows. */
     public static final int MAX_SIZE = 48;
     /** The chests that make a room a treasure stop besides the treasure rooms (Matěj's playtest of 2026-10-24). */
@@ -58,7 +61,9 @@ public record DungeonRoom(Identifier template, Vec3i size, RoomRole role, int we
                     Codec.intRange(0, 256).optionalFieldOf("chests", 0).forGetter(DungeonRoom::chests),
                     Codec.BOOL.optionalFieldOf("hazard", false).forGetter(DungeonRoom::hazard),
                     RoomContainers.CODEC.optionalFieldOf("containers", RoomContainers.NONE)
-                            .forGetter(DungeonRoom::containers))
+                            .forGetter(DungeonRoom::containers),
+                    RoomOpenings.CODEC.optionalFieldOf("openings", RoomOpenings.NONE)
+                            .forGetter(DungeonRoom::openings))
             .apply(instance, DungeonRoom::new)).validate(DungeonRoom::validate);
 
     public DungeonRoom {
@@ -66,12 +71,12 @@ public record DungeonRoom(Identifier template, Vec3i size, RoomRole role, int we
         explosionBreaks = List.copyOf(explosionBreaks);
     }
 
-    /** A room whose containers all stay. */
+    /** A room whose containers all stay and that opens nothing. */
     public DungeonRoom(Identifier template, Vec3i size, RoomRole role, int weight, List<Connector> connectors,
             Optional<Integer> maxPerLayout, boolean nearStart, List<Identifier> explosionBreaks,
             Optional<Integer> entry, int spawners, int chests, boolean hazard) {
         this(template, size, role, weight, connectors, maxPerLayout, nearStart, explosionBreaks, entry, spawners,
-                chests, hazard, RoomContainers.NONE);
+                chests, hazard, RoomContainers.NONE, RoomOpenings.NONE);
     }
 
     /**
@@ -123,6 +128,15 @@ public record DungeonRoom(Identifier template, Vec3i size, RoomRole role, int we
                     || pos.getY() >= size.getY() || pos.getZ() >= size.getZ()) {
                 return DataResult.error(() -> room.template + ": connector at " + pos.toShortString()
                         + " lies outside the room");
+            }
+        }
+        for (List<BlockPos> opening : room.openings.sides().values()) {
+            for (BlockPos pos : opening) {
+                if (pos.getX() < 0 || pos.getY() < 0 || pos.getZ() < 0 || pos.getX() >= size.getX()
+                        || pos.getY() >= size.getY() || pos.getZ() >= size.getZ()) {
+                    return DataResult.error(() -> room.template + ": an opening clears " + pos.toShortString()
+                            + ", outside the room");
+                }
             }
         }
         if (room.entry.isPresent() && room.entry.get() >= room.connectors.size()) {

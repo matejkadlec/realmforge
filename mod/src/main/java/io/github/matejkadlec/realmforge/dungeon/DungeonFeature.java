@@ -1,6 +1,6 @@
 package io.github.matejkadlec.realmforge.dungeon;
 
-import io.github.matejkadlec.realmforge.dungeon.instance.ContainerSwapProcessor;
+import io.github.matejkadlec.realmforge.dungeon.instance.BlockSwapProcessor;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceMobLevels;
@@ -30,7 +30,7 @@ public final class DungeonFeature {
         DungeonAttachments.register(modBus);
         modBus.addListener(DataPackRegistryEvent.NewRegistry.class, DungeonRegistries::registerDataPackRegistries);
         InstanceManager.register(modBus);
-        ContainerSwapProcessor.register(modBus);
+        BlockSwapProcessor.register(modBus);
         InstanceRules.register();
         DungeonBlocks.register(modBus);
         // A mob in a run's plot takes the run's level, which the instance dimension's missing rule would not give it.

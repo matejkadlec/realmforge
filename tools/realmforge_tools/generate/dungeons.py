@@ -22,6 +22,9 @@ as weights by count. The table is the sidecar's own for that kind, else the dung
 the type's ``default``; a kind without one keeps its containers and lists none. The type's own ``containers`` is
 resolved into its rooms and left out of its entry.
 
+A room's ``openings`` go into its entry as written, by side (RLM-412, ``rooms/openings.py``): the game opens one side
+at random that is not the room's way in.
+
 Each room also gets its set-piece spots (``rooms/set_pieces.py``, ADR 0050): the patterns of spots the pieces that
 reach its role fit, each with the pieces that may fill it. The entry lists those pieces (template, processor list,
 weight, tags, whether they may be mirrored) and the patterns a room of each role fills by default
@@ -45,6 +48,7 @@ from realmforge_tools.rooms.connectors import Connector, connectors
 from realmforge_tools.rooms.containers import KINDS, Candidate, Kind, candidates
 from realmforge_tools.rooms.dress import reachable_hazards
 from realmforge_tools.rooms.generator import DOOR, EMPTY_POOL, GENERATED_DIR, paths
+from realmforge_tools.rooms.openings import SIDES
 from realmforge_tools.rooms.set_pieces import DENSITY, Fit, Pattern, RoomView, match
 from realmforge_tools.rooms.structure import (
     JIGSAW,
@@ -363,7 +367,15 @@ def _room(room: RoomEntry) -> dict[str, Any]:
         data["chests"] = chests(room)
     if hazard(room):
         data["hazard"] = True
+    if room.model.openings:
+        data["openings"] = opening_data(room)
     return data
+
+
+def opening_data(room: RoomEntry) -> dict[str, list[list[int]]]:
+    """The room's ``openings`` in the entry, by side in the order the game draws from (RLM-412)."""
+    openings = room.model.openings
+    return {side: [list(pos) for pos in openings[side]] for side in SIDES if side in openings}
 
 
 def spawners(room: RoomEntry) -> int:
@@ -440,12 +452,13 @@ def _expectations(content: Content) -> bytes:
         "     * A room of the pool, or the type's wall: its structure id, size, role, weight, connectors, how often a layout\n"
         "     * may hold it (0: no limit), whether it stays at the start, the blocks an explosion may break in it, and the\n"
         "     * connector it is entered through (-1: any), its spawners and chests, whether it is a hazard, the chests and\n"
-        "     * barrels a chance table decides and the tables, as weights by count (empty: none; RLM-365).\n"
+        "     * barrels a chance table decides and the tables, as weights by count (empty: none; RLM-365), and the blocks\n"
+        '     * each side\'s opening clears, as "side x y z" (RLM-412).\n'
         "     */\n"
         "    public record RoomExpectation(String template, int sizeX, int sizeY, int sizeZ, String role, int weight,\n"
         "            List<ConnectorExpectation> connectors, int maxPerLayout, boolean nearStart,\n"
         "            List<String> explosionBreaks, int entry, int spawners, int chests, boolean hazard,\n"
-        "            int containerSpots, List<Integer> chestTable, List<Integer> barrelTable) {\n"
+        "            int containerSpots, List<Integer> chestTable, List<Integer> barrelTable, List<String> openings) {\n"
         "    }\n"
         "\n"
         "    /**\n"
@@ -483,6 +496,11 @@ def _room_expectation(room: RoomEntry, dungeon: DungeonTypeDef) -> str:
     entry = entry_index(room)
     containers = container_data(room, dungeon) or {}
     tables = [", ".join(map(str, containers.get(f"{kind}s", []))) for kind in KINDS]
+    openings = ", ".join(
+        string_literal(f"{side} {x} {y} {z}")
+        for side, positions in opening_data(room).items()
+        for x, y, z in positions
+    )
     return (
         f"                            new RoomExpectation({string_literal(f'{MOD_ID}:{ROOMS_DIR}/{room.id}')}, "
         f"{x}, {y}, {z}, {string_literal(room_role(room.model.tags) or '')}, {room.model.weight},\n"
@@ -491,7 +509,7 @@ def _room_expectation(room: RoomEntry, dungeon: DungeonTypeDef) -> str:
         f"{'true' if room.model.near_start else 'false'}, List.of({breaks}), {-1 if entry is None else entry}, "
         f"{spawners(room)}, {chests(room)}, {'true' if hazard(room) else 'false'},\n"
         f"                                    {len(containers.get('spots', []))}, List.of({tables[0]}), "
-        f"List.of({tables[1]}))"
+        f"List.of({tables[1]}), List.of({openings}))"
     )
 
 
@@ -501,5 +519,5 @@ def _wall_expectation(dungeon: DungeonTypeDef, walls: WallsDef) -> str:
         f"                            new RoomExpectation({string_literal(wall_template(dungeon))}, "
         f"{WALL_WIDTH}, {WALL_HEIGHT}, 1, {string_literal(WALL_ROLE)}, {walls.weight},\n"
         f"                                    {connector_list},\n"
-        "                                    0, false, List.of(), -1, 0, 0, false, 0, List.of(), List.of())"
+        "                                    0, false, List.of(), -1, 0, 0, false, 0, List.of(), List.of(), List.of())"
     )

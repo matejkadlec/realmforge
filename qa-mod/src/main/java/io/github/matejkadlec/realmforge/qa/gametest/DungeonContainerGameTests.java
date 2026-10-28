@@ -35,7 +35,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 public final class DungeonContainerGameTests {
     private static final int TIMEOUT = 1200;
     private static final Identifier TEST_DUNGEON = Identifier.parse("realmforge:test_dungeon");
-    /** The throne room's chests are a sight behind bars (RLM-469), not loot: its table keeps all six. */
+    /** The throne room's chests are a sight behind unbreakable iron bars, not loot: its table keeps all six. */
     private static final Identifier THRONE_ROOM =
             Identifier.parse("realmforge:rooms/third_party/stonevaults/dungeon/treasure/mooshroom_king");
     private static final int SEEDS = 300;

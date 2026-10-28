@@ -47,9 +47,8 @@ place:
     - {from: [2, 2, 5], to: [2, 2, 5], block: "minecraft:stone_button[face=wall,facing=east,powered=false]"}
     - {from: [10, 2, 7], to: [10, 2, 7], block: "minecraft:stone_button[face=wall,facing=west,powered=false]"}
   # The husk temple's doorways were barred (iron bars around a 1x1 gap, its connectors leaving iron bars in the gap),
-  # though the dungeon passes through it. Its spawner sat sealed inside the sandstone monument in the middle; players
-  # break spawners in instances (RLM-412), so the monument is opened on its east side above its bottom layer (Matěj,
-  # 2026-10-24): the spawner keeps the sandstone around it at floor level and shows from above and from the east.
+  # though the dungeon passes through it. Its spawner stays sealed inside the sandstone monument in the middle here:
+  # its sidecar's openings take out the chiseled sandstone on one side of it, the side a run opens (RLM-412).
   dungeon/rooms/husk_temple:
     - {from: [0, 1, 6], to: [0, 1, 6], final_state: "minecraft:air"}
     - {from: [12, 1, 6], to: [12, 1, 6], final_state: "minecraft:air"}
@@ -59,8 +58,6 @@ place:
     - {from: [12, 1, 5], to: [12, 3, 5], block: "minecraft:air"}
     - {from: [12, 2, 6], to: [12, 3, 6], block: "minecraft:air"}
     - {from: [12, 1, 7], to: [12, 3, 7], block: "minecraft:air"}
-    - {from: [7, 2, 5], to: [7, 2, 7], block: "minecraft:air"}
-    - {from: [6, 2, 6], to: [6, 3, 6], block: "minecraft:air"}
   # The skeleton trap's spawner sat under a 3x3 of stone brick slabs: the slab above it becomes a cobweb, which shows
   # the spawner and which players break, like the spawner (Matěj, 2026-10-24, RLM-412). Its spawner named skeletons
   # for the first spawn only and pigs in its potentials, which vanilla draws from after every spawn: skeletons alone.
@@ -88,9 +85,9 @@ place:
     - {from: [8, 3, 9], to: [8, 3, 9], block: "minecraft:lever[face=wall,facing=south,powered=false]"}
   # The egg room (Matěj's playtest of 2026-10-22, RLM-361): lava over its glass ceiling, cell for cell, in a rim of
   # stone bricks that holds it, the catacombs' look he built; the template grows a layer for it (grow, above). A cave
-  # spider spawner sits in the quartz egg's upper hollow, which opens towards the doorway, so players see it and break
-  # it (RLM-412); the hollow under it is filled, so no spider spawns shut in. Of its six chests it keeps the two on
-  # the east wall: a fight, not a loot room. With them it no longer ends the run (RLM-363's exit moved to parrot).
+  # spider spawner sits in the quartz egg's upper hollow, closed here: its sidecar's openings open one side of the egg
+  # in a run (RLM-412), and the hollow under it is filled, so no spider spawns shut in. Of its six chests it keeps the
+  # two on the east wall: a fight, not a loot room. With them it no longer ends the run (RLM-363's exit moved to parrot).
   dungeon/treasure/egg:
     - {from: [6, 8, 3], to: [6, 8, 3], block: "minecraft:lava[level=0]"}
     - {from: [4, 8, 4], to: [8, 8, 5], block: "minecraft:lava[level=0]"}
@@ -111,7 +108,6 @@ place:
     - {from: [6, 8, 10], to: [6, 8, 10], block: "minecraft:stone_bricks"}
     - {from: [6, 2, 6], to: [6, 3, 6], block: "minecraft:smooth_quartz"}
     - {from: [6, 4, 6], to: [6, 4, 6], spawner: minecraft:cave_spider}
-    - {from: [5, 4, 6], to: [5, 4, 6], block: "minecraft:air"}
     - {from: [6, 2, 1], to: [6, 2, 1], block: "minecraft:air"}
     - {from: [2, 2, 2], to: [2, 2, 2], block: "minecraft:air"}
     - {from: [11, 2, 8], to: [11, 2, 8], block: "minecraft:air"}
