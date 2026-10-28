@@ -1,7 +1,10 @@
 package io.github.matejkadlec.realmforge.dungeon.instance;
 
+import io.github.matejkadlec.realmforge.Realmforge;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
@@ -16,13 +19,18 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
 /**
  * A run's rooms stand in its dungeon type's biome, {@code realmforge:dungeon_<type>}, which {@code rf gen} names after
- * the type (RLM-409, architecture 15.5): Traveler's Titles shows the biome's name when a player arrives, and Xaero's
- * Minimap shows it as the biome. The instance dimension's generator fills it with {@code minecraft:the_void}; placing a
- * room gives the room the run's biome and clearing gives the void back, one unit's slice (one chunk column) at a time,
- * the way {@code /fillbiome} does: every 4 x 4 x 4 biome cell the slice touches, then the chunk's biomes go to the
- * players who see it.
+ * the type (RLM-409, architecture 15.5): Xaero's Minimap shows it as the biome, and the client's arrival title names
+ * it ({@code client/hud/InstanceArrivalTitle}). The instance dimension's generator fills it with
+ * {@code minecraft:the_void}. Once a run's rooms stand, every 4 x 4 x 4 biome cell within {@link #REACH} blocks of a
+ * room gets the run's biome, the way {@code /fillbiome} sets cells; each slice cleanup clears gets the void back.
  */
 public final class InstanceBiomes {
+    /**
+     * How far past a room its biome reaches, in blocks: vanilla's biome lookup at a block reads a cell up to two
+     * blocks away ({@code BiomeManager#getBiome}), so a player beside a wall still reads the run's biome. Within the
+     * margin the plot holds and cleanup clears ({@link PlotWork#MARGIN}).
+     */
+    static final int REACH = 2;
     private static final String PREFIX = "dungeon_";
 
     private InstanceBiomes() {
@@ -34,24 +42,38 @@ public final class InstanceBiomes {
                 Identifier.fromNamespaceAndPath(dungeonType.getNamespace(), PREFIX + dungeonType.getPath()));
     }
 
+    /** Whether {@code biome} is a dungeon type's biome, {@code realmforge:dungeon_<type>}. */
+    public static boolean isRunBiome(ResourceKey<Biome> biome) {
+        return biome.identifier().getPath().startsWith(PREFIX)
+                && biome.identifier().getNamespace().equals(Realmforge.MOD_ID);
+    }
+
+    /** Gives a slice cleanup cleared the void back; the builder calls it after every unit it ran. */
+    static void afterUnit(ServerLevel level, PlotWork.Unit unit) {
+        if (unit instanceof PlotWork.Clear clear) {
+            Holder<Biome> theVoid = level.registryAccess().lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.THE_VOID);
+            LevelChunk chunk = fill(level, clear.slice(), theVoid);
+            level.getChunkSource().chunkMap.resendBiomesForChunks(List.of(chunk));
+        }
+    }
+
     /**
-     * Gives the unit's slice its biome after the builder ran it: a placed room the run's biome, when the run has a
-     * dungeon type whose biome is loaded, and a cleared box the void.
+     * Gives the run's rooms and {@link #REACH} blocks around them the run's biome, when the run has a dungeon type
+     * whose biome is loaded; called when the rooms stand, before anyone enters. The plot holds every chunk this
+     * touches.
      */
-    static void apply(ServerLevel level, Plot plot, PlotWork.Unit unit) {
-        switch (unit) {
-            case PlotWork.Place place -> {
-                Holder<Biome> biome = runBiome(level, plot.dungeonType().orElse(null));
-                if (biome != null) {
-                    fill(level, place.slice(), biome);
-                }
-            }
-            case PlotWork.Clear clear ->
-                    fill(level, clear.slice(), level.registryAccess().lookupOrThrow(Registries.BIOME)
-                            .getOrThrow(Biomes.THE_VOID));
-            case PlotWork.DiscardEntities discard -> {
+    static void fillRun(ServerLevel level, Plot plot) {
+        Holder<Biome> biome = runBiome(level, plot.dungeonType().orElse(null));
+        if (biome == null) {
+            return;
+        }
+        Set<LevelChunk> changed = new LinkedHashSet<>();
+        for (BoundingBox room : plot.rooms()) {
+            for (BoundingBox slice : PlotWork.chunkSlices(room.inflatedBy(REACH))) {
+                changed.add(fill(level, slice, biome));
             }
         }
+        level.getChunkSource().chunkMap.resendBiomesForChunks(List.copyOf(changed));
     }
 
     @Nullable
@@ -64,8 +86,8 @@ public final class InstanceBiomes {
         return biome.orElse(null);
     }
 
-    /** Sets {@code biome} in every biome cell of {@code slice}, which lies in one chunk column. */
-    private static void fill(ServerLevel level, BoundingBox slice, Holder<Biome> biome) {
+    /** Sets {@code biome} in every biome cell {@code slice} touches; the slice lies in one chunk column. */
+    private static LevelChunk fill(ServerLevel level, BoundingBox slice, Holder<Biome> biome) {
         int minX = QuartPos.fromBlock(slice.minX());
         int minY = QuartPos.fromBlock(slice.minY());
         int minZ = QuartPos.fromBlock(slice.minZ());
@@ -77,6 +99,6 @@ public final class InstanceBiomes {
                         && z >= minZ && z <= maxZ ? biome : chunk.getNoiseBiome(x, y, z),
                 level.getChunkSource().randomState().sampler());
         chunk.markUnsaved();
-        level.getChunkSource().chunkMap.resendBiomesForChunks(List.of(chunk));
+        return chunk;
     }
 }

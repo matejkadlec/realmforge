@@ -589,7 +589,7 @@ public final class InstanceManager extends SavedData {
             long start = System.nanoTime();
             try {
                 long cleared = InstanceBuilder.run(level, plot, unit);
-                InstanceBiomes.apply(level, plot, unit);
+                InstanceBiomes.afterUnit(level, unit);
                 int room = unit instanceof PlotWork.Place place ? place.room() : -1;
                 plot.recorder().unit(level.getGameTime(), room, System.nanoTime() - start, cleared);
             } catch (RuntimeException e) {
@@ -618,6 +618,7 @@ public final class InstanceManager extends SavedData {
         reports.put(plot.id(), report);
         LOGGER.info("Instance {}", report);
         if (plot.state() == PlotState.BUILDING) {
+            InstanceBiomes.fillRun(level(), plot);
             plot.finishBuilding(findSpawn(plot));
             placeExits(plot);
             Optional<PortalLink> portal = plot.portal();

@@ -165,9 +165,10 @@ public final class InstanceGameTests {
     }
 
     /**
-     * RLM-409: a run of a dungeon type stands in the type's biome, which Traveler's Titles and Xaero's Minimap name
-     * after the type, while the dimension around its rooms stays the void; clearing the plot gives the void back. A run
-     * through a portal takes its portal's dungeon type.
+     * RLM-409: a run of a dungeon type stands in the type's biome once its rooms stand, which Xaero's Minimap and the
+     * arrival title name after the type, even beside a wall, where vanilla's biome lookup reads a cell up to two blocks
+     * away; the dimension a little further from its rooms stays the void, and clearing the plot gives the void back. A
+     * run through a portal takes its portal's dungeon type.
      */
     @QaGameTest(timeoutTicks = TIMEOUT)
     public static void aRunStandsInItsDungeonTypesBiome(GameTestHelper helper) {
@@ -186,13 +187,17 @@ public final class InstanceGameTests {
         Plot plot = manager.open(SpikeLayouts.spike(), List.of(), null, 0L, OptionalInt.empty(), TEST_DUNGEON);
         BlockPos origin = plot.origin();
         BlockPos inside = origin.offset(SpikeLayouts.ENTRANCE);
-        // Eight blocks west of the start room's wall: past the biome cells its room touches.
+        // On the start room's floor beside its west wall (x 0): the lookup there reads cells as far west as x -1.
+        BlockPos besideTheWall = origin.offset(1, 1, 7);
+        // Eight blocks west of the start room's wall: past the biome cells its room's biome reaches.
         BlockPos outside = origin.offset(-8, 1, 7);
         helper.startSequence()
                 .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.READY, "plot is " + plot.state()))
                 .thenExecute(() -> {
                     helper.assertTrue(instances.getBiome(inside).is(biome),
                             "the start room stands in " + instances.getBiome(inside).getRegisteredName());
+                    helper.assertTrue(instances.getBiome(besideTheWall).is(biome),
+                            "beside its wall stands " + instances.getBiome(besideTheWall).getRegisteredName());
                     helper.assertTrue(instances.getBiome(outside).is(Biomes.THE_VOID),
                             "beside the rooms stands " + instances.getBiome(outside).getRegisteredName());
                     manager.release(plot);

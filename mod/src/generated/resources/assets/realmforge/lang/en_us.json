@@ -105,6 +105,7 @@
   "gui.realmforge.create_character": "Create Character",
   "gui.realmforge.defense": "Defense",
   "gui.realmforge.entity_reach": "Entity Reach",
+  "gui.realmforge.instance_subtitle": "Realmforge Instance",
   "gui.realmforge.kit_item": "%1$s ×%2$s",
   "gui.realmforge.known_spells": "Known Spells",
   "gui.realmforge.mining_speed": "Mining Speed",

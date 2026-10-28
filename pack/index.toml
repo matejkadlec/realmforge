@@ -34,7 +34,7 @@ hash = "0c8e1d63fede7bcce61cb095c74842e70aa0501bea14c1a1912ded322c0692bd"
 
 [[files]]
 file = "config/travelerstitles-neoforge-26_1.toml"
-hash = "c05d5ebb8f7e398dd01e1a1daef25877fb47e0b4fc0526ceec5720e25f8ea9cc"
+hash = "95d1f61c1c770aaa4534a386f8c93850a87c28ea30a17bdb6d9424714d0e1dc1"
 
 [[files]]
 file = "config/waystones-common.toml"

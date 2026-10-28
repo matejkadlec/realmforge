@@ -477,9 +477,10 @@ Rules:
   the pieces that may fill it. `test_dungeon` is test content (like `items/test_item`) that only `/qa dungeon plan`,
   `build` and `enter` use and its key opens, about 50 rooms on one long main road with a fight after every 2 to 4 rooms
   ([architecture 15.2](../docs/architecture.md#152-dungeon-types)); W6 brings the real dungeon types. Each type also
-  gets the biome `realmforge:dungeon_<id>`, named like the type, which its runs' rooms stand in: Traveler's Titles
-  shows the dungeon's name when a player arrives, and Xaero's Minimap shows it as the biome (RLM-409,
-  [architecture 15.5](../docs/architecture.md#155-instances)).
+  gets the biome `realmforge:dungeon_<id>`, named like the type, which its runs' rooms stand in: the arrival title
+  shows the dungeon's name, and Xaero's Minimap shows it as the biome (RLM-409,
+  [architecture 15.5](../docs/architecture.md#155-instances)). A new type's biome joins Traveler's Titles' biome
+  blacklist in `pack/config/` (a pytest says so), so its own title stays the only one.
 - Start each YAML file with the `yaml-language-server` schema comment (see `items/test_item.yaml`) for editor
   completion.
 
