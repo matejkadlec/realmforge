@@ -41,6 +41,7 @@ public final class QaGameTests {
 
     private static final List<Class<?>> HOLDERS = List.of(
             ApothicAttributesGameTests.class,
+            BossBarGameTests.class,
             CastGameTests.class,
             CharacterGameTests.class,
             CharacterSheetGameTests.class,
