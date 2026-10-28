@@ -149,7 +149,8 @@ Matěj's direction for armour (2026-10-15), designed step by step as sets, weapo
   are Apprentice's (wool), Spellweave, Arcane Silk and Netherite (RLM-197); a caster's weapon is a wand in vanilla's
   seven materials, wood to netherite (RLM-172), made from an amethyst shard over the material over a stick. A wand
   takes both hands: no shield while it is held, and every shield stays locked for 3 minutes after (Matěj,
-  2026-10-26).
+  2026-10-26). A shield taken in hand during the lock goes into the bag, never the hotbar, and drops at the feet only
+  when the bag is full; the lock ends at a death or a logout (Matěj, 2026-10-28, RLM-461).
 - **Ranged and rogue:** less armour than melee, dodge chance and movement speed; partly base materials plus an
   advanced leather from animals that are hard to kill and spawn only in some biomes (that leather plus diamonds
   makes the diamond-tier set).
