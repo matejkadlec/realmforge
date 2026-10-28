@@ -249,7 +249,7 @@ Rules:
   of any dungeon without one) and `spell` (cast the `spell`, or any spell: an instant one when cast, a cast time or
   channel when it completes; never an `npc_only` spell). FTB Quests has no task type of ours, so each of these becomes
   an advancement without a display, `realmforge:quest/<quest>/<key with : as />`, that one of our triggers completes and
-  FTB Quests' advancement task reads; it is titled from data ("Reach level 5", "Complete Test Dungeon", "Cast a
+  FTB Quests' advancement task reads; it is titled from data ("Reach level 5", "Complete Prisoner's Kingdom", "Cast a
   spell"). Any task may give a `title` instead of FTB Quests' own or ours. Every quest says where, how and with what
   (Q1-3): its `realm` (of `realms/`, `overworld` for the Overworld) and, optionally, its `place` (a `structure` of
   `minecraft:worldgen/structure` with the `name` the text calls it, as a structure has no name in the game, a `biome`,

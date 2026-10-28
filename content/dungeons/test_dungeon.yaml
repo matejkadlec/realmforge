@@ -1,4 +1,6 @@
 # yaml-language-server: $schema=../../tools/schemas/dungeons.schema.json
+# Prisoner's Kingdom (Matěj's name, RLM-275; players see it since RLM-409), which keeps the ids of the dungeon
+# framework's test type until RLM-456 makes it a real Overworld dungeon.
 # The dungeon framework's test type (W4a, RLM-178), test content like realmforge:test_item: a vault of the stone vault
 # rooms imported from Stonevaults and the room generator's corridors. Its key opens a dungeon portal to it (W4d,
 # RLM-181); `/qa dungeon plan`, `build` and `enter` show its layouts. The real dungeon types come with W6. About 50
@@ -10,7 +12,7 @@
 # a player up to level 10.
 id: test_dungeon
 name:
-  en_us: Test Dungeon
+  en_us: Prisoner's Kingdom
 pool: realmforge:stone_vault
 layout:
   main_path: [38, 42]

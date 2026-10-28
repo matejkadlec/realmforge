@@ -2194,7 +2194,7 @@ long a portal to it stays open ([15.5](#155-instances)), since RLM-459 its base 
 ```yaml
 # content/dungeons/test_dungeon.yaml (exists)
 id: test_dungeon
-name: {en_us: Test Dungeon}
+name: {en_us: Prisoner's Kingdom}
 pool: realmforge:stone_vault          # the rooms whose sidecar lists this pool
 layout:
   main_path: [38, 42]                 # [min, max] rooms between the entrance and the ending
@@ -2251,7 +2251,7 @@ of the pool must be one the wall closes: no open block beside, above or below th
 side connector's face (`rooms/connectors.py`, `doorway_gap`; the corners do not count, as no player passes a gap that
 only touches the doorway at a corner). The keys also form the item tag `realmforge:dungeon_key`, which the client reads to know which items a portal
 takes, as the dungeon types stay on the server. `realmforge:test_dungeon` is test content like `realmforge:test_item`,
-opened with the Test Dungeon Key, and W6 brings the real types. What later tasks add, as a sketch:
+opened with the Prisoner's Kingdom Key, and W6 brings the real types. What later tasks add, as a sketch:
 
 ```yaml
 # planned fields (names are examples)
