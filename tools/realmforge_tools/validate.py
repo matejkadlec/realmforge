@@ -927,6 +927,10 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
             problems += _check_inner_effects(entry.source, path, effect, spell, universe, effects)
             if effect.type == PROJECTILE:
                 problems += _check_projectile(entry.source, path, effect, mob_tags, universe)
+            if spell.cast.type == "channel":
+                problems += _check_channel_reapply(
+                    entry.source, path, effect, spell.cast.interval_seconds, effects
+                )
         cast_sound = getattr(spell.cast, "sound", None)
         if cast_sound is not None and not universe.contains(SOUND_EVENT_REGISTRY, cast_sound):
             problems.append(
@@ -1109,7 +1113,44 @@ def _check_inner_effects(
         problems += _check_effect(source, inner_path, inner, spell, universe, effects)
         if reached not in _EFFECT_TARGETING[inner.type]:
             problems.append(Problem(source, f"{inner_path}.type", f"{inner.type} cannot act on {what}"))
+        if effect.type == AREA:
+            problems += _check_reapply(
+                source, inner_path, inner, effect.interval_seconds, "the area", effects
+            )
     return problems
+
+
+def _check_channel_reapply(
+    source: str, path: str, effect: BaseModel, interval: float, effects: dict[str, PeriodicDef]
+) -> list[Problem]:
+    """A channel runs its effects at every interval: what it applies, and what the projectile or area it sends at
+    every interval applies, is applied again then."""
+    problems = _check_reapply(source, path, effect, interval, "the channel", effects)
+    if effect.type in (PROJECTILE, AREA):
+        for m, inner in enumerate(effect.effects):
+            problems += _check_reapply(source, f"{path}.effects.{m}", inner, interval, "the channel", effects)
+    return problems
+
+
+def _check_reapply(
+    source: str, path: str, effect: BaseModel, interval: float, what: str, effects: dict[str, PeriodicDef]
+) -> list[Problem]:
+    """An area or a channel applies one of our effects with damage or healing over time again no sooner than the
+    effect ticks. Its ticks count the remaining duration, which every application resets, so an effect applied again
+    sooner never ticks while it is (RLM-376); as often as it ticks loses only the partial interval, as in Classic."""
+    status = getattr(effect, "effect", None)
+    periodic = effects.get(status) if effect.type == APPLY_EFFECT else None
+    if periodic is None or periodic.interval_seconds <= interval + 1e-9:
+        return []
+    return [
+        Problem(
+            source,
+            f"{path}.effect",
+            f"{status} ticks every {periodic.interval_seconds:g} s and {what} applies it again every "
+            f"{interval:g} s: each application resets its duration before it ticks, so it never ticks while "
+            f"{what} keeps applying it; give {what} an interval of at least {periodic.interval_seconds:g} s",
+        )
+    ]
 
 
 def _check_effect(

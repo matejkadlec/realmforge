@@ -916,6 +916,101 @@ def test_an_effect_with_ticks_lasts_whole_intervals(repo: RepoPaths) -> None:
     )
 
 
+BURNING_4S = "{type: realmforge:apply_effect, effect: realmforge:test_burning, duration_seconds: 4}"
+
+
+def reapplying_spell(repo: RepoPaths, cast: str, effect: str) -> None:
+    spell(
+        repo,
+        "smoulder",
+        "school: realmforge:fire\n"
+        "scales_with: spell_power\n"
+        "targeting: {type: realmforge:enemy, range: 16}\n"
+        f"cast: {cast}\n"
+        f"effects:\n  - {effect}\n",
+    )
+
+
+@pytest.mark.parametrize(
+    ("cast", "effect", "path", "what", "interval"),
+    [
+        (
+            "{type: instant}",
+            "{type: realmforge:area, radius: 3, duration_seconds: 4, interval_seconds: 0.5, "
+            f"effects: [{BURNING_4S}]}}",
+            "effects.0.effects.0.effect",
+            "the area",
+            "0.5",
+        ),
+        (
+            "{type: channel, duration_seconds: 3, interval_seconds: 0.5}",
+            BURNING_4S,
+            "effects.0.effect",
+            "the channel",
+            "0.5",
+        ),
+        (
+            "{type: channel, duration_seconds: 3, interval_seconds: 0.5}",
+            f"{{type: realmforge:projectile, speed: 20, effects: [{BURNING_4S}]}}",
+            "effects.0.effects.0.effect",
+            "the channel",
+            "0.5",
+        ),
+        (
+            "{type: channel, duration_seconds: 2, interval_seconds: 0.25}",
+            "{type: realmforge:area, radius: 3, duration_seconds: 4, interval_seconds: 1, "
+            f"effects: [{BURNING_4S}]}}",
+            "effects.0.effects.0.effect",
+            "the channel",
+            "0.25",
+        ),
+    ],
+)
+def test_an_area_or_channel_does_not_reapply_an_effect_faster_than_it_ticks(
+    repo: RepoPaths, cast: str, effect: str, path: str, what: str, interval: str
+) -> None:
+    reapplying_spell(repo, cast, effect)
+    assert_problem(
+        repo,
+        f"{path}: realmforge:test_burning ticks every 1 s and {what} applies it again every {interval} s: each "
+        f"application resets its duration before it ticks, so it never ticks while {what} keeps applying it; give "
+        f"{what} an interval of at least 1 s",
+    )
+
+
+@pytest.mark.parametrize(
+    ("cast", "effect"),
+    [
+        (
+            "{type: instant}",
+            f"{{type: realmforge:area, radius: 3, duration_seconds: 4, interval_seconds: 1, effects: [{BURNING_4S}]}}",
+        ),
+        (
+            "{type: instant}",
+            f"{{type: realmforge:area, radius: 3, duration_seconds: 4, interval_seconds: 2, effects: [{BURNING_4S}]}}",
+        ),
+        ("{type: channel, duration_seconds: 3, interval_seconds: 1}", BURNING_4S),
+        ("{type: channel, duration_seconds: 4, interval_seconds: 2}", BURNING_4S),
+        (
+            "{type: channel, duration_seconds: 3, interval_seconds: 1}",
+            f"{{type: realmforge:projectile, speed: 20, effects: [{BURNING_4S}]}}",
+        ),
+        # A projectile of a spell that is not a channel applies it once, and a vanilla effect has no ticks of ours.
+        ("{type: instant}", f"{{type: realmforge:projectile, speed: 20, effects: [{BURNING_4S}]}}"),
+        (
+            "{type: channel, duration_seconds: 3, interval_seconds: 0.5}",
+            "{type: realmforge:apply_effect, effect: minecraft:slowness, duration_seconds: 4}",
+        ),
+    ],
+)
+def test_an_area_or_channel_may_reapply_an_effect_as_often_as_it_ticks(
+    repo: RepoPaths, cast: str, effect: str
+) -> None:
+    reapplying_spell(repo, cast, effect)
+    content, _ = load_and_validate(repo)
+    assert any(entry.model.id == "smoulder" for entry in content.spells)
+
+
 def test_our_effects_may_be_applied(repo: RepoPaths) -> None:
     content, _ = load_and_validate(repo)
     ignite = next(entry.model for entry in content.spells if entry.model.id == "test_ignite")
