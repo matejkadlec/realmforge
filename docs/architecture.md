@@ -1384,7 +1384,8 @@ type only for genuinely new behaviour.
   `AimAssist#turn`) at the same speed and sets `needsSync`, so its clients get the turned velocity and position at once
   and draw the curve; it flies on straight once the enemy is dead, gone, in another level or behind it. **Nothing flies
   forever:** it has no lifetime unless its data sets `lifetime_ticks` (at most 10 s), and it is removed above the build height (its bottom above the top of the world's
-  highest block), where entities stop moving (its next position not entity-ticking,
+  highest block) while it does not fly down (RLM-446: a caster on the top block layer, or flying above it, still hits a
+  mob below), where entities stop moving (its next position not entity-ticking,
   `ServerLevel#isPositionEntityTicking`: beyond every player's simulation distance, which equals the render distance by
   default, or in a chunk that is not loaded; `checkDespawn`, which the server calls even where entities no longer
   tick, removes one left behind), and in the void (vanilla's `Entity#checkBelowWorld`, 64 blocks below the
@@ -1440,7 +1441,12 @@ effects, so a modifier finds its attribute, ours included), an 18 by 18 placehol
 `effect.realmforge.<id>` and `GeneratedEffectExpectations`, which `ContentEffectGameTests` checks. Each is an
 `effect/StatusEffect`: vanilla's modifiers, multiplied by the amplifier + 1, and an `effect/Periodic` that ticks at the
 end of every interval since the effect began (an effect of 4 s and 1 s intervals ticks 4 times, the first after a
-second; validation keeps a spell's durations whole intervals), each level adding the amount again.
+second; validation keeps a spell's durations whole intervals), each level adding the amount again. It counts the
+remaining duration (`Periodic#ticksAt`), which every application resets, so an area or a channel that applies it again
+sooner than it ticks would keep it from ticking at all: validation refuses an interval shorter than the effect's
+(RLM-376); an equal one loses only the partial interval, as in Classic. Cast Time Reduction shortens a channel's
+interval, and validation cannot see it, so a hasted channel that applies such an effect at every interval still keeps
+it from ticking.
 `effect/EffectTicks` deals a tick as a hit of the school from the effect's caster, so the damage pipeline raises it by
 the caster's spell power (a magic school) and school power as they are when it ticks, the target's resistance lowers
 it, a kill counts for the caster and the caster sees its numbers; ticks never crit (`CritRule.NONE`) and never knock
@@ -1448,8 +1454,13 @@ back. Healing ticks are raised the same way. Once the caster is gone (dead, logg
 ticks go on at the bare amount. `apply_effect` applies an effect through `effect/Effects#apply`, which records its
 `effect/EffectSource` (the caster's UUID, the spell's id, the proc origin) in the holder's `realmforge:effect_sources`
 attachment; the latest application decides, so the same effect from a potion or a command forgets the source, and the
-effect's removal or expiry does too. `Effects#source` is what dispels and talents (C4, C5) read. `EffectGameTests`
-covers the ticks, the caster's stats, a caster that left, the modifiers and the sources.
+effect's removal or expiry does too. An application that changes nothing (`MobEffectInstance#update` keeps the
+effect as it is, and it ends no later) keeps it: `MobEffectEvent.Added` fires before that update, so `Effects` asks a
+copy of the old instance (RLM-373). A weaker but longer one forgets it too, though `update` keeps the effect: vanilla
+holds it as the hidden effect, which takes over without an event once the stronger one ends. `Effects#source` is what dispels and talents (C4, C5) read. An
+effect a proc's spell applied keeps the proc origin, and its ticks carry it, so they trigger no proc
+([12](#12-talents)). `EffectGameTests` covers the ticks, the caster's stats, a caster that left, the modifiers, the
+sources and a proc's damage over time.
 
 ### 11.5 Resources, cooldowns, modifiers
 
@@ -2673,7 +2684,8 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   whatever the budget, then the rest of 5 ms goes round the plots with work one unit at a time, starting after the plot
   served last; some unit always runs. Plots opened together build side by side, and clearing a closed plot never holds
   back a run's build. The unit list is a pure function of the saved plot, so a restart resumes at the saved step, and a
-  unit whose chunk is still loading waits for a later tick instead of loading it on the main thread. A unit that throws
+  unit whose chunk is still loading waits for a later tick instead of loading it on the main thread; one that places
+  rooms or removes entities also waits for the chunk's entities (below, "Chunk loading"). A unit that throws
   (a room template that no longer resolves after a restart) releases a plot being built and is skipped by a closing one,
   and is logged, instead of failing the tick on every start. A test dungeon layout of 93 placements (RLM-363;
   `DungeonPlanGameTests` logs its `BuildReport`) took 198 units in 151 ticks, about 7.5 seconds at 20 ticks a second,
@@ -2686,7 +2698,9 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   and 0.3-1 s the first time a plot cell is used, as vanilla generates and saves the neighbours of a forced chunk
   too, 3-4 MB per cell). So a plot first asks for its chunks with a background ticket of our own
   (`realmforge:instance_loading`: loading only, renewed every tick until the chunk has loaded and gone 20 ticks
-  later, not saved), and the controller holds each chunk only once it has loaded. After a restart, a plot asks again
+  later, not saved), and the controller holds each chunk only once it has loaded, its entities included
+  (`ServerLevel#areEntitiesLoaded`: the entity manager makes a chunk's entity sections accessible after its blocks, and a
+  room's item frames placed before that stay hidden from every entity query, RLM-483). After a restart, a plot asks again
   for the chunks it does not hold, and a build released before any of its units ran loads none. The GameTest server
   runs its ticks back to back, so the background loading of a new plot cell (seconds) would outlast the tests' tick
   timeouts; there the QA mod loads the chunks plots wait for before each tick (`GameTestChunkLoads`).

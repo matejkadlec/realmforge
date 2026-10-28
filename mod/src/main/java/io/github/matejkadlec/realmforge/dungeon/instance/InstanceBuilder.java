@@ -57,8 +57,12 @@ final class InstanceBuilder {
     }
 
     /**
-     * Whether every chunk the unit touches is loaded (and, for removing entities, their entities too). Work waits
-     * for chunks that are still loading, after a restart for example, instead of loading them on the main thread.
+     * Whether every chunk the unit touches is loaded, and, for placing or removing entities, their entities too. Work
+     * waits for chunks that are still loading, after a restart for example, instead of loading them on the main
+     * thread. A chunk's blocks load before the entity manager makes its entity sections accessible, so a room placed
+     * in between would add its item frames hidden, out of every entity query, until the chunk's status catches up
+     * (RLM-483); placing waits for the entities as removing does. A plot holds a chunk only once both have loaded
+     * ({@code InstanceManager#holdChunks}), so this waits only for chunks that a restart is loading again.
      */
     static boolean ready(ServerLevel level, PlotWork.Unit unit) {
         BoundingBox box = switch (unit) {
@@ -70,7 +74,7 @@ final class InstanceBuilder {
             if (level.getChunkSource().getChunkNow(ChunkPos.getX(chunk), ChunkPos.getZ(chunk)) == null) {
                 return false;
             }
-            if (unit instanceof PlotWork.DiscardEntities && !level.areEntitiesLoaded(chunk)) {
+            if (!(unit instanceof PlotWork.Clear) && !level.areEntitiesLoaded(chunk)) {
                 return false;
             }
         }

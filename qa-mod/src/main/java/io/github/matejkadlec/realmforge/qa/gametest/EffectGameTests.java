@@ -6,10 +6,14 @@ import io.github.matejkadlec.realmforge.effect.Effects;
 import io.github.matejkadlec.realmforge.generated.GeneratedEffects;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpells;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
+import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
+import io.github.matejkadlec.realmforge.qa.combat.QaProcs;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import io.github.matejkadlec.realmforge.spell.CastResult;
+import io.github.matejkadlec.realmforge.spell.Proc;
 import io.github.matejkadlec.realmforge.spell.Resources;
 import io.github.matejkadlec.realmforge.spell.Spell;
+import io.github.matejkadlec.realmforge.spell.SpellAim;
 import io.github.matejkadlec.realmforge.spell.SpellCaster;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import java.util.Optional;
@@ -153,6 +157,77 @@ public final class EffectGameTests {
         helper.succeed();
     }
 
+    /**
+     * An application by anything but a spell (a command, a potion, a mob's arrow) that changes nothing keeps a spell's
+     * source, its caster's stats and kill credit included (RLM-373). A stronger one forgets it, and so does a longer
+     * one, a weaker one included: vanilla keeps that one hidden and lets it take over when the spell's ends.
+     */
+    @QaGameTest
+    public static void aWeakerApplicationByAnythingElseKeepsTheSource(GameTestHelper helper) {
+        ServerPlayer player = caster(helper, "qa-effect-source-kept");
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 3));
+        EffectSource source = new EffectSource(player.getUUID(),
+                Optional.of(GeneratedSpells.TEST_IGNITE.identifier()), Optional.empty());
+        Effects.apply(husk, new MobEffectInstance(GeneratedEffects.TEST_BURNING, 100, 1), player, source);
+        helper.assertFalse(husk.addEffect(new MobEffectInstance(GeneratedEffects.TEST_BURNING, 20, 0)),
+                "a weaker, shorter application changes nothing");
+        helper.assertValueEqual(Effects.source(husk, GeneratedEffects.TEST_BURNING), Optional.of(source),
+                "so the spell's source stays");
+        helper.assertFalse(husk.addEffect(new MobEffectInstance(GeneratedEffects.TEST_BURNING, 100, 1)),
+                "an equal one changes nothing either");
+        helper.assertValueEqual(Effects.source(husk, GeneratedEffects.TEST_BURNING), Optional.of(source),
+                "and keeps it too");
+        helper.assertTrue(husk.addEffect(new MobEffectInstance(GeneratedEffects.TEST_BURNING, 40, 2)),
+                "a stronger, shorter one takes over");
+        helper.assertValueEqual(Effects.source(husk, GeneratedEffects.TEST_BURNING), Optional.empty(),
+                "and forgets the spell's source");
+
+        Effects.apply(husk, new MobEffectInstance(GeneratedEffects.TEST_BURNING, 100, 3), player, source);
+        helper.assertValueEqual(Effects.source(husk, GeneratedEffects.TEST_BURNING), Optional.of(source),
+                "a stronger spell's application records it again");
+        helper.assertFalse(husk.addEffect(new MobEffectInstance(GeneratedEffects.TEST_BURNING, 400, 0)),
+                "a weaker, longer one changes nothing yet");
+        helper.assertValueEqual(Effects.source(husk, GeneratedEffects.TEST_BURNING), Optional.empty(),
+                "but it takes over later, so the spell's source goes");
+        logout(player);
+        helper.succeed();
+    }
+
+    /**
+     * An effect a proc's spell applied keeps the proc's origin on its source, and its ticks carry it, so they trigger
+     * no proc (architecture 12): the caster's sure on-hit spark fires on every tick of a cast's burning, and on none of
+     * a proc's.
+     */
+    @QaGameTest
+    public static void aProcsDamageOverTimeTriggersNoProc(GameTestHelper helper) {
+        ServerPlayer player = caster(helper, "qa-effect-proc-origin");
+        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 0);
+        StatsCommands.setBase(player, GeneratedStats.FIRE_POWER, 0);
+        Husk byProc = SpellGameTests.husk(helper, new BlockPos(1, 1, 3));
+        Husk byCast = SpellGameTests.husk(helper, new BlockPos(3, 1, 3));
+        Identifier origin = RealmforgeQa.id("ignite_on_hit");
+        QaProcs.give(player, new Proc(RealmforgeQa.id("spark_every_hit"), Proc.Trigger.HIT, 1, 0,
+                new Proc.CastSpell(GeneratedSpells.TEST_PROC_SPARK, 1)));
+
+        CastResult proc = SpellCaster.castProc(player, spell(helper, GeneratedSpells.TEST_IGNITE), 1,
+                SpellAim.at(byProc), origin);
+        helper.assertTrue(proc.success(), "test_ignite cast by a proc: " + proc.failure());
+        helper.assertValueEqual(Effects.source(byProc, GeneratedEffects.TEST_BURNING).flatMap(EffectSource::procOrigin),
+                Optional.of(origin), "its burning keeps the proc's origin");
+        learn(helper, player, GeneratedSpells.TEST_IGNITE);
+        CastResult cast = SpellCaster.cast(player, GeneratedSpells.TEST_IGNITE, byCast);
+        helper.assertTrue(cast.success(), "test_ignite cast as a spell: " + cast.failure());
+        helper.assertValueEqual(Effects.source(byCast, GeneratedEffects.TEST_BURNING).flatMap(EffectSource::procOrigin),
+                Optional.empty(), "a cast's burning has none");
+        helper.runAfterDelay(90, () -> {
+            assertHealth(helper, byProc, HEALTH - 4 * 2, "4 ticks of 2, and no spark for any of them");
+            assertHealth(helper, byCast, HEALTH - 4 * (2 + 1), "4 ticks of 2, each with its spark of 1");
+            QaProcs.clear(player);
+            logout(player);
+            helper.succeed();
+        });
+    }
+
     private static ServerPlayer caster(GameTestHelper helper, String name) {
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, name, new Vec3(2.5, 1, 0.5));
         player.setGameMode(GameType.SURVIVAL);
@@ -163,9 +238,12 @@ public final class EffectGameTests {
     }
 
     private static void learn(GameTestHelper helper, ServerPlayer player, ResourceKey<Spell> spell) {
-        Holder.Reference<Spell> holder = Spells.get(helper.getLevel().registryAccess(), spell)
+        Spells.learn(player, spell(helper, spell), 1);
+    }
+
+    private static Holder.Reference<Spell> spell(GameTestHelper helper, ResourceKey<Spell> spell) {
+        return Spells.get(helper.getLevel().registryAccess(), spell)
                 .orElseThrow(() -> new IllegalStateException("no spell " + spell.identifier()));
-        Spells.learn(player, holder, 1);
     }
 
     private static void apply(LivingEntity target, Holder<MobEffect> effect, int ticks,
