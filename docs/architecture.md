@@ -1520,8 +1520,9 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   (`assets/realmforge/font/keys.json`), which maps a private codepoint to the section sign of vanilla's font sheet.
   NeoForge's Key Binds screen marks a key yellow when any other mapping shares it, even one that works only in a
   screen (JEI's Show Recipe on R) or with F3 held; in game only the spell bar's key acts.
-- **Learning and placing:** `Spells#learn` puts a learned spell into the bar's first empty slot, unless it is on the
-  bar or is a mob's. The spellbook (`client/screen/SpellbookScreen`) moves a known spell into a slot, swapping with
+- **Learning and placing:** `Spells#learn` puts a newly learned spell into the bar's first empty slot, unless it is a
+  mob's. Learning a known spell again, at any level (a class level, C4, or a specialization point, C5), leaves the bar
+  as the player arranged it, so a spell taken off stays off (RLM-374). The spellbook (`client/screen/SpellbookScreen`) moves a known spell into a slot, swapping with
   the one there, or empties one, through `SetSpellBarSlotPayload` and `Spells#placeOnBar`, which refuses another slot
   or an unknown spell.
 - **Casting** (Matěj, 2026-10-19): `client/spell/CastQueue` decides every client tick, from the presses and the held
