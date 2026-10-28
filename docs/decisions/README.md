@@ -63,7 +63,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0049](0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md) | Player hits bypass the hurt cooldown in our damage pipeline, not through Iron's RPG Tweaks | Accepted (amends 0044), amended by [0051](0051-player-melee-passes-the-hurt-cooldown-only-at-full-strength.md) (melee only at full attack strength) |
 | [0050](0050-set-pieces-hand-built-nbt-placed-at-dungeon-generation.md) | Set pieces: hand-built NBT, placed at dungeon generation | Accepted (amends 0005 and 0014) |
 | [0051](0051-player-melee-passes-the-hurt-cooldown-only-at-full-strength.md) | A player's melee hit passes the hurt cooldown only at full attack strength | Accepted (amends 0049) |
-| [0052](0052-spells-aim-with-the-crosshair.md) | Spells aim with the crosshair: bolts fly where it points, ground spells clamp to their range | Accepted |
+| [0052](0052-spells-aim-with-the-crosshair.md) | Spells aim with the crosshair: bolts fly where it points, ground spells clamp to their range | Accepted, amended by [0055](0055-aim-assistance-for-a-players-enemy-spells.md) (aim assistance) |
 | [0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md) | Target dummies in the pack, WorldEdit for building only, and no FTB Teams parties | Accepted (amends 0013 and 0044) |
 | [0054](0054-skyhearth-and-deepholm-amend-asgard-and-atlantis.md) | Skyhearth and Deepholm amend Asgard and Atlantis | Accepted (amends 0045) |
 | [0055](0055-aim-assistance-for-a-players-enemy-spells.md) | Aim assistance for a player's enemy spells: a cone around the crosshair, homing bolts, a sticky target | Accepted (amends 0052) |

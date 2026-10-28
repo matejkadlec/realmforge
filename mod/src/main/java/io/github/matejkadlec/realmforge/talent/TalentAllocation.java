@@ -15,7 +15,8 @@ import net.minecraft.util.ExtraCodecs;
 
 /**
  * The value of a player's {@code realmforge:talents} attachment (architecture 7 and 12): the ranks allocated in each
- * talent tree and the points not spent yet. Trees are named by id until C5 adds their registry.
+ * talent tree and the points not spent yet. Trees are named by id until their registry comes with talents (postponed,
+ * RLM-28).
  *
  * @param ranks         tree to node id to rank (1 or more); unallocated nodes and trees are absent (an empty tree is
  *                      dropped)

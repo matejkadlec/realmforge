@@ -337,7 +337,7 @@
     },
     "CritDef": {
       "additionalProperties": false,
-      "description": "How the spell crits (Matěj, 2026-10-15). By default every spell can crit, on the caster's crit chance, and a\ncrit deals or heals 1 + the caster's crit damage (150 % with the base 50 %). Talents (C5) can change all three.",
+      "description": "How the spell crits (Matěj, 2026-10-15). By default every spell can crit, on the caster's crit chance, and a\ncrit deals or heals 1 + the caster's crit damage (150 % with the base 50 %). Talents (postponed, RLM-28) will\nchange all three.",
       "properties": {
         "bonus_chance_percent": {
           "default": 0,

@@ -62,7 +62,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
  *   <li>A level-up earns stat points ({@link StatPoints}), recomputes the stats, shows a title, plays a fanfare to the
  *   player and bursts particles around them, says in chat how many stat points are unspent, and fires
  *   {@code realmforge:level_reached}, as does every login. A level that falls below the points spent returns them all.
- *   Talent points and class spells join with C4 and C5.</li>
+ *   Class spells join with C4 and specialization points with C5; talent points wait with talents (RLM-28).</li>
  *   <li>A login leaves the stat recompute to the player's first tick (architecture 8.2): only then are the gear's
  *   modifiers back, which the saved stat modifiers were computed with (RLM-202).</li>
  * </ul>

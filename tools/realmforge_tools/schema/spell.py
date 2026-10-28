@@ -497,7 +497,8 @@ class CostDef(_LeveledAmount):
 
 class CritDef(StrictModel):
     """How the spell crits (Matěj, 2026-10-15). By default every spell can crit, on the caster's crit chance, and a
-    crit deals or heals 1 + the caster's crit damage (150 % with the base 50 %). Talents (C5) can change all three."""
+    crit deals or heals 1 + the caster's crit damage (150 % with the base 50 %). Talents (postponed, RLM-28) will
+    change all three."""
 
     can_crit: bool = Field(default=True, description="Whether the spell can crit at all.")
     multiplier_percent: float | None = Field(

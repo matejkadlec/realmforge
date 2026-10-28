@@ -2,7 +2,7 @@
 
 Date: 2026-10-25
 
-Status: Accepted
+Status: Accepted, amended by [0055](0055-aim-assistance-for-a-players-enemy-spells.md) (aim assistance)
 
 ## Context
 

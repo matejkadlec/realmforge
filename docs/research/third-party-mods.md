@@ -31,6 +31,7 @@ the [ADR 0013](../decisions/0013-modpack-composition.md) list.
 | M1 | Iron's RPG Tweaks, combat module only | marked No on 2026-10-18, then taken on 2026-10-19 (below) | PK4, RLM-311 |
 | M1 | Controlling + Searchables | in the pack since RLM-279 ([ADR 0043](../decisions/0043-default-keys-and-key-search-in-the-pack.md)) | done |
 | M1 | Lootr | moved from M2 to M1 on 2026-10-19 ([ADR 0041](../decisions/0041-dungeon-containers-hold-loot-through-lootr.md)) | RLM-288 |
+| M1 | MmmMmmMmmMmm (target dummies) + Moonlight Lib | added on 2026-10-23, after this review: target dummies for everyone, and Maren's Trial (RLM-397) dresses one. Moonlight Lib is a pinned beta, a release-channel exception: every 26.1.2 build of it is a beta ([ADR 0053](../decisions/0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md)) | RLM-393 |
 | M2 | Artifacts, Immersive Armors | **Artifacts is held:** its items are curios, which ADR 0025 keeps out of the pack unless they are ours (RLM-7), so Matěj decides with its catalogue. A catalogue each first (every item with its effect, a proposed minimum realm or level, early unique reward candidates); Matěj decides what stays | RLM-312, RLM-313, RLM-314 |
 | M2 | Legendary Tooltips, Item Borders, YDM's Weapon Master | | RLM-314 |
 | M2 | YUNG's suite: Better Mineshafts, Desert Temples, Jungle Temples, Witch Huts, Ocean Monuments, Bridges, Extras, Better Caves, Better Dungeons | not Better Strongholds. Better Dungeons is in (open question 1, below) | RLM-315 |
@@ -46,24 +47,26 @@ the [ADR 0013](../decisions/0013-modpack-composition.md) list.
 | M8 (v2) | Apothic Spawners, Trims Overhaul, Gateways to Eternity, Yggdrasil | Apothic Spawners: modified spawners give vanilla XP and mob loot, never class XP, and their loot is balance-checked | RLM-330 |
 
 **Watchlist** (re-checked when each milestone starts; Matěj expects most 1.21.1-only mods never to reach 26.1.2):
-Supplementaries with Amendments, Polymorph, Relics and Farmer's Delight add-ons join when they reach 26.1.2; for
-Enhanced Boss Bars, Simply Swords and Mowzie's Mobs we build our own until they arrive. Undecided on the watchlist:
-Every Compat, and Handcrafted, Another Furniture or Chipped.
+Supplementaries with Amendments, Polymorph, Relics (SSKirillSS's, Modrinth `relics-mod`) and Farmer's Delight add-ons
+join when they reach 26.1.2; for Enhanced Boss Bars, Simply Swords and Mowzie's Mobs we build our own until they arrive.
+Undecided on the watchlist: Every Compat, and Handcrafted, Another Furniture or Chipped.
 
-**Rejected (No):** Epic Knights, Basic Weapons, the RPG Series gear (Arsenal, Armory, Relics, Jewelry: too much
-overlap, against "not overmodded"), TslatEntityStatus (we have damage numbers and Neat), Combat Roll (classes get their
-own teleport, dash or roll), DeCubed Dungeons, Explorify and Formations Overworld (they overlap MVS), Medieval
-Buildings, ATi Structures, Variants&Ventures, Friends&Foes, Mutant Monsters, The Conjurer, Hunter's Return,
-Champions-Unofficial, Guard Villagers, EarthMobs, Explorer's Compass and Nature's Compass (our own Structure Compass
-instead), Corpse and GraveStone (keepInventory stays on), Tectonic, Little Joys, Snow! Real Magic!, Paragliders and
-Hang Glider, Food Effect Tooltips (our own tooltips), Pufferfish's Skills, Cooking for Blockheads (modern look),
-Storage Delight, Crate Delight, Starcatcher, WorldEdit, Rechiseled, Stoneworks, Fetzi's Asian Decoration, Building
-Wands, Construction Sticks, Dark Paintings, Dynamic RPG Resource Bars, Visible Traders, Advancement Plaques, Ping
-Wheel, Simple Voice Chat, KubeJS + LootJS, AmbientSounds (ElevenLabs sounds instead), Sound Physics Remastered, Subtle
-Effects, Particular Reforged, Not Enough Animations, 3D Skin Layers, Spawn Animations, Sounds, and Immersive Paintings
-(open question 3). Watchlist No: When Dungeons Arise, IDAS, Born in Chaos, Kaleidoscope Cookery, Creeper and Enderman
-Overhaul, Critters and Companions, Kobolds, TorchMaster, Valhelsia Structures, In Control!, Naturalist, Presence
-Footsteps.
+**Rejected (No):** Epic Knights, Basic Weapons, the RPG Series gear (Arsenal, Armory, ZsoltMolnarrr's Relics
+`relics-rpg`, Jewelry: too much overlap, against "not overmodded"), TslatEntityStatus (we have damage numbers and Neat),
+Combat Roll (classes get their own teleport, dash or roll), DeCubed Dungeons, Explorify and Formations Overworld (they
+overlap MVS), Medieval Buildings, ATi Structures, Variants&Ventures, Friends&Foes, Mutant Monsters, The Conjurer,
+Hunter's Return, Champions-Unofficial, Guard Villagers, EarthMobs, Explorer's Compass and Nature's Compass (our own
+Structure Compass instead), Corpse and GraveStone (keepInventory stays on), Tectonic, Little Joys, Snow! Real Magic!,
+Paragliders and Hang Glider, Food Effect Tooltips (our own tooltips), Pufferfish's Skills, Cooking for Blockheads
+(modern look), Storage Delight, Crate Delight, Starcatcher, WorldEdit (for the pack; Matěj builds with it in his dev
+client, `-PwithWorldEdit`, and his Prism instance, [ADR
+0053](../decisions/0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md)), Rechiseled,
+Stoneworks, Fetzi's Asian Decoration, Building Wands, Construction Sticks, Dark Paintings, Dynamic RPG Resource Bars,
+Visible Traders, Advancement Plaques, Ping Wheel, Simple Voice Chat, KubeJS + LootJS, AmbientSounds (ElevenLabs sounds
+instead), Sound Physics Remastered, Subtle Effects, Particular Reforged, Not Enough Animations, 3D Skin Layers, Spawn
+Animations, Sounds, and Immersive Paintings (open question 3). Watchlist No: When Dungeons Arise, IDAS, Born in Chaos,
+Kaleidoscope Cookery, Creeper and Enderman Overhaul, Critters and Companions, Kobolds, TorchMaster, Valhelsia
+Structures, In Control!, Naturalist, Presence Footsteps.
 
 **Not reviewed:** Repurposed Structures, which RLM-221 asked for, has a 26.1 build that Modrinth does not tag 26.1.2.
 
