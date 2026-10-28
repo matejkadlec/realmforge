@@ -199,10 +199,11 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
 - **C4 Class kits** (RLM-27, M, after C3b, C3c and the spell aiming). 4-5 spells per class; starting gear with fixed
   stats, generated with per-slot modifier ids and the rule that gear never adds max health directly
   ([architecture 8.2](architecture.md#82-where-modifiers-come-from)); the Human's racial passive and active (Sword
-  Specialization with the `#realmforge:sword_like` item tag and its tooltip lines, Will To Survive on the spell bar's
-  G key; [architecture 10.1](architecture.md#101-races-and-classes), RLM-219); a first balance pass on the training
-  dummy. The Mage never heals: it survives through utility (Ice Block, Mirror Image) and shields (Mana Shield, Ice
-  Barrier, perhaps spells that raise the Magic Shield for a while) (Matěj, 2026-10-22).
+  Specialization with the `#realmforge:sword_like` item tag and its tooltip lines, Will To Survive in the racial slot
+  beside the spell bar (X; [ADR 0046](decisions/0046-spell-bar-default-keys-amend-the-pack-defaults.md));
+  [architecture 10.1](architecture.md#101-races-and-classes), RLM-219); a first balance pass on the training dummy.
+  The Mage never heals: it survives through utility (Ice Block, Mirror Image) and shields (Mana Shield, Ice Barrier,
+  perhaps spells that raise the Magic Shield for a while) (Matěj, 2026-10-22).
 - **C5 Specialization spell trees** (RLM-333, M, after C4). Talents are postponed indefinitely (RLM-28), but the M1
   tree stays as a specialization spell tree, one per class (Matěj, 2026-10-16, RLM-218): most spells take several
   points and grow stronger with each, some gain an extra effect at the top rank, big-impact spells have one rank;

@@ -395,13 +395,14 @@ class InstantCastDef(StrictModel):
 
 
 class _TimedCastDef(StrictModel):
-    """What cast-time spells and channels share: moving cancels them unless the spell allows it, and the target is
-    checked again before the effects run (architecture 11.2)."""
+    """What cast-time spells and channels share: moving never cancels them (ADR 0039), the cast halves its caster's
+    speed unless the spell allows full speed (ADR 0047), and the target is checked again before the effects run
+    (architecture 11.2)."""
 
     castable_while_moving: bool = Field(
         default=False,
-        description="Whether the caster moves at full speed during the cast; by default the cast slows it as "
-        "Slowness III does.",
+        description="Whether the caster moves at full speed during the cast; by default the cast halves its speed "
+        "(moving never cancels it).",
     )
     lock_on: bool = Field(
         default=False,
