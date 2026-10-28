@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
+import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.generated.GeneratedItems;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpells;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -29,12 +31,15 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.stats.Stats;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -46,6 +51,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -55,8 +61,11 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.Repairable;
 import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 /**
  * Gear from {@code content/items/} (RLM-172 wands, RLM-197 caster robes): each piece is in the game as its YAML says
@@ -299,9 +308,11 @@ public final class GearGameTests {
     }
 
     /**
-     * RLM-172 (Matěj, 2026-10-26): a two-handed wand coming into the main hand drops the shield in the off hand and
-     * locks every shield, on vanilla's item cooldown; while the wand stays there the lock keeps starting again, and
-     * after it leaves the lock runs down from where it was, while a shield taken in hand still drops.
+     * RLM-172 (Matěj, 2026-10-26) and RLM-461 (Matěj, 2026-10-28): a two-handed wand coming into the main hand puts the
+     * shield in the off hand into the bag and locks every shield, on vanilla's item cooldown; while the wand stays
+     * there the lock keeps starting again, and after it leaves the lock runs down from where it was, while a shield
+     * taken in hand still goes into the bag. The bag is the main inventory, never the hotbar, so the shield stays out of
+     * both hands and nothing lies on the ground to be picked up again.
      */
     @QaGameTest(timeoutTicks = 100)
     public static void aTwoHandedWandLocksEveryShield(GameTestHelper helper) {
@@ -312,7 +323,9 @@ public final class GearGameTests {
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(GeneratedItems.STONE_WAND.get()));
         player.doTick();
         helper.assertTrue(player.getOffhandItem().isEmpty(), "the wand took the shield out of the off hand");
-        helper.assertValueEqual(clearDroppedShields(helper, player), 1, "the shield dropped to the ground");
+        helper.assertTrue(player.getInventory().getItem(Inventory.SELECTION_SIZE).is(Items.SHIELD),
+                "into the first slot of the bag, past the hotbar");
+        helper.assertValueEqual(clearDroppedShields(helper, player), 0, "no shield on the ground");
         long locked = helper.getLevel().getGameTime();
         helper.assertValueEqual(TwoHandedGear.lockEnd(player), OptionalLong.of(locked + TwoHandedGear.LOCK_TICKS),
                 "a 3-minute lock");
@@ -323,11 +336,12 @@ public final class GearGameTests {
             long now = helper.getLevel().getGameTime();
             helper.assertTrue(TwoHandedGear.lockEnd(player).orElse(0) > now + TwoHandedGear.LOCK_TICKS - 20,
                     "the lock started again while the wand stayed in the main hand");
-            player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-            player.setItemInHand(InteractionHand.OFF_HAND, shield.copy());
+            player.setItemInHand(InteractionHand.MAIN_HAND, shield.copy());
             player.doTick();
-            helper.assertTrue(player.getOffhandItem().isEmpty(), "a shield taken in hand during the lock drops");
-            helper.assertValueEqual(clearDroppedShields(helper, player), 1, "the second shield dropped");
+            helper.assertTrue(player.getMainHandItem().isEmpty(), "a shield taken in hand during the lock goes");
+            helper.assertTrue(player.getInventory().getItem(Inventory.SELECTION_SIZE + 1).is(Items.SHIELD),
+                    "into the next free slot of the bag");
+            helper.assertValueEqual(clearDroppedShields(helper, player), 0, "still no shield on the ground");
             helper.assertTrue(TwoHandedGear.lockEnd(player).isPresent(), "the lock lasts after the wand left");
         });
         helper.runAfterDelay(60, () -> {
@@ -337,6 +351,95 @@ public final class GearGameTests {
             logout(player);
             helper.succeed();
         });
+    }
+
+    /**
+     * RLM-461 (Matěj, 2026-10-28): with the bag full, a shield taken in hand during the lock drops at the player's feet,
+     * as a plain drop: not thrown ahead, and not counted as the player's drop.
+     */
+    @QaGameTest
+    public static void aShieldDropsOnlyWhenTheBagIsFull(GameTestHelper helper) {
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-gear-full-bag");
+        try {
+            player.setGameMode(GameType.SURVIVAL);
+            for (int slot = Inventory.SELECTION_SIZE; slot < Inventory.INVENTORY_SIZE; slot++) {
+                player.getInventory().setItem(slot, new ItemStack(Items.DIRT));
+            }
+            player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
+            player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(GeneratedItems.STONE_WAND.get()));
+            player.doTick();
+            helper.assertTrue(player.getOffhandItem().isEmpty(), "the shield left the off hand");
+            List<ItemEntity> dropped = helper.getLevel().getEntitiesOfClass(ItemEntity.class,
+                    player.getBoundingBox().inflate(4), item -> item.getItem().is(Items.SHIELD));
+            helper.assertValueEqual(dropped.size(), 1, "with the bag full, it dropped");
+            ItemEntity shield = dropped.getFirst();
+            helper.assertTrue(shield.position().subtract(player.position()).horizontalDistance() < 0.01
+                    && shield.getDeltaMovement().horizontalDistance() < 0.01,
+                    "at the player's feet, not thrown ahead: " + shield.position() + ", " + shield.getDeltaMovement());
+            helper.assertValueEqual(player.getStats().getValue(Stats.CUSTOM.get(Stats.DROP)), 0,
+                    "not counted as the player's drop");
+            dropped.forEach(ItemEntity::discard);
+        } finally {
+            logout(player);
+        }
+        helper.succeed();
+    }
+
+    /**
+     * RLM-461: a death ends the lock, though the respawned player is a new object with the old one's entity id, and so
+     * does a logout. After either, a shield stays in hand.
+     */
+    @QaGameTest
+    public static void aDeathAndALogoutEndTheLock(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-gear-lock-ends");
+        ServerPlayer player = lockedWithoutTheWand(helper, QaPlayers.loginOnPlatform(helper, profile));
+        ServerPlayer respawned = server.getPlayerList().respawn(player, false, Entity.RemovalReason.KILLED);
+        helper.assertTrue(TwoHandedGear.lockEnd(respawned).isEmpty(), "the death ended the lock");
+        respawned.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
+        respawned.doTick();
+        helper.assertTrue(respawned.getOffhandItem().is(Items.SHIELD), "after the death a shield stays in hand");
+
+        respawned.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+        lockedWithoutTheWand(helper, respawned);
+        logout(respawned);
+        ServerPlayer back = QaPlayers.loginOnPlatform(helper, profile);
+        try {
+            helper.assertTrue(TwoHandedGear.lockEnd(back).isEmpty(), "the logout ended the lock");
+            back.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
+            back.doTick();
+            helper.assertTrue(back.getOffhandItem().is(Items.SHIELD), "after the logout a shield stays in hand");
+        } finally {
+            logout(back);
+        }
+        helper.succeed();
+    }
+
+    /**
+     * RLM-461: a client rebuilds its player at a dimension change and forgets its cooldowns, so the lock goes back on
+     * the shields' cooldown (here the server's cooldown is taken away first, as the client's is). The test posts the
+     * dimension change's event that {@code ServerPlayer#teleport} fires, instead of generating another dimension's
+     * terrain, which would load the server beside the tests that wait for light. A return from the End builds a new
+     * player on the server too: it keeps the lock and its cooldown.
+     */
+    @QaGameTest
+    public static void theLockShowsAgainAfterADimensionChangeAndAReturnFromTheEnd(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = lockedWithoutTheWand(helper, QaPlayers.loginOnPlatform(helper, "qa-gear-lock-travels"));
+        ItemStack shield = new ItemStack(Items.SHIELD);
+        OptionalLong end = TwoHandedGear.lockEnd(player);
+        player.getCooldowns().removeCooldown(player.getCooldowns().getCooldownGroup(shield));
+        NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerChangedDimensionEvent(player, Level.NETHER, Level.OVERWORLD));
+        helper.assertTrue(player.getCooldowns().isOnCooldown(shield), "the dimension change showed the lock again");
+
+        ServerPlayer back = server.getPlayerList().respawn(player, true, Entity.RemovalReason.CHANGED_DIMENSION);
+        try {
+            helper.assertValueEqual(TwoHandedGear.lockEnd(back), end, "the return from the End kept the lock");
+            helper.assertTrue(back.getCooldowns().isOnCooldown(shield), "and its new player shows it");
+        } finally {
+            logout(back);
+        }
+        helper.succeed();
     }
 
     /**
@@ -423,6 +526,16 @@ public final class GearGameTests {
         double expected = CustomMobGameTests.expectedShare(drop, looting);
         helper.assertTrue(Math.abs(share - expected) <= CustomMobGameTests.SHARE_TOLERANCE,
                 what + " dropped " + drop.item() + " in " + share + " of the rolls, not about " + expected);
+    }
+
+    /** Locks the player's shields with a wand in the main hand, then empties the hand, so the lock runs down. */
+    private static ServerPlayer lockedWithoutTheWand(GameTestHelper helper, ServerPlayer player) {
+        player.setGameMode(GameType.SURVIVAL);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(GeneratedItems.STONE_WAND.get()));
+        player.doTick();
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        helper.assertTrue(TwoHandedGear.lockEnd(player).isPresent(), "the wand locked the shields");
+        return player;
     }
 
     /** Removes the shields lying near the player, so none is picked up again, and returns how many there were. */
