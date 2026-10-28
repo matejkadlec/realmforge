@@ -9,8 +9,9 @@ import java.util.WeakHashMap;
 import net.minecraft.world.entity.LivingEntity;
 
 /**
- * The QA mod's proc source (architecture 12): procs given to single entities, until talents (C5) and items give real
- * ones. GameTests give and take them; weak keys, so a removed entity leaves nothing behind. Server thread only.
+ * The QA mod's proc source (architecture 12): procs given to single entities, until items and talents (postponed,
+ * RLM-28) give real ones. GameTests give and take them; weak keys, so a removed entity leaves nothing behind. Server
+ * thread only.
  */
 public final class QaProcs {
     private static final Map<LivingEntity, List<Proc>> PROCS = new WeakHashMap<>();

@@ -219,7 +219,8 @@ def universe_with_content(vanilla: IdUniverse, content: Content) -> IdUniverse:
         universe.add(WORLDGEN_REGISTRIES[file.directory], f"{MOD_ID}:{file.id}")
     for room in content.rooms:
         universe.add(STRUCTURE_REGISTRY, room_structure_id(room.id))
-        # A room pool is a template pool too, for the jigsaws of world structures (M4), so a jigsaw may name one.
+        # A room pool is a template pool too, for the jigsaws of world structures (M2, ADR 0044), so a jigsaw may
+        # name one.
         for pool in room.model.pools:
             universe.add(TEMPLATE_POOL_REGISTRY, pool)
     return universe

@@ -298,10 +298,10 @@ How features cooperate without breaking the direction:
 | Registry | Content | One entry | Synced | Milestone |
 | --- | --- | --- | --- | --- |
 | `realmforge:race` | `content/races/` | playable race: base modifiers, innate spells, allowed classes | yes | M1 |
-| `realmforge:class` | `content/classes/` | class: resource type, starting stats, spells by level, talent trees, starting kit | yes | M1 |
+| `realmforge:class` | `content/classes/` | class: resource type, starting stats, spells by level, its specializations' spell trees (C5), starting kit | yes | M1 |
 | `realmforge:spell_school` | `content/spell_schools/` | school (owned by `combat`): kind (physical or magic), colour, its damage type, and the stats that are its power and resistance (attributes from `content/stats/`, static registrations, so a new school's stats need a game restart) | yes | M1 |
 | `realmforge:spell` | `content/spells/` | spell for players or NPCs: school, what it scales with, targeting, cast, cost, cooldowns, crit rules, typed effects with values per spell level (C3a-1), its name and description with placeholders (C3b) | yes | M1 |
-| `realmforge:talent_tree` | `content/talents/` | WoW-style tree: nodes on a grid, ranks, prerequisites, typed effects per rank | yes | M1 |
+| `realmforge:talent_tree` | `content/talents/` | WoW-style tree: nodes on a grid, ranks, prerequisites, typed effects per rank | yes | postponed ([12](#12-talents)) |
 | `realmforge:stat_rule` | `content/stat_rules/` | what a primary stat gives: per-point modifiers, milestone bonuses | yes | M1 |
 | `realmforge:curve` | `content/curves/` | named table of points (level → value), linearly interpolated: XP per level, mob scaling, item budgets | yes | M1 |
 | `realmforge:chapter` | `content/chapters/` | story chapter (owned by `progression`, C2): order, the level cap while it is the player's current chapter and the one once it is completed; its advancement `realmforge:chapter/<id>` marks it completed (what a chapter unlocks names the chapter through `chapter_completed`) | yes | M1 |
@@ -327,7 +327,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | --- | --- | --- |
 | `realmforge:spell_effect_type` | damage, heal (C3a-1, `spell/SpellEffectTypes`); apply_effect, remove_effect, projectile, area, teleport, dash, knockback (C3a-3); summon later | spells, so also boss abilities and procs |
 | `realmforge:targeting_type` | self, enemy, ally (C3a-1, `spell/TargetingTypes`); ground point, direction (C3a-3); for NPCs current target, random player, farthest player (C3a-4), arena point (W5) | spells, boss abilities |
-| `realmforge:talent_effect_type` | attribute_modifier, spell_modifier, grant_spell, proc | talents; later glyphs and set bonuses |
+| `realmforge:talent_effect_type` | attribute_modifier, spell_modifier, grant_spell, proc | talents (postponed, [12](#12-talents)); later glyphs and set bonuses |
 | `realmforge:resource_type` | mana, rage (`spell/ResourceTypes`; C1 gave them ids and names, C3a-1 their pools, C3a-4 rage's gain and decay) | classes, spell costs |
 | `realmforge:phase_trigger_type` | health_below, time_in_phase, adds_defeated | bosses |
 | `realmforge:dungeon_ending_type` | boss_lair, treasury; later puzzle, wave_arena, escape, mounted_run, exploration | dungeon types |
@@ -532,13 +532,13 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   (`stats/StatsAttachments`, `character/CharacterAttachments`, `spell/SpellAttachments`,
   `talent/TalentAttachments`), registered from its `<Name>Feature`. The values are `stats/EntityLevel`,
   `character/CharacterData`, `spell/Spellbook`, `spell/CombatState` and `talent/TalentAllocation`; owner-only data
-  syncs with `core/Attachments#toOwner`. Talent trees are named by `Identifier` until their registry exists (C5);
-  races and classes are `ResourceKey`s since C1, and spells since C3a-1, which save the same string, so F3's saves
-  stay readable. `CombatState` keeps one pool per resource type (`resources`, by the type's id), absent until the
-  type's pool first fills ([11.5](#115-resources-cooldowns-modifiers)). Leveling (C2, [10.2](#102-leveling)) caches
-  the level cap there for players with a character, and stat points (RLM-196) save the points spent on each primary
-  stat by the stat's id; the unspent points are derived, never saved. Every saved field is optional with a default,
-  so an empty save reads as the default value.
+  syncs with `core/Attachments#toOwner`. Talent trees are named by `Identifier` until their registry exists (postponed
+  with talents, [12](#12-talents)); races and classes are `ResourceKey`s since C1, and spells since C3a-1, which save
+  the same string, so F3's saves stay readable. `CombatState` keeps one pool per resource type (`resources`, by the
+  type's id), absent until the type's pool first fills ([11.5](#115-resources-cooldowns-modifiers)). Leveling (C2,
+  [10.2](#102-leveling)) caches the level cap there for players with a character, and stat points (RLM-196) save the
+  points spent on each primary stat by the stat's id; the unspent points are derived, never saved. Every saved field is
+  optional with a default, so an empty save reads as the default value.
 - `level` is copied on death, and NeoForge copies the same attachments when a mob converts (a zombie drowns,
   `LivingConversionEvent.Post`), so the converted mob keeps its level, and `mob` gives it that level's scaling
   ([14.1](#141-mob-levels)).
@@ -800,7 +800,7 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
    empty.
 6. **`LivingDamageEvent.Post`** puts both sides in combat ([9.4](#94-in-combat), as a dodge and a full block in
    step 3 do) and reports what was dealt: `combat` posts `CombatEvent.Hit` (school, crit, the original damage, what armor
-   blocked, the damage dealt and taken from health) for higher features (procs in C3a and C5, threat later, the QA mod's
+   blocked, the damage dealt and taken from health) for higher features (procs since C3a, threat later, the QA mod's
    combat log), and sends the combat text (`combat/net/CombatTextPayload`) to the player who dealt the hit
    ([18](#18-client-code-rendering-gui-input)). A tick of a damaging effect has no attacker:
    `combat/DamageOverTime` remembers the player who applied each poison or wither (from `MobEffectEvent.Added`'s
@@ -1120,9 +1120,10 @@ go of right click stops its charge.
     (vanilla's title packets), plays the challenge fanfare to the player alone, bursts totem particles that everyone
     nearby sees, says in chat how many stat points are unspent and which key opens the sheet (a keybind component),
     and fires `realmforge:level_reached`. A level-up that reaches the cap says in chat which chapter raises it.
-    Talent points and class spells join with C4 and C5. A login updates the level quietly and leaves the stat
-    recompute to the player's first tick ([8.2](#82-where-modifiers-come-from), RLM-202); every other update
-    (kills, rewards, commands, chapters) recomputes at once.
+    Class spells join with C4 and specialization points with C5; talent points wait with talents (RLM-28). A login
+    updates the level quietly and leaves the stat recompute to the player's first tick
+    ([8.2](#82-where-modifiers-come-from), RLM-202); every other update (kills, rewards, commands, chapters) recomputes
+    at once.
   - **Stat points** (`character/StatPoints`, RLM-196): the points a player has earned are derived, never saved:
     those of every level from 2 to theirs, each level's the curve `stat_points_per_level` rounded half up and at
     least 0 (`tools/realmforge_tools/schema/leveling.py` computes the same, and a GameTest compares the two). The
@@ -1177,7 +1178,8 @@ Its name and description are translation keys from C3b, the description's number
   a spell pushes its target only through a `realmforge:knockback` effect (C3a-3).
 - **Crits** (Matěj, 2026-10-15): every spell can crit, heals too, on the caster's crit chance for 1 + the caster's
   crit damage (150 % with the base 50 %), crit damage being shared with melee. A spell's `crit` data may switch
-  crits off, add a bonus chance, or set its own multiplier (`combat/CritRule`); talents (C5) will change all three.
+  crits off, add a bonus chance, or set its own multiplier (`combat/CritRule`); talents (postponed, RLM-28) will change
+  all three.
 
 A player knows a spell through their class (by level), race, talents (`grant_spell`) or items (an item component
 lists spells granted while equipped or on use): the vision's "some from the race or class, some from items".
@@ -1722,9 +1724,9 @@ return; the proc engine at its end exists since C3a.
   the holder) or apply a status effect (`ApplyEffect`, to the holder or the other entity). `spell/Procs` reacts to
   `CombatEvent.Hit` (every hit with an attacker: melee, ranged and spells, a dodged one never) and to kills
   (`LivingDeathEvent`, last, so a totem's save counts), and fires the procs that every `Procs.Source` gives the
-  entities involved; talents (C5) and items will add theirs, and the QA mod adds `QaProcs` for its tests. A proc
-  fires at its chance outside its internal cooldown, which starts once its spell was cast or its effect took hold.
-  Its spell goes through `SpellCaster#castProc`: at once and free, whatever its cast type, without the spell's
+  entities involved; items and talents (postponed, RLM-28) will add theirs, and the QA mod adds `QaProcs` for its tests.
+  A proc fires at its chance outside its internal cooldown, which starts once its spell was cast or its effect took
+  hold. Its spell goes through `SpellCaster#castProc`: at once and free, whatever its cast type, without the spell's
   cooldowns or the global cooldown, while another cast runs. The proc origin is the proc's id: `EffectContext`
   carries it to every effect, a projectile or an area keeps it, `DamageEffect` puts it into its
   `combat/SchoolDamageSource`, and `Procs` ignores every hit and kill whose source carries one. Vanilla status

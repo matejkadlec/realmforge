@@ -25,7 +25,8 @@ public final class Spells {
      * Teaches {@code player} {@code spell} at {@code level}, replacing the level they knew. A spell they did not know
      * goes into the spell bar's first empty slot (C3b, RLM-25); learning a known one again, at any level, leaves the
      * bar as the player arranged it (RLM-374), so a rank-up never brings back a spell they took off. The level must lie
-     * between 1 and the spell's {@code max_level}. Character (C4: spells by class level) and talents (C5) call this.
+     * between 1 and the spell's {@code max_level}. Character (C4: spells by class level) and the specialization spell
+     * trees (C5) call this.
      */
     public static void learn(Player player, Holder.Reference<Spell> spell, int level) {
         if (level < 1 || level > spell.value().maxLevel()) {
