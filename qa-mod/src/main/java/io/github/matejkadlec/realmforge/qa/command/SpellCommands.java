@@ -42,8 +42,9 @@ import net.neoforged.neoforge.registries.DeferredHolder;
  * {@code /qa spell} drives the spell engine (C3a-1, architecture 11) and sets up the spell bar (C3b), on the executing
  * entity ({@code /execute as} makes a mob the caster):
  * <ul>
- *   <li>{@code /qa spell learn <spell> [<level>]} teaches the executing player a spell, at level 1 by default; it goes
- *   into the spell bar's first empty slot.</li>
+ *   <li>{@code /qa spell learn <spell> [<level>]} teaches the executing player a spell, at level 1 by default. A spell
+ *   the player did not know goes into the spell bar's first empty slot; learning a known spell again, at any level,
+ *   leaves the bar alone (RLM-374), so {@code /qa spell bar <slot> <spell>} places it.</li>
  *   <li>{@code /qa spell bar <slot> [<spell>]} puts a known spell into a bar slot (1 to 8), or empties it; slot 9 is
  *   the racial slot beside the bar (X), which takes any spell here until the race fills it (C4).</li>
  *   <li>{@code /qa spell cast <spell> [<target>]} casts it at the target (none by default: a self or ally spell then
