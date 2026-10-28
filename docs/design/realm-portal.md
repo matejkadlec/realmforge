@@ -21,7 +21,9 @@
 > 12 to 14). RLM-395 (2026-10-23 and 2026-10-24) made every signet a recipe around a shard that its realm's final
 > boss drops, and let a quest shop sell a lost signet ([Decisions](#decisions), 15 to 17). RLM-335 and RLM-406
 > (2026-10-27) let players travel at once and made the sealstone glow near a signet ([Decisions](#decisions), 18 and
-> 19), and RLM-341 let Overworld frames stand on ground at y 63. Other block and item names
+> 19), and RLM-341 let Overworld frames stand on ground at y 63. RLM-458 (2026-10-28) let a realm's own signet open a
+> frame inside the realm back onto Overworld, with the glow, and set the stone realm's scale to the Nether's 1:8
+> ([Decisions](#decisions), 22 to 24). Other block and item names
 > are working names; realm names are the approved ones of the [lore outline](../lore/outline.md#the-realms)
 > (RLM-139, RLM-188), without an article. The v1 realm layout (RLM-188, 2026-10-16) moved the stone realm to
 > chapter 2 (levels 6–18) and its unlock to the end of chapter 1's main questline. APIs named here were checked
@@ -40,9 +42,11 @@
 - **Portals link like the Nether's, in both directions** (Matěj, RLM-128). An Overworld portal leads to the realm
   portal near its scaled position in the realm, or builds one there, and the way back works the same in reverse.
   Any number of portals can stand anywhere in Overworld.
-- **Scaled coordinates keep arrivals near a realm's origin,** where its lowest levels are: the stone realm links at
-  1:16, so every Overworld portal within 20,000 blocks of the origin arrives in its first level band
-  ([The coordinate scale](#the-coordinate-scale)).
+- **Scaled coordinates keep arrivals near a realm's origin:** the stone realm links at 1:8, as the Nether does (Matěj,
+  2026-10-28), so every Overworld portal within 10,000 blocks of the origin arrives within 1,250 blocks of the realm's
+  origin ([The coordinate scale](#the-coordinate-scale)).
+- **A frame inside a realm opens back onto Overworld** with the realm's own signet or the sneak gesture, so a player
+  whose portal broke is never stuck there (Matěj, 2026-10-28).
 - **A player always respawns in Overworld,** at their bed or at the world spawn, never in a realm. A
   "Return to last death" scroll (RLM-155) takes them back to where they died.
 - **Each realm has its own colour**, particles and sound, and a flavour line (RE-1).
@@ -118,7 +122,8 @@ hoppers have nothing to take.
 | right-click with a signet of a realm the player has unlocked | opens the portal onto the signet's realm, or switches it there at once; the signet stays in the hand |
 | right-click with the signet of the realm a lit portal already shows | nothing changes; "The portal already opens onto Undervault" |
 | right-click with a signet of a realm the player has not unlocked | refused, with the realm's hint: "You are not eligible to open a portal to the stone realm. Unlocked by completing The Ominous Chief quest." (Matěj, 2026-10-20) |
-| right-click with any signet on a frame inside a realm | refused: "This portal leads only back to Overworld" (Matěj, RLM-188) |
+| right-click with the realm's own signet on a frame inside that realm | opens it onto return, or keeps it there, as the sneak gesture does (Matěj, 2026-10-28: "the portal in the Undervault would get activated by the same signet") |
+| right-click with another realm's signet on a frame inside a realm | refused: "This portal leads only back to Overworld", because no portal links two realms (Matěj, RLM-188) |
 | right-click with an empty hand | the action bar shows where the portal opens onto, or "The portal is closed" for a dark one |
 | sneak and right-click with an empty main hand, whatever the off hand holds | in Overworld, closes the portal (setting none); inside a realm, opens it onto return, or switches it back to return |
 | break the sealstone | the portal closes, and the sealstone drops as an item without its setting; one a trip built drops nothing ([Building a portal](#building-a-portal)) |
@@ -126,16 +131,16 @@ hoppers have nothing to take.
 - **Who may switch a portal:** anyone holding a signet they are eligible to use (Matěj, RLM-128). Unlocks are per
   player ([Multiplayer](#multiplayer)), so switching changes only where the portal leads, never who may enter.
 - **It glows near a signet** (Matěj, 2026-10-24, RLM-406: "the Sealstone block would smoothly light up if player with
-  Signet item in hand"; chapter 1's "the gate lights"). While a player holding a signet in either hand stands within 5
-  blocks of its centre, the sealstone lights up, one light level a tick to light level 15, so it rises over 15 ticks,
-  about a second, and fades the same way once they walk away or put the signet away. A portal open onto a realm glows
-  for that realm's signet; a dark one, as a frame that was never opened is, for any signet; a return portal, open onto
-  Overworld, which has no signet, stays dark. It glows only where a signet opens a portal, so in Overworld: a
-  sealstone inside a realm, where every signet is refused, and one in a dimension without an entry (the instances, the
-  Nether, other mods'), stays dark for every signet (RLM-458). The glow is the block's own light (a block state,
-  `glow`), so every player sees it, also on a dedicated server; spectators light nothing. The radius, the signet rule
-  and the full light level are proposals for Matěj's playtest. Its look, an emissive texture, comes with the frame's
-  retexture (RLM-301).
+  Signet item in hand"; chapter 1's "the gate lights"). While a player holding a signet that works on it in either
+  hand stands within 5 blocks of its centre, the sealstone lights up, one light level a tick to light level 15, so it
+  rises over 15 ticks, about a second, and fades the same way once they walk away or put the signet away. In
+  Overworld, a portal open onto a realm glows for that realm's signet, and a dark one, as a frame that was never
+  opened is, for any signet. Inside a realm, the sealstone glows for that realm's own signet, which opens it back onto
+  Overworld, whether it is dark or open onto return (Matěj, 2026-10-28: "I'd add the glowing effect as well"). In a
+  dimension without an entry (the instances, the Nether, other mods'), where no signet opens a portal, it stays dark
+  (RLM-458). The glow is the block's own light (a block state, `glow`), so every player sees it, also on a dedicated
+  server; spectators light nothing. The radius, the signet rule and the full light level are proposals for Matěj's
+  playtest. Its look, an emissive texture, comes with the frame's retexture (RLM-301).
 - **The sneak gesture with something in the off hand** (RLM-133). Vanilla skips a block's use while the player
   sneaks with anything in either hand that does not bypass the sneak (`ServerPlayerGameMode#useItemOn` on the server,
   `MultiPlayerGameMode#performUseItemOn` on the client; `IItemStackExtension#doesSneakBypassUse` is true only for an
@@ -279,26 +284,28 @@ player arrives wherever the linked portal stands.
   `NetherPortalBlock#getPortalDestination` does with `DimensionType.getTeleportationScale` and
   `WorldBorder#clampToBounds`. It starts from the centre of the opening, not from the player, whose place in a
   3-wide opening would shift the target by up to 16 blocks on the way back. It then looks for a lit realm portal
-  that leads back to Overworld (setting return) within ⌊128 ÷ scale⌋ blocks of that position: 8 at 1:16. When
-  it finds one, the player arrives there; otherwise a portal is built within one block less, ⌊128 ÷ scale⌋ − 1: 7
-  at 1:16 ([Building a portal](#building-a-portal); the rounding below needs that block).
+  that leads back to Overworld (setting return) within ⌊128 ÷ scale⌋ blocks of that position: 16 at 1:8, as vanilla
+  searches the Nether. When it finds one, the player arrives there; otherwise a portal is built within one block less,
+  ⌊128 ÷ scale⌋ − 1: 15 at 1:8 ([Building a portal](#building-a-portal); the rounding below needs that block).
 - **Back to Overworld:** the same in reverse. The trip multiplies by the scale and looks within 128 blocks of
   that position for a lit portal open onto the realm the player comes from, or builds one within 16 blocks.
 - **The radii follow vanilla's arithmetic.** Vanilla's `PortalForcer#findClosestPortalPosition` searches 16 blocks
   in the Nether and 128 in Overworld, and 16 × 8 = 128 is what makes a nether portal pair link back. A realm
   side radius derived from 128 ÷ scale keeps that true at any scale, once it allows for the rounding:
   `WorldBorder#clampToBounds` returns `BlockPos.containing`, which rounds the scaled position down. An Overworld
-  portal centred at x 15 aims at realm x 0 (15 ÷ 16, rounded down); a realm portal built 8 blocks away, at x −8,
-  would aim back at −128, and the search there (−256 to 0) misses x 15.
-  - a portal a trip builds in a realm stands within 7 blocks of the rounded position, which lies less than one
-    realm block below the exact one (at most 15 Overworld blocks), so the way back aims within 7 × 16 + 15 = 127
+  portal centred at x 7 aims at realm x 0 (7 ÷ 8, rounded down); a realm portal built 16 blocks away, at x −16,
+  would aim back at −128, and the search there (−256 to 0) misses x 7.
+  - a portal a trip builds in a realm stands within 15 blocks of the rounded position, which lies less than one
+    realm block below the exact one (at most 7 Overworld blocks), so the way back aims within 15 × 8 + 7 = 127
     blocks of the Overworld portal it came from, inside the Overworld search;
   - one a trip builds in Overworld stands within 16 blocks of the scaled-back position, so the way back aims
     within 1 block of the realm portal it came from.
 
-  So a pair a trip built always links back, both ways. Overworld portals up to about 128 blocks apart (8 × 16) lead
+  So a pair a trip built always links back, both ways. Overworld portals up to about 128 blocks apart (16 × 8) lead
   to one realm portal, as Overworld portals up to 128 blocks apart share one nether portal. Matěj asked for exactly
-  that: Overworld portals close to each other target the same realm portal.
+  that: Overworld portals close to each other target the same realm portal. At 1:8 the search radii are vanilla's own
+  (128 in Overworld, 16 in the realm), so realm portals pair as nether portals do (Matěj, 2026-10-28: "make it exactly
+  the same behavior as per nether"); only the realm's build radius is one block less, for the rounding.
 - **The search reads point-of-interest data, as vanilla's does:** the sealstone is a point of interest of our
   own (`Registries.POINT_OF_INTEREST_TYPE`, `PoiManager#getInSquare`). The search then keeps only sealstones whose
   portal is lit and leads the right way. Portals are never linked by a saved pair, so breaking or switching a portal
@@ -314,40 +321,40 @@ player arrives wherever the linked portal stands.
 
 A realm's dimension type sets vanilla's `coordinate_scale`; the Nether's is 8 and Overworld's 1.
 `DimensionType.getTeleportationScale(from, to)` divides the source's scale by the target's. A trip from
-Overworld into a realm of scale 16 therefore multiplies x and z by 1/16, and the way back by 16. Realm portals never
+Overworld into a realm of scale 8 therefore multiplies x and z by 1/8, and the way back by 8. Realm portals never
 link two realms (Matěj, RLM-188). The scale is data, so a playtest can change it without code.
 
 **Besides portals, only `/execute in` reads it** in 26.1.2. The command's `in` redirect (`ExecuteCommand`) calls
 `CommandSourceStack#withLevel`, which multiplies the source's x and z by `DimensionType.getTeleportationScale`, as
 it does for the Nether, so relative positions after it are scaled. From Overworld x 1,600,
-`/execute in realmforge:stone run tp @s ~ ~ ~` lands at realm x 100, not 1,600. Test and playtest commands
+`/execute in realmforge:stone run tp @s ~ ~ ~` lands at realm x 200, not 1,600. Test and playtest commands
 therefore give absolute coordinates in a realm. `/execute at <entity>` is not affected: it sets the entity's own
 position after the level.
 
-**The stone realm uses 1:16, twice the Nether's ratio** (Matěj: "like the Nether's 1:8, or stronger"). The ratio
+**The stone realm uses 1:8, the Nether's ratio** (Matěj, 2026-10-28: "note that the coordinates are 1:8, undervault
+is basically nether replacement"). It replaces W2b's 1:16 (his earlier "like the Nether's 1:8, or stronger"), which
 came from mob levels that rose with the distance from the realm's origin. Since RLM-303 they follow the nearest
 player instead, floored at the realm's entry level ([architecture 14.1](../architecture.md#141-mob-levels)), so where
-a portal arrives no longer decides the levels met there. The ratio stays, and keeps arrivals near the realm's origin:
+a portal arrives no longer decides the levels met there:
 
 - **Arrivals:** Overworld bases mostly stand within 10,000 blocks of the origin (the realm design's travel rule leaves
-  trips of 1,000–10,000 blocks to waystones). At 1:16 every Overworld portal within 20,000 blocks arrives within
+  trips of 1,000–10,000 blocks to waystones). At 1:8 every Overworld portal within 10,000 blocks arrives within
   1,250 blocks of the realm's origin, where the [realm design](realms.md#the-stone-realm)'s sub-regions start.
-- **Where 1:16 came from:** the first level rule (W2a, by distance) gave level 6 at the origin and one level more every
-  320 blocks, so the realm's first band, levels 6–10, lay within 1,280 blocks of the origin. 1:16 was picked for the
-  first version's narrower bands (10,000 ÷ 640 ≈ 16) and kept arrivals at the realm's lowest levels. The bands are
-  the old area model now, as the realm design says.
+- **Where 1:16 came from** (W2b, replaced on 2026-10-28): the first level rule (W2a, by distance) gave level 6 at the
+  origin and one level more every 320 blocks, so the realm's first band, levels 6–10, lay within 1,280 blocks of the
+  origin. 1:16 was picked for the first version's narrower bands (10,000 ÷ 640 ≈ 16) and kept arrivals at the realm's
+  lowest levels. The bands are the old area model now, as the realm design says.
 
 | Overworld portal, blocks from 0, 0 | Arrival in the stone realm, blocks from 0, 0 |
 | --- | --- |
-| 1,000 | 63 |
-| 5,000 | 313 |
-| 10,000 | 625 |
-| 20,000 | 1,250 |
-| 30,000 | 1,875 |
+| 1,000 | 125 |
+| 5,000 | 625 |
+| 10,000 | 1,250 |
+| 20,000 | 2,500 |
+| 30,000 | 3,750 |
 
-- **At the Nether's 1:8,** a portal at 5,000 would arrive at 625 and one at 10,000 at 1,250.
-- **The way back multiplies by 16:** a realm portal 1,000 blocks from the realm's origin leads to Overworld
-  16,000 blocks out. That is how nether travel works too.
+- **The way back multiplies by 8:** a realm portal 1,000 blocks from the realm's origin leads to Overworld
+  8,000 blocks out. That is how nether travel works too.
 - **A later realm** sets its own scale, by the same arithmetic of where its portals arrive.
 
 ### Building a portal
@@ -356,7 +363,7 @@ When no portal leads the right way within the search radius, the trip builds one
 `PortalForcer#createPortal` does for nether portals:
 
 - **The spot:** the one nearest the scaled position, searched in a spiral within the build radius of that side (⌊128 ÷
-  scale⌋ − 1 blocks in a realm, 7 at 1:16, one less than the search for the rounding in [Linking](#linking); 16 blocks
+  scale⌋ − 1 blocks in a realm, 15 at 1:8, one less than the search for the rounding in [Linking](#linking); 16 blocks
   in Overworld, as vanilla's spiral), where the frame is set into solid floor (Matěj, 2026-10-20: "the bottom side in
   the floor … so player doesn't have to jump in order to get in, but can just walk": its bottom row replaces the top of
   the floor, so the opening is at floor level), the rest of the frame's space is free, and one side has floor and two
@@ -520,9 +527,10 @@ without one; never in a realm. This answers the realm design's
 
 ## Edge cases
 
-- **A frame inside a realm:** allowed, and it opens only back to Overworld (Matěj, RLM-188): the sneak gesture
-  opens it onto return (Overworld, at the scaled-back position, [Linking](#linking)), and every signet is refused
-  there ([The sealstone](#the-sealstone)). A trip to another realm goes through Overworld.
+- **A frame inside a realm:** allowed, and it opens only back to Overworld (Matěj, RLM-188): the realm's own signet
+  and the sneak gesture open it onto return (Overworld, at the scaled-back position, [Linking](#linking)), so a
+  player whose portal broke builds a new one and leaves (Matěj, 2026-10-28). Another realm's signet is refused there
+  ([The sealstone](#the-sealstone)). A trip to another realm goes through Overworld.
 - **Instance dimensions and other dimensions:** a frame lights only in dimensions that have a realm entry: the
   Overworld and the realms. In `realmforge:instances`, in the Nether and End until M4 removes them, and in
   dimensions of other mods the sealstone refuses: "The portal cannot open here". Inside instances players are in
@@ -588,7 +596,7 @@ arrival: {y: [63, 310], floor: minecraft:stone_bricks, pocket_radius: 3}   # por
   message a template; no message hard-codes a realm's name. The refusal at the sealstone names the realm by its
   plain `description` instead: "You are not eligible to open a portal to the stone realm." (Matěj, 2026-10-20).
 - **The coordinate scale is not here:** it is the `coordinate_scale` of the realm's dimension type
-  (`content/worldgen/dimension_type/stone.json`, `16.0`), next to its `bed_rule` and `respawn_anchor_works`
+  (`content/worldgen/dimension_type/stone.json`, `8.0`), next to its `bed_rule` and `respawn_anchor_works`
   attributes, because vanilla reads it from there.
 - **`realmforge:realm`, a new datapack registry** owned by `world`
   ([architecture 5.2](../architecture.md#52-our-datapack-registries)), synced to clients, because they need the
@@ -660,7 +668,7 @@ dimension rules and access:
   - the frame check (both axes; corners present or missing, which both light; a missing side block; a block in the
     opening; the sealstone off-centre; a frame too big or too small);
   - the scaled position, both ways, with the world border clamp and its rounding down;
-  - a signet on a frame inside a realm is refused, and the sneak gesture still opens it onto return;
+  - the realm's own signet opens a frame inside the realm onto return, and so does the sneak gesture (2026-10-28);
   - the build radius of each side, ⌊128 ÷ scale⌋ − 1 in a realm: from every Overworld x in one 16-block cell,
     a realm portal at either end of the radius aims back within 128 blocks;
   - the spot search for a built portal (a ceiling, a void, water, a full column, the `y` range), including a way
@@ -696,7 +704,8 @@ dimension rules and access:
     not take them back, until they stepped out for half a second and in again (RLM-335);
   - the sealstone glows while a player holding a signet stands within 5 blocks, rising over 15 ticks, fades once
     they step away, stays dark with empty hands, and a return portal stays dark for a realm's signet (RLM-406);
-    a dark frame inside the stone realm stays dark for that realm's signet (RLM-458);
+    a dark frame inside the stone realm glows for that realm's signet, also once open onto return, and fades
+    without it (RLM-458);
     a mob moved into or out of a realm with
     `Entity#teleport(TeleportTransition)`, and one moved with `/tp` (`Entity#teleportTo`), stays where it is
     (RLM-133), while a mob teleported within the realm moves;
@@ -743,8 +752,8 @@ Matěj's answers of 2026-10-13 (RLM-128), which this version records:
 6. **W2's size:** split into W2a (the stone realm's dimension, its rules and the requirement types) and W2b (the
    realm portal), each M.
 7. **Travel works like the Nether, in both directions,** with scaled coordinates so arrivals stay near a realm's
-   origin. The spec picks the ratio from the level bands (1:16 for the stone realm). There is no landing: the
-   landing and the home point fit instanced dungeons, not realms.
+   origin. The spec picks the ratio from the level bands (1:16 for the stone realm; 1:8 since decision 24). There is
+   no landing: the landing and the home point fit instanced dungeons, not realms.
 8. **Respawn:** always at the player's bed in Overworld, or at the world spawn; never in a realm.
 9. **Only players travel,** and unlocks are per player and permanent, for now; shared party quests come later with
    low priority.
@@ -752,7 +761,8 @@ Matěj's answers of 2026-10-13 (RLM-128), which this version records:
     at an arrival point, and a warp into a realm the player has not unlocked never works.
 11. **Portals inside a realm lead only back to Overworld** (Matěj, 2026-10-15, RLM-188 item 8): a portal opens onto
     a realm only from Overworld, and a frame built inside a realm opens only onto return. This replaces the first
-    version's signet that switched a frame inside a realm to another realm.
+    version's signet that switched a frame inside a realm to another realm. Decision 22 lets the realm's own signet
+    open it onto return.
 
 His playtest of W2b (2026-10-20, RLM-154) added:
 
@@ -795,10 +805,21 @@ His answers on chapter 2 (2026-10-25 to 2026-10-27, RLM-351, recorded by RLM-432
     Snow Blocks and 2 Ice ([Realm signets](#realm-signets)). This replaces 16's rule for the twins; the Signet of the
     Undervault keeps it.
 
+His answer to RLM-458's playtest handoff (2026-10-28) added:
+
+22. **A realm's own signet opens a frame inside the realm back onto Overworld** ("the portal in the Undervault would
+    get activated by the same signet"; "if a player broke the frame by accident, they would get lock in the
+    dimension"), as the sneak gesture, which stays, does. The spec keeps another realm's signet refused there, so no
+    portal links two realms (11) ([The sealstone](#the-sealstone)).
+23. **The sealstone glows inside a realm too** ("I'd add the glowing effect as well"), for the realm's own signet.
+24. **Realms link at 1:8 and pair like nether portals** ("make it exactly the same behavior as per nether, and note
+    that the coordinates are 1:8, undervault is basically nether replacement"). This replaces 7's 1:16
+    ([The coordinate scale](#the-coordinate-scale)).
+
 ## Open questions
 
 Matěj answered every question of the first version (RLM-128). The numbers marked as proposals (the materials, the
-stone realm's level rule and its 1:16 scale, Overworld's arrival `y` range) are checked in his playtests of W2a
+stone realm's level rule and its scale, Overworld's arrival `y` range) are checked in his playtests of W2a
 and W2b. Three questions are open, and question 2 is decided:
 
 1. **FTB Teams parties share realm unlocks.** FTB Quests keeps progress per FTB Teams team, so a player who joins

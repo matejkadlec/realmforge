@@ -419,12 +419,12 @@ public final class RealmGameTests {
         helper.assertTrue(ceilingHigh >= open * 95 / 100, "a high ceiling: " + ceilingHigh + " of " + open);
     }
 
-    /** The realm's dimension: its type links at 1:16 and has no skylight; it is the realm of the content. */
+    /** The realm's dimension: its type links at 1:8, as the Nether's, with no skylight; it is the content's realm. */
     @QaGameTest
     public static void theRealmDimensionIsTheContents(GameTestHelper helper) {
         RealmExpectation expected = stone();
         ServerLevel realm = realm(helper, expected);
-        helper.assertValueEqual(realm.dimensionType().coordinateScale(), 16.0, "the realm's coordinate scale");
+        helper.assertValueEqual(realm.dimensionType().coordinateScale(), 8.0, "the realm's coordinate scale");
         helper.assertFalse(realm.dimensionType().hasSkyLight(), "the realm has no sky light");
         helper.assertTrue(realm.dimensionType().hasCeiling(), "the realm has a ceiling");
         helper.assertTrue(Realms.isRealm(realm.registryAccess(), realm.dimension()), "the dimension is a realm");

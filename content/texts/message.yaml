@@ -58,7 +58,8 @@ texts:
   # (Matěj's wording, 2026-10-20).
   realm_portal_not_eligible:
     en_us: You are not eligible to open a portal to the %1$s. %2$s
-  # Any signet on a frame inside a realm: those lead only back to Overworld (Matěj, RLM-188).
+  # Another realm's signet on a frame inside a realm: those lead only back to Overworld (Matěj, RLM-188), and only the
+  # realm's own signet opens them (Matěj, 2026-10-28).
   realm_portal_only_back:
     en_us: This portal leads only back to Overworld
   # A signet or the gesture on a frame that is not complete, or whose opening is blocked; particles mark the problems.

@@ -126,15 +126,28 @@ public final class RealmPortals {
         return refused.isEmpty();
     }
 
-    /** A signet used on the sealstone at {@code sealstone} (realm portal spec, "The sealstone"). */
+    /**
+     * A signet used on the sealstone at {@code sealstone} (realm portal spec, "The sealstone"). Inside a realm, the
+     * realm's own signet opens the frame back onto Overworld, as the sneak gesture does (Matěj, 2026-10-28: "the
+     * portal in the Undervault would get activated by the same signet"); another realm's signet is refused, because
+     * no portal links two realms (RLM-188).
+     */
     static void useSignet(ServerPlayer player, ServerLevel level, BlockPos sealstone, Holder.Reference<Realm> realm) {
         RegistryAccess registries = level.registryAccess();
         if (Realms.entry(registries, level.dimension()).isEmpty()) {
             tell(player, Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_CANNOT_OPEN_HERE));
             return;
         }
-        if (Realms.isRealm(registries, level.dimension())) {
-            tell(player, Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_ONLY_BACK));
+        Optional<Holder.Reference<Realm>> here = Realms.of(registries, level.dimension());
+        if (here.isPresent()) {
+            Optional<Holder.Reference<Realm>> overworld = Realms.overworld(registries);
+            if (!here.get().key().equals(realm.key())) {
+                tell(player, Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_ONLY_BACK));
+            } else if (overworld.isEmpty()) {
+                tell(player, Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_CANNOT_OPEN_HERE));
+            } else {
+                open(player, level, sealstone, overworld.get());
+            }
             return;
         }
         if (!RealmAccess.mayEnter(player, realm.value().dimension())) {
@@ -256,13 +269,13 @@ public final class RealmPortals {
      * The sealstone's glow, every server tick (RLM-406, Matěj: "the Sealstone block would smoothly light up if player
      * with Signet item in hand"): one light level a tick towards {@link SealstoneBlock#MAX_GLOW} while a player holding
      * a signet that lights it ({@link #lightsSealstone}) in either hand stands within {@link #GLOW_RADIUS} of its centre,
-     * and towards dark otherwise, so it rises or fades over 15 ticks, about a second. It stays dark where no signet
-     * opens a portal ({@link #signetsOpenPortalsIn}, RLM-458). Spectators count for nothing. The new state goes to
-     * clients without shape updates, so nothing next to it reacts to the glow.
+     * and towards dark otherwise, so it rises or fades over 15 ticks, about a second. In a dimension without a realm
+     * entry, where no signet opens a portal, it stays dark (RLM-458). Spectators count for nothing. The new state goes
+     * to clients without shape updates, so nothing next to it reacts to the glow.
      */
     static void tickGlow(Level level, BlockPos pos, BlockState state, SealstoneBlockEntity entity) {
         boolean near = false;
-        if (signetsOpenPortalsIn(level)) {
+        if (Realms.entry(level.registryAccess(), level.dimension()).isPresent()) {
             Optional<Identifier> destination = isLit(level, pos) ? entity.storedDestination() : Optional.empty();
             Vec3 centre = Vec3.atCenterOf(pos);
             for (Player player : level.players()) {
@@ -283,25 +296,22 @@ public final class RealmPortals {
     }
 
     /**
-     * Whether a signet opens a portal in {@code level}'s dimension, the rule {@link #useSignet} applies first: only in a
-     * dimension with a realm entry that is no realm, so in Overworld. Inside a realm a frame opens only back to
-     * Overworld, and the instances, the Nether and other mods' dimensions have no entry (RLM-458).
-     */
-    static boolean signetsOpenPortalsIn(Level level) {
-        RegistryAccess registries = level.registryAccess();
-        return Realms.entry(registries, level.dimension()).isPresent()
-                && !Realms.isRealm(registries, level.dimension());
-    }
-
-    /**
-     * Whether {@code stack} is a signet that lights a sealstone whose portal opens onto {@code destination}: the signet
-     * of that realm, or any signet while the portal is dark, as a frame that was never opened is (RLM-406). A return
-     * portal, open onto Overworld, which has no signet, stays dark.
+     * Whether {@code stack} is a signet that lights a sealstone in {@code level} whose portal opens onto
+     * {@code destination}, so the signet that works on it ({@link #useSignet}). In Overworld: the signet of that realm,
+     * or any signet while the portal is dark, as a frame that was never opened is (RLM-406). Inside a realm: that
+     * realm's own signet, which opens the frame back onto Overworld, dark or lit (Matěj, 2026-10-28). Nowhere else.
      */
     public static boolean lightsSealstone(Level level, ItemStack stack, Optional<Identifier> destination) {
-        return Realms.bySignet(level.registryAccess(), stack.getItem())
-                .filter(realm -> destination.isEmpty() || destination.get().equals(realm.key().identifier()))
-                .isPresent();
+        RegistryAccess registries = level.registryAccess();
+        Optional<Holder.Reference<Realm>> signet = Realms.bySignet(registries, stack.getItem());
+        if (signet.isEmpty() || Realms.entry(registries, level.dimension()).isEmpty()) {
+            return false;
+        }
+        Optional<Holder.Reference<Realm>> here = Realms.of(registries, level.dimension());
+        if (here.isPresent()) {
+            return here.get().key().equals(signet.get().key());
+        }
+        return destination.isEmpty() || destination.get().equals(signet.get().key().identifier());
     }
 
     /** Marks {@code positions} with particles for {@link #MARK_TICKS} ticks. */
