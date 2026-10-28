@@ -1438,7 +1438,9 @@ end of every interval since the effect began (an effect of 4 s and 1 s intervals
 second; validation keeps a spell's durations whole intervals), each level adding the amount again. It counts the
 remaining duration (`Periodic#ticksAt`), which every application resets, so an area or a channel that applies it again
 sooner than it ticks would keep it from ticking at all: validation refuses an interval shorter than the effect's
-(RLM-376); an equal one loses only the partial interval, as in Classic.
+(RLM-376); an equal one loses only the partial interval, as in Classic. Cast Time Reduction shortens a channel's
+interval, and validation cannot see it, so a hasted channel that applies such an effect at every interval still keeps
+it from ticking.
 `effect/EffectTicks` deals a tick as a hit of the school from the effect's caster, so the damage pipeline raises it by
 the caster's spell power (a magic school) and school power as they are when it ticks, the target's resistance lowers
 it, a kill counts for the caster and the caster sees its numbers; ticks never crit (`CritRule.NONE`) and never knock

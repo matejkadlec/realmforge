@@ -328,7 +328,8 @@ Rules:
   `duration_seconds` up to 60, `amplifier`; an area or a channel applies one of our effects with `periodic` again
   at every interval, which resets its duration, so validation refuses an area or channel whose interval is shorter
   than the effect's: it would never tick while applied again; an equal one loses only the partial interval, as in
-  Classic) and `realmforge:remove_effect` (`effect`) on any entity target; `realmforge:knockback` (`strength`,
+  Classic, though Cast Time Reduction shortens a channel's interval below it) and `realmforge:remove_effect`
+  (`effect`) on any entity target; `realmforge:knockback` (`strength`,
   0.4 is a melee hit's) on an enemy, which also interrupts its cast; `realmforge:projectile` (`speed` in blocks per
   second, `size`, an optional `lifetime_seconds` of at most 10, without which it flies until it hits something or
   leaves the world, and its own `effects` on the first enemy it reaches that can be damaged, hostile or passive; it
