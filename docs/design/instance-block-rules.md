@@ -2,26 +2,27 @@
 
 > Which blocks of a dungeon instance players may break or place, how, and what happens to rooms that only work while
 > their blocks stay (RLM-360). Written on 2026-10-27 from Matěj's answers of 2026-10-24 and 2026-10-25 (RLM-360's
-> comments, his second playtest of the batch RLM-362, RLM-363, RLM-364) and the rooms on `master` at `e366b80`.
-> **Decided:** the allowlist, its blocks, no drops, gold bars for the throne room and exposed spawners are Matěj's;
-> the scope, the mechanism and the speed are this note's recommendations, which RLM-412 left to it
-> ([ADR 0055](../decisions/0055-players-break-an-allowlist-of-blocks-in-instances.md)). **Open:** lighting TNT
-> (RLM-470). Implemented by RLM-412 (spawners, cobwebs, vines, the two exposed spawners) and RLM-469 (iron bars and
-> the gold bars); the egg's spawner comes with RLM-361.
+> comments, his second playtest of the batch RLM-362, RLM-363, RLM-364) and the rooms on `master` at `e366b80`;
+> revised on 2026-10-28 from his playtest of RLM-360, RLM-412, RLM-361 and RLM-365 (iron bars stay, the spawners show
+> on a side away from the way in). **Decided:** the allowlist, its blocks, no drops and exposed spawners are Matěj's;
+> the scope, the mechanism and the speed are this note's recommendations, which RLM-412 left to it and his playtest
+> passed ([ADR 0055](../decisions/0055-players-break-an-allowlist-of-blocks-in-instances.md)). **Open:** lighting TNT
+> (RLM-470). Implemented by RLM-412 (spawners, cobwebs, vines, the exposed spawners, room openings); the egg's spawner
+> comes with RLM-361.
 
 ## At a glance
 
 | Question | Answer | Who decided |
 | --- | --- | --- |
 | Allowlist or denylist | **Allowlist:** only listed blocks break; placing stays forbidden | Matěj, 2026-10-24 |
-| The list | Spawners, cobwebs, vines; iron bars once gold bars seal the throne room (RLM-469); smooth stone only by TNT, through a room's `explosion_breaks` (RLM-257) | Matěj, 2026-10-24 |
+| The list | Spawners, cobwebs, vines; smooth stone only by TNT, through a room's `explosion_breaks` (RLM-257). Not iron bars | Matěj, 2026-10-24; iron bars left out 2026-10-28 |
 | Drops | Nothing a player breaks inside an instance drops an item, shears included | Matěj (cobwebs and vines), this note (the rest) |
-| Decoration behind bars | Gold bars, a block of ours that never breaks there (RLM-469) | Matěj, 2026-10-24 |
-| Hidden spawners | Exposed in their rooms, not more breakable blocks around them | Matěj, 2026-10-24 |
+| Decoration behind bars | Stays behind its iron bars, which never break there; no gold bars (RLM-469 rejected) | Matěj, 2026-10-28 |
+| Hidden spawners | Exposed in their rooms, not more breakable blocks around them: on one side, at random the left, the right or the opposite one, never the side a run enters from | Matěj, 2026-10-24 and 2026-10-28 |
 | Trial spawners | Not in the Prisoner's Kingdom; RLM-359 keeps them for later dungeon types | Matěj, 2026-10-25 |
 | Scope of the list | One block tag for every instance, `realmforge:breakable_in_instances` | this note |
 | How Adventure mode breaks them | A mixin on `Player#blockActionRestricted`, by hand or with any item | this note |
-| How fast | Vanilla's speed for the block and the item in hand | this note |
+| How fast | Vanilla's speed for the block and the item in hand | this note; passed in Matěj's playtest of 2026-10-28 |
 | Flint and steel on TNT | Open: recommended refused (RLM-470) | Matěj |
 
 ## 1. Where we start
@@ -54,8 +55,8 @@ blocks (via TNT)", with spawners breakable too ("spawners have to be breakable")
 
 ### The stone vault pool per option
 
-The Prisoner's Kingdom's pool (`realmforge:stone_vault`) has 32 rooms. Counted from their templates after this
-note's two spawner edits (section 7):
+The Prisoner's Kingdom's pool (`realmforge:stone_vault`) has 32 rooms. Counted from their templates as of RLM-412's
+and RLM-361's edits (section 7), before a run opens a side (1 sandstone or 3 quartz blocks):
 
 | Blocks | Count | Rooms | Allowlist | Denylist (Matěj's candidates: stone bricks, smooth stone, TNT) |
 | --- | ---: | ---: | --- | --- |
@@ -63,12 +64,12 @@ note's two spawner edits (section 7):
 | Cobblestone and mossy cobblestone (and their slabs and stairs) | 1,005 | 22 | protected | **breakable** |
 | Wood: planks, logs, stairs, slabs, fences, doors, trapdoors | 1,705 | 15 | protected | **breakable** |
 | Smooth stone | 99 | 4 | only by TNT (`explosion_breaks`) | protected |
-| Spawners | 6 | 5 | **breakable** | **breakable** |
+| Spawners | 7 | 6 | **breakable** | **breakable** |
 | Cobwebs | 63 | 25 | **breakable** | **breakable** |
 | Vines | 149 | 25 | **breakable** | **breakable** |
-| Iron bars | 41 | 3 | **breakable** (RLM-469) | **breakable** |
-| Sandstone (cut, chiseled, stairs, slabs) | 118 | 1 (`husk_temple`) | protected | **breakable** |
-| Quartz (smooth, stairs, slabs) | 43 | 1 (`treasure/egg`) | protected | **breakable** |
+| Iron bars | 41 | 3 | protected (Matěj, 2026-10-28) | **breakable** |
+| Sandstone (cut, chiseled, stairs, slabs) | 123 | 1 (`husk_temple`) | protected | **breakable** |
+| Quartz (smooth, stairs, slabs) | 45 | 1 (`treasure/egg`) | protected | **breakable** |
 | Glass, tinted glass, stained glass | 251 | 6 | protected | **breakable** |
 | Redstone and mechanisms (wire, torches, repeaters, comparators, pistons, levers, buttons, plates, tripwires, dispensers, iron doors) | 289 | 9 | protected | **breakable**: locks and traps could be taken apart |
 | TNT | 13 | 2 | protected | protected |
@@ -81,18 +82,18 @@ need its redstone listed, and every wooden room could be dug through.
 ## 3. Rooms meant to be seen, not entered
 
 The throne room (`treasure/mooshroom_king`) shows a throne and 6 chests behind 9 iron bars. Breakable iron bars would
-make it a loot room. Matěj's two ideas:
+make it a loot room. Matěj's two ideas were another, unbreakable bar for decoration (gold bars, a block of ours) and
+reachable decoration rooms at the dungeon's end.
 
-1. **Another, unbreakable bar for decoration.** Chosen: "a custom gold bars, crafted from gold … a regular block of
-   ours", which stay unbreakable in dungeons. RLM-469 adds the block and swaps the throne room's bars.
-2. Reachable decoration rooms at the dungeon's end. Not needed once gold bars exist.
+**Iron bars stay unbreakable** (Matěj, 2026-10-28): he wanted them breakable only because they blocked the way in
+other rooms, and RLM-364 took them out of the doorways they barred instead. So the throne room keeps its iron bars,
+no gold bars are made, and RLM-469, which would have made both, is rejected: "iron bars can stay in front of the
+throne, no need for separate gold bars".
 
 The pool's other iron bars: 18 in `pillager_dungeon/rooms/jail_2` (its cells, with chests, behind iron doors that
-levers now open, RLM-364) and 14 in `pillager_dungeon/rooms/temple`. Breaking them opens nothing a lever does not
-already open, so RLM-469 only has to check them again before iron bars join the list. Rooms meant only as a sight
-behind glass (`pillager_dungeon/rooms/jail`'s garden behind tinted glass) stay closed: glass is not on the list.
-
-Until RLM-469, iron bars stay unbreakable: breakable bars before the gold bars exist would open the throne room.
+levers now open, RLM-364) and 14 in `pillager_dungeon/rooms/temple`; neither bars the way through. Rooms meant only as
+a sight behind glass (`pillager_dungeon/rooms/jail`'s garden behind tinted glass) stay closed too: glass is not on the
+list.
 
 ## 4. Scope: one list for every instance
 
@@ -140,25 +141,34 @@ pays off. The playtest decides whether that is fine; a faster break in instances
 ## 6. Drops
 
 Matěj: cobwebs and vines drop nothing, "to prevent string farming", "even when broken with shears". This note makes it
-the rule for every block broken inside an instance: a dungeon's blocks are not loot. A spawner drops no item anyway,
-and iron bars will drop none either (RLM-469). A spawner broken with a pickaxe still drops vanilla's experience, as
-anywhere. TNT walls are the one way blocks break by explosion; their drops are vanilla's.
+the rule for every block broken inside an instance: a dungeon's blocks are not loot. A spawner drops no item anyway.
+A spawner broken with a pickaxe still drops vanilla's experience, as anywhere. TNT walls are the one way blocks break by explosion; their drops are vanilla's.
 
 ## 7. Hidden spawners
 
-Matěj chose to expose them in their rooms rather than make more blocks breakable. The pool's spawners on `master`:
+Matěj chose to expose them in their rooms rather than make more blocks breakable, and, in his playtest of 2026-10-28,
+on a side rather than from above: "the exposed side should not be the one the player enters the room from initially,
+should be right side, left side or the opposite side (random ... 33.3% each)". The pool's spawners on `master`:
 
 | Room | Spawner | On `master` | Now |
 | --- | --- | --- | --- |
 | `rooms/skeleton_trap` | (6, 1, 6) | under a 3×3 of stone brick slabs, stone bricks around it | the slab above it is a cobweb (Matěj's choice), which shows the spawner and breaks |
-| `rooms/husk_temple` | (6, 1, 6) | sealed inside the sandstone monument | the monument is opened on its east side above its bottom layer (Matěj's img4, described in RLM-360): the spawner keeps its sandstone at floor level and shows from above and from the east |
+| `rooms/husk_temple` | (6, 1, 6) | sealed inside the sandstone monument | a run opens one side: the chiseled sandstone in front of the spawner at floor level goes, the rest of the monument stays (Matěj's img1) |
 | `rooms/drowned_junction` | (6, 1, 6) | open above, water around | unchanged |
 | `rooms/library` | (1, 1, 11), (10, 1, 1) | open | unchanged |
 | `rooms/tight_maze` | (6, 2, 6) | open on three sides | unchanged |
-| `treasure/egg` | none yet | | RLM-361 puts a cave spider spawner inside the quartz egg, reachable the same way |
+| `treasure/egg` | none yet | | RLM-361 puts a cave spider spawner into the quartz egg's upper hollow; a run opens one side of it: the quartz beside the spawner, and one corner's quartz block and the slab on it |
+
+**Openings** (`openings` in a room's sidecar, [content README](../../content/README.md)): per side of the template, the
+blocks a run turns to air there. The planner knows the connector each room is entered through (the one it hangs off
+the room before it by), and the run opens one listed side at random that is not that connector's side, so a player
+walks around to the spawner or meets it across the room. The template keeps the spawner closed in; the egg is a dead
+end, so its spawner never faces its doorway, and the husk temple, which a run passes through west to east or east to
+west, opens north, south or its far side.
 
 The pytest `test_the_stone_vault_pools_spawners_can_be_seen_and_broken` keeps it so: every spawner of the pool
-touches a cell a player reaches from the room's doorways (`rooms/dress.py`'s `reach`), air or a cobweb.
+touches a cell a player reaches from the room's doorways (`rooms/dress.py`'s `reach`), air or a cobweb, whichever side
+a run opens.
 
 ## 8. Lighting TNT (open, RLM-470)
 
@@ -178,7 +188,6 @@ This is Matěj's call: **RLM-470** asks it. If he refuses it, the guard is an `I
 ## Open questions for Matěj
 
 1. **Lighting TNT:** refuse flint and steel and fire charges on TNT inside instances, as recommended? (RLM-470)
-2. **The husk temple's opening:** made from the description of his img4, which the cloud session did not have. Does
-   the opening match it? (the playtest of RLM-412)
-3. **Breaking speed:** vanilla's, so a wand breaks a cobweb in 20 s and a spawner in 25 s. Fine, or faster inside
-   instances? (the playtest of RLM-412)
+2. ~~**The husk temple's opening.**~~ Answered by his img1 (2026-10-28): the chiseled sandstone in front of the
+   spawner, on a side a run opens (section 7).
+3. ~~**Breaking speed.**~~ Vanilla's, passed in his playtest of 2026-10-28.

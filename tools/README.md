@@ -112,7 +112,8 @@ source file, its format and its data version, leaves `pools` empty and drafts th
 `curved`, `t_junction`, `crossing`, plus `vertical` for one up or down), the role from a word in the room's path
 (`boss`, `treasure`, `entrance`, `stairs`, `hallway`), else `hallway` for a straight or curved piece at most 7 blocks
 wide (measured across the passage) and `combat` for the rest. A re-import keeps the sidecar's pools, tags, weight
-and room rules (`max_per_layout`, `near_start`, `explosion_breaks`, `entry`; [content/README](../content/README.md)). A room
+and room rules (`max_per_layout`, `near_start`, `explosion_breaks`, `entry`, `containers`, `openings`;
+[content/README](../content/README.md)). A room
 is written only when it validates; otherwise the command lists the problems and writes nothing for that
 room, and so does a source file that cannot be read (some jars ship a corrupt template; exclude it). A file that the
 gallery's review rejects is skipped (`SKIP` in the report): the `review.yaml` of the target folder decides, or that of

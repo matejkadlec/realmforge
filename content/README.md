@@ -359,13 +359,18 @@ Rules:
   through that connector, and no loop leads into it from another side; validation wants exactly one connector on that
   side and none on an entrance, RLM-362) and `containers` (its own chance tables for its chests and barrels, which
   take the place of its dungeon type's for each kind it names; a table may not ask for more than the room holds,
-  RLM-365), and, for an imported room, its `source`. Stonevaults' throne room
+  RLM-365) and `openings` (per side of the template, `north`, `east`, `south` or `west`, the blocks a run turns to air
+  there, such as the block in front of a spawner the room hides: a run opens one side at random that is not the side
+  it enters the room from, so list two sides or more; each position holds a plain block, no connector, spawner, chest
+  or barrel, RLM-412), and, for an imported room, its `source`. Stonevaults' throne room
   (`treasure/mooshroom_king`) is limited to one per layout at the start, its combination lock
   (`rooms/combination_lock`) lets its TNT break the smooth stone, gravel and redstone that close its way on, and its
   three locks are entered from their mechanism: `combination_lock` and `item_combination_lock` from the west,
   `pressure_plate_lock` from the north, the side of its pressure plates (its levers open the door from the south).
   Its `tiny_cap` keeps one to three chests by its own table (75, 20 and 5 %), the pillager `jail` always its one chest
-  and one barrel (Matěj, 2026-10-25), and the throne room all six of its chests, a sight behind bars (RLM-365).
+  and one barrel (Matěj, 2026-10-25), and the throne room all six of its chests, a sight behind bars (RLM-365). Its
+  `husk_temple` and egg room (`treasure/egg`) open one side of their spawner's casing, away from their way in
+  (RLM-412).
   Its fights (`husk_temple`, `skeleton_trap`, `tight_maze`, `library`) are limited to three per layout,
   `drowned_junction`, every other combat room, the lobby and every treasure room to one, and the stairs to two
   (RLM-364). Nine rooms of its pillager dungeon (stone bricks and dark oak like the rest: `bedroom`, `big_head`,

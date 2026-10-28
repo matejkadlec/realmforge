@@ -81,7 +81,7 @@ The test dungeon's tables (`content/dungeons/test_dungeon.yaml`):
 | Every other room (`default`) | 1 at 60 %, 2 at 30 %, 3 at 10 % | none at 20 %, 1 at 40 %, 2 at 30 %, 3 at 10 % |
 | `treasure/tiny_cap` (Matěj's own table) | 1 at 75 %, 2 at 20 %, 3 at 5 % | none |
 | `pillager_dungeon/rooms/jail` (Matěj, 2026-10-25) | always its 1 | always its 1 |
-| `treasure/mooshroom_king`, the throne room | always all 6: a sight behind bars, not loot (gold bars seal it, RLM-469) | none |
+| `treasure/mooshroom_king`, the throne room | always all 6: a sight behind its iron bars, which never break, not loot | none |
 
 - **The default** never takes a room's only chest, which is often what a lock or a trap guards, and cuts the rooms
   that hold many: the library's 2 chests and 3 barrels, `storage_2`'s 15 barrels, `big_head`'s 4 chests and 2 barrels.

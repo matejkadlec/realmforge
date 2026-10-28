@@ -51,8 +51,8 @@ Mo' Structures' abandoned village temples, are not imported.
 ## Importing a source again
 
 Unpack the jar's folder outside the repository and import it with the rules; a re-import keeps the sidecars' pools,
-tags, weight and room rules (`max_per_layout`, `near_start`, `explosion_breaks`), and skips the rooms the gallery's
-review rejected:
+tags, weight and room rules (`max_per_layout`, `near_start`, `explosion_breaks`, `entry`, `containers`, `openings`),
+and skips the rooms the gallery's review rejected:
 
 ```bash
 unzip -q stonevaults-2.0.0+26.1-neoforge.jar 'data/stonevaults/structure/*' -d /tmp/stonevaults
@@ -73,10 +73,11 @@ connectors leave behind, levers over `jail_2`'s cell doors, tinted glass for the
 and a barrel on its side at the end of `jail`'s passage, its only containers (Matěj, 2026-10-25), and set the exit
 marker of the room that ends the test dungeon, `treasure/parrot` (RLM-363; the egg room ended it until it kept two
 chests). Players break spawners in instances (RLM-412, ADR 0055), so the rules also expose the two spawners the rooms
-hid: a cobweb takes the place of the slab over `skeleton_trap`'s, and `husk_temple`'s sandstone monument is opened on
-its east side above its bottom layer; `skeleton_trap`'s spawner, which turned to pigs after its first spawn, spawns
-skeletons alone. The egg room (`treasure/egg`, RLM-361) grows a layer for lava over its glass ceiling, in a rim of
-stone bricks, gets a cave spider spawner in its quartz egg, opened towards the doorway, and keeps two of its six
+hid: a cobweb takes the place of the slab over `skeleton_trap`'s, and `husk_temple`'s sandstone monument stays whole,
+since its sidecar's `openings` take out the chiseled sandstone on the side of its spawner a run opens (Matěj's img1,
+2026-10-28); `skeleton_trap`'s spawner, which turned to pigs after its first spawn, spawns skeletons alone. The egg
+room (`treasure/egg`, RLM-361) grows a layer for lava over its glass ceiling, in a rim of stone bricks, gets a cave
+spider spawner in its quartz egg, closed in until a run opens one side (its `openings`), and keeps two of its six
 chests.
 
 A newer version of a source updates its `NOTICE` (version, file, what changed) and this table.
