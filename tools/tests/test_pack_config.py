@@ -103,3 +103,12 @@ def test_the_target_dummy_shows_only_our_combat_text() -> None:
         (REPO_ROOT / "pack" / "config" / "dummmmmmy-client.toml").read_text(encoding="utf-8")
     )
     assert config["damage_numbers"]["enabled"] is False
+
+
+def test_no_monster_spawns_wearing_a_backpack() -> None:
+    """Sophisticated Backpacks' monsters with backpacks stay off (Matěj, 2026-10-29, RLM-494): about 1 in 100 by
+    default, each with a flat health bonus, potion buffs, armor and a backpack of chest loot."""
+    config = tomllib.loads(
+        (REPO_ROOT / "pack" / "config" / "sophisticatedbackpacks-server.toml").read_text(encoding="utf-8")
+    )
+    assert config["entityBackpackAdditions"]["chance"] == 0.0

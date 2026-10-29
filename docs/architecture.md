@@ -1903,10 +1903,11 @@ party lock (RLM-304) and open-world dungeons (RLM-305) come later.
   ([8.2](#82-where-modifiers-come-from)), saved with the mob. The health modifier is `ADD_MULTIPLIED_BASE`: it
   multiplies the base plus every flat bonus, and other base multipliers add to its multiple instead of compounding
   with it (+10 % on a mob at 1.4 times makes 1.5 times, not 1.54); `ADD_MULTIPLIED_TOTAL` modifiers multiply the
-  result. The pack's first flat bonus comes from Sophisticated Backpacks: a monster it puts a backpack on (about 1 in
-  100, its server config's `entityBackpackAdditions.chance`) gets `sophisticatedbackpacks:backpack_bearer_health_bonus`
-  and at times Health Boost, both `ADD_VALUE`, which the level's multiple scales with the base (RLM-485). Whether the
-  level's multiple should compound instead is settled with the first other multiplier of a mob's maximum health.
+  result. A flat bonus is scaled with the base: Health Boost's, or the 10 to 30 health an Apotheosis elite gets from
+  the Frontier world tier on. Sophisticated Backpacks' monsters with backpacks, about 1 in 100 by default with a flat
+  health bonus and at times Health Boost (RLM-485), are off in the pack (`entityBackpackAdditions.chance = 0.0`;
+  Matěj, 2026-10-29, RLM-494). Whether the level's multiple should compound instead is settled with the first other
+  multiplier of a mob's maximum health.
   Damage is a multiplier on `LivingIncomingDamageEvent` for every hit whose causing entity (`DamageSource#getEntity`)
   is a leveled mob, so arrows, explosions and thrown potions grow with the level too; only melee reads the attack
   damage attribute. It runs at `HIGH` priority, before the damage pipeline

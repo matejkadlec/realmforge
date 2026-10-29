@@ -229,6 +229,13 @@ later hit, the 1 s cooldown, the covered arc: `config/realmforge-common.toml`, [
 - `config/swordblockingmechanics-client.toml`: `render_parry_indicator = false`, since it would show its own parry
   window, which is off.
 
+**Sophisticated Backpacks** (`config/sophisticatedbackpacks-server.toml`, Sophisticated Backpacks 3.26.11, RLM-494;
+Matěj, 2026-10-29): `entityBackpackAdditions.chance = 0.0`, so no monster spawns wearing a backpack. By default
+about 1 in 100 did, with a flat health bonus, potion buffs, armor and a backpack of chest loot it dropped, beside our
+own mob levels and loot (RLM-485 found it through the spawn GameTest's second health modifier). The backpacks
+players craft are unchanged. NeoForge reads a server config from `config/`; a world's `serverconfig/` may override it.
+`tools/tests/test_pack_config.py` checks the value.
+
 ## Notes on single mods
 
 - **MmmMmmMmmMmm's target dummies are for everyone** (RLM-393): a dummy with a hay-bale head that shows the damage it
