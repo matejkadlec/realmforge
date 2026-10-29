@@ -3,6 +3,7 @@
 # The hook modes exit at once unless CLAUDE_CODE_REMOTE is true, so local sessions are unaffected.
 #
 #   cloud-warmup.sh --env   synchronous hook (milliseconds): route PyPI through the agent proxy for the session;
+#                           point Gradle at a Maven Central mirror (a user-level init script, outside the repository);
 #                           at startup and resume, tell Claude when the warm-up below is about to run
 #   cloud-warmup.sh         async hook at startup and resume: `uv sync --locked`, then the first Gradle run
 #                           (distribution, dependencies, NeoForm setup, build/mc-sources/, compile); the Gradle
@@ -28,6 +29,52 @@ route_pypi_through_proxy() {
   fixed="$(printf '%s,%s' "${NO_PROXY:-}" "${no_proxy:-}" | tr ',' '\n' | awk 'NF && !seen[$0]++' \
     | { grep -vxE 'pypi\.org|files\.pythonhosted\.org' || true; } | paste -sd, -)"
   export NO_PROXY="$fixed" no_proxy="$fixed"
+}
+
+# Maven Central answers the agent proxy's shared IP with "429 Too Many Requests" for minutes at a time (RLM-426),
+# also behind the plugin portal, which redirects library downloads there. Google's mirror of Central serves the
+# same files. A user-level init script (Gradle reads every *.gradle in init.d/) puts the mirror first for plugins and
+# moves every repository that points at Central to it, so the repository's Gradle files stay as they are and local
+# sessions and CI keep resolving from Central.
+central_mirror_script() {
+  cat <<'EOF'
+// Written by Realmforge's .claude/hooks/cloud-warmup.sh in cloud sessions (RLM-426); rewritten on every session start.
+// Maven Central rate-limits the agent proxy (HTTP 429), so Gradle downloads Central's files from Google's mirror.
+def mirror = 'https://maven-central.storage-download.googleapis.com/maven2/'
+def centralHosts = ['repo.maven.apache.org', 'repo1.maven.org']
+def redirect = { RepositoryHandler repositories ->
+    repositories.withType(MavenArtifactRepository).configureEach { repository ->
+        if (repository.url?.host in centralHosts) {
+            repository.url = mirror
+        }
+    }
+}
+
+beforeSettings { settings ->
+    // Added before the build's own pluginManagement block runs, so it comes ahead of the plugin portal, whose
+    // library downloads redirect to Central.
+    settings.pluginManagement.repositories.maven {
+        name = 'MavenCentralMirror'
+        url = mirror
+    }
+    redirect(settings.pluginManagement.repositories)
+    redirect(settings.dependencyResolutionManagement.repositories)
+}
+
+allprojects {
+    redirect(buildscript.repositories)
+    redirect(repositories)
+}
+EOF
+}
+
+install_central_mirror() {
+  local dir="${GRADLE_USER_HOME:-$HOME/.gradle}/init.d"
+  local target="$dir/realmforge-central-mirror.gradle"
+  mkdir -p "$dir" || return 1
+  if [ "$(cat "$target" 2>/dev/null)" != "$(central_mirror_script)" ]; then
+    central_mirror_script >"$target"
+  fi
 }
 
 # Hosts the agent proxy refused since the warm-up started that the log mentions, space-separated.
@@ -160,6 +207,7 @@ warm_up() {
   : >"$log"
   echo "running" >"$state/status"
   route_pypi_through_proxy || true
+  install_central_mirror || echo "== could not write the Maven Central mirror's init script" >>"$log"
   cd "$root" || return 1
 
   if ! step uv uv sync --locked; then
@@ -199,6 +247,7 @@ case "${1:-}" in
     if route_pypi_through_proxy && [ -n "${CLAUDE_ENV_FILE:-}" ]; then
       printf "export NO_PROXY='%s' no_proxy='%s'\n" "$NO_PROXY" "$NO_PROXY" >>"$CLAUDE_ENV_FILE"
     fi
+    install_central_mirror || true
     # The async warm-up reports only when it ends. On a resume with changed build inputs or after a failed
     # warm-up, the agent would not know that a Gradle run is starting next to its own, so say it now.
     case "$(hook_source)" in
