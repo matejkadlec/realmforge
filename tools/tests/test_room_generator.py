@@ -330,6 +330,19 @@ def test_corridor_lights_keep_off_the_ends_and_balance_the_walls() -> None:
             )  # two free blocks to each end
 
 
+def test_wall_lights_hang_on_a_themes_own_full_blocks() -> None:
+    # RLM-473: a theme built of our own blocks, which no name rule knows as solid, still gets its wall lights.
+    blocks = THEME.blocks.model_dump()
+    blocks |= {role: "realmforge:vaultstone" for role in ("wall_base", "wall_body", "wall_body_cracked")}
+    blocks |= {role: "realmforge:vaultstone" for role in ("wall_body_mossy", "wall_cornice")}
+    own = THEME.model_copy(update={"blocks": THEME.blocks.model_validate(blocks)})
+    room_spec = spec(kind="corridor", connectors=["north", "south"], footprint=[5, 13], height=5)
+    for seed in range(1, 5):
+        assert [li.pos for li in wall_lights(generate_room(room_spec, own, seed))] == [
+            li.pos for li in wall_lights(generate_room(room_spec, THEME, seed))
+        ], seed
+
+
 def test_walls_with_alcoves_carry_lights_only_on_pilasters() -> None:
     room_spec = spec(
         kind="corridor", connectors=["north", "south"], footprint=[7, 13], height=6, features=["alcoves"]
@@ -546,6 +559,28 @@ def test_validation_checks_what_each_theme_role_holds(repo: RepoPaths) -> None:
     messages = {(p.location, p.message) for p in failed.value.problems}
     assert ("blocks.stairs", "minecraft:oak_planks is not a stairs block") in messages
     assert ("blocks.ceiling", "unknown block 'minecraft:no_such_block'") in messages
+
+
+def test_a_themes_full_role_takes_our_own_simple_blocks(repo: RepoPaths) -> None:
+    # RLM-473: Undervault's stones are full blocks, though no vanilla name rule knows them; a pane is not.
+    theme = repo.content / "room_themes/stone_vault.yaml"
+    text = theme.read_text(encoding="utf-8")
+    theme.write_text(
+        text.replace("ceiling: minecraft:stone", "ceiling: realmforge:vaultstone"), encoding="utf-8"
+    )
+    load_and_validate(repo)
+    theme.write_text(
+        text.replace("ceiling: minecraft:stone", "ceiling: minecraft:glass_pane"), encoding="utf-8"
+    )
+    with pytest.raises(ValidationFailed) as failed:
+        load_and_validate(repo)
+    assert [(p.location, p.message) for p in failed.value.problems] == [
+        (
+            "blocks.ceiling",
+            "minecraft:glass_pane is not a full solid block (a full block missing from SOLID_BLOCKS in "
+            "rooms/check.py belongs there)",
+        )
+    ]
 
 
 # --- candidates and freezing ----------------------------------------------------------------------------------

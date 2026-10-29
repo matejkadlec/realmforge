@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Regression suite for .claude/scripts/gradle-queue.sh: in a cloud session it starts no Gradle run while the
-# SessionStart warm-up (.claude/hooks/cloud-warmup.sh) still runs Gradle in the same checkout (RLM-74).
+# SessionStart warm-up (.claude/hooks/cloud-warmup.sh) still runs Gradle in the same checkout (RLM-74). It also checks
+# that the warm-up's --env step points a cloud session's Gradle at a Maven Central mirror, and a local one's not
+# (RLM-426).
 #
 #   bash tests/test_gradle_queue.sh
 #
@@ -156,10 +158,40 @@ test_queue_gives_up_on_an_endless_warmup() {
   assert_contains "$result" "gave up after 0 minutes in the queue (the cloud warm-up was still running)"
 }
 
+# Maven Central rate-limits the cloud proxy (HTTP 429), so --env installs a user-level init script with a mirror.
+test_cloud_env_installs_the_central_mirror() {
+  local repo
+  local cloud_home="$TEST_ROOT/cloud-gradle-home"
+  local local_home="$TEST_ROOT/local-gradle-home"
+  local script="$cloud_home/init.d/realmforge-central-mirror.gradle"
+
+  repo="$(new_fixture mirror)"
+  (cd "$repo" && env CLAUDE_CODE_REMOTE=true GRADLE_USER_HOME="$cloud_home" .claude/hooks/cloud-warmup.sh --env \
+    < /dev/null) || fail "Expected --env to succeed in a cloud session."
+  [[ -f $script ]] || fail "Expected --env to install the init script in a cloud session."
+  grep -Fq "https://maven-central.storage-download.googleapis.com/maven2/" "$script" \
+    || fail "Expected the init script to name Google's Maven Central mirror."
+  grep -Fq "'repo.maven.apache.org', 'repo1.maven.org'" "$script" \
+    || fail "Expected the init script to move Maven Central's repositories to the mirror."
+  [[ -z "$(git -C "$repo" status --porcelain --untracked-files=all -- . ':!.cache' ':!gradlew' ':!.claude')" ]] \
+    || fail "Expected --env to write nothing into the repository."
+
+  # A later session start rewrites a stale script and leaves a current one as it is.
+  echo "// stale" > "$script"
+  (cd "$repo" && env CLAUDE_CODE_REMOTE=true GRADLE_USER_HOME="$cloud_home" .claude/hooks/cloud-warmup.sh --env \
+    < /dev/null) || fail "Expected --env to succeed again."
+  grep -Fq "maven-central.storage-download.googleapis.com" "$script" || fail "Expected a stale script rewritten."
+
+  (cd "$repo" && env CLAUDE_CODE_REMOTE= GRADLE_USER_HOME="$local_home" .claude/hooks/cloud-warmup.sh --env \
+    < /dev/null) || fail "Expected --env to succeed in a local session."
+  [[ ! -e "$local_home" ]] || fail "Expected a local session to keep Maven Central."
+}
+
 test_cloud_run_waits_for_a_running_warmup
 test_failed_warmup_does_not_block_the_run
 test_checkout_without_warmup_runs_at_once
 test_local_run_does_not_wait
 test_queue_gives_up_on_an_endless_warmup
+test_cloud_env_installs_the_central_mirror
 
 echo "PASS: gradle-queue.sh cloud warm-up suite"

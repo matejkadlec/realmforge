@@ -1,16 +1,18 @@
 """``rf set-pieces import`` (RLM-281): a template the workshop jig's structure block saved -> a set piece in
 ``content/set_pieces/`` with a drafted fit rule (the [building workflow](../../../docs/design/set-pieces.md#the-building-workflow)).
 
-``/qa setpiece jig <mask>`` names its structure block ``realmforge_qa:set_piece/<mask>_<n>``, so pressing Save writes
-``<world>/generated/realmforge_qa/structure/set_piece/<mask>_<n>.nbt`` (``StructureTemplateManager#save``). The
+``/qa setpiece jig <mask>`` names its structure block ``realmforge_qa:set_piece/<mask>_<token>``, a random token
+no other jig of any world takes (RLM-390), so pressing Save writes
+``<world>/generated/realmforge_qa/structure/set_piece/<mask>_<token>.nbt`` (``StructureTemplateManager#save``). The
 import reads the mask from that name (``rooms/set_pieces.py`` ``NAMED_MASKS``) and the height from the template's
 size, less the layers on top that hold only air (the jig sets the structure block's box as high as a piece may be,
 so a lower piece needs no change to it), checks the piece (``piece_problems`` and the ids,
 ``rooms/check.py``), writes the template normalized as ``content/set_pieces/<id>.nbt`` and drafts
 ``<id>.yaml``: the mask, the height, ``builds_walls`` where the mask's piece brings its walls, ``tags`` left empty
 to fill in (validation refuses the fit rule until then), the default roles and weight, and the save it came from.
-An existing fit rule is kept: importing a save again replaces only the template. ``--from-world`` imports every
-save of a world that no piece names as its source yet, each under its save's name as its id.
+An existing fit rule is kept: importing a save again replaces only the template, and a piece that came from another
+save is never replaced. ``--from-world`` imports every save of a world that no piece names as its source yet, each
+under its save's name as its id. Saves of older jigs, numbered ``<mask>_<n>``, import the same way.
 """
 
 from __future__ import annotations
@@ -36,7 +38,9 @@ from realmforge_tools.yamlio import YamlLoadError, load_yaml
 # Where the jig's structure block saves, below a world's folder, and the namespace of its names.
 JIG_NAMESPACE = "realmforge_qa"
 JIG_FOLDER = Path("generated") / JIG_NAMESPACE / "structure" / "set_piece"
-_SAVE_NAME = re.compile(r"^(?P<mask>[a-z0-9_]+?)_(?P<n>\d+)$")
+_SAVE_NAME = re.compile(r"^(?P<mask>[a-z0-9_]+?)_(?P<token>[a-z0-9]+)$")
+# Namespaces whose blocks a piece may hold: the rest wait for the full-pack registry dump (CLAUDE.md rule 3).
+_KNOWN_NAMESPACES = ("minecraft", "realmforge")
 _ID = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
@@ -60,7 +64,8 @@ def save_name(path: Path) -> str:
 
 
 def mask_of(path: Path) -> NamedMask | None:
-    """The jig's mask a save is named after (``wall_3x1_2`` -> ``wall_3x1``), or None."""
+    """The jig's mask a save is named after (``wall_3x1_k3j9z1`` or an older jig's ``wall_3x1_2`` -> ``wall_3x1``), or
+    None."""
     match = _SAVE_NAME.match(path.stem)
     return NAMED_MASKS.get(match["mask"]) if match else None
 
@@ -75,15 +80,8 @@ def world_saves(world: Path) -> list[Path]:
 
 def imported_sources(target: Path) -> set[str]:
     """The saves the fit rules in ``target`` name as their source."""
-    found = set()
-    for rule in sorted(target.glob("*.yaml")) if target.is_dir() else []:
-        try:
-            data = load_yaml(rule)
-        except YamlLoadError:
-            continue
-        if isinstance(data, dict) and isinstance(data.get("source"), str):
-            found.add(data["source"])
-    return found
+    rules = sorted(target.glob("*.yaml")) if target.is_dir() else []
+    return {source for rule in rules if (source := _source_of(rule)) is not None}
 
 
 def import_piece(source: Path, piece_id: str, target: Path, universe: IdUniverse) -> ImportResult:
@@ -111,16 +109,44 @@ def import_piece(source: Path, piece_id: str, target: Path, universe: IdUniverse
     fit = Fit(named.mask, height, named.builds_walls)
     for location, message in piece_problems(fit, structure) + check_structure(structure, universe):
         result.problems.append(f"{location}: {message}")
+    other_mods = sorted(
+        {
+            block.state.name.partition(":")[0]
+            for block in structure.blocks
+            if block.state.name.partition(":")[0] not in _KNOWN_NAMESPACES
+        }
+    )
+    if other_mods:
+        result.problems.append(
+            f"blocks of other mods ({', '.join(other_mods)}): build with vanilla blocks only; the import and rf gen "
+            "refuse other mods' blocks until the full-pack registry dump exists (CLAUDE.md rule 3)"
+        )
+    rule = target / f"{piece_id}.yaml"
+    taken_by = _source_of(rule)
+    if taken_by is not None and taken_by != save_name(source):
+        result.problems.append(
+            f"the piece {piece_id} came from {taken_by}, not from this save: import it under another --id"
+        )
     if result.problems:
         return result
     target.mkdir(parents=True, exist_ok=True)
     result.template.write_bytes(write_structure(structure))
     result.written = True
-    rule = target / f"{piece_id}.yaml"
     if not rule.exists():
         rule.write_text(draft_rule(piece_id, named, height, save_name(source)), encoding="utf-8")
         result.drafted = True
     return result
+
+
+def _source_of(rule: Path) -> str | None:
+    """The save a fit rule names as its source, or None (no rule, or one without a source)."""
+    if not rule.is_file():
+        return None
+    try:
+        data = load_yaml(rule)
+    except YamlLoadError:
+        return None
+    return data["source"] if isinstance(data, dict) and isinstance(data.get("source"), str) else None
 
 
 def lowered(structure: Structure) -> Structure:

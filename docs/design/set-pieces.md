@@ -240,12 +240,14 @@ Two or three builds per piece kind are therefore enough, instead of five.
 1. **The jig:** `/qa setpiece jig <mask> [<wall block>]` (QA mod, dev client) builds the frame for a mask on a flat
    platform north of Matěj and turns him to face it: the `W` cells as walls of the given block (stone bricks by
    default), glass on the clearance cells, and a structure block in Save mode already set to the piece's bounds,
-   three blocks high, and named `realmforge_qa:set_piece/<mask>_<n>`. The masks are the mask report's, by name
+   three blocks high, and named `realmforge_qa:set_piece/<mask>_<token>`, a random token no other jig takes
+   (RLM-390: numbers counted from 1 in each world repeated across worlds and between unsaved jigs). The masks are the mask report's, by name
    (`wall_3x1`, `corner_1x1`, `niche_2x1`, `free_2x2`, `built_niche_3x1` for the hay niche, ...). For a piece with its
    own walls (`builds_walls`) the jig leaves the `W` cells inside the bounds, empty, for him to build, and builds a flat
    wall behind them.
 2. **Building:** he builds the piece inside the bounds (blocks outside them are not saved) and presses Save in the
-   structure block. Minecraft writes the file to
+   structure block. Build with vanilla blocks only: the import and `rf gen` refuse other mods' blocks (Macaw's included) until the full-pack registry dump exists (CLAUDE.md rule 3). The save keeps entities for item frames, paintings, armor stands and displays,
+   the only entities a piece may hold; a mob that wandered in or a dropped item makes the import refuse it. Minecraft writes the file to
    `run/client/saves/<world>/generated/realmforge_qa/structure/set_piece/<name>.nbt`.
 3. **Import:** `uv run rf set-pieces import <file> --id hay_niche` normalizes the template into
    `content/set_pieces/hay_niche.nbt` and drafts `hay_niche.yaml` with the mask the jig used (read from the name),

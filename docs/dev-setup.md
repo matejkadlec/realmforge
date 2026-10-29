@@ -240,14 +240,17 @@ Windows (3.2), where mouse look works:
    (the hay niche); tab completion lists them.
 3. Build the piece inside the box (what stands outside it is not saved; a piece lower than three blocks needs no
    change to the box), open the structure block and press **Save**. The game writes
-   `$HOME\projects\realmforge-win\run\client\saves\<world>\generated\realmforge_qa\structure\set_piece\<mask>_<n>.nbt`.
+   `$HOME\projects\realmforge-win\run\client\saves\<world>\generated\realmforge_qa\structure\set_piece\<mask>_<token>.nbt`,
+   the token six random letters and digits that no other jig takes, in this world or another. Build with vanilla blocks only: the import and `rf gen` refuse other mods' blocks (Macaw's included) until the full-pack registry dump exists (CLAUDE.md rule 3). A
+   piece keeps only decorative entities (item frames, paintings, armor stands, displays): a mob or a dropped item
+   inside the box makes the import refuse it.
 4. Import in WSL, in your checkout (the Windows clone has no Python): every new save of the world at once, each under
    its save's name, or one save under the id you choose:
 
    ```bash
    cd ~/projects/realmforge
    uv run rf set-pieces import --from-world /mnt/c/Users/<you>/projects/realmforge-win/run/client/saves/workshop
-   uv run rf set-pieces import /mnt/c/Users/<you>/projects/realmforge-win/run/client/saves/workshop/generated/realmforge_qa/structure/set_piece/built_niche_3x1_1.nbt --id hay_niche
+   uv run rf set-pieces import /mnt/c/Users/<you>/projects/realmforge-win/run/client/saves/workshop/generated/realmforge_qa/structure/set_piece/built_niche_3x1_k3j9z1.nbt --id hay_niche
    ```
 
    Reading the saves from `/mnt/c/` is fine; only builds stay on their own side. In WSL's own client the path is
@@ -381,7 +384,7 @@ are unaffected.
   download goes through Claude's HTTPS proxy. Its `NO_PROXY` still lists PyPI, so uv would skip the proxy and fail
   with `dns error`. The hook removes PyPI from `NO_PROXY` for the whole session (via `CLAUDE_ENV_FILE`). At
   `startup` and `resume` (the `source` in the hook input) it also tells Claude, as session context, when the
-  warm-up below is about to run: no finished warm-up for the current build inputs (`status` not `done`, a changed
+  warm-up below is about to run (the Maven Central mirror below is its other job): no finished warm-up for the current build inputs (`status` not `done`, a changed
   `stamp`, or no `build/mc-sources/`). A resumed session whose agent changed a build input, or whose last warm-up
   failed, then knows that a Gradle run is starting next to its own; with a matching stamp it prints nothing.
 - **`cloud-warmup.sh`** (`"async": true`, never delays the session). In the background it runs `uv sync --locked`,
@@ -391,7 +394,18 @@ are unaffected.
   takes about 5 minutes cold; the warm-up takes about 4 minutes in the background, and the first build after it
   about 45 seconds. With the Java 25 download (2026-10-13) the warm-up took 4.6 minutes, and the first build a
   minute, most of it the game assets its JUnit run downloads (435 MiB).
-  - Maven Central sometimes answers bursts with `429 Too Many Requests` for a few minutes. After a 429 (or a
+  - **Maven Central mirror (RLM-426).** Maven Central answers the agent proxy's shared IP with
+    `429 Too Many Requests`, also behind the plugin portal (`plugins.gradle.org` redirects library downloads to
+    `repo.maven.apache.org`): on 2026-10-29 a warm-up failed three times in a row on ModDevGradle's
+    `com.google.code.gson:gson:2.10.1`. So `--env` (and the warm-up itself) writes a user-level Gradle init script,
+    `~/.gradle/init.d/realmforge-central-mirror.gradle` (or under `GRADLE_USER_HOME`), outside the repository: it
+    adds Google's mirror of Central, `https://maven-central.storage-download.googleapis.com/maven2/`, first to the
+    plugin repositories and moves every repository that points at `repo.maven.apache.org` or `repo1.maven.org` to
+    it. The mirror serves the same files; the agent proxy allows it. The repository's Gradle files stay as they
+    are, so local sessions and CI resolve from Central as before. With the script, the same session's warm-up
+    finished in 228 s. `tests/test_gradle_queue.sh` checks that a cloud session gets the script and a local one
+    does not.
+  - A repository may still answer a burst with `429 Too Many Requests` for a few minutes. After a 429 (or a
     502/503/504) the warm-up retries the Gradle step after 60 s and again after 120 s; any other failure ends it
     at once.
   - State in `.cache/warmup/` (gitignored): `status` (`running`, `done` or `failed`), `summary`, `log`, and
@@ -405,9 +419,9 @@ are unaffected.
     before every run and starts Gradle only once the warm-up is no longer running; agents run it themselves before
     any Gradle command outside the queue and after a resume (rule in `CLAUDE.md`).
 - The environment's network access (environment settings → **Network access**) must allow the default package
-  managers plus `downloads.gradle.org`; NeoForge and Mojang hosts were reachable without extra
-  entries. A blocked host fails with `403` / `CONNECT tunnel failed`; `curl -sS "$HTTPS_PROXY/__agentproxy/status"`
-  lists the recent denials.
+  managers plus `downloads.gradle.org` and the Central mirror's `maven-central.storage-download.googleapis.com`;
+  NeoForge and Mojang hosts were reachable without extra entries. A blocked host fails with `403` /
+  `CONNECT tunnel failed`; `curl -sS "$HTTPS_PROXY/__agentproxy/status"` lists the recent denials.
 - The environment's setup script (environment settings) provisions tools only. It runs before Claude Code launches
   and its result is cached for later sessions, but only when it finishes within about five minutes. The Gradle
   warm-up alone takes about four, plus any rate-limit retries, so the project warm-up stays in the hook.

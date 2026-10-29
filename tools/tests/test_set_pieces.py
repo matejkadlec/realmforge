@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import shutil
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -29,6 +30,7 @@ from realmforge_tools.rooms.set_pieces import (
     mask_report,
     match,
     pattern_cells,
+    piece_problems,
     place_piece,
     placement,
     transform,
@@ -675,7 +677,10 @@ def test_the_mask_report_reproduces_the_designs_counts() -> None:
 def test_rf_set_pieces_report_prints_the_table(capsys: pytest.CaptureFixture[str]) -> None:
     assert cli.main(["set-pieces", "report", "niche_3x1"]) == 0
     out = capsys.readouterr().out
-    assert "| Mask |" in out and "| 3x1 niche (`niche_3x1`) |" in out and "All (164)" in out
+    rooms = len(
+        load_content(RepoPaths()).rooms
+    )  # whatever rooms were imported, rejected or kept since (RLM-390)
+    assert "| Mask |" in out and "| 3x1 niche (`niche_3x1`) |" in out and f"All ({rooms})" in out
     assert cli.main(["set-pieces", "report", "nope"]) == 1
 
 
@@ -834,3 +839,119 @@ def test_from_world_imports_every_new_save(tmp_path: Path, capsys: pytest.Captur
     assert cli.main(["set-pieces", "import", "--from-world", str(world), "--to", str(target)]) == 0
     assert "No new saves" in capsys.readouterr().out
     assert cli.main(["set-pieces", "import", str(world), "--from-world", str(world)]) == 1
+
+
+def test_a_theme_of_our_own_blocks_gets_the_same_spots() -> None:
+    # RLM-473: validation takes our own simple blocks as a theme's full blocks, so the matcher takes them as walls and
+    # floors too, though no name rule knows them.
+    vault = "realmforge:vaultstone"
+    vanilla = singles(box_room(), fit("wall_1x1"), {"wall_body": BRICKS, "floor": STONE, "ceiling": STONE})
+    own = singles(box_room(wall=vault, floor=vault), fit("wall_1x1"), {"wall_body": vault, "floor": vault})
+    assert vanilla and own == vanilla
+    assert (
+        singles(box_room(wall=vault, floor=vault), fit("wall_1x1"), {"wall_body": BRICKS, "floor": STONE})
+        == []
+    )
+
+
+# --- RLM-390: unique save names, decorative entities only, other mods' blocks --------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("name", "mask"),
+    [
+        ("wall_3x1_k3j9z1", "wall_3x1"),
+        ("built_niche_3x1_0a0a0a", "built_niche_3x1"),
+        ("wall_3x1_2", "wall_3x1"),
+    ],
+)
+def test_a_saves_mask_comes_before_its_token(name: str, mask: str) -> None:
+    named = piece_import.mask_of(Path(f"{name}.nbt"))
+    assert named is not None and named.name == mask
+
+
+def with_entity(entity_id: str) -> Structure:
+    shelf = Structure(
+        (3, 1, 1),
+        DATA_VERSION,
+        tuple(StructureBlock((x, 0, 0), BlockState.parse("minecraft:bookshelf")) for x in range(3)),
+    )
+    return replace(shelf, entities=(StructureEntity((1.5, 0.5, 0.5), (1, 0, 0), {"id": entity_id}),))
+
+
+@pytest.mark.parametrize(
+    "entity_id",
+    ["minecraft:item_frame", "minecraft:glow_item_frame", "minecraft:painting", "minecraft:armor_stand"],
+)
+def test_a_piece_keeps_its_decorative_entities(entity_id: str, tmp_path: Path) -> None:
+    fit = Fit(NAMED_MASKS["wall_3x1"].mask, 1)
+    assert piece_problems(fit, with_entity(entity_id)) == []
+    result = piece_import.import_piece(
+        save(tmp_path / "world", "wall_3x1_abc", with_entity(entity_id)),
+        "x",
+        tmp_path / "out",
+        load_vanilla(RepoPaths()),
+    )
+    assert result.written, result.problems
+
+
+@pytest.mark.parametrize("entity_id", ["minecraft:zombie", "minecraft:item", "minecraft:experience_orb"])
+def test_a_piece_refuses_a_mob_or_a_dropped_item(entity_id: str, tmp_path: Path) -> None:
+    fit = Fit(NAMED_MASKS["wall_3x1"].mask, 1)
+    assert [location for location, _ in piece_problems(fit, with_entity(entity_id))] == [
+        f"entity {entity_id} at 1 0 0"
+    ]
+    result = piece_import.import_piece(
+        save(tmp_path / "world", "wall_3x1_abc", with_entity(entity_id)),
+        "x",
+        tmp_path / "out",
+        load_vanilla(RepoPaths()),
+    )
+    assert not result.written
+    assert any("only decorative entities" in problem for problem in result.problems), result.problems
+
+
+def test_from_world_imports_a_second_worlds_saves(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    # Each jig names its save with a token of its own, so a second world's saves are new saves.
+    first, second, target = tmp_path / "first", tmp_path / "second", tmp_path / "pieces"
+    save(first, "wall_3x1_aaaaaa", SHELF)
+    save(second, "wall_3x1_bbbbbb", SHELF)
+    for world in (first, second):
+        assert cli.main(["set-pieces", "import", "--from-world", str(world), "--to", str(target)]) == 0
+    assert capsys.readouterr().out.count("OK   ") == 2
+    assert piece_import.imported_sources(target) == {
+        "realmforge_qa:set_piece/wall_3x1_aaaaaa",
+        "realmforge_qa:set_piece/wall_3x1_bbbbbb",
+    }
+
+
+def test_an_import_never_replaces_a_piece_from_another_save(tmp_path: Path) -> None:
+    universe, target = load_vanilla(RepoPaths()), tmp_path / "pieces"
+    assert piece_import.import_piece(
+        save(tmp_path / "w", "wall_3x1_aaaaaa", SHELF), "shelf", target, universe
+    ).written
+    before = (target / "shelf.nbt").read_bytes()
+    other = save(tmp_path / "w", "wall_3x1_bbbbbb", with_entity("minecraft:painting"))
+    again = piece_import.import_piece(other, "shelf", target, universe)
+    assert not again.written
+    assert again.problems == [
+        "the piece shelf came from realmforge_qa:set_piece/wall_3x1_aaaaaa, not from this save: import it under "
+        "another --id"
+    ]
+    assert (target / "shelf.nbt").read_bytes() == before
+
+
+def test_an_import_says_why_other_mods_blocks_are_refused(tmp_path: Path) -> None:
+    table = Structure(
+        (3, 1, 1),
+        DATA_VERSION,
+        tuple(StructureBlock((x, 0, 0), BlockState.parse("mcwfurnitures:oak_table")) for x in range(3)),
+    )
+    result = piece_import.import_piece(
+        save(tmp_path / "w", "wall_3x1_abc", table), "x", tmp_path / "out", load_vanilla(RepoPaths())
+    )
+    assert not result.written
+    assert any(
+        p.startswith("blocks of other mods (mcwfurnitures): build with vanilla blocks only")
+        for p in result.problems
+    )

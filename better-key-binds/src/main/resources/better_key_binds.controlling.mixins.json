@@ -2,6 +2,7 @@
   "required": false,
   "minVersion": "0.8",
   "package": "io.github.matejkadlec.betterkeybinds.mixin.controlling",
+  "plugin": "io.github.matejkadlec.betterkeybinds.ControllingMixins",
   "compatibilityLevel": "JAVA_25",
   "client": [
     "ControllingCategoryEntryMixin",
@@ -11,6 +12,6 @@
     "ControllingKeyEntryMixin"
   ],
   "injectors": {
-    "defaultRequire": 1
+    "defaultRequire": 0
   }
 }

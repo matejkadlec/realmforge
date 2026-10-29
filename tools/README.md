@@ -296,10 +296,11 @@ generated rooms' paths. All masks over the 164 rooms take about 5 seconds (about
 
 **The workshop:** in the dev client, `/qa setpiece jig <mask> [<wall block>]` builds the frame for a mask north of you
 and turns you to face it, with a structure block in Save mode whose box is the piece's cells, three blocks high, named
-`realmforge_qa:set_piece/<mask>_<n>`. Build the piece in the box, press Save, then import the save:
+`realmforge_qa:set_piece/<mask>_<token>`, six random letters and digits that no other jig takes, in this world or
+another. Build the piece in the box, press Save, then import the save. Build with vanilla blocks only: the import and `rf gen` refuse other mods' blocks (Macaw's included) until the full-pack registry dump exists (CLAUDE.md rule 3).
 
 ```bash
-uv run rf set-pieces import run/client/saves/<world>/generated/realmforge_qa/structure/set_piece/wall_3x1_1.nbt --id barrel_shelf
+uv run rf set-pieces import run/client/saves/<world>/generated/realmforge_qa/structure/set_piece/wall_3x1_k3j9z1.nbt --id barrel_shelf
 uv run rf set-pieces import --from-world <world>      # every save of run/client/saves/<world> not imported yet
 ```
 
@@ -308,6 +309,7 @@ layers on top that hold only air, checks the piece (its cells, ids and blocks, a
 normalized as `content/set_pieces/<ID>.nbt` and drafts `<ID>.yaml`: the mask, the height, `builds_walls` for
 `built_niche_3x1`, empty `tags` for you to fill in (validation refuses the fit rule until then), the default roles and
 weight, and `source`, the save it came from. An existing fit rule is kept, so importing a save again replaces only its
-template. **`--from-world WORLD`** (a world folder, or a world name in `run/client/saves/`) imports every save of the
+template; an id whose fit rule came from another save is refused. A piece holds only decorative entities (item frames,
+paintings, armor stands, displays), and an import of other mods' blocks says why it refuses them. **`--from-world WORLD`** (a world folder, or a world name in `run/client/saves/`) imports every save of the
 jig in that world that no fit rule names as its `source`, each under its save's name as its id (rename the two files
 and the `id` together). `--to DIR` writes elsewhere than `content/set_pieces/`. Then `uv run rf gen`.
