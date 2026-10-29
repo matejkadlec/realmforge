@@ -1771,8 +1771,16 @@ return; the proc engine at its end exists since C3a.
     the pipeline writes, so `spell` never names an item and needs no dependency on `item`). A wand is
     **two-handed** (`gear.two_handed`, item tag `realmforge:two_handed`; Matěj, 2026-10-26): while one is in a
     player's main hand, every shield (`c:tools/shield`) is locked, and stays locked for 3 minutes after it leaves the
-    hand. `item/TwoHandedGear` keeps the lock per player, shows it as vanilla's item cooldown on every shield (which
-    also refuses blocking), and drops a shield held in either hand while it lasts, with a message in the action bar.
+    hand. `item/TwoHandedGear` keeps the lock per player (by UUID, since a respawn builds a new player), shows it as
+    vanilla's item cooldown on every shield (which also refuses blocking), and puts a shield held in either hand
+    while it lasts into the bag, with a message in the action bar: a free slot of the main inventory (9 to 35), never
+    the hotbar, so it does not come back into a hand by itself, or, with the bag full, a plain drop at the player's
+    feet, not thrown and not counted as the player's drop (RLM-461; Matěj, 2026-10-28), which is not picked up into the
+    selected slot while the lock lasts and the bag is full (`ItemEntityPickupEvent.Pre`; a shield does not stack, so a
+    pickup takes the first free slot, often the selected one, and would drop again at once; with a bag slot free, the
+    tick's end stows it there). A death and a logout end the lock (`PlayerRespawnEvent`, `PlayerLoggedOutEvent`); a
+    return from the End keeps it. A client rebuilds its player, and forgets its cooldowns, at every dimension change,
+    so `PlayerChangedDimensionEvent` and the End's respawn put what is left of the lock on the shields' cooldown again.
     The lock is its own, not the cooldown, so a shield an axe disabled stays in hand. It is not Better Combat's
     two-handed weapons, which block with right click ([9.3](#93-blocking-with-two-handed-weapons));
   - **armor** (`head`, `chest`, `legs`, `feet`) gets vanilla's `EQUIPPABLE` component with its slot, equip sound and
