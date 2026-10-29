@@ -49,8 +49,10 @@ import net.minecraft.world.phys.Vec3;
  * {@link Bosses}).
  *
  * <ul>
- *   <li><b>Phases:</b> {@link BossPhaseMachine} moves it into the next phase when that phase's trigger holds. A new
- *   phase cancels the cast in progress, casts its {@code on_enter} spells at once (without their cooldowns), and for
+ *   <li><b>Phases:</b> once a fight has begun (it has had a target since its last reset), {@link BossPhaseMachine}
+ *   moves it into the next phase when that phase's trigger holds, and the time in a phase counts; a boss nobody has
+ *   pulled stays in its first phase, so an enrage timer starts with the fight. A new phase cancels the cast in
+ *   progress, casts its {@code on_enter} spells at once (without their cooldowns), and for
  *   the definition's phase change time the boss stands, casts nothing and takes no hurt, which particles round it
  *   show; a refused hit sounds like a blocked one.</li>
  *   <li><b>Abilities:</b> while its target is in reach, it casts its phase's abilities through {@link SpellCaster},
@@ -87,7 +89,10 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
     private int phase;
     private int phaseTicks;
     private int phaseChangeLeft;
-    /** Whether it has had a target since its last reset: only a fight that happened can end. */
+    /**
+     * Whether it has had a target since its last reset: only then do its phases move on and its time in a phase count,
+     * and only a fight that happened can end.
+     */
     private boolean engaged;
     private int castDelay;
 
@@ -130,7 +135,7 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
         return definition().map(boss -> boss.value().phases().get(phase));
     }
 
-    /** The ticks since it entered its current phase. */
+    /** The ticks of fight since it entered its current phase. */
     public int ticksInPhase() {
         return phaseTicks;
     }
@@ -191,7 +196,10 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
         bossBar.update();
     }
 
-    /** The fight on the server, every tick: the arena and the end of a fight, the phases, the phase change. */
+    /**
+     * The fight on the server, every tick: the arena and the end of a fight, the phases while a fight runs, the phase
+     * change.
+     */
     private void followFight(ServerLevel level) {
         Optional<Holder.Reference<Boss>> boss = definition();
         if (boss.isEmpty()) {
@@ -201,12 +209,14 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
             reset();
             return;
         }
-        OptionalInt next = BossPhaseMachine.next(boss.get().value().phases(), phase,
-                new BossPhaseMachine.Progress(getHealth() / getMaxHealth(), phaseTicks));
-        if (next.isPresent()) {
-            enterPhase(next.getAsInt());
-        } else {
-            phaseTicks++;
+        if (engaged) {
+            OptionalInt next = BossPhaseMachine.next(boss.get().value().phases(), phase,
+                    new BossPhaseMachine.Progress(getHealth() / getMaxHealth(), phaseTicks));
+            if (next.isPresent()) {
+                enterPhase(next.getAsInt());
+            } else {
+                phaseTicks++;
+            }
         }
         if (phaseChangeLeft > 0) {
             if (phaseChangeLeft % PHASE_CHANGE_PARTICLE_INTERVAL == 0) {

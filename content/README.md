@@ -128,18 +128,19 @@ Rules:
   the placeholder until A2's art: a `build` (`humanoid`, `slim`, `golem`), a `surface` (`speckled`, `smooth`,
   `mossy_bricks`), `eyes` (`dot`, `tall`, or `gem` in the variants' accents) and its `color` (and `moss`). A mob's id
   must not be one of `texts/entity.yaml`'s names, which name the hand-written entity types with the same keys.
-- `bosses/` holds the bosses' fights ([architecture 14.3](../docs/architecture.md#143-bosses), W5a): the `entity` of
-  its body (a mob of archetype `boss` in `mobs/`, one boss per body and a boss for every such mob), its fixed `level`
-  (a dungeon run's level wins over it), its `arena` (`radius`, 4 to 64 blocks round its home, the spot where it first
+- `bosses/` holds the bosses' fights ([architecture 14.3](../docs/architecture.md#143-bosses), W5a): the `entity` of its
+  body (a mob of archetype `boss` in `mobs/`, one boss per body and a boss for every such mob), its fixed `level` (a
+  dungeon run's level wins over it), its `arena` (`radius`, 4 to 64 blocks round its home, the spot where it first
   stood: it fights only what stands inside, takes no hurt from outside, and resets when pulled out), its `bar_color`
   (vanilla's boss bar colours, `red` by default) and `phase_change_seconds` (3 by default: how long it stands unhurt,
   casting nothing, when it enters a later phase). Its `phases` come in order: each has an `id`, a `name` the boss bar
   shows after the boss's name (Title Case, 1 to 3 words), and every phase after the first an `enter_when`, a
   `realmforge:health_below` (`health_percent`, decreasing from phase to phase) or a `realmforge:time_in_phase`
-  (`after_seconds` in the phase before); `on_enter` names spells it casts at once when the phase begins (not for the
-  first phase), and `abilities` the spells it casts while the phase lasts (`spell`, and its own `cooldown_seconds` on top
-  of the spell's), at its target, or at a player or itself when the spell picks so (no `ally` spells). The `test_titan`
-  boss is test content (like `items/test_item`) for the boss GameTests.
+  (`after_seconds` of fight in the phase before: a boss nobody has pulled stays in its first phase); `on_enter` names
+  spells it casts at once when the phase begins (not for the first phase), and `abilities` the spells it casts while the
+  phase lasts (`spell`, and its own `cooldown_seconds` on top of the spell's), at its target, or at a player or itself
+  when the spell picks so (no `ally` spells). The `test_titan` boss is test content (like `items/test_item`) for the
+  boss GameTests.
 - `sounds/` holds our sound events ([ADR 0007](../docs/decisions/0007-asset-pipeline.md), A3): one file per subject
   (a mob, a spell, a block), its `category` (`entity`, `block`, `item`, `spell`, `ambient`, `ui`) and its `events`,
   each `realmforge:<category>.<subject>.<name>` with a `subtitle` (vanilla's style: "Hewn Sentinel cracks") and the

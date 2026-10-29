@@ -38,15 +38,16 @@ public final class BossGameTests {
     }
 
     /**
-     * Every phase change: below half health it enters Fury, hardens and stands unhurt for its 1 s phase change; after
-     * 4 s of Fury it enters Frenzy. The boss bar shows each phase in the boss's colour, and the titan has its fixed
-     * level.
+     * Every phase change in a fight (the titan has a target): below half health it enters Fury, hardens and stands
+     * unhurt for its 1 s phase change; after 4 s of Fury it enters Frenzy. The boss bar shows each phase in the boss's
+     * colour, and the titan has its fixed level.
      */
     @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 200)
     public static void theTestTitanGoesThroughEveryPhase(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         BossMob titan = titan(helper);
         titan.setNoAi(true);
+        titan.setTarget(husk(helper, new Vec3(8.5, 1, 1.5)));
         helper.assertTrue(titan.definition().isPresent(), "the titan finds its fight");
         helper.assertValueEqual(MobLevels.level(titan), OptionalInt.of(5), "the titan's fixed level");
         assertPhase(helper, titan, 0, "Awakening");
@@ -77,6 +78,36 @@ public final class BossGameTests {
                     assertPhase(helper, titan, 2, "Frenzy");
                     helper.assertTrue(titan.ticksInPhase() <= 1, "Frenzy has just begun");
                 })
+                .thenSucceed();
+    }
+
+    /**
+     * A titan nobody has pulled stays in its phase: neither a health threshold nor a phase's time moves it on, so an
+     * enrage timer starts with the fight. Put into Fury as {@code /qa boss phase fury} does, it stays there past
+     * Fury's 4 s, its phase change still ends after 1 s, and once it has a target the 4 s count from then.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 300)
+    public static void anIdleTestTitanStaysInItsPhase(GameTestHelper helper) {
+        BossMob titan = titan(helper);
+        titan.setNoAi(true);
+        titan.setHealth(titan.getMaxHealth() * 0.4F);
+        long[] targeted = new long[1];
+        helper.startSequence()
+                .thenExecuteAfter(5, () -> {
+                    assertPhase(helper, titan, 0, "Awakening");
+                    titan.enterPhase(1);
+                    assertPhase(helper, titan, 1, "Fury");
+                })
+                .thenExecuteAfter(100, () -> {
+                    assertPhase(helper, titan, 1, "Fury");
+                    helper.assertFalse(titan.changingPhase(), "the phase change ends while it is idle too");
+                    helper.assertValueEqual(titan.ticksInPhase(), 0, "no time in the phase counts while it is idle");
+                    titan.setTarget(husk(helper, new Vec3(8.5, 1, 1.5)));
+                    targeted[0] = helper.getLevel().getGameTime();
+                })
+                .thenWaitUntil(() -> assertPhase(helper, titan, 2, "Frenzy"))
+                .thenExecute(() -> helper.assertTrue(helper.getLevel().getGameTime() - targeted[0] >= 80,
+                        "Frenzy came 4 s into the fight, not earlier"))
                 .thenSucceed();
     }
 
@@ -119,9 +150,13 @@ public final class BossGameTests {
     public static void theTestTitanResetsOutsideItsArena(GameTestHelper helper) {
         BossMob titan = titan(helper);
         titan.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0);
+        Husk husk = husk(helper, new Vec3(8.5, 1, 1.5));
         helper.startSequence()
                 .thenWaitUntil(() -> helper.assertTrue(titan.home().isPresent(), "the titan took its home"))
-                .thenExecute(() -> titan.setHealth(titan.getMaxHealth() * 0.4F))
+                .thenExecute(() -> {
+                    titan.setTarget(husk);
+                    titan.setHealth(titan.getMaxHealth() * 0.4F);
+                })
                 .thenWaitUntil(() -> assertPhase(helper, titan, 1, "Fury"))
                 .thenExecute(() -> {
                     helper.assertTrue(titan.hasEffect(MobEffects.RESISTANCE), "hardened in Fury");
@@ -132,6 +167,7 @@ public final class BossGameTests {
                     assertPhase(helper, titan, 0, "Awakening");
                     helper.assertValueEqual(titan.getHealth(), titan.getMaxHealth(), "full health after the reset");
                     helper.assertFalse(titan.hasEffect(MobEffects.RESISTANCE), "its effects are gone");
+                    helper.assertTrue(titan.getTarget() == null, "its target is gone");
                     Vec3 home = Vec3.atBottomCenterOf(titan.home().orElseThrow());
                     helper.assertTrue(titan.position().distanceTo(home) < 1, "back home: " + titan.position());
                 })

@@ -2077,15 +2077,16 @@ phases:
   before: an enrage timer); `adds_defeated` comes with a spell that summons adds. The pipeline refuses a trigger on the
   first phase, a later phase without one and health thresholds that do not decrease; JUnit (`BossPhaseMachineTest`)
   walks every generated boss through all its phases in order.
-- **Boss entity** (`boss/BossMob`, a `MeleeMob`): every tick on the server, it follows its fight. A new phase cancels
-  the cast in progress, casts the phase's `on_enter` spells at once through `SpellCaster#castProc` (no cooldowns, no
-  procs from their hits), and for `phase_change_seconds` the boss stands, casts nothing and takes no hurt; particles
-  round it show it, and a refused hit sounds like a blocked shield (BM-18: no immunity without a tell). While its
-  target is in reach, it tries its phase's abilities every 5 ticks through `SpellCaster`, the first that is off its
-  own `cooldown_seconds` and that the engine lets it cast, so every attack is a readable cast; it aims at its target,
-  unless the spell picks its own (`random_player`, `farthest_player`) or acts on itself (`self`). Between casts it
-  fights in melee; while a cast runs it stands and faces its target (`BossHoldGoal`). Ground movement only: no flying
-  bosses.
+- **Boss entity** (`boss/BossMob`, a `MeleeMob`): every tick on the server, it follows its fight. Its phases move on and
+  its time in a phase counts only once a fight has begun (it has had a target since its last reset), so a boss nobody
+  has pulled stays in its first phase and an enrage timer starts with the fight. A new phase cancels the cast in
+  progress, casts the phase's `on_enter` spells at once through `SpellCaster#castProc` (no cooldowns, no procs from
+  their hits), and for `phase_change_seconds` the boss stands, casts nothing and takes no hurt; particles round it show
+  it, and a refused hit sounds like a blocked shield (BM-18: no immunity without a tell). While its target is in reach,
+  it tries its phase's abilities every 5 ticks through `SpellCaster`, the first that is off its own `cooldown_seconds`
+  and that the engine lets it cast, so every attack is a readable cast; it aims at its target, unless the spell picks
+  its own (`random_player`, `farthest_player`) or acts on itself (`self`). Between casts it fights in melee; while a
+  cast runs it stands and faces its target (`BossHoldGoal`). Ground movement only: no flying bosses.
 - **Arena:** its home is where its AI first finds it on the ground (a guard's post, [14.2](#142-custom-mobs)). It
   targets only what stands within the arena's radius of home, drops a target that leaves it, and takes no hurt from an
   attacker outside it. Pulled out of its arena, it resets (`BossMob#reset`): back home, at full health, in its first
