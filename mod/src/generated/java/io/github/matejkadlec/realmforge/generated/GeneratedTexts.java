@@ -110,7 +110,7 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.highlight_spell_target_toggle} from {@code content/texts/gui.yaml}: "Toggle" */
     public static final String GUI_HIGHLIGHT_SPELL_TARGET_TOGGLE = "gui.realmforge.highlight_spell_target_toggle";
 
-    /** {@code gui.realmforge.highlight_spell_target_tooltip} from {@code content/texts/gui.yaml}: "Toggle: a press of the key shows the target circle under the mob your spell would hit, and another hides it. Hold: it shows while the key is held." */
+    /** {@code gui.realmforge.highlight_spell_target_tooltip} from {@code content/texts/gui.yaml}: "Toggle: a press of the key bind shows the highlight under the target mob. Press again to hide it.\nHold: shows the highlight under the target mob only while the key bind is held." */
     public static final String GUI_HIGHLIGHT_SPELL_TARGET_TOOLTIP = "gui.realmforge.highlight_spell_target_tooltip";
 
     /** {@code gui.realmforge.instance_subtitle} from {@code content/texts/gui.yaml}: "Realmforge Instance" */
@@ -128,7 +128,7 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.mirror_hotbar_width} from {@code content/texts/gui.yaml}: "Mirror Hotbar's Width" */
     public static final String GUI_MIRROR_HOTBAR_WIDTH = "gui.realmforge.mirror_hotbar_width";
 
-    /** {@code gui.realmforge.mirror_hotbar_width_tooltip} from {@code content/texts/gui.yaml}: "On: the spell bar and the resource bar are exactly as wide as the hotbar, in place of Spellbar Size." */
+    /** {@code gui.realmforge.mirror_hotbar_width_tooltip} from {@code content/texts/gui.yaml}: "On: the spellbar matches the vanilla hotbar's width. Overrides the Spellbar Size setting." */
     public static final String GUI_MIRROR_HOTBAR_WIDTH_TOOLTIP = "gui.realmforge.mirror_hotbar_width_tooltip";
 
     /** {@code gui.realmforge.movement_speed} from {@code content/texts/gui.yaml}: "Movement Speed" */
@@ -158,7 +158,7 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.queue_spell_casts} from {@code content/texts/gui.yaml}: "Queue Spell Casts" */
     public static final String GUI_QUEUE_SPELL_CASTS = "gui.realmforge.queue_spell_casts";
 
-    /** {@code gui.realmforge.queue_spell_casts_tooltip} from {@code content/texts/gui.yaml}: "On: a spell you press during another spell's cast waits for it to end. Off: it cancels that cast and casts at once." */
+    /** {@code gui.realmforge.queue_spell_casts_tooltip} from {@code content/texts/gui.yaml}: "On: a spell you press during another spell's cast waits for it to end, and casts afterwards.\nOff: a spell you press during another spell's cast cancels it to cast itself immediately." */
     public static final String GUI_QUEUE_SPELL_CASTS_TOOLTIP = "gui.realmforge.queue_spell_casts_tooltip";
 
     /** {@code gui.realmforge.race} from {@code content/texts/gui.yaml}: "Race" */
@@ -188,13 +188,13 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.spell_bar_position_hint} from {@code content/texts/gui.yaml}: "Drag the bar to change its position." */
     public static final String GUI_SPELL_BAR_POSITION_HINT = "gui.realmforge.spell_bar_position_hint";
 
-    /** {@code gui.realmforge.spell_bar_position_tooltip} from {@code content/texts/gui.yaml}: "Drag the spell bar and the resource bar under it wherever you want them on the screen." */
+    /** {@code gui.realmforge.spell_bar_position_tooltip} from {@code content/texts/gui.yaml}: "Reposition the spellbar wherever you want it on the screen." */
     public static final String GUI_SPELL_BAR_POSITION_TOOLTIP = "gui.realmforge.spell_bar_position_tooltip";
 
     /** {@code gui.realmforge.spell_bar_size} from {@code content/texts/gui.yaml}: "Spellbar Size" */
     public static final String GUI_SPELL_BAR_SIZE = "gui.realmforge.spell_bar_size";
 
-    /** {@code gui.realmforge.spell_bar_size_tooltip} from {@code content/texts/gui.yaml}: "The width of the spell bar and the resource bar, from half to one and a half; their height grows with it." */
+    /** {@code gui.realmforge.spell_bar_size_tooltip} from {@code content/texts/gui.yaml}: "Size of the spellbar. The width-to-height ratio stays the same." */
     public static final String GUI_SPELL_BAR_SIZE_TOOLTIP = "gui.realmforge.spell_bar_size_tooltip";
 
     /** {@code gui.realmforge.spell_casting_options} from {@code content/texts/gui.yaml}: "Spell Casting Options" */
@@ -221,7 +221,7 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.spells_queue_size} from {@code content/texts/gui.yaml}: "Spells Queue Size" */
     public static final String GUI_SPELLS_QUEUE_SIZE = "gui.realmforge.spells_queue_size";
 
-    /** {@code gui.realmforge.spells_queue_size_tooltip} from {@code content/texts/gui.yaml}: "How many spells can wait. At 1, a newer spell replaces the waiting one; above 1, it waits after them." */
+    /** {@code gui.realmforge.spells_queue_size_tooltip} from {@code content/texts/gui.yaml}: "How many spells can be queued for a subsequent cast." */
     public static final String GUI_SPELLS_QUEUE_SIZE_TOOLTIP = "gui.realmforge.spells_queue_size_tooltip";
 
     /** {@code gui.realmforge.spend_stat_point} from {@code content/texts/gui.yaml}: "Spend a point on %1$s" */

@@ -110,17 +110,18 @@ texts:
   spell_options:
     en_us: Options
   # The spell casting options (Matěj, 2026-10-19, RLM-25; client/screen/SpellOptionsScreen), also behind the
-  # Config button of the mod list.
+  # Config button of the mod list. The tooltips are Matěj's (2026-10-29): "Spellbar" is one word, and a tooltip's
+  # second case ("Off:", "Hold:") starts on a new line.
   spell_casting_options:
     en_us: Spell Casting Options
   queue_spell_casts:
     en_us: Queue Spell Casts
   queue_spell_casts_tooltip:
-    en_us: "On: a spell you press during another spell's cast waits for it to end. Off: it cancels that cast and casts at once."
+    en_us: "On: a spell you press during another spell's cast waits for it to end, and casts afterwards.\nOff: a spell you press during another spell's cast cancels it to cast itself immediately."
   spells_queue_size:
     en_us: Spells Queue Size
   spells_queue_size_tooltip:
-    en_us: "How many spells can wait. At 1, a newer spell replaces the waiting one; above 1, it waits after them."
+    en_us: How many spells can be queued for a subsequent cast.
   # The spell bar's options, rows of the same list (RLM-404; Matěj, 2026-10-29: no section heading). Spellbar
   # Position opens the drag mode (client/screen/SpellBarPositionScreen), whose title it is too.
   spell_bar_position:
@@ -128,17 +129,17 @@ texts:
   spell_bar_position_button:
     en_us: Spellbar Position...
   spell_bar_position_tooltip:
-    en_us: Drag the spell bar and the resource bar under it wherever you want them on the screen.
+    en_us: Reposition the spellbar wherever you want it on the screen.
   spell_bar_position_hint:
     en_us: Drag the bar to change its position.
   spell_bar_size:
     en_us: Spellbar Size
   spell_bar_size_tooltip:
-    en_us: "The width of the spell bar and the resource bar, from half to one and a half; their height grows with it."
+    en_us: Size of the spellbar. The width-to-height ratio stays the same.
   mirror_hotbar_width:
     en_us: Mirror Hotbar's Width
   mirror_hotbar_width_tooltip:
-    en_us: "On: the spell bar and the resource bar are exactly as wide as the hotbar, in place of Spellbar Size."
+    en_us: "On: the spellbar matches the vanilla hotbar's width. Overrides the Spellbar Size setting."
   # How the Highlight Spell Target key works (RLM-468; Matěj's playtest of 2026-10-29): a row of the same list,
   # "Highlight Spell Target: Toggle" by default, "Hold" on a click.
   highlight_spell_target:
@@ -148,7 +149,7 @@ texts:
   highlight_spell_target_hold:
     en_us: Hold
   highlight_spell_target_tooltip:
-    en_us: "Toggle: a press of the key shows the target circle under the mob your spell would hit, and another hides it. Hold: it shows while the key is held."
+    en_us: "Toggle: a press of the key bind shows the highlight under the target mob. Press again to hide it.\nHold: shows the highlight under the target mob only while the key bind is held."
   reset_position:
     en_us: Reset Position
   save:
