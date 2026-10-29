@@ -139,8 +139,10 @@ Rules:
   (`after_seconds` of fight in the phase before: a boss nobody has pulled stays in its first phase); `on_enter` names
   spells it casts at once when the phase begins (not for the first phase), and `abilities` the spells it casts while the
   phase lasts (`spell`, and its own `cooldown_seconds` on top of the spell's), at its target, or at a player or itself
-  when the spell picks so (no `ally` spells). The `test_titan` boss is test content (like `items/test_item`) for the
-  boss GameTests.
+  when the spell picks so (no `ally` spells). An ability on the boss itself whose first effect is an area (a quake) is
+  cast only while its target stands inside it, and while any area spell is cast a ring marks where it lands. `astone`
+  is Undervault's guardian (W5b); the `test_titan` boss is test content (like `items/test_item`) for the boss
+  GameTests.
 - `sounds/` holds our sound events ([ADR 0007](../docs/decisions/0007-asset-pipeline.md), A3): one file per subject
   (a mob, a spell, a block), its `category` (`entity`, `block`, `item`, `spell`, `ambient`, `ui`) and its `events`,
   each `realmforge:<category>.<subject>.<name>` with a `subtitle` (vanilla's style: "Hewn Sentinel cracks") and the

@@ -2047,8 +2047,9 @@ holds the same text. New feedback on a mob goes into both in the same run.
   hands in front of the forehead).
   `attack.swing` lasts half the mob's attack interval (0.75 s for the Sentinel), a stone golem's heavy swing:
   `MeleeMob#swing` triggers it on the server (`triggerAnim`, synced to clients) and it plays to its end, since
-  GeckoLib's own attack controller stops with vanilla's 6-tick arm swing. While a caster casts a spell that forms its
-  projectile, the renderer draws the projectile's orb growing in its hands ([11.6](#116-client-side)). Until
+  GeckoLib's own attack controller stops with vanilla's 6-tick arm swing. While a custom mob (a caster, or a boss such
+  as Astone with her boulder) casts a spell that forms its projectile, the renderer draws the projectile's orb growing
+  in its hands ([11.6](#116-client-side)). Until
   A2 (RLM-48) brings the art, `rf gen` writes placeholders from the YAML's `model`: a build that fills the hitbox
   (`humanoid`; `slim`, an enderman's long legs and arms and a tall head; `golem`, a broad body with shells on its front
   and back, long arms as thick as a player's and a big head, moss hanging off the shells), a surface (`speckled`,
@@ -2065,7 +2066,8 @@ holds the same text. New feedback on a mob goes into both in the same run.
 ### 14.3 Bosses
 
 Built in W5a (RLM-490, part 1 of W5, RLM-35): the framework every boss runs on, tested with the test boss
-`realmforge:test_titan`. The first real boss, Astone, the Unbroken, is W5b (RLM-491).
+`realmforge:test_titan`. The first real boss is W5b (RLM-491): Astone, the Unbroken, Undervault's guardian
+(`content/bosses/astone.yaml`, [below](#astone-the-unbroken)).
 
 ```yaml
 # content/bosses/test_titan.yaml (the format, schema/boss.py)
@@ -2109,11 +2111,20 @@ phases:
   has pulled stays in its first phase and an enrage timer starts with the fight. A new phase cancels the cast in
   progress, casts the phase's `on_enter` spells at once through `SpellCaster#castProc` (no cooldowns, no procs from
   their hits), and for `phase_change_seconds` the boss stands, casts nothing and takes no hurt; particles round it show
-  it, and a refused hit sounds like a blocked shield (BM-18: no immunity without a tell). While its target is in reach,
-  it tries its phase's abilities every 5 ticks through `SpellCaster`, the first that is off its own `cooldown_seconds`
+  it, and a refused hit sounds like a blocked shield (BM-18: no immunity without a tell). While it has a target, it
+  tries its phase's abilities every 5 ticks through `SpellCaster`, the first that is off its own `cooldown_seconds`
   and that the engine lets it cast, so every attack is a readable cast; it aims at its target, unless the spell picks
-  its own (`random_player`, `farthest_player`) or acts on itself (`self`). Between casts it fights in melee; while a
-  cast runs it stands and faces its target (`BossHoldGoal`). Ground movement only: no flying bosses.
+  its own (`random_player`, `farthest_player`) or acts on itself (`self`). An area round itself (a spell on itself
+  whose first effect is an area: a quake) it casts only while its target stands inside it, measured across the ground
+  as the area measures. Between casts it fights in melee; while a cast runs it stands and faces its target
+  (`BossHoldGoal`). Ground movement only: no flying bosses.
+- **Telegraphs** (research BM-2: heavy area attacks are telegraphed): every ability with a cast time is told by the
+  cast (its sound, the `attack.cast` animation, a projectile forming in its hands). While a boss casts a spell whose
+  first effect is an area, a ring of orange dust marks that area's edge where it will land, every 4 ticks
+  (`BossMob#landing`): round itself, round its target where the target stands now, or round the ground point the cast
+  was aimed at when it began (`Spells#currentCastTarget`; a ground point never follows its target,
+  [11.2](#112-casting-server-authoritative)), so a player who steps out of the ring dodges it. The spell engine's own
+  spell visuals are C6 (RLM-29).
 - **Arena:** its home is where its AI first finds it on the ground (a guard's post, [14.2](#142-custom-mobs)). It
   attacks only what stands within the arena's radius of home (`BossMob#canAttack`, which vanilla's target goals and
   `Mob#getTarget` ask, so a target that leaves the arena is let go and forgotten), and takes no hurt from an attacker
@@ -2145,7 +2156,32 @@ phases:
 - **GameTests:** `BossGameTests` spawn the test titan and cover every phase change (the bar's title, the `on_enter`
   effect, the refused hit during the change), its ability cast at a target with its own cooldown, the reset outside the
   arena and after a fight, the refused hit from outside the arena, its fixed level, and that a boss summoned as
-  `/summon` does it never despawns; `ContentBossGameTests` compare the registry with the generated expectations.
+  `/summon` does it never despawns; `AstoneGameTests` cover Astone (below); `ContentBossGameTests` compare the registry
+  with the generated expectations.
+
+#### Astone, the Unbroken
+
+W5b (RLM-491; [chapter 2, Part 10](lore/chapters/02-the-weight-of-stone.md), quest 14): Undervault's guardian, a
+colossus of living stone (she/her) that the Gatewrights set at the stone arena's altar to weigh whoever comes for the
+next signets; a trial, not a villain. Her body is `content/mobs/astone.yaml` (2 by 5 blocks, a golem placeholder until
+A2, in `#realmforge:stone_creatures`, breaking apart into Vaultstone), her fight `content/bosses/astone.yaml`, her
+sounds `content/sounds/astone*.yaml`, and her kill XP rank is a realm guardian's 20 (RLM-192). Level 18, Undervault's
+highest, unless a run of the stone arena (W6, RLM-36) gives her its level; an arena of radius 20, a white bar, the
+default 3 s phase change. The numbers are proposals for Matěj's playtest.
+
+| Phase | Enters | `on_enter` | Abilities |
+| --- | --- | --- | --- |
+| The Weighing | at the start | - | Hurled Boulder: a 2 s cast that forms a boulder in her hands, then a dodgeable projectile (physical, a throw back) |
+| Quaking Stone | below 60 % health | Shockwave: throws back every enemy within 8 blocks, no damage | Quake (a 1.5 s cast, an area of 5 round her: damage, a throw back, 3 s of Slowness), Rockfall (a 2 s cast, an area of 3 where her target stood when she began), Hurled Boulder |
+| Breaking Point | below 25 % health | Cracked Stone: her own effect `realmforge:cracked_stone` for 60 s, +30 % attack damage, +25 % speed, -50 % armor | Cracked Stone again before it wears off, Quake, Rockfall, Hurled Boulder |
+
+She drops the Stone Heart, the Sun Signet Shard and the Ice Signet Shard at 100 % on every kill (Matěj, 2026-10-25
+and 2026-10-27, RLM-432), fire-resistant materials whose recipes (the twins' signets, the Skyhearth Medallion) come
+with their realms. The altar, her summoning item and the arena dungeon are W6 (RLM-36); until then
+`/summon realmforge:astone`. `AstoneGameTests` cover each phase change (the bar's title, the shockwave's push, the
+cracks), each ability cast through the spell engine at a husk (the boulder, Quake only with its target inside, Rockfall
+where its target stood, dodged by a husk that left the ring, Cracked Stone again as an ability), and her three drops
+on three kills; `BossPhaseMachineTest` walks her definition through all three phases.
 
 ## 15. Dimensions and dungeons
 

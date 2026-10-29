@@ -65,8 +65,10 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   [architecture 14.2](docs/architecture.md#142-custom-mobs)). Bosses run on the boss framework (W5a, RLM-490): a
   boss's body is a custom mob of archetype `boss` and its fight an entry of `content/bosses/` (phases named in the boss
   bar, entered by health or by time, abilities and `on_enter` spells through the spell engine, a short unhurt phase
-  change, an arena that resets it, a fixed level, never a despawn), tested with the test titan; the first real boss,
-  Astone, is W5b (RLM-491). A new player
+  change, an arena that resets it, a fixed level, never a despawn, a ring that marks where an area lands), tested with
+  the test titan. The first real boss is Astone, the Unbroken (W5b, RLM-491), Undervault's guardian: three phases
+  (a boulder, then a quake and a rockfall, then cracked stone), and the Stone Heart and the twins' shards on every
+  kill; `/summon realmforge:astone` until W6's altar. A new player
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits.
   Casters have their gear (RLM-172, RLM-197), from an item's `gear` in YAML: seven two-handed wands from wood to
   netherite whose stats count in the main hand, which every cast wears and which lock shields, and four robe sets (Apprentice's, Spellweave, Arcane Silk,
