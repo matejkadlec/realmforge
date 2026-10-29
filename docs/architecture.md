@@ -1152,7 +1152,9 @@ go of right click stops its charge.
     which checks again. It looks like a bow's draw (`client/render/ScrollCharge`, Matěj's playtest of 2026-10-24):
     the bow's pose in third person, and in first person vanilla's bow transform stretched over the 3 s, the scroll
     pulled back and shaking harder as the charge fills, through NeoForge's client item extensions on the scrolls'
-    items, as a plain item has no use animation. Each scroll registers what it checks and does (`Scrolls.add`), and
+    items, as a plain item has no use animation. Other players see the pose too: it reads only the synced use flags,
+    because another player's client knows no charge length (the plain item's use duration is 0) and counts its
+    remaining ticks below 0 at once; only the first-person draw counts them (RLM-416). Each scroll registers what it checks and does (`Scrolls.add`), and
     its item joins `ScrollCharge`: the Scroll of Oblivion first, the Scroll of Respec (RLM-226) and the Scroll of
     Rebirth (RLM-228) next. A level that falls below what was spent
     (a command, a revoked chapter, a curve that gives fewer) returns every spent point, with a message.

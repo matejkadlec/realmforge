@@ -29,14 +29,15 @@ public final class ScrollCharge {
         @Override
         @Nullable
         public HumanoidModel.ArmPose getArmPose(LivingEntity entity, InteractionHand hand, ItemStack stack) {
-            return charging(entity, hand) ? HumanoidModel.ArmPose.BOW_AND_ARROW : null;
+            return posed(entity.isUsingItem(), entity.getUsedItemHand(), hand) ? HumanoidModel.ArmPose.BOW_AND_ARROW
+                    : null;
         }
 
         @Override
         public boolean applyForgeHandTransform(PoseStack poseStack, LocalPlayer player, HumanoidArm arm,
                 ItemStack stack, float partialTick, float equipProcess, float swingProcess) {
             InteractionHand hand = arm == player.getMainArm() ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
-            if (!charging(player, hand)) {
+            if (!drawn(player.isUsingItem(), player.getUsedItemHand(), hand, player.getUseItemRemainingTicks())) {
                 return false;
             }
             // Vanilla's arm transform and its bow case (ItemInHandRenderer), drawn over the charge.
@@ -76,8 +77,21 @@ public final class ScrollCharge {
         return Math.min(1.0F, (share * share + share * 2.0F) / 3.0F);
     }
 
-    /** Whether {@code entity} is charging the scroll in {@code hand}. */
-    private static boolean charging(LivingEntity entity, InteractionHand hand) {
-        return entity.isUsingItem() && entity.getUsedItemHand() == hand && entity.getUseItemRemainingTicks() > 0;
+    /**
+     * Whether a player who uses the item in {@code usedHand} holds the scroll in {@code hand} in the bow's pose: from
+     * the synced use flags alone, so other players see it too (RLM-416). Their client knows no charge length: the plain
+     * item's use duration is 0, and only the server and the charging player's own client set the charge, in
+     * {@code LivingEntityUseItemEvent.Start}, so another player's remaining ticks run below 0 at once.
+     */
+    static boolean posed(boolean usingItem, InteractionHand usedHand, InteractionHand hand) {
+        return usingItem && usedHand == hand;
+    }
+
+    /**
+     * Whether the local player draws the scroll in {@code hand} in first person: posed, with charge ticks left
+     * ({@code remainingTicks}), which the draw's transform counts.
+     */
+    static boolean drawn(boolean usingItem, InteractionHand usedHand, InteractionHand hand, int remainingTicks) {
+        return posed(usingItem, usedHand, hand) && remainingTicks > 0;
     }
 }
