@@ -1,4 +1,4 @@
-"""Apotheosis data, fitted to Realmforge (ADR 0038, ADR 0062, architecture 19.4).
+"""Apotheosis data, fitted to Realmforge (ADR 0038, ADR 0063, architecture 19.4).
 
 Apotheosis defines its affixes, gems, tier augments and rarities as data, and a file in our data pack at the same path
 replaces one of them: the core mod loads after Apotheosis, so its data pack sits above Apotheosis's, and Apotheosis

@@ -73,7 +73,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0059](0059-the-status-overview-ends-with-verification-and-the-claimed-tickets.md) | The status overview ends with Verification and the claimed tickets, without a batch ledger | Accepted (amends 0021) |
 | [0060](0060-what-counts-as-the-owners-confirmation-of-an-adr-conflicting-change.md) | What counts as the owner's confirmation of an ADR-conflicting change | Accepted (amends 0030) |
 | [0061](0061-the-target-circle-is-a-smooth-light-ring-and-the-highlight-toggles.md) | The target circle is a smooth light ring, and its highlight toggles | Accepted (amends 0055) |
-| [0062](0062-apotheosis-data-is-fitted-from-a-pinned-snapshot.md) | Apotheosis's data is fitted from a pinned snapshot | Accepted |
+| [0063](0063-apotheosis-data-is-fitted-from-a-pinned-snapshot.md) | Apotheosis's data is fitted from a pinned snapshot | Accepted |
 
 ## Open questions (not decided)
 

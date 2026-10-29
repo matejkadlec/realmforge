@@ -1,4 +1,4 @@
-"""Apotheosis's data, fitted to Realmforge (ADR 0062, architecture 19.4, ``schema/apotheosis.py``).
+"""Apotheosis's data, fitted to Realmforge (ADR 0063, architecture 19.4, ``schema/apotheosis.py``).
 
 1. ``rf ids apotheosis`` downloads the jar ``pack/mods/apotheosis.pw.toml`` names (sha512-verified, cached in
    ``.cache/``) and writes ``tools/id_universe/apotheosis-<version>.json``: its affixes, gems, tier augments and

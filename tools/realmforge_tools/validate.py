@@ -2175,7 +2175,7 @@ def _check_kill_xp_multipliers(content: Content, universe: IdUniverse) -> list[P
 
 
 def _check_apotheosis(content: Content, universe: IdUniverse, paths: RepoPaths) -> list[Problem]:
-    """Apotheosis's data, fitted (ADR 0062, architecture 19.4): every changed entry, remap and removed recipe names
+    """Apotheosis's data, fitted (ADR 0063, architecture 19.4): every changed entry, remap and removed recipe names
     something Apotheosis or vanilla has, a replaced field keeps Apotheosis's loot categories, rarities and affixes,
     and no remapped stat is left where no remap applies (``realmforge_tools/apotheosis.py``)."""
     try:

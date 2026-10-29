@@ -3467,7 +3467,7 @@ QA mod's dev runs load them with the rest of the pack (ADR 0042) and copy `pack/
 dodge modifiers on the attacker and the target.
 
 **Their data, fixed and fitted** (RLM-271, RLM-272,
-[ADR 0062](decisions/0062-apotheosis-data-is-fitted-from-a-pinned-snapshot.md)). The core mod declares an optional
+[ADR 0063](decisions/0063-apotheosis-data-is-fitted-from-a-pinned-snapshot.md)). The core mod declares an optional
 dependency on Apotheosis and Apothic Enchanting with `ordering = "AFTER"`: FML sorts the mod files by those edges, and
 NeoForge stacks the mods' data packs in that order, so a file of ours replaces theirs at the same path.
 
