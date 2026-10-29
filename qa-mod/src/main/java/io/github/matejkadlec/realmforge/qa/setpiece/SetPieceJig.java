@@ -3,8 +3,11 @@ package io.github.matejkadlec.realmforge.qa.setpiece;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedSetPieceMasks;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedSetPieceMasks.NamedMask;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.Identifier;
@@ -23,9 +26,11 @@ import net.minecraft.world.level.block.state.properties.StructureMode;
  * under the frame and the player, clears the air above it, builds the {@code W} cells as walls three high (for a
  * mask whose piece brings its own walls, it leaves them empty and builds a flat wall behind the first row instead),
  * puts glass on the clearance cells and a structure block in Save mode into the floor, its box set to the piece's
- * cells three high and its name {@code realmforge_qa:set_piece/<mask>_<n>}, the first {@code n} the world has no
- * template for. Pressing Save writes {@code <world>/generated/realmforge_qa/structure/set_piece/<mask>_<n>.nbt},
- * which {@code rf set-pieces import} brings into {@code content/set_pieces/}.
+ * cells three high and its name {@code realmforge_qa:set_piece/<mask>_<token>}, a random token that no jig took
+ * before (RLM-390). Pressing Save writes {@code <world>/generated/realmforge_qa/structure/set_piece/<mask>_<token>.nbt},
+ * which {@code rf set-pieces import} brings into {@code content/set_pieces/}, its file name the piece's id: a token
+ * keeps the names of two jigs apart, unsaved or in different worlds, where a number counted from 1 in each world
+ * would repeat.
  */
 public final class SetPieceJig {
     /** The tallest piece: the walls' height and the structure block's box. */
@@ -35,6 +40,11 @@ public final class SetPieceJig {
     public static final Block FLOOR = Blocks.SMOOTH_STONE;
     public static final Block CLEARANCE = Blocks.GLASS;
     public static final String NAME_PREFIX = "set_piece/";
+    /** The token's length and letters: lowercase letters and digits, as a content id takes them. */
+    public static final int TOKEN_LENGTH = 6;
+    private static final String TOKEN_CHARACTERS = "abcdefghijklmnopqrstuvwxyz0123456789";
+    /** The names this game handed out: a jig's name reaches the structure manager only once it is saved. */
+    private static final Set<Identifier> HANDED_OUT = new HashSet<>();
 
     private SetPieceJig() {
     }
@@ -116,11 +126,19 @@ public final class SetPieceJig {
         }
     }
 
-    /** {@code realmforge_qa:set_piece/<mask>_<n>} with the first {@code n} the world has no template for. */
+    /**
+     * {@code realmforge_qa:set_piece/<mask>_<token>} with a random token that neither this game handed out nor the
+     * world has a template for. Not the level's random source, which world generation and mobs draw from.
+     */
     private static Identifier freeName(ServerLevel level, String mask) {
-        for (int n = 1; ; n++) {
-            Identifier name = RealmforgeQa.id(NAME_PREFIX + mask + "_" + n);
-            if (level.getStructureManager().get(name).isEmpty()) {
+        while (true) {
+            StringBuilder token = new StringBuilder(TOKEN_LENGTH);
+            for (int i = 0; i < TOKEN_LENGTH; i++) {
+                token.append(TOKEN_CHARACTERS.charAt(ThreadLocalRandom.current().nextInt(TOKEN_CHARACTERS.length())));
+            }
+            Identifier name = RealmforgeQa.id(NAME_PREFIX + mask + "_" + token);
+            if (!HANDED_OUT.contains(name) && level.getStructureManager().get(name).isEmpty()) {
+                HANDED_OUT.add(name);
                 return name;
             }
         }

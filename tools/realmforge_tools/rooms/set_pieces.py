@@ -712,6 +712,19 @@ FORBIDDEN_BLOCKS: dict[str, str] = {
         ("minecraft:iron_door", "minecraft:iron_trapdoor"), "a door that looks locked looks like progression"
     ),
 }
+# The only entities a piece may hold: decoration that stays where it is placed (the jig saves entities for them).
+# A mob that wandered into the box or a dropped item would otherwise come with every run (RLM-390).
+DECORATIVE_ENTITIES = frozenset(
+    {
+        "minecraft:item_frame",
+        "minecraft:glow_item_frame",
+        "minecraft:painting",
+        "minecraft:armor_stand",
+        "minecraft:block_display",
+        "minecraft:item_display",
+        "minecraft:text_display",
+    }
+)
 _FORBIDDEN_SUFFIXES = {
     "_button": "no puzzle-like buttons",
     "_pressure_plate": "no redstone or puzzle-like parts",
@@ -721,7 +734,8 @@ _FORBIDDEN_SUFFIXES = {
 def piece_problems(fit: Fit, structure: Structure) -> list[tuple[str, str]]:
     """What keeps a template from being the piece its fit rule describes, as (location, message) pairs: its size
     is the footprint's box up to the piece's height, it holds blocks only in the footprint (no air elsewhere either,
-    which would carve into the room), and none that a piece may not hold. ``rooms/check.py`` checks its ids."""
+    which would carve into the room), none that a piece may not hold, and only decorative entities. ``rooms/check.py``
+    checks its ids."""
     problems: list[tuple[str, str]] = []
     size = fit.template_size()
     if structure.size != size:
@@ -755,6 +769,15 @@ def piece_problems(fit: Fit, structure: Structure) -> list[tuple[str, str]]:
                 (
                     where,
                     "a container in a piece holds no loot table: the builder gives it the container loot (ADR 0041)",
+                )
+            )
+    for entity in structure.entities:
+        if entity.id not in DECORATIVE_ENTITIES:
+            problems.append(
+                (
+                    f"entity {entity.id or '?'} at {_fmt(entity.block_pos)}",
+                    "a piece holds only decorative entities (item frames, paintings, armor stands, displays): remove "
+                    "it in the world and save again",
                 )
             )
     if outside:

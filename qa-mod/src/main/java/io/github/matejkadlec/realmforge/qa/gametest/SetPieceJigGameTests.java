@@ -16,7 +16,8 @@ import net.minecraft.world.phys.Vec3;
 /**
  * {@code /qa setpiece jig} (RLM-281) builds the workshop frame for a mask north of where it runs: the walls, the glass
  * on the clearance, the floor, and a structure block in Save mode whose box is the piece's cells three high, named
- * {@code realmforge_qa:set_piece/<mask>_<n>}; saving it gives a template of that size. The command runs through the
+ * {@code realmforge_qa:set_piece/<mask>_<token>}; saving it gives a template of that size, and no two jigs share a
+ * name. The command runs through the
  * server's dispatcher as typed, from the 9×9 platform's south edge (x 4, z 8).
  */
 public final class SetPieceJigGameTests {
@@ -47,6 +48,21 @@ public final class SetPieceJigGameTests {
         StructureTemplate saved = helper.getLevel().getStructureManager()
                 .get(Identifier.parse(block.getStructureName())).orElseThrow();
         helper.assertValueEqual(saved.getSize(), new Vec3i(3, SetPieceJig.HEIGHT, 1), "the saved template's size");
+        helper.succeed();
+    }
+
+    @QaGameTest(template = QaGameTests.PLATFORM_9X9)
+    public static void twoJigsForOneMaskSaveUnderDifferentNames(GameTestHelper helper) {
+        // RLM-390: neither jig is saved, so the structure manager knows neither name; the second must not take the
+        // first one's, or its Save would overwrite that build.
+        run(helper, "qa setpiece jig wall_3x1");
+        String first = structureBlock(helper, new BlockPos(2, 0, 6)).getStructureName();
+        run(helper, "qa setpiece jig wall_3x1");
+        String second = structureBlock(helper, new BlockPos(2, 0, 6)).getStructureName();
+        String pattern = "realmforge_qa:set_piece/wall_3x1_[a-z0-9]{" + SetPieceJig.TOKEN_LENGTH + "}";
+        helper.assertTrue(first.matches(pattern), "a name the import reads: " + first);
+        helper.assertTrue(second.matches(pattern), "a name the import reads: " + second);
+        helper.assertFalse(first.equals(second), "two jigs of one mask share the name " + first);
         helper.succeed();
     }
 

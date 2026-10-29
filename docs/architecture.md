@@ -2620,7 +2620,8 @@ Rooms are generated or imported; nobody has to build one by hand
   the room gallery outlines each pattern and renders the room with a piece in each. **The workshop:**
   `/qa setpiece jig <mask> [<wall block>]` (QA mod, `qa/setpiece/SetPieceJig`) builds the frame for one of the
   report's masks north of the player, with a structure block in Save mode boxed to the piece's cells and named
-  `realmforge_qa:set_piece/<mask>_<n>`, and `uv run rf set-pieces import <save> --id <id>` (or `--from-world <world>`)
+  `realmforge_qa:set_piece/<mask>_<token>` (a random token, so no two jigs share a save), and
+  `uv run rf set-pieces import <save> --id <id>` (or `--from-world <world>`)
   brings the save into `content/set_pieces/` with a drafted fit rule ([tools/README](../tools/README.md#set-pieces)).
   `ContentSetPieceGameTests` loads every piece and its processor list; `SetPieceJigGameTests` runs the jig.
 - **Validation:** size limits (48 blocks per axis, a structure block's maximum), connectors on the room's boundary

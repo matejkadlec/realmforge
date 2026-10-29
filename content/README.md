@@ -442,7 +442,7 @@ Rules:
   may become another: `to` a block state as the template has it, `chance`, and `keep`, the properties it takes over).
   `source` names the workshop jig's save it came from. The template is built as the mask shows it, wall to the north,
   and holds the piece's cells only (not even air elsewhere), no connector, marker, spawner, redstone, fluid,
-  locked-looking door or container loot table. `uv run rf set-pieces import` writes both files from a jig save
+  locked-looking door or container loot table, and no entity but item frames, paintings, armor stands and displays. `uv run rf set-pieces import` writes both files from a jig save
   ([tools/README](../tools/README.md#set-pieces)); validation refuses a drafted fit rule until its `tags` are filled
   in. `test_barrel` is test content (like `items/test_item`): it gives the test dungeon's rooms spots.
 - `room_specs/` holds the rooms the room generator builds (A4d,
