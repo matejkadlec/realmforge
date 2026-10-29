@@ -28,7 +28,6 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -538,10 +537,12 @@ public final class CastGameTests {
         player.snapTo(helper.absoluteVec(pos), player.getYRot(), player.getXRot());
     }
 
-    /** {@code player}'s client asks to sprint, as it does when the sprint key is pressed. */
+    /**
+     * {@code player}'s client asks to sprint: what the server does with {@code ServerboundPlayerCommandPacket}'s
+     * {@code START_SPRINTING}, which it ignores from a fake player, whose client never reports that it loaded.
+     */
     private static void askToSprint(ServerPlayer player) {
-        player.connection.handlePlayerCommand(new ServerboundPlayerCommandPacket(player,
-                ServerboundPlayerCommandPacket.Action.START_SPRINTING));
+        player.setSprinting(true);
     }
 
     private static void assertSpeed(GameTestHelper helper, LivingEntity entity, double expected, String what) {
