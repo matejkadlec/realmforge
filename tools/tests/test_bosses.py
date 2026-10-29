@@ -97,14 +97,30 @@ def boss_model(**fields: object) -> BossDef:
     return BossDef.model_validate(data)
 
 
-def test_the_repository_has_the_test_titan() -> None:
+def test_the_repository_has_the_test_titan_and_astone() -> None:
     content, _ = load_and_validate(RepoPaths())
     bosses = {entry.model.id: entry.model for entry in content.bosses}
-    assert set(bosses) == {"test_titan"}
+    assert set(bosses) == {"astone", "test_titan"}
     titan = bosses["test_titan"]
     assert titan.entity == "realmforge:test_titan"
     assert [phase.id for phase in titan.phases] == ["awakening", "fury", "frenzy"]
-    assert {entry.model.id: entry.model.archetype for entry in content.mobs}["test_titan"] == "boss"
+    archetypes = {entry.model.id: entry.model.archetype for entry in content.mobs}
+    assert archetypes["test_titan"] == "boss"
+    # W5b (RLM-491): Undervault's guardian, three phases by health, an on_enter spell for each later one.
+    astone = bosses["astone"]
+    assert astone.entity == "realmforge:astone"
+    assert archetypes["astone"] == "boss"
+    assert astone.level == 18
+    assert [phase.id for phase in astone.phases] == ["weighing", "quaking", "breaking"]
+    assert [phase.name.en_us for phase in astone.phases] == [
+        "The Weighing",
+        "Quaking Stone",
+        "Breaking Point",
+    ]
+    assert [phase.on_enter for phase in astone.phases[1:]] == [
+        ["realmforge:astone_shockwave"],
+        ["realmforge:astone_cracked_stone"],
+    ]
 
 
 @pytest.mark.parametrize(
@@ -310,9 +326,11 @@ def test_generation_writes_the_fight_the_body_and_the_expectations(repo: RepoPat
 
 
 def test_no_bosses_still_compile(repo: RepoPaths) -> None:
-    for name in ("test_titan",):
+    for name in ("astone", "test_titan"):
         (repo.content / "bosses" / f"{name}.yaml").unlink()
         (repo.content / "mobs" / f"{name}.yaml").unlink()
+    # Astone's kill XP rank names her body.
+    (repo.content / "kill_xp_multipliers" / "astone.yaml").unlink()
     files = generate(repo)
     assert "BOSSES = List.of();" in files[BOSS_EXPECTATIONS].decode()
     assert not any(path.startswith(BOSS_DATA) for path in files)

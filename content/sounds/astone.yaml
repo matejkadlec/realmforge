@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../tools/schemas/sounds.schema.json
+# Astone's sounds (W5b, RLM-491; Realmforge Mobs Guideline, section 9): a deep grinding rumble now and then, a heavy
+# stone crack when she is hurt, a crushing fall into rubble when she dies, and steps heavier than a Sentinel's.
+# Vanilla sounds, deeper, until A3's own (RLM-126).
+id: astone
+category: entity
+events:
+  ambient:
+    subtitle: {en_us: Astone rumbles}
+    sounds:
+      - {event: minecraft:block.grindstone.use, volume: 0.7, pitch: 0.5}
+      - {event: minecraft:block.deepslate.place, pitch: 0.5}
+  hurt:
+    subtitle: {en_us: Astone cracks}
+    sounds:
+      - {event: minecraft:block.deepslate.break, pitch: 0.6}
+      - {event: minecraft:entity.iron_golem.hurt, pitch: 0.5}
+  death:
+    subtitle: {en_us: Astone crumbles}
+    sounds:
+      - {event: minecraft:entity.iron_golem.death, pitch: 0.5}
+  step:
+    subtitle: {en_us: Astone stomps}
+    sounds:
+      - {event: minecraft:entity.iron_golem.step, pitch: 0.5}

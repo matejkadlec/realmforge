@@ -34,6 +34,26 @@ public final class GeneratedMobExpectations {
 
     public static final List<MobExpectation> MOBS = List.of(
             new MobExpectation(
+                    "realmforge:astone",
+                    "entity.realmforge.astone",
+                    "boss",
+                    2.0F, 5.0F,
+                    250.0, 7.0, 8.0,
+                    0.24, 32.0, 1.0,
+                    "guard",
+                    40, 0.6,
+                    List.of(),
+                    0.0, 0.0,
+                    "realmforge:entity.astone.ambient", "realmforge:entity.astone.hurt", "realmforge:entity.astone.death",
+                    "realmforge:entity.astone.step", false,
+                    "realmforge:vaultstone",
+                    List.of("realmforge:stone_creatures", "c:bosses"),
+                    "realmforge:entities/astone",
+                    List.of(new DropExpectation("realmforge:stone_heart", 1, 1, 1.0, 0, 0.0),
+                            new DropExpectation("realmforge:sun_signet_shard", 1, 1, 1.0, 0, 0.0),
+                            new DropExpectation("realmforge:ice_signet_shard", 1, 1, 1.0, 0, 0.0)),
+                    List.of()),
+            new MobExpectation(
                     "realmforge:hewn_chanter",
                     "entity.realmforge.hewn_chanter",
                     "caster",

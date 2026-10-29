@@ -239,6 +239,11 @@ def test_no_magic_school_writes_no_armor_tag(repo: RepoPaths) -> None:
         for file in (repo.content / folder).glob("*.yaml"):
             if "realmforge:physical" not in file.read_text(encoding="utf-8"):
                 file.unlink()
+    # Astone's physical spells go with her body (her boulder spares the stone creatures, her cracks are an effect of
+    # no school), and so does her kill XP rank, which names it.
+    for file in (repo.content / "spells").glob("astone_*.yaml"):
+        file.unlink()
+    (repo.content / "kill_xp_multipliers" / "astone.yaml").unlink()
     files = generate(repo)
     assert f"{TAGS}/bypasses_cooldown.json" in files
     assert json.loads(files[f"{TAGS}/no_knockback.json"]) == {"values": ["realmforge:physical"]}
@@ -276,10 +281,12 @@ def test_keys_and_expectations_cover_every_school(repo: RepoPaths) -> None:
 
 
 def test_no_schools_still_compile(repo: RepoPaths) -> None:
-    # Spells and effects name their school, so they go too, and the mobs and bosses that cast the spells.
+    # Spells and effects name their school, so they go too, and the mobs and bosses that cast the spells, and Astone's
+    # kill XP rank, which names her body.
     for folder in ("spell_schools", "spells", "effects", "mobs", "bosses"):
         for file in (repo.content / folder).glob("*.yaml"):
             file.unlink()
+    (repo.content / "kill_xp_multipliers" / "astone.yaml").unlink()
     files = generate(repo)
     assert "ALL = List.of();" in files[KEYS_JAVA].decode()
     assert "SPELL_SCHOOLS = List.of();" in files[EXPECTATIONS].decode()

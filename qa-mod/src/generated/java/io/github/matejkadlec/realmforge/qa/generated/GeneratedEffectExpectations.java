@@ -27,6 +27,13 @@ public final class GeneratedEffectExpectations {
 
     public static final List<EffectExpectation> EFFECTS = List.of(
             new EffectExpectation(
+                    "realmforge:cracked_stone",
+                    "effect.realmforge.cracked_stone",
+                    "beneficial",
+                    0xB5654A,
+                    List.of(new ModifierExpectation("minecraft:attack_damage", "realmforge:effect.cracked_stone.minecraft.attack_damage", 0.3, "add_multiplied_total"), new ModifierExpectation("minecraft:movement_speed", "realmforge:effect.cracked_stone.minecraft.movement_speed", 0.25, "add_multiplied_total"), new ModifierExpectation("minecraft:armor", "realmforge:effect.cracked_stone.minecraft.armor", -0.5, "add_multiplied_total")),
+                    Optional.empty()),
+            new EffectExpectation(
                     "realmforge:test_burning",
                     "effect.realmforge.test_burning",
                     "harmful",

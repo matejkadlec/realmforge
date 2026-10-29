@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Astone's quake (W5b, RLM-491), from her second phase on: she raises her fists with a deep rumble for 1.5 s while a
+# ring of particles marks its reach round her (BossMob), then slams the ground: damage, a throw back and a short
+# slow for every enemy inside. Step out of the ring to dodge it. She casts it only while her target stands inside it.
+# Proposals for Matěj's playtest.
+id: astone_quake
+name: {en_us: Quake}
+description: {en_us: "Slams the ground, dealing {damage} damage to every enemy within {radius} blocks and throwing them back."}
+school: realmforge:physical
+scales_with: attack_damage
+targeting: {type: realmforge:self}
+cast:
+  type: cast_time
+  duration_seconds: 1.5
+  sound: realmforge:spell.astone_quake.rumble
+cooldown_seconds: 10
+npc_only: true
+effects:
+  - type: realmforge:area
+    radius: 5
+    duration_seconds: 0.5
+    interval_seconds: 0.5
+    effects:
+      - {type: realmforge:damage, amount: 3, attack_damage_percent: 75}
+      - {type: realmforge:knockback, strength: 1.2}
+      - {type: realmforge:apply_effect, effect: minecraft:slowness, duration_seconds: 3}

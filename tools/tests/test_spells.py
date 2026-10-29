@@ -74,10 +74,16 @@ def spell_model(**fields: object) -> SpellDef:
 # The repository's content
 
 
-def test_repository_spells_are_the_engine_tests_and_stoneform() -> None:
+def test_repository_spells_are_the_engine_tests_stoneform_and_astones() -> None:
     content, universe = load_and_validate(RepoPaths())
     ids = {entry.model.id for entry in content.spells}
     assert ids == {
+        # Astone's (W5b, RLM-491).
+        "astone_boulder",
+        "astone_cracked_stone",
+        "astone_quake",
+        "astone_rockfall",
+        "astone_shockwave",
         # The Hewn Chanter's (W3, RLM-33); the rest are the engine's tests.
         "stoneform",
         "test_blink",
@@ -373,7 +379,8 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
     keys = files[KEYS_JAVA].decode()
     assert 'public static final ResourceKey<Spell> TEST_BOLT = key("test_bolt");' in keys
     assert (
-        "ALL = List.of(STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, "
+        "ALL = List.of(ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, ASTONE_SHOCKWAVE, "
+        "STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, "
         "TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, "
         "TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, "
         "TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TITAN_HARDEN);"

@@ -1,0 +1,76 @@
+{
+  "entity": "realmforge:astone",
+  "level": 18,
+  "arena": {
+    "radius": 20.0
+  },
+  "bar_color": "white",
+  "phase_change_ticks": 60,
+  "phases": [
+    {
+      "id": "weighing",
+      "name": "boss.realmforge.astone.phases.0.name",
+      "on_enter": [],
+      "abilities": [
+        {
+          "spell": "realmforge:astone_boulder",
+          "cooldown_ticks": 0
+        }
+      ]
+    },
+    {
+      "id": "quaking",
+      "name": "boss.realmforge.astone.phases.1.name",
+      "enter_when": {
+        "type": "realmforge:health_below",
+        "health": 0.6
+      },
+      "on_enter": [
+        "realmforge:astone_shockwave"
+      ],
+      "abilities": [
+        {
+          "spell": "realmforge:astone_quake",
+          "cooldown_ticks": 0
+        },
+        {
+          "spell": "realmforge:astone_rockfall",
+          "cooldown_ticks": 0
+        },
+        {
+          "spell": "realmforge:astone_boulder",
+          "cooldown_ticks": 0
+        }
+      ]
+    },
+    {
+      "id": "breaking",
+      "name": "boss.realmforge.astone.phases.2.name",
+      "enter_when": {
+        "type": "realmforge:health_below",
+        "health": 0.25
+      },
+      "on_enter": [
+        "realmforge:astone_cracked_stone"
+      ],
+      "abilities": [
+        {
+          "spell": "realmforge:astone_cracked_stone",
+          "cooldown_ticks": 0
+        },
+        {
+          "spell": "realmforge:astone_quake",
+          "cooldown_ticks": 0
+        },
+        {
+          "spell": "realmforge:astone_rockfall",
+          "cooldown_ticks": 0
+        },
+        {
+          "spell": "realmforge:astone_boulder",
+          "cooldown_ticks": 0
+        }
+      ]
+    }
+  ]
+}

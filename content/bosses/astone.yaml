@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=../../tools/schemas/bosses.schema.json
+# Astone, the Unbroken (W5b, RLM-491; chapter 2, Part 10, quest 14): Undervault's guardian, the first real boss. Her
+# body is content/mobs/astone.yaml. Three phases, each adding one readable mechanic (research BM-2), every attack a
+# cast with a tell, all on the ground, no blindness or darkness (the vision):
+# - The Weighing: she hits in melee and hurls a boulder that forms in her raised hands, which can be dodged.
+# - Quaking Stone (below 60 %): she throws everyone near her back as it begins, then slams the ground round herself
+#   (Quake) and brings rocks down where her target stood (Rockfall); a ring of particles marks where each lands while
+#   she casts, so stepping out of it dodges it.
+# - Breaking Point (below 25 %): her stone cracks; she hits harder and moves faster, but blocks less.
+# Level 18, Undervault's highest (chapter 2, levels 6 to 18); in the stone arena's run (W6, RLM-36) she takes the
+# run's level. The numbers are proposals for Matěj's playtest.
+id: astone
+entity: realmforge:astone
+level: 18
+arena: {radius: 20}
+bar_color: white
+phases:
+  - id: weighing
+    name: {en_us: The Weighing}
+    abilities:
+      - {spell: realmforge:astone_boulder}
+  - id: quaking
+    name: {en_us: Quaking Stone}
+    enter_when: {type: realmforge:health_below, health_percent: 60}
+    on_enter: [realmforge:astone_shockwave]
+    abilities:
+      - {spell: realmforge:astone_quake}
+      - {spell: realmforge:astone_rockfall}
+      - {spell: realmforge:astone_boulder}
+  - id: breaking
+    name: {en_us: Breaking Point}
+    enter_when: {type: realmforge:health_below, health_percent: 25}
+    on_enter: [realmforge:astone_cracked_stone]
+    abilities:
+      # Her cracks last 60 s at most (research SP-8); she cracks again whenever they wear off.
+      - {spell: realmforge:astone_cracked_stone}
+      - {spell: realmforge:astone_quake}
+      - {spell: realmforge:astone_rockfall}
+      - {spell: realmforge:astone_boulder}

@@ -25,6 +25,10 @@ public final class GeneratedKillXpMultiplierExpectations {
 
     public static final List<KillXpMultiplierExpectation> MULTIPLIERS = List.of(
             new KillXpMultiplierExpectation(
+                    "realmforge:astone", "realmforge:astone", 20.0,
+                    List.of(),
+                    List.of(new Sample(-1, 20.0), new Sample(1, 20.0), new Sample(2, 20.0), new Sample(4, 20.0), new Sample(127, 20.0))),
+            new KillXpMultiplierExpectation(
                     "realmforge:breeze", "minecraft:breeze", 1.5,
                     List.of(),
                     List.of(new Sample(-1, 1.5), new Sample(1, 1.5), new Sample(2, 1.5), new Sample(4, 1.5), new Sample(127, 1.5))),

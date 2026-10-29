@@ -82,8 +82,8 @@ def mob_model(**fields: object) -> MobDef:
 
 def test_repository_mobs_are_the_hewn() -> None:
     content, universe = load_and_validate(RepoPaths())
-    # test_titan is the boss framework's test boss (test_bosses.py).
-    mobs = {entry.model.id: entry.model for entry in content.mobs if not entry.model.id.startswith("test_")}
+    # The bosses' bodies, the test titan and Astone, have their own tests (test_bosses.py).
+    mobs = {entry.model.id: entry.model for entry in content.mobs if entry.model.archetype != "boss"}
     assert {mob_id: model.archetype for mob_id, model in mobs.items()} == {
         "hewn_chanter": "caster",
         "hewn_sentinel": "melee",
@@ -458,8 +458,10 @@ def test_no_mobs_still_compile(repo: RepoPaths) -> None:
     # A boss runs on a mob, so the bosses go too.
     for file in [*(repo.content / "mobs").glob("*.yaml"), *(repo.content / "bosses").glob("*.yaml")]:
         file.unlink()
-    # Stoneform spares the Hewn's tag, which no mob would fill.
-    (repo.content / "spells" / "stoneform.yaml").unlink()
+    # Stoneform and Astone's boulder spare the Hewn's tag, which no mob would fill; Astone's kill XP rank names her.
+    for name in ("stoneform", "astone_boulder"):
+        (repo.content / "spells" / f"{name}.yaml").unlink()
+    (repo.content / "kill_xp_multipliers" / "astone.yaml").unlink()
     files = generate(repo)
     registrations = files[REGISTRATIONS].decode()
     assert "ALL =\n            List.of();" in registrations

@@ -1,4 +1,55 @@
 {
+  "entity.astone.ambient": {
+    "sounds": [
+      {
+        "name": "minecraft:block.grindstone.use",
+        "pitch": 0.5,
+        "type": "event",
+        "volume": 0.7
+      },
+      {
+        "name": "minecraft:block.deepslate.place",
+        "pitch": 0.5,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.entity.astone.ambient"
+  },
+  "entity.astone.death": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.iron_golem.death",
+        "pitch": 0.5,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.entity.astone.death"
+  },
+  "entity.astone.hurt": {
+    "sounds": [
+      {
+        "name": "minecraft:block.deepslate.break",
+        "pitch": 0.6,
+        "type": "event"
+      },
+      {
+        "name": "minecraft:entity.iron_golem.hurt",
+        "pitch": 0.5,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.entity.astone.hurt"
+  },
+  "entity.astone.step": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.iron_golem.step",
+        "pitch": 0.5,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.entity.astone.step"
+  },
   "entity.hewn_chanter.ambient": {
     "sounds": [
       {
@@ -68,6 +119,56 @@
       }
     ],
     "subtitle": "subtitles.realmforge.entity.hewn_sentinel.step"
+  },
+  "spell.astone_boulder.form": {
+    "sounds": [
+      {
+        "name": "minecraft:block.grindstone.use",
+        "pitch": 0.5,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.astone_boulder.form"
+  },
+  "spell.astone_boulder.impact": {
+    "sounds": [
+      {
+        "name": "minecraft:block.deepslate.break",
+        "pitch": 0.7,
+        "type": "event"
+      },
+      {
+        "name": "minecraft:block.stone.break",
+        "pitch": 0.6,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.astone_boulder.impact"
+  },
+  "spell.astone_quake.rumble": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.warden.dig",
+        "pitch": 0.7,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.astone_quake.rumble"
+  },
+  "spell.astone_rockfall.crack": {
+    "sounds": [
+      {
+        "name": "minecraft:block.pointed_dripstone.break",
+        "pitch": 0.6,
+        "type": "event"
+      },
+      {
+        "name": "minecraft:block.dripstone_block.break",
+        "pitch": 0.5,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.astone_rockfall.crack"
   },
   "spell.stoneform.form": {
     "sounds": [

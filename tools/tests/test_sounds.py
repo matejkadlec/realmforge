@@ -42,16 +42,24 @@ def sounds(repo: RepoPaths, name: str, body: str) -> None:
     write(repo.content / "sounds" / f"{name}.yaml", f"id: {name}\n{body}")
 
 
-def test_repository_sounds_are_the_hewns_and_stoneforms() -> None:
+def test_repository_sounds_are_the_hewns_stoneforms_and_astones() -> None:
     content, universe = load_and_validate(RepoPaths())
     ids = sorted(sound_id(entry.model, name) for entry in content.sounds for name in entry.model.events)
     assert ids == [
+        "realmforge:entity.astone.ambient",
+        "realmforge:entity.astone.death",
+        "realmforge:entity.astone.hurt",
+        "realmforge:entity.astone.step",
         "realmforge:entity.hewn_chanter.ambient",
         "realmforge:entity.hewn_chanter.death",
         "realmforge:entity.hewn_chanter.hurt",
         "realmforge:entity.hewn_sentinel.death",
         "realmforge:entity.hewn_sentinel.hurt",
         "realmforge:entity.hewn_sentinel.step",
+        "realmforge:spell.astone_boulder.form",
+        "realmforge:spell.astone_boulder.impact",
+        "realmforge:spell.astone_quake.rumble",
+        "realmforge:spell.astone_rockfall.crack",
         "realmforge:spell.stoneform.form",
         "realmforge:spell.stoneform.impact",
     ]

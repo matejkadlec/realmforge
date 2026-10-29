@@ -1,0 +1,44 @@
+{
+  "name": "spell.realmforge.astone_rockfall.name",
+  "description": "spell.realmforge.astone_rockfall.description",
+  "school": "realmforge:physical",
+  "scales_with": "attack_damage",
+  "targeting": {
+    "type": "realmforge:ground_point",
+    "range": 24.0
+  },
+  "cast": {
+    "castable_while_moving": false,
+    "lock_on": false,
+    "keep_sight": false,
+    "sound": "realmforge:spell.astone_rockfall.crack",
+    "type": "cast_time",
+    "duration_ticks": 40,
+    "forms_projectile": false
+  },
+  "cooldown_ticks": 180,
+  "global_cooldown_ticks": 10,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": true,
+  "effects": [
+    {
+      "type": "realmforge:area",
+      "radius": 3.0,
+      "duration_ticks": 10,
+      "interval_ticks": 10,
+      "affects": "enemies",
+      "effects": [
+        {
+          "amount": 5.0,
+          "per_level": 0,
+          "type": "realmforge:damage",
+          "attack_damage": 0.75
+        }
+      ]
+    }
+  ]
+}

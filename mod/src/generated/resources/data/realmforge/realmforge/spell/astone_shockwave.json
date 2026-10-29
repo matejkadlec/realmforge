@@ -1,0 +1,35 @@
+{
+  "name": "spell.realmforge.astone_shockwave.name",
+  "description": "spell.realmforge.astone_shockwave.description",
+  "school": "realmforge:physical",
+  "scales_with": "attack_damage",
+  "targeting": {
+    "type": "realmforge:self"
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 10,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": true,
+  "effects": [
+    {
+      "type": "realmforge:area",
+      "radius": 8.0,
+      "duration_ticks": 10,
+      "interval_ticks": 10,
+      "affects": "enemies",
+      "effects": [
+        {
+          "type": "realmforge:knockback",
+          "strength": 1.5
+        }
+      ]
+    }
+  ]
+}

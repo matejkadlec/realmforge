@@ -1,0 +1,57 @@
+{
+  "name": "spell.realmforge.astone_boulder.name",
+  "description": "spell.realmforge.astone_boulder.description",
+  "school": "realmforge:physical",
+  "scales_with": "attack_damage",
+  "targeting": {
+    "type": "realmforge:current_target",
+    "range": 24.0
+  },
+  "cast": {
+    "castable_while_moving": false,
+    "lock_on": false,
+    "keep_sight": true,
+    "keep_range": 0.5,
+    "sound": "realmforge:spell.astone_boulder.form",
+    "type": "cast_time",
+    "duration_ticks": 40,
+    "forms_projectile": true
+  },
+  "cooldown_ticks": 160,
+  "global_cooldown_ticks": 10,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": true,
+  "effects": [
+    {
+      "type": "realmforge:projectile",
+      "speed": 16.0,
+      "size": 1.2,
+      "lifetime_ticks": 40,
+      "effects": [
+        {
+          "amount": 2.0,
+          "per_level": 0,
+          "type": "realmforge:damage",
+          "attack_damage": 1.0
+        },
+        {
+          "type": "realmforge:knockback",
+          "strength": 0.8
+        }
+      ],
+      "spares": "realmforge:stone_creatures",
+      "impact": {
+        "sound": "realmforge:spell.astone_boulder.impact",
+        "particles": "realmforge:vaultstone"
+      },
+      "appearance": {
+        "model": "orb",
+        "color": "#8B8579"
+      }
+    }
+  ]
+}
