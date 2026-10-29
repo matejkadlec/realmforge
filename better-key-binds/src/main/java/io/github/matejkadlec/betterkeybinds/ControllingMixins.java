@@ -20,12 +20,16 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
  * injection point (RLM-383). The config sets {@code defaultRequire} 0, so such a hook is skipped instead of failing the
  * class, which would crash the game when the Key Binds screen loads it, and Mixin stays silent about it outside its
  * debug mode. After a mixin is applied, a hook whose merged method nothing in the class calls found no injection point.
- * It sits outside the mixin package, whose classes Mixin loads only as mixins.
+ * MixinExtras applies its late injectors ({@code @WrapOperation} among them) only after this check, in its Mixin
+ * extension, so their handlers are left out here: the row's layout hook reports itself when the row is drawn
+ * ({@code ControllingKeyEntryMixin}). It sits outside the mixin package, whose classes Mixin loads only as mixins.
  */
 public final class ControllingMixins implements IMixinConfigPlugin {
     private static final Logger LOGGER = LogUtils.getLogger();
     /** Our hooks' prefix, which the merged methods keep in their names. */
     static final String PREFIX = "betterKeyBinds$";
+    /** The handler prefixes of MixinExtras's late injectors, which inject after config plugins' {@code postApply}. */
+    static final List<String> LATE_HANDLERS = List.of("wrapOperation$", "wrapWithCondition$", "modifyExpressionValue$");
 
     @Override
     public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
@@ -35,7 +39,10 @@ public final class ControllingMixins implements IMixinConfigPlugin {
         }
     }
 
-    /** Our methods in {@code node} that no instruction calls or names in a method handle, by their hook names. */
+    /**
+     * Our methods in {@code node} that no instruction calls or names in a method handle, by their hook names, except
+     * the handlers of late injectors, which are not applied yet.
+     */
     static List<String> unusedHooks(ClassNode node) {
         Set<String> called = new HashSet<>();
         for (MethodNode method : node.methods) {
@@ -54,7 +61,8 @@ public final class ControllingMixins implements IMixinConfigPlugin {
         List<String> unused = new ArrayList<>();
         for (MethodNode method : node.methods) {
             int at = method.name.indexOf(PREFIX);
-            if (at >= 0 && !called.contains(method.name)) {
+            boolean late = LATE_HANDLERS.stream().anyMatch(method.name::startsWith);
+            if (at >= 0 && !late && !called.contains(method.name)) {
                 unused.add(method.name.substring(at));
             }
         }

@@ -35,10 +35,12 @@ class ControllingMixinsTest {
         node.methods.add(method("handler$zza000$better_key_binds$betterKeyBinds$renderSecondaryButton"));
         node.methods.add(method("lambda$betterKeyBinds$search$0"));
         // Its injection point moved: merged into the class, called from nowhere.
+        node.methods.add(method("handler$zzc000$better_key_binds$betterKeyBinds$refreshSecondaryButton"));
+        // MixinExtras injects a @WrapOperation only after config plugins' postApply: not judged here.
         node.methods.add(method("wrapOperation$zzb000$better_key_binds$betterKeyBinds$moveChangeButton"));
         node.methods.add(method("children"));
 
-        assertEquals(List.of("betterKeyBinds$moveChangeButton"), ControllingMixins.unusedHooks(node));
+        assertEquals(List.of("betterKeyBinds$refreshSecondaryButton"), ControllingMixins.unusedHooks(node));
     }
 
     @Test

@@ -68,8 +68,10 @@ loaded, and a Controlling update that changes the code they hook into never cras
 
 - A class, method or field a mixin names is gone: Mixin skips that whole mixin and logs an error.
 - A hook's injection point moved (a call it wraps or a call it injects at): the config's `defaultRequire` is 0, so
-  Mixin skips that hook alone, and the config's plugin (`ControllingMixins`) logs a warning naming it. Each hook then
-  costs only what it adds:
+  Mixin skips that hook alone, and a warning names it. The config's plugin (`ControllingMixins`) checks the hooks
+  when Controlling's class loads; MixinExtras applies a `@WrapOperation` only after that check, so the row's layout
+  hook reports itself the first time a row is drawn, and the other two wraps (the search by key, the category
+  headings) show only in game. Each hook then costs only what it adds:
   - the row's layout hook (the `setPosition` call it wraps): the secondary key column. Its button shows and is
     clickable only once the row has placed it, so Controlling's own layout stays, without a stray button (the row's
     other hooks sit at a method's end, which no update moves);

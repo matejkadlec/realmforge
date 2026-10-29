@@ -3,6 +3,7 @@ package io.github.matejkadlec.betterkeybinds.mixin.controlling;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.mojang.logging.LogUtils;
 import io.github.matejkadlec.betterkeybinds.KeyBindsRows;
 import io.github.matejkadlec.betterkeybinds.SecondaryKeyColumn;
 import java.util.List;
@@ -11,6 +12,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.network.chat.Component;
+import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -29,7 +31,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * <p>A Controlling update can move any hook's injection point, and the config then skips that hook (RLM-383). The
  * column's hooks give way together: the secondary button is shown and clickable only once the row has placed it, so a
  * row whose layout hook lost its {@code setPosition} call keeps Controlling's own layout instead of a stray button at
- * the screen's corner.
+ * the screen's corner. That hook is a late injector, which the config's plugin cannot judge, so a row drawn without
+ * having placed its button logs the warning itself, once.
  */
 @Pseudo
 @Mixin(targets = "com.blamejared.controlling.client.NewKeyBindsList$KeyEntry")
@@ -55,6 +58,8 @@ public abstract class ControllingKeyEntryMixin {
     private boolean betterKeyBinds$secondaryConflict;
     @Unique
     private boolean betterKeyBinds$placed;
+    @Unique
+    private static boolean betterKeyBinds$warned;
 
     @Inject(method = "<init>", at = @At("TAIL"))
     private void betterKeyBinds$createSecondaryButton(CallbackInfo ci) {
@@ -79,6 +84,15 @@ public abstract class ControllingKeyEntryMixin {
     private void betterKeyBinds$renderSecondaryButton(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
             boolean hovered, float partialTick, CallbackInfo ci) {
         if (!betterKeyBinds$placed) {
+            // The row has laid out its buttons, so a button that exists but was never placed means the layout hook
+            // found no setPosition call to wrap.
+            if (betterKeyBinds$secondaryButton != null && !betterKeyBinds$warned) {
+                betterKeyBinds$warned = true;
+                Logger logger = LogUtils.getLogger();
+                logger.warn("Better Key Binds: betterKeyBinds$moveChangeButton found no injection point in "
+                        + "Controlling's Key Binds row (a Controlling update moved it); the secondary key column is "
+                        + "missing");
+            }
             return;
         }
         ContainerObjectSelectionList.Entry<?> row = (ContainerObjectSelectionList.Entry<?>) (Object) this;
