@@ -191,11 +191,22 @@ structure, and `/locate structure minecraft:village_plains` finds one.
 time, in white, next to our combat text; only ours stay. Its DPS line under the dummy (`dummmmmmy-common.toml`,
 `general.DPS_mode`) keeps its default. `tools/tests/test_pack_config.py` checks the value.
 
-**Traveler's Titles** (`config/travelerstitles-neoforge-26_1.toml`, client, Traveler's Titles 6.1.0, RLM-308):
-`"Blacklisted Dimensions" = "[realmforge:stone, realmforge:instances]"`. A realm shows its own arrival title (W2b), so
-Traveler's Titles shows none there, and the dungeon instances, which have no name of their own, show no "???".
-Overworld keeps its title, which is the mod's own. Biome titles need open sky, which neither dimension has. A new
-realm's dimension joins the list: `tools/tests/test_pack_config.py` fails until it does.
+**Traveler's Titles** (`config/travelerstitles-neoforge-26_1.toml`, client, Traveler's Titles 6.1.0, RLM-308,
+RLM-409):
+
+- `"Blacklisted Dimensions" = "[realmforge:stone, realmforge:instances]"`. A realm shows its own arrival title (W2b),
+  so Traveler's Titles shows none there, and the dungeon instances, which have no name of their own, show no "???".
+  Overworld keeps its title, which is the mod's own.
+- `"Blacklisted Biomes"` adds the dungeon biomes, `realmforge:dungeon_<id>`, to the mod's three defaults: a dungeon
+  run's arrival title names the run (`client/hud/InstanceArrivalTitle`,
+  [architecture 15.5](../docs/architecture.md#155-instances)), which Traveler's Titles' own title of that biome cannot
+  do, so it is the only one.
+- Biome titles do not need open sky in either dimension: the mod counts a player as underground only in a dimension
+  with skylight, and neither has any. The stone realm shows no biome title because its biome, `realmforge:undervault`,
+  has no name; a named biome there would get one.
+
+A new realm's dimension and a new dungeon type's biome join the lists: `tools/tests/test_pack_config.py` fails until
+they do.
 
 **Pick Up Notifier** (`config/pickupnotifier-client.toml`, client, Pick Up Notifier 26.1.1, RLM-308; Matěj's
 playtest, 2026-10-23): the list of pickups starts at the middle of the screen's right edge and grows downwards, 150 %
