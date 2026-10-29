@@ -145,7 +145,9 @@ public final class BossGameTests {
 
     /**
      * Pulled out of its arena, the titan resets: back home, at full health, in its first phase, its Fury's hardening
-     * gone.
+     * gone. It is pulled straight up (the arena is a sphere), so it stays in its own chunk column, which ticks wherever
+     * the test is placed; a spot beside the platform can fall in a chunk that does not tick, and the titan would never
+     * reset there (RLM-523).
      */
     @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 100)
     public static void theTestTitanResetsOutsideItsArena(GameTestHelper helper) {
@@ -161,7 +163,7 @@ public final class BossGameTests {
                 .thenWaitUntil(() -> assertPhase(helper, titan, 1, "Fury"))
                 .thenExecute(() -> {
                     helper.assertTrue(titan.hasEffect(MobEffects.RESISTANCE), "hardened in Fury");
-                    Vec3 out = helper.absoluteVec(MIDDLE.add(14, 0, 0));
+                    Vec3 out = helper.absoluteVec(MIDDLE.add(0, 14, 0));
                     titan.teleportTo(out.x, out.y, out.z);
                 })
                 .thenExecuteAfter(1, () -> {
