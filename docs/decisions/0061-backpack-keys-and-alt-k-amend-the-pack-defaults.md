@@ -23,7 +23,8 @@ World Tier Select from Ctrl+T to Alt+T for the same reason.
 ## Decision
 
 1. **Open Backpack on B** (`key.sophisticatedbackpacks.open_backpack`) in `pack/config/defaultoptions/keybindings.txt`.
-   A boot of the whole pack (`rf pack-boot`) leaves no other key mapping on B.
+   A boot of the whole pack (`rf pack-boot`, 2026-10-29) leaves no other key mapping on B but vanilla's F3+B (Show
+   Hitboxes), which `KeyboardHandler` handles as a debug key while F3 is held, without pressing B's other mappings.
 2. **Sort Storage/Backpack on `;`** (`key.sophisticatedcore.sort`, `key.keyboard.grave.accent`). It does not fight
    Inventory Sorting's Sort on the same key: in a Sophisticated screen, Sophisticated Core handles the key in NeoForge's
    `ScreenEvent.KeyPressed.Pre`, sorts the storage and cancels the event, so the screen's own `keyPressed`, where
