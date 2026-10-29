@@ -27,7 +27,8 @@ rest by normal priority.
    ticket linked to it for the new part, or tell Matěj that the requested work is already under way there.
 3. Set sprint-relative priority, classify each ticket AI-only or Playtest under _QA classification_, and
    local-only or cloud-capable under _Run location_. A requested item that is Matěj's own decision gets the
-   `decision` label and is listed, not implemented (_Tickets waiting on Matěj_).
+   `decision` label and goes to him as a question in the response, not implemented (_Tickets waiting on
+   Matěj_).
 4. Route new or newly selected work through To Do -> Next (the `flow2` exception in _Priority and the Next queue_
    lets it in whatever else Next holds), replenishing Next under the same section. The step 6 claim owns the
    Next -> In Progress move; do not make it here, or the claim's "still in Next" precondition is false on every

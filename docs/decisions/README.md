@@ -32,7 +32,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0018](0018-pack-boot-tests.md) | Pack boot tests: server and client self tests on every PR | Accepted (amends 0010), adjusted for 26.1.2 by [0026](0026-platform-minecraft-26-1-2-neoforge.md) |
 | [0019](0019-dungeon-instances-in-plots.md) | Dungeon instances in plots | Accepted (refines 0012), amended by [0031](0031-instance-builder-background-chunks-and-shared-budget.md) |
 | [0020](0020-cast-animations-and-melee-while-casting.md) | Cast animations through playerAnimator, no melee while casting | Accepted, amended by [0026](0026-platform-minecraft-26-1-2-neoforge.md) (Player Animation Library) and [0039](0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md) (a cast slows instead of moving interrupting it) |
-| [0021](0021-status-overview-and-plan-changes.md) | A status overview ends every response; plan changes without a label | Accepted (amends 0015, 0016 and 0017), amended by [0022](0022-playtest-before-the-pull-request.md) |
+| [0021](0021-status-overview-and-plan-changes.md) | A status overview ends every response; plan changes without a label | Accepted (amends 0015, 0016 and 0017), amended by [0022](0022-playtest-before-the-pull-request.md) and [0059](0059-the-status-overview-ends-with-verification-and-the-claimed-tickets.md) (no batch ledger; Verification and the claimed tickets close every response) |
 | [0022](0022-playtest-before-the-pull-request.md) | Playtest before the pull request: qa1 and qa2 | Accepted (amends 0016 and 0021), amended by [0024](0024-no-github-labels.md) |
 | [0023](0023-texture-generator.md) | Texture generator: Retro Diffusion Fast, cleaned to the project palette | Accepted (refines 0007) |
 | [0024](0024-no-github-labels.md) | No GitHub labels: playtests run on qa1 and qa2 alone | Accepted (amends 0015 and 0022) |
@@ -69,6 +69,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0055](0055-aim-assistance-for-a-players-enemy-spells.md) | Aim assistance for a player's enemy spells: a cone around the crosshair, homing bolts, a sticky target | Accepted (amends 0052) |
 | [0056](0056-players-break-an-allowlist-of-blocks-in-instances.md) | Players break an allowlist of blocks in instances | Accepted |
 | [0057](0057-a-cast-that-slows-its-caster-stops-its-sprint.md) | A cast that slows its caster stops its sprint | Accepted (amends 0047) |
+| [0059](0059-the-status-overview-ends-with-verification-and-the-claimed-tickets.md) | The status overview ends with Verification and the claimed tickets, without a batch ledger | Accepted (amends 0021) |
 | [0060](0060-what-counts-as-the-owners-confirmation-of-an-adr-conflicting-change.md) | What counts as the owner's confirmation of an ADR-conflicting change | Accepted (amends 0030) |
 
 ## Open questions (not decided)

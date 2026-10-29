@@ -449,8 +449,8 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
   ([ADR 0024](docs/decisions/0024-no-github-labels.md)).
 - A plan change (any change to `docs/roadmap.md`) does not hold the merge. Make one only as
   Matěj decided it: a Done decision ticket, his request, or a ticket he wrote that asks for it; the description
-  names the plan change and that source. Propose any other plan change to him first, under "Blocked or other" in
-  the [status overview](#status-overview) ([ADR 0021](docs/decisions/0021-status-overview-and-plan-changes.md)).
+  names the plan change and that source. Propose any other plan change to him first, as a question in the
+  response or as a `decision` ticket ([ADR 0021](docs/decisions/0021-status-overview-and-plan-changes.md)).
 - A PR from a Jira batch names its tickets in the title, e.g. `feat(spells): add the spell engine core (RLM-24)`.
 - After publishing or updating a ready pull request as your own task work, run `/finalize-pr <n>` on it straight
   after, in the same run, in every case. Its fresh `pr-reviewer` subagent is the only code review (ChatGPT Codex
@@ -465,7 +465,7 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
 **Ending a session**
 
 - Stop every process you started (`runClient`, `runServer`, `runGameTestServer`, `packwiz serve`), remove your
-  temporary files, and name any uncommitted work you leave behind in the status overview's Cleanup line.
+  temporary files, and record any uncommitted work you leave behind in a comment on the ticket it belongs to.
 
 ## Workflow
 
@@ -506,19 +506,23 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
 
 ## Status overview
 
-Every response to Matěj ends with a status overview, so he can keep track of the work without scrolling back
-([ADR 0021](docs/decisions/0021-status-overview-and-plan-changes.md)). It covers what this session did and what
-it watches: pull requests, tickets, and everything waiting on him. An empty group says "none" (or "none from this
-run"). Ticket keys and pull request links, plus the player-visible or architectural changes that matter; files,
-implementation detail and the full evidence stay in the ticket comments. It comes in one of two shapes.
+Every response to Matěj ends with a status overview, so he sees what the run needs from him and what it proved
+without scrolling back ([ADR 0021](docs/decisions/0021-status-overview-and-plan-changes.md),
+[ADR 0059](docs/decisions/0059-the-status-overview-ends-with-verification-and-the-claimed-tickets.md)). It has no
+batch ledger: no "Merged into master", "Pending CR", "Pending User QA" or "Blocked or other" group, and no Cleanup
+line. Claude Code shows him the sessions that wait for him, and what a ledger only recorded (blocked and decision
+tickets, stale or lost claims, follow-ups, reconciled tickets) lives in Jira comments. Ticket keys and pull request
+links, plus the player-visible or architectural changes that matter; files, implementation detail and the full
+evidence stay in the ticket comments. It comes in one of two shapes, and both end with Verification.
 
 **Something waits for Matěj's manual test** (a playtest, a revision of one, anything he should try before it
 merges). Four parts:
 
-1. **What to test:** one sentence on where to start (the world, the first command), then a numbered list. Each
-   item opens with a bold name for the check and the state it needs, gives the steps as sub-bullets with the
-   exact commands that reach that state, and says what he should see. A behavior change he must decide on comes
-   first and says so ([flow: What to test](docs/ai-development-flow.md#what-to-test)). Three or more setup commands
+1. **What to test:** one sentence on where to start (his existing test world, or the one line on why this change
+   needs a new world; the first command), then a numbered list. Each item opens with a bold name for the check and
+   the state it needs, gives the steps as sub-bullets with the exact commands that reach that state, and says what
+   he should see. A behavior change he must decide on comes first and says so
+   ([flow: What to test](docs/ai-development-flow.md#what-to-test)). Three or more setup commands
    in a row go as one command for an impulse command block, `execute as @p at @p run qa run <command>; <command>;
    ...`, with how to run it ([flow: Reaching the state](docs/ai-development-flow.md#reaching-the-state)).
 2. **Launch commands:** complete commands he can paste, in one block, with the checkout named in the heading,
@@ -527,38 +531,24 @@ merges). Four parts:
    block, a revision's too: `cd $HOME\projects\realmforge-win`, `git fetch origin`, `git switch <branch>`, then
    `git pull --ff-only` for a revision, and `.\gradlew.bat runClient`, one per line; never the update command alone,
    as his clone is often on another batch by the time he tests (Matěj, 2026-10-24).
-3. **Verification ✅** (optional): what ran and passed, one bullet each; never "all checks passed" for a partial
-   run.
-4. **Batch ledger**, one bullet per group:
-   - **Merged into master:** the pull requests merged in this run, and those whose tickets this run's
-     reconciliation moved to Done, or "none";
-   - **Pending CR:** pull requests under review, each with its exact state (a review pass, waiting for checks, a
-     hold, `owner action: ...`);
-   - **Pending User QA:** the tickets and branch waiting for this test (no pull request yet; for a
-     reconfirmation, the pull request);
-   - **Blocked or other:** everything else that needs his attention (below).
+3. **How he answers**, in one line. For a first playtest, in this session or any later one: `qa1` passes the test
+   (the batch is then published), `qa2` with what is wrong asks for a revision. For a reconfirmation of a
+   published pull request, in this session, whose `finalize-pr` run owns it: `qa1` passes it (the run continues to
+   the merge), `qa2` asks for a revision.
+4. **Verification ✅** (below).
 
-Close with one line on how he answers. For a first playtest, in this session or any later one: `qa1` passes the
-test (the batch is then published), `qa2` with what is wrong asks for a revision. For a reconfirmation of a
-published pull request, in this session, whose `finalize-pr` run owns it: `qa1` passes it (the run continues to
-the merge), `qa2` asks for a revision.
+**Nothing waits for his test.** The response says in a few lines what the run did: a merged pull request with its
+link, its merge commit and the changes that matter, or where a pull request stands and why. Then **Verification ✅**.
 
-**Nothing waits for his test.** Three parts:
+In both shapes, whatever the run cannot go on without (a decision, an account, a conflict only he can settle) is
+asked as a question before Verification, one he can answer in a reply. Nothing else is listed for him.
 
-- **Merged into master**, per merged pull request, as bullets: **What** (the tickets, the merge commit, and the
-  changes that matter as sub-bullets), **Review** (the `finalize-pr` passes, and what they found or tracked),
-  **Checks** (the required checks, and CI on `master` after the merge), **Jira** (where the tickets ended).
-  It also lists the tickets this run's reconciliation moved to Done, each with its pull request. "None" when
-  nothing merged.
-- **Pending CR / Pending User QA:** both queues on one shared line, each with its exact state, or "none from this
-  run".
-- **Blocked or other**, as bullets.
-
-In both shapes, **Blocked or other** holds: decision tickets and tickets waiting on Matěj, with what each needs;
-plan changes proposed to him; follow-up tickets this session created; findings it did not file, with the reason;
-GitHub issues from players it came across; conflicts, stale claims and searches it could not complete; the Next
-queue when it matters. A last
-**Cleanup:** line may say which processes stopped, what was removed, and any uncommitted work left behind.
+**Verification ✅** closes every response: what ran and passed in this run, one bullet each (the gate's commands,
+the review passes and what they found, CI on the head or on `master` after the merge); never "all checks passed"
+for a partial run, and "nothing ran" when nothing did. Its last line, the last line of the response, names the
+tickets this run claimed or worked on, such as `Tickets: RLM-490, RLM-491 (parts of RLM-35)`, or
+`Tickets: none`. When they differ from the keys Matěj typed, a few words say why (an L ticket split, a dependency
+pulled in, a part split off).
 
 ## How the pipeline fits together
 
