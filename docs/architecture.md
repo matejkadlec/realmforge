@@ -3493,7 +3493,11 @@ NeoForge stacks the mods' data packs in that order, so a file of ours replaces t
   tier augment skips a mob without its attribute (`AttributeAugment#apply`).
 - **Removed recipes** come from `content/recipe_removals/`: a file at the recipe's own path with the `neoforge:never`
   condition, which NeoForge's recipe loader skips. Apotheosis's potion charms are the first (its crafting recipe and
-  Apothic Enchanting's infusion; Matěj dislikes them by design, RLM-205).
+  Apothic Enchanting's infusion; Matěj dislikes them by design, RLM-205). Apotheosis's client still marks a potion
+  that could not become a charm with "Cannot be converted into a Potion Charm."; `client/compat/apotheosis/
+  PotionCharmTooltip`, an `ItemTooltipEvent` listener at the lowest priority, drops that line (its key
+  `misc.apotheosis.blacklisted_potion`) after Apotheosis added it, so no tooltip names the missing item (Matěj,
+  2026-10-29).
 - **Mythic shows as Legendary**: the rarity's name and the two texts that say mythic are in the core mod's
   `assets/apotheosis/lang/en_us.json` (texts of other mods, above).
 
