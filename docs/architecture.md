@@ -787,7 +787,11 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
      chance, its own multiplier; Matěj, 2026-10-15), then the defender's resistance: × (1 −
      resistance), through `setAmount`. The resistance is the defender's resistance to the school, plus its spell
      resistance when the school is magic, at most 75 % together (`DamageCalculator.RESISTANCE_CAP`, research BM-18);
-     a physical school hit meets no spell resistance. Talents act through those attributes or are already part of
+     a physical school hit meets no spell resistance. A spell's damage effect may carry spell penetration (C4,
+     Arcane Missiles): the hit ignores that share of the capped resistance (`DamageCalculator#penetrated`).
+   - **Crit overflow** (C4, RLM-392): a crit chance above 100 % (Reckless Strike's bonus can take it there) turns
+     into crit damage 1:1, every 1 % above 100 % adding 1 % crit damage (`DamageCalculator#critMultiplier`), for
+     melee, ranged and school hits alike. Talents act through those attributes or are already part of
      the spell's damage ([11.5](#115-resources-cooldowns-modifiers)).
    - **The armor formula is vanilla's** (`CombatRules.getDamageAfterAbsorb`, Matěj, 2026-10-16, RLM-223), applied
      after our armor pierce through `addReductionModifier(DamageContainer.Reduction.ARMOR, ...)`. The armor a hit
@@ -798,7 +802,9 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
      (Breach) adjusts that share. So armor counts most against small hits and toughness against big ones, at most
      80 % blocked; the attacker's level reaches armor only through its hit size (mob damage grows with level,
      [14.1](#141-mob-levels)). Armor pierce and shred act on every hit armor meets from that attacker: melee,
-     projectiles (their shooter's) and physical school hits. NeoForge runs that reduction for every hit, so the
+     projectiles (their shooter's) and physical school hits. A spell's damage effect may add armor shred to its own
+     hit (C4, Slam), on top of the attacker's and at most 100 % together; `combat/HitBonus` carries it, with the
+     spell penetration above, on the hit's `SchoolDamageSource`. NeoForge runs that reduction for every hit, so the
      formula keeps vanilla's (zero) reduction for damage in `#minecraft:bypasses_armor`. Vanilla still wears the
      armor down. The formula is ours in code (`DamageCalculator#armorReduction`, JUnit-checked against vanilla's), so
      a mod that replaces `CombatRules` (Apothic Attributes, whose armor and protection formulas the pack sets to
@@ -806,7 +812,8 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
      ([ADR 0033](decisions/0033-vanilla-armor-formula-amends-our-own.md)).
    - **The magic shield** joins the absorption reduction
      (`addReductionModifier(DamageContainer.Reduction.ABSORPTION, ...)`) of a defender that has the stat or points
-     left (step 5).
+     left (step 5). A status effect that raises the stat (Ice Barrier, C4) fills the points it adds at once
+     (`MagicShields#onEffectAdded`), so it shields in the middle of a fight; they go when it ends.
 4. **Vanilla's hurt cooldown** comes next. Within 10 ticks of the previous hit, a hit that is not bigger than the
    previous one is dropped without any further event, and a bigger one deals only the difference; a hit outside
    that window starts a new one. School hits bypass it (the tag), so spells, damage over time and abilities always
@@ -1094,6 +1101,18 @@ go of right click stops its charge.
   singleplayer like a menu (the server still handles payloads while paused). Its view model is
   `CharacterCreationView`. M1 has one race, Human, and decision D1's classes, Warrior (rage) and Mage (mana)
   ([content/README](../content/README.md)).
+- **In code (C4, RLM-27): the class kits.** A class lists its spells with the level that teaches each (`spells`,
+  `character/ClassSpell`); every class starts with one at level 1 (decision D4), and the pipeline allows 4 × N spells
+  by the end of chapter N's level cap. `character/ClassSpells` teaches the due ones at rank 1 into the spell bar's
+  first empty slot: at creation and level-up with a chat line each, and silently at login and on a quiet level change
+  (commands), so a character made before its class had spells catches up; a known spell keeps its rank, and a level
+  that falls takes nothing away. A race names its racial spell (`racial_spell`), taught at creation into the racial
+  slot (X, `Spells#learnRacial`), and its racial passive (`racial_passive`, `character/RacialPassive`): a name, a
+  description, an item tag the main hand's item must be in, and modifiers that `CharacterBonuses` adds while it is
+  (`CharacterBonuses#passiveModifierId`); `character/RacialPassives` writes its tooltip lines, which
+  `client/tooltip/RacialPassiveTooltip` adds to the weapon's (`AddAttributeTooltipsEvent`). The Origin tab lists both
+  under the race. The Human's Will To Survive is free, as a race spans classes of different resources, and casts
+  while stunned (`castable_while_stunned`). `ClassKitGameTests` covers the kits.
 
 ### 10.2 Leveling
 
@@ -1238,6 +1257,11 @@ Its name and description are translation keys from C3b, the description's number
   crits off, add a bonus chance, or set its own multiplier (`combat/CritRule`); talents (postponed, RLM-28) will change
   all three.
 
+- **What a cast needs in hand** (C4, RLM-499): `requires` lists `melee_weapon` (an item of
+  `#realmforge:melee_weapons`: swords, axes, maces, spears, tridents and their like, never a wand) in the main hand
+  or `shield` (`#c:tools/shield`) in either hand; a player's physical spell that deals damage in melee needs one of
+  them (the pipeline checks it), and `spell/SpellRequirement` refuses the cast without it. Mobs need nothing.
+
 A player knows a spell through their class (by level), race, talents (`grant_spell`) or items (an item component
 lists spells granted while equipped or on use): the vision's "some from the race or class, some from items".
 
@@ -1248,7 +1272,8 @@ lists spells granted while equipped or on use): the vision's "some from the race
    player's spells aimed at an enemy: the server picks the mob near the crosshair for a targeted spell that names none,
    and a bolt homes in on it ([ADR 0055](decisions/0055-aim-assistance-for-a-players-enemy-spells.md), below).
 2. `SpellCaster` checks: the spell is known, off cooldown and global cooldown, the resource suffices, a targeted
-   spell's target is in range and line of sight, and the caster is not silenced, stunned or already casting. A
+   spell's target is in range and line of sight, a player holds what the spell `requires` (11.1), and the caster is
+   not silenced, stunned (but for a spell `castable_while_stunned`, C4) or already casting. A
    direction or a ground point never refuses a cast for its target (spell aiming, below).
 3. Instant spells run now. A cast-time or channelled spell stores the current cast in the `combat` attachment and
    sends `CastStartedPayload` to the caster and tracking players (cast bar, animation). A player who starts
@@ -1267,7 +1292,9 @@ lists spells granted while equipped or on use): the vision's "some from the race
    stats as they run, those that a projectile or an area runs later included ([11.3](#113-spell-entities)).
 5. A channel pays its cost and starts its cooldown when it begins, and pays the cost again as each later second
    begins (Matěj, 2026-10-24: as in WoW; a spell paying only at the start or at another pace can come later); a pool
-   that falls short ends it. It runs its effects at the tick interval its data sets for as long as it lasts,
+   that falls short ends it. It runs its effects at the tick interval its data sets for as long as it lasts (a
+   player's channel every 0.5 s, Matěj, 2026-10-29, RLM-518: more, smaller hits beat fewer, bigger ones; the pipeline
+   refuses another interval, and `npc_only` spells keep theirs, Astone's Quake its 0.75 s),
    checking the target before every tick as in step 4. An interrupt ends it early, and the ticks already run stay
    applied.
 6. Mobs and bosses use the same `SpellCaster`, without a payload. Their cooldowns and current cast live in their
@@ -1534,6 +1561,17 @@ its ticks carry it, so they trigger no proc
 ([12](#12-talents)). `EffectGameTests` covers the ticks, the caster's stats, a caster that left, the modifiers, the
 sources and a proc's damage over time.
 
+**In code (C4, RLM-27): stuns, ranks and cleanses.** An effect marked `stun` (Stunned, Shield Bash's) gives -100 %
+movement speed and jump strength (the pipeline requires both modifiers), and `effect/Stuns` does the rest while it
+lasts: a stunned mob's goals lose their move, look and jump controls before it ticks (vanilla's `Mob#tick` sets them
+from the goals every few ticks), a stunned attacker's own melee hit deals nothing, and a stunned player cannot
+attack; the spell engine refuses a stunned caster's spells and interrupts the cast in progress (`CastEnd.STUNNED`),
+but for a spell `castable_while_stunned`. Ordinary mobs have no stun immunity or diminishing returns (Matěj,
+2026-10-24, RLM-392). `apply_effect` grows with the spell's rank: `duration_per_level_seconds` adds to its duration
+for every rank above 1 (at most a minute) and `stronger_at_levels` lists the ranks that raise its amplifier by one
+(Frostbolt's Slowness II at rank 5). `realmforge:cleanse` (`spell/CleanseEffect`, Will To Survive) removes every
+harmful effect from the caster or an ally, a stun included.
+
 ### 11.5 Resources, cooldowns, modifiers
 
 - Resource kinds are Java types (`realmforge:resource_type`: mana regenerates, rage is gained in combat and
@@ -1681,9 +1719,11 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   `combat` attachment and the type's maximum (the synced Max Mana stat, or rage's 100), so no new sync was needed and
   `RageGameTests` reads the same view on the server. Hidden without a character or with a maximum below 1.
 - **Texts:** a spell's description names its numbers through placeholders (`{damage}`, `{heal}`, `{duration}`,
-  `{periodic}`, `{periodic_total}`, `{interval}`, `{radius}`), which `spell/SpellText` fills with the spell's data at
-  the player's level and their stats as they are now, as the effects would land before the target's resistance and a
-  crit; `schema/spell.py` and validation make sure each has the effect it reads. A damage number shows its school
+  `{periodic}`, `{periodic_total}`, `{interval}`, `{radius}`; C4 added `{armor_shred}`, `{penetration}`,
+  `{crit_chance}` and `{bonus}`, the one attribute modifier of the applied effect), which `spell/SpellText` fills with
+  the spell's data at the player's level (an effect's duration and strength at the rank too) and their stats as they
+  are now, as the effects would land before the target's resistance and a crit; `schema/spell.py` and validation make
+  sure each has the effect it reads. A damage number shows its school
   instead of naming it (Matěj's playtest of 2026-10-21): `SpellText#fill` puts the school's icon before it (an inline
   GUI sprite, `combat/SpellSchools#icon`: `Component.object` with an `AtlasSprite` of the `gui` atlas,
   `textures/gui/sprites/school/<id>.png`, a generated placeholder until the art exists) and draws the number in the
@@ -1728,13 +1768,13 @@ forgets the highlighted mob at once when it goes off; a logout switches it off.
 
 ### 11.7 Class spells and stances
 
-Decided, not built yet (Matěj, 2026-10-23/24, RLM-391 and RLM-392): C4 Class kits (RLM-27) builds these spells
-and their first balance pass, C5 (RLM-333) the specialization trees they start ([10.1](#101-races-and-classes)).
-The stun, spell penetration and the crit overflow below are new to the engine, so C4 builds them too. The stances
-come a little later in each tree, so the specialization trees build them (C5, RLM-333). The hit moment of the instant
-Warrior spells (below) comes with their animations (RLM-399, in C6, RLM-29) and changes
-[11.2](#112-casting-server-authoritative) step 3, "Instant spells run now"; until then C4 may deal their damage at
-once. Damage labels (Low, Medium, High) compare a spell with the other spells; they are not numbers.
+Decided by Matěj (2026-10-23/24, RLM-391 and RLM-392); C4 Class kits (RLM-27) built these spells, the engine parts
+they need (the stun, spell penetration, per-hit armor shred, the crit overflow, ranks that grow an effect) and their
+first balance pass (below); C5 (RLM-333) builds the specialization trees they start ([10.1](#101-races-and-classes)).
+The stances come a little later in each tree, so the specialization trees build them (C5, RLM-333). The hit moment of
+the instant Warrior spells (below) comes with their animations (RLM-399, in C6, RLM-29) and changes
+[11.2](#112-casting-server-authoritative) step 3, "Instant spells run now"; until then C4 deals their damage at once,
+to a single target. Damage labels (Low, Medium, High) compare a spell with the other spells; they are not numbers.
 
 - **Ranks:** every specialization's first spell has max rank 5 (its maximum level, [11.1](#111-model)). A rank
   raises the spell's damage and its effect. **Cooldowns don't shrink with rank:** a spell gets a lower base cooldown
@@ -1753,12 +1793,15 @@ once. Damage labels (Low, Medium, High) compare a spell with the other spells; t
 | --- | --- | --- | --- | --- |
 | Fire | Fireball | Medium | 1.5 s cast at every rank, no cooldown | Burning (fire damage over time) I / I / I / I / II |
 | Frost | Frostbolt | Medium | 1.5 s cast at every rank, no cooldown | Slowness I / I / I / I / II |
-| Arcane | Arcane Missiles | High | a 3 s channel of 3 missiles at every rank, no cooldown; costs more mana than Fireball or Frostbolt | spell penetration 5 / 10 / 15 / 20 / 25 % |
+| Arcane | Arcane Missiles | High | a 1.5 s channel of 3 missiles, one every 0.5 s, at every rank (RLM-518), no cooldown; costs more mana than Fireball or Frostbolt | spell penetration 5 / 10 / 15 / 20 / 25 % |
 
 - Only the cast time limits Fireball and Frostbolt. Cast Time Reduction later brings them to about 0.5 s: in the
   early and mid game they are the main damage, and later the player casts many other spells around them.
-- Cast Time Reduction shortens Arcane Missiles' channel and keeps its 3 missiles: about 66 % casts them in 1 s late
-  in the game. That is enough scaling: fewer seconds and more missiles together could be a problem, and not reducing
+- **Arcane Missiles fires its 3 missiles in 1.5 s** (Matěj, 2026-10-29, RLM-518; it was 3 s): one at 0.5 s, 1 s and
+  1.5 s, as every player channel ticks every 0.5 s, so it matches Fireball's and Frostbolt's 1.5 s cast. Its damage
+  per second is now above theirs, which the playtest rebalances.
+- Cast Time Reduction shortens Arcane Missiles' channel and keeps its 3 missiles: all the ticks come closer together
+  (RLM-487 covers hasted channels). That is enough scaling: fewer seconds and more missiles together could be a problem, and not reducing
   a channel's time would be wrong globally.
 - "No cooldown" is only for these base spells: many other Mage spells, Ice Block above all, keep normal cooldowns.
 - This replaced the proposal of 2026-10-19 (a 1 s cast at rank 1 down to instant at rank 5, and 3 / 3 / 4 / 4 / 5
@@ -1810,10 +1853,30 @@ aura spell.
 - **The weapon condition pauses, never ends, a stance:** while it is not met (a torch in the offhand), the stance
   stays on and only its bonuses pause; that neither turns it off nor starts the 5 minutes.
 
-**Open, for C4 and C5:** base damage and damage per rank; how Burning's damage and Slowness's strength or duration
-grow between ranks 1 and 4; mana costs; the stance percentages (X); exact rage costs and cooldowns; which tree each
-class gets in M1; whether the Mage's D4 starting spell ("a Frostbolt-like fast single-target cast that slows",
-RLM-54) is Frostbolt itself.
+**C4's first balance pass** (RLM-27; the numbers are in `content/spells/`, each file's comment says why; the playtest
+tunes them). A class teaches its spells by level ([10.1](#101-races-and-classes)): four by level 10, chapter 1's cap.
+
+| Class | Level 1 | Level 3 | Level 5 | Level 8 |
+| --- | --- | --- | --- | --- |
+| Warrior | Slam | Battle Shout | Shield Bash | Reckless Strike |
+| Mage | Frostbolt | Ice Barrier | Fireball | Arcane Missiles |
+
+- **Slam:** 4 + 1.5 per rank + 120 % of attack damage, 30 rage, 6 s, needs a melee weapon (RLM-499); armor shred
+  5 % per rank. **Reckless Strike:** 2 + 1 per rank + 100 % of attack damage, 20 rage, 4 s, a melee weapon; crit
+  chance +10 % and 5 % more per rank. **Shield Bash:** 1 + 0.5 per rank + 60 % of attack damage, 15 rage, 6 s, a
+  shield; Stunned 0.5 s and 0.25 s more per rank.
+- **Frostbolt:** 9 + 2 per rank, 10 mana; Slowness 3 s and 0.5 s more per rank, II from rank 5. **Fireball:** 8 + 2
+  per rank, 12 mana; Burning (0.75 fire every 0.5 s, many small ticks, RLM-518) 4 s and 0.5 s more per rank, II from
+  rank 5. **Arcane Missiles:** 3 × (5 + 1 per rank), 12 mana a second.
+- **The self-buffs** (a proposal for Matěj): the Warrior's **Battle Shout** (10 rage, no cooldown: +10 % attack
+  damage for the Warrior and the allies within 10 blocks for a minute) and the Mage's **Ice Barrier** (25 mana, 30 s:
+  +12 Magic Shield for 20 s, filled at once; the Mage survives through shields, not heals, Matěj, 2026-10-22).
+- **Will To Survive** (the Human's racial): free, 5 minutes, cast while stunned.
+- **Rage gain** stays at the Warrior's starting numbers ([11.5](#115-resources-cooldowns-modifiers)).
+
+**Open, for C5 and the playtest:** the numbers above; the stance percentages (X); which tree each class gets in M1;
+whether Frostbolt stays the Mage's D4 starting spell ("a Frostbolt-like fast single-target cast that slows",
+RLM-54), as C4 made it.
 
 ## 12. Talents
 

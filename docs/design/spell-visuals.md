@@ -21,8 +21,8 @@ Matěj, 2026-10-25 (RLM-434):
     (icy blue, fiery red). Frostbolt forms a glacier, Fireball a fire bomb.
   - Frost spells share a frost look: Ice Lance, an instant frost projectile, has Frostbolt's texture, particles and
     trajectory.
-  - Arcane Missiles fires 3 missiles quickly one after another: same model, particles and texture, different
-    trajectories.
+  - Arcane Missiles fires 3 missiles quickly one after another, one every 0.5 s in its 1.5 s channel (Matěj,
+    2026-10-29, RLM-518): same model, particles and texture, different trajectories.
   - Areas share a look: Blizzard is an ice circle on the ground with a clear border; Fire Storm is the same area with
     fire, and a Hunter's Frost Trap makes a similar one.
 - **Frostbolt is the reference** (RLM-440): a glacier "made of dozens of rectangles", "a custom shape, not squarish
@@ -370,7 +370,7 @@ The M1 mapping, for Matěj to approve. Damage, ranks and hit shapes are C4's and
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Frostbolt | `cast`, then `release` | `grow`: the glacier grows from its core, frost shards swirling in | glacier, point first | straight | frost | shatters into shards and a puff of snow, filling the splash | ice forming, release, shatter |
 | Fireball | `cast`, then `release` | `grow`: the glacier shape in fire, embers and black smoke swirling in | glacier, point first | straight | fire | bursts into embers and black smoke, filling the splash | fire forming, release, burst |
-| Arcane Missiles | `channel` | `hands`: purple motes swirl round both hands for the whole channel | missile, one each second | `arcane_left`, `arcane_high`, `arcane_right` in turn | arcane | a ring and sparkles, for each missile | each missile's launch, each burst |
+| Arcane Missiles | `channel` | `hands`: purple motes swirl round both hands for the whole channel | missile, one every 0.5 s (RLM-518) | `arcane_left`, `arcane_high`, `arcane_right` in turn | arcane | a ring and sparkles, for each missile | each missile's launch, each burst |
 | Slam | `slam`, about 1 s, left to right | none | none | none | none | none | a heavy swing; the hit at 0.5 s |
 | Reckless Strike | `stab`, about 1 s | none | none | none | none | none | a stab; the hit at 0.25 s |
 | Shield Bash | `shield_bash`, about 0.5 s | none | none | none | none | none | a shield thud at 0.25 s |
