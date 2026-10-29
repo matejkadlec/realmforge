@@ -1152,7 +1152,9 @@ go of right click stops its charge.
     which checks again. It looks like a bow's draw (`client/render/ScrollCharge`, Matěj's playtest of 2026-10-24):
     the bow's pose in third person, and in first person vanilla's bow transform stretched over the 3 s, the scroll
     pulled back and shaking harder as the charge fills, through NeoForge's client item extensions on the scrolls'
-    items, as a plain item has no use animation. Each scroll registers what it checks and does (`Scrolls.add`), and
+    items, as a plain item has no use animation. Other players see the pose too: it reads only the synced use flags,
+    because another player's client knows no charge length (the plain item's use duration is 0) and counts its
+    remaining ticks below 0 at once; only the first-person draw counts them (RLM-416). Each scroll registers what it checks and does (`Scrolls.add`), and
     its item joins `ScrollCharge`: the Scroll of Oblivion first, the Scroll of Respec (RLM-226) and the Scroll of
     Rebirth (RLM-228) next. A level that falls below what was spent
     (a command, a revoked chapter, a curve that gives fewer) returns every spent point, with a message.
@@ -3470,6 +3472,11 @@ that agents can read. So far:
   run ...` ([flow: Reaching the state](ai-development-flow.md#reaching-the-state));
 - `/qa setpiece jig <mask> [<wall block>]` (RLM-281): the set-piece workshop's frame for a mask north of the player,
   with a structure block in Save mode boxed to the piece ([15.4](#154-rooms));
+- `/qa puppet scroll` and `/qa puppet remove` (RLM-416): log in a fake player, Puppet, three blocks ahead and facing
+  the player, in creative mode, charging a Scroll of Oblivion (`QaPlayers#loginAt`, its hand filled before any client
+  tracks it), and log it out. Nothing ticks a fake player (`ServerPlayer#doTick`), so it stays in the middle of the
+  charge, and one client shows how other players see a charging scroll ([10.2](#102-leveling)); running it again
+  replaces it;
 - `/qa realm enter <realm> [<x> <z>]`, `/qa realm unlock|lock <realm>` (W2a): take the player to a realm's floor at
   x, z (0, 0 by default) the way `/tp` does, so a player without the realm's unlock is refused, and grant or revoke
   the unlock advancement as `/advancement grant|revoke @s only realmforge:realm/<realm>` does

@@ -1,13 +1,16 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
+import io.github.matejkadlec.realmforge.character.Scrolls;
 import io.github.matejkadlec.realmforge.combat.DamageOverTime;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
+import io.github.matejkadlec.realmforge.generated.GeneratedItems;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpells;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.mob.MobLevels;
 import io.github.matejkadlec.realmforge.mob.MobScaling;
 import io.github.matejkadlec.realmforge.qa.combat.TrainingDummy;
 import io.github.matejkadlec.realmforge.qa.command.MobCommands;
+import io.github.matejkadlec.realmforge.qa.command.PuppetCommands;
 import io.github.matejkadlec.realmforge.spell.SpellAttachments;
 import io.github.matejkadlec.realmforge.spell.Spellbook;
 import java.util.List;
@@ -24,6 +27,8 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionSet;
+import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -258,6 +263,43 @@ public final class QaCommandGameTests {
             server.getPlayerList().remove(player);
         }
         helper.succeed();
+    }
+
+    /**
+     * RLM-416's playtest: {@code /qa puppet scroll} logs Puppet in three blocks in front of the player, facing it, in
+     * creative mode and charging a Scroll of Oblivion that nothing finishes, so a client shows another player's
+     * charging scroll. Running it again replaces the puppet, and {@code /qa puppet remove} logs it out.
+     */
+    @QaGameTest
+    public static void aPuppetStaysInTheMiddleOfAScrollsCharge(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-puppet", new Vec3(2.5, 1, 0.5));
+        // On the platform's north edge, facing south (yaw 0), so the puppet appears on the platform.
+        run(server, player, "qa puppet scroll");
+        run(server, player, "qa puppet scroll");
+        long puppets = server.getPlayerList().getPlayers().stream()
+                .filter(other -> other.getUUID().equals(PuppetCommands.PROFILE.id())).count();
+        helper.assertValueEqual(puppets, 1L, "a second /qa puppet scroll replaces the first puppet");
+        ServerPlayer puppet = server.getPlayerList().getPlayer(PuppetCommands.PROFILE.id());
+        helper.assertTrue(puppet != null && puppet.level() == helper.getLevel(), "the puppet is in the player's level");
+        helper.assertTrue(Math.abs(puppet.position().distanceTo(player.position()) - 3) < 1e-6,
+                "three blocks in front: " + puppet.position());
+        helper.assertTrue(Math.abs(Mth.wrapDegrees(puppet.getYRot())) == 180, "facing the player: " + puppet.getYRot());
+        helper.assertTrue(puppet.isCreative(), "in creative mode, so mobs leave it alone");
+        helper.assertTrue(puppet.getMainHandItem().is(GeneratedItems.OBLIVION_SCROLL.get()), "it holds the scroll");
+        helper.assertTrue(puppet.isUsingItem() && puppet.getUsedItemHand() == InteractionHand.MAIN_HAND,
+                "it charges the scroll in its main hand");
+        helper.runAfterDelay(Scrolls.CHARGE_TICKS + 5, () -> {
+            helper.assertTrue(puppet.isUsingItem(), "still charging after a full charge's time");
+            helper.assertValueEqual(puppet.getUseItemRemainingTicks(), Scrolls.CHARGE_TICKS,
+                    "nothing ticks the puppet's charge on");
+            helper.assertValueEqual(puppet.getMainHandItem().getCount(), 1, "the scroll is not used up");
+            run(server, player, "qa puppet remove");
+            helper.assertTrue(server.getPlayerList().getPlayer(PuppetCommands.PROFILE.id()) == null,
+                    "/qa puppet remove logs it out");
+            server.getPlayerList().remove(player);
+            helper.succeed();
+        });
     }
 
     private static void run(MinecraftServer server, ServerPlayer player, String command) {

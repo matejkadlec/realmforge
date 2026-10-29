@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.Connection;
 import net.minecraft.network.ConnectionProtocol;
@@ -42,9 +43,9 @@ import org.slf4j.Logger;
  * Tests therefore log new players in with {@link #loginOnPlatform}, which puts them on their own test's platform, and
  * move a player that a respawn puts back at the world spawn with {@link #onPlatform} before they tick it.
  * {@link #login} alone is for a returning player, who loads where it left, and for a test that moves the player
- * itself right after.
+ * itself right after. {@link #loginAt} logs in a puppet for a playtest ({@code /qa puppet}).
  */
-final class QaPlayers {
+public final class QaPlayers {
     /** The middle of the 5×5 platform, one block above its stone floor. */
     static final Vec3 PLATFORM_MIDDLE = new Vec3(2.5, 1, 2.5);
 
@@ -65,10 +66,7 @@ final class QaPlayers {
      */
     static ServerPlayer login(MinecraftServer server, GameProfile profile) {
         CommonListenerCookie cookie = CommonListenerCookie.createInitial(profile, false);
-        Connection connection = new Connection(PacketFlow.SERVERBOUND);
-        new EmbeddedChannel(connection);
-        NetworkRegistry.configureMockConnection(connection);
-        withoutConfigFiles(connection);
+        Connection connection = mockConnection();
         try (ProblemReporter.ScopedCollector problems = new ProblemReporter.ScopedCollector(LOGGER)) {
             Optional<ValueInput> saved = server.getPlayerList().loadPlayerData(new NameAndId(profile))
                     .map(tag -> TagValueInput.create(problems, server.registryAccess(), tag));
@@ -85,6 +83,26 @@ final class QaPlayers {
             server.getPlayerList().placeNewPlayer(connection, player, cookie);
             return player;
         }
+    }
+
+    /**
+     * Logs a new fake player in at {@code position} in {@code level}, facing {@code yaw}, once {@code prepare} has set
+     * it up, so a client that starts to track it gets it as prepared (what it holds, for example): a puppet for a
+     * playtest ({@code /qa puppet}). Its saved data is not loaded. Nothing ticks it ({@code ServerPlayer#doTick}), so
+     * it stays as it was left; {@code PlayerList#remove} logs it out.
+     */
+    public static ServerPlayer loginAt(ServerLevel level, GameProfile profile, Vec3 position, float yaw,
+            Consumer<ServerPlayer> prepare) {
+        MinecraftServer server = level.getServer();
+        CommonListenerCookie cookie = CommonListenerCookie.createInitial(profile, false);
+        ServerPlayer player = new ServerPlayer(server, level, profile, cookie.clientInformation());
+        EventHooks.firePlayerLoadingEvent(player, server.getPlayerList(), player.getStringUUID());
+        player.snapTo(position, yaw, 0);
+        player.setYHeadRot(yaw);
+        player.setYBodyRot(yaw);
+        prepare.accept(player);
+        server.getPlayerList().placeNewPlayer(mockConnection(), player, cookie);
+        return player;
     }
 
     /** A new player named {@code name} (a random id), at the platform's middle. */
@@ -140,6 +158,15 @@ final class QaPlayers {
         } else if (packet instanceof BundlePacket<?> bundle) {
             bundle.subPackets().forEach(inner -> collect(inner, type, into));
         }
+    }
+
+    /** A connection that acts as a NeoForge client accepting every payload but server config files ({@link #login}). */
+    private static Connection mockConnection() {
+        Connection connection = new Connection(PacketFlow.SERVERBOUND);
+        new EmbeddedChannel(connection);
+        NetworkRegistry.configureMockConnection(connection);
+        withoutConfigFiles(connection);
+        return connection;
     }
 
     /** Takes the config file channel out of the mock connection's payload setup (internal NeoForge API, dev only). */
