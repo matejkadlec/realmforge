@@ -2,7 +2,9 @@
 
 Date: 2026-10-15
 
-Status: Accepted (amends [0001](0001-record-architecture-decisions.md))
+Status: Accepted (amends [0001](0001-record-architecture-decisions.md)); amended by
+[0060](0060-what-counts-as-the-owners-confirmation-of-an-adr-conflicting-change.md) (a ticket he wrote, or a Done
+decision ticket, is his confirmation; an agent's ticket is not), 2026-10-29
 
 ## Context
 

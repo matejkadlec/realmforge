@@ -6,8 +6,9 @@ procedurally generated dungeons and dimensions, bosses with phases, professions,
 Set in the world of Realmforge.
 
 **Status:** early development. Milestone M0 (bootstrap) provides the build, CI, the content pipeline and a single
-test item; there is no gameplay yet. Next is M1, a small playable vertical slice. Goals:
-[docs/vision.md](docs/vision.md); plan: [docs/roadmap.md](docs/roadmap.md).
+test item. M1, under way, builds the character to level 18 (stats, spells, gear); M2 builds the world of chapters 1
+and 2 and ends in the first release, v0.1.0. Goals: [docs/vision.md](docs/vision.md); plan:
+[docs/roadmap.md](docs/roadmap.md).
 
 ## How it is built
 

@@ -17,6 +17,11 @@
 > approval (RLM-164). Plan: [roadmap](../roadmap.md); the XP model that fills the bands:
 > [leveling.md](leveling.md); the Nether and End: [ADR 0025](../decisions/0025-remove-the-nether-and-end.md), amended
 > by [ADR 0032](../decisions/0032-v1-realm-layout-amends-the-nether-and-end-removal.md).
+>
+> **Milestones since 2026-10-29** (RLM-504,
+> [ADR 0058](../decisions/0058-player-systems-before-world-content.md)): M1 is the character to level 18
+> and M2 the world of chapters 1 and 2. Where this document stages world content as M1 and then M2, its M1 is M2's
+> first stage and its M2 the rest of M2.
 
 ## At a glance
 
@@ -27,8 +32,8 @@ optional dungeon.
 
 | Realm | Name | Levels | Chapter | Milestone | Identity | Signature content |
 | --- | --- | --- | --- | --- | --- | --- |
-| [Overworld](#the-overworld) | Overworld | 1–10 | 1 | M1 | home | the first story realm; realm portals built anywhere |
-| [Stone realm](#the-stone-realm) | Undervault | 6–18 | 2 | M1 | earth and stone | one giant cave, the mine of the whole game, Cairnfolk houses and the Hewn's Mine, catacombs, a boss arena, ancient debris |
+| [Overworld](#overworld) | Overworld | 1–10 | 1 | M2 | home | the first story realm; realm portals built anywhere |
+| [Stone realm](#the-stone-realm) | Undervault | 6–18 | 2 | M2 | earth and stone | one giant cave, the mine of the whole game, Cairnfolk houses and the Hewn's Mine, catacombs, a boss arena, ancient debris |
 | [Desert realm](#the-desert-realm) | Sunwastes | 16–24 | 3 (twin) | M4 | sun and sand | dunes and big oases, pyramid and sphinx dungeons |
 | [Tundra realm](#the-tundra-realm) | Everwinter | 20–30 | 3 (twin) | M4 | frost | frozen lakes with something beneath, a nordic fortress, an ice castle |
 | [Hub realm](#the-hub-realm) | Skyhearth | from about 15 | none | later | the heavens | a celestial city and palace full of NPCs, the centre of the game: quests into Sunwastes, Everwinter and every later realm, trading |
@@ -47,7 +52,7 @@ player first meets one (the guide, the arrival title), it carries a plain subtit
 "Undervault — Stone Realm". This document keeps "stone realm", "desert realm" and so on as plain descriptions, and
 so does the refusal at the realm portal's sealstone: "You are not eligible to open a portal to the stone realm."
 (Matěj, 2026-10-20). Renamed on 2026-10-15: the Rimefields became Everwinter, the Forgefire Ashfire, and the Brink
-Unmade Isles (RLM-164). Renamed later: Olympus became Asgard (2026-10-17, RLM-245), and the prehistoric Prestoria
+Unmade Isles (RLM-188). Renamed later: Olympus became Asgard (2026-10-17, RLM-245), and the prehistoric Prestoria
 became the water realm Atlantis (2026-10-19, RLM-265); on 2026-10-22 Asgard became Skyhearth and Atlantis Deepholm,
 to drop borrowed mythology (RLM-357,
 [ADR 0054](../decisions/0054-skyhearth-and-deepholm-amend-asgard-and-atlantis.md)).
@@ -102,7 +107,7 @@ to drop borrowed mythology (RLM-357,
   [apotheosis.md](apotheosis.md#mob-levels-and-loot)), and the realm needs no hard level lock. Undervault opens through
   chapter 1's main questline, whose last step is the realm's unlock quest and also gives the Signet of the Undervault
   ([realm portal spec](realm-portal.md#access-and-unlocks)). Overworld's own final boss gates Undervault once it exists
-  (Matěj, 2026-10-16; [Overworld](#the-overworld)). The item rule of [Opening the next realm](#opening-the-next-realm)
+  (Matěj, 2026-10-16; [Overworld](#overworld)). The item rule of [Opening the next realm](#opening-the-next-realm)
   (RE-9) covers Undervault too once that boss exists (M2): the Illusioner drops the Stone Signet Shard, crafted with
   diamonds, Overworld's most precious gem, and stone into the Signet of the Undervault (RLM-395).
 - 1 stat point (Matěj, 2026-10-15, RLM-196) and about 1 skill point per level; spell limits per chapter as in D4
@@ -204,7 +209,7 @@ never also in Overworld.** Vanilla strongholds are off from M1.
 | Realm | Structures | Milestone |
 | --- | --- | --- |
 | Overworld | Dungeons Enhanced: Large Dungeon, Tower of the Undead, Druid Circle, Pillager Camp, Pirate Ship, Fishing Ship, Monster Maze (dark, pale), Jungle Monument, Stables, Ruined Building, Mushroom House, Tree House, Miners House; YUNG's suite, Dungeons and Taverns, MVS, Battle Towers, Underground Worlds (Structory and Structory: Towers only if Matěj clears their Stardust Labs License, ADR 0044); the illager mods and the villages (CTOV with Village Taverns) | M2 (RLM-315, RLM-318) |
-| Overworld, late | Ancient Cities through Dungeons and Taverns' Ancient City Overhaul, with a Warden of level 40 and more for a later questline (the Overworld's structure floor of 40 for Ancient Cities, RLM-342); Golem Dungeons' Sculk Factory beside them | later |
+| Overworld, late | Ancient Cities through Dungeons and Taverns' Ancient City Overhaul, with a Warden of level 40 and more for a later questline (Overworld's structure floor of 40 for Ancient Cities, RLM-342); Golem Dungeons' Sculk Factory beside them | later |
 | Undervault | Dungeons Enhanced: Deep Crypt, Dungeon Variant (set into the cave walls); Golem Dungeons: Abandoned Factory | M2 (RLM-316) |
 | Sunwastes | Dungeons Enhanced: Desert Tomb, Desert Temple, Hay Storage; YUNG's Cave Biomes: Lost Caves | M4 (RLM-325) |
 | Everwinter | Dungeons Enhanced: Castle, Ice Pit, Witch Tower, Watch Tower; YUNG's Cave Biomes: Frosted Caves; The Lost Castle in the tundra | M4 (RLM-325) |
@@ -293,7 +298,7 @@ The layout of every realm assumes cheap travel; nobody walks 1,000–10,000 bloc
 
 ### Overworld
 
-Chapter 1 (levels 1–10), the realm of M1. Identity: home.
+Chapter 1 (levels 1–10), the realm of M2. Identity: home.
 
 - **The first story realm** (Matěj, 2026-10-16), kept close to vanilla plus the pack's world mods. The Nether and End
   are removed ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)).
@@ -316,7 +321,7 @@ Chapter 1 (levels 1–10), the realm of M1. Identity: home.
 
 ### The stone realm
 
-Name: **Undervault**. Chapter 2 (levels 6–18), the realm of M1. Identity: earth and stone. Mining is its main
+Name: **Undervault**. Chapter 2 (levels 6–18), the realm of M2. Identity: earth and stone. Mining is its main
 profession: it is the mine of the whole game, in the spirit of Stoneblock (Matěj, RLM-188). As the first sealed realm
 it offers most of what the Nether offered ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)).
 

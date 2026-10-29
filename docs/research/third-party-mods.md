@@ -5,6 +5,8 @@
 > Matěj marked each mod Yes, No or Undecided with comments, decided placement and the plan change on 2026-10-19 and
 > answered the open questions the same night. Source tickets: RLM-264 (the picks, the plan change) and RLM-221 (the
 > Overworld structure research it answers). Decision: [ADR 0044](../decisions/0044-third-party-mods-by-milestone.md).
+> Updated on 2026-10-29 for the re-planned M1 and M2 (RLM-504,
+> [ADR 0058](../decisions/0058-player-systems-before-world-content.md)): the gear mods are M1's, Lootr is M2's.
 
 Every mod below had a NeoForge 26.1.2 build on 2026-10-18 unless the line says otherwise. A pick is a plan, not a pack
 change: each mod goes in through its ticket, with its side, a pack boot, the [pack README](../../pack/README.md) and
@@ -30,17 +32,17 @@ the [ADR 0013](../decisions/0013-modpack-composition.md) list.
 | M1 | Macaw's Furniture, Doors, Windows, Roofs, Bridges, Lights and Lamps, Fences and Walls, Paths and Pavings, Trapdoors, Stairs | | PK2, RLM-309 |
 | M1 | Iron's RPG Tweaks, combat module only | marked No on 2026-10-18, then taken on 2026-10-19 (below) | PK4, RLM-311 |
 | M1 | Controlling + Searchables | in the pack since RLM-279 ([ADR 0043](../decisions/0043-default-keys-and-key-search-in-the-pack.md)) | done |
-| M1 | Lootr | moved from M2 to M1 on 2026-10-19 ([ADR 0041](../decisions/0041-dungeon-containers-hold-loot-through-lootr.md)) | RLM-288 |
 | M1 | MmmMmmMmmMmm (target dummies) + Moonlight Lib | added on 2026-10-23, after this review: target dummies for everyone, and Maren's Trial (RLM-397) dresses one. Moonlight Lib is a pinned beta, a release-channel exception: every 26.1.2 build of it is a beta ([ADR 0053](../decisions/0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md)) | RLM-393 |
-| M2 | Artifacts, Immersive Armors | **Artifacts is held:** its items are curios, which ADR 0025 keeps out of the pack unless they are ours (RLM-7), so Matěj decides with its catalogue. A catalogue each first (every item with its effect, a proposed minimum realm or level, early unique reward candidates); Matěj decides what stays | RLM-312, RLM-313, RLM-314 |
-| M2 | Legendary Tooltips, Item Borders, YDM's Weapon Master | | RLM-314 |
+| M1 | Artifacts, Immersive Armors | **Artifacts is held:** its items are curios, which ADR 0025 keeps out of the pack unless they are ours (RLM-7), so Matěj decides with its catalogue. A catalogue each first (every item with its effect, a proposed minimum realm or level, early unique reward candidates); Matěj decides what stays | RLM-312, RLM-313, RLM-314 |
+| M1 | Legendary Tooltips, Item Borders, YDM's Weapon Master | M2's until 2026-10-29 (RLM-504) | RLM-314 |
+| M2 | Lootr | moved from M2 to M1 on 2026-10-19 ([ADR 0041](../decisions/0041-dungeon-containers-hold-loot-through-lootr.md)), back to M2 with the dungeons on 2026-10-29 ([ADR 0058](../decisions/0058-player-systems-before-world-content.md)) | RLM-288 |
 | M2 | YUNG's suite: Better Mineshafts, Desert Temples, Jungle Temples, Witch Huts, Ocean Monuments, Bridges, Extras, Better Caves, Better Dungeons | not Better Strongholds. Better Dungeons is in (open question 1, below) | RLM-315 |
 | M2 | Dungeons and Taverns, Structory, Structory: Towers, MVS – Moog's Voyager Structures, Battle Towers, Dungeons Enhanced, Underground Worlds | not D&T's Stronghold splinter. **Structory and Structory: Towers are held:** they are Stardust Labs mods under the Stardust Labs License, whose AI clause ADR 0028 avoids, so they wait for Matěj's reading (ADR 0044). Dungeons Enhanced's 26.1.2 build is 6.4.1 beta | RLM-315 |
 | M2 | Golem Dungeons | Abandoned Factory in Undervault; its golems join raids from wave 5 (a config switch), decided before the raid quests are tuned | RLM-316 |
 | M2 | Illager Invasion, It Takes a Pillage, Illager Warship, Ender Zoology, ChoiceTheorem's Overhauled Village, Village Taverns, Villager Names | Village Taverns' pieces go into CTOV's village pools (Lithostitched `add_template_pool_elements`). Villager Names with a custom name list that leaves out our story NPCs' names (it has no blacklist) | RLM-318 |
 | M3 | Ranged Weapon API, More Bows and Arrows | with the ranged play style; More Bows and Arrows gets a catalogue first | RLM-323, RLM-324 |
 | M4 | YUNG's Cave Biomes, The Lost Castle, Alex's Mobs Continued | Alex's Mobs Continued with its Nether and End mobs off or moved | RLM-325 |
-| M4 | Just Enough Resources (alpha), LambDynamicLights, Effectual, Falling Leaves, Fresh Animations (a resource pack) + Entity Texture Features + Entity Model Features, Fusion | Fusion moves to M1 if Undervault needs connected textures | RLM-326 |
+| M4 | Just Enough Resources (alpha), LambDynamicLights, Effectual, Falling Leaves, Fresh Animations (a resource pack) + Entity Texture Features + Entity Model Features, Fusion | Fusion moves to M2 if Undervault needs connected textures | RLM-326 |
 | M5 | Aquaculture 2 (the fishing profession), Better Archeology (the seed of an archaeology profession, WoW-inspired) | | RLM-328 |
 | Later realms | MSS – Moog's Soaring Structures (Unmade Isles), Grim Kingdoms (Quagmire), Dungeons and Taverns: Ancient City Overhaul (the late Overworld) | with their realms or questline | none yet |
 | M8 (v2) | Shoulder Surfing Reloaded, Camera Overhaul | both off by default, switched on in an optional-features screen | RLM-329 |
@@ -92,7 +94,7 @@ Matěj, 2026-10-19: **each structure only in its realm, never also in Overworld.
 
 ## The Overworld chapter
 
-Matěj, 2026-10-19; the plan moves it to M2 ([roadmap](../roadmap.md#m2-gear-and-loot)):
+Matěj, 2026-10-19; the plan moves it to M2 ([roadmap](../roadmap.md#m2-the-world-of-chapters-1-and-2)):
 
 - **Main questline:** 2–3 zombie, skeleton or spider dungeons first, then pillagers, illagers and evokers until the
   end of the chapter. Other dungeons are optional quests, or mandatory where they fit the progression (RLM-320).

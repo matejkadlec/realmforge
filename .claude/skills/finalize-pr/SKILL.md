@@ -627,10 +627,12 @@ gh api -X PUT repos/matejkadlec/realmforge/pulls/<n>/merge -f merge_method=merge
 
 ## Report
 
-At each merge or stop, report as the status overview from `CLAUDE.md`: this pull request under "Merged into
-master" (**What**, **Review**, **Checks**, **Jira**), or under "Pending CR" or "Pending User QA" with the step the
-run stopped at; while it waits for a reconfirmation, in the manual-test shape with _What to test_ and the
-launch commands, closing with how Matěj answers (`qa1` or `qa2`). The details below go into those bullets:
+At each merge or stop, report in the response and end it with the status overview from `CLAUDE.md` (no batch
+ledger): a few lines on where the pull request stands (merged, or the step the run stopped at and what it needs
+from Matěj, asked as a question), then Verification with the review passes and the checks, and its `Tickets:`
+line; while it waits for a reconfirmation, in the manual-test shape with _What to test_, the launch commands and
+how Matěj answers (`qa1` or `qa2`). The details below go into those lines, the most important first; what only
+needs recording goes into the tickets' `🤖 Claude QA` comments instead:
 
 - the pull request number and URL, the branch and the base;
 - the head SHA (merged or current), and whether the remote head equals your final commit;
@@ -641,5 +643,5 @@ launch commands, closing with how Matěj answers (`qa1` or `qa2`). The details b
 - the exact checks that passed locally, the CI state and the merge commit;
 - the Jira tickets and the status each one ended in;
 - "Follow-ups not ticketed": every follow-up that could not become a ticket because Jira was unreachable, with
-  its file, scenario and smallest fix, under "Blocked or other";
+  its file, scenario and smallest fix (Jira cannot hold them, so the response does);
 - the post-merge outcome, or the step the run stopped at, with any linked remediation.

@@ -203,7 +203,7 @@ other realms.
 
 | Realm | Walls and floors the pieces meet | Decor that suits it |
 | --- | --- | --- |
-| Undervault (stone, M1) | stone bricks, deepslate, tuff, cobblestone | barrels, crates of planks, minecart rails and a minecart, chains, lanterns, anvils, ore piles (raw ore blocks), scaffolding, tools in item frames |
+| Undervault (stone, M2) | stone bricks, deepslate, tuff, cobblestone | barrels, crates of planks, minecart rails and a minecart, chains, lanterns, anvils, ore piles (raw ore blocks), scaffolding, tools in item frames |
 | Sunwastes (desert) | sandstone, smooth and cut sandstone, terracotta | decorated pots, skulls, banners, hay, cactus in pots, suspicious sand, sarcophagi of stairs |
 | Everwinter (tundra) | packed and blue ice, snow, spruce, stone bricks | spruce barrels and chests, campfires, powder snow, frozen lanterns (soul lanterns), furs (white wool and carpets) |
 | Skyhearth (hub) | quartz, calcite, gold blocks | lecterns, bookshelves, candles, flower pots, banners, amethyst |

@@ -20,6 +20,11 @@
 > whole still waits for Matěj's review, so this outline takes from it only what he decided and what the approved
 > chapters tell. Where the two chapters say more than this outline, the chapters win. The design documents use the
 > new names since RLM-465.
+>
+> **Milestones since 2026-10-29** (RLM-504,
+> [ADR 0058](../decisions/0058-player-systems-before-world-content.md)): M1 is the character to level 18
+> and M2 the world of chapters 1 and 2. Where this outline stages the chapters as M1 and then M2, its M1 is M2's
+> first stage and its M2 the rest of M2.
 
 ## At a glance
 

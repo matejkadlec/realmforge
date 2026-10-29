@@ -1,6 +1,6 @@
 ---
 name: flow1
-description: Autonomously select and deliver a coherent batch of 1-N tickets from the active RLM Jira sprint (Next first, then To Do), pulling unfinished dependencies into the batch and keeping Next filled by priority. Claims the tickets, implements the batch in its own git worktree and validates it. An AI-only batch is published as one ready pull request and carried through its independent review to its merge with finalize-pr; a gameplay batch is pushed without a pull request and handed to Matěj for a playtest, which he answers with qa1 or qa2. Never implements decision tickets or tickets waiting on Matěj; lists them instead. Takes an optional run location: "flow1 cloud" (the default) selects only work a cloud session can do and stops when none is left; "flow1 local" selects work only a local session can do first, then goes by normal priority. Use when the user says "flow1", "flow1 cloud" or "flow1 local", or asks the agent to pick up and deliver sprint work.
+description: Autonomously select and deliver a coherent batch of 1-N tickets from the active RLM Jira sprint (Next first, then To Do), pulling unfinished dependencies into the batch and keeping Next filled by priority. Claims the tickets, implements the batch in its own git worktree and validates it. An AI-only batch is published as one ready pull request and carried through its independent review to its merge with finalize-pr; a gameplay batch is pushed without a pull request and handed to Matěj for a playtest, which he answers with qa1 or qa2. Never implements decision tickets or tickets waiting on Matěj; leaves them to him instead. Takes an optional run location: "flow1 cloud" (the default) selects only work a cloud session can do and stops when none is left; "flow1 local" selects work only a local session can do first, then goes by normal priority. Use when the user says "flow1", "flow1 cloud" or "flow1 local", or asks the agent to pick up and deliver sprint work.
 ---
 
 # flow1: autonomous batch delivery
@@ -56,12 +56,13 @@ Name the mode in the batch announcement.
     stops (_After publication_). A batch is not delivered until its pull request has merged.
 11. **Playtest batch: hand off and stop** under _Playtest handoff_: push the branch and open **no pull request**,
     record the `🎮 Playtest handoff` on each ticket, move the tickets to Pending User QA, keep the branch and the
-    worktree, and give the status overview in its manual-test shape (_What to test_, the _Launch commands_, the
-    verification and the batch ledger), closing with how Matěj answers. Stop there: his
+    worktree, and give the status overview in its manual-test shape (_What to test_, the _Launch commands_, how
+    Matěj answers, and Verification with its `Tickets:` line). Stop there: his
     [`qa1`](../qa1/SKILL.md) publishes the batch and carries it to its merge, and his [`qa2`](../qa2/SKILL.md)
     revises it.
 
 The run ends at a boundary in _Concurrency and run boundaries_. Every response of the run, the last one included,
-ends with the status overview from `CLAUDE.md`, its batch ledger filled as that section describes (tickets waiting
-on Matěj under "Blocked or other"). In a cloud session (`CLAUDE_CODE_REMOTE=true`), _Cloud sessions_ adds what
-differs there.
+ends with the status overview from `CLAUDE.md`: no batch ledger, a question for whatever the run cannot go on
+without, and Verification last, whose `Tickets:` line names the keys the run claimed (and why, when they differ
+from the keys Matěj typed: a split, a pulled-in dependency). What only needs recording goes into Jira comments.
+In a cloud session (`CLAUDE_CODE_REMOTE=true`), _Cloud sessions_ adds what differs there.

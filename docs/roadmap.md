@@ -2,12 +2,15 @@
 
 > The order of work, by milestone. Goals: [vision.md](vision.md). Realms and their order:
 > [design/realms.md](design/realms.md). How things are built: [architecture.md](architecture.md). Decisions:
-> [ADRs](decisions/README.md). Baseline of 2026-10-11.
+> [ADRs](decisions/README.md). Baseline of 2026-10-11; M1 and M2 re-planned on 2026-10-29 (RLM-504,
+> [ADR 0058](decisions/0058-player-systems-before-world-content.md)).
 
 ## How to use this roadmap
 
-- **Milestones are minor releases:** M1 ships as v0.1.0, M2 as v0.2.0, and so on (open decision D7). Only M1 is
-  planned task by task; later milestones are outlines, detailed when the previous one ends.
+- **Milestones are minor releases from M2 on:** M1 builds the character and ships no release of its own, and M2
+  ships as v0.1.0 (decision D7, amended on 2026-10-29). Later milestones keep their numbers until they are planned
+  (M3 as v0.3.0, and so on). M1 and M2 are planned task by task; later milestones are outlines, detailed when the
+  previous one ends.
 - **The plan lives here, the status in Jira** ([ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md)).
   Every task, decision and backlog item names its ticket in the Jira space Realmforge (`RLM-<n>`, at
   `https://envelopment.atlassian.net/browse/RLM-<n>`), and every milestone its epic. Whether a task waits, is in
@@ -18,10 +21,13 @@
 - **One task, or one coherent batch of tasks, per PR** ([ADR 0016](decisions/0016-jira-batch-delivery.md)).
   Large tasks are split into several PRs. A task is done when its "done when" holds, the checks in CLAUDE.md pass
   and its PR has merged; `finalize-pr` then moves its ticket to Done.
-- **Agents** take the next unblocked task of the current milestone, spikes first, through its ticket in the
-  active sprint: `flow1`, `flow2`, or the intake claim of the [AI development flow](ai-development-flow.md) for
-  direct work, with the key in the branch name and the PR title. A task waiting on an open decision
-  ([below](#open-decisions)) is not started: the agent lists it for Matěj.
+- **Agents** take the next unblocked task of the current milestone through its ticket in the active sprint:
+  `flow1`, `flow2`, or the intake claim of the [AI development flow](ai-development-flow.md) for direct work, with
+  the key in the branch name and the PR title. A task waiting on an open decision ([below](#open-decisions)) is not
+  started: it waits for Matěj.
+- **Player systems first:** no M2 task enters a sprint before M1's [definition of done](#definition-of-done) holds,
+  unless Matěj says so. Technical "after" links alone never make world work ready (Matěj, 2026-10-29,
+  [ADR 0058](decisions/0058-player-systems-before-world-content.md)).
 - **Changing the plan** is a PR to this file, and every change to it is one
   ([ADR 0017](decisions/0017-jira-as-the-source-of-task-status.md)). Agents make it only as Matěj decided it (a
   Done decision ticket, his request, or a ticket he wrote that asks for it) and propose any other change to him
@@ -37,8 +43,8 @@
 | Milestone | Epic | Theme | Release | Status |
 | --- | --- | --- | --- | --- |
 | [M0](#m0-bootstrap) | - | Bootstrap: build, CI, content pipeline, modpack | - | done |
-| [M1](#m1-vertical-slice-the-first-two-chapters) | RLM-6 | Vertical slice: the first two chapters | v0.1.0 | next |
-| [M2](#m2-gear-and-loot) | RLM-7 | Gear and loot | v0.2.0 | outline |
+| [M1](#m1-the-character-to-level-18-stats-spells-gear) | RLM-6 | The character to level 18 (stats, spells, gear) | - | next |
+| [M2](#m2-the-world-of-chapters-1-and-2) | RLM-7 | The world of chapters 1 and 2 | v0.1.0 | after M1 |
 | [M3](#m3-classes-and-combat-depth) | RLM-8 | Classes and combat depth | v0.3.0 | outline |
 | [M4](#m4-the-world-grows) | RLM-9 | The world grows | v0.4.0 | outline |
 | [M5](#m5-professions-and-enchanting) | RLM-10 | Professions and enchanting | v0.5.0 | outline |
@@ -46,11 +52,14 @@
 | [M7](#m7-contracts) | RLM-12 | Contracts | v0.7.0 | outline |
 | [M8](#m8-after-v1) | RLM-307 | After v1: optional features and the post-v1 mods | v2 | outline |
 
-The order follows dependencies and what makes the slice worth playing: loot gives dungeons a purpose (M2), new
-classes need a combat system with depth (M3), new dimensions need mobs, bosses and dungeon archetypes to fill them
-(M4), professions need gear and materials to work on (M5). M8 holds what comes after v1 (Matěj, 2026-10-19,
-RLM-264). Which third-party mods join in which milestone is
-[ADR 0044](decisions/0044-third-party-mods-by-milestone.md), with every pick in the
+The order follows Matěj's rule of 2026-10-29, **player systems first**: the character works from level 1 to 18
+(M1) before the custom mobs, dungeons and bosses of its world are built and balanced against it (M2), because a
+boss built before the stats, spells and gear it is balanced against cannot be judged
+([ADR 0058](decisions/0058-player-systems-before-world-content.md)). After that, new classes need a combat system
+with depth (M3), new dimensions need mobs, bosses and dungeon archetypes to fill them (M4), and professions need
+gear and materials to work on (M5). M8 holds what comes after v1 (Matěj, 2026-10-19, RLM-264). Which third-party
+mods join in which milestone is [ADR 0044](decisions/0044-third-party-mods-by-milestone.md), amended for M1 and M2
+by [ADR 0058](decisions/0058-player-systems-before-world-content.md), with every pick in the
 [research note](research/third-party-mods.md).
 
 ## M0: Bootstrap
@@ -63,45 +72,52 @@ Of the six technical spikes in the research report ([research notes, section 10]
 M0 finished spike 1 (skeleton) and most of spike 2 (pipeline: items and lang with ID validation). Quests remain
 and come with task Q1; recipes come with the first content that needs one. Spikes 3-6 open M1.
 
-## M1: Vertical slice, the first two chapters
+## M1: The character to level 18 (stats, spells, gear)
 
-**Goal:** a small, complete, playable piece of Realmforge that uses every core system once, so later milestones
-add content to systems that already work instead of building them. It ships the first two chapters of the v1 realm
-layout (Matěj, RLM-188, [realm design](design/realms.md)): chapter 1 in Overworld (levels 1-10) and chapter 2 in
-Undervault (levels 6-18), about 12 hours for an average player by the [XP model](design/leveling.md).
+**Goal:** a Warrior and a Mage that work completely from level 1 to 18: their stats, their spells with real
+visuals, and their gear up to netherite with curios and Apotheosis affixes (Matěj, 2026-10-29, RLM-6). **Player
+systems come first:** every new system must be testable when it lands, and a boss built before the stats, spells and
+gear it is balanced against cannot be (Astone, RLM-491). So M1 builds and balances no custom mob, dungeon or boss;
+M2 does, against the finished character ([ADR 0058](decisions/0058-player-systems-before-world-content.md)). M1
+replaces the first plan's vertical slice: its world part moved to [M2](#m2-the-world-of-chapters-1-and-2), and the
+gear of the old M2 moved here.
 
 ### Scope
 
 | Area | M1 content |
 | --- | --- |
-| Race | 1 |
+| Race | 1, the Human |
 | Classes | 2: a melee class and a caster (decision D1: Warrior with rage, Mage with mana) |
-| Spells | 4-5 per class, covering a self-buff, a debuff, single target, AoE and one special spell (such as a blink) |
-| Spell trees | one specialization spell tree per class (C5, RLM-218); talents are postponed indefinitely (Matěj, 2026-10-16, RLM-28, [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)) |
-| Chapters | 2: Overworld (chapter 1, levels 1-10) and Undervault (chapter 2, levels 6-18); no Overworld dungeon or boss |
-| Leveling | levels 1-18 with a level cap: 10 in chapter 1, 18 once it is done, 30 once chapter 2 is done (D2; XP stops at the cap) |
-| Stats | primary stats with derived bonuses and at least one milestone bonus; a character sheet |
-| Dimension | 1 custom dimension, the stone realm: one giant cave with a single walkable floor (Undervault, [realm design](design/realms.md#the-stone-realm)); data-driven worldgen, locked until chapter 1's main questline unlocks it |
-| Mobs | levels by location for vanilla hostile mobs, plus 1-2 custom mob types for the dungeons (proposal D11) |
-| Dungeons | 2 procedural, instanced dungeon types: one ends in the boss's lair, one in a treasury with no boss |
-| Boss | 1 boss with 3 phases, on the ground, no blindness or darkness |
-| Quests | chapters 1 and 2, about 25-30 quests, generated into FTB Quests |
-| Gear | a small set of fixed-stat weapons and armor as rewards; no affixes yet |
-| World | default gamerules, Dark Vision toggle, griefing protection; vanilla strongholds off |
-| Pack | the M1 mods of [ADR 0044](decisions/0044-third-party-mods-by-milestone.md) ([Pack](#pack-parallel)) and Lootr |
+| Stats | primary stats with derived bonuses, milestones and class-dependent bonuses; damage-type resistances and Healing Received as our own stats; the character sheet, split into tabs and reworked with our own background, font and layout |
+| Spells | 4-5 per class, covering a self-buff, a debuff, single target, AoE and one special spell (such as a blink), with hit shapes; the spell bar, casting and combat QoL |
+| Spell trees | one specialization spell tree per class, full to level 18 (C5, RLM-218); talents are postponed indefinitely (Matěj, 2026-10-16, RLM-28, [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)) |
+| Spell visuals | icons, and every spell's model, trajectory, particles, animation and sounds |
+| Leveling | levels 1-18 with the level cap of D2 (C2); the chapter advancements that raise the cap are granted by command until M2's quests grant them |
+| Gear | Apotheosis's rarities, affixes, gems and reforging fitted to our stats ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)); weapons, wands and caster robes up to netherite with textures; our own shield tiers; curios with textures, with Artifacts and Immersive Armors as Matěj picks them |
+| Items | the Scrolls of Respec and Rebirth |
+| World | Overworld as the test world: vanilla hostile mobs with levels (W1), vanilla strongholds off |
+| Pack | the M1 mods of [ADR 0044](decisions/0044-third-party-mods-by-milestone.md) ([Pack](#pack-parallel)) and the gear mods, which were M2's until 2026-10-29 |
 
-**Not in M1:** a second race, more classes, each class's other two specializations and dual spec (M1 has one
-specialization per class; RLM-218), talents and glyphs (postponed indefinitely, RLM-28), affixes, gems, reforging,
-professions, pets, mounts, villages, the enchanting overhaul, contracts, world-structure dungeons, Overworld's own
-dungeons and final boss (Matěj, 2026-10-16; both in M2 since 2026-10-19, RLM-264), the gated ores (RLM-194, M4),
-custom NPCs, changes to the Nether and End (apart from strongholds off, which leaves the End unreachable,
-[ADR 0044](decisions/0044-third-party-mods-by-milestone.md)), and dungeon parties: instances are solo in M1
-(decision D8); parties come later (RLM-68).
+**Testing:** in an Overworld test world, on the training dummy and vanilla mobs with levels (W1). No custom mob,
+dungeon, boss or quest is needed (RLM-6).
 
-**Order:** the spikes first, then foundations; character and world work can run in parallel after that; quests
-and the release come last. "After" in a task names what must be merged first.
+**Not in M1** (M2's since 2026-10-29): Undervault's art and worldgen, the realm portal's art, custom mobs and their
+models, instanced dungeons, Astone's finish and balance, quests, coins and merchants, and the release. **Later
+milestones:** a second race, more classes, each class's other two specializations and dual spec (M1 has one
+specialization per class; RLM-218), talents and glyphs (postponed indefinitely, RLM-28), professions, pets,
+mounts, villages, the enchanting overhaul, contracts, the gated ores (RLM-194, M4), custom NPCs, and changes to the
+Nether and End (apart from strongholds off, which leaves the End unreachable,
+[ADR 0044](decisions/0044-third-party-mods-by-milestone.md)).
 
-### Phase 0: spikes
+**Order:** the foundations first, then the phases in order: stats, classes and spells, spell visuals, gear and
+curios (Matěj, 2026-10-29). "After" in a task names what must be merged first.
+
+### Foundations
+
+Phases 0 to 2 of the first M1 plan (2026-10-11): the spikes, the foundations and the character's core systems. The
+rest of that plan's phase 2 (C4 to C6) is in the phases below, and its phases 3 and 4 are M2's.
+
+#### Phase 0: spikes
 
 The four spikes left from the research report. Each is time-boxed and ends in one small PR with a written answer,
 plus an ADR when it decides something. Prototype code stays only if it fits the architecture.
@@ -140,7 +156,7 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   the MCP servers, the final pick. *Done when:* Matěj has picked; ADR 0007 is confirmed or superseded; the project
   palette and the first texture pipeline step exist. Blocks final art (A1, A2); placeholders until then.
 
-### Phase 1: foundations
+#### Phase 1: foundations
 
 - **F1 Feature skeleton** (RLM-17, S, after spike 6). Packages from
   [architecture 4.2](architecture.md#42-packages-of-the-core-mod) with empty `<Name>Feature` classes wired in
@@ -173,7 +189,7 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   hurt-cooldown window, and show that a dodged hit leaves no damage container behind
   ([architecture 9.1](architecture.md#91-damage-pipeline)).
 
-### Phase 2: character and abilities
+#### Phase 2: character core
 
 - **C1 Races and classes** (RLM-22, M, after F5; D1). The registries, including the `realmforge:resource_type` type
   registry with `mana` and `rage` (ids only; C3a gives them behaviour), so class entries can name their resource;
@@ -196,6 +212,26 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
 - **Spell aiming** (RLM-344, RLM-345, RLM-346, after C3b; moved from M3 before C4, Matěj, 2026-10-22). Spells cast
   without a target and aim with the crosshair (RLM-344); smart auto-aim for targeted spells, with the target
   highlighted (RLM-345); ground-targeted areas land at the crosshair, with clamp cast (RLM-346).
+- **W1 Mob levels** (RLM-31, M, after F5). `realmforge:dimension_rules` with an entry for `minecraft:overworld`
+  (named in its `dimension` field); levels at spawn for vanilla hostile mobs (and later ours); scaling from curves,
+  with health refilled to the scaled maximum; Jade shows the level (optional). *Done when:* GameTests check the
+  level by distance, the scaled maximum health, that a new mob's current health equals it, that a split slime's
+  children keep the parent's level, that a mob added without `finalizeSpawn` (`GameTestHelper#spawn`) gets a
+  level and its scaling, and that a converted mob (a piglin zombifying outside the Nether) keeps a level and
+  scaling that belong together. M1 tests the character on these mobs.
+
+### Phase 3: stats
+
+- **Primary stats** (RLM-170, after F4). Rebalance the primary stats, add milestones and class-dependent bonuses.
+- **Stamina** (RLM-171, after RLM-170). The Stamina stat that RLM-170 adds slows the hunger drain.
+- **Damage-type resistances** (RLM-233). Physical, Projectile, Explosion and Fall resistance and Healing Received
+  as our own stats, on the character sheet.
+- **Character sheet tabs** (RLM-235). The stats split into Melee, Ranged, Magic and Defense tabs, with ranged stats.
+- **Character sheet rework** (RLM-225, RLM-254). Our own background, font and layout; the specialization's
+  placeholder.
+
+### Phase 4: classes and spells
+
 - **C4 Class kits** (RLM-27, M, after C3b, C3c and the spell aiming). 4-5 spells per class; starting gear with fixed
   stats, generated with per-slot modifier ids and the rule that gear never adds max health directly
   ([architecture 8.2](architecture.md#82-where-modifiers-come-from)); the Human's racial passive and active (Sword
@@ -208,95 +244,50 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   tree stays as a specialization spell tree, one per class (Matěj, 2026-10-16, RLM-218): most spells take several
   points and grow stronger with each, some gain an extra effect at the top rank, big-impact spells have one rank;
   the tree holds active and passive spells. The spell trees window, where the player picks the specialization and
-  spends points ([architecture 10.1](architecture.md#101-races-and-classes)). *Done when:* JUnit covers the point
-  rules, and a GameTest shows a spent point changing a spell's cast.
-- **C6 Casting animations and effects** (RLM-29, M, after spike 4 and C4). Animations, particles and sounds for both
-  classes.
+  spends points ([architecture 10.1](architecture.md#101-races-and-classes)). A full tree to level 18 for both the
+  Warrior and the Mage (RLM-6). *Done when:* JUnit covers the point rules, and a GameTest shows a spent point
+  changing a spell's cast.
+- **Hit shapes** (RLM-399, after C4). AoE hit shapes for the Warrior's melee spells and a splash explosion for the
+  Mage's bolts.
+- **The spell bar, casting and combat QoL:** the options and fixes that playing the two classes turns up, each its
+  own ticket under RLM-6.
 
-### Phase 3: world, dungeons and the boss
+### Phase 5: spell visuals
 
-- **W1 Mob levels** (RLM-31, M, after F5). `realmforge:dimension_rules` with an entry for `minecraft:overworld`
-  (named in its `dimension` field); levels at spawn for vanilla hostile mobs (and later ours); scaling from curves,
-  with health refilled to the scaled maximum; Jade shows the level (optional). *Done when:* GameTests check the
-  level by distance, the scaled maximum health, that a new mob's current health equals it, that a split slime's
-  children keep the parent's level, that a mob added without `finalizeSpawn` (`GameTestHelper#spawn`) gets a
-  level and its scaling, and that a converted mob (a piglin zombifying outside the Nether) keeps a level and
-  scaling that belong together.
-- **W2a Stone realm** (RLM-32, M, after W1 and C2). Worldgen JSON for the stone realm
-  ([realm design](design/realms.md#the-stone-realm): one giant cave with a single walkable floor, common stone of
-  about hardness 25, ancient debris below the floor, no weather; RLM-188), its dimension type (the coordinate scale
-  the realm portal links by, beds that set no spawn) and its dimension rules; the `realmforge:requirement_type`
-  registry with its first types; `content/realms/` with the realm's unlock advancement, which chapter 1's last main
-  quest grants; access refused on every way in without the unlock, mobs kept out, respawn always in Overworld
-  ([realm portal design](design/realm-portal.md)). *Done when:* GameTests show a player teleported into the realm
-  refused before the unlock and allowed after it, a mob teleported in staying where it is, and a death in the realm
-  respawning in Overworld.
-- **W2b Realm portal** (RLM-154, M, after W2a). Access through the realm portal
-  ([realm portal design](design/realm-portal.md)): the frame, the sealstone and the stone realm's signet, a
-  chapter 1 quest reward; Nether-like linking in both directions at the realm's coordinate scale, to a portal near
-  the scaled position or one built there. *Done when:* GameTests show the portal refusing a player before the unlock
-  and passing them after it, and a trip into the realm and back that links to the portals at the scaled positions
-  or builds them.
-- **W3 Custom mobs** (RLM-33, M, after W1 and C3a; D11). 1-2 custom mob types for the dungeons (archetypes: melee and
-  caster), GeckoLib models, loot tables without trash. *Done when:* GameTests check that they spawn with levels and
-  drop valid loot.
-- **W4 Dungeon framework** (RLM-34, L, after spike 3 and W1). The instance dimension from spike 3;
-  `realmforge:dungeon_type`; the room format and its validation (`content/rooms/`); the pure planner and layout
-  with fuzz tests; the builder with data markers and chunk tickets; `InstanceManager`; entry through a temporary
-  dungeon portal that a dungeon key opens for its player alone (D8), open for the dungeon type's time with warnings
-  before it closes and sends everyone back, and exit at any time by the dungeon exit or `/instance leave`; a completed
-  run closes 5 minutes later; the rules inside (Adventure mode plus guards for non-player edits and for items with
-  `can_break` or `can_place_on`, [architecture 15.5](architecture.md#155-instances)); QA commands to preview a layout
-  and enter a dungeon. *Done when:* GameTests build and enter an instance, open a portal with a key, close it by its
-  timer and by the last player's `/instance leave`, and check the completion's 5 minutes, and a bucket (a plain one,
-  and water, lava and empty buckets with `can_place_on`), flint and steel, an axe, a hoe, a tool with `can_break`,
-  placing and breaking all leave the room unchanged.
-- **W5 Boss** (RLM-35, L, after C3a and W3). `realmforge:boss`, `BossPhaseMachine`, abilities through the spell engine,
-  the boss entity and model, the phase name in the boss bar, arena rules, loot. The boss is tested on its own,
-  before any dungeon references it. *Done when:* GameTests cover every phase change.
-- **W6 Two dungeon types** (RLM-36, L, after W4 and W5). Type A ends in the boss's lair; type B ends in a treasury with
-  traps and a vault, without a boss. Its rooms come from A4 (generated and imported,
-  [ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)); agents assemble variants and set encounter
-  and loot budgets. Both types put the netherite upgrade smithing template into their loot, fairly often (Matěj,
-  RLM-188). No container in a dungeon is empty: every chest and barrel holds loot worth a few mob kills, per player
-  through Lootr, which joins the pack in M1 (Matěj, 2026-10-19,
-  [ADR 0041](decisions/0041-dungeon-containers-hold-loot-through-lootr.md),
-  [container loot](design/container-loot.md)).
+- **A1 Icons** (RLM-46, after spike 5) for spells, items and gear. Placeholders are generated until real art exists
+  ([ADR 0007](decisions/0007-asset-pipeline.md)).
+- **Spell visuals** (epic RLM-434, [spell visuals design](design/spell-visuals.md)): the visuals engine, then every
+  spell's model, trajectory, particles and animation, with **C6 Casting animations and effects** (RLM-29, M, after
+  spike 4 and C4): animations, particles and sounds for both classes.
+- **Sounds** (after the visuals): the sound-effect generator and audio pipeline (RLM-126), the first spells' sounds
+  (RLM-445), and **A3 Sounds** (RLM-49): vanilla sounds remapped in `sounds.json`, a few new ones.
 
-### Phase 4: story, polish, release
+### Phase 6: gear and curios
 
-- **Q1 Quest pipeline** (RLM-37, L, after C2). `content/quests/` (chapters exist since C2) to FTB Quests SNBT with
-  stable ids, advancements, our criteria triggers and statistics, lang; `CommandReward`s with `permission_level: 2`
-  for our commands; `packwiz refresh` after generation; quest validation (where, how, with what; boss levels from
-  data). Finishes the quest half of research spike 2. *Done when:* pytest checks the generated SNBT, including that
-  every chapter reward is a per-player, auto-claimed `AdvancementReward`
-  ([architecture 16](architecture.md#16-progression-and-quests)).
-- **Q2 Chapters 1 and 2** (RLM-38, M, after Q1 and W6). About 25-30 quests with lore set in Realmforge: the two main
-  questlines of the [lore outline's beats](lore/outline.md#chapters-1-and-2-for-q2) plus side quests, rewards from
-  the gear set; each chapter's last quest grants its chapter advancement (RLM-188).
-- **R1 World rules** (RLM-42, S, after F1; D6). Default gamerules for new worlds, griefing protection, Dark Vision.
-- **R2 Release pipeline** (RLM-44, M, after Q2; D7, D9). A workflow that builds the jar and the pack from a `v*` tag
-  ([ADR 0008](decisions/0008-distribution-github-and-curseforge.md)), version 0.1.0, changelog, README.
-- **R3 Playtest and balance** (RLM-45, M, repeated, after Q2). Matěj plays the slice in Prism; agents fix what he
-  finds; a spark profile on his PC.
-
-### Assets (parallel)
-
-Placeholders are generated until real art exists ([ADR 0007](decisions/0007-asset-pipeline.md)).
-
-- **A1 Icons** (RLM-46, after spike 5) for spells, items and gear.
-- **A2 Models and animations** (RLM-48) for the custom mobs and the boss (GeckoLib; Blockbench MCP, installed only with
-  Matěj's approval). UV-mapped entity textures need his eye ([ADR 0007](decisions/0007-asset-pipeline.md)).
-- **A3 Sounds** (RLM-49): vanilla sounds remapped in `sounds.json`, a few new ones.
-- **A4 Rooms** (RLM-50): rooms generated from YAML room specs by our room generator, plus an imported baseline of
-  MIT, CC0 and LGPL-3.0 rooms with their notices; nobody builds rooms by hand, and Matěj reviews them in a gallery
-  ([ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)).
+- **Apotheosis** ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md),
+  [Apotheosis design](design/apotheosis.md)): Apotheosis, Apothic Attributes and Apothic Enchanting in the pack,
+  fitted to our combat and stats (RLM-205); its data from our YAML (RLM-272); loot categories for wands and our
+  curio slots (RLM-273); the affix set from Matěj's review (RLM-232); rarity tiers by realm, affixes per tier and
+  item type, and loot-only gear (RLM-198). Its five rarities (mythic shown as Legendary), affixes, gems and sockets
+  and its reforging, with loot by the player's world tier, not an item level. Probably also the full-pack registry
+  dump for the ID universe ([ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)), once
+  content references other mods' items.
+- **Weapons and armor:** every weapon type in the seven vanilla materials (Matěj, 2026-10-15), the wands (RLM-172)
+  and caster robes (RLM-197) up to netherite, all with textures, and more weapon and armor sets.
+- **Shields** (RLM-378). Our own shield tiers with a block cooldown per tier, from wood to netherite, then our realm
+  materials.
+- **Curios:** Curios with the first curios of our own, with textures; Artifacts and Immersive Armors after their
+  catalogues, from which Matěj picks what stays (RLM-312, RLM-313; Artifacts' curio items wait for his word on
+  [ADR 0025](decisions/0025-remove-the-nether-and-end.md)'s curio rule), and the gear and tooltip mods (RLM-314:
+  Legendary Tooltips, Item Borders, YDM's Weapon Master).
+- **Scrolls** of Respec (RLM-226), a full spell point reset, and of Rebirth (RLM-228), a full character reset.
 
 ### Pack (parallel)
 
 The M1 mods of [ADR 0044](decisions/0044-third-party-mods-by-milestone.md) (Matěj, 2026-10-18 and 2026-10-19,
-RLM-264). Each goes in with packwiz, its side, the [pack README](../pack/README.md) and the ADR 0013 list, and a pack
-boot. Controlling with Searchables is in since RLM-279, and Lootr is W6's (RLM-288).
+RLM-264); the gear mods come with [phase 6](#phase-6-gear-and-curios). Each goes in with packwiz, its side, the
+[pack README](../pack/README.md) and the ADR 0013 list, and a pack boot. Controlling with Searchables is in since
+RLM-279; Lootr comes with W6 in M2 (RLM-288).
 
 - **PK1 QoL and UI mods** (RLM-308, M). Inventory Sorting (instead of building Lightweight Inventory Sorting, RLM-61),
   Advanced Loot Info with Advanced Core Info, Just Enough Professions, Clumps, Crafting Tweaks, Item Highlighter, Pick
@@ -318,39 +309,107 @@ boot. Controlling with Searchables is in since RLM-279, and Lootr is W6's (RLM-2
 
 1. The full pack boots in CI (spike 6 job) and plays in Prism on Matěj's PC with acceptable performance (spark
    profile).
-2. In a new world a player can create a character (1 race, 2 classes); reach level 10 by killing mobs and
-   questing and stay there until chapter 1 is done; finish chapter 1 and see the level cap rise to 18; enter
-   Undervault once chapter 1's quest unlocks it; use every class spell and spend points in its specialization spell
-   tree; reach level 18 and stay
-   there until chapter 2 is done; clear both dungeon types, one ending with the boss and one without; beat the boss
-   through all three phases; finish chapter 2 and see the level cap rise to 30.
-3. JUnit covers formulas, the spell tree rules, the dungeon planner and layout, and the phase machine; GameTests cover
-   spells, leveling and the cap, the chapter bridge, instances and boss phases; every CI job is green.
+2. A Warrior and a Mage can each be levelled from 1 to 18 with a full specialization tree, every spell with its real
+   visuals, gear up to netherite (the Mage's caster robes included), working curios and Apotheosis affixes, and the
+   reworked character sheet (RLM-6).
+3. JUnit covers the formulas and the spell tree rules; GameTests cover spells, leveling and the cap, and the gear;
+   every CI job is green.
 4. `docs/architecture.md` and CLAUDE.md match the code; spike outcomes and changed decisions have ADRs.
-5. GitHub Release v0.1.0 (jar and pack), built from a tag.
 
-## M2: Gear and loot
+## M2: The world of chapters 1 and 2
 
-Outline: Apotheosis's five rarities (mythic shown as Legendary), affixes, gems and sockets and its reforging,
-fitted to our stats and generated from our YAML ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md),
-[Apotheosis design](design/apotheosis.md)), with loot by the player's world tier, not an item level; RNG item
-chests (as items); quest choice rewards with pre-rolled gear; Curios with the first
-curios; more weapon and armor sets; simple craftable foods and potions with weak, long-lasting buffs (a few percent,
-more against one mob type, for example +5% damage for an hour or +8% against undead), brewable without the Nether
-([ADR 0025](decisions/0025-remove-the-nether-and-end.md)). Probably also the full-pack registry dump for the ID
-universe ([ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)), once content
-references other mods' items. Apotheosis leaves M2 far smaller than planned, so the Overworld chapter's content and
-the first world-structure dungeons join it (Matěj, 2026-10-19, RLM-264,
-[ADR 0044](decisions/0044-third-party-mods-by-milestone.md)):
+**Goal:** the world the finished character plays in: the first two chapters of the v1 realm layout (Matěj, RLM-188,
+[realm design](design/realms.md)), chapter 1 in Overworld (levels 1-10) and chapter 2 in Undervault (levels 6-18),
+about 12 hours for an average player by the [XP model](design/leveling.md). It is built and balanced only once M1's
+character works to level 18, and v0.1.0 is released at its end (Matěj, 2026-10-29, RLM-7).
 
-- **Gear and tooltip mods** (RLM-314): Artifacts and Immersive Armors after their catalogues, from which Matěj picks
-  what stays (RLM-312, RLM-313; Artifacts' curio items wait for his word on ADR 0025's curio rule), Legendary
-  Tooltips, Item Borders, YDM's Weapon Master.
+**No M2 task enters a sprint before M1's [definition of done](#definition-of-done) holds**, unless Matěj says so.
+Technical "after" links alone never make world work ready
+([ADR 0058](decisions/0058-player-systems-before-world-content.md)). Documents written before 2026-10-29 call the
+first stage of this milestone M1 (the chapters' short versions, with the quest book as the only voice) and the rest
+M2; both stages are M2's now.
+
+### Scope
+
+| Area | M2 content |
+| --- | --- |
+| Chapters | 2: Overworld (chapter 1, levels 1-10) and Undervault (chapter 2, levels 6-18); each chapter's last quest grants the advancement that raises the level cap (D2) |
+| Dimension | 1 custom dimension, the stone realm: one giant cave with a single walkable floor (Undervault, [realm design](design/realms.md#the-stone-realm)), with its textures; data-driven worldgen, locked until chapter 1's main questline unlocks it, entered through the realm portal |
+| Mobs | 1-2 custom mob types for the dungeons (proposal D11) with real models, textures and animations, Undervault's own mobs, and mob levels for dungeons and structures |
+| Dungeons | 2 procedural, instanced dungeon types: one ends in the boss's lair, one in a treasury with no boss; the world-structure dungeons of Overworld and Undervault |
+| Bosses | Astone, the Unbroken: 3 phases, on the ground, no blindness or darkness, balanced against the finished character; Overworld's final boss, an elite Illusioner |
+| Quests | chapters 1 and 2, about 25-30 quests, generated into FTB Quests, with XP rewards, quest choice rewards with pre-rolled gear, and RNG item chests |
+| World | default gamerules, Night Vision toggle, griefing protection (R1); illagers and villages; simple foods and potions; coins and merchants ([ADR 0040](decisions/0040-coins-and-data-driven-merchant-trades.md)) |
+| Pack | Lootr ([ADR 0041](decisions/0041-dungeon-containers-hold-loot-through-lootr.md)), the structure, dungeon, illager and village mods of [ADR 0044](decisions/0044-third-party-mods-by-milestone.md) |
+| Release | v0.1.0, built from a tag (D7) |
+
+**Not in M2:** dungeon parties: instances are solo (decision D8); parties come later (RLM-68). The gated ores
+(RLM-194, M4), and changes to the Nether and End apart from strongholds off
+([ADR 0044](decisions/0044-third-party-mods-by-milestone.md)).
+
+**Order:** the realm, its mobs, the dungeons and the boss; the rest of the world; then the quests and the release.
+"After" in a task names what must be merged first.
+
+### Phase 1: realm, mobs, dungeons and the boss
+
+- **W2a Stone realm** (RLM-32, M, after W1 and C2). Worldgen JSON for the stone realm
+  ([realm design](design/realms.md#the-stone-realm): one giant cave with a single walkable floor, common stone of
+  about hardness 25, ancient debris below the floor, no weather; RLM-188), its dimension type (the coordinate scale
+  the realm portal links by, beds that set no spawn) and its dimension rules; the `realmforge:requirement_type`
+  registry with its first types; `content/realms/` with the realm's unlock advancement, which chapter 1's last main
+  quest grants; access refused on every way in without the unlock, mobs kept out, respawn always in Overworld
+  ([realm portal design](design/realm-portal.md)). *Done when:* GameTests show a player teleported into the realm
+  refused before the unlock and allowed after it, a mob teleported in staying where it is, and a death in the realm
+  respawning in Overworld.
+- **W2b Realm portal** (RLM-154, M, after W2a). Access through the realm portal
+  ([realm portal design](design/realm-portal.md)): the frame, the sealstone and the stone realm's signet, a
+  chapter 1 quest reward; Nether-like linking in both directions at the realm's coordinate scale, to a portal near
+  the scaled position or one built there. *Done when:* GameTests show the portal refusing a player before the unlock
+  and passing them after it, and a trip into the realm and back that links to the portals at the scaled positions
+  or builds them.
+- **Undervault's textures and worldgen** (RLM-266 to RLM-270) and **the realm portal's art and rules** (RLM-300,
+  RLM-301, RLM-306, RLM-337, RLM-358, RLM-394).
+- **W3 Custom mobs** (RLM-33, M, after W1 and C3a; D11). 1-2 custom mob types for the dungeons (archetypes: melee and
+  caster), GeckoLib models, loot tables without trash. *Done when:* GameTests check that they spawn with levels and
+  drop valid loot. Their real models, textures and animations (A2, RLM-350, RLM-401, RLM-453, RLM-385), and mob
+  levels for dungeons (RLM-240, RLM-304, RLM-305).
+- **W4 Dungeon framework** (RLM-34, L, after spike 3 and W1). The instance dimension from spike 3;
+  `realmforge:dungeon_type`; the room format and its validation (`content/rooms/`); the pure planner and layout
+  with fuzz tests; the builder with data markers and chunk tickets; `InstanceManager`; entry through a temporary
+  dungeon portal that a dungeon key opens for its player alone (D8), open for the dungeon type's time with warnings
+  before it closes and sends everyone back, and exit at any time by the dungeon exit or `/instance leave`; a completed
+  run closes 5 minutes later; the rules inside (Adventure mode plus guards for non-player edits and for items with
+  `can_break` or `can_place_on`, [architecture 15.5](architecture.md#155-instances)); QA commands to preview a layout
+  and enter a dungeon. *Done when:* GameTests build and enter an instance, open a portal with a key, close it by its
+  timer and by the last player's `/instance leave`, and check the completion's 5 minutes, and a bucket (a plain one,
+  and water, lava and empty buckets with `can_place_on`), flint and steel, an axe, a hoe, a tool with `can_break`,
+  placing and breaking all leave the room unchanged.
+- **W5 Boss** (RLM-35, L, after C3a and W3). `realmforge:boss`, `BossPhaseMachine`, abilities through the spell engine,
+  the boss entity and model, the phase name in the boss bar, arena rules, loot. The boss is tested on its own,
+  before any dungeon references it. *Done when:* GameTests cover every phase change. Astone is finished with custom
+  particles, models, textures and animations once Undervault's textures exist, then balanced against the finished
+  character (RLM-7); the boss bar (RLM-174).
+- **W6 Two dungeon types** (RLM-36, L, after W4 and W5). Type A ends in the boss's lair; type B ends in a treasury with
+  traps and a vault, without a boss. Its rooms come from A4 (generated and imported,
+  [ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)); agents assemble variants and set encounter
+  and loot budgets. Both types put the netherite upgrade smithing template into their loot, fairly often (Matěj,
+  RLM-188). No container in a dungeon is empty: every chest and barrel holds loot worth a few mob kills, per player
+  through Lootr, which joins the pack with it (Matěj, 2026-10-19,
+  [ADR 0041](decisions/0041-dungeon-containers-hold-loot-through-lootr.md),
+  [container loot](design/container-loot.md)).
+
+### Phase 2: the rest of the world
+
+The world content of the old M2 outline (Matěj, 2026-10-19, RLM-264,
+[ADR 0044](decisions/0044-third-party-mods-by-milestone.md)), whose gear moved to M1:
+
 - **World-structure dungeons, moved from M4,** for Overworld and Undervault, each structure only in its realm
   ([realm design](design/realms.md#structures-from-other-mods)): Overworld's structure and dungeon mods (RLM-315:
   YUNG's suite, Dungeons and Taverns, MVS, Battle Towers, Dungeons Enhanced, Underground Worlds; Structory waits for
   Matěj's reading of its Stardust Labs License), Undervault's from other mods in its stones (RLM-316), and our own
   dungeon types as world structures, starting with Undervault's dwarf-like fortress (RLM-317).
+- **Undervault's own structures and mobs:** the Hewn's Mine (RLM-429), Halcyar's Chamber and the gem ores
+  (RLM-433), from [chapter 2](lore/chapters/02-the-weight-of-stone.md).
 - **Illagers and villages** (RLM-318): Illager Invasion, It Takes a Pillage, Illager Warship, ChoiceTheorem's
   Overhauled Village with Village Taverns, Villager Names, Ender Zoology.
 - **The Overworld chapter's content:** its main questline (2–3 zombie, skeleton or spider dungeons, then pillagers,
@@ -360,6 +419,52 @@ the first world-structure dungeons join it (Matěj, 2026-10-19, RLM-264,
 - **Our own Structure Compass, moved from M4** (RLM-319): every structure of the dimension, with filtering and search
   by group, an early quest reward.
 - **Painting variants of our own** (RLM-322), one set per dungeon theme.
+- **Simple craftable foods and potions** with weak, long-lasting buffs (a few percent, more against one mob type, for
+  example +5% damage for an hour or +8% against undead), brewable without the Nether
+  ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)).
+- **RNG item chests** (as items) and quest choice rewards with pre-rolled gear.
+
+### Phase 3: story, polish, release
+
+- **Q1 Quest pipeline** (RLM-37, L, after C2). `content/quests/` (chapters exist since C2) to FTB Quests SNBT with
+  stable ids, advancements, our criteria triggers and statistics, lang; `CommandReward`s with `permission_level: 2`
+  for our commands; `packwiz refresh` after generation; quest validation (where, how, with what; boss levels from
+  data). Finishes the quest half of research spike 2. *Done when:* pytest checks the generated SNBT, including that
+  every chapter reward is a per-player, auto-claimed `AdvancementReward`
+  ([architecture 16](architecture.md#16-progression-and-quests)).
+- **Q2 Chapters 1 and 2** (RLM-38, M, after Q1 and W6). About 25-30 quests with lore set in Realmforge: the two main
+  questlines of the [lore outline's beats](lore/outline.md#chapters-1-and-2) plus side quests, rewards from
+  the gear set, XP rewards; each chapter's last quest grants its chapter advancement (RLM-188).
+- **Coins and merchants** ([ADR 0040](decisions/0040-coins-and-data-driven-merchant-trades.md),
+  [coins and trades](research/coins-and-trades.md)).
+- **R1 World rules** (RLM-42, S, after F1; D6). Default gamerules for new worlds, griefing protection, Night Vision.
+- **R2 Release pipeline** (RLM-44, M, after Q2; D7, D9). A workflow that builds the jar and the pack from a `v*` tag
+  ([ADR 0008](decisions/0008-distribution-github-and-curseforge.md)), version 0.1.0, changelog, README.
+- **R3 Playtest and balance** (RLM-45, M, repeated, after Q2). Matěj plays the slice in Prism; agents fix what he
+  finds; a spark profile on his PC.
+
+### Assets (parallel)
+
+Placeholders are generated until real art exists ([ADR 0007](decisions/0007-asset-pipeline.md)).
+
+- **A2 Models and animations** (RLM-48) for the custom mobs and the boss (GeckoLib; Blockbench MCP, installed only with
+  Matěj's approval). UV-mapped entity textures need his eye ([ADR 0007](decisions/0007-asset-pipeline.md)).
+- **A4 Rooms** (RLM-50): rooms generated from YAML room specs by our room generator, plus an imported baseline of
+  MIT, CC0 and LGPL-3.0 rooms with their notices; nobody builds rooms by hand, and Matěj reviews them in a gallery
+  ([ADR 0028](decisions/0028-dungeon-rooms-generated-or-imported.md)).
+
+### Definition of done
+
+1. The full pack boots in CI and plays in Prism on Matěj's PC with acceptable performance (spark profile).
+2. In a new world a player can create a character (1 race, 2 classes); reach level 10 by killing mobs and
+   questing and stay there until chapter 1 is done; finish chapter 1 and see the level cap rise to 18; enter
+   Undervault once chapter 1's quest unlocks it; reach level 18 and stay there until chapter 2 is done; clear both
+   dungeon types, one ending with the boss and one without; beat the boss through all three phases; finish
+   chapter 2 and see the level cap rise to 30.
+3. JUnit covers the dungeon planner and layout, and the phase machine; GameTests cover the chapter bridge,
+   instances and boss phases; every CI job is green.
+4. `docs/architecture.md` and CLAUDE.md match the code; changed decisions have ADRs.
+5. GitHub Release v0.1.0 (jar and pack), built from a tag.
 
 ## M3: Classes and combat depth
 
@@ -399,7 +504,7 @@ start of the village, villager and trade overhaul, with trades paid in our own c
 - **The in-game guide** (RLM-116, [guide design](design/guide.md)): our own screen on `J` with nested tabs
   (Realms, Dungeons, Bosses, Character, Basics), search and chapter locks; each realm lists its ores, each dungeon
   its notable loot, each boss its full loot table with drop chances. It replaces EMI Loot and EMI Ores, which the
-  26.1.2 port removed, and its entries cover chapter 1's content too.
+  26.1.2 port removed, and its entries cover the content of chapters 1 and 2 too (RLM-188).
 
 ## M5: Professions and enchanting
 
@@ -481,8 +586,8 @@ decided, which wins over the proposal here.
 | D4 | RLM-54 | Spell key scheme | C3b | a separate spell bar with its own keys, leaving the item hotbar alone; spike 4 informs it |
 | D5 | RLM-55 | Primary stats | F4 | **Decided 2026-10-11 (RLM-55): strength, dexterity, vitality and intellect.** Vitality is the health stat, not called stamina so it is never confused with a stamina resource. Dexterity gives bonuses every class uses: critical strike chance (spells too), attack speed and movement speed (small, capped). Dodge is no Dexterity bonus: it is kept for future classes such as the Rogue and the Hunter. Luck and defense stay out. F4 (RLM-20) set the first numbers in `content/stat_rules/` |
 | D6 | RLM-56 | Destructive mobs | R1 | targeted protection (no terrain damage) instead of `mobGriefing=false`, as the research notes recommend |
-| D7 | RLM-57 | Release numbering | R2 | M1 is v0.1.0. The vision describes v0.1 as "everything, cut down"; the research report called v0.1 a vertical slice; this roadmap follows the report and the M1 brief |
-| D8 | RLM-58 | Who enters an instance | spike 3 | **Decided 2026-10-11 (RLM-58): solo only in M1.** Every player who enters gets their own instance; entry is a temporary portal opened with a dungeon key (W4); parties come later through our own command-based party system (RLM-68), not FTB Teams |
+| D7 | RLM-57 | Release numbering | R2 | **Amended 2026-10-29 (RLM-504): M2 is v0.1.0**, the world of chapters 1 and 2; M1, the character, ships no release of its own ([ADR 0058](decisions/0058-player-systems-before-world-content.md)). Before, M1 was v0.1.0: the vision describes v0.1 as "everything, cut down"; the research report called v0.1 a vertical slice, and the first plan followed the report and the M1 brief |
+| D8 | RLM-58 | Who enters an instance | spike 3 | **Decided 2026-10-11 (RLM-58): solo only in M1** (the dungeons are M2's since 2026-10-29, so solo only in M2). Every player who enters gets their own instance; entry is a temporary portal opened with a dungeon key (W4); parties come later through our own command-based party system (RLM-68), not FTB Teams |
 | D9 | RLM-59 | License of `content/`, `art/` and `docs/` | R2 | an ADR before the first release ([ADR 0009](decisions/0009-licensing.md) left it open); the quest texts feed the All Rights Reserved pack |
 | D10 | RLM-47 | Nether and End: overhaul or remove | M4 planning | **Decided 2026-10-12 (RLM-47): remove both** ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)). Their items get new sources (quests, trades, realm drops); Overworld is the starting area and the hub ([realm design](design/realms.md)). [ADR 0032](decisions/0032-v1-realm-layout-amends-the-nether-and-end-removal.md) amends it for the v1 layout (RLM-188): Overworld covers levels 1-10, Ashfire (the late fire realm) does not replace the Nether, and netherite comes from Undervault. Carried out in M4 |
-| D11 | RLM-60 | Custom mobs in M1 | W3 | 1-2 custom types (a melee and a caster archetype) plus leveled vanilla hostile mobs; every custom mob needs a model, animations and a UV texture that Matěj reviews, so more wait for M4 |
+| D11 | RLM-60 | Custom mobs in M2 (M1 until 2026-10-29) | W3 | 1-2 custom types (a melee and a caster archetype) plus leveled vanilla hostile mobs; every custom mob needs a model, animations and a UV texture that Matěj reviews, so more wait for M4 |

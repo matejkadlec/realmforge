@@ -19,6 +19,9 @@
   arena and Astone, with the quest book as the only voice. M2 brings the Hewn's Mine, the Golem Works, Halcyar's
   Chamber, the gem ores and the mirror scenes; Rubia's quest and Skyhearth come in M3 or later. The part [In M1](#in-m1)
   shows M1's short version.
+- **Milestones since 2026-10-29** (RLM-504,
+  [ADR 0058](../../decisions/0058-player-systems-before-world-content.md)): M1 is the character to level 18 and M2
+  the world of chapters 1 and 2. This chapter's M1 (the short version) is M2's first stage, and its M2 the rest of M2.
 
 ## Part 1: Under the World
 
@@ -291,7 +294,7 @@ key to the stone arena, where the keeper waits.
 
 - **Quest 11, "The Catacombs"** (beat 16; M1): clear them to the treasury. The treasury holds the arena key, every time.
 - **The dungeon** (W6, RLM-36): an instanced dungeon behind a Dungeon Portal Base, opened with the catacomb key, and a
-  dungeon type of its own, separate from Prisoner's Kingdom (decided 25 October), which is a real dungeon of the
+  dungeon type of its own, separate from Prisoner's Kingdom (decided 25 October), which is a real dungeon in
   Overworld, not only a test dungeon (decided 27 October, RLM-456). Each run is built for the player who opens it, so
   the story never gives it a fixed place.
 - **The riddles and light beams** come with the dungeon puzzle work, so M1's catacombs may have none yet.

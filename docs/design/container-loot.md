@@ -9,8 +9,9 @@
 - **No container is ever empty.** Every chest and barrel a player can open in a dungeon holds loot: W6's chest
   markers, the chests and barrels the imported rooms brought, the import dressing's barrels and the containers in
   set pieces. In Matěj's words, players expect loot, and an empty chest or barrel is disappointing.
-- **Lootr** (MIT, NeoForge 26.1.2 builds) joins the pack in **M1**: every player gets their own contents of the same
-  container. Loot cannot be balanced without it, or it would have to be balanced again once it comes.
+- **Lootr** (MIT, NeoForge 26.1.2 builds) joins the pack in **M2**, with the dungeons (M1 until 2026-10-29,
+  [ADR 0058](../decisions/0058-player-systems-before-world-content.md)): every player gets their own contents of the
+  same container. Loot cannot be balanced without it, or it would have to be balanced again once it comes.
 - **A container's loot is worth a few mob kills,** at the very least the time it took to open and loot it:
 
   | Container | Minimum | Medium | Maximum (a high roll) |
