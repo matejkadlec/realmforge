@@ -12,6 +12,7 @@ from pathlib import PurePosixPath
 
 from pydantic import BaseModel
 
+from realmforge_tools.apotheosis import Snapshot, fit, load_snapshot
 from realmforge_tools.content import Content, Entry, RoomEntry, SetPieceEntry, load_content
 from realmforge_tools.id_universe import IdUniverse, load_vanilla
 from realmforge_tools.problems import Problem, ValidationFailed
@@ -34,6 +35,12 @@ from realmforge_tools.rooms.set_pieces import piece_problems
 from realmforge_tools.rooms.structure import BlockState, StructureError, count_spawners
 from realmforge_tools.rooms.walk import walk_problems
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES, WORLDGEN_DIR
+from realmforge_tools.schema.apotheosis import (
+    CURIOS_LOOT_CATEGORIES,
+    LOOT_CATEGORIES,
+    RARITIES,
+    ApotheosisEntryDef,
+)
 from realmforge_tools.schema.block import ITEMLESS_KINDS, REALM_PORTAL_KINDS, SINGLE_BLOCK_KINDS
 from realmforge_tools.schema.chapter import advancement_id as chapter_advancement
 from realmforge_tools.schema.character import STARTING_BREAD, CharacterModifierDef
@@ -174,7 +181,11 @@ def load_and_validate(
     content = load_content(paths, skip_broken_kept_seeds=broken_kept_seeds is not None)
     universe = universe_with_content(load_vanilla(paths), content)
     _add_core_mod_worldgen(universe, paths)
-    problems = validate_content(content, universe) + _check_worldgen_clashes(content, paths)
+    problems = (
+        validate_content(content, universe)
+        + _check_worldgen_clashes(content, paths)
+        + _check_apotheosis(content, universe, paths)
+    )
     if broken_kept_seeds is not None:
         specs = {entry.source: entry.model.id for entry in content.room_specs}
         kept = []
@@ -262,7 +273,6 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_quests(content, universe)
     problems += _check_leveling_curves(content)
     problems += _check_kill_xp_multipliers(content, universe)
-    problems += _check_apotheosis_affixes(content, universe)
     return problems
 
 
@@ -2164,24 +2174,135 @@ def _check_kill_xp_multipliers(content: Content, universe: IdUniverse) -> list[P
     return problems
 
 
-def _check_apotheosis_affixes(content: Content, universe: IdUniverse) -> list[Problem]:
-    """Each entry replaces another Apotheosis affix, modifies an attribute that exists (vanilla's or our stats) and is
-    not exclusive with itself (architecture 19.4)."""
-    problems: list[Problem] = []
+def _check_apotheosis(content: Content, universe: IdUniverse, paths: RepoPaths) -> list[Problem]:
+    """Apotheosis's data, fitted (ADR 0062, architecture 19.4): every changed entry, remap and removed recipe names
+    something Apotheosis or vanilla has, a replaced field keeps Apotheosis's loot categories, rarities and affixes,
+    and no remapped stat is left where no remap applies (``realmforge_tools/apotheosis.py``)."""
+    try:
+        snapshot = load_snapshot(paths)
+    except FileNotFoundError as e:
+        return [Problem(paths.rel(paths.id_universe), "", str(e))]
+    problems = list(fit(content, snapshot).problems)
+    attributes = universe.registries.get(ATTRIBUTE_REGISTRY, set()) | _snapshot_attributes(snapshot)
+    for entry in [*content.apotheosis_affixes, *content.apotheosis_gems, *content.apotheosis_tier_augments]:
+        problems += _check_replaced_fields(entry, snapshot, attributes)
     seen: dict[str, str] = {}
-    for entry in content.apotheosis_affixes:
-        affix = entry.model
-        if affix.affix in seen:
+    for entry in content.apotheosis_stat_remaps:
+        remap = entry.model
+        if remap.source in seen:
             problems.append(
-                Problem(entry.source, "affix", f"{affix.affix} is already replaced by {seen[affix.affix]}")
+                Problem(entry.source, "source", f"{remap.source} is already remapped by {seen[remap.source]}")
             )
-        seen.setdefault(affix.affix, entry.source)
-        if not universe.contains(ATTRIBUTE_REGISTRY, affix.attribute):
+        seen.setdefault(remap.source, entry.source)
+        if remap.target is not None and not universe.contains(ATTRIBUTE_REGISTRY, remap.target):
             problems.append(
-                Problem(entry.source, "attribute", _unknown(affix.attribute, ATTRIBUTE_REGISTRY, universe))
+                Problem(entry.source, "target", _unknown(remap.target, ATTRIBUTE_REGISTRY, universe))
             )
-        if affix.affix in affix.exclusive_set:
-            problems.append(Problem(entry.source, "exclusive_set", f"{affix.affix} cannot exclude itself"))
+    replaced = {entry.model.replaces: entry.source for entry in content.recipes}
+    removed: dict[str, str] = {}
+    for entry in content.recipe_removals:
+        for n, recipe in enumerate(entry.model.recipes):
+            location = f"recipes.{n}"
+            if recipe.startswith(f"{MOD_ID}:"):
+                problems.append(
+                    Problem(
+                        entry.source, location, f"{recipe} is our own: change the item's or block's recipe"
+                    )
+                )
+            elif recipe not in snapshot.recipes and not universe.contains(RECIPE_REGISTRY, recipe):
+                problems.append(
+                    Problem(
+                        entry.source,
+                        location,
+                        f"neither vanilla nor Apotheosis {snapshot.version} has a recipe {recipe}",
+                    )
+                )
+            if recipe in removed:
+                problems.append(
+                    Problem(entry.source, location, f"{recipe} is already removed by {removed[recipe]}")
+                )
+            removed.setdefault(recipe, entry.source)
+            if recipe in replaced:
+                problems.append(Problem(entry.source, location, f"{replaced[recipe]} replaces {recipe}"))
+    return problems
+
+
+def _snapshot_attributes(snapshot: Snapshot) -> set[str]:
+    """Every attribute Apotheosis's own data names: Apothic Attributes' are not in the ID universe."""
+    found: set[str] = set()
+
+    def visit(value: object, name: str = "") -> None:
+        if isinstance(value, dict):
+            for key, item in value.items():
+                visit(item, key)
+        elif isinstance(value, list):
+            for item in value:
+                visit(item, name)
+        elif isinstance(value, str) and name in ("attribute", "attributes"):
+            found.add(value)
+
+    for kind in snapshot.entries.values():
+        visit(kind)
+    return found
+
+
+def _check_replaced_fields(
+    entry: Entry[ApotheosisEntryDef], snapshot: Snapshot, attributes: set[str]
+) -> list[Problem]:
+    """The fields an entry replaces that name loot categories, rarities, affixes or an attribute name ones that
+    exist."""
+    problems: list[Problem] = []
+    model = entry.model
+    for name, value in model.replace.items():
+        location = f"replace.{name}"
+        if name in ("categories", "types") and isinstance(value, list):
+            for n, category in enumerate(value):
+                if category in CURIOS_LOOT_CATEGORIES:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            f"{location}.{n}",
+                            f"{category} exists only with Curios, which the pack lacks: Apotheosis would skip the "
+                            "whole entry",
+                        )
+                    )
+                elif category not in LOOT_CATEGORIES:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            f"{location}.{n}",
+                            f"unknown loot category {category!r}; Apotheosis has {', '.join(LOOT_CATEGORIES)}",
+                        )
+                    )
+        elif name == "values" and model.KIND == "affixes" and isinstance(value, dict):
+            unknown = sorted(set(value) - set(RARITIES))
+            if unknown:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        location,
+                        f"unknown rarities {', '.join(unknown)}; Apotheosis has {', '.join(RARITIES)}",
+                    )
+                )
+        elif name == "definition" and model.KIND == "affixes" and isinstance(value, dict):
+            exclusive = value.get("exclusive_set", [])
+            for n, affix in enumerate(exclusive if isinstance(exclusive, list) else []):
+                if affix == model.target:
+                    problems.append(
+                        Problem(
+                            entry.source, f"{location}.exclusive_set.{n}", f"{affix} cannot exclude itself"
+                        )
+                    )
+                elif snapshot.entry("affixes", str(affix)) is None:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            f"{location}.exclusive_set.{n}",
+                            f"Apotheosis {snapshot.version} has no affix {affix}",
+                        )
+                    )
+        elif name == "attribute" and isinstance(value, str) and value not in attributes:
+            problems.append(Problem(entry.source, location, f"unknown attribute {value!r}"))
     return problems
 
 

@@ -25,7 +25,7 @@ import sys
 import time
 from pathlib import Path
 
-from realmforge_tools import gamelog, packboot, vanilla
+from realmforge_tools import apotheosis, gamelog, packboot, vanilla
 from realmforge_tools.art import gallery
 from realmforge_tools.art.palette import DEFAULT_PALETTE, PaletteError, load_gpl
 from realmforge_tools.art.texture import DEFAULT_SIZE, Image, TextureError, clean
@@ -67,6 +67,10 @@ def main(argv: list[str] | None = None) -> int:
     ids_commands = ids.add_subparsers(dest="ids_command", required=True)
     ids_vanilla = ids_commands.add_parser("vanilla", help="extract vanilla ids from the official server jar")
     ids_vanilla.add_argument("--version", default=MINECRAFT_VERSION)
+    ids_commands.add_parser(
+        "apotheosis",
+        help="snapshot the data of the Apotheosis jar pack/mods/apotheosis.pw.toml names (its affixes, gems, ...)",
+    )
     pack_boot = commands.add_parser(
         "pack-boot",
         help="boot the whole pack plus our mod jars on a server and a client; exit 1 on errors",
@@ -243,7 +247,10 @@ def main(argv: list[str] | None = None) -> int:
         return _set_pieces(args, paths)
 
     if args.command == "ids":
-        target = vanilla.extract(args.version, paths)
+        if args.ids_command == "apotheosis":
+            target = apotheosis.extract(paths)
+        else:
+            target = vanilla.extract(args.version, paths)
         print(f"Wrote {paths.rel(target)}")
         return 0
 

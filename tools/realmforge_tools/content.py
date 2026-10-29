@@ -28,6 +28,10 @@ from realmforge_tools.schema import (
     CONTENT_TYPES,
     WORLDGEN_DIR,
     ApotheosisAffixDef,
+    ApotheosisGemDef,
+    ApotheosisRarityDef,
+    ApotheosisStatRemapDef,
+    ApotheosisTierAugmentDef,
     BlockDef,
     BossDef,
     ChapterDef,
@@ -43,6 +47,7 @@ from realmforge_tools.schema import (
     RaceDef,
     RealmDef,
     RecipeOverrideDef,
+    RecipeRemovalDef,
     RoomSpecDef,
     RoomThemeDef,
     SoundGroupDef,
@@ -203,7 +208,12 @@ class Content:
     room_themes: tuple[Entry[RoomThemeDef], ...]
     realms: tuple[Entry[RealmDef], ...]
     apotheosis_affixes: tuple[Entry[ApotheosisAffixDef], ...]
+    apotheosis_gems: tuple[Entry[ApotheosisGemDef], ...]
+    apotheosis_tier_augments: tuple[Entry[ApotheosisTierAugmentDef], ...]
+    apotheosis_rarities: tuple[Entry[ApotheosisRarityDef], ...]
+    apotheosis_stat_remaps: tuple[Entry[ApotheosisStatRemapDef], ...]
     recipes: tuple[Entry[RecipeOverrideDef], ...]
+    recipe_removals: tuple[Entry[RecipeRemovalDef], ...]
     worldgen: tuple[WorldgenFile, ...]
     rooms: tuple[RoomEntry, ...] = ()
     room_reviews: tuple[RoomReview, ...] = ()
@@ -299,7 +309,12 @@ def load_content(
         room_themes=by_id(loaded["room_themes"]),
         realms=by_id(loaded["realms"]),
         apotheosis_affixes=by_id(loaded["apotheosis_affixes"]),
+        apotheosis_gems=by_id(loaded["apotheosis_gems"]),
+        apotheosis_tier_augments=by_id(loaded["apotheosis_tier_augments"]),
+        apotheosis_rarities=by_id(loaded["apotheosis_rarities"]),
+        apotheosis_stat_remaps=by_id(loaded["apotheosis_stat_remaps"]),
         recipes=by_id(loaded["recipes"]),
+        recipe_removals=by_id(loaded["recipe_removals"]),
         worldgen=tuple(sorted(worldgen, key=lambda f: (f.directory, f.id))),
         rooms=rooms,
         room_reviews=reviews,

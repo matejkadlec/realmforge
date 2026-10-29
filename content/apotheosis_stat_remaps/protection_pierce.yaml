@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_stat_remaps.schema.json
+# Protection pierce is switched off (RLM-205): Runebreaking, the bow bonuses of Breach and Molten Breach, Royalty's
+# share of it and the monsters' Summit and Pinnacle augments. Ours waits for Matěj's decision on what it pierces
+# (RLM-159).
+id: protection_pierce
+source: apothic_attributes:prot_pierce
+off: true

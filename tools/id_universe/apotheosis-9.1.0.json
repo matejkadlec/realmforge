@@ -1,0 +1,6627 @@
+{
+  "mod": "apotheosis",
+  "version": "9.1.0",
+  "jar": {
+    "file": "Apotheosis-26.1.2-9.1.0.jar",
+    "sha512": "8db33b929de427e0f2154d0007fb13cc6d3a95b30b6b68b8be265c3bd45f099a72284315e19203e3dd2662bbe1447b5c052eae4b014d7fd46b9edaaeb31b258c"
+  },
+  "source": "https://github.com/Shadows-of-Fire/Apotheosis",
+  "license": "MIT, Copyright (c) Shadows_of_Fire: Apotheosis's own data, unchanged",
+  "generated_by": "uv run rf ids apotheosis",
+  "affixes": {
+    "apotheosis:armor/attribute/adamantine": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:armor",
+      "categories": [
+        "apotheosis:chestplate",
+        "apotheosis:leggings"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_multiplied_base",
+      "values": {
+        "apotheosis:rare": {
+          "min": 0.15,
+          "max": 0.3
+        },
+        "apotheosis:epic": {
+          "min": 0.15,
+          "max": 0.3
+        },
+        "apotheosis:mythic": {
+          "min": 0.25,
+          "max": 0.4
+        }
+      }
+    },
+    "apotheosis:armor/attribute/aquatic": {
+      "type": "apotheosis:attribute",
+      "attribute": "neoforge:swim_speed",
+      "categories": [
+        "apotheosis:boots"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_multiplied_total",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.2,
+          "max": 0.3
+        },
+        "apotheosis:uncommon": {
+          "min": 0.2,
+          "max": 0.3
+        },
+        "apotheosis:rare": {
+          "min": 0.3,
+          "max": 0.5
+        },
+        "apotheosis:epic": {
+          "min": 0.3,
+          "max": 0.5
+        },
+        "apotheosis:mythic": {
+          "min": 0.4,
+          "max": 0.7
+        }
+      }
+    },
+    "apotheosis:armor/attribute/blessed": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:max_health",
+      "categories": [
+        "apotheosis:helmet",
+        "apotheosis:chestplate",
+        "apotheosis:leggings",
+        "apotheosis:boots"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:common": {
+          "min": 2.0,
+          "max": 4.0,
+          "step": 0.25
+        },
+        "apotheosis:uncommon": {
+          "min": 2.0,
+          "max": 5.0,
+          "step": 0.25
+        },
+        "apotheosis:rare": {
+          "min": 3.0,
+          "max": 6.0,
+          "step": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 3.0,
+          "max": 8.0,
+          "step": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 5.0,
+          "max": 8.0,
+          "step": 0.25
+        }
+      }
+    },
+    "apotheosis:armor/attribute/elastic": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:step_height",
+      "categories": [
+        "apotheosis:boots"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:common": 0.5,
+        "apotheosis:uncommon": 0.5,
+        "apotheosis:rare": {
+          "min": 0.5,
+          "max": 1.5,
+          "step": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 0.5,
+          "max": 1.5,
+          "step": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 1.0,
+          "max": 2.0,
+          "step": 0.25
+        }
+      }
+    },
+    "apotheosis:armor/attribute/fireproof": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:burning_time",
+      "categories": [
+        "apotheosis:helmet"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_multiplied_base",
+      "values": {
+        "apotheosis:uncommon": {
+          "min": -0.15,
+          "max": -0.35,
+          "step": -0.05
+        },
+        "apotheosis:rare": {
+          "min": -0.2,
+          "max": -0.4,
+          "step": -0.05
+        },
+        "apotheosis:epic": {
+          "min": -0.35,
+          "max": -0.75,
+          "step": -0.05
+        },
+        "apotheosis:mythic": {
+          "min": -0.6,
+          "max": -1.0,
+          "step": -0.05
+        }
+      }
+    },
+    "apotheosis:armor/attribute/fortunate": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:luck",
+      "categories": [
+        "apotheosis:helmet",
+        "apotheosis:chestplate",
+        "apotheosis:leggings",
+        "apotheosis:boots"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.5,
+          "max": 1.5,
+          "step": 0.25
+        },
+        "apotheosis:uncommon": {
+          "min": 0.5,
+          "max": 1.5,
+          "step": 0.25
+        },
+        "apotheosis:rare": {
+          "min": 1.5,
+          "max": 3.0,
+          "step": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 1.5,
+          "max": 3.5,
+          "step": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 3.0,
+          "max": 5.0,
+          "step": 0.25
+        }
+      }
+    },
+    "apotheosis:armor/attribute/gravitational": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:gravity",
+      "categories": [
+        "apotheosis:chestplate"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_multiplied_total",
+      "values": {
+        "apotheosis:common": {
+          "min": -0.1,
+          "max": -0.2,
+          "step": -0.01
+        },
+        "apotheosis:uncommon": {
+          "min": -0.1,
+          "max": -0.25,
+          "step": -0.01
+        },
+        "apotheosis:rare": {
+          "min": -0.15,
+          "max": -0.3,
+          "step": -0.01
+        },
+        "apotheosis:epic": {
+          "min": -0.15,
+          "max": -0.35,
+          "step": -0.01
+        },
+        "apotheosis:mythic": {
+          "min": -0.2,
+          "max": -0.5,
+          "step": -0.01
+        }
+      }
+    },
+    "apotheosis:armor/attribute/ironforged": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:armor",
+      "categories": [
+        "apotheosis:helmet",
+        "apotheosis:chestplate",
+        "apotheosis:leggings",
+        "apotheosis:boots"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:common": {
+          "min": 1.0,
+          "max": 1.5,
+          "step": 0.25
+        },
+        "apotheosis:uncommon": {
+          "min": 1.0,
+          "max": 1.5,
+          "step": 0.25
+        },
+        "apotheosis:rare": {
+          "min": 1.5,
+          "max": 3.0,
+          "step": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 2.0,
+          "max": 5.0,
+          "step": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 4.0,
+          "max": 8.0,
+          "step": 0.25
+        }
+      }
+    },
+    "apotheosis:armor/attribute/oxygenated": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:oxygen_bonus",
+      "categories": [
+        "apotheosis:helmet"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:uncommon": {
+          "min": 0.2,
+          "max": 0.3
+        },
+        "apotheosis:rare": {
+          "min": 0.35,
+          "max": 0.5
+        },
+        "apotheosis:epic": {
+          "min": 0.55,
+          "max": 0.7
+        },
+        "apotheosis:mythic": {
+          "min": 0.85,
+          "max": 1.25
+        }
+      }
+    },
+    "apotheosis:armor/attribute/spiritual": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:healing_received",
+      "categories": [
+        "apotheosis:chestplate",
+        "apotheosis:leggings"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_multiplied_base",
+      "values": {
+        "apotheosis:rare": {
+          "min": 0.1,
+          "max": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 0.15,
+          "max": 0.3
+        },
+        "apotheosis:mythic": {
+          "min": 0.2,
+          "max": 0.4
+        }
+      }
+    },
+    "apotheosis:armor/attribute/stalwart": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:knockback_resistance",
+      "categories": [
+        "apotheosis:helmet",
+        "apotheosis:chestplate",
+        "apotheosis:leggings",
+        "apotheosis:boots"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:uncommon": {
+          "min": 0.05,
+          "max": 0.1
+        },
+        "apotheosis:rare": {
+          "min": 0.05,
+          "max": 0.1
+        },
+        "apotheosis:epic": {
+          "min": 0.15,
+          "max": 0.2
+        },
+        "apotheosis:mythic": {
+          "min": 0.25,
+          "max": 0.35
+        }
+      }
+    },
+    "apotheosis:armor/attribute/steel_touched": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:armor_toughness",
+      "categories": [
+        "apotheosis:helmet",
+        "apotheosis:chestplate",
+        "apotheosis:leggings",
+        "apotheosis:boots"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:rare": 1.0,
+        "apotheosis:epic": {
+          "min": 1.5,
+          "max": 3.0,
+          "step": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 2.0,
+          "max": 6.0,
+          "step": 0.25
+        }
+      }
+    },
+    "apotheosis:armor/attribute/timekeeping": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:cooldown_reduction",
+      "categories": [
+        "apotheosis:helmet",
+        "apotheosis:chestplate",
+        "apotheosis:shield"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:rare": {
+          "min": 0.01,
+          "max": 0.05,
+          "step": 0.005
+        },
+        "apotheosis:epic": {
+          "min": 0.05,
+          "max": 0.075,
+          "step": 0.005
+        },
+        "apotheosis:mythic": {
+          "min": 0.05,
+          "max": 0.1,
+          "step": 0.005
+        }
+      }
+    },
+    "apotheosis:armor/attribute/unbound": {
+      "type": "apotheosis:attribute",
+      "attribute": "neoforge:creative_flight",
+      "categories": [
+        "apotheosis:chestplate"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [
+          "apotheosis:armor/attribute/winged"
+        ],
+        "weights": {
+          "pinnacle": {
+            "quality": 0.2,
+            "weight": 1
+          }
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:mythic": 1.0
+      }
+    },
+    "apotheosis:armor/attribute/windswept": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:movement_speed",
+      "categories": [
+        "apotheosis:leggings",
+        "apotheosis:boots"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_multiplied_total",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.1,
+          "max": 0.2
+        },
+        "apotheosis:uncommon": {
+          "min": 0.1,
+          "max": 0.25
+        },
+        "apotheosis:rare": {
+          "min": 0.15,
+          "max": 0.3
+        },
+        "apotheosis:epic": {
+          "min": 0.15,
+          "max": 0.4
+        },
+        "apotheosis:mythic": {
+          "min": 0.2,
+          "max": 0.45
+        }
+      }
+    },
+    "apotheosis:armor/attribute/winged": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:elytra_flight",
+      "categories": [
+        "apotheosis:chestplate"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:epic": 1.0,
+        "apotheosis:mythic": 1.0
+      }
+    },
+    "apotheosis:armor/dmg_reduction/blast_forged": {
+      "type": "apotheosis:damage_reduction",
+      "categories": [
+        "apotheosis:chestplate",
+        "apotheosis:leggings"
+      ],
+      "damage_type": "explosion",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "values": {
+        "apotheosis:common": {
+          "min": 0.05,
+          "max": 0.1
+        },
+        "apotheosis:uncommon": {
+          "min": 0.1,
+          "max": 0.15
+        },
+        "apotheosis:rare": {
+          "min": 0.15,
+          "max": 0.2
+        },
+        "apotheosis:epic": {
+          "min": 0.15,
+          "max": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 0.15,
+          "max": 0.35
+        }
+      }
+    },
+    "apotheosis:armor/dmg_reduction/blockading": {
+      "type": "apotheosis:damage_reduction",
+      "categories": [
+        "apotheosis:chestplate",
+        "apotheosis:leggings"
+      ],
+      "damage_type": "physical",
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "values": {
+        "apotheosis:common": {
+          "min": 0.01,
+          "max": 0.05
+        },
+        "apotheosis:uncommon": {
+          "min": 0.01,
+          "max": 0.05
+        },
+        "apotheosis:rare": {
+          "min": 0.05,
+          "max": 0.1
+        },
+        "apotheosis:epic": {
+          "min": 0.05,
+          "max": 0.1
+        },
+        "apotheosis:mythic": {
+          "min": 0.05,
+          "max": 0.15
+        }
+      }
+    },
+    "apotheosis:armor/dmg_reduction/deflective": {
+      "type": "apotheosis:damage_reduction",
+      "categories": [
+        "apotheosis:helmet",
+        "apotheosis:chestplate"
+      ],
+      "damage_type": "projectile",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "values": {
+        "apotheosis:common": {
+          "min": 0.05,
+          "max": 0.1
+        },
+        "apotheosis:uncommon": {
+          "min": 0.1,
+          "max": 0.15
+        },
+        "apotheosis:rare": {
+          "min": 0.15,
+          "max": 0.2
+        },
+        "apotheosis:epic": {
+          "min": 0.15,
+          "max": 0.2
+        },
+        "apotheosis:mythic": {
+          "min": 0.15,
+          "max": 0.3
+        }
+      }
+    },
+    "apotheosis:armor/dmg_reduction/feathery": {
+      "type": "apotheosis:damage_reduction",
+      "categories": [
+        "apotheosis:boots"
+      ],
+      "damage_type": "fall",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "values": {
+        "apotheosis:common": {
+          "min": 0.05,
+          "max": 0.1
+        },
+        "apotheosis:uncommon": {
+          "min": 0.1,
+          "max": 0.15
+        },
+        "apotheosis:rare": {
+          "min": 0.15,
+          "max": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 0.15,
+          "max": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 0.15,
+          "max": 0.4
+        }
+      }
+    },
+    "apotheosis:armor/dmg_reduction/grounded": {
+      "type": "apotheosis:damage_reduction",
+      "categories": [
+        "apotheosis:helmet",
+        "apotheosis:boots"
+      ],
+      "damage_type": "lightning",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "values": {
+        "apotheosis:common": {
+          "min": 0.05,
+          "max": 0.1
+        },
+        "apotheosis:uncommon": {
+          "min": 0.1,
+          "max": 0.15
+        },
+        "apotheosis:rare": {
+          "min": 0.15,
+          "max": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 0.15,
+          "max": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 0.15,
+          "max": 0.4
+        }
+      }
+    },
+    "apotheosis:armor/dmg_reduction/runed": {
+      "type": "apotheosis:damage_reduction",
+      "categories": [
+        "apotheosis:helmet",
+        "apotheosis:chestplate",
+        "apotheosis:leggings",
+        "apotheosis:boots"
+      ],
+      "damage_type": "magic",
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [
+          "apotheosis:armor/dmg_reduction/blockading"
+        ],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "values": {
+        "apotheosis:common": {
+          "min": 0.01,
+          "max": 0.05
+        },
+        "apotheosis:uncommon": {
+          "min": 0.01,
+          "max": 0.05
+        },
+        "apotheosis:rare": {
+          "min": 0.05,
+          "max": 0.1
+        },
+        "apotheosis:epic": {
+          "min": 0.05,
+          "max": 0.1
+        },
+        "apotheosis:mythic": {
+          "min": 0.05,
+          "max": 0.15
+        }
+      }
+    },
+    "apotheosis:armor/mob_effect/blinding": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "minecraft:blindness",
+      "target": "hurt_attacker",
+      "types": [
+        "apotheosis:helmet"
+      ],
+      "values": {
+        "apotheosis:uncommon": {
+          "duration": {
+            "min": 40.0,
+            "max": 80.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 300
+        },
+        "apotheosis:rare": {
+          "duration": {
+            "min": 40.0,
+            "max": 80.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 240
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 40.0,
+            "max": 80.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 240
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 60.0,
+            "max": 100.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 200
+        }
+      }
+    },
+    "apotheosis:armor/mob_effect/bolstering": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "minecraft:resistance",
+      "target": "hurt_self",
+      "types": [
+        "apotheosis:chestplate",
+        "apotheosis:leggings"
+      ],
+      "values": {
+        "apotheosis:uncommon": {
+          "duration": {
+            "min": 40.0,
+            "max": 100.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 240
+        },
+        "apotheosis:rare": {
+          "duration": {
+            "min": 80.0,
+            "max": 120.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 240
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 80.0,
+            "max": 140.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.2
+          },
+          "cooldown": 240
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 80.0,
+            "max": 160.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.5
+          },
+          "cooldown": 240
+        }
+      }
+    },
+    "apotheosis:armor/mob_effect/bursting": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [
+          "apotheosis:armor/mob_effect/revitalizing"
+        ],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "apothic_attributes:vitality",
+      "target": "hurt_self",
+      "types": [
+        "apotheosis:chestplate",
+        "apotheosis:leggings"
+      ],
+      "values": {
+        "apotheosis:epic": {
+          "duration": 200.0,
+          "amplifier": 0.0,
+          "cooldown": 300
+        },
+        "apotheosis:mythic": {
+          "duration": 200.0,
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          },
+          "cooldown": 300
+        }
+      }
+    },
+    "apotheosis:armor/mob_effect/nimble": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "minecraft:speed",
+      "target": "hurt_self",
+      "types": [
+        "apotheosis:leggings",
+        "apotheosis:boots"
+      ],
+      "values": {
+        "apotheosis:uncommon": {
+          "duration": {
+            "min": 100.0,
+            "max": 300.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 800
+        },
+        "apotheosis:rare": {
+          "duration": {
+            "min": 200.0,
+            "max": 400.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 800
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 200.0,
+            "max": 400.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 2.0,
+            "step": 0.25
+          },
+          "cooldown": 700
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 200.0,
+            "max": 400.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 2.0,
+            "step": 0.5
+          },
+          "cooldown": 600
+        }
+      }
+    },
+    "apotheosis:armor/mob_effect/revitalizing": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "minecraft:instant_health",
+      "target": "hurt_self",
+      "types": [
+        "apotheosis:chestplate",
+        "apotheosis:leggings"
+      ],
+      "values": {
+        "apotheosis:epic": {
+          "duration": 1.0,
+          "amplifier": 0.0,
+          "cooldown": 300
+        },
+        "apotheosis:mythic": {
+          "duration": 1.0,
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          },
+          "cooldown": 240
+        }
+      }
+    },
+    "apotheosis:boots/ability/steadfast": {
+      "type": "apotheosis:attribute_toggle",
+      "attributes": [
+        "minecraft:movement_speed",
+        "minecraft:step_height"
+      ],
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [
+          "apotheosis:boots/ability/unhurried",
+          "apotheosis:boots/ability/surefooted"
+        ],
+        "weights": {
+          "pinnacle": {
+            "quality": 0.75,
+            "weight": 20
+          }
+        }
+      },
+      "rarities": [
+        "apotheosis:mythic"
+      ]
+    },
+    "apotheosis:boots/ability/surefooted": {
+      "type": "apotheosis:attribute_toggle",
+      "attributes": [
+        "minecraft:step_height"
+      ],
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "rarities": [
+        "apotheosis:epic",
+        "apotheosis:mythic"
+      ]
+    },
+    "apotheosis:boots/ability/unhurried": {
+      "type": "apotheosis:attribute_toggle",
+      "attributes": [
+        "minecraft:movement_speed"
+      ],
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "rarities": [
+        "apotheosis:epic",
+        "apotheosis:mythic"
+      ]
+    },
+    "apotheosis:breaker/ability/enlightened": {
+      "type": "apotheosis:enlightened",
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "values": {
+        "apotheosis:rare": {
+          "min": 12.0,
+          "max": 8.0,
+          "step": -1.0
+        },
+        "apotheosis:epic": {
+          "min": 10.0,
+          "max": 5.0,
+          "step": -1.0
+        },
+        "apotheosis:mythic": {
+          "min": 5.0,
+          "max": 0.0,
+          "step": -1.0
+        }
+      }
+    },
+    "apotheosis:breaker/ability/sandforming": {
+      "type": "apotheosis:stoneforming",
+      "candidates": "#apotheosis:sandforming_candidates",
+      "categories": [
+        "apotheosis:breaker"
+      ],
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [
+          "apotheosis:breaker/ability/stoneforming"
+        ],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      }
+    },
+    "apotheosis:breaker/ability/stoneforming": {
+      "type": "apotheosis:stoneforming",
+      "candidates": "#apotheosis:stoneforming_candidates",
+      "categories": [
+        "apotheosis:breaker"
+      ],
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [
+          "apotheosis:breaker/ability/sandforming"
+        ],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      }
+    },
+    "apotheosis:breaker/ability/supermassive": {
+      "type": "apotheosis:radial",
+      "categories": [
+        "apotheosis:breaker"
+      ],
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [
+          "apotheosis:breaker/effect/radial"
+        ],
+        "weights": {
+          "pinnacle": {
+            "quality": 0.75,
+            "weight": 20
+          }
+        }
+      },
+      "values": {
+        "apotheosis:mythic": [
+          {
+            "x": 7,
+            "xOff": 0,
+            "y": 7,
+            "yOff": 0
+          }
+        ]
+      }
+    },
+    "apotheosis:breaker/attribute/destructive": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:block_break_speed",
+      "categories": [
+        "apotheosis:breaker",
+        "apotheosis:shears"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_multiplied_total",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.15,
+          "max": 0.3
+        },
+        "apotheosis:uncommon": {
+          "min": 0.15,
+          "max": 0.3
+        },
+        "apotheosis:rare": {
+          "min": 0.25,
+          "max": 0.5
+        },
+        "apotheosis:epic": {
+          "min": 0.25,
+          "max": 0.7
+        },
+        "apotheosis:mythic": {
+          "min": 0.55,
+          "max": 0.85
+        }
+      }
+    },
+    "apotheosis:breaker/attribute/experienced": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:experience_gained",
+      "categories": [
+        "apotheosis:breaker"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_multiplied_total",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.25,
+          "max": 0.4
+        },
+        "apotheosis:uncommon": {
+          "min": 0.25,
+          "max": 0.4
+        },
+        "apotheosis:rare": {
+          "min": 0.35,
+          "max": 0.5
+        },
+        "apotheosis:epic": {
+          "min": 0.35,
+          "max": 0.6
+        },
+        "apotheosis:mythic": {
+          "min": 0.55,
+          "max": 0.65
+        }
+      }
+    },
+    "apotheosis:breaker/attribute/lengthy": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:block_interaction_range",
+      "categories": [
+        "apotheosis:breaker"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.5,
+          "max": 1.5,
+          "step": 0.25
+        },
+        "apotheosis:uncommon": {
+          "min": 0.5,
+          "max": 1.5,
+          "step": 0.25
+        },
+        "apotheosis:rare": {
+          "min": 1.0,
+          "max": 2.5,
+          "step": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 1.0,
+          "max": 2.5,
+          "step": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 1.5,
+          "max": 4.0,
+          "step": 0.25
+        }
+      }
+    },
+    "apotheosis:breaker/attribute/submerged": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:submerged_mining_speed",
+      "categories": [
+        "apotheosis:breaker"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.1,
+          "max": 0.3
+        },
+        "apotheosis:uncommon": {
+          "min": 0.2,
+          "max": 0.3
+        },
+        "apotheosis:rare": {
+          "min": 0.3,
+          "max": 0.5
+        },
+        "apotheosis:epic": {
+          "min": 0.4,
+          "max": 0.55
+        },
+        "apotheosis:mythic": {
+          "min": 0.5,
+          "max": 0.8
+        }
+      }
+    },
+    "apotheosis:breaker/effect/omnetic": {
+      "type": "apotheosis:omnetic",
+      "categories": [
+        "apotheosis:breaker"
+      ],
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 5.0,
+          "weight": 25
+        }
+      },
+      "values": {
+        "apotheosis:rare": {
+          "items": [
+            {
+              "id": "minecraft:iron_axe"
+            },
+            {
+              "id": "minecraft:iron_shovel"
+            },
+            {
+              "id": "minecraft:iron_pickaxe"
+            },
+            {
+              "id": "minecraft:iron_sword"
+            },
+            {
+              "id": "minecraft:iron_hoe"
+            }
+          ],
+          "name": "iron"
+        },
+        "apotheosis:epic": {
+          "items": [
+            {
+              "id": "minecraft:diamond_axe"
+            },
+            {
+              "id": "minecraft:diamond_shovel"
+            },
+            {
+              "id": "minecraft:diamond_pickaxe"
+            },
+            {
+              "id": "minecraft:diamond_sword"
+            },
+            {
+              "id": "minecraft:diamond_hoe"
+            }
+          ],
+          "name": "diamond"
+        },
+        "apotheosis:mythic": {
+          "items": [
+            {
+              "id": "minecraft:netherite_axe"
+            },
+            {
+              "id": "minecraft:netherite_shovel"
+            },
+            {
+              "id": "minecraft:netherite_pickaxe"
+            },
+            {
+              "id": "minecraft:netherite_sword"
+            },
+            {
+              "id": "minecraft:netherite_hoe"
+            }
+          ],
+          "name": "netherite"
+        }
+      }
+    },
+    "apotheosis:breaker/effect/radial": {
+      "type": "apotheosis:radial",
+      "categories": [
+        "apotheosis:breaker",
+        "apotheosis:shears"
+      ],
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 5.0,
+          "weight": 25
+        }
+      },
+      "values": {
+        "apotheosis:uncommon": [
+          {
+            "x": 1,
+            "xOff": 0,
+            "y": 2,
+            "yOff": 1
+          },
+          {
+            "x": 1,
+            "xOff": 0,
+            "y": 3,
+            "yOff": 0
+          },
+          {
+            "x": 3,
+            "xOff": 0,
+            "y": 2,
+            "yOff": 1
+          }
+        ],
+        "apotheosis:rare": [
+          {
+            "x": 1,
+            "xOff": 0,
+            "y": 3,
+            "yOff": 0
+          },
+          {
+            "x": 3,
+            "xOff": 0,
+            "y": 2,
+            "yOff": 1
+          }
+        ],
+        "apotheosis:epic": [
+          {
+            "x": 3,
+            "xOff": 0,
+            "y": 2,
+            "yOff": 1
+          },
+          {
+            "x": 3,
+            "xOff": 0,
+            "y": 3,
+            "yOff": 0
+          },
+          {
+            "x": 5,
+            "xOff": 0,
+            "y": 3,
+            "yOff": 0
+          }
+        ],
+        "apotheosis:mythic": [
+          {
+            "x": 3,
+            "xOff": 0,
+            "y": 3,
+            "yOff": 0
+          },
+          {
+            "x": 5,
+            "xOff": 0,
+            "y": 3,
+            "yOff": 0
+          },
+          {
+            "x": 5,
+            "xOff": 0,
+            "y": 5,
+            "yOff": 0
+          }
+        ]
+      }
+    },
+    "apotheosis:breaker/enchantment/prosperous": {
+      "type": "apotheosis:enchantment",
+      "categories": [
+        "apotheosis:breaker"
+      ],
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "enchantment": "minecraft:fortune",
+      "mode": "existing",
+      "values": {
+        "apotheosis:uncommon": 1.0,
+        "apotheosis:rare": {
+          "min": 1.0,
+          "max": 2.0,
+          "step": 0.5
+        },
+        "apotheosis:epic": {
+          "min": 1.0,
+          "max": 3.0,
+          "step": 0.5
+        },
+        "apotheosis:mythic": {
+          "min": 2.0,
+          "max": 4.0,
+          "step": 0.5
+        }
+      }
+    },
+    "apotheosis:breaker/mob_effect/spelunkers": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "minecraft:speed",
+      "target": "break_self",
+      "types": [
+        "apotheosis:breaker"
+      ],
+      "values": {
+        "apotheosis:uncommon": {
+          "duration": {
+            "min": 200.0,
+            "max": 300.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 600
+        },
+        "apotheosis:rare": {
+          "duration": {
+            "min": 300.0,
+            "max": 400.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 600
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 300.0,
+            "max": 460.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          },
+          "cooldown": 600
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 340.0,
+            "max": 500.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 2.0,
+            "step": 0.25
+          },
+          "cooldown": 600
+        }
+      }
+    },
+    "apotheosis:breaker/mob_effect/swift": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "minecraft:haste",
+      "target": "break_self",
+      "types": [
+        "apotheosis:breaker"
+      ],
+      "values": {
+        "apotheosis:uncommon": {
+          "duration": {
+            "min": 100.0,
+            "max": 200.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 600
+        },
+        "apotheosis:rare": {
+          "duration": {
+            "min": 200.0,
+            "max": 300.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 600
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 200.0,
+            "max": 360.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          },
+          "cooldown": 600
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 240.0,
+            "max": 400.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 2.0,
+            "step": 0.25
+          },
+          "cooldown": 600
+        }
+      }
+    },
+    "apotheosis:generic/attribute/lucky": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:luck",
+      "categories": [
+        "apotheosis:bow",
+        "apotheosis:breaker",
+        "apotheosis:helmet",
+        "apotheosis:chestplate",
+        "apotheosis:leggings",
+        "apotheosis:boots",
+        "apotheosis:shield",
+        "apotheosis:trident",
+        "apotheosis:melee_weapon",
+        "apotheosis:shears",
+        "apotheosis:charm"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:uncommon": {
+          "min": 1.0,
+          "max": 1.5,
+          "step": 0.25
+        },
+        "apotheosis:rare": {
+          "min": 2.0,
+          "max": 3.0,
+          "step": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 2.5,
+          "max": 4.0,
+          "step": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 3.0,
+          "max": 6.0,
+          "step": 0.25
+        }
+      }
+    },
+    "apotheosis:generic/telepathic": {
+      "type": "apotheosis:telepathic",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "rarities": [
+        "apotheosis:rare",
+        "apotheosis:epic",
+        "apotheosis:mythic"
+      ]
+    },
+    "apotheosis:melee/attribute/berserking": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:overheal",
+      "categories": [
+        "apotheosis:melee_weapon"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [
+          "apotheosis:melee/attribute/vampiric"
+        ],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.05,
+          "max": 0.1
+        },
+        "apotheosis:uncommon": {
+          "min": 0.05,
+          "max": 0.1
+        },
+        "apotheosis:rare": {
+          "min": 0.1,
+          "max": 0.2
+        },
+        "apotheosis:epic": {
+          "min": 0.1,
+          "max": 0.2
+        },
+        "apotheosis:mythic": {
+          "min": 0.15,
+          "max": 0.25
+        }
+      }
+    },
+    "apotheosis:melee/attribute/forceful": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:attack_knockback",
+      "categories": [
+        "apotheosis:melee_weapon"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.5,
+          "max": 1.0,
+          "step": 0.25
+        },
+        "apotheosis:uncommon": {
+          "min": 0.5,
+          "max": 1.5,
+          "step": 0.25
+        },
+        "apotheosis:rare": {
+          "min": 0.75,
+          "max": 2.5,
+          "step": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 1.0,
+          "max": 2.5,
+          "step": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 1.5,
+          "max": 3.0,
+          "step": 0.25
+        }
+      }
+    },
+    "apotheosis:melee/attribute/giant_slaying": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:current_hp_damage",
+      "categories": [
+        "apotheosis:melee_weapon"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "pinnacle": {
+            "quality": 0.75,
+            "weight": 15
+          }
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:epic": {
+          "min": 0.1,
+          "max": 0.2
+        },
+        "apotheosis:mythic": {
+          "min": 0.1,
+          "max": 0.25
+        }
+      }
+    },
+    "apotheosis:melee/attribute/glacial": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:cold_damage",
+      "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [
+          "apotheosis:melee/attribute/infernal"
+        ],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:uncommon": {
+          "min": 2.0,
+          "max": 4.0,
+          "step": 0.25
+        },
+        "apotheosis:rare": {
+          "min": 2.0,
+          "max": 5.0,
+          "step": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 4.0,
+          "max": 6.0,
+          "step": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 4.0,
+          "max": 10.0,
+          "step": 0.25
+        }
+      }
+    },
+    "apotheosis:melee/attribute/graceful": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:attack_speed",
+      "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_multiplied_total",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.15,
+          "max": 0.25
+        },
+        "apotheosis:uncommon": {
+          "min": 0.2,
+          "max": 0.3
+        },
+        "apotheosis:rare": {
+          "min": 0.2,
+          "max": 0.35
+        },
+        "apotheosis:epic": {
+          "min": 0.25,
+          "max": 0.5
+        },
+        "apotheosis:mythic": {
+          "min": 0.4,
+          "max": 0.85
+        }
+      }
+    },
+    "apotheosis:melee/attribute/infernal": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:fire_damage",
+      "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [
+          "apotheosis:melee/attribute/glacial"
+        ],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:uncommon": {
+          "min": 2.0,
+          "max": 4.0,
+          "step": 0.25
+        },
+        "apotheosis:rare": {
+          "min": 2.0,
+          "max": 5.0,
+          "step": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 4.0,
+          "max": 6.0,
+          "step": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 4.0,
+          "max": 10.0,
+          "step": 0.25
+        }
+      }
+    },
+    "apotheosis:melee/attribute/intricate": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:crit_chance",
+      "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident",
+        "apotheosis:bow"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.1,
+          "max": 0.2
+        },
+        "apotheosis:uncommon": {
+          "min": 0.1,
+          "max": 0.2
+        },
+        "apotheosis:rare": {
+          "min": 0.1,
+          "max": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 0.15,
+          "max": 0.35
+        },
+        "apotheosis:mythic": {
+          "min": 0.25,
+          "max": 0.55
+        }
+      }
+    },
+    "apotheosis:melee/attribute/lacerating": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:crit_damage",
+      "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident",
+        "apotheosis:bow"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.1,
+          "max": 0.2
+        },
+        "apotheosis:uncommon": {
+          "min": 0.1,
+          "max": 0.2
+        },
+        "apotheosis:rare": {
+          "min": 0.15,
+          "max": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 0.15,
+          "max": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 0.25,
+          "max": 0.4
+        }
+      }
+    },
+    "apotheosis:melee/attribute/lengthy": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:entity_interaction_range",
+      "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.5,
+          "max": 1.5,
+          "step": 0.25
+        },
+        "apotheosis:uncommon": {
+          "min": 0.5,
+          "max": 1.5,
+          "step": 0.25
+        },
+        "apotheosis:rare": {
+          "min": 0.75,
+          "max": 2.5,
+          "step": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 1.0,
+          "max": 2.5,
+          "step": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 1.5,
+          "max": 3.0,
+          "step": 0.25
+        }
+      }
+    },
+    "apotheosis:melee/attribute/murderous": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:attack_damage",
+      "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_multiplied_base",
+      "values": {
+        "apotheosis:rare": {
+          "min": 0.15,
+          "max": 0.43
+        },
+        "apotheosis:epic": {
+          "min": 0.18,
+          "max": 0.48
+        },
+        "apotheosis:mythic": {
+          "min": 0.25,
+          "max": 0.55
+        }
+      }
+    },
+    "apotheosis:melee/attribute/piercing": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:armor_pierce",
+      "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident",
+        "apotheosis:bow"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:common": {
+          "min": 2.0,
+          "max": 4.0,
+          "step": 0.25
+        },
+        "apotheosis:uncommon": {
+          "min": 2.0,
+          "max": 4.0,
+          "step": 0.25
+        },
+        "apotheosis:rare": {
+          "min": 4.0,
+          "max": 8.0,
+          "step": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 5.0,
+          "max": 10.0,
+          "step": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 5.0,
+          "max": 12.0,
+          "step": 0.25
+        }
+      }
+    },
+    "apotheosis:melee/attribute/vampiric": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:life_steal",
+      "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [
+          "apotheosis:melee/attribute/berserking"
+        ],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.05,
+          "max": 0.08
+        },
+        "apotheosis:uncommon": {
+          "min": 0.05,
+          "max": 0.08
+        },
+        "apotheosis:rare": {
+          "min": 0.05,
+          "max": 0.1
+        },
+        "apotheosis:epic": {
+          "min": 0.08,
+          "max": 0.13
+        },
+        "apotheosis:mythic": {
+          "min": 0.1,
+          "max": 0.15
+        }
+      }
+    },
+    "apotheosis:melee/attribute/violent": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:attack_damage",
+      "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:common": {
+          "min": 2.0,
+          "max": 3.0,
+          "step": 0.25
+        },
+        "apotheosis:uncommon": {
+          "min": 2.0,
+          "max": 3.0,
+          "step": 0.25
+        },
+        "apotheosis:rare": {
+          "min": 3.0,
+          "max": 5.0,
+          "step": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 4.0,
+          "max": 6.0,
+          "step": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 5.0,
+          "max": 8.0,
+          "step": 0.25
+        }
+      }
+    },
+    "apotheosis:melee/cleaving": {
+      "type": "apotheosis:cleaving",
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "values": {
+        "apotheosis:epic": {
+          "chance": {
+            "min": 0.3,
+            "max": 0.5,
+            "step": 0.05
+          },
+          "targets": {
+            "min": 2.0,
+            "max": 5.0,
+            "step": 1.0
+          }
+        },
+        "apotheosis:mythic": {
+          "chance": {
+            "min": 0.4,
+            "max": 0.6,
+            "step": 0.05
+          },
+          "targets": {
+            "min": 3.0,
+            "max": 6.0,
+            "step": 1.0
+          }
+        }
+      }
+    },
+    "apotheosis:melee/executing": {
+      "type": "apotheosis:executing",
+      "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident"
+      ],
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "values": {
+        "apotheosis:epic": {
+          "min": 0.1,
+          "max": 0.2
+        },
+        "apotheosis:mythic": {
+          "min": 0.15,
+          "max": 0.25
+        }
+      }
+    },
+    "apotheosis:melee/festive": {
+      "type": "apotheosis:festive",
+      "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident"
+      ],
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "values": {
+        "apotheosis:epic": {
+          "chance": {
+            "min": 0.02,
+            "max": 0.05,
+            "step": 0.005
+          },
+          "rolls": 20
+        },
+        "apotheosis:mythic": {
+          "chance": {
+            "min": 0.03,
+            "max": 0.06,
+            "step": 0.005
+          },
+          "rolls": 20
+        }
+      }
+    },
+    "apotheosis:melee/mob_effect/bloodletting": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "apothic_attributes:bleeding",
+      "stack_on_reapply": true,
+      "stacking_limit": 3,
+      "target": "attack_target",
+      "types": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident"
+      ],
+      "values": {
+        "apotheosis:uncommon": {
+          "duration": 100.0,
+          "amplifier": 0.0,
+          "cooldown": 80
+        },
+        "apotheosis:rare": {
+          "duration": {
+            "min": 100.0,
+            "max": 120.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 80
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 100.0,
+            "max": 120.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 80
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 100.0,
+            "max": 120.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.125
+          },
+          "cooldown": 80
+        }
+      }
+    },
+    "apotheosis:melee/mob_effect/caustic": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "apothic_attributes:sundering",
+      "stack_on_reapply": true,
+      "stacking_limit": 3,
+      "target": "attack_target",
+      "types": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident"
+      ],
+      "values": {
+        "apotheosis:rare": {
+          "duration": {
+            "min": 100.0,
+            "max": 180.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 60
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 100.0,
+            "max": 200.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.125
+          },
+          "cooldown": 60
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 200.0,
+            "max": 400.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          },
+          "cooldown": 60
+        }
+      }
+    },
+    "apotheosis:melee/mob_effect/elusive": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "minecraft:speed",
+      "stack_on_reapply": true,
+      "stacking_limit": 3,
+      "target": "attack_self",
+      "types": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident"
+      ],
+      "values": {
+        "apotheosis:uncommon": {
+          "duration": {
+            "min": 200.0,
+            "max": 400.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 300
+        },
+        "apotheosis:rare": {
+          "duration": {
+            "min": 200.0,
+            "max": 600.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 300
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 200.0,
+            "max": 600.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          },
+          "cooldown": 300
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 200.0,
+            "max": 800.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 2.0,
+            "step": 0.25
+          },
+          "cooldown": 300
+        }
+      }
+    },
+    "apotheosis:melee/mob_effect/omniscient": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [
+          "apotheosis:melee/mob_effect/sophisticated"
+        ],
+        "weights": {
+          "pinnacle": {
+            "quality": 0.75,
+            "weight": 20
+          }
+        }
+      },
+      "mob_effect": "apothic_attributes:knowledge",
+      "stack_on_reapply": true,
+      "stacking_limit": 8,
+      "target": "attack_self",
+      "types": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident"
+      ],
+      "values": {
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 100.0,
+            "max": 160.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.125
+          },
+          "cooldown": 80
+        }
+      }
+    },
+    "apotheosis:melee/mob_effect/sophisticated": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "apothic_attributes:knowledge",
+      "stack_on_reapply": true,
+      "stacking_limit": 3,
+      "target": "attack_self",
+      "types": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident"
+      ],
+      "values": {
+        "apotheosis:uncommon": {
+          "duration": {
+            "min": 400.0,
+            "max": 600.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 400
+        },
+        "apotheosis:rare": {
+          "duration": {
+            "min": 400.0,
+            "max": 800.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 400
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 400.0,
+            "max": 800.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          },
+          "cooldown": 400
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 400.0,
+            "max": 1000.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 2.0,
+            "step": 0.25
+          },
+          "cooldown": 400
+        }
+      }
+    },
+    "apotheosis:melee/mob_effect/weakening": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "minecraft:weakness",
+      "target": "attack_target",
+      "types": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident"
+      ],
+      "values": {
+        "apotheosis:uncommon": {
+          "duration": {
+            "min": 80.0,
+            "max": 140.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 300
+        },
+        "apotheosis:rare": {
+          "duration": {
+            "min": 80.0,
+            "max": 160.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 300
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 80.0,
+            "max": 180.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          },
+          "cooldown": 300
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 80.0,
+            "max": 200.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 2.0,
+            "step": 0.125
+          },
+          "cooldown": 300
+        }
+      }
+    },
+    "apotheosis:melee/thunderstruck": {
+      "type": "apotheosis:thunderstruck",
+      "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident"
+      ],
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "values": {
+        "apotheosis:epic": {
+          "min": 3.0,
+          "max": 6.0,
+          "step": 1.0
+        },
+        "apotheosis:mythic": {
+          "min": 4.0,
+          "max": 8.0,
+          "step": 1.0
+        }
+      }
+    },
+    "apotheosis:ranged/attribute/agile": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:draw_speed",
+      "categories": [
+        "apotheosis:bow"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_multiplied_total",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.2,
+          "max": 0.4
+        },
+        "apotheosis:uncommon": {
+          "min": 0.2,
+          "max": 0.4
+        },
+        "apotheosis:rare": {
+          "min": 0.3,
+          "max": 0.5
+        },
+        "apotheosis:epic": {
+          "min": 0.5,
+          "max": 0.6
+        },
+        "apotheosis:mythic": {
+          "min": 0.5,
+          "max": 0.65
+        }
+      }
+    },
+    "apotheosis:ranged/attribute/elven": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:arrow_damage",
+      "categories": [
+        "apotheosis:bow",
+        "apotheosis:trident"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_multiplied_total",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.15,
+          "max": 0.2
+        },
+        "apotheosis:uncommon": {
+          "min": 0.15,
+          "max": 0.25
+        },
+        "apotheosis:rare": {
+          "min": 0.2,
+          "max": 0.3
+        },
+        "apotheosis:epic": {
+          "min": 0.25,
+          "max": 0.35
+        },
+        "apotheosis:mythic": {
+          "min": 0.25,
+          "max": 0.4
+        }
+      }
+    },
+    "apotheosis:ranged/attribute/streamlined": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:arrow_velocity",
+      "categories": [
+        "apotheosis:bow",
+        "apotheosis:trident"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_multiplied_total",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.15,
+          "max": 0.2
+        },
+        "apotheosis:uncommon": {
+          "min": 0.15,
+          "max": 0.2
+        },
+        "apotheosis:rare": {
+          "min": 0.15,
+          "max": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 0.15,
+          "max": 0.3
+        },
+        "apotheosis:mythic": {
+          "min": 0.15,
+          "max": 0.35
+        }
+      }
+    },
+    "apotheosis:ranged/attribute/windswept": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:movement_speed",
+      "categories": [
+        "apotheosis:bow",
+        "apotheosis:trident"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_multiplied_total",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.15,
+          "max": 0.25
+        },
+        "apotheosis:uncommon": {
+          "min": 0.15,
+          "max": 0.3
+        },
+        "apotheosis:rare": {
+          "min": 0.15,
+          "max": 0.3
+        },
+        "apotheosis:epic": {
+          "min": 0.15,
+          "max": 0.35
+        },
+        "apotheosis:mythic": {
+          "min": 0.2,
+          "max": 0.4
+        }
+      }
+    },
+    "apotheosis:ranged/enchantment/prosperous": {
+      "type": "apotheosis:enchantment",
+      "categories": [
+        "apotheosis:bow"
+      ],
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "enchantment": "minecraft:looting",
+      "values": {
+        "apotheosis:epic": {
+          "min": 6.0,
+          "max": 8.0,
+          "step": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 8.0,
+          "max": 10.0,
+          "step": 0.25
+        }
+      }
+    },
+    "apotheosis:ranged/magical": {
+      "type": "apotheosis:magical",
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "rarities": [
+        "apotheosis:epic",
+        "apotheosis:mythic"
+      ]
+    },
+    "apotheosis:ranged/mob_effect/acidic": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "pinnacle": {
+            "quality": 0.75,
+            "weight": 20
+          }
+        }
+      },
+      "mob_effect": "apothic_attributes:sundering",
+      "stack_on_reapply": true,
+      "stacking_limit": 4,
+      "target": "arrow_target",
+      "types": [
+        "apotheosis:bow"
+      ],
+      "values": {
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 80.0,
+            "max": 160.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 40
+        }
+      }
+    },
+    "apotheosis:ranged/mob_effect/blighted": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "minecraft:wither",
+      "target": "arrow_target",
+      "types": [
+        "apotheosis:bow",
+        "apotheosis:trident"
+      ],
+      "values": {
+        "apotheosis:epic": {
+          "duration": {
+            "min": 160.0,
+            "max": 200.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          },
+          "cooldown": 300
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 160.0,
+            "max": 200.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 3.0,
+            "step": 0.25
+          },
+          "cooldown": 300
+        }
+      }
+    },
+    "apotheosis:ranged/mob_effect/deathbound": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [
+          "apotheosis:ranged/mob_effect/blighted"
+        ],
+        "weights": {
+          "pinnacle": {
+            "quality": 0.75,
+            "weight": 20
+          }
+        }
+      },
+      "mob_effect": "minecraft:wither",
+      "stack_on_reapply": true,
+      "stacking_limit": 4,
+      "target": "arrow_target",
+      "types": [
+        "apotheosis:bow",
+        "apotheosis:trident"
+      ],
+      "values": {
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 100.0,
+            "max": 200.0,
+            "step": 20.0
+          },
+          "amplifier": 1.0,
+          "cooldown": 40
+        }
+      }
+    },
+    "apotheosis:ranged/mob_effect/ensnaring": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "minecraft:slowness",
+      "target": "arrow_target",
+      "types": [
+        "apotheosis:bow",
+        "apotheosis:trident"
+      ],
+      "values": {
+        "apotheosis:uncommon": {
+          "duration": {
+            "min": 40.0,
+            "max": 80.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 160
+        },
+        "apotheosis:rare": {
+          "duration": {
+            "min": 40.0,
+            "max": 100.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 160
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 40.0,
+            "max": 120.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          },
+          "cooldown": 160
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 80.0,
+            "max": 160.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 2.0,
+            "step": 0.25
+          },
+          "cooldown": 160
+        }
+      }
+    },
+    "apotheosis:ranged/mob_effect/fleeting": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "minecraft:speed",
+      "target": "arrow_self",
+      "types": [
+        "apotheosis:bow",
+        "apotheosis:trident"
+      ],
+      "values": {
+        "apotheosis:uncommon": {
+          "duration": {
+            "min": 100.0,
+            "max": 200.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0
+        },
+        "apotheosis:rare": {
+          "duration": {
+            "min": 100.0,
+            "max": 200.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 100.0,
+            "max": 200.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          }
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 100.0,
+            "max": 300.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 2.0,
+            "step": 0.25
+          }
+        }
+      }
+    },
+    "apotheosis:ranged/mob_effect/grievous": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "apothic_attributes:grievous",
+      "target": "arrow_target",
+      "types": [
+        "apotheosis:bow",
+        "apotheosis:trident"
+      ],
+      "values": {
+        "apotheosis:uncommon": {
+          "duration": 200.0,
+          "amplifier": 0.0,
+          "cooldown": 500
+        },
+        "apotheosis:rare": {
+          "duration": {
+            "min": 200.0,
+            "max": 300.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 500
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 200.0,
+            "max": 300.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          },
+          "cooldown": 400
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 200.0,
+            "max": 300.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 2.0,
+            "step": 0.25
+          },
+          "cooldown": 400
+        }
+      }
+    },
+    "apotheosis:ranged/mob_effect/ivy_laced": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "minecraft:poison",
+      "stack_on_reapply": true,
+      "stacking_limit": 5,
+      "target": "arrow_target",
+      "types": [
+        "apotheosis:bow",
+        "apotheosis:trident"
+      ],
+      "values": {
+        "apotheosis:rare": {
+          "duration": {
+            "min": 100.0,
+            "max": 160.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 40
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 100.0,
+            "max": 160.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          },
+          "cooldown": 40
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 100.0,
+            "max": 200.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 2.0,
+            "step": 0.25
+          },
+          "cooldown": 40
+        }
+      }
+    },
+    "apotheosis:ranged/mob_effect/shulkers": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "minecraft:levitation",
+      "target": "arrow_target",
+      "types": [
+        "apotheosis:bow"
+      ],
+      "values": {
+        "apotheosis:epic": {
+          "duration": {
+            "min": 20.0,
+            "max": 80.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          },
+          "cooldown": 140
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 20.0,
+            "max": 100.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 2.0,
+            "step": 0.25
+          },
+          "cooldown": 140
+        }
+      }
+    },
+    "apotheosis:ranged/spectral": {
+      "type": "apotheosis:spectral",
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "values": {
+        "apotheosis:epic": {
+          "min": 0.2,
+          "max": 0.5
+        },
+        "apotheosis:mythic": {
+          "min": 0.3,
+          "max": 0.7
+        }
+      }
+    },
+    "apotheosis:shears/effect/gardening": {
+      "type": "apotheosis:stoneforming",
+      "candidates": "#apotheosis:gardening_candidates",
+      "categories": [
+        "apotheosis:shears"
+      ],
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [
+          "apotheosis:shears/effect/leafforming"
+        ],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      }
+    },
+    "apotheosis:shears/effect/leafforming": {
+      "type": "apotheosis:stoneforming",
+      "candidates": "#apotheosis:leafforming_candidates",
+      "categories": [
+        "apotheosis:shears"
+      ],
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [
+          "apotheosis:shears/effect/gardening"
+        ],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      }
+    },
+    "apotheosis:shield/attribute/ironforged": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:armor",
+      "categories": [
+        "apotheosis:shield"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_multiplied_base",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.1,
+          "max": 0.15
+        },
+        "apotheosis:uncommon": {
+          "min": 0.1,
+          "max": 0.15
+        },
+        "apotheosis:rare": {
+          "min": 0.15,
+          "max": 0.2
+        },
+        "apotheosis:epic": {
+          "min": 0.15,
+          "max": 0.25
+        },
+        "apotheosis:mythic": {
+          "min": 0.2,
+          "max": 0.3
+        }
+      }
+    },
+    "apotheosis:shield/attribute/stalwart": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:knockback_resistance",
+      "categories": [
+        "apotheosis:shield"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.1,
+          "max": 0.2
+        },
+        "apotheosis:uncommon": {
+          "min": 0.1,
+          "max": 0.2
+        },
+        "apotheosis:rare": {
+          "min": 0.2,
+          "max": 0.3
+        },
+        "apotheosis:epic": {
+          "min": 0.2,
+          "max": 0.3
+        },
+        "apotheosis:mythic": {
+          "min": 0.25,
+          "max": 0.35
+        }
+      }
+    },
+    "apotheosis:shield/attribute/steel_touched": {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:armor_toughness",
+      "categories": [
+        "apotheosis:shield"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_multiplied_base",
+      "values": {
+        "apotheosis:rare": {
+          "min": 0.15,
+          "max": 0.2
+        },
+        "apotheosis:epic": {
+          "min": 0.15,
+          "max": 0.2
+        },
+        "apotheosis:mythic": {
+          "min": 0.2,
+          "max": 0.3
+        }
+      }
+    },
+    "apotheosis:shield/catalyzing": {
+      "type": "apotheosis:catalyzing",
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "values": {
+        "apotheosis:epic": {
+          "min": 200.0,
+          "max": 400.0,
+          "step": 20.0
+        },
+        "apotheosis:mythic": {
+          "min": 300.0,
+          "max": 600.0,
+          "step": 20.0
+        }
+      }
+    },
+    "apotheosis:shield/mob_effect/devilish": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "apothic_attributes:bleeding",
+      "stack_on_reapply": true,
+      "stacking_limit": 4,
+      "target": "block_attacker",
+      "types": [
+        "apotheosis:shield"
+      ],
+      "values": {
+        "apotheosis:uncommon": {
+          "duration": 100.0,
+          "amplifier": 0.0,
+          "cooldown": 40
+        },
+        "apotheosis:rare": {
+          "duration": {
+            "min": 100.0,
+            "max": 120.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 40
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 100.0,
+            "max": 140.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.125
+          },
+          "cooldown": 40
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 100.0,
+            "max": 140.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          },
+          "cooldown": 40
+        }
+      }
+    },
+    "apotheosis:shield/mob_effect/galvanizing": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [
+          "apotheosis:shield/mob_effect/reinforcing"
+        ],
+        "weights": {
+          "pinnacle": {
+            "quality": 0.75,
+            "weight": 20
+          }
+        }
+      },
+      "mob_effect": "minecraft:resistance",
+      "stack_on_reapply": true,
+      "stacking_limit": 3,
+      "target": "block_self",
+      "types": [
+        "apotheosis:shield"
+      ],
+      "values": {
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 100.0,
+            "max": 160.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.125
+          },
+          "cooldown": 80
+        }
+      }
+    },
+    "apotheosis:shield/mob_effect/reinforcing": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "minecraft:resistance",
+      "target": "block_self",
+      "types": [
+        "apotheosis:shield"
+      ],
+      "values": {
+        "apotheosis:rare": {
+          "duration": {
+            "min": 120.0,
+            "max": 180.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 200
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 120.0,
+            "max": 200.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          },
+          "cooldown": 200
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 160.0,
+            "max": 240.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.5
+          },
+          "cooldown": 200
+        }
+      }
+    },
+    "apotheosis:shield/mob_effect/venomous": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "minecraft:poison",
+      "stack_on_reapply": true,
+      "stacking_limit": 4,
+      "target": "block_attacker",
+      "types": [
+        "apotheosis:shield"
+      ],
+      "values": {
+        "apotheosis:uncommon": {
+          "duration": 120.0,
+          "amplifier": 0.0,
+          "cooldown": 200
+        },
+        "apotheosis:rare": {
+          "duration": {
+            "min": 120.0,
+            "max": 180.0,
+            "step": 20.0
+          },
+          "amplifier": 0.0,
+          "cooldown": 200
+        },
+        "apotheosis:epic": {
+          "duration": {
+            "min": 120.0,
+            "max": 200.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.25
+          },
+          "cooldown": 120
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 160.0,
+            "max": 240.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.5
+          },
+          "cooldown": 120
+        }
+      }
+    },
+    "apotheosis:shield/mob_effect/withering": {
+      "type": "apotheosis:mob_effect",
+      "definition": {
+        "affix_type": "basic_effect",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "mob_effect": "minecraft:wither",
+      "target": "block_attacker",
+      "types": [
+        "apotheosis:shield"
+      ],
+      "values": {
+        "apotheosis:epic": {
+          "duration": {
+            "min": 40.0,
+            "max": 100.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.5
+          }
+        },
+        "apotheosis:mythic": {
+          "duration": {
+            "min": 60.0,
+            "max": 160.0,
+            "step": 20.0
+          },
+          "amplifier": {
+            "min": 0.0,
+            "max": 2.0,
+            "step": 0.25
+          }
+        }
+      }
+    },
+    "apotheosis:shield/psychic": {
+      "type": "apotheosis:psychic",
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "values": {
+        "apotheosis:epic": {
+          "min": 0.5,
+          "max": 0.9
+        },
+        "apotheosis:mythic": {
+          "min": 0.6,
+          "max": 1.2
+        }
+      }
+    },
+    "apotheosis:shield/retreating": {
+      "type": "apotheosis:retreating",
+      "definition": {
+        "affix_type": "ability",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "rarities": [
+        "apotheosis:epic",
+        "apotheosis:mythic"
+      ]
+    },
+    "apotheosis:weapon/attribute/nullifying": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:prot_shred",
+      "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident",
+        "apotheosis:bow"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:rare": {
+          "min": 0.1,
+          "max": 0.15,
+          "step": 0.005
+        },
+        "apotheosis:epic": {
+          "min": 0.125,
+          "max": 0.175,
+          "step": 0.005
+        },
+        "apotheosis:mythic": {
+          "min": 0.15,
+          "max": 0.2,
+          "step": 0.005
+        }
+      }
+    },
+    "apotheosis:weapon/attribute/runebreaking": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:prot_pierce",
+      "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident",
+        "apotheosis:bow"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:rare": {
+          "min": 4.0,
+          "max": 8.0,
+          "step": 0.5
+        },
+        "apotheosis:epic": {
+          "min": 5.0,
+          "max": 10.0,
+          "step": 0.5
+        },
+        "apotheosis:mythic": {
+          "min": 5.0,
+          "max": 12.0,
+          "step": 0.5
+        }
+      }
+    },
+    "apotheosis:weapon/attribute/shredding": {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:armor_shred",
+      "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:trident",
+        "apotheosis:bow"
+      ],
+      "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+          "quality": 0.1,
+          "weight": 25
+        }
+      },
+      "operation": "add_value",
+      "values": {
+        "apotheosis:common": {
+          "min": 0.1,
+          "max": 0.2
+        },
+        "apotheosis:uncommon": {
+          "min": 0.1,
+          "max": 0.2
+        },
+        "apotheosis:rare": {
+          "min": 0.15,
+          "max": 0.25
+        },
+        "apotheosis:epic": {
+          "min": 0.2,
+          "max": 0.28
+        },
+        "apotheosis:mythic": {
+          "min": 0.3,
+          "max": 0.4
+        }
+      }
+    }
+  },
+  "gems": {
+    "apotheosis:core/ballast": {
+      "weights": {
+        "quality": 0.1,
+        "weight": 100
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:attack_damage",
+          "gem_class": {
+            "key": "light_weapon",
+            "types": [
+              "apotheosis:melee_weapon",
+              "apotheosis:trident"
+            ]
+          },
+          "operation": "add_value",
+          "values": {
+            "cracked": 1.0,
+            "chipped": 2.0,
+            "flawed": 3.5,
+            "normal": 5.0,
+            "flawless": 7.0,
+            "perfect": 10.0
+          }
+        },
+        {
+          "type": "apotheosis:durability",
+          "gem_class": {
+            "key": "tools",
+            "types": [
+              "apotheosis:breaker",
+              "apotheosis:shears"
+            ]
+          },
+          "values": {
+            "cracked": 0.1,
+            "chipped": 0.15,
+            "flawed": 0.25,
+            "normal": 0.35,
+            "flawless": 0.45,
+            "perfect": 0.6
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:knockback_resistance",
+          "gem_class": {
+            "key": "core_armor",
+            "types": [
+              "apotheosis:chestplate",
+              "apotheosis:leggings"
+            ]
+          },
+          "operation": "add_value",
+          "values": {
+            "cracked": 0.1,
+            "chipped": 0.2,
+            "flawed": 0.3,
+            "normal": 0.4,
+            "flawless": 0.5,
+            "perfect": 0.7
+          }
+        }
+      ]
+    },
+    "apotheosis:core/brawlers": {
+      "weights": {
+        "quality": 0.1,
+        "weight": 100
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:attack_speed",
+          "gem_class": {
+            "key": "light_weapon",
+            "types": [
+              "apotheosis:melee_weapon",
+              "apotheosis:trident"
+            ]
+          },
+          "operation": "add_multiplied_base",
+          "values": {
+            "cracked": 0.1,
+            "chipped": 0.15,
+            "flawed": 0.2,
+            "normal": 0.3,
+            "flawless": 0.35,
+            "perfect": 0.5
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:max_health",
+          "gem_class": {
+            "key": "core_armor",
+            "types": [
+              "apotheosis:chestplate",
+              "apotheosis:leggings"
+            ]
+          },
+          "operation": "add_value",
+          "values": {
+            "cracked": 1.0,
+            "chipped": 2.0,
+            "flawed": 4.0,
+            "normal": 6.0,
+            "flawless": 8.0,
+            "perfect": 12.0
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:max_health",
+          "gem_class": "apotheosis:shield",
+          "operation": "add_multiplied_total",
+          "values": {
+            "cracked": 0.05,
+            "chipped": 0.1,
+            "flawed": 0.15,
+            "normal": 0.2,
+            "flawless": 0.25,
+            "perfect": 0.3
+          }
+        }
+      ]
+    },
+    "apotheosis:core/breach": {
+      "unique": true,
+      "weights": {
+        "quality": 0.1,
+        "weight": 100
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:armor_pierce",
+          "gem_class": {
+            "key": "light_weapon",
+            "types": [
+              "apotheosis:melee_weapon",
+              "apotheosis:trident"
+            ]
+          },
+          "operation": "add_value",
+          "values": {
+            "cracked": 2.0,
+            "chipped": 3.0,
+            "flawed": 5.0,
+            "normal": 7.0,
+            "flawless": 9.0,
+            "perfect": 12.0
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:block_interaction_range",
+          "gem_class": {
+            "key": "tools",
+            "types": [
+              "apotheosis:breaker",
+              "apotheosis:shears"
+            ]
+          },
+          "operation": "add_value",
+          "values": {
+            "cracked": 0.5,
+            "chipped": 1.0,
+            "flawed": 1.5,
+            "normal": 2.0,
+            "flawless": 2.5,
+            "perfect": 3.0
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:prot_pierce",
+          "gem_class": "apotheosis:bow",
+          "operation": "add_value",
+          "values": {
+            "cracked": 4.0,
+            "chipped": 5.0,
+            "flawed": 7.0,
+            "normal": 8.0,
+            "flawless": 10.0,
+            "perfect": 15.0
+          }
+        }
+      ]
+    },
+    "apotheosis:core/combatant": {
+      "unique": true,
+      "weights": {
+        "quality": 0.1,
+        "weight": 100
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:arrow_damage",
+          "gem_class": {
+            "key": "ranged_weapon",
+            "types": [
+              "apotheosis:bow",
+              "apotheosis:trident"
+            ]
+          },
+          "operation": "add_multiplied_base",
+          "values": {
+            "cracked": 0.05,
+            "chipped": 0.15,
+            "flawed": 0.2,
+            "normal": 0.3,
+            "flawless": 0.4,
+            "perfect": 0.55
+          }
+        },
+        {
+          "type": "apotheosis:damage_reduction",
+          "damage_type": "physical",
+          "gem_class": {
+            "key": "core_armor",
+            "types": [
+              "apotheosis:chestplate",
+              "apotheosis:leggings"
+            ]
+          },
+          "values": {
+            "cracked": 0.05,
+            "chipped": 0.075,
+            "flawed": 0.125,
+            "normal": 0.175,
+            "flawless": 0.225,
+            "perfect": 0.275
+          }
+        },
+        {
+          "type": "apotheosis:durability",
+          "gem_class": "apotheosis:melee_weapon",
+          "values": {
+            "cracked": 0.05,
+            "chipped": 0.1,
+            "flawed": 0.15,
+            "normal": 0.225,
+            "flawless": 0.3,
+            "perfect": 0.4
+          }
+        }
+      ]
+    },
+    "apotheosis:core/guardian": {
+      "weights": {
+        "quality": 0.1,
+        "weight": 100
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:armor",
+          "gem_class": {
+            "key": "core_armor",
+            "types": [
+              "apotheosis:chestplate",
+              "apotheosis:leggings"
+            ]
+          },
+          "operation": "add_value",
+          "values": {
+            "cracked": 0.5,
+            "chipped": 1.0,
+            "flawed": 2.5,
+            "normal": 4.0,
+            "flawless": 6.0,
+            "perfect": 8.0
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:life_steal",
+          "gem_class": {
+            "key": "light_weapon",
+            "types": [
+              "apotheosis:melee_weapon",
+              "apotheosis:trident"
+            ]
+          },
+          "operation": "add_value",
+          "values": {
+            "cracked": 0.05,
+            "chipped": 0.1,
+            "flawed": 0.15,
+            "normal": 0.2,
+            "flawless": 0.25,
+            "perfect": 0.3
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:armor",
+          "gem_class": "apotheosis:shield",
+          "operation": "add_multiplied_total",
+          "values": {
+            "cracked": 0.05,
+            "chipped": 0.1,
+            "flawed": 0.2,
+            "normal": 0.25,
+            "flawless": 0.3,
+            "perfect": 0.45
+          }
+        }
+      ]
+    },
+    "apotheosis:core/lightning": {
+      "weights": {
+        "quality": 0.1,
+        "weight": 100
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:arrow_velocity",
+          "gem_class": "apotheosis:bow",
+          "operation": "add_multiplied_base",
+          "values": {
+            "cracked": 0.05,
+            "chipped": 0.15,
+            "flawed": 0.25,
+            "normal": 0.35,
+            "flawless": 0.425,
+            "perfect": 0.55
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:block_break_speed",
+          "gem_class": {
+            "key": "tools",
+            "types": [
+              "apotheosis:breaker",
+              "apotheosis:shears"
+            ]
+          },
+          "operation": "add_value",
+          "values": {
+            "cracked": 0.05,
+            "chipped": 0.15,
+            "flawed": 0.25,
+            "normal": 0.35,
+            "flawless": 0.425,
+            "perfect": 0.5
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:movement_speed",
+          "gem_class": {
+            "key": "lower_armor",
+            "types": [
+              "apotheosis:leggings",
+              "apotheosis:boots"
+            ]
+          },
+          "operation": "add_multiplied_total",
+          "values": {
+            "cracked": 0.1,
+            "chipped": 0.225,
+            "flawed": 0.375,
+            "normal": 0.45,
+            "flawless": 0.55,
+            "perfect": 0.7
+          }
+        }
+      ]
+    },
+    "apotheosis:core/lunar": {
+      "weights": {
+        "quality": 0.1,
+        "weight": 100
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:cold_damage",
+          "gem_class": "apotheosis:melee_weapon",
+          "operation": "add_value",
+          "values": {
+            "cracked": 1.0,
+            "chipped": 1.5,
+            "flawed": 2.5,
+            "normal": 4.0,
+            "flawless": 6.0,
+            "perfect": 8.0
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:gravity",
+          "gem_class": {
+            "key": "core_armor",
+            "types": [
+              "apotheosis:chestplate",
+              "apotheosis:leggings"
+            ]
+          },
+          "operation": "add_multiplied_total",
+          "values": {
+            "cracked": -0.1,
+            "chipped": -0.25,
+            "flawed": -0.45,
+            "normal": -0.65,
+            "flawless": -0.85,
+            "perfect": -1.04
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "neoforge:swim_speed",
+          "gem_class": "apotheosis:boots",
+          "operation": "add_multiplied_base",
+          "values": {
+            "cracked": 0.1,
+            "chipped": 0.2,
+            "flawed": 0.3,
+            "normal": 0.45,
+            "flawless": 0.6,
+            "perfect": 0.8
+          }
+        },
+        {
+          "type": "apotheosis:anti_gravity_arrow",
+          "gem_class": {
+            "key": "ranged_weapon",
+            "types": [
+              "apotheosis:bow",
+              "apotheosis:trident"
+            ]
+          },
+          "min_purity": "flawless"
+        }
+      ]
+    },
+    "apotheosis:core/samurai": {
+      "unique": true,
+      "weights": {
+        "quality": 0.1,
+        "weight": 100
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:crit_chance",
+          "gem_class": {
+            "key": "weapons",
+            "types": [
+              "apotheosis:melee_weapon",
+              "apotheosis:trident",
+              "apotheosis:bow"
+            ]
+          },
+          "operation": "add_value",
+          "values": {
+            "cracked": 0.05,
+            "chipped": 0.15,
+            "flawed": 0.25,
+            "normal": 0.35,
+            "flawless": 0.4,
+            "perfect": 0.5
+          }
+        },
+        {
+          "type": "apotheosis:multi_attribute",
+          "desc": "bonus.apotheosis:multi_attr.desc.and",
+          "gem_class": {
+            "key": "lower_armor",
+            "types": [
+              "apotheosis:leggings",
+              "apotheosis:boots"
+            ]
+          },
+          "modifiers": [
+            {
+              "attribute": "minecraft:armor_toughness",
+              "operation": "add_multiplied_total",
+              "values": {
+                "cracked": 0.1,
+                "chipped": 0.15,
+                "flawed": 0.175,
+                "normal": 0.225,
+                "flawless": 0.275,
+                "perfect": 0.35
+              }
+            },
+            {
+              "attribute": "minecraft:movement_speed",
+              "operation": "add_multiplied_total",
+              "values": {
+                "cracked": -0.025,
+                "chipped": -0.05,
+                "flawed": -0.075,
+                "normal": -0.1,
+                "flawless": -0.125,
+                "perfect": -0.15
+              }
+            }
+          ]
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:arrow_velocity",
+          "gem_class": "apotheosis:helmet",
+          "operation": "add_multiplied_total",
+          "values": {
+            "cracked": 0.075,
+            "chipped": 0.15,
+            "flawed": 0.25,
+            "normal": 0.375,
+            "flawless": 0.425,
+            "perfect": 0.5
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:dodge_chance",
+          "gem_class": "apotheosis:shield",
+          "operation": "add_value",
+          "values": {
+            "cracked": 0.01,
+            "chipped": 0.02,
+            "flawed": 0.04,
+            "normal": 0.06,
+            "flawless": 0.08,
+            "perfect": 0.1
+          }
+        }
+      ]
+    },
+    "apotheosis:core/slipstream": {
+      "unique": true,
+      "weights": {
+        "quality": 0.1,
+        "weight": 100
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:draw_speed",
+          "gem_class": "apotheosis:bow",
+          "operation": "add_multiplied_base",
+          "values": {
+            "cracked": 0.1,
+            "chipped": 0.25,
+            "flawed": 0.35,
+            "normal": 0.45,
+            "flawless": 0.5,
+            "perfect": 0.6
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:block_break_speed",
+          "gem_class": {
+            "key": "tools",
+            "types": [
+              "apotheosis:breaker",
+              "apotheosis:shears"
+            ]
+          },
+          "operation": "add_multiplied_base",
+          "values": {
+            "cracked": 0.1,
+            "chipped": 0.15,
+            "flawed": 0.225,
+            "normal": 0.3,
+            "flawless": 0.375,
+            "perfect": 0.45
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:dodge_chance",
+          "gem_class": "apotheosis:boots",
+          "operation": "add_value",
+          "values": {
+            "cracked": 0.025,
+            "chipped": 0.05,
+            "flawed": 0.075,
+            "normal": 0.1,
+            "flawless": 0.125,
+            "perfect": 0.15
+          }
+        }
+      ]
+    },
+    "apotheosis:core/solar": {
+      "weights": {
+        "quality": 0.1,
+        "weight": 100
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:fire_damage",
+          "gem_class": {
+            "key": "light_weapon",
+            "types": [
+              "apotheosis:melee_weapon",
+              "apotheosis:trident"
+            ]
+          },
+          "operation": "add_value",
+          "values": {
+            "cracked": 1.0,
+            "chipped": 1.5,
+            "flawed": 2.5,
+            "normal": 4.0,
+            "flawless": 6.0,
+            "perfect": 8.0
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:gravity",
+          "gem_class": {
+            "key": "core_armor",
+            "types": [
+              "apotheosis:chestplate",
+              "apotheosis:leggings"
+            ]
+          },
+          "operation": "add_multiplied_total",
+          "values": {
+            "cracked": 0.1,
+            "chipped": 0.25,
+            "flawed": 0.45,
+            "normal": 0.65,
+            "flawless": 0.85,
+            "perfect": 1.04
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:step_height",
+          "gem_class": "apotheosis:boots",
+          "operation": "add_value",
+          "values": {
+            "cracked": 0.25,
+            "chipped": 0.5,
+            "flawed": 1.0,
+            "normal": 1.5,
+            "flawless": 2.0,
+            "perfect": 3.0
+          }
+        }
+      ]
+    },
+    "apotheosis:core/splendor": {
+      "weights": {
+        "quality": 0.1,
+        "weight": 100
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:luck",
+          "gem_class": {
+            "key": "armor",
+            "types": [
+              "apotheosis:helmet",
+              "apotheosis:chestplate",
+              "apotheosis:leggings",
+              "apotheosis:boots"
+            ]
+          },
+          "operation": "add_value",
+          "values": {
+            "cracked": 0.5,
+            "chipped": 1.25,
+            "flawed": 2.0,
+            "normal": 2.25,
+            "flawless": 3.5,
+            "perfect": 5.0
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:experience_gained",
+          "gem_class": {
+            "key": "weapon_or_tool",
+            "types": [
+              "apotheosis:melee_weapon",
+              "apotheosis:trident",
+              "apotheosis:bow",
+              "apotheosis:breaker"
+            ]
+          },
+          "operation": "add_multiplied_base",
+          "values": {
+            "cracked": 0.075,
+            "chipped": 0.15,
+            "flawed": 0.225,
+            "normal": 0.3,
+            "flawless": 0.4,
+            "perfect": 0.6
+          }
+        }
+      ]
+    },
+    "apotheosis:core/tyrannical": {
+      "unique": true,
+      "weights": {
+        "quality": 0.1,
+        "weight": 100
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:attack_knockback",
+          "gem_class": {
+            "key": "light_weapon",
+            "types": [
+              "apotheosis:melee_weapon",
+              "apotheosis:trident"
+            ]
+          },
+          "operation": "add_value",
+          "values": {
+            "cracked": 0.5,
+            "chipped": 1.0,
+            "flawed": 1.5,
+            "normal": 2.0,
+            "flawless": 3.0,
+            "perfect": 3.5
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:armor_toughness",
+          "gem_class": {
+            "key": "core_armor",
+            "types": [
+              "apotheosis:chestplate",
+              "apotheosis:leggings"
+            ]
+          },
+          "operation": "add_value",
+          "values": {
+            "cracked": 0.5,
+            "chipped": 1.0,
+            "flawed": 2.0,
+            "normal": 3.0,
+            "flawless": 4.0,
+            "perfect": 6.0
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:armor_toughness",
+          "gem_class": "apotheosis:shield",
+          "operation": "add_multiplied_base",
+          "values": {
+            "cracked": 0.05,
+            "chipped": 0.15,
+            "flawed": 0.225,
+            "normal": 0.3,
+            "flawless": 0.375,
+            "perfect": 0.5
+          }
+        },
+        {
+          "type": "apotheosis:multi_attribute",
+          "desc": "bonus.apotheosis:multi_attr.desc.and",
+          "gem_class": "apotheosis:boots",
+          "modifiers": [
+            {
+              "attribute": "minecraft:max_health",
+              "operation": "add_multiplied_total",
+              "values": {
+                "cracked": 0.05,
+                "chipped": 0.075,
+                "flawed": 0.125,
+                "normal": 0.175,
+                "flawless": 0.225,
+                "perfect": 0.4
+              }
+            },
+            {
+              "attribute": "apothic_attributes:life_steal",
+              "operation": "add_value",
+              "values": {
+                "cracked": -0.025,
+                "chipped": -0.05,
+                "flawed": -0.075,
+                "normal": -0.1,
+                "flawless": -0.125,
+                "perfect": -0.2
+              }
+            }
+          ]
+        },
+        {
+          "type": "apotheosis:mob_effect",
+          "gem_class": "apotheosis:bow",
+          "mob_effect": "apothic_attributes:bleeding",
+          "stack_on_reapply": true,
+          "stacking_limit": 4,
+          "target": "arrow_target",
+          "values": {
+            "flawless": {
+              "duration": 160,
+              "amplifier": 0,
+              "cooldown": 40
+            },
+            "perfect": {
+              "duration": 160,
+              "amplifier": 1,
+              "cooldown": 40
+            }
+          }
+        }
+      ]
+    },
+    "apotheosis:core/warlord": {
+      "weights": {
+        "quality": 0.1,
+        "weight": 100
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:crit_damage",
+          "gem_class": {
+            "key": "weapons",
+            "types": [
+              "apotheosis:melee_weapon",
+              "apotheosis:bow"
+            ]
+          },
+          "operation": "add_multiplied_base",
+          "values": {
+            "cracked": 0.1,
+            "chipped": 0.2,
+            "flawed": 0.35,
+            "normal": 0.45,
+            "flawless": 0.55,
+            "perfect": 0.7
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:max_health",
+          "gem_class": "apotheosis:chestplate",
+          "operation": "add_multiplied_base",
+          "values": {
+            "cracked": 0.05,
+            "chipped": 0.1,
+            "flawed": 0.15,
+            "normal": 0.2,
+            "flawless": 0.25,
+            "perfect": 0.35
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:attack_damage",
+          "gem_class": "apotheosis:helmet",
+          "operation": "add_multiplied_total",
+          "values": {
+            "cracked": 0.05,
+            "chipped": 0.1,
+            "flawed": 0.125,
+            "normal": 0.15,
+            "flawless": 0.175,
+            "perfect": 0.225
+          }
+        },
+        {
+          "type": "apotheosis:mob_effect",
+          "gem_class": "apotheosis:trident",
+          "mob_effect": "minecraft:strength",
+          "stack_on_reapply": true,
+          "stacking_limit": 5,
+          "target": "arrow_self",
+          "values": {
+            "flawless": {
+              "duration": 200,
+              "amplifier": 0,
+              "cooldown": 40
+            },
+            "perfect": {
+              "duration": 200,
+              "amplifier": 1,
+              "cooldown": 40
+            }
+          }
+        }
+      ]
+    },
+    "apotheosis:overworld/earth": {
+      "constraints": {
+        "dimensions": [
+          "minecraft:overworld"
+        ]
+      },
+      "min_purity": "flawed",
+      "unique": true,
+      "weights": {
+        "frontier": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "ascent": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "summit": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "pinnacle": {
+          "quality": 2.0,
+          "weight": 50
+        }
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:enchantment",
+          "enchantment": "minecraft:sharpness",
+          "gem_class": {
+            "key": "light_weapon",
+            "types": [
+              "apotheosis:melee_weapon",
+              "apotheosis:trident"
+            ]
+          },
+          "mode": "existing",
+          "values": {
+            "flawed": 1,
+            "normal": 2,
+            "flawless": 3,
+            "perfect": 4
+          }
+        },
+        {
+          "type": "apotheosis:enchantment",
+          "enchantment": "minecraft:protection",
+          "gem_class": {
+            "key": "core_armor",
+            "types": [
+              "apotheosis:chestplate",
+              "apotheosis:leggings"
+            ]
+          },
+          "mode": "existing",
+          "values": {
+            "flawed": 1,
+            "normal": 2,
+            "flawless": 3,
+            "perfect": 4
+          }
+        },
+        {
+          "type": "apotheosis:enchantment",
+          "enchantment": "minecraft:fortune",
+          "gem_class": {
+            "key": "tools",
+            "types": [
+              "apotheosis:breaker",
+              "apotheosis:shears"
+            ]
+          },
+          "mode": "existing",
+          "values": {
+            "flawed": 1,
+            "normal": 2,
+            "flawless": 3,
+            "perfect": 4
+          }
+        }
+      ]
+    },
+    "apotheosis:overworld/royalty": {
+      "constraints": {
+        "dimensions": [
+          "minecraft:overworld"
+        ]
+      },
+      "min_purity": "flawed",
+      "unique": true,
+      "weights": {
+        "frontier": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "ascent": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "summit": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "pinnacle": {
+          "quality": 2.0,
+          "weight": 50
+        }
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:all_stats",
+          "attributes": [
+            "minecraft:max_health",
+            "minecraft:knockback_resistance",
+            "minecraft:movement_speed",
+            "minecraft:attack_damage",
+            "minecraft:attack_knockback",
+            "minecraft:attack_speed",
+            "minecraft:armor",
+            "minecraft:armor_toughness",
+            "minecraft:luck",
+            "minecraft:step_height",
+            "minecraft:block_interaction_range",
+            "minecraft:entity_interaction_range",
+            "apothic_attributes:armor_pierce",
+            "apothic_attributes:armor_shred",
+            "apothic_attributes:arrow_damage",
+            "apothic_attributes:arrow_velocity",
+            "apothic_attributes:cold_damage",
+            "apothic_attributes:crit_chance",
+            "apothic_attributes:crit_damage",
+            "apothic_attributes:current_hp_damage",
+            "apothic_attributes:dodge_chance",
+            "apothic_attributes:experience_gained",
+            "apothic_attributes:fire_damage",
+            "apothic_attributes:ghost_health",
+            "apothic_attributes:healing_received",
+            "apothic_attributes:life_steal",
+            "minecraft:block_break_speed",
+            "apothic_attributes:overheal",
+            "apothic_attributes:prot_pierce",
+            "apothic_attributes:prot_shred",
+            "neoforge:swim_speed"
+          ],
+          "gem_class": "apotheosis:helmet",
+          "operation": "add_multiplied_total",
+          "values": {
+            "flawed": 0.05,
+            "normal": 0.075,
+            "flawless": 0.1,
+            "perfect": 0.15
+          }
+        },
+        {
+          "type": "apotheosis:drop_transform",
+          "conditions": [
+            {
+              "condition": "apotheosis:matches_block",
+              "valid_blocks": "#c:ores/copper"
+            }
+          ],
+          "desc": "gem.apotheosis:overworld/royalty.bonus.pickaxe",
+          "gem_class": "apotheosis:breaker",
+          "inputs": "#c:raw_materials/copper",
+          "output": {
+            "id": "minecraft:raw_gold"
+          },
+          "values": {
+            "flawed": 0.15,
+            "normal": 0.2,
+            "flawless": 0.25,
+            "perfect": 0.4
+          }
+        },
+        {
+          "type": "apotheosis:multi_attribute",
+          "desc": "bonus.apotheosis:multi_attr.desc.and",
+          "gem_class": "apotheosis:bow",
+          "modifiers": [
+            {
+              "attribute": "apothic_attributes:prot_shred",
+              "operation": "add_value",
+              "values": {
+                "flawed": 0.25,
+                "normal": 0.3,
+                "flawless": 0.35,
+                "perfect": 0.4
+              }
+            },
+            {
+              "attribute": "apothic_attributes:draw_speed",
+              "operation": "add_multiplied_total",
+              "values": {
+                "flawed": -0.35,
+                "normal": -0.45,
+                "flawless": -0.55,
+                "perfect": -0.65
+              }
+            }
+          ]
+        },
+        {
+          "type": "apotheosis:multi_attribute",
+          "desc": "bonus.apotheosis:multi_attr.desc.and_but",
+          "gem_class": "apotheosis:shield",
+          "modifiers": [
+            {
+              "attribute": "minecraft:armor",
+              "operation": "add_multiplied_base",
+              "values": {
+                "flawed": 0.15,
+                "normal": 0.25,
+                "flawless": 0.35,
+                "perfect": 0.5
+              }
+            },
+            {
+              "attribute": "minecraft:armor_toughness",
+              "operation": "add_multiplied_base",
+              "values": {
+                "flawed": 0.075,
+                "normal": 0.125,
+                "flawless": 0.225,
+                "perfect": 0.3
+              }
+            },
+            {
+              "attribute": "minecraft:movement_speed",
+              "operation": "add_multiplied_total",
+              "values": {
+                "flawed": -0.25,
+                "normal": -0.3,
+                "flawless": -0.35,
+                "perfect": -0.4
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "apotheosis:overworld/verdant_ruin": {
+      "constraints": {
+        "dimensions": [
+          "minecraft:overworld"
+        ]
+      },
+      "min_purity": "flawed",
+      "unique": true,
+      "weights": {
+        "frontier": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "ascent": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "summit": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "pinnacle": {
+          "quality": 2.0,
+          "weight": 50
+        }
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:multi_attribute",
+          "desc": "bonus.apotheosis:multi_attr.desc.and",
+          "gem_class": {
+            "key": "weapons",
+            "types": [
+              "apotheosis:melee_weapon",
+              "apotheosis:trident",
+              "apotheosis:bow"
+            ]
+          },
+          "modifiers": [
+            {
+              "attribute": "apothic_attributes:armor_shred",
+              "operation": "add_value",
+              "values": {
+                "flawed": 0.075,
+                "normal": 0.15,
+                "flawless": 0.25,
+                "perfect": 0.4
+              }
+            },
+            {
+              "attribute": "minecraft:armor",
+              "operation": "add_multiplied_total",
+              "values": {
+                "flawed": -0.025,
+                "normal": -0.05,
+                "flawless": -0.075,
+                "perfect": -0.1
+              }
+            }
+          ]
+        },
+        {
+          "type": "apotheosis:damage_reduction",
+          "damage_type": "magic",
+          "gem_class": "apotheosis:chestplate",
+          "values": {
+            "flawed": 0.125,
+            "normal": 0.15,
+            "flawless": 0.175,
+            "perfect": 0.2
+          }
+        },
+        {
+          "type": "apotheosis:multi_attribute",
+          "desc": "bonus.apotheosis:multi_attr.desc.and",
+          "gem_class": "apotheosis:boots",
+          "modifiers": [
+            {
+              "attribute": "minecraft:knockback_resistance",
+              "operation": "add_multiplied_total",
+              "values": {
+                "flawed": 0.05,
+                "normal": 0.1,
+                "flawless": 0.15,
+                "perfect": 0.2
+              }
+            },
+            {
+              "attribute": "minecraft:attack_knockback",
+              "operation": "add_multiplied_total",
+              "values": {
+                "flawed": -0.075,
+                "normal": -0.1,
+                "flawless": -0.125,
+                "perfect": -0.15
+              }
+            }
+          ]
+        },
+        {
+          "type": "apotheosis:radial",
+          "gem_class": "apotheosis:breaker",
+          "values": {
+            "flawed": {
+              "x": 3,
+              "xOff": 0,
+              "y": 2,
+              "yOff": 1
+            },
+            "normal": {
+              "x": 3,
+              "xOff": 0,
+              "y": 3,
+              "yOff": 0
+            },
+            "flawless": {
+              "x": 5,
+              "xOff": 0,
+              "y": 3,
+              "yOff": 0
+            },
+            "perfect": {
+              "x": 5,
+              "xOff": 0,
+              "y": 5,
+              "yOff": 0
+            }
+          }
+        }
+      ]
+    },
+    "apotheosis:the_end/endersurge": {
+      "constraints": {
+        "dimensions": [
+          "minecraft:the_end"
+        ]
+      },
+      "min_purity": "flawless",
+      "unique": true,
+      "weights": {
+        "summit": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "pinnacle": {
+          "quality": 2.0,
+          "weight": 50
+        }
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:enchantment",
+          "enchantment": "minecraft:sharpness",
+          "gem_class": {
+            "key": "anything",
+            "types": {
+              "type": "neoforge:any"
+            }
+          },
+          "mode": "global",
+          "values": {
+            "flawless": 1,
+            "perfect": 2
+          }
+        }
+      ]
+    },
+    "apotheosis:the_end/mageslayer": {
+      "constraints": {
+        "dimensions": [
+          "minecraft:the_end"
+        ]
+      },
+      "min_purity": "normal",
+      "unique": true,
+      "weights": {
+        "summit": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "pinnacle": {
+          "quality": 2.0,
+          "weight": 50
+        }
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:multi_attribute",
+          "desc": "bonus.apotheosis:multi_attr.desc.and",
+          "gem_class": {
+            "key": "light_weapon",
+            "types": [
+              "apotheosis:melee_weapon",
+              "apotheosis:trident"
+            ]
+          },
+          "modifiers": [
+            {
+              "attribute": "apothic_attributes:prot_shred",
+              "operation": "add_value",
+              "values": {
+                "normal": 0.25,
+                "flawless": 0.35,
+                "perfect": 0.45
+              }
+            },
+            {
+              "attribute": "apothic_attributes:armor_shred",
+              "operation": "add_multiplied_base",
+              "values": {
+                "normal": -0.15,
+                "flawless": -0.3,
+                "perfect": -0.5
+              }
+            }
+          ]
+        },
+        {
+          "type": "apotheosis:mageslayer",
+          "gem_class": "apotheosis:helmet",
+          "values": {
+            "normal": 0.15,
+            "flawless": 0.225,
+            "perfect": 0.35
+          }
+        },
+        {
+          "type": "apotheosis:mob_effect",
+          "gem_class": "apotheosis:shield",
+          "mob_effect": "minecraft:resistance",
+          "target": "block_self",
+          "values": {
+            "normal": {
+              "duration": 200,
+              "amplifier": 0,
+              "cooldown": 400
+            },
+            "flawless": {
+              "duration": 300,
+              "amplifier": 0,
+              "cooldown": 400
+            },
+            "perfect": {
+              "duration": 300,
+              "amplifier": 1,
+              "cooldown": 400
+            }
+          }
+        }
+      ]
+    },
+    "apotheosis:the_nether/blood_lord": {
+      "constraints": {
+        "dimensions": [
+          "minecraft:the_nether"
+        ]
+      },
+      "min_purity": "flawed",
+      "unique": true,
+      "weights": {
+        "ascent": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "summit": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "pinnacle": {
+          "quality": 2.0,
+          "weight": 50
+        }
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:multi_attribute",
+          "desc": "bonus.apotheosis:multi_attr.desc.and",
+          "gem_class": {
+            "key": "light_weapon",
+            "types": [
+              "apotheosis:melee_weapon",
+              "apotheosis:trident"
+            ]
+          },
+          "modifiers": [
+            {
+              "attribute": "apothic_attributes:life_steal",
+              "operation": "add_value",
+              "values": {
+                "flawed": 0.1,
+                "normal": 0.125,
+                "flawless": 0.15,
+                "perfect": 0.15
+              }
+            },
+            {
+              "attribute": "apothic_attributes:life_steal",
+              "operation": "add_multiplied_total",
+              "values": {
+                "flawed": 0.05,
+                "normal": 0.1,
+                "flawless": 0.2,
+                "perfect": 0.3
+              }
+            }
+          ]
+        },
+        {
+          "type": "apotheosis:multi_attribute",
+          "desc": "bonus.apotheosis:multi_attr.desc.and",
+          "gem_class": "apotheosis:helmet",
+          "modifiers": [
+            {
+              "attribute": "minecraft:attack_damage",
+              "operation": "add_multiplied_total",
+              "values": {
+                "flawed": 0.25,
+                "normal": 0.35,
+                "flawless": 0.45,
+                "perfect": 0.6
+              }
+            },
+            {
+              "attribute": "minecraft:max_health",
+              "operation": "add_multiplied_total",
+              "values": {
+                "flawed": -0.3,
+                "normal": -0.4,
+                "flawless": -0.5,
+                "perfect": -0.65
+              }
+            }
+          ]
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:healing_received",
+          "gem_class": "apotheosis:chestplate",
+          "operation": "add_multiplied_base",
+          "values": {
+            "flawed": 0.2,
+            "normal": 0.3,
+            "flawless": 0.4,
+            "perfect": 0.5
+          }
+        },
+        {
+          "type": "apotheosis:bloody_arrow",
+          "values": {
+            "flawed": {
+              "cooldown": 450,
+              "damage_mult": 1.6,
+              "health_cost": 0.2
+            },
+            "normal": {
+              "cooldown": 450,
+              "damage_mult": 1.9,
+              "health_cost": 0.3
+            },
+            "flawless": {
+              "cooldown": 450,
+              "damage_mult": 2.2,
+              "health_cost": 0.4
+            },
+            "perfect": {
+              "cooldown": 450,
+              "damage_mult": 2.5,
+              "health_cost": 0.5
+            }
+          }
+        },
+        {
+          "type": "apotheosis:leech_block",
+          "values": {
+            "flawed": {
+              "cooldown": 450,
+              "heal_factor": 0.25
+            },
+            "normal": {
+              "cooldown": 450,
+              "heal_factor": 0.4
+            },
+            "flawless": {
+              "cooldown": 450,
+              "heal_factor": 0.55
+            },
+            "perfect": {
+              "cooldown": 450,
+              "heal_factor": 0.65
+            }
+          }
+        }
+      ]
+    },
+    "apotheosis:the_nether/inferno": {
+      "neoforge:conditions": [
+        {
+          "type": "neoforge:mod_loaded",
+          "modid": "apothic_enchanting"
+        }
+      ],
+      "constraints": {
+        "dimensions": [
+          "minecraft:the_nether"
+        ]
+      },
+      "min_purity": "flawed",
+      "unique": true,
+      "weights": {
+        "ascent": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "summit": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "pinnacle": {
+          "quality": 2.0,
+          "weight": 50
+        }
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:mob_effect",
+          "gem_class": {
+            "key": "light_weapon",
+            "types": [
+              "apotheosis:melee_weapon",
+              "apotheosis:trident"
+            ]
+          },
+          "mob_effect": "apothic_attributes:detonation",
+          "target": "attack_target",
+          "values": {
+            "flawless": {
+              "duration": 80,
+              "amplifier": 0,
+              "cooldown": 1200
+            },
+            "perfect": {
+              "duration": 80,
+              "amplifier": 1,
+              "cooldown": 1200
+            }
+          }
+        },
+        {
+          "type": "apotheosis:enchantment",
+          "enchantment": "apothic_enchanting:berserkers_fury",
+          "gem_class": "apotheosis:chestplate",
+          "values": {
+            "flawed": 1,
+            "normal": 1,
+            "flawless": 2,
+            "perfect": 2
+          }
+        },
+        {
+          "type": "apotheosis:enchantment",
+          "enchantment": "minecraft:efficiency",
+          "gem_class": "apotheosis:breaker",
+          "values": {
+            "flawed": 1,
+            "normal": 2,
+            "flawless": 3,
+            "perfect": 4
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:fire_damage",
+          "gem_class": "apotheosis:helmet",
+          "operation": "add_multiplied_total",
+          "values": {
+            "flawed": 0.5,
+            "normal": 0.625,
+            "flawless": 0.75,
+            "perfect": 0.9
+          }
+        }
+      ]
+    },
+    "apotheosis:the_nether/molten_breach": {
+      "constraints": {
+        "dimensions": [
+          "minecraft:the_nether"
+        ]
+      },
+      "min_purity": "flawed",
+      "unique": true,
+      "weights": {
+        "ascent": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "summit": {
+          "quality": 2.0,
+          "weight": 50
+        },
+        "pinnacle": {
+          "quality": 2.0,
+          "weight": 50
+        }
+      },
+      "bonuses": [
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:prot_pierce",
+          "gem_class": {
+            "key": "light_weapon",
+            "types": [
+              "apotheosis:melee_weapon",
+              "apotheosis:trident"
+            ]
+          },
+          "operation": "add_value",
+          "values": {
+            "flawed": 5.5,
+            "normal": 8.0,
+            "flawless": 9.5,
+            "perfect": 12.0
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "apothic_attributes:armor_pierce",
+          "gem_class": "apotheosis:bow",
+          "operation": "add_value",
+          "values": {
+            "flawed": 4.0,
+            "normal": 5.5,
+            "flawless": 8.0,
+            "perfect": 10.0
+          }
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:entity_interaction_range",
+          "gem_class": "apotheosis:shield",
+          "operation": "add_value",
+          "values": {
+            "flawed": 0.5,
+            "normal": 0.75,
+            "flawless": 1.25,
+            "perfect": 1.75
+          }
+        },
+        {
+          "type": "apotheosis:multi_attribute",
+          "desc": "bonus.apotheosis:multi_attr.desc.and",
+          "gem_class": "apotheosis:chestplate",
+          "modifiers": [
+            {
+              "attribute": "minecraft:attack_damage",
+              "operation": "add_multiplied_base",
+              "values": {
+                "flawed": 0.05,
+                "normal": 0.1,
+                "flawless": 0.125,
+                "perfect": 0.175
+              }
+            },
+            {
+              "attribute": "apothic_attributes:healing_received",
+              "operation": "add_multiplied_total",
+              "values": {
+                "flawed": -0.05,
+                "normal": -0.15,
+                "flawless": -0.25,
+                "perfect": -0.35
+              }
+            }
+          ]
+        },
+        {
+          "type": "apotheosis:attribute",
+          "attribute": "minecraft:scale",
+          "gem_class": "apotheosis:leggings",
+          "operation": "add_value",
+          "values": {
+            "flawed": 0.075,
+            "normal": 0.125,
+            "flawless": 0.15,
+            "perfect": 0.25
+          }
+        },
+        {
+          "type": "apotheosis:omnetic",
+          "gem_class": {
+            "key": "tools",
+            "types": [
+              "apotheosis:breaker",
+              "apotheosis:shears"
+            ]
+          },
+          "values": {
+            "flawed": {
+              "items": [
+                {
+                  "id": "minecraft:diamond_axe"
+                },
+                {
+                  "id": "minecraft:diamond_shovel"
+                },
+                {
+                  "id": "minecraft:diamond_pickaxe"
+                },
+                {
+                  "id": "minecraft:diamond_sword"
+                },
+                {
+                  "id": "minecraft:diamond_hoe"
+                }
+              ],
+              "name": "diamond"
+            },
+            "normal": {
+              "items": [
+                {
+                  "id": "minecraft:diamond_axe"
+                },
+                {
+                  "id": "minecraft:diamond_shovel"
+                },
+                {
+                  "id": "minecraft:diamond_pickaxe"
+                },
+                {
+                  "id": "minecraft:diamond_sword"
+                },
+                {
+                  "id": "minecraft:diamond_hoe"
+                }
+              ],
+              "name": "diamond"
+            },
+            "flawless": {
+              "items": [
+                {
+                  "id": "minecraft:netherite_axe"
+                },
+                {
+                  "id": "minecraft:netherite_shovel"
+                },
+                {
+                  "id": "minecraft:netherite_pickaxe"
+                },
+                {
+                  "id": "minecraft:netherite_sword"
+                },
+                {
+                  "id": "minecraft:netherite_hoe"
+                }
+              ],
+              "name": "netherite"
+            },
+            "perfect": {
+              "items": [
+                {
+                  "id": "minecraft:netherite_axe"
+                },
+                {
+                  "id": "minecraft:netherite_shovel"
+                },
+                {
+                  "id": "minecraft:netherite_pickaxe"
+                },
+                {
+                  "id": "minecraft:netherite_sword"
+                },
+                {
+                  "id": "minecraft:netherite_hoe"
+                }
+              ],
+              "name": "netherite"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "tier_augments": {
+    "apotheosis:ascent/armor": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "minecraft:armor",
+        "modifier_id": "apotheosis:ascent/armor",
+        "operation": "add_value",
+        "value": 8.0
+      },
+      "sort_index": 100,
+      "target": "monsters",
+      "tier": "ascent"
+    },
+    "apotheosis:ascent/armor_pierce": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "apothic_attributes:armor_pierce",
+        "modifier_id": "apotheosis:ascent/armor_pierce",
+        "operation": "add_value",
+        "value": 5.0
+      },
+      "sort_index": 200,
+      "target": "monsters",
+      "tier": "ascent"
+    },
+    "apotheosis:ascent/experience": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "apothic_attributes:experience_gained",
+        "modifier_id": "apotheosis:ascent/experience",
+        "operation": "add_multiplied_total",
+        "value": 0.55
+      },
+      "sort_index": 100,
+      "target": "players",
+      "tier": "ascent"
+    },
+    "apotheosis:ascent/luck": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "minecraft:luck",
+        "modifier_id": "apotheosis:ascent/luck",
+        "operation": "add_multiplied_total",
+        "value": 0.3
+      },
+      "sort_index": 200,
+      "target": "players",
+      "tier": "ascent"
+    },
+    "apotheosis:ascent/max_eterna": {
+      "neoforge:conditions": [
+        {
+          "type": "neoforge:mod_loaded",
+          "modid": "apothic_enchanting"
+        }
+      ],
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "apothic_enchanting:max_eterna",
+        "modifier_id": "apotheosis:ascent/max_eterna",
+        "operation": "add_value",
+        "value": -40.0
+      },
+      "sort_index": 90,
+      "target": "players",
+      "tier": "ascent"
+    },
+    "apotheosis:frontier/armor": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "minecraft:armor",
+        "modifier_id": "apotheosis:frontier/armor",
+        "operation": "add_value",
+        "value": 4.0
+      },
+      "sort_index": 100,
+      "target": "monsters",
+      "tier": "frontier"
+    },
+    "apotheosis:frontier/experience": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "apothic_attributes:experience_gained",
+        "modifier_id": "apotheosis:frontier/experience",
+        "operation": "add_multiplied_total",
+        "value": 0.35
+      },
+      "sort_index": 100,
+      "target": "players",
+      "tier": "frontier"
+    },
+    "apotheosis:frontier/luck": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "minecraft:luck",
+        "modifier_id": "apotheosis:frontier/luck",
+        "operation": "add_multiplied_total",
+        "value": 0.2
+      },
+      "sort_index": 200,
+      "target": "players",
+      "tier": "frontier"
+    },
+    "apotheosis:frontier/max_eterna": {
+      "neoforge:conditions": [
+        {
+          "type": "neoforge:mod_loaded",
+          "modid": "apothic_enchanting"
+        }
+      ],
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "apothic_enchanting:max_eterna",
+        "modifier_id": "apotheosis:frontier/max_eterna",
+        "operation": "add_value",
+        "value": -55.0
+      },
+      "sort_index": 90,
+      "target": "players",
+      "tier": "frontier"
+    },
+    "apotheosis:haven/max_eterna": {
+      "neoforge:conditions": [
+        {
+          "type": "neoforge:mod_loaded",
+          "modid": "apothic_enchanting"
+        }
+      ],
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "apothic_enchanting:max_eterna",
+        "modifier_id": "apotheosis:haven/max_eterna",
+        "operation": "add_value",
+        "value": -70.0
+      },
+      "sort_index": 90,
+      "target": "players",
+      "tier": "haven"
+    },
+    "apotheosis:pinnacle/armor": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "minecraft:armor",
+        "modifier_id": "apotheosis:pinnacle/armor",
+        "operation": "add_value",
+        "value": 16.0
+      },
+      "sort_index": 100,
+      "target": "monsters",
+      "tier": "pinnacle"
+    },
+    "apotheosis:pinnacle/armor_pierce": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "apothic_attributes:armor_pierce",
+        "modifier_id": "apotheosis:pinnacle/armor_pierce",
+        "operation": "add_value",
+        "value": 25.0
+      },
+      "sort_index": 200,
+      "target": "monsters",
+      "tier": "pinnacle"
+    },
+    "apotheosis:pinnacle/armor_toughness": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "minecraft:armor_toughness",
+        "modifier_id": "apotheosis:pinnacle/armor_toughness",
+        "operation": "add_value",
+        "value": 20.0
+      },
+      "sort_index": 150,
+      "target": "monsters",
+      "tier": "pinnacle"
+    },
+    "apotheosis:pinnacle/experience": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "apothic_attributes:experience_gained",
+        "modifier_id": "apotheosis:pinnacle/experience",
+        "operation": "add_multiplied_total",
+        "value": 1.25
+      },
+      "sort_index": 100,
+      "target": "players",
+      "tier": "pinnacle"
+    },
+    "apotheosis:pinnacle/luck": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "minecraft:luck",
+        "modifier_id": "apotheosis:pinnacle/luck",
+        "operation": "add_multiplied_total",
+        "value": 1.0
+      },
+      "sort_index": 200,
+      "target": "players",
+      "tier": "pinnacle"
+    },
+    "apotheosis:pinnacle/magic_reduction": {
+      "type": "apotheosis:damage_reduction",
+      "amount": 0.15,
+      "damage_type": "magic",
+      "reduction_id": "apotheosis:pinnacle/magic_reduction",
+      "sort_index": 500,
+      "target": "monsters",
+      "tier": "pinnacle"
+    },
+    "apotheosis:pinnacle/physical_reduction": {
+      "type": "apotheosis:damage_reduction",
+      "amount": 0.15,
+      "damage_type": "physical",
+      "reduction_id": "apotheosis:pinnacle/physical_reduction",
+      "sort_index": 400,
+      "target": "monsters",
+      "tier": "pinnacle"
+    },
+    "apotheosis:pinnacle/prot_pierce": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "apothic_attributes:prot_pierce",
+        "modifier_id": "apotheosis:pinnacle/prot_pierce",
+        "operation": "add_value",
+        "value": 20.0
+      },
+      "sort_index": 300,
+      "target": "monsters",
+      "tier": "pinnacle"
+    },
+    "apotheosis:summit/armor": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "minecraft:armor",
+        "modifier_id": "apotheosis:summit/armor",
+        "operation": "add_value",
+        "value": 12.0
+      },
+      "sort_index": 100,
+      "target": "monsters",
+      "tier": "summit"
+    },
+    "apotheosis:summit/armor_pierce": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "apothic_attributes:armor_pierce",
+        "modifier_id": "apotheosis:summit/armor_pierce",
+        "operation": "add_value",
+        "value": 15.0
+      },
+      "sort_index": 200,
+      "target": "monsters",
+      "tier": "summit"
+    },
+    "apotheosis:summit/armor_toughness": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "minecraft:armor_toughness",
+        "modifier_id": "apotheosis:summit/armor_toughness",
+        "operation": "add_value",
+        "value": 10.0
+      },
+      "sort_index": 150,
+      "target": "monsters",
+      "tier": "summit"
+    },
+    "apotheosis:summit/experience": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "apothic_attributes:experience_gained",
+        "modifier_id": "apotheosis:summit/experience",
+        "operation": "add_multiplied_total",
+        "value": 0.75
+      },
+      "sort_index": 100,
+      "target": "players",
+      "tier": "summit"
+    },
+    "apotheosis:summit/luck": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "minecraft:luck",
+        "modifier_id": "apotheosis:summit/luck",
+        "operation": "add_multiplied_total",
+        "value": 0.5
+      },
+      "sort_index": 200,
+      "target": "players",
+      "tier": "summit"
+    },
+    "apotheosis:summit/magic_reduction": {
+      "type": "apotheosis:damage_reduction",
+      "amount": 0.1,
+      "damage_type": "magic",
+      "reduction_id": "apotheosis:summit/magic_reduction",
+      "sort_index": 500,
+      "target": "monsters",
+      "tier": "summit"
+    },
+    "apotheosis:summit/max_eterna": {
+      "neoforge:conditions": [
+        {
+          "type": "neoforge:mod_loaded",
+          "modid": "apothic_enchanting"
+        }
+      ],
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "apothic_enchanting:max_eterna",
+        "modifier_id": "apotheosis:summit/max_eterna",
+        "operation": "add_value",
+        "value": -25.0
+      },
+      "sort_index": 90,
+      "target": "players",
+      "tier": "summit"
+    },
+    "apotheosis:summit/physical_reduction": {
+      "type": "apotheosis:damage_reduction",
+      "amount": 0.1,
+      "damage_type": "physical",
+      "reduction_id": "apotheosis:summit/physical_reduction",
+      "sort_index": 400,
+      "target": "monsters",
+      "tier": "summit"
+    },
+    "apotheosis:summit/prot_pierce": {
+      "type": "apotheosis:attribute",
+      "modifier": {
+        "attribute": "apothic_attributes:prot_pierce",
+        "modifier_id": "apotheosis:summit/prot_pierce",
+        "operation": "add_value",
+        "value": 10.0
+      },
+      "sort_index": 300,
+      "target": "monsters",
+      "tier": "summit"
+    }
+  },
+  "rarities": {
+    "apotheosis:common": {
+      "color": "#808080",
+      "invader_sound": "minecraft:intentionally_empty",
+      "material": "apotheosis:mysterious_scrap_metal",
+      "render_data": {
+        "beam_height": 0.0,
+        "beam_radius": 0.035,
+        "beam_texture": "apotheosis:textures/rarity/beam.png",
+        "glow_radius": 0.065,
+        "glow_texture": "apotheosis:textures/rarity/glow.png"
+      },
+      "rules": [
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "stat"
+        },
+        {
+          "type": "apotheosis:chanced",
+          "chance": 0.25,
+          "rule": {
+            "type": "apotheosis:affix",
+            "affix_type": "stat"
+          }
+        }
+      ],
+      "sort_index": 300,
+      "weights": {
+        "haven": {
+          "weight": 600
+        },
+        "frontier": {
+          "weight": 290
+        },
+        "ascent": {
+          "weight": 100
+        },
+        "summit": {
+          "weight": 0
+        },
+        "pinnacle": {
+          "weight": 0
+        }
+      }
+    },
+    "apotheosis:epic": {
+      "color": "#BB00BB",
+      "invader_sound": "apotheosis:invader_epic",
+      "material": "apotheosis:arcane_sands",
+      "render_data": {
+        "beam_height": 3.0,
+        "beam_radius": 0.035,
+        "beam_texture": "apotheosis:textures/rarity/beam.png",
+        "glow_radius": 0.065,
+        "glow_texture": "apotheosis:textures/rarity/glow.png",
+        "particle": {
+          "enabled": true
+        },
+        "shadow": {
+          "alpha": 255,
+          "frame_time": 1.5,
+          "frames": 20,
+          "size": 0.4,
+          "texture": "apotheosis:textures/rarity/shadow_t3.png"
+        }
+      },
+      "rules": [
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "stat"
+        },
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "stat"
+        },
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "stat"
+        },
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "basic_effect"
+        },
+        {
+          "type": "apotheosis:chanced",
+          "chance": 0.25,
+          "rule": {
+            "type": "apotheosis:affix",
+            "affix_type": "basic_effect"
+          }
+        },
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "ability"
+        },
+        {
+          "type": "apotheosis:socket",
+          "min": 1,
+          "max": 3
+        },
+        {
+          "type": "apotheosis:durability",
+          "min": 0.25,
+          "max": 0.55
+        }
+      ],
+      "sort_index": 600,
+      "weights": {
+        "haven": {
+          "weight": 0
+        },
+        "frontier": {
+          "weight": 10
+        },
+        "ascent": {
+          "quality": 5.0,
+          "weight": 100
+        },
+        "summit": {
+          "quality": 5.0,
+          "weight": 540
+        },
+        "pinnacle": {
+          "quality": 2.5,
+          "weight": 650
+        }
+      }
+    },
+    "apotheosis:mythic": {
+      "color": "#ED7014",
+      "invader_sound": "apotheosis:invader_mythic",
+      "material": "apotheosis:godforged_pearl",
+      "render_data": {
+        "beam_height": 3.5,
+        "beam_radius": 0.035,
+        "beam_texture": "apotheosis:textures/rarity/beam.png",
+        "glow_radius": 0.065,
+        "glow_texture": "apotheosis:textures/rarity/glow.png",
+        "particle": {
+          "enabled": true
+        },
+        "shadow": {
+          "alpha": 255,
+          "frame_time": 1.5,
+          "frames": 7,
+          "size": 0.4,
+          "texture": "apotheosis:textures/rarity/shadow_t4.png"
+        }
+      },
+      "rules": [
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "stat"
+        },
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "stat"
+        },
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "stat"
+        },
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "stat"
+        },
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "basic_effect"
+        },
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "basic_effect"
+        },
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "ability"
+        },
+        {
+          "type": "apotheosis:select",
+          "chance": 0.95,
+          "if_false": {
+            "type": "apotheosis:socket",
+            "min": 4,
+            "max": 4
+          },
+          "if_true": {
+            "type": "apotheosis:socket",
+            "min": 1,
+            "max": 3
+          }
+        },
+        {
+          "type": "apotheosis:select",
+          "chance": 0.99,
+          "if_false": {
+            "type": "apotheosis:component",
+            "components": {
+              "!apotheosis:durability_bonus": {},
+              "minecraft:unbreakable": {}
+            }
+          },
+          "if_true": {
+            "type": "apotheosis:durability",
+            "min": 0.45,
+            "max": 0.75
+          }
+        }
+      ],
+      "sort_index": 700,
+      "weights": {
+        "haven": {
+          "weight": 0
+        },
+        "frontier": {
+          "weight": 0
+        },
+        "ascent": {
+          "weight": 0
+        },
+        "summit": {
+          "quality": 5.0,
+          "weight": 50
+        },
+        "pinnacle": {
+          "quality": 10.0,
+          "weight": 250
+        }
+      }
+    },
+    "apotheosis:rare": {
+      "color": "#5555FF",
+      "invader_sound": "apotheosis:invader_rare",
+      "material": "apotheosis:luminous_crystal_shard",
+      "render_data": {
+        "beam_height": 2.5,
+        "beam_radius": 0.035,
+        "beam_texture": "apotheosis:textures/rarity/beam.png",
+        "glow_radius": 0.0,
+        "glow_texture": "apotheosis:textures/rarity/glow.png",
+        "shadow": {
+          "alpha": 255,
+          "frame_time": 1.5,
+          "frames": 20,
+          "size": 0.35,
+          "texture": "apotheosis:textures/rarity/shadow_t2.png"
+        }
+      },
+      "rules": [
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "stat"
+        },
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "stat"
+        },
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "basic_effect"
+        },
+        {
+          "type": "apotheosis:chanced",
+          "chance": 0.35,
+          "rule": {
+            "type": "apotheosis:affix",
+            "affix_type": "basic_effect"
+          }
+        },
+        {
+          "type": "apotheosis:socket",
+          "min": 0,
+          "max": 2
+        },
+        {
+          "type": "apotheosis:durability",
+          "min": 0.1,
+          "max": 0.25
+        }
+      ],
+      "sort_index": 500,
+      "weights": {
+        "haven": {
+          "quality": 5.0,
+          "weight": 40
+        },
+        "frontier": {
+          "quality": 5.0,
+          "weight": 100
+        },
+        "ascent": {
+          "quality": 2.5,
+          "weight": 500
+        },
+        "summit": {
+          "quality": 2.5,
+          "weight": 290
+        },
+        "pinnacle": {
+          "weight": 100
+        }
+      }
+    },
+    "apotheosis:uncommon": {
+      "color": "#33FF33",
+      "invader_sound": "apotheosis:invader_uncommon",
+      "material": "apotheosis:timeworn_fabric",
+      "render_data": {
+        "beam_height": 0.0,
+        "beam_radius": 0.035,
+        "beam_texture": "apotheosis:textures/rarity/beam.png",
+        "glow_radius": 0.065,
+        "glow_texture": "apotheosis:textures/rarity/glow.png",
+        "shadow": {
+          "alpha": 175,
+          "frame_time": 1.5,
+          "frames": 20,
+          "size": 0.35,
+          "texture": "apotheosis:textures/rarity/shadow_t1.png"
+        }
+      },
+      "rules": [
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "stat"
+        },
+        {
+          "type": "apotheosis:affix",
+          "affix_type": "stat"
+        },
+        {
+          "type": "apotheosis:chanced",
+          "chance": 0.5,
+          "rule": {
+            "type": "apotheosis:affix",
+            "affix_type": "basic_effect"
+          }
+        },
+        {
+          "type": "apotheosis:socket",
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "sort_index": 400,
+      "weights": {
+        "haven": {
+          "quality": 2.5,
+          "weight": 360
+        },
+        "frontier": {
+          "weight": 600
+        },
+        "ascent": {
+          "weight": 300
+        },
+        "summit": {
+          "weight": 120
+        },
+        "pinnacle": {
+          "weight": 0
+        }
+      }
+    }
+  },
+  "recipes": [
+    "apotheosis:ascent_spawner_upgrade_rune",
+    "apotheosis:augmenting_table",
+    "apotheosis:book",
+    "apotheosis:burning_spawner_rune",
+    "apotheosis:diamond_upgrade_smithing_template",
+    "apotheosis:echoing_spawner_rune",
+    "apotheosis:fallback/gateways/tiered/pinnacle",
+    "apotheosis:fallback/infused_spawner_rune",
+    "apotheosis:fallback/pinnacle_spawner_upgrade_rune",
+    "apotheosis:fallback/summit_spawner_upgrade_rune",
+    "apotheosis:frontier_spawner_upgrade_rune",
+    "apotheosis:gateways/tiered/ascent",
+    "apotheosis:gateways/tiered/frontier",
+    "apotheosis:gateways/tiered/pinnacle",
+    "apotheosis:gateways/tiered/summit",
+    "apotheosis:gem_case",
+    "apotheosis:gem_cutting/chipped",
+    "apotheosis:gem_cutting/cracked",
+    "apotheosis:gem_cutting/flawed",
+    "apotheosis:gem_cutting/flawless",
+    "apotheosis:gem_cutting/normal",
+    "apotheosis:gem_cutting_table",
+    "apotheosis:gem_fused_slate",
+    "apotheosis:god_fused_pearl",
+    "apotheosis:gold_upgrade_smithing_template",
+    "apotheosis:ignore_conditions_spawner_rune",
+    "apotheosis:ignore_light_spawner_rune",
+    "apotheosis:ignore_players_spawner_rune",
+    "apotheosis:infused_spawner_rune",
+    "apotheosis:infusion/ender_gem_case",
+    "apotheosis:infusion/potion_charm",
+    "apotheosis:initial_health_spawner_rune",
+    "apotheosis:iron_upgrade_smithing_template",
+    "apotheosis:malice",
+    "apotheosis:no_ai_spawner_rune",
+    "apotheosis:pinnacle_spawner_upgrade_rune",
+    "apotheosis:potion_charm",
+    "apotheosis:raven_enchanting_table",
+    "apotheosis:redstone_control_spawner_rune",
+    "apotheosis:reforging/common",
+    "apotheosis:reforging/epic",
+    "apotheosis:reforging/mythic",
+    "apotheosis:reforging/rare",
+    "apotheosis:reforging/uncommon",
+    "apotheosis:reforging_table",
+    "apotheosis:salvaging/affix_item/common",
+    "apotheosis:salvaging/affix_item/epic",
+    "apotheosis:salvaging/affix_item/mythic",
+    "apotheosis:salvaging/affix_item/rare",
+    "apotheosis:salvaging/affix_item/uncommon",
+    "apotheosis:salvaging/gem/chipped",
+    "apotheosis:salvaging/gem/cracked",
+    "apotheosis:salvaging/gem/flawed",
+    "apotheosis:salvaging/gem/flawless",
+    "apotheosis:salvaging/gem/normal",
+    "apotheosis:salvaging/gem/perfect",
+    "apotheosis:salvaging/other/chain_armor",
+    "apotheosis:salvaging/other/compressed_iron_armor",
+    "apotheosis:salvaging/other/copper_armor",
+    "apotheosis:salvaging/other/copper_horse_armor",
+    "apotheosis:salvaging/other/copper_nautilus_armor",
+    "apotheosis:salvaging/other/copper_tools",
+    "apotheosis:salvaging/other/diamond_armor",
+    "apotheosis:salvaging/other/diamond_horse_armor",
+    "apotheosis:salvaging/other/diamond_nautilus_armor",
+    "apotheosis:salvaging/other/diamond_tools",
+    "apotheosis:salvaging/other/gold_armor",
+    "apotheosis:salvaging/other/gold_tools",
+    "apotheosis:salvaging/other/golden_horse_armor",
+    "apotheosis:salvaging/other/golden_nautilus_armor",
+    "apotheosis:salvaging/other/iron_armor",
+    "apotheosis:salvaging/other/iron_horse_armor",
+    "apotheosis:salvaging/other/iron_nautilus_armor",
+    "apotheosis:salvaging/other/iron_tools",
+    "apotheosis:salvaging/other/leather_armor",
+    "apotheosis:salvaging/other/leather_horse_armor",
+    "apotheosis:salvaging/other/netherite_armor",
+    "apotheosis:salvaging/other/netherite_horse_armor",
+    "apotheosis:salvaging/other/netherite_nautilus_armor",
+    "apotheosis:salvaging/other/netherite_tools",
+    "apotheosis:salvaging/other/stone_tools",
+    "apotheosis:salvaging/other/wolf_armor",
+    "apotheosis:salvaging/other/wooden_tools",
+    "apotheosis:salvaging_table",
+    "apotheosis:sigil_add_sockets",
+    "apotheosis:sigil_of_enhancement",
+    "apotheosis:sigil_of_rebirth",
+    "apotheosis:sigil_of_socketing",
+    "apotheosis:sigil_of_unnaming",
+    "apotheosis:sigil_of_withdrawal",
+    "apotheosis:silent_spawner_rune",
+    "apotheosis:simple_reforging_table",
+    "apotheosis:smithing/upgrade_chainmail_boots_to_iron_boots",
+    "apotheosis:smithing/upgrade_chainmail_chestplate_to_iron_chestplate",
+    "apotheosis:smithing/upgrade_chainmail_helmet_to_iron_helmet",
+    "apotheosis:smithing/upgrade_chainmail_leggings_to_iron_leggings",
+    "apotheosis:smithing/upgrade_golden_axe_to_diamond_axe",
+    "apotheosis:smithing/upgrade_golden_boots_to_diamond_boots",
+    "apotheosis:smithing/upgrade_golden_chestplate_to_diamond_chestplate",
+    "apotheosis:smithing/upgrade_golden_helmet_to_diamond_helmet",
+    "apotheosis:smithing/upgrade_golden_hoe_to_diamond_hoe",
+    "apotheosis:smithing/upgrade_golden_leggings_to_diamond_leggings",
+    "apotheosis:smithing/upgrade_golden_pickaxe_to_diamond_pickaxe",
+    "apotheosis:smithing/upgrade_golden_shovel_to_diamond_shovel",
+    "apotheosis:smithing/upgrade_golden_sword_to_diamond_sword",
+    "apotheosis:smithing/upgrade_iron_axe_to_golden_axe",
+    "apotheosis:smithing/upgrade_iron_boots_to_golden_boots",
+    "apotheosis:smithing/upgrade_iron_chestplate_to_golden_chestplate",
+    "apotheosis:smithing/upgrade_iron_helmet_to_golden_helmet",
+    "apotheosis:smithing/upgrade_iron_hoe_to_golden_hoe",
+    "apotheosis:smithing/upgrade_iron_leggings_to_golden_leggings",
+    "apotheosis:smithing/upgrade_iron_pickaxe_to_golden_pickaxe",
+    "apotheosis:smithing/upgrade_iron_shovel_to_golden_shovel",
+    "apotheosis:smithing/upgrade_iron_sword_to_golden_sword",
+    "apotheosis:smithing/upgrade_stone_axe_to_iron_axe",
+    "apotheosis:smithing/upgrade_stone_hoe_to_iron_hoe",
+    "apotheosis:smithing/upgrade_stone_pickaxe_to_iron_pickaxe",
+    "apotheosis:smithing/upgrade_stone_shovel_to_iron_shovel",
+    "apotheosis:smithing/upgrade_stone_sword_to_iron_sword",
+    "apotheosis:socketing",
+    "apotheosis:spawn_range_spawner_rune",
+    "apotheosis:spawner_modifiers/_inverse/burning",
+    "apotheosis:spawner_modifiers/_inverse/echoing",
+    "apotheosis:spawner_modifiers/_inverse/ignore_conditions",
+    "apotheosis:spawner_modifiers/_inverse/ignore_light",
+    "apotheosis:spawner_modifiers/_inverse/ignore_players",
+    "apotheosis:spawner_modifiers/_inverse/initial_health",
+    "apotheosis:spawner_modifiers/_inverse/no_ai",
+    "apotheosis:spawner_modifiers/_inverse/redstone_control",
+    "apotheosis:spawner_modifiers/_inverse/silent",
+    "apotheosis:spawner_modifiers/_inverse/spawn_range",
+    "apotheosis:spawner_modifiers/_inverse/youthful",
+    "apotheosis:spawner_modifiers/burning",
+    "apotheosis:spawner_modifiers/echoing",
+    "apotheosis:spawner_modifiers/ignore_conditions",
+    "apotheosis:spawner_modifiers/ignore_light",
+    "apotheosis:spawner_modifiers/ignore_players",
+    "apotheosis:spawner_modifiers/initial_health",
+    "apotheosis:spawner_modifiers/no_ai",
+    "apotheosis:spawner_modifiers/redstone_control",
+    "apotheosis:spawner_modifiers/silent",
+    "apotheosis:spawner_modifiers/spawn_range",
+    "apotheosis:spawner_modifiers/tier/ascent",
+    "apotheosis:spawner_modifiers/tier/frontier",
+    "apotheosis:spawner_modifiers/tier/pinnacle",
+    "apotheosis:spawner_modifiers/tier/summit",
+    "apotheosis:spawner_modifiers/youthful",
+    "apotheosis:spawner_rune",
+    "apotheosis:summit_spawner_upgrade_rune",
+    "apotheosis:supremacy",
+    "apotheosis:unnaming",
+    "apotheosis:widthdrawal",
+    "apotheosis:youthful_spawner_rune",
+    "apothic_spawners:spawner_modifiers/_inverse/burning",
+    "apothic_spawners:spawner_modifiers/_inverse/echoing",
+    "apothic_spawners:spawner_modifiers/_inverse/ignore_conditions",
+    "apothic_spawners:spawner_modifiers/_inverse/ignore_light",
+    "apothic_spawners:spawner_modifiers/_inverse/ignore_players",
+    "apothic_spawners:spawner_modifiers/_inverse/initial_health",
+    "apothic_spawners:spawner_modifiers/_inverse/max_delay",
+    "apothic_spawners:spawner_modifiers/_inverse/max_nearby",
+    "apothic_spawners:spawner_modifiers/_inverse/min_delay",
+    "apothic_spawners:spawner_modifiers/_inverse/no_ai",
+    "apothic_spawners:spawner_modifiers/_inverse/player_range",
+    "apothic_spawners:spawner_modifiers/_inverse/redstone_control",
+    "apothic_spawners:spawner_modifiers/_inverse/silent",
+    "apothic_spawners:spawner_modifiers/_inverse/spawn_count",
+    "apothic_spawners:spawner_modifiers/_inverse/spawn_range",
+    "apothic_spawners:spawner_modifiers/_inverse/youthful",
+    "apothic_spawners:spawner_modifiers/burning",
+    "apothic_spawners:spawner_modifiers/echoing",
+    "apothic_spawners:spawner_modifiers/ignore_conditions",
+    "apothic_spawners:spawner_modifiers/ignore_light",
+    "apothic_spawners:spawner_modifiers/ignore_players",
+    "apothic_spawners:spawner_modifiers/initial_health",
+    "apothic_spawners:spawner_modifiers/max_delay",
+    "apothic_spawners:spawner_modifiers/max_nearby",
+    "apothic_spawners:spawner_modifiers/min_delay",
+    "apothic_spawners:spawner_modifiers/no_ai",
+    "apothic_spawners:spawner_modifiers/player_range",
+    "apothic_spawners:spawner_modifiers/redstone_control",
+    "apothic_spawners:spawner_modifiers/silent",
+    "apothic_spawners:spawner_modifiers/spawn_count",
+    "apothic_spawners:spawner_modifiers/spawn_range",
+    "apothic_spawners:spawner_modifiers/youthful"
+  ]
+}

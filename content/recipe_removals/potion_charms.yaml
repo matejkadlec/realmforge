@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/recipe_removals.schema.json
+# Apotheosis's potion charms are off: Matěj dislikes them by design (RLM-205, RLM-272). The crafting recipe and Apothic
+# Enchanting's infusion are the only ways to make one.
+id: potion_charms
+recipes:
+  - apotheosis:potion_charm
+  - apotheosis:infusion/potion_charm

@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_stat_remaps.schema.json
+# Shredding, Verdant Ruin and Royalty give our armor shred, a share of the armor a hit meets (RLM-234).
+id: armor_shred
+source: apothic_attributes:armor_shred
+target: realmforge:armor_shred

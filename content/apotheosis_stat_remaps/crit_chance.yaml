@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_stat_remaps.schema.json
+# Intricate, Samurai and Royalty's all-stats bonus give our crit chance, which melee, ranged and spell hits roll
+# (architecture 9.1); Apothic Attributes' own crit never fires (RLM-271).
+id: crit_chance
+source: apothic_attributes:crit_chance
+target: realmforge:crit_chance

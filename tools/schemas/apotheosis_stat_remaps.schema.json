@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "An Apothic Attributes stat that ours replaces, or that is switched off, wherever an Apotheosis affix, gem bonus\nor tier augment grants it (RLM-272).\n\nWith ``target``, each of them grants our stat instead, with the same operation and values. With ``off``, an\nattribute affix or a tier augment is switched off, a gem bonus is dropped (a multi-attribute bonus as a whole, as\nits description joins all its modifiers), and the stat leaves an all-stats bonus's list.",
+  "properties": {
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "off": {
+      "default": false,
+      "description": "true switches whatever grants it off instead of remapping it.",
+      "title": "Off",
+      "type": "boolean"
+    },
+    "source": {
+      "description": "The Apothic Attributes stat it replaces.",
+      "pattern": "^apothic_attributes:[a-z0-9_]+$",
+      "title": "Source",
+      "type": "string"
+    },
+    "source_base": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The source's base value where its scale differs from the target's (Apothic Attributes' crit damage is 1.5, ours +0.5). An add_multiplied_base modifier then becomes an add_value of its values times this, so it adds what it added to the source.",
+      "title": "Source Base"
+    },
+    "target": {
+      "anyOf": [
+        {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The stat that replaces it, e.g. realmforge:crit_chance. Leave out with off.",
+      "title": "Target"
+    }
+  },
+  "required": [
+    "id",
+    "source"
+  ],
+  "title": "ApotheosisStatRemapDef",
+  "type": "object"
+}

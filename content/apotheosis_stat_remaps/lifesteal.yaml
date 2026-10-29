@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_stat_remaps.schema.json
+# Vampiric, Guardian, Tyrannical, Blood Lord and Royalty give our lifesteal: melee and ranged hits only, never spells
+# (architecture 9.1).
+id: lifesteal
+source: apothic_attributes:life_steal
+target: realmforge:lifesteal

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Recipes that no longer exist: each is replaced by a file at its own path that NeoForge skips\n(``neoforge:never``), so the recipe never loads (RLM-272: Apotheosis's potion charms).",
+  "properties": {
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "recipes": {
+      "description": "The recipes to remove, e.g. apotheosis:potion_charm: vanilla's or Apotheosis's (its snapshot), never our own.",
+      "items": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Recipes",
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "id",
+    "recipes"
+  ],
+  "title": "RecipeRemovalDef",
+  "type": "object"
+}
