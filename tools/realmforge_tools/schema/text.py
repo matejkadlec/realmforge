@@ -22,7 +22,7 @@ TextGroupId = Annotated[
 
 class TextGroupDef(StrictModel):
     """A group of texts sharing the translation key prefix ``<id>.realmforge.``, for example ``key`` for key
-    mapping names (``key.realmforge.dark_vision``) or ``message`` for chat and action bar messages."""
+    mapping names (``key.realmforge.night_vision``) or ``message`` for chat and action bar messages."""
 
     id: TextGroupId
     texts: dict[TextName, LocalizedText] = Field(

@@ -175,7 +175,7 @@ All have NeoForge 26.1.2 builds. The pack only references them, nothing is forke
 | Villages, villagers, trades | Cisco's Medieval RPG | repeatable trade quests, later contracts (section 9); trades in coins as vanilla data ([ADR 0040](decisions/0040-coins-and-data-driven-merchant-trades.md)) |
 | Structure locator | Explorer's Compass | none of its code (CC BY-NC-SA); our own Structure Compass in M2 ([ADR 0044](decisions/0044-third-party-mods-by-milestone.md), RLM-319) |
 | Small UI | EMI Trades, Lightweight Inventory Sorting, Damage Numbers | missing on NeoForge or Fabric-only. **Superseded:** Neat and Toast Control cover YDM's MobHealthBar and Toast Remover by Matěj's choice, No Recipe Book is in the pack since 26.1.2, and Inventory Sorting, Advanced Loot Info and Just Enough Professions take the rest ([ADR 0044](decisions/0044-third-party-mods-by-milestone.md)), see [overrides](#owner-overrides) |
-| Default world rules, Dark Vision toggle, Nether and End removed ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)) | Otherworld (Dark Vision) | notes below |
+| Default world rules, Night Vision toggle (RLM-295; Dark Vision before), Nether and End removed ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)) | Otherworld (Dark Vision) | notes below |
 | QA and debug mod | Dummmmmmy | section 6 |
 
 ### Quests

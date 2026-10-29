@@ -49,18 +49,18 @@ def test_texts_become_lang_keys_and_constants(repo: RepoPaths) -> None:
     assert java.index("HINT_FIRST_STEPS") < java.index("HINT_OPEN_THE_MAP")
 
 
-def test_repository_texts_cover_the_dark_vision_key(repo: RepoPaths) -> None:
+def test_repository_texts_cover_the_night_vision_key(repo: RepoPaths) -> None:
     files = generate(repo)
     java = files[GENERATED_TEXTS].decode()
     for constant in (
         "KEY_CATEGORY_MAIN",
-        "KEY_DARK_VISION",
-        "MESSAGE_DARK_VISION_ON",
-        "MESSAGE_DARK_VISION_OFF",
+        "KEY_NIGHT_VISION",
+        "MESSAGE_NIGHT_VISION_ON",
+        "MESSAGE_NIGHT_VISION_OFF",
     ):
         assert f"public static final String {constant} = " in java
     en_us = json.loads(files[f"{LANG}/en_us.json"])
-    assert en_us["key.realmforge.dark_vision"] == "Toggle Dark Vision"
+    assert en_us["key.realmforge.night_vision"] == "Toggle Night Vision"
     # The key category realmforge:main reads its name from key.category.realmforge.main.
     assert en_us["key.category.realmforge.main"] == "Realmforge"
 

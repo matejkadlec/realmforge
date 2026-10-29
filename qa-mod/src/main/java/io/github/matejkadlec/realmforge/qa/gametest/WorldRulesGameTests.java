@@ -1,7 +1,7 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
 import com.mojang.authlib.GameProfile;
-import io.github.matejkadlec.realmforge.world.DarkVision;
+import io.github.matejkadlec.realmforge.world.NightVision;
 import io.github.matejkadlec.realmforge.world.GriefingProtection;
 import io.github.matejkadlec.realmforge.world.WorldDefaults;
 import java.util.List;
@@ -47,7 +47,7 @@ import net.neoforged.neoforge.event.EventHooks;
 
 /**
  * R1 world rules (architecture 19.1): the gamerules of a new world, targeted protection against destructive mobs
- * (decision D6) and Dark Vision. Coordinates are relative to the template's corner: the floor is at y = 0.
+ * (decision D6) and Night Vision. Coordinates are relative to the template's corner: the floor is at y = 0.
  */
 public final class WorldRulesGameTests {
     /** The explosion's centre, in the air above the middle of the platform. */
@@ -185,14 +185,14 @@ public final class WorldRulesGameTests {
         helper.succeed();
     }
 
-    /** A player who has never played before gets Dark Vision on the first login. */
+    /** A player who has never played before gets Night Vision on the first login. */
     @QaGameTest
-    public static void darkVisionIsOnAfterTheFirstLogin(GameTestHelper helper) {
+    public static void nightVisionIsOnAfterTheFirstLogin(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-dark-vision");
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-night-vision");
         try {
-            helper.assertTrue(DarkVision.isEnabled(player), "Dark Vision is off by default");
-            assertHasDarkVision(helper, player);
+            helper.assertTrue(NightVision.isEnabled(player), "Night Vision is off by default");
+            assertHasOurNightVision(helper, player);
         } finally {
             server.getPlayerList().remove(player);
         }
@@ -200,53 +200,53 @@ public final class WorldRulesGameTests {
     }
 
     @QaGameTest
-    public static void darkVisionSurvivesMilkAndTotems(GameTestHelper helper) {
+    public static void nightVisionSurvivesMilkAndTotems(GameTestHelper helper) {
         ServerPlayer player = fakePlayer(helper);
-        DarkVision.setEnabled(player, true);
+        NightVision.setEnabled(player, true);
         drinkMilk(helper, player);
         ItemStack totem = new ItemStack(Items.TOTEM_OF_UNDYING);
         totem.get(DataComponents.DEATH_PROTECTION).applyEffects(totem, player);
-        assertHasDarkVision(helper, player);
+        assertHasOurNightVision(helper, player);
         helper.succeed();
     }
 
-    /** The switch removes only Dark Vision: a potion's own night vision stays, and Dark Vision outlasts it. */
+    /** The switch removes only our Night Vision: a potion's own night vision stays, and ours outlasts it. */
     @QaGameTest
-    public static void toggleSwitchesOnlyDarkVision(GameTestHelper helper) {
+    public static void toggleSwitchesOnlyOurNightVision(GameTestHelper helper) {
         ServerPlayer player = fakePlayer(helper);
-        DarkVision.setEnabled(player, true);
-        helper.assertFalse(DarkVision.toggle(player), "the toggle did not switch it off");
+        NightVision.setEnabled(player, true);
+        helper.assertFalse(NightVision.toggle(player), "the toggle did not switch it off");
         helper.assertFalse(player.hasEffect(MobEffects.NIGHT_VISION), "night vision outlived the switch");
 
         player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 3600));
-        helper.assertTrue(DarkVision.toggle(player), "the toggle did not switch it on");
-        assertHasDarkVision(helper, player);
+        helper.assertTrue(NightVision.toggle(player), "the toggle did not switch it on");
+        assertHasOurNightVision(helper, player);
         drinkMilk(helper, player);
-        assertHasDarkVision(helper, player);
+        assertHasOurNightVision(helper, player);
 
-        DarkVision.setEnabled(player, false);
-        helper.assertFalse(player.hasEffect(MobEffects.NIGHT_VISION), "Dark Vision outlived the switch");
+        NightVision.setEnabled(player, false);
+        helper.assertFalse(player.hasEffect(MobEffects.NIGHT_VISION), "Night Vision outlived the switch");
         player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 3600));
-        DarkVision.refresh(player);
+        NightVision.refresh(player);
         helper.assertTrue(player.hasEffect(MobEffects.NIGHT_VISION), "the switch took a potion's night vision");
         helper.succeed();
     }
 
     /**
-     * Night vision from anywhere else leaves Dark Vision hidden (no particles, no icon) while the switch is on; with
-     * the switch off, a potion works as usual.
+     * Night vision from anywhere else leaves our Night Vision hidden (no particles, no icon) while the switch is on;
+     * with the switch off, a potion works as usual.
      */
     @QaGameTest
-    public static void otherNightVisionLeavesDarkVisionHidden(GameTestHelper helper) {
+    public static void otherNightVisionLeavesOursHidden(GameTestHelper helper) {
         ServerPlayer player = fakePlayer(helper);
-        DarkVision.setEnabled(player, true);
+        NightVision.setEnabled(player, true);
         drinkNightVisionPotion(helper, player);
-        assertHasDarkVision(helper, player);
+        assertHasOurNightVision(helper, player);
         helper.assertFalse(player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 3600, 1)),
-                "a stronger night vision was applied over Dark Vision");
-        assertHasDarkVision(helper, player);
+                "a stronger night vision was applied over ours");
+        assertHasOurNightVision(helper, player);
 
-        DarkVision.setEnabled(player, false);
+        NightVision.setEnabled(player, false);
         drinkNightVisionPotion(helper, player);
         MobEffectInstance potion = player.getEffect(MobEffects.NIGHT_VISION);
         helper.assertTrue(potion != null && !potion.isInfiniteDuration() && potion.isVisible() && potion.showIcon(),
@@ -261,26 +261,26 @@ public final class WorldRulesGameTests {
         GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-dark-relog");
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, profile);
         try {
-            DarkVision.setEnabled(player, false);
+            NightVision.setEnabled(player, false);
             player = server.getPlayerList().respawn(player, false, Entity.RemovalReason.KILLED);
-            helper.assertFalse(DarkVision.isEnabled(player), "death switched Dark Vision back on");
+            helper.assertFalse(NightVision.isEnabled(player), "death switched Night Vision back on");
             helper.assertFalse(player.hasEffect(MobEffects.NIGHT_VISION), "night vision after respawn while off");
 
-            DarkVision.setEnabled(player, true);
+            NightVision.setEnabled(player, true);
             player = server.getPlayerList().respawn(player, false, Entity.RemovalReason.KILLED);
-            helper.assertTrue(DarkVision.isEnabled(player), "death switched Dark Vision off");
-            assertHasDarkVision(helper, player);
+            helper.assertTrue(NightVision.isEnabled(player), "death switched Night Vision off");
+            assertHasOurNightVision(helper, player);
 
-            DarkVision.setEnabled(player, false);
+            NightVision.setEnabled(player, false);
             server.getPlayerList().remove(player);
             player = QaPlayers.login(server, profile);
-            helper.assertFalse(DarkVision.isEnabled(player), "relog switched Dark Vision back on");
+            helper.assertFalse(NightVision.isEnabled(player), "relog switched Night Vision back on");
             helper.assertFalse(player.hasEffect(MobEffects.NIGHT_VISION), "night vision after relog while off");
 
-            DarkVision.setEnabled(player, true);
+            NightVision.setEnabled(player, true);
             server.getPlayerList().remove(player);
             player = QaPlayers.login(server, profile);
-            assertHasDarkVision(helper, player);
+            assertHasOurNightVision(helper, player);
         } finally {
             server.getPlayerList().remove(player);
         }
@@ -336,9 +336,9 @@ public final class WorldRulesGameTests {
         PotionContents.createItemStack(Items.POTION, Potions.NIGHT_VISION).finishUsingItem(helper.getLevel(), player);
     }
 
-    private static void assertHasDarkVision(GameTestHelper helper, Player player) {
-        helper.assertTrue(DarkVision.isDarkVision(player.getEffect(MobEffects.NIGHT_VISION)),
-                "no Dark Vision effect: " + player.getEffect(MobEffects.NIGHT_VISION));
+    private static void assertHasOurNightVision(GameTestHelper helper, Player player) {
+        helper.assertTrue(NightVision.isOurs(player.getEffect(MobEffects.NIGHT_VISION)),
+                "no Night Vision effect: " + player.getEffect(MobEffects.NIGHT_VISION));
     }
 
     private static ServerPlayer fakePlayer(GameTestHelper helper) {

@@ -20,7 +20,7 @@
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "A group of texts sharing the translation key prefix ``<id>.realmforge.``, for example ``key`` for key\nmapping names (``key.realmforge.dark_vision``) or ``message`` for chat and action bar messages.",
+  "description": "A group of texts sharing the translation key prefix ``<id>.realmforge.``, for example ``key`` for key\nmapping names (``key.realmforge.night_vision``) or ``message`` for chat and action bar messages.",
   "properties": {
     "id": {
       "description": "Lowercase snake_case words joined by dots; the key prefix. Must equal the file name.",

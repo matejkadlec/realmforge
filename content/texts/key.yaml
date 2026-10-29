@@ -2,8 +2,8 @@
 # Key mapping names in Options > Controls (key.realmforge.<name>). The heading of our keys is in key.category.yaml.
 id: key
 texts:
-  dark_vision:
-    en_us: Toggle Dark Vision
+  night_vision:
+    en_us: Toggle Night Vision
   character_sheet:
     en_us: Character Sheet
   # The spellbook (C3b, RLM-25): known spells, their tooltips, and the spell bar's layout.

@@ -177,7 +177,7 @@ io.github.matejkadlec.realmforge
 ├─ item/              item behaviours, gear components; affixes and gems later
 ├─ loot/              loot functions and conditions, reward rolls
 ├─ character/         races, classes, character data, leveling, level caps, the character sheet's view
-├─ world/             dimension rules and access, realms, world blocks, world defaults, Dark Vision, griefing
+├─ world/             dimension rules and access, realms, world blocks, world defaults, Night Vision, griefing
 │                     protection
 ├─ mob/               mob levels and scaling, AI goal library, custom mobs
 ├─ boss/              boss definitions, phase machine, boss entity, the boss bar
@@ -268,7 +268,7 @@ How features cooperate without breaking the direction:
 | | `RegisterTicketControllersEvent` (mod) | chunk ticket controllers: instance plots ([15.5](#155-instances)) |
 | World creation | `LevelEvent.CreateSpawnPosition` (game; listened to, never cancelled) | the gamerules of a new world, once ([19.1](#191-world-defaults)) |
 | Server start | `RegisterCommandsEvent`, `ServerStartedEvent` (game) | commands |
-| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerRespawnPositionEvent`, `PlayerEvent.PlayerRespawnEvent`, `PlayerEvent.PlayerChangedDimensionEvent`, `PlayerTickEvent.Post` (game) | recompute stats at the end of a new player entity's first tick and after a change; keep health across respawns ([8.2](#82-where-modifiers-come-from)); bring a character's level cap and level up to date at login ([10.2](#102-leveling)); keep or end the player's instance run, and respawn a death inside it at its entrance ([15.5](#155-instances)); respawn a death in a realm in Overworld ([15.1](#151-dimensions)); reapply Dark Vision ([19.1](#191-world-defaults)) |
+| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerRespawnPositionEvent`, `PlayerEvent.PlayerRespawnEvent`, `PlayerEvent.PlayerChangedDimensionEvent`, `PlayerTickEvent.Post` (game) | recompute stats at the end of a new player entity's first tick and after a change; keep health across respawns ([8.2](#82-where-modifiers-come-from)); bring a character's level cap and level up to date at login ([10.2](#102-leveling)); keep or end the player's instance run, and respawn a death inside it at its entrance ([15.5](#155-instances)); respawn a death in a realm in Overworld ([15.1](#151-dimensions)); reapply Night Vision ([19.1](#191-world-defaults)) |
 | Travel | `EntityTravelToDimensionEvent` (game) | refuse a player without a dimension's access and every other entity a trip into or out of a realm; put a travelling player's shoulder entities down ([15.1](#151-dimensions)) |
 | Play | damage, death, spawn, tick and advancement events (game) | sections 8-16 |
 | Client start | `RealmforgeClient` constructor; client registration events (mod) | [section 18](#18-client-code-rendering-gui-input) |
@@ -427,8 +427,8 @@ book with the rest of `pack/config/` (`seedPackConfig`), which deletes each run'
   `<registry>.realmforge.<id>.<field path>`, for example `spell.realmforge.firebolt.name` (a nested field adds its
   path: `spell.realmforge.firebolt.effects.0.label`). Texts that belong to no content type (key mapping names,
   messages) live in `content/texts/<group>.yaml` and get the key `<group>.realmforge.<name>`
-  (`key.realmforge.dark_vision`); Java names them through the generated `GeneratedTexts` constants
-  (`GeneratedTexts.KEY_DARK_VISION`), which belong to `core`, so every feature and `client` may use them.
+  (`key.realmforge.night_vision`); Java names them through the generated `GeneratedTexts` constants
+  (`GeneratedTexts.KEY_NIGHT_VISION`), which belong to `core`, so every feature and `client` may use them.
 - One generator writes every datapack type (`tools/realmforge_tools/generate/datapack.py`): the `id` becomes the
   file name, texts become keys, units are converted, unset optional fields are left out, and everything else keeps
   its YAML name and value. A type that needs a different JSON shape converts in its own generator instead.
@@ -493,7 +493,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:combat` | `spell` | players and mobs that cast | resource pools (mana, rage), cooldowns, current cast (transient), whether a cast set Better Combat's disable tag | owner, throttled (players; clients never read a mob's copy) |
 | `realmforge:effect_sources` | `effect` | living entities | who applied each status effect a spell gave the holder: the caster's UUID, the spell's id, the proc origin ([11.4](#114-status-effects), C3c) | not synced (the server reads it) |
 | `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points | owner |
-| `realmforge:dark_vision` | `world` | players | whether Dark Vision is switched on (on by default) | not synced (the effect itself is) |
+| `realmforge:night_vision` | `world` | players | whether Night Vision is switched on (on by default) | not synced (the effect itself is) |
 | `realmforge:visited_realms` | `world` | players | the ids of the realms the player has arrived in, so the arrival shows a realm's flavour line once (W2b); copied on death | not synced |
 | `realmforge:instance` | `dungeon` | players | the run's plot, the return point (spike 3) and the game mode to give back when entering switched it to Adventure (W4c) | not synced |
 | `realmforge:stat_tracker` | `stats` | players | when the stat modifiers were last recomputed and what a respawn owes the health ([8.2](#82-where-modifiers-come-from)); transient: not saved or copied | not synced |
@@ -1551,7 +1551,7 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   keys by their US position. The pack's default keys (`pack/config/defaultoptions/keybindings.txt`,
   [ADR 0046](decisions/0046-spell-bar-default-keys-amend-the-pack-defaults.md)) move vanilla's chat to Enter and
   unbind the keys the bar takes, Apotheosis's Open World Tier Select moves from Ctrl+T to Alt+T (a held sprint key
-  would otherwise steal T), and Dark Vision moved from H to ¨ (`\` on a US keyboard). Our keys are
+  would otherwise steal T), and Night Vision moved from H to ¨ (`\` on a US keyboard). Our keys are
   `client/input/RealmforgeKeyMapping`s, labelled through `KeyLabels`: Minecraft reads `§` in any text as a formatting
   code, so a key on § would show an empty label; ours draws it from the font `realmforge:keys`
   (`assets/realmforge/font/keys.json`), which maps a private codepoint to the section sign of vanilla's font sheet.
@@ -3115,8 +3115,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   `client/screen/CharacterCreationScreen`), `SpendStatPoint` (exists: `character/net/SpendStatPointPayload`, sent by
   `client/screen/CharacterSheetScreen`), `CastSpell` (exists: `spell/net/CastSpellPayload`, sent by
   `client/spell/SpellBarInput`), `SetSpellBarSlot` (exists: `spell/net/SetSpellBarSlotPayload`, sent by
-  `client/screen/SpellbookScreen`), `CancelCast`, `LearnTalent`, `ToggleDarkVision` (exists:
-  `world/net/ToggleDarkVisionPayload`, sent by `client/input/DarkVisionKey`).
+  `client/screen/SpellbookScreen`), `CancelCast`, `LearnTalent`, `ToggleNightVision` (exists:
+  `world/net/ToggleNightVisionPayload`, sent by `client/input/NightVisionKey`).
 - Server → client: `CastStarted` and `CastEnded` (exist: `spell/net/CastStartedPayload` and `CastEndedPayload`, kept
   by `client/spell/ClientCasts`, the local player's end also shown by `client/hud/CastBarHud`), `CastRefused` (exists:
   `spell/net/CastRefusedPayload`, the reason shown by `client/hud/CastBarHud`), `CastTarget` (exists:
@@ -3220,7 +3220,7 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
 
 ### 19.1 World defaults
 
-Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, `DarkVision`.
+Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, `NightVision`.
 
 - When a world is created, set the vision's gamerules once: `keepInventory` and `doImmediateRespawn` on;
   `blockExplosionDropDecay`, `mobExplosionDropDecay` and `tntExplosionDropDecay` off. The signal is
@@ -3255,21 +3255,22 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
   Still allowed, as mixed or harmless cases: zombies breaking turtle eggs, a skeleton's arrows breaking decorated
   pots, chorus flowers or pointed dripstone, foxes picking sweet berries, sheep eating grass, snow golems leaving
   snow. Inside instances every mob is denied, which is intended there ([15.5](#155-instances)).
-- Dark Vision: a key (`client/input/DarkVisionKey`, ¨ by default since the spell bar took H, "Toggle Dark Vision" under Realmforge in the
-  controls) sends `ToggleDarkVisionPayload`; the server flips the sender's switch and confirms it on the action
-  bar. The effect is vanilla night vision as an infinite, hidden effect (`MobEffectInstance.INFINITE_DURATION`, no
-  particles, no icon); every player has it, switched on by default. The on/off state lives in the
-  `realmforge:dark_vision` attachment (copied on death) because effects do not survive death: the effect is
-  reapplied on respawn and login. Milk and a totem of undying clear every effect (`LivingEntity#removeAllEffects`;
-  NeoForge 26.1 has no effect cures any more), and each removal posts the cancellable `MobEffectEvent.Remove`:
-  `DarkVision` cancels it for Dark Vision while the switch is on, so only the switch removes it, `/effect clear`
-  included. Switching on replaces a potion's night vision, which
-  Dark Vision outlasts; switching off removes only infinite night vision, so a potion drunk while it is off stays.
-  While the switch is on, every other night vision is refused: `LivingEntity#addEffect` would merge it into Dark
-  Vision through `MobEffectInstance#update`, which copies the newcomer's particles and icon onto the infinite
-  effect, so `DarkVision` answers its `MobEffectEvent.Applicable` with `DO_NOT_APPLY` (a potion, a splash potion, a
-  tipped arrow, suspicious stew, `/effect give`, any amplifier: night vision has no stronger level, and Dark Vision
-  outlasts them all).
+- Night Vision (called Dark Vision until RLM-295): a key (`client/input/NightVisionKey`, ¨ by default since the spell
+  bar took H, "Toggle Night Vision" under Realmforge in the controls) sends `ToggleNightVisionPayload`; the server
+  flips the sender's switch and confirms it on the action bar ("Night Vision On", "Night Vision Off"). Ours is
+  vanilla's night vision effect, infinite and hidden (`MobEffectInstance.INFINITE_DURATION`, no particles, no icon),
+  which tells it apart from a potion's, with its icon and its end; every player has it, switched on by default. The
+  on/off state lives in the `realmforge:night_vision` attachment (copied on death) because effects do not survive
+  death: the effect is reapplied on respawn and login. Milk and a totem of undying clear every effect
+  (`LivingEntity#removeAllEffects`; NeoForge 26.1 has no effect cures any more), and each removal posts the
+  cancellable `MobEffectEvent.Remove`: `NightVision` cancels it for ours while the switch is on, so only the switch
+  removes it, `/effect clear` included. Switching on replaces a potion's night vision, which ours outlasts; switching
+  off removes only infinite night vision, so a potion drunk while it is off stays. While the switch is on, every
+  other night vision is refused: `LivingEntity#addEffect` would merge it into ours through
+  `MobEffectInstance#update`, which copies the newcomer's particles and icon onto the infinite effect, so
+  `NightVision` answers its `MobEffectEvent.Applicable` with `DO_NOT_APPLY` (a potion, a splash potion, a tipped
+  arrow, suspicious stew, `/effect give`, any amplifier: night vision has no stronger level, and ours outlasts them
+  all).
 
 ### 19.2 Configuration
 
@@ -3544,7 +3545,7 @@ dimensions (`realmforge:instances`, later the stone realm) exist in GameTests on
 (`PlayerList#remove`, `PlayerList#placeNewPlayer`) with `QaPlayers#login`, as `InstanceGameTests` does to test
 reconnects; its connection goes through NeoForge's `NetworkRegistry#configureMockConnection`, so synced attachments
 can be sent to it. `PlayerList#respawn(player, false, ...)` stands in for a respawn after death, which copies the
-copy-on-death attachments (`PlayerStateGameTests`, and `WorldRulesGameTests` for Dark Vision), and
+copy-on-death attachments (`PlayerStateGameTests`, and `WorldRulesGameTests` for Night Vision), and
 `PlayerList#respawn(player, true, ...)` for leaving the End. The connection never ticks the player, so a test that
 needs player ticks plays them with `ServerPlayer#doTick`, the call the network handler makes once per tick
 (`StatsGameTests`). For the same reason a fake player tracks an entity (`Entity#startSeenByPlayer`) only when the test

@@ -39,12 +39,12 @@ public final class SpellKeys {
     private static final List<Lazy<KeyMapping>> SLOTS = slots();
 
     public static final Lazy<KeyMapping> SPELLBOOK = Lazy.of(() -> new RealmforgeKeyMapping(
-            GeneratedTexts.KEY_SPELLBOOK, GLFW.GLFW_KEY_P, DarkVisionKey.CATEGORY));
+            GeneratedTexts.KEY_SPELLBOOK, GLFW.GLFW_KEY_P, NightVisionKey.CATEGORY));
 
     private SpellKeys() {
     }
 
-    /** Called once from {@code RealmforgeClient}, after {@link DarkVisionKey}, which registers our main category. */
+    /** Called once from {@code RealmforgeClient}, after {@link NightVisionKey}, which registers our main category. */
     public static void register(IEventBus modBus) {
         modBus.addListener(RegisterKeyMappingsEvent.class, event -> {
             event.registerCategory(CATEGORY);

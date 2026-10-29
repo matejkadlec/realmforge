@@ -218,8 +218,8 @@ public final class GeneratedTexts {
     /** {@code key.realmforge.character_sheet} from {@code content/texts/key.yaml}: "Character Sheet" */
     public static final String KEY_CHARACTER_SHEET = "key.realmforge.character_sheet";
 
-    /** {@code key.realmforge.dark_vision} from {@code content/texts/key.yaml}: "Toggle Dark Vision" */
-    public static final String KEY_DARK_VISION = "key.realmforge.dark_vision";
+    /** {@code key.realmforge.night_vision} from {@code content/texts/key.yaml}: "Toggle Night Vision" */
+    public static final String KEY_NIGHT_VISION = "key.realmforge.night_vision";
 
     /** {@code key.realmforge.racial_ability} from {@code content/texts/key.yaml}: "Racial Ability" */
     public static final String KEY_RACIAL_ABILITY = "key.realmforge.racial_ability";
@@ -263,12 +263,6 @@ public final class GeneratedTexts {
     /** {@code message.realmforge.cannot_use_in_combat} from {@code content/texts/message.yaml}: "You can't use this in combat." */
     public static final String MESSAGE_CANNOT_USE_IN_COMBAT = "message.realmforge.cannot_use_in_combat";
 
-    /** {@code message.realmforge.dark_vision_off} from {@code content/texts/message.yaml}: "Dark Vision Off" */
-    public static final String MESSAGE_DARK_VISION_OFF = "message.realmforge.dark_vision_off";
-
-    /** {@code message.realmforge.dark_vision_on} from {@code content/texts/message.yaml}: "Dark Vision On" */
-    public static final String MESSAGE_DARK_VISION_ON = "message.realmforge.dark_vision_on";
-
     /** {@code message.realmforge.dungeon_completed} from {@code content/texts/message.yaml}: "You completed the instance and will be automatically teleported out in 5 minutes. Use '/instance leave' to exit immediately." */
     public static final String MESSAGE_DUNGEON_COMPLETED = "message.realmforge.dungeon_completed";
 
@@ -286,6 +280,12 @@ public final class GeneratedTexts {
 
     /** {@code message.realmforge.level_up_subtitle} from {@code content/texts/message.yaml}: "You are now level %1$s" */
     public static final String MESSAGE_LEVEL_UP_SUBTITLE = "message.realmforge.level_up_subtitle";
+
+    /** {@code message.realmforge.night_vision_off} from {@code content/texts/message.yaml}: "Night Vision Off" */
+    public static final String MESSAGE_NIGHT_VISION_OFF = "message.realmforge.night_vision_off";
+
+    /** {@code message.realmforge.night_vision_on} from {@code content/texts/message.yaml}: "Night Vision On" */
+    public static final String MESSAGE_NIGHT_VISION_ON = "message.realmforge.night_vision_on";
 
     /** {@code message.realmforge.not_in_dungeon} from {@code content/texts/message.yaml}: "You are not in a dungeon." */
     public static final String MESSAGE_NOT_IN_DUNGEON = "message.realmforge.not_in_dungeon";

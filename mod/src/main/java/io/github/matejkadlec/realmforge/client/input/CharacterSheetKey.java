@@ -17,12 +17,12 @@ import org.lwjgl.glfw.GLFW;
  */
 public final class CharacterSheetKey {
     public static final Lazy<KeyMapping> KEY = Lazy.of(() -> new RealmforgeKeyMapping(
-            GeneratedTexts.KEY_CHARACTER_SHEET, GLFW.GLFW_KEY_K, DarkVisionKey.CATEGORY));
+            GeneratedTexts.KEY_CHARACTER_SHEET, GLFW.GLFW_KEY_K, NightVisionKey.CATEGORY));
 
     private CharacterSheetKey() {
     }
 
-    /** Called once from {@code RealmforgeClient}, after {@link DarkVisionKey}, which registers our key category. */
+    /** Called once from {@code RealmforgeClient}, after {@link NightVisionKey}, which registers our key category. */
     public static void register(IEventBus modBus) {
         modBus.addListener(RegisterKeyMappingsEvent.class, event -> event.register(KEY.get()));
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> onClientTick());
