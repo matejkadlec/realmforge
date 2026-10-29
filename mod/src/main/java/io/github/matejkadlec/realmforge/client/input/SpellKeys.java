@@ -42,11 +42,12 @@ public final class SpellKeys {
             GeneratedTexts.KEY_SPELLBOOK, GLFW.GLFW_KEY_P, NightVisionKey.CATEGORY));
 
     /**
-     * Held, it shows the target circle under the mob an enemy spell would go to now (RLM-468; Left Alt by default,
-     * which no key of the pack takes): {@code client/spell/TargetCircle} reads it.
+     * Highlight Spell Target: pressed to toggle, or held (the client option
+     * {@code ClientConfig#HIGHLIGHT_SPELL_TARGET}), it shows the target circle under the mob an enemy spell would go to
+     * now (RLM-468; Left Alt by default, which no key of the pack takes): {@code client/spell/TargetCircle} reads it.
      */
-    public static final Lazy<KeyMapping> SHOW_TARGET = Lazy.of(() -> new RealmforgeKeyMapping(
-            GeneratedTexts.KEY_SHOW_TARGET, GLFW.GLFW_KEY_LEFT_ALT, CATEGORY));
+    public static final Lazy<KeyMapping> HIGHLIGHT_SPELL_TARGET = Lazy.of(() -> new RealmforgeKeyMapping(
+            GeneratedTexts.KEY_HIGHLIGHT_SPELL_TARGET, GLFW.GLFW_KEY_LEFT_ALT, CATEGORY));
 
     private SpellKeys() {
     }
@@ -57,7 +58,7 @@ public final class SpellKeys {
             event.registerCategory(CATEGORY);
             SLOTS.forEach(key -> event.register(key.get()));
             event.register(SPELLBOOK.get());
-            event.register(SHOW_TARGET.get());
+            event.register(HIGHLIGHT_SPELL_TARGET.get());
         });
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> onClientTick());
     }

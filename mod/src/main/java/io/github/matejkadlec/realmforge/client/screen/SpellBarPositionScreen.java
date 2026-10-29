@@ -109,7 +109,7 @@ public final class SpellBarPositionScreen extends Screen {
         return true;
     }
 
-    /** The snap lets go after a second of pulling even while the mouse holds still, when no drag event comes. */
+    /** The snap lets go after its pull even while the mouse holds still, when no drag event comes. */
     @Override
     public void tick() {
         if (moving) {

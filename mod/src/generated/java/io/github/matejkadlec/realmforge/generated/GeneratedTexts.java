@@ -101,6 +101,18 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.entity_reach} from {@code content/texts/gui.yaml}: "Entity Reach" */
     public static final String GUI_ENTITY_REACH = "gui.realmforge.entity_reach";
 
+    /** {@code gui.realmforge.highlight_spell_target} from {@code content/texts/gui.yaml}: "Highlight Spell Target" */
+    public static final String GUI_HIGHLIGHT_SPELL_TARGET = "gui.realmforge.highlight_spell_target";
+
+    /** {@code gui.realmforge.highlight_spell_target_hold} from {@code content/texts/gui.yaml}: "Hold" */
+    public static final String GUI_HIGHLIGHT_SPELL_TARGET_HOLD = "gui.realmforge.highlight_spell_target_hold";
+
+    /** {@code gui.realmforge.highlight_spell_target_toggle} from {@code content/texts/gui.yaml}: "Toggle" */
+    public static final String GUI_HIGHLIGHT_SPELL_TARGET_TOGGLE = "gui.realmforge.highlight_spell_target_toggle";
+
+    /** {@code gui.realmforge.highlight_spell_target_tooltip} from {@code content/texts/gui.yaml}: "Toggle: a press of the key shows the target circle under the mob your spell would hit, and another hides it. Hold: it shows while the key is held." */
+    public static final String GUI_HIGHLIGHT_SPELL_TARGET_TOOLTIP = "gui.realmforge.highlight_spell_target_tooltip";
+
     /** {@code gui.realmforge.instance_subtitle} from {@code content/texts/gui.yaml}: "Realmforge Instance" */
     public static final String GUI_INSTANCE_SUBTITLE = "gui.realmforge.instance_subtitle";
 
@@ -173,7 +185,7 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.spell_bar_position_button} from {@code content/texts/gui.yaml}: "Spellbar Position..." */
     public static final String GUI_SPELL_BAR_POSITION_BUTTON = "gui.realmforge.spell_bar_position_button";
 
-    /** {@code gui.realmforge.spell_bar_position_hint} from {@code content/texts/gui.yaml}: "Drag the bars. They snap to the middle; pull sideways for a second to let go." */
+    /** {@code gui.realmforge.spell_bar_position_hint} from {@code content/texts/gui.yaml}: "Drag the bar to change its position." */
     public static final String GUI_SPELL_BAR_POSITION_HINT = "gui.realmforge.spell_bar_position_hint";
 
     /** {@code gui.realmforge.spell_bar_position_tooltip} from {@code content/texts/gui.yaml}: "Drag the spell bar and the resource bar under it wherever you want them on the screen." */
@@ -251,14 +263,14 @@ public final class GeneratedTexts {
     /** {@code key.realmforge.character_sheet} from {@code content/texts/key.yaml}: "Character Sheet" */
     public static final String KEY_CHARACTER_SHEET = "key.realmforge.character_sheet";
 
+    /** {@code key.realmforge.highlight_spell_target} from {@code content/texts/key.yaml}: "Highlight Spell Target" */
+    public static final String KEY_HIGHLIGHT_SPELL_TARGET = "key.realmforge.highlight_spell_target";
+
     /** {@code key.realmforge.night_vision} from {@code content/texts/key.yaml}: "Toggle Night Vision" */
     public static final String KEY_NIGHT_VISION = "key.realmforge.night_vision";
 
     /** {@code key.realmforge.racial_ability} from {@code content/texts/key.yaml}: "Racial Ability" */
     public static final String KEY_RACIAL_ABILITY = "key.realmforge.racial_ability";
-
-    /** {@code key.realmforge.show_target} from {@code content/texts/key.yaml}: "Show Target" */
-    public static final String KEY_SHOW_TARGET = "key.realmforge.show_target";
 
     /** {@code key.realmforge.spell_slot_1} from {@code content/texts/key.yaml}: "Spell Slot 1" */
     public static final String KEY_SPELL_SLOT_1 = "key.realmforge.spell_slot_1";

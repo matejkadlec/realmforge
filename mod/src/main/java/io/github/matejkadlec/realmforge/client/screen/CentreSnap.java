@@ -9,8 +9,8 @@ package io.github.matejkadlec.realmforge.client.screen;
 final class CentreSnap {
     /** How near the middle a group snaps to it, in GUI pixels. */
     static final int DISTANCE = 6;
-    /** How long a sideways pull holds before the snap lets go. */
-    static final long RELEASE_MILLIS = 1000;
+    /** How long a sideways pull holds before the snap lets go (Matěj's playtest of 2026-10-29: not a second). */
+    static final long RELEASE_MILLIS = 250;
     private static final long NO_PULL = Long.MIN_VALUE;
 
     private boolean snapped;

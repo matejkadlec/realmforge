@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.client.screen;
 
 import io.github.matejkadlec.realmforge.client.ClientConfig;
+import io.github.matejkadlec.realmforge.client.ClientConfig.HighlightMode;
 import io.github.matejkadlec.realmforge.client.hud.SpellBarLayout;
 import io.github.matejkadlec.realmforge.client.spell.CastQueue;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
@@ -20,8 +21,9 @@ import net.minecraft.network.chat.Component;
  * default, and Spells Queue Size, 1 to 3, which only applies, and can only be changed, while queueing is on; then the
  * spell bar's (RLM-404; Matěj, 2026-10-29: rows of the same list, no section heading): Spellbar Position, which opens
  * the drag mode ({@link SpellBarPositionScreen}), Spellbar Size, 0.5 to 1.5, and Mirror Hotbar's Width, which overrides
- * the size and greys its slider out while on. Opened from the spellbook and from the mod list's Config button; Done
- * saves them.
+ * the size and greys its slider out while on; and Highlight Spell Target, Toggle by default or Hold, how its key shows
+ * the target circle (RLM-468; Matěj's playtest of 2026-10-29). Opened from the spellbook and from the mod list's Config
+ * button; Done saves them.
  */
 public final class SpellOptionsScreen extends Screen {
     private static final int WIDTH = 200;
@@ -80,8 +82,15 @@ public final class SpellOptionsScreen extends Screen {
                                 barSize.active = !value;
                             }
                         }));
+        addRenderableWidget(CycleButton.<HighlightMode>builder(value -> Component.translatable(value.text()),
+                        ClientConfig.HIGHLIGHT_SPELL_TARGET.get())
+                .withValues(HighlightMode.values())
+                .withTooltip(value -> Tooltip.create(Component.translatable(
+                        GeneratedTexts.GUI_HIGHLIGHT_SPELL_TARGET_TOOLTIP)))
+                .create(x, y + 5 * ROW, WIDTH, 20, Component.translatable(GeneratedTexts.GUI_HIGHLIGHT_SPELL_TARGET),
+                        (button, value) -> ClientConfig.HIGHLIGHT_SPELL_TARGET.set(value)));
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> onClose())
-                .bounds(x, y + 5 * ROW + 8, WIDTH, 20).build());
+                .bounds(x, y + 6 * ROW + 8, WIDTH, 20).build());
     }
 
     @Override

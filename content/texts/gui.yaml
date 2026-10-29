@@ -130,7 +130,7 @@ texts:
   spell_bar_position_tooltip:
     en_us: Drag the spell bar and the resource bar under it wherever you want them on the screen.
   spell_bar_position_hint:
-    en_us: Drag the bars. They snap to the middle; pull sideways for a second to let go.
+    en_us: Drag the bar to change its position.
   spell_bar_size:
     en_us: Spellbar Size
   spell_bar_size_tooltip:
@@ -139,6 +139,16 @@ texts:
     en_us: Mirror Hotbar's Width
   mirror_hotbar_width_tooltip:
     en_us: "On: the spell bar and the resource bar are exactly as wide as the hotbar, in place of Spellbar Size."
+  # How the Highlight Spell Target key works (RLM-468; Matěj's playtest of 2026-10-29): a row of the same list,
+  # "Highlight Spell Target: Toggle" by default, "Hold" on a click.
+  highlight_spell_target:
+    en_us: Highlight Spell Target
+  highlight_spell_target_toggle:
+    en_us: Toggle
+  highlight_spell_target_hold:
+    en_us: Hold
+  highlight_spell_target_tooltip:
+    en_us: "Toggle: a press of the key shows the target circle under the mob your spell would hit, and another hides it. Hold: it shows while the key is held."
   reset_position:
     en_us: Reset Position
   save:

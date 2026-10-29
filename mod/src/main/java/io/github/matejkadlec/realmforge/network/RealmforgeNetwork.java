@@ -6,17 +6,17 @@ import io.github.matejkadlec.realmforge.character.net.CreateCharacterPayload;
 import io.github.matejkadlec.realmforge.character.net.SpendStatPointPayload;
 import io.github.matejkadlec.realmforge.combat.net.CombatTextPayload;
 import io.github.matejkadlec.realmforge.combat.net.HitDirectionPayload;
-import io.github.matejkadlec.realmforge.spell.ShowTarget;
 import io.github.matejkadlec.realmforge.spell.SpellBar;
 import io.github.matejkadlec.realmforge.spell.Spells;
+import io.github.matejkadlec.realmforge.spell.TargetHighlight;
 import io.github.matejkadlec.realmforge.spell.net.CastEndedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastRefusedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastSpellPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastStartedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastTargetPayload;
+import io.github.matejkadlec.realmforge.spell.net.HighlightTargetPayload;
+import io.github.matejkadlec.realmforge.spell.net.HighlightedTargetPayload;
 import io.github.matejkadlec.realmforge.spell.net.SetSpellBarSlotPayload;
-import io.github.matejkadlec.realmforge.spell.net.ShowTargetPayload;
-import io.github.matejkadlec.realmforge.spell.net.ShownTargetPayload;
 import io.github.matejkadlec.realmforge.world.NightVision;
 import io.github.matejkadlec.realmforge.world.net.RealmRefusedPayload;
 import io.github.matejkadlec.realmforge.world.net.ToggleNightVisionPayload;
@@ -80,10 +80,10 @@ public final class RealmforgeNetwork {
                         Spells.placeOnBar(player, payload.slot(), payload.spell());
                     }
                 });
-        registrar.playToServer(ShowTargetPayload.TYPE, ShowTargetPayload.STREAM_CODEC,
+        registrar.playToServer(HighlightTargetPayload.TYPE, HighlightTargetPayload.STREAM_CODEC,
                 (payload, context) -> {
                     if (context.player() instanceof ServerPlayer player) {
-                        ShowTarget.setHeld(player, payload.held());
+                        TargetHighlight.setOn(player, payload.on());
                     }
                 });
         registrar.playToClient(CombatTextPayload.TYPE, CombatTextPayload.STREAM_CODEC);
@@ -92,7 +92,7 @@ public final class RealmforgeNetwork {
         registrar.playToClient(CastEndedPayload.TYPE, CastEndedPayload.STREAM_CODEC);
         registrar.playToClient(CastRefusedPayload.TYPE, CastRefusedPayload.STREAM_CODEC);
         registrar.playToClient(CastTargetPayload.TYPE, CastTargetPayload.STREAM_CODEC);
-        registrar.playToClient(ShownTargetPayload.TYPE, ShownTargetPayload.STREAM_CODEC);
+        registrar.playToClient(HighlightedTargetPayload.TYPE, HighlightedTargetPayload.STREAM_CODEC);
         registrar.playToClient(RealmRefusedPayload.TYPE, RealmRefusedPayload.STREAM_CODEC);
     }
 }

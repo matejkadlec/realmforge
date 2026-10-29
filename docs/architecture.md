@@ -1358,14 +1358,15 @@ spell a player aims at an enemy goes to a hostile mob near the crosshair (Matěj
   it changes, the mob the spell will hit (`CastTargetPayload`): the cast's entity target, or for a direction from the
   look whose spell launches a projectile, the mob `AimAssist#enemy` picks now, every tick, so the circle follows the
   crosshair through Fireball's cast ([11.6](#116-client-side)).
-- **The Show target key** (RLM-468; `spell/ShowTarget`): while a player holds it, their client says so
-  (`ShowTargetPayload`, when the key goes down and up), and every server tick the server names to it, when it changes,
-  the mob `AimAssist#enemy` picks now within 32 blocks (`ShownTargetPayload`), with no cast and no spell on the bar.
-  The server picks because only it knows a mob's target and a neutral mob's anger. The state is kept by player id, so
-  a respawn keeps a held key, and dropped at logout.
+- **The Highlight Spell Target key** (RLM-468; `spell/TargetHighlight`): while a player's highlight is on (the key
+  toggled on, or held), their client says so (`HighlightTargetPayload`, when it goes on and off), and every server tick
+  the server names to it, when it changes, the mob `AimAssist#enemy` picks now within 32 blocks
+  (`HighlightedTargetPayload`), with no cast and no spell on the bar. The server picks because only it knows a mob's
+  target and a neutral mob's anger. The state is kept by player id, so a respawn keeps a highlight that is on, and
+  dropped at logout.
 - `SpellAimingGameTests` covers an assisted bolt beside the crosshair, one beyond the cone or toward a cow, one after a
   moving husk, the bar's assisted pick and its view check, the sticky target beyond the range and beyond twice it, and
-  a sticky target that dies with its "Target lost", and the Show target key's mob.
+  a sticky target that dies with its "Target lost", and the highlighted mob.
 
 **Kept targets (W3 revision, RLM-33):** a timed spell may keep its entity target through the cast instead of only
 checking it before its effects. With `keep_sight`, `Casting` checks the caster's line of sight to the target every
@@ -1608,7 +1609,7 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   (`client/ClientConfig`). Spellbar Position opens the drag mode (`client/screen/SpellBarPositionScreen`), which hides
   the options: the player drags the group anywhere on the screen but off it, partly or wholly
   (`SpellBarLayout#clamp`). While dragging, a red dashed line 2 px wide marks the screen's middle, and the group snaps
-  to it within 6 px and holds there against a sideways pull until the pull has lasted a second (`CentreSnap`). Cancel
+  to it within 6 px and holds there against a sideways pull until the pull has lasted 0.25 s (`CentreSnap`). Cancel
   (and Escape) goes back with the place before, Save keeps the new one, Reset Position (bottom left) puts the group
   back at its default place. In game the screen has no dimmed or blurred background and draws the group itself
   (`SpellBarHud#draw`, which the HUD layer skips meanwhile); from the main menu empty slots stand in for it. A saved
@@ -1656,17 +1657,24 @@ hitbox and 0.4 above its eyes; never above its height), from 15 % of its size at
 end, where the server launches it from ([11.2](#112-casting-server-authoritative)).
 
 **In code (aim assistance, RLM-345): the target circle.** During the local player's cast-time or channelled spell,
-`client/spell/TargetCircle` draws a ring of dust in the spell school's colour on the ground under the mob the server
-named in `CastTargetPayload` ([11.2](#112-casting-server-authoritative)), its hitbox's half width plus 0.35 blocks out,
-every second game tick, once a game tick at most: while singleplayer is paused (or the server's ticks are frozen) the
-client ticks on but the game time stands still and the particle engine waits, so it must not queue a ring every client
-tick (RLM-474, `TargetCircleTest`). Never outside a cast (Q4), and gone with the local player's `CastEndedPayload` or a
-logout. `SpellAimingGameTests` reads the payload the server sends a cast's caster.
-Particles until the spell visuals (C6) give it its art. **The Show target key** (RLM-468, `SpellKeys#SHOW_TARGET`, Left
-Alt by default, which no key of the pack takes, under Realmforge Spell Bar) shows it without a cast: while it is held,
-`TargetCircle` draws the ring in white under the mob the server names in `ShownTargetPayload` ([11.2](#112-casting-server-authoritative)),
-unless the local player's cast names its own mob, which wins (`TargetCircle#under`, `TargetCircleTest`). It tells the
-server when the key goes down and up, and forgets the shown mob at once when it goes up.
+`client/spell/TargetCircle` draws a ring on the ground under the mob the server named in `CastTargetPayload`
+([11.2](#112-casting-server-authoritative)), its hitbox's half width plus 0.35 blocks out, so a Warden's is wider than
+an Enderman's. Never outside a cast unless highlighted (Q4), and gone with the local player's `CastEndedPayload` or a
+logout. `SpellAimingGameTests` reads the payload the server sends a cast's caster. Its look is Matěj's (playtest of
+2026-10-29, RLM-468, [ADR 0061](decisions/0061-the-target-circle-is-a-smooth-light-ring-and-the-highlight-toggles.md)):
+a smooth, very light yellow circle lying flat, no particles and no animation, the same for every spell, as easy to see
+in the dark as in daylight and lighting nothing. It is geometry, not a texture: the client extracts the mob's position
+between two ticks with the level's render state (`ExtractLevelRenderStateEvent`) and submits 96 to 720 segments (by its
+size) of three bands, a 1/16 block core and a 0.1 block glow fading out on each side (`SubmitCustomGeometryEvent`),
+through vanilla's `RenderTypes#debugQuads`: translucent position and colour quads with no lightmap, no fog and no depth
+write, so neither night nor a torch changes it, every frame, also while paused. **The Highlight Spell Target key**
+(RLM-468, `SpellKeys#HIGHLIGHT_SPELL_TARGET`, Left Alt by default, which no key of the pack takes, under Realmforge
+Spell Bar) shows it without a cast. The client option Highlight Spell Target (`ClientConfig#HIGHLIGHT_SPELL_TARGET`, a
+row of the spell options) makes it a toggle (the default: a press switches the highlight on until the next press) or
+Hold (on while the key is held). While the highlight is on, `TargetCircle` draws the ring under the mob the server names
+in `HighlightedTargetPayload` ([11.2](#112-casting-server-authoritative)), unless the local player's cast names its own
+mob, which wins (`TargetCircle#under`, `TargetCircleTest`). It tells the server when the highlight goes on and off, and
+forgets the highlighted mob at once when it goes off; a logout switches it off.
 
 ### 11.7 Class spells and stances
 
@@ -3142,18 +3150,19 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   `client/screen/CharacterCreationScreen`), `SpendStatPoint` (exists: `character/net/SpendStatPointPayload`, sent by
   `client/screen/CharacterSheetScreen`), `CastSpell` (exists: `spell/net/CastSpellPayload`, sent by
   `client/spell/SpellBarInput`), `SetSpellBarSlot` (exists: `spell/net/SetSpellBarSlotPayload`, sent by
-  `client/screen/SpellbookScreen`), `ShowTarget` (exists: `spell/net/ShowTargetPayload`, the Show target key going
-  down or up, sent by `client/spell/TargetCircle`), `CancelCast`, `LearnTalent`, `ToggleNightVision` (exists:
+  `client/screen/SpellbookScreen`), `HighlightTarget` (exists: `spell/net/HighlightTargetPayload`, the Highlight Spell
+  Target going on or off, sent by `client/spell/TargetCircle`), `CancelCast`, `LearnTalent`, `ToggleNightVision` (exists:
   `world/net/ToggleNightVisionPayload`, sent by `client/input/NightVisionKey`).
-- Server → client: `CastStarted` and `CastEnded` (exist: `spell/net/CastStartedPayload` and `CastEndedPayload`, kept
-  by `client/spell/ClientCasts`, the local player's end also shown by `client/hud/CastBarHud`), `CastRefused` (exists:
+- Server → client: `CastStarted` and `CastEnded` (exist: `spell/net/CastStartedPayload` and `CastEndedPayload`, kept by
+  `client/spell/ClientCasts`, the local player's end also shown by `client/hud/CastBarHud`), `CastRefused` (exists:
   `spell/net/CastRefusedPayload`, the reason shown by `client/hud/CastBarHud`), `CastTarget` (exists:
   `spell/net/CastTargetPayload`, the mob under the target circle of the player's own cast, drawn by
-  `client/spell/TargetCircle`), `ShownTarget` (exists: `spell/net/ShownTargetPayload`, the mob under the circle
-  while the Show target key is held, drawn by `client/spell/TargetCircle`), `CombatText` (exists: `combat/net/CombatTextPayload`, shown by
-  `client/hud/CombatTextHud`), `HitDirection` (exists: `combat/net/HitDirectionPayload`, shown by
-  `client/hud/HitDirectionHud`), `RealmRefused` (exists: `world/net/RealmRefusedPayload`, the realm's hint, shown by
-  `client/hud/RealmRefusalHud`, [15.1](#151-dimensions)), `DungeonStatus`.
+  `client/spell/TargetCircle`), `HighlightedTarget` (exists: `spell/net/HighlightedTargetPayload`, the mob under the
+  circle while the Highlight Spell Target is on, drawn by `client/spell/TargetCircle`), `CombatText` (exists:
+  `combat/net/CombatTextPayload`, shown by `client/hud/CombatTextHud`), `HitDirection` (exists:
+  `combat/net/HitDirectionPayload`, shown by `client/hud/HitDirectionHud`), `RealmRefused` (exists:
+  `world/net/RealmRefusedPayload`, the realm's hint, shown by `client/hud/RealmRefusalHud`, [15.1](#151-dimensions)),
+  `DungeonStatus`.
 
 ## 18. Client code: rendering, GUI, input
 
@@ -3243,7 +3252,7 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   unavoidable, no shaders of our own (Iris and Complementary). Porting costs the most here
   ([ADR 0003](decisions/0003-platform-minecraft-1-21-1-neoforge.md)), so it stays small.
 - **Client config** (`ModConfigSpec`, client type) holds UI preferences only: `client/ClientConfig` (C3b), the spell
-  casting options and the spell bar's place and size (RLM-404).
+  casting options, the spell bar's place and size (RLM-404) and how the Highlight Spell Target key works (RLM-468).
 
 ## 19. Cross-cutting rules
 
@@ -3305,8 +3314,8 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
 
 `ModConfigSpec` only for operator and UI settings (instance limits, timeouts, debug flags, HUD options). Gameplay
 numbers are content, so they are versioned, validated and tested. The client config exists (C3b): `client/ClientConfig`,
-`config/realmforge-client.toml`, holds how the spell bar's presses wait and where the spell bar goes and how big it is
-([11.6](#116-client-side)). One exception: the
+`config/realmforge-client.toml`, holds how the spell bar's presses wait, where the spell bar goes and how big it is,
+and whether the Highlight Spell Target key toggles or is held ([11.6](#116-client-side)). One exception: the
 common config, `combat/CombatConfig`, `config/realmforge-common.toml`, holds the blocking rules
 ([9.3](#93-blocking-with-two-handed-weapons)) and the in-combat window ([9.4](#94-in-combat), RLM-348, whose ticket
 allowed content or config), because Matěj tunes them while he plays (RLM-297) and NeoForge reloads the file when it

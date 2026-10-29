@@ -30,18 +30,18 @@ class CentreSnapTest {
         CentreSnap snap = new CentreSnap();
         snap.x(MIDDLE, MIDDLE, 0);
         assertEquals(MIDDLE, snap.x(MIDDLE + 40, MIDDLE, 100), "a pull begins");
-        assertEquals(MIDDLE, snap.x(MIDDLE + 60, MIDDLE, 1099), "held for just under a second");
+        assertEquals(MIDDLE, snap.x(MIDDLE + 60, MIDDLE, 349), "held for just under a quarter of a second");
         assertTrue(snap.snapped());
     }
 
     @Test
-    void aSecondOfPullingReleasesIt() {
+    void aQuarterOfASecondOfPullingReleasesIt() {
         CentreSnap snap = new CentreSnap();
         snap.x(MIDDLE, MIDDLE, 0);
         snap.x(MIDDLE + 40, MIDDLE, 100);
-        assertEquals(MIDDLE + 60, snap.x(MIDDLE + 60, MIDDLE, 1100), "a second of pulling lets go");
+        assertEquals(MIDDLE + 60, snap.x(MIDDLE + 60, MIDDLE, 350), "a quarter of a second of pulling lets go");
         assertFalse(snap.snapped());
-        assertEquals(MIDDLE + 30, snap.x(MIDDLE + 30, MIDDLE, 1200), "then it follows the mouse");
+        assertEquals(MIDDLE + 30, snap.x(MIDDLE + 30, MIDDLE, 400), "then it follows the mouse");
     }
 
     @Test
@@ -49,12 +49,12 @@ class CentreSnapTest {
         CentreSnap snap = new CentreSnap();
         snap.x(MIDDLE, MIDDLE, 0);
         snap.x(MIDDLE - 40, MIDDLE, 100);
-        snap.x(MIDDLE, MIDDLE, 900);
-        assertEquals(MIDDLE, snap.x(MIDDLE - 40, MIDDLE, 1200), "a new pull starts over");
+        snap.x(MIDDLE, MIDDLE, 300);
+        assertEquals(MIDDLE, snap.x(MIDDLE - 40, MIDDLE, 400), "a new pull starts over");
         assertTrue(snap.snapped());
-        snap.x(MIDDLE - 40, MIDDLE, 2200);
-        assertFalse(snap.snapped(), "released after its own second");
-        assertEquals(MIDDLE, snap.x(MIDDLE + 3, MIDDLE, 2300), "back near the middle: snapped again");
+        snap.x(MIDDLE - 40, MIDDLE, 650);
+        assertFalse(snap.snapped(), "released after its own quarter of a second");
+        assertEquals(MIDDLE, snap.x(MIDDLE + 3, MIDDLE, 700), "back near the middle: snapped again");
     }
 
     @Test

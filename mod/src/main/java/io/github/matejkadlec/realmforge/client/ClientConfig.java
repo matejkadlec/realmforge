@@ -11,8 +11,9 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
  * The client options (architecture 19.2: UI preferences only), in {@code config/realmforge-client.toml}: how the spell
- * bar's presses wait (Matěj, 2026-10-19, RLM-25), and where the spell bar and resource bar group goes and how big it is
- * (RLM-404). {@link SpellOptionsScreen} edits them, from the spellbook and from the mod list's Config button.
+ * bar's presses wait (Matěj, 2026-10-19, RLM-25), where the spell bar and resource bar group goes and how big it is
+ * (RLM-404), and how the Highlight Spell Target key works (RLM-468). {@link SpellOptionsScreen} edits them, from the
+ * spellbook and from the mod list's Config button.
  */
 public final class ClientConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
@@ -59,7 +60,33 @@ public final class ClientConfig {
             .translation(GeneratedTexts.GUI_MIRROR_HOTBAR_WIDTH)
             .define("mirrorHotbarWidth", false);
 
+    /** How the Highlight Spell Target key works: Toggle (the default) or Hold. */
+    public static final ModConfigSpec.EnumValue<HighlightMode> HIGHLIGHT_SPELL_TARGET = BUILDER
+            .comment("How the Highlight Spell Target key shows the target circle: TOGGLE, a press shows it and another "
+                    + "hides it; HOLD, it shows while the key is held.")
+            .translation(GeneratedTexts.GUI_HIGHLIGHT_SPELL_TARGET)
+            .defineEnum("highlightSpellTarget", HighlightMode.TOGGLE);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
+
+    /** How the Highlight Spell Target key works (RLM-468; Matěj's playtest of 2026-10-29). */
+    public enum HighlightMode {
+        /** A press of the key shows the highlight, and the next one hides it. */
+        TOGGLE(GeneratedTexts.GUI_HIGHLIGHT_SPELL_TARGET_TOGGLE),
+        /** The highlight shows while the key is held. */
+        HOLD(GeneratedTexts.GUI_HIGHLIGHT_SPELL_TARGET_HOLD);
+
+        private final String text;
+
+        HighlightMode(String text) {
+            this.text = text;
+        }
+
+        /** The translation key of the option's value, "Toggle" or "Hold". */
+        public String text() {
+            return text;
+        }
+    }
 
     private ClientConfig() {
     }
