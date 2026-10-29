@@ -1,0 +1,53 @@
+{
+  "constraints": {
+    "dimensions": [
+      "minecraft:the_end"
+    ]
+  },
+  "min_purity": "normal",
+  "unique": true,
+  "weights": {
+    "summit": {
+      "quality": 2.0,
+      "weight": 50
+    },
+    "pinnacle": {
+      "quality": 2.0,
+      "weight": 50
+    }
+  },
+  "bonuses": [
+    {
+      "type": "apotheosis:mageslayer",
+      "gem_class": "apotheosis:helmet",
+      "values": {
+        "normal": 0.15,
+        "flawless": 0.225,
+        "perfect": 0.35
+      }
+    },
+    {
+      "type": "apotheosis:mob_effect",
+      "gem_class": "apotheosis:shield",
+      "mob_effect": "minecraft:resistance",
+      "target": "block_self",
+      "values": {
+        "normal": {
+          "duration": 200,
+          "amplifier": 0,
+          "cooldown": 400
+        },
+        "flawless": {
+          "duration": 300,
+          "amplifier": 0,
+          "cooldown": 400
+        },
+        "perfect": {
+          "duration": 300,
+          "amplifier": 1,
+          "cooldown": 400
+        }
+      }
+    }
+  ]
+}

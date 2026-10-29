@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_stat_remaps.schema.json
+# Lacerating, Warlord and Royalty's all-stats bonus give our crit damage. Apothic Attributes' crit damage is the whole
+# multiplier, 1.5 at base, ours the bonus, +0.5 at base: an add_value means the same on both, and Warlord's
+# add_multiplied_base becomes an add_value of 1.5 times its values, so it adds what it added there.
+id: crit_damage
+source: apothic_attributes:crit_damage
+target: realmforge:crit_damage
+source_base: 1.5

@@ -8,6 +8,7 @@ uv run rf validate        # validate content/ (schema, ids, references)
 uv run rf gen             # validate, then regenerate every generated file
 uv run rf gen --check     # exit 1 if any generated file is out of date
 uv run rf ids vanilla     # re-extract the vanilla ID universe (downloads the server jar, needs Java 25)
+uv run rf ids apotheosis  # re-snapshot Apotheosis's data from the jar pack/mods/apotheosis.pw.toml pins
 uv run rf pack-boot       # boot the whole pack plus mod/build/libs' jar on a server and a client (needs Java 25)
 uv run rf gametest-log    # after ./gradlew runGameTestServer: exit 1 on data loading errors in its log
 uv run rf art clean SRC DST   # snap a generated texture to the 16x16 grid and the project palette
@@ -27,21 +28,23 @@ uv run ruff check && uv run ruff format --check
 | `realmforge_tools/content.py` | loads `content/` (step 1: schema) |
 | `realmforge_tools/validate.py` | own ids and references against the ID universe (steps 2-3) |
 | `realmforge_tools/id_universe.py`, `vanilla.py` | the ID universe and the vanilla extractor |
-| `realmforge_tools/generate/` | generators; `generate_all` + `sync` own the generated directories; `datapack.py` writes every type in `DATAPACK_TYPES` as datapack registry entries (translation keys, unit conversion); `spell_schools.py` writes the spell schools with their damage types, damage type tag entries and placeholder icons; `spells.py` writes the spells' `GeneratedSpells` keys, the placeholder textures of their projectiles' appearances and QA expectations (their data comes from `datapack.py`); `effects.py` writes the status effects' `GeneratedEffects` registrations, placeholder icons and QA expectations; `mobs.py` writes the custom mobs' `GeneratedMobs` registrations, loot tables (one per variant too), entity type tags, placeholder GeckoLib models, animations and textures (one per variant), where each mob's raised hands are (a forming projectile grows there), and QA expectations (a boss's body, archetype `boss`, made through `mob/custom/Archetypes` and in `c:bosses`); `bosses.py` writes the bosses' QA expectations (their data and phase names come from `datapack.py`); `sounds.py` writes our sound events' `sounds.json`, `GeneratedSounds` registrations and subtitles; `texts.py` writes the `GeneratedTexts` key constants and `lang.py` every locale's lang file; `apotheosis.py` writes the Apotheosis affixes of `content/apotheosis_affixes/` to Apotheosis's own paths; `fonts.py` writes our symbols font (`realmforge:symbols`, the mob level's skull) and its texture from the pixel rows it holds |
+| `realmforge_tools/apotheosis.py` | Apotheosis's data ([ADR 0063](../docs/decisions/0063-apotheosis-data-is-fitted-from-a-pinned-snapshot.md)): `rf ids apotheosis` writes its snapshot, and `fit` applies `content/`'s entry changes and stat remaps to it, for `validate.py` and `generate/apotheosis.py` |
+| `realmforge_tools/generate/` | generators; `generate_all` + `sync` own the generated directories; `datapack.py` writes every type in `DATAPACK_TYPES` as datapack registry entries (translation keys, unit conversion); `spell_schools.py` writes the spell schools with their damage types, damage type tag entries and placeholder icons; `spells.py` writes the spells' `GeneratedSpells` keys, the placeholder textures of their projectiles' appearances and QA expectations (their data comes from `datapack.py`); `effects.py` writes the status effects' `GeneratedEffects` registrations, placeholder icons and QA expectations; `mobs.py` writes the custom mobs' `GeneratedMobs` registrations, loot tables (one per variant too), entity type tags, placeholder GeckoLib models, animations and textures (one per variant), where each mob's raised hands are (a forming projectile grows there), and QA expectations (a boss's body, archetype `boss`, made through `mob/custom/Archetypes` and in `c:bosses`); `bosses.py` writes the bosses' QA expectations (their data and phase names come from `datapack.py`); `sounds.py` writes our sound events' `sounds.json`, `GeneratedSounds` registrations and subtitles; `texts.py` writes the `GeneratedTexts` key constants and `lang.py` every locale's lang file; `apotheosis.py` writes every Apotheosis affix, gem, tier augment and rarity that `content/` changes to Apotheosis's own paths, and every removed recipe as a file NeoForge skips; `fonts.py` writes our symbols font (`realmforge:symbols`, the mob level's skull) and its texture from the pixel rows it holds |
 | `realmforge_tools/formats/` | deterministic PNG, NBT, gzip/zlib and JSON writers; a PNG reader for generator output; an NBT reader (every tag type, the arrays included) |
 | `realmforge_tools/art/` | texture pipeline ([ADR 0023](../docs/decisions/0023-texture-generator.md)): palette, `rf art clean`, `rf art gallery` |
 | `realmforge_tools/rooms/` | dungeon rooms ([below](#rooms)): structure templates, the source readers, `rf rooms import`, the draft slot tags, dressing plain rooms, the checks, the renderer and `rf rooms gallery`; set pieces ([below](#set-pieces)): the matcher and the mask report (`set_pieces.py`) and `rf set-pieces import` (`set_piece_import.py`) |
 | `realmforge_tools/packboot.py` | `rf pack-boot`: installs and boots the pack with NeoForge's self tests ([below](#pack-boot)) |
 | `realmforge_tools/gamelog.py` | NeoForge log parsing shared by `rf pack-boot` and `rf gametest-log` ([below](#gametest-log)) |
 | `realmforge_tools/client_isolation.py` | the import check that keeps client classes under `client/` (architecture 18) |
-| `id_universe/` | generated vanilla id snapshot (committed) |
+| `id_universe/` | generated snapshots (committed): vanilla's ids, and Apotheosis's data (`apotheosis-<version>.json`, MIT, its affixes, gems, tier augments, rarities and recipe ids) |
 | `schemas/` | generated JSON Schemas for editor completion (committed) |
 | `tests/` | pytest |
 
 Generated directories (owned by `rf gen`, never edit by hand): `mod/src/generated/`, `qa-mod/src/generated/`,
 `tools/schemas/`, and FTB Quests' quest book `pack/config/ftbquests/quests/` (`generate/quests.py`, JSON5, written once
 `content/quests/` has a quest). When `rf gen` changes files in `pack/`, it runs `packwiz refresh` in `pack/`; without
-`packwiz` on the `PATH` it exits with 1 and asks for it. `tools/id_universe/` is written by `rf ids vanilla`.
+`packwiz` on the `PATH` it exits with 1 and asks for it. `tools/id_universe/` is written by `rf ids vanilla` and `rf ids apotheosis`, never by hand: after an Apotheosis update
+in the pack, run `rf ids apotheosis` (a pytest fails while the snapshot names another jar).
 
 ## Pack boot
 

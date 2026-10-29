@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_stat_remaps.schema.json
+# Timekeeping gives our cooldown reduction, which every spell's cooldown reads (architecture 11.5).
+id: cooldown_reduction
+source: apothic_attributes:cooldown_reduction
+target: realmforge:cooldown_reduction

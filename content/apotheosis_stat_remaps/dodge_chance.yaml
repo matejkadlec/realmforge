@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_stat_remaps.schema.json
+# Samurai (shields), Slipstream (boots) and Royalty give our dodge chance; Apothic Attributes' own dodge never fires
+# (RLM-271).
+id: dodge_chance
+source: apothic_attributes:dodge_chance
+target: realmforge:dodge_chance

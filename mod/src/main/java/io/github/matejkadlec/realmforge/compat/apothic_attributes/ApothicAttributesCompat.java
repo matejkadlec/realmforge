@@ -21,11 +21,13 @@ import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
  *   <li>Every entity type gets its crit chance 0 and crit damage 1.0 as base values, after Apothic Attributes added
  *   them at 5 % and 150 % ({@code EntityAttributeModificationEvent} at LOW priority, a phase FML runs after every
  *   mod's NORMAL listeners).</li>
- *   <li>Its crit damage is capped at 1.0 and its dodge chance at 0, so no affix, gem or tier augment lifts them
- *   before their data points at our stats (RLM-272): its crit needs crit damage above 1 ({@code
- *   AttributeEvents#apothCriticalStrike}), and its dodge rolls a random float against the dodge chance ({@code
- *   AttributeEvents#isDodging}), which at 0 dodges only when the float is exactly 0, once in 2^24 rolls. The caps
- *   use the accessor of {@code stats/AttributeCaps} ({@link RangedAttributeAccessor}).</li>
+ *   <li>Its crit damage is capped at 1.0 and its dodge chance at 0, so nothing lifts them: its crit needs crit damage
+ *   above 1 ({@code AttributeEvents#apothCriticalStrike}), and its dodge rolls a random float against the dodge
+ *   chance ({@code AttributeEvents#isDodging}), which at 0 dodges only when the float is exactly 0, once in 2^24
+ *   rolls. Apotheosis's affixes, gems and tier augments grant our crit and dodge instead since RLM-272
+ *   ({@code content/apotheosis_stat_remaps/}); the caps stay, as they cost nothing and guard against another mod's
+ *   data or a later Apotheosis release that grants its own again. They use the accessor of
+ *   {@code stats/AttributeCaps} ({@link RangedAttributeAccessor}).</li>
  * </ul>
  * Vanilla's jump crits keep vanilla's multiplier: Apothic Attributes raises it to its crit damage only when that is
  * higher, and a player's melee crit is ours anyway ({@code DamagePipeline#onCriticalHit}). Tested by the QA mod's

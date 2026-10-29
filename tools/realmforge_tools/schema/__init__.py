@@ -6,7 +6,14 @@ wrong types are errors. JSON Schemas for editor completion are generated from th
 
 from dataclasses import dataclass
 
-from realmforge_tools.schema.apotheosis_affix import ApotheosisAffixDef
+from realmforge_tools.schema.apotheosis import (
+    ApotheosisAffixDef,
+    ApotheosisGemDef,
+    ApotheosisRarityDef,
+    ApotheosisStatRemapDef,
+    ApotheosisTierAugmentDef,
+    RecipeRemovalDef,
+)
 from realmforge_tools.schema.block import BlockDef
 from realmforge_tools.schema.boss import BossDef
 from realmforge_tools.schema.chapter import ChapterDef
@@ -54,7 +61,12 @@ CONTENT_TYPES: dict[str, type] = {
     "room_specs": RoomSpecDef,
     "realms": RealmDef,
     "apotheosis_affixes": ApotheosisAffixDef,
+    "apotheosis_gems": ApotheosisGemDef,
+    "apotheosis_tier_augments": ApotheosisTierAugmentDef,
+    "apotheosis_rarities": ApotheosisRarityDef,
+    "apotheosis_stat_remaps": ApotheosisStatRemapDef,
     "recipes": RecipeOverrideDef,
+    "recipe_removals": RecipeRemovalDef,
 }
 
 # content/worldgen/ holds vanilla worldgen JSON instead of YAML; it is validated and copied (content.py, validate.py).
@@ -91,6 +103,10 @@ __all__ = [
     "DATAPACK_TYPES",
     "WORLDGEN_DIR",
     "ApotheosisAffixDef",
+    "ApotheosisGemDef",
+    "ApotheosisRarityDef",
+    "ApotheosisStatRemapDef",
+    "ApotheosisTierAugmentDef",
     "BlockDef",
     "BossDef",
     "ChapterDef",
@@ -107,6 +123,7 @@ __all__ = [
     "RaceDef",
     "RealmDef",
     "RecipeOverrideDef",
+    "RecipeRemovalDef",
     "RoomSpecDef",
     "RoomThemeDef",
     "SoundGroupDef",

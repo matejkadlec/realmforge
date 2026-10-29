@@ -1,0 +1,43 @@
+{
+  "$defs": {
+    "JsonValue": {}
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One of Apotheosis's gems, switched off or with fields replaced (``bonuses`` replaces all its bonuses).",
+  "properties": {
+    "disabled": {
+      "default": false,
+      "description": "true switches the entry off: Apotheosis skips it, as if it did not exist (neoforge:never).",
+      "title": "Disabled",
+      "type": "boolean"
+    },
+    "gem": {
+      "description": "The gem it changes, e.g. apotheosis:core/breach.",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_]+(/[a-z0-9_]+)*$",
+      "title": "Gem",
+      "type": "string"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "replace": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "description": "Top-level fields of the entry, each replaced as a whole, in Apotheosis's own format, e.g. categories: [apotheosis:bow]. Every field must exist in the entry and keep its JSON type.",
+      "title": "Replace",
+      "type": "object"
+    }
+  },
+  "required": [
+    "id",
+    "gem"
+  ],
+  "title": "ApotheosisGemDef",
+  "type": "object"
+}

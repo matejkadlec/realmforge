@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_stat_remaps.schema.json
+# Berserking and Royalty give our overheal, a share of max health that healing past it fills as absorption.
+id: overheal
+source: apothic_attributes:overheal
+target: realmforge:overheal

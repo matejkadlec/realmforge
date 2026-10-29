@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_stat_remaps.schema.json
+# Protection shred is switched off (RLM-205): Nullifying, the bonuses of Royalty and Mageslayer that pair it with
+# another stat, and Royalty's share of it.
+id: protection_shred
+source: apothic_attributes:prot_shred
+off: true

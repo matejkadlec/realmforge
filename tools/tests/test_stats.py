@@ -533,8 +533,10 @@ def test_expectations_hold_stats_and_rule_samples(repo: RepoPaths) -> None:
 def test_no_stats_or_rules_still_compile(repo: RepoPaths) -> None:
     # Spell schools name their power and resistance stats, and races, classes, effects and gear their modifiers' stats,
     # so they go too, and with the schools the spells and effects that name them, and the mobs and bosses that cast them.
+    # Apotheosis's stat remaps name the stats that replace Apothic Attributes'.
     for folder in (
         "stats",
+        "apotheosis_stat_remaps",
         "stat_rules",
         "spell_schools",
         "spells",
