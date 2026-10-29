@@ -216,9 +216,10 @@ gap between iron and diamond (a chestplate's 6 and 8 armor) and the fixed step p
 | Pinnacle | malachite | Unmade Isles |
 
 **The anchor:** Overworld's players craft iron while they meet its dungeons, and an Overworld dungeon's loot is
-diamond-level (the reference set itself, Haven being Overworld's tier), which is Matěj's "an early dungeon's curio is
-about as strong as diamond-tier gear". Undervault's Astone drops netherite +30 %: her unique piece is above anything
-a level 18 player can craft, and below the Twins set of chapter 3.
+diamond-level: its chests diamond +15 % and its boss diamond +30 % (Haven's reference set, the table above), which is
+Matěj's "an early dungeon's curio is about as strong as diamond-tier gear". Undervault's dungeon chests and bosses give
+netherite +15 % and +30 %, and Astone, Undervault's final boss, the next tier's set: her unique piece has the Twins
+set's numbers, above anything a level 18 player can craft, and equal to what chapter 3 crafts.
 
 ### Armor and toughness climb slowest
 
@@ -226,9 +227,9 @@ a level 18 player can craft, and below the Twins set of chapter 3.
   the reference set's and the next tier's, never above the next tier's crafted piece. The rest of its budget is its
   effect: Matěj's "better armor gets effects instead" (2026-10-16), with the best reachable set at about netherite
   × 1.5, 30 armor and 18 toughness.
-- **Example, Astone's unique chest piece (melee):** 9 armor (netherite 8, the Twins tier's chestplate about 9),
-  toughness 3, +30 % on its other stats, and an effect such as "Unbroken: 10 % less damage from hits while above
-  half health".
+- **Example, Astone's unique chest piece (melee):** the Twins tier's chestplate (not designed yet; about 9 armor and
+  3 toughness against netherite's 8 and 3), its other stats at the Twins tier's, and an effect such as "Unbroken:
+  10 % less damage from hits while above half health".
 - **A caster's unique robe** raises magic shield, spell power and mana by the same shares; magic shield counts as its
   armor for the slow climb.
 
