@@ -333,11 +333,12 @@ merges.
   follows that. Writing the outcome into the roadmap's open decisions is a plan change
   ([Publication](#publication)).
 - A ticket that asks for a change conflicting with an accepted ADR does not wait on him when it is his own request
-  (its description or a comment records it as his, with the date, or he named the ticket in the session) or a Done
-  decision ticket: the batch makes the change with its superseding or amending ADR, and the pull request
-  description names the ADR and that ticket ([ADR 0060](decisions/0060-what-counts-as-the-owners-confirmation-of-an-adr-conflicting-change.md)).
-  A ticket an agent wrote (a follow-up, a review finding) is no confirmation: the agent follows the ADR and puts the
-  change to him first, as for a plan change.
+  (its description or a comment records it as his, with the date) or a Done decision ticket: the batch makes the
+  change with its superseding or amending ADR, and the pull request description names the ADR and that ticket
+  ([ADR 0060](decisions/0060-what-counts-as-the-owners-confirmation-of-an-adr-conflicting-change.md)). A ticket an
+  agent wrote (a follow-up, a review finding) is no confirmation: the agent follows the ADR and puts the change to
+  him first, as for a plan change. When he names such a ticket in the session, that is his request there: the
+  agent names the ADR and its main consequence once and waits for his answer.
 
 ### QA evidence
 

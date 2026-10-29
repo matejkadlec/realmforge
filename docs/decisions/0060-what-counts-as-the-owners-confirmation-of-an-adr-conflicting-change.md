@@ -16,22 +16,27 @@ the flow's "Tickets waiting on Matěj" does not cover it. Plan changes already h
 ([0021](0021-status-overview-and-plan-changes.md)): his request, a ticket he wrote that asks for the change, or a
 Done decision ticket.
 
+Source: Matěj named RLM-216 in a session on 2026-10-29 (`flow1 cloud RLM-504 RLM-508 RLM-216 RLM-231`). The ticket
+itself is a review finding. This ADR fills the gap in 0030 and reverses none of its rules, so no conflict notice
+was due.
+
 ## Decision
 
 - **The owner's decision for an ADR-conflicting change has the same sources as a plan change:**
   - **his request in a session:** the notice of 0030 once, and his confirmation (or his word that it is already
-    decided) makes it the decision;
+    decided) makes it the decision. Naming a ticket to a session (direct work, `flow1 <keys>`) is such a request:
+    for a ticket that is not already his decision (below), the agent gives the notice and waits for his answer;
   - **a ticket he wrote that asks for the change:** its description or a comment records it as his request, with
-    the date, or he names the ticket to a session (direct work, `flow1 <keys>`). Agents act under his Jira
-    account, so the author field never tells;
+    the date. Agents act under his Jira account, so the author field never tells;
   - **a Done decision ticket:** its comments record what he decided.
-- **A ticket is already his decision.** It does not wait on him: the run that takes it makes the change and writes
-  the superseding or amending ADR in the same pull request, without asking again. The notice of 0030 moves into
-  the pull request description, which names the conflicting ADR, its main consequence and the source (the ticket's
-  key), and the new ADR records the same source.
-- **A ticket an agent wrote is no confirmation:** a follow-up, a review finding or a split-off part. The agent
-  follows the ADR, and a change it still finds worth making goes to the owner first, as a question or a
-  `decision` ticket, like an agent's own plan change.
+- **His ticket or a Done decision ticket is already his decision.** It does not wait on him: the run that takes it
+  makes the change and writes the superseding or amending ADR in the same pull request, without asking again. The
+  notice of 0030 moves into the pull request description, which names the conflicting ADR, its main consequence
+  and the source (the ticket's key), and the new ADR records the same source.
+- **A ticket an agent wrote is no confirmation by itself:** a follow-up, a review finding or a split-off part. The
+  agent follows the ADR, and a change it still finds worth making goes to the owner first, as a question or a
+  `decision` ticket, like an agent's own plan change. When he names such a ticket to a session, that is his request
+  in the session, so the notice and his confirmation apply.
 
 ## Consequences
 
