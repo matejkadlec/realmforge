@@ -5,6 +5,7 @@ package io.github.matejkadlec.realmforge.generated;
 
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.mob.ai.KiteRules;
+import io.github.matejkadlec.realmforge.mob.custom.Archetypes;
 import io.github.matejkadlec.realmforge.mob.custom.CasterMob;
 import io.github.matejkadlec.realmforge.mob.custom.CustomMob;
 import io.github.matejkadlec.realmforge.mob.custom.CustomMobSpec;
@@ -63,9 +64,26 @@ public final class GeneratedMobs {
                     MobCategory.MONSTER, builder -> builder.sized(1.2F, 3.0F)
                             .clientTrackingRange(8));
 
+    /** {@code realmforge:test_titan} from {@code content/mobs/test_titan.yaml}: boss, "Test Titan". */
+    private static final CustomMobSpec TEST_TITAN_SPEC = new CustomMobSpec(CustomMobSpec.Idle.GUARD,
+            new CustomMobSpec.Sounds(Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(), false),
+            Optional.empty(),
+            new CustomMobSpec.Melee(30, 0.0),
+            List.of(), Optional.empty(),
+            List.of());
+
+    public static final DeferredHolder<EntityType<?>, EntityType<CustomMob>> TEST_TITAN =
+            ENTITY_TYPES.registerEntityType("test_titan",
+                    (type, level) -> Archetypes.create("boss", type, level, TEST_TITAN_SPEC),
+                    MobCategory.MONSTER, builder -> builder.sized(1.4F, 3.2F)
+                            .clientTrackingRange(10));
+
     /** Every mob above, in id order. */
     public static final List<DeferredHolder<EntityType<?>, ? extends EntityType<? extends CustomMob>>> ALL =
-            List.of(HEWN_CHANTER, HEWN_SENTINEL);
+            List.of(HEWN_CHANTER, HEWN_SENTINEL, TEST_TITAN);
 
     private GeneratedMobs() {
     }
@@ -92,6 +110,14 @@ public final class GeneratedMobs {
                 .add(Attributes.MOVEMENT_SPEED, 0.27)
                 .add(Attributes.FOLLOW_RANGE, 20.0)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.6)
+                .build());
+        event.put(TEST_TITAN.get(), Monster.createMonsterAttributes()
+                .add(Attributes.MAX_HEALTH, 200.0)
+                .add(Attributes.ATTACK_DAMAGE, 6.0)
+                .add(Attributes.ARMOR, 4.0)
+                .add(Attributes.MOVEMENT_SPEED, 0.25)
+                .add(Attributes.FOLLOW_RANGE, 32.0)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 1.0)
                 .build());
     }
 }

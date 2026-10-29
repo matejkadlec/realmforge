@@ -1,0 +1,54 @@
+{
+  "entity": "realmforge:test_titan",
+  "level": 5,
+  "arena": {
+    "radius": 12.0
+  },
+  "bar_color": "purple",
+  "phase_change_ticks": 20,
+  "phases": [
+    {
+      "id": "awakening",
+      "name": "boss.realmforge.test_titan.phases.0.name",
+      "on_enter": [],
+      "abilities": [
+        {
+          "spell": "realmforge:test_npc_target_bolt",
+          "cooldown_ticks": 40
+        }
+      ]
+    },
+    {
+      "id": "fury",
+      "name": "boss.realmforge.test_titan.phases.1.name",
+      "enter_when": {
+        "type": "realmforge:health_below",
+        "health": 0.5
+      },
+      "on_enter": [
+        "realmforge:test_titan_harden"
+      ],
+      "abilities": [
+        {
+          "spell": "realmforge:test_npc_target_bolt",
+          "cooldown_ticks": 20
+        }
+      ]
+    },
+    {
+      "id": "frenzy",
+      "name": "boss.realmforge.test_titan.phases.2.name",
+      "enter_when": {
+        "type": "realmforge:time_in_phase",
+        "after_ticks": 80
+      },
+      "on_enter": [],
+      "abilities": [
+        {
+          "spell": "realmforge:test_npc_target_bolt",
+          "cooldown_ticks": 0
+        }
+      ]
+    }
+  ]
+}

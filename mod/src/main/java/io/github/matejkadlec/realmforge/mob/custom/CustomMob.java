@@ -3,9 +3,13 @@ package io.github.matejkadlec.realmforge.mob.custom;
 import com.geckolib.animatable.GeoEntity;
 import com.geckolib.animatable.instance.AnimatableInstanceCache;
 import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
 import com.geckolib.constant.DefaultAnimations;
 import com.geckolib.util.GeckoLibUtil;
 import io.github.matejkadlec.realmforge.mob.ai.Wandering;
+import io.github.matejkadlec.realmforge.spell.Spells;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -53,6 +57,9 @@ import net.minecraft.world.level.storage.loot.LootTable;
  * ({@link Wandering}), or a guard keeps to its post. Vanilla's {@code Mob} constructor
  * registers goals before a subclass's fields exist, so this class registers them itself once the spec is set.
  *
+ * <p>Clients see a cast of a cast-time or channelled spell in progress through a synced flag ({@link #isCasting}),
+ * which plays the model's {@code attack.cast} animation for as long as the cast runs, whichever archetype casts.
+ *
  * <ul>
  *   <li><b>Variants:</b> a mob with variants rolls one by weight when it is created on the server, saves it and
  *   syncs it, so clients draw its texture; it drops its variant's loot table instead of the type's.</li>
@@ -70,6 +77,9 @@ public abstract class CustomMob extends Monster implements GeoEntity {
     private static final String VARIANT = "realmforge:variant";
     private static final EntityDataAccessor<Integer> DATA_VARIANT =
             SynchedEntityData.defineId(CustomMob.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> CASTING =
+            SynchedEntityData.defineId(CustomMob.class, EntityDataSerializers.BOOLEAN);
+    private static final RawAnimation CAST = RawAnimation.begin().thenLoop("attack.cast");
     /** Break particles per cubic block of the mob's hitbox, and the most a death bursts into. */
     private static final double PARTICLES_PER_BLOCK = 40;
     private static final int MAX_PARTICLES = 160;
@@ -141,10 +151,16 @@ public abstract class CustomMob extends Monster implements GeoEntity {
         return variants.size() - 1;
     }
 
+    /** Whether a cast-time or channelled spell of this mob is in progress, on the server and on clients. */
+    public boolean isCasting() {
+        return entityData.get(CASTING);
+    }
+
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder entityData) {
         super.defineSynchedData(entityData);
         entityData.define(DATA_VARIANT, 0);
+        entityData.define(CASTING, false);
     }
 
     @Override
@@ -164,12 +180,17 @@ public abstract class CustomMob extends Monster implements GeoEntity {
             goalSelector.addGoal(Wandering.LOOK_PRIORITY, new RandomLookAroundGoal(this));
         }
         goalSelector.addGoal(Wandering.LOOK_PRIORITY, new LookAtPlayerGoal(this, Player.class, Wandering.LOOK_RANGE));
+        addTargetGoals();
+    }
+
+    /** The archetype's fighting goals, at priority 1 to 4. */
+    protected abstract void addFightGoals();
+
+    /** Whom it fights: whoever hurts it, and the nearest player it sees. */
+    protected void addTargetGoals() {
         targetSelector.addGoal(1, new HurtByTargetGoal(this));
         targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
     }
-
-    /** The archetype's fighting goals, at priority 2 to 4. */
-    protected abstract void addFightGoals();
 
     @Override
     protected void customServerAiStep(ServerLevel level) {
@@ -177,6 +198,7 @@ public abstract class CustomMob extends Monster implements GeoEntity {
         if (post == null && spec.idle() == CustomMobSpec.Idle.GUARD && onGround()) {
             post = blockPosition();
         }
+        entityData.set(CASTING, Spells.currentCast(this).isPresent());
     }
 
     @Override
@@ -286,6 +308,8 @@ public abstract class CustomMob extends Monster implements GeoEntity {
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(DefaultAnimations.genericWalkIdleController());
         addActionControllers(controllers);
+        controllers.add(new AnimationController<CustomMob>("Cast",
+                test -> test.animatable().isCasting() ? test.setAndContinue(CAST) : PlayState.STOP));
     }
 
     /** The archetype's animation controllers for its attacks, besides walking and idling. */

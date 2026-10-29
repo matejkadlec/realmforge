@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../tools/schemas/bosses.schema.json
+# Boss framework test (W5a, RLM-490): three phases, one per trigger type and an on_enter buff, a short phase change so
+# the GameTests stay short. Not gameplay content; the GameTests in the QA mod fight it.
+id: test_titan
+entity: realmforge:test_titan
+level: 5
+arena: {radius: 12}
+bar_color: purple
+phase_change_seconds: 1
+phases:
+  - id: awakening
+    name: {en_us: Awakening}
+    abilities:
+      - {spell: realmforge:test_npc_target_bolt, cooldown_seconds: 2}
+  - id: fury
+    name: {en_us: Fury}
+    enter_when: {type: realmforge:health_below, health_percent: 50}
+    on_enter: [realmforge:test_titan_harden]
+    abilities:
+      - {spell: realmforge:test_npc_target_bolt, cooldown_seconds: 1}
+  - id: frenzy
+    name: {en_us: Frenzy}
+    enter_when: {type: realmforge:time_in_phase, after_seconds: 4}
+    abilities:
+      - {spell: realmforge:test_npc_target_bolt}

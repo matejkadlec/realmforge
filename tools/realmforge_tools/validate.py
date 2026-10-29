@@ -51,7 +51,7 @@ from realmforge_tools.schema.effect import PeriodicDef, effect_id
 from realmforge_tools.schema.item import GEAR_FORBIDDEN_ATTRIBUTES, USE_TEXT_GROUP, ItemDef, entity_loot_table
 from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
-from realmforge_tools.schema.mob import TRASH_LOOT, mob_description_id
+from realmforge_tools.schema.mob import BOSS, TRASH_LOOT, mob_description_id, mob_id
 from realmforge_tools.schema.quest import (
     CUSTOM_STATS,
     AdvancementRewardDef,
@@ -240,6 +240,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_effects(content, universe)
     problems += _check_spells(content, universe)
     problems += _check_mobs(content, universe)
+    problems += _check_bosses(content, universe)
     problems += _check_sounds(content, universe)
     problems += _check_characters(content, universe)
     problems += _check_worldgen_references(content, universe)
@@ -671,7 +672,7 @@ def _check_pooled_room(room: RoomEntry) -> list[Problem]:
 def _check_ids(content: Content) -> list[Problem]:
     problems: list[Problem] = []
     for type_dir in CONTENT_TYPES:
-        kind = type_dir.removesuffix("s")
+        kind = type_dir.removesuffix("es") if type_dir.endswith("sses") else type_dir.removesuffix("s")
         seen: dict[str, str] = {}
         for entry in content.entries(type_dir):
             entry_id = entry.model.id
@@ -1065,6 +1066,74 @@ def _check_mobs(content: Content, universe: IdUniverse) -> list[Problem]:
                         "target in range",
                     )
                 )
+    return problems
+
+
+# The targeting types a boss casts its phases' spells with: at its target or a player it picks, at a point or along
+# a direction aimed at its target, or on itself (architecture 14.3). An ally spell has no ally to find.
+BOSS_SPELL_TARGETING = (SELF, ENEMY, CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLAYER, GROUND_POINT, DIRECTION)
+
+
+def _check_bosses(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A boss runs on a mob of archetype boss, one boss per such mob and every such mob a boss's, and its phases cast
+    spells that exist and that a boss can aim (architecture 14.3)."""
+    problems: list[Problem] = []
+    spells = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spells}
+    mobs = {mob_id(entry.model.id): entry.model for entry in content.mobs}
+    bodies: dict[str, str] = {}
+    for entry in content.bosses:
+        boss = entry.model
+        mob = mobs.get(boss.entity)
+        if mob is None:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "entity",
+                    f"{boss.entity} is no mob of content/mobs/: a boss runs on a mob of archetype {BOSS}",
+                )
+            )
+        elif mob.archetype != BOSS:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "entity",
+                    f"{boss.entity} is a {mob.archetype} mob: a boss runs on a mob of archetype {BOSS}",
+                )
+            )
+        elif boss.entity in bodies:
+            problems.append(
+                Problem(entry.source, "entity", f"{boss.entity} is already the body of {bodies[boss.entity]}")
+            )
+        else:
+            bodies[boss.entity] = entry.source
+        for p, phase in enumerate(boss.phases):
+            casts = [(f"phases.{p}.on_enter.{n}", spell) for n, spell in enumerate(phase.on_enter)] + [
+                (f"phases.{p}.abilities.{n}.spell", ability.spell)
+                for n, ability in enumerate(phase.abilities)
+            ]
+            for path, spell_id in casts:
+                spell = spells.get(spell_id)
+                if spell is None:
+                    problems.append(Problem(entry.source, path, _unknown(spell_id, SPELL_REGISTRY, universe)))
+                elif spell.targeting.type not in BOSS_SPELL_TARGETING:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            path,
+                            f"{spell_id} targets {spell.targeting.type}; a boss casts with "
+                            f"{', '.join(BOSS_SPELL_TARGETING)}",
+                        )
+                    )
+    for entry in content.mobs:
+        mob = entry.model
+        if mob.archetype == BOSS and mob_id(mob.id) not in bodies:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "archetype",
+                    f"no boss in content/bosses/ runs on {mob_id(mob.id)}: a boss's body needs its fight",
+                )
+            )
     return problems
 
 

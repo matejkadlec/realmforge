@@ -15,8 +15,8 @@ import net.minecraft.world.entity.LivingEntity;
  * {@code Entity#startSeenByPlayer}, {@link #stopSeenBy} from {@code #stopSeenByPlayer}), so a player sees the bar
  * exactly while their client tracks the boss: within its entity type's client tracking range and the server's view
  * distance, in its dimension, logged in. It calls {@link #update} every tick, which keeps the bar's progress at the
- * boss's share of health and its title at the boss's name, or at the title the boss set ({@link #setTitle}: W5's
- * phase name). From the boss's death on, nobody sees the bar.
+ * boss's share of health and its title at the boss's name, or at the title the boss set ({@link #setTitle}: a
+ * {@link BossMob}'s name and phase). From the boss's death on, nobody sees the bar.
  *
  * <p>The client gets only the title, colour, overlay and progress, so this needs no payload and no drawing of ours,
  * and other mods treat the bar as they treat the Wither's. A boss's entity type also goes into NeoForge's
@@ -69,6 +69,16 @@ public final class BossBar {
         if (!boss.level().isClientSide()) {
             event.setName(currentTitle());
         }
+    }
+
+    /** Sets the bar's colour: a boss's definition names it once the boss reads it. */
+    public void setColor(BossEvent.BossBarColor color) {
+        event.setColor(color);
+    }
+
+    /** The bar's colour. */
+    public BossEvent.BossBarColor color() {
+        return event.getColor();
     }
 
     /** The title the players see. */

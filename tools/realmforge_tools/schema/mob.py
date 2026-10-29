@@ -2,11 +2,12 @@
 
 Entity types are a static registry, so each mob becomes a generated registration of the archetype it picks, a Java
 class with its AI (``mob/custom/``): ``melee`` fights in melee, ``caster`` casts its spells through the spell engine
-and steps between its casts. Everything else is the mob's data: its name, size, attributes, how it idles and hits, its
-sounds, how it breaks apart, its loot (a vanilla loot table, ``data/realmforge/loot_table/entities/<id>.json``, one per
-variant), its variants and its placeholder model's look. Its model and animations are placeholders until A2 (RLM-48)
-brings the art. A custom mob is hostile, so it gets a level and its scaling like every hostile mob (architecture
-14.1).
+and steps between its casts, and ``boss`` is the body of a boss (``boss/BossMob``), which fights in melee and casts
+the abilities of its phases from its entry in ``content/bosses/`` (W5, architecture 14.3). Everything else is the
+mob's data: its name, size, attributes, how it idles and hits, its sounds, how it breaks apart, its loot (a vanilla
+loot table, ``data/realmforge/loot_table/entities/<id>.json``, one per variant), its variants and its placeholder
+model's look. Its model and animations are placeholders until A2 (RLM-48) brings the art. A custom mob is hostile, so
+it gets a level and its scaling like every hostile mob (architecture 14.1).
 """
 
 from __future__ import annotations
@@ -28,8 +29,11 @@ from realmforge_tools.schema.spell_school import HexColor
 
 PositiveSize = Annotated[float, Field(ge=0.3, le=4.0, allow_inf_nan=False)]
 
-# The archetype classes in mob/custom/ (generate/mobs.py names them).
-ARCHETYPES = ("melee", "caster")
+# The archetype classes in mob/custom/, and boss's in boss/ (generate/mobs.py names them).
+ARCHETYPES = ("melee", "caster", "boss")
+BOSS = "boss"
+# NeoForge's tag of bosses, which Neat and our mob levels read (architecture 14.3); every boss's body joins it.
+BOSSES_TAG = "c:bosses"
 MAX_DROP_COUNT = 64
 MAX_LOOTING_COUNT = 8
 MAX_KNOCK_UP = 3.0
@@ -122,7 +126,7 @@ class CasterDef(StrictModel):
 
 
 class MeleeDef(StrictModel):
-    """How a melee mob hits."""
+    """How a melee mob, or a boss, hits."""
 
     attack_interval_seconds: Seconds = Field(
         default=1.0,
@@ -253,18 +257,20 @@ class MobDef(StrictModel):
 
     id: ContentId
     name: LocalizedText = Field(description="The mob's name, Title Case (lore style guide).")
-    archetype: Literal["melee", "caster"] = Field(
-        description="melee: walks up to its target and hits it; caster: casts its spells from a distance."
+    archetype: Literal["melee", "caster", "boss"] = Field(
+        description="melee: walks up to its target and hits it; caster: casts its spells from a distance; boss: the "
+        "body of a boss, which hits in melee and casts its phases' abilities (content/bosses/)."
     )
     size: MobSizeDef
     attributes: MobAttributesDef
     idle: Literal["stroll", "guard"] = Field(
         default="stroll",
         description="stroll (the default): wanders while it has no target, as vanilla's mobs do, at the Zombified "
-        "Piglin's speed; guard: stands at the spot where it spawned and walks back to it once it loses its target.",
+        "Piglin's speed; guard: stands at the spot where it spawned and walks back to it once it loses its target. A "
+        "boss always guards its arena, so it leaves this out.",
     )
     melee: MeleeDef | None = Field(
-        default=None, description="How a melee mob hits; only for archetype melee."
+        default=None, description="How a melee mob or a boss hits; only for archetypes melee and boss."
     )
     caster: CasterDef | None = Field(
         default=None, description="A caster's spells and steps; only for archetype caster."
@@ -278,7 +284,7 @@ class MobDef(StrictModel):
     tags: UniqueResourceIds = Field(
         default_factory=list,
         description="Our entity type tags it belongs to, e.g. realmforge:stone_creatures, which a spell's projectile "
-        "may spare.",
+        "may spare. A boss joins c:bosses by itself.",
     )
     loot: list[MobDropDef] = Field(default_factory=list, description="What it may drop when it dies.")
     variants: list[MobVariantDef] = Field(
@@ -292,8 +298,10 @@ class MobDef(StrictModel):
             raise ValueError("a caster names its spells: caster: {spells: [...]}")
         if self.archetype != "caster" and self.caster is not None:
             raise ValueError(f"caster is only for archetype caster, not {self.archetype}")
-        if self.archetype != "melee" and self.melee is not None:
-            raise ValueError(f"melee is only for archetype melee, not {self.archetype}")
+        if self.archetype == "caster" and self.melee is not None:
+            raise ValueError("melee is only for archetypes melee and boss, not caster")
+        if self.archetype == BOSS and "idle" in self.model_fields_set:
+            raise ValueError("a boss guards its arena: leave idle out")
         ids = [variant.id for variant in self.variants]
         repeated = sorted({variant for variant in ids if ids.count(variant) > 1})
         if repeated:
@@ -308,6 +316,16 @@ class MobDef(StrictModel):
             if repeated:
                 raise ValueError(f"one drop per item: {', '.join(repeated)}")
         return self
+
+
+def idle_of(mob: MobDef) -> str:
+    """What ``mob`` does without a target: its ``idle``, or ``guard`` for a boss, which keeps to its arena."""
+    return "guard" if mob.archetype == BOSS else mob.idle
+
+
+def tags_of(mob: MobDef) -> list[str]:
+    """The entity type tags ``mob`` joins: its own, and ``c:bosses`` for a boss's body."""
+    return [*mob.tags, BOSSES_TAG] if mob.archetype == BOSS else list(mob.tags)
 
 
 def melee_of(mob: MobDef) -> MeleeDef:

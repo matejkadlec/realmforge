@@ -3,6 +3,10 @@
 # %1$s and %2$s are filled in by the game.
 id: gui
 texts:
+  # A boss's bar at the top of the screen (W5a, architecture 14.3): "Astone, the Unbroken — Stone Fury" (%1$s the
+  # boss's name, %2$s its phase's name).
+  boss_bar_title:
+    en_us: "%1$s — %2$s"
   # The screen's title, for the narrator; the sheet itself shows character_title.
   character_sheet:
     en_us: Character Sheet

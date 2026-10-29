@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.mob.custom;
 
+import io.github.matejkadlec.realmforge.mob.ai.Facing;
 import io.github.matejkadlec.realmforge.mob.ai.KiteStep;
 import io.github.matejkadlec.realmforge.spell.CastEnd;
 import io.github.matejkadlec.realmforge.spell.CastResult;
@@ -10,7 +11,6 @@ import io.github.matejkadlec.realmforge.spell.Targets;
 import java.util.EnumSet;
 import java.util.Optional;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
 
@@ -131,15 +131,7 @@ final class CasterFightGoal extends Goal {
 
     /** Turns its body, head and eyes to its target at once, as it stands. */
     private void face(LivingEntity target) {
-        double dx = target.getX() - mob.getX();
-        double dz = target.getZ() - mob.getZ();
-        if (dx * dx + dz * dz > 1e-6) {
-            float yaw = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90.0F;
-            mob.setYRot(yaw);
-            mob.setYBodyRot(yaw);
-            mob.setYHeadRot(yaw);
-        }
-        mob.getLookControl().setLookAt(target, 90.0F, 90.0F);
+        Facing.face(mob, target);
     }
 
     private void closeIn(LivingEntity target) {
