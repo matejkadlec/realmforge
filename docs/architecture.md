@@ -1826,8 +1826,10 @@ return; the proc engine at its end exists since C3a.
   and its tables reforge, salvage and augment. There is no rarity of our own (vanilla's `Rarity` stays as it is), no
   `realmforge:affixes` component and no item level. We fit it to our systems: its stats point at ours, its data is
   generated from `content/` (RLM-272), our wands and curio slots get loot categories of their own (RLM-273), and its
-  world tier follows our realms ([Apotheosis design](design/apotheosis.md)). Apothic Attributes' own crit and dodge
-  are switched off ([19.4](#194-optional-integrations)).
+  world tier follows our realms ([Apotheosis design](design/apotheosis.md)). Apotheosis takes any item whose
+  `EQUIPPABLE` slot is an armor slot for armor, our robes too, so the [gear design](design/gear.md#loot-categories)
+  proposes robe categories as well. Apothic Attributes' own crit and dodge are switched off
+  ([19.4](#194-optional-integrations)).
 - **Loot:** loot tables generated from YAML, with our own loot functions (`Registries.LOOT_FUNCTION_TYPE`) where
   vanilla's and Apotheosis's are not enough, so other mods and data packs see ordinary loot tables. A vanilla mob's
   loot keeps its own table: an item's `dropped_by` adds a drop to it through NeoForge's loot modifier

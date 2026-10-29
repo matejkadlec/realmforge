@@ -72,6 +72,20 @@ consumable decisions of 11–12 October 2026.
   boss; and his answers of 2026-10-19. It answers RLM-221's Overworld structure research. Decided in
   [ADR 0044](../decisions/0044-third-party-mods-by-milestone.md).
 
+## Artifacts and Immersive Armors catalogues (2026-10-29, RLM-312, RLM-313)
+
+- **[artifacts.md](artifacts.md)**: every one of Artifacts 15.1.3's 49 items (NeoForge 26.1.2 jar) with its effect,
+  slot, what it fights in our stats and combat, a proposed minimum realm and level and early quest reward candidates;
+  where it places items (chests, brushing, mob equipment, campsites and the Mimic) and the config and data that switch
+  each source off; its five Curios slot types against our four slots and Matěj's curio rule. Proposed: six utility
+  items as unique quest rewards in our slots, everything else and every world source off, with an ADR amending the
+  curio rule; or Artifacts left out. Waiting for Matěj's pick.
+- **[immersive-armors.md](immersive-armors.md)**: Immersive Armors 1.8.2's ten sets and 40 pieces (NeoForge 26.1.2
+  jar) with armor, toughness, knockback resistance, speed, durability, enchantability, their hard-coded effects and
+  where they act in our damage pipeline, recipes (two with Nether materials), chest loot and mob armor, and the levers
+  (config, recipe conditions, `ModifyDefaultComponentsEvent`). Proposed: nine sets, Robe off, Heavy's toughness cut,
+  Warrior and Divine as unique quest rewards, its chest loot and mob armor off. Waiting for Matěj's pick.
+
 ## Coins, merchant trades and trade display (2026-10-19, RLM-222)
 
 - **[coins-and-trades.md](coins-and-trades.md)**: coin, trade-editing and villager mods on NeoForge 26.1.2 (Modrinth
