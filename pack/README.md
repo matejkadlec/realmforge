@@ -151,7 +151,7 @@ keyboard). A new profile gets these keys; an existing one keeps its own until th
 player presses **Reset Keys** in Key Binds (or deletes `options.txt`), which
 returns every key to these defaults. Matěj's picks of 2026-10-19, with the spell
 bar's of RLM-25 ([ADR 0046](../docs/decisions/0046-spell-bar-default-keys-amend-the-pack-defaults.md)) and the
-backpack's of RLM-501 ([ADR 0061](../docs/decisions/0061-backpack-keys-and-alt-k-amend-the-pack-defaults.md)):
+backpack's of RLM-501 ([ADR 0062](../docs/decisions/0062-backpack-keys-and-alt-k-amend-the-pack-defaults.md)):
 
 - free for spells (RLM-25): Quick Actions and Swap Offhand; the spell bar (our
   code) takes R, T, F, G, H, C, `ů` and `§` (right of L on a Czech keyboard),

@@ -127,7 +127,7 @@ def default_keys() -> dict[str, str]:
 
 def test_the_backpack_keys_are_on_b_and_semicolon() -> None:
     """Open Backpack on B, alone, and Sort Storage/Backpack on ; beside Open Quests and Inventory Sorting's Sort
-    (Matěj, 2026-10-29, RLM-501, ADR 0061); every other Sophisticated key stays unbound."""
+    (Matěj, 2026-10-29, RLM-501, ADR 0062); every other Sophisticated key stays unbound."""
     keys = default_keys()
     assert [mapping for mapping, key in keys.items() if key == "key.keyboard.b"] == [
         "key.sophisticatedbackpacks.open_backpack"
@@ -147,7 +147,7 @@ def test_the_backpack_keys_are_on_b_and_semicolon() -> None:
 
 
 def test_apotheosis_keys_leave_ctrl_free_for_sprinting() -> None:
-    """Holding Ctrl to sprint must not turn T or K into Apotheosis's Ctrl bindings (ADR 0046, RLM-347, ADR 0061)."""
+    """Holding Ctrl to sprint must not turn T or K into Apotheosis's Ctrl bindings (ADR 0046, RLM-347, ADR 0062)."""
     keys = default_keys()
     assert keys["key.apotheosis.open_world_tier_select"] == "key.keyboard.t:ALT"
     assert keys["key.apotheosis.toggle_attribute_bonuses"] == "key.keyboard.k:ALT"
