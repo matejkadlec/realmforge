@@ -249,7 +249,10 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
     follow accepted ADRs strictly in everything they decide on their own. When Matěj asks for a change that
     conflicts with an ADR, never refuse or block on it: name the conflicting ADR and its main consequence once, in
     one or two sentences. If he confirms (or already said it is decided), his request is the decision: make the
-    change and write the superseding or amending ADR in the same pull request.
+    change and write the superseding or amending ADR in the same pull request. It is already decided when it comes
+    as a ticket he wrote that asks for the change, or as a Done decision ticket: such a ticket does not wait on him,
+    and its pull request description names the conflicting ADR and that ticket as the source. A ticket an agent
+    wrote is no confirmation ([ADR 0060](docs/decisions/0060-what-counts-as-the-owners-confirmation-of-an-adr-conflicting-change.md)).
 11. **Code follows [docs/architecture.md](docs/architecture.md):** feature packages with a `<Name>Feature` entry,
     one-way dependencies, client-only code only under `client/`, game definitions as datapack registries. To
     deviate, update the document in the same PR; changing a decision recorded in

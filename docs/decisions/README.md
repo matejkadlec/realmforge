@@ -5,7 +5,7 @@ This directory records Realmforge's significant decisions as short ADRs (Michael
 - One decision per file: `NNNN-kebab-case-title.md` with Date, Status, Context, Decision, Consequences.
 - New decisions get the next number and a row in the table below.
 - Accepted ADRs are not rewritten. A changed decision gets a new ADR, and the old one is marked `Superseded by NNNN`, never deleted.
-- ADRs bind agents, not Matěj ([0030](0030-adrs-bind-agents-not-the-owner.md)). Agents follow them strictly in what they decide on their own. When he asks for a change that conflicts with one, the agent names the ADR and its main consequence once, never refuses, and once he confirms, makes the change with its superseding or amending ADR in the same pull request.
+- ADRs bind agents, not Matěj ([0030](0030-adrs-bind-agents-not-the-owner.md)). Agents follow them strictly in what they decide on their own. When he asks for a change that conflicts with one, the agent names the ADR and its main consequence once, never refuses, and once he confirms, makes the change with its superseding or amending ADR in the same pull request. A ticket he wrote that asks for the change, or a Done decision ticket, is already his confirmation; a ticket an agent wrote is not ([0060](0060-what-counts-as-the-owners-confirmation-of-an-adr-conflicting-change.md)).
 - Upgrading any pinned version (Minecraft, NeoForge, ModDevGradle, Gradle, Java) requires a new ADR.
 
 Background: [vision](../vision.md) (the owner's goals) and [research notes](../research-notes.md) (reasoning, comparisons, sources). How the decisions fit together in code: [architecture](../architecture.md); the plan: [roadmap](../roadmap.md).
@@ -41,7 +41,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0027](0027-client-bound-payload-handlers-through-the-client-event.md) | Client-bound payload handlers through NeoForge's client event | Accepted (amends 0014) |
 | [0028](0028-dungeon-rooms-generated-or-imported.md) | Dungeon rooms are generated or imported, not built by hand | Accepted (amends 0007, 0009, 0012 and 0014) |
 | [0029](0029-independent-claude-review-before-every-merge.md) | Independent Claude review before every merge | Accepted (supersedes 0015) |
-| [0030](0030-adrs-bind-agents-not-the-owner.md) | ADRs bind agents, not the owner | Accepted (amends 0001) |
+| [0030](0030-adrs-bind-agents-not-the-owner.md) | ADRs bind agents, not the owner | Accepted (amends 0001), amended by [0060](0060-what-counts-as-the-owners-confirmation-of-an-adr-conflicting-change.md) (what counts as his confirmation) |
 | [0031](0031-instance-builder-background-chunks-and-shared-budget.md) | Instance builder: background chunk loads, a shared budget, clear-only cleanup | Accepted (amends 0019) |
 | [0032](0032-v1-realm-layout-amends-the-nether-and-end-removal.md) | The v1 realm layout amends the Nether and End removal | Accepted (amends 0025) |
 | [0033](0033-vanilla-armor-formula-amends-our-own.md) | Vanilla's armor formula amends "our own formula" | Accepted (amends 0014) |
@@ -69,6 +69,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0055](0055-aim-assistance-for-a-players-enemy-spells.md) | Aim assistance for a player's enemy spells: a cone around the crosshair, homing bolts, a sticky target | Accepted (amends 0052) |
 | [0056](0056-players-break-an-allowlist-of-blocks-in-instances.md) | Players break an allowlist of blocks in instances | Accepted |
 | [0057](0057-a-cast-that-slows-its-caster-stops-its-sprint.md) | A cast that slows its caster stops its sprint | Accepted (amends 0047) |
+| [0060](0060-what-counts-as-the-owners-confirmation-of-an-adr-conflicting-change.md) | What counts as the owner's confirmation of an ADR-conflicting change | Accepted (amends 0030) |
 
 ## Open questions (not decided)
 

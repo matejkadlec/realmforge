@@ -333,6 +333,12 @@ merges.
 - A decision is made when its ticket is Done; its comments record what Matěj decided, and the implementing batch
   follows that. Writing the outcome into the roadmap's open decisions is a plan change
   ([Publication](#publication)).
+- A ticket that asks for a change conflicting with an accepted ADR does not wait on him when it is his own request
+  (its description or a comment records it as his, with the date, or he named the ticket in the session) or a Done
+  decision ticket: the batch makes the change with its superseding or amending ADR, and the pull request
+  description names the ADR and that ticket ([ADR 0060](decisions/0060-what-counts-as-the-owners-confirmation-of-an-adr-conflicting-change.md)).
+  A ticket an agent wrote (a follow-up, a review finding) is no confirmation: the agent follows the ADR and puts the
+  change to him first, as for a plan change.
 
 ### QA evidence
 
@@ -926,8 +932,10 @@ monitored merge. An AI-only batch is published as soon as its gate passes. A pla
    - **title:** Conventional Commits with the keys, `feat(spells): add the spell engine core (RLM-24)`, several
      keys comma-separated;
    - **description:** the tickets with links; what changed and why; for a batch published by `qa1`, the head
-     Matěj played; dependencies pulled in; the checks that ran; a stacked base or plan change, if any; never
-     `@codex` anywhere.
+     Matěj played; dependencies pulled in; the checks that ran; a stacked base, a plan change, or a change that
+     conflicts with an accepted ADR (the ADR and the source of Matěj's decision,
+     [ADR 0060](decisions/0060-what-counts-as-the-owners-confirmation-of-an-adr-conflicting-change.md)), if any;
+     never `@codex` anywhere.
 3. **No labels:** pull requests carry no GitHub labels ([ADR 0024](decisions/0024-no-github-labels.md)). What
    waits for Matěj is a ticket in Pending User QA, never a label.
 4. **Plan changes** hold no merge
