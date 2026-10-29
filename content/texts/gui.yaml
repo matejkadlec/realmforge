@@ -121,6 +121,28 @@ texts:
     en_us: Spells Queue Size
   spells_queue_size_tooltip:
     en_us: "How many spells can wait. At 1, a newer spell replaces the waiting one; above 1, it waits after them."
+  # The spell bar's options, rows of the same list (RLM-404; Matěj, 2026-10-29: no section heading). Spellbar
+  # Position opens the drag mode (client/screen/SpellBarPositionScreen), whose title it is too.
+  spell_bar_position:
+    en_us: Spellbar Position
+  spell_bar_position_button:
+    en_us: Spellbar Position...
+  spell_bar_position_tooltip:
+    en_us: Drag the spell bar and the resource bar under it wherever you want them on the screen.
+  spell_bar_position_hint:
+    en_us: Drag the bars. They snap to the middle; pull sideways for a second to let go.
+  spell_bar_size:
+    en_us: Spellbar Size
+  spell_bar_size_tooltip:
+    en_us: "The width of the spell bar and the resource bar, from half to one and a half; their height grows with it."
+  mirror_hotbar_width:
+    en_us: Mirror Hotbar's Width
+  mirror_hotbar_width_tooltip:
+    en_us: "On: the spell bar and the resource bar are exactly as wide as the hotbar, in place of Spellbar Size."
+  reset_position:
+    en_us: Reset Position
+  save:
+    en_us: Save
   # The arrival title's subtitle in a dungeon run, under the dungeon's name (RLM-409; client/hud/InstanceArrivalTitle).
   instance_subtitle:
     en_us: Realmforge Instance

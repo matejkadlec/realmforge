@@ -1582,24 +1582,41 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
 - **HUD** (`client/hud`): the spell bar (`SpellBarHud`, drawn from `spell/SpellBarView` by `SpellSlots`) has its nine
   24 px slots side by side, the racial slot last, 216 px wide (Matěj's playtest of 2026-10-21). Its layer comes right
   after vanilla's selected item name, which is drawn on the line above the status rows and the XP bar. The bar and
-  the resource bar under it keep one place on the screen, whatever the status rows are (Matěj, 2026-10-24: absorption
-  hearts must not move them): 14 px above the item name's line of a survival player's usual stack (the health, armor
-  and food rows and the XP bar, 73 px), 24 px above the XP bar's level text there (twice the gap the bar had before
-  the resource bar). They raise `Gui#leftHeight` and `Gui#rightHeight` above them, unless the stack already reaches
-  higher, so the action bar message stays above them (`SpellBarLayout`); extra heart rows lift only the XP bar and the
-  item name toward the block. It shows even when empty (research SP-1). A slot is framed in its spell's school colour,
+  the resource bar under it are one group, which the player can move and resize (below); its default place stays the
+  same on the screen, whatever the status rows are (Matěj, 2026-10-24: absorption hearts must not move it): centred,
+  14 px above the item name's line of a survival player's usual stack (the health, armor and food rows and the XP bar,
+  73 px), 24 px above the XP bar's level text there (twice the gap the bar had before the resource bar). When the
+  group lies in the screen's middle columns and reaches down to the action bar message, it raises `Gui#leftHeight` and
+  `Gui#rightHeight` above itself, unless the stack already reaches higher, so the message stays above it
+  (`SpellBarLayout`); extra heart rows lift only the XP bar and the item name toward the group. It shows even when
+  empty (research SP-1). A slot is framed in its spell's school colour,
   a frame that stays once spells have icons (Matěj, 2026-10-21), shows the spell's initials until then (C6, A1), its
   key in the corner, a blue tint while the resource does not cover the cost, and the cooldown sweep
   (`CooldownSweep`): a dark wedge that shrinks clockwise from 12 o'clock, for the spell's own cooldown or the global
   cooldown, whichever ends later, with the seconds left of a cooldown of 2 s or more. The cast bar (`CastBarHud`, after
   WoW's casting bar, Matěj's playtest of 2026-10-21) sits toward the middle of the screen, 70 % of the way down at most
-  and clear of the spell bar and the action bar message: a 200 by 20 px black frame with rounded corners and a 2 px
+  and clear of the spell bar wherever it is: above a group in its way, with room for the action bar message between,
+  or below one at the top of the screen: a 200 by 20 px black frame with rounded corners and a 2 px
   border, holding the spell's icon (its initials on the school's colour until icons exist) and then the bar. The bar
   fills in the spell school's colour, shaded in steps from light at the top to dark at the bottom with an almost white
   leading edge (`CastBarStyle`); a cast time fills from the left, a channel starts full and empties toward the left. The
   spell's name is on the left and the seconds "elapsed / total" on the right, smaller. After a cast the bar stays a
   moment: full and flashing toward white as it fades, or red with how it ended in place of the name ("Interrupted", "Out
   of range"), and a refused cast's reason shows there in red (`spell/CastTexts`, research SP-3).
+- **The spell bar's place and size** (RLM-404; Matěj, 2026-10-24 and 2026-10-29): three rows of the spell options
+  (`client/screen/SpellOptionsScreen`), after the casting ones and with no section heading, saved in the client config
+  (`client/ClientConfig`). Spellbar Position opens the drag mode (`client/screen/SpellBarPositionScreen`), which hides
+  the options: the player drags the group anywhere on the screen but off it, partly or wholly
+  (`SpellBarLayout#clamp`). While dragging, a red dashed line 2 px wide marks the screen's middle, and the group snaps
+  to it within 6 px and holds there against a sideways pull until the pull has lasted a second (`CentreSnap`). Cancel
+  (and Escape) goes back with the place before, Save keeps the new one, Reset Position (bottom left) puts the group
+  back at its default place. In game the screen has no dimmed or blurred background and draws the group itself
+  (`SpellBarHud#draw`, which the HUD layer skips meanwhile); from the main menu empty slots stand in for it. A saved
+  place is two fractions of the room the screen leaves the group each way (`spellBarX`, `spellBarY`, -1 for the
+  default place), so it stays on any screen size; 0.5 is the middle exactly, so a centred group stays centred.
+  Spellbar Size (0.5 to 1.5 in steps of 0.05, default 1) scales the group's width, its height with it; Mirror
+  Hotbar's Width (off) overrides it, greying the slider out, with the group exactly as wide as the hotbar (182 px).
+  The group is drawn through the pose's translation and scale, so its slots and resource bar keep their own sizes.
 - **The resource bar** (`client/hud/ResourceBarHud`, RLM-400; Matěj, 2026-10-24): the local player's class resource,
   attached under the spell bar and as wide, 13 px tall: a 1 px black border whose bottom corner pixels are left out
   (rounded, the top square where it meets the slots), a dark gray empty part and the fill in the resource's colour,
@@ -1623,8 +1640,9 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   "for {damage} damage". `spell/SpellTooltip` builds the spellbook's tooltip: name, rank, cost (a channel's per second),
   range, the cast after Cast Time Reduction, the cooldown after Cooldown Reduction and the filled description.
   `SpellTextGameTests` and `SpellBarGameTests` cover the server side and the texts, `CastQueueTest`,
-  `CooldownSweepTest`, `SpellBarLayoutTest`, `CastBarStyleTest`, `KeyLabelsTest`, `SpellTextTest` and `SpellBarViewTest`
-  the client's logic.
+  `CooldownSweepTest`, `SpellBarLayoutTest` (the default place, the clamping, the saved places, the size and mirror
+  rules), `CentreSnapTest`, `CastBarStyleTest`, `KeyLabelsTest`, `SpellTextTest` and `SpellBarViewTest` the client's
+  logic.
 
 **In code (W3 revision, RLM-33): projectile appearances.** A projectile with an `appearance` is drawn by
 `client/render/SpellProjectileRenderer` instead of its trail of sparks: the `orb` is vanilla's shulker bullet model
@@ -3216,8 +3234,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     starting kit. It opens and closes by itself ([10.1](#101-races-and-classes)).
   - The spell bar with the resource bar under it and the cast bar (`client/hud/SpellBarHud`, `ResourceBarHud`,
     `CastBarHud`), the spellbook
-    (`client/screen/SpellbookScreen`, P by default) and the spell casting options (`SpellOptionsScreen`), C3b:
-    [11.6](#116-client-side).
+    (`client/screen/SpellbookScreen`, P by default) and the spell options (`SpellOptionsScreen`), C3b, with the
+    spell bar's place and size and its drag mode (`SpellBarPositionScreen`, RLM-404): [11.6](#116-client-side).
 - **Minecraft 26.1 draws GUIs by render-state extraction:** a HUD layer (`GuiLayer`) and a screen
   (`Screen#extractRenderState`) receive a `GuiGraphicsExtractor` (`text`, `centeredText`, `fill`, `pose()` for
   scaling). A layer registered through `RegisterGuiLayersEvent` checks `options.hideGui` itself.
@@ -3225,7 +3243,7 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   unavoidable, no shaders of our own (Iris and Complementary). Porting costs the most here
   ([ADR 0003](decisions/0003-platform-minecraft-1-21-1-neoforge.md)), so it stays small.
 - **Client config** (`ModConfigSpec`, client type) holds UI preferences only: `client/ClientConfig` (C3b), the spell
-  casting options.
+  casting options and the spell bar's place and size (RLM-404).
 
 ## 19. Cross-cutting rules
 
@@ -3287,7 +3305,8 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
 
 `ModConfigSpec` only for operator and UI settings (instance limits, timeouts, debug flags, HUD options). Gameplay
 numbers are content, so they are versioned, validated and tested. The client config exists (C3b): `client/ClientConfig`,
-`config/realmforge-client.toml`, holds how the spell bar's presses wait ([11.6](#116-client-side)). One exception: the
+`config/realmforge-client.toml`, holds how the spell bar's presses wait and where the spell bar goes and how big it is
+([11.6](#116-client-side)). One exception: the
 common config, `combat/CombatConfig`, `config/realmforge-common.toml`, holds the blocking rules
 ([9.3](#93-blocking-with-two-handed-weapons)) and the in-combat window ([9.4](#94-in-combat), RLM-348, whose ticket
 allowed content or config), because Matěj tunes them while he plays (RLM-297) and NeoForge reloads the file when it

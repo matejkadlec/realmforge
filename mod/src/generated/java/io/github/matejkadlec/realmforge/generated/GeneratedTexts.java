@@ -113,6 +113,12 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.mining_speed} from {@code content/texts/gui.yaml}: "Mining Speed" */
     public static final String GUI_MINING_SPEED = "gui.realmforge.mining_speed";
 
+    /** {@code gui.realmforge.mirror_hotbar_width} from {@code content/texts/gui.yaml}: "Mirror Hotbar's Width" */
+    public static final String GUI_MIRROR_HOTBAR_WIDTH = "gui.realmforge.mirror_hotbar_width";
+
+    /** {@code gui.realmforge.mirror_hotbar_width_tooltip} from {@code content/texts/gui.yaml}: "On: the spell bar and the resource bar are exactly as wide as the hotbar, in place of Spellbar Size." */
+    public static final String GUI_MIRROR_HOTBAR_WIDTH_TOOLTIP = "gui.realmforge.mirror_hotbar_width_tooltip";
+
     /** {@code gui.realmforge.movement_speed} from {@code content/texts/gui.yaml}: "Movement Speed" */
     public static final String GUI_MOVEMENT_SPEED = "gui.realmforge.movement_speed";
 
@@ -146,6 +152,12 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.race} from {@code content/texts/gui.yaml}: "Race" */
     public static final String GUI_RACE = "gui.realmforge.race";
 
+    /** {@code gui.realmforge.reset_position} from {@code content/texts/gui.yaml}: "Reset Position" */
+    public static final String GUI_RESET_POSITION = "gui.realmforge.reset_position";
+
+    /** {@code gui.realmforge.save} from {@code content/texts/gui.yaml}: "Save" */
+    public static final String GUI_SAVE = "gui.realmforge.save";
+
     /** {@code gui.realmforge.specialization_wip} from {@code content/texts/gui.yaml}: "Specialization: WIP" */
     public static final String GUI_SPECIALIZATION_WIP = "gui.realmforge.specialization_wip";
 
@@ -154,6 +166,24 @@ public final class GeneratedTexts {
 
     /** {@code gui.realmforge.spell_bar} from {@code content/texts/gui.yaml}: "Spell Bar" */
     public static final String GUI_SPELL_BAR = "gui.realmforge.spell_bar";
+
+    /** {@code gui.realmforge.spell_bar_position} from {@code content/texts/gui.yaml}: "Spellbar Position" */
+    public static final String GUI_SPELL_BAR_POSITION = "gui.realmforge.spell_bar_position";
+
+    /** {@code gui.realmforge.spell_bar_position_button} from {@code content/texts/gui.yaml}: "Spellbar Position..." */
+    public static final String GUI_SPELL_BAR_POSITION_BUTTON = "gui.realmforge.spell_bar_position_button";
+
+    /** {@code gui.realmforge.spell_bar_position_hint} from {@code content/texts/gui.yaml}: "Drag the bars. They snap to the middle; pull sideways for a second to let go." */
+    public static final String GUI_SPELL_BAR_POSITION_HINT = "gui.realmforge.spell_bar_position_hint";
+
+    /** {@code gui.realmforge.spell_bar_position_tooltip} from {@code content/texts/gui.yaml}: "Drag the spell bar and the resource bar under it wherever you want them on the screen." */
+    public static final String GUI_SPELL_BAR_POSITION_TOOLTIP = "gui.realmforge.spell_bar_position_tooltip";
+
+    /** {@code gui.realmforge.spell_bar_size} from {@code content/texts/gui.yaml}: "Spellbar Size" */
+    public static final String GUI_SPELL_BAR_SIZE = "gui.realmforge.spell_bar_size";
+
+    /** {@code gui.realmforge.spell_bar_size_tooltip} from {@code content/texts/gui.yaml}: "The width of the spell bar and the resource bar, from half to one and a half; their height grows with it." */
+    public static final String GUI_SPELL_BAR_SIZE_TOOLTIP = "gui.realmforge.spell_bar_size_tooltip";
 
     /** {@code gui.realmforge.spell_casting_options} from {@code content/texts/gui.yaml}: "Spell Casting Options" */
     public static final String GUI_SPELL_CASTING_OPTIONS = "gui.realmforge.spell_casting_options";
