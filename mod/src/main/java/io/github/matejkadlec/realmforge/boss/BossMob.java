@@ -93,8 +93,8 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
     private static final int LANDING_RING_INTERVAL = 4;
     /** The space between two particles of that ring, in blocks. */
     private static final double LANDING_RING_SPACING = 0.6;
-    /** The ring's particles: a warning orange dust that reads on stone. */
-    private static final DustParticleOptions LANDING_RING = new DustParticleOptions(0xFF7A1F, 1.5F);
+    /** The ring's particles: dark grey dust (Matěj's playtest of Astone, 2026-10-29: grey, not orange or purple). */
+    private static final DustParticleOptions LANDING_RING = new DustParticleOptions(0x4A4A4A, 1.5F);
 
     private final BossBar bossBar = new BossBar(this, BossEvent.BossBarColor.RED);
     /** When each ability may be cast again, in game time; its own cooldown, beside the spell's. */

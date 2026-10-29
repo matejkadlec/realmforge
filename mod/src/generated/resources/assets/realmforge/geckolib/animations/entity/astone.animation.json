@@ -225,6 +225,57 @@
           }
         }
       }
+    },
+    "attack.slam": {
+      "loop": true,
+      "animation_length": 0.75,
+      "bones": {
+        "head": {
+          "rotation": [
+            "query.head_x_rotation",
+            "query.head_y_rotation",
+            0
+          ]
+        },
+        "left_arm": {
+          "rotation": {
+            "0.0": [
+              -15,
+              0,
+              0
+            ],
+            "0.4125": [
+              -165,
+              0,
+              0
+            ],
+            "0.75": [
+              -15,
+              0,
+              0
+            ]
+          }
+        },
+        "right_arm": {
+          "rotation": {
+            "0.0": [
+              -15,
+              0,
+              0
+            ],
+            "0.4125": [
+              -165,
+              0,
+              0
+            ],
+            "0.75": [
+              -15,
+              0,
+              0
+            ]
+          }
+        }
+      }
     }
   }
 }

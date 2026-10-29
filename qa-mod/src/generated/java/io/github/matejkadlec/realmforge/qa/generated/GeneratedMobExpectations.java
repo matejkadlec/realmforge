@@ -23,13 +23,17 @@ public final class GeneratedMobExpectations {
     public record VariantExpectation(String id, int weight, String lootTable, List<DropExpectation> loot) {
     }
 
-    /** Expected state of one mob: its entity type, attributes at level 1, behaviour, sounds and loot. */
+    /**
+     * Expected state of one mob: its entity type, attributes at level 1, behaviour, sounds and loot, and where its
+     * hands hold a projectile its spell forms (blocks in front of its middle and above its feet).
+     */
     public record MobExpectation(String id, String descriptionId, String archetype, float width, float height,
             double maxHealth, double attackDamage, double armor, double movementSpeed, double followRange,
             double knockbackResistance, String idle, int attackIntervalTicks, double knockUpBlocks,
             List<String> spells, double kitingStepBlocks, double kitingSpeed, String ambientSound,
             String hurtSound, String deathSound, String stepSound, boolean silentSteps, String deathParticles,
-            List<String> tags, String lootTable, List<DropExpectation> loot, List<VariantExpectation> variants) {
+            List<String> tags, String lootTable, List<DropExpectation> loot, List<VariantExpectation> variants,
+            double handsAhead, double handsUp) {
     }
 
     public static final List<MobExpectation> MOBS = List.of(
@@ -52,7 +56,8 @@ public final class GeneratedMobExpectations {
                     List.of(new DropExpectation("realmforge:stone_heart", 1, 1, 1.0, 0, 0.0),
                             new DropExpectation("realmforge:sun_signet_shard", 1, 1, 1.0, 0, 0.0),
                             new DropExpectation("realmforge:ice_signet_shard", 1, 1, 1.0, 0, 0.0)),
-                    List.of()),
+                    List.of(),
+                    2.5439, 5.0312),
             new MobExpectation(
                     "realmforge:hewn_chanter",
                     "entity.realmforge.hewn_chanter",
@@ -72,7 +77,8 @@ public final class GeneratedMobExpectations {
                     List.of(new DropExpectation("realmforge:magic_stone_dust", 1, 2, 0.6, 1, 0.0),
                             new DropExpectation("realmforge:vaultstone", 1, 3, 1.0, 1, 0.0),
                             new DropExpectation("realmforge:arcane_dust", 0, 1, 1.0, 1, 0.0)),
-                    List.of()),
+                    List.of(),
+                    1.1908, 3.0),
             new MobExpectation(
                     "realmforge:hewn_sentinel",
                     "entity.realmforge.hewn_sentinel",
@@ -99,7 +105,8 @@ public final class GeneratedMobExpectations {
                                     new DropExpectation("realmforge:ruby", 1, 1, 0.2, 0, 0.05))),
                             new VariantExpectation("topaz", 1, "realmforge:entities/hewn_sentinel/topaz",
                                     List.of(new DropExpectation("realmforge:vaultstone_bricks", 1, 2, 0.75, 1, 0.0),
-                                    new DropExpectation("realmforge:topaz", 1, 1, 0.2, 0, 0.05))))),
+                                    new DropExpectation("realmforge:topaz", 1, 1, 0.2, 0, 0.05)))),
+                    1.5155, 3.0),
             new MobExpectation(
                     "realmforge:test_titan",
                     "entity.realmforge.test_titan",
@@ -117,7 +124,8 @@ public final class GeneratedMobExpectations {
                     List.of("c:bosses"),
                     "realmforge:entities/test_titan",
                     List.of(new DropExpectation("minecraft:diamond", 1, 1, 1.0, 0, 0.0)),
-                    List.of()));
+                    List.of(),
+                    1.6238, 3.1875));
 
     private GeneratedMobExpectations() {
     }

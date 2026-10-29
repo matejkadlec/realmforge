@@ -39,7 +39,8 @@ public final class GeneratedMobs {
             CustomMobSpec.id("realmforge:vaultstone"),
             new CustomMobSpec.Melee(40, 0.6),
             List.of(), Optional.empty(),
-            List.of());
+            List.of(),
+            new CustomMobSpec.Hands(2.5439, 5.0312));
 
     public static final DeferredHolder<EntityType<?>, EntityType<CustomMob>> ASTONE =
             ENTITY_TYPES.registerEntityType("astone",
@@ -56,7 +57,8 @@ public final class GeneratedMobs {
             CustomMobSpec.id("realmforge:vaultstone"),
             new CustomMobSpec.Melee(20, 0.0),
             List.of(GeneratedSpells.STONEFORM), Optional.of(new KiteRules(2.0, 1.5)),
-            List.of());
+            List.of(),
+            new CustomMobSpec.Hands(1.1908, 3.0));
 
     public static final DeferredHolder<EntityType<?>, EntityType<CasterMob>> HEWN_CHANTER =
             ENTITY_TYPES.registerEntityType("hewn_chanter",
@@ -73,7 +75,8 @@ public final class GeneratedMobs {
             CustomMobSpec.id("realmforge:vaultstone_bricks"),
             new CustomMobSpec.Melee(30, 0.5),
             List.of(), Optional.empty(),
-            List.of(new CustomMobSpec.Variant("sapphire", 1), new CustomMobSpec.Variant("ruby", 1), new CustomMobSpec.Variant("topaz", 1)));
+            List.of(new CustomMobSpec.Variant("sapphire", 1), new CustomMobSpec.Variant("ruby", 1), new CustomMobSpec.Variant("topaz", 1)),
+            new CustomMobSpec.Hands(1.5155, 3.0));
 
     public static final DeferredHolder<EntityType<?>, EntityType<MeleeMob>> HEWN_SENTINEL =
             ENTITY_TYPES.registerEntityType("hewn_sentinel",
@@ -90,7 +93,8 @@ public final class GeneratedMobs {
             Optional.empty(),
             new CustomMobSpec.Melee(30, 0.0),
             List.of(), Optional.empty(),
-            List.of());
+            List.of(),
+            new CustomMobSpec.Hands(1.6238, 3.1875));
 
     public static final DeferredHolder<EntityType<?>, EntityType<CustomMob>> TEST_TITAN =
             ENTITY_TYPES.registerEntityType("test_titan",

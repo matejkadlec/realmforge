@@ -38,7 +38,8 @@
           "type": "realmforge:damage",
           "attack_damage": 0.75
         }
-      ]
+      ],
+      "ring_color": "#8C8C8C"
     }
   ]
 }

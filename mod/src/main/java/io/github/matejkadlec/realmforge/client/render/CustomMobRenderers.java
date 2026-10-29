@@ -80,6 +80,7 @@ public final class CustomMobRenderers {
                         .map(variant -> type.withPath("textures/entity/" + type.getPath() + "_" + variant.id() + ".png"))
                         .orElse(null);
                 custom.forming = forming(entity, partialTick);
+                custom.formAt = SpellVisuals.formOffset(entity, state.bodyRot);
             }
         }
 
@@ -106,8 +107,7 @@ public final class CustomMobRenderers {
             super.submit(state, poseStack, collector, camera);
             if (state instanceof State custom && custom.forming.isPresent()) {
                 Forming forming = custom.forming.get();
-                Vec3 at = SpellVisuals.formOffset(state.boundingBoxWidth, state.boundingBoxHeight, state.eyeHeight,
-                        state.bodyRot);
+                Vec3 at = custom.formAt;
                 poseStack.pushPose();
                 poseStack.translate(at.x, at.y, at.z);
                 orbs.submit(poseStack, collector, forming.texture(), forming.size(), state.ageInTicks,
@@ -138,9 +138,11 @@ public final class CustomMobRenderers {
     private static class State extends LivingEntityRenderState {
         @Nullable Identifier texture;
         Optional<Forming> forming = Optional.empty();
+        /** Where it forms, from the mob's feet: in its raised hands ({@link SpellVisuals#formOffset}). */
+        Vec3 formAt = Vec3.ZERO;
     }
 
-    /** A projectile forming in front of a caster: its texture and its size so far, in blocks. */
+    /** A projectile forming in a caster's hands: its texture and its size so far, in blocks. */
     private record Forming(Identifier texture, float size) {
     }
 }

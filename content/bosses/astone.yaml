@@ -3,9 +3,9 @@
 # body is content/mobs/astone.yaml. Three phases, each adding one readable mechanic (research BM-2), every attack a
 # cast with a tell, all on the ground, no blindness or darkness (the vision):
 # - The Weighing: she hits in melee and hurls a boulder that forms in her raised hands, which can be dodged.
-# - Quaking Stone (below 60 %): she throws everyone near her back as it begins, then slams the ground round herself
-#   (Quake) and brings rocks down where her target stood (Rockfall); a ring of particles marks where each lands while
-#   she casts, so stepping out of it dodges it.
+# - Quaking Stone (below 60 %): she throws everyone near her back as it begins, then beats the ground round herself
+#   for 3 s, every slam hurting whoever stands inside (Quake), and brings rocks down where her target stood
+#   (Rockfall); a ring of dark grey dust marks where each lands while she casts, so stepping out of it dodges it.
 # - Breaking Point (below 25 %): her stone cracks; she hits harder and moves faster, but blocks less.
 # Level 18, Undervault's highest (chapter 2, levels 6 to 18); in the stone arena's run (W6, RLM-36) she takes the
 # run's level. The numbers are proposals for Matěj's playtest.

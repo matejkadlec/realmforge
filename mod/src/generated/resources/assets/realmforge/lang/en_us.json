@@ -274,7 +274,7 @@
   "spell.realmforge.astone_boulder.name": "Hurled Boulder",
   "spell.realmforge.astone_cracked_stone.description": "Cracks the caster's stone for {duration} sec: it hits harder and moves faster, but blocks less.",
   "spell.realmforge.astone_cracked_stone.name": "Cracked Stone",
-  "spell.realmforge.astone_quake.description": "Slams the ground, dealing {damage} damage to every enemy within {radius} blocks and throwing them back.",
+  "spell.realmforge.astone_quake.description": "Slams the ground again and again, dealing {damage} damage to every enemy within {radius} blocks with each slam.",
   "spell.realmforge.astone_quake.name": "Quake",
   "spell.realmforge.astone_rockfall.description": "Brings rocks down on a spot, dealing {damage} damage to every enemy within {radius} blocks of it.",
   "spell.realmforge.astone_rockfall.name": "Rockfall",

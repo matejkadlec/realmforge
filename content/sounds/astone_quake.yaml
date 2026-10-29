@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../tools/schemas/sounds.schema.json
-# Quake's sound (W5b, RLM-491): a deep rumble as Astone raises her fists to slam the ground, her tell to step out of
-# the ring round her. Vanilla sounds until A3's own (RLM-126).
+# Quake's sound (W5b, RLM-491): a deep rumble as Astone begins to beat the ground with her fists, her tell to step out
+# of the ring round her. Vanilla sounds until A3's own (RLM-126).
 id: astone_quake
 category: spell
 events:

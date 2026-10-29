@@ -14,5 +14,6 @@ effects:
     radius: 8
     duration_seconds: 0.5
     interval_seconds: 0.5
+    ring_color: "#8C8C8C"
     effects:
       - {type: realmforge:knockback, strength: 1.5}

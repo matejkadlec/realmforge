@@ -521,7 +521,8 @@ public final class CustomMobGameTests {
         EntityType<MeleeMob> type = GeneratedMobs.HEWN_SENTINEL.get();
         CustomMobSpec spec = Objects.requireNonNull(type.create(helper.getLevel(), EntitySpawnReason.STRUCTURE)).spec();
         MeleeMob sentinel = new MeleeMob(type, helper.getLevel(), new CustomMobSpec(CustomMobSpec.Idle.GUARD,
-                spec.sounds(), spec.deathParticles(), spec.melee(), spec.spells(), spec.kiting(), spec.variants()));
+                spec.sounds(), spec.deathParticles(), spec.melee(), spec.spells(), spec.kiting(), spec.variants(),
+                spec.hands()));
         sentinel.setPersistenceRequired();
         Vec3 start = helper.absoluteVec(new Vec3(2.5, 1, 2.5));
         sentinel.snapTo(start.x, start.y, start.z, 0, 0);

@@ -130,6 +130,21 @@
           "title": "Radius",
           "type": "number"
         },
+        "ring_color": {
+          "anyOf": [
+            {
+              "description": "An RGB colour, \"#RRGGBB\".",
+              "pattern": "^#[0-9A-Fa-f]{6}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The colour of the ring of dust that shows its edge, \"#RRGGBB\"; without it, a ring of purple sparks (until C6, RLM-29).",
+          "title": "Ring Color"
+        },
         "type": {
           "const": "realmforge:area",
           "title": "Type",
@@ -150,6 +165,23 @@
       "additionalProperties": false,
       "description": "The spell takes ``duration_seconds`` to cast, which Cast Time Reduction shortens. At the end the cost and the\ntarget are checked again; the cost, its own cooldown and the effects follow. The global cooldown starts with the\ncast.",
       "properties": {
+        "animation": {
+          "anyOf": [
+            {
+              "enum": [
+                "raise",
+                "slam"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How a custom mob or boss moves its arms while it casts (its model's animation): raise (the default) lifts them forward and up, the hands before its forehead; slam beats its fists up and down, one slam every 0.75 s, the time a channel of the same interval ticks at (a quake). Players' casts ignore it.",
+          "title": "Animation"
+        },
         "castable_while_moving": {
           "default": false,
           "description": "Whether the caster moves at full speed during the cast; by default the cast halves its speed (moving never cancels it).",
@@ -227,6 +259,23 @@
       "additionalProperties": false,
       "description": "The spell pays its cost and starts its cooldowns when the channel begins, then runs its effects every\n``interval_seconds`` for ``duration_seconds``, checking the target before every tick. Cast Time Reduction shortens\nthe interval, so the channel keeps its number of ticks.",
       "properties": {
+        "animation": {
+          "anyOf": [
+            {
+              "enum": [
+                "raise",
+                "slam"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How a custom mob or boss moves its arms while it casts (its model's animation): raise (the default) lifts them forward and up, the hands before its forehead; slam beats its fists up and down, one slam every 0.75 s, the time a channel of the same interval ticks at (a quake). Players' casts ignore it.",
+          "title": "Animation"
+        },
         "castable_while_moving": {
           "default": false,
           "description": "Whether the caster moves at full speed during the cast; by default the cast halves its speed (moving never cancels it).",

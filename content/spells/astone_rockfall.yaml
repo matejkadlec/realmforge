@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # Astone's rockfall (W5b, RLM-491), from her second phase on: rocks come down where her target stood when she began
-# the 2 s cast, with cracking rock as its tell and a ring of particles marking the spot (BossMob). Step out of the
+# the 2 s cast, with cracking rock as its tell and a ring of dark grey dust marking the spot (BossMob). Step out of the
 # ring to dodge it; it punishes standing still at range. Proposals for Matěj's playtest.
 id: astone_rockfall
 name: {en_us: Rockfall}
@@ -19,5 +19,6 @@ effects:
     radius: 3
     duration_seconds: 0.5
     interval_seconds: 0.5
+    ring_color: "#8C8C8C"
     effects:
       - {type: realmforge:damage, amount: 5, attack_damage_percent: 75}

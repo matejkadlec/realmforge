@@ -6,10 +6,14 @@ import io.github.matejkadlec.realmforge.generated.GeneratedItems;
 import io.github.matejkadlec.realmforge.generated.GeneratedMobs;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpells;
 import io.github.matejkadlec.realmforge.mob.MobLevels;
+import io.github.matejkadlec.realmforge.mob.custom.CustomMobSpec;
 import io.github.matejkadlec.realmforge.spell.Spell;
+import io.github.matejkadlec.realmforge.spell.SpellCast;
+import io.github.matejkadlec.realmforge.spell.SpellVisuals;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalInt;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
@@ -96,8 +100,9 @@ public final class AstoneGameTests {
     }
 
     /**
-     * In her first phase she hurls her boulder at her target through the spell engine: a 2 s cast that forms it in
-     * her hands, then a projectile that hurts the husk 7 blocks away, out of reach of her fists.
+     * In her first phase she hurls her boulder at her target through the spell engine: a 2 s cast with her arms raised
+     * that forms it in her hands, at the end of her arms (Matěj's playtest, 2026-10-29: not two thirds along them and
+     * below them), then a projectile that hurts the husk 7 blocks away, out of reach of her fists.
      */
     @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 200)
     public static void astoneHurlsHerBoulderAtHerTarget(GameTestHelper helper) {
@@ -108,21 +113,36 @@ public final class AstoneGameTests {
         helper.startSequence()
                 .thenWaitUntil(() -> helper.assertTrue(casting(astone, GeneratedSpells.ASTONE_BOULDER),
                         "Astone casts her boulder"))
-                .thenExecute(() -> helper.assertTrue(astone.landing().isEmpty(), "a boulder marks no landing ring"))
+                // The animation clients see follows the cast on her next tick.
+                .thenWaitUntil(() -> helper.assertValueEqual(astone.castAnimation(),
+                        Optional.of(SpellCast.Animation.RAISE), "her arms are raised"))
+                .thenExecute(() -> {
+                    helper.assertTrue(astone.landing().isEmpty(), "a boulder marks no landing ring");
+                    CustomMobSpec.Hands hands = astone.spec().hands();
+                    Vec3 forms = SpellVisuals.formOffset(astone, 0);
+                    helper.assertTrue(Math.abs(forms.z - hands.ahead()) < 1e-6 && forms.x == 0,
+                            "the boulder forms in her hands, " + hands.ahead() + " blocks ahead: " + forms);
+                    helper.assertValueEqual(forms.y, Math.min(hands.up(), astone.getBbHeight()),
+                            "the boulder forms as high as her hands, below her height");
+                    helper.assertTrue(hands.ahead() > astone.getBbWidth() / 2 + 1.5,
+                            "her hands reach well beyond her hitbox: " + hands.ahead());
+                })
                 .thenWaitUntil(() -> helper.assertTrue(husk.getHealth() < full, "her boulder hit the husk"))
                 .thenSucceed();
     }
 
     /**
      * In Quaking Stone she casts Quake only while her target stands inside it: with a husk 7 blocks away, outside
-     * Quake's 5, she never begins it; with a new target 3 blocks away she does, the ring round her marks its reach, and
-     * the slam hurts and slows that husk. (A new husk, so no boulder still on its way to the first throws it back out
-     * of the ring.)
+     * Quake's 5, she never begins it; with a new target 3 blocks away she does, slamming her fists (animation slam),
+     * the ring round her marks its reach, and slam after slam hurts and slows that husk as long as it stays (Matěj's
+     * playtest, 2026-10-29: a real earthquake, not one hit). (A new husk, so no boulder still on its way to the first
+     * throws it back out of the ring.)
      */
     @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 400)
     public static void astoneQuakesOnlyWithHerTargetInside(GameTestHelper helper) {
         BossMob astone = standingAstone(helper);
         Husk[] husk = new Husk[1];
+        float[] firstSlam = new float[1];
         helper.startSequence()
                 .thenWaitUntil(() -> helper.assertTrue(astone.home().isPresent(), "Astone took her home"))
                 .thenExecute(() -> astone.enterPhase(1))
@@ -146,9 +166,16 @@ public final class AstoneGameTests {
                             "the ring is round her: " + landing.middle());
                     helper.assertValueEqual(landing.radius(), 5.0, "the ring's radius, Quake's");
                 })
+                .thenWaitUntil(() -> helper.assertValueEqual(astone.castAnimation(),
+                        Optional.of(SpellCast.Animation.SLAM), "she slams her fists"))
                 .thenWaitUntil(() -> helper.assertTrue(husk[0].hasEffect(MobEffects.SLOWNESS),
                         "her quake slowed the husk"))
-                .thenExecute(() -> helper.assertTrue(husk[0].getHealth() < HUSK_HEALTH, "her quake hurt the husk"))
+                .thenExecute(() -> {
+                    helper.assertTrue(husk[0].getHealth() < HUSK_HEALTH, "her first slam hurt the husk");
+                    firstSlam[0] = husk[0].getHealth();
+                })
+                .thenWaitUntil(() -> helper.assertTrue(husk[0].getHealth() < firstSlam[0],
+                        "her next slam hurt the husk again"))
                 .thenSucceed();
     }
 

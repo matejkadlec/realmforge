@@ -404,6 +404,7 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "                    Optional.empty(),\n"
         "                    Optional.empty(),\n"
         "                    false,\n"
+        '                    "raise",\n'
         '                    Optional.of("realmforge:mana"),\n'
         "                    10.0,\n"
         "                    5.0,\n"
@@ -642,6 +643,45 @@ def test_an_area_for_allies_may_heal(repo: RepoPaths) -> None:
     )
     content, _ = load_and_validate(repo)
     assert any(entry.model.id == "sanctuary" for entry in content.spells)
+
+
+def test_a_quake_slams_and_its_area_has_a_grey_ring(repo: RepoPaths) -> None:
+    # Astone's Quake (Matěj's playtest, 2026-10-29): a channel her fists beat through, its rings grey.
+    spell(
+        repo,
+        "quake",
+        "school: realmforge:physical\n"
+        "scales_with: attack_damage\n"
+        "targeting: {type: realmforge:self}\n"
+        "cast: {type: channel, duration_seconds: 3, interval_seconds: 0.75, animation: slam}\n"
+        "npc_only: true\n"
+        "effects:\n"
+        "  - {type: realmforge:area, radius: 5, duration_seconds: 0.5, interval_seconds: 0.5, ring_color: '#8C8C8C', "
+        "effects: [{type: realmforge:damage, amount: 1, attack_damage_percent: 30}]}\n",
+    )
+    files = generate(repo)
+    data = json.loads(files[f"{SPELL_DATA}/quake.json"])
+    assert data["cast"]["animation"] == "slam"
+    assert data["effects"][0]["ring_color"] == "#8C8C8C"
+    expectations = files[EXPECTATIONS].decode()
+    quake = expectations[expectations.index('"realmforge:quake"') :]
+    assert '                    "slam",\n' in quake[: quake.index("List.of(")]
+    assert 'Map.of("affects", "enemies", "ring_color", "#8C8C8C")' in quake
+
+
+@pytest.mark.parametrize(
+    ("cast", "expected"),
+    [
+        ({"type": "instant", "animation": "slam"}, "Extra inputs are not permitted"),
+        (
+            {"type": "cast_time", "duration_seconds": 1, "animation": "dance"},
+            "Input should be 'raise' or 'slam'",
+        ),
+    ],
+)
+def test_only_a_timed_cast_has_an_animation(cast: dict, expected: str) -> None:
+    with pytest.raises(ValueError, match=re.escape(expected)):
+        spell_model(cast=cast)
 
 
 def test_status_effects_must_exist(repo: RepoPaths) -> None:

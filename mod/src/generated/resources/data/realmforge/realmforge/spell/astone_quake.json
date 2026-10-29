@@ -11,11 +11,12 @@
     "lock_on": false,
     "keep_sight": false,
     "sound": "realmforge:spell.astone_quake.rumble",
-    "type": "cast_time",
-    "duration_ticks": 30,
-    "forms_projectile": false
+    "animation": "slam",
+    "type": "channel",
+    "duration_ticks": 60,
+    "interval_ticks": 15
   },
-  "cooldown_ticks": 200,
+  "cooldown_ticks": 240,
   "global_cooldown_ticks": 10,
   "max_level": 1,
   "crit": {
@@ -32,22 +33,19 @@
       "affects": "enemies",
       "effects": [
         {
-          "amount": 3.0,
+          "amount": 1.0,
           "per_level": 0,
           "type": "realmforge:damage",
-          "attack_damage": 0.75
-        },
-        {
-          "type": "realmforge:knockback",
-          "strength": 1.2
+          "attack_damage": 0.3
         },
         {
           "type": "realmforge:apply_effect",
           "effect": "minecraft:slowness",
-          "duration_ticks": 60,
+          "duration_ticks": 30,
           "amplifier": 0
         }
-      ]
+      ],
+      "ring_color": "#8C8C8C"
     }
   ]
 }

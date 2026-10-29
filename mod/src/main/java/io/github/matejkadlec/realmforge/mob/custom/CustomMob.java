@@ -9,9 +9,15 @@ import com.geckolib.animation.object.PlayState;
 import com.geckolib.constant.DefaultAnimations;
 import com.geckolib.util.GeckoLibUtil;
 import io.github.matejkadlec.realmforge.mob.ai.Wandering;
+import io.github.matejkadlec.realmforge.spell.SpellCast;
+import io.github.matejkadlec.realmforge.spell.SpellVisuals;
 import io.github.matejkadlec.realmforge.spell.Spells;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -45,6 +51,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * A custom mob (architecture 14.2): the base of the archetypes in {@code content/mobs/} pick ({@link MeleeMob},
@@ -57,8 +64,10 @@ import net.minecraft.world.level.storage.loot.LootTable;
  * ({@link Wandering}), or a guard keeps to its post. Vanilla's {@code Mob} constructor
  * registers goals before a subclass's fields exist, so this class registers them itself once the spec is set.
  *
- * <p>Clients see a cast of a cast-time or channelled spell in progress through a synced flag ({@link #isCasting}),
- * which plays the model's {@code attack.cast} animation for as long as the cast runs, whichever archetype casts.
+ * <p>Clients see a cast of a cast-time or channelled spell in progress through a synced value ({@link #castAnimation}),
+ * which plays the model's animation the spell names for as long as the cast runs, whichever archetype casts: its arms
+ * raised ({@code attack.cast}), or its fists slamming up and down ({@code attack.slam}). A projectile its spell forms
+ * grows in its raised hands, where its spec says they are ({@link SpellVisuals.Hands}).
  *
  * <ul>
  *   <li><b>Variants:</b> a mob with variants rolls one by weight when it is created on the server, saves it and
@@ -72,14 +81,18 @@ import net.minecraft.world.level.storage.loot.LootTable;
  * <p>Light does not matter to it: vanilla's monsters prefer dark spots ({@code Monster#getWalkTargetValue}), which
  * also keeps a spawner from spawning them in a lit room; a custom mob stands in torchlit dungeons.
  */
-public abstract class CustomMob extends Monster implements GeoEntity {
+public abstract class CustomMob extends Monster implements GeoEntity, SpellVisuals.Hands {
     private static final String POST = "realmforge:post";
     private static final String VARIANT = "realmforge:variant";
     private static final EntityDataAccessor<Integer> DATA_VARIANT =
             SynchedEntityData.defineId(CustomMob.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Boolean> CASTING =
-            SynchedEntityData.defineId(CustomMob.class, EntityDataSerializers.BOOLEAN);
-    private static final RawAnimation CAST = RawAnimation.begin().thenLoop("attack.cast");
+    /** The cast in progress's animation, by its ordinal plus 1; 0 while it casts nothing. */
+    private static final EntityDataAccessor<Byte> CAST_ANIMATION =
+            SynchedEntityData.defineId(CustomMob.class, EntityDataSerializers.BYTE);
+    private static final SpellCast.Animation[] ANIMATIONS = SpellCast.Animation.values();
+    private static final Map<SpellCast.Animation, RawAnimation> CAST_LOOPS = Arrays.stream(ANIMATIONS).collect(
+            Collectors.toUnmodifiableMap(Function.identity(),
+                    animation -> RawAnimation.begin().thenLoop(animation.modelAnimation())));
     /** Break particles per cubic block of the mob's hitbox, and the most a death bursts into. */
     private static final double PARTICLES_PER_BLOCK = 40;
     private static final int MAX_PARTICLES = 160;
@@ -153,14 +166,25 @@ public abstract class CustomMob extends Monster implements GeoEntity {
 
     /** Whether a cast-time or channelled spell of this mob is in progress, on the server and on clients. */
     public boolean isCasting() {
-        return entityData.get(CASTING);
+        return castAnimation().isPresent();
+    }
+
+    /** How it moves its arms for the cast-time or channelled spell in progress, if any, on the server and on clients. */
+    public Optional<SpellCast.Animation> castAnimation() {
+        int value = entityData.get(CAST_ANIMATION);
+        return value > 0 && value <= ANIMATIONS.length ? Optional.of(ANIMATIONS[value - 1]) : Optional.empty();
+    }
+
+    @Override
+    public Vec3 formingHands() {
+        return new Vec3(0, spec.hands().up(), spec.hands().ahead());
     }
 
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder entityData) {
         super.defineSynchedData(entityData);
         entityData.define(DATA_VARIANT, 0);
-        entityData.define(CASTING, false);
+        entityData.define(CAST_ANIMATION, (byte) 0);
     }
 
     @Override
@@ -198,7 +222,10 @@ public abstract class CustomMob extends Monster implements GeoEntity {
         if (post == null && spec.idle() == CustomMobSpec.Idle.GUARD && onGround()) {
             post = blockPosition();
         }
-        entityData.set(CASTING, Spells.currentCast(this).isPresent());
+        entityData.set(CAST_ANIMATION, (byte) Spells.currentCast(this)
+                .flatMap(cast -> Spells.get(registryAccess(), cast.spell()))
+                .map(spell -> spell.value().cast().animation().ordinal() + 1)
+                .orElse(0).intValue());
     }
 
     @Override
@@ -308,8 +335,9 @@ public abstract class CustomMob extends Monster implements GeoEntity {
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(DefaultAnimations.genericWalkIdleController());
         addActionControllers(controllers);
-        controllers.add(new AnimationController<CustomMob>("Cast",
-                test -> test.animatable().isCasting() ? test.setAndContinue(CAST) : PlayState.STOP));
+        controllers.add(new AnimationController<CustomMob>("Cast", test -> test.animatable().castAnimation()
+                .map(animation -> test.setAndContinue(CAST_LOOPS.get(animation)))
+                .orElse(PlayState.STOP)));
     }
 
     /** The archetype's animation controllers for its attacks, besides walking and idling. */

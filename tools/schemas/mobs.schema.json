@@ -234,6 +234,21 @@
       "additionalProperties": false,
       "description": "The placeholder model and texture, until A2 (RLM-48) brings the art: a build that fills the hitbox, a\nsurface, eyes and colours.",
       "properties": {
+        "arm_thickness": {
+          "anyOf": [
+            {
+              "maximum": 12,
+              "minimum": 2,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The arms' width and depth in texture pixels, 2 to 12 (a player's are 4); by default the build's: a golem's are 4, a slim mob's 2, a humanoid's grow with its width. Their length stays the build's.",
+          "title": "Arm Thickness"
+        },
         "build": {
           "default": "humanoid",
           "description": "humanoid: legs, body and head in thirds; slim: an enderman's long legs and arms, a tall head; golem: a broad body with shells on its front and back, long thick arms and a big head.",

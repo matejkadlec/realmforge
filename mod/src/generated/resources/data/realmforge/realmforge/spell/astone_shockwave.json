@@ -29,7 +29,8 @@
           "type": "realmforge:knockback",
           "strength": 1.5
         }
-      ]
+      ],
+      "ring_color": "#8C8C8C"
     }
   ]
 }
