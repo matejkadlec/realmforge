@@ -399,7 +399,7 @@ start of the village, villager and trade overhaul, with trades paid in our own c
 - **The in-game guide** (RLM-116, [guide design](design/guide.md)): our own screen on `J` with nested tabs
   (Realms, Dungeons, Bosses, Character, Basics), search and chapter locks; each realm lists its ores, each dungeon
   its notable loot, each boss its full loot table with drop chances. It replaces EMI Loot and EMI Ores, which the
-  26.1.2 port removed, and its entries cover chapter 1's content too.
+  26.1.2 port removed, and its entries cover the content of chapters 1 and 2 too (RLM-188).
 
 ## M5: Professions and enchanting
 

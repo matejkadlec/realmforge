@@ -291,7 +291,7 @@ key to the stone arena, where the keeper waits.
 
 - **Quest 11, "The Catacombs"** (beat 16; M1): clear them to the treasury. The treasury holds the arena key, every time.
 - **The dungeon** (W6, RLM-36): an instanced dungeon behind a Dungeon Portal Base, opened with the catacomb key, and a
-  dungeon type of its own, separate from Prisoner's Kingdom (decided 25 October), which is a real dungeon of the
+  dungeon type of its own, separate from Prisoner's Kingdom (decided 25 October), which is a real dungeon in
   Overworld, not only a test dungeon (decided 27 October, RLM-456). Each run is built for the player who opens it, so
   the story never gives it a fixed place.
 - **The riddles and light beams** come with the dungeon puzzle work, so M1's catacombs may have none yet.

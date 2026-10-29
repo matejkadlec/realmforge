@@ -1888,7 +1888,7 @@ and open-world dungeons (RLM-305) come later, and the party lock with the party 
   structure (`minecraft:ancient_city`) or a structure tag (`#minecraft:village`, read with vanilla's
   `ExtraCodecs.TAG_OR_ELEMENT_ID`), each with a floor above `entry_level` and at most `max_level`. A mob that gets its
   level inside one of such a structure's pieces takes the highest such floor instead of the realm's
-  (`MobLevels#floorAt`, `MobLevelRule#chances(playerLevel, floor)`); the rest of the rule holds. The Overworld's
+  (`MobLevels#floorAt`, `MobLevelRule#chances(playerLevel, floor)`); the rest of the rule holds. Overworld's
   Ancient Cities are 40 and more, for a later questline's Warden (ADR 0044), so a Warden their shriekers call is too;
   one that a deep dark sculk patch outside a city calls (`SculkPatchFeature` places shriekers that can summon) follows
   the realm's floor. `floorAt` reads the spot's chunk at `STRUCTURE_REFERENCES` and each referenced start's chunk at

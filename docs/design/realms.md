@@ -47,7 +47,7 @@ player first meets one (the guide, the arrival title), it carries a plain subtit
 "Undervault — Stone Realm". This document keeps "stone realm", "desert realm" and so on as plain descriptions, and
 so does the refusal at the realm portal's sealstone: "You are not eligible to open a portal to the stone realm."
 (Matěj, 2026-10-20). Renamed on 2026-10-15: the Rimefields became Everwinter, the Forgefire Ashfire, and the Brink
-Unmade Isles (RLM-164). Renamed later: Olympus became Asgard (2026-10-17, RLM-245), and the prehistoric Prestoria
+Unmade Isles (RLM-188). Renamed later: Olympus became Asgard (2026-10-17, RLM-245), and the prehistoric Prestoria
 became the water realm Atlantis (2026-10-19, RLM-265); on 2026-10-22 Asgard became Skyhearth and Atlantis Deepholm,
 to drop borrowed mythology (RLM-357,
 [ADR 0054](../decisions/0054-skyhearth-and-deepholm-amend-asgard-and-atlantis.md)).
@@ -204,7 +204,7 @@ never also in Overworld.** Vanilla strongholds are off from M1.
 | Realm | Structures | Milestone |
 | --- | --- | --- |
 | Overworld | Dungeons Enhanced: Large Dungeon, Tower of the Undead, Druid Circle, Pillager Camp, Pirate Ship, Fishing Ship, Monster Maze (dark, pale), Jungle Monument, Stables, Ruined Building, Mushroom House, Tree House, Miners House; YUNG's suite, Dungeons and Taverns, MVS, Battle Towers, Underground Worlds (Structory and Structory: Towers only if Matěj clears their Stardust Labs License, ADR 0044); the illager mods and the villages (CTOV with Village Taverns) | M2 (RLM-315, RLM-318) |
-| Overworld, late | Ancient Cities through Dungeons and Taverns' Ancient City Overhaul, with a Warden of level 40 and more for a later questline (the Overworld's structure floor of 40 for Ancient Cities, RLM-342); Golem Dungeons' Sculk Factory beside them | later |
+| Overworld, late | Ancient Cities through Dungeons and Taverns' Ancient City Overhaul, with a Warden of level 40 and more for a later questline (Overworld's structure floor of 40 for Ancient Cities, RLM-342); Golem Dungeons' Sculk Factory beside them | later |
 | Undervault | Dungeons Enhanced: Deep Crypt, Dungeon Variant (set into the cave walls); Golem Dungeons: Abandoned Factory | M2 (RLM-316) |
 | Sunwastes | Dungeons Enhanced: Desert Tomb, Desert Temple, Hay Storage; YUNG's Cave Biomes: Lost Caves | M4 (RLM-325) |
 | Everwinter | Dungeons Enhanced: Castle, Ice Pit, Witch Tower, Watch Tower; YUNG's Cave Biomes: Frosted Caves; The Lost Castle in the tundra | M4 (RLM-325) |

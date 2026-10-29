@@ -447,7 +447,7 @@ without one; never in a realm. This answers the realm design's
 - **Respawn anchors do not work there** (`minecraft:gameplay/respawn_anchor_works: false`): as in Overworld, a
   charged anchor explodes when used.
 - **A spawn point in a realm set some other way** (`/spawnpoint`, another mod) is overridden. NeoForge's
-  `PlayerRespawnPositionEvent`, which `PlayerList#respawn` posts, moves a respawn whose level is a realm to the
+  `PlayerRespawnPositionEvent`, which `PlayerList#respawn` posts, moves a respawn whose level is a realm to
   Overworld's world spawn.
 - **A death costs the way back, nothing more:** `keep_inventory` and `immediate_respawn` are on
   ([architecture 19.1](../architecture.md#191-world-defaults)). The ways back are the player's own Overworld portal,
@@ -533,7 +533,7 @@ without one; never in a realm. This answers the realm design's
   and the sneak gesture open it onto return (Overworld, at the scaled-back position, [Linking](#linking)), so a
   player whose portal broke builds a new one and leaves (Matěj, 2026-10-28). Another realm's signet is refused there
   ([The sealstone](#the-sealstone)). A trip to another realm goes through Overworld.
-- **Instance dimensions and other dimensions:** a frame lights only in dimensions that have a realm entry: the
+- **Instance dimensions and other dimensions:** a frame lights only in dimensions that have a realm entry:
   Overworld and the realms. In `realmforge:instances`, in the Nether and End until M4 removes them, and in
   dimensions of other mods the sealstone refuses: "The portal cannot open here". Inside instances players are in
   Adventure mode anyway and cannot build one ([architecture 15.5](../architecture.md#155-instances)). Dungeon
@@ -749,7 +749,7 @@ Matěj's answers of 2026-10-13 (RLM-128), which this version records:
    progress: without the realm's unlock quest a player can neither open a portal to that realm with the signet nor
    pass through an open one ("You are not eligible to pass through the portal."). One signet opens any number of
    portals.
-3. **First portal:** answered by the Nether-like travel. Any number of portals can lead to one realm, anywhere in the
+3. **First portal:** answered by the Nether-like travel. Any number of portals can lead to one realm, anywhere in
    Overworld, so no generated shrine is needed.
 4. **Who may switch a portal:** anyone holding a signet they are eligible to use.
 5. **Recall:** the Waystones mod's Warp Scroll and Return Scroll, plus our "Return to last death" scroll.
