@@ -386,6 +386,48 @@ public final class GearGameTests {
     }
 
     /**
+     * RLM-461: while the lock lasts, a dropped shield is not picked back into the selected slot. A shield does not
+     * stack, so a pickup takes the first free slot, and with the bag and the hotbar before it full that is the selected
+     * one: the shield would land in the main hand and drop again every time its pickup delay ran out. Into another free
+     * slot it is picked up as usual.
+     */
+    @QaGameTest
+    public static void aDroppedShieldIsNotPickedBackIntoTheHand(GameTestHelper helper) {
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-gear-no-pickup-loop");
+        try {
+            player.setGameMode(GameType.SURVIVAL);
+            Inventory inventory = player.getInventory();
+            for (int slot = 0; slot < Inventory.INVENTORY_SIZE; slot++) {
+                inventory.setItem(slot, new ItemStack(Items.DIRT));
+            }
+            player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(GeneratedItems.STONE_WAND.get()));
+            player.doTick();
+            player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.SHIELD));
+            player.doTick();
+            helper.assertTrue(player.getMainHandItem().isEmpty(), "the shield left the main hand");
+            List<ItemEntity> dropped = helper.getLevel().getEntitiesOfClass(ItemEntity.class,
+                    player.getBoundingBox().inflate(4), item -> item.getItem().is(Items.SHIELD));
+            helper.assertValueEqual(dropped.size(), 1, "with the bag full, it dropped");
+            ItemEntity shield = dropped.getFirst();
+            shield.setNoPickUpDelay();
+            shield.playerTouch(player);
+            helper.assertTrue(!shield.isRemoved() && player.getMainHandItem().isEmpty(),
+                    "the selected slot is the first free one, so the shield stays on the ground");
+
+            inventory.setItem(inventory.getSelectedSlot(), new ItemStack(Items.DIRT));
+            int free = inventory.getSelectedSlot() == 3 ? 4 : 3;
+            inventory.setItem(free, ItemStack.EMPTY);
+            shield.playerTouch(player);
+            helper.assertTrue(shield.isRemoved() && inventory.getItem(free).is(Items.SHIELD),
+                    "with another slot free first, it is picked up into it");
+        } finally {
+            clearDroppedShields(helper, player);
+            logout(player);
+        }
+        helper.succeed();
+    }
+
+    /**
      * RLM-461: a death ends the lock, though the respawned player is a new object with the old one's entity id, and so
      * does a logout. After either, a shield stays in hand.
      */

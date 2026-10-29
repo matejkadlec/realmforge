@@ -3,6 +3,7 @@ package io.github.matejkadlec.realmforge.item;
 import io.github.matejkadlec.realmforge.generated.GeneratedItems;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
@@ -21,5 +22,6 @@ public final class ItemFeature {
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedOutEvent.class, TwoHandedGear::onLoggedOut);
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerChangedDimensionEvent.class,
                 TwoHandedGear::onChangedDimension);
+        NeoForge.EVENT_BUS.addListener(ItemEntityPickupEvent.Pre.class, TwoHandedGear::onItemPickup);
     }
 }

@@ -16,6 +16,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.TriState;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
@@ -25,6 +26,7 @@ import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
@@ -36,7 +38,8 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  * the lock lasts goes into the bag, with "You can't use this now" in the action bar: one in the off hand when a wand
  * comes into the main hand, and one taken in hand during the lock. It takes a free slot of the main inventory, never
  * the hotbar, so it does not come back into a hand by itself; with none free it drops at the player's feet, a plain
- * drop rather than a throw (RLM-461; Matěj, 2026-10-28).
+ * drop rather than a throw (RLM-461; Matěj, 2026-10-28), and while the lock lasts it is not picked up into the
+ * selected slot, which would put it in the main hand to drop again.
  *
  * <p>The lock is this class's own, per player, not the shields' cooldown: an axe that disables a shield puts it on the
  * same vanilla cooldown, and such a shield stays in hand. Item cooldowns are not saved, and neither is the lock: it
@@ -117,6 +120,21 @@ public final class TwoHandedGear {
     /** A logout ends the lock. */
     static void onLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         LOCKED_UNTIL.remove(event.getEntity().getUUID());
+    }
+
+    /**
+     * While the lock lasts, a shield on the ground is not picked up into the selected slot: a shield does not stack, so
+     * a pickup takes the first free slot ({@code Inventory#getFreeSlot}), and with the bag full that is often the
+     * selected one, from which it would drop again at once, every time its pickup delay ran out. Into another free
+     * slot it is picked up as usual.
+     */
+    static void onItemPickup(ItemEntityPickupEvent.Pre event) {
+        Player player = event.getPlayer();
+        Inventory inventory = player.getInventory();
+        if (event.getItemEntity().getItem().is(Tags.Items.TOOLS_SHIELD) && lockEnd(player).isPresent()
+                && inventory.getFreeSlot() == inventory.getSelectedSlot()) {
+            event.setCanPickup(TriState.FALSE);
+        }
     }
 
     /** The client built a new player, without cooldowns: the lock goes back on its shields. */
