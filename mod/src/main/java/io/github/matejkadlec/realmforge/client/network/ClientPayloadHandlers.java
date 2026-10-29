@@ -12,6 +12,7 @@ import io.github.matejkadlec.realmforge.spell.net.CastEndedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastRefusedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastStartedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastTargetPayload;
+import io.github.matejkadlec.realmforge.spell.net.HighlightedTargetPayload;
 import io.github.matejkadlec.realmforge.world.net.RealmRefusedPayload;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
@@ -43,6 +44,7 @@ public final class ClientPayloadHandlers {
         });
         event.register(CastRefusedPayload.TYPE, (payload, context) -> CastBarHud.refused(payload));
         event.register(CastTargetPayload.TYPE, (payload, context) -> TargetCircle.set(payload));
+        event.register(HighlightedTargetPayload.TYPE, (payload, context) -> TargetCircle.highlighted(payload));
         event.register(RealmRefusedPayload.TYPE, (payload, context) -> RealmRefusalHud.show(payload));
     }
 }

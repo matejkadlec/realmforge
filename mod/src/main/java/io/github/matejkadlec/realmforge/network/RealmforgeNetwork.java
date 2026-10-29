@@ -8,15 +8,18 @@ import io.github.matejkadlec.realmforge.combat.net.CombatTextPayload;
 import io.github.matejkadlec.realmforge.combat.net.HitDirectionPayload;
 import io.github.matejkadlec.realmforge.spell.SpellBar;
 import io.github.matejkadlec.realmforge.spell.Spells;
+import io.github.matejkadlec.realmforge.spell.TargetHighlight;
 import io.github.matejkadlec.realmforge.spell.net.CastEndedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastRefusedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastSpellPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastStartedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastTargetPayload;
+import io.github.matejkadlec.realmforge.spell.net.HighlightTargetPayload;
+import io.github.matejkadlec.realmforge.spell.net.HighlightedTargetPayload;
 import io.github.matejkadlec.realmforge.spell.net.SetSpellBarSlotPayload;
-import io.github.matejkadlec.realmforge.world.DarkVision;
+import io.github.matejkadlec.realmforge.world.NightVision;
 import io.github.matejkadlec.realmforge.world.net.RealmRefusedPayload;
-import io.github.matejkadlec.realmforge.world.net.ToggleDarkVisionPayload;
+import io.github.matejkadlec.realmforge.world.net.ToggleNightVisionPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -47,10 +50,10 @@ public final class RealmforgeNetwork {
         // (the registrar's default). A client-bound payload is registered without a handler, `playToClient(TYPE,
         // STREAM_CODEC)`: its handler is client code, in client/network/ClientPayloadHandlers (ADR 0027). A
         // server-bound handler hands the intent to the feature's system, which validates every field.
-        registrar.playToServer(ToggleDarkVisionPayload.TYPE, ToggleDarkVisionPayload.STREAM_CODEC,
+        registrar.playToServer(ToggleNightVisionPayload.TYPE, ToggleNightVisionPayload.STREAM_CODEC,
                 (payload, context) -> {
                     if (context.player() instanceof ServerPlayer player) {
-                        DarkVision.toggle(player);
+                        NightVision.toggle(player);
                     }
                 });
         registrar.playToServer(CreateCharacterPayload.TYPE, CreateCharacterPayload.STREAM_CODEC,
@@ -77,12 +80,19 @@ public final class RealmforgeNetwork {
                         Spells.placeOnBar(player, payload.slot(), payload.spell());
                     }
                 });
+        registrar.playToServer(HighlightTargetPayload.TYPE, HighlightTargetPayload.STREAM_CODEC,
+                (payload, context) -> {
+                    if (context.player() instanceof ServerPlayer player) {
+                        TargetHighlight.setOn(player, payload.on());
+                    }
+                });
         registrar.playToClient(CombatTextPayload.TYPE, CombatTextPayload.STREAM_CODEC);
         registrar.playToClient(HitDirectionPayload.TYPE, HitDirectionPayload.STREAM_CODEC);
         registrar.playToClient(CastStartedPayload.TYPE, CastStartedPayload.STREAM_CODEC);
         registrar.playToClient(CastEndedPayload.TYPE, CastEndedPayload.STREAM_CODEC);
         registrar.playToClient(CastRefusedPayload.TYPE, CastRefusedPayload.STREAM_CODEC);
         registrar.playToClient(CastTargetPayload.TYPE, CastTargetPayload.STREAM_CODEC);
+        registrar.playToClient(HighlightedTargetPayload.TYPE, HighlightedTargetPayload.STREAM_CODEC);
         registrar.playToClient(RealmRefusedPayload.TYPE, RealmRefusedPayload.STREAM_CODEC);
     }
 }

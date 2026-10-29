@@ -14,7 +14,7 @@ import io.github.matejkadlec.realmforge.client.hud.RealmRefusalHud;
 import io.github.matejkadlec.realmforge.client.hud.SpellBarHud;
 import io.github.matejkadlec.realmforge.client.hud.XpBarHud;
 import io.github.matejkadlec.realmforge.client.input.CharacterSheetKey;
-import io.github.matejkadlec.realmforge.client.input.DarkVisionKey;
+import io.github.matejkadlec.realmforge.client.input.NightVisionKey;
 import io.github.matejkadlec.realmforge.client.input.SpellKeys;
 import io.github.matejkadlec.realmforge.client.network.ClientPayloadHandlers;
 import io.github.matejkadlec.realmforge.client.render.CustomMobRenderers;
@@ -42,7 +42,7 @@ public final class RealmforgeClient {
         ClientConfig.register(container);
         ClientPayloadHandlers.register(modBus);
         // Client registration events (HUD layers, key mappings, renderers, screens) are added to modBus here.
-        DarkVisionKey.register(modBus);
+        NightVisionKey.register(modBus);
         CharacterSheetKey.register(modBus);
         SpellKeys.register(modBus);
         CharacterCreationScreen.register(modBus);

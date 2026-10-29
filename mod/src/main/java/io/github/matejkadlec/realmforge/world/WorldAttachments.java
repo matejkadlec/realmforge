@@ -15,11 +15,11 @@ public final class WorldAttachments {
             DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, Realmforge.MOD_ID);
 
     /**
-     * {@code realmforge:dark_vision}: whether the player's Dark Vision is switched on. On by default, because every
+     * {@code realmforge:night_vision}: whether the player's Night Vision is switched on. On by default, because every
      * player has it (vision). Copied on death, because the effect itself is not; not synced, because the effect is.
      */
-    public static final DeferredHolder<AttachmentType<?>, AttachmentType<Boolean>> DARK_VISION =
-            ATTACHMENTS.register("dark_vision", () -> AttachmentType.builder(() -> Boolean.TRUE)
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<Boolean>> NIGHT_VISION =
+            ATTACHMENTS.register("night_vision", () -> AttachmentType.builder(() -> Boolean.TRUE)
                     .serialize(Codec.BOOL.fieldOf("value"))
                     .copyOnDeath()
                     .build());

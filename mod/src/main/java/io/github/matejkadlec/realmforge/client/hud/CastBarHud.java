@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.client.hud;
 
 import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.client.ClientConfig;
 import io.github.matejkadlec.realmforge.client.spell.ClientCasts;
 import io.github.matejkadlec.realmforge.client.spell.CurrentCasts;
 import io.github.matejkadlec.realmforge.spell.CastEnd;
@@ -31,13 +32,13 @@ import net.neoforged.neoforge.common.NeoForge;
 
 /**
  * The local player's cast bar (architecture 11.6, 18; C3b, RLM-25), after WoW's casting bar (Matěj's playtest of
- * 2026-10-21): toward the middle of the screen, above the spell bar ({@link SpellBarLayout}), in a black frame with
- * rounded corners that holds the spell's icon on the left and the bar on the right. The bar fills in the spell school's
- * colour, shaded like a lit tube ({@link CastBarStyle}) with an almost white leading edge; a cast time fills from the
- * left, a channel starts full and empties toward the left. The spell's name is on the left, the seconds "elapsed /
- * total" on the right. When a cast ends, the bar stays for a moment: full and fading when it completed, red with the
- * reason in place of the name when it did not ("Interrupted", "Out of range"; {@link CastTexts}). With no cast to show,
- * a refused cast's reason shows there in red (research SP-3).
+ * 2026-10-21): toward the middle of the screen, clear of the spell bar wherever it is ({@link SpellBarLayout}), in a
+ * black frame with rounded corners that holds the spell's icon on the left and the bar on the right. The bar fills in
+ * the spell school's colour, shaded like a lit tube ({@link CastBarStyle}) with an almost white leading edge; a cast
+ * time fills from the left, a channel starts full and empties toward the left. The spell's name is on the left, the
+ * seconds "elapsed / total" on the right. When a cast ends, the bar stays for a moment: full and fading when it
+ * completed, red with the reason in place of the name when it did not ("Interrupted", "Out of range";
+ * {@link CastTexts}). With no cast to show, a refused cast's reason shows there in red (research SP-3).
  */
 public final class CastBarHud {
     static final Identifier LAYER = Realmforge.id("cast_bar");
@@ -111,10 +112,8 @@ public final class CastBarHud {
         }
         long now = player.level().getGameTime();
         double time = now + deltaTracker.getGameTimeDeltaPartialTick(false);
-        // The spell bar raised the stack to a row above itself.
-        int stack = Math.max(minecraft.gui.leftHeight, minecraft.gui.rightHeight);
-        int barTop = graphics.guiHeight() - stack + SpellBarLayout.ROW;
-        int top = SpellBarLayout.castBarTop(graphics.guiHeight(), barTop);
+        int top = SpellBarLayout.castBarTop(graphics.guiWidth(), graphics.guiHeight(),
+                ClientConfig.spellBarGroup(graphics.guiWidth(), graphics.guiHeight()));
         int x = (graphics.guiWidth() - SpellBarLayout.CAST_BAR_WIDTH) / 2;
         Font font = minecraft.font;
         Optional<Cast> cast = ClientCasts.current(player);

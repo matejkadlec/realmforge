@@ -2,8 +2,8 @@
 # Key mapping names in Options > Controls (key.realmforge.<name>). The heading of our keys is in key.category.yaml.
 id: key
 texts:
-  dark_vision:
-    en_us: Toggle Dark Vision
+  night_vision:
+    en_us: Toggle Night Vision
   character_sheet:
     en_us: Character Sheet
   # The spellbook (C3b, RLM-25): known spells, their tooltips, and the spell bar's layout.
@@ -29,3 +29,7 @@ texts:
     en_us: Spell Slot 8
   racial_ability:
     en_us: Racial Ability
+  # Toggled on, or held (the spell options' Highlight Spell Target), it shows the target circle under the mob an enemy
+  # spell would go to now (RLM-468, aim assistance; Matěj's playtest of 2026-10-29 named it).
+  highlight_spell_target:
+    en_us: Highlight Spell Target

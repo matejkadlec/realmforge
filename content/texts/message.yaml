@@ -2,10 +2,10 @@
 # Chat and action bar messages (message.realmforge.<name>).
 id: message
 texts:
-  dark_vision_off:
-    en_us: Dark Vision Off
-  dark_vision_on:
-    en_us: Dark Vision On
+  night_vision_off:
+    en_us: Night Vision Off
+  night_vision_on:
+    en_us: Night Vision On
   # Leveling (C2, architecture 10.2). XP a kill gave, in the action bar: "+50 XP" (%1$s the XP).
   xp_gained:
     en_us: "+%1$s XP"

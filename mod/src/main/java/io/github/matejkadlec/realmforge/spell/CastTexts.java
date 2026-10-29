@@ -45,7 +45,7 @@ public final class CastTexts {
             case COMPLETED -> Optional.empty();
             case KNOCKED_BACK, CANCELLED, DIED, CHANGED_DIMENSION, LOGGED_OUT ->
                     Optional.of(Component.translatable(GeneratedTexts.CAST_INTERRUPTED));
-            case TARGET_LOST -> Optional.of(failure(CastFailure.NO_TARGET, spell));
+            case TARGET_LOST -> Optional.of(Component.translatable(GeneratedTexts.CAST_TARGET_LOST));
             case OUT_OF_RANGE -> Optional.of(failure(CastFailure.OUT_OF_RANGE, spell));
             case NO_LINE_OF_SIGHT -> Optional.of(failure(CastFailure.NO_LINE_OF_SIGHT, spell));
             case INVALID_TARGET -> Optional.of(failure(CastFailure.INVALID_TARGET, spell));

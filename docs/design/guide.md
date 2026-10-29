@@ -222,7 +222,7 @@ Matěj's answers of 2026-10-13 (RLM-116); none is open.
    Realms, Dungeons, Bosses and Basics. Where spells go was left to the design: with what grants them, a class, a
    race or another system ([Screen](#screen)).
 2. **Milestone:** M4.
-3. **Default key:** `J`, unless a mod in the pack already uses it (checked when it is built; RLM-42's Dark Vision key
+3. **Default key:** `J`, unless a mod in the pack already uses it (checked when it is built; RLM-42's Night Vision key
    takes `N`).
 4. **Locked chapters:** one "Chapter N: locked" line.
 5. **Basics:** the systems too, not only the world.

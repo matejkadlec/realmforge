@@ -172,7 +172,7 @@ backpack's of RLM-501 ([ADR 0062](../docs/decisions/0062-backpack-keys-and-alt-k
   Just Zoom's Zoom on Z (Czech QWERTZ);
 - Xaero's Minimap (2026-10-20): Minimap Settings on `ú` (right of P on a Czech
   keyboard), Zoom In and Zoom Out Minimap on the numeric keypad's + and -, New
-  Waypoint on N, Open Waypoint Screen on `,` (right of M); our Dark Vision key
+  Waypoint on N, Open Waypoint Screen on `,` (right of M); our Night Vision key
   moved from N to H for it, then to `¨` (by Enter on a Czech keyboard) for the
   spell bar (its default is in our code);
 - unbound: Just Zoom's Open Options (it shared B with Open Backpack), Xaero's

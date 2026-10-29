@@ -41,8 +41,8 @@ key_justzoom.keybinds.keybind.open_options:key.keyboard.unknown
 key_key.command:key.keyboard.unknown
 
 # Xaero's Minimap (Matěj, 2026-10-20): Minimap Settings on ú (right of P on a Czech keyboard), zoom on the numeric
-# keypad's + and -, New Waypoint on N, Open Waypoint Screen on , (right of M), Quick Waypoint unbound. Our Dark
-# Vision key moved from N to H for this, then to ¨ (by Enter), as H became a spell key (DarkVisionKey, RLM-25).
+# keypad's + and -, New Waypoint on N, Open Waypoint Screen on , (right of M), Quick Waypoint unbound. Our Night
+# Vision key moved from N to H for this, then to ¨ (by Enter), as H became a spell key (NightVisionKey, RLM-25).
 key_gui.xaero_minimap_settings:key.keyboard.left.bracket
 key_gui.xaero_zoom_in:key.keyboard.keypad.add
 key_gui.xaero_zoom_out:key.keyboard.keypad.subtract

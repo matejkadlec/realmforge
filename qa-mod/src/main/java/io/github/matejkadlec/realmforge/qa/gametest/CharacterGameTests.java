@@ -187,7 +187,7 @@ public final class CharacterGameTests {
 
     /**
      * The character sheet's Origin tab names the race and the class, with their descriptions and what the race gives,
-     * and a subclass placeholder; the heading stays name and level (Matěj, 2026-10-14).
+     * and a specialization placeholder; the heading stays name and level (Matěj, 2026-10-14).
      */
     @QaGameTest
     public static void originTabShowsRaceAndClass(GameTestHelper helper) {
@@ -217,7 +217,8 @@ public final class CharacterGameTests {
                 "Class: " + Component.translatable(playerClass.nameKey()).getString(), "the class");
         helper.assertValueEqual(classSection.rows().getFirst().label().getString(),
                 Component.translatable(playerClass.descriptionKey()).getString(), "the class's description");
-        helper.assertValueEqual(origin.right().get(1).title().getString(), "Subclass: WIP", "the subclass placeholder");
+        helper.assertValueEqual(origin.right().get(1).title().getString(), "Specialization: WIP",
+                "the specialization placeholder");
         server.getPlayerList().remove(player);
         helper.succeed();
     }

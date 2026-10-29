@@ -18,8 +18,9 @@ import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 
 /**
- * The value of a player's {@code realmforge:character} attachment (architecture 7 and 10): race, classes (a list:
- * one in M1, room for dual class), total character XP, the cached level cap and the stat points spent.
+ * The value of a player's {@code realmforge:character} attachment (architecture 7 and 10): race, classes (a list
+ * that holds one class, as there is no dual class, RLM-218), total character XP, the cached level cap and the stat
+ * points spent.
  *
  * <p>Races and classes are saved as their ids, which is how F3 saved them before C1 added their registries, so
  * those saves stay readable. A key whose entry no longer exists (content removed) stays saved and gives nothing.

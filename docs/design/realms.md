@@ -86,7 +86,7 @@ to drop borrowed mythology (RLM-357,
   - one identity element visible on the realm's mobs and drops (RE-5), and music and ambience from the start (RE-8);
   - Skyhearth is the exception: a small, passive realm of NPCs ([The hub realm](#the-hub-realm)).
 - **No horror realm with limited visibility** (RE-18). Every realm has its own light (glowstone, crystals, a sky),
-  so Dark Vision is a comfort, not a requirement.
+  so Night Vision is a comfort, not a requirement.
 
 ### Chapters and levels
 
@@ -598,7 +598,7 @@ art or assets of other games.
 - **Light, sky and sound:**
   - the Void below glows violet and lights the islands from beneath, and crystals and the growths' orbs glow;
   - the sky is magenta and violet, with a pale moon; a day and night cycle keeps it from freezing (RE-17);
-  - it is never dark and never horror (RE-18), so Dark Vision stays a comfort;
+  - it is never dark and never horror (RE-18), so Night Vision stays a comfort;
   - music and ambience come with the realm (RE-8): low choirs, the creak of the chains.
 - **Landmarks** (WF-1, WF-5): dark Roman-style Gatewright gates (arches) where bridges meet the islands; the great
   chains, anchored on the island rims; rune obelisks floating above the guard towers, the link-houses and the

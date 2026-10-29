@@ -46,14 +46,14 @@ Rules:
   touches.
 - **Labels use Title Case** (Matěj, 2026-10-13), for readability: names (items, stats, spells, mobs, realms),
   key mapping names, setting names, screen, button and tab titles, guide chapter and section names, and short
-  status messages: `Dark Vision On`, `Toggle Dark Vision`, `Character Sheet`. Every word starts with a capital
+  status messages: `Night Vision On`, `Toggle Night Vision`, `Character Sheet`. Every word starts with a capital
   except articles, conjunctions and prepositions of up to three letters (`a`, `an`, `the`, `and`, `but`, `or`,
   `of`, `in`, `on`, `at`, `to`, `for`, `by`) that are neither the first nor the last word: `Ring of the Deep`,
-  `Dark Vision On`. Whole sentences (tooltip explanations, quest, lore and dialog text, a chat line that reads as
+  `Night Vision On`. Whole sentences (tooltip explanations, quest, lore and dialog text, a chat line that reads as
   a sentence) stay in sentence case.
 - `texts/` holds player-facing texts that belong to no other type (key mapping names, messages). The group id
   is the key prefix (`key`, `message`, ...) and must not be another type's prefix (`item`, `curve`); Java
-  names a text through its `GeneratedTexts` constant (`KEY_DARK_VISION`), never by typing the key. A group id may
+  names a text through its `GeneratedTexts` constant (`KEY_NIGHT_VISION`), never by typing the key. A group id may
   contain dots where the game prescribes a key format: `key.category.yaml` names key categories, which Options >
   Controls reads from `key.category.<namespace>.<path>` (constant `KEY_CATEGORY_MAIN`). `item_use.yaml` holds the
   green "Use:" tooltip line of each item use, named after the use; validation requires one for every use an item

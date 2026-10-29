@@ -22,7 +22,7 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 
 /**
- * Dimension rules and access, realms and the realm portal, world defaults, Dark Vision, griefing protection, and the
+ * Dimension rules and access, realms and the realm portal, world defaults, Night Vision, griefing protection, and the
  * blocks of {@code content/blocks/} (architecture 15.1, 19.1).
  */
 public final class WorldFeature {
@@ -55,9 +55,9 @@ public final class WorldFeature {
         NeoForge.EVENT_BUS.addListener(LivingDestroyBlockEvent.class, GriefingProtection::onDestroyBlock);
         NeoForge.EVENT_BUS.addListener(BlockEvent.FarmlandTrampleEvent.class, GriefingProtection::onFarmlandTrample);
 
-        NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class, DarkVision::onLoggedIn);
-        NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerRespawnEvent.class, DarkVision::onRespawn);
-        NeoForge.EVENT_BUS.addListener(MobEffectEvent.Remove.class, DarkVision::onEffectRemove);
-        NeoForge.EVENT_BUS.addListener(MobEffectEvent.Applicable.class, DarkVision::onEffectApplicable);
+        NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class, NightVision::onLoggedIn);
+        NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerRespawnEvent.class, NightVision::onRespawn);
+        NeoForge.EVENT_BUS.addListener(MobEffectEvent.Remove.class, NightVision::onEffectRemove);
+        NeoForge.EVENT_BUS.addListener(MobEffectEvent.Applicable.class, NightVision::onEffectApplicable);
     }
 }

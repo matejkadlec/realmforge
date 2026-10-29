@@ -44,6 +44,9 @@ public final class GeneratedTexts {
     /** {@code cast.realmforge.out_of_range} from {@code content/texts/cast.yaml}: "Out of range" */
     public static final String CAST_OUT_OF_RANGE = "cast.realmforge.out_of_range";
 
+    /** {@code cast.realmforge.target_lost} from {@code content/texts/cast.yaml}: "Target lost" */
+    public static final String CAST_TARGET_LOST = "cast.realmforge.target_lost";
+
     /** {@code cast.realmforge.unknown_spell} from {@code content/texts/cast.yaml}: "That spell no longer exists" */
     public static final String CAST_UNKNOWN_SPELL = "cast.realmforge.unknown_spell";
 
@@ -98,6 +101,18 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.entity_reach} from {@code content/texts/gui.yaml}: "Entity Reach" */
     public static final String GUI_ENTITY_REACH = "gui.realmforge.entity_reach";
 
+    /** {@code gui.realmforge.highlight_spell_target} from {@code content/texts/gui.yaml}: "Highlight Spell Target" */
+    public static final String GUI_HIGHLIGHT_SPELL_TARGET = "gui.realmforge.highlight_spell_target";
+
+    /** {@code gui.realmforge.highlight_spell_target_hold} from {@code content/texts/gui.yaml}: "Hold" */
+    public static final String GUI_HIGHLIGHT_SPELL_TARGET_HOLD = "gui.realmforge.highlight_spell_target_hold";
+
+    /** {@code gui.realmforge.highlight_spell_target_toggle} from {@code content/texts/gui.yaml}: "Toggle" */
+    public static final String GUI_HIGHLIGHT_SPELL_TARGET_TOGGLE = "gui.realmforge.highlight_spell_target_toggle";
+
+    /** {@code gui.realmforge.highlight_spell_target_tooltip} from {@code content/texts/gui.yaml}: "Toggle: a press of the key bind shows the highlight under the target mob. Press again to hide it.\nHold: shows the highlight under the target mob only while the key bind is held." */
+    public static final String GUI_HIGHLIGHT_SPELL_TARGET_TOOLTIP = "gui.realmforge.highlight_spell_target_tooltip";
+
     /** {@code gui.realmforge.instance_subtitle} from {@code content/texts/gui.yaml}: "Realmforge Instance" */
     public static final String GUI_INSTANCE_SUBTITLE = "gui.realmforge.instance_subtitle";
 
@@ -109,6 +124,12 @@ public final class GeneratedTexts {
 
     /** {@code gui.realmforge.mining_speed} from {@code content/texts/gui.yaml}: "Mining Speed" */
     public static final String GUI_MINING_SPEED = "gui.realmforge.mining_speed";
+
+    /** {@code gui.realmforge.mirror_hotbar_width} from {@code content/texts/gui.yaml}: "Mirror Hotbar's Width" */
+    public static final String GUI_MIRROR_HOTBAR_WIDTH = "gui.realmforge.mirror_hotbar_width";
+
+    /** {@code gui.realmforge.mirror_hotbar_width_tooltip} from {@code content/texts/gui.yaml}: "On: the spellbar matches the vanilla hotbar's width. Overrides the Spellbar Size setting." */
+    public static final String GUI_MIRROR_HOTBAR_WIDTH_TOOLTIP = "gui.realmforge.mirror_hotbar_width_tooltip";
 
     /** {@code gui.realmforge.movement_speed} from {@code content/texts/gui.yaml}: "Movement Speed" */
     public static final String GUI_MOVEMENT_SPEED = "gui.realmforge.movement_speed";
@@ -137,14 +158,44 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.queue_spell_casts} from {@code content/texts/gui.yaml}: "Queue Spell Casts" */
     public static final String GUI_QUEUE_SPELL_CASTS = "gui.realmforge.queue_spell_casts";
 
-    /** {@code gui.realmforge.queue_spell_casts_tooltip} from {@code content/texts/gui.yaml}: "On: a spell you press during another spell's cast waits for it to end. Off: it cancels that cast and casts at once." */
+    /** {@code gui.realmforge.queue_spell_casts_tooltip} from {@code content/texts/gui.yaml}: "On: a spell you press during another spell's cast waits for it to end, and casts afterwards.\nOff: a spell you press during another spell's cast cancels it to cast itself immediately." */
     public static final String GUI_QUEUE_SPELL_CASTS_TOOLTIP = "gui.realmforge.queue_spell_casts_tooltip";
 
     /** {@code gui.realmforge.race} from {@code content/texts/gui.yaml}: "Race" */
     public static final String GUI_RACE = "gui.realmforge.race";
 
+    /** {@code gui.realmforge.reset_position} from {@code content/texts/gui.yaml}: "Reset Position" */
+    public static final String GUI_RESET_POSITION = "gui.realmforge.reset_position";
+
+    /** {@code gui.realmforge.save} from {@code content/texts/gui.yaml}: "Save" */
+    public static final String GUI_SAVE = "gui.realmforge.save";
+
+    /** {@code gui.realmforge.specialization_wip} from {@code content/texts/gui.yaml}: "Specialization: WIP" */
+    public static final String GUI_SPECIALIZATION_WIP = "gui.realmforge.specialization_wip";
+
+    /** {@code gui.realmforge.specialization_wip_description} from {@code content/texts/gui.yaml}: "Lorem ipsum dolor sit amet, consectetur adipiscing elit." */
+    public static final String GUI_SPECIALIZATION_WIP_DESCRIPTION = "gui.realmforge.specialization_wip_description";
+
     /** {@code gui.realmforge.spell_bar} from {@code content/texts/gui.yaml}: "Spell Bar" */
     public static final String GUI_SPELL_BAR = "gui.realmforge.spell_bar";
+
+    /** {@code gui.realmforge.spell_bar_position} from {@code content/texts/gui.yaml}: "Spellbar Position" */
+    public static final String GUI_SPELL_BAR_POSITION = "gui.realmforge.spell_bar_position";
+
+    /** {@code gui.realmforge.spell_bar_position_button} from {@code content/texts/gui.yaml}: "Spellbar Position..." */
+    public static final String GUI_SPELL_BAR_POSITION_BUTTON = "gui.realmforge.spell_bar_position_button";
+
+    /** {@code gui.realmforge.spell_bar_position_hint} from {@code content/texts/gui.yaml}: "Drag the bar to change its position." */
+    public static final String GUI_SPELL_BAR_POSITION_HINT = "gui.realmforge.spell_bar_position_hint";
+
+    /** {@code gui.realmforge.spell_bar_position_tooltip} from {@code content/texts/gui.yaml}: "Reposition the spellbar wherever you want it on the screen." */
+    public static final String GUI_SPELL_BAR_POSITION_TOOLTIP = "gui.realmforge.spell_bar_position_tooltip";
+
+    /** {@code gui.realmforge.spell_bar_size} from {@code content/texts/gui.yaml}: "Spellbar Size" */
+    public static final String GUI_SPELL_BAR_SIZE = "gui.realmforge.spell_bar_size";
+
+    /** {@code gui.realmforge.spell_bar_size_tooltip} from {@code content/texts/gui.yaml}: "Size of the spellbar. The width-to-height ratio stays the same." */
+    public static final String GUI_SPELL_BAR_SIZE_TOOLTIP = "gui.realmforge.spell_bar_size_tooltip";
 
     /** {@code gui.realmforge.spell_casting_options} from {@code content/texts/gui.yaml}: "Spell Casting Options" */
     public static final String GUI_SPELL_CASTING_OPTIONS = "gui.realmforge.spell_casting_options";
@@ -170,7 +221,7 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.spells_queue_size} from {@code content/texts/gui.yaml}: "Spells Queue Size" */
     public static final String GUI_SPELLS_QUEUE_SIZE = "gui.realmforge.spells_queue_size";
 
-    /** {@code gui.realmforge.spells_queue_size_tooltip} from {@code content/texts/gui.yaml}: "How many spells can wait. At 1, a newer spell replaces the waiting one; above 1, it waits after them." */
+    /** {@code gui.realmforge.spells_queue_size_tooltip} from {@code content/texts/gui.yaml}: "How many spells can be queued for a subsequent cast." */
     public static final String GUI_SPELLS_QUEUE_SIZE_TOOLTIP = "gui.realmforge.spells_queue_size_tooltip";
 
     /** {@code gui.realmforge.spend_stat_point} from {@code content/texts/gui.yaml}: "Spend a point on %1$s" */
@@ -184,12 +235,6 @@ public final class GeneratedTexts {
 
     /** {@code gui.realmforge.stat_milestone} from {@code content/texts/gui.yaml}: "At %1$s: %2$s" */
     public static final String GUI_STAT_MILESTONE = "gui.realmforge.stat_milestone";
-
-    /** {@code gui.realmforge.subclass_wip} from {@code content/texts/gui.yaml}: "Subclass: WIP" */
-    public static final String GUI_SUBCLASS_WIP = "gui.realmforge.subclass_wip";
-
-    /** {@code gui.realmforge.subclass_wip_description} from {@code content/texts/gui.yaml}: "Lorem ipsum dolor sit amet, consectetur adipiscing elit." */
-    public static final String GUI_SUBCLASS_WIP_DESCRIPTION = "gui.realmforge.subclass_wip_description";
 
     /** {@code gui.realmforge.swimming_speed} from {@code content/texts/gui.yaml}: "Swimming Speed" */
     public static final String GUI_SWIMMING_SPEED = "gui.realmforge.swimming_speed";
@@ -218,8 +263,11 @@ public final class GeneratedTexts {
     /** {@code key.realmforge.character_sheet} from {@code content/texts/key.yaml}: "Character Sheet" */
     public static final String KEY_CHARACTER_SHEET = "key.realmforge.character_sheet";
 
-    /** {@code key.realmforge.dark_vision} from {@code content/texts/key.yaml}: "Toggle Dark Vision" */
-    public static final String KEY_DARK_VISION = "key.realmforge.dark_vision";
+    /** {@code key.realmforge.highlight_spell_target} from {@code content/texts/key.yaml}: "Highlight Spell Target" */
+    public static final String KEY_HIGHLIGHT_SPELL_TARGET = "key.realmforge.highlight_spell_target";
+
+    /** {@code key.realmforge.night_vision} from {@code content/texts/key.yaml}: "Toggle Night Vision" */
+    public static final String KEY_NIGHT_VISION = "key.realmforge.night_vision";
 
     /** {@code key.realmforge.racial_ability} from {@code content/texts/key.yaml}: "Racial Ability" */
     public static final String KEY_RACIAL_ABILITY = "key.realmforge.racial_ability";
@@ -263,12 +311,6 @@ public final class GeneratedTexts {
     /** {@code message.realmforge.cannot_use_in_combat} from {@code content/texts/message.yaml}: "You can't use this in combat." */
     public static final String MESSAGE_CANNOT_USE_IN_COMBAT = "message.realmforge.cannot_use_in_combat";
 
-    /** {@code message.realmforge.dark_vision_off} from {@code content/texts/message.yaml}: "Dark Vision Off" */
-    public static final String MESSAGE_DARK_VISION_OFF = "message.realmforge.dark_vision_off";
-
-    /** {@code message.realmforge.dark_vision_on} from {@code content/texts/message.yaml}: "Dark Vision On" */
-    public static final String MESSAGE_DARK_VISION_ON = "message.realmforge.dark_vision_on";
-
     /** {@code message.realmforge.dungeon_completed} from {@code content/texts/message.yaml}: "You completed the instance and will be automatically teleported out in 5 minutes. Use '/instance leave' to exit immediately." */
     public static final String MESSAGE_DUNGEON_COMPLETED = "message.realmforge.dungeon_completed";
 
@@ -286,6 +328,12 @@ public final class GeneratedTexts {
 
     /** {@code message.realmforge.level_up_subtitle} from {@code content/texts/message.yaml}: "You are now level %1$s" */
     public static final String MESSAGE_LEVEL_UP_SUBTITLE = "message.realmforge.level_up_subtitle";
+
+    /** {@code message.realmforge.night_vision_off} from {@code content/texts/message.yaml}: "Night Vision Off" */
+    public static final String MESSAGE_NIGHT_VISION_OFF = "message.realmforge.night_vision_off";
+
+    /** {@code message.realmforge.night_vision_on} from {@code content/texts/message.yaml}: "Night Vision On" */
+    public static final String MESSAGE_NIGHT_VISION_ON = "message.realmforge.night_vision_on";
 
     /** {@code message.realmforge.not_in_dungeon} from {@code content/texts/message.yaml}: "You are not in a dungeon." */
     public static final String MESSAGE_NOT_IN_DUNGEON = "message.realmforge.not_in_dungeon";
