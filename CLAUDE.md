@@ -61,7 +61,7 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   custom mobs exist (W3): Undervault's Hewn, the Hewn Sentinel (melee, of one of three gems it may drop) and the
   Hewn Chanter (a caster of Stoneform that kites), from `content/mobs/`, wandering as vanilla's mobs do, with
   GeckoLib placeholder models until A2's art, and our own sound events from `content/sounds/` (vanilla sounds
-  remapped); every custom mob follows Matěj's Realmforge Mobs Guideline (Jira copy: RLM-33 comment 22481,
+  remapped); every custom mob follows Matěj's Realmforge Mobs Guideline (Jira copy: RLM-491 comment 23008,
   [architecture 14.2](docs/architecture.md#142-custom-mobs)). Bosses run on the boss framework (W5a, RLM-490): a
   boss's body is a custom mob of archetype `boss` and its fight an entry of `content/bosses/` (phases named in the boss
   bar, entered by health or by time, abilities and `on_enter` spells through the spell engine, a short unhurt phase

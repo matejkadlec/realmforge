@@ -1367,7 +1367,9 @@ once (`CastEnd.OUT_OF_RANGE`), and past it the range no longer matters, not even
 (`SpellCaster#recheck` then needs the target only alive, in the dimension and in sight). A spell that locks on keeps
 neither. A cast's `sound` plays from the caster when the cast begins, and a cast time that `forms_projectile` launches
 its first effect's projectile from the caster's raised hands (`SpellVisuals#formPoint`, the caster's body
-facing) toward the target's middle, where its clients drew it forming ([11.6](#116-client-side)). The Hewn Chanter's
+facing) toward the target's middle, where its clients drew it forming ([11.6](#116-client-side)). A cast-time or
+channelled spell's `animation` says how a custom mob moves its arms while it runs (`SpellCast.Animation`: `raise`, the
+default, or `slam`, [14.2](#142-custom-mobs)); players' casts ignore it. The Hewn Chanter's
 Stoneform keeps sight for the whole cast and range for its first half (Matěj's playtest, 2026-10-23);
 `CustomMobGameTests` covers both.
 
@@ -1406,7 +1408,8 @@ type only for genuinely new behaviour.
   standing within the radius of its middle, from half a block below it to 3 blocks above: on its first tick, then
   every `interval_ticks`, once per interval of its `duration_ticks` (a whole number of intervals). It acts as it
   appears (RLM-436): Test Scorch, 3 s of 1 s, pulses at 0, 1 and 2 s and is gone at 3 s. Its client draws its ring
-  from its first tick.
+  from its first tick: dust in the area's `ring_color` (synced with its radius; Astone's grey, RLM-491), or purple
+  sparks without one, until C6 (RLM-29).
 - Both deliver their effects themselves: the hit's direct entity is the projectile or the area, its causing entity
   the caster, so kill credit and the hit direction work as for an arrow. Their effects read the caster's stats when
   they land; no snapshot is taken at the cast, as nothing (talents, procs) needs one yet. A spell entity ends when its
@@ -1621,9 +1624,10 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
 `textures/entity/spell/<spell>.png` (`SpellVisuals#projectileTexture`, a placeholder in the YAML's colour that
 `rf gen` draws), as wide as its hitbox. While a caster casts a spell that `forms_projectile`, the custom mob renderer
 reads the cast from `ClientCasts` and the spell from the synced registry and draws that orb in the caster's raised
-hands, in front of its forehead (`SpellVisuals#formOffset`: 0.4 blocks above its eyes, never above its height), from
-15 % of its size at the cast's start to all of it at its end, where the server launches it from
-([11.2](#112-casting-server-authoritative)).
+hands (`SpellVisuals#formOffset`: where a custom mob's spec puts its hands, `SpellVisuals.Hands`, at the end of its
+arms in the cast pose, which `rf gen` works out from the model; for any other caster 0.75 blocks in front of its
+hitbox and 0.4 above its eyes; never above its height), from 15 % of its size at the cast's start to all of it at its
+end, where the server launches it from ([11.2](#112-casting-server-authoritative)).
 
 **In code (aim assistance, RLM-345): the target circle.** During the local player's cast-time or channelled spell,
 `client/spell/TargetCircle` draws a ring of dust in the spell school's colour on the ground under the mob the server
@@ -1971,9 +1975,9 @@ Sentinel (melee, of one of three gems: Sapphire, Ruby or Topaz) and the Hewn Cha
 Stoneform).
 
 **Before designing or changing a custom mob, read the Realmforge Mobs Guideline**: Matěj's rules for every custom
-mob (size, textures, eyes, wandering, animations, caster behaviour, sounds, drops), collected from his playtests. Its
-source of truth is its Jira copy, RLM-33 comment 22481 (or a later version in a comment of the ticket that changed
-it); the [Confluence page](https://envelopment.atlassian.net/wiki/spaces/~712020b06cd5a60c92413493fad43098103a66/pages/10420261/Realmforge+Mobs+Guideline)
+mob and boss (size, textures, eyes, wandering, animations, caster behaviour, sounds, drops, bosses), collected from
+his playtests. Its source of truth is its latest Jira copy, version 2.2 in RLM-491 comment 23008 (version 2.1 in RLM-33
+comment 22481; a later version goes into a comment of the ticket that changed it); the [Confluence page](https://envelopment.atlassian.net/wiki/spaces/~712020b06cd5a60c92413493fad43098103a66/pages/10420261/Realmforge+Mobs+Guideline)
 holds the same text. New feedback on a mob goes into both in the same run.
 
 - **Entity types are static, data picks the behaviour** (principle 2). A mob in `content/mobs/<id>.yaml` picks an
@@ -2042,17 +2046,21 @@ holds the same text. New feedback on a mob goes into both in the same run.
   `assets/realmforge/geckolib/models/entity/<id>.geo.json`, `geckolib/animations/entity/<id>.animation.json` and
   `textures/entity/<id>.png` (a variant's texture through its own model and render state). The animations carry
   GeckoLib's default names: `misc.idle` and `move.walk` (one of them always plays, and both turn the head with the mob's
-  look through GeckoLib's molang queries), `attack.swing` for a melee hit and `attack.cast` while a cast-time or
-  channelled spell runs (every custom mob's synced flag, `CustomMob#isCasting`; the arms raised forward and up, the
-  hands in front of the forehead).
+  look through GeckoLib's molang queries), `attack.swing` for a melee hit, and while a cast-time or channelled spell
+  runs the animation its `cast.animation` names (every custom mob's synced value, `CustomMob#castAnimation`):
+  `attack.cast` (`raise`, the default; the arms raised forward and up, the hands in front of the forehead) or
+  `attack.slam` (`slam`; both fists beating up and down at a medium pace, a slam every 0.75 s, so a channel of that
+  interval hits as the fists come down: Astone's Quake, Matěj's playtest of 2026-10-29).
   `attack.swing` lasts half the mob's attack interval (0.75 s for the Sentinel), a stone golem's heavy swing:
   `MeleeMob#swing` triggers it on the server (`triggerAnim`, synced to clients) and it plays to its end, since
   GeckoLib's own attack controller stops with vanilla's 6-tick arm swing. While a custom mob (a caster, or a boss such
   as Astone with her boulder) casts a spell that forms its projectile, the renderer draws the projectile's orb growing
-  in its hands ([11.6](#116-client-side)). Until
+  in its hands, which its spec places at the end of its arms in the cast pose (`CustomMobSpec.Hands`, from the model:
+  half an arm's thickness back from its end; Matěj's playtest of Astone, 2026-10-29) ([11.6](#116-client-side)). Until
   A2 (RLM-48) brings the art, `rf gen` writes placeholders from the YAML's `model`: a build that fills the hitbox
   (`humanoid`; `slim`, an enderman's long legs and arms and a tall head; `golem`, a broad body with shells on its front
-  and back, long arms as thick as a player's and a big head, moss hanging off the shells), a surface (`speckled`,
+  and back, long arms as thick as a player's and a big head, moss hanging off the shells), arms of the build's
+  thickness or the YAML's `arm_thickness` (Astone's 8 pixels, twice a golem's), a surface (`speckled`,
   `smooth`, or `mossy_bricks`: vanilla's brick layout of 8 by 4 pixels with grey mortar, every brick its own shade and
   lit on its top and left edges, moss in clumps of at least 5 pixels, and on each shell's outer face a long crack after
   Matěj's drawing, a dark grey rim round the variant's gem) and eyes (`dot`, `tall`, or `gem`: each 2x3, a white column
@@ -2119,8 +2127,8 @@ phases:
   as the area measures. Between casts it fights in melee; while a cast runs it stands and faces its target
   (`BossHoldGoal`). Ground movement only: no flying bosses.
 - **Telegraphs** (research BM-2: heavy area attacks are telegraphed): every ability with a cast time is told by the
-  cast (its sound, the `attack.cast` animation, a projectile forming in its hands). While a boss casts a spell whose
-  first effect is an area, a ring of orange dust marks that area's edge where it will land, every 4 ticks
+  cast (its sound, its animation, a projectile forming in its hands). While a boss casts a spell whose
+  first effect is an area, a ring of dark grey dust marks that area's edge where it will land, every 4 ticks
   (`BossMob#landing`): round itself, round its target where the target stands now, or round the ground point the cast
   was aimed at when it began (`Spells#currentCastTarget`; a ground point never follows its target,
   [11.2](#112-casting-server-authoritative)), so a player who steps out of the ring dodges it. The spell engine's own
@@ -2163,26 +2171,30 @@ phases:
 
 W5b (RLM-491; [chapter 2, Part 10](lore/chapters/02-the-weight-of-stone.md), quest 14): Undervault's guardian, a
 colossus of living stone (she/her) that the Gatewrights set at the stone arena's altar to weigh whoever comes for the
-next signets; a trial, not a villain. Her body is `content/mobs/astone.yaml` (2 by 5 blocks, a golem placeholder until
-A2, in `#realmforge:stone_creatures`, breaking apart into Vaultstone), her fight `content/bosses/astone.yaml`, her
-sounds `content/sounds/astone*.yaml`, and her kill XP rank is a realm guardian's 20 (RLM-192). Level 18, Undervault's
-highest, unless a run of the stone arena (W6, RLM-36) gives her its level; an arena of radius 20, a white bar, the
-default 3 s phase change. The numbers are proposals for Matěj's playtest.
+next signets; a trial, not a villain. Her body is `content/mobs/astone.yaml` (2 by 5 blocks, a golem placeholder with
+arms twice a golem's thickness until A2, in `#realmforge:stone_creatures`, breaking apart into Vaultstone), her fight
+`content/bosses/astone.yaml`, her sounds `content/sounds/astone*.yaml`, and her kill XP rank is a realm guardian's 20
+(RLM-192). Level 18, Undervault's highest, unless a run of the stone arena (W6, RLM-36) gives her its level; an arena
+of radius 20, a white bar, the default 3 s phase change. Matěj's playtest of 2026-10-29 shaped her look (thicker arms,
+the boulder formed in her hands, a Quake that slams, grey rings) and passed her with placeholders: her own art (her
+texture from Undervault's final stone, her particles and spell visuals, stones breaking off her in the fight) waits for
+RLM-502, and her balance against level-18 characters with the finished stats, spells and gear for RLM-503, so her
+numbers stay proposals.
 
 | Phase | Enters | `on_enter` | Abilities |
 | --- | --- | --- | --- |
 | The Weighing | at the start | - | Hurled Boulder: a 2 s cast that forms a boulder in her hands, then a dodgeable projectile (physical, a throw back) |
-| Quaking Stone | below 60 % health | Shockwave: throws back every enemy within 8 blocks, no damage | Quake (a 1.5 s cast, an area of 5 round her: damage, a throw back, 3 s of Slowness), Rockfall (a 2 s cast, an area of 3 where her target stood when she began), Hurled Boulder |
+| Quaking Stone | below 60 % health | Shockwave: throws back every enemy within 8 blocks, no damage | Quake (a 3 s channel in which she slams her fists, every 0.75 s an area of 5 round her: damage and 1.5 s of Slowness for whoever stays inside), Rockfall (a 2 s cast, an area of 3 where her target stood when she began), Hurled Boulder |
 | Breaking Point | below 25 % health | Cracked Stone: her own effect `realmforge:cracked_stone` for 60 s, +30 % attack damage, +25 % speed, -50 % armor | Cracked Stone again before it wears off, Quake, Rockfall, Hurled Boulder |
 
 She drops the Stone Heart, the Sun Signet Shard and the Ice Signet Shard at 100 % on every kill (Matěj, 2026-10-25
 and 2026-10-27, RLM-432), fire-resistant materials whose recipes (the twins' signets, the Skyhearth Medallion) come
 with their realms. The altar, her summoning item and the arena dungeon are W6 (RLM-36); until then
 `/summon realmforge:astone`. `AstoneGameTests` cover each phase change (the bar's title, the shockwave's push, the
-cracks), each ability cast through the spell engine at a husk (the boulder, Quake only with its target inside, Rockfall
-where its target stood, dodged by a husk that left the ring, Cracked Stone again as an ability), her three drops on
-three kills, and the playtest's commands (`/summon`, `/qa boss phase`, `/qa boss reset`, `/kill`);
-`BossPhaseMachineTest` walks her definition through all three phases.
+cracks), each ability cast through the spell engine at a husk (the boulder formed in her hands, Quake only with its
+target inside and hitting slam after slam, Rockfall where its target stood, dodged by a husk that left the ring,
+Cracked Stone again as an ability), her three drops on three kills, and the playtest's commands (`/summon`,
+`/qa boss phase`, `/qa boss reset`, `/kill`); `BossPhaseMachineTest` walks her definition through all three phases.
 
 ## 15. Dimensions and dungeons
 
