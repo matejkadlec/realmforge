@@ -21,6 +21,7 @@ import io.github.matejkadlec.realmforge.spell.SpellCaster;
 import io.github.matejkadlec.realmforge.spell.SpellProjectile;
 import io.github.matejkadlec.realmforge.spell.SpellTarget;
 import io.github.matejkadlec.realmforge.spell.Spells;
+import io.github.matejkadlec.realmforge.spell.net.CastTargetPayload;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
@@ -30,9 +31,11 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
@@ -43,7 +46,8 @@ import net.minecraft.world.phys.Vec3;
  * spells of {@code content/spells/}: {@code test_forward_missile} (an instant frost bolt along the caster's look, 20
  * blocks a second, no lifetime, 3 damage, shattering like ice where it hits), {@code test_slow_missile} (the same after
  * a 1 s cast, 4 damage, a 2 s lifetime), {@code test_scorch} (an area at a ground point within 16 blocks), and the
- * targeted {@code test_bolt} (instant, 6 damage) and {@code test_slow_bolt} (a 2 s cast, 10 damage), both 16 blocks.
+ * targeted {@code test_bolt} (instant, 6 damage) and {@code test_slow_bolt} (a 2 s cast, 10 damage), both 16 blocks,
+ * and the ally spell {@code test_mend} (instant, a heal of 4, 16 blocks).
  * They aim as the spell bar does: at nothing, so the bolt flies where the caster looks and the area lands where it
  * looks, or at an entity or a point.
  *
@@ -382,6 +386,96 @@ public final class SpellAimingGameTests {
         CastResult refused = SpellBar.cast(player, GeneratedSpells.TEST_BOLT, Optional.of(behind.getId()), false);
         helper.assertValueEqual(refused.failureOrNull(), CastFailure.INVALID_TARGET, "a target behind the player");
         assertHealth(helper, behind, HEALTH, "the husk behind the player");
+        logout(player);
+        helper.succeed();
+    }
+
+    /**
+     * From the spell bar, an ally spell whose client named no target goes to the player beside the crosshair (Test
+     * Mend, a heal of 4; 0.7 blocks beside at 8 blocks, where the cone allows 1: {@code AimAssist#ally}). With nobody
+     * near the crosshair, it heals the caster, as a WoW heal without a friendly target.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17)
+    public static void theSpellBarAssistsAnAllySpellToAPlayerBesideTheCrosshair(GameTestHelper helper) {
+        ServerPlayer player = caster(helper, "qa-assist-ally");
+        player.snapTo(helper.absoluteVec(new Vec3(8.5, 1, 4.5)), 0, 0);
+        learn(helper, player, GeneratedSpells.TEST_MEND);
+        ServerPlayer ally = caster(helper, "qa-assist-ally-hurt");
+        ally.snapTo(helper.absoluteVec(new Vec3(9.5, 1, 12.5)), 0, 0);
+        player.setHealth(player.getMaxHealth() - 10);
+        ally.setHealth(ally.getMaxHealth() - 10);
+        float allyHealth = ally.getHealth();
+        float playerHealth = player.getHealth();
+
+        CastResult assisted = SpellBar.cast(player, GeneratedSpells.TEST_MEND, Optional.empty(), false);
+        helper.assertTrue(assisted.success(), "test_mend was refused: " + assisted.failure());
+        helper.assertTrue(assisted.entity().orElse(null) == ally, "it went to " + assisted.target());
+        helper.assertTrue(ally.getHealth() > allyHealth, "the ally beside the crosshair was not healed");
+        helper.assertValueEqual(player.getHealth(), playerHealth, "the caster's health");
+
+        Spells.resetCooldowns(player);
+        ally.snapTo(helper.absoluteVec(new Vec3(15.5, 1, 12.5)), 0, 0);
+        CastResult self = SpellBar.cast(player, GeneratedSpells.TEST_MEND, Optional.empty(), false);
+        helper.assertTrue(self.success(), "test_mend was refused: " + self.failure());
+        helper.assertTrue(self.entity().orElse(null) == player, "with nobody near the crosshair it went to "
+                + self.target());
+        helper.assertTrue(player.getHealth() > playerHealth, "the caster was not healed");
+        logout(ally);
+        logout(player);
+        helper.succeed();
+    }
+
+    /**
+     * A calm neutral mob gets no assistance (Q6): a bolt cast with a calm wolf beside the crosshair (0.77 blocks at 12
+     * blocks, where the cone allows 1.5) flies straight on. Once the wolf is angry at the caster, the next bolt homes in
+     * on it ({@code AimAssist#hostile}).
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17)
+    public static void anAssistedBoltSkipsACalmNeutralMobButNotAnAngryOne(GameTestHelper helper) {
+        ServerPlayer player = assistedCaster(helper, "qa-assist-neutral");
+        Wolf wolf = helper.spawn(EntityType.WOLF, new BlockPos(9, 1, 12));
+        wolf.setNoAi(true);
+        wolf.snapTo(helper.absoluteVec(new Vec3(9.5, 1, 12.5)), 0, 0);
+        helper.assertValueEqual(castBolt(helper, player).homing(), Optional.<LivingEntity>empty(),
+                "the bolt beside a calm wolf homes in on");
+        helper.runAfterDelay(20, () -> {
+            helper.assertValueEqual(spellEntities(helper, SpellProjectile.class).size(), 0, "bolts in flight");
+            wolf.setPersistentAngerTarget(EntityReference.<LivingEntity>of(player));
+            wolf.setTimeToRemainAngry(400);
+            Spells.resetCooldowns(player);
+            helper.assertValueEqual(castBolt(helper, player).homing(), Optional.<LivingEntity>of(wolf),
+                    "the bolt beside an angry wolf homes in on");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * The target circle's mob (RLM-345, Q4; {@code Casting#circleTarget}): the server names it to the caster's client
+     * in {@code CastTargetPayload} when a cast-time spell begins. A cast at an entity names its target; a bolt that
+     * follows the crosshair names the mob aim assistance would send it to, a husk beside the crosshair.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17)
+    public static void aCastNamesTheMobUnderItsTargetCircle(GameTestHelper helper) {
+        ServerPlayer player = assistedCaster(helper, "qa-assist-circle");
+        learn(helper, player, GeneratedSpells.TEST_SLOW_BOLT);
+        learn(helper, player, GeneratedSpells.TEST_SLOW_MISSILE);
+        Husk aside = husk(helper, new BlockPos(4, 1, 6));
+        Husk beside = husk(helper, new BlockPos(9, 1, 12));
+        QaPlayers.sentPayloads(player, CastTargetPayload.class);
+
+        CastGameTests.assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, aside);
+        helper.assertValueEqual(QaPlayers.sentPayloads(player, CastTargetPayload.class),
+                List.of(new CastTargetPayload(Optional.of(aside.getId()))), "the circle of a cast at an entity");
+        Spells.cancelCast(player);
+        Spells.resetCooldowns(player);
+
+        CastResult missile = SpellCaster.cast(player, GeneratedSpells.TEST_SLOW_MISSILE, SpellAim.NONE);
+        helper.assertTrue(missile.success() && missile.begun(), "test_slow_missile did not begin: " + missile);
+        helper.assertValueEqual(QaPlayers.sentPayloads(player, CastTargetPayload.class),
+                List.of(new CastTargetPayload(Optional.of(beside.getId()))),
+                "the circle of a bolt that follows the crosshair");
+        Spells.cancelCast(player);
         logout(player);
         helper.succeed();
     }

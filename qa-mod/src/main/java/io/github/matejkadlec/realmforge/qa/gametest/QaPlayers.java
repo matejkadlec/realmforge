@@ -3,14 +3,19 @@ package io.github.matejkadlec.realmforge.qa.gametest;
 import com.mojang.authlib.GameProfile;
 import com.mojang.logging.LogUtils;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.Connection;
 import net.minecraft.network.ConnectionProtocol;
+import net.minecraft.network.protocol.BundlePacket;
 import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -114,6 +119,27 @@ final class QaPlayers {
         helper.assertTrue(player.level() == helper.getLevel(), "the player is in the test's level");
         player.snapTo(helper.absoluteVec(relative), 0, 0);
         return player;
+    }
+
+    /**
+     * The payloads of {@code type} the server sent {@code player} since the last call, oldest first. The fake
+     * connection's channel ({@link #login}) keeps every packet written to it; this drains it, bundles included.
+     */
+    static <T extends CustomPacketPayload> List<T> sentPayloads(ServerPlayer player, Class<T> type) {
+        EmbeddedChannel channel = (EmbeddedChannel) player.connection.getConnection().channel();
+        List<T> payloads = new ArrayList<>();
+        for (Object message = channel.readOutbound(); message != null; message = channel.readOutbound()) {
+            collect(message, type, payloads);
+        }
+        return payloads;
+    }
+
+    private static <T> void collect(Object packet, Class<T> type, List<T> into) {
+        if (packet instanceof ClientboundCustomPayloadPacket(CustomPacketPayload payload) && type.isInstance(payload)) {
+            into.add(type.cast(payload));
+        } else if (packet instanceof BundlePacket<?> bundle) {
+            bundle.subPackets().forEach(inner -> collect(inner, type, into));
+        }
     }
 
     /** Takes the config file channel out of the mock connection's payload setup (internal NeoForge API, dev only). */

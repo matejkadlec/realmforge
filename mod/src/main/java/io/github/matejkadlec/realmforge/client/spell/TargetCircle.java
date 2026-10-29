@@ -33,6 +33,8 @@ public final class TargetCircle {
     private static final double LIFT = 0.05;
 
     private static Optional<Integer> target = Optional.empty();
+    /** The game time of the last ring drawn. */
+    private static long lastRing = Long.MIN_VALUE;
 
     private TargetCircle() {
     }
@@ -40,7 +42,10 @@ public final class TargetCircle {
     /** Called once from {@code RealmforgeClient}. */
     public static void register() {
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> onClientTick());
-        NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, event -> target = Optional.empty());
+        NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, event -> {
+            target = Optional.empty();
+            lastRing = Long.MIN_VALUE;
+        });
     }
 
     public static void set(CastTargetPayload payload) {
@@ -55,11 +60,16 @@ public final class TargetCircle {
         }
     }
 
+    /**
+     * Draws the ring every {@value #INTERVAL_TICKS} game ticks. The client ticks on while singleplayer is paused, but
+     * the game time stands still and the particle engine does not tick, so it would queue a ring every client tick
+     * until the game resumes; a game tick gets one ring at most (RLM-474).
+     */
     private static void onClientTick() {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         ClientLevel level = minecraft.level;
-        if (player == null || level == null || target.isEmpty() || level.getGameTime() % INTERVAL_TICKS != 0) {
+        if (player == null || level == null || target.isEmpty() || !ringDue(level.getGameTime(), lastRing)) {
             return;
         }
         Entity entity = level.getEntity(target.get());
@@ -68,7 +78,13 @@ public final class TargetCircle {
                 .map(spell -> spell.value().school().value().color());
         if (entity instanceof LivingEntity living && living.isAlive() && color.isPresent()) {
             draw(level, living, color.get());
+            lastRing = level.getGameTime();
         }
+    }
+
+    /** Whether a ring is due at game time {@code gameTime}, the last one drawn at {@code lastRing}. */
+    static boolean ringDue(long gameTime, long lastRing) {
+        return gameTime % INTERVAL_TICKS == 0 && gameTime != lastRing;
     }
 
     private static void draw(ClientLevel level, LivingEntity entity, int color) {
