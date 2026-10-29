@@ -3496,6 +3496,11 @@ NeoForge stacks the mods' data packs in that order, so a file of ours replaces t
   Apothic Enchanting's infusion; Matěj dislikes them by design, RLM-205).
 - **Mythic shows as Legendary**: the rarity's name and the two texts that say mythic are in the core mod's
   `assets/apotheosis/lang/en_us.json` (texts of other mods, above).
+
+`ApotheosisGameTests` check the fitted data in the game, through Apotheosis's own commands and its ids, so the QA mod
+does not compile against it: an Intricate sword raises our crit chance and nothing of Apothic Attributes', a
+switched-off affix cannot be applied, a Summit monster gets our armor pierce and no protection pierce, every mob has
+the three combat stats, a mob's lifesteal heals it, and no potion charm recipe loads.
 - **Apothic Enchanting's stale list of loot modifiers** (`data/neoforge/loot_modifiers/global_loot_modifiers.json`,
   the NeoForge 21.1 format) is replaced by a file in the core mod's resources whose `neoforge:never` condition makes
   NeoForge skip it quietly. NeoForge 26.1 reads every file in `loot_modifiers/` as a modifier and logged an error for
