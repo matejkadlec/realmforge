@@ -33,6 +33,7 @@ from typing import Any
 from realmforge_tools.rooms.check import is_solid
 from realmforge_tools.rooms.structure import AIR, Pos
 from realmforge_tools.rooms.walk import LIGHT_SOURCES, light_levels, walkable
+from realmforge_tools.schema.room_spec import FULL, THEME_ROLES
 
 # Free blocks between a wall light and its wall's end, and between two wall lights on one wall.
 END_GAP = 2
@@ -83,6 +84,8 @@ class _Planner:
         self.stands = walkable(self.cells)
         self.marked = {(x, z) for _, (x, _, z) in builder.markers}
         self.rubble = {builder.theme.block("rubble"), builder.theme.block("rubble_slab")}
+        # Validation makes these full blocks, our own ones included, which no name rule knows (RLM-473).
+        self.full = {builder.theme.block(role) for role, need in THEME_ROLES.items() if need == FULL}
         self.door_sides = {door.side: door for door in builder.doors}
         self.level = LIGHT_SOURCES.get(builder.theme.block("wall_light"), 14)
         self.lantern_level = LIGHT_SOURCES.get(builder.theme.block("ceiling_light"), 15)
@@ -105,7 +108,8 @@ class _Planner:
     def hangs(self, x: int, z: int, facing: str) -> bool:
         """Whether the block behind a light at (x, z) facing ``facing`` holds it."""
         dx, dz = _DIRECTIONS[facing]
-        return is_solid(self.cells.name((x - dx, self.y, z - dz)))
+        behind = self.cells.name((x - dx, self.y, z - dz))
+        return behind in self.full or is_solid(behind)
 
     def wall_cell(self, side: str, along: int) -> tuple[int, int] | None:
         """The first cell in from the wall on ``side`` at ``along``, past any wall grown into the room."""

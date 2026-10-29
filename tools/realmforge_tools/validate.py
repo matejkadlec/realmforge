@@ -6,6 +6,7 @@ import copy
 import difflib
 import math
 import re
+from collections.abc import Callable
 from itertools import pairwise
 from pathlib import PurePosixPath
 
@@ -410,11 +411,22 @@ def _room_location(room: RoomEntry, location: str) -> str:
     return location
 
 
+# Told with every refused full block: a vanilla full block is only missing from the list.
+_NOT_FULL = "a full solid block (a full block missing from SOLID_BLOCKS in rooms/check.py belongs there)"
+
+
+def _full_block(content: Content) -> Callable[[str], bool]:
+    """Whether a block is a full solid block: ``is_solid`` by its name, or one of our own simple content blocks, such
+    as Undervault's stones (RLM-473). The structure checks keep ``is_solid`` alone."""
+    ours = {f"{MOD_ID}:{entry.model.id}" for entry in content.blocks if entry.model.kind == "simple"}
+    return lambda name: name in ours or is_solid(name)
+
+
 def _check_room_themes(content: Content, universe: IdUniverse) -> list[Problem]:
     """Every block of a theme exists and is what its role needs: a full block, stairs, a slab, a wall torch, a
     lantern (``schema/room_spec.py``)."""
     needs = {
-        FULL: (is_solid, "a full solid block"),
+        FULL: (_full_block(content), _NOT_FULL),
         STAIRS: (lambda name: name.endswith("_stairs"), "a stairs block"),
         SLAB: (lambda name: name.endswith("_slab"), "a slab"),
         WALL_TORCH: (lambda name: name.endswith("wall_torch"), "a wall torch"),
@@ -496,6 +508,7 @@ def _check_dungeons(content: Content, universe: IdUniverse) -> list[Problem]:
     entrance (``_check_pooled_room``). Whether a layout fits a plot is the planner's to find; JUnit fuzzes it over the
     generated types."""
     problems: list[Problem] = []
+    full = _full_block(content)
     used_pools = {entry.model.pool for entry in content.dungeons}
     pooled: dict[str, list[RoomEntry]] = {}
     for room in content.rooms:
@@ -583,7 +596,7 @@ def _check_dungeons(content: Content, universe: IdUniverse) -> list[Problem]:
                     f"connector to take it{' (a corridor, as the pacing hangs branches off them)' if paced else ''}",
                 )
             )
-        problems += _check_walls(entry, shapes, universe)
+        problems += _check_walls(entry, shapes, universe, full)
         everything = [connector for _, _, found in shapes for connector in found]
         for room, _, found in shapes:
             for connector in found:
@@ -604,6 +617,7 @@ def _check_walls(
     entry: Entry[DungeonTypeDef],
     shapes: list[tuple[RoomEntry, str | None, list[Connector]]],
     universe: IdUniverse,
+    full: Callable[[str], bool],
 ) -> list[Problem]:
     """A dungeon type's wall is a full solid block, and closes every doorway of its pool: around the middle three by
     three blocks of each side connector's face, the room is closed (RLM-364). A pane, a fence or air would leave
@@ -614,10 +628,8 @@ def _check_walls(
     problems = []
     if not universe.contains(BLOCK_REGISTRY, walls.block):
         problems.append(Problem(entry.source, "layout.walls.block", f"unknown block {walls.block!r}"))
-    elif not is_solid(walls.block):
-        problems.append(
-            Problem(entry.source, "layout.walls.block", f"{walls.block} is not a full solid block")
-        )
+    elif not full(walls.block):
+        problems.append(Problem(entry.source, "layout.walls.block", f"{walls.block} is not {_NOT_FULL}"))
     kind = f"doorway_gaps_{WALL_WIDTH}x{WALL_HEIGHT}"
     for room, _, found in shapes:
         gaps = room.derived(

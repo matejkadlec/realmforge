@@ -304,6 +304,18 @@ def test_walls_close_the_doorways_nothing_else_takes(repo: RepoPaths) -> None:
             for p in problems
         ), problems
 
+    # RLM-473: our own simple blocks are full blocks too, and so are the chiseled stones the list now holds.
+    for block in ("realmforge:vaultstone", "minecraft:chiseled_deepslate"):
+        path.write_text(
+            dungeon(layout=LAYOUT + f"  walls:\n    block: {block}\n    weight: 3\n"), encoding="utf-8"
+        )
+        assert not any("layout.walls.block" in p for p in problems_for(repo)), block
+    # A refused block names where a missing vanilla full block belongs.
+    path.write_text(
+        dungeon(layout=LAYOUT + "  walls:\n    block: minecraft:oak_fence\n    weight: 3\n"), encoding="utf-8"
+    )
+    assert any("missing from SOLID_BLOCKS in rooms/check.py belongs there" in p for p in problems_for(repo))
+
 
 def test_a_doorways_corners_need_no_wall() -> None:
     # A player cannot pass a gap that only touches the doorway at a corner, like item_combination_lock's.
