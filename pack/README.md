@@ -73,7 +73,8 @@ RLM-65, RLM-124 and RLM-308):
   are pinned, so `packwiz update --all` leaves them; update them together, by hand.
 - **Moonlight Lib 26.1.2-4.1.1**, the library of MmmMmmMmmMmm 26.1.2-3.0.1 (a release; Matěj's pick, RLM-393,
   [ADR 0053](../docs/decisions/0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md)):
-  every 26.1.2 build of Moonlight is a beta. It is pinned; update the two together, by hand, and take a Moonlight
+  every 26.1.2 build of Moonlight is a beta. Both are pinned (RLM-460), so `packwiz update --all` cannot move
+  MmmMmmMmmMmm to a build that needs a newer Moonlight; update the two together, by hand, and take a Moonlight
   release once one exists.
 
 ## Configuration
@@ -149,7 +150,8 @@ which the game shows as the player's layout labels them (Z on a Czech QWERTZ
 keyboard). A new profile gets these keys; an existing one keeps its own until the
 player presses **Reset Keys** in Key Binds (or deletes `options.txt`), which
 returns every key to these defaults. Matěj's picks of 2026-10-19, with the spell
-bar's of RLM-25 ([ADR 0046](../docs/decisions/0046-spell-bar-default-keys-amend-the-pack-defaults.md)):
+bar's of RLM-25 ([ADR 0046](../docs/decisions/0046-spell-bar-default-keys-amend-the-pack-defaults.md)) and the
+backpack's of RLM-501 ([ADR 0061](../docs/decisions/0061-backpack-keys-and-alt-k-amend-the-pack-defaults.md)):
 
 - free for spells (RLM-25): Quick Actions and Swap Offhand; the spell bar (our
   code) takes R, T, F, G, H, C, `ů` and `§` (right of L on a Czech keyboard),
@@ -157,19 +159,24 @@ bar's of RLM-25 ([ADR 0046](../docs/decisions/0046-spell-bar-default-keys-amend-
   from T to Enter, and its creative toolbar
   keys (C and X) and Social Interactions (P; the pause menu's Player Reporting
   still opens it) go unbound, and Apotheosis's Open World Tier Select moves from
-  Ctrl+T to Alt+T, so holding Ctrl to sprint does not steal T;
+  Ctrl+T to Alt+T, so holding Ctrl to sprint does not steal T, and its Toggle
+  Attribute Bonuses from Ctrl+K to Alt+K, so it does not steal the character
+  sheet's K (RLM-347);
 - Open Quests on `;` (the key left of 1 on a Czech keyboard), and Inventory
   Sorting's Sort there too (RLM-308): it sorts while an inventory is open, Open
   Quests works while none is; Inventory Sorting's Open Settings is unbound (its
-  default, P, is the spellbook's). Tom's Simple Storage's Open Terminal on V
-  (RLM-25), Just Zoom's Zoom on Z (Czech QWERTZ);
+  default, P, is the spellbook's). Sophisticated Core's Sort Storage/Backpack is
+  on `;` as well (RLM-501): in a backpack's screen it sorts the backpack and
+  swallows the key, so Inventory Sorting does not sort it a second time. Open
+  Backpack on B (RLM-501), Tom's Simple Storage's Open Terminal on V (RLM-25),
+  Just Zoom's Zoom on Z (Czech QWERTZ);
 - Xaero's Minimap (2026-10-20): Minimap Settings on `ú` (right of P on a Czech
   keyboard), Zoom In and Zoom Out Minimap on the numeric keypad's + and -, New
   Waypoint on N, Open Waypoint Screen on `,` (right of M); our Dark Vision key
   moved from N to H for it, then to `¨` (by Enter on a Czech keyboard) for the
   spell bar (its default is in our code);
 - unbound: Just Zoom's Open Options (it shared B with Open Backpack), Xaero's
-  Quick Waypoint, vanilla's Open Command, every Iris key and every
+  Quick Waypoint, vanilla's Open Command, every Iris key and every other
   Sophisticated Backpacks and Sophisticated Core key.
 
 To find a key mapping's name, boot the pack and read the `key_` lines of the
@@ -291,6 +298,15 @@ Modrinth and CurseForge ([ADR 0008](../docs/decisions/0008-distribution-github-a
 Prism gets both jars from `./gradlew :mod:installToPrism :better-key-binds:installToPrism`
 ([dev setup](../docs/dev-setup.md#4-playing-the-pack-on-windows-prism-launcher--packwiz-installer)), the pack boot
 test copies them in ([Boot test](#boot-test)), and the dev client loads both.
+
+## Java arguments
+
+A pack cannot set its players' JVM arguments, so this is advice for every launcher (Prism: **Edit** → **Settings** →
+**Java** → **JVM arguments**; [dev setup](../docs/dev-setup.md#4-playing-the-pack-on-windows-prism-launcher--packwiz-installer)):
+run the game on Java 25 with `-XX:+UseZGC` (RLM-479). Java's default collector, G1, makes Distant Horizons warn about
+FPS stutter in chat on every join; the pack leaves that warning on, so a player still on G1 learns the fix. ZGC needs
+more headroom above the memory the game uses than G1 does: the pack boot test runs the whole pack's client in 4 GB, so
+give an instance at least 6 GB (**Maximum memory allocation**). The dev runs and the pack boot test use ZGC already.
 
 ## Optional mods
 

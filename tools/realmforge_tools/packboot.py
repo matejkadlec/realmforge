@@ -123,6 +123,9 @@ ALLOWED_ERRORS: dict[str, tuple[tuple[str, str], ...]] = {
 
 SERVER_HEAP = "-Xmx3G"
 CLIENT_HEAP = "-Xmx4G"
+# ZGC, as the dev runs and the players' launchers use (RLM-479): Java's default G1 makes Distant Horizons warn about
+# FPS stutter, and the boot should run the collector the game is played with.
+GC = "-XX:+UseZGC"
 BOOT_TIMEOUT_S = 600
 # After a loading error the client waits on FML's error screen forever, so a boot that logged a FATAL line or wrote
 # a crash report is stopped this many seconds later instead of at the timeout.
@@ -524,7 +527,13 @@ def _install_pack(work: _Workspace, side: str, pack_dir: Path) -> None:
 
 def _server_command(work: _Workspace) -> list[str]:
     server = work.game("server")
-    return [java_executable(), SERVER_HEAP, f"@{_neoforge_args_file(server).relative_to(server)}", "nogui"]
+    return [
+        java_executable(),
+        SERVER_HEAP,
+        GC,
+        f"@{_neoforge_args_file(server).relative_to(server)}",
+        "nogui",
+    ]
 
 
 def _client_command(work: _Workspace, *, dry: bool) -> list[str]:
@@ -544,7 +553,7 @@ def _client_command(work: _Workspace, *, dry: bool) -> list[str]:
         NEOFORGE_CLIENT_VERSION,
         "--jvm",
         java_executable(),
-        f"--jvm-args={CLIENT_HEAP}",
+        f"--jvm-args={CLIENT_HEAP} {GC}",
         "-u",
         "Dev",
     ]

@@ -298,7 +298,22 @@ every launch, so the instance always matches the repository.
 7. Shaders: put [Complementary Shaders](https://www.complementary.dev/shaders/) into the instance's
    `shaderpacks/` folder and enable it in Iris's video settings.
 
-Tip: Prism's **Edit** → **Settings** → **Java** can download a Java 25 runtime for the instance automatically.
+8. **Java** (RLM-479): **Edit** → **Settings** → **Java**. Prism can download a Java 25 runtime for the instance
+   there. Enable **Memory** and set **Maximum memory allocation** to at least 6144 MiB, then enable **Java arguments**
+   and paste:
+
+   ```text
+   -XX:+UseZGC
+   ```
+
+   Java's default collector, G1, makes Distant Horizons post "G1 Garbage collector detected. This can cause FPS
+   stuttering" in chat on every join; with ZGC it stays quiet. ZGC wants more headroom above the memory the game
+   uses than G1 (the pack boot test runs the whole pack's client in 4 GB, `tools/realmforge_tools/packboot.py`),
+   hence the 6 GB. Checked on Temurin 25.0.4.1: `-XX:+UseZGC` is generational ZGC, the only mode since JDK 24; the
+   old `-XX:+ZGenerational` only prints "Ignoring option ZGenerational; support was removed in 24.0", so leave it
+   out. The dev client and dev server (`qa-mod/build.gradle`) and the pack boot test run on ZGC too; the GameTest
+   server keeps the default. Players get the same advice in the
+   [pack README](../pack/README.md#java-arguments).
 
 ## 5. Claude Code
 
