@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 from realmforge_tools.schema.apotheosis_affix import ApotheosisAffixDef
 from realmforge_tools.schema.block import BlockDef
+from realmforge_tools.schema.boss import BossDef
 from realmforge_tools.schema.chapter import ChapterDef
 from realmforge_tools.schema.character import ClassDef, RaceDef
 from realmforge_tools.schema.curve import CurveDef
@@ -47,6 +48,7 @@ CONTENT_TYPES: dict[str, type] = {
     "effects": EffectDef,
     "spells": SpellDef,
     "mobs": MobDef,
+    "bosses": BossDef,
     "sounds": SoundGroupDef,
     "room_themes": RoomThemeDef,
     "room_specs": RoomSpecDef,
@@ -81,6 +83,7 @@ DATAPACK_TYPES: tuple[DatapackType, ...] = (
     DatapackType("kill_xp_multipliers", "kill_xp_multiplier"),
     DatapackType("spells", "spell"),
     DatapackType("realms", "realm"),
+    DatapackType("bosses", "boss"),
 )
 
 __all__ = [
@@ -89,6 +92,7 @@ __all__ = [
     "WORLDGEN_DIR",
     "ApotheosisAffixDef",
     "BlockDef",
+    "BossDef",
     "ChapterDef",
     "ClassDef",
     "CurveDef",

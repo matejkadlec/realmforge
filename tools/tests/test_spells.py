@@ -105,6 +105,8 @@ def test_repository_spells_are_the_engine_tests_and_stoneform() -> None:
         "test_slow_missile",
         "test_strike",
         "test_sure_crit",
+        # The boss framework's test boss hardens in its second phase (W5a, RLM-490).
+        "test_titan_harden",
     }
     assert universe.contains("realmforge:spell", "realmforge:test_bolt")
 
@@ -374,7 +376,7 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "ALL = List.of(STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, "
         "TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, "
         "TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, "
-        "TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT);"
+        "TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TITAN_HARDEN);"
     ) in keys
     expectations = files[EXPECTATIONS].decode()
     assert (

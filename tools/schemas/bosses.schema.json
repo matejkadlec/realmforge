@@ -1,0 +1,247 @@
+{
+  "$defs": {
+    "ArenaDef": {
+      "additionalProperties": false,
+      "description": "Where the boss fights: a sphere round its home, the spot where it first stood on the ground. It targets only\nplayers inside, and pulled out of it, it resets: back home, at full health, in its first phase.",
+      "properties": {
+        "radius": {
+          "description": "The arena's radius in blocks, 4 to 64.",
+          "maximum": 64,
+          "minimum": 4,
+          "title": "Radius",
+          "type": "number"
+        }
+      },
+      "required": [
+        "radius"
+      ],
+      "title": "ArenaDef",
+      "type": "object"
+    },
+    "BossAbilityDef": {
+      "additionalProperties": false,
+      "description": "A spell the boss casts while its phase lasts, whenever the spell is ready and its target in reach. The boss\naims it at its current target; a spell that picks its own target (``random_player``, ``farthest_player``) or acts\non the boss itself (``self``) chooses for itself.",
+      "properties": {
+        "cooldown_seconds": {
+          "default": 0,
+          "description": "The ability's own pause between two casts, on top of the spell's cooldown; 0 (the default): the spell's cooldown alone.",
+          "minimum": 0,
+          "title": "Cooldown Seconds",
+          "type": "number"
+        },
+        "spell": {
+          "description": "The spell, realmforge:<id> (content/spells/).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Spell",
+          "type": "string"
+        }
+      },
+      "required": [
+        "spell"
+      ],
+      "title": "BossAbilityDef",
+      "type": "object"
+    },
+    "BossPhaseDef": {
+      "additionalProperties": false,
+      "description": "One phase of the fight. The first is where the fight starts; every later one has a trigger that enters it from\nthe phase before, so the phases come in order.",
+      "properties": {
+        "abilities": {
+          "description": "What the boss casts while the phase lasts, most important first.",
+          "items": {
+            "$ref": "#/$defs/BossAbilityDef"
+          },
+          "title": "Abilities",
+          "type": "array"
+        },
+        "enter_when": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "mapping": {
+                  "realmforge:health_below": "#/$defs/HealthBelowDef",
+                  "realmforge:time_in_phase": "#/$defs/TimeInPhaseDef"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/HealthBelowDef"
+                },
+                {
+                  "$ref": "#/$defs/TimeInPhaseDef"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "What enters this phase from the one before; none for the first phase.",
+          "title": "Enter When"
+        },
+        "id": {
+          "description": "The phase's id, unique within the boss, e.g. awakening.",
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/LocalizedText",
+          "description": "The phase's name in the boss bar, after the boss's name: Title Case, 1 to 3 words (lore style guide), e.g. Stone Fury."
+        },
+        "on_enter": {
+          "description": "Spells the boss casts at once when the phase begins, without their cooldowns: a buff on itself, a blast round it. Not for the first phase.",
+          "items": {
+            "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+            "type": "string"
+          },
+          "title": "On Enter",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "BossPhaseDef",
+      "type": "object"
+    },
+    "HealthBelowDef": {
+      "additionalProperties": false,
+      "description": "The boss's health has fallen below a share of its maximum.",
+      "properties": {
+        "health_percent": {
+          "description": "The share of its maximum health, in percent: 0 to 100.",
+          "exclusiveMaximum": 100,
+          "exclusiveMinimum": 0,
+          "title": "Health Percent",
+          "type": "number"
+        },
+        "type": {
+          "const": "realmforge:health_below",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "health_percent"
+      ],
+      "title": "HealthBelowDef",
+      "type": "object"
+    },
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    },
+    "TimeInPhaseDef": {
+      "additionalProperties": false,
+      "description": "The boss has spent a while in the phase before this one: an enrage timer, or a phase that ends by itself.",
+      "properties": {
+        "after_seconds": {
+          "description": "How long the phase before lasts, in seconds; more than 0.",
+          "minimum": 0,
+          "title": "After Seconds",
+          "type": "number"
+        },
+        "type": {
+          "const": "realmforge:time_in_phase",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "after_seconds"
+      ],
+      "title": "TimeInPhaseDef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A boss's fight, ``realmforge:<id>``: the entity it runs on and its phases.",
+  "properties": {
+    "arena": {
+      "$ref": "#/$defs/ArenaDef"
+    },
+    "bar_color": {
+      "default": "red",
+      "description": "The colour of its boss bar: pink, blue, red, green, yellow, purple or white.",
+      "enum": [
+        "pink",
+        "blue",
+        "red",
+        "green",
+        "yellow",
+        "purple",
+        "white"
+      ],
+      "title": "Bar Color",
+      "type": "string"
+    },
+    "entity": {
+      "description": "Its body: a mob of archetype boss in content/mobs/, realmforge:<mob>. One boss per such mob.",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+      "title": "Entity",
+      "type": "string"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "level": {
+      "description": "Its fixed level, which scales its attributes like every mob's (architecture 14.1); in a dungeon run it takes the run's level instead.",
+      "maximum": 1000,
+      "minimum": 1,
+      "title": "Level",
+      "type": "integer"
+    },
+    "phase_change_seconds": {
+      "default": 3,
+      "description": "How long it stands, unhurt and casting nothing, when it enters a new phase, in seconds (research BM-2: 3 s); 0 for no pause. Particles round it show it.",
+      "minimum": 0,
+      "title": "Phase Change Seconds",
+      "type": "number"
+    },
+    "phases": {
+      "description": "Its phases, in the order the fight goes through.",
+      "items": {
+        "$ref": "#/$defs/BossPhaseDef"
+      },
+      "minItems": 1,
+      "title": "Phases",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "entity",
+    "level",
+    "arena",
+    "phases"
+  ],
+  "title": "BossDef",
+  "type": "object"
+}

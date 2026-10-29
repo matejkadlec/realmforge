@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Boss framework test (W5a, RLM-490): the test titan hardens when it enters its second phase (on_enter). Not gameplay
+# content; the GameTests in the QA mod check the effect.
+id: test_titan_harden
+name: {en_us: Test Titan Harden}
+description: {en_us: "Hardens the caster for {duration} sec."}
+school: realmforge:physical
+scales_with: attack_damage
+targeting: {type: realmforge:self}
+cast: {type: instant}
+npc_only: true
+effects:
+  - {type: realmforge:apply_effect, effect: minecraft:resistance, duration_seconds: 30}

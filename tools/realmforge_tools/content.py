@@ -29,6 +29,7 @@ from realmforge_tools.schema import (
     WORLDGEN_DIR,
     ApotheosisAffixDef,
     BlockDef,
+    BossDef,
     ChapterDef,
     ClassDef,
     CurveDef,
@@ -196,6 +197,7 @@ class Content:
     effects: tuple[Entry[EffectDef], ...]
     spells: tuple[Entry[SpellDef], ...]
     mobs: tuple[Entry[MobDef], ...]
+    bosses: tuple[Entry[BossDef], ...]
     sounds: tuple[Entry[SoundGroupDef], ...]
     room_specs: tuple[Entry[RoomSpecDef], ...]
     room_themes: tuple[Entry[RoomThemeDef], ...]
@@ -291,6 +293,7 @@ def load_content(
         effects=by_id(loaded["effects"]),
         spells=by_id(loaded["spells"]),
         mobs=by_id(loaded["mobs"]),
+        bosses=by_id(loaded["bosses"]),
         sounds=by_id(loaded["sounds"]),
         room_specs=by_id(loaded["room_specs"]),
         room_themes=by_id(loaded["room_themes"]),

@@ -109,7 +109,10 @@ public final class CustomMobGameTests {
     private CustomMobGameTests() {
     }
 
-    /** Each custom mob spawns near a level 20 player at a level near 20, with that level's scaling and full health. */
+    /**
+     * Each custom mob spawns near a level 20 player at a level near 20, a boss's body at its definition's fixed level
+     * (W5a), with that level's scaling and full health.
+     */
     @QaGameTest
     public static void customMobsSpawnWithLevelsAndTheirScaling(GameTestHelper helper) {
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-custom-mob-level");
@@ -122,8 +125,13 @@ public final class CustomMobGameTests {
                 String what = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()).toString();
                 OptionalInt level = MobLevels.level(mob);
                 helper.assertTrue(level.isPresent(), what + " has no level");
-                helper.assertTrue(level.getAsInt() >= 17 && level.getAsInt() <= 23,
-                        what + " is level " + level.getAsInt() + " near a level 20 player");
+                OptionalInt fixed = mob instanceof MobLevels.FixedLevel boss ? boss.fixedLevel() : OptionalInt.empty();
+                if (fixed.isPresent()) {
+                    helper.assertValueEqual(level.getAsInt(), fixed.getAsInt(), what + "'s fixed level");
+                } else {
+                    helper.assertTrue(level.getAsInt() >= 17 && level.getAsInt() <= 23,
+                            what + " is level " + level.getAsInt() + " near a level 20 player");
+                }
                 MobScaling scaling = MobScaling.at(helper.getLevel().registryAccess(), level.getAsInt());
                 helper.assertTrue(scaling.health() > 1, "level " + level.getAsInt() + " scales health");
                 assertClose(helper, mob.getMaxHealth(),
@@ -443,8 +451,20 @@ public final class CustomMobGameTests {
         Map<CustomMob, Vec3> starts = new HashMap<>();
         Map<CustomMob, Double> speeds = new HashMap<>();
         Map<CustomMob, WaterAvoidingRandomStrollGoal> strolls = new HashMap<>();
-        for (int n = 0; n < GeneratedMobs.ALL.size(); n++) {
-            CustomMob mob = helper.spawn(GeneratedMobs.ALL.get(n).get(), new Vec3(4.5 + 8 * n, 1, 8.5));
+        // A boss's body guards its arena instead (W5a, BossGameTests).
+        List<EntityType<? extends CustomMob>> strollers = GeneratedMobs.ALL.stream()
+                .<EntityType<? extends CustomMob>>map(type -> type.get())
+                .filter(type -> {
+                    CustomMob probe = type.create(helper.getLevel(), EntitySpawnReason.COMMAND);
+                    boolean wanders = probe != null && probe.spec().idle() == CustomMobSpec.Idle.STROLL;
+                    if (probe != null) {
+                        probe.discard();
+                    }
+                    return wanders;
+                })
+                .toList();
+        for (int n = 0; n < strollers.size(); n++) {
+            CustomMob mob = helper.spawn(strollers.get(n), new Vec3(4.5 + 8 * n, 1, 8.5));
             String what = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()).toString();
             Map<Class<?>, Integer> goals = new HashMap<>();
             for (WrappedGoal goal : mob.goalSelector.getAvailableGoals()) {

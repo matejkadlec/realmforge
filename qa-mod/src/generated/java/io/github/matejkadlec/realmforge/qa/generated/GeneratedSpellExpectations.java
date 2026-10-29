@@ -794,7 +794,36 @@ public final class GeneratedSpellExpectations {
                     1.0,
                     false,
                     List.of(
-                            new EffectExpectation("realmforge:damage", Map.of("amount", 5.0, "attack_damage", 0.0, "per_level", 0.0), Map.of(), List.of()))));
+                            new EffectExpectation("realmforge:damage", Map.of("amount", 5.0, "attack_damage", 0.0, "per_level", 0.0), Map.of(), List.of()))),
+            new SpellExpectation(
+                    "realmforge:test_titan_harden",
+                    "spell.realmforge.test_titan_harden.name",
+                    "spell.realmforge.test_titan_harden.description",
+                    "realmforge:physical",
+                    "attack_damage",
+                    "realmforge:self",
+                    0.0,
+                    "instant",
+                    0,
+                    0,
+                    false,
+                    false,
+                    false,
+                    Optional.empty(),
+                    Optional.empty(),
+                    false,
+                    Optional.empty(),
+                    0.0,
+                    0.0,
+                    0,
+                    10,
+                    1,
+                    true,
+                    Optional.empty(),
+                    0.0,
+                    true,
+                    List.of(
+                            new EffectExpectation("realmforge:apply_effect", Map.of("amplifier", 0.0, "duration_ticks", 600.0), Map.of("effect", "minecraft:resistance"), List.of()))));
 
     private GeneratedSpellExpectations() {
     }

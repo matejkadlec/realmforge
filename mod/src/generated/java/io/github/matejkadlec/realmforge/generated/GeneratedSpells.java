@@ -89,8 +89,11 @@ public final class GeneratedSpells {
     /** {@code realmforge:test_sure_crit} from {@code content/spells/test_sure_crit.yaml}: frost, enemy, damage. */
     public static final ResourceKey<Spell> TEST_SURE_CRIT = key("test_sure_crit");
 
+    /** {@code realmforge:test_titan_harden} from {@code content/spells/test_titan_harden.yaml}: physical, self, apply_effect. */
+    public static final ResourceKey<Spell> TEST_TITAN_HARDEN = key("test_titan_harden");
+
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Spell>> ALL = List.of(STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT);
+    public static final List<ResourceKey<Spell>> ALL = List.of(STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TITAN_HARDEN);
 
     private GeneratedSpells() {
     }

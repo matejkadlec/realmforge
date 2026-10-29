@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
+import io.github.matejkadlec.realmforge.boss.BossMob;
 import io.github.matejkadlec.realmforge.generated.GeneratedMobs;
 import io.github.matejkadlec.realmforge.mob.ai.KiteRules;
 import io.github.matejkadlec.realmforge.mob.custom.CasterMob;
@@ -37,7 +38,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 public final class ContentMobGameTests {
     private static final double TOLERANCE = 1e-6;
     private static final Map<String, Class<? extends CustomMob>> ARCHETYPES =
-            Map.of("melee", MeleeMob.class, "caster", CasterMob.class);
+            Map.of("melee", MeleeMob.class, "caster", CasterMob.class, "boss", BossMob.class);
 
     private ContentMobGameTests() {
     }

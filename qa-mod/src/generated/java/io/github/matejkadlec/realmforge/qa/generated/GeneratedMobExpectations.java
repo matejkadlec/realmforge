@@ -79,7 +79,25 @@ public final class GeneratedMobExpectations {
                                     new DropExpectation("realmforge:ruby", 1, 1, 0.2, 0, 0.05))),
                             new VariantExpectation("topaz", 1, "realmforge:entities/hewn_sentinel/topaz",
                                     List.of(new DropExpectation("realmforge:vaultstone_bricks", 1, 2, 0.75, 1, 0.0),
-                                    new DropExpectation("realmforge:topaz", 1, 1, 0.2, 0, 0.05))))));
+                                    new DropExpectation("realmforge:topaz", 1, 1, 0.2, 0, 0.05))))),
+            new MobExpectation(
+                    "realmforge:test_titan",
+                    "entity.realmforge.test_titan",
+                    "boss",
+                    1.4F, 3.2F,
+                    200.0, 6.0, 4.0,
+                    0.25, 32.0, 1.0,
+                    "guard",
+                    30, 0.0,
+                    List.of(),
+                    0.0, 0.0,
+                    "", "", "",
+                    "", false,
+                    "",
+                    List.of("c:bosses"),
+                    "realmforge:entities/test_titan",
+                    List.of(new DropExpectation("minecraft:diamond", 1, 1, 1.0, 0, 0.0)),
+                    List.of()));
 
     private GeneratedMobExpectations() {
     }

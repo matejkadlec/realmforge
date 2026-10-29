@@ -82,7 +82,8 @@ def mob_model(**fields: object) -> MobDef:
 
 def test_repository_mobs_are_the_hewn() -> None:
     content, universe = load_and_validate(RepoPaths())
-    mobs = {entry.model.id: entry.model for entry in content.mobs}
+    # test_titan is the boss framework's test boss (test_bosses.py).
+    mobs = {entry.model.id: entry.model for entry in content.mobs if not entry.model.id.startswith("test_")}
     assert {mob_id: model.archetype for mob_id, model in mobs.items()} == {
         "hewn_chanter": "caster",
         "hewn_sentinel": "melee",
@@ -108,9 +109,9 @@ def test_repository_mobs_are_the_hewn() -> None:
                 "caster": {"spells": ["realmforge:stoneform"]},
                 "melee": {"attack_interval_seconds": 1.5},
             },
-            "melee is only for archetype melee, not caster",
+            "melee is only for archetypes melee and boss, not caster",
         ),
-        ({"archetype": "summoner"}, "Input should be 'melee' or 'caster'"),
+        ({"archetype": "summoner"}, "Input should be 'melee', 'caster' or 'boss'"),
         ({"size": {"width": 0.1, "height": 2}}, "Input should be greater than or equal to 0.3"),
         ({"attributes": {"max_health": 0, "attack_damage": 1, "movement_speed": 0.2}}, "greater than 0"),
         (
@@ -454,7 +455,8 @@ def test_a_sentinels_stone_has_many_shades_and_no_black(variant: str) -> None:
 
 
 def test_no_mobs_still_compile(repo: RepoPaths) -> None:
-    for file in (repo.content / "mobs").glob("*.yaml"):
+    # A boss runs on a mob, so the bosses go too.
+    for file in [*(repo.content / "mobs").glob("*.yaml"), *(repo.content / "bosses").glob("*.yaml")]:
         file.unlink()
     # Stoneform spares the Hewn's tag, which no mob would fill.
     (repo.content / "spells" / "stoneform.yaml").unlink()

@@ -24,25 +24,31 @@ from realmforge_tools.generate.javagen import constant_name, header, java_file_p
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.common import LocalizedText
 from realmforge_tools.schema.mob import (
+    BOSS,
     DropDef,
     MobDef,
     MobDropDef,
     MobVariantDef,
+    idle_of,
     melee_of,
     mob_description_id,
     mob_id,
     mob_loot_table,
+    tags_of,
 )
 
 GENERATED_PACKAGE = f"{JAVA_PACKAGE}.generated"
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
 SOURCES = "content/mobs/"
 
-# YAML archetype -> its class in mob/custom/.
+# YAML archetype -> its class in mob/custom/. A boss's body (boss/BossMob) belongs to the boss feature, above mob, so
+# its registration creates it through mob/custom/Archetypes, which that feature fills (architecture 4.4).
 ARCHETYPE_CLASSES = {"melee": "MeleeMob", "caster": "CasterMob"}
 _IDLE = {"stroll": "STROLL", "guard": "GUARD"}
-# How far away clients see the mob, in chunks: vanilla's for monsters.
+# How far away clients see the mob, in chunks: vanilla's for monsters, and a vanilla boss's for a boss, whose boss bar
+# shows while its client tracks it (architecture 14.3).
 CLIENT_TRACKING_RANGE = 8
+BOSS_TRACKING_RANGE = 10
 PIXELS_PER_BLOCK = 16
 # The placeholder texture's side: the smallest of these that the model's box UVs fit.
 TEXTURE_SIZES = (64, 128, 256)
@@ -78,7 +84,7 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
             )
     tags: dict[str, list[str]] = {}
     for entry in content.mobs:
-        for tag in entry.model.tags:
+        for tag in tags_of(entry.model):
             tags.setdefault(tag, []).append(mob_id(entry.model.id))
     for tag, mobs in sorted(tags.items()):
         namespace, path = tag.split(":", 1)
@@ -738,7 +744,7 @@ def _spec(mob: MobDef) -> str:
         for variant in mob.variants
     )
     return (
-        f"new CustomMobSpec(CustomMobSpec.Idle.{_IDLE[mob.idle]},\n"
+        f"new CustomMobSpec(CustomMobSpec.Idle.{_IDLE[idle_of(mob)]},\n"
         f"            new CustomMobSpec.Sounds({_id(sounds.ambient)},\n"
         f"                    {_id(sounds.hurt)},\n"
         f"                    {_id(sounds.death)},\n"
@@ -765,20 +771,37 @@ def _attributes(mob: MobDef) -> str:
     return f"Monster.createMonsterAttributes(){adds}\n                .build()"
 
 
+def _entity_class(mob: MobDef) -> str:
+    """The Java class of the mob's entity type: its archetype's, or ``CustomMob`` for one made through
+    ``Archetypes``."""
+    return ARCHETYPE_CLASSES.get(mob.archetype, "CustomMob")
+
+
+def _factory(mob: MobDef) -> str:
+    """The entity factory of the mob's registration, as Java."""
+    spec = f"{constant_name(mob.id)}_SPEC"
+    if mob.archetype in ARCHETYPE_CLASSES:
+        return f"(type, level) -> new {ARCHETYPE_CLASSES[mob.archetype]}(type, level, {spec})"
+    return f"(type, level) -> Archetypes.create({string_literal(mob.archetype)}, type, level, {spec})"
+
+
+def _tracking_range(mob: MobDef) -> int:
+    return BOSS_TRACKING_RANGE if mob.archetype == BOSS else CLIENT_TRACKING_RANGE
+
+
 def _registrations(content: Content) -> bytes:
     mobs = [entry.model for entry in content.mobs]
     fields = "".join(
         f"    /** {{@code {mob_id(entry.model.id)}}} from {{@code {entry.source}}}: {_comment(entry.model)}. */\n"
         f"    private static final CustomMobSpec {constant_name(entry.model.id)}_SPEC = {_spec(entry.model)};\n"
         "\n"
-        f"    public static final DeferredHolder<EntityType<?>, EntityType<{ARCHETYPE_CLASSES[entry.model.archetype]}>> "
+        f"    public static final DeferredHolder<EntityType<?>, EntityType<{_entity_class(entry.model)}>> "
         f"{constant_name(entry.model.id)} =\n"
         f"            ENTITY_TYPES.registerEntityType({string_literal(entry.model.id)},\n"
-        f"                    (type, level) -> new {ARCHETYPE_CLASSES[entry.model.archetype]}(type, level, "
-        f"{constant_name(entry.model.id)}_SPEC),\n"
+        f"                    {_factory(entry.model)},\n"
         f"                    MobCategory.MONSTER, builder -> builder.sized({_float(entry.model.size.width)}, "
         f"{_float(entry.model.size.height)})\n"
-        f"                            .clientTrackingRange({CLIENT_TRACKING_RANGE}));\n"
+        f"                            .clientTrackingRange({_tracking_range(entry.model)}));\n"
         "\n"
         for entry in content.mobs
     )
@@ -787,7 +810,9 @@ def _registrations(content: Content) -> bytes:
     custom_imports = "".join(
         f"import {JAVA_PACKAGE}.mob.custom.{name};\n"
         for name in sorted(
-            {ARCHETYPE_CLASSES[mob.archetype] for mob in mobs} | {"CustomMob", "CustomMobSpec"}
+            {_entity_class(mob) for mob in mobs}
+            | {"CustomMob", "CustomMobSpec"}
+            | ({"Archetypes"} if any(mob.archetype not in ARCHETYPE_CLASSES for mob in mobs) else set())
         )
     )
     source = (
@@ -862,7 +887,7 @@ def _expectation(mob: MobDef) -> str:
         f"                                    {_drops(mob.loot + variant.loot, '                                    ')})"
         for variant in mob.variants
     )
-    tags = ", ".join(string_literal(tag) for tag in mob.tags)
+    tags = ", ".join(string_literal(tag) for tag in tags_of(mob))
     return (
         "            new MobExpectation(\n"
         f"                    {string_literal(mob_id(mob.id))},\n"
@@ -872,7 +897,7 @@ def _expectation(mob: MobDef) -> str:
         f"                    {_double(values.max_health)}, {_double(values.attack_damage)}, {_double(values.armor)},\n"
         f"                    {_double(values.movement_speed)}, {_double(values.follow_range)}, "
         f"{_double(percent_to_fraction(values.knockback_resistance_percent))},\n"
-        f"                    {string_literal(mob.idle)},\n"
+        f"                    {string_literal(idle_of(mob))},\n"
         f"                    {seconds_to_ticks(melee.attack_interval_seconds)}, {_double(melee.knock_up_blocks)},\n"
         f"                    List.of({spells}),\n"
         f"                    {_double(kiting.step_blocks if kiting else 0)}, "

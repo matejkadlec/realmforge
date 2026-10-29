@@ -68,6 +68,15 @@ public final class MobLevels {
         OptionalInt levelFor(ServerLevel level, Mob mob, double x, double y, double z);
     }
 
+    /**
+     * A mob whose level is fixed outside the places a {@link Source} gives levels: a boss takes its definition's (W5a,
+     * architecture 14.3), and a dungeon run's level still wins over it.
+     */
+    public interface FixedLevel {
+        /** Its fixed level, or empty when it follows the dimension's rule after all. */
+        OptionalInt fixedLevel();
+    }
+
     private static final List<Source> SOURCES = new CopyOnWriteArrayList<>();
 
     private MobLevels() {
@@ -79,8 +88,8 @@ public final class MobLevels {
     }
 
     /**
-     * Whether a mob gets a level: every hostile mob (vanilla's {@link Enemy} marker, which our mobs will carry too).
-     * Bosses take theirs from their definition (W5), or from the dungeon run they stand in.
+     * Whether a mob gets a level: every hostile mob (vanilla's {@link Enemy} marker, which our mobs carry too).
+     * Bosses take theirs from their definition ({@link FixedLevel}), or from the dungeon run they stand in.
      */
     public static boolean getsLevel(Entity entity) {
         return entity instanceof Mob && entity instanceof Enemy;
@@ -110,14 +119,20 @@ public final class MobLevels {
     }
 
     /**
-     * The level {@code mob} gets at a position: the first {@link Source}'s that has one for it there, or else
-     * {@link #levelAt}'s, drawn from the mob's random; empty when neither gives one.
+     * The level {@code mob} gets at a position: the first {@link Source}'s that has one for it there, or else its
+     * {@link FixedLevel}, or else {@link #levelAt}'s, drawn from the mob's random; empty when none gives one.
      */
     public static OptionalInt levelFor(ServerLevel level, Mob mob, double x, double y, double z) {
         for (Source source : SOURCES) {
             OptionalInt sourced = source.levelFor(level, mob, x, y, z);
             if (sourced.isPresent()) {
                 return sourced;
+            }
+        }
+        if (mob instanceof FixedLevel fixed) {
+            OptionalInt own = fixed.fixedLevel();
+            if (own.isPresent()) {
+                return own;
             }
         }
         return levelAt(level, x, y, z, mob.getRandom());

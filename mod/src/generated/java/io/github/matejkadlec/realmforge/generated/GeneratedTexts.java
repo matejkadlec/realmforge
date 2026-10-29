@@ -71,6 +71,9 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.block_reach} from {@code content/texts/gui.yaml}: "Block Reach" */
     public static final String GUI_BLOCK_REACH = "gui.realmforge.block_reach";
 
+    /** {@code gui.realmforge.boss_bar_title} from {@code content/texts/gui.yaml}: "%1$s — %2$s" */
+    public static final String GUI_BOSS_BAR_TITLE = "gui.realmforge.boss_bar_title";
+
     /** {@code gui.realmforge.character_creation} from {@code content/texts/gui.yaml}: "Create Your Character" */
     public static final String GUI_CHARACTER_CREATION = "gui.realmforge.character_creation";
 

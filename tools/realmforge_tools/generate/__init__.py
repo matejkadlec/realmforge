@@ -14,6 +14,7 @@ from realmforge_tools.content import Content
 from realmforge_tools.generate import (
     apotheosis,
     blocks,
+    bosses,
     characters,
     curves,
     datapack,
@@ -62,6 +63,7 @@ def generate_all(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         spell_schools.generate,
         spells.generate,
         mobs.generate,
+        bosses.generate,
         sounds.generate,
         texts.generate,
         fonts.generate,
