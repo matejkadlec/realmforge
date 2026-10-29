@@ -112,3 +112,42 @@ def test_no_monster_spawns_wearing_a_backpack() -> None:
         (REPO_ROOT / "pack" / "config" / "sophisticatedbackpacks-server.toml").read_text(encoding="utf-8")
     )
     assert config["entityBackpackAdditions"]["chance"] == 0.0
+
+
+def default_keys() -> dict[str, str]:
+    """Default Options' ``key_<key mapping>:<key>[:<modifier>]`` lines, as mapping to ``<key>[:<modifier>]``."""
+    lines = (REPO_ROOT / "pack" / "config" / "defaultoptions" / "keybindings.txt").read_text(encoding="utf-8")
+    keys = {}
+    for line in lines.splitlines():
+        if line.startswith("key_"):
+            mapping, key = line.removeprefix("key_").split(":", 1)
+            keys[mapping] = key
+    return keys
+
+
+def test_the_backpack_keys_are_on_b_and_semicolon() -> None:
+    """Open Backpack on B, alone, and Sort Storage/Backpack on ; beside Open Quests and Inventory Sorting's Sort
+    (Matěj, 2026-10-29, RLM-501, ADR 0062); every other Sophisticated key stays unbound."""
+    keys = default_keys()
+    assert [mapping for mapping, key in keys.items() if key == "key.keyboard.b"] == [
+        "key.sophisticatedbackpacks.open_backpack"
+    ]
+    assert {mapping for mapping, key in keys.items() if key == "key.keyboard.grave.accent"} == {
+        "key.ftbquests.keys.quests",
+        "inventorysorter.key.sort",
+        "key.sophisticatedcore.sort",
+    }
+    other_sophisticated = {
+        key
+        for mapping, key in keys.items()
+        if mapping.startswith("key.sophisticated")
+        and mapping not in {"key.sophisticatedbackpacks.open_backpack", "key.sophisticatedcore.sort"}
+    }
+    assert other_sophisticated == {"key.keyboard.unknown"}
+
+
+def test_apotheosis_keys_leave_ctrl_free_for_sprinting() -> None:
+    """Holding Ctrl to sprint must not turn T or K into Apotheosis's Ctrl bindings (ADR 0046, RLM-347, ADR 0062)."""
+    keys = default_keys()
+    assert keys["key.apotheosis.open_world_tier_select"] == "key.keyboard.t:ALT"
+    assert keys["key.apotheosis.toggle_attribute_bonuses"] == "key.keyboard.k:ALT"

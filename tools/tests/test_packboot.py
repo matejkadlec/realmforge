@@ -165,6 +165,17 @@ def test_the_client_needs_xvfb_or_a_display(monkeypatch: pytest.MonkeyPatch) -> 
     assert packboot._headless(["game"]) == ["game"]
 
 
+def test_both_sides_boot_on_zgc(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    # RLM-479: the collector the game is played with; on G1, Distant Horizons warns about FPS stutter.
+    monkeypatch.setattr(packboot, "java_executable", lambda: "java")
+    monkeypatch.setattr(packboot.shutil, "which", lambda name: f"/usr/bin/{name}")
+    work = packboot._Workspace(tmp_path)
+    server = packboot._server_command(work)
+    assert server[:3] == ["java", packboot.SERVER_HEAP, "-XX:+UseZGC"]
+    client = packboot._client_command(work, dry=False)
+    assert f"--jvm-args={packboot.CLIENT_HEAP} -XX:+UseZGC" in client
+
+
 def test_optional_mods_come_from_the_metafiles(tmp_path: Path) -> None:
     write(tmp_path / "mods" / "a.pw.toml", 'name = "A"\nfilename = "a.jar"\n[option]\noptional = true\n')
     write(tmp_path / "mods" / "b.pw.toml", 'name = "B"\nfilename = "b.jar"\n')

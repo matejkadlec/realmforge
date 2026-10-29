@@ -15,8 +15,10 @@ key_key.saveToolbarActivator:key.keyboard.unknown
 key_key.socialInteractions:key.keyboard.unknown
 
 # Apotheosis: Open World Tier Select moves from Ctrl+T to Alt+T, so a player who holds Ctrl to sprint still casts the
-# spell bar's T (RLM-25).
+# spell bar's T (RLM-25), and Toggle Attribute Bonuses from Ctrl+K to Alt+K, so Ctrl and K still open the character
+# sheet (RLM-347).
 key_key.apotheosis.open_world_tier_select:key.keyboard.t:ALT
+key_key.apotheosis.toggle_attribute_bonuses:key.keyboard.k:ALT
 
 # FTB Quests: Open Quests on ; (Czech QWERTZ).
 key_key.ftbquests.keys.quests:key.keyboard.grave.accent
@@ -54,8 +56,12 @@ key_iris.keybind.toggleShaders:key.keyboard.unknown
 key_iris.keybind.shaderPackSelection:key.keyboard.unknown
 key_iris.keybind.wireframe:key.keyboard.unknown
 
-# Sophisticated Backpacks and Sophisticated Core: all unbound.
-key_key.sophisticatedbackpacks.open_backpack:key.keyboard.unknown
+# Sophisticated Backpacks and Sophisticated Core (Matěj, 2026-10-29, RLM-501): Open Backpack on B, free since Iris's
+# and Just Zoom's keys there went unbound and the terminal moved to V; Sort Storage/Backpack on ;, beside Inventory
+# Sorting's Sort. In a backpack screen Sophisticated Core sorts the backpack and swallows the key, so Inventory Sorting
+# never sorts it as well; over the player's inventory Sophisticated Core leaves the key to Inventory Sorting. The other
+# Sophisticated keys stay unbound.
+key_key.sophisticatedbackpacks.open_backpack:key.keyboard.b
 key_key.sophisticatedbackpacks.inventory_interaction:key.keyboard.unknown
 key_key.sophisticatedbackpacks.tool_swap:key.keyboard.unknown
 key_key.sophisticatedbackpacks.toggle_upgrade_1:key.keyboard.unknown
@@ -63,6 +69,6 @@ key_key.sophisticatedbackpacks.toggle_upgrade_2:key.keyboard.unknown
 key_key.sophisticatedbackpacks.toggle_upgrade_3:key.keyboard.unknown
 key_key.sophisticatedbackpacks.toggle_upgrade_4:key.keyboard.unknown
 key_key.sophisticatedbackpacks.toggle_upgrade_5:key.keyboard.unknown
-key_key.sophisticatedcore.sort:key.keyboard.unknown
+key_key.sophisticatedcore.sort:key.keyboard.grave.accent
 key_key.sophisticatedcore.transfer_to_storage:key.keyboard.unknown
 key_key.sophisticatedcore.transfer_to_inventory:key.keyboard.unknown

@@ -1,6 +1,7 @@
 name = "MmmMmmMmmMmm"
 filename = "dummmmmmy-26.1.2-3.0.1-neoforge.jar"
 side = "both"
+pin = true
 
 [download]
 url = "https://cdn.modrinth.com/data/Adega8YN/versions/nmUUS6Aa/dummmmmmy-26.1.2-3.0.1-neoforge.jar"
