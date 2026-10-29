@@ -64,6 +64,8 @@ import net.minecraft.world.level.levelgen.structure.pools.EmptyPoolElement;
 import net.minecraft.world.level.levelgen.structure.templatesystem.LiquidSettings;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.config.ModConfigs;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
@@ -95,14 +97,6 @@ public final class MobLevelGameTests {
     private static final Identifier HEALTH_BOOST = Identifier.withDefaultNamespace("effect.health_boost");
     /** The maximum health Health Boost adds per level: vanilla's {@code MobEffects.HEALTH_BOOST}. */
     private static final double HEALTH_BOOST_PER_LEVEL = 4;
-    /**
-     * The maximum health modifiers a pack mod gives a spawning monster on its own (RLM-485): Sophisticated Backpacks
-     * puts a backpack on about 1 in 100 (its server config's {@code entityBackpackAdditions.chance}, 0.01), with a flat
-     * health bonus and at times Health Boost. Both are flat, so the level's multiple scales them with the base
-     * (architecture 14.1).
-     */
-    private static final Set<Identifier> PACK_HEALTH_BONUSES = Set.of(
-            Identifier.fromNamespaceAndPath("sophisticatedbackpacks", "backpack_bearer_health_bonus"), HEALTH_BOOST);
 
     private MobLevelGameTests() {
     }
@@ -244,9 +238,10 @@ public final class MobLevelGameTests {
     }
 
     /**
-     * A skeleton spawned through {@code finalizeSpawn} has its scaled maximum health, and all of it. Its only health
-     * modifier is its level's, besides a pack mod's flat bonus ({@link #PACK_HEALTH_BONUSES}), which the level's
-     * multiple scales too.
+     * A skeleton spawned through {@code finalizeSpawn} has its scaled maximum health, and all of it, and its only
+     * health modifier is its level's. A flat bonus added later (Health Boost) is scaled by the level too. Sophisticated
+     * Backpacks' monsters with backpacks, which added a flat bonus of their own to about 1 in 100 (RLM-485), are off in
+     * the pack (RLM-494), so its modifier fails this test if they come back.
      */
     @QaGameTest
     public static void spawnedMobHasItsScaledMaximumHealthInFull(GameTestHelper helper) {
@@ -271,30 +266,17 @@ public final class MobLevelGameTests {
         AttributeInstance health = skeleton.getAttribute(Attributes.MAX_HEALTH);
         String found = "found " + health.getModifiers().stream()
                 .map(modifier -> modifier.id() + " " + modifier.operation() + " " + modifier.amount()).sorted().toList();
-        List<AttributeModifier> packBonuses = health.getModifiers().stream()
-                .filter(modifier -> PACK_HEALTH_BONUSES.contains(modifier.id())).toList();
-        helper.assertTrue(health.getModifiers().size() == packBonuses.size() + 1
-                        && health.hasModifier(MobScaling.HEALTH_MODIFIER),
-                "the skeleton's only health modifier is its level's, " + MobScaling.HEALTH_MODIFIER
-                        + ", besides a pack mod's flat bonus " + PACK_HEALTH_BONUSES + "; " + found);
-        helper.assertTrue(packBonuses.stream()
-                        .allMatch(modifier -> modifier.operation() == AttributeModifier.Operation.ADD_VALUE),
-                "a pack mod's health bonus is flat; " + found);
-        double flat = packBonuses.stream().mapToDouble(AttributeModifier::amount).sum();
-        assertClose(helper, skeleton.getMaxHealth(), (health.getBaseValue() + flat) * scaling.health(),
-                "maximum health, the level's multiple of the base and any flat bonus");
+        helper.assertTrue(health.getModifiers().size() == 1 && health.hasModifier(MobScaling.HEALTH_MODIFIER),
+                "the skeleton's only health modifier is its level's, " + MobScaling.HEALTH_MODIFIER + "; " + found);
+        assertClose(helper, skeleton.getMaxHealth(), health.getBaseValue() * scaling.health(), "maximum health");
         assertClose(helper, skeleton.getHealth(), skeleton.getMaxHealth(), "a new mob's health");
         helper.assertFalse(skeleton.hasData(MobAttachments.PENDING_REFILL), "the refill mark is gone after the join");
 
-        // The case a backpack bearer brings, on every run: a flat bonus added later is scaled by the level too.
-        skeleton.removeEffect(MobEffects.HEALTH_BOOST);
-        double flatBesidesBoost = packBonuses.stream().filter(modifier -> !modifier.id().equals(HEALTH_BOOST))
-                .mapToDouble(AttributeModifier::amount).sum();
+        // A flat bonus added later is scaled by the level too: the level's modifier multiplies the base plus it.
         skeleton.addEffect(new MobEffectInstance(MobEffects.HEALTH_BOOST, 200, 0));
         assertClose(helper, health.getModifier(HEALTH_BOOST).amount(), HEALTH_BOOST_PER_LEVEL, "Health Boost I");
         assertClose(helper, skeleton.getMaxHealth(),
-                (health.getBaseValue() + flatBesidesBoost + HEALTH_BOOST_PER_LEVEL) * scaling.health(),
-                "maximum health with Health Boost I");
+                (health.getBaseValue() + HEALTH_BOOST_PER_LEVEL) * scaling.health(), "maximum health with Health Boost I");
 
         // A zombie's own finalizeSpawn may raise its maximum again (the leader bonus); the join refills that too.
         for (Zombie zombie : List.of(helper.spawn(EntityType.ZOMBIE, 1, 1, 1, EntitySpawnReason.SPAWN_ITEM_USE),
@@ -302,6 +284,23 @@ public final class MobLevelGameTests {
             assertScaled(helper, zombie, assertLeveled(helper, zombie));
             assertClose(helper, zombie.getHealth(), zombie.getMaxHealth(), "a new zombie's health");
         }
+    }
+
+    /**
+     * RLM-494 (Matěj, 2026-10-29): the server runs with the pack's Sophisticated Backpacks config, which puts no
+     * backpack on a spawning monster. Its default of 1 in 100 gave such a monster a flat health bonus, potion buffs,
+     * armor and chest loot (RLM-485). The dev runs copy {@code pack/config/} into their config folder, so this reads what
+     * the pack ships.
+     */
+    @QaGameTest
+    public static void noMonsterSpawnsWearingABackpack(GameTestHelper helper) {
+        List<ModConfig> server = ModConfigs.getModConfigs("sophisticatedbackpacks").stream()
+                .filter(config -> config.getType() == ModConfig.Type.SERVER).toList();
+        helper.assertValueEqual(server.size(), 1, "Sophisticated Backpacks' server configs");
+        Object chance = server.getFirst().getLoadedConfig().config().get("entityBackpackAdditions.chance");
+        helper.assertTrue(chance instanceof Number number && number.doubleValue() == 0,
+                "the chance of a monster spawning with a backpack is 0: " + chance);
+        helper.succeed();
     }
 
     /**

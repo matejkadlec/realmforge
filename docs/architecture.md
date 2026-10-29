@@ -1844,8 +1844,8 @@ return; the proc engine at its end exists since C3a.
 Built in W1 (RLM-31): `world/DimensionRules`, `world/MobLevelRule` and `mob/MobLevels`, with the scaling in
 `mob/MobScaling`. Since RLM-303 (part 1 of RLM-240) the level follows the nearest player instead of the distance
 from the dimension's origin, since RLM-342 (part 4) a structure can raise the floor of the mobs it holds, and since
-RLM-459 (part 5) a dungeon run gives the mobs in its plot its own level; the bosses' own campaign levels and the
-party lock (RLM-304) and open-world dungeons (RLM-305) come later.
+RLM-459 (part 5) a dungeon run gives the mobs in its plot its own level; the bosses' own campaign levels (RLM-304)
+and open-world dungeons (RLM-305) come later, and the party lock with the party system (RLM-68).
 
 - **Which mobs:** every hostile mob, vanilla's and later ours: a `Mob` that carries vanilla's `Enemy` marker
   (`MobLevels#getsLevel`). Animals, villagers and golems get none. Bosses take the fixed level from their definition
@@ -1877,8 +1877,9 @@ party lock (RLM-304) and open-world dungeons (RLM-305) come later.
   `MobLevels.Source`; `RunLevels#mobLevel`): a boss (NeoForge's `#c:bosses`) at it, a miniboss
   (`#realmforge:minibosses`, which W5 and W6 fill) one below, every other mob two or three below, as likely, never
   below 1: boss 40, minibosses 39, the rest 37 and 38. A run opened without a dungeon type (the QA tests' spike
-  rooms) has no level, so its mobs get none. The party lock while a run is active (RLM-68) and a boss-ending type's
-  base taken from its boss's definition (W5, W6) are RLM-304.
+  rooms) has no level, so its mobs get none. A boss-ending type's base taken from its boss's definition (W5, W6) is
+  RLM-304. The party lock (while a run is active nobody joins its party) comes with the party system, RLM-68 (Matěj,
+  2026-10-29: moved there from RLM-304).
 - **Structure floors** (Matěj, 2026-10-19, RLM-342): the rule's optional `structure_floors` name a world generation
   structure (`minecraft:ancient_city`) or a structure tag (`#minecraft:village`, read with vanilla's
   `ExtraCodecs.TAG_OR_ELEMENT_ID`), each with a floor above `entry_level` and at most `max_level`. A mob that gets its
@@ -1905,10 +1906,11 @@ party lock (RLM-304) and open-world dungeons (RLM-305) come later.
   ([8.2](#82-where-modifiers-come-from)), saved with the mob. The health modifier is `ADD_MULTIPLIED_BASE`: it
   multiplies the base plus every flat bonus, and other base multipliers add to its multiple instead of compounding
   with it (+10 % on a mob at 1.4 times makes 1.5 times, not 1.54); `ADD_MULTIPLIED_TOTAL` modifiers multiply the
-  result. The pack's first flat bonus comes from Sophisticated Backpacks: a monster it puts a backpack on (about 1 in
-  100, its server config's `entityBackpackAdditions.chance`) gets `sophisticatedbackpacks:backpack_bearer_health_bonus`
-  and at times Health Boost, both `ADD_VALUE`, which the level's multiple scales with the base (RLM-485). Whether the
-  level's multiple should compound instead is settled with the first other multiplier of a mob's maximum health.
+  result. A flat bonus is scaled with the base: Health Boost's, or the 10 to 30 health an Apotheosis elite gets from
+  the Frontier world tier on. Sophisticated Backpacks' monsters with backpacks, about 1 in 100 by default with a flat
+  health bonus and at times Health Boost (RLM-485), are off in the pack (`entityBackpackAdditions.chance = 0.0`;
+  Matěj, 2026-10-29, RLM-494). Whether the level's multiple should compound instead is settled with the first other
+  multiplier of a mob's maximum health.
   Damage is a multiplier on `LivingIncomingDamageEvent` for every hit whose causing entity (`DamageSource#getEntity`)
   is a leveled mob, so arrows, explosions and thrown potions grow with the level too; only melee reads the attack
   damage attribute. It runs at `HIGH` priority, before the damage pipeline
