@@ -1202,7 +1202,8 @@ lists spells granted while equipped or on use): the vision's "some from the race
    tracking the caster later (walking up to a boss, reconnecting mid-cast) gets the current cast from a
    `PlayerEvent.StartTracking` listener, as a `CastStartedPayload` with the original start time, so the telegraph
    still shows. An interrupt cancels the cast; moving never does, but slows the caster
-   ([ADR 0039](decisions/0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md)).
+   ([ADR 0039](decisions/0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md)) and stops its sprint
+   ([ADR 0057](decisions/0057-a-cast-that-slows-its-caster-stops-its-sprint.md)).
 4. A cast pays its cost when it begins, a cast time too (Matěj, 2026-10-24: the bar shows the cost leave at once,
    and an interrupted cast keeps it spent). A player's wand in the main hand loses a point of durability then, once
    per cast, as a sword per hit (RLM-172, [13](#13-items-gear-and-loot)). When a cast-time spell completes, the server checks the target again,
@@ -1278,10 +1279,17 @@ spell that may not be cast while moving gives its caster the transient movement 
 `Casting#CAST_SLOW` (`realmforge:cast_slow`, −50 % `ADD_MULTIPLIED_TOTAL`, [ADR 0047](decisions/0047-the-cast-slow-halves-the-casters-speed.md)) from its start until
 it ends, however it ends; a spell with `castable_while_moving` leaves the caster at full speed. The modifier is no
 status effect: no icon, no particles, milk does not clear it, and it is never saved, so a crash leaves none behind.
-Players and mobs are slowed alike. A player's client moves the player, so a modified client can ignore the slow as it
-can ignore vanilla's Slowness. A spell's `realmforge:knockback` interrupts the target's cast explicitly
-(`CastEnd.KNOCKED_BACK`), unless it may be cast while moving. `CastGameTests` covers the slow, and
-`SpellEffectGameTests` the knockback.
+Players and mobs are slowed alike. Such a cast also stops its caster's sprint when it begins and keeps it from
+sprinting until it ends, as an item that slows its user does (RLM-371,
+[ADR 0057](decisions/0057-a-cast-that-slows-its-caster-stops-its-sprint.md)), so a caster who sprints into it moves
+at half its walking speed too: the server stops the sprint at the start and at every tick of the cast
+(`Casting#blocksSprint`), and the player's client (`client/spell/ClientCasts`, in NeoForge's
+`MovementInputUpdateEvent`, before vanilla starts a sprint) stops it, lets go of the sprint key and forgets the double
+tap of forward (`LocalPlayer#sprintTriggerTime`, opened by an access transformer, [19.3](#193-mixins-and-access-transformers)).
+After the cast a held or toggled sprint key sprints again. A player's client moves the player, so a modified client
+can ignore the slow and the sprint stop as it can ignore vanilla's Slowness. A spell's `realmforge:knockback`
+interrupts the target's cast explicitly (`CastEnd.KNOCKED_BACK`), unless it may be cast while moving.
+`CastGameTests` covers the slow and the sprint stop, and `SpellEffectGameTests` the knockback.
 
 **In code (spell aiming, RLM-344 and RLM-346; [ADR 0052](decisions/0052-spells-aim-with-the-crosshair.md)):** spells
 are aimed, not targeted, unless their data keeps a target (Matěj's playtest of C3b, 2026-10-21: "cast anytime, aim
@@ -1516,8 +1524,12 @@ seen from outside only their rotation follows the head, like vanilla's bow pose.
 animation, `realmforge:cast` (`player_animations/cast.json`, the QA mod's former test cast), until C6's spell visuals
 (epic RLM-434) give spells their own. `client/animation/CastAnimation` registers one PAL layer per player at priority
 3000 at client setup and shows or lowers it with a 4-tick fade; `ClientCasts` raises it on `CastStartedPayload` and
-lowers it on `CastEndedPayload`, unless a newer cast of the caster already started, so it shows for the caster and
-every tracking player, one who starts tracking mid-cast included (the server sends them the cast in progress).
+lowers it at the client tick after `CastEndedPayload`, unless the caster cast again by then, so it shows for the caster
+and every tracking player, one who starts tracking mid-cast included (the server sends them the cast in progress). The
+server ends a cast that another replaces before it starts the new one, in the same tick, so the end arrives first;
+lowering at once dipped the hands and raised them again from the animation's first frame (RLM-454).
+`client/spell/PendingLowerings` keeps the casters whose casts ended until that tick, and `PendingLoweringsTest` covers
+it.
 `AimedCastAnimation` wraps the animation with the aim above, and `CastArms` holds its math (decomposing the turned
 rotation into the part's angles, the short way round, and the pivot turned about the eye), which `CastArmsTest`
 covers. Player Animation Library is a required dependency on the client only (`side = "CLIENT"`); every PAL call of
@@ -1616,7 +1628,10 @@ hands, in front of its forehead (`SpellVisuals#formOffset`: 0.4 blocks above its
 **In code (aim assistance, RLM-345): the target circle.** During the local player's cast-time or channelled spell,
 `client/spell/TargetCircle` draws a ring of dust in the spell school's colour on the ground under the mob the server
 named in `CastTargetPayload` ([11.2](#112-casting-server-authoritative)), its hitbox's half width plus 0.35 blocks out,
-every second tick; never outside a cast (Q4), and gone with the local player's `CastEndedPayload` or a logout.
+every second game tick, once a game tick at most: while singleplayer is paused (or the server's ticks are frozen) the
+client ticks on but the game time stands still and the particle engine waits, so it must not queue a ring every client
+tick (RLM-474, `TargetCircleTest`). Never outside a cast (Q4), and gone with the local player's `CastEndedPayload` or a
+logout. `SpellAimingGameTests` reads the payload the server sends a cast's caster.
 Particles until the spell visuals (C6) give it its art. The Show target key that shows it without a cast is RLM-468's.
 
 ### 11.7 Class spells and stances
@@ -3225,10 +3240,13 @@ Minecraft jar a project compiles against (its default location), and which `neof
 `[[accessTransformers]]`, so FML applies it when the game loads: in a dev run (the runs live in `qa-mod/`, whose own
 jar lacks the core mod's transforms), on the GameTest server and in the pack. The core mod's one opens
 `LivingEntity#lastHurt` for the hurt cooldown ([9.1](#91-damage-pipeline)), `ServerPlayer#setShoulderEntityLeft`
-and `Right` for the shoulder entities a realm trip leaves behind ([15.1](#151-dimensions)) and `Holder.Reference#bindTags`
-for the tag of raisable weapons ([9.3](#93-blocking-with-two-handed-weapons)); the QA mod's opens `lastHurt` for
-`CombatGameTests` and `CombatStatGameTests`, `damageContainers` for `CombatGameTests` and `WeaponBlockGameTests`, and
-`Holder.Reference#bindTags` for `WeaponBlockGameTests`, whose client rebinds the tag after its server's tag update.
+and `Right` for the shoulder entities a realm trip leaves behind ([15.1](#151-dimensions)), `Holder.Reference#bindTags`
+for the tag of raisable weapons ([9.3](#93-blocking-with-two-handed-weapons)) and the client's
+`LocalPlayer#sprintTriggerTime`, the double tap of forward that a cast which slows its caster clears
+([11.2](#112-casting-server-authoritative); no GameTest reaches the client, so the playtest covers it, and
+`CastGameTests` the server's half); the QA mod's opens `lastHurt` for `CombatGameTests` and `CombatStatGameTests`,
+`damageContainers` for `CombatGameTests` and `WeaponBlockGameTests`, and `Holder.Reference#bindTags` for
+`WeaponBlockGameTests`, whose client rebinds the tag after its server's tag update.
 
 ### 19.4 Optional integrations
 

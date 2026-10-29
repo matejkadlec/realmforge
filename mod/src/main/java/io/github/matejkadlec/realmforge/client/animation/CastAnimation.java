@@ -56,8 +56,9 @@ public final class CastAnimation {
 
     /**
      * Raises {@code entity}'s hands into the cast pose when {@code casting}, or lowers them, fading either way. A
-     * player already in the state stays as they are, so a cast that replaces another keeps its pose; any other entity
-     * is ignored (mobs have no PAL layer).
+     * player already in the state stays as they are, so a cast that replaces another keeps its pose and its tick:
+     * {@code ClientCasts} lowers the hands only a tick after a cast's end, by which time the replacing cast has started
+     * (RLM-454). Any other entity is ignored (mobs have no PAL layer).
      */
     public static void show(Entity entity, boolean casting) {
         if (entity instanceof AbstractClientPlayer player

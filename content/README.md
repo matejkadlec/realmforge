@@ -325,8 +325,9 @@ Rules:
   (it pays its cost when the cast begins; the effects and the cooldown come when it completes) or `{type: channel,
   duration_seconds, interval_seconds}` (it pays and starts its cooldown when it begins, pays its cost again as each
   later second begins, and runs its effects every interval; the duration is a whole number of intervals), the timed
-  ones with `castable_while_moving` (by default the cast slows its caster to half its speed; with `true` the caster
-  moves at full speed; moving never cancels a cast, ADR 0039, ADR 0047) and `lock_on` (range and line of sight are not
+  ones with `castable_while_moving` (by default the cast slows its caster to half its speed and stops its sprint
+  until it ends; with `true` the caster moves at full speed and may sprint; moving never cancels a cast, ADR 0039,
+  ADR 0047, ADR 0057) and `lock_on` (range and line of sight are not
   checked again before the effects), or instead `keep_sight` (losing sight of the target ends the cast at once) and
   `keep_range_percent` (for that share of the cast the target must stay in range or the cast ends at once; past it,
   range no longer matters; a player's cast-time or channelled `enemy` or `ally` spell keeps its target anyway until
