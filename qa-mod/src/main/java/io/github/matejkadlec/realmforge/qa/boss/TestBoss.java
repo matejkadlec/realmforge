@@ -16,10 +16,12 @@ import net.minecraft.world.level.ServerLevelAccessor;
 
 /**
  * The QA test boss (RLM-173, architecture 20): a zombie half again as big, with {@value #MAX_HEALTH} health at level
- * 1, in {@code c:bosses}, that carries the core mod's {@link BossBar}, so the bar can be tried and tested until W5's
- * boss exists. {@code /summon realmforge_qa:test_boss} in the dev client. It is always an adult on foot and never a
+ * 1, in {@code c:bosses}, that carries the core mod's {@link BossBar} without a fight of its own, so the bar can be
+ * tried and tested on its own (the boss framework's test boss is {@code realmforge:test_titan}, W5a).
+ * {@code /summon realmforge_qa:test_boss} in the dev client. It is always an adult on foot and never a
  * zombie leader, and it neither burns in daylight nor turns into a drowned. Like every hostile mob, it gets a level
- * when it joins the world (architecture 14.1).
+ * when it joins the world (architecture 14.1). Like vanilla's bosses, it never despawns, however far the players are
+ * (RLM-482): {@code /summon} leaves its persistence unset, so it requires it itself.
  */
 public final class TestBoss extends Zombie {
     public static final double MAX_HEALTH = 200;
@@ -57,6 +59,17 @@ public final class TestBoss extends Zombie {
     public void stopSeenByPlayer(ServerPlayer player) {
         super.stopSeenByPlayer(player);
         bossBar.stopSeenBy(player);
+    }
+
+    /** A boss never despawns: {@code Mob#checkDespawn} keeps a mob that requires persistence (RLM-482). */
+    @Override
+    public boolean requiresCustomPersistence() {
+        return true;
+    }
+
+    @Override
+    public boolean removeWhenFarAway(double distSqr) {
+        return false;
     }
 
     /** Never a baby, so never a chicken jockey either. */
