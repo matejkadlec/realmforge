@@ -33,7 +33,8 @@ texts:
   cannot_use_in_combat:
     en_us: You can't use this in combat.
   # A shield taken in hand while a two-handed wand keeps every shield locked (in the main hand, and for 3 minutes
-  # after; RLM-172, Matěj, 2026-10-26): it drops to the ground.
+  # after; RLM-172, Matěj, 2026-10-26): it goes into the bag, or drops at the player's feet when the bag is full
+  # (RLM-461, Matěj, 2026-10-28).
   shield_locked:
     en_us: You can't use this now.
   # The level fell below what the spent points need (a command, a revoked chapter), so they all return (%1$s the

@@ -130,7 +130,8 @@ class GearDef(StrictModel):
         default=False,
         description=(
             "Wands only: it takes both hands, so no shield can be held with it. While it is in the main hand every "
-            "shield is locked and stays locked for 3 minutes after; a locked shield taken in hand drops."
+            "shield is locked and stays locked for 3 minutes after; a locked shield taken in hand goes into the bag, "
+            "or drops at the player's feet when the bag is full."
         ),
     )
     modifiers: list[GearModifierDef] = Field(
