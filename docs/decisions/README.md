@@ -49,13 +49,13 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0035](0035-room-galleries-show-every-marker-with-its-label.md) | Room galleries show every marker with its label | Accepted |
 | [0036](0036-room-lights-and-decorations-form-patterns.md) | Room lights and decorations form patterns | Accepted |
 | [0037](0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md) | Elytra from chapter 3's final boss amend the Nether and End removal | Accepted (amends 0025) |
-| [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) | Apotheosis carries gear rarity, affixes, gems and enchanting | Accepted (amends 0004 and 0013) |
+| [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) | Apotheosis carries gear rarity, affixes, gems and enchanting | Accepted (amends 0004 and 0013), amended by [0058](0058-player-systems-before-world-content.md) (Apotheosis in M1) |
 | [0039](0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md) | A cast slows its caster instead of moving interrupting it | Accepted (amends 0020), the slow raised to 50 % by [0047](0047-the-cast-slow-halves-the-casters-speed.md) |
 | [0040](0040-coins-and-data-driven-merchant-trades.md) | Coins and data-driven merchant trades | Accepted (amends 0013) |
-| [0041](0041-dungeon-containers-hold-loot-through-lootr.md) | Dungeon containers hold loot through Lootr | Accepted (amends 0013) |
+| [0041](0041-dungeon-containers-hold-loot-through-lootr.md) | Dungeon containers hold loot through Lootr | Accepted (amends 0013), amended by [0058](0058-player-systems-before-world-content.md) (Lootr in M2) |
 | [0042](0042-the-dev-runs-load-the-whole-pack.md) | The dev runs load the whole pack | Accepted (amends 0020) |
 | [0043](0043-default-keys-and-key-search-in-the-pack.md) | Default keys and key search in the pack | Accepted (amends 0013), amended by [0046](0046-spell-bar-default-keys-amend-the-pack-defaults.md) (the spell bar's keys, chat on Enter, Dark Vision on ¨) |
-| [0044](0044-third-party-mods-by-milestone.md) | Third-party mods by milestone | Accepted (amends 0004, 0013 and 0025), WorldEdit for building only by [0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md) |
+| [0044](0044-third-party-mods-by-milestone.md) | Third-party mods by milestone | Accepted (amends 0004, 0013 and 0025), WorldEdit for building only by [0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md), M1 and M2 re-planned by [0058](0058-player-systems-before-world-content.md) |
 | [0045](0045-asgard-and-atlantis-amend-the-v1-realm-layout.md) | Asgard and Atlantis amend the v1 realm layout | Accepted (amends 0032), the names amended by [0054](0054-skyhearth-and-deepholm-amend-asgard-and-atlantis.md) |
 | [0046](0046-spell-bar-default-keys-amend-the-pack-defaults.md) | The spell bar's default keys amend the pack's default keys | Accepted (amends 0043) |
 | [0047](0047-the-cast-slow-halves-the-casters-speed.md) | The cast slow halves the caster's speed | Accepted (amends 0039), amended by [0057](0057-a-cast-that-slows-its-caster-stops-its-sprint.md) (the cast stops the sprint) |
@@ -69,6 +69,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0055](0055-aim-assistance-for-a-players-enemy-spells.md) | Aim assistance for a player's enemy spells: a cone around the crosshair, homing bolts, a sticky target | Accepted (amends 0052) |
 | [0056](0056-players-break-an-allowlist-of-blocks-in-instances.md) | Players break an allowlist of blocks in instances | Accepted |
 | [0057](0057-a-cast-that-slows-its-caster-stops-its-sprint.md) | A cast that slows its caster stops its sprint | Accepted (amends 0047) |
+| [0058](0058-player-systems-before-world-content.md) | Player systems before world content: M1 is the character to level 18, M2 the world of chapters 1 and 2 | Accepted (amends 0038, 0041 and 0044) |
 | [0059](0059-the-status-overview-ends-with-verification-and-the-claimed-tickets.md) | The status overview ends with Verification and the claimed tickets, without a batch ledger | Accepted (amends 0021) |
 | [0060](0060-what-counts-as-the-owners-confirmation-of-an-adr-conflicting-change.md) | What counts as the owner's confirmation of an ADR-conflicting change | Accepted (amends 0030) |
 

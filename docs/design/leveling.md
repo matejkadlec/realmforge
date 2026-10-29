@@ -72,7 +72,7 @@ Hours per chapter, from one chapter's cap to the next (chapter 1 from level 1):
 | 6 | Ashfire | 44–52 | 18.7 | 4.6 |
 | 7 | Unmade Isles | 52–60 | 22.9 | 5.5 |
 
-M1 (chapters 1 and 2, levels 1–18) therefore takes about 12 hours on average and 4 for a fast player.
+M2 (chapters 1 and 2, levels 1–18) therefore takes about 12 hours on average and 4 for a fast player.
 
 ## Kill XP
 

@@ -28,6 +28,11 @@
 > (RLM-139, RLM-188), without an article. The v1 realm layout (RLM-188, 2026-10-16) moved the stone realm to
 > chapter 2 (levels 6–18) and its unlock to the end of chapter 1's main questline. APIs named here were checked
 > against Minecraft 26.1.2 and NeoForge 26.1.2.116 on 2026-10-13 and 2026-10-14, except where marked *verify*.
+>
+> **Milestones since 2026-10-29** (RLM-504,
+> [ADR 0058](../decisions/0058-player-systems-before-world-content.md)): M1 is the character to level 18
+> and M2 the world of chapters 1 and 2. Where this document stages world content as M1 and then M2, its M1 is M2's
+> first stage and its M2 the rest of M2.
 
 ## At a glance
 

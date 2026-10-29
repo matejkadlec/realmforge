@@ -52,10 +52,14 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   publication of ticket work, read [docs/ai-development-flow.md](docs/ai-development-flow.md) completely. Agents
   never implement `decision` tickets or tickets waiting on Matěj.
 - **Status:** M0 (bootstrap) is done: build, CI, content pipeline, one test item (`realmforge:test_item`), modpack
-  definition. M1, the playable vertical slice (proposed as v0.1.0, roadmap decision D7), is under way: CI boots the
-  whole pack on a server and a client (spike 6). Before any gameplay code the project moved from Minecraft 1.21.1 to
-  26.1.2 (RLM-65, RLM-123, RLM-124). The core mod has its feature skeleton (F1), datapack registries (F2), player
-  state (F3), stats (F4) with their names, a character sheet (F4b) and raised attribute caps (F4c), and the combat
+  definition. M1, the character to level 18 (stats, spells, gear; RLM-6), is under way, and M2, the world of
+  chapters 1 and 2, follows it and ends in v0.1.0 (roadmap decision D7): player systems come first
+  ([ADR 0058](docs/decisions/0058-player-systems-before-world-content.md)), so the world work built before that plan
+  change (Undervault, the realm portal, custom mobs, dungeons, the boss framework and Astone, the quest pipeline) is
+  M2's and waits for M1. CI boots the whole pack on a server and a client (spike 6). Before any gameplay code the
+  project moved from Minecraft 1.21.1 to 26.1.2 (RLM-65, RLM-123, RLM-124). The core mod has its feature skeleton
+  (F1), datapack registries (F2), player state (F3), stats (F4) with their names, a character sheet (F4b) and
+  raised attribute caps (F4c), and the combat
   core (F5: spell schools, crit, dodge, resistances, our armor formula, combat text, the QA training dummy), and
   hostile mobs get levels near the nearest player's, floored per realm (W1, RLM-303), scaled by curves. The first
   custom mobs exist (W3): Undervault's Hewn, the Hewn Sentinel (melee, of one of three gems it may drop) and the

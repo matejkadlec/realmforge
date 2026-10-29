@@ -2,7 +2,8 @@
 
 Date: 2026-10-19
 
-Status: Accepted (amends [0013](0013-modpack-composition.md): Lootr joins the pack in M1)
+Status: Accepted (amends [0013](0013-modpack-composition.md): Lootr joins the pack in M1); amended by
+[0058](0058-player-systems-before-world-content.md) (Lootr comes with the dungeons in M2), 2026-10-29
 
 ## Context
 

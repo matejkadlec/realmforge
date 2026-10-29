@@ -7,7 +7,9 @@ answers the stronghold question of [0025](0025-remove-the-nether-and-end.md) and
 [0049](0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md) (Iron's RPG Tweaks stays out: our damage pipeline lets
 player hits through the hurt cooldown, RLM-311), 2026-10-23; amended by
 [0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md) (MmmMmmMmmMmm joins the pack;
-WorldEdit stays out for players and serves Matěj's building in the dev client and his Prism instance), 2026-10-25
+WorldEdit stays out for players and serves Matěj's building in the dev client and his Prism instance), 2026-10-25;
+amended by [0058](0058-player-systems-before-world-content.md) (M1 is the character to level 18 with the gear mods,
+M2 the world of chapters 1 and 2 with Lootr), 2026-10-29
 
 ## Context
 

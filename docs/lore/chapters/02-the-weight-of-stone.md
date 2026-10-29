@@ -19,6 +19,9 @@
   arena and Astone, with the quest book as the only voice. M2 brings the Hewn's Mine, the Golem Works, Halcyar's
   Chamber, the gem ores and the mirror scenes; Rubia's quest and Skyhearth come in M3 or later. The part [In M1](#in-m1)
   shows M1's short version.
+- **Milestones since 2026-10-29** (RLM-504,
+  [ADR 0058](../../decisions/0058-player-systems-before-world-content.md)): M1 is the character to level 18 and M2
+  the world of chapters 1 and 2. This chapter's M1 (the short version) is M2's first stage, and its M2 the rest of M2.
 
 ## Part 1: Under the World
 

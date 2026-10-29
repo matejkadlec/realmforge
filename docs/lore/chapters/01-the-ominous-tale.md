@@ -15,6 +15,9 @@
 - **Proposal** marked something new that Matěj's picks needed; every one is decided now ([Decisions](#decisions)).
 - The whole chapter is M2's: the Overworld questline (RLM-320), Maren's Trial (RLM-397), the Bastille (RLM-398) and the
   Illusioner (RLM-321). M1's quest book tells a short version ([In M1](#in-m1)).
+- **Milestones since 2026-10-29** (RLM-504,
+  [ADR 0058](../../decisions/0058-player-systems-before-world-content.md)): M1 is the character to level 18 and M2
+  the world of chapters 1 and 2. This chapter's M1 (the short version) is M2's first stage, and its M2 the rest of M2.
 
 ## Part 1: A Letter From the Sky
 

@@ -2,7 +2,8 @@
 
 Date: 2026-10-19
 
-Status: Accepted (amends [0004](0004-build-rpg-systems-in-house.md) and [0013](0013-modpack-composition.md))
+Status: Accepted (amends [0004](0004-build-rpg-systems-in-house.md) and [0013](0013-modpack-composition.md)); amended by
+[0058](0058-player-systems-before-world-content.md) (Apotheosis is M1's, not M2's), 2026-10-29
 
 ## Context
 

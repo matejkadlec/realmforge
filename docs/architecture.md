@@ -9,8 +9,9 @@
 >
 > **Status:** baseline of 2026-10-11, recorded in [ADR 0014](decisions/0014-core-mod-architecture.md). Almost
 > everything below is planned; today the item pipeline and the empty feature skeleton (M1 task F1: the packages of
-> [4.2](#42-packages-of-the-core-mod), `network/`, `client/` and the import check) exist. M1 builds most of it; parts
-> that come later are marked with their milestone (M2, M3, ...).
+> [4.2](#42-packages-of-the-core-mod), `network/`, `client/` and the import check) exist. M1 and M2 build most of it;
+> parts that come later are marked with their milestone (M3, M4, ...). Since 2026-10-29 M1 is the character to level
+> 18 and M2 the world of chapters 1 and 2 ([ADR 0058](decisions/0058-player-systems-before-world-content.md)).
 >
 > **Living document.** When code and this document disagree, fix one of them in the same PR. Changing one of the
 > decisions recorded in [ADR 0014](decisions/0014-core-mod-architecture.md) needs a new ADR
@@ -309,11 +310,11 @@ How features cooperate without breaking the direction:
 | `realmforge:chapter` | `content/chapters/` | story chapter (owned by `progression`, C2): order, the level cap while it is the player's current chapter and the one once it is completed; its advancement `realmforge:chapter/<id>` marks it completed (what a chapter unlocks names the chapter through `chapter_completed`) | yes | M1 |
 | `realmforge:kill_xp_multiplier` | `content/kill_xp_multipliers/` | how much kill XP the mobs of one entity type give (owned by `character`, C2), named in an `entity` field, by size for slimes and magma cubes; the XP model calls it the mob's rank. Validation allows one entry per entity type | no | M1 |
 | `realmforge:dimension_rules` | `content/dimensions/` | gameplay rules of one dimension, named in a `dimension` field (for example `minecraft:overworld`): mob levels and the access requirements ([15.1](#151-dimensions)); flags later. Validation allows one entry per dimension; the server indexes the entries by dimension | no | M1 |
-| `realmforge:realm` | `content/realms/` | a realm (owned by `world`, W2a): its dimension, name, subtitle, plain description ("stone realm"), locked hint, level band, flavour line and the icon of its unlock advancement `realmforge:realm/<id>`, and the realm portal's fields (W2b): its signet, colour, particle, sound pitch and arrival (where a trip may build a portal). Overworld has an entry too, which is no realm: no unlock, signet, description, hint or flavour, its colour the return portals'. Validation allows one entry per dimension and one realm per signet; `world/realm/Realms` indexes them by dimension and by signet, and `Realms#of` never returns Overworld's | yes | M1 |
-| `realmforge:boss` | `content/bosses/` | a boss's fight (`boss/Boss`, W5a): the entity type of its body (a mob of archetype `boss`, whose attributes, loot and model come from `content/mobs/`), fixed level, arena, boss bar colour, phase change, phases (name, trigger, `on_enter` spells, abilities); [14.3](#143-bosses) | no | M1 |
-| `realmforge:dungeon_type` | `content/dungeons/` | rule set: the room pool it is built from, resolved into its rooms (template, size, role, weight, connectors), and its layout rules (W4a); its key and how long a portal to it stays open (W4d); its base level (RLM-459, [14.1](#141-mob-levels)); each room's set-piece spots, the pieces that fill them and the density per role (RLM-280, [15.4](#154-rooms)); theme, encounters and loot join with the tasks that use them | no | M1 |
-| `realmforge:affix` | `content/affixes/` | rollable modifier: item categories (tags), tiers by rarity and level | yes | M2 |
-| `realmforge:gem` | `content/gems/` | socketable gem and its bonuses | yes | M2 |
+| `realmforge:realm` | `content/realms/` | a realm (owned by `world`, W2a): its dimension, name, subtitle, plain description ("stone realm"), locked hint, level band, flavour line and the icon of its unlock advancement `realmforge:realm/<id>`, and the realm portal's fields (W2b): its signet, colour, particle, sound pitch and arrival (where a trip may build a portal). Overworld has an entry too, which is no realm: no unlock, signet, description, hint or flavour, its colour the return portals'. Validation allows one entry per dimension and one realm per signet; `world/realm/Realms` indexes them by dimension and by signet, and `Realms#of` never returns Overworld's | yes | M2 |
+| `realmforge:boss` | `content/bosses/` | a boss's fight (`boss/Boss`, W5a): the entity type of its body (a mob of archetype `boss`, whose attributes, loot and model come from `content/mobs/`), fixed level, arena, boss bar colour, phase change, phases (name, trigger, `on_enter` spells, abilities); [14.3](#143-bosses) | no | M2 |
+| `realmforge:dungeon_type` | `content/dungeons/` | rule set: the room pool it is built from, resolved into its rooms (template, size, role, weight, connectors), and its layout rules (W4a); its key and how long a portal to it stays open (W4d); its base level (RLM-459, [14.1](#141-mob-levels)); each room's set-piece spots, the pieces that fill them and the density per role (RLM-280, [15.4](#154-rooms)); theme, encounters and loot join with the tasks that use them | no | M2 |
+| `realmforge:affix` | `content/affixes/` | rollable modifier: item categories (tags), tiers by rarity and level | yes | M1 |
+| `realmforge:gem` | `content/gems/` | socketable gem and its bonuses | yes | M1 |
 
 Professions, pets, mounts and contract templates follow in later milestones. A milestone task may still rename a
 registry before its first use. Server-only registries reach players only through what the server sends: the boss
@@ -334,7 +335,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `realmforge:phase_trigger_type` | health_below, time_in_phase (W5a, `boss/PhaseTriggerTypes`); adds_defeated with a spell that summons adds | bosses |
 | `realmforge:dungeon_ending_type` | boss_lair, treasury; later puzzle, wave_arena, escape, mounted_run, exploration | dungeon types |
 | `realmforge:requirement_type` | has_advancement (`core/HasAdvancement`), level_at_least (`character/LevelAtLeast`), chapter_completed (`progression/ChapterCompleted`), all W2a; class_is later | unlocks: dimensions (W2a), dungeons, items, talents |
-| `realmforge:affix_type` (M2) | attribute, on_hit, on_kill | affixes |
+| `realmforge:affix_type` (M1) | attribute, on_hit, on_kill | affixes |
 
 ### 5.4 Using registry entries in Java
 
@@ -605,7 +606,7 @@ would remove both bonuses.
 | talents | `stats/CharacterStats`, from `talent`'s provider | `realmforge:talent/<tree>/<node>/<n>` | saved, recomputed |
 | derived from primary stats | `stats/CharacterStats`, from stat rules ([8.3](#83-derived-stats-and-milestones)) | `realmforge:stat/<rule namespace>/<entry>/<rule path>`: `<entry>` is `<n>` per point, `at_<points>_<n>` per milestone; the rule's path comes last, as only it may contain slashes | saved, recomputed |
 | gear with fixed stats | vanilla, from the item's attribute modifiers ([13](#13-items-gear-and-loot)) | `realmforge:gear/<slot>/<n>` (generated: `<slot>` is `mainhand` or the armor slot); a wand's attack damage and speed use vanilla's base ids (`Item.BASE_ATTACK_DAMAGE_ID`, `BASE_ATTACK_SPEED_ID`), as vanilla's weapons, so the tooltip shows them as its base numbers | while equipped |
-| affixes and gems (M2) | vanilla slots: `ItemAttributeModifierEvent` adds them to the stack's modifiers; curio slots (rings, trinkets): Curios' own modifier API, because Curios ignores vanilla equipment modifiers in its slots (*verify* in M2) | `realmforge:affix/<affix>/<slot>/<k>/<n>`: `<k>` counts repeats of the same affix or gem on one stack (two sockets with the same gem), and curio slots use their slot id and index as `<slot>` | while equipped |
+| affixes and gems (M1) | vanilla slots: `ItemAttributeModifierEvent` adds them to the stack's modifiers; curio slots (rings, trinkets): Curios' own modifier API, because Curios ignores vanilla equipment modifiers in its slots (*verify* in M1) | `realmforge:affix/<affix>/<slot>/<k>/<n>`: `<k>` counts repeats of the same affix or gem on one stack (two sockets with the same gem), and curio slots use their slot id and index as `<slot>` | while equipped |
 | status effects | vanilla, `MobEffect#addAttributeModifier` | the effect's | while active |
 | mob level | `mob`, when the mob gets its level ([14.1](#141-mob-levels)): health and armor (damage multiplies each hit instead) | `realmforge:mob_level/<attribute>` (`max_health`, `armor`) | saved with the mob, reapplied from its level and the current curves when it loads |
 
@@ -1820,7 +1821,7 @@ return; the proc engine at its end exists since C3a.
   dependency on `item`. A use and an item's `flavor` line are its tooltip: the vanilla lore component on the item's
   default components, the use as a green "Use:" line from `content/texts/item_use.yaml`, the flavor line in vanilla's
   lore style. The first use, `unlearn_stat_points`, is the Scroll of Oblivion's ([10.2](#102-leveling)).
-- **Rarity, affixes, gems, reforging and enchanting (M2) come from Apotheosis**, Apothic Attributes and Apothic
+- **Rarity, affixes, gems, reforging and enchanting (M1) come from Apotheosis**, Apothic Attributes and Apothic
   Enchanting, which are in the pack ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)):
   its five rarities (mythic shown as Legendary), affixes, gems and sockets live in its own data components and data,
   and its tables reforge, salvage and augment. There is no rarity of our own (vanilla's `Rarity` stays as it is), no
@@ -1838,7 +1839,7 @@ return; the proc engine at its end exists since C3a.
   is a validation rule: a denylist plus a minimum value per tier.
 - **Rewards:** quest choice rewards are pre-rolled stacks written into the quest files (ADR 0006). RNG item chests
   (M2) are items that roll a loot table when opened.
-- **Curios (M2)** supplies curio slots ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md)); *verify* its
+- **Curios (M1)** supplies curio slots ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md)); *verify* its
   26.1.2 API when adding it.
 
 ## 14. Mobs and bosses
@@ -2741,7 +2742,7 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   state (building, ready, active, completed, closing, free), layout (its rooms and the block an arriving player looks
   at), its data markers, where players arrive, the boxes of its rooms and of blocks still to clear, its work
   progress, its party, the chunks it holds, and its run's level (RLM-459: its dungeon type's base raised to the
-  party's highest level when it opened, held for the run, [14.1](#141-mob-levels)). The party is a list of players: solo in M1 (decision D8), parties
+  party's highest level when it opened, held for the run, [14.1](#141-mob-levels)). The party is a list of players: solo in M2 (decision D8), parties
   later (RLM-68) without a data migration. Each player's run and return point live in the player's
   `realmforge:instance` attachment ([7](#7-player-state)), with the game mode entering took from them (W4c).
 - **Entry:** a dungeon portal opened with a dungeon key (W4d, D8; below) → allocate a plot
@@ -3537,7 +3538,7 @@ that agents can read. So far:
   original damage, what armor blocked, and the damage dealt and taken from health. A new server starts a new file.
 
 The vanilla GameTest server builds its world from the flat preset with an empty dimension registry, so our data pack
-dimensions (`realmforge:instances`, later the M1 dimension) exist in GameTests only through the QA mod's
+dimensions (`realmforge:instances`, later the stone realm) exist in GameTests only through the QA mod's
 `GameTestServerMixin`. A GameTest can log a fake player out and in again through the normal save and login path
 (`PlayerList#remove`, `PlayerList#placeNewPlayer`) with `QaPlayers#login`, as `InstanceGameTests` does to test
 reconnects; its connection goes through NeoForge's `NetworkRegistry#configureMockConnection`, so synced attachments
@@ -3563,5 +3564,5 @@ of them needs a new ADR. Everything else here may change with the code, in the s
 The owner decisions the plan depended on ([roadmap](roadmap.md#open-decisions), D1 to D11) are all made: each
 decision ticket's comments record what Matěj decided, and the task that needs one follows it. Griefing protection
 (D6) is built ([19.1](#191-world-defaults)), and the Nether and End (D10) are removed in M4
-([ADR 0025](decisions/0025-remove-the-nether-and-end.md)). Still open: M2 decides how rarity works
-([13](#13-items-gear-and-loot)).
+([ADR 0025](decisions/0025-remove-the-nether-and-end.md)). Still open: M1's gear design decides how rarity works
+([13](#13-items-gear-and-loot), RLM-198).
