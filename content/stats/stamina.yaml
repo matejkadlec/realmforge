@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# How long a player lasts before hunger drains (Matěj, 2026-10-14): each point lowers the food exhaustion they gain
+# from sprinting, jumping, swimming, fighting, taking damage and mining by 1 %, at most 50 % (RLM-171, first numbers,
+# tuned in the playtest; architecture 8.1). Not vanilla's: no vanilla attribute scales exhaustion.
+id: stamina
+name: {en_us: Stamina}
+kind: secondary
+max: 1000
+lowers_exhaustion:
+  per_point_percent: 1
+  max_percent: 50

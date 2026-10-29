@@ -16,8 +16,9 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 /**
  * What one primary stat gives, an entry of the datapack registry {@code realmforge:stat_rule} from
  * {@code content/stat_rules/} (architecture 8.3): attribute modifiers per point of the stat, and bonuses once the stat
- * reaches a milestone. Amounts are in game units (fractions for percentages). {@link StatRules} turns a stat value
- * into modifiers; {@link CharacterStats} applies them to players.
+ * reaches a milestone, each for every player or for some class roles only ({@link ClassRole}). Amounts are in game
+ * units (fractions for percentages). {@link StatRules} turns a stat value into modifiers; {@link CharacterStats}
+ * applies them to players.
  *
  * <p>A rule reads a primary stat and writes no primary stat, so rules never feed each other: a rule whose bonuses
  * raised a primary stat would read them back as a changed input on the next check and escalate them. The pipeline
@@ -41,14 +42,38 @@ public record StatRule(Holder<Attribute> stat, List<PerPoint> perPoint, List<Mil
         milestones = List.copyOf(milestones);
     }
 
-    /** One attribute modifier a rule writes: the attribute, vanilla's operation and the amount. */
-    public record Modifier(Holder<Attribute> attribute, AttributeModifier.Operation operation, double amount) {
+    /**
+     * One attribute modifier a rule writes: the attribute, vanilla's operation, the amount, and the class roles it
+     * applies to.
+     *
+     * @param roles the roles whose players get it; empty: every player, one without a character included
+     */
+    public record Modifier(Holder<Attribute> attribute, AttributeModifier.Operation operation, double amount,
+            List<ClassRole> roles) {
         public static final MapCodec<Modifier> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                         Attribute.CODEC.fieldOf("attribute").forGetter(Modifier::attribute),
                         AttributeModifier.Operation.CODEC.fieldOf("operation").forGetter(Modifier::operation),
-                        Codec.DOUBLE.fieldOf("amount").forGetter(Modifier::amount))
+                        Codec.DOUBLE.fieldOf("amount").forGetter(Modifier::amount),
+                        ClassRole.CODEC.listOf().optionalFieldOf("roles", List.of()).forGetter(Modifier::roles))
                 .apply(instance, Modifier::new));
         public static final Codec<Modifier> CODEC = MAP_CODEC.codec();
+
+        public Modifier {
+            roles = List.copyOf(roles);
+        }
+
+        /** A modifier for every player. */
+        public Modifier(Holder<Attribute> attribute, AttributeModifier.Operation operation, double amount) {
+            this(attribute, operation, amount, List.of());
+        }
+
+        /**
+         * Whether a player of {@code role} gets it: one without roles applies to everyone, one with roles only to
+         * those, never to a player without a role (no character).
+         */
+        public boolean appliesTo(Optional<ClassRole> role) {
+            return roles.isEmpty() || role.isPresent() && roles.contains(role.get());
+        }
     }
 
     /**

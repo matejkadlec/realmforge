@@ -190,13 +190,20 @@ Rules:
 - `stats/` defines our attributes ([architecture 8.1](../docs/architecture.md#81-the-attribute-set)). Every stat
   has a `name`, which the character sheet and item tooltips show. A stat counts points (`default`, `max`) or is a
   share (`default_percent`, `max_percent`, shown as a percentage); its minimum is 0, and a primary stat counts
-  points. `stat_rules/` says what one primary stat gives, per point (with an optional cap, `max` or `max_percent`
-  in the amount's unit) and at milestones
+  points. A stat in points may set `lowers_exhaustion` (`per_point_percent`, `max_percent` of at most 100): each
+  point lowers the food exhaustion its player gains by that much, at most the cap (Stamina, RLM-171; natural
+  regeneration's food cost stays vanilla's). `stat_rules/` says what one primary stat gives, per point (with an
+  optional cap, `max` or `max_percent` in the amount's unit) and at milestones
   ([8.3](../docs/architecture.md#83-derived-stats-and-milestones)). A rule reads a primary stat no other rule reads
-  and writes only secondary stats and vanilla attributes (`minecraft:attack_damage`). An `add_value` amount on one
-  of our stats takes its unit (`amount_percent` for a share, `amount` for points); on a vanilla attribute, whichever
-  fits it (`minecraft:knockback_resistance` is a fraction, so `amount_percent: 5` adds 5 %). Multiplied operations
-  always take `amount_percent`.
+  and writes only secondary stats, vanilla attributes (`minecraft:attack_damage`) and NeoForge's
+  (`neoforge:swim_speed`). An `add_value` amount on one of our stats takes its unit (`amount_percent` for a share,
+  `amount` for points); on a vanilla attribute, whichever fits it (`minecraft:knockback_resistance` is a fraction, so
+  `amount_percent: 5` adds 5 %). Multiplied operations always take `amount_percent`. A percent bonus adds to the
+  base, `add_multiplied_base`: every value is `(default + flat) × (1 + sum of percents)`, so validation refuses
+  `add_multiplied_total` in stat rules, races, classes and gear; only status effects multiply the total
+  ([8.2](../docs/architecture.md#82-where-modifiers-come-from)). A per-point entry or a milestone modifier may name
+  `roles` (`[melee]`, `[caster, ranged]`): then only players whose class plays one of them get it, and a player
+  without a character never does; without `roles`, every player gets it.
 - `spell_schools/` defines the kinds of damage ([architecture 9.1](../docs/architecture.md#91-damage-pipeline)):
   `physical` (armor reduces it, it can be dodged) or `magic` (bypasses armor; spell power raises it). `power` and
   `resistance` name secondary stats that are shares (`fire_power`, `fire_resistance`), each serving one school.
@@ -248,7 +255,8 @@ Rules:
   (where a way back builds a portal), and no unlock.
 - `races/` and `classes/` define who a player can be ([architecture 10.1](../docs/architecture.md#101-races-and-classes)).
   A race lists the classes it may take (each must exist, and every class must be open to some race) and gives
-  `modifiers`; a class names its `resource` (`realmforge:mana` or `realmforge:rage`), and a rage class, and only a
+  `modifiers`; a class names its `role` (`melee`, `caster` or `ranged`, assassins too: which role-bound stat rule
+  bonuses its players get) and its `resource` (`realmforge:mana` or `realmforge:rage`), and a rage class, and only a
   rage class, sets its `rage` numbers: `per_hit_dealt` (rage for a full-strength melee hit dealt, a weaker swing
   giving its share, and a swing giving it once however many mobs it hits), `per_max_health_taken` (rage for losing
   the whole max health to attackers, a hit for a tenth of it giving a tenth), `decay_per_second` and

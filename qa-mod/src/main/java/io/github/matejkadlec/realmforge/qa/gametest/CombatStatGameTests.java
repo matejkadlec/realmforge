@@ -199,18 +199,21 @@ public final class CombatStatGameTests {
         });
     }
 
-    /** Done when of RLM-160: health regeneration heals its points every second, never beyond max health. */
+    /**
+     * Done when of RLM-160, with RLM-170's interval: health regeneration heals its points every 5 seconds, never
+     * beyond max health.
+     */
     @QaGameTest
-    public static void healthRegenerationHealsItsPointsEverySecond(GameTestHelper helper) {
+    public static void healthRegenerationHealsItsPointsEveryFiveSeconds(GameTestHelper helper) {
         ServerPlayer player = player(helper, "qa-regen");
         StatsCommands.setBase(player, GeneratedStats.HEALTH_REGENERATION, 2);
         StatsCommands.setBase(player, GeneratedStats.OVERHEAL, 0.5);
         player.setHealth(10);
 
         ticks(player, HealthRegeneration.INTERVAL_TICKS);
-        assertHealth(helper, player, 12, "one second heals 2");
+        assertHealth(helper, player, 12, "5 seconds heal 2");
         ticks(player, 3 * HealthRegeneration.INTERVAL_TICKS);
-        assertHealth(helper, player, 18, "three more seconds heal 6");
+        assertHealth(helper, player, 18, "15 more seconds heal 6");
         player.setHealth(19.5F);
         ticks(player, HealthRegeneration.INTERVAL_TICKS);
         assertHealth(helper, player, 20, "the last half point fills the health bar");

@@ -101,6 +101,28 @@
           ],
           "title": "Operation",
           "type": "string"
+        },
+        "roles": {
+          "anyOf": [
+            {
+              "items": {
+                "enum": [
+                  "melee",
+                  "caster",
+                  "ranged"
+                ],
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The class roles it applies to (melee, caster, ranged); left out, it applies to every player.",
+          "title": "Roles"
         }
       },
       "required": [
@@ -112,7 +134,7 @@
     },
     "StatModifierDef": {
       "additionalProperties": false,
-      "description": "An attribute modifier a stat rule writes. ``add_value`` adds to the base; ``add_multiplied_base`` adds a share\nof the base (weapons included); ``add_multiplied_total`` multiplies the result. Multiplied operations take\n``amount_percent``. ``add_value`` on one of our stats takes its unit (``amount_percent`` for a share,\n``amount`` for points); on a vanilla attribute, whichever fits it (``amount_percent: 5`` adds 0.05 to the\nfraction ``minecraft:knockback_resistance``).",
+      "description": "An attribute modifier a stat rule writes. ``add_value`` adds to the base; ``add_multiplied_base`` adds a share\nof the base (weapons included); ``add_multiplied_total`` multiplies the result, which validation refuses in stat\nrules: every value is ``(default + flat) * (1 + sum of percents)`` (architecture 8.2). Multiplied operations take\n``amount_percent``. ``add_value`` on one of our stats takes its unit (``amount_percent`` for a share,\n``amount`` for points); on a vanilla attribute, whichever fits it (``amount_percent: 5`` adds 0.05 to the\nfraction ``minecraft:knockback_resistance``).",
       "properties": {
         "amount": {
           "anyOf": [
@@ -155,6 +177,28 @@
           ],
           "title": "Operation",
           "type": "string"
+        },
+        "roles": {
+          "anyOf": [
+            {
+              "items": {
+                "enum": [
+                  "melee",
+                  "caster",
+                  "ranged"
+                ],
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The class roles it applies to (melee, caster, ranged); left out, it applies to every player.",
+          "title": "Roles"
         }
       },
       "required": [

@@ -1,15 +1,21 @@
 # yaml-language-server: $schema=../../tools/schemas/stat_rules.schema.json
-# What Strength gives (D5, RLM-55): the vision's "10 STR = +10 % attack damage", on the weapon's damage too. First
-# numbers; RLM-136 plays them with the character sheet.
+# What Strength gives (Matěj, RLM-170; the next numbers after F4's, not the final ones): attack damage and lifesteal
+# (melee and ranged hits only, never spells: RLM-158), crits at 10 points, more damage and armor pierce at 25.
 id: strength
 stat: realmforge:strength
 per_point:
   - attribute: minecraft:attack_damage
-    operation: add_multiplied_base
-    amount_percent: 1
+    operation: add_value
+    amount: 0.5
+  - attribute: realmforge:lifesteal
+    operation: add_value
+    amount_percent: 0.5
 milestones:
+  - points: 10
+    modifiers:
+      - {attribute: realmforge:crit_chance, operation: add_value, amount_percent: 10}
+      - {attribute: realmforge:crit_damage, operation: add_value, amount_percent: 10}
   - points: 25
     modifiers:
-      - attribute: realmforge:crit_damage
-        operation: add_value
-        amount_percent: 10
+      - {attribute: minecraft:attack_damage, operation: add_multiplied_base, amount_percent: 25}
+      - {attribute: realmforge:armor_pierce, operation: add_value, amount: 5}

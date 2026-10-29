@@ -1,15 +1,35 @@
 # yaml-language-server: $schema=../../tools/schemas/stat_rules.schema.json
-# What Vitality gives (D5, RLM-55): health. A player starts with 20 (ten hearts), so 20 VIT doubles it. First numbers;
-# RLM-136 plays them with the character sheet.
+# What Vitality gives (Matěj, RLM-170; the next numbers after F4's, not the final ones): health and its regeneration
+# (healed every 5 s) for everyone, and a defense by class role: armor for melee classes, magic shield for casters,
+# dodge for ranged ones (assassins count as ranged). Stamina and more regeneration at 10 points, more health and spell
+# resistance at 25.
 id: vitality
 stat: realmforge:vitality
 per_point:
   - attribute: minecraft:max_health
     operation: add_value
     amount: 1
+  - attribute: realmforge:health_regeneration
+    operation: add_value
+    amount: 0.2
+  - attribute: minecraft:armor
+    operation: add_multiplied_base
+    amount_percent: 1
+    roles: [melee]
+  - attribute: realmforge:magic_shield
+    operation: add_multiplied_base
+    amount_percent: 1
+    roles: [caster]
+  - attribute: realmforge:dodge_chance
+    operation: add_value
+    amount_percent: 1
+    roles: [ranged]
 milestones:
+  - points: 10
+    modifiers:
+      - {attribute: realmforge:stamina, operation: add_value, amount: 10}
+      - {attribute: realmforge:health_regeneration, operation: add_multiplied_base, amount_percent: 10}
   - points: 25
     modifiers:
-      - attribute: minecraft:max_health
-        operation: add_multiplied_total
-        amount_percent: 5
+      - {attribute: minecraft:max_health, operation: add_multiplied_base, amount_percent: 10}
+      - {attribute: realmforge:spell_resistance, operation: add_value, amount_percent: 20}

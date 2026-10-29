@@ -20,7 +20,7 @@ import net.neoforged.neoforge.common.PercentageAttribute;
 
 /**
  * RLM-136: the character sheet shows the player's name, level and attributes on its tabs, every stat of ours exactly
- * once. The sheet's view model is common code ({@link CharacterSheetView}), so the test builds it for a fake player on
+ * once, Stamina right below Luck (RLM-170). The sheet's view model is common code ({@link CharacterSheetView}), so the test builds it for a fake player on
  * the server after {@code /qa stats} set Strength, and compares it with the attributes the stat rules produced.
  */
 public final class CharacterSheetGameTests {
@@ -51,10 +51,18 @@ public final class CharacterSheetGameTests {
         helper.assertValueEqual(row(helper, view, NeoForgeMod.SWIM_SPEED).value(), "100%", "swimming speed");
         helper.assertValueEqual(row(helper, view, Attributes.BLOCK_INTERACTION_RANGE).value(), "4.5", "block reach");
         helper.assertValueEqual(row(helper, view, GeneratedStats.XP_MULTIPLIER).value(), "100%", "XP multiplier");
-        // Intellect is 0, so its per-point line is left out and the milestone is its first line.
+        // Intellect is 0, so its per-point lines are left out and its first milestone is its first line.
         Row intellectMilestone = rowById(helper, view, GeneratedStats.INTELLECT.value().getDescriptionId() + "/0");
-        helper.assertValueEqual(intellectMilestone.label().getString(), "At 25: +5% Cooldown Reduction",
-                "Intellect's milestone, which gave Haste before");
+        helper.assertValueEqual(intellectMilestone.label().getString(), "At 10: +100 Max Mana, +5 Mana Regeneration",
+                "Intellect's first milestone");
+        // Stamina sits right below Luck under Other (RLM-170), and Vitality's milestone at 10 gives it 10.
+        List<Row> other = view.tabs().getFirst().right().getFirst().rows();
+        List<String> otherIds = other.stream().map(Row::id).toList();
+        int luck = otherIds.indexOf(Attributes.LUCK.value().getDescriptionId());
+        helper.assertTrue(luck >= 0, "Other lists Luck: " + otherIds);
+        helper.assertValueEqual(otherIds.get(luck + 1), GeneratedStats.STAMINA.value().getDescriptionId(),
+                "the row below Luck");
+        helper.assertValueEqual(other.get(luck + 1).value(), "10", "10 Vitality's Stamina");
         for (Holder<Attribute> attribute : List.of(Attributes.MAX_HEALTH, Attributes.ARMOR, Attributes.ATTACK_DAMAGE)) {
             assertValue(helper, view, attribute, player.getAttributeValue(attribute));
         }
@@ -74,24 +82,35 @@ public final class CharacterSheetGameTests {
         helper.assertValueEqual(movementSpeed.value(), "100%",
                 "movement speed reads as a percent of the player's base");
         helper.assertValueEqual(row(helper, view, GeneratedStats.STRENGTH).value(), "25", "Strength");
-        helper.assertValueEqual(row(helper, view, GeneratedStats.CRIT_CHANCE).value(), "5%", "the base crit chance");
+        helper.assertValueEqual(row(helper, view, GeneratedStats.CRIT_CHANCE).value(), "15%",
+                "the base 5% crit chance and Strength's 10% at 10 points");
 
         String strength = GeneratedStats.STRENGTH.value().getDescriptionId();
         Row perPoint = rowById(helper, view, strength + "/0");
-        helper.assertValueEqual(perPoint.label().getString(), "+25% Attack Damage", "what 25 Strength gives");
-        Row milestone = rowById(helper, view, strength + "/1");
-        helper.assertValueEqual(milestone.label().getString(), "At 25: +10% Crit Damage", "Strength's milestone");
+        helper.assertValueEqual(perPoint.label().getString(), "+12.5 Attack Damage", "what 25 Strength gives");
+        Row milestone = rowById(helper, view, strength + "/3");
+        helper.assertValueEqual(milestone.label().getString(), "At 25: +25% Attack Damage, +5 Armor Pierce",
+                "Strength's second milestone");
         helper.assertValueEqual(milestone.color(), CharacterSheetView.BONUS, "the milestone is reached at 25");
-        Row vitalityMilestone = rowById(helper, view, GeneratedStats.VITALITY.value().getDescriptionId() + "/1");
-        helper.assertValueEqual(vitalityMilestone.color(), CharacterSheetView.AHEAD, "Vitality's 25 is still ahead");
+        String vitality = GeneratedStats.VITALITY.value().getDescriptionId();
+        // A player without a character gets no role's bonus, so Vitality lists health and regeneration only.
+        helper.assertValueEqual(rowById(helper, view, vitality + "/1").label().getString(),
+                "+2 Health Regeneration", "10 Vitality's health regeneration");
+        helper.assertValueEqual(rowById(helper, view, vitality + "/2").color(), CharacterSheetView.BONUS,
+                "Vitality's 10 is reached");
+        helper.assertValueEqual(rowById(helper, view, vitality + "/3").color(), CharacterSheetView.AHEAD,
+                "Vitality's 25 is still ahead");
 
         StatsCommands.setBase(player, GeneratedStats.DEXTERITY, 25);
         CharacterSheetView dexterous = CharacterSheetView.of(player);
-        helper.assertValueEqual(row(helper, dexterous, Attributes.MOVEMENT_SPEED).value(), "105%",
-                "25 Dexterity's movement speed bonus");
-        // Dexterity's third bonus is movement speed, under the sheet's name for it.
-        helper.assertValueEqual(rowById(helper, dexterous, GeneratedStats.DEXTERITY.value().getDescriptionId() + "/2")
-                .label().getString(), "+5% Movement Speed", "Dexterity's movement speed bonus line");
+        helper.assertValueEqual(row(helper, dexterous, Attributes.MOVEMENT_SPEED).value(), "120%",
+                "Dexterity's movement speed bonus at 10");
+        helper.assertValueEqual(row(helper, dexterous, NeoForgeMod.SWIM_SPEED).value(), "120%",
+                "Dexterity's swimming speed bonus at 10");
+        // Dexterity's first milestone, under the sheet's names for both speeds.
+        helper.assertValueEqual(rowById(helper, dexterous, GeneratedStats.DEXTERITY.value().getDescriptionId() + "/1")
+                .label().getString(), "At 10: +20% Movement Speed, +20% Swimming Speed",
+                "Dexterity's movement and swimming speed line");
 
         Row firePower = row(helper, view, GeneratedStats.FIRE_POWER);
         helper.assertValueEqual(firePower.label().getString(), "Fire Power", "school stats show their names");

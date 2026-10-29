@@ -8,6 +8,7 @@ name:
   en_us: Mage
 description:
   en_us: Strikes from afar with fire, frost and arcane power, drawn from a well of mana.
+role: caster
 resource: realmforge:mana
 modifiers:
   - {attribute: realmforge:intellect, operation: add_value, amount: 5}

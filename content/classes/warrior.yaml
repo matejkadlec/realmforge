@@ -7,6 +7,7 @@ name:
   en_us: Warrior
 description:
   en_us: Fights up close with steel and a stubborn heart. Rage builds as you trade blows.
+role: melee
 resource: realmforge:rage
 # Starting numbers (C3a-4, RLM-212) until the class kits (C4) tune them: a full-strength hit gives 10 rage, losing half
 # the max health to attackers 25, and 5 s after the last hit dealt or taken the pool loses 2 a second.

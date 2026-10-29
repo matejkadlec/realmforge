@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
@@ -20,8 +22,8 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 /**
  * Applies the stat sources and the stat rules to players (architecture 8.2, 8.3): first the modifiers of every
  * {@link StatSource} (race and class), then, from the primary stats those leave, each rule's modifiers that
- * {@link StatRules} gives, all as saved-but-recomputed modifiers ({@link RecomputedModifiers}); and keeps health right
- * across logins and respawns.
+ * {@link StatRules} gives the player's class role ({@link #rolesBy}), all as saved-but-recomputed modifiers
+ * ({@link RecomputedModifiers}); and keeps health right across logins and respawns.
  *
  * <p>When it recomputes, always at the end of a player tick ({@code PlayerTickEvent.Post}), after vanilla applied the
  * tick's equipment changes:
@@ -49,12 +51,29 @@ public final class CharacterStats {
     /** The registered sources, applied in registration order. */
     private static final List<StatSource> SOURCES = new CopyOnWriteArrayList<>();
 
+    /** Where a player's class role comes from ({@code character}); without it, every player has none. */
+    private static volatile Function<ServerPlayer, Optional<ClassRole>> roles = player -> Optional.empty();
+
     private CharacterStats() {
     }
 
     /** Adds a source of modifiers that every recompute applies. Called once per source at mod construction. */
     public static void addSource(StatSource source) {
         SOURCES.add(source);
+    }
+
+    /**
+     * Sets where a player's class role comes from, which decides the role-bound bonuses of the stat rules
+     * (architecture 8.3): {@code character} hands its main class's role, empty without a character. Called once at mod
+     * construction.
+     */
+    public static void rolesBy(Function<ServerPlayer, Optional<ClassRole>> source) {
+        roles = source;
+    }
+
+    /** The player's class role now: its main class's, empty without a character. */
+    public static Optional<ClassRole> role(ServerPlayer player) {
+        return roles.apply(player);
     }
 
     /** Recomputes the player's stat modifiers at the end of its next tick: call it after changing a stat source. */
@@ -75,13 +94,14 @@ public final class CharacterStats {
             changed |= RecomputedModifiers.replace(player.getAttributes(), source::owns, source.bonuses(player));
         }
         Registry<StatRule> rules = player.registryAccess().lookupOrThrow(StatsRegistries.STAT_RULE);
+        Optional<ClassRole> role = role(player);
         List<StatBonus> wanted = new ArrayList<>();
         Map<Holder<Attribute>, Double> applied = new HashMap<>();
         for (Map.Entry<ResourceKey<StatRule>, StatRule> entry : rules.entrySet()) {
             StatRule rule = entry.getValue();
             double value = statValue(player, rule.stat());
             applied.put(rule.stat(), value);
-            wanted.addAll(StatRules.bonuses(entry.getKey().identifier(), rule, value));
+            wanted.addAll(StatRules.bonuses(entry.getKey().identifier(), rule, value, role));
         }
         Tracker tracker = tracker(player);
         tracker.applied = applied;

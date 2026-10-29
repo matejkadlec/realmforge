@@ -33,6 +33,7 @@ CLASS = (
     """id: rogue
 name: {en_us: Rogue}
 description: {en_us: Quick and quiet.}
+role: ranged
 resource: realmforge:rage
 """
     + RAGE
@@ -142,6 +143,28 @@ def test_race_takes_at_least_one_class(repo: RepoPaths) -> None:
 def test_class_no_race_lists_is_refused(repo: RepoPaths) -> None:
     write(repo.content / "classes" / "rogue.yaml", CLASS)
     assert_problem(repo, "no race lists realmforge:rogue in its classes")
+
+
+def test_a_class_names_its_role(repo: RepoPaths) -> None:
+    write(repo.content / "classes" / "rogue.yaml", CLASS.replace("role: ranged\n", ""))
+    assert_problem(repo, "role: Field required")
+
+
+def test_a_class_role_is_a_known_one(repo: RepoPaths) -> None:
+    write(repo.content / "classes" / "rogue.yaml", CLASS.replace("role: ranged", "role: healer"))
+    assert_problem(repo, "role")
+
+
+def test_race_and_class_bonuses_add_their_percents(repo: RepoPaths) -> None:
+    write(repo.content / "races" / "elf.yaml", RACE.replace("[realmforge:warrior]", "[realmforge:rogue]"))
+    write(
+        repo.content / "classes" / "rogue.yaml",
+        CLASS
+        + "modifiers:\n"
+        + "  - {attribute: minecraft:attack_damage, operation: add_multiplied_total, amount_percent: 5}\n"
+        + "starting_kit:\n  - {item: minecraft:bread, count: 32}\n",
+    )
+    assert_problem(repo, "modifiers.0.operation: stat bonuses add their percents")
 
 
 def test_class_resource_is_a_known_type(repo: RepoPaths) -> None:
@@ -264,6 +287,7 @@ def test_generated_data_and_lang(repo: RepoPaths) -> None:
     assert rogue == {
         "name": "class.realmforge.rogue.name",
         "description": "class.realmforge.rogue.description",
+        "role": "ranged",
         "resource": "realmforge:rage",
         "rage": {
             "per_hit_dealt": 10.0,

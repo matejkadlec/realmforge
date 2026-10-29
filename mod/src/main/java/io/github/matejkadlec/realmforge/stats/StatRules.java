@@ -3,17 +3,20 @@ package io.github.matejkadlec.realmforge.stats;
 import io.github.matejkadlec.realmforge.Realmforge;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
 /**
- * Which attribute modifiers a stat value gives under a {@link StatRule} (architecture 8.3), without world access.
- * The pipeline computes the same in {@code StatRuleDef.bonuses_at}, and a GameTest compares the two.
+ * Which attribute modifiers a stat value gives a player of a class role under a {@link StatRule} (architecture 8.3),
+ * without world access. The pipeline computes the same in {@code StatRuleDef.bonuses_at}, and a GameTest compares the
+ * two.
  *
  * <p>Modifier ids are unique per rule and entry (architecture 8.2): {@code realmforge:stat/<namespace>/<entry>/<path>}
  * for the rule {@code <namespace>:<path>}, where the entry is {@code <n>} for the n-th per-point entry and
- * {@code at_<points>_<n>} for the n-th modifier of the milestone at {@code points}. A rule's path may contain slashes,
- * so it comes last, after the two segments that cannot: {@code realmforge:stat/realmforge/0/strength}.
+ * {@code at_<points>_<n>} for the n-th modifier of the milestone at {@code points}, counting the entries of every role.
+ * A rule's path may contain slashes, so it comes last, after the two segments that cannot:
+ * {@code realmforge:stat/realmforge/0/strength}.
  */
 public final class StatRules {
     /** The path prefix of every modifier stat rules write, in our namespace. */
@@ -23,16 +26,17 @@ public final class StatRules {
     }
 
     /**
-     * The modifiers {@code value} points of the rule's stat give: each per-point entry whose total is not 0, then
-     * every modifier of each milestone reached ({@code value >= points}), in the rule's order.
+     * The modifiers {@code value} points of the rule's stat give a player of {@code role} (empty: no character): each
+     * per-point entry for that role whose total is not 0, then every modifier for that role of each milestone reached
+     * ({@code value >= points}), in the rule's order.
      */
-    public static List<StatBonus> bonuses(Identifier rule, StatRule statRule, double value) {
+    public static List<StatBonus> bonuses(Identifier rule, StatRule statRule, double value, Optional<ClassRole> role) {
         List<StatBonus> bonuses = new ArrayList<>();
         List<StatRule.PerPoint> perPoint = statRule.perPoint();
         for (int n = 0; n < perPoint.size(); n++) {
             StatRule.PerPoint entry = perPoint.get(n);
             double total = entry.totalAt(value);
-            if (total != 0) {
+            if (total != 0 && entry.modifier().appliesTo(role)) {
                 bonuses.add(bonus(perPointId(rule, n), entry.modifier(), total));
             }
         }
@@ -41,7 +45,9 @@ public final class StatRules {
                 List<StatRule.Modifier> modifiers = milestone.modifiers();
                 for (int n = 0; n < modifiers.size(); n++) {
                     StatRule.Modifier modifier = modifiers.get(n);
-                    bonuses.add(bonus(milestoneId(rule, milestone.points(), n), modifier, modifier.amount()));
+                    if (modifier.appliesTo(role)) {
+                        bonuses.add(bonus(milestoneId(rule, milestone.points(), n), modifier, modifier.amount()));
+                    }
                 }
             }
         }

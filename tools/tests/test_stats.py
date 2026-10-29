@@ -7,7 +7,7 @@ import json
 import pytest
 
 from realmforge_tools.generate import generate_all
-from realmforge_tools.generate.stats import sample_values
+from realmforge_tools.generate.stats import sample_roles, sample_values
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import RepoPaths
 from realmforge_tools.schema.stat_rule import StatRuleDef
@@ -72,15 +72,47 @@ def test_repository_stats_and_rules_are_valid() -> None:
     assert universe.contains("realmforge:stat_rule", "realmforge:strength")
 
 
-def test_strength_gives_the_visions_ten_percent_for_ten_points() -> None:
+def test_strength_gives_matejs_numbers_at_ten_points() -> None:
     content, _ = load_and_validate(RepoPaths())
     (strength,) = (e.model for e in content.stat_rules if e.model.id == "strength")
-    assert (
-        "realmforge:stat/realmforge/0/strength",
-        "minecraft:attack_damage",
-        "add_multiplied_base",
-        0.1,
-    ) in (strength.bonuses_at(10))
+    assert strength.bonuses_at(10) == [
+        ("realmforge:stat/realmforge/0/strength", "minecraft:attack_damage", "add_value", 5.0),
+        ("realmforge:stat/realmforge/1/strength", "realmforge:lifesteal", "add_value", 0.05),
+        ("realmforge:stat/realmforge/at_10_0/strength", "realmforge:crit_chance", "add_value", 0.1),
+        ("realmforge:stat/realmforge/at_10_1/strength", "realmforge:crit_damage", "add_value", 0.1),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("role", "defense"),
+    [
+        ("melee", ("realmforge:stat/realmforge/2/vitality", "minecraft:armor", "add_multiplied_base", 0.2)),
+        (
+            "caster",
+            ("realmforge:stat/realmforge/3/vitality", "realmforge:magic_shield", "add_multiplied_base", 0.2),
+        ),
+        ("ranged", ("realmforge:stat/realmforge/4/vitality", "realmforge:dodge_chance", "add_value", 0.2)),
+    ],
+)
+def test_vitality_gives_each_role_its_defense(role: str, defense: tuple[str, str, str, float]) -> None:
+    content, _ = load_and_validate(RepoPaths())
+    (vitality,) = (e.model for e in content.stat_rules if e.model.id == "vitality")
+    common = [
+        ("realmforge:stat/realmforge/0/vitality", "minecraft:max_health", "add_value", 20.0),
+        ("realmforge:stat/realmforge/1/vitality", "realmforge:health_regeneration", "add_value", 4.0),
+    ]
+    got = [
+        (id_, attribute, operation, pytest.approx(amount))
+        for id_, attribute, operation, amount in vitality.bonuses_at(20, role)[:3]
+    ]
+    assert got == [*common, defense]
+    assert [bonus[0] for bonus in vitality.bonuses_at(20)][:2] == [bonus[0] for bonus in common]
+    assert len(vitality.bonuses_at(20)) == len(vitality.bonuses_at(20, role)) - 1, "no character: no defense"
+
+
+def test_the_classes_name_their_roles() -> None:
+    content, _ = load_and_validate(RepoPaths())
+    assert {e.model.id: e.model.role for e in content.classes} == {"warrior": "melee", "mage": "caster"}
 
 
 # Stats: schema
@@ -105,6 +137,18 @@ def test_strength_gives_the_visions_ten_percent_for_ten_points() -> None:
         ("kind: primary\nmax: 0\n", "max: Input should be greater than 0"),
         ("kind: secondary\nmax_percent: 1.0e-323\n", "the maximum is too small: it is 0 in game units"),
         ("kind: tertiary\nmax: 10\n", "kind: Input should be 'primary' or 'secondary'"),
+        (
+            "kind: secondary\nmax_percent: 100\nlowers_exhaustion: {per_point_percent: 1, max_percent: 50}\n",
+            "lowers_exhaustion counts per point: the stat needs max, not max_percent",
+        ),
+        (
+            "kind: secondary\nmax: 100\nlowers_exhaustion: {per_point_percent: 1, max_percent: 150}\n",
+            "lowers_exhaustion.max_percent: Input should be less than or equal to 100",
+        ),
+        (
+            "kind: secondary\nmax: 100\nlowers_exhaustion: {per_point_percent: 0, max_percent: 50}\n",
+            "lowers_exhaustion.per_point_percent: Input should be greater than 0",
+        ),
     ],
 )
 def test_invalid_stats_are_rejected(repo: RepoPaths, body: str, expected: str) -> None:
@@ -224,6 +268,40 @@ def test_invalid_stats_are_rejected(repo: RepoPaths, body: str, expected: str) -
             {"per_point": [{"attribute": "minecraft:luck", "operation": "multiply", "amount": 1}]},
             "operation",
         ),
+        (
+            {
+                "per_point": [
+                    {
+                        "attribute": "minecraft:luck",
+                        "operation": "add_value",
+                        "amount": 1,
+                        "roles": ["caster", "caster"],
+                    }
+                ]
+            },
+            "a role is listed twice",
+        ),
+        (
+            {
+                "per_point": [
+                    {"attribute": "minecraft:luck", "operation": "add_value", "amount": 1, "roles": []}
+                ]
+            },
+            "roles",
+        ),
+        (
+            {
+                "per_point": [
+                    {
+                        "attribute": "minecraft:luck",
+                        "operation": "add_value",
+                        "amount": 1,
+                        "roles": ["healer"],
+                    }
+                ]
+            },
+            "roles",
+        ),
     ],
 )
 def test_invalid_rule_shapes_are_rejected(data: dict, expected: str) -> None:
@@ -291,6 +369,37 @@ def test_add_value_on_our_points_is_not_in_percent(repo: RepoPaths) -> None:
     )
 
 
+def test_stat_rules_add_their_percents(repo: RepoPaths) -> None:
+    rule(repo, "strength", per_point("minecraft:attack_damage", "amount_percent: 5", "add_multiplied_total"))
+    assert_problem(
+        repo,
+        "per_point.0.operation: stat bonuses add their percents, (default + flat) * (1 + sum of percents): use "
+        "add_multiplied_base, not add_multiplied_total",
+    )
+
+
+def test_a_milestone_adds_its_percents_too(repo: RepoPaths) -> None:
+    rule(
+        repo,
+        "strength",
+        "stat: realmforge:strength\nmilestones:\n  - points: 5\n    modifiers:\n"
+        "      - {attribute: minecraft:max_health, operation: add_multiplied_total, amount_percent: 5}\n",
+    )
+    assert_problem(repo, "milestones.0.modifiers.0.operation: stat bonuses add their percents")
+
+
+def test_a_rule_may_name_neoforges_attributes(repo: RepoPaths) -> None:
+    rule(repo, "strength", per_point("neoforge:swim_speed", "amount_percent: 1", "add_multiplied_base"))
+    assert json.loads(generate(repo)[f"{RULE_DATA}/strength.json"])["per_point"][0]["attribute"] == (
+        "neoforge:swim_speed"
+    )
+
+
+def test_an_unknown_neoforge_attribute_is_refused(repo: RepoPaths) -> None:
+    rule(repo, "strength", per_point("neoforge:swim_sped", "amount_percent: 1", "add_multiplied_base"))
+    assert_problem(repo, "per_point.0.attribute: unknown id 'neoforge:swim_sped'")
+
+
 @pytest.mark.parametrize("amount", ["amount_percent: 5", "amount: 0.05"])
 def test_add_value_on_a_vanilla_attribute_takes_either_unit(repo: RepoPaths, amount: str) -> None:
     # The pipeline does not know vanilla units: knockback resistance is a fraction, max health counts points.
@@ -326,6 +435,51 @@ def test_bonuses_scale_per_point_and_respect_the_cap() -> None:
         "add_multiplied_base",
         0.05,
     )
+
+
+def test_role_bound_bonuses_go_to_their_roles_and_keep_their_ids() -> None:
+    model = rule_model(
+        {
+            "per_point": [
+                {
+                    "attribute": "minecraft:attack_speed",
+                    "operation": "add_multiplied_base",
+                    "amount_percent": 1,
+                    "roles": ["melee", "ranged"],
+                },
+                {"attribute": "realmforge:crit_chance", "operation": "add_value", "amount_percent": 1},
+            ],
+            "milestones": [
+                {
+                    "points": 5,
+                    "modifiers": [
+                        {
+                            "attribute": "minecraft:armor",
+                            "operation": "add_value",
+                            "amount": 2,
+                            "roles": ["caster"],
+                        },
+                        {"attribute": "minecraft:armor", "operation": "add_value", "amount": 1},
+                    ],
+                }
+            ],
+        }
+    )
+    ids = {role: [bonus[0] for bonus in model.bonuses_at(5, role)] for role in (None, "melee", "caster")}
+    assert ids == {
+        None: ["realmforge:stat/realmforge/1/r", "realmforge:stat/realmforge/at_5_1/r"],
+        "melee": [
+            "realmforge:stat/realmforge/0/r",
+            "realmforge:stat/realmforge/1/r",
+            "realmforge:stat/realmforge/at_5_1/r",
+        ],
+        "caster": [
+            "realmforge:stat/realmforge/1/r",
+            "realmforge:stat/realmforge/at_5_0/r",
+            "realmforge:stat/realmforge/at_5_1/r",
+        ],
+    }
+    assert model.role_bound
 
 
 def test_no_points_give_no_bonus() -> None:
@@ -452,11 +606,28 @@ def test_samples_cover_zero_both_sides_of_milestones_and_past_caps() -> None:
 
 
 def test_rule_data_is_in_game_units(repo: RepoPaths) -> None:
+    rule(
+        repo,
+        "strength",
+        "stat: realmforge:strength\nper_point:\n"
+        "  - {attribute: minecraft:attack_damage, operation: add_multiplied_base, amount_percent: 1}\n"
+        "  - {attribute: minecraft:movement_speed, operation: add_multiplied_base, amount_percent: 0.2, "
+        "max_percent: 20, roles: [melee, ranged]}\n"
+        "milestones:\n  - points: 25\n    modifiers:\n"
+        "      - {attribute: realmforge:crit_damage, operation: add_value, amount_percent: 10}\n",
+    )
     files = generate(repo)
     assert json.loads(files[f"{RULE_DATA}/strength.json"]) == {
         "stat": "realmforge:strength",
         "per_point": [
-            {"attribute": "minecraft:attack_damage", "operation": "add_multiplied_base", "amount": 0.01}
+            {"attribute": "minecraft:attack_damage", "operation": "add_multiplied_base", "amount": 0.01},
+            {
+                "attribute": "minecraft:movement_speed",
+                "operation": "add_multiplied_base",
+                "amount": 0.002,
+                "roles": ["melee", "ranged"],
+                "max": 0.2,
+            },
         ],
         "milestones": [
             {
@@ -466,13 +637,6 @@ def test_rule_data_is_in_game_units(repo: RepoPaths) -> None:
                 ],
             }
         ],
-    }
-    dexterity = json.loads(files[f"{RULE_DATA}/dexterity.json"])
-    assert dexterity["per_point"][2] == {
-        "attribute": "minecraft:movement_speed",
-        "operation": "add_multiplied_base",
-        "amount": 0.002,
-        "max": 0.2,
     }
 
 
@@ -517,17 +681,68 @@ def test_expectations_hold_stats_and_rule_samples(repo: RepoPaths) -> None:
     assert (
         'new StatExpectation(\n                    "realmforge:crit_chance",\n'
         '                    "attribute.realmforge.crit_chance",\n                    false,\n'
-        "                    true,\n                    0.05,\n                    1.0)" in java
+        "                    true,\n                    0.05,\n                    1.0,\n"
+        "                    0.0,\n                    0.0)" in java
     )
     assert (
-        'new Sample(12.5, List.of(new Bonus("realmforge:stat/realmforge/0/vitality", "minecraft:max_health", "add_value", '
-        "12.5)))" in java
+        'new StatExpectation(\n                    "realmforge:stamina",\n'
+        '                    "attribute.realmforge.stamina",\n                    false,\n'
+        "                    false,\n                    0.0,\n                    1000.0,\n"
+        "                    0.01,\n                    0.5)" in java
     )
     assert (
-        'new Bonus("realmforge:stat/realmforge/at_25_0/strength", "realmforge:crit_damage", "add_value", 0.1)'
+        'new Sample(12.5, null, List.of(new Bonus("realmforge:stat/realmforge/0/vitality", "minecraft:max_health", '
+        '"add_value", 12.5), new Bonus("realmforge:stat/realmforge/1/vitality", "realmforge:health_regeneration", '
+        '"add_value", 2.5), ' in java
+    )
+    assert (
+        'new Bonus("realmforge:stat/realmforge/3/vitality", "realmforge:magic_shield", "add_multiplied_base", 0.125)'
         in java
     )
-    assert "new Sample(0.0, List.of())" in java
+    assert (
+        'new Bonus("realmforge:stat/realmforge/at_10_1/strength", "realmforge:crit_damage", "add_value", 0.1)'
+        in java
+    )
+    assert "new Sample(0.0, null, List.of())" in java
+    assert 'new Sample(0.0, "caster", List.of())' in java
+
+
+def test_sample_roles_cover_every_role_only_where_a_rule_names_one() -> None:
+    plain = rule_model(
+        {"per_point": [{"attribute": "minecraft:armor", "operation": "add_value", "amount": 1}]}
+    )
+    assert sample_roles(plain) == [None]
+    bound = rule_model(
+        {
+            "per_point": [
+                {"attribute": "minecraft:armor", "operation": "add_value", "amount": 1, "roles": ["caster"]}
+            ]
+        }
+    )
+    assert sample_roles(bound) == [None, "melee", "caster", "ranged"]
+
+
+def test_the_stamina_stat_lowers_exhaustion(repo: RepoPaths) -> None:
+    files = generate(repo)
+    java = files[STATS_JAVA].decode()
+    assert "LOWER_EXHAUSTION = List.of(new ExhaustionReduction(STAMINA, 0.01, 0.5));" in java
+    content, _ = load_and_validate(repo)
+    (stamina,) = (e.model for e in content.stats if e.model.id == "stamina")
+    assert stamina.exhaustion_reduction_at(0) == 0
+    assert stamina.exhaustion_reduction_at(30) == pytest.approx(0.3)
+    assert stamina.exhaustion_reduction_at(80) == 0.5, "capped"
+    (crit,) = (e.model for e in content.stats if e.model.id == "crit_chance")
+    assert crit.exhaustion_reduction_at(80) == 0, "a stat without lowers_exhaustion takes nothing away"
+
+
+def test_without_a_stamina_stat_nothing_lowers_exhaustion(repo: RepoPaths) -> None:
+    (repo.content / "stats" / "stamina.yaml").unlink()
+    vitality = (repo.content / "stat_rules" / "vitality.yaml").read_text(encoding="utf-8")
+    write(
+        repo.content / "stat_rules" / "vitality.yaml",
+        vitality.replace("      - {attribute: realmforge:stamina, operation: add_value, amount: 10}\n", ""),
+    )
+    assert "LOWER_EXHAUSTION = List.of();" in generate(repo)[STATS_JAVA].decode()
 
 
 def test_no_stats_or_rules_still_compile(repo: RepoPaths) -> None:

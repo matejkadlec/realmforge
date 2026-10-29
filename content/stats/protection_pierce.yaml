@@ -1,7 +1,0 @@
-# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
-# Protection a hit ignores, in points. What it pierces (the Protection enchantment, a "Protected" effect) waits for
-# Matěj (RLM-159); no effect until then.
-id: protection_pierce
-name: {en_us: Protection Pierce}
-kind: secondary
-max: 1000

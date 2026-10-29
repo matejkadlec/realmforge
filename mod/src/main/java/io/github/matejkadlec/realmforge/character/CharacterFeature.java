@@ -28,10 +28,10 @@ public final class CharacterFeature {
 
     /**
      * Registers the feature's registries and event listeners (leveling's and the stat points' among them), hands
-     * {@code stats} the race and class modifiers and those of spent stat points, and {@code spell} a rage class's rage
-     * numbers and a mob's rank for aim assistance (its kill XP multiplier). At common setup, once every attribute is
-     * registered, it makes the attributes the character sheet shows sync to the client. Called once from
-     * {@code Realmforge}.
+     * {@code stats} the race and class modifiers, those of spent stat points and the main class's role, and
+     * {@code spell} a rage class's rage numbers and a mob's rank for aim assistance (its kill XP multiplier). At common
+     * setup, once every attribute is registered, it makes the attributes the character sheet shows sync to the client.
+     * Called once from {@code Realmforge}.
      */
     public static void register(IEventBus modBus) {
         CharacterAttachments.register(modBus);
@@ -39,6 +39,7 @@ public final class CharacterFeature {
         modBus.addListener(DataPackRegistryEvent.NewRegistry.class, CharacterRegistries::registerDataPackRegistries);
         CharacterStats.addSource(CharacterBonuses.SOURCE);
         CharacterStats.addSource(StatPoints.SOURCE);
+        CharacterStats.rolesBy(player -> Characters.mainClass(player).map(playerClass -> playerClass.value().role()));
         Rage.addSource(holder -> holder instanceof Player player
                 ? Characters.mainClass(player).flatMap(playerClass -> playerClass.value().rage())
                 : Optional.empty());

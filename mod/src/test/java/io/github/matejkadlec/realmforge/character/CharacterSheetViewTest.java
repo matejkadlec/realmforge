@@ -3,6 +3,7 @@ package io.github.matejkadlec.realmforge.character;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
+import io.github.matejkadlec.realmforge.stats.ClassRole;
 import io.github.matejkadlec.realmforge.stats.StatRule;
 import java.util.List;
 import java.util.Optional;
@@ -85,12 +86,33 @@ class CharacterSheetViewTest {
                         0.002), Optional.of(0.2))),
                 List.of(new StatRule.Milestone(25, List.of(
                         new StatRule.Modifier(Attributes.ARMOR, Operation.ADD_VALUE, 2.0)))));
-        assertEquals(List.of("+1%", "+0.2%"), amounts(CharacterSheetView.gains(List.of(rule), 3)));
-        assertEquals(List.of("+1%", "+0.2%", "+2"), amounts(CharacterSheetView.gains(List.of(rule), 24)),
+        assertEquals(List.of("+1%", "+0.2%"), amounts(CharacterSheetView.gains(List.of(rule), 3, Optional.empty())));
+        assertEquals(List.of("+1%", "+0.2%", "+2"),
+                amounts(CharacterSheetView.gains(List.of(rule), 24, Optional.empty())),
                 "the 25th point reaches the milestone");
-        assertEquals(List.of("+1%"), amounts(CharacterSheetView.gains(List.of(rule), 100)),
+        assertEquals(List.of("+1%"), amounts(CharacterSheetView.gains(List.of(rule), 100, Optional.empty())),
                 "movement speed is at its cap");
-        assertEquals(List.of(), amounts(CharacterSheetView.gains(List.of(), 3)), "a stat without a rule gives nothing");
+        assertEquals(List.of(), amounts(CharacterSheetView.gains(List.of(), 3, Optional.empty())),
+                "a stat without a rule gives nothing");
+    }
+
+    /** RLM-170: the {@code +} lists the bonuses of the player's role and the role-free ones, nothing else. */
+    @Test
+    void gainsAreThoseOfThePlayersRole() {
+        StatRule rule = new StatRule(Attributes.LUCK, List.of(
+                new StatRule.PerPoint(new StatRule.Modifier(Attributes.ATTACK_SPEED, Operation.ADD_MULTIPLIED_BASE,
+                        0.015, List.of(ClassRole.MELEE)), Optional.empty()),
+                new StatRule.PerPoint(new StatRule.Modifier(Attributes.ARMOR, Operation.ADD_VALUE, 1.0),
+                        Optional.empty())),
+                List.of(new StatRule.Milestone(10, List.of(
+                        new StatRule.Modifier(Attributes.MAX_HEALTH, Operation.ADD_VALUE, 5.0,
+                                List.of(ClassRole.CASTER))))));
+        assertEquals(List.of("+1.5%", "+1"), amounts(CharacterSheetView.gains(List.of(rule), 9,
+                Optional.of(ClassRole.MELEE))), "melee: its attack speed, and the armor everyone gets");
+        assertEquals(List.of("+1", "+5"), amounts(CharacterSheetView.gains(List.of(rule), 9,
+                Optional.of(ClassRole.CASTER))), "caster: the armor, and its milestone's health");
+        assertEquals(List.of("+1"), amounts(CharacterSheetView.gains(List.of(rule), 9, Optional.empty())),
+                "no character: the role-free armor only");
     }
 
     /** The amount of each "+1% Attack Damage" line: its translation's first argument. */

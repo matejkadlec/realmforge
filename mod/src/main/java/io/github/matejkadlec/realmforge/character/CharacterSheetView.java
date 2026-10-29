@@ -4,6 +4,7 @@ import io.github.matejkadlec.realmforge.combat.CombatRegistries;
 import io.github.matejkadlec.realmforge.combat.SpellSchool;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
+import io.github.matejkadlec.realmforge.stats.ClassRole;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatRule;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
@@ -115,7 +116,8 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
     private static final List<Holder<Attribute>> PRIMARY_ORDER = List.of(GeneratedStats.STRENGTH,
             GeneratedStats.DEXTERITY, GeneratedStats.VITALITY, GeneratedStats.INTELLECT);
 
-    private static final List<Entry> OTHER = List.of(entry(Attributes.LUCK),
+    /** Stamina right below Luck (Matěj, RLM-170). */
+    private static final List<Entry> OTHER = List.of(entry(Attributes.LUCK), entry(GeneratedStats.STAMINA),
             entry(Attributes.BLOCK_BREAK_SPEED, GeneratedTexts.GUI_MINING_SPEED),
             entry(Attributes.BLOCK_INTERACTION_RANGE, GeneratedTexts.GUI_BLOCK_REACH),
             entry(Attributes.ENTITY_INTERACTION_RANGE, GeneratedTexts.GUI_ENTITY_REACH),
@@ -124,9 +126,7 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
             entry(GeneratedStats.XP_MULTIPLIER));
     private static final List<Entry> OFFENSE = List.of(entry(Attributes.ATTACK_DAMAGE), entry(Attributes.ATTACK_SPEED),
             entry(GeneratedStats.CRIT_CHANCE), entry(GeneratedStats.CRIT_DAMAGE), entry(GeneratedStats.ARMOR_PIERCE),
-            entry(GeneratedStats.ARMOR_SHRED), entry(GeneratedStats.PROTECTION_PIERCE),
-            entry(GeneratedStats.PROTECTION_PIERCE_PERCENT), entry(GeneratedStats.LIFESTEAL),
-            entry(GeneratedStats.OVERHEAL));
+            entry(GeneratedStats.ARMOR_SHRED), entry(GeneratedStats.LIFESTEAL), entry(GeneratedStats.OVERHEAL));
     private static final List<Entry> DEFENSE = List.of(entry(Attributes.MAX_HEALTH),
             entry(GeneratedStats.HEALTH_REGENERATION), entry(Attributes.ARMOR), entry(Attributes.ARMOR_TOUGHNESS),
             entry(GeneratedStats.MAGIC_SHIELD), entry(GeneratedStats.DODGE_CHANCE),
@@ -180,6 +180,10 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
             school.resistance().flatMap(Holder::unwrapKey).ifPresent(placed::add);
         });
         listed().forEach(entry -> placed.add(key(entry.attribute())));
+        // The rules' bonuses the player's main class's role gets; without a character, the role-free ones.
+        Optional<ClassRole> role = character.classes().stream().findFirst()
+                .flatMap(key -> registries.lookupOrThrow(CharacterRegistries.CLASS).get(key))
+                .map(entry -> entry.value().role());
 
         List<Row> primary = new ArrayList<>();
         for (Holder<Attribute> stat : primaryStats()) {
@@ -188,9 +192,9 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
             List<StatRule> statRules = rules.stream().filter(rule -> rule.stat().is(key(stat))).toList();
             boolean spendable = character.exists() && unspentPoints > 0 && StatPoints.isPrimaryStat(key(stat));
             primary.add(new Row(stat.value().getDescriptionId(), name(stat), formatted(stat, points), false, STAT,
-                    spendable ? new Spend(key(stat), gains(statRules, points)) : null));
+                    spendable ? new Spend(key(stat), gains(statRules, points, role)) : null));
             for (StatRule rule : statRules) {
-                primary.addAll(ruleRows(stat, rule, points));
+                primary.addAll(ruleRows(stat, rule, points, role));
             }
         }
         // The unspent points at the end of the title (Matěj, 2026-10-16): "Unspent:" white, the number yellow while
@@ -338,25 +342,27 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
     }
 
     /**
-     * What one more point gives under the stat's rules: each per-point bonus that grows (one that reached its cap
-     * does not), then the bonuses of each milestone the point reaches. Amounts read with one decimal, a share as a
-     * percentage too ({@link #gain}): a point gives little, and whole percents would read 0% (Dexterity's 0.1% crit).
+     * What one more point gives a player of {@code role} under the stat's rules: each per-point bonus for that role
+     * that grows (one that reached its cap does not), then the bonuses for that role of each milestone the point
+     * reaches. Amounts read with one decimal, a share as a percentage too ({@link #gain}): a point gives little, and
+     * whole percents would read 0% (Dexterity's 0.5% crit).
      */
-    static List<Component> gains(List<StatRule> rules, double points) {
+    static List<Component> gains(List<StatRule> rules, double points, Optional<ClassRole> role) {
         List<Component> gains = new ArrayList<>();
         for (StatRule rule : rules) {
             for (StatRule.PerPoint entry : rule.perPoint()) {
                 double more = entry.totalAt(points + 1) - entry.totalAt(points);
-                if (Math.abs(more) > 1e-9) {
+                if (Math.abs(more) > 1e-9 && entry.modifier().appliesTo(role)) {
                     gains.add(Component.translatable(GeneratedTexts.GUI_STAT_BONUS, gain(entry.modifier().attribute(),
                             entry.modifier().operation(), more), name(entry.modifier().attribute())));
                 }
             }
             for (StatRule.Milestone milestone : rule.milestones()) {
                 if (points < milestone.points() && points + 1 >= milestone.points()) {
-                    milestone.modifiers().forEach(modifier -> gains.add(Component.translatable(
-                            GeneratedTexts.GUI_STAT_BONUS, gain(modifier.attribute(), modifier.operation(),
-                                    modifier.amount()), name(modifier.attribute()))));
+                    milestone.modifiers().stream().filter(modifier -> modifier.appliesTo(role))
+                            .forEach(modifier -> gains.add(Component.translatable(GeneratedTexts.GUI_STAT_BONUS,
+                                    gain(modifier.attribute(), modifier.operation(), modifier.amount()),
+                                    name(modifier.attribute()))));
                 }
             }
         }
@@ -376,23 +382,32 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
         return (amount < 0 ? "-" : "+") + number;
     }
 
-    /** What the rule gives at {@code points}: each per-point total that is not 0, then every milestone. */
-    private static List<Row> ruleRows(Holder<Attribute> stat, StatRule rule, double points) {
+    /**
+     * What the rule gives a player of {@code role} at {@code points}: each per-point total for that role that is not
+     * 0, then every milestone with a bonus for that role, listing those bonuses only.
+     */
+    private static List<Row> ruleRows(Holder<Attribute> stat, StatRule rule, double points, Optional<ClassRole> role) {
         String id = stat.value().getDescriptionId();
         List<Row> rows = new ArrayList<>();
         for (StatRule.PerPoint entry : rule.perPoint()) {
             double total = entry.totalAt(points);
-            if (total != 0) {
+            if (total != 0 && entry.modifier().appliesTo(role)) {
                 rows.add(new Row(id + "/" + rows.size(), bonus(entry.modifier(), total), "", true, BONUS));
             }
         }
         for (StatRule.Milestone milestone : rule.milestones()) {
             MutableComponent bonuses = Component.empty();
             for (StatRule.Modifier modifier : milestone.modifiers()) {
+                if (!modifier.appliesTo(role)) {
+                    continue;
+                }
                 if (!bonuses.getSiblings().isEmpty()) {
                     bonuses.append(", ");
                 }
                 bonuses.append(bonus(modifier, modifier.amount()));
+            }
+            if (bonuses.getSiblings().isEmpty()) {
+                continue;
             }
             Component label = Component.translatable(GeneratedTexts.GUI_STAT_MILESTONE, milestone.points(), bonuses);
             rows.add(new Row(id + "/" + rows.size(), label, "", true, points >= milestone.points() ? BONUS : AHEAD));

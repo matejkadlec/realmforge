@@ -1,6 +1,7 @@
 {
   "name": "class.realmforge.mage.name",
   "description": "class.realmforge.mage.description",
+  "role": "caster",
   "resource": "realmforge:mana",
   "modifiers": [
     {

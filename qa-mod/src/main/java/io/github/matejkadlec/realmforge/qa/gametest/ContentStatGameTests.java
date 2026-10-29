@@ -7,11 +7,15 @@ import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.B
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.Sample;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.StatExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.StatRuleExpectation;
+import io.github.matejkadlec.realmforge.stats.ClassRole;
+import io.github.matejkadlec.realmforge.stats.ExhaustionReduction;
 import io.github.matejkadlec.realmforge.stats.StatBonus;
 import io.github.matejkadlec.realmforge.stats.StatRule;
 import io.github.matejkadlec.realmforge.stats.StatRules;
 import io.github.matejkadlec.realmforge.stats.StatsRegistries;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import net.minecraft.core.Holder;
@@ -27,9 +31,10 @@ import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.neoforged.neoforge.common.PercentageAttribute;
 
 /**
- * Checks that every stat in {@code content/stats/} is registered as the content says and sits on players, and that
- * every stat rule in {@code content/stat_rules/} reached the datapack registry {@code realmforge:stat_rule} and gives
- * the bonuses the pipeline computes ({@link GeneratedStatExpectations}, the pattern of architecture 6.5).
+ * Checks that every stat in {@code content/stats/} is registered as the content says (how it lowers exhaustion
+ * included) and sits on players, and that every stat rule in {@code content/stat_rules/} reached the datapack registry
+ * {@code realmforge:stat_rule} and gives each class role the bonuses the pipeline computes
+ * ({@link GeneratedStatExpectations}, the pattern of architecture 6.5).
  */
 public final class ContentStatGameTests {
     // The pipeline and the game compute the same formula in doubles; allow for rounding only.
@@ -67,6 +72,14 @@ public final class ContentStatGameTests {
             AttributeInstance instance = player.getAttribute(holder);
             helper.assertTrue(instance != null, "players have " + expected.id());
             helper.assertValueEqual(instance.getBaseValue(), expected.defaultValue(), expected.id() + " on a player");
+
+            Optional<ExhaustionReduction> exhaustion = GeneratedStats.LOWER_EXHAUSTION.stream()
+                    .filter(reduction -> reduction.stat().is(holder))
+                    .findFirst();
+            helper.assertValueEqual(exhaustion.map(ExhaustionReduction::perPoint).orElse(0.0),
+                    expected.exhaustionPerPoint(), expected.id() + " lowers exhaustion per point by");
+            helper.assertValueEqual(exhaustion.map(ExhaustionReduction::max).orElse(0.0), expected.exhaustionMax(),
+                    expected.id() + " lowers exhaustion at most by");
         }
         server.getPlayerList().remove(player);
         helper.succeed();
@@ -91,8 +104,8 @@ public final class ContentStatGameTests {
             helper.assertTrue(rule != null, "stat rule is not loaded: " + expected.id());
             helper.assertValueEqual(rule.stat().getRegisteredName(), expected.stat(), expected.id() + " stat");
             for (Sample sample : expected.samples()) {
-                assertBonuses(helper, StatRules.bonuses(id, rule, sample.value()), sample.bonuses(),
-                        expected.id() + " at " + sample.value());
+                assertBonuses(helper, StatRules.bonuses(id, rule, sample.value(), role(sample)), sample.bonuses(),
+                        expected.id() + " at " + sample.value() + " for role " + sample.role());
             }
         }
         helper.succeed();
@@ -112,6 +125,13 @@ public final class ContentStatGameTests {
             helper.assertTrue(close(actual.modifier().amount(), expected.amount()),
                     what + ": amount " + expected.amount() + " expected, got " + actual.modifier().amount());
         }
+    }
+
+    /** The class role a sample is for: empty for a player without a character. */
+    static Optional<ClassRole> role(Sample sample) {
+        return Arrays.stream(ClassRole.values())
+                .filter(role -> role.getSerializedName().equals(sample.role()))
+                .findFirst();
     }
 
     static boolean close(double got, double want) {

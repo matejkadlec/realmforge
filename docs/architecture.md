@@ -301,11 +301,11 @@ How features cooperate without breaking the direction:
 | Registry | Content | One entry | Synced | Milestone |
 | --- | --- | --- | --- | --- |
 | `realmforge:race` | `content/races/` | playable race: base modifiers, innate spells, allowed classes | yes | M1 |
-| `realmforge:class` | `content/classes/` | class: resource type, starting stats, spells by level, its specializations' spell trees (C5), starting kit | yes | M1 |
+| `realmforge:class` | `content/classes/` | class: role (melee, caster, ranged), resource type, starting stats, spells by level, its specializations' spell trees (C5), starting kit | yes | M1 |
 | `realmforge:spell_school` | `content/spell_schools/` | school (owned by `combat`): kind (physical or magic), colour, its damage type, and the stats that are its power and resistance (attributes from `content/stats/`, static registrations, so a new school's stats need a game restart) | yes | M1 |
 | `realmforge:spell` | `content/spells/` | spell for players or NPCs: school, what it scales with, targeting, cast, cost, cooldowns, crit rules, typed effects with values per spell level (C3a-1), its name and description with placeholders (C3b) | yes | M1 |
 | `realmforge:talent_tree` | `content/talents/` | WoW-style tree: nodes on a grid, ranks, prerequisites, typed effects per rank | yes | postponed ([12](#12-talents)) |
-| `realmforge:stat_rule` | `content/stat_rules/` | what a primary stat gives: per-point modifiers, milestone bonuses | yes | M1 |
+| `realmforge:stat_rule` | `content/stat_rules/` | what a primary stat gives: per-point modifiers, milestone bonuses, each for every player or some class roles | yes | M1 |
 | `realmforge:curve` | `content/curves/` | named table of points (level → value), linearly interpolated: XP per level, mob scaling, item budgets | yes | M1 |
 | `realmforge:chapter` | `content/chapters/` | story chapter (owned by `progression`, C2): order, the level cap while it is the player's current chapter and the one once it is completed; its advancement `realmforge:chapter/<id>` marks it completed (what a chapter unlocks names the chapter through `chapter_completed`) | yes | M1 |
 | `realmforge:kill_xp_multiplier` | `content/kill_xp_multipliers/` | how much kill XP the mobs of one entity type give (owned by `character`, C2), named in an `entity` field, by size for slimes and magma cubes; the XP model calls it the mob's rank. Validation allows one entry per entity type | no | M1 |
@@ -560,25 +560,35 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   shows as syncable, attack damage included; a GameTest fails if an attribute on the sheet does not sync. It runs at
   common setup (`FMLCommonSetupEvent#enqueueWork`), once every attribute is registered: at mod construction a
   `DeferredHolder` is still unbound.
-- **Primary stats (ours, decision D5):** strength (STR), dexterity (DEX), vitality (VIT: health, not called
-  stamina so it is never confused with a stamina resource) and intellect (INT). They are attributes, so gear, buffs
+- **Primary stats (ours, decision D5):** strength (STR), dexterity (DEX), vitality (VIT: health; Stamina is a
+  secondary stat of its own, below) and intellect (INT). They are attributes, so gear, buffs
   and talents modify them like anything else. They start at 0: race, class, the stat points a player spends, talents
   and gear raise them (C1 and later; levels give stat points, not stats: RLM-196). Luck and defense stay out (D5).
 - **Secondary stats (ours):** crit chance (5 % to start with), crit damage (+50 %: a crit deals 150 % for melee,
-  ranged and spell hits alike, Matěj, 2026-10-19, who first meant it for spells only), dodge chance (no primary stat
-  gives it: D5 keeps it for future classes such as the Rogue), spell power, and each magic school's power and
+  ranged and spell hits alike, Matěj, 2026-10-19, who first meant it for spells only), dodge chance (Vitality gives it
+  to ranged classes only, and M1 has none: [8.3](#83-derived-stats-and-milestones)), spell power, and each magic school's power and
   resistance (`fire_power`, `fire_resistance`, ...; F5, the resistances capped at 75 % so nothing becomes immune
   without a tell, research BM-18). Matěj's playtest of F4b and F5 (2026-10-13) set the rest of the list, shown on the
   character sheet before every one of them works. Working in the damage pipeline ([9.1](#91-damage-pipeline);
   RLM-158, RLM-160): armor pierce and armor shred (`armor_pierce` in points, `armor_shred` a share, Apotheosis's
   name for it, RLM-234; both lower the armor a hit meets, never its toughness), lifesteal (a share of a melee or ranged hit's damage healed back), overheal (a
   share of max health that healing past it fills as absorption), spell resistance (a share, added to a magic
-  school's resistance, the sum at most 75 %), health regeneration (points healed every second) and magic shield (a
-  pool of points that takes damage before health). Not working yet: protection pierce and protection pierce %
-  (RLM-159, waiting for his decision on what they pierce); cast time reduction (C3a-2, RLM-210); and the XP
+  school's resistance, the sum at most 75 %), health regeneration (points healed every 5 seconds) and magic shield (a
+  pool of points that takes damage before health). Not working yet: cast time reduction (C3a-2, RLM-210) and the XP
   multiplier (100 % by default, C2, RLM-23). Max mana, mana regeneration and cooldown reduction (which replaced haste)
   work since C3a-1 ([11.5](#115-resources-cooldowns-modifiers)).
-  Healing power is gone: healing spells scale with spell power and their school.
+  Healing power is gone: healing spells scale with spell power and their school. Protection pierce, flat and in
+  percent, is gone too (Matěj, 2026-10-14: mainly a PvP stat; RLM-159 rejected, RLM-170).
+- **Stamina** (`realmforge:stamina`, points, RLM-170 and RLM-171; Matěj, 2026-10-14: "how quickly a player will
+  exhaust (= hunger drain) from sprinting, fighting, etc."): each point lowers the food exhaustion the player gains by
+  1 %, at most 50 % (first numbers, the stat's `lowers_exhaustion` in `content/stats/stamina.yaml`). Vitality gives
+  10 at its 10-point milestone. No vanilla attribute or NeoForge event scales exhaustion, and vanilla adds all of it
+  from sprinting, jumping, swimming, attacking, taking damage, mining and the Hunger effect through
+  `Player#causeFoodExhaustion`, so `mixin/PlayerExhaustionMixin` scales the amount there by
+  `stats/ExhaustionReduction#factor` ([19.3](#193-mixins-and-access-transformers)). Natural regeneration's food cost
+  (`FoodData#tick`) stays vanilla's. The rule is generic: any stat in points may set `lowers_exhaustion`, its share
+  per point and its cap become `GeneratedStats.LOWER_EXHAUSTION`, and several stats' shares add up, at most all of the
+  exhaustion.
 - **Defined in `content/stats/`** (F4): each stat's kind (primary or secondary) and its range, in points (a
   `RangedAttribute`) or as a share (`max_percent`: NeoForge's `PercentageAttribute`, holding a fraction). `rf gen`
   writes their registrations into `generated/GeneratedStats` (owned by `stats`), with the description id
@@ -589,12 +599,26 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   with the features that use them (spell power for casters). Every mob has armor pierce, armor shred and lifesteal at
   0 (`combat/MobCombatStats`, RLM-272; Matěj, 2026-10-29), which its gear and Apotheosis's tier augments raise and the
   damage pipeline reads on any attacker; mob crits wait for their own ticket.
-- NeoForge also has a boolean `creative_flight` attribute (`NeoForgeMod.CREATIVE_FLIGHT`): the planned basis for
+- **NeoForge's attributes** (`NeoForgeMod`: `neoforge:swim_speed`, a share of 100 % shown as Swimming Speed,
+  `nametag_distance` and `creative_flight`) are always there with the loader, so content may name them like vanilla's:
+  the pipeline adds them to the ID universe (`id_universe.NEOFORGE_ATTRIBUTES`, read from the pinned NeoForge's
+  sources). Dexterity gives swimming speed at 10 points.
+- NeoForge's boolean `creative_flight` attribute (`NeoForgeMod.CREATIVE_FLIGHT`) is the planned basis for
   Angel Wings-style spells. It is not the basis for flying mounts: a mount is its own entity the player rides
   (RLM-115), and the mount entity itself flies, as a flying vehicle (`Entity#isFlyingVehicle()`) or with no gravity
   while airborne ([Chococraft research, notes for the mount tasks](research/chococraft.md#notes-for-the-mount-tasks)).
 
 ### 8.2 Where modifiers come from
+
+**The formula** (Matěj, RLM-170): every value is `(default + flat) × (1 + sum of percents)`. One Attack Damage, +2 and
++1 from two sources and +15 % and +10 % from two more give `(1 + 2 + 1) × 1.25 = 5`. In vanilla terms, a flat bonus
+is `add_value` and every percent on a points attribute is `add_multiplied_base`, whose amounts vanilla sums and
+multiplies with the base and every `add_value` (`AttributeInstance#calculateValue`). A percent on a share (Crit
+Chance, Dodge Chance) is an `add_value` that adds to the share. No stat bonus multiplies the total on its own
+(`add_multiplied_total`): validation refuses it in stat rules, races, classes and gear. Status effects may, as they
+scale a whole value for a while: a slow, the cast's half speed ([11.2](#112-casting-server-authoritative)), a boss
+phase's Cracked Stone. `StatsGameTests#percentBonusesMultiplyTheFlatSum` plays Matěj's example and Strength's bonuses
+in the same sums.
 
 An attribute holds at most one modifier per id. Vanilla's equipment code and the `addOrUpdate...` and
 `addOrReplace...` methods replace a modifier with the same id; the plain `add...` methods throw. So every id is
@@ -649,14 +673,35 @@ A GameTest player (`QaPlayers#loginOnPlatform`) is never ticked by its connectio
 ### 8.3 Derived stats and milestones
 
 - A `realmforge:stat_rule` entry (`content/stat_rules/`, `stats/StatRule`) says what one primary stat gives:
-  per-point modifiers (the vision's "10 STR = +10% attack damage" is 1% per point), each with an optional cap on its
-  total (`max_percent: 20` keeps DEX's movement speed small), and milestone bonuses once the stat reaches a number
-  of points. Every point counts, fractions included; a per-point total of 0 gives no modifier.
-- What the D5 stats give, with F4's first numbers in `content/stat_rules/` (RLM-136 plays them): STR attack damage,
-  DEX crit chance (spells too), attack speed and movement speed, VIT max health, INT spell power; each has one
-  milestone, at 25 points.
-- `stats/StatRules` is the pure part: the modifiers a stat value gives. The pipeline computes the same
-  (`StatRuleDef.bonuses_at`), and a GameTest compares the two at sample values.
+  per-point modifiers, each with an optional cap on its total (`max_percent: 20`), and milestone bonuses once the
+  stat reaches a number of points. Every point counts, fractions included; a per-point total of 0 gives no modifier.
+- **Class roles** (RLM-170; Matěj confirmed the proposal on 2026-10-15): a class names its role
+  (`role: melee | caster | ranged` on `content/classes/`, `stats/ClassRole`; the Warrior is melee, the Mage a caster,
+  and assassins will count as ranged), and a per-point entry or a milestone modifier may name the roles it applies to
+  (`roles: [caster]`); one without roles applies to everyone. One rule per primary stat stays, so Dexterity can give
+  melee and ranged classes attack speed and casters cooldown reduction from the same points. `stats` asks
+  `character` for a player's role through a provider, as for the stat sources: `CharacterStats#rolesBy`, which
+  `CharacterFeature` sets to the main class's role. A player without a character gets the role-free entries only. An
+  entry keeps its position in the rule whatever the role, so its modifier id (8.2) is the same for every role that
+  gets it, and a class change replaces one role's modifiers with the other's at the next recompute. The character
+  sheet lists the bonuses of the player's own role ([18](#18-client-code-rendering-gui-input)). A class with two
+  roles (a Rogue with half armor, half dodge) is not modelled: one role per class, until such a class exists.
+- What the D5 stats give, with Matěj's numbers of RLM-170 in `content/stat_rules/` (the next numbers after F4's,
+  not the final ones; he tunes them in playtests):
+  - **Strength:** +0.5 attack damage and +0.5 % lifesteal per point; at 10 +10 % crit chance and +10 % crit damage;
+    at 25 +25 % attack damage and +5 armor pierce.
+  - **Dexterity:** +0.5 % crit chance per point, and +1.5 % attack speed (melee, ranged) or +1.5 % cooldown reduction
+    (casters); at 10 +20 % movement and swimming speed; at 25 +10 % crit chance and +20 % attack speed (melee,
+    ranged) or +20 % cooldown reduction (casters).
+  - **Vitality:** +1 max health and +0.2 health regeneration per point (Matěj, 2026-10-15), and +1 % armor (melee),
+    +1 % magic shield (casters) or +1 % dodge chance (ranged); at 10 +10 Stamina and +10 % health regeneration; at
+    25 +10 % max health and +20 % spell resistance.
+  - **Intellect:** +2 % spell power, +2 % cast time reduction and +1 mana regeneration per point; at 10 +100 max mana
+    and +5 mana regeneration; at 25 +25 % cooldown reduction.
+- `stats/StatRules` is the pure part: the modifiers a stat value gives a role. The pipeline computes the same
+  (`StatRuleDef.bonuses_at`), and a GameTest compares the two at sample values, for a player without a character
+  and, for a rule with role-bound entries, for every role (`ContentStatGameTests`); `ClassRoleGameTests` gives a
+  Warrior and a Mage the same Dexterity and Vitality.
 - Recompute when a primary stat may have changed: marked dirty by `LivingEquipmentChangeEvent`,
   `MobEffectEvent.Added`, `MobEffectEvent.Remove`, `MobEffectEvent.Expired` and our own changes
   (`CharacterStats#markDirty`: level, talents), plus a cheap check every 10 ticks that compares primary values and
@@ -840,9 +885,10 @@ and the apple's 4 are left when the overheal expires (RLM-195). Its state is per
 keys, checked each server tick); a player who logs in has absorption above the maximum clamped away, since the
 modifier is not saved. Passive health regeneration never overheals.
 
-**Health regeneration** (`combat/HealthRegeneration`): a player with X health regeneration heals X health every
-second (X/2 hearts; Matěj, 2026-10-14), on top of vanilla's food regeneration, never beyond max health. It runs on
-the player's tick, every 20 ticks of its tick count.
+**Health regeneration** (`combat/HealthRegeneration`): a player with X health regeneration heals X health every 5
+seconds (X/2 hearts), WotLK's "health per 5" (Matěj, 2026-10-15, RLM-170: every second, his first rule of
+2026-10-14, was too strong), on top of vanilla's food regeneration, never beyond max health. It runs on the player's
+tick, every 100 ticks of its tick count.
 
 **Magic shield** (`combat/MagicShields`; Matěj, 2026-10-13: "a secondary healthbar, that is hit first, and only
 when empty the player begin to lose health; mainly for casters"): a pool of up to the magic shield stat's points in
@@ -1008,8 +1054,9 @@ go of right click stops its charge.
     the pack has them. For a Human, the tooltip of every such weapon (hover, JEI) shows two lines below the weapon's
     stats and above the Apotheosis affixes, where Apotheosis puts "Heavenly Implements": "Sword Specialization" in
     dark gray and "+10% damage" in light gray.
-- **A class** gives its resource type, starting stats, spells by level, its specializations' spell trees and starting
-  kit. Race and
+- **A class** gives its role, resource type, starting stats, spells by level, its specializations' spell trees and
+  starting kit. Its role (melee, caster or ranged) decides which role-bound bonuses of the stat rules its players get
+  ([8.3](#83-derived-stats-and-milestones), RLM-170). Race and
   class stats stay the same at every level: each level gives stat points the player spends instead
   ([10.2](#102-leveling); Matěj, 2026-10-15, RLM-196: classes are for skills and abilities, not fixed stat
   growth). **Decided 2026-10-21 (Matěj, RLM-170):** races and classes keep small starting stats that differ between
@@ -3216,9 +3263,10 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   - The character sheet (`client/screen/CharacterSheetScreen`, opened and closed by `client/input/CharacterSheetKey`,
     K by default) draws `character/CharacterSheetView`: the player's name and level in bold ("Steve · Lv. 12"),
     then four tabs of two columns (a click, the number keys, Tab or the arrow keys switch them). The heading and the
-    selected tab are white, and gold marks only the section titles. Stats: the primary stats with what they give and
-    their milestones, and the other attributes (luck, mining speed, reach, movement speed, swimming speed, the XP
-    multiplier); Combat: offense, and defense with spell resistance last; Magic: spells (max mana, mana regeneration,
+    selected tab are white, and gold marks only the section titles. Stats: the primary stats with what they give the
+    player's class role and their milestones (a player without a character sees the role-free bonuses,
+    [8.3](#83-derived-stats-and-milestones)), and the other attributes (luck, Stamina right below it, mining speed,
+    reach, movement speed, swimming speed, the XP multiplier); Combat: offense, and defense with spell resistance last; Magic: spells (max mana, mana regeneration,
     spell power, cooldown and cast time reduction) and the spell schools' power and resistance; Origin (C1): the race
     with its description and what it gives (its racial passive and active once spells exist), and the class with its
     description, then "Specialization: WIP", a placeholder until the specialization spell trees exist (C5). The names the sheet gives vanilla attributes (Mining Speed, Movement Speed, ...)
@@ -3328,9 +3376,11 @@ changes. Once they settle they can move into content.
 
 Last resort, only where no event or API exists. Each one sits in `mixin/` (or the access transformer file) with a
 comment saying why, and gets a test. A mod lists its mixins in `<modid>.mixins.json`, which `neoforge.mods.toml`
-names under `[[mixins]]`. The core mod has two: `RangedAttributeAccessor`, which raises attribute caps
-([8.4](#84-caps)) and caps two of Apothic Attributes' down ([19.4](#194-optional-integrations)), and
-`PlayerBlockActionMixin`, which lets Adventure mode break the allowlist inside instances ([15.5](#155-instances)). The QA mod has one too, for tests only: `GameTestServerMixin` gives the GameTest world the data
+names under `[[mixins]]`. The core mod has three: `RangedAttributeAccessor`, which raises attribute caps
+([8.4](#84-caps)) and caps two of Apothic Attributes' down ([19.4](#194-optional-integrations)),
+`PlayerBlockActionMixin`, which lets Adventure mode break the allowlist inside instances ([15.5](#155-instances)), and
+`PlayerExhaustionMixin`, which lowers a player's food exhaustion by their Stamina ([8.1](#81-the-attribute-set);
+`StaminaGameTests`). The QA mod has one too, for tests only: `GameTestServerMixin` gives the GameTest world the data
 pack dimensions, which vanilla leaves out ([20](#20-tests-per-layer)).
 
 Access transformers live in `src/main/resources/META-INF/accesstransformer.cfg`, which ModDevGradle applies to the
@@ -3486,7 +3536,7 @@ NeoForge stacks the mods' data packs in that order, so a file of ours replaces t
   and cooldown reduction point at ours, in every affix, gem and tier augment; Warlord's crit damage, a share of Apothic
   Attributes' base of 1.5, becomes an `add_value` of 1.5 times it, as ours is the bonus over a hit (`source_base`).
   Protection pierce and shred are switched off (Runebreaking, Nullifying, the gems' bonuses with them, the monsters'
-  Summit and Pinnacle augments): ours wait for RLM-159. Healing received (RLM-233), the ranged stats (RLM-235), the
+  Summit and Pinnacle augments): we have no protection pierce (RLM-159 rejected, RLM-170). Healing received (RLM-233), the ranged stats (RLM-235), the
   elemental damage stats and Experience Gained stay Apothic Attributes': vanilla XP pays for reforging, and our XP
   multiplier is character XP (Matěj, 2026-10-29). The monsters' tier augments give our armor pierce, which every mob
   has, with armor shred and lifesteal, for its gear too (`combat/MobCombatStats`, [8.1](#81-the-attribute-set)); a

@@ -1,23 +1,28 @@
 # yaml-language-server: $schema=../../tools/schemas/stat_rules.schema.json
-# What Dexterity gives (D5, RLM-55): general bonuses every class uses, since neither M1 class is built on it. Critical
-# strike chance (spells too), attack speed and movement speed; movement speed is small and capped. No dodge: D5 keeps
-# it for future classes. First numbers; RLM-136 plays them with the character sheet.
+# What Dexterity gives (Matěj, RLM-170; the next numbers after F4's, not the final ones): crit chance (spells too) for
+# everyone, attack speed for melee and ranged classes and cooldown reduction for casters instead, movement and
+# swimming speed at 10 points, more crits and speed at 25.
 id: dexterity
 stat: realmforge:dexterity
 per_point:
   - attribute: realmforge:crit_chance
     operation: add_value
-    amount_percent: 0.1
+    amount_percent: 0.5
   - attribute: minecraft:attack_speed
     operation: add_multiplied_base
-    amount_percent: 0.5
-  - attribute: minecraft:movement_speed
-    operation: add_multiplied_base
-    amount_percent: 0.2
-    max_percent: 20
+    amount_percent: 1.5
+    roles: [melee, ranged]
+  - attribute: realmforge:cooldown_reduction
+    operation: add_value
+    amount_percent: 1.5
+    roles: [caster]
 milestones:
+  - points: 10
+    modifiers:
+      - {attribute: minecraft:movement_speed, operation: add_multiplied_base, amount_percent: 20}
+      - {attribute: neoforge:swim_speed, operation: add_multiplied_base, amount_percent: 20}
   - points: 25
     modifiers:
-      - attribute: realmforge:crit_chance
-        operation: add_value
-        amount_percent: 2
+      - {attribute: realmforge:crit_chance, operation: add_value, amount_percent: 10}
+      - {attribute: minecraft:attack_speed, operation: add_multiplied_base, amount_percent: 20, roles: [melee, ranged]}
+      - {attribute: realmforge:cooldown_reduction, operation: add_value, amount_percent: 20, roles: [caster]}

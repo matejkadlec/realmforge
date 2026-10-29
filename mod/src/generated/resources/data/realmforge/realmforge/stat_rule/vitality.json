@@ -5,16 +5,65 @@
       "attribute": "minecraft:max_health",
       "operation": "add_value",
       "amount": 1.0
+    },
+    {
+      "attribute": "realmforge:health_regeneration",
+      "operation": "add_value",
+      "amount": 0.2
+    },
+    {
+      "attribute": "minecraft:armor",
+      "operation": "add_multiplied_base",
+      "amount": 0.01,
+      "roles": [
+        "melee"
+      ]
+    },
+    {
+      "attribute": "realmforge:magic_shield",
+      "operation": "add_multiplied_base",
+      "amount": 0.01,
+      "roles": [
+        "caster"
+      ]
+    },
+    {
+      "attribute": "realmforge:dodge_chance",
+      "operation": "add_value",
+      "amount": 0.01,
+      "roles": [
+        "ranged"
+      ]
     }
   ],
   "milestones": [
+    {
+      "points": 10,
+      "modifiers": [
+        {
+          "attribute": "realmforge:stamina",
+          "operation": "add_value",
+          "amount": 10.0
+        },
+        {
+          "attribute": "realmforge:health_regeneration",
+          "operation": "add_multiplied_base",
+          "amount": 0.1
+        }
+      ]
+    },
     {
       "points": 25,
       "modifiers": [
         {
           "attribute": "minecraft:max_health",
-          "operation": "add_multiplied_total",
-          "amount": 0.05
+          "operation": "add_multiplied_base",
+          "amount": 0.1
+        },
+        {
+          "attribute": "realmforge:spell_resistance",
+          "operation": "add_value",
+          "amount": 0.2
         }
       ]
     }

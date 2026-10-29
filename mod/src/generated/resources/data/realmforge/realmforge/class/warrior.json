@@ -1,6 +1,7 @@
 {
   "name": "class.realmforge.warrior.name",
   "description": "class.realmforge.warrior.description",
+  "role": "melee",
   "resource": "realmforge:rage",
   "modifiers": [
     {

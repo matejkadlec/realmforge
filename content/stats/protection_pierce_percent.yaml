@@ -1,6 +1,0 @@
-# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
-# Protection a hit ignores, in percent of the protection left after flat Protection Pierce (RLM-159).
-id: protection_pierce_percent
-name: {en_us: Protection Pierce %}
-kind: secondary
-max_percent: 100

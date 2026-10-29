@@ -1,5 +1,30 @@
 {
   "$defs": {
+    "ExhaustionDef": {
+      "additionalProperties": false,
+      "description": "How a stat lowers the food exhaustion its player gains (architecture 8.1, RLM-171): from sprinting, jumping,\nswimming, attacking, taking damage, mining and the Hunger effect, everything vanilla adds through\n``Player#causeFoodExhaustion``. Natural regeneration's food cost stays vanilla's. The shares of several stats add\nup, at most 100 %.",
+      "properties": {
+        "max_percent": {
+          "description": "The most it lowers exhaustion, in percent (at most 100).",
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Max Percent",
+          "type": "number"
+        },
+        "per_point_percent": {
+          "description": "How much each point lowers exhaustion, in percent.",
+          "exclusiveMinimum": 0,
+          "title": "Per Point Percent",
+          "type": "number"
+        }
+      },
+      "required": [
+        "per_point_percent",
+        "max_percent"
+      ],
+      "title": "ExhaustionDef",
+      "type": "object"
+    },
     "LocalizedText": {
       "additionalProperties": false,
       "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
@@ -65,6 +90,18 @@
       ],
       "title": "Kind",
       "type": "string"
+    },
+    "lowers_exhaustion": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExhaustionDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Each point lowers the food exhaustion the player gains (Stamina); a stat in points only."
     },
     "max": {
       "anyOf": [
