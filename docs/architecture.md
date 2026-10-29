@@ -310,7 +310,7 @@ How features cooperate without breaking the direction:
 | `realmforge:kill_xp_multiplier` | `content/kill_xp_multipliers/` | how much kill XP the mobs of one entity type give (owned by `character`, C2), named in an `entity` field, by size for slimes and magma cubes; the XP model calls it the mob's rank. Validation allows one entry per entity type | no | M1 |
 | `realmforge:dimension_rules` | `content/dimensions/` | gameplay rules of one dimension, named in a `dimension` field (for example `minecraft:overworld`): mob levels and the access requirements ([15.1](#151-dimensions)); flags later. Validation allows one entry per dimension; the server indexes the entries by dimension | no | M1 |
 | `realmforge:realm` | `content/realms/` | a realm (owned by `world`, W2a): its dimension, name, subtitle, plain description ("stone realm"), locked hint, level band, flavour line and the icon of its unlock advancement `realmforge:realm/<id>`, and the realm portal's fields (W2b): its signet, colour, particle, sound pitch and arrival (where a trip may build a portal). Overworld has an entry too, which is no realm: no unlock, signet, description, hint or flavour, its colour the return portals'. Validation allows one entry per dimension and one realm per signet; `world/realm/Realms` indexes them by dimension and by signet, and `Realms#of` never returns Overworld's | yes | M1 |
-| `realmforge:boss` | `content/bosses/` | fixed level, attributes, phases, abilities (spells), arena, loot | no | M1 |
+| `realmforge:boss` | `content/bosses/` | a boss's fight (`boss/Boss`, W5a): the entity type of its body (a mob of archetype `boss`, whose attributes, loot and model come from `content/mobs/`), fixed level, arena, boss bar colour, phase change, phases (name, trigger, `on_enter` spells, abilities); [14.3](#143-bosses) | no | M1 |
 | `realmforge:dungeon_type` | `content/dungeons/` | rule set: the room pool it is built from, resolved into its rooms (template, size, role, weight, connectors), and its layout rules (W4a); its key and how long a portal to it stays open (W4d); its base level (RLM-459, [14.1](#141-mob-levels)); each room's set-piece spots, the pieces that fill them and the density per role (RLM-280, [15.4](#154-rooms)); theme, encounters and loot join with the tasks that use them | no | M1 |
 | `realmforge:affix` | `content/affixes/` | rollable modifier: item categories (tags), tiers by rarity and level | yes | M2 |
 | `realmforge:gem` | `content/gems/` | socketable gem and its bonuses | yes | M2 |
@@ -328,10 +328,10 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | Registry | Types (first set) | Used by |
 | --- | --- | --- |
 | `realmforge:spell_effect_type` | damage, heal (C3a-1, `spell/SpellEffectTypes`); apply_effect, remove_effect, projectile, area, teleport, dash, knockback (C3a-3); summon later | spells, so also boss abilities and procs |
-| `realmforge:targeting_type` | self, enemy, ally (C3a-1, `spell/TargetingTypes`); ground point, direction (C3a-3); for NPCs current target, random player, farthest player (C3a-4), arena point (W5) | spells, boss abilities |
+| `realmforge:targeting_type` | self, enemy, ally (C3a-1, `spell/TargetingTypes`); ground point, direction (C3a-3); for NPCs current target, random player, farthest player (C3a-4); arena point with the first boss that needs it | spells, boss abilities |
 | `realmforge:talent_effect_type` | attribute_modifier, spell_modifier, grant_spell, proc | talents (postponed, [12](#12-talents)); later glyphs and set bonuses |
 | `realmforge:resource_type` | mana, rage (`spell/ResourceTypes`; C1 gave them ids and names, C3a-1 their pools, C3a-4 rage's gain and decay) | classes, spell costs |
-| `realmforge:phase_trigger_type` | health_below, time_in_phase, adds_defeated | bosses |
+| `realmforge:phase_trigger_type` | health_below, time_in_phase (W5a, `boss/PhaseTriggerTypes`); adds_defeated with a spell that summons adds | bosses |
 | `realmforge:dungeon_ending_type` | boss_lair, treasury; later puzzle, wave_arena, escape, mounted_run, exploration | dungeon types |
 | `realmforge:requirement_type` | has_advancement (`core/HasAdvancement`), level_at_least (`character/LevelAtLeast`), chapter_completed (`progression/ChapterCompleted`), all W2a; class_is later | unlocks: dimensions (W2a), dungeons, items, talents |
 | `realmforge:affix_type` (M2) | attribute, on_hit, on_kill | affixes |
@@ -1230,7 +1230,8 @@ use them (the pipeline checks it): `current_target` (`spell/CurrentTargetTargeti
 range and in sight that the mob may attack (`Targets#playerTargets`: alive, neither in creative nor spectator mode,
 not invulnerable, not its ally), at random or the farthest from its eyes. Given an entity to aim at, as a cast time's
 check before its effects is, they check that one instead of choosing again, so a cast-time spell hits the player it
-chose. `arena_point` comes with the boss (W5). `NpcCastGameTests` casts all three, the farthest one with a cast time.
+chose. `arena_point` comes with the first boss that needs it. `NpcCastGameTests` casts all three, the farthest one with
+a cast time.
 
 **In code (C3a-1):** `spell/SpellCaster` casts instant spells for any living caster; a player at the level their
 spellbook knows, a mob at level 1. It refuses a cast, paying nothing and running nothing, with a `spell/CastFailure`
@@ -1321,7 +1322,7 @@ spell a player aims at an enemy goes to a hostile mob near the crosshair (Matěj
   line meets). An enemy must be hostile (`AimAssist#hostile`): a neutral mob (`NeutralMob`) only while angry at the
   player or targeting them, any other mob while it targets them, every other monster (`Enemy`); passive mobs get no
   help (Q6). `AimAssist#choose` ranks them in order, each rule breaking only the ties above (Q2): a boss's priority
-  adds (a flag W5's boss framework sets; none yet), a boss (`#c:bosses`), below 25 % health, the current target (the
+  adds (a flag a boss's fight may set later; none yet), a boss (`#c:bosses`), below 25 % health, the current target (the
   `combat` attachment's `CombatState#isCurrentTarget`: the entity a player's targeted cast aimed at, or their last
   `CombatEvent.Hit` victim, within the in-combat time, server only, never saved or synced), a higher rank (the kill XP
   multiplier, which `character` hands over through `AimAssist#rankBy`, [4.4](#44-dependencies-between-features)), a
@@ -1822,7 +1823,8 @@ party lock (RLM-304) and open-world dungeons (RLM-305) come later.
 
 - **Which mobs:** every hostile mob, vanilla's and later ours: a `Mob` that carries vanilla's `Enemy` marker
   (`MobLevels#getsLevel`). Animals, villagers and golems get none. Bosses take the fixed level from their definition
-  (W5), or in a dungeon run the run's (below).
+  (W5a: a `MobLevels.FixedLevel` mob, asked after the sources and before the dimension's rule), or in a dungeon run the
+  run's (below).
 - **The rule:** `realmforge:dimension_rules` (owned by `world`, server only) gives a dimension an optional mob level
   rule (`content/dimensions/`, [content README](../content/README.md)), which follows the nearest player (Matěj,
   2026-10-16, RLM-240): a mob is up to 3 levels below or above the player's level, each offset by its weight in
@@ -1950,8 +1952,11 @@ holds the same text. New feedback on a mob goes into both in the same run.
 - **Entity types are static, data picks the behaviour** (principle 2). A mob in `content/mobs/<id>.yaml` picks an
   archetype, a Java class in `mob/custom/`: `melee` (`MeleeMob`) walks up to its target and hits it with its attack
   damage (`PacedMeleeAttackGoal`, vanilla's melee goal at the YAML's `melee.attack_interval_seconds`); `caster`
-  (`CasterMob`) casts its spells at its target and steps between its casts. The rest is the mob's data: its name,
-  hitbox, attributes at level 1 (health, attack damage, armor, speed, follow range, knockback resistance), how it
+  (`CasterMob`) casts its spells at its target and steps between its casts; `boss` is the body of a boss
+  (`boss/BossMob`, [14.3](#143-bosses)). The `boss` feature sits above `mob`, so it provides that class through
+  `mob/custom/Archetypes` when the mod is constructed, and `GeneratedMobs` creates such a mob through it, as
+  `world/BlockKinds` does for block kinds ([4.4](#44-dependencies-between-features)). The rest is the mob's data: its
+  name, hitbox, attributes at level 1 (health, attack damage, armor, speed, follow range, knockback resistance), how it
   idles and hits, its sounds, its death particles, its entity type tags, a caster's spells and kiting, its loot, its
   variants and its placeholder model's look. A new archetype is Java; a new mob of an existing one is YAML.
 - **Generated** (`generate/mobs.py`): `GeneratedMobs`, which belongs to `mob`, registers each entity type with its
@@ -2011,7 +2016,8 @@ holds the same text. New feedback on a mob goes into both in the same run.
   `textures/entity/<id>.png` (a variant's texture through its own model and render state). The animations carry
   GeckoLib's default names: `misc.idle` and `move.walk` (one of them always plays, and both turn the head with the mob's
   look through GeckoLib's molang queries), `attack.swing` for a melee hit and `attack.cast` while a cast-time or
-  channelled spell runs (`CasterMob`'s synced flag; the arms raised forward and up, the hands in front of the forehead).
+  channelled spell runs (every custom mob's synced flag, `CustomMob#isCasting`; the arms raised forward and up, the
+  hands in front of the forehead).
   `attack.swing` lasts half the mob's attack interval (0.75 s for the Sentinel), a stone golem's heavy swing:
   `MeleeMob#swing` triggers it on the server (`triggerAnim`, synced to clients) and it plays to its end, since
   GeckoLib's own attack controller stops with vanilla's 6-tick arm swing. While a caster casts a spell that forms its
@@ -2031,47 +2037,85 @@ holds the same text. New feedback on a mob goes into both in the same run.
 
 ### 14.3 Bosses
 
+Built in W5a (RLM-490, part 1 of W5, RLM-35): the framework every boss runs on, tested with the test boss
+`realmforge:test_titan`. The first real boss, Astone, the Unbroken, is W5b (RLM-491).
+
 ```yaml
-# content/bosses/hollow_warden.yaml (sketch; names are examples)
-id: hollow_warden
-entity: realmforge:hollow_warden     # the boss's entity type
-level: 10
-attributes: {max_health: 400, attack_damage: 9, armor: 8}
-arena: {radius: 18}
+# content/bosses/test_titan.yaml (the format, schema/boss.py)
+id: test_titan
+entity: realmforge:test_titan          # its body: a mob of archetype boss in content/mobs/
+level: 5                               # fixed; a dungeon run's level wins over it
+arena: {radius: 12}                    # round its home, the spot where it first stood on the ground
+bar_color: purple
+phase_change_seconds: 1                # 3 by default (research BM-2)
 phases:
   - id: awakening
+    name: {en_us: Awakening}           # the boss bar: "Test Titan — Awakening"
     abilities:
-      - {spell: realmforge:grave_cleave, cooldown_seconds: 6, target: current_target}
-      - {spell: realmforge:bone_spikes, cooldown_seconds: 12, target: random_player}
-  - id: summoning
-    enter_when: {type: health_below, percent: 70}
-    on_enter: [{type: realmforge:apply_effect, effect: realmforge:bone_armor, target: self}]
-    abilities: [...]
+      - {spell: realmforge:test_npc_target_bolt, cooldown_seconds: 2}
   - id: fury
-    enter_when: {type: health_below, percent: 30}
-    abilities: [...]
-loot: realmforge:boss/hollow_warden
+    name: {en_us: Fury}
+    enter_when: {type: realmforge:health_below, health_percent: 50}
+    on_enter: [realmforge:test_titan_harden]
+    abilities: [{spell: realmforge:test_npc_target_bolt, cooldown_seconds: 1}]
+  - id: frenzy
+    name: {en_us: Frenzy}
+    enter_when: {type: realmforge:time_in_phase, after_seconds: 4}
+    abilities: [{spell: realmforge:test_npc_target_bolt}]
 ```
 
-- **Phase machine:** pure Java (`BossPhaseMachine`: health fraction, time in phase and living adds go in; the current
-  phase and transitions come out), JUnit-tested against every boss definition.
-- **Boss entity:** one base class runs the abilities through the spell engine, so every boss attack is a readable,
-  telegraphed cast that player tools can answer. Ground movement only: no flying bosses (a validation rule). Pulled
-  out of its arena, the boss resets.
-- **Boss bar** (exists, RLM-173; Matěj, 2026-10-14): vanilla's big bar at the top of the screen, a `ServerBossEvent`
-  the boss owns, the Wither's pattern, through the shared helper `boss/BossBar`. The boss builds it with its colour
-  and hands it its tracking calls (`BossBar#startSeenBy` from `Entity#startSeenByPlayer`, `#stopSeenBy` from
+- **Body and fight:** a boss's body is a custom mob of archetype `boss` (`content/mobs/`, [14.2](#142-custom-mobs)):
+  its name, hitbox, attributes at level 1, melee, sounds, death particles, loot and placeholder model, in `c:bosses`
+  by itself and seen from a vanilla boss's tracking range (10 chunks). Its fight is its entry in the server-only
+  datapack registry `realmforge:boss` (`boss/Boss`, [5.2](#52-our-datapack-registries)), which names the body's entity
+  type; `boss/Bosses#of` finds the entry of an entity type through an index built once per registry. The pipeline
+  allows one boss per body and a boss for every body, and checks the phases' spells (any targeting but `ally`).
+- **Phase machine:** pure Java (`boss/BossPhaseMachine`: the health share and the ticks in the phase go in, the phase
+  it moves into comes out). The phases come in order: only the next phase's trigger counts, so a hit past two health
+  thresholds enters the phase between them first. Triggers are entries of `realmforge:phase_trigger_type`
+  (`boss/PhaseTriggerTypes`): `health_below` (a share of the maximum) and `time_in_phase` (the ticks in the phase
+  before: an enrage timer); `adds_defeated` comes with a spell that summons adds. The pipeline refuses a trigger on the
+  first phase, a later phase without one and health thresholds that do not decrease; JUnit (`BossPhaseMachineTest`)
+  walks every generated boss through all its phases in order.
+- **Boss entity** (`boss/BossMob`, a `MeleeMob`): every tick on the server, it follows its fight. A new phase cancels
+  the cast in progress, casts the phase's `on_enter` spells at once through `SpellCaster#castProc` (no cooldowns, no
+  procs from their hits), and for `phase_change_seconds` the boss stands, casts nothing and takes no hurt; particles
+  round it show it, and a refused hit sounds like a blocked shield (BM-18: no immunity without a tell). While its
+  target is in reach, it tries its phase's abilities every 5 ticks through `SpellCaster`, the first that is off its
+  own `cooldown_seconds` and that the engine lets it cast, so every attack is a readable cast; it aims at its target,
+  unless the spell picks its own (`random_player`, `farthest_player`) or acts on itself (`self`). Between casts it
+  fights in melee; while a cast runs it stands and faces its target (`BossHoldGoal`). Ground movement only: no flying
+  bosses.
+- **Arena:** its home is where its AI first finds it on the ground (a guard's post, [14.2](#142-custom-mobs)). It
+  targets only what stands within the arena's radius of home, drops a target that leaves it, and takes no hurt from an
+  attacker outside it. Pulled out of its arena, it resets (`BossMob#reset`): back home, at full health, in its first
+  phase, its effects, cast, cooldowns and target gone. A fight that is over resets it the same way, as in WoW: it had a
+  target since its last reset, has none now, and is out of combat ([9.4](#94-in-combat)), so a player who died or left
+  finds it whole again.
+- **Level:** the definition's fixed `level`, through `MobLevels.FixedLevel` ([14.1](#141-mob-levels)): the sources
+  (a dungeon run's level) come first, the fixed level before the dimension's rule.
+- **Persistence:** a boss never despawns, however far the players are (`requiresCustomPersistence`), as vanilla's
+  bosses do not; the QA mod's test boss neither (RLM-482).
+- **Boss bar** (exists, RLM-173; Matěj, 2026-10-14): vanilla's big bar at the top of the screen, a `ServerBossEvent` the
+  boss owns, the Wither's pattern, through the shared helper `boss/BossBar`. The boss builds it with its colour and
+  hands it its tracking calls (`BossBar#startSeenBy` from `Entity#startSeenByPlayer`, `#stopSeenBy` from
   `#stopSeenByPlayer`), so a player sees the bar exactly while their client tracks the boss: within its entity type's
   client tracking range and the server's view distance, in its dimension, logged in. `BossBar#update`, every server
   tick, keeps the progress at the boss's share of health and the title at its name, or at the title the boss set
-  (`BossBar#setTitle`, W5's phase name); from the boss's death on, nobody sees it. `ServerBossEvent` sends only
-  changes, and the client draws the bar itself, so it needs no payload and no drawing of ours, and other mods treat it
-  as the Wither's. Every boss's entity type goes into NeoForge's `c:bosses` tag (W5's with its type; the QA mod's
-  test boss already is, [20](#20-tests-per-layer)), which Neat reads (its purple boss card stays above bosses, with
-  their level: Matěj, 2026-10-21) and our levels read (bosses at a run's level, [14.1](#141-mob-levels)). Our own
-  styled bar in the guide's look is RLM-174.
+  (`BossBar#setTitle`: a `BossMob`'s name and phase, `gui.realmforge.boss_bar_title`, "Test Titan — Fury"); from the
+  boss's death on, nobody sees it. A `BossMob`'s bar takes its definition's colour (`BossBar#setColor`).
+  `ServerBossEvent` sends only changes, and the client draws the bar itself, so it needs no payload and no drawing of
+  ours, and other mods treat it as the Wither's. Every boss's entity type goes into NeoForge's `c:bosses` tag (a
+  `BossMob`'s body by its archetype; the QA mod's test boss by hand, [20](#20-tests-per-layer)), which Neat reads (its
+  purple boss card stays above bosses, with their level: Matěj, 2026-10-21) and our levels read (bosses at a run's
+  level, [14.1](#141-mob-levels)). Our own styled bar in the guide's look is RLM-174.
 - **Level and lore** come from the same data as the quest texts.
-- **GameTests:** spawn the boss, set its health, assert the phase changes and their effects.
+- **QA:** `/qa boss` shows the nearest boss's phase, `/qa boss phase <phase>` puts it into a phase as the fight does,
+  and `/qa boss reset` resets it ([20](#20-tests-per-layer)).
+- **GameTests:** `BossGameTests` spawn the test titan and cover every phase change (the bar's title, the `on_enter`
+  effect, the refused hit during the change), its ability cast at a target with its own cooldown, the reset outside the
+  arena and after a fight, the refused hit from outside the arena, its fixed level, and that a boss summoned as
+  `/summon` does it never despawns; `ContentBossGameTests` compare the registry with the generated expectations.
 
 ## 15. Dimensions and dungeons
 
@@ -3372,9 +3416,14 @@ that agents can read. So far:
   action bar, `/qa dummy reset|remove`. Pillagers carry our stats in the dev game, so
   `/attribute @n[type=pillager] realmforge:dodge_chance base set 0.5` sets a dummy's dodge chance or resistances;
 - `/summon realmforge_qa:test_boss` (RLM-173): the test boss, a zombie half again as big with 200 health at level 1,
-  in `c:bosses`, that carries the core mod's boss bar ([14.3](#143-bosses)) until W5's boss exists. It is always an
-  adult on foot and never a zombie leader, and it neither burns in daylight nor turns into a drowned;
-  `BossBarGameTests` test the bar on it;
+  in `c:bosses`, that carries the core mod's boss bar ([14.3](#143-bosses)) without a fight of its own. It is always
+  an adult on foot and never a zombie leader, it neither burns in daylight nor turns into a drowned, and it never
+  despawns (RLM-482); `BossBarGameTests` test the bar on it. `/summon realmforge:test_titan` is the boss framework's
+  test boss (W5a, `content/bosses/test_titan.yaml`);
+- `/qa boss`, `/qa boss phase <phase>` and `/qa boss reset` (W5a): on the nearest boss within 64 blocks, show its phase,
+  the time in it, a phase change in progress, its health and home; put it into a phase by id as the fight does (its
+  `on_enter` spells and its phase change included), so a playtest reaches a late phase without the fight before it; or
+  reset it as leaving its arena does ([14.3](#143-bosses));
 - `/qa spell learn <spell> [<level>]`, `/qa spell cast <spell> [<target>]`, `/qa spell cancel`, `/qa spell resource
   <mana|rage> <amount>`, `/qa spell reset` and `/qa spell show` (C3a-1, C3a-2): teach the executing player a spell,
   cast it (as a mob with `/execute as`; a refusal names its reason; a cast-time or channelled spell begins), cancel
