@@ -11,7 +11,7 @@ texts:
   character_sheet:
     en_us: Character Sheet
   # The sheet's heading: "Steve · Lv. 12" (%1$s the player's name, %2$s the level; Matěj, 2026-10-14). Race, class
-  # and subclass are on the Origin tab instead, which keeps the heading short.
+  # and specialization are on the Origin tab instead, which keeps the heading short.
   character_title:
     en_us: "%1$s · Lv. %2$s"
   # The XP bar above the health and food rows (C2): the character level at its middle (%1$s the level).
@@ -82,16 +82,16 @@ texts:
   create_character:
     en_us: Create Character
   # The Origin tab's sections (Matěj, 2026-10-14): "Race: Human", "Class: Warrior" (%1$s the name, or none), and
-  # a placeholder for the subclass until subclasses exist (M3).
+  # a placeholder for the specialization until the specialization spell trees exist (C5, RLM-333).
   origin_race:
     en_us: "Race: %1$s"
   origin_class:
     en_us: "Class: %1$s"
   none:
     en_us: None
-  subclass_wip:
-    en_us: "Subclass: WIP"
-  subclass_wip_description:
+  specialization_wip:
+    en_us: "Specialization: WIP"
+  specialization_wip_description:
     en_us: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
   # The spellbook (C3b, RLM-25, client/screen/SpellbookScreen): the player's known spells and the spell bar's layout.
   spellbook:

@@ -143,6 +143,12 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.race} from {@code content/texts/gui.yaml}: "Race" */
     public static final String GUI_RACE = "gui.realmforge.race";
 
+    /** {@code gui.realmforge.specialization_wip} from {@code content/texts/gui.yaml}: "Specialization: WIP" */
+    public static final String GUI_SPECIALIZATION_WIP = "gui.realmforge.specialization_wip";
+
+    /** {@code gui.realmforge.specialization_wip_description} from {@code content/texts/gui.yaml}: "Lorem ipsum dolor sit amet, consectetur adipiscing elit." */
+    public static final String GUI_SPECIALIZATION_WIP_DESCRIPTION = "gui.realmforge.specialization_wip_description";
+
     /** {@code gui.realmforge.spell_bar} from {@code content/texts/gui.yaml}: "Spell Bar" */
     public static final String GUI_SPELL_BAR = "gui.realmforge.spell_bar";
 
@@ -184,12 +190,6 @@ public final class GeneratedTexts {
 
     /** {@code gui.realmforge.stat_milestone} from {@code content/texts/gui.yaml}: "At %1$s: %2$s" */
     public static final String GUI_STAT_MILESTONE = "gui.realmforge.stat_milestone";
-
-    /** {@code gui.realmforge.subclass_wip} from {@code content/texts/gui.yaml}: "Subclass: WIP" */
-    public static final String GUI_SUBCLASS_WIP = "gui.realmforge.subclass_wip";
-
-    /** {@code gui.realmforge.subclass_wip_description} from {@code content/texts/gui.yaml}: "Lorem ipsum dolor sit amet, consectetur adipiscing elit." */
-    public static final String GUI_SUBCLASS_WIP_DESCRIPTION = "gui.realmforge.subclass_wip_description";
 
     /** {@code gui.realmforge.swimming_speed} from {@code content/texts/gui.yaml}: "Swimming Speed" */
     public static final String GUI_SWIMMING_SPEED = "gui.realmforge.swimming_speed";

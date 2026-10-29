@@ -3180,8 +3180,7 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     multiplier); Combat: offense, and defense with spell resistance last; Magic: spells (max mana, mana regeneration,
     spell power, cooldown and cast time reduction) and the spell schools' power and resistance; Origin (C1): the race
     with its description and what it gives (its racial passive and active once spells exist), and the class with its
-    description, then a placeholder for the specialization until specializations exist (its text still reads
-    "Subclass: WIP" until RLM-254). The names the sheet gives vanilla attributes (Mining Speed, Movement Speed, ...)
+    description, then "Specialization: WIP", a placeholder until the specialization spell trees exist (C5). The names the sheet gives vanilla attributes (Mining Speed, Movement Speed, ...)
     apply on their rows and in the primary stats' bonuses. A stat of ours that no section
     names shows under Other. Values round for display only (Matěj, 2026-10-14): a percentage half up to a whole
     number (100.6% reads 101%), any other number half up to one decimal (6.45 reads 6.5). For a player with a

@@ -36,7 +36,7 @@ import net.neoforged.neoforge.common.PercentageAttribute;
  * the player's name and level, then four tabs of two columns each (Matěj, 2026-10-13 and 2026-10-14). Stats: the
  * primary stats with what they give, and the other attributes. Combat: offense and defense. Magic: spells with mana,
  * and the spell schools' power and resistance. Origin: the race (its description and what it gives) and the class (its
- * description, then a placeholder for the subclass). A player with a character also sees their unspent stat points at
+ * description, then a placeholder for the specialization). A player with a character also sees their unspent stat points at
  * the end of the Primary Stats title, and while any are unspent each primary stat's row offers a {@code +} that spends
  * one, with what that point gives (RLM-196; Matěj, 2026-10-16). Built
  * from a player's synced attributes, character and level and the synced registries, so the client screen and the
@@ -226,8 +226,9 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
 
     /**
      * The Origin tab (Matěj, 2026-10-14): the race on the left (its description and what it gives; its racial ability
-     * comes with the spell system), the class on the right (its description, then the subclass, a placeholder until
-     * subclasses exist). A race or class the player lacks, or whose entry is gone, reads as "None".
+     * comes with the spell system), the class on the right (its description, then the specialization, a placeholder
+     * until the specialization spell trees exist, C5). A race or class the player lacks, or whose entry is gone, reads
+     * as "None".
      */
     private static Tab origin(CharacterData character, HolderLookup.Provider registries) {
         Optional<Race> race = character.race()
@@ -247,9 +248,9 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
         List<Row> classRows = new ArrayList<>();
         playerClass.ifPresent(entry -> classRows.add(new Row(ORIGIN + "class/description",
                 Component.translatable(entry.description()), "", false, TEXT)));
-        Section subclass = new Section(Component.translatable(GeneratedTexts.GUI_SUBCLASS_WIP),
-                List.of(new Row(ORIGIN + "subclass/description",
-                        Component.translatable(GeneratedTexts.GUI_SUBCLASS_WIP_DESCRIPTION), "", false, TEXT)));
+        Section specialization = new Section(Component.translatable(GeneratedTexts.GUI_SPECIALIZATION_WIP),
+                List.of(new Row(ORIGIN + "specialization/description",
+                        Component.translatable(GeneratedTexts.GUI_SPECIALIZATION_WIP_DESCRIPTION), "", false, TEXT)));
 
         Component none = Component.translatable(GeneratedTexts.GUI_NONE);
         Section raceSection = new Section(Component.translatable(GeneratedTexts.GUI_ORIGIN_RACE,
@@ -258,7 +259,7 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
                 playerClass.<Component>map(entry -> Component.translatable(entry.name())).orElse(none)),
                 List.copyOf(classRows));
         return new Tab(Component.translatable(GeneratedTexts.GUI_TAB_ORIGIN), List.of(raceSection),
-                List.of(classSection, subclass));
+                List.of(classSection, specialization));
     }
 
     /** Every row of the sheet: tab by tab, left column first. */
