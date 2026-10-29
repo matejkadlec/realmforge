@@ -15,6 +15,7 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.phys.Vec3;
 
@@ -202,6 +203,34 @@ public final class BossGameTests {
                 .thenWaitUntil(() -> assertPhase(helper, titan, 0, "Awakening"))
                 .thenExecute(() -> helper.assertValueEqual(titan.getHealth(), titan.getMaxHealth(),
                         "full health once the fight is over"))
+                .thenSucceed();
+    }
+
+    /**
+     * A target that leaves the arena is let go for good: the titan keeps its real hurt-by goal, which remembers
+     * whoever hit it, and still neither follows the husk out of the arena nor takes it back as its target.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 200)
+    public static void theTestTitanLetsGoOfATargetThatLeavesItsArena(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BossMob titan = (BossMob) helper.spawn(GeneratedMobs.TEST_TITAN.get(), MIDDLE);
+        // Only the hurt-by goal stays, so no player of another test draws it into a fight.
+        titan.targetSelector.removeAllGoals(goal -> goal instanceof NearestAttackableTargetGoal<?>);
+        Husk husk = husk(helper, new Vec3(8.5, 1, 4.5));
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(titan.home().isPresent(), "the titan took its home"))
+                .thenExecute(() -> titan.hurtServer(level, level.damageSources().mobAttack(husk), 1))
+                .thenWaitUntil(() -> helper.assertTrue(titan.getTarget() == husk, "the husk that hit it is its target"))
+                .thenExecute(() -> {
+                    Vec3 out = helper.absoluteVec(MIDDLE.add(0, 0, -16));
+                    husk.snapTo(out.x, out.y, out.z, 0, 0);
+                })
+                .thenExecuteAfter(2, () -> helper.assertTrue(titan.getTarget() == null,
+                        "the titan let go of the husk outside its arena"))
+                .thenExecuteFor(60, () -> {
+                    helper.assertTrue(titan.getTarget() == null, "the titan never took the husk back");
+                    helper.assertTrue(titan.inArena(titan), "the titan never followed it out of its arena");
+                })
                 .thenSucceed();
     }
 

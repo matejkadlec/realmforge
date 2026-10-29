@@ -59,8 +59,9 @@ import net.minecraft.world.phys.Vec3;
  *   the first one ready that the engine lets it cast, so every attack is a readable cast. It aims at its target,
  *   unless the spell picks its own ({@code random_player}, {@code farthest_player}) or acts on itself. Between casts
  *   it fights in melee; while a cast runs it stands and faces its target ({@link BossHoldGoal}).</li>
- *   <li><b>Arena:</b> its home is the spot where it first stood on the ground. It fights only what stands within the
- *   arena's radius of home and takes no hurt from outside it. Pulled out of it, it resets: back home, at full
+ *   <li><b>Arena:</b> its home is the spot where it first stood on the ground. It attacks only what stands within the
+ *   arena's radius of home ({@link #canAttack}, which vanilla's target goals and {@code Mob#getTarget} ask, so they
+ *   let go of a target that leaves it), and takes no hurt from outside it. Pulled out of it, it resets: back home, at full
  *   health, in its first phase, its effects, casts and cooldowns gone. It resets the same way once its fight is
  *   over: it had a target and has none now, and it is out of combat (architecture 9.4).</li>
  *   <li><b>Boss bar:</b> its {@link BossBar} in the definition's colour, titled with its name and its phase's.</li>
@@ -171,6 +172,15 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
         super.addFightGoals();
     }
 
+    /**
+     * It attacks only what stands in its arena. Vanilla's target goals and {@code Mob#getTarget} ask this, so a target
+     * that leaves the arena is let go and forgotten, instead of being handed back by the goal that remembers it.
+     */
+    @Override
+    public boolean canAttack(LivingEntity target) {
+        return super.canAttack(target) && inArena(target);
+    }
+
     /** It fights whoever hurts it and the nearest player it sees, while they stand in its arena. */
     @Override
     protected void addTargetGoals() {
@@ -275,11 +285,8 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
     @Override
     protected void customServerAiStep(ServerLevel level) {
         super.customServerAiStep(level);
+        // A target outside the arena is none: getTarget asks canAttack.
         LivingEntity target = getTarget();
-        if (target != null && !inArena(target)) {
-            setTarget(null);
-            return;
-        }
         if (target == null || !target.isAlive() || changingPhase() || Spells.currentCast(this).isPresent()) {
             return;
         }

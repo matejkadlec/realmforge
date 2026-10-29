@@ -2088,8 +2088,9 @@ phases:
   its own (`random_player`, `farthest_player`) or acts on itself (`self`). Between casts it fights in melee; while a
   cast runs it stands and faces its target (`BossHoldGoal`). Ground movement only: no flying bosses.
 - **Arena:** its home is where its AI first finds it on the ground (a guard's post, [14.2](#142-custom-mobs)). It
-  targets only what stands within the arena's radius of home, drops a target that leaves it, and takes no hurt from an
-  attacker outside it. Pulled out of its arena, it resets (`BossMob#reset`): back home, at full health, in its first
+  attacks only what stands within the arena's radius of home (`BossMob#canAttack`, which vanilla's target goals and
+  `Mob#getTarget` ask, so a target that leaves the arena is let go and forgotten), and takes no hurt from an attacker
+  outside it. Pulled out of its arena, it resets (`BossMob#reset`): back home, at full health, in its first
   phase, its effects, cast, cooldowns and target gone. A fight that is over resets it the same way, as in WoW: it had a
   target since its last reset, has none now, and is out of combat ([9.4](#94-in-combat)), so a player who died or left
   finds it whole again.
