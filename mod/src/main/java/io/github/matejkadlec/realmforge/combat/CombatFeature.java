@@ -4,6 +4,7 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -12,9 +13,9 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 
 /**
- * The damage pipeline: spell schools, crit, dodge, resistances, our armor formula, armor pierce, lifesteal, overheal,
- * health regeneration, the magic shield, combat text, damage over time's appliers, and blocking with a two-handed
- * weapon (architecture 9).
+ * The damage pipeline: spell schools, crit, dodge, resistances, our armor formula, armor pierce, lifesteal (and those
+ * stats on mobs), overheal, health regeneration, the magic shield, combat text, damage over time's appliers, and
+ * blocking with a two-handed weapon (architecture 9).
  */
 public final class CombatFeature {
     private CombatFeature() {
@@ -25,6 +26,7 @@ public final class CombatFeature {
         modBus.addListener(DataPackRegistryEvent.NewRegistry.class, CombatRegistries::registerDataPackRegistries);
         CombatConfig.register(container);
         CombatAttachments.register(modBus);
+        modBus.addListener(EntityAttributeModificationEvent.class, MobCombatStats::addToMobs);
         DamagePipeline.register();
         NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, Overheal::onServerTick);
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class, Overheal::onLogin);

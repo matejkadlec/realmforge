@@ -1,3 +1,6 @@
 {
-  "key.category.apotheosis.keys": "Apotheosis"
+  "key.category.apotheosis.keys": "Apotheosis",
+  "rarity.apotheosis:mythic": "Legendary",
+  "advancements.apotheosis.mythic.desc": "Find a legendary affix item",
+  "apotheosis.subtitle.invader_mythic": "Legendary Apothic Invader spawns"
 }
