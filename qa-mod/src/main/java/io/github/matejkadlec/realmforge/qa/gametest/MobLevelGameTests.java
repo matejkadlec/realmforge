@@ -28,6 +28,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ConversionParams;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -89,6 +91,18 @@ public final class MobLevelGameTests {
             ResourceKey.create(Registries.DIMENSION, Identifier.parse("realmforge:stone"));
     /** Where in Undervault the floor test stands, far from the other realm tests' spots. */
     private static final Vec3 IN_UNDERVAULT = new Vec3(-1000.5, 64, 1000.5);
+    /** Health Boost's maximum health modifier. */
+    private static final Identifier HEALTH_BOOST = Identifier.withDefaultNamespace("effect.health_boost");
+    /** The maximum health Health Boost adds per level: vanilla's {@code MobEffects.HEALTH_BOOST}. */
+    private static final double HEALTH_BOOST_PER_LEVEL = 4;
+    /**
+     * The maximum health modifiers a pack mod gives a spawning monster on its own (RLM-485): Sophisticated Backpacks
+     * puts a backpack on about 1 in 100 (its server config's {@code entityBackpackAdditions.chance}, 0.01), with a flat
+     * health bonus and at times Health Boost. Both are flat, so the level's multiple scales them with the base
+     * (architecture 14.1).
+     */
+    private static final Set<Identifier> PACK_HEALTH_BONUSES = Set.of(
+            Identifier.fromNamespaceAndPath("sophisticatedbackpacks", "backpack_bearer_health_bonus"), HEALTH_BOOST);
 
     private MobLevelGameTests() {
     }
@@ -229,7 +243,11 @@ public final class MobLevelGameTests {
         helper.succeed();
     }
 
-    /** A skeleton spawned through {@code finalizeSpawn} has its scaled maximum health, and all of it. */
+    /**
+     * A skeleton spawned through {@code finalizeSpawn} has its scaled maximum health, and all of it. Its only health
+     * modifier is its level's, besides a pack mod's flat bonus ({@link #PACK_HEALTH_BONUSES}), which the level's
+     * multiple scales too.
+     */
     @QaGameTest
     public static void spawnedMobHasItsScaledMaximumHealthInFull(GameTestHelper helper) {
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-mob-level-health");
@@ -251,10 +269,32 @@ public final class MobLevelGameTests {
         helper.assertTrue(scaling.health() > 1, "level " + level + " scales health");
         assertScaled(helper, skeleton, level);
         AttributeInstance health = skeleton.getAttribute(Attributes.MAX_HEALTH);
-        helper.assertValueEqual(health.getModifiers().size(), 1, "the skeleton's only health modifier is its level's");
-        assertClose(helper, skeleton.getMaxHealth(), health.getBaseValue() * scaling.health(), "maximum health");
+        String found = "found " + health.getModifiers().stream()
+                .map(modifier -> modifier.id() + " " + modifier.operation() + " " + modifier.amount()).sorted().toList();
+        List<AttributeModifier> packBonuses = health.getModifiers().stream()
+                .filter(modifier -> PACK_HEALTH_BONUSES.contains(modifier.id())).toList();
+        helper.assertTrue(health.getModifiers().size() == packBonuses.size() + 1
+                        && health.hasModifier(MobScaling.HEALTH_MODIFIER),
+                "the skeleton's only health modifier is its level's, " + MobScaling.HEALTH_MODIFIER
+                        + ", besides a pack mod's flat bonus " + PACK_HEALTH_BONUSES + "; " + found);
+        helper.assertTrue(packBonuses.stream()
+                        .allMatch(modifier -> modifier.operation() == AttributeModifier.Operation.ADD_VALUE),
+                "a pack mod's health bonus is flat; " + found);
+        double flat = packBonuses.stream().mapToDouble(AttributeModifier::amount).sum();
+        assertClose(helper, skeleton.getMaxHealth(), (health.getBaseValue() + flat) * scaling.health(),
+                "maximum health, the level's multiple of the base and any flat bonus");
         assertClose(helper, skeleton.getHealth(), skeleton.getMaxHealth(), "a new mob's health");
         helper.assertFalse(skeleton.hasData(MobAttachments.PENDING_REFILL), "the refill mark is gone after the join");
+
+        // The case a backpack bearer brings, on every run: a flat bonus added later is scaled by the level too.
+        skeleton.removeEffect(MobEffects.HEALTH_BOOST);
+        double flatBesidesBoost = packBonuses.stream().filter(modifier -> !modifier.id().equals(HEALTH_BOOST))
+                .mapToDouble(AttributeModifier::amount).sum();
+        skeleton.addEffect(new MobEffectInstance(MobEffects.HEALTH_BOOST, 200, 0));
+        assertClose(helper, health.getModifier(HEALTH_BOOST).amount(), HEALTH_BOOST_PER_LEVEL, "Health Boost I");
+        assertClose(helper, skeleton.getMaxHealth(),
+                (health.getBaseValue() + flatBesidesBoost + HEALTH_BOOST_PER_LEVEL) * scaling.health(),
+                "maximum health with Health Boost I");
 
         // A zombie's own finalizeSpawn may raise its maximum again (the leader bonus); the join refills that too.
         for (Zombie zombie : List.of(helper.spawn(EntityType.ZOMBIE, 1, 1, 1, EntitySpawnReason.SPAWN_ITEM_USE),

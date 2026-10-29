@@ -231,9 +231,12 @@ public final class RealmPortalGameTests {
      * Done when of RLM-406: a dark sealstone lights up while a player holding a signet, in either hand, stands within 5
      * blocks of it, rising over 15 ticks, and fades once they step 5.5 blocks away; with empty hands it stays dark. A
      * lit portal glows only for its own realm's signet: a return portal, open onto Overworld, stays dark. The glow is
-     * the sealstone's block light.
+     * the sealstone's block light. The light engine updates it off the server thread, and the GameTest server runs its
+     * ticks back to back, so with the worker threads busy with other tests' chunks (the realm trips generate realm
+     * terrain) the light in the opening was still missing 160 ticks after the glow, and the test timed out on tick
+     * 202 (RLM-485); the timeout leaves room for that, as {@code RealmGameTests#shoulderParrotsStayBehind}'s does.
      */
-    @QaGameTest(template = QaGameTests.PLATFORM_9X9, timeoutTicks = 200)
+    @QaGameTest(template = QaGameTests.PLATFORM_9X9, timeoutTicks = 600)
     public static void theSealstoneGlowsWhileAPlayerWithASignetIsNear(GameTestHelper helper) {
         RealmExpectation stone = RealmGameTests.stone();
         ServerLevel level = helper.getLevel();

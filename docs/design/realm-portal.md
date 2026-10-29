@@ -298,7 +298,9 @@ player arrives wherever the linked portal stands.
     realm block below the exact one (at most 7 Overworld blocks), so the way back aims within 15 × 8 + 7 = 127
     blocks of the Overworld portal it came from, inside the Overworld search;
   - one a trip builds in Overworld stands within 16 blocks of the scaled-back position, so the way back aims
-    within 1 block of the realm portal it came from.
+    within 2 blocks of the realm portal it came from, inside the realm search of 16: a realm portal at x R scales
+    back to 8R + 4, a frame built within 16 blocks of that has its centre between 8R − 11.5 and 8R + 20.5, and
+    dividing by 8 and rounding down gives R − 2 to R + 2.
 
   So a pair a trip built always links back, both ways. Overworld portals up to about 128 blocks apart (16 × 8) lead
   to one realm portal, as Overworld portals up to 128 blocks apart share one nether portal. Matěj asked for exactly
@@ -687,10 +689,11 @@ dimension rules and access:
     with the signet it showed before (RLM-133);
   - the sneak gesture with a shield in the off hand closes an Overworld portal, and opens a frame in a realm onto
     return (RLM-133);
-  - a trip from Overworld builds a return portal within 7 blocks of the scaled position in the realm, and the
-    first trip back through it arrives at the Overworld portal it came from, also from a portal the scale rounds
-    down the most (centred at x 15) when the only free spot in the realm lies 7 blocks towards negative x; a second
-    trip from a portal within 128 blocks of the first arrives at that same realm portal;
+  - a trip from Overworld builds a return portal within the realm's build radius (15 blocks at 1:8) of the scaled
+    position in the realm, and the first trip back through it arrives at the Overworld portal it came from, also
+    from a portal the scale rounds down the most (centred at x 7) when the only free spot in the realm lies 15
+    blocks towards negative x; a second trip from a portal within 128 blocks of the first arrives at that same realm
+    portal;
   - a trip from a realm portal with no Overworld portal near its scaled-back position builds one there, and the trip
     back arrives at the realm portal it came from;
   - a built portal never stands outside the world border or outside its dimension's `y` range;
@@ -704,8 +707,9 @@ dimension rules and access:
     not take them back, until they stepped out for half a second and in again (RLM-335);
   - the sealstone glows while a player holding a signet stands within 5 blocks, rising over 15 ticks, fades once
     they step away, stays dark with empty hands, and a return portal stays dark for a realm's signet (RLM-406);
-    a dark frame inside the stone realm glows for that realm's signet, also once open onto return, and fades
-    without it (RLM-458);
+    inside the stone realm, the realm's own signet lights a dark sealstone and one open onto return, a shield
+    lights nothing, and in the instance dimension no signet lights one; this asks the rule itself, with no player
+    kept in the realm for the glow's ticks, whose background chunk loading held up the tests beside it (RLM-458);
     a mob moved into or out of a realm with
     `Entity#teleport(TeleportTransition)`, and one moved with `/tp` (`Entity#teleportTo`), stays where it is
     (RLM-133), while a mob teleported within the realm moves;
@@ -821,7 +825,7 @@ His answer to RLM-458's playtest handoff (2026-10-28) added:
 
 Matěj answered every question of the first version (RLM-128). The numbers marked as proposals (the materials, the
 stone realm's level rule and its scale, Overworld's arrival `y` range) are checked in his playtests of W2a
-and W2b. Three questions are open, and question 2 is decided:
+and W2b. Two questions are open (3 and 4); questions 1 and 2 are decided:
 
 1. **FTB Teams parties share realm unlocks.** FTB Quests keeps progress per FTB Teams team, so a player who joins
    someone's party (`/ftbteams party`) would get that team's realm unlocks and chapter advancements at their next

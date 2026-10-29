@@ -376,7 +376,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `races/`, `classes/`, `spells/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `realms/`, `bosses/`, `dungeons/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
 | `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template, and each room's set-piece spots with the pieces that may fill them ([15.4](#154-rooms)); a biome per type, `worldgen/biome/dungeon_<id>.json`, named like it (`generate/instance_biomes.py`, [15.5](#155-instances)) | the planner ([15.3](#153-generation-pure-first-then-minecraft)); the builder's set pieces (RLM-282) |
-| `loot/`, tags; the `recipe` of an item or block (exists, W4d) | `data/realmforge/loot_table/`, `recipe/<id>.json` (vanilla's `crafting_shaped`, the result the entry itself), `tags/` | reloadable vanilla data |
+| `loot/`, tags; the `recipe` of an item or block (exists, W4d); an item's `dropped_by` (RLM-172) | `data/realmforge/loot_table/`, `recipe/<id>.json` (vanilla's `crafting_shaped`, `crafting_shapeless` or `smithing_transform`, with item or tag ingredients, the result the entry itself), `tags/`; per `dropped_by` mob a loot table `loot_table/item_drops/<item>/<ns>/<entity>.json` and a NeoForge `neoforge:add_table` loot modifier `loot_modifiers/item_drops/<item>/<ns>/<entity>.json` that adds it to the mob's own table ([13](#13-items-gear-and-loot)) | reloadable vanilla data; global loot modifiers |
 | `chapters/`, `realms/`, `quests/` | `data/realmforge/advancement/` (a chapter's `chapter/<id>`, a realm's unlock `realm/<id>`, a quest task of ours `quest/<quest>/<key>`); `pack/config/ftbquests/quests/` (FTB Quests' JSON5, stable ids per ADR 0006; exists, Q1-1, [16](#16-progression-and-quests)) | advancements; the FTB Quests book |
 | `worldgen/<registry>/<id>.json` (JSON, [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)) | validated and copied unchanged to `data/realmforge/dimension/`, `dimension_type/`, `worldgen/<registry>/` | vanilla worldgen registries |
 | `rooms/` (NBT plus a YAML sidecar; [15.4](#154-rooms)) | validated and copied, normalized, to `data/realmforge/structure/rooms/` | structure templates |
@@ -1457,8 +1457,9 @@ attachment; the latest application decides, so the same effect from a potion or 
 effect's removal or expiry does too. An application that changes nothing (`MobEffectInstance#update` keeps the
 effect as it is, and it ends no later) keeps it: `MobEffectEvent.Added` fires before that update, so `Effects` asks a
 copy of the old instance (RLM-373). A weaker but longer one forgets it too, though `update` keeps the effect: vanilla
-holds it as the hidden effect, which takes over without an event once the stronger one ends. `Effects#source` is what dispels and talents (C4, C5) read. An
-effect a proc's spell applied keeps the proc origin, and its ticks carry it, so they trigger no proc
+holds it as the hidden effect, which takes over without an event once the stronger one ends. `Effects#source` is
+what dispels (C4) and talents (postponed, RLM-28) read. An effect a proc's spell applied keeps the proc origin, and
+its ticks carry it, so they trigger no proc
 ([12](#12-talents)). `EffectGameTests` covers the ticks, the caster's stats, a caster that left, the modifiers, the
 sources and a proc's damage over time.
 
@@ -1877,10 +1878,13 @@ party lock (RLM-304) and open-world dungeons (RLM-305) come later.
   ([8.2](#82-where-modifiers-come-from)), saved with the mob. The health modifier is `ADD_MULTIPLIED_BASE`: it
   multiplies the base plus every flat bonus, and other base multipliers add to its multiple instead of compounding
   with it (+10 % on a mob at 1.4 times makes 1.5 times, not 1.54); `ADD_MULTIPLIED_TOTAL` modifiers multiply the
-  result. Whether the level's multiple should compound instead is settled with the first other source of a mob's
-  maximum health. Damage is a multiplier on `LivingIncomingDamageEvent` for every hit whose causing entity
-  (`DamageSource#getEntity`) is a leveled mob, so arrows, explosions and thrown potions grow with the level too; only
-  melee reads the attack damage attribute. It runs at `HIGH` priority, before the damage pipeline
+  result. The pack's first flat bonus comes from Sophisticated Backpacks: a monster it puts a backpack on (about 1 in
+  100, its server config's `entityBackpackAdditions.chance`) gets `sophisticatedbackpacks:backpack_bearer_health_bonus`
+  and at times Health Boost, both `ADD_VALUE`, which the level's multiple scales with the base (RLM-485). Whether the
+  level's multiple should compound instead is settled with the first other multiplier of a mob's maximum health.
+  Damage is a multiplier on `LivingIncomingDamageEvent` for every hit whose causing entity (`DamageSource#getEntity`)
+  is a leveled mob, so arrows, explosions and thrown potions grow with the level too; only melee reads the attack
+  damage attribute. It runs at `HIGH` priority, before the damage pipeline
   ([9.1](#91-damage-pipeline)), so the pipeline's steps see the scaled hit: a raised weapon compares that one with the
   hurt cooldown window's `lastHurt`, which vanilla set from a scaled hit too. The shipped curves add nothing at level 1, and a curve a data pack removed
   adds nothing.
