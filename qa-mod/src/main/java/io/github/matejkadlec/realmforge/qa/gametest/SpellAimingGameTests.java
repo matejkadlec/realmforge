@@ -13,6 +13,8 @@ import io.github.matejkadlec.realmforge.qa.combat.SoundLog;
 import io.github.matejkadlec.realmforge.spell.CastEnd;
 import io.github.matejkadlec.realmforge.spell.CastFailure;
 import io.github.matejkadlec.realmforge.spell.CastResult;
+import io.github.matejkadlec.realmforge.spell.CastTexts;
+import io.github.matejkadlec.realmforge.spell.ShowTarget;
 import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.SpellAim;
 import io.github.matejkadlec.realmforge.spell.SpellArea;
@@ -22,10 +24,12 @@ import io.github.matejkadlec.realmforge.spell.SpellProjectile;
 import io.github.matejkadlec.realmforge.spell.SpellTarget;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import io.github.matejkadlec.realmforge.spell.net.CastTargetPayload;
+import io.github.matejkadlec.realmforge.spell.net.ShownTargetPayload;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -348,7 +352,7 @@ public final class SpellAimingGameTests {
 
     /**
      * A sticky target that dies during the cast ends it at once, the target lost, and the cast picks no other: Q3.
-     * Its text is still "You have no target" (RLM-468 gives it its own).
+     * The cast bar says "Target lost" (RLM-468).
      */
     @QaGameTest(template = QaGameTests.PLATFORM_17X17)
     public static void aStickyTargetThatDiesEndsTheCastAtOnce(GameTestHelper helper) {
@@ -360,6 +364,8 @@ public final class SpellAimingGameTests {
         helper.runAfterDelay(5, () -> husk.kill(helper.getLevel()));
         helper.runAfterDelay(7, () -> {
             assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.TARGET_LOST);
+            helper.assertValueEqual(CastTexts.end(CastEnd.TARGET_LOST, Optional.empty()).map(Component::getString),
+                    Optional.of("Target lost"), "the cast bar's text");
             assertHealth(helper, other, HEALTH, "the husk beside it");
             logout(player);
             helper.succeed();
@@ -478,6 +484,37 @@ public final class SpellAimingGameTests {
         Spells.cancelCast(player);
         logout(player);
         helper.succeed();
+    }
+
+    /**
+     * The Show target key (RLM-468): while the client says it is held, the server names the mob an enemy spell would
+     * go to now (a husk beside the crosshair), names none once the husk leaves the cone, and stops when the key goes
+     * up.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17)
+    public static void theShowTargetKeyNamesTheMobAnEnemySpellWouldGoTo(GameTestHelper helper) {
+        ServerPlayer player = assistedCaster(helper, "qa-show-target");
+        Husk husk = husk(helper, new BlockPos(9, 1, 12));
+        QaPlayers.sentPayloads(player, ShownTargetPayload.class);
+
+        ShowTarget.setHeld(player, true);
+        helper.assertTrue(ShowTarget.isHeld(player), "the key is not held");
+        helper.assertValueEqual(QaPlayers.sentPayloads(player, ShownTargetPayload.class),
+                List.of(new ShownTargetPayload(Optional.of(husk.getId()))), "the mob beside the crosshair");
+        husk.snapTo(helper.absoluteVec(new Vec3(15.5, 1, 12.5)), 0, 0);
+        helper.runAfterDelay(2, () -> {
+            helper.assertValueEqual(QaPlayers.sentPayloads(player, ShownTargetPayload.class),
+                    List.of(new ShownTargetPayload(Optional.empty())), "no mob once the husk left the cone");
+            ShowTarget.setHeld(player, false);
+            helper.assertFalse(ShowTarget.isHeld(player), "the key is still held");
+            husk.snapTo(helper.absoluteVec(new Vec3(9.5, 1, 12.5)), 0, 0);
+        });
+        helper.runAfterDelay(4, () -> {
+            helper.assertValueEqual(QaPlayers.sentPayloads(player, ShownTargetPayload.class), List.of(),
+                    "the server named a mob after the key went up");
+            logout(player);
+            helper.succeed();
+        });
     }
 
     /** A ground spell aimed at the floor within its range lands where the caster looks. */

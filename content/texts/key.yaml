@@ -29,3 +29,6 @@ texts:
     en_us: Spell Slot 8
   racial_ability:
     en_us: Racial Ability
+  # Held, it shows the target circle under the mob an enemy spell would go to now (RLM-468, aim assistance).
+  show_target:
+    en_us: Show Target

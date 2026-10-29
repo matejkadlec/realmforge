@@ -44,6 +44,9 @@ public final class GeneratedTexts {
     /** {@code cast.realmforge.out_of_range} from {@code content/texts/cast.yaml}: "Out of range" */
     public static final String CAST_OUT_OF_RANGE = "cast.realmforge.out_of_range";
 
+    /** {@code cast.realmforge.target_lost} from {@code content/texts/cast.yaml}: "Target lost" */
+    public static final String CAST_TARGET_LOST = "cast.realmforge.target_lost";
+
     /** {@code cast.realmforge.unknown_spell} from {@code content/texts/cast.yaml}: "That spell no longer exists" */
     public static final String CAST_UNKNOWN_SPELL = "cast.realmforge.unknown_spell";
 
@@ -223,6 +226,9 @@ public final class GeneratedTexts {
 
     /** {@code key.realmforge.racial_ability} from {@code content/texts/key.yaml}: "Racial Ability" */
     public static final String KEY_RACIAL_ABILITY = "key.realmforge.racial_ability";
+
+    /** {@code key.realmforge.show_target} from {@code content/texts/key.yaml}: "Show Target" */
+    public static final String KEY_SHOW_TARGET = "key.realmforge.show_target";
 
     /** {@code key.realmforge.spell_slot_1} from {@code content/texts/key.yaml}: "Spell Slot 1" */
     public static final String KEY_SPELL_SLOT_1 = "key.realmforge.spell_slot_1";

@@ -1352,15 +1352,20 @@ spell a player aims at an enemy goes to a hostile mob near the crosshair (Matěj
 - **The sticky target** (`SpellCaster#stickyRange`): a player's cast-time or channelled spell on an `enemy` or `ally`
   that does not lock on keeps its entity until the cast ends, beyond the spell's range, and `Casting` ends it at once as
   `out_of_range` when the target goes more than twice the range away, or as `target_lost` when it dies (Q3: no new
-  pick; its text stays "You have no target" until RLM-468). `SpellCaster#recheck` then accepts the target up to twice
+  pick; the cast bar says "Target lost", RLM-468). `SpellCaster#recheck` then accepts the target up to twice
   the range, in sight. A spell that locks on keeps its target anywhere in the caster's dimension, as before.
 - **The target circle:** while a player casts a cast-time or channelled spell, `Casting` names to their client, when
   it changes, the mob the spell will hit (`CastTargetPayload`): the cast's entity target, or for a direction from the
   look whose spell launches a projectile, the mob `AimAssist#enemy` picks now, every tick, so the circle follows the
   crosshair through Fireball's cast ([11.6](#116-client-side)).
+- **The Show target key** (RLM-468; `spell/ShowTarget`): while a player holds it, their client says so
+  (`ShowTargetPayload`, when the key goes down and up), and every server tick the server names to it, when it changes,
+  the mob `AimAssist#enemy` picks now within 32 blocks (`ShownTargetPayload`), with no cast and no spell on the bar.
+  The server picks because only it knows a mob's target and a neutral mob's anger. The state is kept by player id, so
+  a respawn keeps a held key, and dropped at logout.
 - `SpellAimingGameTests` covers an assisted bolt beside the crosshair, one beyond the cone or toward a cow, one after a
   moving husk, the bar's assisted pick and its view check, the sticky target beyond the range and beyond twice it, and
-  a sticky target that dies. The Show target key and the "Target lost" text come with RLM-468.
+  a sticky target that dies with its "Target lost", and the Show target key's mob.
 
 **Kept targets (W3 revision, RLM-33):** a timed spell may keep its entity target through the cast instead of only
 checking it before its effects. With `keep_sight`, `Casting` checks the caster's line of sight to the target every
@@ -1639,7 +1644,11 @@ every second game tick, once a game tick at most: while singleplayer is paused (
 client ticks on but the game time stands still and the particle engine waits, so it must not queue a ring every client
 tick (RLM-474, `TargetCircleTest`). Never outside a cast (Q4), and gone with the local player's `CastEndedPayload` or a
 logout. `SpellAimingGameTests` reads the payload the server sends a cast's caster.
-Particles until the spell visuals (C6) give it its art. The Show target key that shows it without a cast is RLM-468's.
+Particles until the spell visuals (C6) give it its art. **The Show target key** (RLM-468, `SpellKeys#SHOW_TARGET`, Left
+Alt by default, which no key of the pack takes, under Realmforge Spell Bar) shows it without a cast: while it is held,
+`TargetCircle` draws the ring in white under the mob the server names in `ShownTargetPayload` ([11.2](#112-casting-server-authoritative)),
+unless the local player's cast names its own mob, which wins (`TargetCircle#under`, `TargetCircleTest`). It tells the
+server when the key goes down and up, and forgets the shown mob at once when it goes up.
 
 ### 11.7 Class spells and stances
 
@@ -3115,13 +3124,15 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   `client/screen/CharacterCreationScreen`), `SpendStatPoint` (exists: `character/net/SpendStatPointPayload`, sent by
   `client/screen/CharacterSheetScreen`), `CastSpell` (exists: `spell/net/CastSpellPayload`, sent by
   `client/spell/SpellBarInput`), `SetSpellBarSlot` (exists: `spell/net/SetSpellBarSlotPayload`, sent by
-  `client/screen/SpellbookScreen`), `CancelCast`, `LearnTalent`, `ToggleNightVision` (exists:
+  `client/screen/SpellbookScreen`), `ShowTarget` (exists: `spell/net/ShowTargetPayload`, the Show target key going
+  down or up, sent by `client/spell/TargetCircle`), `CancelCast`, `LearnTalent`, `ToggleNightVision` (exists:
   `world/net/ToggleNightVisionPayload`, sent by `client/input/NightVisionKey`).
 - Server → client: `CastStarted` and `CastEnded` (exist: `spell/net/CastStartedPayload` and `CastEndedPayload`, kept
   by `client/spell/ClientCasts`, the local player's end also shown by `client/hud/CastBarHud`), `CastRefused` (exists:
   `spell/net/CastRefusedPayload`, the reason shown by `client/hud/CastBarHud`), `CastTarget` (exists:
   `spell/net/CastTargetPayload`, the mob under the target circle of the player's own cast, drawn by
-  `client/spell/TargetCircle`), `CombatText` (exists: `combat/net/CombatTextPayload`, shown by
+  `client/spell/TargetCircle`), `ShownTarget` (exists: `spell/net/ShownTargetPayload`, the mob under the circle
+  while the Show target key is held, drawn by `client/spell/TargetCircle`), `CombatText` (exists: `combat/net/CombatTextPayload`, shown by
   `client/hud/CombatTextHud`), `HitDirection` (exists: `combat/net/HitDirectionPayload`, shown by
   `client/hud/HitDirectionHud`), `RealmRefused` (exists: `world/net/RealmRefusedPayload`, the realm's hint, shown by
   `client/hud/RealmRefusalHud`, [15.1](#151-dimensions)), `DungeonStatus`.
