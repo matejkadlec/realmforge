@@ -2095,7 +2095,8 @@ phases:
 - **Level:** the definition's fixed `level`, through `MobLevels.FixedLevel` ([14.1](#141-mob-levels)): the sources
   (a dungeon run's level) come first, the fixed level before the dimension's rule.
 - **Persistence:** a boss never despawns, however far the players are (`requiresCustomPersistence`), as vanilla's
-  bosses do not; the QA mod's test boss neither (RLM-482).
+  bosses do not; the QA mod's test boss neither (RLM-482). It never goes through a portal either (`canUsePortal`, as
+  the Wither), since its arena and home belong to the dimension it stands in.
 - **Boss bar** (exists, RLM-173; Matěj, 2026-10-14): vanilla's big bar at the top of the screen, a `ServerBossEvent` the
   boss owns, the Wither's pattern, through the shared helper `boss/BossBar`. The boss builds it with its colour and
   hands it its tracking calls (`BossBar#startSeenBy` from `Entity#startSeenByPlayer`, `#stopSeenBy` from

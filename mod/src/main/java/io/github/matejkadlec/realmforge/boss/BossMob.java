@@ -63,7 +63,8 @@ import net.minecraft.world.phys.Vec3;
  *   over: it had a target and has none now, and it is out of combat (architecture 9.4).</li>
  *   <li><b>Boss bar:</b> its {@link BossBar} in the definition's colour, titled with its name and its phase's.</li>
  *   <li><b>Level:</b> its definition's, unless a dungeon run gives it the run's ({@link MobLevels.FixedLevel}).</li>
- *   <li><b>Persistence:</b> it never despawns, as vanilla's bosses do not, however far the players are.</li>
+ *   <li><b>Persistence:</b> it never despawns, as vanilla's bosses do not, however far the players are, and it never
+ *   goes through a portal, as the Wither does not: its arena and home belong to the dimension it stands in.</li>
  * </ul>
  */
 public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
@@ -323,6 +324,12 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
         Optional<BossPhase> current = Optional.ofNullable(definition).map(boss -> boss.value().phases().get(phase));
         bossBar.setTitle(current.<Component>map(entered -> Component.translatable(GeneratedTexts.GUI_BOSS_BAR_TITLE,
                 getDisplayName(), entered.displayName())).orElse(null));
+    }
+
+    /** It never goes through a portal, as the Wither does not: its arena and home stay in its own dimension. */
+    @Override
+    public boolean canUsePortal(boolean ignorePassenger) {
+        return false;
     }
 
     /** A boss never despawns, however far the players are (RLM-482). */

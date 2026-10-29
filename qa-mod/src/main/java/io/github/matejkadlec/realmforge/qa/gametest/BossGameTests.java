@@ -80,6 +80,15 @@ public final class BossGameTests {
                 .thenSucceed();
     }
 
+    /** A boss never goes through a portal, as the Wither does not: its arena and home stay in its dimension. */
+    @QaGameTest
+    public static void theTestTitanNeverUsesAPortal(GameTestHelper helper) {
+        BossMob titan = (BossMob) helper.spawn(GeneratedMobs.TEST_TITAN.get(), new Vec3(2.5, 1, 2.5));
+        helper.assertFalse(titan.canUsePortal(false), "the titan may not use a portal");
+        helper.assertFalse(titan.canUsePortal(true), "nor as a passenger's vehicle");
+        helper.succeed();
+    }
+
     /**
      * The titan casts its phase's ability, {@code test_npc_target_bolt}, at its target through the spell engine, and
      * no sooner again than its own cooldown of 2 s allows. It cannot walk, and its target stands 6 blocks away, out of
