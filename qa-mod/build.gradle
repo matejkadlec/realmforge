@@ -302,6 +302,9 @@ neoForge {
             // `-PofflineClient` starts as the offline `Dev` player instead, without the login prompt that an
             // agent's screenshot run cannot answer: ./gradlew runClient -PofflineClient
             devLogin = !providers.gradleProperty('offlineClient').isPresent()
+            // ZGC instead of Java's default G1, which makes Distant Horizons warn about FPS stutter in chat on every
+            // join (RLM-479). Generational by default since JDK 23; players get the same advice (pack/README.md).
+            jvmArgument '-XX:+UseZGC'
         }
 
         server {
@@ -309,6 +312,9 @@ neoForge {
             sourceSet = sourceSets.devServer
             loadedMods = [mods.realmforge, mods.realmforge_qa]
             programArgument '--nogui'
+            // The same collector as the client (RLM-479). The GameTest server below keeps the default: it runs
+            // headless for a few minutes, where a collector's pauses change nothing.
+            jvmArgument '-XX:+UseZGC'
             gameDirectory = rootProject.file('run/server')
             taskBefore verifyPackServerMods
         }

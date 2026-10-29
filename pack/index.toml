@@ -10,7 +10,7 @@ hash = "a3dffbd3da542c9b47efcff28a9f66816043bc7d2794ac91ffccd1e094cfd784"
 
 [[files]]
 file = "config/defaultoptions/keybindings.txt"
-hash = "dbc47fc2704f5d9a8d370ddf939b8f087d392db82575b3070f8e58c34e67e849"
+hash = "746e6623d9601121eab4bf81dc10f0f3a6d956f783aa7b0faadd8c32727f7801"
 
 [[files]]
 file = "config/dummmmmmy-client.toml"
@@ -296,7 +296,7 @@ metafile = true
 
 [[files]]
 file = "mods/mmmmmmmmmmmm.pw.toml"
-hash = "7a50255ac7aec7adac53394361be059c00d30d5ea5a5fc80419448d2fce59541"
+hash = "590d824285271c628206abc1042ee98c5484a01aa9de90d1ddd398b50ecaaccf"
 metafile = true
 
 [[files]]
