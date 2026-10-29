@@ -7,12 +7,16 @@ import io.github.matejkadlec.realmforge.mob.MobLevels;
 import io.github.matejkadlec.realmforge.mob.custom.CustomMob;
 import io.github.matejkadlec.realmforge.mob.custom.CustomMobSpec;
 import io.github.matejkadlec.realmforge.mob.custom.MeleeMob;
+import io.github.matejkadlec.realmforge.spell.AreaEffect;
+import io.github.matejkadlec.realmforge.spell.CombatState;
 import io.github.matejkadlec.realmforge.spell.FarthestPlayerTargeting;
 import io.github.matejkadlec.realmforge.spell.RandomPlayerTargeting;
 import io.github.matejkadlec.realmforge.spell.SelfTargeting;
 import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.SpellAim;
 import io.github.matejkadlec.realmforge.spell.SpellCaster;
+import io.github.matejkadlec.realmforge.spell.SpellEffect;
+import io.github.matejkadlec.realmforge.spell.SpellTarget;
 import io.github.matejkadlec.realmforge.spell.SpellTargeting;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import java.util.HashMap;
@@ -22,6 +26,7 @@ import java.util.OptionalInt;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -30,6 +35,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -55,10 +61,12 @@ import net.minecraft.world.phys.Vec3;
  *   progress, casts its {@code on_enter} spells at once (without their cooldowns), and for
  *   the definition's phase change time the boss stands, casts nothing and takes no hurt, which particles round it
  *   show; a refused hit sounds like a blocked one.</li>
- *   <li><b>Abilities:</b> while its target is in reach, it casts its phase's abilities through {@link SpellCaster},
- *   the first one ready that the engine lets it cast, so every attack is a readable cast. It aims at its target,
- *   unless the spell picks its own ({@code random_player}, {@code farthest_player}) or acts on itself. Between casts
- *   it fights in melee; while a cast runs it stands and faces its target ({@link BossHoldGoal}).</li>
+ *   <li><b>Abilities:</b> while it has a target, it casts its phase's abilities through {@link SpellCaster}, the
+ *   first one ready that the engine lets it cast, so every attack is a readable cast. It aims at its target, unless
+ *   the spell picks its own ({@code random_player}, {@code farthest_player}) or acts on itself; an area round itself
+ *   it casts only while its target stands inside it. Between casts it fights in melee; while a cast runs it stands
+ *   and faces its target ({@link BossHoldGoal}), and a ring of particles marks where the cast's area will land, so a
+ *   player can step out of it (research BM-2).</li>
  *   <li><b>Arena:</b> its home is the spot where it first stood on the ground. It attacks only what stands within the
  *   arena's radius of home ({@link #canAttack}, which vanilla's target goals and {@code Mob#getTarget} ask, so they
  *   let go of a target that leaves it), and takes no hurt from outside it. Pulled out of it, it resets: back home, at full
@@ -81,6 +89,12 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
     private static final int CAST_INTERVAL = 5;
     /** How often, in ticks, the particles of a phase change show. */
     private static final int PHASE_CHANGE_PARTICLE_INTERVAL = 4;
+    /** How often, in ticks, the ring that marks where a cast's area lands shows. */
+    private static final int LANDING_RING_INTERVAL = 4;
+    /** The space between two particles of that ring, in blocks. */
+    private static final double LANDING_RING_SPACING = 0.6;
+    /** The ring's particles: a warning orange dust that reads on stone. */
+    private static final DustParticleOptions LANDING_RING = new DustParticleOptions(0xFF7A1F, 1.5F);
 
     private final BossBar bossBar = new BossBar(this, BossEvent.BossBarColor.RED);
     /** When each ability may be cast again, in game time; its own cooldown, beside the spell's. */
@@ -235,6 +249,52 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
             }
             phaseChangeLeft--;
         }
+        if (tickCount % LANDING_RING_INTERVAL == 0) {
+            markLanding(level);
+        }
+    }
+
+    /** Where the area of a cast lands: the middle and the radius of the ring that marks it. */
+    public record Landing(Vec3 middle, double radius) {
+    }
+
+    /**
+     * Where the area of its cast in progress will land, when the spell's first effect is an area: round the entity the
+     * cast acts on (itself, or its target where it stands now), or round the ground point the cast was aimed at when
+     * it began. On the server only.
+     */
+    public Optional<Landing> landing() {
+        Optional<CombatState.Cast> cast = Spells.currentCast(this);
+        Optional<SpellTarget> target = Spells.currentCastTarget(this);
+        if (cast.isEmpty() || target.isEmpty()) {
+            return Optional.empty();
+        }
+        Vec3 middle = target.get().entity().map(Entity::position).orElse(target.get().position());
+        return Spells.get(registryAccess(), cast.get().spell())
+                .flatMap(spell -> landingArea(spell.value()))
+                .map(area -> new Landing(middle, area.radius()));
+    }
+
+    /** While it casts, a ring of particles marks where the cast's area lands ({@link #landing}). */
+    private void markLanding(ServerLevel level) {
+        landing().ifPresent(landing -> {
+            int count = Mth.ceil(2 * Math.PI * landing.radius() / LANDING_RING_SPACING);
+            for (int i = 0; i < count; i++) {
+                double angle = 2 * Math.PI * i / count;
+                level.sendParticles(LANDING_RING, landing.middle().x + Math.cos(angle) * landing.radius(),
+                        landing.middle().y + 0.1, landing.middle().z + Math.sin(angle) * landing.radius(), 1, 0, 0,
+                        0, 0);
+            }
+        });
+    }
+
+    /** The area {@code spell} lands, its first effect, if that is one. */
+    private static Optional<AreaEffect> landingArea(Spell spell) {
+        if (spell.effects().isEmpty()) {
+            return Optional.empty();
+        }
+        SpellEffect first = spell.effects().getFirst();
+        return first instanceof AreaEffect area ? Optional.of(area) : Optional.empty();
     }
 
     /**
@@ -309,7 +369,7 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
                 continue;
             }
             Optional<Holder.Reference<Spell>> spell = Spells.get(registryAccess(), ability.spell());
-            if (spell.isEmpty()) {
+            if (spell.isEmpty() || !worthCasting(spell.get().value(), target)) {
                 continue;
             }
             if (SpellCaster.cast(this, ability.spell(), aim(spell.get().value().targeting(), target)).success()) {
@@ -317,6 +377,21 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
                 return;
             }
         }
+    }
+
+    /**
+     * Whether {@code spell} is worth casting at {@code target} now: an area round the boss itself (a quake) only while
+     * the target stands inside it, measured as the area measures; every other spell whenever the engine allows it.
+     */
+    private boolean worthCasting(Spell spell, LivingEntity target) {
+        if (!(spell.targeting() instanceof SelfTargeting)) {
+            return true;
+        }
+        return landingArea(spell).map(area -> {
+            double dx = target.getX() - getX();
+            double dz = target.getZ() - getZ();
+            return dx * dx + dz * dz <= area.radius() * area.radius();
+        }).orElse(true);
     }
 
     /** What a cast aims at: its target, unless the spell picks its own target or acts on the caster. */

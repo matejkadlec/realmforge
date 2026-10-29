@@ -8,7 +8,6 @@ import io.github.matejkadlec.realmforge.client.compat.neat.NeatCard;
 import io.github.matejkadlec.realmforge.client.compat.neat.NeatCompat;
 import io.github.matejkadlec.realmforge.client.spell.ClientCasts;
 import io.github.matejkadlec.realmforge.generated.GeneratedMobs;
-import io.github.matejkadlec.realmforge.mob.custom.CasterMob;
 import io.github.matejkadlec.realmforge.mob.custom.CustomMob;
 import io.github.matejkadlec.realmforge.spell.CombatState;
 import io.github.matejkadlec.realmforge.spell.ProjectileEffect;
@@ -32,9 +31,9 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
  * The renderers of the custom mobs (architecture 14.2, 18): GeckoLib's, with the model, animations and texture of the
  * mob's id ({@code assets/realmforge/geckolib/models/entity/<id>.geo.json}, {@code .../animations/entity/},
  * {@code textures/entity/<id>.png}, a variant's {@code <id>_<variant>.png}), and Neat's card above it as above every
- * vanilla mob ({@link NeatCard}). The animations turn the model's head to where the mob looks. While a caster casts a
- * spell that forms its projectile, the projectile's orb grows in its raised hands ({@link SpellOrbs}), where the
- * server launches it from.
+ * vanilla mob ({@link NeatCard}). The animations turn the model's head to where the mob looks. While a custom mob (a
+ * caster or a boss) casts a spell that forms its projectile, the projectile's orb grows in its raised hands
+ * ({@link SpellOrbs}), where the server launches it from.
  */
 public final class CustomMobRenderers {
     /** A formed projectile starts at this share of its size and grows to the whole of it by the end of the cast. */
@@ -80,7 +79,7 @@ public final class CustomMobRenderers {
                 custom.texture = entity.variant()
                         .map(variant -> type.withPath("textures/entity/" + type.getPath() + "_" + variant.id() + ".png"))
                         .orElse(null);
-                custom.forming = entity instanceof CasterMob ? forming(entity, partialTick) : Optional.empty();
+                custom.forming = forming(entity, partialTick);
             }
         }
 

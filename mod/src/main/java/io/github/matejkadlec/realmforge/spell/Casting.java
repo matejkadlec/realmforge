@@ -153,6 +153,14 @@ public final class Casting {
         return caster.getExistingData(SpellAttachments.COMBAT).flatMap(CombatState::currentCast);
     }
 
+    /**
+     * What {@code caster}'s cast in progress acts on, as its targeting resolved it when the cast began (an entity, or a
+     * ground point that stays where it was); on the server only, and empty without a cast.
+     */
+    public static Optional<SpellTarget> currentTarget(LivingEntity caster) {
+        return Optional.ofNullable(RUNNING.get(caster)).map(Running::target);
+    }
+
     /** Whether {@code caster} is casting a cast-time or channelled spell. */
     public static boolean isCasting(Entity caster) {
         return caster instanceof LivingEntity living && current(living).isPresent();
