@@ -25,6 +25,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * row: Controlling replaces the screen's list with its own, whose rows lay out their buttons after the render event
  * its API offers, so only a mixin can move the primary button. The new conflict tooltip keeps Controlling's category
  * line first. Applied only when Controlling is loaded ({@code Pseudo}).
+ *
+ * <p>A Controlling update can move any hook's injection point, and the config then skips that hook (RLM-383). The
+ * column's hooks give way together: the secondary button is shown and clickable only once the row has placed it, so a
+ * row whose layout hook lost its {@code setPosition} call keeps Controlling's own layout instead of a stray button at
+ * the screen's corner.
  */
 @Pseudo
 @Mixin(targets = "com.blamejared.controlling.client.NewKeyBindsList$KeyEntry")
@@ -48,6 +53,8 @@ public abstract class ControllingKeyEntryMixin {
     private Button betterKeyBinds$secondaryButton;
     @Unique
     private boolean betterKeyBinds$secondaryConflict;
+    @Unique
+    private boolean betterKeyBinds$placed;
 
     @Inject(method = "<init>", at = @At("TAIL"))
     private void betterKeyBinds$createSecondaryButton(CallbackInfo ci) {
@@ -59,13 +66,21 @@ public abstract class ControllingKeyEntryMixin {
     @WrapOperation(method = "extractContent", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/components/Button;setPosition(II)V", ordinal = 1))
     private void betterKeyBinds$moveChangeButton(Button changeButton, int x, int y, Operation<Void> original) {
+        if (betterKeyBinds$secondaryButton == null) {
+            original.call(changeButton, x, y);
+            return;
+        }
         original.call(changeButton, x - SecondaryKeyColumn.SHIFT, y);
         betterKeyBinds$secondaryButton.setPosition(x, y);
+        betterKeyBinds$placed = true;
     }
 
     @Inject(method = "extractContent", at = @At("TAIL"))
     private void betterKeyBinds$renderSecondaryButton(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
             boolean hovered, float partialTick, CallbackInfo ci) {
+        if (!betterKeyBinds$placed) {
+            return;
+        }
         ContainerObjectSelectionList.Entry<?> row = (ContainerObjectSelectionList.Entry<?>) (Object) this;
         SecondaryKeyColumn.render(graphics, betterKeyBinds$secondaryButton, betterKeyBinds$secondaryConflict,
                 row.getContentY(), row.getContentBottom(), mouseX, mouseY, partialTick);
@@ -73,12 +88,14 @@ public abstract class ControllingKeyEntryMixin {
 
     @ModifyReturnValue(method = "children", at = @At("RETURN"))
     private List<?> betterKeyBinds$addSecondaryButton(List<?> children) {
-        return KeyBindsRows.withSecondaryButton(children, betterKeyBinds$secondaryButton);
+        return betterKeyBinds$placed ? KeyBindsRows.withSecondaryButton(children, betterKeyBinds$secondaryButton)
+                : children;
     }
 
     @ModifyReturnValue(method = "narratables", at = @At("RETURN"))
     private List<?> betterKeyBinds$narrateSecondaryButton(List<?> narratables) {
-        return KeyBindsRows.withSecondaryButton(narratables, betterKeyBinds$secondaryButton);
+        return betterKeyBinds$placed ? KeyBindsRows.withSecondaryButton(narratables, betterKeyBinds$secondaryButton)
+                : narratables;
     }
 
     @Inject(method = "refreshEntry", at = @At("TAIL"))

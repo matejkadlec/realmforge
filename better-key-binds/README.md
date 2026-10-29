@@ -64,9 +64,20 @@ mod has registered its key mappings, not from `options.txt`, whose early startup
 does not know yet.
 
 The Controlling mixins are in their own mixin config, which is not required: they only apply when Controlling is
-loaded, and should a Controlling update change the code they hook into, its screen loses the secondary column
-instead of the game crashing. After a Controlling update in the pack, move the `compileOnly` versions in
-`build.gradle` and check the column in game.
+loaded, and a Controlling update that changes the code they hook into never crashes the game. What it can cost:
+
+- A class, method or field a mixin names is gone: Mixin skips that whole mixin and logs an error.
+- A hook's injection point moved (a call it wraps or a call it injects at): the config's `defaultRequire` is 0, so
+  Mixin skips that hook alone, and the config's plugin (`ControllingMixins`) logs a warning naming it. Each hook then
+  costs only what it adds:
+  - the row's layout hook (the `setPosition` call it wraps): the secondary key column. Its button shows and is
+    clickable only once the row has placed it, so Controlling's own layout stays, without a stray button (the row's
+    other hooks sit at a method's end, which no update moves);
+  - "Show Conflicts", the search by key or "Toggle Free": that tool ignores secondary keys again;
+  - the category headings: they reach into the next row again, as in Controlling itself.
+
+After a Controlling update in the pack, move the `compileOnly` versions in `build.gradle`, check the column in game,
+and look for `Better Key Binds:` warnings in the log.
 
 ## Building and testing
 
