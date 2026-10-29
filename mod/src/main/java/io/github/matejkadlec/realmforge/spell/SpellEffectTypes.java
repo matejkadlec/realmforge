@@ -8,7 +8,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * The spell effect types (architecture 5.3), the first set: {@code damage} and {@code heal} (C3a-1), the status
- * effects, the spell entities, the movements and {@code knockback} (C3a-3). The pipeline knows the same ids
+ * effects, the spell entities, the movements and {@code knockback} (C3a-3), and {@code cleanse} (C4). The pipeline knows the same ids
  * ({@code tools/realmforge_tools/schema/spell.py}).
  */
 public final class SpellEffectTypes {
@@ -30,6 +30,10 @@ public final class SpellEffectTypes {
     /** {@code realmforge:remove_effect}: takes a status effect off the target ({@link RemoveEffectEffect}). */
     public static final DeferredHolder<MapCodec<? extends SpellEffect>, MapCodec<RemoveEffectEffect>> REMOVE_EFFECT =
             TYPES.register("remove_effect", () -> RemoveEffectEffect.MAP_CODEC);
+
+    /** {@code realmforge:cleanse}: takes every harmful status effect off the target ({@link CleanseEffect}). */
+    public static final DeferredHolder<MapCodec<? extends SpellEffect>, MapCodec<CleanseEffect>> CLEANSE =
+            TYPES.register("cleanse", () -> CleanseEffect.MAP_CODEC);
 
     /** {@code realmforge:projectile}: a spell projectile ({@link ProjectileEffect}). */
     public static final DeferredHolder<MapCodec<? extends SpellEffect>, MapCodec<ProjectileEffect>> PROJECTILE =

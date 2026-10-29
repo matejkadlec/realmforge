@@ -17,13 +17,24 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * Status effects generated from {@code content/effects/} (architecture 11.4): attribute modifiers, and damage or
- * healing over time ({@link Periodic}). NeoForge registers attributes before status effects, so a modifier
- * finds its attribute, ours included, when its effect is built.
+ * Status effects generated from {@code content/effects/} (architecture 11.4): attribute modifiers, damage or
+ * healing over time ({@link Periodic}) and stuns. NeoForge registers attributes before status effects, so a
+ * modifier finds its attribute, ours included, when its effect is built.
  */
 public final class GeneratedEffects {
     public static final DeferredRegister<MobEffect> EFFECTS =
             DeferredRegister.create(Registries.MOB_EFFECT, Realmforge.MOD_ID);
+
+    /** {@code realmforge:battle_shout} from {@code content/effects/battle_shout.yaml}: beneficial, "Battle Shout". */
+    public static final DeferredHolder<MobEffect, MobEffect> BATTLE_SHOUT =
+            EFFECTS.register("battle_shout", () -> new StatusEffect(MobEffectCategory.BENEFICIAL, 0xF5241B,
+                    Optional.empty())
+                    .modifier("minecraft:attack_damage", "realmforge:effect.battle_shout.minecraft.attack_damage", 0.1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+
+    /** {@code realmforge:burning} from {@code content/effects/burning.yaml}: harmful, "Burning". */
+    public static final DeferredHolder<MobEffect, MobEffect> BURNING =
+            EFFECTS.register("burning", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0xFF7F1F,
+                    Optional.of(Periodic.damage("realmforge:fire", 0.75, 10))));
 
     /** {@code realmforge:cracked_stone} from {@code content/effects/cracked_stone.yaml}: beneficial, "Cracked Stone". */
     public static final DeferredHolder<MobEffect, MobEffect> CRACKED_STONE =
@@ -32,6 +43,20 @@ public final class GeneratedEffects {
                     .modifier("minecraft:attack_damage", "realmforge:effect.cracked_stone.minecraft.attack_damage", 0.3, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
                     .modifier("minecraft:movement_speed", "realmforge:effect.cracked_stone.minecraft.movement_speed", 0.25, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
                     .modifier("minecraft:armor", "realmforge:effect.cracked_stone.minecraft.armor", -0.5, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+
+    /** {@code realmforge:ice_barrier} from {@code content/effects/ice_barrier.yaml}: beneficial, "Ice Barrier". */
+    public static final DeferredHolder<MobEffect, MobEffect> ICE_BARRIER =
+            EFFECTS.register("ice_barrier", () -> new StatusEffect(MobEffectCategory.BENEFICIAL, 0x7FD4FF,
+                    Optional.empty())
+                    .modifier("realmforge:magic_shield", "realmforge:effect.ice_barrier.realmforge.magic_shield", 12.0, AttributeModifier.Operation.ADD_VALUE));
+
+    /** {@code realmforge:stunned} from {@code content/effects/stunned.yaml}: harmful, "Stunned". */
+    public static final DeferredHolder<MobEffect, MobEffect> STUNNED =
+            EFFECTS.register("stunned", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0xF4D35E,
+                    Optional.empty())
+                    .stuns()
+                    .modifier("minecraft:movement_speed", "realmforge:effect.stunned.minecraft.movement_speed", -1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
+                    .modifier("minecraft:jump_strength", "realmforge:effect.stunned.minecraft.jump_strength", -1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 
     /** {@code realmforge:test_burning} from {@code content/effects/test_burning.yaml}: harmful, "Test Burning". */
     public static final DeferredHolder<MobEffect, MobEffect> TEST_BURNING =
@@ -51,7 +76,7 @@ public final class GeneratedEffects {
                     .modifier("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", -0.1, AttributeModifier.Operation.ADD_VALUE));
 
     /** Every effect above, in id order. */
-    public static final List<DeferredHolder<MobEffect, MobEffect>> ALL = List.of(CRACKED_STONE, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);
+    public static final List<DeferredHolder<MobEffect, MobEffect>> ALL = List.of(BATTLE_SHOUT, BURNING, CRACKED_STONE, ICE_BARRIER, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);
 
     private GeneratedEffects() {
     }

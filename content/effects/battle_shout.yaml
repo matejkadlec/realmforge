@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../tools/schemas/effects.schema.json
+# The Warrior's Battle Shout (C4, the class kit's self-buff): +10 % attack damage while it lasts, for the Warrior and
+# every ally the shout reaches.
+id: battle_shout
+name: {en_us: Battle Shout}
+category: beneficial
+color: "#F5241B"
+modifiers:
+  - {attribute: minecraft:attack_damage, operation: add_multiplied_total, amount_percent: 10}

@@ -5,6 +5,7 @@ import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.character.CharacterAttachments;
 import io.github.matejkadlec.realmforge.character.CharacterData;
 import io.github.matejkadlec.realmforge.character.CharacterRegistries;
+import io.github.matejkadlec.realmforge.character.ClassSpells;
 import io.github.matejkadlec.realmforge.qa.command.StateCommands;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedChapterExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectations;
@@ -79,10 +80,15 @@ public final class PlayerStateGameTests {
         GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-state-save");
         ServerPlayer first = QaPlayers.loginOnPlatform(helper, profile);
         fill(first);
+        // A login teaches the class's spells by level (C4): the saved spellbook holds them already, as the level
+        // agrees with the XP, so the relog changes nothing.
+        ClassSpells.teach(first, false);
+        Spellbook saved = first.getData(SpellAttachments.SPELLBOOK);
+        helper.assertValueEqual(saved.level(FIREBOLT), Optional.of(2), "a taught spell keeps the rank it had");
         server.getPlayerList().remove(first);
 
         ServerPlayer again = QaPlayers.login(server, profile);
-        assertFilled(helper, again, "after a relog");
+        assertFilled(helper, again, saved, "after a relog");
         server.getPlayerList().remove(again);
         helper.succeed();
     }
@@ -97,7 +103,7 @@ public final class PlayerStateGameTests {
 
         ServerPlayer respawned = server.getPlayerList().respawn(dead, false, Entity.RemovalReason.KILLED);
         helper.assertTrue(respawned != dead, "a respawn after death makes a new player entity");
-        assertFilled(helper, respawned, "after death");
+        assertFilled(helper, respawned, SPELLBOOK, "after death");
         server.getPlayerList().remove(respawned);
         helper.succeed();
     }
@@ -180,10 +186,10 @@ public final class PlayerStateGameTests {
         entity.setData(TalentAttachments.TALENTS, TALENTS);
     }
 
-    private static void assertFilled(GameTestHelper helper, LivingEntity entity, String when) {
+    private static void assertFilled(GameTestHelper helper, LivingEntity entity, Spellbook spellbook, String when) {
         helper.assertValueEqual(entity.getData(StatsAttachments.LEVEL), PLAYER_LEVEL, "level " + when);
         helper.assertValueEqual(entity.getData(CharacterAttachments.CHARACTER), CHARACTER, "character " + when);
-        helper.assertValueEqual(entity.getData(SpellAttachments.SPELLBOOK), SPELLBOOK, "spellbook " + when);
+        helper.assertValueEqual(entity.getData(SpellAttachments.SPELLBOOK), spellbook, "spellbook " + when);
         helper.assertValueEqual(entity.getData(SpellAttachments.COMBAT), combat(false),
                 "combat state (resource pools and cooldowns, no cast) " + when);
         helper.assertValueEqual(entity.getData(TalentAttachments.TALENTS), TALENTS, "talents " + when);

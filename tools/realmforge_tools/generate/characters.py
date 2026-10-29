@@ -9,7 +9,13 @@ from realmforge_tools.content import Content
 from realmforge_tools.generate.datapack import seconds_to_ticks, translation_key
 from realmforge_tools.generate.javagen import header, java_file_path, string_literal
 from realmforge_tools.project import MOD_ID, QA_JAVA_PACKAGE, RepoPaths
-from realmforge_tools.schema.character import CharacterModifierDef, RageDef, bonuses
+from realmforge_tools.schema.character import (
+    CharacterModifierDef,
+    RaceDef,
+    RageDef,
+    bonuses,
+    passive_bonuses,
+)
 
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
 
@@ -64,29 +70,63 @@ _BONUS_RECORDS = (
 )
 
 
+def _passive(race: RaceDef) -> str:
+    passive = race.racial_passive
+    if passive is None:
+        return "Optional.empty()"
+    rows = ", ".join(
+        f"new Bonus({string_literal(id_)}, {string_literal(attribute)}, {string_literal(operation)}, "
+        f"{_double(amount)})"
+        for id_, attribute, operation, amount in passive_bonuses(race.id, passive)
+    )
+    return (
+        "Optional.of(new Passive(\n"
+        f"                            {string_literal(translation_key('race', race.id, 'racial_passive.name'))},\n"
+        f"                            {string_literal(translation_key('race', race.id, 'racial_passive.description'))},\n"
+        f"                            {string_literal(passive.weapons)},\n"
+        f"                            List.of({rows})))"
+    )
+
+
 def _races(content: Content) -> bytes:
     rows = []
     for race in (entry.model for entry in content.races):
+        racial_spell = (
+            f"Optional.of({string_literal(race.racial_spell)})"
+            if race.racial_spell is not None
+            else "Optional.empty()"
+        )
         rows.append(
             "            new RaceExpectation(\n"
             f"                    {string_literal(f'{MOD_ID}:{race.id}')},\n"
             f"                    {string_literal(translation_key('race', race.id, 'name'))},\n"
             f"                    {string_literal(translation_key('race', race.id, 'description'))},\n"
             f"                    {_strings(list(race.classes))},\n"
-            f"                    {_bonuses('race', race.id, race.modifiers)})"
+            f"                    {_bonuses('race', race.id, race.modifiers)},\n"
+            f"                    {racial_spell},\n"
+            f"                    {_passive(race)})"
         )
     source = (
         header(Path(__file__), "content/races/") + f"package {QA_GENERATED_PACKAGE};\n"
         "\n"
         "import java.util.List;\n"
+        "import java.util.Optional;\n"
         "\n"
         "/** What {@code content/races/} says about every race, so GameTests can check that the game agrees. */\n"
         "public final class GeneratedRaceExpectations {\n" + _BONUS_RECORDS + "    /**\n"
+        "     * A racial passive: its name and description keys, the item tag the main hand needs, and the bonuses it\n"
+        "     * gives meanwhile.\n"
+        "     */\n"
+        "    public record Passive(String nameKey, String descriptionKey, String weapons, List<Bonus> bonuses) {\n"
+        "    }\n"
+        "\n"
+        "    /**\n"
         "     * Expected state of one race. Ids are full resource locations, e.g. {@code realmforge:human}; the classes\n"
-        "     * are the ones it may take, in the YAML's order; the bonuses are the ones the game must give, in this order.\n"
+        "     * are the ones it may take, in the YAML's order; the bonuses are the ones the game must give, in this order;\n"
+        "     * the racial spell fills the slot beside the spell bar.\n"
         "     */\n"
         "    public record RaceExpectation(String id, String nameKey, String descriptionKey, List<String> classes,\n"
-        "            List<Bonus> bonuses) {\n"
+        "            List<Bonus> bonuses, Optional<String> racialSpell, Optional<Passive> racialPassive) {\n"
         "    }\n"
         "\n"
         f"    public static final List<RaceExpectation> RACES = {_list(rows)};\n"
@@ -104,6 +144,10 @@ def _classes(content: Content) -> bytes:
         kit = ", ".join(
             f"new KitItem({string_literal(item.item)}, {item.count})" for item in player_class.starting_kit
         )
+        spells = ", ".join(
+            f"new ClassSpell({string_literal(taught.spell)}, {taught.level})"
+            for taught in player_class.spells
+        )
         rows.append(
             "            new ClassExpectation(\n"
             f"                    {string_literal(f'{MOD_ID}:{player_class.id}')},\n"
@@ -112,7 +156,8 @@ def _classes(content: Content) -> bytes:
             f"                    {string_literal(player_class.resource)},\n"
             f"                    {_rage(player_class.rage)},\n"
             f"                    List.of({kit}),\n"
-            f"                    {_bonuses('class', player_class.id, player_class.modifiers)})"
+            f"                    {_bonuses('class', player_class.id, player_class.modifiers)},\n"
+            f"                    List.of({spells}))"
         )
     source = (
         header(Path(__file__), "content/classes/") + f"package {QA_GENERATED_PACKAGE};\n"
@@ -132,12 +177,16 @@ def _classes(content: Content) -> bytes:
         "    public record KitItem(String item, int count) {\n"
         "    }\n"
         "\n"
+        "    /** A spell the class teaches at a level. */\n"
+        "    public record ClassSpell(String spell, int level) {\n"
+        "    }\n"
+        "\n"
         "    /**\n"
         "     * Expected state of one class. Ids are full resource locations, e.g. {@code realmforge:warrior}; the bonuses\n"
         "     * are the ones the game must give, in this order.\n"
         "     */\n"
         "    public record ClassExpectation(String id, String nameKey, String descriptionKey, String resource,\n"
-        "            Optional<Rage> rage, List<KitItem> startingKit, List<Bonus> bonuses) {\n"
+        "            Optional<Rage> rage, List<KitItem> startingKit, List<Bonus> bonuses, List<ClassSpell> spells) {\n"
         "    }\n"
         "\n"
         f"    public static final List<ClassExpectation> CLASSES = {_list(rows)};\n"

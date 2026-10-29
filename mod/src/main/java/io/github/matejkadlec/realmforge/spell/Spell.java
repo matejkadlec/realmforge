@@ -30,11 +30,13 @@ import net.minecraft.util.ExtraCodecs;
  * @param maxLevel its highest level (rank)
  * @param crit how it crits
  * @param npcOnly whether only mobs and bosses may cast it
+ * @param requires what a player's cast needs in hand (RLM-499): a melee weapon, a shield
+ * @param castableWhileStunned whether a stunned caster may cast it (Will To Survive, C4)
  * @param effects what it does, in order
  */
 public record Spell(String name, String description, Holder<SpellSchool> school, Scaling scalesWith, SpellTargeting targeting, SpellCast cast,
         Optional<SpellCost> cost, int cooldownTicks, int globalCooldownTicks, int maxLevel, CritRule crit,
-        boolean npcOnly, List<SpellEffect> effects) {
+        boolean npcOnly, List<SpellRequirement> requires, boolean castableWhileStunned, List<SpellEffect> effects) {
     /** The global cooldown of a spell that names none: half a second, as in WoW (Matěj, 2026-10-19, RLM-25). */
     public static final int DEFAULT_GLOBAL_COOLDOWN_TICKS = 10;
 
@@ -52,10 +54,14 @@ public record Spell(String name, String description, Holder<SpellSchool> school,
                     ExtraCodecs.POSITIVE_INT.optionalFieldOf("max_level", 1).forGetter(Spell::maxLevel),
                     CritRule.CODEC.optionalFieldOf("crit", CritRule.DEFAULT).forGetter(Spell::crit),
                     Codec.BOOL.optionalFieldOf("npc_only", false).forGetter(Spell::npcOnly),
+                    SpellRequirement.CODEC.listOf().optionalFieldOf("requires", List.of()).forGetter(Spell::requires),
+                    Codec.BOOL.optionalFieldOf("castable_while_stunned", false)
+                            .forGetter(Spell::castableWhileStunned),
                     ExtraCodecs.nonEmptyList(SpellEffect.CODEC.listOf()).fieldOf("effects").forGetter(Spell::effects))
             .apply(instance, Spell::new));
 
     public Spell {
+        requires = List.copyOf(requires);
         effects = List.copyOf(effects);
     }
 

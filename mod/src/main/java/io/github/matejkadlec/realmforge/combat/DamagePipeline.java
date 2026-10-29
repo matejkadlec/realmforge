@@ -34,8 +34,9 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *
  * <ol>
  *   <li>{@code CriticalHitEvent}: a player's full-strength melee attack crits on our crit chance and deals 1 + crit
- *   damage, instead of vanilla's jump crit; vanilla still plays the crit sound and particles, and a crit no longer
- *   stops a sword's sweep (vanilla's jump crits never met one on the ground).</li>
+ *   damage (plus the chance above 100 %, crit overflow), instead of vanilla's jump crit; vanilla still plays the crit
+ *   sound and particles, and a crit no longer stops a sword's sweep (vanilla's jump crits never met one on the
+ *   ground).</li>
  *   <li>{@code ProjectileImpactEvent}, last: a player's arrow from a full draw (vanilla's crit arrow: a fully drawn bow
  *   or a player's crossbow) or a thrown trident is marked as one that may crit, and an arrow stops being vanilla's
  *   crit arrow, so vanilla's random crit-arrow bonus never stacks with our crit.</li>
@@ -44,9 +45,10 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *   ({@link WeaponBlocks}), before armor and resistances. A marked projectile's hit crits on its shooter's crit
  *   chance and deals 1 + crit damage. A school hit gets spell power (magic), the school's power, a crit roll (by the
  *   spell's {@link CritRule} when a {@link SchoolDamageSource} brings one) and the defender's resistance (spell
- *   resistance added for magic). The armor reduction becomes vanilla's formula on the armor the attacker's armor
- *   pierce and shred leave, except for damage in {@code #minecraft:bypasses_armor}. The defender's magic shield
- *   joins the absorption reduction ({@link MagicShields}).</li>
+ *   resistance added for magic), less the hit's spell penetration ({@link HitBonus}). The armor reduction becomes
+ *   vanilla's formula on the armor the attacker's armor pierce and shred leave (a spell's hit adding its own shred),
+ *   except for damage in {@code #minecraft:bypasses_armor}. The defender's magic shield joins the absorption
+ *   reduction ({@link MagicShields}).</li>
  *   <li>Hurt cooldown: a school hit lands through it ({@code #minecraft:bypasses_cooldown}) and leaves the defender's
  *   window as it was: it grants no invulnerability of its own, and {@code lastHurt}, which vanilla overwrites, is
  *   restored afterwards, so melee hits in an open window are still compared with the previous melee hit, not with a
@@ -118,11 +120,12 @@ public final class DamagePipeline {
             return;
         }
         // Neo resets the attack strength only at the end of Player#attack, so it is still this attack's here.
+        double critChance = stat(player, GeneratedStats.CRIT_CHANCE);
         boolean crit = player.getAttackStrengthScale(0.5F) > FULL_STRENGTH
-                && DamageCalculator.crits(stat(player, GeneratedStats.CRIT_CHANCE), player.getRandom());
+                && DamageCalculator.crits(critChance, player.getRandom());
         event.setCriticalHit(crit);
         event.setDamageMultiplier(crit
-                ? (float) DamageCalculator.critMultiplier(stat(player, GeneratedStats.CRIT_DAMAGE))
+                ? (float) DamageCalculator.critMultiplier(stat(player, GeneratedStats.CRIT_DAMAGE), critChance)
                 : 1.0F);
         // Vanilla's jump crits never happened on the ground, where sweeps do; ours do, so a crit keeps the sweep.
         event.setDisableSweep(false);
@@ -241,12 +244,15 @@ public final class DamagePipeline {
      */
     private static boolean rangedCrit(LivingIncomingDamageEvent event, DamageSource source) {
         if (!source.is(DamageTypeTags.IS_PROJECTILE) || !(source.getEntity() instanceof Player shooter)
-                || !HitTracker.fullDraw(source.getDirectEntity())
-                || !DamageCalculator.crits(stat(shooter, GeneratedStats.CRIT_CHANCE), shooter.getRandom())) {
+                || !HitTracker.fullDraw(source.getDirectEntity())) {
+            return false;
+        }
+        double critChance = stat(shooter, GeneratedStats.CRIT_CHANCE);
+        if (!DamageCalculator.crits(critChance, shooter.getRandom())) {
             return false;
         }
         event.setAmount(event.getAmount()
-                * (float) DamageCalculator.critMultiplier(stat(shooter, GeneratedStats.CRIT_DAMAGE)));
+                * (float) DamageCalculator.critMultiplier(stat(shooter, GeneratedStats.CRIT_DAMAGE), critChance));
         return true;
     }
 
@@ -318,8 +324,9 @@ public final class DamagePipeline {
                         school.power().map(power -> stat(living, power)).orElse(0.0))
                 : DamageCalculator.Attacker.NONE;
         double schoolResistance = school.resistance().map(stat -> stat(defender, stat)).orElse(0.0);
-        double resistance = DamageCalculator.resistance(schoolResistance,
-                stat(defender, GeneratedStats.SPELL_RESISTANCE), school.magic());
+        double resistance = DamageCalculator.penetrated(DamageCalculator.resistance(schoolResistance,
+                stat(defender, GeneratedStats.SPELL_RESISTANCE), school.magic()),
+                SchoolDamageSource.bonusOf(source).penetration());
         DamageCalculator.SchoolHit hit = DamageCalculator.schoolHit(event.getAmount(), school.magic(), attacker,
                 resistance, SchoolDamageSource.critOf(source), level.getRandom());
         event.setAmount((float) hit.damage());
@@ -344,10 +351,11 @@ public final class DamagePipeline {
         }
         float damage = container.getNewDamage();
         LivingEntity attacker = source.getEntity() instanceof LivingEntity living ? living : null;
+        double bonusShred = SchoolDamageSource.bonusOf(source).armorShred();
         double share = attacker != null
                 ? armorShare(defender, damage, stat(attacker, GeneratedStats.ARMOR_PIERCE),
-                        stat(attacker, GeneratedStats.ARMOR_SHRED))
-                : armorShare(defender, damage, 0, 0);
+                        stat(attacker, GeneratedStats.ARMOR_SHRED) + bonusShred)
+                : armorShare(defender, damage, 0, bonusShred);
         ItemStack weapon = source.getWeaponItem();
         if (weapon != null && defender.level() instanceof ServerLevel level) {
             share = Mth.clamp(EnchantmentHelper.modifyArmorEffectiveness(level, weapon, defender, source,

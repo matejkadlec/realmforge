@@ -19,6 +19,9 @@ from realmforge_tools.schema.spell_school import HexColor
 
 Positive = Annotated[float, Field(gt=0, allow_inf_nan=False)]
 
+# What a stun's modifiers bring to a halt (C4): walking and jumping.
+STUN_STOPS: tuple[str, ...] = ("minecraft:movement_speed", "minecraft:jump_strength")
+
 # A tick of damage or healing is a hit or a heal of its own, so a few per second at most.
 MIN_INTERVAL_SECONDS = 0.25
 MAX_INTERVAL_SECONDS = 10.0
@@ -66,11 +69,31 @@ class EffectDef(StrictModel):
     periodic: PeriodicDef | None = Field(
         default=None, description="Damage or healing at the end of every interval while it lasts."
     )
+    stun: bool = Field(
+        default=False,
+        description="A stun (C4): its holder neither attacks nor casts, a mob's AI stands still, and a cast in "
+        "progress is interrupted. Harmful only; its modifiers stop movement (movement_speed and jump_strength at "
+        "-100 % add_multiplied_total).",
+    )
 
     @model_validator(mode="after")
     def _does_something(self) -> EffectDef:
         if not self.modifiers and self.periodic is None:
             raise ValueError("an effect gives modifiers, periodic damage or healing, or both")
+        if self.stun:
+            if self.category != "harmful":
+                raise ValueError("a stun is harmful")
+            stopped = {
+                modifier.attribute
+                for modifier in self.modifiers
+                if modifier.operation == "add_multiplied_total" and modifier.amount_percent == -100
+            }
+            missing = sorted(set(STUN_STOPS) - stopped)
+            if missing:
+                raise ValueError(
+                    f"a stun stops movement: give it {', '.join(missing)} at amount_percent -100, "
+                    "add_multiplied_total"
+                )
         attributes = [modifier.attribute for modifier in self.modifiers]
         repeated = sorted({attribute for attribute in attributes if attributes.count(attribute) > 1})
         if repeated:

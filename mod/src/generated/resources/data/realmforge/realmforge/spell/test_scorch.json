@@ -18,6 +18,8 @@
     "bonus_chance": 0.0
   },
   "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
   "effects": [
     {
       "type": "realmforge:area",

@@ -1,8 +1,10 @@
 # yaml-language-server: $schema=../../tools/schemas/classes.schema.json
 # The M1 caster (decision D1, RLM-51): intellect. A caster starts with 100 Max Mana and 5 Mana Regeneration, 5 mana a
-# second (Matěj, 2026-10-14). Its spells come in C4; it starts with the Stone Wand (RLM-172) and the Apprentice's
-# set (RLM-197). The stats stay the same at every level: each level gives a stat point to spend instead, and the
-# class keeps these as its starting identity until Matěj decides on them (2026-10-15, RLM-196).
+# second (Matěj, 2026-10-14); it starts with the Stone Wand (RLM-172) and the Apprentice's set (RLM-197). The stats stay
+# the same at every level: each level gives a stat point to spend instead, and the class keeps these as its starting
+# identity until Matěj decides on them (2026-10-15, RLM-196). Its kit (C4): Frostbolt at level 1 (decision D4's
+# starting spell, Frost's first, the M1 tree), Ice Barrier at 3, Fireball at 5 and Arcane Missiles at 8, four spells by
+# the end of chapter 1 (D4: 4 x N). The Mage never heals: it survives through shields and utility (Matěj, 2026-10-22).
 id: mage
 name:
   en_us: Mage
@@ -23,3 +25,8 @@ starting_kit:
   - {item: realmforge:apprentice_pants}
   - {item: realmforge:apprentice_boots}
   - {item: minecraft:bread, count: 32}
+spells:
+  - {spell: realmforge:frostbolt, level: 1}
+  - {spell: realmforge:ice_barrier, level: 3}
+  - {spell: realmforge:fireball, level: 5}
+  - {spell: realmforge:arcane_missiles, level: 8}

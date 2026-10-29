@@ -86,9 +86,10 @@ def _registration(effect: EffectDef) -> str:
         f"AttributeModifier.Operation.{_OPERATIONS[modifier.operation]})"
         for modifier in effect.modifiers
     )
+    stun = "\n                    .stuns()" if effect.stun else ""
     return (
         f"() -> new StatusEffect(MobEffectCategory.{_CATEGORIES[effect.category]}, {_hex(effect.color)},\n"
-        f"                    {_periodic(effect)}){modifiers}"
+        f"                    {_periodic(effect)}){stun}{modifiers}"
     )
 
 
@@ -118,9 +119,9 @@ def _registrations(content: Content) -> bytes:
         "import net.neoforged.neoforge.registries.DeferredRegister;\n"
         "\n"
         "/**\n"
-        " * Status effects generated from {@code content/effects/} (architecture 11.4): attribute modifiers, and damage or\n"
-        " * healing over time ({@link Periodic}). NeoForge registers attributes before status effects, so a modifier\n"
-        " * finds its attribute, ours included, when its effect is built.\n"
+        " * Status effects generated from {@code content/effects/} (architecture 11.4): attribute modifiers, damage or\n"
+        " * healing over time ({@link Periodic}) and stuns. NeoForge registers attributes before status effects, so a\n"
+        " * modifier finds its attribute, ours included, when its effect is built.\n"
         " */\n"
         "public final class GeneratedEffects {\n"
         "    public static final DeferredRegister<MobEffect> EFFECTS =\n"
@@ -161,7 +162,8 @@ def _expectation(effect: EffectDef) -> str:
         f"                    {string_literal(effect.category)},\n"
         f"                    {_hex(effect.color)},\n"
         f"                    List.of({modifiers}),\n"
-        f"                    {periodic_expectation})"
+        f"                    {periodic_expectation},\n"
+        f"                    {'true' if effect.stun else 'false'})"
     )
 
 
@@ -188,9 +190,12 @@ def _expectations(content: Content) -> bytes:
         "    public record PeriodicExpectation(String type, String school, double amount, int intervalTicks) {\n"
         "    }\n"
         "\n"
-        "    /** Expected state of one effect: its category, particle colour (RGB), modifiers and periodic ticks. */\n"
+        "    /**\n"
+        "     * Expected state of one effect: its category, particle colour (RGB), modifiers, periodic ticks and whether\n"
+        "     * it stuns.\n"
+        "     */\n"
         "    public record EffectExpectation(String id, String descriptionId, String category, int color,\n"
-        "            List<ModifierExpectation> modifiers, Optional<PeriodicExpectation> periodic) {\n"
+        "            List<ModifierExpectation> modifiers, Optional<PeriodicExpectation> periodic, boolean stun) {\n"
         "    }\n"
         "\n"
         f"    public static final List<EffectExpectation> EFFECTS = {effects};\n"

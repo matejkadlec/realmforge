@@ -163,6 +163,12 @@
       ],
       "default": null,
       "description": "Damage or healing at the end of every interval while it lasts."
+    },
+    "stun": {
+      "default": false,
+      "description": "A stun (C4): its holder neither attacks nor casts, a mob's AI stands still, and a cast in progress is interrupted. Harmful only; its modifiers stop movement (movement_speed and jump_strength at -100 % add_multiplied_total).",
+      "title": "Stun",
+      "type": "boolean"
     }
   },
   "required": [

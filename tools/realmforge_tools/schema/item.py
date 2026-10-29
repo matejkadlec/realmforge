@@ -36,6 +36,24 @@ WANDS_TAG = f"{MOD_ID}:wands"
 # locked for 3 minutes after (item/TwoHandedGear; Matěj, 2026-10-26). Not Better Combat's two-handed weapons, which a
 # player raises with right click to block (combat/WeaponBlocks).
 TWO_HANDED_TAG = f"{MOD_ID}:two_handed"
+# The item tag of melee weapons (RLM-499): a player's melee spell needs one in the main hand. Vanilla's swords, axes,
+# spears, the trident and the mace; our own melee weapon types (katana, hammer, dagger) join it once they exist. Bows,
+# crossbows, wands and tools such as pickaxes are no melee weapons.
+MELEE_WEAPONS_TAG = f"{MOD_ID}:melee_weapons"
+# The item tag of sword-like weapons (Matěj, 2026-10-15, RLM-219): the Human's Sword Specialization. Vanilla's swords
+# today; katanas, longswords and maybe rapiers once the pack has them.
+SWORD_LIKE_TAG = f"{MOD_ID}:sword_like"
+# Item tags whose members are fixed here rather than coming from content/items/ (generate/items.py writes them).
+FIXED_ITEM_TAGS: dict[str, tuple[str, ...]] = {
+    MELEE_WEAPONS_TAG: (
+        "#minecraft:swords",
+        "#minecraft:axes",
+        "#minecraft:spears",
+        "minecraft:trident",
+        "minecraft:mace",
+    ),
+    SWORD_LIKE_TAG: ("#minecraft:swords",),
+}
 # A player's attack damage and attack speed without a weapon (vanilla's base values): a weapon's tooltip numbers are
 # its modifiers plus these.
 PLAYER_ATTACK_DAMAGE = 1.0

@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../tools/schemas/effects.schema.json
+# The Mage's Ice Barrier (C4; the Mage survives through shields, not heals, Matěj, 2026-10-22): +12 Magic Shield while
+# it lasts, and the points it adds fill the pool at once (combat/MagicShields), so it shields in a fight too.
+id: ice_barrier
+name: {en_us: Ice Barrier}
+category: beneficial
+color: "#7FD4FF"
+modifiers:
+  - {attribute: realmforge:magic_shield, operation: add_value, amount: 12}

@@ -14,11 +14,12 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
 /**
  * One of our status effects, from {@code content/effects/} through {@code GeneratedEffects} (architecture 11.4):
- * vanilla's attribute modifiers, and damage or healing at the end of every interval ({@link Periodic}), which takes
- * the stats of the caster that applied it ({@link EffectTicks}).
+ * vanilla's attribute modifiers, damage or healing at the end of every interval ({@link Periodic}), which takes the
+ * stats of the caster that applied it ({@link EffectTicks}), and whether it stuns ({@link Stuns}, C4).
  */
 public class StatusEffect extends MobEffect {
     private final Optional<Periodic> periodic;
+    private boolean stuns;
 
     public StatusEffect(MobEffectCategory category, int color, Optional<Periodic> periodic) {
         super(category, color);
@@ -28,6 +29,17 @@ public class StatusEffect extends MobEffect {
     /** Its damage or healing over time, if it has any. */
     public Optional<Periodic> periodic() {
         return periodic;
+    }
+
+    /** Makes it a stun ({@link Stuns}); the generated registration calls it while it builds the effect. */
+    public StatusEffect stuns() {
+        stuns = true;
+        return this;
+    }
+
+    /** Whether it is a stun: its holder neither attacks nor casts, and a mob's AI stands still. */
+    public boolean isStun() {
+        return stuns;
     }
 
     /**

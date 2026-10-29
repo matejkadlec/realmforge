@@ -12,7 +12,7 @@ from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import RepoPaths
 from realmforge_tools.schema.effect import EffectDef, modifier_id
 from realmforge_tools.validate import load_and_validate
-from tests.conftest import write
+from tests.conftest import drop_class_kits, write
 
 LANG = "mod/src/generated/resources/assets/realmforge/lang/en_us.json"
 ICONS = "mod/src/generated/resources/assets/realmforge/textures/mob_effect"
@@ -57,7 +57,11 @@ def effect_model(**fields: object) -> EffectDef:
 def test_repository_effects_are_the_engine_tests() -> None:
     content, _ = load_and_validate(RepoPaths())
     assert {entry.model.id for entry in content.effects} == {
+        "battle_shout",
+        "burning",
         "cracked_stone",
+        "ice_barrier",
+        "stunned",
         "test_burning",
         "test_regrowth",
         "test_sapped",
@@ -175,7 +179,10 @@ def test_registrations(repo: RepoPaths) -> None:
         '"realmforge:effect.test_sapped.minecraft.movement_speed", -0.2, '
         "AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)\n"
     ) in java
-    assert "ALL = List.of(CRACKED_STONE, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);" in java
+    assert (
+        "ALL = List.of(BATTLE_SHOUT, BURNING, CRACKED_STONE, ICE_BARRIER, STUNNED, TEST_BURNING, TEST_REGROWTH, "
+        "TEST_SAPPED);"
+    ) in java
 
 
 def test_modifier_ids_name_the_effect_and_the_attribute() -> None:
@@ -203,7 +210,8 @@ def test_expectations(repo: RepoPaths) -> None:
         '                    "beneficial",\n'
         "                    0x4FCF6F,\n"
         "                    List.of(),\n"
-        '                    Optional.of(new PeriodicExpectation("heal", "realmforge:arcane", 2.0, 20)))'
+        '                    Optional.of(new PeriodicExpectation("heal", "realmforge:arcane", 2.0, 20)),\n'
+        "                    false)"
     ) in expectations
     assert (
         'new ModifierExpectation("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", '
@@ -212,11 +220,22 @@ def test_expectations(repo: RepoPaths) -> None:
 
 
 def test_no_effects_still_compile(repo: RepoPaths) -> None:
-    # The spells that apply them go too, and Astone, whose last phase casts one of them.
+    # The spells that apply them go too, with the class kits that teach some of them, and Astone, whose last phase
+    # casts one of them.
     for file in (repo.content / "effects").glob("*.yaml"):
         file.unlink()
-    for name in ("test_ignite", "test_regrow", "test_sap", "astone_cracked_stone"):
+    for name in (
+        "test_ignite",
+        "test_regrow",
+        "test_sap",
+        "astone_cracked_stone",
+        "battle_shout",
+        "fireball",
+        "ice_barrier",
+        "shield_bash",
+    ):
         (repo.content / "spells" / f"{name}.yaml").unlink()
+    drop_class_kits(repo.content)
     for folder in ("bosses", "mobs", "kill_xp_multipliers"):
         (repo.content / folder / "astone.yaml").unlink()
     files = generate(repo)

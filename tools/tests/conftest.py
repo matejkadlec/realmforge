@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import shutil
 from pathlib import Path
 
@@ -29,3 +30,16 @@ def write(path: Path, text: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
     return path
+
+
+def drop_class_kits(content: Path) -> None:
+    """Takes the class kits out of ``content`` (C4): every class's ``spells`` and every race's ``racial_spell``, for a
+    test that deletes the spells they name."""
+    for file in (content / "classes").glob("*.yaml"):
+        file.write_text(
+            re.sub(r"^spells:\n(?:  - .*\n)*", "", file.read_text(encoding="utf-8"), flags=re.M), "utf-8"
+        )
+    for file in (content / "races").glob("*.yaml"):
+        file.write_text(
+            re.sub(r"^racial_spell: .*\n", "", file.read_text(encoding="utf-8"), flags=re.M), "utf-8"
+        )

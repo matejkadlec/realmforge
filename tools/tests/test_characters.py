@@ -303,6 +303,7 @@ def test_generated_data_and_lang(repo: RepoPaths) -> None:
             }
         ],
         "starting_kit": [{"item": "minecraft:bread", "count": 32}, {"item": "minecraft:stick", "count": 1}],
+        "spells": [],
     }
     elf = json.loads(files[f"{DATA}/race/elf.json"])
     assert elf["classes"] == ["realmforge:rogue"]

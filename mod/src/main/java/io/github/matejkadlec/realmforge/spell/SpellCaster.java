@@ -3,6 +3,7 @@ package io.github.matejkadlec.realmforge.spell;
 import com.mojang.datafixers.util.Either;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
+import io.github.matejkadlec.realmforge.effect.Effects;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.progression.ProgressionTriggers;
 import java.util.Optional;
@@ -31,7 +32,10 @@ import net.minecraft.world.item.ItemStack;
  *   <li>the spell does not exist;</li>
  *   <li>a player casts an {@code npc_only} spell, or one their spellbook does not know;</li>
  *   <li>a cast-time or channelled spell of the caster is still in progress;</li>
+ *   <li>the caster is stunned, and the spell is not one cast while stunned (C4);</li>
  *   <li>the spell's own cooldown runs, or the global cooldown runs and the spell is on it;</li>
+ *   <li>a player lacks what the spell needs in hand: a melee weapon in the main hand, a shield in either hand
+ *   ({@link SpellRequirement}, RLM-499);</li>
  *   <li>its targeting finds no valid target (an entity or a point) in range and in line of sight;</li>
  *   <li>a player has less of the spell's resource than it costs.</li>
  * </ol>
@@ -130,12 +134,19 @@ public final class SpellCaster {
         if (current.isPresent() && (!replaceCast || current.get().spell().equals(spell.key()))) {
             return CastResult.refused(CastFailure.ALREADY_CASTING);
         }
+        if (!value.castableWhileStunned() && Effects.isStunned(caster)) {
+            return CastResult.refused(CastFailure.STUNNED);
+        }
         long now = serverLevel.getGameTime();
         if (state.isOnCooldown(spell.key(), now)) {
             return CastResult.refused(CastFailure.ON_COOLDOWN);
         }
         if (state.isOnGlobalCooldown(now)) {
             return CastResult.refused(CastFailure.ON_GLOBAL_COOLDOWN);
+        }
+        Optional<CastFailure> unmet = unmetRequirement(caster, value);
+        if (unmet.isPresent()) {
+            return CastResult.refused(unmet.get());
         }
         Either<SpellTarget, CastFailure> resolved = value.targeting().resolve(caster, aim);
         Optional<CastFailure> missed = resolved.right();
@@ -205,6 +216,18 @@ public final class SpellCaster {
         if (caster instanceof ServerPlayer player) {
             ProgressionTriggers.SPELL_CAST.get().trigger(player, spell.key().identifier());
         }
+    }
+
+    /**
+     * Why a player cannot cast {@code spell} with what they hold, if they cannot: the first of its requirements they do
+     * not meet (RLM-499). Mobs and bosses cast without them.
+     */
+    static Optional<CastFailure> unmetRequirement(LivingEntity caster, Spell spell) {
+        if (!(caster instanceof Player)) {
+            return Optional.empty();
+        }
+        return spell.requires().stream().filter(requirement -> !requirement.metBy(caster))
+                .map(SpellRequirement::failure).findFirst();
     }
 
     /** Whether {@code caster} has enough of the spell's resource for a cast at {@code level}; mobs always do. */

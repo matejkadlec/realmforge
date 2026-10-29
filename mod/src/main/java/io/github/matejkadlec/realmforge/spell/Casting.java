@@ -2,6 +2,7 @@ package io.github.matejkadlec.realmforge.spell;
 
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
+import io.github.matejkadlec.realmforge.effect.Effects;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.spell.CombatState.Cast;
 import io.github.matejkadlec.realmforge.spell.net.CastEndedPayload;
@@ -24,6 +25,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
@@ -97,6 +99,7 @@ public final class Casting {
                 event -> end(event.getEntity(), CastEnd.CHANGED_DIMENSION));
         NeoForge.EVENT_BUS.addListener(PlayerEvent.StartTracking.class, Casting::onStartTracking);
         NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, event -> RUNNING.clear());
+        NeoForge.EVENT_BUS.addListener(MobEffectEvent.Added.class, Casting::onEffectAdded);
     }
 
     /**
@@ -413,6 +416,13 @@ public final class Casting {
     private static void onAttack(AttackEntityEvent event) {
         if (isCasting(event.getEntity())) {
             event.setCanceled(true);
+        }
+    }
+
+    /** A stun (C4) interrupts the cast in progress, whatever its spell. */
+    private static void onEffectAdded(MobEffectEvent.Added event) {
+        if (!event.getEntity().level().isClientSide() && Effects.isStun(event.getEffectInstance().getEffect())) {
+            end(event.getEntity(), CastEnd.STUNNED);
         }
     }
 

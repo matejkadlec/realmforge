@@ -237,10 +237,10 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
     }
 
     /**
-     * The Origin tab (Matěj, 2026-10-14): the race on the left (its description and what it gives; its racial ability
-     * comes with the spell system), the class on the right (its description, then the specialization, a placeholder
-     * until the specialization spell trees exist, C5). A race or class the player lacks, or whose entry is gone, reads
-     * as "None".
+     * The Origin tab (Matěj, 2026-10-14): the race on the left (its description, what it gives, its racial ability and
+     * its racial passive, C4), the class on the right (its description, then the specialization, a placeholder until
+     * the specialization spell trees exist, C5). A race or class the player lacks, or whose entry is gone, reads as
+     * "None".
      */
     private static Tab origin(CharacterData character, HolderLookup.Provider registries) {
         Optional<Race> race = character.race()
@@ -256,6 +256,13 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
             for (int n = 0; n < bonuses.size(); n++) {
                 raceRows.add(new Row(ORIGIN + "race/bonus/" + n, bonuses.get(n), "", false, BONUS));
             }
+            entry.racialSpell().ifPresent(spell -> raceRows.add(new Row(ORIGIN + "race/racial_ability",
+                    Component.translatable(GeneratedTexts.GUI_ORIGIN_RACIAL_ABILITY,
+                            Component.translatable(spell.value().name())), "", false, TEXT)));
+            entry.racialPassive().ifPresent(passive -> raceRows.add(new Row(ORIGIN + "race/racial_passive",
+                    Component.translatable(GeneratedTexts.GUI_ORIGIN_RACIAL_PASSIVE,
+                            Component.translatable(passive.name()), RacialPassives.description(passive)), "", false,
+                    TEXT)));
         });
         List<Row> classRows = new ArrayList<>();
         playerClass.ifPresent(entry -> classRows.add(new Row(ORIGIN + "class/description",

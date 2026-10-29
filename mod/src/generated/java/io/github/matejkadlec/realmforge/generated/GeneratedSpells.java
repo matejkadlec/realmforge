@@ -11,6 +11,9 @@ import net.minecraft.resources.ResourceKey;
 
 /** Keys of the spells in {@code content/spells/}, so Java names a spell without typing its id. */
 public final class GeneratedSpells {
+    /** {@code realmforge:arcane_missiles} from {@code content/spells/arcane_missiles.yaml}: arcane, direction, projectile. */
+    public static final ResourceKey<Spell> ARCANE_MISSILES = key("arcane_missiles");
+
     /** {@code realmforge:astone_boulder} from {@code content/spells/astone_boulder.yaml}: physical, current_target, projectile. */
     public static final ResourceKey<Spell> ASTONE_BOULDER = key("astone_boulder");
 
@@ -25,6 +28,27 @@ public final class GeneratedSpells {
 
     /** {@code realmforge:astone_shockwave} from {@code content/spells/astone_shockwave.yaml}: physical, self, area. */
     public static final ResourceKey<Spell> ASTONE_SHOCKWAVE = key("astone_shockwave");
+
+    /** {@code realmforge:battle_shout} from {@code content/spells/battle_shout.yaml}: physical, self, area. */
+    public static final ResourceKey<Spell> BATTLE_SHOUT = key("battle_shout");
+
+    /** {@code realmforge:fireball} from {@code content/spells/fireball.yaml}: fire, direction, projectile. */
+    public static final ResourceKey<Spell> FIREBALL = key("fireball");
+
+    /** {@code realmforge:frostbolt} from {@code content/spells/frostbolt.yaml}: frost, direction, projectile. */
+    public static final ResourceKey<Spell> FROSTBOLT = key("frostbolt");
+
+    /** {@code realmforge:ice_barrier} from {@code content/spells/ice_barrier.yaml}: frost, self, apply_effect. */
+    public static final ResourceKey<Spell> ICE_BARRIER = key("ice_barrier");
+
+    /** {@code realmforge:reckless_strike} from {@code content/spells/reckless_strike.yaml}: physical, enemy, damage. */
+    public static final ResourceKey<Spell> RECKLESS_STRIKE = key("reckless_strike");
+
+    /** {@code realmforge:shield_bash} from {@code content/spells/shield_bash.yaml}: physical, enemy, damage, apply_effect. */
+    public static final ResourceKey<Spell> SHIELD_BASH = key("shield_bash");
+
+    /** {@code realmforge:slam} from {@code content/spells/slam.yaml}: physical, enemy, damage. */
+    public static final ResourceKey<Spell> SLAM = key("slam");
 
     /** {@code realmforge:stoneform} from {@code content/spells/stoneform.yaml}: arcane, current_target, projectile. */
     public static final ResourceKey<Spell> STONEFORM = key("stoneform");
@@ -107,8 +131,11 @@ public final class GeneratedSpells {
     /** {@code realmforge:test_titan_harden} from {@code content/spells/test_titan_harden.yaml}: physical, self, apply_effect. */
     public static final ResourceKey<Spell> TEST_TITAN_HARDEN = key("test_titan_harden");
 
+    /** {@code realmforge:will_to_survive} from {@code content/spells/will_to_survive.yaml}: physical, self, cleanse. */
+    public static final ResourceKey<Spell> WILL_TO_SURVIVE = key("will_to_survive");
+
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Spell>> ALL = List.of(ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, ASTONE_SHOCKWAVE, STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TITAN_HARDEN);
+    public static final List<ResourceKey<Spell>> ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, ASTONE_SHOCKWAVE, BATTLE_SHOUT, FIREBALL, FROSTBOLT, ICE_BARRIER, RECKLESS_STRIKE, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TITAN_HARDEN, WILL_TO_SURVIVE);
 
     private GeneratedSpells() {
     }

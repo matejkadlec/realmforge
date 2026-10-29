@@ -87,6 +87,12 @@ texts:
     en_us: "Race: %1$s"
   origin_class:
     en_us: "Class: %1$s"
+  # The race's racial active and passive under its bonuses (C4, RLM-219): "Racial ability: Will To Survive" and
+  # "Sword Specialization: +10% damage" (%1$s the passive's name, %2$s its tooltip line).
+  origin_racial_ability:
+    en_us: "Racial ability: %1$s"
+  origin_racial_passive:
+    en_us: "%1$s: %2$s"
   none:
     en_us: None
   specialization_wip:

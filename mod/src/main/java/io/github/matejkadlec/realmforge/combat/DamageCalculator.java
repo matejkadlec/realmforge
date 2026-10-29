@@ -12,11 +12,13 @@ import net.minecraft.util.RandomSource;
  * <ul>
  *   <li><b>Crit:</b> a roll against the attacker's crit chance; a crit multiplies the damage by 1 + crit damage. A
  *   spell's hit or heal crits by its {@link CritRule}: it may not crit at all, add to the chance, or bring its own
- *   multiplier (Matěj, 2026-10-15).</li>
+ *   multiplier (Matěj, 2026-10-15). A chance above 100 % always crits, and what lies above 100 % adds to the
+ *   multiplier 1:1, 1 % of chance for 1 % of crit damage (crit overflow, RLM-392; C4).</li>
  *   <li><b>Dodge:</b> a roll against the defender's dodge chance; a dodged hit deals nothing.</li>
  *   <li><b>School hit:</b> damage × (1 + spell power, for magic only, + the school's power), then the crit roll, then
  *   × (1 − the defender's resistance): the resistance to the school, plus spell resistance for a magic school, at
- *   most 75 % together ({@link #RESISTANCE_CAP}).</li>
+ *   most 75 % together ({@link #RESISTANCE_CAP}), less the hit's spell penetration share of it
+ *   ({@link #penetrated}; C4).</li>
  *   <li><b>Armor:</b> vanilla's formula ({@code CombatRules#getDamageAfterAbsorb}; Matěj, 2026-10-16), on the armor
  *   the attacker's armor pierce leaves (the flat points first, then the armor shred share of what is left). With D the
  *   hit's damage, effective armor = clamp(armor − D / (2 + toughness / 4), armor / 5, 20) blocks effective / 25 of
@@ -77,13 +79,27 @@ public final class DamageCalculator {
     }
 
     /**
+     * The damage multiplier of a critical hit rolled on {@code critChance}: 1 + crit damage + the chance above 100 %
+     * (crit overflow, RLM-392: 1 % of chance for 1 % of crit damage).
+     */
+    public static double critMultiplier(double critDamage, double critChance) {
+        return critMultiplier(critDamage) + critOverflow(critChance);
+    }
+
+    /** The crit chance above 100 %, which a crit adds to its multiplier; 0 at 100 % or less. */
+    public static double critOverflow(double critChance) {
+        return Math.max(0, critChance - 1);
+    }
+
+    /**
      * A crit roll by {@code rule} for a caster with {@code critChance} and {@code critDamage}: a rule that cannot crit
      * never rolls; otherwise the chance is the caster's plus the rule's bonus, and a crit multiplies by the rule's own
-     * multiplier or 1 + crit damage.
+     * multiplier or 1 + crit damage, plus the chance above 100 % (crit overflow).
      */
     public static Crit crit(CritRule rule, double critChance, double critDamage, RandomSource random) {
-        return rule.canCrit() && crits(rule.chance(critChance), random)
-                ? new Crit(true, rule.multiplier(critDamage))
+        double chance = rule.chance(critChance);
+        return rule.canCrit() && crits(chance, random)
+                ? new Crit(true, rule.multiplier(critDamage) + critOverflow(chance))
                 : Crit.NONE;
     }
 
@@ -115,6 +131,14 @@ public final class DamageCalculator {
     public static double resistance(double schoolResistance, double spellResistance, boolean magic) {
         double sum = Math.max(0, schoolResistance) + (magic ? Math.max(0, spellResistance) : 0);
         return Math.min(RESISTANCE_CAP, sum);
+    }
+
+    /**
+     * The resistance a hit with spell penetration meets: {@code resistance} less the {@code penetration} share of it
+     * (25 % penetration leaves three quarters of a 40 % resistance, 30 %). Shares outside 0 to 1 are kept there.
+     */
+    public static double penetrated(double resistance, double penetration) {
+        return Math.max(0, resistance) * (1 - Mth.clamp(penetration, 0, 1));
     }
 
     /** Damage after a resistance: × (1 − resistance), the resistance kept between 0 and 1. */

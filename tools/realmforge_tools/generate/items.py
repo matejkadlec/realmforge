@@ -26,6 +26,7 @@ from realmforge_tools.generate.textures import placeholder_equipment_texture, pl
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.item import (
     ARMOR_KINDS,
+    FIXED_ITEM_TAGS,
     PLAYER_ATTACK_DAMAGE,
     PLAYER_ATTACK_SPEED,
     TWO_HANDED_TAG,
@@ -130,7 +131,7 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         )
     files.update(_looks(content, assets))
 
-    tags: dict[str, list[str]] = {}
+    tags: dict[str, list[str]] = {tag: list(members) for tag, members in FIXED_ITEM_TAGS.items()}
     for entry in content.items:
         item = f"{MOD_ID}:{entry.model.id}"
         if entry.model.use is not None:

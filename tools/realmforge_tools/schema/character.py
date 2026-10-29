@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Annotated, Literal
 
 from pydantic import Field, model_validator
@@ -25,6 +26,9 @@ FiniteNumber = Annotated[float, Field(allow_inf_nan=False)]
 RESOURCE_TYPES: tuple[str, ...] = (f"{MOD_ID}:mana", f"{MOD_ID}:rage")
 ResourceType = Literal["realmforge:mana", "realmforge:rage"]
 RAGE = f"{MOD_ID}:rage"
+
+# The highest level a class may teach a spell at: far beyond today's caps (30), within the chapters' levels.
+MAX_CLASS_SPELL_LEVEL = 1000
 
 # Every class's starting kit holds this much bread (Matěj, 2026-10-14: "for both classes and any future classes").
 STARTING_BREAD: tuple[str, int] = ("minecraft:bread", 32)
@@ -75,9 +79,44 @@ class KitItemDef(StrictModel):
     count: int = Field(default=1, ge=1, le=64, description="How many (1 to 64), split into full stacks.")
 
 
+# The placeholder a racial passive's description may name: its first modifier, in percent for a multiplied operation.
+PASSIVE_PLACEHOLDERS: tuple[str, ...] = ("bonus",)
+_PLACEHOLDER = re.compile(r"\{([^{}]*)\}")
+
+
+class RacialPassiveDef(StrictModel):
+    """A race's racial passive (Matěj, 2026-10-15, RLM-219): modifiers its players have while the main hand holds an
+    item of ``weapons``, such as the Human's Sword Specialization. For a player of the race, every such item's tooltip
+    shows the passive's name and description below the item's stats (architecture 10.1)."""
+
+    name: LocalizedText = Field(
+        description="The passive's name, e.g. Sword Specialization (dark gray in tooltips)."
+    )
+    description: LocalizedText = Field(
+        description='What it gives, one short line in tooltips, e.g. "+{bonus}% damage": {bonus} is its first '
+        "modifier's amount (in percent for a multiplied operation)."
+    )
+    weapons: ResourceId = Field(
+        description="An item tag, e.g. realmforge:sword_like: the passive applies while an item of it is in the main "
+        "hand."
+    )
+    modifiers: list[CharacterModifierDef] = Field(
+        min_length=1, description="Attribute modifiers it gives while it applies."
+    )
+
+    @model_validator(mode="after")
+    def _placeholders(self) -> RacialPassiveDef:
+        for name in _PLACEHOLDER.findall(self.description.en_us):
+            if name not in PASSIVE_PLACEHOLDERS:
+                raise ValueError(
+                    f"description: unknown placeholder {{{name}}}; known: {', '.join(PASSIVE_PLACEHOLDERS)}"
+                )
+        return self
+
+
 class RaceDef(StrictModel):
-    """A playable race: the classes it may take and the modifiers it gives (architecture 10.1). Innate spells and a
-    size come with the spell system (C4) and later races."""
+    """A playable race: the classes it may take, the modifiers it gives, and its racial active and passive
+    (architecture 10.1; C4). A size comes with later races."""
 
     id: ContentId
     name: LocalizedText = Field(description="The race's name, shown on character creation (Title Case).")
@@ -89,6 +128,14 @@ class RaceDef(StrictModel):
     )
     modifiers: list[CharacterModifierDef] = Field(
         default_factory=list, description="Attribute modifiers the race gives, usually primary stats."
+    )
+    racial_spell: ResourceId | None = Field(
+        default=None,
+        description="Its racial active (RLM-219): a free spell every player of the race knows from creation, in the "
+        "racial slot beside the spell bar (X), e.g. realmforge:will_to_survive.",
+    )
+    racial_passive: RacialPassiveDef | None = Field(
+        default=None, description="Its racial passive (RLM-219), e.g. the Human's Sword Specialization."
     )
 
 
@@ -119,9 +166,17 @@ class RageDef(StrictModel):
     )
 
 
+class ClassSpellDef(StrictModel):
+    """A spell a class teaches its players at a level (C4): they learn it at rank 1 once they reach the level, and
+    keep it."""
+
+    spell: ResourceId = Field(description="The spell, e.g. realmforge:slam.")
+    level: int = Field(ge=1, le=MAX_CLASS_SPELL_LEVEL, description="The character level that teaches it.")
+
+
 class ClassDef(StrictModel):
-    """A class: its role, its resource, the stats it gives and its starting kit (architecture 10.1). Spells by level
-    and talent trees come with C4 and C5."""
+    """A class: its role, its resource, the stats it gives, its spells by level and its starting kit (architecture
+    10.1). The specialization spell trees come with C5."""
 
     id: ContentId
     name: LocalizedText = Field(
@@ -147,6 +202,21 @@ class ClassDef(StrictModel):
     starting_kit: list[KitItemDef] = Field(
         default_factory=list, description="Items a new character of this class receives once."
     )
+    spells: list[ClassSpellDef] = Field(
+        default_factory=list,
+        description="The spells the class teaches by level (C4): one at level 1, and at most 4 per chapter in all "
+        "(decision D4: chapter N allows 4 x N spells).",
+    )
+
+    @model_validator(mode="after")
+    def _spells(self) -> ClassDef:
+        names = [spell.spell for spell in self.spells]
+        repeated = sorted({name for name in names if names.count(name) > 1})
+        if repeated:
+            raise ValueError(f"a class teaches each spell once: {', '.join(repeated)}")
+        if names and not any(spell.level == 1 for spell in self.spells):
+            raise ValueError("every class starts with one spell (decision D4): teach one at level 1")
+        return self
 
     @model_validator(mode="after")
     def _rage(self) -> ClassDef:
@@ -171,4 +241,18 @@ def bonuses(
     return [
         (modifier_id(registry, entry_id, n), modifier.attribute, modifier.operation, modifier.game_amount)
         for n, modifier in enumerate(modifiers)
+    ]
+
+
+def passive_modifier_id(race_id: str, n: int) -> str:
+    """The id of the n-th modifier of a race's racial passive: ``realmforge:race/<namespace>/passive/<n>/<path>``
+    (the game's ``CharacterBonuses`` builds the same)."""
+    return f"{MOD_ID}:race/{MOD_ID}/passive/{n}/{race_id}"
+
+
+def passive_bonuses(race_id: str, passive: RacialPassiveDef) -> list[tuple[str, str, str, float]]:
+    """The modifiers a race's racial passive gives while it applies, as ``bonuses`` lists them."""
+    return [
+        (passive_modifier_id(race_id, n), modifier.attribute, modifier.operation, modifier.game_amount)
+        for n, modifier in enumerate(passive.modifiers)
     ]

@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../tools/schemas/effects.schema.json
+# A stun (C4; Shield Bash, RLM-392): its holder stands still, neither attacks nor casts, and a mob's AI waits until it
+# ends; a cast in progress is interrupted. Ordinary mobs have no stun immunity or diminishing returns for now (Matěj,
+# 2026-10-24); bosses get theirs one by one. The Human's Will To Survive breaks it.
+id: stunned
+name: {en_us: Stunned}
+category: harmful
+color: "#F4D35E"
+stun: true
+modifiers:
+  - {attribute: minecraft:movement_speed, operation: add_multiplied_total, amount_percent: -100}
+  - {attribute: minecraft:jump_strength, operation: add_multiplied_total, amount_percent: -100}

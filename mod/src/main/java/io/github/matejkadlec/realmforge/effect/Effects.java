@@ -49,6 +49,16 @@ public final class Effects {
         return changed;
     }
 
+    /** Whether {@code entity} is stunned now ({@link Stuns}). */
+    public static boolean isStunned(LivingEntity entity) {
+        return Stuns.isStunned(entity);
+    }
+
+    /** Whether {@code effect} is a stun ({@link Stuns}). */
+    public static boolean isStun(Holder<MobEffect> effect) {
+        return Stuns.isStun(effect);
+    }
+
     /** Who applied {@code effect} to {@code entity}, while it has the effect and a spell applied it. */
     public static Optional<EffectSource> source(LivingEntity entity, Holder<MobEffect> effect) {
         if (!entity.hasEffect(effect)) {

@@ -56,7 +56,13 @@ from realmforge_tools.schema.dungeon import (
     room_role,
 )
 from realmforge_tools.schema.effect import PeriodicDef, effect_id
-from realmforge_tools.schema.item import GEAR_FORBIDDEN_ATTRIBUTES, USE_TEXT_GROUP, ItemDef, entity_loot_table
+from realmforge_tools.schema.item import (
+    FIXED_ITEM_TAGS,
+    GEAR_FORBIDDEN_ATTRIBUTES,
+    USE_TEXT_GROUP,
+    ItemDef,
+    entity_loot_table,
+)
 from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
 from realmforge_tools.schema.mob import BOSS, TRASH_LOOT, mob_description_id, mob_id
@@ -89,6 +95,7 @@ from realmforge_tools.schema.spell import (
     ALLY,
     APPLY_EFFECT,
     AREA,
+    CLEANSE,
     CURRENT_TARGET,
     DAMAGE,
     DASH,
@@ -107,6 +114,7 @@ from realmforge_tools.schema.spell import (
     TELEPORT,
     SpellDef,
 )
+from realmforge_tools.schema.spell_school import SpellSchoolDef
 from realmforge_tools.schema.stat import StatDef
 from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
@@ -219,6 +227,8 @@ def universe_with_content(vanilla: IdUniverse, content: Content) -> IdUniverse:
             universe.add(ITEM_REGISTRY, f"{MOD_ID}:{entry.model.id}")
     for entry in content.spell_schools:
         universe.add(DAMAGE_TYPE_REGISTRY, entry.model.damage_type)
+    # The item tags generate/items.py writes with fixed members (melee weapons, sword-like weapons).
+    universe.tags.setdefault(ITEM_REGISTRY, set()).update(FIXED_ITEM_TAGS)
     for entry in content.sounds:
         for name in entry.model.events:
             universe.add(SOUND_EVENT_REGISTRY, sound_id(entry.model, name))
@@ -852,8 +862,8 @@ def _check_spell_schools(content: Content, universe: IdUniverse) -> list[Problem
     return problems
 
 
-# Which targeting types each effect may use: damage and knockback hit enemies, heals mend the caster or its allies,
-# status effects go on anyone; a projectile flies at an enemy, a ground point or along a direction, an area lies at the
+# Which targeting types each effect may use: damage and knockback hit enemies, heals and cleanses help the caster or
+# its allies, status effects go on anyone; a projectile flies at an enemy, a ground point or along a direction, an area lies at the
 # caster's feet, an enemy's or a ground point, a teleport needs a point to go to, and a dash rushes at an enemy, a
 # point or along a direction. The NPC targeting types choose an enemy, so they go wherever enemy does.
 _NPC = (CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLAYER)
@@ -862,6 +872,7 @@ _EFFECT_TARGETING: dict[str, tuple[str, ...]] = {
     HEAL: (SELF, ALLY),
     APPLY_EFFECT: (SELF, ENEMY, ALLY, *_NPC),
     REMOVE_EFFECT: (SELF, ENEMY, ALLY, *_NPC),
+    CLEANSE: (SELF, ALLY),
     KNOCKBACK: (ENEMY, *_NPC),
     PROJECTILE: (ENEMY, GROUND_POINT, DIRECTION, *_NPC),
     AREA: (SELF, ENEMY, GROUND_POINT, *_NPC),
@@ -964,7 +975,103 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
             problems.append(
                 Problem(entry.source, "cast.sound", _unknown(cast_sound, SOUND_EVENT_REGISTRY, universe))
             )
+        if school is not None:
+            problems += _check_hit_bonuses(entry.source, spell, school)
+            problems += _check_melee_requirement(entry.source, spell, school)
+        problems += _check_bonus_placeholder(entry.source, spell, content, universe)
     return problems
+
+
+def _check_hit_bonuses(source: str, spell: SpellDef, school: SpellSchoolDef) -> list[Problem]:
+    """A hit's extra armor shred needs a school that armor stops (physical), and its spell penetration a school with
+    a resistance to ignore (a magic one); either would do nothing otherwise."""
+    problems: list[Problem] = []
+    for path, effect in spell.all_effects():
+        if effect.type != DAMAGE:
+            continue
+        if effect.armor_shred_percent is not None and school.bypasses_armor:
+            problems.append(
+                Problem(
+                    source,
+                    f"{path}.armor_shred_percent",
+                    f"{spell.school} hits skip armor, so armor shred does nothing for them",
+                )
+            )
+        if effect.penetration_percent is not None and school.resistance is None:
+            problems.append(
+                Problem(
+                    source,
+                    f"{path}.penetration_percent",
+                    f"{spell.school} has no resistance for spell penetration to ignore",
+                )
+            )
+    return problems
+
+
+def _check_melee_requirement(source: str, spell: SpellDef, school: SpellSchoolDef) -> list[Problem]:
+    """A player's physical spell that deals damage in melee (a damage effect of its own or of an area, not a
+    projectile's) names what it strikes with: a melee weapon in the main hand, or a shield (RLM-499). Mobs and bosses
+    cast without it, so their spells need none."""
+    if spell.npc_only or school.kind != "physical" or spell.requires:
+        return []
+    melee = [
+        path
+        for path, effect in spell.all_effects()
+        if effect.type == DAMAGE and not _inside_projectile(spell, path)
+    ]
+    if not melee:
+        return []
+    return [
+        Problem(
+            source,
+            "requires",
+            f"a player's physical spell that deals damage in melee ({melee[0]}) needs a melee weapon in the main "
+            "hand: requires: [melee_weapon] (or [shield] for a shield strike), RLM-499",
+        )
+    ]
+
+
+def _inside_projectile(spell: SpellDef, path: str) -> bool:
+    """Whether the effect at ``path`` is one a projectile runs on the enemy it hits."""
+    parts = path.split(".")
+    return len(parts) == 4 and spell.effects[int(parts[1])].type == PROJECTILE
+
+
+def _check_bonus_placeholder(
+    source: str, spell: SpellDef, content: Content, universe: IdUniverse
+) -> list[Problem]:
+    """{bonus} reads the attribute modifier of the first applied status effect: one of ours must have exactly one (the
+    game keeps an effect's modifiers unordered), and it must read as a number, in percent for a multiplied operation or
+    in the attribute's points (not add_value on one of our shares, which the description could not tell from
+    points)."""
+    if "bonus" not in spell.placeholders():
+        return []
+    applied = spell.first_effect(APPLY_EFFECT)
+    ours = {effect_id(entry.model.id): entry.model for entry in content.effects}
+    effect = ours.get(applied.effect)
+    if effect is None:
+        return []
+    if len(effect.modifiers) != 1:
+        return [
+            Problem(
+                source,
+                "description",
+                f"{{bonus}} reads {applied.effect}'s one modifier, and it has {len(effect.modifiers)}",
+            )
+        ]
+    first = effect.modifiers[0]
+    stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
+    stat = stats.get(first.attribute)
+    if first.operation == "add_value" and stat is not None and stat.percent:
+        return [
+            Problem(
+                source,
+                "description",
+                f"{{bonus}} reads {applied.effect}'s first modifier, add_value on the share {first.attribute}: "
+                "give it a multiplied operation or describe the number another way",
+            )
+        ]
+    return []
 
 
 def _check_projectile(
@@ -1281,16 +1388,20 @@ def _check_effect(
     status = getattr(effect, "effect", None)
     periodic = effects.get(status) if effect.type == APPLY_EFFECT else None
     if periodic is not None:
-        ticks = effect.duration_seconds / periodic.interval_seconds
-        if abs(ticks - round(ticks)) > 1e-9:
-            problems.append(
-                Problem(
-                    source,
-                    f"{path}.duration_seconds",
-                    f"{status} ticks every {periodic.interval_seconds:g} s, so it lasts a whole number of its "
-                    f"intervals, not {effect.duration_seconds:g} s",
+        for field in ("duration_seconds", "duration_per_level_seconds"):
+            seconds = getattr(effect, field)
+            if seconds is None:
+                continue
+            ticks = seconds / periodic.interval_seconds
+            if abs(ticks - round(ticks)) > 1e-9:
+                problems.append(
+                    Problem(
+                        source,
+                        f"{path}.{field}",
+                        f"{status} ticks every {periodic.interval_seconds:g} s, so it lasts a whole number of its "
+                        f"intervals at every level, and {field} {seconds:g} s is not one",
+                    )
                 )
-            )
     if status is not None and not universe.contains(MOB_EFFECT_REGISTRY, status):
         problems.append(Problem(source, f"{path}.effect", _unknown(status, MOB_EFFECT_REGISTRY, universe)))
     elif effect.type == APPLY_EFFECT and status in INSTANT_MOB_EFFECTS:
@@ -1307,9 +1418,13 @@ def _check_effect(
 def _check_characters(content: Content, universe: IdUniverse) -> list[Problem]:
     """Races name classes that exist, and every class is open to some race, or no player could take it. Modifiers
     name attributes that exist, in their unit as for stat rules (architecture 8.3), and add their percents to the
-    base (architecture 8.2); kit items exist, and every kit holds the starting bread."""
+    base (architecture 8.2); kit items exist, and every kit holds the starting bread. A race's racial spell and a
+    class's spells are players' spells; a racial spell is free, as a race spans classes of different resources, and a
+    class's spells cost its own resource, at most 4 x N of them by the end of chapter N (decision D4). A racial passive
+    names an item tag that exists, and its modifiers add their percents to the base too."""
     problems: list[Problem] = []
     stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
+    spells = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spells}
     class_registry = f"{MOD_ID}:class"
     taken: set[str] = set()
     for entry in content.races:
@@ -1319,10 +1434,13 @@ def _check_characters(content: Content, universe: IdUniverse) -> list[Problem]:
                 problems.append(
                     Problem(entry.source, f"classes.{n}", _unknown(class_id, class_registry, universe))
                 )
+        problems += _check_racials(entry, spells, stats, universe)
     for entry in (*content.races, *content.classes):
         for n, modifier in enumerate(entry.model.modifiers):
             problems += _check_adds_percents(entry.source, f"modifiers.{n}", modifier.operation)
             problems += _check_modifier(entry.source, f"modifiers.{n}", modifier, stats, universe)
+    for entry in content.classes:
+        problems += _check_class_spells(entry, spells, content)
     bread, bread_count = STARTING_BREAD
     for entry in content.classes:
         class_id = f"{MOD_ID}:{entry.model.id}"
@@ -1367,6 +1485,102 @@ def _check_adds_percents(source: str, path: str, operation: str) -> list[Problem
             "not add_multiplied_total (architecture 8.2)",
         )
     ]
+
+
+def _check_racials(
+    entry: Entry, spells: dict[str, SpellDef], stats: dict[str, StatDef], universe: IdUniverse
+) -> list[Problem]:
+    """A race's racial spell is one of our player spells, free; its racial passive names an item tag that exists and
+    attributes that exist, and its {bonus} reads as a number."""
+    problems: list[Problem] = []
+    race = entry.model
+    if race.racial_spell is not None:
+        spell = spells.get(race.racial_spell)
+        if spell is None:
+            problems.append(
+                Problem(entry.source, "racial_spell", _unknown(race.racial_spell, SPELL_REGISTRY, universe))
+            )
+        elif spell.npc_only:
+            problems.append(
+                Problem(entry.source, "racial_spell", f"{race.racial_spell} is a mob's spell (npc_only)")
+            )
+        elif spell.cost is not None:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "racial_spell",
+                    f"{race.racial_spell} costs {spell.cost.resource}: a racial spell is free, as the race's classes "
+                    "use different resources",
+                )
+            )
+    passive = race.racial_passive
+    if passive is None:
+        return problems
+    if not universe.contains_tag(ITEM_REGISTRY, passive.weapons):
+        problems.append(
+            Problem(entry.source, "racial_passive.weapons", f"unknown item tag {passive.weapons!r}")
+        )
+    for n, modifier in enumerate(passive.modifiers):
+        path = f"racial_passive.modifiers.{n}"
+        problems += _check_modifier(entry.source, path, modifier, stats, universe)
+        problems += _check_adds_percents(entry.source, path, modifier.operation)
+    first = passive.modifiers[0]
+    stat = stats.get(first.attribute)
+    if (
+        "{bonus}" in passive.description.en_us
+        and first.operation == "add_value"
+        and stat is not None
+        and stat.percent
+    ):
+        problems.append(
+            Problem(
+                entry.source,
+                "racial_passive.description",
+                f"{{bonus}} reads the first modifier, add_value on the share {first.attribute}: give it a multiplied "
+                "operation or describe the number another way",
+            )
+        )
+    return problems
+
+
+def _check_class_spells(entry: Entry, spells: dict[str, SpellDef], content: Content) -> list[Problem]:
+    """A class's spells are our player spells that cost the class's resource (or nothing), and the class teaches at
+    most 4 x N of them by the last level of chapter N (decision D4: chapter 1 allows 4 spells, chapter 2 eight)."""
+    problems: list[Problem] = []
+    player_class = entry.model
+    for n, taught in enumerate(player_class.spells):
+        spell = spells.get(taught.spell)
+        if spell is None:
+            problems.append(
+                Problem(
+                    entry.source, f"spells.{n}.spell", f"{taught.spell} is not a spell of content/spells/"
+                )
+            )
+        elif spell.npc_only:
+            problems.append(
+                Problem(entry.source, f"spells.{n}.spell", f"{taught.spell} is a mob's spell (npc_only)")
+            )
+        elif spell.cost is not None and spell.cost.resource != player_class.resource:
+            problems.append(
+                Problem(
+                    entry.source,
+                    f"spells.{n}.spell",
+                    f"{taught.spell} costs {spell.cost.resource}, and the class's resource is {player_class.resource}",
+                )
+            )
+    for chapter in sorted((entry.model for entry in content.chapters), key=lambda chapter: chapter.order):
+        known = sum(1 for taught in player_class.spells if taught.level <= chapter.level_cap)
+        allowed = 4 * chapter.order
+        if known > allowed:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "spells",
+                    f"{known} spells by level {chapter.level_cap}, the end of chapter {chapter.order}, which allows "
+                    f"{allowed} (decision D4: 4 x N)",
+                )
+            )
+    return problems
 
 
 def _check_modifier(

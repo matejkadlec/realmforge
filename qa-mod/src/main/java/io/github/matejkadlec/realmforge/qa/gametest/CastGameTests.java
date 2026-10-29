@@ -47,7 +47,8 @@ import net.minecraft.world.phys.Vec3;
  * C3a-2 (RLM-210): cast times, channels and interrupts (architecture 11.2). Players cast the test spells of
  * {@code content/spells/} at husks that stand still: {@code test_slow_bolt} costs 20 mana when its 2 s cast begins and
  * deals 10 fire damage when it completes, {@code test_drain} pays 15 mana and starts its 5 s cooldown when it begins,
- * pays 15 mana again as each later second begins (RLM-403) and deals 2 arcane damage every second for 3 s, and
+ * pays 15 mana again as each later second begins (RLM-403) and deals 1 arcane damage every half second for 3 s (a
+ * player's channel ticks every 0.5 s, RLM-518), and
  * {@code test_homing_bolt} deals 4 frost damage after 1 s, locks on and may be cast while moving. The server ticks the
  * casts, so the checks wait real ticks, with a few ticks of slack around each end.
  */
@@ -139,7 +140,7 @@ public final class CastGameTests {
         helper.runAfterDelay(30, () -> {
             helper.assertFalse(Casting.isCasting(player), "10 mana do not pay the second second");
             assertEnded(helper, player, GeneratedSpells.TEST_DRAIN, CastEnd.NOT_ENOUGH_RESOURCE);
-            assertHealth(helper, husk, HEALTH - 2, "the first second's tick, which its payment covered, landed");
+            assertHealth(helper, husk, HEALTH - 2, "the first second's two ticks, which its payment covered, landed");
             assertPool(helper, player, 10, "the refused payment took nothing");
             logout(player);
             helper.succeed();
@@ -194,27 +195,31 @@ public final class CastGameTests {
         helper.assertValueEqual(Spells.currentCast(player), Optional.of(
                 new Cast(GeneratedSpells.TEST_DRAIN, now, 60, true)), "a 3 s channel");
         assertHealth(helper, husk, HEALTH, "the first tick comes after an interval");
-        helper.runAfterDelay(15, () -> {
-            assertHealth(helper, husk, HEALTH, "no tick before the first interval");
+        helper.runAfterDelay(5, () -> {
+            assertHealth(helper, husk, HEALTH, "no tick before the first half second");
             assertPool(helper, player, 85, "nor a second payment");
         });
-        helper.runAfterDelay(30, () -> {
-            assertHealth(helper, husk, HEALTH - 2, "one tick after a second");
+        helper.runAfterDelay(15, () -> {
+            assertHealth(helper, husk, HEALTH - 1, "one tick after half a second");
+            assertPool(helper, player, 85, "and still no second payment");
+        });
+        helper.runAfterDelay(25, () -> {
+            assertHealth(helper, husk, HEALTH - 2, "two ticks after a second");
             assertPool(helper, player, 70, "and the second second paid");
         });
         helper.runAfterDelay(45, () -> {
-            assertHealth(helper, husk, HEALTH - 4, "two ticks after two seconds");
+            assertHealth(helper, husk, HEALTH - 4, "four ticks after two seconds");
             assertPool(helper, player, 55, "and the third second paid");
             walk(helper, player, new Vec3(1.5, 1, 0.5));
         });
-        helper.runAfterDelay(50, () -> {
+        helper.runAfterDelay(47, () -> {
             helper.assertTrue(Casting.isCasting(player), "moving ended the channel");
             helper.assertTrue(Casting.cancel(player), "no channel to cancel");
         });
         helper.runAfterDelay(75, () -> {
             assertEnded(helper, player, GeneratedSpells.TEST_DRAIN, CastEnd.CANCELLED);
             assertSlowed(helper, player, false, "the cancel took the cast's slow away");
-            assertHealth(helper, husk, HEALTH - 4, "the cancel stopped the third tick; the first two stay");
+            assertHealth(helper, husk, HEALTH - 4, "the cancel stopped the fifth tick; the first four stay");
             assertPool(helper, player, 55, "and the seconds paid are not refunded");
             logout(player);
             helper.succeed();
@@ -323,14 +328,14 @@ public final class CastGameTests {
         learn(helper, player, GeneratedSpells.TEST_DRAIN);
         assertBegun(helper, player, GeneratedSpells.TEST_DRAIN, husk);
         helper.assertValueEqual(Spells.currentCast(player).map(Cast::durationTicks), Optional.of(30),
-                "three ticks every half second");
-        helper.runAfterDelay(15, () -> {
-            assertHealth(helper, husk, HEALTH - 2, "one tick after half a second");
+                "six ticks every quarter second");
+        helper.runAfterDelay(12, () -> {
+            assertHealth(helper, husk, HEALTH - 2, "two ticks after half a second");
             assertPool(helper, player, 70, "and two seconds paid, half a second apart");
         });
         helper.runAfterDelay(40, () -> {
             assertEnded(helper, player, GeneratedSpells.TEST_DRAIN, CastEnd.COMPLETED);
-            assertHealth(helper, husk, HEALTH - 6, "all three ticks");
+            assertHealth(helper, husk, HEALTH - 6, "all six ticks");
             assertPool(helper, player, 55, "and all three seconds paid");
             logout(player);
             helper.succeed();

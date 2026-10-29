@@ -1,0 +1,39 @@
+{
+  "name": "spell.realmforge.reckless_strike.name",
+  "description": "spell.realmforge.reckless_strike.description",
+  "school": "realmforge:physical",
+  "scales_with": "attack_damage",
+  "targeting": {
+    "type": "realmforge:enemy",
+    "range": 4.0
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cost": {
+    "amount": 20.0,
+    "per_level": 0,
+    "resource": "realmforge:rage"
+  },
+  "cooldown_ticks": 80,
+  "global_cooldown_ticks": 10,
+  "max_level": 5,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.1,
+    "bonus_chance_per_level": 0.05
+  },
+  "npc_only": false,
+  "requires": [
+    "melee_weapon"
+  ],
+  "castable_while_stunned": false,
+  "effects": [
+    {
+      "amount": 2.0,
+      "per_level": 1.0,
+      "type": "realmforge:damage",
+      "attack_damage": 1.0
+    }
+  ]
+}

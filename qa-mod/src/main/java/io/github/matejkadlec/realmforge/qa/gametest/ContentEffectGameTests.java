@@ -43,6 +43,7 @@ public final class ContentEffectGameTests {
             helper.assertValueEqual(status.getColor(), expected.color(), id + " colour");
             helper.assertValueEqual(status.periodic().map(ContentEffectGameTests::periodic), expected.periodic(),
                     id + " periodic");
+            helper.assertValueEqual(status.isStun(), expected.stun(), id + " stuns");
             List<ModifierExpectation> modifiers = new ArrayList<>();
             status.createModifiers(0, (attribute, modifier) -> modifiers.add(new ModifierExpectation(
                     attribute.getRegisteredName(), modifier.id().toString(), modifier.amount(),

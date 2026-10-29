@@ -24,12 +24,16 @@ public final class GeneratedClassExpectations {
     public record KitItem(String item, int count) {
     }
 
+    /** A spell the class teaches at a level. */
+    public record ClassSpell(String spell, int level) {
+    }
+
     /**
      * Expected state of one class. Ids are full resource locations, e.g. {@code realmforge:warrior}; the bonuses
      * are the ones the game must give, in this order.
      */
     public record ClassExpectation(String id, String nameKey, String descriptionKey, String resource,
-            Optional<Rage> rage, List<KitItem> startingKit, List<Bonus> bonuses) {
+            Optional<Rage> rage, List<KitItem> startingKit, List<Bonus> bonuses, List<ClassSpell> spells) {
     }
 
     public static final List<ClassExpectation> CLASSES = List.of(
@@ -40,7 +44,8 @@ public final class GeneratedClassExpectations {
                     "realmforge:mana",
                     Optional.empty(),
                     List.of(new KitItem("realmforge:stone_wand", 1), new KitItem("realmforge:apprentice_hat", 1), new KitItem("realmforge:apprentice_robes", 1), new KitItem("realmforge:apprentice_pants", 1), new KitItem("realmforge:apprentice_boots", 1), new KitItem("minecraft:bread", 32)),
-                    List.of(new Bonus("realmforge:class/realmforge/0/mage", "realmforge:intellect", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/mage", "realmforge:vitality", "add_value", 2.0), new Bonus("realmforge:class/realmforge/2/mage", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:class/realmforge/3/mage", "realmforge:max_mana", "add_value", 100.0), new Bonus("realmforge:class/realmforge/4/mage", "realmforge:mana_regeneration", "add_value", 5.0))),
+                    List.of(new Bonus("realmforge:class/realmforge/0/mage", "realmforge:intellect", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/mage", "realmforge:vitality", "add_value", 2.0), new Bonus("realmforge:class/realmforge/2/mage", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:class/realmforge/3/mage", "realmforge:max_mana", "add_value", 100.0), new Bonus("realmforge:class/realmforge/4/mage", "realmforge:mana_regeneration", "add_value", 5.0)),
+                    List.of(new ClassSpell("realmforge:frostbolt", 1), new ClassSpell("realmforge:ice_barrier", 3), new ClassSpell("realmforge:fireball", 5), new ClassSpell("realmforge:arcane_missiles", 8))),
             new ClassExpectation(
                     "realmforge:warrior",
                     "class.realmforge.warrior.name",
@@ -48,7 +53,8 @@ public final class GeneratedClassExpectations {
                     "realmforge:rage",
                     Optional.of(new Rage(10.0, 50.0, 2.0, 100)),
                     List.of(new KitItem("minecraft:stone_sword", 1), new KitItem("minecraft:shield", 1), new KitItem("minecraft:leather_helmet", 1), new KitItem("minecraft:leather_chestplate", 1), new KitItem("minecraft:leather_leggings", 1), new KitItem("minecraft:leather_boots", 1), new KitItem("minecraft:bread", 32)),
-                    List.of(new Bonus("realmforge:class/realmforge/0/warrior", "realmforge:strength", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/warrior", "realmforge:vitality", "add_value", 4.0), new Bonus("realmforge:class/realmforge/2/warrior", "realmforge:dexterity", "add_value", 2.0))));
+                    List.of(new Bonus("realmforge:class/realmforge/0/warrior", "realmforge:strength", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/warrior", "realmforge:vitality", "add_value", 4.0), new Bonus("realmforge:class/realmforge/2/warrior", "realmforge:dexterity", "add_value", 2.0)),
+                    List.of(new ClassSpell("realmforge:slam", 1), new ClassSpell("realmforge:battle_shout", 3), new ClassSpell("realmforge:shield_bash", 5), new ClassSpell("realmforge:reckless_strike", 8))));
 
     private GeneratedClassExpectations() {
     }

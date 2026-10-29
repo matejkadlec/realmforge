@@ -28,12 +28,15 @@
     "bonus_chance": 0.0
   },
   "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
   "effects": [
     {
       "type": "realmforge:apply_effect",
       "effect": "realmforge:test_regrowth",
       "duration_ticks": 60,
-      "amplifier": 0
+      "amplifier": 0,
+      "stronger_at_levels": []
     }
   ]
 }

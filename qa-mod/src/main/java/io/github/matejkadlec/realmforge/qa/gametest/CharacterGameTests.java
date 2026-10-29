@@ -130,7 +130,8 @@ public final class CharacterGameTests {
         HolderLookup.RegistryLookup<PlayerClass> classes =
                 server.registryAccess().lookupOrThrow(CharacterRegistries.CLASS);
         ResourceKey<PlayerClass> allowed = classKey(race.classes().getFirst());
-        Race narrow = new Race("qa", "qa", List.of(classes.getOrThrow(allowed)), List.of());
+        Race narrow = new Race("qa", "qa", List.of(classes.getOrThrow(allowed)), List.of(), Optional.empty(),
+                Optional.empty());
         Optional<ResourceKey<PlayerClass>> refused = classes.listElementIds().filter(key -> !key.equals(allowed))
                 .findFirst();
         helper.assertTrue(refused.isPresent(), "the content has a second class");
@@ -210,8 +211,9 @@ public final class CharacterGameTests {
                 Component.translatable(race.descriptionKey()).getString(), "the race's description");
         Race raceEntry = server.registryAccess().lookupOrThrow(CharacterRegistries.RACE).getValue(
                 Identifier.parse(race.id()));
-        helper.assertValueEqual(raceSection.rows().size(), 1 + raceEntry.modifiers().size(),
-                "the description, then a line for each modifier of the race");
+        helper.assertValueEqual(raceSection.rows().size(), 1 + raceEntry.modifiers().size()
+                + (raceEntry.racialSpell().isPresent() ? 1 : 0) + (raceEntry.racialPassive().isPresent() ? 1 : 0),
+                "the description, a line for each modifier of the race, then its racial ability and passive (C4)");
         CharacterSheetView.Section classSection = origin.right().getFirst();
         helper.assertValueEqual(classSection.title().getString(),
                 "Class: " + Component.translatable(playerClass.nameKey()).getString(), "the class");

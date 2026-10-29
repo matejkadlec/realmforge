@@ -2,9 +2,12 @@ package io.github.matejkadlec.realmforge.combat;
 
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
+import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /**
@@ -54,6 +57,31 @@ public final class MagicShields {
         defender.setData(CombatAttachments.MAGIC_SHIELD,
                 new MagicShield(shield.points() - taken, defender.tickCount + REFILL_DELAY_TICKS));
         return absorbed + taken;
+    }
+
+    /**
+     * A status effect that raises a player's magic shield fills the points it adds at once, so a shield spell (the
+     * Mage's Ice Barrier, C4) works in a fight, while the pool waits for its refill: the effect's {@code add_value}
+     * modifiers on {@code realmforge:magic_shield}, at its amplifier, join the pool. {@link #onPlayerTick} keeps the
+     * pool within the raised stat, and the pool falls back to the stat when the effect ends.
+     */
+    static void onEffectAdded(MobEffectEvent.Added event) {
+        if (!(event.getEntity() instanceof Player player) || !(player.level() instanceof ServerLevel)) {
+            return;
+        }
+        MobEffectInstance instance = event.getEffectInstance();
+        double[] added = {0};
+        instance.getEffect().value().createModifiers(instance.getAmplifier(), (attribute, modifier) -> {
+            if (attribute.value() == GeneratedStats.MAGIC_SHIELD.value()
+                    && modifier.operation() == AttributeModifier.Operation.ADD_VALUE && modifier.amount() > 0) {
+                added[0] += modifier.amount();
+            }
+        });
+        if (added[0] > 0) {
+            MagicShield shield = player.getExistingData(CombatAttachments.MAGIC_SHIELD).orElse(MagicShield.EMPTY);
+            player.setData(CombatAttachments.MAGIC_SHIELD,
+                    new MagicShield(shield.points() + (float) added[0], shield.refillAt()));
+        }
     }
 
     /** Keeps the pool within the stat and refills it once the delay has passed. */

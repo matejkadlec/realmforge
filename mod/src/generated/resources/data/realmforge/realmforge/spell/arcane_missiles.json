@@ -1,0 +1,57 @@
+{
+  "name": "spell.realmforge.arcane_missiles.name",
+  "description": "spell.realmforge.arcane_missiles.description",
+  "school": "realmforge:arcane",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:direction",
+    "range": 40.0
+  },
+  "cast": {
+    "castable_while_moving": false,
+    "lock_on": false,
+    "keep_sight": false,
+    "type": "channel",
+    "duration_ticks": 30,
+    "interval_ticks": 10
+  },
+  "cost": {
+    "amount": 12.0,
+    "per_level": 0,
+    "resource": "realmforge:mana"
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 10,
+  "max_level": 5,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
+  "effects": [
+    {
+      "type": "realmforge:projectile",
+      "speed": 35.0,
+      "size": 0.4,
+      "effects": [
+        {
+          "amount": 5.0,
+          "per_level": 1.0,
+          "type": "realmforge:damage",
+          "penetration": 0.05,
+          "penetration_per_level": 0.05
+        }
+      ],
+      "impact": {
+        "sound": "minecraft:block.amethyst_cluster.break",
+        "particles": "minecraft:amethyst_block"
+      },
+      "appearance": {
+        "model": "orb",
+        "color": "#C77DFF"
+      }
+    }
+  ]
+}

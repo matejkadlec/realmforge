@@ -1,0 +1,36 @@
+{
+  "name": "spell.realmforge.ice_barrier.name",
+  "description": "spell.realmforge.ice_barrier.description",
+  "school": "realmforge:frost",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:self"
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cost": {
+    "amount": 25.0,
+    "per_level": 0,
+    "resource": "realmforge:mana"
+  },
+  "cooldown_ticks": 600,
+  "global_cooldown_ticks": 10,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
+  "effects": [
+    {
+      "type": "realmforge:apply_effect",
+      "effect": "realmforge:ice_barrier",
+      "duration_ticks": 400,
+      "amplifier": 0,
+      "stronger_at_levels": []
+    }
+  ]
+}

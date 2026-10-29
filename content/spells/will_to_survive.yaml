@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# The Human's racial active (Matěj, 2026-10-15, RLM-219): it shakes off every harmful effect, a stun included, so it can
+# be cast while stunned. Free, as a race spans classes of different resources; a 5 minute cooldown.
+id: will_to_survive
+name: {en_us: Will To Survive}
+description: {en_us: "Shakes off every harmful effect on you: stuns, damage over time and every other debuff."}
+school: realmforge:physical
+scales_with: attack_damage
+targeting: {type: realmforge:self}
+cast: {type: instant}
+cooldown_seconds: 300
+castable_while_stunned: true
+effects:
+  - {type: realmforge:cleanse}

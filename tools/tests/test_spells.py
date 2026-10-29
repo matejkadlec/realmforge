@@ -74,10 +74,20 @@ def spell_model(**fields: object) -> SpellDef:
 # The repository's content
 
 
-def test_repository_spells_are_the_engine_tests_stoneform_and_astones() -> None:
+def test_repository_spells_are_the_class_kits_engine_tests_stoneform_and_astones() -> None:
     content, universe = load_and_validate(RepoPaths())
     ids = {entry.model.id for entry in content.spells}
     assert ids == {
+        # The Warrior's and the Mage's kits and the Human's racial (C4, RLM-27).
+        "slam",
+        "battle_shout",
+        "shield_bash",
+        "reckless_strike",
+        "frostbolt",
+        "ice_barrier",
+        "fireball",
+        "arcane_missiles",
+        "will_to_survive",
         # Astone's (W5b, RLM-491).
         "astone_boulder",
         "astone_cracked_stone",
@@ -128,11 +138,11 @@ def test_repository_spells_are_the_engine_tests_stoneform_and_astones() -> None:
         ({"effects": [{"type": "realmforge:damage", "amount": -1}]}, "greater than or equal to 0"),
         (
             {"effects": [{"type": "realmforge:damage", "amount": 1, "per_level": 1}]},
-            "per_level never applies with max_level 1 \\(effects.0\\)",
+            "nothing grows with the level at max_level 1 \\(effects.0\\)",
         ),
         (
             {"cost": {"resource": "realmforge:mana", "amount": 5, "per_level": 1}},
-            "per_level never applies with max_level 1 \\(cost\\)",
+            "nothing grows with the level at max_level 1 \\(cost\\)",
         ),
         ({"cost": {"resource": "realmforge:mana", "amount": 0}}, "a cost of 0 is no cost"),
         ({"cost": {"resource": "realmforge:energy", "amount": 5}}, "realmforge:mana"),
@@ -327,6 +337,8 @@ def test_spell_data_is_in_game_units(repo: RepoPaths) -> None:
         "max_level": 2,
         "crit": {"can_crit": True, "multiplier": 2.0, "bonus_chance": 0.1},
         "npc_only": False,
+        "requires": [],
+        "castable_while_stunned": False,
         "effects": [{"amount": 12.0, "per_level": 3.0, "type": "realmforge:damage"}],
     }
 
@@ -347,7 +359,7 @@ def test_timed_casts_are_in_ticks(repo: RepoPaths) -> None:
         "keep_sight": False,
         "type": "channel",
         "duration_ticks": 60,
-        "interval_ticks": 20,
+        "interval_ticks": 10,
     }
     assert json.loads(files[f"{SPELL_DATA}/test_homing_bolt.json"])["cast"] == {
         "castable_while_moving": True,
@@ -379,11 +391,12 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
     keys = files[KEYS_JAVA].decode()
     assert 'public static final ResourceKey<Spell> TEST_BOLT = key("test_bolt");' in keys
     assert (
-        "ALL = List.of(ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, ASTONE_SHOCKWAVE, "
+        "ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, "
+        "ASTONE_SHOCKWAVE, BATTLE_SHOUT, FIREBALL, FROSTBOLT, ICE_BARRIER, RECKLESS_STRIKE, SHIELD_BASH, SLAM, "
         "STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, "
         "TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, "
         "TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, "
-        "TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TITAN_HARDEN);"
+        "TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TITAN_HARDEN, WILL_TO_SURVIVE);"
     ) in keys
     expectations = files[EXPECTATIONS].decode()
     assert (
@@ -414,6 +427,9 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "                    true,\n"
         "                    Optional.empty(),\n"
         "                    0.0,\n"
+        "                    0.0,\n"
+        "                    false,\n"
+        "                    List.of(),\n"
         "                    false,\n"
         "                    List.of(\n"
         '                            new EffectExpectation("realmforge:damage", '
@@ -425,7 +441,7 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
     assert "Optional.of(2.0),\n                    1.0," in expectations
     channel = expectations[expectations.index('"realmforge:test_drain"') :]
     assert (
-        '"channel",\n                    60,\n                    20,\n                    false,\n'
+        '"channel",\n                    60,\n                    10,\n                    false,\n'
         in channel
     )
     homing = expectations[expectations.index('"realmforge:test_homing_bolt"') :]
@@ -524,7 +540,9 @@ def test_invalid_c3a3_effects_are_rejected(effect: dict, expected: str) -> None:
 
 
 def test_inner_effects_count_for_per_level() -> None:
-    with pytest.raises(ValueError, match=r"per_level never applies with max_level 1 \(effects.0.effects.0\)"):
+    with pytest.raises(
+        ValueError, match=r"nothing grows with the level at max_level 1 \(effects.0.effects.0\)"
+    ):
         spell_model(
             effects=[
                 {
@@ -754,6 +772,7 @@ def test_spell_entities_are_in_game_units(repo: RepoPaths) -> None:
                     "effect": "minecraft:slowness",
                     "duration_ticks": 60,
                     "amplifier": 0,
+                    "stronger_at_levels": [],
                 },
             ],
         }
@@ -969,14 +988,15 @@ BURNING_4S = "{type: realmforge:apply_effect, effect: realmforge:test_burning, d
 
 
 def reapplying_spell(repo: RepoPaths, cast: str, effect: str) -> None:
+    # A player's channel ticks every 0.5 s (RLM-518), so a channel of another interval is a mob's.
+    mob = "type: channel" in cast and "interval_seconds: 0.5}" not in cast
     spell(
         repo,
         "smoulder",
         "school: realmforge:fire\n"
         "scales_with: spell_power\n"
         "targeting: {type: realmforge:enemy, range: 16}\n"
-        f"cast: {cast}\n"
-        f"effects:\n  - {effect}\n",
+        f"cast: {cast}\n" + ("npc_only: true\n" if mob else "") + f"effects:\n  - {effect}\n",
     )
 
 

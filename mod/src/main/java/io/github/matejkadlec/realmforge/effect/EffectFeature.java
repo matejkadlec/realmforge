@@ -8,7 +8,7 @@ import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 
 /**
  * Our status effects (architecture 11.4): the generated registrations from {@code content/effects/}, their damage and
- * healing over time, and who applied each one.
+ * healing over time, stuns, and who applied each one.
  */
 public final class EffectFeature {
     private EffectFeature() {
@@ -21,5 +21,6 @@ public final class EffectFeature {
         NeoForge.EVENT_BUS.addListener(MobEffectEvent.Added.class, Effects::onEffectAdded);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, MobEffectEvent.Remove.class, Effects::onEffectRemoved);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, MobEffectEvent.Expired.class, Effects::onEffectExpired);
+        Stuns.register();
     }
 }

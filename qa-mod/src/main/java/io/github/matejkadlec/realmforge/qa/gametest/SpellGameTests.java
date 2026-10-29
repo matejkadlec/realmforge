@@ -30,11 +30,14 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
@@ -190,11 +193,14 @@ public final class SpellGameTests {
 
     /**
      * A physical ability adds the caster's attack damage, pays rage, and never crits when its data says so; spell power
-     * does nothing for it (Matěj, 2026-10-15). It is on the global cooldown, as every spell is (RLM-402).
+     * does nothing for it (Matěj, 2026-10-15). It is on the global cooldown, as every spell is (RLM-402). A melee spell
+     * needs a melee weapon in the main hand (RLM-499); the sword's own modifiers wait for a tick that never comes here,
+     * so the base attack damage is what the strike adds.
      */
     @QaGameTest
     public static void aPhysicalAbilityAddsAttackDamageAndPaysRage(GameTestHelper helper) {
         ServerPlayer player = caster(helper, "qa-spell-strike");
+        player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
         StatsCommands.setBase(player, Attributes.ATTACK_DAMAGE, 8);
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 1);
         StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 1);

@@ -30,7 +30,13 @@ public enum CastFailure implements StringRepresentable {
     /** Blocks stand between the caster and the target. */
     NO_LINE_OF_SIGHT("no_line_of_sight"),
     /** The caster has less of the spell's resource than it costs. */
-    NOT_ENOUGH_RESOURCE("not_enough_resource");
+    NOT_ENOUGH_RESOURCE("not_enough_resource"),
+    /** The caster is stunned (C4), and the spell is not one a stunned caster may cast. */
+    STUNNED("stunned"),
+    /** A player's spell needs a melee weapon in the main hand, and none is there (RLM-499). */
+    NO_MELEE_WEAPON("no_melee_weapon"),
+    /** A player's spell needs a shield in either hand, and neither holds one (Shield Bash, C4). */
+    NO_SHIELD("no_shield");
 
     private final String serializedName;
 

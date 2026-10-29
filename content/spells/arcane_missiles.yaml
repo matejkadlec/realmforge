@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Arcane's first spell (C4, RLM-391; the Arcane Mage plays as burst): a 1.5 s channel that fires a missile every half
+# second, 3 in all, at every rank (Matěj, 2026-10-29, RLM-518; it was 3 missiles in 3 s), no cooldown. High damage and
+# more mana than Fireball or Frostbolt: 12 a second, so 24 a cast. Each missile ignores 5 % of the target's resistance
+# to arcane per rank (spell penetration). Each flies where the crosshair points at its tick, homing on an enemy near it.
+# At level 1 about 19 damage a cast, 12.9 a second: more than Frostbolt's 7.7 (RLM-518 halved the channel), paid for in
+# mana; Matěj rebalances it in the playtest.
+id: arcane_missiles
+name: {en_us: Arcane Missiles}
+description: {en_us: "Fires 3 arcane missiles, each for {damage} damage, ignoring {penetration}% of the target's resistance to arcane."}
+school: realmforge:arcane
+scales_with: spell_power
+targeting: {type: realmforge:direction, range: 40}
+cast: {type: channel, duration_seconds: 1.5, interval_seconds: 0.5}
+cost: {resource: realmforge:mana, amount: 12}
+max_level: 5
+effects:
+  - type: realmforge:projectile
+    speed: 35
+    size: 0.4
+    impact: {sound: minecraft:block.amethyst_cluster.break, particles: minecraft:amethyst_block}
+    appearance: {model: orb, color: "#C77DFF"}
+    effects:
+      - type: realmforge:damage
+        amount: 5
+        per_level: 1
+        penetration_percent: 5
+        penetration_per_level_percent: 5

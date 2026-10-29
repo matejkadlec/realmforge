@@ -4,6 +4,7 @@
 package io.github.matejkadlec.realmforge.qa.generated;
 
 import java.util.List;
+import java.util.Optional;
 
 /** What {@code content/races/} says about every race, so GameTests can check that the game agrees. */
 public final class GeneratedRaceExpectations {
@@ -15,11 +16,19 @@ public final class GeneratedRaceExpectations {
     }
 
     /**
+     * A racial passive: its name and description keys, the item tag the main hand needs, and the bonuses it
+     * gives meanwhile.
+     */
+    public record Passive(String nameKey, String descriptionKey, String weapons, List<Bonus> bonuses) {
+    }
+
+    /**
      * Expected state of one race. Ids are full resource locations, e.g. {@code realmforge:human}; the classes
-     * are the ones it may take, in the YAML's order; the bonuses are the ones the game must give, in this order.
+     * are the ones it may take, in the YAML's order; the bonuses are the ones the game must give, in this order;
+     * the racial spell fills the slot beside the spell bar.
      */
     public record RaceExpectation(String id, String nameKey, String descriptionKey, List<String> classes,
-            List<Bonus> bonuses) {
+            List<Bonus> bonuses, Optional<String> racialSpell, Optional<Passive> racialPassive) {
     }
 
     public static final List<RaceExpectation> RACES = List.of(
@@ -28,7 +37,13 @@ public final class GeneratedRaceExpectations {
                     "race.realmforge.human.name",
                     "race.realmforge.human.description",
                     List.of("realmforge:warrior", "realmforge:mage"),
-                    List.of(new Bonus("realmforge:race/realmforge/0/human", "realmforge:strength", "add_value", 1.0), new Bonus("realmforge:race/realmforge/1/human", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:race/realmforge/2/human", "realmforge:vitality", "add_value", 1.0), new Bonus("realmforge:race/realmforge/3/human", "realmforge:intellect", "add_value", 1.0))));
+                    List.of(new Bonus("realmforge:race/realmforge/0/human", "realmforge:strength", "add_value", 1.0), new Bonus("realmforge:race/realmforge/1/human", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:race/realmforge/2/human", "realmforge:vitality", "add_value", 1.0), new Bonus("realmforge:race/realmforge/3/human", "realmforge:intellect", "add_value", 1.0)),
+                    Optional.of("realmforge:will_to_survive"),
+                    Optional.of(new Passive(
+                            "race.realmforge.human.racial_passive.name",
+                            "race.realmforge.human.racial_passive.description",
+                            "realmforge:sword_like",
+                            List.of(new Bonus("realmforge:race/realmforge/passive/0/human", "minecraft:attack_damage", "add_multiplied_base", 0.1))))));
 
     private GeneratedRaceExpectations() {
     }
