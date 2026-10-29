@@ -82,7 +82,8 @@ public final class AstoneGameTests {
                         "her shockwave threw the husk back, away from her: from " + start + " to " + near.getZ()))
                 .thenExecuteAfter(PHASE_CHANGE_TICKS - 11, () -> {
                     helper.assertFalse(astone.changingPhase(), "the phase change is over after 3 s");
-                    helper.assertFalse(astone.hasEffect(GeneratedEffects.CRACKED_STONE), "not cracked before the last phase");
+                    helper.assertFalse(astone.hasEffect(GeneratedEffects.CRACKED_STONE),
+                            "not cracked before the last phase");
                     astone.setHealth(astone.getMaxHealth() * 0.2F);
                 })
                 .thenExecuteAfter(1, () -> {
