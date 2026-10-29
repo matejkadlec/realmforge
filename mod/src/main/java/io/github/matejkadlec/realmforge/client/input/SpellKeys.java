@@ -39,17 +39,26 @@ public final class SpellKeys {
     private static final List<Lazy<KeyMapping>> SLOTS = slots();
 
     public static final Lazy<KeyMapping> SPELLBOOK = Lazy.of(() -> new RealmforgeKeyMapping(
-            GeneratedTexts.KEY_SPELLBOOK, GLFW.GLFW_KEY_P, DarkVisionKey.CATEGORY));
+            GeneratedTexts.KEY_SPELLBOOK, GLFW.GLFW_KEY_P, NightVisionKey.CATEGORY));
+
+    /**
+     * Highlight Spell Target: pressed to toggle, or held (the client option
+     * {@code ClientConfig#HIGHLIGHT_SPELL_TARGET}), it shows the target circle under the mob an enemy spell would go to
+     * now (RLM-468; Left Alt by default, which no key of the pack takes): {@code client/spell/TargetCircle} reads it.
+     */
+    public static final Lazy<KeyMapping> HIGHLIGHT_SPELL_TARGET = Lazy.of(() -> new RealmforgeKeyMapping(
+            GeneratedTexts.KEY_HIGHLIGHT_SPELL_TARGET, GLFW.GLFW_KEY_LEFT_ALT, CATEGORY));
 
     private SpellKeys() {
     }
 
-    /** Called once from {@code RealmforgeClient}, after {@link DarkVisionKey}, which registers our main category. */
+    /** Called once from {@code RealmforgeClient}, after {@link NightVisionKey}, which registers our main category. */
     public static void register(IEventBus modBus) {
         modBus.addListener(RegisterKeyMappingsEvent.class, event -> {
             event.registerCategory(CATEGORY);
             SLOTS.forEach(key -> event.register(key.get()));
             event.register(SPELLBOOK.get());
+            event.register(HIGHLIGHT_SPELL_TARGET.get());
         });
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> onClientTick());
     }

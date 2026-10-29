@@ -10,7 +10,7 @@ hash = "a3dffbd3da542c9b47efcff28a9f66816043bc7d2794ac91ffccd1e094cfd784"
 
 [[files]]
 file = "config/defaultoptions/keybindings.txt"
-hash = "fca7380a19cf86a2dacf470d241fd4e975bcdb164d32ba3e769126b1e5b76361"
+hash = "dbc47fc2704f5d9a8d370ddf939b8f087d392db82575b3070f8e58c34e67e849"
 
 [[files]]
 file = "config/dummmmmmy-client.toml"

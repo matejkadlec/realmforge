@@ -6,8 +6,8 @@
 > of 2026-10-27 to this document's proposal (Q1 to Q6) and four follow-ups. All three are decided and built
 > ([ADR 0052](../decisions/0052-spells-aim-with-the-crosshair.md),
 > [ADR 0055](../decisions/0055-aim-assistance-for-a-players-enemy-spells.md), [architecture
-> 11.2](../architecture.md#112-casting-server-authoritative) and [11.3](../architecture.md#113-spell-entities)), apart
-> from the Show target key and the "Target lost" text, which RLM-468 builds.
+> 11.2](../architecture.md#112-casting-server-authoritative) and [11.3](../architecture.md#113-spell-entities)); the
+> Highlight Spell Target key and the "Target lost" text came with RLM-468.
 
 ## Goals
 
@@ -113,20 +113,24 @@ For a cast-time or channelled spell that lands on its target:
    spell);
 3. line of sight is still checked when the effects land; a spell that locks on (a homing missile) keeps its target
    wherever it goes in the caster's dimension, as its data says;
-4. a target that dies during the cast fails it: no new target is picked (Q3). The cast bar says "Target lost" once
-   RLM-468 gives it the text; until then "You have no target".
+4. a target that dies during the cast fails it: no new target is picked (Q3). The cast bar says "Target lost"
+   (RLM-468).
 
 ### The target circle
 
 1. **Only during a cast-time or channelled spell** (Q4, follow-up 4), never all the time: with one targeted spell on
    the bar, a circle under mobs all the time would be annoying. It lies under the mob the spell will hit: the cast's
    target, or the mob a bolt would be assisted to if it left now, so it follows the crosshair through Fireball's cast.
-2. **The Show target key** (RLM-468; Left Alt by default, rebindable): while it is held, the circle shows under the mob
-   an enemy spell would pick now, without a cast and without a targeted spell on the bar. In Matěj's words, it "can
-   also help player to understand how the targeting works, or to be sure that their targeted spell will land at the
-   target they want, and not e.g. a mob close next to it".
-3. The circle is purely visual: a ring of dust in the spell school's colour until the spell visuals (C6) give it its
-   art.
+2. **The Highlight Spell Target key** (RLM-468; Left Alt by default, rebindable; named so in Matěj's playtest of
+   2026-10-29): while it is on, the circle shows under the mob an enemy spell would pick now, without a cast and without
+   a targeted spell on the bar. A press switches it on until the next press, or, with the option Highlight Spell
+   Target: Hold, it is on while the key is held. In Matěj's words, it "can also help player to understand how the
+   targeting works, or to be sure that their targeted spell will land at the target they want, and not e.g. a mob close
+   next to it".
+3. The circle is purely visual (Matěj's playtest of 2026-10-29): a thin, smooth, very light yellow circle lying flat
+   under the mob, as wide as its hitbox and more, with no particles and no animation, the same for every spell, as easy
+   to see in the dark as in daylight but lighting nothing around it
+   ([ADR 0061](../decisions/0061-the-target-circle-is-a-smooth-light-ring-and-the-highlight-toggles.md)).
 
 ### Built so
 

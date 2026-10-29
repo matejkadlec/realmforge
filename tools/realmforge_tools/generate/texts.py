@@ -44,6 +44,6 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
 
 
 def _comment(text: LocalizedText) -> str:
-    """The English text, safe inside a Javadoc comment."""
-    english = text.en_us.replace("*/", "*&#47;").replace("@", "&#64;")
+    """The English text, safe inside a one-line Javadoc comment: a line break shows as the escape a Java string uses."""
+    english = text.en_us.replace("*/", "*&#47;").replace("@", "&#64;").replace("\n", "\\n")
     return f'"{english}"'

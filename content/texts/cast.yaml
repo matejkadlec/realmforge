@@ -19,6 +19,9 @@ texts:
     en_us: Spell is not ready yet
   no_target:
     en_us: You have no target
+  # The cast bar when a cast's target died or is gone before the cast ended (RLM-468, aim assistance's Q3).
+  target_lost:
+    en_us: Target lost
   invalid_target:
     en_us: Invalid target
   out_of_range:

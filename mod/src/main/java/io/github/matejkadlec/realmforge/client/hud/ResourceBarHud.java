@@ -13,12 +13,12 @@ import net.minecraft.util.Util;
 
 /**
  * The resource bar (RLM-400; Matěj, 2026-10-24): the local player's class resource, right under the spell bar and as
- * wide, drawn by {@link SpellBarHud} in its place ({@link SpellBarLayout#resourceBarTop}). A 1 px black border with the
- * bottom corners' pixels left out, a dark gray empty part, the fill in the resource's colour ({@link ResourceBarStyle}),
- * shaded darker at its top and bottom edges, with a darker line at its leading edge while the pool is neither empty nor
- * full, and "current / maximum" in the middle, white with a black outline like vanilla's experience level. The fill
- * eases to a new value over 150 ms; the numbers change at once. Hidden without a character or a pool
- * ({@link ResourceBarView}).
+ * wide, drawn by {@link SpellBarHud} in its place ({@link SpellBarLayout#resourceBarTop}), at the group's scale. A 1 px
+ * black border with the bottom corners' pixels left out, a dark gray empty part, the fill in the resource's colour
+ * ({@link ResourceBarStyle}), shaded darker at its top and bottom edges, with a darker line at its leading edge while
+ * the pool is neither empty nor full, and "current / maximum" in the middle, white with a black outline like vanilla's
+ * experience level. The fill eases to a new value over 150 ms; the numbers change at once. Hidden without a character
+ * or a pool ({@link ResourceBarView}).
  */
 public final class ResourceBarHud {
     /** The resource the fill last showed, so a class change jumps instead of easing. */
@@ -44,18 +44,12 @@ public final class ResourceBarHud {
                 : ResourceBarStyle.colors(type.identifier());
         double fraction = fill(type, view.get().fraction());
 
+        drawEmpty(graphics, x, y);
         int width = SpellBarLayout.WIDTH;
-        int height = SpellBarLayout.RESOURCE_BAR_HEIGHT;
-        int border = ARGB.opaque(ResourceBarStyle.BORDER);
-        // The border, its bottom corner pixels left out: rounded at the GUI's pixel size, the top square.
-        graphics.fill(x, y, x + width, y + height - 1, border);
-        graphics.fill(x + 1, y + height - 1, x + width - 1, y + height, border);
-
         int innerX = x + 1;
         int innerY = y + 1;
         int innerWidth = width - 2;
-        int innerHeight = height - 2;
-        graphics.fill(innerX, innerY, innerX + innerWidth, innerY + innerHeight, ARGB.opaque(ResourceBarStyle.EMPTY));
+        int innerHeight = SpellBarLayout.RESOURCE_BAR_HEIGHT - 2;
         int filled = ResourceBarStyle.fillWidth(fraction, innerWidth);
         for (int row = 0; row < innerHeight && filled > 0; row++) {
             float shade = ResourceBarStyle.rowShade(row, innerHeight);
@@ -76,6 +70,17 @@ public final class ResourceBarHud {
         graphics.text(font, text, textX, textY + 1, outline, false);
         graphics.text(font, text, textX, textY - 1, outline, false);
         graphics.text(font, text, textX, textY, ARGB.opaque(ResourceBarStyle.TEXT), false);
+    }
+
+    /** Draws the bar's border and its empty inside with the top left corner at x, y: an empty bar. */
+    static void drawEmpty(GuiGraphicsExtractor graphics, int x, int y) {
+        int width = SpellBarLayout.WIDTH;
+        int height = SpellBarLayout.RESOURCE_BAR_HEIGHT;
+        int border = ARGB.opaque(ResourceBarStyle.BORDER);
+        // The border, its bottom corner pixels left out: rounded at the GUI's pixel size, the top square.
+        graphics.fill(x, y, x + width, y + height - 1, border);
+        graphics.fill(x + 1, y + height - 1, x + width - 1, y + height, border);
+        graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, ARGB.opaque(ResourceBarStyle.EMPTY));
     }
 
     /** The fill to show now: easing toward {@code target}, from wherever it showed when the target last changed. */

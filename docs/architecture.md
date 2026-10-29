@@ -177,7 +177,7 @@ io.github.matejkadlec.realmforge
 ├─ item/              item behaviours, gear components; affixes and gems later
 ├─ loot/              loot functions and conditions, reward rolls
 ├─ character/         races, classes, character data, leveling, level caps, the character sheet's view
-├─ world/             dimension rules and access, realms, world blocks, world defaults, Dark Vision, griefing
+├─ world/             dimension rules and access, realms, world blocks, world defaults, Night Vision, griefing
 │                     protection
 ├─ mob/               mob levels and scaling, AI goal library, custom mobs
 ├─ boss/              boss definitions, phase machine, boss entity, the boss bar
@@ -268,7 +268,7 @@ How features cooperate without breaking the direction:
 | | `RegisterTicketControllersEvent` (mod) | chunk ticket controllers: instance plots ([15.5](#155-instances)) |
 | World creation | `LevelEvent.CreateSpawnPosition` (game; listened to, never cancelled) | the gamerules of a new world, once ([19.1](#191-world-defaults)) |
 | Server start | `RegisterCommandsEvent`, `ServerStartedEvent` (game) | commands |
-| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerRespawnPositionEvent`, `PlayerEvent.PlayerRespawnEvent`, `PlayerEvent.PlayerChangedDimensionEvent`, `PlayerTickEvent.Post` (game) | recompute stats at the end of a new player entity's first tick and after a change; keep health across respawns ([8.2](#82-where-modifiers-come-from)); bring a character's level cap and level up to date at login ([10.2](#102-leveling)); keep or end the player's instance run, and respawn a death inside it at its entrance ([15.5](#155-instances)); respawn a death in a realm in Overworld ([15.1](#151-dimensions)); reapply Dark Vision ([19.1](#191-world-defaults)) |
+| Player | `PlayerEvent.PlayerLoggedInEvent`, `PlayerEvent.Clone`, `PlayerRespawnPositionEvent`, `PlayerEvent.PlayerRespawnEvent`, `PlayerEvent.PlayerChangedDimensionEvent`, `PlayerTickEvent.Post` (game) | recompute stats at the end of a new player entity's first tick and after a change; keep health across respawns ([8.2](#82-where-modifiers-come-from)); bring a character's level cap and level up to date at login ([10.2](#102-leveling)); keep or end the player's instance run, and respawn a death inside it at its entrance ([15.5](#155-instances)); respawn a death in a realm in Overworld ([15.1](#151-dimensions)); reapply Night Vision ([19.1](#191-world-defaults)) |
 | Travel | `EntityTravelToDimensionEvent` (game) | refuse a player without a dimension's access and every other entity a trip into or out of a realm; put a travelling player's shoulder entities down ([15.1](#151-dimensions)) |
 | Play | damage, death, spawn, tick and advancement events (game) | sections 8-16 |
 | Client start | `RealmforgeClient` constructor; client registration events (mod) | [section 18](#18-client-code-rendering-gui-input) |
@@ -427,8 +427,8 @@ book with the rest of `pack/config/` (`seedPackConfig`), which deletes each run'
   `<registry>.realmforge.<id>.<field path>`, for example `spell.realmforge.firebolt.name` (a nested field adds its
   path: `spell.realmforge.firebolt.effects.0.label`). Texts that belong to no content type (key mapping names,
   messages) live in `content/texts/<group>.yaml` and get the key `<group>.realmforge.<name>`
-  (`key.realmforge.dark_vision`); Java names them through the generated `GeneratedTexts` constants
-  (`GeneratedTexts.KEY_DARK_VISION`), which belong to `core`, so every feature and `client` may use them.
+  (`key.realmforge.night_vision`); Java names them through the generated `GeneratedTexts` constants
+  (`GeneratedTexts.KEY_NIGHT_VISION`), which belong to `core`, so every feature and `client` may use them.
 - One generator writes every datapack type (`tools/realmforge_tools/generate/datapack.py`): the `id` becomes the
   file name, texts become keys, units are converted, unset optional fields are left out, and everything else keeps
   its YAML name and value. A type that needs a different JSON shape converts in its own generator instead.
@@ -493,7 +493,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:combat` | `spell` | players and mobs that cast | resource pools (mana, rage), cooldowns, current cast (transient), whether a cast set Better Combat's disable tag | owner, throttled (players; clients never read a mob's copy) |
 | `realmforge:effect_sources` | `effect` | living entities | who applied each status effect a spell gave the holder: the caster's UUID, the spell's id, the proc origin ([11.4](#114-status-effects), C3c) | not synced (the server reads it) |
 | `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points | owner |
-| `realmforge:dark_vision` | `world` | players | whether Dark Vision is switched on (on by default) | not synced (the effect itself is) |
+| `realmforge:night_vision` | `world` | players | whether Night Vision is switched on (on by default) | not synced (the effect itself is) |
 | `realmforge:visited_realms` | `world` | players | the ids of the realms the player has arrived in, so the arrival shows a realm's flavour line once (W2b); copied on death | not synced |
 | `realmforge:instance` | `dungeon` | players | the run's plot, the return point (spike 3) and the game mode to give back when entering switched it to Adventure (W4c) | not synced |
 | `realmforge:stat_tracker` | `stats` | players | when the stat modifiers were last recomputed and what a respawn owes the health ([8.2](#82-where-modifiers-come-from)); transient: not saved or copied | not synced |
@@ -1352,15 +1352,21 @@ spell a player aims at an enemy goes to a hostile mob near the crosshair (Matěj
 - **The sticky target** (`SpellCaster#stickyRange`): a player's cast-time or channelled spell on an `enemy` or `ally`
   that does not lock on keeps its entity until the cast ends, beyond the spell's range, and `Casting` ends it at once as
   `out_of_range` when the target goes more than twice the range away, or as `target_lost` when it dies (Q3: no new
-  pick; its text stays "You have no target" until RLM-468). `SpellCaster#recheck` then accepts the target up to twice
+  pick; the cast bar says "Target lost", RLM-468). `SpellCaster#recheck` then accepts the target up to twice
   the range, in sight. A spell that locks on keeps its target anywhere in the caster's dimension, as before.
 - **The target circle:** while a player casts a cast-time or channelled spell, `Casting` names to their client, when
   it changes, the mob the spell will hit (`CastTargetPayload`): the cast's entity target, or for a direction from the
   look whose spell launches a projectile, the mob `AimAssist#enemy` picks now, every tick, so the circle follows the
   crosshair through Fireball's cast ([11.6](#116-client-side)).
+- **The Highlight Spell Target key** (RLM-468; `spell/TargetHighlight`): while a player's highlight is on (the key
+  toggled on, or held), their client says so (`HighlightTargetPayload`, when it goes on and off), and every server tick
+  the server names to it, when it changes, the mob `AimAssist#enemy` picks now within 32 blocks
+  (`HighlightedTargetPayload`), with no cast and no spell on the bar. The server picks because only it knows a mob's
+  target and a neutral mob's anger. The state is kept by player id, so a respawn keeps a highlight that is on, and
+  dropped at logout.
 - `SpellAimingGameTests` covers an assisted bolt beside the crosshair, one beyond the cone or toward a cow, one after a
   moving husk, the bar's assisted pick and its view check, the sticky target beyond the range and beyond twice it, and
-  a sticky target that dies. The Show target key and the "Target lost" text come with RLM-468.
+  a sticky target that dies with its "Target lost", and the highlighted mob.
 
 **Kept targets (W3 revision, RLM-33):** a timed spell may keep its entity target through the cast instead of only
 checking it before its effects. With `keep_sight`, `Casting` checks the caster's line of sight to the target every
@@ -1551,7 +1557,7 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   keys by their US position. The pack's default keys (`pack/config/defaultoptions/keybindings.txt`,
   [ADR 0046](decisions/0046-spell-bar-default-keys-amend-the-pack-defaults.md)) move vanilla's chat to Enter and
   unbind the keys the bar takes, Apotheosis's Open World Tier Select moves from Ctrl+T to Alt+T (a held sprint key
-  would otherwise steal T), and Dark Vision moved from H to ¨ (`\` on a US keyboard). Our keys are
+  would otherwise steal T), and Night Vision moved from H to ¨ (`\` on a US keyboard). Our keys are
   `client/input/RealmforgeKeyMapping`s, labelled through `KeyLabels`: Minecraft reads `§` in any text as a formatting
   code, so a key on § would show an empty label; ours draws it from the font `realmforge:keys`
   (`assets/realmforge/font/keys.json`), which maps a private codepoint to the section sign of vanilla's font sheet.
@@ -1577,24 +1583,41 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
 - **HUD** (`client/hud`): the spell bar (`SpellBarHud`, drawn from `spell/SpellBarView` by `SpellSlots`) has its nine
   24 px slots side by side, the racial slot last, 216 px wide (Matěj's playtest of 2026-10-21). Its layer comes right
   after vanilla's selected item name, which is drawn on the line above the status rows and the XP bar. The bar and
-  the resource bar under it keep one place on the screen, whatever the status rows are (Matěj, 2026-10-24: absorption
-  hearts must not move them): 14 px above the item name's line of a survival player's usual stack (the health, armor
-  and food rows and the XP bar, 73 px), 24 px above the XP bar's level text there (twice the gap the bar had before
-  the resource bar). They raise `Gui#leftHeight` and `Gui#rightHeight` above them, unless the stack already reaches
-  higher, so the action bar message stays above them (`SpellBarLayout`); extra heart rows lift only the XP bar and the
-  item name toward the block. It shows even when empty (research SP-1). A slot is framed in its spell's school colour,
+  the resource bar under it are one group, which the player can move and resize (below); its default place stays the
+  same on the screen, whatever the status rows are (Matěj, 2026-10-24: absorption hearts must not move it): centred,
+  14 px above the item name's line of a survival player's usual stack (the health, armor and food rows and the XP bar,
+  73 px), 24 px above the XP bar's level text there (twice the gap the bar had before the resource bar). When the
+  group lies in the screen's middle columns and reaches down to the action bar message, it raises `Gui#leftHeight` and
+  `Gui#rightHeight` above itself, unless the stack already reaches higher, so the message stays above it
+  (`SpellBarLayout`); extra heart rows lift only the XP bar and the item name toward the group. It shows even when
+  empty (research SP-1). A slot is framed in its spell's school colour,
   a frame that stays once spells have icons (Matěj, 2026-10-21), shows the spell's initials until then (C6, A1), its
   key in the corner, a blue tint while the resource does not cover the cost, and the cooldown sweep
   (`CooldownSweep`): a dark wedge that shrinks clockwise from 12 o'clock, for the spell's own cooldown or the global
   cooldown, whichever ends later, with the seconds left of a cooldown of 2 s or more. The cast bar (`CastBarHud`, after
   WoW's casting bar, Matěj's playtest of 2026-10-21) sits toward the middle of the screen, 70 % of the way down at most
-  and clear of the spell bar and the action bar message: a 200 by 20 px black frame with rounded corners and a 2 px
+  and clear of the spell bar wherever it is: above a group in its way, with room for the action bar message between,
+  or below one at the top of the screen: a 200 by 20 px black frame with rounded corners and a 2 px
   border, holding the spell's icon (its initials on the school's colour until icons exist) and then the bar. The bar
   fills in the spell school's colour, shaded in steps from light at the top to dark at the bottom with an almost white
   leading edge (`CastBarStyle`); a cast time fills from the left, a channel starts full and empties toward the left. The
   spell's name is on the left and the seconds "elapsed / total" on the right, smaller. After a cast the bar stays a
   moment: full and flashing toward white as it fades, or red with how it ended in place of the name ("Interrupted", "Out
   of range"), and a refused cast's reason shows there in red (`spell/CastTexts`, research SP-3).
+- **The spell bar's place and size** (RLM-404; Matěj, 2026-10-24 and 2026-10-29): three rows of the spell options
+  (`client/screen/SpellOptionsScreen`), after the casting ones and with no section heading, saved in the client config
+  (`client/ClientConfig`). Spellbar Position opens the drag mode (`client/screen/SpellBarPositionScreen`), which hides
+  the options: the player drags the group anywhere on the screen but off it, partly or wholly
+  (`SpellBarLayout#clamp`). While dragging, a red dashed line 2 px wide marks the screen's middle, and the group snaps
+  to it within 6 px and holds there against a sideways pull until the pull has lasted 0.25 s (`CentreSnap`). Cancel
+  (and Escape) goes back with the place before, Save keeps the new one, Reset Position (bottom left) puts the group
+  back at its default place. In game the screen has no dimmed or blurred background and draws the group itself
+  (`SpellBarHud#draw`, which the HUD layer skips meanwhile); from the main menu empty slots stand in for it. A saved
+  place is two fractions of the room the screen leaves the group each way (`spellBarX`, `spellBarY`, -1 for the
+  default place), so it stays on any screen size; 0.5 is the middle exactly, so a centred group stays centred.
+  Spellbar Size (0.5 to 1.5 in steps of 0.05, default 1) scales the group's width, its height with it; Mirror
+  Hotbar's Width (off) overrides it, greying the slider out, with the group exactly as wide as the hotbar (182 px).
+  The group is drawn through the pose's translation and scale, so its slots and resource bar keep their own sizes.
 - **The resource bar** (`client/hud/ResourceBarHud`, RLM-400; Matěj, 2026-10-24): the local player's class resource,
   attached under the spell bar and as wide, 13 px tall: a 1 px black border whose bottom corner pixels are left out
   (rounded, the top square where it meets the slots), a dark gray empty part and the fill in the resource's colour,
@@ -1618,8 +1641,9 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   "for {damage} damage". `spell/SpellTooltip` builds the spellbook's tooltip: name, rank, cost (a channel's per second),
   range, the cast after Cast Time Reduction, the cooldown after Cooldown Reduction and the filled description.
   `SpellTextGameTests` and `SpellBarGameTests` cover the server side and the texts, `CastQueueTest`,
-  `CooldownSweepTest`, `SpellBarLayoutTest`, `CastBarStyleTest`, `KeyLabelsTest`, `SpellTextTest` and `SpellBarViewTest`
-  the client's logic.
+  `CooldownSweepTest`, `SpellBarLayoutTest` (the default place, the clamping, the saved places, the size and mirror
+  rules), `CentreSnapTest`, `CastBarStyleTest`, `KeyLabelsTest`, `SpellTextTest` and `SpellBarViewTest` the client's
+  logic.
 
 **In code (W3 revision, RLM-33): projectile appearances.** A projectile with an `appearance` is drawn by
 `client/render/SpellProjectileRenderer` instead of its trail of sparks: the `orb` is vanilla's shulker bullet model
@@ -1633,13 +1657,24 @@ hitbox and 0.4 above its eyes; never above its height), from 15 % of its size at
 end, where the server launches it from ([11.2](#112-casting-server-authoritative)).
 
 **In code (aim assistance, RLM-345): the target circle.** During the local player's cast-time or channelled spell,
-`client/spell/TargetCircle` draws a ring of dust in the spell school's colour on the ground under the mob the server
-named in `CastTargetPayload` ([11.2](#112-casting-server-authoritative)), its hitbox's half width plus 0.35 blocks out,
-every second game tick, once a game tick at most: while singleplayer is paused (or the server's ticks are frozen) the
-client ticks on but the game time stands still and the particle engine waits, so it must not queue a ring every client
-tick (RLM-474, `TargetCircleTest`). Never outside a cast (Q4), and gone with the local player's `CastEndedPayload` or a
-logout. `SpellAimingGameTests` reads the payload the server sends a cast's caster.
-Particles until the spell visuals (C6) give it its art. The Show target key that shows it without a cast is RLM-468's.
+`client/spell/TargetCircle` draws a ring on the ground under the mob the server named in `CastTargetPayload`
+([11.2](#112-casting-server-authoritative)), its hitbox's half width plus 0.35 blocks out, so a Warden's is wider than
+an Enderman's. Never outside a cast unless highlighted (Q4), and gone with the local player's `CastEndedPayload` or a
+logout. `SpellAimingGameTests` reads the payload the server sends a cast's caster. Its look is Matěj's (playtest of
+2026-10-29, RLM-468, [ADR 0061](decisions/0061-the-target-circle-is-a-smooth-light-ring-and-the-highlight-toggles.md)):
+a smooth, very light yellow circle lying flat, no particles and no animation, the same for every spell, as easy to see
+in the dark as in daylight and lighting nothing. It is geometry, not a texture: the client extracts the mob's position
+between two ticks with the level's render state (`ExtractLevelRenderStateEvent`) and submits 96 to 720 segments (by its
+size) of three bands, a 1/16 block core and a 0.1 block glow fading out on each side (`SubmitCustomGeometryEvent`),
+through vanilla's `RenderTypes#debugQuads`: translucent position and colour quads with no lightmap, no fog and no depth
+write, so neither night nor a torch changes it, every frame, also while paused. **The Highlight Spell Target key**
+(RLM-468, `SpellKeys#HIGHLIGHT_SPELL_TARGET`, Left Alt by default, which no key of the pack takes, under Realmforge
+Spell Bar) shows it without a cast. The client option Highlight Spell Target (`ClientConfig#HIGHLIGHT_SPELL_TARGET`, a
+row of the spell options) makes it a toggle (the default: a press switches the highlight on until the next press) or
+Hold (on while the key is held). While the highlight is on, `TargetCircle` draws the ring under the mob the server names
+in `HighlightedTargetPayload` ([11.2](#112-casting-server-authoritative)), unless the local player's cast names its own
+mob, which wins (`TargetCircle#under`, `TargetCircleTest`). It tells the server when the highlight goes on and off, and
+forgets the highlighted mob at once when it goes off; a logout switches it off.
 
 ### 11.7 Class spells and stances
 
@@ -3115,16 +3150,19 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   `client/screen/CharacterCreationScreen`), `SpendStatPoint` (exists: `character/net/SpendStatPointPayload`, sent by
   `client/screen/CharacterSheetScreen`), `CastSpell` (exists: `spell/net/CastSpellPayload`, sent by
   `client/spell/SpellBarInput`), `SetSpellBarSlot` (exists: `spell/net/SetSpellBarSlotPayload`, sent by
-  `client/screen/SpellbookScreen`), `CancelCast`, `LearnTalent`, `ToggleDarkVision` (exists:
-  `world/net/ToggleDarkVisionPayload`, sent by `client/input/DarkVisionKey`).
-- Server → client: `CastStarted` and `CastEnded` (exist: `spell/net/CastStartedPayload` and `CastEndedPayload`, kept
-  by `client/spell/ClientCasts`, the local player's end also shown by `client/hud/CastBarHud`), `CastRefused` (exists:
+  `client/screen/SpellbookScreen`), `HighlightTarget` (exists: `spell/net/HighlightTargetPayload`, the Highlight Spell
+  Target going on or off, sent by `client/spell/TargetCircle`), `CancelCast`, `LearnTalent`, `ToggleNightVision` (exists:
+  `world/net/ToggleNightVisionPayload`, sent by `client/input/NightVisionKey`).
+- Server → client: `CastStarted` and `CastEnded` (exist: `spell/net/CastStartedPayload` and `CastEndedPayload`, kept by
+  `client/spell/ClientCasts`, the local player's end also shown by `client/hud/CastBarHud`), `CastRefused` (exists:
   `spell/net/CastRefusedPayload`, the reason shown by `client/hud/CastBarHud`), `CastTarget` (exists:
   `spell/net/CastTargetPayload`, the mob under the target circle of the player's own cast, drawn by
-  `client/spell/TargetCircle`), `CombatText` (exists: `combat/net/CombatTextPayload`, shown by
-  `client/hud/CombatTextHud`), `HitDirection` (exists: `combat/net/HitDirectionPayload`, shown by
-  `client/hud/HitDirectionHud`), `RealmRefused` (exists: `world/net/RealmRefusedPayload`, the realm's hint, shown by
-  `client/hud/RealmRefusalHud`, [15.1](#151-dimensions)), `DungeonStatus`.
+  `client/spell/TargetCircle`), `HighlightedTarget` (exists: `spell/net/HighlightedTargetPayload`, the mob under the
+  circle while the Highlight Spell Target is on, drawn by `client/spell/TargetCircle`), `CombatText` (exists:
+  `combat/net/CombatTextPayload`, shown by `client/hud/CombatTextHud`), `HitDirection` (exists:
+  `combat/net/HitDirectionPayload`, shown by `client/hud/HitDirectionHud`), `RealmRefused` (exists:
+  `world/net/RealmRefusedPayload`, the realm's hint, shown by `client/hud/RealmRefusalHud`, [15.1](#151-dimensions)),
+  `DungeonStatus`.
 
 ## 18. Client code: rendering, GUI, input
 
@@ -3180,8 +3218,7 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     multiplier); Combat: offense, and defense with spell resistance last; Magic: spells (max mana, mana regeneration,
     spell power, cooldown and cast time reduction) and the spell schools' power and resistance; Origin (C1): the race
     with its description and what it gives (its racial passive and active once spells exist), and the class with its
-    description, then a placeholder for the specialization until specializations exist (its text still reads
-    "Subclass: WIP" until RLM-254). The names the sheet gives vanilla attributes (Mining Speed, Movement Speed, ...)
+    description, then "Specialization: WIP", a placeholder until the specialization spell trees exist (C5). The names the sheet gives vanilla attributes (Mining Speed, Movement Speed, ...)
     apply on their rows and in the primary stats' bonuses. A stat of ours that no section
     names shows under Other. Values round for display only (Matěj, 2026-10-14): a percentage half up to a whole
     number (100.6% reads 101%), any other number half up to one decimal (6.45 reads 6.5). For a player with a
@@ -3206,8 +3243,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     starting kit. It opens and closes by itself ([10.1](#101-races-and-classes)).
   - The spell bar with the resource bar under it and the cast bar (`client/hud/SpellBarHud`, `ResourceBarHud`,
     `CastBarHud`), the spellbook
-    (`client/screen/SpellbookScreen`, P by default) and the spell casting options (`SpellOptionsScreen`), C3b:
-    [11.6](#116-client-side).
+    (`client/screen/SpellbookScreen`, P by default) and the spell options (`SpellOptionsScreen`), C3b, with the
+    spell bar's place and size and its drag mode (`SpellBarPositionScreen`, RLM-404): [11.6](#116-client-side).
 - **Minecraft 26.1 draws GUIs by render-state extraction:** a HUD layer (`GuiLayer`) and a screen
   (`Screen#extractRenderState`) receive a `GuiGraphicsExtractor` (`text`, `centeredText`, `fill`, `pose()` for
   scaling). A layer registered through `RegisterGuiLayersEvent` checks `options.hideGui` itself.
@@ -3215,13 +3252,13 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   unavoidable, no shaders of our own (Iris and Complementary). Porting costs the most here
   ([ADR 0003](decisions/0003-platform-minecraft-1-21-1-neoforge.md)), so it stays small.
 - **Client config** (`ModConfigSpec`, client type) holds UI preferences only: `client/ClientConfig` (C3b), the spell
-  casting options.
+  casting options, the spell bar's place and size (RLM-404) and how the Highlight Spell Target key works (RLM-468).
 
 ## 19. Cross-cutting rules
 
 ### 19.1 World defaults
 
-Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, `DarkVision`.
+Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, `NightVision`.
 
 - When a world is created, set the vision's gamerules once: `keepInventory` and `doImmediateRespawn` on;
   `blockExplosionDropDecay`, `mobExplosionDropDecay` and `tntExplosionDropDecay` off. The signal is
@@ -3256,27 +3293,29 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
   Still allowed, as mixed or harmless cases: zombies breaking turtle eggs, a skeleton's arrows breaking decorated
   pots, chorus flowers or pointed dripstone, foxes picking sweet berries, sheep eating grass, snow golems leaving
   snow. Inside instances every mob is denied, which is intended there ([15.5](#155-instances)).
-- Dark Vision: a key (`client/input/DarkVisionKey`, ¨ by default since the spell bar took H, "Toggle Dark Vision" under Realmforge in the
-  controls) sends `ToggleDarkVisionPayload`; the server flips the sender's switch and confirms it on the action
-  bar. The effect is vanilla night vision as an infinite, hidden effect (`MobEffectInstance.INFINITE_DURATION`, no
-  particles, no icon); every player has it, switched on by default. The on/off state lives in the
-  `realmforge:dark_vision` attachment (copied on death) because effects do not survive death: the effect is
-  reapplied on respawn and login. Milk and a totem of undying clear every effect (`LivingEntity#removeAllEffects`;
-  NeoForge 26.1 has no effect cures any more), and each removal posts the cancellable `MobEffectEvent.Remove`:
-  `DarkVision` cancels it for Dark Vision while the switch is on, so only the switch removes it, `/effect clear`
-  included. Switching on replaces a potion's night vision, which
-  Dark Vision outlasts; switching off removes only infinite night vision, so a potion drunk while it is off stays.
-  While the switch is on, every other night vision is refused: `LivingEntity#addEffect` would merge it into Dark
-  Vision through `MobEffectInstance#update`, which copies the newcomer's particles and icon onto the infinite
-  effect, so `DarkVision` answers its `MobEffectEvent.Applicable` with `DO_NOT_APPLY` (a potion, a splash potion, a
-  tipped arrow, suspicious stew, `/effect give`, any amplifier: night vision has no stronger level, and Dark Vision
-  outlasts them all).
+- Night Vision (called Dark Vision until RLM-295): a key (`client/input/NightVisionKey`, ¨ by default since the spell
+  bar took H, "Toggle Night Vision" under Realmforge in the controls) sends `ToggleNightVisionPayload`; the server
+  flips the sender's switch and confirms it on the action bar ("Night Vision On", "Night Vision Off"). Ours is
+  vanilla's night vision effect, infinite and hidden (`MobEffectInstance.INFINITE_DURATION`, no particles, no icon),
+  which tells it apart from a potion's, with its icon and its end; every player has it, switched on by default. The
+  on/off state lives in the `realmforge:night_vision` attachment (copied on death) because effects do not survive
+  death: the effect is reapplied on respawn and login. Milk and a totem of undying clear every effect
+  (`LivingEntity#removeAllEffects`; NeoForge 26.1 has no effect cures any more), and each removal posts the
+  cancellable `MobEffectEvent.Remove`: `NightVision` cancels it for ours while the switch is on, so only the switch
+  removes it, `/effect clear` included. Switching on replaces a potion's night vision, which ours outlasts; switching
+  off removes only infinite night vision, so a potion drunk while it is off stays. While the switch is on, every
+  other night vision is refused: `LivingEntity#addEffect` would merge it into ours through
+  `MobEffectInstance#update`, which copies the newcomer's particles and icon onto the infinite effect, so
+  `NightVision` answers its `MobEffectEvent.Applicable` with `DO_NOT_APPLY` (a potion, a splash potion, a tipped
+  arrow, suspicious stew, `/effect give`, any amplifier: night vision has no stronger level, and ours outlasts them
+  all).
 
 ### 19.2 Configuration
 
 `ModConfigSpec` only for operator and UI settings (instance limits, timeouts, debug flags, HUD options). Gameplay
 numbers are content, so they are versioned, validated and tested. The client config exists (C3b): `client/ClientConfig`,
-`config/realmforge-client.toml`, holds how the spell bar's presses wait ([11.6](#116-client-side)). One exception: the
+`config/realmforge-client.toml`, holds how the spell bar's presses wait, where the spell bar goes and how big it is,
+and whether the Highlight Spell Target key toggles or is held ([11.6](#116-client-side)). One exception: the
 common config, `combat/CombatConfig`, `config/realmforge-common.toml`, holds the blocking rules
 ([9.3](#93-blocking-with-two-handed-weapons)) and the in-combat window ([9.4](#94-in-combat), RLM-348, whose ticket
 allowed content or config), because Matěj tunes them while he plays (RLM-297) and NeoForge reloads the file when it
@@ -3545,7 +3584,7 @@ dimensions (`realmforge:instances`, later the stone realm) exist in GameTests on
 (`PlayerList#remove`, `PlayerList#placeNewPlayer`) with `QaPlayers#login`, as `InstanceGameTests` does to test
 reconnects; its connection goes through NeoForge's `NetworkRegistry#configureMockConnection`, so synced attachments
 can be sent to it. `PlayerList#respawn(player, false, ...)` stands in for a respawn after death, which copies the
-copy-on-death attachments (`PlayerStateGameTests`, and `WorldRulesGameTests` for Dark Vision), and
+copy-on-death attachments (`PlayerStateGameTests`, and `WorldRulesGameTests` for Night Vision), and
 `PlayerList#respawn(player, true, ...)` for leaving the End. The connection never ticks the player, so a test that
 needs player ticks plays them with `ServerPlayer#doTick`, the call the network handler makes once per tick
 (`StatsGameTests`). For the same reason a fake player tracks an entity (`Entity#startSeenByPlayer`) only when the test
