@@ -38,8 +38,8 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  * the lock lasts goes into the bag, with "You can't use this now" in the action bar: one in the off hand when a wand
  * comes into the main hand, and one taken in hand during the lock. It takes a free slot of the main inventory, never
  * the hotbar, so it does not come back into a hand by itself; with none free it drops at the player's feet, a plain
- * drop rather than a throw (RLM-461; Matěj, 2026-10-28), and while the lock lasts it is not picked up into the
- * selected slot, which would put it in the main hand to drop again.
+ * drop rather than a throw (RLM-461; Matěj, 2026-10-28), and while the lock lasts and the bag is full it is not picked
+ * up into the selected slot, which would put it in the main hand to drop again.
  *
  * <p>The lock is this class's own, per player, not the shields' cooldown: an axe that disables a shield puts it on the
  * same vanilla cooldown, and such a shield stays in hand. Item cooldowns are not saved, and neither is the lock: it
@@ -123,16 +123,17 @@ public final class TwoHandedGear {
     }
 
     /**
-     * While the lock lasts, a shield on the ground is not picked up into the selected slot: a shield does not stack, so
-     * a pickup takes the first free slot ({@code Inventory#getFreeSlot}), and with the bag full that is often the
-     * selected one, from which it would drop again at once, every time its pickup delay ran out. Into another free
-     * slot it is picked up as usual.
+     * While the lock lasts and the bag is full, a shield on the ground is not picked up into the selected slot: a
+     * shield does not stack, so a pickup takes the first free slot ({@code Inventory#getFreeSlot}), and when that is
+     * the selected one, the end of the tick would drop it again at once, every time its pickup delay ran out. Into
+     * another free slot it is picked up as usual, and with a bag slot free it is picked up into the hand too, and goes
+     * into the bag at the end of the same tick (a pickup runs in the player's {@code aiStep}, before the tick's end).
      */
     static void onItemPickup(ItemEntityPickupEvent.Pre event) {
         Player player = event.getPlayer();
         Inventory inventory = player.getInventory();
         if (event.getItemEntity().getItem().is(Tags.Items.TOOLS_SHIELD) && lockEnd(player).isPresent()
-                && inventory.getFreeSlot() == inventory.getSelectedSlot()) {
+                && inventory.getFreeSlot() == inventory.getSelectedSlot() && firstFreeBagSlot(inventory) < 0) {
             event.setCanPickup(TriState.FALSE);
         }
     }
@@ -151,16 +152,25 @@ public final class TwoHandedGear {
      */
     private static void stow(ServerPlayer player, ItemStack shield) {
         Inventory inventory = player.getInventory();
-        for (int slot = Inventory.SELECTION_SIZE; slot < Inventory.INVENTORY_SIZE; slot++) {
-            if (inventory.getItem(slot).isEmpty()) {
-                inventory.setItem(slot, shield);
-                return;
-            }
+        int slot = firstFreeBagSlot(inventory);
+        if (slot >= 0) {
+            inventory.setItem(slot, shield);
+            return;
         }
         ItemEntity dropped = player.drop(shield, false, false);
         if (dropped != null) {
             dropped.setDeltaMovement(Vec3.ZERO);
         }
+    }
+
+    /** The first free slot of the main inventory, past the hotbar (9 to 35), or -1 when the bag is full. */
+    private static int firstFreeBagSlot(Inventory inventory) {
+        for (int slot = Inventory.SELECTION_SIZE; slot < Inventory.INVENTORY_SIZE; slot++) {
+            if (inventory.getItem(slot).isEmpty()) {
+                return slot;
+            }
+        }
+        return -1;
     }
 
     /**

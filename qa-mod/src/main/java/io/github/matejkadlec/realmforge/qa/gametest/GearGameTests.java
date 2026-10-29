@@ -308,11 +308,11 @@ public final class GearGameTests {
     }
 
     /**
-     * RLM-172 (Matěj, 2026-10-26) and RLM-461 (Matěj, 2026-10-28): a two-handed wand coming into the main hand puts the
-     * shield in the off hand into the bag and locks every shield, on vanilla's item cooldown; while the wand stays
+     * RLM-172 (Matěj, 2026-10-26) and RLM-461 (Matěj, 2026-10-28): a two-handed wand coming into the main hand puts
+     * the shield in the off hand into the bag and locks every shield, on vanilla's item cooldown; while the wand stays
      * there the lock keeps starting again, and after it leaves the lock runs down from where it was, while a shield
-     * taken in hand still goes into the bag. The bag is the main inventory, never the hotbar, so the shield stays out of
-     * both hands and nothing lies on the ground to be picked up again.
+     * taken in hand still goes into the bag. The bag is the main inventory, never the hotbar, so the shield stays out
+     * of both hands and nothing lies on the ground to be picked up again.
      */
     @QaGameTest(timeoutTicks = 100)
     public static void aTwoHandedWandLocksEveryShield(GameTestHelper helper) {
@@ -354,8 +354,8 @@ public final class GearGameTests {
     }
 
     /**
-     * RLM-461 (Matěj, 2026-10-28): with the bag full, a shield taken in hand during the lock drops at the player's feet,
-     * as a plain drop: not thrown ahead, and not counted as the player's drop.
+     * RLM-461 (Matěj, 2026-10-28): with the bag full, a shield taken in hand during the lock drops at the player's
+     * feet, as a plain drop: not thrown ahead, and not counted as the player's drop.
      */
     @QaGameTest
     public static void aShieldDropsOnlyWhenTheBagIsFull(GameTestHelper helper) {
@@ -386,10 +386,11 @@ public final class GearGameTests {
     }
 
     /**
-     * RLM-461: while the lock lasts, a dropped shield is not picked back into the selected slot. A shield does not
-     * stack, so a pickup takes the first free slot, and with the bag and the hotbar before it full that is the selected
-     * one: the shield would land in the main hand and drop again every time its pickup delay ran out. Into another free
-     * slot it is picked up as usual.
+     * RLM-461: while the lock lasts and the bag is full, a dropped shield is not picked back into the selected slot. A
+     * shield does not stack, so a pickup takes the first free slot, and with the hotbar before it full that is the
+     * selected one: the shield would land in the main hand and drop again every time its pickup delay ran out. Into
+     * another free slot it is picked up as usual, and with a bag slot free it is picked up into the hand and stowed in
+     * the bag by the same tick's end.
      */
     @QaGameTest
     public static void aDroppedShieldIsNotPickedBackIntoTheHand(GameTestHelper helper) {
@@ -420,6 +421,21 @@ public final class GearGameTests {
             shield.playerTouch(player);
             helper.assertTrue(shield.isRemoved() && inventory.getItem(free).is(Items.SHIELD),
                     "with another slot free first, it is picked up into it");
+
+            inventory.setItem(free, new ItemStack(Items.DIRT));
+            inventory.setItem(inventory.getSelectedSlot(), ItemStack.EMPTY);
+            int bag = 20;
+            inventory.setItem(bag, ItemStack.EMPTY);
+            ItemEntity another = new ItemEntity(helper.getLevel(), player.getX(), player.getY(), player.getZ(),
+                    new ItemStack(Items.SHIELD));
+            another.setNoPickUpDelay();
+            helper.getLevel().addFreshEntity(another);
+            another.playerTouch(player);
+            helper.assertTrue(another.isRemoved() && player.getMainHandItem().is(Items.SHIELD),
+                    "with a bag slot free, it is picked up into the selected slot");
+            player.doTick();
+            helper.assertTrue(player.getMainHandItem().isEmpty() && inventory.getItem(bag).is(Items.SHIELD),
+                    "and the tick's end stows it in the bag");
         } finally {
             clearDroppedShields(helper, player);
             logout(player);

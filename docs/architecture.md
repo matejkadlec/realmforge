@@ -1774,13 +1774,13 @@ return; the proc engine at its end exists since C3a.
     while it lasts into the bag, with a message in the action bar: a free slot of the main inventory (9 to 35), never
     the hotbar, so it does not come back into a hand by itself, or, with the bag full, a plain drop at the player's
     feet, not thrown and not counted as the player's drop (RLM-461; Matěj, 2026-10-28), which is not picked up into the
-    selected slot while the lock lasts (`ItemEntityPickupEvent.Pre`; a shield does not stack, so a pickup takes the
-    first free slot, often the selected one with the bag full, and would drop again at once). A death and a logout end the
-    lock (`PlayerRespawnEvent`, `PlayerLoggedOutEvent`); a return from the End keeps it. A client rebuilds its player,
-    and forgets its cooldowns, at every dimension change, so `PlayerChangedDimensionEvent` and the End's respawn put
-    what is left of the lock on the shields' cooldown again. The lock is its own, not the cooldown, so a shield an axe
-    disabled stays in hand. It is not Better Combat's two-handed weapons, which block with right click
-    ([9.3](#93-blocking-with-two-handed-weapons));
+    selected slot while the lock lasts and the bag is full (`ItemEntityPickupEvent.Pre`; a shield does not stack, so a
+    pickup takes the first free slot, often the selected one, and would drop again at once; with a bag slot free, the
+    tick's end stows it there). A death and a logout end the lock (`PlayerRespawnEvent`, `PlayerLoggedOutEvent`); a
+    return from the End keeps it. A client rebuilds its player, and forgets its cooldowns, at every dimension change,
+    so `PlayerChangedDimensionEvent` and the End's respawn put what is left of the lock on the shields' cooldown again.
+    The lock is its own, not the cooldown, so a shield an axe disabled stays in hand. It is not Better Combat's
+    two-handed weapons, which block with right click ([9.3](#93-blocking-with-two-handed-weapons));
   - **armor** (`head`, `chest`, `legs`, `feet`) gets vanilla's `EQUIPPABLE` component with its slot, equip sound and
     look: an equipment asset `assets/realmforge/equipment/<look>.json` with a body and a leggings layer, placeholder
     textures until A1's art. Caster robes give no armor: magic shield, spell power, max mana and cooldown reduction;
