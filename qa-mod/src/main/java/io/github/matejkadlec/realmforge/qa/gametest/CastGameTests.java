@@ -28,6 +28,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -267,6 +268,51 @@ public final class CastGameTests {
     }
 
     /**
+     * A cast that slows its caster stops its sprint until it ends (RLM-371, ADR 0057): a sprinting player who starts
+     * Test Slow Bolt moves at half their walking speed, not at 65 % of it, a sprint their client asks for during the
+     * cast is stopped at the next tick, and after the cast they sprint again. A spell castable while moving keeps the
+     * sprint.
+     */
+    @QaGameTest
+    public static void aCastThatSlowsStopsTheSprintUntilItEnds(GameTestHelper helper) {
+        Husk husk = husk(helper, new BlockPos(2, 1, 3));
+        ServerPlayer player = caster(helper, "qa-cast-sprinter");
+        ServerPlayer seeker = caster(helper, "qa-cast-sprinter-free");
+        seeker.snapTo(helper.absoluteVec(new Vec3(0.5, 1, 0.5)), 0, 0);
+        double walking = player.getAttributeValue(Attributes.MOVEMENT_SPEED);
+        learn(helper, player, GeneratedSpells.TEST_SLOW_BOLT);
+        learn(helper, seeker, GeneratedSpells.TEST_HOMING_BOLT);
+        askToSprint(player);
+        askToSprint(seeker);
+        assertSpeed(helper, player, walking * 1.3, "sprinting before the cast");
+
+        assertBegun(helper, player, GeneratedSpells.TEST_SLOW_BOLT, husk);
+        helper.assertFalse(player.isSprinting(), "the cast did not stop the sprint");
+        helper.assertTrue(Casting.blocksSprint(player), "the cast does not keep the player from sprinting");
+        assertSpeed(helper, player, walking * 0.5, "half the walking speed during the cast");
+        assertBegun(helper, seeker, GeneratedSpells.TEST_HOMING_BOLT, husk);
+        helper.assertTrue(seeker.isSprinting(), "a spell castable while moving stopped the sprint");
+        helper.assertFalse(Casting.blocksSprint(seeker), "a spell castable while moving keeps its caster from sprinting");
+        askToSprint(player);
+        helper.runAfterDelay(2, () -> {
+            helper.assertFalse(player.isSprinting(), "a sprint asked for during the cast was not stopped");
+            assertSpeed(helper, player, walking * 0.5, "still half the walking speed");
+        });
+        helper.runAfterDelay(50, () -> {
+            assertEnded(helper, player, GeneratedSpells.TEST_SLOW_BOLT, CastEnd.COMPLETED);
+            helper.assertFalse(Casting.blocksSprint(player), "the ended cast still keeps the player from sprinting");
+            askToSprint(player);
+        });
+        helper.runAfterDelay(52, () -> {
+            helper.assertTrue(player.isSprinting(), "the player does not sprint again after the cast");
+            assertSpeed(helper, player, walking * 1.3, "sprinting after the cast");
+            logout(seeker);
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
      * Cast Time Reduction shortens a channel's interval and its seconds, so it runs all its ticks and pays for all its
      * seconds in less time, then completes.
      */
@@ -490,6 +536,18 @@ public final class CastGameTests {
     static void walk(GameTestHelper helper, ServerPlayer player, Vec3 pos) {
         player.setLastClientInput(new Input(true, false, false, false, false, false, false));
         player.snapTo(helper.absoluteVec(pos), player.getYRot(), player.getXRot());
+    }
+
+    /** {@code player}'s client asks to sprint, as it does when the sprint key is pressed. */
+    private static void askToSprint(ServerPlayer player) {
+        player.connection.handlePlayerCommand(new ServerboundPlayerCommandPacket(player,
+                ServerboundPlayerCommandPacket.Action.START_SPRINTING));
+    }
+
+    private static void assertSpeed(GameTestHelper helper, LivingEntity entity, double expected, String what) {
+        double speed = entity.getAttributeValue(Attributes.MOVEMENT_SPEED);
+        helper.assertTrue(Math.abs(speed - expected) <= TOLERANCE, what + ": movement speed " + expected
+                + " expected, got " + speed);
     }
 
     private static void assertSlowed(GameTestHelper helper, LivingEntity caster, boolean slowed, String message) {

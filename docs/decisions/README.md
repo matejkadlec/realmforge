@@ -58,7 +58,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0044](0044-third-party-mods-by-milestone.md) | Third-party mods by milestone | Accepted (amends 0004, 0013 and 0025), WorldEdit for building only by [0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md) |
 | [0045](0045-asgard-and-atlantis-amend-the-v1-realm-layout.md) | Asgard and Atlantis amend the v1 realm layout | Accepted (amends 0032), the names amended by [0054](0054-skyhearth-and-deepholm-amend-asgard-and-atlantis.md) |
 | [0046](0046-spell-bar-default-keys-amend-the-pack-defaults.md) | The spell bar's default keys amend the pack's default keys | Accepted (amends 0043) |
-| [0047](0047-the-cast-slow-halves-the-casters-speed.md) | The cast slow halves the caster's speed | Accepted (amends 0039) |
+| [0047](0047-the-cast-slow-halves-the-casters-speed.md) | The cast slow halves the caster's speed | Accepted (amends 0039), amended by [0057](0057-a-cast-that-slows-its-caster-stops-its-sprint.md) (the cast stops the sprint) |
 | [0048](0048-better-key-binds-our-own-client-mod-independent-of-realmforge.md) | Better Key Binds: our own client mod, independent of Realmforge | Accepted (amends 0008, 0011 and 0013) |
 | [0049](0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md) | Player hits bypass the hurt cooldown in our damage pipeline, not through Iron's RPG Tweaks | Accepted (amends 0044), amended by [0051](0051-player-melee-passes-the-hurt-cooldown-only-at-full-strength.md) (melee only at full attack strength) |
 | [0050](0050-set-pieces-hand-built-nbt-placed-at-dungeon-generation.md) | Set pieces: hand-built NBT, placed at dungeon generation | Accepted (amends 0005 and 0014) |
@@ -68,6 +68,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0054](0054-skyhearth-and-deepholm-amend-asgard-and-atlantis.md) | Skyhearth and Deepholm amend Asgard and Atlantis | Accepted (amends 0045) |
 | [0055](0055-aim-assistance-for-a-players-enemy-spells.md) | Aim assistance for a player's enemy spells: a cone around the crosshair, homing bolts, a sticky target | Accepted (amends 0052) |
 | [0056](0056-players-break-an-allowlist-of-blocks-in-instances.md) | Players break an allowlist of blocks in instances | Accepted |
+| [0057](0057-a-cast-that-slows-its-caster-stops-its-sprint.md) | A cast that slows its caster stops its sprint | Accepted (amends 0047) |
 
 ## Open questions (not decided)
 

@@ -45,6 +45,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   logging out, the caster's removal and a cancel ({@link #cancel}) end it without more effects.</li>
  *   <li><b>Moving slows, it never interrupts</b> (RLM-261, ADR 0039): a cast of a spell that may not be cast while
  *   moving gives its caster {@link #CAST_SLOW}, half its movement speed, until the cast ends however it ends. A spell's {@code realmforge:knockback} still interrupts the cast ({@link #knockedBack}).</li>
+ *   <li><b>No sprint</b> (RLM-371, ADR 0057): such a cast also stops its caster's sprint when it begins, and keeps it
+ *   stopped every tick until it ends, as using an item does ({@link #blocksSprint}; the client keeps the sprint key
+ *   from starting one, {@code client/spell/ClientCasts}).</li>
  *   <li><b>A kept target:</b> a spell that keeps sight of its target checks it every tick and ends the cast at once
  *   when blocks come between them; one that keeps its range for a share of the cast ends at once when the target
  *   leaves the range within that share, and past it the range no longer matters ({@link SpellCast#keepRange}).</li>
@@ -119,8 +122,11 @@ public final class Casting {
         }
         caster.syncData(SpellAttachments.COMBAT);
         AttributeInstance speed = caster.getAttribute(Attributes.MOVEMENT_SPEED);
-        if (!spellCast.castableWhileMoving() && speed != null) {
-            speed.addOrUpdateTransientModifier(CAST_SLOW);
+        if (!spellCast.castableWhileMoving()) {
+            caster.setSprinting(false);
+            if (speed != null) {
+                speed.addOrUpdateTransientModifier(CAST_SLOW);
+            }
         }
         Running running = new Running(caster, spell, level, target, (ServerLevel) caster.level(), cast, interval,
                 second, payments);
@@ -150,6 +156,15 @@ public final class Casting {
     /** Whether {@code caster} is casting a cast-time or channelled spell. */
     public static boolean isCasting(Entity caster) {
         return caster instanceof LivingEntity living && current(living).isPresent();
+    }
+
+    /**
+     * Whether {@code caster}'s cast in progress keeps it from sprinting: one whose spell may not be cast while moving
+     * (RLM-371, ADR 0057). Reads the {@code combat} attachment, so the caster's own client gets the same answer.
+     */
+    public static boolean blocksSprint(LivingEntity caster) {
+        return current(caster).flatMap(cast -> Spells.get(caster.registryAccess(), cast.spell()))
+                .filter(spell -> !spell.value().cast().castableWhileMoving()).isPresent();
     }
 
     /** Cancels {@code caster}'s cast in progress, if any; returns whether one ran. */
@@ -186,6 +201,10 @@ public final class Casting {
         }
         long now = running.level().getGameTime();
         Spell spell = running.spell().value();
+        if (!spell.cast().castableWhileMoving() && caster.isSprinting()) {
+            // A player's client asked to sprint (ServerboundPlayerCommandPacket) before it knew of the cast.
+            caster.setSprinting(false);
+        }
         Optional<CastEnd> lost = lostTarget(running, now);
         if (lost.isPresent()) {
             end(caster, lost.get());
