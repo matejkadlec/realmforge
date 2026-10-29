@@ -841,6 +841,19 @@ def test_from_world_imports_every_new_save(tmp_path: Path, capsys: pytest.Captur
     assert cli.main(["set-pieces", "import", str(world), "--from-world", str(world)]) == 1
 
 
+def test_a_theme_of_our_own_blocks_gets_the_same_spots() -> None:
+    # RLM-473: validation takes our own simple blocks as a theme's full blocks, so the matcher takes them as walls and
+    # floors too, though no name rule knows them.
+    vault = "realmforge:vaultstone"
+    vanilla = singles(box_room(), fit("wall_1x1"), {"wall_body": BRICKS, "floor": STONE, "ceiling": STONE})
+    own = singles(box_room(wall=vault, floor=vault), fit("wall_1x1"), {"wall_body": vault, "floor": vault})
+    assert vanilla and own == vanilla
+    assert (
+        singles(box_room(wall=vault, floor=vault), fit("wall_1x1"), {"wall_body": BRICKS, "floor": STONE})
+        == []
+    )
+
+
 # --- RLM-390: unique save names, decorative entities only, other mods' blocks --------------------------------------
 
 

@@ -52,6 +52,7 @@ from realmforge_tools.rooms.connectors import connectors
 from realmforge_tools.rooms.dress import family
 from realmforge_tools.rooms.structure import AIR, BlockState, Pos, Structure, StructureBlock
 from realmforge_tools.rooms.walk import LIGHT_SOURCES, Cells, light_levels, reach, walkable
+from realmforge_tools.schema.room_spec import FULL, THEME_ROLES
 
 WALL, PIECE, CLEAR, ANY = "W", ".", "_", "?"
 MASK_CELLS = (WALL, PIECE, CLEAR, ANY)
@@ -372,6 +373,13 @@ class RoomView:
         self.structure = structure
         self.cells = Cells.of(structure)
         self.theme_blocks = theme_blocks
+        # A theme's full-role blocks are full blocks by validation, our own ones too, which no name rule knows
+        # (RLM-473).
+        self.full = {
+            block
+            for role, need in THEME_ROLES.items()
+            if need == FULL and (block := (theme_blocks or {}).get(role))
+        }
         self.paths = paths
         self.stands = walkable(self.cells)
         found = connectors(structure)
@@ -389,8 +397,10 @@ class RoomView:
     def _floor_block(self, pos: Pos) -> bool:
         if not self.cells.inside(pos):
             return False
-        name = self.cells.name(pos)
-        return name != BARRIER and is_solid(name)
+        return self._solid(self.cells.name(pos))
+
+    def _solid(self, name: str) -> bool:
+        return name != BARRIER and (name in self.full or is_solid(name))
 
     @cached_property
     def door_groups(self) -> list[tuple[Pos, frozenset[Pos]]]:
@@ -442,7 +452,7 @@ class RoomView:
             any_block = bool(roles)
 
         def is_wall(name: str) -> bool:
-            return name != BARRIER and is_solid(name) and (any_block or name in blocks)
+            return self._solid(name) and (any_block or name in blocks)
 
         return is_wall
 

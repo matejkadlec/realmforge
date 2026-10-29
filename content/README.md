@@ -463,8 +463,9 @@ Rules:
 - `room_themes/` names, for each neutral role the room generator builds with (`floor`, `floor_variant`,
   `floor_border`, `wall_base`, `wall_body`, `wall_body_cracked`, `wall_body_mossy`, `wall_cornice`, `ceiling`,
   `pillar`, `stairs`, `slab`, `rubble`, `rubble_slab`, `wall_light`, `ceiling_light`), the block it is in this
-  theme: a full solid block, a stairs block, a slab, a wall torch or a lantern as the role needs, each role its own
-  block, so a theme swap (W4) can tell them apart. `stone_vault` is the one theme so far.
+  theme: a full solid block (vanilla's, or one of our own `simple` blocks such as `realmforge:vaultstone`), a stairs
+  block, a slab, a wall torch or a lantern as the role needs, each role its own block, so a theme swap (W4) can tell
+  them apart. `stone_vault` is the one theme so far.
 - `dungeons/` holds the kinds of dungeons ([architecture 15.2](../docs/architecture.md#152-dungeon-types)): a `name` (a
   label), the room `pool` the type is built from, and the `layout` the planner follows, each range written `[min, max]`:
   `main_path` (rooms between the entrance and the ending, 1 to 96), `branches` (side branches off the main path's rooms,
@@ -484,7 +485,8 @@ Rules:
   rooms to pass through and the junctions must be corridors (`hallway`, `stairs`), the pool needs a fight (a `combat`
   room with a spawner, two connectors) and, without `walls`, a corridor's dead end. Every connector of its rooms must
   meet one of the pool by the jigsaw rules (its `target` is the other's `name`; sides meet sides, up meets down), and
-  with `walls` the wall's block must be a full solid block and every doorway of the pool one the wall closes: no open
+  with `walls` the wall's block must be a full solid block (vanilla's, or one of our own `simple` blocks) and every
+  doorway of the pool one the wall closes: no open
   block beside, above or below its middle
   three by three blocks. `rf gen` resolves the pool into the entry, so the game plans without loading a template, and
   writes each room's set-piece spots into it: the patterns where the pieces that reach the room's role fit, each with
