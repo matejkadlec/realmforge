@@ -262,6 +262,11 @@ class AreaEffectDef(StrictModel):
     effects: list[EntityEffectDef] = Field(
         min_length=1, description="What it does to each entity inside each time it acts, in order."
     )
+    ring_color: HexColor | None = Field(
+        default=None,
+        description='The colour of the ring of dust that shows its edge, "#RRGGBB"; without it, a ring of purple '
+        "sparks (until C6, RLM-29).",
+    )
 
     @model_validator(mode="after")
     def _ticks(self) -> AreaEffectDef:
@@ -424,6 +429,12 @@ class _TimedCastDef(StrictModel):
     )
     sound: ResourceId | None = Field(
         default=None, description="A sound event the caster makes when the cast begins, e.g. its chant."
+    )
+    animation: Literal["raise", "slam"] | None = Field(
+        default=None,
+        description="How a custom mob or boss moves its arms while it casts (its model's animation): raise (the "
+        "default) lifts them forward and up, the hands before its forehead; slam beats its fists up and down, one slam "
+        "every 0.75 s, the time a channel of the same interval ticks at (a quake). Players' casts ignore it.",
     )
 
     @model_validator(mode="after")

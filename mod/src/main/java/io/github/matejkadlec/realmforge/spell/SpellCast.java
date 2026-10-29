@@ -32,12 +32,14 @@ import net.minecraft.util.StringRepresentable;
  * @param sound               the sound event the caster makes when the cast begins, if any
  * @param formsProjectile     whether the spell's projectile (its first effect) forms in front of the caster during a
  *                            cast time, growing to its size, and flies from there ({@link SpellVisuals})
+ * @param animation           how a custom mob or boss moves its arms while a cast-time or channelled spell runs (its
+ *                            model's animation); players' casts ignore it
  */
 public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean castableWhileMoving,
         boolean lockOn, boolean keepSight, Optional<Double> keepRange, Optional<Identifier> sound,
-        boolean formsProjectile) {
+        boolean formsProjectile, Animation animation) {
     public static final SpellCast INSTANT = new SpellCast(Type.INSTANT, 0, 0, false, false, false, Optional.empty(),
-            Optional.empty(), false);
+            Optional.empty(), false, Animation.RAISE);
 
     public static final Codec<SpellCast> CODEC = RecordCodecBuilder.<SpellCast>create(instance -> instance.group(
                     Type.CODEC.fieldOf("type").forGetter(SpellCast::type),
@@ -51,20 +53,21 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
                     Codec.BOOL.optionalFieldOf("keep_sight", false).forGetter(SpellCast::keepSight),
                     Codec.doubleRange(0, 1).optionalFieldOf("keep_range").forGetter(SpellCast::keepRange),
                     Identifier.CODEC.optionalFieldOf("sound").forGetter(SpellCast::sound),
-                    Codec.BOOL.optionalFieldOf("forms_projectile", false).forGetter(SpellCast::formsProjectile))
+                    Codec.BOOL.optionalFieldOf("forms_projectile", false).forGetter(SpellCast::formsProjectile),
+                    Animation.CODEC.optionalFieldOf("animation", Animation.RAISE).forGetter(SpellCast::animation))
             .apply(instance, SpellCast::new)).validate(SpellCast::validate);
 
     /** A cast time of {@code ticks} (1 or more). */
     public static SpellCast castTime(int ticks, boolean castableWhileMoving, boolean lockOn) {
         return new SpellCast(Type.CAST_TIME, ticks, 0, castableWhileMoving, lockOn, false, Optional.empty(),
-                Optional.empty(), false);
+                Optional.empty(), false, Animation.RAISE);
     }
 
     /** A channel of {@code durationTicks} that ticks every {@code intervalTicks}, which divides the duration. */
     public static SpellCast channel(int durationTicks, int intervalTicks, boolean castableWhileMoving,
             boolean lockOn) {
         return new SpellCast(Type.CHANNEL, durationTicks, intervalTicks, castableWhileMoving, lockOn, false,
-                Optional.empty(), Optional.empty(), false);
+                Optional.empty(), Optional.empty(), false, Animation.RAISE);
     }
 
     /** Whether the effects run at once, without a current cast. */
@@ -90,9 +93,10 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
         return switch (cast.type) {
             case INSTANT -> cast.durationTicks == 0 && cast.intervalTicks == 0 && !cast.castableWhileMoving
                     && !cast.lockOn && !cast.keepSight && cast.keepRange.isEmpty() && cast.sound.isEmpty()
+                    && cast.animation == Animation.RAISE
                     ? DataResult.success(cast)
                     : DataResult.error(() -> "An instant cast has no duration, interval, movement, lock-on, kept "
-                            + "sight or range, or sound: " + cast);
+                            + "sight or range, sound or animation: " + cast);
             case CAST_TIME -> cast.durationTicks > 0 && cast.intervalTicks == 0
                     ? DataResult.success(cast)
                     : DataResult.error(() -> "A cast time lasts a tick or more and has no interval: " + cast);
@@ -101,6 +105,37 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
                     ? DataResult.success(cast)
                     : DataResult.error(() -> "A channel lasts a whole number of intervals of a tick or more: " + cast);
         };
+    }
+
+    /**
+     * How a custom mob or boss moves its arms while it casts, its model's animation ({@code generate/mobs.py} writes
+     * both into every custom mob's animations).
+     */
+    public enum Animation implements StringRepresentable {
+        /** Its arms raised forward and up, the hands before its forehead, where a projectile it forms grows. */
+        RAISE("raise", "attack.cast"),
+        /** Its fists beating up and down, a slam every 0.75 s, the interval a quake ticks at. */
+        SLAM("slam", "attack.slam");
+
+        public static final Codec<Animation> CODEC = StringRepresentable.fromEnum(Animation::values);
+
+        private final String serializedName;
+        private final String modelAnimation;
+
+        Animation(String serializedName, String modelAnimation) {
+            this.serializedName = serializedName;
+            this.modelAnimation = modelAnimation;
+        }
+
+        /** The model's animation it plays, e.g. {@code attack.cast}. */
+        public String modelAnimation() {
+            return modelAnimation;
+        }
+
+        @Override
+        public String getSerializedName() {
+            return serializedName;
+        }
     }
 
     /** The cast types. */

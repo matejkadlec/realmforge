@@ -27,6 +27,7 @@ import io.github.matejkadlec.realmforge.spell.SpellRegistries;
 import io.github.matejkadlec.realmforge.spell.SpellTargeting;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -81,6 +82,8 @@ public final class ContentSpellGameTests {
                     id + " cast sound");
             helper.assertValueEqual(spell.cast().formsProjectile(), expected.formsProjectile(),
                     id + " forms its projectile");
+            helper.assertValueEqual(spell.cast().animation().getSerializedName(), expected.castAnimation(),
+                    id + " cast animation");
             helper.assertValueEqual(spell.cost().map(cost -> cost.resource().getRegisteredName()),
                     expected.costResource(), id + " cost resource");
             helper.assertValueEqual(spell.cost().map(cost -> cost.amount()).orElse(0.0), expected.costAmount(),
@@ -162,10 +165,17 @@ public final class ContentSpellGameTests {
                     projectile.effects().stream().map(ContentSpellGameTests::effect).toList());
             case AreaEffect area -> new EffectExpectation(type, Map.of("radius", area.radius(), "duration_ticks",
                     (double) area.durationTicks(), "interval_ticks", (double) area.intervalTicks()),
-                    Map.of("affects", area.affects().getSerializedName()),
-                    area.effects().stream().map(ContentSpellGameTests::effect).toList());
+                    areaNames(area), area.effects().stream().map(ContentSpellGameTests::effect).toList());
             default -> new EffectExpectation(type, Map.of(), Map.of(), List.of());
         };
+    }
+
+    /** An area's names; its ring's colour, "#RRGGBB", only when it has one, as the data names it only then. */
+    private static Map<String, String> areaNames(AreaEffect area) {
+        Map<String, String> names = new HashMap<>(Map.of("affects", area.affects().getSerializedName()));
+        area.ringColor().ifPresent(color -> names.put("ring_color",
+                String.format(Locale.ROOT, "#%06X", color & 0xFFFFFF)));
+        return Map.copyOf(names);
     }
 
     /** A projectile's numbers; its lifetime only when it has one, as the data names it only then. */

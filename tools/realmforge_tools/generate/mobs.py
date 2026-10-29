@@ -5,7 +5,8 @@ The placeholder model fills the mob's hitbox in the build its YAML picks (``huma
 bones the archetypes animate (``head``, ``body``, ``left_arm``, ``right_arm``, ``left_leg``, ``right_leg``), in the
 Bedrock geometry format GeckoLib reads; its texture paints each box by the YAML's surface, eyes and colours, one
 texture per variant; its animations are the ones the archetypes play (``misc.idle``, ``move.walk``, ``attack.swing``,
-``attack.cast``). A2 (RLM-48) replaces them with real art.
+``attack.cast``, ``attack.slam``). Its spec says where its raised hands are while it casts, so a projectile that its spell
+forms grows there. A2 (RLM-48) replaces them with real art.
 """
 
 from __future__ import annotations
@@ -52,6 +53,11 @@ BOSS_TRACKING_RANGE = 10
 PIXELS_PER_BLOCK = 16
 # The placeholder texture's side: the smallest of these that the model's box UVs fit.
 TEXTURE_SIZES = (64, 128, 256)
+# How far the arms swing up from hanging while a mob casts with its arms raised (attack.cast), in degrees: forward and
+# 30 degrees above level (Matěj's playtests, 2026-10-23 and 2026-10-24).
+CAST_RAISE = 120
+# One slam of attack.slam, in seconds: the fists come down as a channel of this interval ticks (a quake).
+SLAM_SECONDS = 0.75
 LOOTING = "minecraft:looting"
 
 
@@ -198,6 +204,18 @@ class PlaceholderModel:
     pivots: dict[str, tuple[float, float, float]]
     texture_size: int
 
+    def hands(self) -> tuple[float, float]:
+        """Where the hands are while the mob casts with its arms raised (attack.cast at its start), in blocks in front
+        of its middle and above its feet: the middle of each arm's last cube-width, half the arm's thickness back from
+        its end, where a projectile its spell forms grows between the hands."""
+        arm = next(cube for cube in self.cubes if cube.bone == "left_arm")
+        pivot_y = self.pivots["left_arm"][1]
+        reach = pivot_y - arm.origin[1] - arm.size[0] / 2
+        angle = math.radians(CAST_RAISE)
+        ahead = reach * math.sin(angle) / PIXELS_PER_BLOCK
+        up = (pivot_y - reach * math.cos(angle)) / PIXELS_PER_BLOCK
+        return round(ahead, 4), round(up, 4)
+
     def geometry(self, mob: str) -> dict[str, object]:
         top = max(cube.origin[1] + cube.size[1] for cube in self.cubes) / PIXELS_PER_BLOCK
         width = max(abs(cube.origin[0]) + cube.size[0] for cube in self.cubes) * 2 / PIXELS_PER_BLOCK
@@ -256,7 +274,7 @@ def placeholder_model(mob: MobDef) -> PlaceholderModel:
     height = round(mob.size.height * PIXELS_PER_BLOCK)
     across = mob.size.width * PIXELS_PER_BLOCK
     build = {"humanoid": _humanoid, "slim": _slim, "golem": _golem}[mob.model.build]
-    cubes, pivots = build(height, across, mob.id)
+    cubes, pivots = build(height, across, mob.id, mob.model.arm_thickness)
     for size in TEXTURE_SIZES:
         packed = _pack(cubes, size)
         if packed is not None:
@@ -298,14 +316,14 @@ def _limbs(
     return cubes, pivots
 
 
-def _humanoid(height: int, across: float, mob: str) -> tuple[list[Cube], Pivots]:
+def _humanoid(height: int, across: float, mob: str, arms: int | None) -> tuple[list[Cube], Pivots]:
     """Legs and body three eighths of the height each, the head the rest; the body a little narrower than the hitbox
-    and the arms outside it, as vanilla's humanoids."""
+    and the arms outside it, as vanilla's humanoids; ``arms`` thick when the YAML sets it."""
     legs = round(height * 3 / 8)
     body = round(height * 3 / 8)
     head = height - legs - body
     body_width = max(4, round(across * 0.4) * 2)
-    arm = max(2, round(across * 0.3))
+    arm = arms or max(2, round(across * 0.3))
     depth = max(2, round(across * 0.45))
     head_width = min(body_width, max(4, head))
     leg_width = body_width // 2
@@ -318,16 +336,17 @@ def _humanoid(height: int, across: float, mob: str) -> tuple[list[Cube], Pivots]
     return cubes, pivots
 
 
-def _slim(height: int, across: float, mob: str) -> tuple[list[Cube], Pivots]:
+def _slim(height: int, across: float, mob: str, arms: int | None) -> tuple[list[Cube], Pivots]:
     """An enderman's proportions: long thin legs (over half the height), a short body, a tall head, and thin arms
-    that hang below the hips; no wider than the hitbox."""
+    (``arms`` thick when the YAML sets it) that hang below the hips; no wider than the hitbox."""
     legs = round(height * 0.54)
     body = round(height * 0.25)
     head = height - legs - body
     body_width = max(4, round(across * 0.35) * 2)
     depth = max(2, round(across * 0.35))
+    arm = arms or 2
     limbs, pivots = _limbs(
-        legs, body, body_width, (2, round(height * 0.5), 2), (max(2, body_width // 2 - 1), legs, 3), 1
+        legs, body, body_width, (arm, round(height * 0.5), arm), (max(2, body_width // 2 - 1), legs, 3), 1
     )
     cubes = [
         Cube("body", (-body_width / 2, legs, -depth / 2), (body_width, body, depth)),
@@ -337,9 +356,10 @@ def _slim(height: int, across: float, mob: str) -> tuple[list[Cube], Pivots]:
     return cubes, pivots
 
 
-def _golem(height: int, across: float, mob: str) -> tuple[list[Cube], Pivots]:
+def _golem(height: int, across: float, mob: str, arms: int | None) -> tuple[list[Cube], Pivots]:
     """An iron golem's proportions: short thick legs, a broad body with a shell on its front and its back, a big head,
-    and long arms as thick as a player's that hang almost to the ground; moss hangs off the shells' lower edges."""
+    and long arms as thick as a player's (``arms`` thick when the YAML sets it) that hang almost to the ground; moss
+    hangs off the shells' lower edges."""
     legs = round(height * 0.33)
     body = round(height * 0.40)
     head = height - legs - body
@@ -348,8 +368,9 @@ def _golem(height: int, across: float, mob: str) -> tuple[list[Cube], Pivots]:
     head_width = min(body_width - 2, max(6, round(head * 0.9)))
     shell = (max(1, body_width - 2), max(1, body - 4), 2)
     shell_y = legs + (body - shell[1]) // 2
+    arm = arms or 4
     limbs, pivots = _limbs(
-        legs, body, body_width, (4, round(height * 0.65), 4), (max(2, body_width // 2 - 2), legs, 6), 2
+        legs, body, body_width, (arm, round(height * 0.65), arm), (max(2, body_width // 2 - 2), legs, 6), 2
     )
     cubes = [
         Cube("body", (-body_width / 2, legs, -depth / 2), (body_width, body, depth)),
@@ -643,7 +664,20 @@ def _cast_arm(side: int) -> dict[str, object]:
     right), and swaying while the stone forms."""
     return {
         "rotation": _keyframes(
-            (0.0, (-120, 0, -12 * side)), (0.5, (-127, 0, -16 * side)), (1.0, (-120, 0, -12 * side))
+            (0.0, (-CAST_RAISE, 0, -12 * side)),
+            (0.5, (-CAST_RAISE - 7, 0, -16 * side)),
+            (1.0, (-CAST_RAISE, 0, -12 * side)),
+        )
+    }
+
+
+def _slam_arm() -> dict[str, object]:
+    """An arm beating up and down, a slam every ``SLAM_SECONDS`` (Matěj's playtest of Astone's quake, 2026-10-29: at a
+    medium speed, unlike a throw): from just in front of the legs up over the head, then down hard, the fist striking
+    as the slam's time ends."""
+    return {
+        "rotation": _keyframes(
+            (0.0, (-15, 0, 0)), (round(SLAM_SECONDS * 0.55, 4), (-165, 0, 0)), (SLAM_SECONDS, (-15, 0, 0))
         )
     }
 
@@ -657,7 +691,8 @@ def _swing_time(mob: MobDef) -> float:
 def animations(mob: MobDef) -> dict[str, object]:
     """The placeholder animations, by the names the archetypes play (GeckoLib's DefaultAnimations): a slow sway while
     it stands, a stiff walk (the long arms of a golem swing less), both fists hammering down for a melee hit over half
-    the time between two hits, and both arms raised toward the forehead while it casts."""
+    the time between two hits, both arms raised toward the forehead while it casts, and both fists slamming up and down
+    while it casts a spell whose animation is slam."""
     arm_swing = 10 if mob.model.build == "golem" else 15
     swing = _swing_time(mob)
     return {
@@ -701,6 +736,11 @@ def animations(mob: MobDef) -> dict[str, object]:
                 "animation_length": 1.0,
                 "bones": {"head": _LOOK, "left_arm": _cast_arm(1), "right_arm": _cast_arm(-1)},
             },
+            "attack.slam": {
+                "loop": True,
+                "animation_length": SLAM_SECONDS,
+                "bones": {"head": _LOOK, "left_arm": _slam_arm(), "right_arm": _slam_arm()},
+            },
         },
     }
 
@@ -743,6 +783,7 @@ def _spec(mob: MobDef) -> str:
         f"new CustomMobSpec.Variant({string_literal(variant.id)}, {variant.weight})"
         for variant in mob.variants
     )
+    ahead, up = placeholder_model(mob).hands()
     return (
         f"new CustomMobSpec(CustomMobSpec.Idle.{_IDLE[idle_of(mob)]},\n"
         f"            new CustomMobSpec.Sounds({_id(sounds.ambient)},\n"
@@ -753,7 +794,8 @@ def _spec(mob: MobDef) -> str:
         f"            new CustomMobSpec.Melee({seconds_to_ticks(melee.attack_interval_seconds)}, "
         f"{_double(melee.knock_up_blocks)}),\n"
         f"            List.of({spells}), {kiting},\n"
-        f"            List.of({variants}))"
+        f"            List.of({variants}),\n"
+        f"            new CustomMobSpec.Hands({_double(ahead)}, {_double(up)}))"
     )
 
 
@@ -888,6 +930,7 @@ def _expectation(mob: MobDef) -> str:
         for variant in mob.variants
     )
     tags = ", ".join(string_literal(tag) for tag in tags_of(mob))
+    ahead, up = placeholder_model(mob).hands()
     return (
         "            new MobExpectation(\n"
         f"                    {string_literal(mob_id(mob.id))},\n"
@@ -909,7 +952,8 @@ def _expectation(mob: MobDef) -> str:
         f"                    List.of({tags}),\n"
         f"                    {string_literal(mob_loot_table(mob.id))},\n"
         f"                    {_drops(mob.loot, '                            ')},\n"
-        f"                    List.of({chr(10) + variants if variants else ''}))"
+        f"                    List.of({chr(10) + variants if variants else ''}),\n"
+        f"                    {_double(ahead)}, {_double(up)})"
     )
 
 
@@ -939,13 +983,17 @@ def _expectations(content: Content) -> bytes:
         "    public record VariantExpectation(String id, int weight, String lootTable, List<DropExpectation> loot) {\n"
         "    }\n"
         "\n"
-        "    /** Expected state of one mob: its entity type, attributes at level 1, behaviour, sounds and loot. */\n"
+        "    /**\n"
+        "     * Expected state of one mob: its entity type, attributes at level 1, behaviour, sounds and loot, and where its\n"
+        "     * hands hold a projectile its spell forms (blocks in front of its middle and above its feet).\n"
+        "     */\n"
         "    public record MobExpectation(String id, String descriptionId, String archetype, float width, float height,\n"
         "            double maxHealth, double attackDamage, double armor, double movementSpeed, double followRange,\n"
         "            double knockbackResistance, String idle, int attackIntervalTicks, double knockUpBlocks,\n"
         "            List<String> spells, double kitingStepBlocks, double kitingSpeed, String ambientSound,\n"
         "            String hurtSound, String deathSound, String stepSound, boolean silentSteps, String deathParticles,\n"
-        "            List<String> tags, String lootTable, List<DropExpectation> loot, List<VariantExpectation> variants) {\n"
+        "            List<String> tags, String lootTable, List<DropExpectation> loot, List<VariantExpectation> variants,\n"
+        "            double handsAhead, double handsUp) {\n"
         "    }\n"
         "\n"
         f"    public static final List<MobExpectation> MOBS = {mobs};\n"

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import struct
 
 import pytest
@@ -12,6 +13,7 @@ from realmforge_tools.generate import generate_all
 from realmforge_tools.generate.mobs import (
     BONES,
     MOSS_CLUMP,
+    SLAM_SECONDS,
     TEXTURE_SIZES,
     WHITE,
     PlaceholderModel,
@@ -82,8 +84,8 @@ def mob_model(**fields: object) -> MobDef:
 
 def test_repository_mobs_are_the_hewn() -> None:
     content, universe = load_and_validate(RepoPaths())
-    # test_titan is the boss framework's test boss (test_bosses.py).
-    mobs = {entry.model.id: entry.model for entry in content.mobs if not entry.model.id.startswith("test_")}
+    # The bosses' bodies, the test titan and Astone, have their own tests (test_bosses.py).
+    mobs = {entry.model.id: entry.model for entry in content.mobs if entry.model.archetype != "boss"}
     assert {mob_id: model.archetype for mob_id, model in mobs.items()} == {
         "hewn_chanter": "caster",
         "hewn_sentinel": "melee",
@@ -291,7 +293,13 @@ def test_generation_writes_registrations_loot_and_assets(repo: RepoPaths) -> Non
     texture = files[f"{ASSETS}/textures/entity/hewn_brute.png"]
     assert struct.unpack(">II", texture[16:24]) == (64, 64)
     animation = json.loads(files[f"{ASSETS}/geckolib/animations/entity/hewn_brute.animation.json"])
-    assert set(animation["animations"]) == {"misc.idle", "move.walk", "attack.swing", "attack.cast"}
+    assert set(animation["animations"]) == {
+        "misc.idle",
+        "move.walk",
+        "attack.swing",
+        "attack.cast",
+        "attack.slam",
+    }
     geometry = json.loads(files[f"{ASSETS}/geckolib/models/entity/hewn_brute.geo.json"])[
         "minecraft:geometry"
     ][0]
@@ -373,6 +381,56 @@ def test_a_golem_has_shells_and_moss_and_long_arms() -> None:
     body = next(cube for cube in model.cubes if cube.bone == "body" and cube.material == "surface")
     # As thick as a player's arm, and as long as an iron golem's: well past the body.
     assert arm.size[0] == 4 and arm.size[1] > body.size[1]
+
+
+def test_arm_thickness_thickens_the_arms_and_keeps_their_length() -> None:
+    # Astone's arms (Matěj's playtest, 2026-10-29): 4 pixels looked tiny on a 5-block colossus, so 8.
+    def arm(thickness: int | None) -> tuple[int, int, int]:
+        model = {"color": "#8C8577", "build": "golem", "arm_thickness": thickness}
+        built = placeholder_model(mob_model(size={"width": 2, "height": 5}, model=model))
+        return next(cube for cube in built.cubes if cube.bone == "left_arm").size
+
+    assert arm(None) == (4, 52, 4)
+    assert arm(8) == (8, 52, 8)
+    for wrong in (1, 13):
+        with pytest.raises(ValueError, match="arm_thickness"):
+            mob_model(model={"color": "#8C8577", "arm_thickness": wrong})
+
+
+def test_the_hands_are_at_the_end_of_the_raised_arms() -> None:
+    """The hands hold a forming projectile at the end of the arms in the cast pose, 30 degrees above level: half the
+    arm's thickness back from its end (Matěj's playtest of Astone, 2026-10-29: not two thirds along the arm)."""
+    model = placeholder_model(
+        mob_model(
+            size={"width": 2, "height": 5},
+            model={"color": "#8C8577", "build": "golem", "arm_thickness": 8},
+        )
+    )
+    # The pivot is 57 pixels up; the arm reaches 51 below it, 47 to the middle of its last 8 pixels.
+    assert model.hands() == (round(47 * math.sin(math.radians(120)) / 16, 4), round((57 + 47 * 0.5) / 16, 4))
+    ahead, up = model.hands()
+    assert ahead > 2 / 2 + 0.75, "beyond the old fixed point, a little in front of the hitbox"
+    assert up > 4.25 + 0.4, "above the old fixed point, a little above the eyes"
+
+
+def test_the_spec_and_the_expectations_carry_the_hands(repo: RepoPaths) -> None:
+    mob(repo, "hewn_brute", caster("realmforge:stoneform"))
+    files = generate(repo)
+    ahead, up = placeholder_model(mob_model(model={"color": "#8C8577"})).hands()
+    assert f"new CustomMobSpec.Hands({ahead!r}, {up!r}))" in files[REGISTRATIONS].decode()
+    assert f"{ahead!r}, {up!r})" in files[EXPECTATIONS].decode()
+
+
+def test_the_slam_animation_beats_the_fists_once_a_slam() -> None:
+    slam = animations(mob_model())["animations"]["attack.slam"]
+    assert slam["loop"] is True
+    assert slam["animation_length"] == SLAM_SECONDS == 0.75
+    for arm in ("left_arm", "right_arm"):
+        keyframes = slam["bones"][arm]["rotation"]
+        pitches = [rotation[0] for rotation in keyframes.values()]
+        # Up over the head, then down in front of the legs, where it starts again.
+        assert min(pitches) <= -150 and max(pitches) >= -20
+        assert keyframes["0.0"] == keyframes[f"{SLAM_SECONDS:g}"]
 
 
 def test_a_slim_mob_is_no_wider_than_its_hitbox() -> None:
@@ -458,8 +516,10 @@ def test_no_mobs_still_compile(repo: RepoPaths) -> None:
     # A boss runs on a mob, so the bosses go too.
     for file in [*(repo.content / "mobs").glob("*.yaml"), *(repo.content / "bosses").glob("*.yaml")]:
         file.unlink()
-    # Stoneform spares the Hewn's tag, which no mob would fill.
-    (repo.content / "spells" / "stoneform.yaml").unlink()
+    # Stoneform and Astone's boulder spare the Hewn's tag, which no mob would fill; Astone's kill XP rank names her.
+    for name in ("stoneform", "astone_boulder"):
+        (repo.content / "spells" / f"{name}.yaml").unlink()
+    (repo.content / "kill_xp_multipliers" / "astone.yaml").unlink()
     files = generate(repo)
     registrations = files[REGISTRATIONS].decode()
     assert "ALL =\n            List.of();" in registrations

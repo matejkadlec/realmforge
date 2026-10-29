@@ -56,7 +56,12 @@ def effect_model(**fields: object) -> EffectDef:
 
 def test_repository_effects_are_the_engine_tests() -> None:
     content, _ = load_and_validate(RepoPaths())
-    assert {entry.model.id for entry in content.effects} == {"test_burning", "test_regrowth", "test_sapped"}
+    assert {entry.model.id for entry in content.effects} == {
+        "cracked_stone",
+        "test_burning",
+        "test_regrowth",
+        "test_sapped",
+    }
 
 
 @pytest.mark.parametrize(
@@ -170,7 +175,7 @@ def test_registrations(repo: RepoPaths) -> None:
         '"realmforge:effect.test_sapped.minecraft.movement_speed", -0.2, '
         "AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)\n"
     ) in java
-    assert "ALL = List.of(TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);" in java
+    assert "ALL = List.of(CRACKED_STONE, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);" in java
 
 
 def test_modifier_ids_name_the_effect_and_the_attribute() -> None:
@@ -207,11 +212,13 @@ def test_expectations(repo: RepoPaths) -> None:
 
 
 def test_no_effects_still_compile(repo: RepoPaths) -> None:
-    # The spells that apply them go too.
+    # The spells that apply them go too, and Astone, whose last phase casts one of them.
     for file in (repo.content / "effects").glob("*.yaml"):
         file.unlink()
-    for name in ("test_ignite", "test_regrow", "test_sap"):
+    for name in ("test_ignite", "test_regrow", "test_sap", "astone_cracked_stone"):
         (repo.content / "spells" / f"{name}.yaml").unlink()
+    for folder in ("bosses", "mobs", "kill_xp_multipliers"):
+        (repo.content / folder / "astone.yaml").unlink()
     files = generate(repo)
     assert "ALL = List.of();" in files[REGISTRATIONS].decode()
     assert "EFFECTS = List.of();" in files[EXPECTATIONS].decode()

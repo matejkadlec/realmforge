@@ -293,20 +293,21 @@ public final class CustomMobGameTests {
     /**
      * Each custom mob plays its YAML's sounds: its hurt sound when hurt and its death sound when it dies, our own sound
      * events (Matěj's playtest heard neither). A mob with death particles breaks apart: its body is gone the tick after
-     * it dies, instead of falling over for a second.
+     * it dies, instead of falling over for a second. The mobs stand 4 blocks apart, four to a row, all on the floor
+     * (a mob off it would fall away from where its death sound played).
      */
-    @QaGameTest(template = QaGameTests.PLATFORM_9X9, timeoutTicks = 100)
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 100)
     public static void customMobsSoundAndBreakApartAsTheirYamlSays(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         long start = level.getGameTime();
         List<CustomMob> mobs = new ArrayList<>();
-        int x = 1;
-        for (var type : GeneratedMobs.ALL) {
-            CustomMob mob = helper.spawn(type.get(), new Vec3(x + 0.5, 1, 4.5));
+        helper.assertTrue(GeneratedMobs.ALL.size() <= 16, "at most 16 mobs fit on the floor");
+        for (int i = 0; i < GeneratedMobs.ALL.size(); i++) {
+            CustomMob mob = helper.spawn(GeneratedMobs.ALL.get(i).get(), new Vec3(2.5 + 4 * (i % 4), 1,
+                    2.5 + 4 * (i / 4)));
             mob.setNoAi(true);
             mob.hurtServer(level, level.damageSources().generic(), 1);
             mobs.add(mob);
-            x += 6;
         }
         // Past the hurt cooldown's half (10 ticks), so the killing hit counts in full and plays the death sound.
         helper.runAfterDelay(15, () -> mobs.forEach(mob -> mob.hurtServer(level, level.damageSources().generic(),
@@ -520,7 +521,8 @@ public final class CustomMobGameTests {
         EntityType<MeleeMob> type = GeneratedMobs.HEWN_SENTINEL.get();
         CustomMobSpec spec = Objects.requireNonNull(type.create(helper.getLevel(), EntitySpawnReason.STRUCTURE)).spec();
         MeleeMob sentinel = new MeleeMob(type, helper.getLevel(), new CustomMobSpec(CustomMobSpec.Idle.GUARD,
-                spec.sounds(), spec.deathParticles(), spec.melee(), spec.spells(), spec.kiting(), spec.variants()));
+                spec.sounds(), spec.deathParticles(), spec.melee(), spec.spells(), spec.kiting(), spec.variants(),
+                spec.hands()));
         sentinel.setPersistenceRequired();
         Vec3 start = helper.absoluteVec(new Vec3(2.5, 1, 2.5));
         sentinel.snapTo(start.x, start.y, start.z, 0, 0);

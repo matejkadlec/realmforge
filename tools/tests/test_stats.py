@@ -549,6 +549,8 @@ def test_no_stats_or_rules_still_compile(repo: RepoPaths) -> None:
     for file in (repo.content / "items").glob("*.yaml"):
         if "\ngear:" in file.read_text(encoding="utf-8"):
             file.unlink()
+    # Astone's kill XP rank names her body.
+    (repo.content / "kill_xp_multipliers" / "astone.yaml").unlink()
     files = generate(repo)
     assert "ALL = List.of();" in files[STATS_JAVA].decode()
     expectations = files[EXPECTATIONS].decode()

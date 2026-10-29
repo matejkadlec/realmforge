@@ -1,0 +1,51 @@
+{
+  "name": "spell.realmforge.astone_quake.name",
+  "description": "spell.realmforge.astone_quake.description",
+  "school": "realmforge:physical",
+  "scales_with": "attack_damage",
+  "targeting": {
+    "type": "realmforge:self"
+  },
+  "cast": {
+    "castable_while_moving": false,
+    "lock_on": false,
+    "keep_sight": false,
+    "sound": "realmforge:spell.astone_quake.rumble",
+    "animation": "slam",
+    "type": "channel",
+    "duration_ticks": 60,
+    "interval_ticks": 15
+  },
+  "cooldown_ticks": 240,
+  "global_cooldown_ticks": 10,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": true,
+  "effects": [
+    {
+      "type": "realmforge:area",
+      "radius": 5.0,
+      "duration_ticks": 10,
+      "interval_ticks": 10,
+      "affects": "enemies",
+      "effects": [
+        {
+          "amount": 1.0,
+          "per_level": 0,
+          "type": "realmforge:damage",
+          "attack_damage": 0.3
+        },
+        {
+          "type": "realmforge:apply_effect",
+          "effect": "minecraft:slowness",
+          "duration_ticks": 30,
+          "amplifier": 0
+        }
+      ],
+      "ring_color": "#8C8C8C"
+    }
+  ]
+}

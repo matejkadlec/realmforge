@@ -74,10 +74,16 @@ def spell_model(**fields: object) -> SpellDef:
 # The repository's content
 
 
-def test_repository_spells_are_the_engine_tests_and_stoneform() -> None:
+def test_repository_spells_are_the_engine_tests_stoneform_and_astones() -> None:
     content, universe = load_and_validate(RepoPaths())
     ids = {entry.model.id for entry in content.spells}
     assert ids == {
+        # Astone's (W5b, RLM-491).
+        "astone_boulder",
+        "astone_cracked_stone",
+        "astone_quake",
+        "astone_rockfall",
+        "astone_shockwave",
         # The Hewn Chanter's (W3, RLM-33); the rest are the engine's tests.
         "stoneform",
         "test_blink",
@@ -373,7 +379,8 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
     keys = files[KEYS_JAVA].decode()
     assert 'public static final ResourceKey<Spell> TEST_BOLT = key("test_bolt");' in keys
     assert (
-        "ALL = List.of(STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, "
+        "ALL = List.of(ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, ASTONE_SHOCKWAVE, "
+        "STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, "
         "TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, "
         "TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, "
         "TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TITAN_HARDEN);"
@@ -397,6 +404,7 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "                    Optional.empty(),\n"
         "                    Optional.empty(),\n"
         "                    false,\n"
+        '                    "raise",\n'
         '                    Optional.of("realmforge:mana"),\n'
         "                    10.0,\n"
         "                    5.0,\n"
@@ -635,6 +643,45 @@ def test_an_area_for_allies_may_heal(repo: RepoPaths) -> None:
     )
     content, _ = load_and_validate(repo)
     assert any(entry.model.id == "sanctuary" for entry in content.spells)
+
+
+def test_a_quake_slams_and_its_area_has_a_grey_ring(repo: RepoPaths) -> None:
+    # Astone's Quake (Matěj's playtest, 2026-10-29): a channel her fists beat through, its rings grey.
+    spell(
+        repo,
+        "quake",
+        "school: realmforge:physical\n"
+        "scales_with: attack_damage\n"
+        "targeting: {type: realmforge:self}\n"
+        "cast: {type: channel, duration_seconds: 3, interval_seconds: 0.75, animation: slam}\n"
+        "npc_only: true\n"
+        "effects:\n"
+        "  - {type: realmforge:area, radius: 5, duration_seconds: 0.5, interval_seconds: 0.5, ring_color: '#8C8C8C', "
+        "effects: [{type: realmforge:damage, amount: 1, attack_damage_percent: 30}]}\n",
+    )
+    files = generate(repo)
+    data = json.loads(files[f"{SPELL_DATA}/quake.json"])
+    assert data["cast"]["animation"] == "slam"
+    assert data["effects"][0]["ring_color"] == "#8C8C8C"
+    expectations = files[EXPECTATIONS].decode()
+    quake = expectations[expectations.index('"realmforge:quake"') :]
+    assert '                    "slam",\n' in quake[: quake.index("List.of(")]
+    assert 'Map.of("affects", "enemies", "ring_color", "#8C8C8C")' in quake
+
+
+@pytest.mark.parametrize(
+    ("cast", "expected"),
+    [
+        ({"type": "instant", "animation": "slam"}, "Extra inputs are not permitted"),
+        (
+            {"type": "cast_time", "duration_seconds": 1, "animation": "dance"},
+            "Input should be 'raise' or 'slam'",
+        ),
+    ],
+)
+def test_only_a_timed_cast_has_an_animation(cast: dict, expected: str) -> None:
+    with pytest.raises(ValueError, match=re.escape(expected)):
+        spell_model(cast=cast)
 
 
 def test_status_effects_must_exist(repo: RepoPaths) -> None:

@@ -2,6 +2,8 @@ package io.github.matejkadlec.realmforge.spell;
 
 import java.util.List;
 import javax.annotation.Nullable;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -29,8 +31,9 @@ import net.minecraft.world.phys.Vec3;
  * ends it.
  *
  * <ul>
- *   <li><b>Never saved</b> and <b>synced</b> only by its radius, as {@link SpellProjectile}: the client draws a ring
- *   of particles until C6 (RLM-29) gives spells their visuals.</li>
+ *   <li><b>Never saved</b> and <b>synced</b> only by its radius and its ring's colour, as {@link SpellProjectile}:
+ *   the client draws a ring of dust in the area's {@code ring_color}, or of purple sparks without one, until C6
+ *   (RLM-29) gives spells their visuals.</li>
  * </ul>
  */
 public final class SpellArea extends Entity {
@@ -41,6 +44,10 @@ public final class SpellArea extends Entity {
 
     private static final EntityDataAccessor<Float> DATA_RADIUS =
             SynchedEntityData.defineId(SpellArea.class, EntityDataSerializers.FLOAT);
+    /** Its ring's colour as 0xRRGGBB (no alpha, so never {@link #NO_COLOR}), or {@link #NO_COLOR} for purple sparks. */
+    private static final EntityDataAccessor<Integer> DATA_RING_COLOR =
+            SynchedEntityData.defineId(SpellArea.class, EntityDataSerializers.INT);
+    private static final int NO_COLOR = -1;
     /** The client draws its ring every this many ticks. */
     private static final int PARTICLE_INTERVAL = 5;
 
@@ -61,6 +68,7 @@ public final class SpellArea extends Entity {
         entity.cast = context.through(context.level(), entity);
         entity.area = area;
         entity.getEntityData().set(DATA_RADIUS, (float) area.radius());
+        entity.getEntityData().set(DATA_RING_COLOR, area.ringColor().map(color -> color & 0xFFFFFF).orElse(NO_COLOR));
         entity.setPos(position);
         context.level().addFreshEntity(entity);
     }
@@ -73,6 +81,7 @@ public final class SpellArea extends Entity {
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder entityData) {
         entityData.define(DATA_RADIUS, 1.0F);
+        entityData.define(DATA_RING_COLOR, NO_COLOR);
     }
 
     @Override
@@ -150,10 +159,12 @@ public final class SpellArea extends Entity {
 
     private void drawRing() {
         float radius = radius();
+        int color = getEntityData().get(DATA_RING_COLOR);
+        ParticleOptions particle = color == NO_COLOR ? ParticleTypes.WITCH : new DustParticleOptions(color, 1.0F);
         int count = Mth.ceil(2 * Math.PI * radius);
         for (int i = 0; i < count; i++) {
             double angle = 2 * Math.PI * i / count;
-            level().addParticle(ParticleTypes.WITCH, getX() + Math.cos(angle) * radius, getY() + 0.1,
+            level().addParticle(particle, getX() + Math.cos(angle) * radius, getY() + 0.1,
                     getZ() + Math.sin(angle) * radius, 0, 0, 0);
         }
     }

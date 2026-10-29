@@ -25,6 +25,14 @@ public final class GeneratedEffects {
     public static final DeferredRegister<MobEffect> EFFECTS =
             DeferredRegister.create(Registries.MOB_EFFECT, Realmforge.MOD_ID);
 
+    /** {@code realmforge:cracked_stone} from {@code content/effects/cracked_stone.yaml}: beneficial, "Cracked Stone". */
+    public static final DeferredHolder<MobEffect, MobEffect> CRACKED_STONE =
+            EFFECTS.register("cracked_stone", () -> new StatusEffect(MobEffectCategory.BENEFICIAL, 0xB5654A,
+                    Optional.empty())
+                    .modifier("minecraft:attack_damage", "realmforge:effect.cracked_stone.minecraft.attack_damage", 0.3, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
+                    .modifier("minecraft:movement_speed", "realmforge:effect.cracked_stone.minecraft.movement_speed", 0.25, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
+                    .modifier("minecraft:armor", "realmforge:effect.cracked_stone.minecraft.armor", -0.5, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+
     /** {@code realmforge:test_burning} from {@code content/effects/test_burning.yaml}: harmful, "Test Burning". */
     public static final DeferredHolder<MobEffect, MobEffect> TEST_BURNING =
             EFFECTS.register("test_burning", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0xFF7F1F,
@@ -43,7 +51,7 @@ public final class GeneratedEffects {
                     .modifier("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", -0.1, AttributeModifier.Operation.ADD_VALUE));
 
     /** Every effect above, in id order. */
-    public static final List<DeferredHolder<MobEffect, MobEffect>> ALL = List.of(TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);
+    public static final List<DeferredHolder<MobEffect, MobEffect>> ALL = List.of(CRACKED_STONE, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);
 
     private GeneratedEffects() {
     }

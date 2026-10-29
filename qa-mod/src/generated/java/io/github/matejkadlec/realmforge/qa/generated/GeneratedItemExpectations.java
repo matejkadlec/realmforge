@@ -219,6 +219,14 @@ public final class GeneratedItemExpectations {
                                     new GearModifier("realmforge:gear/mainhand/2", "realmforge:cooldown_reduction", "add_value", 0.08)))),
                     List.of()),
             new ItemExpectation(
+                    "realmforge:ice_signet_shard",
+                    "item.realmforge.ice_signet_shard",
+                    64,
+                    List.of("minecraft:ingredients"),
+                    "",
+                    Optional.empty(),
+                    List.of()),
+            new ItemExpectation(
                     "realmforge:iron_wand",
                     "item.realmforge.iron_wand",
                     1,
@@ -403,6 +411,14 @@ public final class GeneratedItemExpectations {
                                     new GearModifier("realmforge:gear/feet/2", "realmforge:max_mana", "add_value", 15.0)))),
                     List.of()),
             new ItemExpectation(
+                    "realmforge:stone_heart",
+                    "item.realmforge.stone_heart",
+                    64,
+                    List.of("minecraft:ingredients"),
+                    "",
+                    Optional.empty(),
+                    List.of()),
+            new ItemExpectation(
                     "realmforge:stone_wand",
                     "item.realmforge.stone_wand",
                     1,
@@ -415,6 +431,14 @@ public final class GeneratedItemExpectations {
                                     new GearModifier("realmforge:gear/mainhand/0", "realmforge:spell_power", "add_value", 0.15),
                                     new GearModifier("realmforge:gear/mainhand/1", "realmforge:cast_time_reduction", "add_value", 0.05),
                                     new GearModifier("realmforge:gear/mainhand/2", "realmforge:cooldown_reduction", "add_value", 0.05)))),
+                    List.of()),
+            new ItemExpectation(
+                    "realmforge:sun_signet_shard",
+                    "item.realmforge.sun_signet_shard",
+                    64,
+                    List.of("minecraft:ingredients"),
+                    "",
+                    Optional.empty(),
                     List.of()),
             new ItemExpectation(
                     "realmforge:test_dungeon_key",

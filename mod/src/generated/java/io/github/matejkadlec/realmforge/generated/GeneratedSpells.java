@@ -11,6 +11,21 @@ import net.minecraft.resources.ResourceKey;
 
 /** Keys of the spells in {@code content/spells/}, so Java names a spell without typing its id. */
 public final class GeneratedSpells {
+    /** {@code realmforge:astone_boulder} from {@code content/spells/astone_boulder.yaml}: physical, current_target, projectile. */
+    public static final ResourceKey<Spell> ASTONE_BOULDER = key("astone_boulder");
+
+    /** {@code realmforge:astone_cracked_stone} from {@code content/spells/astone_cracked_stone.yaml}: physical, self, apply_effect. */
+    public static final ResourceKey<Spell> ASTONE_CRACKED_STONE = key("astone_cracked_stone");
+
+    /** {@code realmforge:astone_quake} from {@code content/spells/astone_quake.yaml}: physical, self, area. */
+    public static final ResourceKey<Spell> ASTONE_QUAKE = key("astone_quake");
+
+    /** {@code realmforge:astone_rockfall} from {@code content/spells/astone_rockfall.yaml}: physical, ground_point, area. */
+    public static final ResourceKey<Spell> ASTONE_ROCKFALL = key("astone_rockfall");
+
+    /** {@code realmforge:astone_shockwave} from {@code content/spells/astone_shockwave.yaml}: physical, self, area. */
+    public static final ResourceKey<Spell> ASTONE_SHOCKWAVE = key("astone_shockwave");
+
     /** {@code realmforge:stoneform} from {@code content/spells/stoneform.yaml}: arcane, current_target, projectile. */
     public static final ResourceKey<Spell> STONEFORM = key("stoneform");
 
@@ -93,7 +108,7 @@ public final class GeneratedSpells {
     public static final ResourceKey<Spell> TEST_TITAN_HARDEN = key("test_titan_harden");
 
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Spell>> ALL = List.of(STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TITAN_HARDEN);
+    public static final List<ResourceKey<Spell>> ALL = List.of(ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, ASTONE_SHOCKWAVE, STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TITAN_HARDEN);
 
     private GeneratedSpells() {
     }

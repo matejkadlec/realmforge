@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Astone's last phase (W5b, RLM-491): as Breaking Point begins (on_enter) her stone cracks (realmforge:cracked_stone),
+# and as an ability she cracks again shortly before it wears off, so it lasts the whole phase. Proposals for Matěj's
+# playtest.
+id: astone_cracked_stone
+name: {en_us: Cracked Stone}
+description: {en_us: "Cracks the caster's stone for {duration} sec: it hits harder and moves faster, but blocks less."}
+school: realmforge:physical
+scales_with: attack_damage
+targeting: {type: realmforge:self}
+cast: {type: instant}
+cooldown_seconds: 55
+npc_only: true
+effects:
+  - {type: realmforge:apply_effect, effect: realmforge:cracked_stone, duration_seconds: 60}

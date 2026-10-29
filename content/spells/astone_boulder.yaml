@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Astone's boulder (W5b, RLM-491), her ability in every phase: a boulder forms and grows in her raised hands while
+# she casts, with grinding stone as its tell, then flies at her target and can be dodged. Like Stoneform, she must
+# keep her target in sight the whole cast and in range for its first half. It flies 32 blocks, spares the stone
+# creatures of Undervault and throws back what it hits. Physical, so armor blocks it; her level raises its damage
+# (architecture 14.1). Proposals for Matěj's playtest.
+id: astone_boulder
+name: {en_us: Hurled Boulder}
+description: {en_us: "Forms a boulder and hurls it at an enemy for {damage} damage."}
+school: realmforge:physical
+scales_with: attack_damage
+targeting: {type: realmforge:current_target, range: 24}
+cast:
+  type: cast_time
+  duration_seconds: 2
+  keep_sight: true
+  keep_range_percent: 50
+  sound: realmforge:spell.astone_boulder.form
+  forms_projectile: true
+cooldown_seconds: 8
+npc_only: true
+effects:
+  - type: realmforge:projectile
+    speed: 16
+    size: 1.2
+    lifetime_seconds: 2
+    spares: realmforge:stone_creatures
+    impact: {sound: realmforge:spell.astone_boulder.impact, particles: realmforge:vaultstone}
+    appearance: {model: orb, color: "#8B8579"}
+    effects:
+      - {type: realmforge:damage, amount: 2, attack_damage_percent: 100}
+      - {type: realmforge:knockback, strength: 0.8}

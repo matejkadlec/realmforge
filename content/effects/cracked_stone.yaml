@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/effects.schema.json
+# Astone's last phase, Breaking Point (W5b, RLM-491): her stone cracks, so she hits harder and moves faster, but her
+# armor blocks less. Its particles on her are its tell. Proposals for Matěj's playtest.
+id: cracked_stone
+name: {en_us: Cracked Stone}
+category: beneficial
+color: "#B5654A"
+modifiers:
+  - {attribute: minecraft:attack_damage, operation: add_multiplied_total, amount_percent: 30}
+  - {attribute: minecraft:movement_speed, operation: add_multiplied_total, amount_percent: 25}
+  - {attribute: minecraft:armor, operation: add_multiplied_total, amount_percent: -50}

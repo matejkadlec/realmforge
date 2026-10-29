@@ -108,7 +108,7 @@ Rules:
   (`neoforge:add_table`) adds it to the mob's own loot, whose table stays vanilla's. Our own mobs list the item in their
   `loot` instead.
 - `mobs/` defines our custom mobs ([architecture 14.2](../docs/architecture.md#142-custom-mobs)); Matěj's rules for them
-  are the Realmforge Mobs Guideline, read it first (its Jira copy is RLM-33 comment 22481). A mob picks an `archetype`,
+  are the Realmforge Mobs Guideline, read it first (its Jira copy is RLM-491 comment 23008). A mob picks an `archetype`,
   `melee`, `caster` or `boss` (the body of a boss in `bosses/`, which hits in melee, guards its arena instead of an
   `idle` and joins `c:bosses` by itself). A melee mob's or a boss's `melee` sets its `attack_interval_seconds` (1 by
   default, vanilla's) and `knock_up_blocks`, how high each hit throws its target; a caster names its `spells` (each one
@@ -126,7 +126,9 @@ Rules:
   and its own loot table, the mob's drops and its own. Trash loot is refused: every drop must be worth having (the
   vision), so no sticks, nuggets, rotten flesh, dirt or cobblestone (`TRASH_LOOT` in `schema/mob.py`). `model` shapes
   the placeholder until A2's art: a `build` (`humanoid`, `slim`, `golem`), a `surface` (`speckled`, `smooth`,
-  `mossy_bricks`), `eyes` (`dot`, `tall`, or `gem` in the variants' accents) and its `color` (and `moss`). A mob's id
+  `mossy_bricks`), `eyes` (`dot`, `tall`, or `gem` in the variants' accents), its `color` (and `moss`), and an optional
+  `arm_thickness` in pixels (2 to 12; the build's by default, a golem's 4; Astone's 8). Its raised hands, where a
+  projectile its spell forms grows, sit at the end of its arms, which the generator works out from the model. A mob's id
   must not be one of `texts/entity.yaml`'s names, which name the hand-written entity types with the same keys.
 - `bosses/` holds the bosses' fights ([architecture 14.3](../docs/architecture.md#143-bosses), W5a): the `entity` of its
   body (a mob of archetype `boss` in `mobs/`, one boss per body and a boss for every such mob), its fixed `level` (a
@@ -139,8 +141,10 @@ Rules:
   (`after_seconds` of fight in the phase before: a boss nobody has pulled stays in its first phase); `on_enter` names
   spells it casts at once when the phase begins (not for the first phase), and `abilities` the spells it casts while the
   phase lasts (`spell`, and its own `cooldown_seconds` on top of the spell's), at its target, or at a player or itself
-  when the spell picks so (no `ally` spells). The `test_titan` boss is test content (like `items/test_item`) for the
-  boss GameTests.
+  when the spell picks so (no `ally` spells). An ability on the boss itself whose first effect is an area (a quake) is
+  cast only while its target stands inside it, and while any area spell is cast a ring marks where it lands. `astone`
+  is Undervault's guardian (W5b); the `test_titan` boss is test content (like `items/test_item`) for the boss
+  GameTests.
 - `sounds/` holds our sound events ([ADR 0007](../docs/decisions/0007-asset-pipeline.md), A3): one file per subject
   (a mob, a spell, a block), its `category` (`entity`, `block`, `item`, `spell`, `ambient`, `ui`) and its `events`,
   each `realmforge:<category>.<subject>.<name>` with a `subtitle` (vanilla's style: "Hewn Sentinel cracks") and the
@@ -332,9 +336,10 @@ Rules:
   `keep_range_percent` (for that share of the cast the target must stay in range or the cast ends at once; past it,
   range no longer matters; a player's cast-time or channelled `enemy` or `ally` spell keeps its target anyway until
   it is more than twice the range away, the sticky target of ADR 0055, unless it locks on), and `sound` (a sound
-  event the caster makes when the cast begins); a cast time may
-  `forms_projectile` (its first effect, a projectile with an `appearance`, grows in front of the caster during the
-  cast and flies from there); an optional `cost` (`resource` `realmforge:mana` or `realmforge:rage`, `amount` at level
+  event the caster makes when the cast begins), and `animation`, how a custom mob or boss moves its arms while it
+  casts (`raise`, the default, or `slam`: its fists beat up and down, one slam every 0.75 s, a quake); a cast time may
+  `forms_projectile` (its first effect, a projectile with an `appearance`, grows in the caster's raised hands during
+  the cast and flies from there); an optional `cost` (`resource` `realmforge:mana` or `realmforge:rage`, `amount` at level
   1, `per_level`; a channel's is per second); `cooldown_seconds`; `global_cooldown_seconds` (0.5 by default, as in
   WoW; every spell is on the global cooldown, physical abilities too, so it is more than 0); `max_level`;
   the `crit` block (`can_crit`, `multiplier_percent` instead of 1 + the caster's crit damage, `bonus_chance_percent`
@@ -357,8 +362,9 @@ Rules:
   whose entities stop it untouched; `impact`, a `sound` and a block's break `particles` where it hits; `appearance`,
   `{model: orb, color}`, its look, with a placeholder texture `textures/entity/spell/<spell>.png`, one per spell) at
   an enemy, a ground point or along a direction; `realmforge:area` (`radius`, `duration_seconds`, `interval_seconds`, `affects: enemies` or
-  `allies`, and its own `effects` on each of them inside as it appears and then at every interval, once per interval
-  of its duration) at the caster's feet, an enemy's or a ground point; `realmforge:teleport` (the caster to a ground
+  `allies`, its own `effects` on each of them inside as it appears and then at every interval, once per interval
+  of its duration, and an optional `ring_color`, the dust ring that shows its edge instead of purple sparks) at the
+  caster's feet, an enemy's or a ground point; `realmforge:teleport` (the caster to a ground
   point, or along a direction as far as its range and blocks allow); and `realmforge:dash` (`strength`, a burst of
   speed in blocks per tick toward an enemy, a ground point or along a direction). The effects of a projectile or an
   area must fit whom they reach: no heal on a projectile, no damage in an area for allies

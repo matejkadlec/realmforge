@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../tools/schemas/mobs.schema.json
+# The body of Astone, the Unbroken (W5b, RLM-491; chapter 2, Part 10): the guardian of Undervault, a colossus of
+# living stone that the Gatewrights set at the stone arena's altar to weigh whoever comes for the next signets. She is
+# a trial, not a villain: she is not angry, she only tries very hard to stop you. Taller than the arena's pillars,
+# slow and heavy, she cannot be pushed, and her slow hits throw the target up. Her fight is content/bosses/astone.yaml.
+# She falls apart into rubble and drops, at 100 % on every kill, the Stone Heart and the twins' shards (Matěj,
+# 2026-10-25 and 2026-10-27, RLM-432). Her arms are twice as thick as a golem's (8 pixels; Matěj's playtest,
+# 2026-10-29: 4 looked tiny on her). The numbers are proposals for Matěj's playtest. Placeholder model and texture until
+# A2 (RLM-48).
+id: astone
+name: {en_us: "Astone, the Unbroken"}
+archetype: boss
+size: {width: 2.0, height: 5.0}
+attributes:
+  max_health: 250
+  attack_damage: 7
+  armor: 8
+  movement_speed: 0.24
+  follow_range: 32
+  knockback_resistance_percent: 100
+melee: {attack_interval_seconds: 2, knock_up_blocks: 0.6}
+sounds:
+  ambient: realmforge:entity.astone.ambient
+  hurt: realmforge:entity.astone.hurt
+  death: realmforge:entity.astone.death
+  step: realmforge:entity.astone.step
+death_particles: realmforge:vaultstone
+tags: [realmforge:stone_creatures]
+loot:
+  - {item: realmforge:stone_heart}
+  - {item: realmforge:sun_signet_shard}
+  - {item: realmforge:ice_signet_shard}
+model: {build: golem, surface: speckled, eyes: tall, color: "#8B8579", arm_thickness: 8}

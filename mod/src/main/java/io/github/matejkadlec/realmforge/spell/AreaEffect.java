@@ -5,6 +5,7 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.StringRepresentable;
 
@@ -18,9 +19,11 @@ import net.minecraft.util.StringRepresentable;
  * @param intervalTicks the ticks between two runs of its effects
  * @param affects whom its effects act on
  * @param effects what it does to each entity inside each time it acts, in order
+ * @param ringColor the colour of the dust ring that shows its edge (Astone's grey stone, Matěj's playtest of
+ *                  2026-10-29); without it, a ring of purple sparks
  */
 public record AreaEffect(double radius, int durationTicks, int intervalTicks, Affects affects,
-        List<SpellEffect> effects) implements SpellEffect {
+        List<SpellEffect> effects, Optional<Integer> ringColor) implements SpellEffect {
     public static final double MAX_RADIUS = 16;
     public static final int MAX_DURATION_TICKS = 1200;
 
@@ -32,7 +35,9 @@ public record AreaEffect(double radius, int durationTicks, int intervalTicks, Af
                                     .forGetter(AreaEffect::intervalTicks),
                             Affects.CODEC.optionalFieldOf("affects", Affects.ENEMIES).forGetter(AreaEffect::affects),
                             ExtraCodecs.nonEmptyList(SpellEffect.CODEC.listOf()).fieldOf("effects")
-                                    .forGetter(AreaEffect::effects))
+                                    .forGetter(AreaEffect::effects),
+                            ExtraCodecs.STRING_RGB_COLOR.optionalFieldOf("ring_color")
+                                    .forGetter(AreaEffect::ringColor))
                     .apply(instance, AreaEffect::new))
             .validate(area -> area.durationTicks() % area.intervalTicks() == 0
                     ? DataResult.success(area)

@@ -249,6 +249,13 @@ class MobModelDef(StrictModel):
     )
     color: HexColor = Field(description='Main colour, "#RRGGBB".')
     moss: HexColor = Field(default="#56702F", description='The moss of mossy_bricks, "#RRGGBB".')
+    arm_thickness: int | None = Field(
+        default=None,
+        ge=2,
+        le=12,
+        description="The arms' width and depth in texture pixels, 2 to 12 (a player's are 4); by default the "
+        "build's: a golem's are 4, a slim mob's 2, a humanoid's grow with its width. Their length stays the build's.",
+    )
 
 
 class MobDef(StrictModel):

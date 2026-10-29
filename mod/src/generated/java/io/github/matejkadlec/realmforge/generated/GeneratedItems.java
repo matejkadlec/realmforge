@@ -232,6 +232,12 @@ public final class GeneratedItems {
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.08, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .build()));
 
+    /** {@code realmforge:ice_signet_shard} from {@code content/items/ice_signet_shard.yaml}. */
+    public static final DeferredItem<Item> ICE_SIGNET_SHARD =
+            ITEMS.registerSimpleItem("ice_signet_shard", properties -> properties.fireResistant()
+                    .component(DataComponents.LORE, new ItemLore(List.of(
+                            Component.translatable("item.realmforge.ice_signet_shard.flavor")))));
+
     /** {@code realmforge:iron_wand} from {@code content/items/iron_wand.yaml}. */
     public static final DeferredItem<Item> IRON_WAND =
             ITEMS.registerSimpleItem("iron_wand", properties -> properties
@@ -428,6 +434,12 @@ public final class GeneratedItems {
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/feet/2", 15.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
                             .build()));
 
+    /** {@code realmforge:stone_heart} from {@code content/items/stone_heart.yaml}. */
+    public static final DeferredItem<Item> STONE_HEART =
+            ITEMS.registerSimpleItem("stone_heart", properties -> properties.fireResistant()
+                    .component(DataComponents.LORE, new ItemLore(List.of(
+                            Component.translatable("item.realmforge.stone_heart.flavor")))));
+
     /** {@code realmforge:stone_wand} from {@code content/items/stone_wand.yaml}. */
     public static final DeferredItem<Item> STONE_WAND =
             ITEMS.registerSimpleItem("stone_wand", properties -> properties
@@ -443,6 +455,12 @@ public final class GeneratedItems {
                             .add(attribute(context, "realmforge:cast_time_reduction"), modifier("realmforge:gear/mainhand/1", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .build()));
+
+    /** {@code realmforge:sun_signet_shard} from {@code content/items/sun_signet_shard.yaml}. */
+    public static final DeferredItem<Item> SUN_SIGNET_SHARD =
+            ITEMS.registerSimpleItem("sun_signet_shard", properties -> properties.fireResistant()
+                    .component(DataComponents.LORE, new ItemLore(List.of(
+                            Component.translatable("item.realmforge.sun_signet_shard.flavor")))));
 
     /** {@code realmforge:test_dungeon_key} from {@code content/items/test_dungeon_key.yaml}. */
     public static final DeferredItem<Item> TEST_DUNGEON_KEY =
@@ -518,10 +536,13 @@ public final class GeneratedItems {
             case "minecraft:ingredients" -> {
                 event.accept(ARCANE_DUST);
                 event.accept(ARCANE_SILK);
+                event.accept(ICE_SIGNET_SHARD);
                 event.accept(MAGIC_STONE_DUST);
                 event.accept(RUBY);
                 event.accept(SAPPHIRE);
                 event.accept(SPELLWEAVE);
+                event.accept(STONE_HEART);
+                event.accept(SUN_SIGNET_SHARD);
                 event.accept(TEST_ITEM);
                 event.accept(TOPAZ);
             }

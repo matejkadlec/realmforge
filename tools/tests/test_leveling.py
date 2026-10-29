@@ -139,6 +139,8 @@ def test_repository_kill_xp_multipliers_follow_the_model() -> None:
         "minecraft:ravager": 4,
         "minecraft:elder_guardian": 10,
         "minecraft:warden": 10,
+        # A realm guardian's rank (RLM-192): Astone, Undervault's (W5b, RLM-491).
+        "realmforge:astone": 20,
     }
     assert {entity: entry.multiplier for entity, entry in given.items()} == expected
     slime = given["minecraft:slime"]

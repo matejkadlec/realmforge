@@ -30,6 +30,24 @@ public final class GeneratedMobs {
     public static final DeferredRegister.Entities ENTITY_TYPES =
             DeferredRegister.createEntities(Realmforge.MOD_ID);
 
+    /** {@code realmforge:astone} from {@code content/mobs/astone.yaml}: boss, "Astone, the Unbroken". */
+    private static final CustomMobSpec ASTONE_SPEC = new CustomMobSpec(CustomMobSpec.Idle.GUARD,
+            new CustomMobSpec.Sounds(CustomMobSpec.id("realmforge:entity.astone.ambient"),
+                    CustomMobSpec.id("realmforge:entity.astone.hurt"),
+                    CustomMobSpec.id("realmforge:entity.astone.death"),
+                    CustomMobSpec.id("realmforge:entity.astone.step"), false),
+            CustomMobSpec.id("realmforge:vaultstone"),
+            new CustomMobSpec.Melee(40, 0.6),
+            List.of(), Optional.empty(),
+            List.of(),
+            new CustomMobSpec.Hands(2.5439, 5.0312));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<CustomMob>> ASTONE =
+            ENTITY_TYPES.registerEntityType("astone",
+                    (type, level) -> Archetypes.create("boss", type, level, ASTONE_SPEC),
+                    MobCategory.MONSTER, builder -> builder.sized(2.0F, 5.0F)
+                            .clientTrackingRange(10));
+
     /** {@code realmforge:hewn_chanter} from {@code content/mobs/hewn_chanter.yaml}: caster, "Hewn Chanter". */
     private static final CustomMobSpec HEWN_CHANTER_SPEC = new CustomMobSpec(CustomMobSpec.Idle.STROLL,
             new CustomMobSpec.Sounds(CustomMobSpec.id("realmforge:entity.hewn_chanter.ambient"),
@@ -39,7 +57,8 @@ public final class GeneratedMobs {
             CustomMobSpec.id("realmforge:vaultstone"),
             new CustomMobSpec.Melee(20, 0.0),
             List.of(GeneratedSpells.STONEFORM), Optional.of(new KiteRules(2.0, 1.5)),
-            List.of());
+            List.of(),
+            new CustomMobSpec.Hands(1.1908, 3.0));
 
     public static final DeferredHolder<EntityType<?>, EntityType<CasterMob>> HEWN_CHANTER =
             ENTITY_TYPES.registerEntityType("hewn_chanter",
@@ -56,7 +75,8 @@ public final class GeneratedMobs {
             CustomMobSpec.id("realmforge:vaultstone_bricks"),
             new CustomMobSpec.Melee(30, 0.5),
             List.of(), Optional.empty(),
-            List.of(new CustomMobSpec.Variant("sapphire", 1), new CustomMobSpec.Variant("ruby", 1), new CustomMobSpec.Variant("topaz", 1)));
+            List.of(new CustomMobSpec.Variant("sapphire", 1), new CustomMobSpec.Variant("ruby", 1), new CustomMobSpec.Variant("topaz", 1)),
+            new CustomMobSpec.Hands(1.5155, 3.0));
 
     public static final DeferredHolder<EntityType<?>, EntityType<MeleeMob>> HEWN_SENTINEL =
             ENTITY_TYPES.registerEntityType("hewn_sentinel",
@@ -73,7 +93,8 @@ public final class GeneratedMobs {
             Optional.empty(),
             new CustomMobSpec.Melee(30, 0.0),
             List.of(), Optional.empty(),
-            List.of());
+            List.of(),
+            new CustomMobSpec.Hands(1.6238, 3.1875));
 
     public static final DeferredHolder<EntityType<?>, EntityType<CustomMob>> TEST_TITAN =
             ENTITY_TYPES.registerEntityType("test_titan",
@@ -83,7 +104,7 @@ public final class GeneratedMobs {
 
     /** Every mob above, in id order. */
     public static final List<DeferredHolder<EntityType<?>, ? extends EntityType<? extends CustomMob>>> ALL =
-            List.of(HEWN_CHANTER, HEWN_SENTINEL, TEST_TITAN);
+            List.of(ASTONE, HEWN_CHANTER, HEWN_SENTINEL, TEST_TITAN);
 
     private GeneratedMobs() {
     }
@@ -95,6 +116,14 @@ public final class GeneratedMobs {
 
     /** Gives every mob above its attributes ({@code EntityAttributeCreationEvent} on the mod bus). */
     public static void createAttributes(EntityAttributeCreationEvent event) {
+        event.put(ASTONE.get(), Monster.createMonsterAttributes()
+                .add(Attributes.MAX_HEALTH, 250.0)
+                .add(Attributes.ATTACK_DAMAGE, 7.0)
+                .add(Attributes.ARMOR, 8.0)
+                .add(Attributes.MOVEMENT_SPEED, 0.24)
+                .add(Attributes.FOLLOW_RANGE, 32.0)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 1.0)
+                .build());
         event.put(HEWN_CHANTER.get(), Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, 18.0)
                 .add(Attributes.ATTACK_DAMAGE, 2.0)

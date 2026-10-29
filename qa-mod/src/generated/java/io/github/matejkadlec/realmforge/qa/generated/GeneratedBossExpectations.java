@@ -30,6 +30,29 @@ public final class GeneratedBossExpectations {
 
     public static final List<BossExpectation> BOSSES = List.of(
             new BossExpectation(
+                    "realmforge:astone",
+                    "realmforge:astone",
+                    18, 20.0, "white", 60,
+                    List.of(
+                            new PhaseExpectation(
+                                    "weighing",
+                                    "boss.realmforge.astone.phases.0.name",
+                                    "", 0.0,
+                                    List.of(),
+                                    List.of(new AbilityExpectation("realmforge:astone_boulder", 0))),
+                            new PhaseExpectation(
+                                    "quaking",
+                                    "boss.realmforge.astone.phases.1.name",
+                                    "realmforge:health_below", 0.6,
+                                    List.of("realmforge:astone_shockwave"),
+                                    List.of(new AbilityExpectation("realmforge:astone_quake", 0), new AbilityExpectation("realmforge:astone_rockfall", 0), new AbilityExpectation("realmforge:astone_boulder", 0))),
+                            new PhaseExpectation(
+                                    "breaking",
+                                    "boss.realmforge.astone.phases.2.name",
+                                    "realmforge:health_below", 0.25,
+                                    List.of("realmforge:astone_cracked_stone"),
+                                    List.of(new AbilityExpectation("realmforge:astone_cracked_stone", 0), new AbilityExpectation("realmforge:astone_quake", 0), new AbilityExpectation("realmforge:astone_rockfall", 0), new AbilityExpectation("realmforge:astone_boulder", 0))))),
+            new BossExpectation(
                     "realmforge:test_titan",
                     "realmforge:test_titan",
                     5, 12.0, "purple", 20,

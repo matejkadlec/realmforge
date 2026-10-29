@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# Astone's heart (W5b, RLM-491; chapter 2, Part 10): she drops it at 100 % on every kill (Matěj, 2026-10-25 and
+# 2026-10-27, RLM-432). It goes into the Skyhearth Medallion (Part 11), whose recipe comes with Skyhearth; no use yet.
+# Lava does not take it, so a kill's drop is never lost. The generated placeholder texture until the A* textures.
+id: stone_heart
+name: {en_us: Stone Heart}
+flavor: {en_us: "It still beats, faintly."}
+fire_resistant: true
+creative_tabs: [minecraft:ingredients]
+color: "#9A6F62"

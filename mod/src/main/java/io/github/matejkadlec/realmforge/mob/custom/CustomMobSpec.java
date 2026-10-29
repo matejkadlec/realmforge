@@ -20,9 +20,10 @@ import net.minecraft.resources.ResourceKey;
  * @param spells a caster's spells, most important first; empty for every other archetype
  * @param kiting a caster's step between two casts; empty when it stands where it cast
  * @param variants its kinds, one rolled when it spawns; empty for a mob of one kind
+ * @param hands where its raised hands are while it casts, from its model: a projectile its spell forms grows there
  */
 public record CustomMobSpec(Idle idle, Sounds sounds, Optional<Identifier> deathParticles, Melee melee,
-        List<ResourceKey<Spell>> spells, Optional<KiteRules> kiting, List<Variant> variants) {
+        List<ResourceKey<Spell>> spells, Optional<KiteRules> kiting, List<Variant> variants, Hands hands) {
     /** What a custom mob does while it has no target. */
     public enum Idle {
         /** Wanders around, as vanilla's mobs do, at the Zombified Piglin's speed ({@code mob/ai/Wandering}). */
@@ -63,6 +64,16 @@ public record CustomMobSpec(Idle idle, Sounds sounds, Optional<Identifier> death
      * @param weight how likely it is against the other variants
      */
     public record Variant(String id, int weight) {
+    }
+
+    /**
+     * Where a mob's hands are while it casts with its arms raised, at the end of its arms (generate/mobs.py works it
+     * out from the model), facing south: a projectile its spell forms grows there ({@code spell/SpellVisuals}).
+     *
+     * @param ahead blocks in front of its middle
+     * @param up blocks above its feet
+     */
+    public record Hands(double ahead, double up) {
     }
 
     public CustomMobSpec {

@@ -93,6 +93,8 @@ public final class ContentMobGameTests {
             helper.assertValueEqual(sounds.silentSteps(), expected.silentSteps(), id + " silent steps");
             helper.assertValueEqual(spec.deathParticles().map(Identifier::toString).orElse(""),
                     expected.deathParticles(), id + " death particles");
+            helper.assertValueEqual(spec.hands(), new CustomMobSpec.Hands(expected.handsAhead(), expected.handsUp()),
+                    id + " hands");
             spec.deathParticles().ifPresent(block -> helper.assertTrue(BuiltInRegistries.BLOCK.containsKey(block),
                     id + " bursts into the particles of " + block + ", which is no block"));
             for (String tag : expected.tags()) {

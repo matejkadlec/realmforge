@@ -73,6 +73,14 @@ public final class Spells {
     }
 
     /**
+     * What {@code caster}'s cast in progress acts on: an entity, or the ground point it was aimed at when it began. On
+     * the server only; a boss marks where its area spells land with it (architecture 14.3).
+     */
+    public static Optional<SpellTarget> currentCastTarget(LivingEntity caster) {
+        return Casting.currentTarget(caster);
+    }
+
+    /**
      * Cancels {@code caster}'s cast-time or channelled spell in progress, if any (the spell bar's cancel, C3b): a cast
      * time pays nothing, a channel keeps the ticks it ran. Returns whether a cast was running.
      */

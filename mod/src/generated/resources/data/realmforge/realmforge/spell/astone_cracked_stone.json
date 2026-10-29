@@ -1,0 +1,28 @@
+{
+  "name": "spell.realmforge.astone_cracked_stone.name",
+  "description": "spell.realmforge.astone_cracked_stone.description",
+  "school": "realmforge:physical",
+  "scales_with": "attack_damage",
+  "targeting": {
+    "type": "realmforge:self"
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cooldown_ticks": 1100,
+  "global_cooldown_ticks": 10,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": true,
+  "effects": [
+    {
+      "type": "realmforge:apply_effect",
+      "effect": "realmforge:cracked_stone",
+      "duration_ticks": 1200,
+      "amplifier": 0
+    }
+  ]
+}
