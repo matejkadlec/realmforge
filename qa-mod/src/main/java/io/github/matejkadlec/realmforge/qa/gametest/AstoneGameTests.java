@@ -11,10 +11,12 @@ import io.github.matejkadlec.realmforge.spell.Spells;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import java.util.List;
 import java.util.OptionalInt;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
@@ -22,6 +24,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -230,6 +233,46 @@ public final class AstoneGameTests {
             helper.killAllEntitiesOfClass(ItemEntity.class);
         }
         helper.succeed();
+    }
+
+    /**
+     * The playtest's commands work on her: {@code /summon realmforge:astone}, {@code /qa boss phase quaking} and
+     * {@code breaking} (with their {@code on_enter} spells), {@code /qa boss reset}, and {@code /kill} leaves her three
+     * drops.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 100)
+    public static void thePlaytestCommandsReachAstonesPhases(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        CommandSourceStack source = level.getServer().createCommandSourceStack().withLevel(level)
+                .withPosition(helper.absoluteVec(MIDDLE)).withPermission(PermissionSet.ALL_PERMISSIONS);
+        run(level, source, "summon realmforge:astone ~ ~ ~");
+        // Other tests' Astones stand on their own platforms, more than a block away.
+        Vec3 spot = helper.absoluteVec(MIDDLE);
+        List<BossMob> summoned = level.getEntitiesOfClass(BossMob.class, new AABB(spot, spot).inflate(1),
+                boss -> boss.getType() == GeneratedMobs.ASTONE.get());
+        helper.assertValueEqual(summoned.size(), 1, "Astones summoned");
+        BossMob astone = summoned.getFirst();
+        astone.targetSelector.removeAllGoals(goal -> true);
+        run(level, source, "qa boss phase quaking");
+        assertPhase(helper, astone, 1, "Quaking Stone");
+        run(level, source, "qa boss phase breaking");
+        assertPhase(helper, astone, 2, "Breaking Point");
+        helper.assertTrue(astone.hasEffect(GeneratedEffects.CRACKED_STONE), "Breaking Point's on_enter spell ran");
+        run(level, source, "qa boss reset");
+        assertPhase(helper, astone, 0, "The Weighing");
+        helper.assertFalse(astone.hasEffect(GeneratedEffects.CRACKED_STONE), "the reset took her cracks");
+        run(level, source, "kill @n[type=realmforge:astone]");
+        helper.assertTrue(astone.isDeadOrDying(), "/kill killed her");
+        BlockPos middle = BlockPos.containing(MIDDLE);
+        for (Item drop : List.of(GeneratedItems.STONE_HEART.get(), GeneratedItems.SUN_SIGNET_SHARD.get(),
+                GeneratedItems.ICE_SIGNET_SHARD.get())) {
+            helper.assertItemEntityCountIs(drop, middle, 6, 1);
+        }
+        helper.succeed();
+    }
+
+    private static void run(ServerLevel level, CommandSourceStack source, String command) {
+        level.getServer().getCommands().performPrefixedCommand(source, command);
     }
 
     /** Astone in the middle of the platform, whom no player of another test draws into a fight. */

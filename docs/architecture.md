@@ -2180,8 +2180,9 @@ and 2026-10-27, RLM-432), fire-resistant materials whose recipes (the twins' sig
 with their realms. The altar, her summoning item and the arena dungeon are W6 (RLM-36); until then
 `/summon realmforge:astone`. `AstoneGameTests` cover each phase change (the bar's title, the shockwave's push, the
 cracks), each ability cast through the spell engine at a husk (the boulder, Quake only with its target inside, Rockfall
-where its target stood, dodged by a husk that left the ring, Cracked Stone again as an ability), and her three drops
-on three kills; `BossPhaseMachineTest` walks her definition through all three phases.
+where its target stood, dodged by a husk that left the ring, Cracked Stone again as an ability), her three drops on
+three kills, and the playtest's commands (`/summon`, `/qa boss phase`, `/qa boss reset`, `/kill`);
+`BossPhaseMachineTest` walks her definition through all three phases.
 
 ## 15. Dimensions and dungeons
 
