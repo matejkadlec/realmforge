@@ -131,9 +131,13 @@ later, because many systems make the player stronger and only the levels make mo
 | Elites | 4 elite kinds converted from natural spawns | Apotheosis data, kept; RLM-240 levels them |
 | Invaders | bosses in affix gear, 0–3 % of natural spawns by tier, only in listed dimension types | Apotheosis data; our realms to be listed |
 
-- **Stats point at ours:** an augment, affix or gem that grants an `apothic_attributes:` stat is remapped to ours
-  (armor pierce included) or switched off (RLM-272). Our stats exist only on players today
-  (`StatsFeature#addToPlayers`), so a mob augment with armor pierce needs them on mobs (open question 2).
+- **Stats point at ours** (RLM-272): an augment, affix or gem that grants an `apothic_attributes:` stat is remapped
+  to ours (crit chance and damage, armor pierce and shred, lifesteal, overheal, dodge, cooldown reduction) or switched
+  off (protection pierce and shred). Healing received (RLM-233), the ranged stats (RLM-235), the elemental damage
+  stats and Experience Gained stay Apothic Attributes': **XP bonuses stay on vanilla XP**, which pays for reforging,
+  not our character XP (Matěj, 2026-10-29). **Every mob has our armor pierce, armor shred and lifesteal** (Matěj,
+  2026-10-29, open question 2), so the monsters' armor pierce augments and the affix weapons mobs wear work through
+  our damage pipeline.
 - **Apotheosis's default elites, invaders and gems** cover Overworld, the Nether and the End. Without the Nether and
   End ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)) only Overworld's apply; each realm adds its own
   through constraints and the invader spawn rules data map as it ships (open question 3).
@@ -215,10 +219,9 @@ For Matěj; each has a proposal so the integration can go on.
 1. **Apotheosis's progression advancements.** With our mod setting the tier, the tab's goals (the Wither, the
    Ender Dragon, five slots of rarer gear) no longer unlock anything, and the Ender Dragon's cannot be reached.
    Proposal: hide the tab by overriding the advancements with a false condition (RLM-272).
-2. **Our stats on mobs, and mob crits.** Remapped augments need our combat stats (armor pierce, armor shred) on
-   mobs, and Matěj's idea of monsters that crit with our crit, never Apothic Attributes', needs our crit stats there
-   too, with a chance that could rise with the mob's level. Proposal: register our combat stats on hostile mobs with
-   RLM-272's remapping; mob crits wait for their own ticket after a playtest of the layers above.
+2. **Our stats on mobs, and mob crits.** Decided (Matěj, 2026-10-29, RLM-272): every mob has our armor pierce, armor
+   shred and lifesteal. Mob crits, with our crit only (never Apothic Attributes'), wait for their own ticket after a
+   playtest of the layers above.
 3. **Elites and invaders per realm.** Proposal: each realm's dimension type joins the invader spawn rules when the
    realm ships, with Apotheosis's default invaders first and realm-themed ones as the realm's content grows;
    Undervault joins with RLM-272.

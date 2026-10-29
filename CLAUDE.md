@@ -151,6 +151,7 @@ uv run rf gen --check                     # exit 1 if generated files are out of
 uv run pytest                             # Python tests
 uv run ruff check && uv run ruff format   # lint + format Python
 uv run rf ids vanilla                     # re-extract the vanilla ID universe (only when the MC version changes)
+uv run rf ids apotheosis                  # re-snapshot Apotheosis's data (only when the pack updates Apotheosis)
 uv run rf pack-boot                       # boot the whole pack + our jars (build/libs) on a server and a client
 uv run rf art clean SRC DST               # snap a generated texture to the grid and art/palette/realmforge.gpl
 uv run rf art gallery DIR                 # review gallery for DIR/<subject>/<candidate>.png -> .cache/art/
@@ -190,7 +191,7 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 | --- | --- | --- |
 | `content/` | YAML game content, the single source of truth ([content/README.md](content/README.md)) | yes |
 | `tools/` | Python pipeline `realmforge_tools`, CLI `rf`, tests ([tools/README.md](tools/README.md)) | yes |
-| `tools/id_universe/` | vanilla ID snapshot, written by `rf ids vanilla` | **no** |
+| `tools/id_universe/` | vanilla ID snapshot and Apotheosis's data snapshot, written by `rf ids vanilla` and `rf ids apotheosis` | **no** |
 | `tools/schemas/` | JSON Schemas for YAML editor completion, written by `rf gen` | **no** |
 | `mod/` | core mod `realmforge` (package `io.github.matejkadlec.realmforge`) | `src/main`, `src/test` |
 | `mod/src/generated/` | Java registrations, models, lang, textures from `rf gen` | **no** |

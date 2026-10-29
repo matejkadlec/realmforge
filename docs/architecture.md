@@ -386,7 +386,8 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | item YAML with a weapon preset | `data/realmforge/weapon_attributes/<item>.json` (Better Combat format) | read by Better Combat |
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
 | `texts/` (exists) | lang keys `<group>.realmforge.<name>`, `GeneratedTexts` constants | translations |
-| `apotheosis_affixes/` (exists, RLM-271) | `data/apotheosis/apotheosis/affixes/<path>.json`, replacing Apotheosis's affix at that path ([19.4](#194-optional-integrations)) | Apotheosis's affix registry |
+| `apotheosis_affixes/` (exists, RLM-271), `apotheosis_gems/`, `apotheosis_tier_augments/`, `apotheosis_rarities/`, `apotheosis_stat_remaps/` (exist, RLM-272) | each Apotheosis entry they change, from its snapshot, at Apotheosis's own path `data/apotheosis/apotheosis/<kind>/<path>.json` ([19.4](#194-optional-integrations)) | Apotheosis's affix, gem, tier augment and rarity registries |
+| `recipe_removals/` (exists, RLM-272) | `data/<namespace>/recipe/<path>.json` per recipe, a file NeoForge skips (`neoforge:never`) | reloadable vanilla data |
 | `recipes/` (exists, RLM-447) | `data/minecraft/recipe/<path>.json`, replacing the vanilla recipe at that path, since the core mod's data pack sits above vanilla's (`generate/recipes.py`) | reloadable vanilla data |
 | every type | `tools/schemas/<type>.schema.json` | editor completion |
 
@@ -585,7 +586,9 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   stat's `name` is the lang entry of that description id, shown on the character sheet
   ([18](#18-client-code-rendering-gui-input)) and in tooltips.
 - `StatsFeature` adds every stat to players in `EntityAttributeModificationEvent`; mobs get the ones they need
-  with the features that use them (spell power for casters).
+  with the features that use them (spell power for casters). Every mob has armor pierce, armor shred and lifesteal at
+  0 (`combat/MobCombatStats`, RLM-272; Matěj, 2026-10-29), which its gear and Apotheosis's tier augments raise and the
+  damage pipeline reads on any attacker; mob crits wait for their own ticket.
 - NeoForge also has a boolean `creative_flight` attribute (`NeoForgeMod.CREATIVE_FLIGHT`): the planned basis for
   Angel Wings-style spells. It is not the basis for flying mounts: a mount is its own entity the player rides
   (RLM-115), and the mount entity itself flies, as a flying vehicle (`Entity#isFlyingVehicle()`) or with no gravity
@@ -3451,9 +3454,10 @@ attributes up by id, so the core mod has no compile-time dependency on it:
 - every entity type gets its crit chance 0 and crit damage 1.0 as base values (it adds them at 5 % and 150 %),
   through `EntityAttributeModificationEvent` at LOW priority, a phase FML runs after every mod's NORMAL listeners;
 - its crit damage is capped at 1.0 and its dodge chance at 0 at common setup (`RangedAttributeAccessor`,
-  [8.4](#84-caps)), so no affix, gem or tier augment lifts them before RLM-272 remaps its data to our stats. Its crit
-  adds damage only above a crit damage of 1, and its dodge rolls a random float against the dodge chance, which at
-  0 dodges only on a float of exactly 0 (once in 2^24 rolls).
+  [8.4](#84-caps)), so nothing lifts them. Its crit adds damage only above a crit damage of 1, and its dodge rolls a
+  random float against the dodge chance, which at 0 dodges only on a float of exactly 0 (once in 2^24 rolls). Since
+  RLM-272 Apotheosis's own data grants our crit and dodge instead (below); the caps stay, as they cost nothing and
+  guard against another mod's data or a later Apotheosis release that grants Apothic Attributes' again.
 
 The pack's config (`pack/config/apotheosis/`) sets its protection and armor formulas to vanilla's and turns its
 attributes panel off; Apothic Enchanting's inlined enchantment descriptions are on, because it replaces the
@@ -3462,15 +3466,36 @@ QA mod's dev runs load them with the rest of the pack (ADR 0042) and copy `pack/
 (`seedPackConfig`), and `ApothicAttributesGameTests` check that its crit and dodge never fire, also with its crit and
 dodge modifiers on the attacker and the target.
 
-**Their data, fixed and fitted** (RLM-271). The core mod declares an optional dependency on Apotheosis and Apothic
-Enchanting with `ordering = "AFTER"`: FML sorts the mod files by those edges, and NeoForge stacks the mods' data packs
-in that order, so a file of ours replaces theirs at the same path.
+**Their data, fixed and fitted** (RLM-271, RLM-272,
+[ADR 0062](decisions/0062-apotheosis-data-is-fitted-from-a-pinned-snapshot.md)). The core mod declares an optional
+dependency on Apotheosis and Apothic Enchanting with `ordering = "AFTER"`: FML sorts the mod files by those edges, and
+NeoForge stacks the mods' data packs in that order, so a file of ours replaces theirs at the same path.
 
-- **Apotheosis's affixes** come from `content/apotheosis_affixes/` ([6.2](#62-what-each-content-type-becomes)): an
-  entry names the affix it replaces and holds its whole definition, and `rf gen` writes it to Apotheosis's own path
-  (`data/apotheosis/apotheosis/affixes/<path>.json`). The first is Lucky, whose `apotheosis:charm` loot category
-  exists only with Curios: without it Apotheosis skipped the whole affix with an error on every load. RLM-272
-  remaps the other affixes to our stats the same way.
+- **Apotheosis's data** starts from a snapshot of its own (`tools/id_universe/apotheosis-<version>.json`, written by
+  `rf ids apotheosis` from the jar the pack pins), because Apotheosis reads our file instead of its own and merges
+  nothing: every file we write holds a whole entry. `realmforge_tools/apotheosis.py` applies `content/`'s changes
+  ([6.2](#62-what-each-content-type-becomes)): an entry of `apotheosis_affixes/`, `apotheosis_gems/`,
+  `apotheosis_tier_augments/` or `apotheosis_rarities/` switches one entry off or replaces some of its top-level
+  fields, then the stat remaps of `apotheosis_stat_remaps/` replace an Apothic Attributes stat with ours wherever an
+  affix, a gem bonus (`attribute`, `multi_attribute`, `all_stats`) or a tier augment grants it, or switch it off
+  there. Every entry that changed is written to Apotheosis's own path (`data/apotheosis/apotheosis/<kind>/<path>.json`);
+  a switched-off one is a file whose `neoforge:never` condition makes Placebo, Apotheosis's data loader, skip it with
+  a trace log only (`JsonUtil#checkConditions`). The first entry change is Lucky, whose `apotheosis:charm` loot
+  category exists only with Curios: without it Apotheosis skipped the whole affix with an error on every load.
+- **The stat remaps** (RLM-272): crit chance, crit damage, armor pierce, armor shred, lifesteal, overheal, dodge chance
+  and cooldown reduction point at ours, in every affix, gem and tier augment; Warlord's crit damage, a share of Apothic
+  Attributes' base of 1.5, becomes an `add_value` of 1.5 times it, as ours is the bonus over a hit (`source_base`).
+  Protection pierce and shred are switched off (Runebreaking, Nullifying, the gems' bonuses with them, the monsters'
+  Summit and Pinnacle augments): ours wait for RLM-159. Healing received (RLM-233), the ranged stats (RLM-235), the
+  elemental damage stats and Experience Gained stay Apothic Attributes': vanilla XP pays for reforging, and our XP
+  multiplier is character XP (Matěj, 2026-10-29). The monsters' tier augments give our armor pierce, which every mob
+  has, with armor shred and lifesteal, for its gear too (`combat/MobCombatStats`, [8.1](#81-the-attribute-set)); a
+  tier augment skips a mob without its attribute (`AttributeAugment#apply`).
+- **Removed recipes** come from `content/recipe_removals/`: a file at the recipe's own path with the `neoforge:never`
+  condition, which NeoForge's recipe loader skips. Apotheosis's potion charms are the first (its crafting recipe and
+  Apothic Enchanting's infusion; Matěj dislikes them by design, RLM-205).
+- **Mythic shows as Legendary**: the rarity's name and the two texts that say mythic are in the core mod's
+  `assets/apotheosis/lang/en_us.json` (texts of other mods, above).
 - **Apothic Enchanting's stale list of loot modifiers** (`data/neoforge/loot_modifiers/global_loot_modifiers.json`,
   the NeoForge 21.1 format) is replaced by a file in the core mod's resources whose `neoforge:never` condition makes
   NeoForge skip it quietly. NeoForge 26.1 reads every file in `loot_modifiers/` as a modifier and logged an error for
