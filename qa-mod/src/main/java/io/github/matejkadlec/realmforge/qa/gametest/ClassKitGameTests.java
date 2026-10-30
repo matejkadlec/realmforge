@@ -9,6 +9,7 @@ import io.github.matejkadlec.realmforge.character.RacialPassives;
 import io.github.matejkadlec.realmforge.combat.CombatAttachments;
 import io.github.matejkadlec.realmforge.combat.CritRule;
 import io.github.matejkadlec.realmforge.combat.DamageCalculator;
+import io.github.matejkadlec.realmforge.combat.DamagePipeline;
 import io.github.matejkadlec.realmforge.combat.HitBonus;
 import io.github.matejkadlec.realmforge.combat.MagicShield;
 import io.github.matejkadlec.realmforge.combat.SpellSchools;
@@ -32,6 +33,7 @@ import io.github.matejkadlec.realmforge.spell.SpellArea;
 import io.github.matejkadlec.realmforge.spell.SpellAttachments;
 import io.github.matejkadlec.realmforge.spell.SpellCaster;
 import io.github.matejkadlec.realmforge.spell.SpellProjectile;
+import io.github.matejkadlec.realmforge.spell.SpellScaling;
 import io.github.matejkadlec.realmforge.spell.SpellTarget;
 import io.github.matejkadlec.realmforge.spell.SpellText;
 import io.github.matejkadlec.realmforge.spell.SpellVisuals;
@@ -227,9 +229,11 @@ public final class ClassKitGameTests {
         helper.assertFalse(player.hasEffect(MobEffects.SLOWNESS), "and took off the slowness");
         helper.assertFalse(player.hasEffect(GeneratedEffects.BURNING), "and the burning");
         helper.assertTrue(player.hasEffect(GeneratedEffects.BATTLE_SHOUT), "but left the buff");
+        // A caster's Dexterity gives Cooldown Reduction (RLM-170), which every cooldown takes.
+        int cooldown = SpellScaling.cooldownTicks(1200, DamagePipeline.stat(player, GeneratedStats.COOLDOWN_REDUCTION));
         helper.assertValueEqual(player.getData(SpellAttachments.COMBAT).cooldowns()
-                .get(GeneratedSpells.WILL_TO_SURVIVE), helper.getLevel().getGameTime() + 1200,
-                "a 1 minute cooldown");
+                .get(GeneratedSpells.WILL_TO_SURVIVE), helper.getLevel().getGameTime() + cooldown,
+                "a 1 minute cooldown, less the mage's Cooldown Reduction");
         Spells.resetCooldowns(player);
         assertCast(helper, player, GeneratedSpells.TEST_BOLT, husk);
         logout(player);
@@ -336,6 +340,8 @@ public final class ClassKitGameTests {
     public static void iceBarrierFillsTheMagicShieldAtOnce(GameTestHelper helper) {
         ServerPlayer player = character(helper, "qa-kit-barrier", "mage");
         StatsCommands.setBase(player, GeneratedStats.MAGIC_SHIELD, 7);
+        // A caster's Vitality adds its percents to the stat's flat points, the barrier's included (RLM-170).
+        double scale = player.getAttributeValue(GeneratedStats.MAGIC_SHIELD) / 7;
         StatsCommands.setBase(player, GeneratedStats.MAX_MANA, 100);
         Resources.set(player, ResourceTypes.MANA, 100);
         learn(helper, player, GeneratedSpells.ICE_BARRIER, 1);
@@ -344,13 +350,14 @@ public final class ClassKitGameTests {
         helper.assertTrue(close(Resources.amount(player, ResourceTypes.MANA), 75), "for 25 mana");
         helper.assertValueEqual(player.getEffect(GeneratedEffects.ICE_BARRIER).getDuration(), 200, "for 10 s");
         player.doTick();
-        helper.assertTrue(close(player.getAttributeValue(GeneratedStats.MAGIC_SHIELD), 17), "the stat raised by 10");
+        helper.assertTrue(close(player.getAttributeValue(GeneratedStats.MAGIC_SHIELD), 17 * scale),
+                "the stat raised by 10: " + player.getAttributeValue(GeneratedStats.MAGIC_SHIELD));
         helper.assertTrue(close(player.getData(CombatAttachments.MAGIC_SHIELD).points(), 12),
                 "the pool waiting for its refill got the 10 at once: "
                         + player.getData(CombatAttachments.MAGIC_SHIELD).points());
         player.removeEffect(GeneratedEffects.ICE_BARRIER);
         player.doTick();
-        helper.assertTrue(close(player.getData(CombatAttachments.MAGIC_SHIELD).points(), 7),
+        helper.assertTrue(close(player.getData(CombatAttachments.MAGIC_SHIELD).points(), 7 * scale),
                 "the barrier's points go with it");
 
         learn(helper, player, GeneratedSpells.ICE_BARRIER, 3);
@@ -362,8 +369,9 @@ public final class ClassKitGameTests {
         }
         helper.assertValueEqual(player.getEffect(GeneratedEffects.ICE_BARRIER).getDuration(), 599,
                 "rank 3 lasts 30 s");
-        helper.assertTrue(close(player.getAttributeValue(GeneratedStats.MAGIC_SHIELD), 37), "and raises it by 30");
-        helper.assertTrue(close(player.getData(CombatAttachments.MAGIC_SHIELD).points(), 37),
+        helper.assertTrue(close(player.getAttributeValue(GeneratedStats.MAGIC_SHIELD), 37 * scale),
+                "and raises it by 30");
+        helper.assertTrue(close(player.getData(CombatAttachments.MAGIC_SHIELD).points(), 37 * scale),
                 "a second cast refreshes the barrier, never stacking past the raised stat: "
                         + player.getData(CombatAttachments.MAGIC_SHIELD).points());
         logout(player);
