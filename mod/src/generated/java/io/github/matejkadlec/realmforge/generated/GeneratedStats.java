@@ -4,6 +4,7 @@
 package io.github.matejkadlec.realmforge.generated;
 
 import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.stats.ExhaustionReduction;
 import java.util.List;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -126,16 +127,6 @@ public final class GeneratedStats {
             ATTRIBUTES.register("overheal",
                     () -> new PercentageAttribute("attribute.realmforge.overheal", 0.0, 0.0, 1.0).setSyncable(true));
 
-    /** {@code realmforge:protection_pierce} from {@code content/stats/protection_pierce.yaml}: secondary, "Protection Pierce". */
-    public static final DeferredHolder<Attribute, Attribute> PROTECTION_PIERCE =
-            ATTRIBUTES.register("protection_pierce",
-                    () -> new RangedAttribute("attribute.realmforge.protection_pierce", 0.0, 0.0, 1000.0).setSyncable(true));
-
-    /** {@code realmforge:protection_pierce_percent} from {@code content/stats/protection_pierce_percent.yaml}: secondary, "Protection Pierce %". */
-    public static final DeferredHolder<Attribute, Attribute> PROTECTION_PIERCE_PERCENT =
-            ATTRIBUTES.register("protection_pierce_percent",
-                    () -> new PercentageAttribute("attribute.realmforge.protection_pierce_percent", 0.0, 0.0, 1.0).setSyncable(true));
-
     /** {@code realmforge:spell_power} from {@code content/stats/spell_power.yaml}: secondary, "Spell Power". */
     public static final DeferredHolder<Attribute, Attribute> SPELL_POWER =
             ATTRIBUTES.register("spell_power",
@@ -145,6 +136,11 @@ public final class GeneratedStats {
     public static final DeferredHolder<Attribute, Attribute> SPELL_RESISTANCE =
             ATTRIBUTES.register("spell_resistance",
                     () -> new PercentageAttribute("attribute.realmforge.spell_resistance", 0.0, 0.0, 0.75).setSyncable(true));
+
+    /** {@code realmforge:stamina} from {@code content/stats/stamina.yaml}: secondary, "Stamina". */
+    public static final DeferredHolder<Attribute, Attribute> STAMINA =
+            ATTRIBUTES.register("stamina",
+                    () -> new RangedAttribute("attribute.realmforge.stamina", 0.0, 0.0, 1000.0).setSyncable(true));
 
     /** {@code realmforge:strength} from {@code content/stats/strength.yaml}: primary, "Strength". */
     public static final DeferredHolder<Attribute, Attribute> STRENGTH =
@@ -165,7 +161,10 @@ public final class GeneratedStats {
     public static final List<DeferredHolder<Attribute, Attribute>> PRIMARY = List.of(DEXTERITY, INTELLECT, STRENGTH, VITALITY);
 
     /** Every stat above, in id order. */
-    public static final List<DeferredHolder<Attribute, Attribute>> ALL = List.of(ARCANE_POWER, ARCANE_RESISTANCE, ARMOR_PIERCE, ARMOR_SHRED, CAST_TIME_REDUCTION, COOLDOWN_REDUCTION, CRIT_CHANCE, CRIT_DAMAGE, DEXTERITY, DODGE_CHANCE, FIRE_POWER, FIRE_RESISTANCE, FROST_POWER, FROST_RESISTANCE, HEALTH_REGENERATION, INTELLECT, LIFESTEAL, MAGIC_SHIELD, MANA_REGENERATION, MAX_MANA, OVERHEAL, PROTECTION_PIERCE, PROTECTION_PIERCE_PERCENT, SPELL_POWER, SPELL_RESISTANCE, STRENGTH, VITALITY, XP_MULTIPLIER);
+    public static final List<DeferredHolder<Attribute, Attribute>> ALL = List.of(ARCANE_POWER, ARCANE_RESISTANCE, ARMOR_PIERCE, ARMOR_SHRED, CAST_TIME_REDUCTION, COOLDOWN_REDUCTION, CRIT_CHANCE, CRIT_DAMAGE, DEXTERITY, DODGE_CHANCE, FIRE_POWER, FIRE_RESISTANCE, FROST_POWER, FROST_RESISTANCE, HEALTH_REGENERATION, INTELLECT, LIFESTEAL, MAGIC_SHIELD, MANA_REGENERATION, MAX_MANA, OVERHEAL, SPELL_POWER, SPELL_RESISTANCE, STAMINA, STRENGTH, VITALITY, XP_MULTIPLIER);
+
+    /** The stats that lower the food exhaustion players gain ({@code lowers_exhaustion}), in id order. */
+    public static final List<ExhaustionReduction> LOWER_EXHAUSTION = List.of(new ExhaustionReduction(STAMINA, 0.01, 0.5));
 
     private GeneratedStats() {
     }

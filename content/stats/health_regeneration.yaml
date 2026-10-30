@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../tools/schemas/stats.schema.json
-# Health healed every second, in points, on top of vanilla's food regeneration, never beyond max health (Matěj,
-# 2026-10-14; architecture 9.1).
+# Health healed every 5 seconds, in points, WotLK's "health per 5" (Matěj, 2026-10-15, RLM-170), on top of vanilla's
+# food regeneration, never beyond max health (architecture 9.1).
 id: health_regeneration
 name: {en_us: Health Regeneration}
 kind: secondary

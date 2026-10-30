@@ -19,10 +19,16 @@ JAVA_INT_MAX = 2**31 - 1
 Operation = Literal["add_value", "add_multiplied_base", "add_multiplied_total"]
 MULTIPLIED: frozenset[str] = frozenset({"add_multiplied_base", "add_multiplied_total"})
 
+# The role a class plays (ClassDef.role), which decides the role-bound bonuses of stat rules its players get
+# (architecture 8.3); the game's stats/ClassRole has the same names. Assassins count as ranged.
+Role = Literal["melee", "caster", "ranged"]
+ROLES: tuple[str, ...] = ("melee", "caster", "ranged")
+
 
 class StatModifierDef(StrictModel):
     """An attribute modifier a stat rule writes. ``add_value`` adds to the base; ``add_multiplied_base`` adds a share
-    of the base (weapons included); ``add_multiplied_total`` multiplies the result. Multiplied operations take
+    of the base (weapons included); ``add_multiplied_total`` multiplies the result, which validation refuses in stat
+    rules: every value is ``(default + flat) * (1 + sum of percents)`` (architecture 8.2). Multiplied operations take
     ``amount_percent``. ``add_value`` on one of our stats takes its unit (``amount_percent`` for a share,
     ``amount`` for points); on a vanilla attribute, whichever fits it (``amount_percent: 5`` adds 0.05 to the
     fraction ``minecraft:knockback_resistance``)."""
@@ -38,6 +44,11 @@ class StatModifierDef(StrictModel):
         default=None,
         description="Amount in percent (5 means 5 %, the fraction 0.05), for multiplied operations and shares.",
     )
+    roles: list[Role] | None = Field(
+        default=None,
+        min_length=1,
+        description="The class roles it applies to (melee, caster, ranged); left out, it applies to every player.",
+    )
 
     @model_validator(mode="after")
     def _one_amount(self) -> StatModifierDef:
@@ -47,7 +58,15 @@ class StatModifierDef(StrictModel):
             raise ValueError("the amount must not be 0")
         if self.operation in MULTIPLIED and self.amount_percent is None:
             raise ValueError(f"{self.operation} multiplies: write the amount as amount_percent")
+        if self.roles is not None and len(set(self.roles)) != len(self.roles):
+            raise ValueError(f"a role is listed twice: {self.roles}")
         return self
+
+    def applies_to(self, role: str | None) -> bool:
+        """Whether a player of ``role`` (None: no character, or a class without a role) gets this modifier: one
+        without roles applies to everyone, one with roles only to those roles (the game's ``StatRule.Modifier``
+        agrees)."""
+        return self.roles is None or role in self.roles
 
     @property
     def is_percent(self) -> bool:
@@ -143,15 +162,22 @@ class StatRuleDef(StrictModel):
         path comes last, as only it may contain slashes (the game's ``StatRules`` builds the same)."""
         return f"{MOD_ID}:stat/{MOD_ID}/{entry}/{self.id}"
 
-    def bonuses_at(self, value: float) -> list[tuple[str, str, str, float]]:
-        """The modifiers ``value`` points give, as (id, attribute, operation, amount): every per-point entry with a
-        non-zero total, then every modifier of each milestone reached. The game's ``StatRules`` must give the same.
+    @property
+    def role_bound(self) -> bool:
+        """Whether any of its modifiers applies to some class roles only."""
+        return any(modifier.roles is not None for _, modifier in self.modifiers())
 
-        Ids follow architecture 8.2 (``modifier_id``)."""
+    def bonuses_at(self, value: float, role: str | None = None) -> list[tuple[str, str, str, float]]:
+        """The modifiers ``value`` points give a player of ``role`` (None: no character), as (id, attribute,
+        operation, amount): every per-point entry for that role with a non-zero total, then every modifier for that
+        role of each milestone reached. The game's ``StatRules`` must give the same.
+
+        Ids follow architecture 8.2 (``modifier_id``): an entry keeps its position whatever the role, so a role's
+        bonuses never take another's id."""
         found: list[tuple[str, str, str, float]] = []
         for n, entry in enumerate(self.per_point):
             total = entry.total_at(value)
-            if total != 0:
+            if total != 0 and entry.applies_to(role):
                 found.append((self.modifier_id(str(n)), entry.attribute, entry.operation, total))
         for milestone in self.milestones:
             if value >= milestone.points:
@@ -163,5 +189,6 @@ class StatRuleDef(StrictModel):
                         modifier.game_amount,
                     )
                     for n, modifier in enumerate(milestone.modifiers)
+                    if modifier.applies_to(role)
                 ]
         return found

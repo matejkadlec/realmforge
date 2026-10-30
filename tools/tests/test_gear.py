@@ -208,6 +208,10 @@ def test_gear_stacks_to_one(repo: RepoPaths) -> None:
             "{attribute: realmforge:spel_power, operation: add_value, amount: 2}",
             "unknown id 'realmforge:spel_power'",
         ),
+        (
+            "{attribute: minecraft:armor, operation: add_multiplied_total, amount_percent: 2}",
+            "stat bonuses add their percents",
+        ),
     ],
 )
 def test_gear_modifiers_name_attributes_in_their_unit(repo: RepoPaths, modifier: str, message: str) -> None:

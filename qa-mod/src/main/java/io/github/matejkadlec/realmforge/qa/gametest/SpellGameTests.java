@@ -331,11 +331,15 @@ public final class SpellGameTests {
         seconds(player, 1);
         assertPool(helper, player, ResourceTypes.MANA, 100, "a new Mage's pool starts full");
 
+        // The class's 5 Mana Regeneration and Intellect's 1 a point (RLM-170).
+        double regeneration = player.getAttributeValue(GeneratedStats.MANA_REGENERATION);
+        helper.assertTrue(regeneration > 5, "the Mage's Intellect adds to the class's 5 Mana Regeneration: "
+                + regeneration);
         Resources.set(player, ResourceTypes.MANA, 50);
         seconds(player, 1);
-        assertPool(helper, player, ResourceTypes.MANA, 55, "5 Mana Regeneration a second");
+        assertPool(helper, player, ResourceTypes.MANA, 50 + regeneration, regeneration + " Mana Regeneration a second");
         seconds(player, 2);
-        assertPool(helper, player, ResourceTypes.MANA, 65, "two more seconds");
+        assertPool(helper, player, ResourceTypes.MANA, 50 + 3 * regeneration, "two more seconds");
         Resources.set(player, ResourceTypes.MANA, 98);
         seconds(player, 1);
         assertPool(helper, player, ResourceTypes.MANA, 100, "never beyond Max Mana");

@@ -3,18 +3,43 @@
   "per_point": [
     {
       "attribute": "minecraft:attack_damage",
-      "operation": "add_multiplied_base",
-      "amount": 0.01
+      "operation": "add_value",
+      "amount": 0.5
+    },
+    {
+      "attribute": "realmforge:lifesteal",
+      "operation": "add_value",
+      "amount": 0.005
     }
   ],
   "milestones": [
     {
-      "points": 25,
+      "points": 10,
       "modifiers": [
+        {
+          "attribute": "realmforge:crit_chance",
+          "operation": "add_value",
+          "amount": 0.1
+        },
         {
           "attribute": "realmforge:crit_damage",
           "operation": "add_value",
           "amount": 0.1
+        }
+      ]
+    },
+    {
+      "points": 25,
+      "modifiers": [
+        {
+          "attribute": "minecraft:attack_damage",
+          "operation": "add_multiplied_base",
+          "amount": 0.25
+        },
+        {
+          "attribute": "realmforge:armor_pierce",
+          "operation": "add_value",
+          "amount": 5.0
         }
       ]
     }

@@ -59,7 +59,8 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   M2's and waits for M1. CI boots the whole pack on a server and a client (spike 6). Before any gameplay code the
   project moved from Minecraft 1.21.1 to 26.1.2 (RLM-65, RLM-123, RLM-124). The core mod has its feature skeleton
   (F1), datapack registries (F2), player state (F3), stats (F4) with their names, a character sheet (F4b) and
-  raised attribute caps (F4c), and the combat
+  raised attribute caps (F4c), Matěj's second stat numbers with bonuses by class role (melee, caster, ranged) and
+  Stamina, which slows the hunger drain (RLM-170, RLM-171), and the combat
   core (F5: spell schools, crit, dodge, resistances, our armor formula, combat text, the QA training dummy), and
   hostile mobs get levels near the nearest player's, floored per realm (W1, RLM-303), scaled by curves. The first
   custom mobs exist (W3): Undervault's Hewn, the Hewn Sentinel (melee, of one of three gems it may drop) and the
@@ -221,7 +222,8 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 2. **Never edit generated files.** They carry a `GENERATED FILE - DO NOT EDIT` header or live in a generated
    directory (table above). Fix the content or the generator and regenerate. CI regenerates and fails on any diff.
 3. **Every id is validated.** References use full ids (`minecraft:stick`) and must exist in the ID universe
-   (vanilla snapshot + our content). Referencing ids from other mods needs the full-pack registry dump (TODO:
+   (vanilla snapshot + NeoForge's attributes, [ADR 0064](docs/decisions/0064-neoforges-attributes-join-the-id-universe.md),
+   + our content). Referencing ids from other mods needs the full-pack registry dump (TODO:
    Registry Dump mod, [ADR 0005](docs/decisions/0005-content-pipeline-yaml-single-source-of-truth.md)).
 4. **English everywhere in the repo**: code, comments, docs, commits, PRs, issues. The game is English only
    too: player-facing text is `LocalizedText` with `en_us` alone, and a community translation would ship as a

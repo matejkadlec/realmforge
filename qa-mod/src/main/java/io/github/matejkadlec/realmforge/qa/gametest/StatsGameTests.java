@@ -4,6 +4,7 @@ import com.mojang.authlib.GameProfile;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
+import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.Bonus;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.Sample;
@@ -65,6 +66,55 @@ public final class StatsGameTests {
         tick(player, CharacterStats.CHECK_INTERVAL);
         helper.assertValueEqual(player.getAttributeValue(Attributes.ATTACK_DAMAGE), before, "attack damage at 0");
         helper.assertFalse(hasStatModifiers(player), "no stat modifier is left at 0 Strength");
+        server.getPlayerList().remove(player);
+        helper.succeed();
+    }
+
+    /**
+     * Done when of RLM-170: every value is {@code (default + flat) × (1 + sum of percents)} (architecture 8.2).
+     * Matěj's example: a player's 1 attack damage, +2 and +1 from two sources and +15% and +10% from two more give
+     * {@code (1 + 2 + 1) × 1.25 = 5}; Strength's flat and percent bonuses join the same two sums.
+     */
+    @QaGameTest
+    public static void percentBonusesMultiplyTheFlatSum(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-stats-formula");
+        tick(player, 1);
+        AttributeInstance damage = player.getAttribute(Attributes.ATTACK_DAMAGE);
+        helper.assertValueEqual(damage.getValue(), 1.0, "a player's attack damage with nothing on it");
+        damage.addTransientModifier(modifier("formula/flat_2", 2, AttributeModifier.Operation.ADD_VALUE));
+        damage.addTransientModifier(modifier("formula/flat_1", 1, AttributeModifier.Operation.ADD_VALUE));
+        damage.addTransientModifier(modifier("formula/percent_15", 0.15,
+                AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+        damage.addTransientModifier(modifier("formula/percent_10", 0.1,
+                AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+        helper.assertTrue(ContentStatGameTests.close(damage.getValue(), 5), "(1 + 2 + 1) × (1 + 15% + 10%) is 5, got "
+                + damage.getValue());
+
+        Sample sample = highestSample(rule("realmforge:strength"));
+        StatsCommands.setBase(player, GeneratedStats.STRENGTH, sample.value());
+        double flat = 1 + 2 + 1;
+        double percent = 0.15 + 0.1;
+        int flatBonuses = 0;
+        int percentBonuses = 0;
+        for (Bonus bonus : sample.bonuses()) {
+            if (!bonus.attribute().equals("minecraft:attack_damage")) {
+                continue;
+            }
+            helper.assertFalse(bonus.operation().equals("add_multiplied_total"), "Strength never multiplies the total");
+            if (bonus.operation().equals("add_value")) {
+                flat += bonus.amount();
+                flatBonuses++;
+            } else {
+                percent += bonus.amount();
+                percentBonuses++;
+            }
+        }
+        helper.assertTrue(flatBonuses > 0 && percentBonuses > 0, "Strength at " + sample.value()
+                + " gives attack damage both flat and in percent");
+        double want = flat * (1 + percent);
+        helper.assertTrue(ContentStatGameTests.close(damage.getValue(), want), "with " + sample.value()
+                + " Strength: (" + flat + ") × (1 + " + percent + ") = " + want + " expected, got " + damage.getValue());
         server.getPlayerList().remove(player);
         helper.succeed();
     }
@@ -269,6 +319,10 @@ public final class StatsGameTests {
         return result;
     }
 
+    private static AttributeModifier modifier(String path, double amount, AttributeModifier.Operation operation) {
+        return new AttributeModifier(RealmforgeQa.id(path), amount, operation);
+    }
+
     private static StatRuleExpectation rule(String stat) {
         return GeneratedStatExpectations.STAT_RULES.stream()
                 .filter(rule -> rule.stat().equals(stat))
@@ -276,9 +330,15 @@ public final class StatsGameTests {
                 .orElseThrow(() -> new IllegalStateException("no stat rule reads " + stat));
     }
 
-    /** The sample with the most points: past the rule's milestones and caps. */
+    /**
+     * The sample with the most points for a player without a character, as the tests' players are: past the rule's
+     * milestones and caps. Samples come role by role, the role-free ones first, each in ascending points.
+     */
     private static Sample highestSample(StatRuleExpectation rule) {
-        return rule.samples().getLast();
+        return rule.samples().stream()
+                .filter(sample -> sample.role() == null)
+                .reduce((lower, higher) -> higher)
+                .orElseThrow(() -> new IllegalStateException(rule.id() + " has no role-free sample"));
     }
 
     private static void setBase(ServerPlayer player, Holder<Attribute> stat, double value) {

@@ -16,7 +16,7 @@ from realmforge_tools.schema.common import (
     StrictModel,
     UniqueResourceIds,
 )
-from realmforge_tools.schema.stat_rule import MULTIPLIED, Operation
+from realmforge_tools.schema.stat_rule import MULTIPLIED, Operation, Role
 
 FiniteNumber = Annotated[float, Field(allow_inf_nan=False)]
 
@@ -120,8 +120,8 @@ class RageDef(StrictModel):
 
 
 class ClassDef(StrictModel):
-    """A class: its resource, the stats it gives and its starting kit (architecture 10.1). Spells by level and talent
-    trees come with C4 and C5."""
+    """A class: its role, its resource, the stats it gives and its starting kit (architecture 10.1). Spells by level
+    and talent trees come with C4 and C5."""
 
     id: ContentId
     name: LocalizedText = Field(
@@ -129,6 +129,10 @@ class ClassDef(StrictModel):
     )
     description: LocalizedText = Field(
         description="One or two sentences on character creation, in the lore style guide's voice."
+    )
+    role: Role = Field(
+        description="What the class plays: melee, caster or ranged (assassins count as ranged). It decides which "
+        "role-bound stat rule bonuses its players get (architecture 8.3)."
     )
     resource: ResourceType = Field(
         description="The resource its spells cost: realmforge:mana or realmforge:rage."

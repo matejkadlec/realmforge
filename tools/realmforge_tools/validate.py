@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from realmforge_tools.apotheosis import Snapshot, fit, load_snapshot
 from realmforge_tools.content import Content, Entry, RoomEntry, SetPieceEntry, load_content
-from realmforge_tools.id_universe import IdUniverse, load_vanilla
+from realmforge_tools.id_universe import NEOFORGE_ATTRIBUTES, IdUniverse, load_vanilla
 from realmforge_tools.problems import Problem, ValidationFailed
 from realmforge_tools.project import MOD_ID, RepoPaths
 from realmforge_tools.rooms.cache import universe_digest
@@ -204,10 +204,12 @@ def load_and_validate(
 
 
 def universe_with_content(vanilla: IdUniverse, content: Content) -> IdUniverse:
-    """The vanilla universe plus every id our content defines."""
+    """The vanilla universe plus NeoForge's attributes and every id our content defines."""
     universe = copy.deepcopy(vanilla)
     for dimension in VANILLA_DIMENSIONS:
         universe.add(DIMENSION_REGISTRY, dimension)
+    for attribute in NEOFORGE_ATTRIBUTES:
+        universe.add(ATTRIBUTE_REGISTRY, attribute)
     for type_dir, registry in REGISTRY_OF_TYPE.items():
         for entry in content.entries(type_dir):
             universe.add(registry, f"{MOD_ID}:{entry.model.id}")
@@ -740,8 +742,9 @@ def _check_references(content: Content, universe: IdUniverse) -> list[Problem]:
 
 def _check_stat_rules(content: Content, universe: IdUniverse) -> list[Problem]:
     """A rule reads one primary stat, which no other rule reads, and writes only secondary stats and vanilla
-    attributes (architecture 8.3). An add_value amount on one of our stats takes its unit, percent for a share; a
-    vanilla attribute takes either, as its unit is not catalogued (knockback resistance is a fraction)."""
+    attributes (architecture 8.3), adding its percents to the base (architecture 8.2). An add_value amount on one of
+    our stats takes its unit, percent for a share; a vanilla attribute takes either, as its unit is not catalogued
+    (knockback resistance is a fraction)."""
     problems: list[Problem] = []
     stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
     rule_of_stat: dict[str, str] = {}
@@ -777,6 +780,7 @@ def _check_stat_rules(content: Content, universe: IdUniverse) -> list[Problem]:
                     )
 
         for path, modifier in rule.modifiers():
+            problems += _check_adds_percents(entry.source, path, modifier.operation)
             location = f"{path}.attribute"
             target = stats.get(modifier.attribute)
             if not universe.contains(ATTRIBUTE_REGISTRY, modifier.attribute):
@@ -1302,8 +1306,8 @@ def _check_effect(
 
 def _check_characters(content: Content, universe: IdUniverse) -> list[Problem]:
     """Races name classes that exist, and every class is open to some race, or no player could take it. Modifiers
-    name attributes that exist, in their unit as for stat rules (architecture 8.3); kit items exist, and every kit
-    holds the starting bread."""
+    name attributes that exist, in their unit as for stat rules (architecture 8.3), and add their percents to the
+    base (architecture 8.2); kit items exist, and every kit holds the starting bread."""
     problems: list[Problem] = []
     stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
     class_registry = f"{MOD_ID}:class"
@@ -1317,6 +1321,7 @@ def _check_characters(content: Content, universe: IdUniverse) -> list[Problem]:
                 )
     for entry in (*content.races, *content.classes):
         for n, modifier in enumerate(entry.model.modifiers):
+            problems += _check_adds_percents(entry.source, f"modifiers.{n}", modifier.operation)
             problems += _check_modifier(entry.source, f"modifiers.{n}", modifier, stats, universe)
     bread, bread_count = STARTING_BREAD
     for entry in content.classes:
@@ -1346,6 +1351,22 @@ def _check_characters(content: Content, universe: IdUniverse) -> list[Problem]:
                     )
                 )
     return problems
+
+
+def _check_adds_percents(source: str, path: str, operation: str) -> list[Problem]:
+    """A stat bonus (a stat rule's, a race's, a class's, gear's) adds its percents to the base: every value is
+    ``(default + flat) * (1 + sum of percents)`` (Matěj, RLM-170, architecture 8.2), so no bonus multiplies the
+    total on its own. Status effects may (a slow, a boss phase's Cracked Stone)."""
+    if operation != "add_multiplied_total":
+        return []
+    return [
+        Problem(
+            source,
+            f"{path}.operation",
+            "stat bonuses add their percents, (default + flat) * (1 + sum of percents): use add_multiplied_base, "
+            "not add_multiplied_total (architecture 8.2)",
+        )
+    ]
 
 
 def _check_modifier(
@@ -1599,8 +1620,8 @@ def _unknown_ingredient(ingredient: str, universe: IdUniverse) -> str | None:
 
 
 def _check_gear(content: Content, universe: IdUniverse) -> list[Problem]:
-    """Gear's fixed stats name attributes that exist, in their unit as for stat rules (architecture 8.3), and never
-    max health, attack damage or attack speed; its repair material and equip sound exist; the items that share a
+    """Gear's fixed stats name attributes that exist, in their unit as for stat rules (architecture 8.3), add their
+    percents to the base (architecture 8.2), and never max health, attack damage or attack speed; its repair material and equip sound exist; the items that share a
     look are armor of one colour, so its placeholder texture has one."""
     problems: list[Problem] = []
     stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
@@ -1611,6 +1632,7 @@ def _check_gear(content: Content, universe: IdUniverse) -> list[Problem]:
             continue
         for n, modifier in enumerate(gear.modifiers):
             path = f"gear.modifiers.{n}"
+            problems += _check_adds_percents(entry.source, path, modifier.operation)
             forbidden = GEAR_FORBIDDEN_ATTRIBUTES.get(modifier.attribute)
             if forbidden is not None:
                 problems.append(Problem(entry.source, f"{path}.attribute", forbidden))

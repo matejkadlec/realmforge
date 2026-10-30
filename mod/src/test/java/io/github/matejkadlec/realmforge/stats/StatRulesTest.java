@@ -25,6 +25,7 @@ class StatRulesTest {
     private static final Operation BASE = Operation.ADD_MULTIPLIED_BASE;
     private static final Operation TOTAL = Operation.ADD_MULTIPLIED_TOTAL;
     private static final Identifier STRENGTH = Realmforge.id("strength");
+    private static final Optional<ClassRole> NONE = Optional.empty();
 
     private static final StatRule RULE = new StatRule(Attributes.LUCK,
             List.of(new StatRule.PerPoint(new StatRule.Modifier(Attributes.ATTACK_DAMAGE, Operation.ADD_MULTIPLIED_BASE,
@@ -42,12 +43,12 @@ class StatRulesTest {
         assertEquals(List.of(
                         bonus("stat/realmforge/0/strength", Attributes.ATTACK_DAMAGE, 0.2, BASE),
                         bonus("stat/realmforge/1/strength", Attributes.MOVEMENT_SPEED, 0.04, BASE)),
-                StatRules.bonuses(STRENGTH, RULE, 20));
+                StatRules.bonuses(STRENGTH, RULE, 20, NONE));
     }
 
     @Test
     void noPointsGiveNothing() {
-        assertEquals(List.of(), StatRules.bonuses(STRENGTH, RULE, 0));
+        assertEquals(List.of(), StatRules.bonuses(STRENGTH, RULE, 0, NONE));
     }
 
     @Test
@@ -60,10 +61,10 @@ class StatRulesTest {
 
     @Test
     void milestonesApplyFromTheirPointsOn() {
-        List<StatBonus> justBelow = StatRules.bonuses(STRENGTH, RULE, 24.99);
+        List<StatBonus> justBelow = StatRules.bonuses(STRENGTH, RULE, 24.99, NONE);
         assertEquals(2, justBelow.size(), "only the per-point bonuses");
 
-        List<StatBonus> reached = StatRules.bonuses(STRENGTH, RULE, 25);
+        List<StatBonus> reached = StatRules.bonuses(STRENGTH, RULE, 25, NONE);
         assertEquals(List.of(
                         bonus("stat/realmforge/0/strength", Attributes.ATTACK_DAMAGE, 0.25, BASE),
                         bonus("stat/realmforge/1/strength", Attributes.MOVEMENT_SPEED, 0.05, BASE),
@@ -71,10 +72,36 @@ class StatRulesTest {
                         bonus("stat/realmforge/at_25_1/strength", Attributes.MAX_HEALTH, 0.05, TOTAL)),
                 reached);
 
-        List<StatBonus> both = StatRules.bonuses(STRENGTH, RULE, 60);
+        List<StatBonus> both = StatRules.bonuses(STRENGTH, RULE, 60, NONE);
         assertEquals(bonus("stat/realmforge/at_50_0/strength", Attributes.ARMOR, 3.0, ADD), both.getLast(),
                 "both milestones, each with its own id");
         assertEquals(5, both.size());
+    }
+
+    /** RLM-170: an entry with roles goes to those roles only, never to a player without one; ids keep positions. */
+    @Test
+    void roleBoundEntriesGoToTheirRolesOnly() {
+        StatRule rule = new StatRule(Attributes.LUCK,
+                List.of(new StatRule.PerPoint(new StatRule.Modifier(Attributes.ATTACK_SPEED, BASE, 0.015,
+                                List.of(ClassRole.MELEE, ClassRole.RANGED)), Optional.empty()),
+                        new StatRule.PerPoint(new StatRule.Modifier(Attributes.ARMOR, ADD, 1.0), Optional.empty())),
+                List.of(new StatRule.Milestone(10, List.of(
+                        new StatRule.Modifier(Attributes.MAX_HEALTH, ADD, 5.0, List.of(ClassRole.CASTER)),
+                        new StatRule.Modifier(Attributes.ARMOR, ADD, 2.0)))));
+        assertEquals(List.of(
+                        bonus("stat/realmforge/0/strength", Attributes.ATTACK_SPEED, 0.15, BASE),
+                        bonus("stat/realmforge/1/strength", Attributes.ARMOR, 10.0, ADD),
+                        bonus("stat/realmforge/at_10_1/strength", Attributes.ARMOR, 2.0, ADD)),
+                StatRules.bonuses(STRENGTH, rule, 10, Optional.of(ClassRole.MELEE)));
+        assertEquals(List.of(
+                        bonus("stat/realmforge/1/strength", Attributes.ARMOR, 10.0, ADD),
+                        bonus("stat/realmforge/at_10_0/strength", Attributes.MAX_HEALTH, 5.0, ADD),
+                        bonus("stat/realmforge/at_10_1/strength", Attributes.ARMOR, 2.0, ADD)),
+                StatRules.bonuses(STRENGTH, rule, 10, Optional.of(ClassRole.CASTER)));
+        assertEquals(List.of(
+                        bonus("stat/realmforge/1/strength", Attributes.ARMOR, 10.0, ADD),
+                        bonus("stat/realmforge/at_10_1/strength", Attributes.ARMOR, 2.0, ADD)),
+                StatRules.bonuses(STRENGTH, rule, 10, NONE), "a player without a role gets the role-free entries");
     }
 
     @Test
@@ -119,6 +146,22 @@ class StatRulesTest {
         assertEquals(Optional.of(0.2), rule.perPoint().getFirst().max());
         assertEquals(25, rule.milestones().getFirst().points());
         assertEquals(2.0, rule.milestones().getFirst().modifiers().getFirst().amount());
+    }
+
+    @Test
+    void codecReadsRoles() {
+        StatRule rule = decode("""
+                {"stat": "realmforge:dexterity", "per_point": [
+                    {"attribute": "minecraft:attack_speed", "operation": "add_multiplied_base", "amount": 0.015,
+                     "roles": ["melee", "ranged"]},
+                    {"attribute": "realmforge:crit_chance", "operation": "add_value", "amount": 0.005}]}
+                """).getOrThrow();
+        assertEquals(List.of(ClassRole.MELEE, ClassRole.RANGED), rule.perPoint().getFirst().modifier().roles());
+        assertEquals(List.of(), rule.perPoint().getLast().modifier().roles(), "no roles: every player");
+        assertTrue(decode("""
+                {"stat": "realmforge:dexterity", "per_point": [
+                    {"attribute": "minecraft:armor", "operation": "add_value", "amount": 1, "roles": ["healer"]}]}
+                """).isError(), "an unknown role");
     }
 
     @Test

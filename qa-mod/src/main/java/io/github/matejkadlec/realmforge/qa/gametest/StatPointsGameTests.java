@@ -22,6 +22,7 @@ import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectations.LevelXp;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedRaceExpectations;
+import io.github.matejkadlec.realmforge.stats.CharacterStats;
 import io.github.matejkadlec.realmforge.stats.StatBonus;
 import io.github.matejkadlec.realmforge.stats.StatRule;
 import io.github.matejkadlec.realmforge.stats.StatRules;
@@ -261,9 +262,9 @@ public final class StatPointsGameTests {
         }
         helper.assertTrue(view.rows().stream().filter(row -> row.spend() != null).count()
                 == GeneratedStats.PRIMARY.size(), "only the primary stats offer a +");
-        // Strength's rule: 1% attack damage a point (content/stat_rules/strength.yaml).
+        // Strength's rule: 0.5 attack damage and 0.5% lifesteal a point (content/stat_rules/strength.yaml, RLM-170).
         helper.assertValueEqual(row(helper, view, GeneratedStats.STRENGTH.value().getDescriptionId()).spend().gains()
-                .stream().map(Component::getString).toList(), List.of("+1% Attack Damage"),
+                .stream().map(Component::getString).toList(), List.of("+0.5 Attack Damage", "+0.5% Lifesteal"),
                 "what a Strength point gives");
 
         while (StatPoints.unspent(player) > 0) {
@@ -300,7 +301,7 @@ public final class StatPointsGameTests {
         }
     }
 
-    /** The stat rule's modifiers on the player are the ones it gives at the stat's current value. */
+    /** The stat rule's modifiers on the player are the ones it gives its class role at the stat's current value. */
     private static void assertRuleBonuses(GameTestHelper helper, ServerPlayer player, Holder<Attribute> stat) {
         Registry<StatRule> rules = player.registryAccess().lookupOrThrow(StatsRegistries.STAT_RULE);
         double value = player.getAttributeValue(stat);
@@ -310,7 +311,8 @@ public final class StatPointsGameTests {
                 continue;
             }
             found = true;
-            List<StatBonus> wanted = StatRules.bonuses(entry.getKey().identifier(), entry.getValue(), value);
+            List<StatBonus> wanted = StatRules.bonuses(entry.getKey().identifier(), entry.getValue(), value,
+                    CharacterStats.role(player));
             helper.assertFalse(wanted.isEmpty(), stat.getRegisteredName() + " at " + value + " gives something");
             for (StatBonus bonus : wanted) {
                 AttributeModifier got = player.getAttribute(bonus.attribute()).getModifier(bonus.modifier().id());

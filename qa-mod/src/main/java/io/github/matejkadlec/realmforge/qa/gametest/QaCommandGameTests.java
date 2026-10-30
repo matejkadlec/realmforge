@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
+import io.github.matejkadlec.realmforge.character.Characters;
 import io.github.matejkadlec.realmforge.character.Scrolls;
 import io.github.matejkadlec.realmforge.combat.DamageOverTime;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
@@ -72,6 +73,8 @@ public final class QaCommandGameTests {
         run(server, player, "qa stats set strength 25");
         helper.assertValueEqual(player.getAttributeBaseValue(GeneratedStats.STRENGTH), 25.0, "Strength");
         helper.assertTrue(player.getAttributeValue(Attributes.ATTACK_DAMAGE) > fist, "Strength raised attack damage");
+        // Strength's milestone at 10 gives crit chance (RLM-170), which the checks and the fire hit below must not see.
+        run(server, player, "qa stats set strength 0");
         run(server, player, "qa stats set crit_chance 0");
         helper.assertValueEqual(player.getAttributeValue(GeneratedStats.CRIT_CHANCE), 0.0, "crit chance, typed in %");
         run(server, player, "qa stats set crit_chance 150");
@@ -100,6 +103,35 @@ public final class QaCommandGameTests {
         helper.assertValueEqual(player.getAttributeValue(GeneratedStats.CRIT_CHANCE), 0.05, "crit chance after reset");
         run(server, player, "qa dummy remove");
         helper.assertTrue(dummies(helper).isEmpty(), "/qa dummy remove removed the dummy");
+        server.getPlayerList().remove(player);
+        helper.succeed();
+    }
+
+    /**
+     * RLM-170 and RLM-171's playtest: the command block lines give a Warrior and a Mage 25 Dexterity and Vitality on top
+     * of their race and class, with Vitality's Stamina at 10, and {@code /qa stats} resets and sets Stamina. The line
+     * runs here through {@code /qa run} as the player; the handoff's {@code execute as @p at @p} only picks that player.
+     */
+    @QaGameTest
+    public static void statRoleCommandsReachTheirStates(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-commands-roles", new Vec3(2.5, 1, 0.5));
+        for (String playerClass : List.of("warrior", "mage")) {
+            run(server, player, "qa run qa character reset; qa character create realmforge:human realmforge:"
+                    + playerClass + "; qa stats set dexterity 25; qa stats set vitality 25");
+            helper.assertValueEqual(Characters.mainClass(player).map(entry -> entry.key().identifier().getPath()),
+                    Optional.of(playerClass), "the character's class");
+            helper.assertTrue(player.getAttributeValue(GeneratedStats.DEXTERITY) > 25, "a " + playerClass
+                    + "'s Dexterity is 25 and its race's and class's");
+            helper.assertValueEqual(player.getAttributeValue(GeneratedStats.STAMINA), 10.0,
+                    "a " + playerClass + "'s Stamina from Vitality's milestone at 10");
+        }
+        helper.assertTrue(player.getAttributeValue(GeneratedStats.COOLDOWN_REDUCTION) > 0,
+                "the Mage's Dexterity gives cooldown reduction");
+        run(server, player, "qa stats reset");
+        helper.assertValueEqual(player.getAttributeValue(GeneratedStats.STAMINA), 0.0, "Stamina after the reset");
+        run(server, player, "qa stats set stamina 50");
+        helper.assertValueEqual(player.getAttributeValue(GeneratedStats.STAMINA), 50.0, "Stamina set by hand");
         server.getPlayerList().remove(player);
         helper.succeed();
     }

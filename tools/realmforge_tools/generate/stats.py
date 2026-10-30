@@ -11,7 +11,7 @@ from realmforge_tools.generate.javagen import constant_name, header, java_file_p
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.common import LocalizedText
 from realmforge_tools.schema.stat import StatDef, stat_description_id
-from realmforge_tools.schema.stat_rule import StatRuleDef
+from realmforge_tools.schema.stat_rule import ROLES, StatRuleDef
 
 GENERATED_PACKAGE = f"{JAVA_PACKAGE}.generated"
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
@@ -83,10 +83,18 @@ def _registrations(content: Content) -> bytes:
     )
     primary = ", ".join(constant_name(e.model.id) for e in content.stats if e.model.kind == "primary")
     every = ", ".join(constant_name(e.model.id) for e in content.stats)
+    exhaustion = ", ".join(
+        f"new ExhaustionReduction({constant_name(e.model.id)}, "
+        f"{_double(e.model.lowers_exhaustion.per_point_percent / 100)}, "
+        f"{_double(e.model.lowers_exhaustion.max_percent / 100)})"
+        for e in content.stats
+        if e.model.lowers_exhaustion is not None
+    )
     source = (
         header(Path(__file__), "content/stats/") + f"package {GENERATED_PACKAGE};\n"
         "\n"
         f"import {JAVA_PACKAGE}.Realmforge;\n"
+        f"import {JAVA_PACKAGE}.stats.ExhaustionReduction;\n"
         "import java.util.List;\n"
         "import net.minecraft.core.registries.Registries;\n"
         "import net.minecraft.world.entity.ai.attributes.Attribute;\n"
@@ -109,6 +117,9 @@ def _registrations(content: Content) -> bytes:
         "    /** Every stat above, in id order. */\n"
         f"    public static final List<DeferredHolder<Attribute, Attribute>> ALL = List.of({every});\n"
         "\n"
+        "    /** The stats that lower the food exhaustion players gain ({@code lowers_exhaustion}), in id order. */\n"
+        f"    public static final List<ExhaustionReduction> LOWER_EXHAUSTION = List.of({exhaustion});\n"
+        "\n"
         "    private GeneratedStats() {\n"
         "    }\n"
         "\n"
@@ -129,10 +140,26 @@ def _stat_rows(content: Content) -> str:
         f"                    {'true' if stat.kind == 'primary' else 'false'},\n"
         f"                    {'true' if stat.percent else 'false'},\n"
         f"                    {_double(stat.game_default)},\n"
-        f"                    {_double(stat.game_max)})"
+        f"                    {_double(stat.game_max)},\n"
+        f"                    {_double(_exhaustion_per_point(stat))},\n"
+        f"                    {_double(_exhaustion_max(stat))})"
         for stat in (entry.model for entry in content.stats)
     ]
     return "List.of(\n" + ",\n".join(rows) + ")" if rows else "List.of()"
+
+
+def _exhaustion_per_point(stat: StatDef) -> float:
+    return 0.0 if stat.lowers_exhaustion is None else stat.lowers_exhaustion.per_point_percent / 100
+
+
+def _exhaustion_max(stat: StatDef) -> float:
+    return 0.0 if stat.lowers_exhaustion is None else stat.lowers_exhaustion.max_percent / 100
+
+
+def sample_roles(rule: StatRuleDef) -> list[str | None]:
+    """The class roles at which the GameTest compares a rule's bonuses: no role (a player without a character), and
+    every role when some of its modifiers apply to some roles only."""
+    return [None, *ROLES] if rule.role_bound else [None]
 
 
 def _rule_rows(content: Content) -> str:
@@ -140,13 +167,17 @@ def _rule_rows(content: Content) -> str:
     stat_max = {f"{MOD_ID}:{entry.model.id}": entry.model.game_max for entry in content.stats}
     for rule in (entry.model for entry in content.stat_rules):
         samples = []
-        for value in sample_values(rule, stat_max.get(rule.stat)):
-            bonuses = ", ".join(
-                f"new Bonus({string_literal(id_)}, {string_literal(attribute)}, {string_literal(operation)}, "
-                f"{_double(amount)})"
-                for id_, attribute, operation, amount in rule.bonuses_at(value)
-            )
-            samples.append(f"                            new Sample({_double(value)}, List.of({bonuses}))")
+        for role in sample_roles(rule):
+            for value in sample_values(rule, stat_max.get(rule.stat)):
+                bonuses = ", ".join(
+                    f"new Bonus({string_literal(id_)}, {string_literal(attribute)}, {string_literal(operation)}, "
+                    f"{_double(amount)})"
+                    for id_, attribute, operation, amount in rule.bonuses_at(value, role)
+                )
+                shown_role = "null" if role is None else string_literal(role)
+                samples.append(
+                    f"                            new Sample({_double(value)}, {shown_role}, List.of({bonuses}))"
+                )
         rows.append(
             "            new StatRuleExpectation(\n"
             f"                    {string_literal(f'{MOD_ID}:{rule.id}')},\n"
@@ -167,18 +198,24 @@ def _expectations(content: Content) -> bytes:
         " * Ids are full resource locations, e.g. {@code realmforge:strength}; numbers are in game units (fractions).\n"
         " */\n"
         "public final class GeneratedStatExpectations {\n"
-        "    /** Expected state of one stat's attribute. */\n"
+        "    /**\n"
+        "     * Expected state of one stat's attribute; {@code exhaustionPerPoint} and {@code exhaustionMax} are how it\n"
+        "     * lowers food exhaustion, both 0 for a stat that does not.\n"
+        "     */\n"
         "    public record StatExpectation(String id, String descriptionId, boolean primary, boolean percent, "
         "double defaultValue,\n"
-        "            double maxValue) {\n"
+        "            double maxValue, double exhaustionPerPoint, double exhaustionMax) {\n"
         "    }\n"
         "\n"
         "    /** One attribute modifier a stat rule gives. */\n"
         "    public record Bonus(String id, String attribute, String operation, double amount) {\n"
         "    }\n"
         "\n"
-        "    /** The bonuses the pipeline computes for a stat value, which the game must match, in this order. */\n"
-        "    public record Sample(double value, List<Bonus> bonuses) {\n"
+        "    /**\n"
+        "     * The bonuses the pipeline computes for a stat value and a class role (null: a player without a character),\n"
+        "     * which the game must match, in this order.\n"
+        "     */\n"
+        "    public record Sample(double value, String role, List<Bonus> bonuses) {\n"
         "    }\n"
         "\n"
         "    /** Expected behaviour of one stat rule. */\n"
