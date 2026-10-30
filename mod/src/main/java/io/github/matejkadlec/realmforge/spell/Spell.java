@@ -1,6 +1,9 @@
 package io.github.matejkadlec.realmforge.spell;
 
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.matejkadlec.realmforge.combat.CombatRegistries;
 import io.github.matejkadlec.realmforge.combat.CritRule;
@@ -33,12 +36,15 @@ import net.minecraft.util.ExtraCodecs;
  * @param npcOnly whether only mobs and bosses may cast it
  * @param requires what a player's cast needs in hand (RLM-499): a melee weapon, a shield
  * @param castableWhileStunned whether a stunned caster may cast it (Will To Survive, C4)
- * @param effects what it does, in order
+ * @param effects what it does, in order; none for a passive spell
+ * @param passive what it does while its player knows it, for a passive spell (RLM-541): never cast, never on the bar.
+ *     A passive spell's data names no targeting, cast or effects, and the pipeline writes their defaults
  */
 public record Spell(String name, String description, Optional<Holder<SpellSchool>> school, Scaling scalesWith,
         SpellTargeting targeting, SpellCast cast,
         Optional<SpellCost> cost, int cooldownTicks, int globalCooldownTicks, int maxLevel, CritRule crit,
-        boolean npcOnly, List<SpellRequirement> requires, boolean castableWhileStunned, List<SpellEffect> effects) {
+        boolean npcOnly, List<SpellRequirement> requires, boolean castableWhileStunned, List<SpellEffect> effects,
+        Optional<Passive> passive) {
     /** The global cooldown of a spell that names none: half a second, as in WoW (Matěj, 2026-10-19, RLM-25). */
     public static final int DEFAULT_GLOBAL_COOLDOWN_TICKS = 10;
 
@@ -48,7 +54,14 @@ public record Spell(String name, String description, Optional<Holder<SpellSchool
      */
     public static final int NO_SCHOOL_COLOR = 0x555555;
 
-    public static final Codec<Spell> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    /**
+     * What it does: its effects, or its passive (RLM-541). One field of the codec for both, since a record codec takes
+     * at most 15.
+     */
+    private static final MapCodec<Pair<List<SpellEffect>, Optional<Passive>>> BEHAVIOUR = Codec.mapPair(
+            SpellEffect.CODEC.listOf().optionalFieldOf("effects", List.of()), Passive.CODEC.optionalFieldOf("passive"));
+
+    public static final Codec<Spell> CODEC = RecordCodecBuilder.<Spell>create(instance -> instance.group(
                     Codec.STRING.fieldOf("name").forGetter(Spell::name),
                     Codec.STRING.fieldOf("description").forGetter(Spell::description),
                     RegistryFixedCodec.create(CombatRegistries.SPELL_SCHOOL).optionalFieldOf("school")
@@ -66,12 +79,39 @@ public record Spell(String name, String description, Optional<Holder<SpellSchool
                     SpellRequirement.CODEC.listOf().optionalFieldOf("requires", List.of()).forGetter(Spell::requires),
                     Codec.BOOL.optionalFieldOf("castable_while_stunned", false)
                             .forGetter(Spell::castableWhileStunned),
-                    ExtraCodecs.nonEmptyList(SpellEffect.CODEC.listOf()).fieldOf("effects").forGetter(Spell::effects))
-            .apply(instance, Spell::new));
+                    BEHAVIOUR.forGetter(Spell::behaviour))
+            .apply(instance, Spell::decoded))
+            .validate(Spell::validate);
 
     public Spell {
         requires = List.copyOf(requires);
         effects = List.copyOf(effects);
+    }
+
+    private static DataResult<Spell> validate(Spell spell) {
+        if (spell.isPassive() != spell.effects().isEmpty()) {
+            return DataResult.error(() -> spell.isPassive() ? "A passive spell has no effects: " + spell.name()
+                    : "An active spell has at least one effect: " + spell.name());
+        }
+        return DataResult.success(spell);
+    }
+
+    private static Spell decoded(String name, String description, Optional<Holder<SpellSchool>> school,
+            Scaling scalesWith, SpellTargeting targeting, SpellCast cast, Optional<SpellCost> cost, int cooldownTicks,
+            int globalCooldownTicks, int maxLevel, CritRule crit, boolean npcOnly, List<SpellRequirement> requires,
+            boolean castableWhileStunned, Pair<List<SpellEffect>, Optional<Passive>> behaviour) {
+        return new Spell(name, description, school, scalesWith, targeting, cast, cost, cooldownTicks,
+                globalCooldownTicks, maxLevel, crit, npcOnly, requires, castableWhileStunned, behaviour.getFirst(),
+                behaviour.getSecond());
+    }
+
+    private Pair<List<SpellEffect>, Optional<Passive>> behaviour() {
+        return Pair.of(effects, passive);
+    }
+
+    /** Whether it is a passive spell (RLM-541): never cast, never on the spell bar. */
+    public boolean isPassive() {
+        return passive.isPresent();
     }
 
     /** Its colour as RGB: its school's, or {@link #NO_SCHOOL_COLOR} for a spell of no school. */

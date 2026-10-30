@@ -203,7 +203,7 @@ def sample_tasks(content: Content) -> list[tuple[str, OwnTaskDef]]:
     castable = [
         entry.model.id
         for entry in content.spells
-        if not entry.model.npc_only and entry.model.targeting.type == SELF
+        if not entry.model.npc_only and not entry.model.is_passive and entry.model.targeting.type == SELF
     ]
     if castable:
         samples.append(("quest_task/spell", SpellTaskDef(type="spell", spell=f"{MOD_ID}:{castable[0]}")))

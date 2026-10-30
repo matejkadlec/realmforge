@@ -15,8 +15,9 @@ import net.minecraft.util.RandomSource;
  *   multiplier (Matěj, 2026-10-15). A chance above 100 % always crits, and what lies above 100 % adds to the
  *   multiplier 1:1, 1 % of chance for 1 % of crit damage (crit overflow, RLM-392; C4).</li>
  *   <li><b>Dodge:</b> a roll against the defender's dodge chance; a dodged hit deals nothing.</li>
- *   <li><b>School hit:</b> damage × (1 + spell power, for magic only, + the school's power), then the crit roll, then
- *   × (1 − the defender's resistance): the resistance to the school, plus spell resistance for a magic school, at
+ *   <li><b>School hit:</b> damage × (1 + the school's power + the hit's own damage bonus, its spell's passives), then
+ *   the crit roll, then × (1 − the defender's resistance). Spell Power is no multiplier: since scaling system C
+ *   (RLM-534) a spell adds its coefficient of the caster's Spell Power to the damage before the hit. The resistance: the resistance to the school, plus spell resistance for a magic school, at
  *   most 75 % together ({@link #RESISTANCE_CAP}), less the hit's spell penetration share of it
  *   ({@link #penetrated}; C4).</li>
  *   <li><b>Armor:</b> vanilla's formula ({@code CombatRules#getDamageAfterAbsorb}; Matěj, 2026-10-16), on the armor
@@ -48,10 +49,14 @@ public final class DamageCalculator {
     private DamageCalculator() {
     }
 
-    /** What an attacker brings to a school hit; an attribute it lacks counts as 0. */
-    public record Attacker(double critChance, double critDamage, double spellPower, double schoolPower) {
+    /**
+     * What an attacker brings to a school hit; an attribute it lacks counts as 0. {@code damageBonus} is the share the
+     * hit's damage grows by: the attacker's power in the school plus the hit's own bonus (its spell's passives,
+     * {@link HitBonus#damage}), the (1 + School Power + passives) of system C.
+     */
+    public record Attacker(double critChance, double critDamage, double damageBonus) {
         /** A hit nobody caused, or an attacker without our stats. */
-        public static final Attacker NONE = new Attacker(0, 0, 0, 0);
+        public static final Attacker NONE = new Attacker(0, 0, 0);
     }
 
     /** A school hit's damage before armor and vanilla's reductions, and whether it was a critical hit. */
@@ -105,23 +110,22 @@ public final class DamageCalculator {
     }
 
     /**
-     * A school hit: {@code damage} × (1 + spell power, for a magic school only, + the school's power), rolled for a
-     * crit by {@link CritRule#DEFAULT}, then reduced by the defender's resistance to the school. Never negative.
+     * A school hit: {@code damage} × (1 + the attacker's damage bonus: the school's power and the hit's passives),
+     * rolled for a crit by {@link CritRule#DEFAULT}, then reduced by the defender's resistance to the school. Never
+     * negative.
      */
-    public static SchoolHit schoolHit(double damage, boolean magic, Attacker attacker, double resistance,
-            RandomSource random) {
-        return schoolHit(damage, magic, attacker, resistance, CritRule.DEFAULT, random);
+    public static SchoolHit schoolHit(double damage, Attacker attacker, double resistance, RandomSource random) {
+        return schoolHit(damage, attacker, resistance, CritRule.DEFAULT, random);
     }
 
     /**
-     * A school hit as {@link #schoolHit(double, boolean, Attacker, double, RandomSource)}, rolled for a crit by
-     * {@code rule}: a spell's crit data.
+     * A school hit as {@link #schoolHit(double, Attacker, double, RandomSource)}, rolled for a crit by {@code rule}: a
+     * spell's crit data.
      */
-    public static SchoolHit schoolHit(double damage, boolean magic, Attacker attacker, double resistance,
-            CritRule rule, RandomSource random) {
-        double bonus = (magic ? attacker.spellPower() : 0) + attacker.schoolPower();
+    public static SchoolHit schoolHit(double damage, Attacker attacker, double resistance, CritRule rule,
+            RandomSource random) {
         Crit crit = crit(rule, attacker.critChance(), attacker.critDamage(), random);
-        double dealt = damage * Math.max(0, 1 + bonus) * crit.multiplier();
+        double dealt = damage * Math.max(0, 1 + attacker.damageBonus()) * crit.multiplier();
         return new SchoolHit(afterResistance(dealt, resistance), crit.crit());
     }
 

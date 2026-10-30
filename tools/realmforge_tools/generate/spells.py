@@ -44,8 +44,10 @@ def _double(value: float) -> str:
 
 
 def _comment(spell: SpellDef) -> str:
-    effects = ", ".join(effect.type.removeprefix(f"{MOD_ID}:") for effect in spell.effects)
     school = spell.school.removeprefix(f"{MOD_ID}:") if spell.school is not None else "no school"
+    if spell.is_passive:
+        return f"{school}, passive"
+    effects = ", ".join(effect.type.removeprefix(f"{MOD_ID}:") for effect in spell.effects)
     return f"{school}, {spell.targeting.type.removeprefix(f'{MOD_ID}:')}, {effects}"
 
 
@@ -120,7 +122,8 @@ def _effect(effect: BaseModel, indent: str) -> str:
             numbers[field] = converted
     if effect.type in (DAMAGE, HEAL):
         # The codec reads a missing share as 0.
-        numbers.setdefault("attack_damage", 0.0)
+        for share in ("attack_damage", "attack_damage_per_level", "spell_power", "spell_power_per_level"):
+            numbers.setdefault(share, 0.0)
     number_map = ", ".join(f"{string_literal(key)}, {_double(numbers[key])}" for key in sorted(numbers))
     name_map = ", ".join(f"{string_literal(key)}, {string_literal(names[key])}" for key in sorted(names))
     nested = (
@@ -136,6 +139,7 @@ def _effect(effect: BaseModel, indent: str) -> str:
 
 def _expectation(spell: SpellDef) -> str:
     effects = ",\n".join(_effect(effect, "                            ") for effect in spell.effects)
+    effect_list = f"List.of(\n{effects})" if effects else "List.of()"
     cost = spell.cost
     crit = spell.crit
     multiplier = crit.multiplier_percent / 100 if crit.multiplier_percent is not None else None
@@ -174,8 +178,8 @@ def _expectation(spell: SpellDef) -> str:
         f"                    {_bool(spell.npc_only)},\n"
         f"                    List.of({', '.join(string_literal(requirement) for requirement in spell.requires)}),\n"
         f"                    {_bool(spell.castable_while_stunned)},\n"
-        "                    List.of(\n"
-        f"{effects}))"
+        f"                    {_bool(spell.is_passive)},\n"
+        f"                    {effect_list})"
     )
 
 
@@ -207,7 +211,8 @@ def _expectations(content: Content) -> bytes:
         "     * spell on the caster itself, the cost's amounts are 0 for a free spell, and the cast's duration and interval\n"
         "     * are 0 where its type has none; {@code keepRange} is the share of the cast that keeps the target in range;\n"
         "     * {@code castAnimation} is how a mob moves while it casts, {@code raise} unless the data says otherwise;\n"
-        "     * {@code requires} names what a player's cast needs in hand ({@code melee_weapon}, {@code shield}).\n"
+        "     * {@code requires} names what a player's cast needs in hand ({@code melee_weapon}, {@code shield});\n"
+        "     * {@code passive} marks a passive spell (RLM-541), which has no effects and the defaults of its cast.\n"
         "     */\n"
         "    public record SpellExpectation(String id, String name, String description, Optional<String> school,\n"
         "            String scalesWith,\n"
@@ -217,7 +222,7 @@ def _expectations(content: Content) -> bytes:
         "            String castAnimation, Optional<String> costResource, double costAmount, double costPerLevel,\n"
         "            int cooldownTicks, int globalCooldownTicks, int maxLevel, boolean canCrit, Optional<Double> critMultiplier,\n"
         "            double critBonusChance, double critBonusChancePerLevel, boolean npcOnly, List<String> requires,\n"
-        "            boolean castableWhileStunned, List<EffectExpectation> effects) {\n"
+        "            boolean castableWhileStunned, boolean passive, List<EffectExpectation> effects) {\n"
         "    }\n"
         "\n"
         f"    public static final List<SpellExpectation> SPELLS = {spells};\n"

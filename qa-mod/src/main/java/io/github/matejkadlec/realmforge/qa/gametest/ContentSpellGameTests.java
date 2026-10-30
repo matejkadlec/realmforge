@@ -8,6 +8,7 @@ import io.github.matejkadlec.realmforge.qa.generated.GeneratedSpellExpectations.
 import io.github.matejkadlec.realmforge.spell.AllyTargeting;
 import io.github.matejkadlec.realmforge.spell.ApplyEffectEffect;
 import io.github.matejkadlec.realmforge.spell.AreaEffect;
+import io.github.matejkadlec.realmforge.spell.Coefficient;
 import io.github.matejkadlec.realmforge.spell.CurrentTargetTargeting;
 import io.github.matejkadlec.realmforge.spell.DamageEffect;
 import io.github.matejkadlec.realmforge.spell.DashEffect;
@@ -107,6 +108,7 @@ public final class ContentSpellGameTests {
                     expected.requires(), id + " requires");
             helper.assertValueEqual(spell.castableWhileStunned(), expected.castableWhileStunned(),
                     id + " castable while stunned");
+            helper.assertValueEqual(spell.isPassive(), expected.passive(), id + " passive");
             helper.assertValueEqual(spell.effects().stream().map(ContentSpellGameTests::effect).toList(),
                     expected.effects(), id + " effects");
         }
@@ -159,8 +161,8 @@ public final class ContentSpellGameTests {
         String type = SpellRegistries.EFFECT_TYPES.getKey(effect.codec()).toString();
         return switch (effect) {
             case DamageEffect damage -> numbers(type, damageNumbers(damage));
-            case HealEffect heal -> numbers(type, Map.of("amount", heal.amount(), "per_level", heal.perLevel(),
-                    "attack_damage", heal.attackDamage()));
+            case HealEffect heal -> numbers(type, withCoefficient(Map.of("amount", heal.amount(), "per_level",
+                    heal.perLevel()), heal.coefficient()));
             case ApplyEffectEffect apply -> new EffectExpectation(type, applyNumbers(apply), applyNames(apply),
                     List.of());
             case RemoveEffectEffect remove -> new EffectExpectation(type, Map.of(),
@@ -182,13 +184,23 @@ public final class ContentSpellGameTests {
      * them only then.
      */
     private static Map<String, Double> damageNumbers(DamageEffect damage) {
-        Map<String, Double> numbers = new HashMap<>(Map.of("amount", damage.amount(), "per_level", damage.perLevel(),
-                "attack_damage", damage.attackDamage()));
+        Map<String, Double> numbers = new HashMap<>(withCoefficient(Map.of("amount", damage.amount(), "per_level",
+                damage.perLevel()), damage.coefficient()));
         putIfSet(numbers, "armor_shred", damage.armorShred());
         putIfSet(numbers, "armor_shred_per_level", damage.armorShredPerLevel());
         putIfSet(numbers, "penetration", damage.penetration());
         putIfSet(numbers, "penetration_per_level", damage.penetrationPerLevel());
         return Map.copyOf(numbers);
+    }
+
+    /** {@code numbers} with a damage or heal effect's coefficient (RLM-534), every share named, 0 when it adds none. */
+    private static Map<String, Double> withCoefficient(Map<String, Double> numbers, Coefficient coefficient) {
+        Map<String, Double> all = new HashMap<>(numbers);
+        all.put("attack_damage", coefficient.attackDamage());
+        all.put("attack_damage_per_level", coefficient.attackDamagePerLevel());
+        all.put("spell_power", coefficient.spellPower());
+        all.put("spell_power_per_level", coefficient.spellPowerPerLevel());
+        return Map.copyOf(all);
     }
 
     /** A status effect's numbers; its growth per level (C4) only when it grows, as the data names it only then. */

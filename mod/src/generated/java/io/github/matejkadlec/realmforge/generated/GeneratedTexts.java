@@ -50,6 +50,9 @@ public final class GeneratedTexts {
     /** {@code cast.realmforge.out_of_range} from {@code content/texts/cast.yaml}: "Out of range" */
     public static final String CAST_OUT_OF_RANGE = "cast.realmforge.out_of_range";
 
+    /** {@code cast.realmforge.passive} from {@code content/texts/cast.yaml}: "That spell is passive" */
+    public static final String CAST_PASSIVE = "cast.realmforge.passive";
+
     /** {@code cast.realmforge.stunned} from {@code content/texts/cast.yaml}: "You are stunned" */
     public static final String CAST_STUNNED = "cast.realmforge.stunned";
 
@@ -514,6 +517,12 @@ public final class GeneratedTexts {
 
     /** {@code spell.tooltip.realmforge.instant} from {@code content/texts/spell.tooltip.yaml}: "Instant" */
     public static final String SPELL_TOOLTIP_INSTANT = "spell.tooltip.realmforge.instant";
+
+    /** {@code spell.tooltip.realmforge.next_rank} from {@code content/texts/spell.tooltip.yaml}: "Next rank:" */
+    public static final String SPELL_TOOLTIP_NEXT_RANK = "spell.tooltip.realmforge.next_rank";
+
+    /** {@code spell.tooltip.realmforge.passive} from {@code content/texts/spell.tooltip.yaml}: "Passive" */
+    public static final String SPELL_TOOLTIP_PASSIVE = "spell.tooltip.realmforge.passive";
 
     /** {@code spell.tooltip.realmforge.racial_empty} from {@code content/texts/spell.tooltip.yaml}: "Your racial ability goes here" */
     public static final String SPELL_TOOLTIP_RACIAL_EMPTY = "spell.tooltip.realmforge.racial_empty";

@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.spell;
 
 import io.github.matejkadlec.realmforge.spell.CombatState.Cast;
+import io.github.matejkadlec.realmforge.stats.CharacterStats;
 import java.util.Optional;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
@@ -26,7 +27,8 @@ public final class Spells {
      * goes into the spell bar's first empty slot (C3b, RLM-25); learning a known one again, at any level, leaves the
      * bar as the player arranged it (RLM-374), so a rank-up never brings back a spell they took off. The level must lie
      * between 1 and the spell's {@code max_level}. Character (C4: spells by class level) and the specialization spell
-     * trees (C5) call this.
+     * trees (C5) call this. A passive spell (RLM-541) never goes onto the bar; its modifiers apply at the end of the
+     * player's tick ({@link Passives#SOURCE}).
      */
     public static void learn(Player player, Holder.Reference<Spell> spell, int level) {
         if (level < 1 || level > spell.value().maxLevel()) {
@@ -35,8 +37,11 @@ public final class Spells {
         }
         Spellbook old = player.getData(SpellAttachments.SPELLBOOK);
         Spellbook book = old.withSpell(spell.key(), level);
-        boolean placed = old.level(spell.key()).isEmpty() && !spell.value().npcOnly();
+        boolean placed = old.level(spell.key()).isEmpty() && !spell.value().npcOnly() && !spell.value().isPassive();
         player.setData(SpellAttachments.SPELLBOOK, placed ? book.withSpellOnBar(spell.key()) : book);
+        if (spell.value().isPassive()) {
+            CharacterStats.markDirty(player);
+        }
     }
 
     /** The level (rank) at which {@code player} knows {@code spell}, if they know it. */
@@ -62,12 +67,15 @@ public final class Spells {
 
     /**
      * Puts {@code spell} into the bar's {@code slot} (0 to 7), or empties the slot: the spellbook's intent
-     * ({@code SetSpellBarSlotPayload}). Refused, changing nothing, for another slot or a spell the player does not
-     * know; a spell already on the bar moves there, swapping with the one it displaces. Returns whether it changed.
+     * ({@code SetSpellBarSlotPayload}). Refused, changing nothing, for another slot, a spell the player does not know
+     * or a passive spell (RLM-541), which is never cast; a spell already on the bar moves there, swapping with the one
+     * it displaces. Returns whether it changed.
      */
     public static boolean placeOnBar(Player player, int slot, Optional<ResourceKey<Spell>> spell) {
         Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
-        if (slot < 0 || slot >= Spellbook.BAR_SLOTS || spell.isPresent() && book.level(spell.get()).isEmpty()) {
+        if (slot < 0 || slot >= Spellbook.BAR_SLOTS || spell.isPresent() && book.level(spell.get()).isEmpty()
+                || spell.flatMap(key -> get(player.registryAccess(), key)).map(holder -> holder.value().isPassive())
+                        .orElse(false)) {
             return false;
         }
         Spellbook placed = spell.map(key -> book.placed(slot, key)).orElseGet(() -> book.withSlot(slot,

@@ -26,6 +26,12 @@ texts:
     en_us: Channeled (%1$s sec)
   cooldown:
     en_us: "%1$s sec cooldown"
+  # A passive spell's tooltip (RLM-541) in place of its cost, range and cast: it works while it is known.
+  passive:
+    en_us: Passive
+  # Above a passive spell's description at its next rank, below the one at its rank.
+  next_rank:
+    en_us: "Next rank:"
   # The racial slot beside the spell bar, while it is empty (C4 fills it from the race).
   racial_empty:
     en_us: Your racial ability goes here

@@ -19,19 +19,41 @@ class SpellScalingTest {
 
     @Test
     void anAttackDamageAbilityAddsItsShareOfAttackDamage() {
-        assertEquals(2 + 8, SpellScaling.base(2, 0, 1, 1, 8), EPSILON, "100 % of 8 attack damage");
-        assertEquals(2 + 4 + 2, SpellScaling.base(2, 2, 2, 0.5, 8), EPSILON, "level 2 and half the attack damage");
-        assertEquals(12, SpellScaling.base(12, 0, 1, 0, 50), EPSILON,
+        assertEquals(2 + 8, SpellScaling.base(2, 0, 1, Coefficient.attackDamage(1), 8, 0), EPSILON,
+                "100 % of 8 attack damage");
+        assertEquals(2 + 4 + 2, SpellScaling.base(2, 2, 2, Coefficient.attackDamage(0.5), 8, 0), EPSILON,
+                "level 2 and half the attack damage");
+        assertEquals(12, SpellScaling.base(12, 0, 1, Coefficient.spellPower(1, 0), 50, 0), EPSILON,
                 "attack damage does nothing for magic (Matěj, 2026-10-15)");
-        assertEquals(2, SpellScaling.base(2, 0, 1, 1, -5), EPSILON, "negative attack damage counts as none");
+        assertEquals(2, SpellScaling.base(2, 0, 1, Coefficient.attackDamage(1), -5, 0), EPSILON,
+                "negative attack damage counts as none");
+    }
+
+    /**
+     * Scaling system C (Matěj, 2026-10-30, RLM-534): Base(rank) + Coefficient(rank) × Power, both growing per rank.
+     * Frostbolt is 8/9/10/11/12 + 100/125/150/175/200 % Spell Power, Slam 4/5.5/7/8.5/10 + 120/140/160/180/200 % Attack
+     * Damage: the ticket's three checks.
+     */
+    @Test
+    void theCoefficientGrowsWithTheRank() {
+        Coefficient frostbolt = Coefficient.spellPower(1, 0.25);
+        assertEquals(13.5, SpellScaling.base(8, 1, 1, frostbolt, 0, 5.5), EPSILON, "8 + 100 % of 5.5");
+        assertEquals(50, SpellScaling.base(8, 1, 5, frostbolt, 0, 19), EPSILON, "12 + 200 % of 19");
+        assertEquals(2, frostbolt.spellPowerAt(5), EPSILON);
+        Coefficient slam = new Coefficient(1.2, 0.2, 0, 0);
+        assertEquals(40, SpellScaling.base(4, 1.5, 5, slam, 15, 0), EPSILON, "10 + 200 % of 15");
+        assertEquals(4 + 1.2 * 15, SpellScaling.base(4, 1.5, 1, slam, 15, 99), EPSILON,
+                "spell power does nothing for a physical ability");
+        assertEquals(8, SpellScaling.base(8, 1, 1, frostbolt, 0, -4), EPSILON, "negative spell power counts as none");
     }
 
     @Test
-    void magicHealsScaleWithSpellPowerAndTheSchoolsPower() {
-        assertEquals(10 * 1.7, SpellScaling.heal(10, Scaling.SPELL_POWER, 0.5, 0.2), EPSILON);
-        assertEquals(10, SpellScaling.heal(10, Scaling.ATTACK_DAMAGE, 0.5, 0.2), EPSILON,
-                "spell power does nothing for a physical ability");
-        assertEquals(0, SpellScaling.heal(10, Scaling.SPELL_POWER, -3, 0), EPSILON, "never negative");
+    void magicHealsScaleWithTheSchoolsPower() {
+        assertEquals(10 * 1.2, SpellScaling.heal(10, Scaling.SPELL_POWER, 0.2), EPSILON,
+                "the caster's Spell Power is already in the base");
+        assertEquals(10, SpellScaling.heal(10, Scaling.ATTACK_DAMAGE, 0.2), EPSILON,
+                "a school's power does nothing for a physical ability's heal");
+        assertEquals(0, SpellScaling.heal(10, Scaling.SPELL_POWER, -3), EPSILON, "never negative");
     }
 
     @Test

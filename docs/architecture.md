@@ -455,7 +455,7 @@ cooldown_seconds: 0
 max_level: 5
 crit: {multiplier_percent: 200}         # optional: every spell crits by default, for 1 + crit damage
 effects:
-  - {type: realmforge:damage, amount: 12, per_level: 3}
+  - {type: realmforge:damage, amount: 12, per_level: 3, spell_power_percent: 100}   # + 100 % of Spell Power (RLM-534)
 ```
 
 1. `uv run rf validate` checks the schema, that `realmforge:fire` is a known school, that the stat it scales with
@@ -568,7 +568,9 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   and gear raise them (C1 and later; levels give stat points, not stats: RLM-196). Luck and defense stay out (D5).
 - **Secondary stats (ours):** crit chance (5 % to start with), crit damage (+50 %: a crit deals 150 % for melee,
   ranged and spell hits alike, Matěj, 2026-10-19, who first meant it for spells only), dodge chance (Vitality gives it
-  to ranged classes only, and M1 has none: [8.3](#83-derived-stats-and-milestones)), spell power, and each magic school's power and
+  to ranged classes only, and M1 has none: [8.3](#83-derived-stats-and-milestones)), Spell Power (points since
+  RLM-534, Matěj, 2026-10-30: gear, Intellect and buffs give it flat or in percent, and a magic spell adds its
+  coefficient of it, [11.1](#111-model)), and each magic school's power and
   resistance (`fire_power`, `fire_resistance`, ...; F5, the resistances capped at 75 % so nothing becomes immune
   without a tell, research BM-18). Matěj's playtest of F4b and F5 (2026-10-13) set the rest of the list, shown on the
   character sheet before every one of them works. Working in the damage pipeline ([9.1](#91-damage-pipeline);
@@ -580,7 +582,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   spell tooltips) and the XP multiplier (100 % by default; C2, RLM-23: `character/Leveling` applies it to character
   XP) work too. Max mana, mana regeneration and cooldown reduction (which replaced haste)
   work since C3a-1 ([11.5](#115-resources-cooldowns-modifiers)).
-  Healing power is gone: healing spells scale with spell power and their school. Protection pierce, flat and in
+  Healing power is gone: healing spells scale with Spell Power (their coefficient) and their school's power. Protection pierce, flat and in
   percent, is gone too (Matěj, 2026-10-14: mainly a PvP stat; RLM-159 rejected, RLM-170).
 - **Stamina** (`realmforge:stamina`, points, RLM-170 and RLM-171; Matěj, 2026-10-14: "how quickly a player will
   exhaust (= hunger drain) from sprinting, fighting, etc."): each point lowers the food exhaustion the player gains by
@@ -634,6 +636,7 @@ would remove both bonuses.
 | race and class | `stats/CharacterStats`, from `character`'s `StatSource` (`character/CharacterBonuses`): each modifier's amount, the same at every level | `realmforge:race/<namespace>/<n>/<path>`, `realmforge:class/<namespace>/<n>/<path>` for the race or class `<namespace>:<path>` | saved, recomputed |
 | spent stat points | `stats/CharacterStats`, from `character`'s `StatSource` (`character/StatPoints`, [10.2](#102-leveling)): one modifier per primary stat with points, adding them | `realmforge:stat_points/<namespace>/<path>` for the stat `<namespace>:<path>` | saved, recomputed |
 | talents | `stats/CharacterStats`, from `talent`'s provider | `realmforge:talent/<tree>/<node>/<n>` | saved, recomputed |
+| passive spells (RLM-541) | `stats/CharacterStats`, from `spell`'s `StatSource` (`spell/Passives`): each known passive spell's modifiers at its rank, while its weapon condition holds | `realmforge:spell/<namespace>/<n>/<path>` for the passive spell `<namespace>:<path>` | saved, recomputed |
 | derived from primary stats | `stats/CharacterStats`, from stat rules ([8.3](#83-derived-stats-and-milestones)) | `realmforge:stat/<rule namespace>/<entry>/<rule path>`: `<entry>` is `<n>` per point, `at_<points>_<n>` per milestone; the rule's path comes last, as only it may contain slashes | saved, recomputed |
 | gear with fixed stats | vanilla, from the item's attribute modifiers ([13](#13-items-gear-and-loot)) | `realmforge:gear/<slot>/<n>` (generated: `<slot>` is `mainhand` or the armor slot); a wand's attack damage and speed use vanilla's base ids (`Item.BASE_ATTACK_DAMAGE_ID`, `BASE_ATTACK_SPEED_ID`), as vanilla's weapons, so the tooltip shows them as its base numbers | while equipped |
 | affixes and gems (M1) | vanilla slots: `ItemAttributeModifierEvent` adds them to the stack's modifiers; curio slots (rings, trinkets): Curios' own modifier API, because Curios ignores vanilla equipment modifiers in its slots (*verify* in M1) | `realmforge:affix/<affix>/<slot>/<k>/<n>`: `<k>` counts repeats of the same affix or gem on one stack (two sockets with the same gem), and curio slots use their slot id and index as `<slot>` | while equipped |
@@ -699,7 +702,8 @@ A GameTest player (`QaPlayers#loginOnPlatform`) is never ticked by its connectio
   - **Vitality:** +1 max health and +0.2 health regeneration per point (Matěj, 2026-10-15), and +1 % armor (melee),
     +1 % magic shield (casters) or +1 % dodge chance (ranged); at 10 +10 Stamina and +10 % health regeneration; at
     25 +10 % max health and +20 % spell resistance.
-  - **Intellect:** +2 % spell power, +2 % cast time reduction and +1 mana regeneration per point; at 10 +100 max mana
+  - **Intellect:** +0.5 Spell Power (points since RLM-534; it was +2 %), +2 % cast time reduction and +1 mana
+    regeneration per point; at 10 +100 max mana
     and +5 mana regeneration; at 25 +25 % cooldown reduction.
 - `stats/StatRules` is the pure part: the modifiers a stat value gives a role. The pipeline computes the same
   (`StatRuleDef.bonuses_at`), and a GameTest compares the two at sample values, for a player without a character
@@ -750,7 +754,8 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
 `combat/DamageCalculator` (JUnit). Logical server only.
 
 1. **Spell schools.** A school (`realmforge:spell_school`, `content/spell_schools/`, owned by `combat`) is a kind of
-   damage: `physical` (armor reduces it, it can be dodged) or `magic` (bypasses armor, spell power raises it). Each
+   damage: `physical` (armor reduces it, it can be dodged) or `magic` (bypasses armor; its spells scale with Spell
+   Power, through their coefficient, [11.1](#111-model)). Each
    school is a vanilla damage type `realmforge:<school>` (death messages `death.attack.realmforge.<school>` keep
    working), in `#minecraft:bypasses_cooldown` and `#minecraft:no_knockback`; magic schools are also in
    `#minecraft:bypasses_armor`. **School hits carry no knockback** (RLM-214): vanilla pushes a target away from the
@@ -785,13 +790,18 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
    - **A ranged crit:** a projectile hit marked in step 2 crits on its shooter's crit chance and deals 1 + crit
      damage (150 % by default, as for melee and spells; Matěj, 2026-10-19), through `setAmount`, with the crit combat
      text.
-   - **A school hit** gets the attacker side, damage × (1 + spell power, for magic only, + the school's power stat),
-     then the crit roll (crit chance and crit damage, as in melee, or the spell's crit rule: no crit at all, a bonus
+   - **A school hit** gets the attacker side, damage × (1 + the school's power stat + the hit's passives), then the
+     crit roll (crit chance and crit damage, as in melee, or the spell's crit rule: no crit at all, a bonus
      chance, its own multiplier; Matěj, 2026-10-15), then the defender's resistance: × (1 −
      resistance), through `setAmount`. The resistance is the defender's resistance to the school, plus its spell
      resistance when the school is magic, at most 75 % together (`DamageCalculator.RESISTANCE_CAP`, research BM-18);
      a physical school hit meets no spell resistance. A spell's damage effect may carry spell penetration (C4,
      Arcane Missiles): the hit ignores that share of the capped resistance (`DamageCalculator#penetrated`).
+     **Spell Power is no multiplier here** (scaling system C, Matěj, 2026-10-30, RLM-534): a spell adds its
+     coefficient of the caster's Spell Power to its damage before the hit ([11.1](#111-model)), so a raw school hit
+     (`/damage`, a trap) gets none. The hit's passives are the share its caster's passive spells add to it (RLM-541:
+     Improved Frostbolt), carried on its `HitBonus` with the armor shred and penetration; a passive spell's crit chance
+     against the target (Shatter on a Frozen one) is in the hit's crit rule already.
    - **Crit overflow** (C4, RLM-392): a crit chance above 100 % (Reckless Strike's bonus can take it there) turns
      into crit damage 1:1, every 1 % above 100 % adding 1 % crit damage (`DamageCalculator#critMultiplier`), for
      melee, ranged and school hits alike. Talents act through those attributes or are already part of
@@ -984,7 +994,9 @@ does**, in step 3 of the pipeline ([9.1](#91-damage-pipeline)), after the dodge:
   full.
 
 The numbers are in the common config (`combat/CombatConfig`, [19.2](#192-configuration)) for Matěj to tune in
-playtests: the full block 0.5 s, the share 50 %, the cooldown 1 s, the arc 180° (the front half). Apotheosis's shield
+playtests: the full block 0.5 s, the share 50 %, the cooldown 1 s, the arc 180° (the front half). A player's passive
+spells may shorten the cooldown (RLM-541: Two-Handed Weapon Specialization's 0.25 s at rank 3): `spell` hands
+`WeaponBlocks#cooldownTicks` the reduction through a provider (`cooldownReductionBy`), never below 0. Apotheosis's shield
 affixes (Retreating, Psychic, ...) neither roll on these weapons, which are no shields, nor fire on their blocks: they
 listen to `LivingShieldBlockEvent`, which only vanilla's shield-style blocking (`minecraft:blocks_attacks`) posts.
 
@@ -1002,7 +1014,9 @@ without this binding, and posts no `DefaultDataComponentsBoundEvent` on the clie
 own set of tags; the tag's list of items, which the core mod's data replaces with an empty one (Sword Blocking
 Mechanics' default is every sword), stays empty. The server logs the raised weapons when it starts. The pack has no two-handed weapon yet but the spears; the QA mod's
 `realmforge_qa:test_greatsword` is one (Better Combat's fallback reads it as a claymore). A Better Combat preset set
-on a single stack does not count, since the tag is per item.
+on a single stack does not count, since the tag is per item. The same binding fills `#realmforge:two_handed_weapons`
+with every weapon Better Combat calls two-handed, spears included (RLM-541): Two-Handed Weapon Specialization applies
+while one is in the main hand. It is not `#realmforge:two_handed`, our two-handed gear (wands), which locks shields.
 
 `WeaponBlocksTest` covers the amounts and the arc; `WeaponBlockGameTests` raises the test greatsword at a zombie's
 hits: in full within 0.5 s, half after it, the cooldown after a block and after lowering it by hand, no block from
@@ -1278,9 +1292,38 @@ Its name and description are translation keys from C3b, the description's number
 
 - **What it scales with** (Matěj, 2026-10-15): spell power for magic, attack damage for physical abilities (a
   Warrior's Slam is a weapon move), later summon damage. Off-class stats do nothing for a class's abilities, so the
-  pipeline refuses a spell whose `scales_with` does not fit its school's kind. A magic school's damage gets spell
-  power and the school's power in the damage pipeline ([9.1](#91-damage-pipeline)); its heals get the same factor
-  from the spell engine. A physical ability's damage and heals add their share of the caster's attack damage.
+  pipeline refuses a spell whose `scales_with` does not fit its school's kind.
+- **How it scales: system C** (Matěj, 2026-10-30, RLM-534; the "Realmforge – Spell Trees to Level 18" proposal).
+  Damage = (Base(rank) + Coefficient(rank) × Power) × (1 + School Power + passives) × crit, where Power is the
+  caster's Spell Power (points) for a magic spell and Attack Damage for a physical one. Each damage and heal effect
+  names its amount and its coefficient per rank (`spell_power_percent` or `attack_damage_percent`, each with a
+  per-level growth; `spell/Coefficient`), and the spell engine adds the coefficient to the amount
+  (`spell/SpellScaling#base`) before the hit; the damage pipeline multiplies only by the school's power and the
+  passives ([9.1](#91-damage-pipeline)). A magic heal gets × (1 + the school's power) in the engine. Effects over time
+  add their own share of Spell Power per tick ([11.4](#114-status-effects)). Spell Power is points with flat and
+  percent modifiers, total = flat × (1 + percents) ([8.2](#82-where-modifiers-come-from)): wands give 1 to 5, the robe
+  sets 2 to 6, Intellect 0.5 a point. **Coefficient rules**, so Frostbolt and Slam stay the main damage spells: a
+  single-target cast has the highest coefficient per cast (Frostbolt 100 to 200 %); an instant spell with a
+  cooldown less per cast; an area spell about a third of a single-target spell per target; damage over time and
+  channels split theirs over the ticks (Arcane Missiles 35 to 65 % a missile, Burning 3 % a tick). The aim: about 20
+  offensive casts for a boss and 1 or 2 for a normal mob at every level. Mobs have no Spell Power, so their spells
+  deal their amounts (their damage grows with their level instead, [14.1](#141-mob-levels)).
+- **Passive spells** (RLM-541; Matěj: "passive spells are spells"): a spell with a `passive` (`spell/Passive`) is
+  learned with ranks like any other but never cast (`CastFailure.PASSIVE`) and never on the spell bar (learning one
+  places nothing, and `Spells#placeOnBar` refuses it); its data names no targeting, cast or effects (the pipeline
+  writes the defaults). While its player knows it, at its rank, and while the main hand holds an item of its
+  `while_wielding` tag if it names one, `spell/Passives` gives: its attribute modifiers, through a `StatSource` like
+  race and class ([8.2](#82-where-modifiers-come-from)), recomputed when a spell is learned and when the held item
+  changes; more damage for named spells (`spell_damage`), added to their hits' passives layer through the hit's
+  `HitBonus`; more crit chance for the player's spell hits on a target with a status effect (`crit_chance`, Shatter
+  against Frozen), added to the hit's crit rule; and a two-handed block's cooldown shorter from a rank on
+  (`block_cooldown`, [9.3](#93-blocking-with-two-handed-weapons)). The spellbook lists it with its rank and "Passive";
+  its tooltip shows the rank's description and the next rank's (`SpellTooltip#passiveLines`), and an active spell's
+  damage number counts the player's passives. Mobs know no spells, so passives give them nothing. Procs (Frostbite,
+  Taste for Blood, Deep Wounds) come with the windows-and-procs ticket and will live in a passive spell. The first are
+  Improved Frostbolt, Shatter and Two-Handed Weapon Specialization (Attack Damage +4/8/12 % with
+  `#realmforge:two_handed_weapons` in hand, as the Human's Sword Specialization gives its +10 %), which the M1 spell
+  trees teach (RLM-542, RLM-543); `/qa spell learn` does until then.
 - **Knockback:** a spell's damage is school damage, which never knocks back ([9.1](#91-damage-pipeline), RLM-214);
   a spell pushes its target only through a `realmforge:knockback` effect (C3a-3).
 - **Crits** (Matěj, 2026-10-15): every spell can crit, heals too, on the caster's crit chance for 1 + the caster's
@@ -1577,10 +1620,11 @@ sooner than it ticks would keep it from ticking at all: validation refuses an in
 (RLM-376); an equal one loses only the partial interval, as in Classic. Cast Time Reduction shortens a channel's
 interval, and validation cannot see it, so a hasted channel that applies such an effect at every interval still keeps
 it from ticking.
-`effect/EffectTicks` deals a tick as a hit of the school from the effect's caster, so the damage pipeline raises it by
-the caster's spell power (a magic school) and school power as they are when it ticks, the target's resistance lowers
-it, a kill counts for the caster and the caster sees its numbers; ticks never crit (`CritRule.NONE`) and never knock
-back. Healing ticks are raised the same way. Once the caster is gone (dead, logged out, in another dimension) the
+`effect/EffectTicks` deals a tick as a hit of the school from the effect's caster: its amount plus its share of the
+caster's Spell Power (`spell_power_percent` on the effect's `periodic`, system C, RLM-534; Burning's 3 % a tick), each
+amplifier level adding that again, which the damage pipeline raises by the caster's school power, both as they are when
+it ticks; the target's resistance lowers it, a kill counts for the caster and the caster sees its numbers; ticks never
+crit (`CritRule.NONE`) and never knock back. Healing ticks are raised the same way. Once the caster is gone (dead, logged out, in another dimension) the
 ticks go on at the bare amount. `apply_effect` applies an effect through `effect/Effects#apply`, which records its
 `effect/EffectSource` (the caster's UUID, the spell's id, the proc origin) in the holder's `realmforge:effect_sources`
 attachment; the latest application decides, so the same effect from a potion or a command forgets the source, and the
@@ -1604,7 +1648,9 @@ for every rank above 1 (at most a minute) and `stronger_at_levels` lists the ran
 (Frostbolt's Slowness II at rank 5). An effect's modifier may grow by a fixed step per amplifier level instead of
 vanilla's multiplying by the level (`per_amplifier`, NeoForge's attribute curve: Battle Shout's 10, 15 and 20 %).
 `realmforge:cleanse` (`spell/CleanseEffect`, Will To Survive) removes every harmful effect from the caster or an ally,
-a stun included.
+a stun included. **Frozen** (`realmforge:frozen`, RLM-541) is a root: -100 % movement speed and jump strength, but no
+`stun`, so its holder still attacks and casts; Shatter's crit chance reads it, and the Frost Mage's tree (RLM-542)
+applies it.
 
 ### 11.5 Resources, cooldowns, modifiers
 
@@ -1827,7 +1873,9 @@ the instant Warrior spells (below) comes with their animations (RLM-399, in C6, 
 to a single target. Damage labels (Low, Medium, High) compare a spell with the other spells; they are not numbers.
 
 - **Ranks:** every specialization's first spell has max rank 5 (its maximum level, [11.1](#111-model)). A rank
-  raises the spell's damage and its effect. **Cooldowns don't shrink with rank:** a spell gets a lower base cooldown
+  raises the spell's damage (its base and, since RLM-534, its coefficient of the caster's power: Frostbolt
+  8/9/10/11/12 + 100/125/150/175/200 % of Spell Power, Slam 4/5.5/7/8.5/10 + 120/140/160/180/200 % of Attack Damage,
+  system C in [11.1](#111-model)) and its effect. **Cooldowns don't shrink with rank:** a spell gets a lower base cooldown
   instead of a high one that shrinks later, since Cooldown Reduction lowers it as the player progresses
   ([11.5](#115-resources-cooldowns-modifiers)).
 - **Who is limited by what:** the Warrior's spells are instant with longer cooldowns; the Mage's main spells are

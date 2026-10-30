@@ -43,9 +43,10 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *   <li>{@code LivingIncomingDamageEvent}: a dodge cancels the hit (melee, projectiles and physical school hits; never
  *   magic, explosions or the world); then a raised two-handed weapon blocks it in full or in part
  *   ({@link WeaponBlocks}), before armor and resistances. A marked projectile's hit crits on its shooter's crit
- *   chance and deals 1 + crit damage. A school hit gets spell power (magic), the school's power, a crit roll (by the
- *   spell's {@link CritRule} when a {@link SchoolDamageSource} brings one) and the defender's resistance (spell
- *   resistance added for magic), less the hit's spell penetration ({@link HitBonus}). The armor reduction becomes
+ *   chance and deals 1 + crit damage. A school hit gets the school's power and its spell's passives ({@link HitBonus}; the
+ *   caster's Spell Power is already in a spell's damage, RLM-534), a crit roll (by the spell's {@link CritRule} when a
+ *   {@link SchoolDamageSource} brings one) and the defender's resistance (spell resistance added for magic), less the
+ *   hit's spell penetration. The armor reduction becomes
  *   vanilla's formula on the armor the attacker's armor pierce and shred leave (a spell's hit adding its own shred),
  *   except for damage in {@code #minecraft:bypasses_armor}. The defender's magic shield joins the absorption
  *   reduction ({@link MagicShields}).</li>
@@ -318,17 +319,17 @@ public final class DamagePipeline {
     private static void schoolHit(LivingIncomingDamageEvent event, ServerLevel level, LivingEntity defender,
             DamageSource source, Holder.Reference<SpellSchool> holder) {
         SpellSchool school = holder.value();
+        HitBonus bonus = SchoolDamageSource.bonusOf(source);
         DamageCalculator.Attacker attacker = source.getEntity() instanceof LivingEntity living
                 ? new DamageCalculator.Attacker(stat(living, GeneratedStats.CRIT_CHANCE),
-                        stat(living, GeneratedStats.CRIT_DAMAGE), stat(living, GeneratedStats.SPELL_POWER),
-                        school.power().map(power -> stat(living, power)).orElse(0.0))
-                : DamageCalculator.Attacker.NONE;
+                        stat(living, GeneratedStats.CRIT_DAMAGE),
+                        school.power().map(power -> stat(living, power)).orElse(0.0) + bonus.damage())
+                : new DamageCalculator.Attacker(0, 0, bonus.damage());
         double schoolResistance = school.resistance().map(stat -> stat(defender, stat)).orElse(0.0);
         double resistance = DamageCalculator.penetrated(DamageCalculator.resistance(schoolResistance,
-                stat(defender, GeneratedStats.SPELL_RESISTANCE), school.magic()),
-                SchoolDamageSource.bonusOf(source).penetration());
-        DamageCalculator.SchoolHit hit = DamageCalculator.schoolHit(event.getAmount(), school.magic(), attacker,
-                resistance, SchoolDamageSource.critOf(source), level.getRandom());
+                stat(defender, GeneratedStats.SPELL_RESISTANCE), school.magic()), bonus.penetration());
+        DamageCalculator.SchoolHit hit = DamageCalculator.schoolHit(event.getAmount(), attacker, resistance,
+                SchoolDamageSource.critOf(source), level.getRandom());
         event.setAmount((float) hit.damage());
         // Keep the defender's window: the hit sets the invulnerable time to this (vanilla refuses 0, and 1 opens no
         // window), and Post restores the lastHurt vanilla overwrites.

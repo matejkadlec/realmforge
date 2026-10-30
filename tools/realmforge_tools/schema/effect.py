@@ -70,13 +70,24 @@ class EffectModifierDef(CharacterModifierDef):
 
 class PeriodicDef(StrictModel):
     """Damage or healing of a spell school at the end of every interval while the effect lasts (damage or healing
-    over time). Each amplifier level adds the amount again, and the caster's stats raise it as they would the
-    school's hit or heal: spell power for a magic school, and the school's power. Ticks never crit."""
+    over time). One tick is (amount + its share of the caster's Spell Power) times (1 + the school's power), scaling
+    system C (RLM-534): a damage over time splits its spell's coefficient over its ticks. Each amplifier level adds the
+    tick again. The caster's stats count as each tick lands. Ticks never crit."""
 
     type: Literal["damage", "heal"] = Field(description="damage: a hit of the school; heal: healing.")
     school: ResourceId = Field(description="The spell school, e.g. realmforge:fire.")
     amount: Positive = Field(description="Damage or healing of one tick at the first level (amplifier 0).")
+    spell_power_percent: Annotated[float, Field(gt=0, le=1000, allow_inf_nan=False)] | None = Field(
+        default=None,
+        description="Share of the caster's Spell Power (points) one tick adds at the first level, in percent (a magic "
+        "school only). Without it, Spell Power adds nothing.",
+    )
     interval_seconds: Seconds = Field(description="The time between two ticks, from 0.25 to 10 s.")
+
+    @property
+    def spell_power_fraction(self) -> float:
+        """The share of Spell Power a tick adds, as a fraction; 0 without any."""
+        return (self.spell_power_percent or 0) / 100
 
     @model_validator(mode="after")
     def _interval(self) -> PeriodicDef:

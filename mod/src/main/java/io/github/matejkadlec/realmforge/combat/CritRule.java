@@ -60,6 +60,17 @@ public record CritRule(boolean canCrit, Optional<Double> multiplier, double bonu
         return new CritRule(canCrit, multiplier, Math.min(1, bonusChance + bonusChancePerLevel * (level - 1)), 0);
     }
 
+    /**
+     * This rule with {@code extra} crit chance added to its bonus, at most 1 in all (a passive spell's against a target,
+     * RLM-541: Shatter). A rule that cannot crit stays as it is.
+     */
+    public CritRule withBonusChance(double extra) {
+        if (!canCrit || extra <= 0) {
+            return this;
+        }
+        return new CritRule(true, multiplier, Math.min(1, bonusChance + extra), bonusChancePerLevel);
+    }
+
     /** The chance to crit for a caster with {@code critChance}; 0 when the rule cannot crit. */
     public double chance(double critChance) {
         return canCrit ? critChance + bonusChance : 0;

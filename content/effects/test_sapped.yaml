@@ -7,4 +7,4 @@ category: harmful
 color: "#8F8FA0"
 modifiers:
   - {attribute: minecraft:movement_speed, operation: add_multiplied_total, amount_percent: -20}
-  - {attribute: realmforge:spell_power, operation: add_value, amount_percent: -10}
+  - {attribute: realmforge:spell_power, operation: add_value, amount: -1}

@@ -1,6 +1,8 @@
 package io.github.matejkadlec.realmforge.spell;
 
 import io.github.matejkadlec.realmforge.combat.CombatEvent;
+import io.github.matejkadlec.realmforge.combat.WeaponBlocks;
+import io.github.matejkadlec.realmforge.stats.CharacterStats;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
@@ -9,7 +11,10 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 import net.neoforged.neoforge.registries.NewRegistryEvent;
 
-/** Spells, effect and targeting types, casting, cooldowns, resources, procs and spell entities (architecture 11). */
+/**
+ * Spells, effect and targeting types, casting, cooldowns, resources, procs, passive spells and spell entities
+ * (architecture 11).
+ */
 public final class SpellFeature {
     private SpellFeature() {
     }
@@ -23,6 +28,8 @@ public final class SpellFeature {
         TargetingTypes.register(modBus);
         SpellEntities.register(modBus);
         SpellAttachments.register(modBus);
+        CharacterStats.addSource(Passives.SOURCE);
+        WeaponBlocks.cooldownReductionBy(Passives::blockCooldownReductionTicks);
         Casting.register();
         AimAssist.register();
         TargetHighlight.register();

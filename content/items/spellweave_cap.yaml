@@ -3,6 +3,7 @@
 # No armor: robes protect with Magic Shield, as much as the same tier's vanilla piece has armor, and give Spell
 # Power and Max Mana (Matěj, 2026-10-15). Durability and enchantability
 # as vanilla's iron armor. The generated placeholder textures until A1's art.
+# The set's Spell Power is flat points (Matěj, 2026-10-30, RLM-534), split over its pieces like its Magic Shield.
 id: spellweave_cap
 name:
   en_us: Spellweave Cap
@@ -17,7 +18,7 @@ gear:
   look: spellweave
   modifiers:
     - {attribute: realmforge:magic_shield, operation: add_value, amount: 2}
-    - {attribute: realmforge:spell_power, operation: add_value, amount_percent: 4}
+    - {attribute: realmforge:spell_power, operation: add_value, amount: 0.5}
     - {attribute: realmforge:max_mana, operation: add_value, amount: 15}
 recipe:
   pattern: ['XXX', 'X X']

@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.function.ToIntFunction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -55,6 +56,11 @@ public final class WeaponBlocks {
     private static final Map<Player, Integer> RAISE_DURATION = new WeakHashMap<>();
     /** The players whose weapon goes down at the end of this server tick, after a blocked hit. */
     private static final Set<Player> TO_LOWER = Collections.newSetFromMap(new WeakHashMap<>());
+    /**
+     * How many ticks shorter a player's cooldown is: {@code spell}'s passive spells (RLM-541: Two-Handed Weapon
+     * Specialization's 0.25 s at rank 3), handed over at mod construction (architecture 4.4).
+     */
+    private static ToIntFunction<Player> cooldownReduction = player -> 0;
 
     private WeaponBlocks() {
     }
@@ -95,7 +101,7 @@ public final class WeaponBlocks {
             return false;
         }
         float left = rules.blocked(event.getAmount(), raisedTicks(player));
-        player.getCooldowns().addCooldown(player.getUseItem(), rules.cooldownTicks());
+        player.getCooldowns().addCooldown(player.getUseItem(), cooldownTicks(player, rules));
         TO_LOWER.add(player);
         level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SHIELD_BLOCK,
                 player.getSoundSource(), 1.0F, 0.8F + level.getRandom().nextFloat() * 0.4F);
@@ -193,6 +199,16 @@ public final class WeaponBlocks {
     }
 
     private static void cooldown(Player player, ItemStack weapon) {
-        player.getCooldowns().addCooldown(weapon, CombatConfig.blockingRules().cooldownTicks());
+        player.getCooldowns().addCooldown(weapon, cooldownTicks(player, CombatConfig.blockingRules()));
+    }
+
+    /** Sets where a player's shorter cooldown comes from. Called once at mod construction. */
+    public static void cooldownReductionBy(ToIntFunction<Player> source) {
+        cooldownReduction = source;
+    }
+
+    /** The player's cooldown after a block or after lowering the weapon: the rules', less its reduction, at least 0. */
+    public static int cooldownTicks(Player player, Rules rules) {
+        return Math.max(0, rules.cooldownTicks() - cooldownReduction.applyAsInt(player));
     }
 }

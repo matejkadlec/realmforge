@@ -1,0 +1,35 @@
+{
+  "name": "spell.realmforge.improved_frostbolt.name",
+  "description": "spell.realmforge.improved_frostbolt.description",
+  "school": "realmforge:frost",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:self"
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 10,
+  "max_level": 3,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
+  "effects": [],
+  "passive": {
+    "modifiers": [],
+    "spell_damage": [
+      {
+        "spells": [
+          "realmforge:frostbolt"
+        ],
+        "damage": 0.05,
+        "damage_per_level": 0.05
+      }
+    ]
+  }
+}

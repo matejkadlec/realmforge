@@ -2,8 +2,10 @@
 # The Mage's first spell (C4; Frost's first spell, RLM-391; decision D4's starting spell "a Frostbolt-like fast
 # single-target cast that slows"): a 1.5 s cast at every rank, no cooldown, so only the cast time limits it. Medium damage
 # and Slowness for 3 s, 0.5 s longer per rank, Slowness II from rank 5. The bolt forms in the hands during the cast and
-# flies where the crosshair points (RLM-344), homing on an enemy near it (RLM-345). First balance pass (C4): about 11.6
-# damage per cast at level 1 (Stone Wand and Apprentice's set, +29 % spell power), 7.7 a second.
+# flies where the crosshair points (RLM-344), homing on an enemy near it (RLM-345). Scaling system C (Matěj,
+# 2026-10-30, RLM-534): 8/9/10/11/12 + 100/125/150/175/200 % of Spell Power, the highest coefficient per cast (a
+# single-target cast with no cooldown). A level 1 Mage (Stone Wand 2, Apprentice's set 2, Intellect 6 × 0.5) has 7
+# Spell Power: 15 damage a cast.
 id: frostbolt
 name: {en_us: Frostbolt}
 description: {en_us: "Hurls a bolt of frost for {damage} damage that slows the target for {duration} sec."}
@@ -20,7 +22,11 @@ effects:
     impact: {sound: minecraft:block.glass.break, particles: minecraft:packed_ice}
     appearance: {model: orb, color: "#7FD4FF"}
     effects:
-      - {type: realmforge:damage, amount: 9, per_level: 2}
+      - type: realmforge:damage
+        amount: 8
+        per_level: 1
+        spell_power_percent: 100
+        spell_power_per_level_percent: 25
       - type: realmforge:apply_effect
         effect: minecraft:slowness
         duration_seconds: 3

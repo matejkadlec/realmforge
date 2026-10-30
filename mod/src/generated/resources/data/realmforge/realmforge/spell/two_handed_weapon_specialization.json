@@ -1,0 +1,38 @@
+{
+  "name": "spell.realmforge.two_handed_weapon_specialization.name",
+  "description": "spell.realmforge.two_handed_weapon_specialization.description",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:self"
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 10,
+  "max_level": 3,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
+  "effects": [],
+  "passive": {
+    "while_wielding": "realmforge:two_handed_weapons",
+    "modifiers": [
+      {
+        "attribute": "minecraft:attack_damage",
+        "operation": "add_multiplied_base",
+        "amount": 0.04,
+        "per_level": 0.04
+      }
+    ],
+    "spell_damage": [],
+    "block_cooldown": {
+      "reduction_ticks": 5,
+      "from_level": 3
+    }
+  }
+}

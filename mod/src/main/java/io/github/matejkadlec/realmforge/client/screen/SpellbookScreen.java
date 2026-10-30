@@ -6,6 +6,7 @@ import io.github.matejkadlec.realmforge.client.hud.SpellBarLayout;
 import io.github.matejkadlec.realmforge.client.hud.SpellSlots;
 import io.github.matejkadlec.realmforge.client.input.SpellKeys;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
+import io.github.matejkadlec.realmforge.spell.Passives;
 import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.SpellAttachments;
 import io.github.matejkadlec.realmforge.spell.SpellBarView;
@@ -42,9 +43,10 @@ import org.lwjgl.glfw.GLFW;
  * player knows, and each spell's tooltip with live numbers ({@link SpellTooltip}). A click on a known spell, then on a
  * bar slot, puts it there ({@code SetSpellBarSlotPayload}); a click on a slot's spell picks it up to move it, and
  * dropping it on another spell swaps them; a right click empties a slot. The racial slot is the race's (C4), so it
- * only shows. The gear button top right, level with the title (RLM-497; Matěj, 2026-10-29: an icon instead of the
- * word), opens the Realmforge config screen ({@link RealmforgeConfigScreen}), "Options" in its tooltip. The panel is
- * drawn as the background, under the button, so the button shows at full brightness.
+ * only shows. A passive spell (RLM-541) is listed with its rank and "Passive" and never goes onto the bar; its tooltip
+ * shows its rank and the next one. The gear button top right, level with the title (RLM-497; Matěj, 2026-10-29: an
+ * icon instead of the word), opens the Realmforge config screen ({@link RealmforgeConfigScreen}), "Options" in its
+ * tooltip. The panel is drawn as the background, under the button, so the button shows at full brightness.
  */
 public final class SpellbookScreen extends Screen {
     private static final int PANEL_WIDTH = 236;
@@ -129,8 +131,11 @@ public final class SpellbookScreen extends Screen {
         int row = rowAt(event.x(), event.y());
         if (row >= 0 && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             ResourceKey<Spell> spell = known().get(row).getKey();
-            selected = spell.equals(selected) ? null : spell;
-            click();
+            // A passive spell (RLM-541) is never cast, so it never goes onto the bar.
+            if (!passive(player, spell)) {
+                selected = spell.equals(selected) ? null : spell;
+                click();
+            }
             return true;
         }
         return super.mouseClicked(event, doubleClick);
@@ -194,6 +199,10 @@ public final class SpellbookScreen extends Screen {
                     Component.translatable(value.name()), entry.getValue())
                     : Component.translatable(value.name())).orElse(Component.literal(entry.getKey().identifier()
                     .toString()));
+            if (spell.map(Spell::isPassive).orElse(false)) {
+                name = name.copy().append(Component.literal(" ")).append(Component.translatable(
+                        GeneratedTexts.SPELL_TOOLTIP_PASSIVE).withStyle(ChatFormatting.GRAY));
+            }
             graphics.text(font, name, x + PADDING + LIST_SLOT + 6, rowY + 5, HEADING);
         }
 
@@ -224,7 +233,8 @@ public final class SpellbookScreen extends Screen {
         spell.flatMap(key -> Spells.get(player.registryAccess(), key)).ifPresent(holder -> {
             List<FormattedCharSequence> lines = new ArrayList<>();
             for (Component line : SpellTooltip.lines(holder.value(), Math.min(spellLevel, holder.value().maxLevel()),
-                    SpellText.statsOf(player), SpellText.schoolsOf(player.registryAccess()))) {
+                    SpellText.statsOf(player), SpellText.schoolsOf(player.registryAccess()),
+                    Passives.damageBonus(player, holder.key()))) {
                 lines.addAll(font.split(line, TOOLTIP_WIDTH));
             }
             graphics.setTooltipForNextFrame(lines, mouseX, mouseY);
@@ -243,6 +253,10 @@ public final class SpellbookScreen extends Screen {
                         .map(holder -> !holder.value().npcOnly()).orElse(false))
                 .sorted(Comparator.comparing(entry -> name(entry.getKey())))
                 .toList();
+    }
+
+    private static boolean passive(LocalPlayer player, ResourceKey<Spell> key) {
+        return Spells.get(player.registryAccess(), key).map(holder -> holder.value().isPassive()).orElse(false);
     }
 
     private String name(ResourceKey<Spell> key) {

@@ -60,6 +60,7 @@ def test_repository_effects_are_the_engine_tests() -> None:
         "battle_shout",
         "burning",
         "cracked_stone",
+        "frozen",
         "ice_barrier",
         "stunned",
         "test_burning",
@@ -142,18 +143,31 @@ def test_the_school_must_exist(repo: RepoPaths) -> None:
     assert_problem(repo, "periodic.school: unknown id 'realmforge:ice'")
 
 
+def test_only_magic_ticks_add_spell_power(repo: RepoPaths) -> None:
+    effect(
+        repo,
+        "bleeding",
+        "category: harmful\ncolor: '#AA0000'\n"
+        "periodic: {type: damage, school: realmforge:physical, amount: 1, spell_power_percent: 5, "
+        "interval_seconds: 0.5}\n",
+    )
+    assert_problem(
+        repo, "periodic.spell_power_percent: realmforge:physical is a physical school, and only magic scales"
+    )
+
+
 def test_modifiers_name_attributes_in_their_unit(repo: RepoPaths) -> None:
     effect(
         repo,
         "frostbite",
         "category: harmful\ncolor: '#7FBFFF'\nmodifiers:\n"
         "  - {attribute: minecraft:speediness, operation: add_value, amount: 1}\n"
-        "  - {attribute: realmforge:spell_power, operation: add_value, amount: 0.1}\n"
+        "  - {attribute: realmforge:crit_chance, operation: add_value, amount: 0.1}\n"
         "  - {attribute: realmforge:strength, operation: add_value, amount_percent: 10}\n",
     )
     problems = problems_for(repo)
     assert any("modifiers.0.attribute: unknown id 'minecraft:speediness'" in p for p in problems), problems
-    assert any("realmforge:spell_power is a share: write the amount as amount_percent" in p for p in problems)
+    assert any("realmforge:crit_chance is a share: write the amount as amount_percent" in p for p in problems)
     assert any("realmforge:strength counts points: add_value takes amount" in p for p in problems)
 
 
@@ -172,7 +186,7 @@ def test_registrations(repo: RepoPaths) -> None:
     assert (
         "    public static final DeferredHolder<MobEffect, MobEffect> TEST_BURNING =\n"
         '            EFFECTS.register("test_burning", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0xFF7F1F,\n'
-        '                    Optional.of(Periodic.damage("realmforge:fire", 2.0, 20))));\n'
+        '                    Optional.of(Periodic.damage("realmforge:fire", 2.0, 0.1, 20))));\n'
     ) in java
     assert (
         '                    .modifier("minecraft:movement_speed", '
@@ -180,7 +194,7 @@ def test_registrations(repo: RepoPaths) -> None:
         "AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)\n"
     ) in java
     assert (
-        "ALL = List.of(BATTLE_SHOUT, BURNING, CRACKED_STONE, ICE_BARRIER, STUNNED, TEST_BURNING, TEST_REGROWTH, "
+        "ALL = List.of(BATTLE_SHOUT, BURNING, CRACKED_STONE, FROZEN, ICE_BARRIER, STUNNED, TEST_BURNING, TEST_REGROWTH, "
         "TEST_SAPPED);"
     ) in java
 
@@ -210,12 +224,12 @@ def test_expectations(repo: RepoPaths) -> None:
         '                    "beneficial",\n'
         "                    0x4FCF6F,\n"
         "                    List.of(),\n"
-        '                    Optional.of(new PeriodicExpectation("heal", "realmforge:arcane", 2.0, 20)),\n'
+        '                    Optional.of(new PeriodicExpectation("heal", "realmforge:arcane", 2.0, 0.1, 20)),\n'
         "                    false)"
     ) in expectations
     assert (
         'new ModifierExpectation("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", '
-        '-0.1, "add_value", -0.2)'
+        '-1.0, "add_value", -2.0)'
     ) in expectations
 
 
@@ -233,6 +247,7 @@ def test_no_effects_still_compile(repo: RepoPaths) -> None:
         "fireball",
         "ice_barrier",
         "shield_bash",
+        "shatter",
     ):
         (repo.content / "spells" / f"{name}.yaml").unlink()
     drop_class_kits(repo.content)

@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# The Frost Mage's passive of the M1 tree (Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1; RLM-541):
+# 10/20/30 % more crit chance for your spells against Frozen targets (Frost Nova and Frostbite freeze them, RLM-542).
+# Above 100 % in all it turns into crit damage, as every crit chance does (C4).
+id: shatter
+name: {en_us: Shatter}
+description: {en_us: "Your spells have {crit_chance}% more chance to crit against Frozen targets."}
+school: realmforge:frost
+max_level: 3
+passive:
+  crit_chance:
+    chance_percent: 10
+    chance_per_level_percent: 10
+    against: realmforge:frozen

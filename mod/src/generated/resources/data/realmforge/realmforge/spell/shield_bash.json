@@ -31,8 +31,9 @@
     {
       "amount": 1.0,
       "per_level": 0.5,
-      "type": "realmforge:damage",
-      "attack_damage": 0.6
+      "attack_damage": 0.6,
+      "attack_damage_per_level": 0.1,
+      "type": "realmforge:damage"
     },
     {
       "type": "realmforge:apply_effect",

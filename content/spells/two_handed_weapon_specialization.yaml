@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# The Arms Warrior's passive of the M1 tree (Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1; RLM-541):
+# +4/8/12 % damage while a two-handed weapon (realmforge:two_handed_weapons, Better Combat's two-handed weapons) is in
+# the main hand, as Attack Damage the way the Human's Sword Specialization gives it, so melee hits and the Warrior's
+# spells both grow; at rank 3 a two-handed block's cooldown is 0.25 s shorter (architecture 9.3). The tree that teaches
+# it is RLM-543's; until then /qa spell learn does.
+id: two_handed_weapon_specialization
+name: {en_us: Two-Handed Weapon Specialization}
+description:
+  en_us: >-
+    +{bonus}% damage with a two-handed weapon in your main hand. From rank {block_cooldown_rank}, its block cooldown is
+    {block_cooldown} sec shorter.
+max_level: 3
+passive:
+  while_wielding: realmforge:two_handed_weapons
+  modifiers:
+    - {attribute: minecraft:attack_damage, operation: add_multiplied_base, amount_percent: 4, per_level_percent: 4}
+  block_cooldown: {reduction_seconds: 0.25, from_level: 3}

@@ -4,7 +4,7 @@
     {
       "attribute": "realmforge:spell_power",
       "operation": "add_value",
-      "amount": 0.02
+      "amount": 0.5
     },
     {
       "attribute": "realmforge:cast_time_reduction",

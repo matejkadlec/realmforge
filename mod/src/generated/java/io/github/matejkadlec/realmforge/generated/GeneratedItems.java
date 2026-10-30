@@ -49,7 +49,7 @@ public final class GeneratedItems {
                             .build())
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/feet/0", 1.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/feet/1", 0.02, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/feet/1", 0.3, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/feet/2", 10.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
                             .build()));
 
@@ -66,7 +66,7 @@ public final class GeneratedItems {
                             .build())
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/head/0", 1.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/head/1", 0.02, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/head/1", 0.3, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/head/2", 10.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
                             .build()));
 
@@ -83,7 +83,7 @@ public final class GeneratedItems {
                             .build())
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/legs/0", 2.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/legs/1", 0.02, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/legs/1", 0.6, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/legs/2", 10.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
                             .build()));
 
@@ -100,7 +100,7 @@ public final class GeneratedItems {
                             .build())
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/chest/0", 3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/chest/1", 0.02, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/chest/1", 0.8, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/chest/2", 10.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
                             .build()));
 
@@ -125,7 +125,7 @@ public final class GeneratedItems {
                             .build())
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/head/0", 3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/head/1", 0.07, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/head/1", 0.7, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/head/2", 25.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/head/3", 0.03, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
                             .build()));
@@ -143,7 +143,7 @@ public final class GeneratedItems {
                             .build())
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/legs/0", 6.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/legs/1", 0.07, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/legs/1", 1.3, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/legs/2", 25.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/legs/3", 0.03, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
                             .build()));
@@ -161,7 +161,7 @@ public final class GeneratedItems {
                             .build())
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/chest/0", 8.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/chest/1", 0.07, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/chest/1", 1.8, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/chest/2", 25.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/chest/3", 0.03, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
                             .build()));
@@ -179,7 +179,7 @@ public final class GeneratedItems {
                             .build())
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/feet/0", 3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/feet/1", 0.07, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/feet/1", 0.7, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/feet/2", 25.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/feet/3", 0.03, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
                             .build()));
@@ -195,7 +195,7 @@ public final class GeneratedItems {
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, 1.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, -3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 0.15, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 2.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(attribute(context, "realmforge:cast_time_reduction"), modifier("realmforge:gear/mainhand/1", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .build()));
@@ -211,7 +211,7 @@ public final class GeneratedItems {
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, 3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, -3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 0.3, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 4.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(attribute(context, "realmforge:cast_time_reduction"), modifier("realmforge:gear/mainhand/1", 0.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .build()));
@@ -227,7 +227,7 @@ public final class GeneratedItems {
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, 2.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, -3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 0.2, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(attribute(context, "realmforge:cast_time_reduction"), modifier("realmforge:gear/mainhand/1", 0.08, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.08, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .build()));
@@ -249,7 +249,7 @@ public final class GeneratedItems {
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, 2.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, -3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 0.2, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(attribute(context, "realmforge:cast_time_reduction"), modifier("realmforge:gear/mainhand/1", 0.08, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.08, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .build()));
@@ -271,7 +271,7 @@ public final class GeneratedItems {
                             .build())
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/head/0", 3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/head/1", 0.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/head/1", 0.9, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/head/2", 40.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/head/3", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
                             .build()));
@@ -289,7 +289,7 @@ public final class GeneratedItems {
                             .build())
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/legs/0", 6.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/legs/1", 0.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/legs/1", 1.8, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/legs/2", 40.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/legs/3", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
                             .build()));
@@ -307,7 +307,7 @@ public final class GeneratedItems {
                             .build())
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/chest/0", 8.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/chest/1", 0.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/chest/1", 2.4, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/chest/2", 40.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/chest/3", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
                             .build()));
@@ -325,7 +325,7 @@ public final class GeneratedItems {
                             .build())
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/feet/0", 3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/feet/1", 0.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/feet/1", 0.9, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/feet/2", 40.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/feet/3", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
                             .build()));
@@ -341,7 +341,7 @@ public final class GeneratedItems {
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, 4.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, -3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 0.4, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 5.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(attribute(context, "realmforge:cast_time_reduction"), modifier("realmforge:gear/mainhand/1", 0.15, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.15, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .build()));
@@ -379,7 +379,7 @@ public final class GeneratedItems {
                             .build())
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/head/0", 2.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/head/1", 0.04, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/head/1", 0.5, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/head/2", 15.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.HEAD)
                             .build()));
 
@@ -396,7 +396,7 @@ public final class GeneratedItems {
                             .build())
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/legs/0", 5.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/legs/1", 0.04, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/legs/1", 1.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/legs/2", 15.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.LEGS)
                             .build()));
 
@@ -413,7 +413,7 @@ public final class GeneratedItems {
                             .build())
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/chest/0", 6.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/chest/1", 0.04, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/chest/1", 1.4, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/chest/2", 15.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
                             .build()));
 
@@ -430,7 +430,7 @@ public final class GeneratedItems {
                             .build())
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(attribute(context, "realmforge:magic_shield"), modifier("realmforge:gear/feet/0", 2.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/feet/1", 0.04, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/feet/1", 0.5, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
                             .add(attribute(context, "realmforge:max_mana"), modifier("realmforge:gear/feet/2", 15.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
                             .build()));
 
@@ -451,7 +451,7 @@ public final class GeneratedItems {
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, 1.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, -3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 0.15, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 2.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(attribute(context, "realmforge:cast_time_reduction"), modifier("realmforge:gear/mainhand/1", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.05, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .build()));
@@ -492,7 +492,7 @@ public final class GeneratedItems {
                     .delayedComponent(DataComponents.ATTRIBUTE_MODIFIERS, context -> ItemAttributeModifiers.builder()
                             .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, 0.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, -3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 0.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                            .add(attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 1.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(attribute(context, "realmforge:cast_time_reduction"), modifier("realmforge:gear/mainhand/1", 0.03, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.03, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .build()));

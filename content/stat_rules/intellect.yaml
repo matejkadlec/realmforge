@@ -1,12 +1,13 @@
 # yaml-language-server: $schema=../../tools/schemas/stat_rules.schema.json
 # What Intellect gives (Matěj, RLM-170; the next numbers after F4's, not the final ones): spell power, faster casts
-# and mana regeneration, more mana at 10 points, cooldown reduction at 25.
+# and mana regeneration, more mana at 10 points, cooldown reduction at 25. Spell Power is flat points since RLM-534
+# (Matěj, 2026-10-30): +0.5 a point, where it was +2 %.
 id: intellect
 stat: realmforge:intellect
 per_point:
   - attribute: realmforge:spell_power
     operation: add_value
-    amount_percent: 2
+    amount: 0.5
   - attribute: realmforge:cast_time_reduction
     operation: add_value
     amount_percent: 2

@@ -37,8 +37,8 @@
         {
           "amount": 5.0,
           "per_level": 0,
-          "type": "realmforge:damage",
-          "attack_damage": 0.75
+          "attack_damage": 0.75,
+          "type": "realmforge:damage"
         }
       ],
       "ring_color": "#8C8C8C"

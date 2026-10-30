@@ -19,12 +19,13 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
  * The ticks of damage and healing over time (architecture 11.4), on the logical server.
  *
  * <ul>
- *   <li><b>Damage</b> is a hit of the effect's school from its caster ({@link EffectSource}), so the damage pipeline
- *   raises it by the caster's spell power (a magic school) and school power as it is now, the target's resistance
- *   lowers it, its kill counts for the caster and the caster sees its numbers in the school's colour. It never crits
- *   ({@link CritRule#NONE}) and never knocks back (school damage). Once the caster is gone (dead, logged out, in
- *   another dimension) the ticks go on without an attacker, at the bare amount.</li>
- *   <li><b>Healing</b> is × (1 + the caster's spell power, for a magic school, + the school's power), as a spell's heal
+ *   <li><b>Damage</b> is a hit of the effect's school from its caster ({@link EffectSource}): its amount plus its share
+ *   of the caster's Spell Power as it is now ({@link Periodic#amountAt(int, double)}; system C, RLM-534), which the
+ *   damage pipeline raises by the caster's school power; the target's resistance lowers it, its kill counts for the
+ *   caster and the caster sees its numbers in the school's colour. It never crits ({@link CritRule#NONE}) and never
+ *   knocks back (school damage). Once the caster is gone (dead, logged out, in another dimension) the ticks go on
+ *   without an attacker, at the bare amount.</li>
+ *   <li><b>Healing</b> is the same tick × (1 + the school's power), as a spell's heal
  *   ({@code spell/SpellScaling#heal}); without the caster, the bare amount.</li>
  *   <li>A proc's effect carries its proc origin to its ticks, so they trigger no proc (architecture 12).</li>
  * </ul>
@@ -44,7 +45,8 @@ public final class EffectTicks {
         Optional<EffectSource> source = Effects.source(target, effect);
         LivingEntity caster = source.map(value -> value.casterIn(level)).orElse(null);
         Optional<Identifier> procOrigin = source.flatMap(EffectSource::procOrigin);
-        double amount = periodic.amountAt(amplifier);
+        double amount = caster == null ? periodic.amountAt(amplifier)
+                : periodic.amountAt(amplifier, DamagePipeline.stat(caster, GeneratedStats.SPELL_POWER));
         switch (periodic.kind()) {
             case DAMAGE -> target.hurtServer(level, SpellSchools.damage(level.registryAccess(), periodic.school(),
                     caster, caster, CritRule.NONE, procOrigin), (float) amount);
@@ -54,12 +56,21 @@ public final class EffectTicks {
     }
 
     /**
-     * What the caster's stats multiply a tick by, damage or healing alike: 1 + spell power (for a magic school) + the
-     * school's power, never below 0, as the damage pipeline raises a school hit. {@code stats} reads the caster's.
+     * What the caster's stats multiply a tick by, damage or healing alike: 1 + the school's power, never below 0, as
+     * the damage pipeline raises a school hit. The caster's Spell Power is in the tick's amount already
+     * ({@link Periodic#amountAt(int, double)}). {@code stats} reads the caster's.
      */
     public static double factor(SpellSchool school, ToDoubleFunction<Holder<Attribute>> stats) {
-        double spellPower = school.magic() ? stats.applyAsDouble(GeneratedStats.SPELL_POWER) : 0;
         double schoolPower = school.power().map(stats::applyAsDouble).orElse(0.0);
-        return Math.max(0, 1 + spellPower + schoolPower);
+        return Math.max(0, 1 + schoolPower);
+    }
+
+    /**
+     * One tick of {@code periodic} at {@code amplifier} as the caster's stats ({@code stats}) make it, before the
+     * target's resistance: its amount with the caster's share of Spell Power, × {@link #factor}. What a tooltip shows.
+     */
+    public static double tickFor(Periodic periodic, SpellSchool school, int amplifier,
+            ToDoubleFunction<Holder<Attribute>> stats) {
+        return periodic.amountAt(amplifier, stats.applyAsDouble(GeneratedStats.SPELL_POWER)) * factor(school, stats);
     }
 }

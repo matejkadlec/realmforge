@@ -5,4 +5,4 @@ id: test_regrowth
 name: {en_us: Test Regrowth}
 category: beneficial
 color: "#4FCF6F"
-periodic: {type: heal, school: realmforge:arcane, amount: 2, interval_seconds: 1}
+periodic: {type: heal, school: realmforge:arcane, amount: 2, spell_power_percent: 10, interval_seconds: 1}

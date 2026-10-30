@@ -5,4 +5,4 @@ id: test_burning
 name: {en_us: Test Burning}
 category: harmful
 color: "#FF7F1F"
-periodic: {type: damage, school: realmforge:fire, amount: 2, interval_seconds: 1}
+periodic: {type: damage, school: realmforge:fire, amount: 2, spell_power_percent: 10, interval_seconds: 1}

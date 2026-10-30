@@ -1,9 +1,11 @@
 # yaml-language-server: $schema=../../tools/schemas/effects.schema.json
-# Fireball's fire damage over time (C4; the Fire Mage plays as damage over time, RLM-391): 0.75 every half second at
-# Burning I, 1.5 at Burning II (Fireball's rank 5), raised by the caster's spell power and Fire Power as its ticks land.
-# Many small ticks rather than few big ones (Matěj, 2026-10-29, RLM-518).
+# Fireball's fire damage over time (C4; the Fire Mage plays as damage over time, RLM-391): every half second 0.5 + 3 % of
+# the caster's Spell Power at Burning I, twice that at Burning II (Fireball's rank 5), raised by Fire Power as its ticks
+# land. Many small ticks rather than few big ones (Matěj, 2026-10-29, RLM-518). Scaling system C (RLM-534): the ticks
+# carry the part of Fireball's coefficient its hit leaves out (Claude's proposal for Matěj's playtest; the base was
+# 0.75 a tick).
 id: burning
 name: {en_us: Burning}
 category: harmful
 color: "#FF7F1F"
-periodic: {type: damage, school: realmforge:fire, amount: 0.75, interval_seconds: 0.5}
+periodic: {type: damage, school: realmforge:fire, amount: 0.5, spell_power_percent: 3, interval_seconds: 0.5}

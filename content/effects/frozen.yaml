@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/effects.schema.json
+# Frozen in place (RLM-541; the Frost Mage's tree, RLM-542, freezes with Frost Nova and Frostbite): a root, so its holder
+# neither walks nor jumps, but unlike a stun it still attacks and casts. Shatter's crit chance reads it.
+id: frozen
+name: {en_us: Frozen}
+category: harmful
+color: "#A8E4FF"
+modifiers:
+  - {attribute: minecraft:movement_speed, operation: add_multiplied_total, amount_percent: -100}
+  - {attribute: minecraft:jump_strength, operation: add_multiplied_total, amount_percent: -100}

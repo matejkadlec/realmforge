@@ -43,6 +43,11 @@ MELEE_WEAPONS_TAG = f"{MOD_ID}:melee_weapons"
 # The item tag of sword-like weapons (Matěj, 2026-10-15, RLM-219): the Human's Sword Specialization. Vanilla's swords
 # today; katanas, longswords and maybe rapiers once the pack has them.
 SWORD_LIKE_TAG = f"{MOD_ID}:sword_like"
+# The item tag of two-handed weapons (RLM-541): Two-Handed Weapon Specialization applies while one is in the main hand.
+# Every weapon Better Combat calls two-handed, spears included; Better Combat decides that at run time, so the data
+# tag is empty and compat/bettercombat/TwoHandedWeapons binds its members into the items, as for the weapons a player
+# raises to block. Not TWO_HANDED_TAG's two-handed gear (wands).
+TWO_HANDED_WEAPONS_TAG = f"{MOD_ID}:two_handed_weapons"
 # Item tags whose members are fixed here rather than coming from content/items/ (generate/items.py writes them).
 FIXED_ITEM_TAGS: dict[str, tuple[str, ...]] = {
     MELEE_WEAPONS_TAG: (
@@ -53,6 +58,7 @@ FIXED_ITEM_TAGS: dict[str, tuple[str, ...]] = {
         "minecraft:mace",
     ),
     SWORD_LIKE_TAG: ("#minecraft:swords",),
+    TWO_HANDED_WEAPONS_TAG: (),
 }
 # A player's attack damage and attack speed without a weapon (vanilla's base values): a weapon's tooltip numbers are
 # its modifiers plus these.
@@ -154,7 +160,7 @@ class GearDef(StrictModel):
     )
     modifiers: list[GearModifierDef] = Field(
         default_factory=list,
-        description="Its fixed stats while in its slot, e.g. {attribute: realmforge:spell_power, operation: add_value, amount_percent: 15}.",
+        description="Its fixed stats while in its slot, e.g. {attribute: realmforge:spell_power, operation: add_value, amount: 2}.",
     )
 
     @model_validator(mode="after")

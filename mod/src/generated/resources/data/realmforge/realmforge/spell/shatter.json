@@ -1,0 +1,32 @@
+{
+  "name": "spell.realmforge.shatter.name",
+  "description": "spell.realmforge.shatter.description",
+  "school": "realmforge:frost",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:self"
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 10,
+  "max_level": 3,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
+  "effects": [],
+  "passive": {
+    "modifiers": [],
+    "spell_damage": [],
+    "crit_chance": {
+      "chance": 0.1,
+      "chance_per_level": 0.1,
+      "against": "realmforge:frozen"
+    }
+  }
+}

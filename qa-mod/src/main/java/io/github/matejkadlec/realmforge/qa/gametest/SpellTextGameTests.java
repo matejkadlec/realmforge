@@ -33,20 +33,21 @@ public final class SpellTextGameTests {
     @QaGameTest
     public static void placeholdersTakeLiveNumbers(GameTestHelper helper) {
         ServerPlayer player = player(helper, "qa-spell-text");
-        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 0.5);
+        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 5);
         StatsCommands.setBase(player, GeneratedStats.FIRE_POWER, 0.2);
-        helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_BOLT, 3), Map.of("damage", "17"),
-                "level 3 deals 10 × (1 + 50 % + 20 %)");
-        helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_MEND, 2), Map.of("heal", "7.5"),
-                "level 2 heals 5 × (1 + 50 %), arcane having no power yet");
+        helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_BOLT, 3), Map.of("damage", "18"),
+                "level 3 deals (10 + 100 % of 5 Spell Power) × (1 + 20 %) (RLM-534)");
+        helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_MEND, 2), Map.of("heal", "10"),
+                "level 2 heals 5 + 100 % of 5 Spell Power, arcane having no power yet");
         helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_IGNITE, 1), Map.of("duration", "4",
-                "periodic", "3.4", "periodic_total", "13.6", "interval", "1"),
-                "4 ticks of 2 × 1.7, with one decimal as everywhere (Matěj, 2026-10-30)");
+                "periodic", "3", "periodic_total", "12", "interval", "1"),
+                "4 ticks of (2 + 10 % of 5 Spell Power) × 1.2, with one decimal as everywhere (Matěj, 2026-10-30)");
         helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_MENDING_RING, 1),
-                Map.of("heal", "3", "radius", "3"), "the area's own heal and its radius");
+                Map.of("heal", "2", "radius", "3"), "the area's own heal, no share of Spell Power, and its radius");
         helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_MISSILE, 1),
-                Map.of("damage", "8.5", "duration", "3", "bonus", "-15"),
-                "the projectile's damage and slow, its one modifier taking 15 % of the speed");
+                Map.of("damage", "6", "duration", "3", "bonus", "-15"),
+                "the projectile's damage, raised by fire power only, and slow, its one modifier taking 15 % of the "
+                        + "speed");
         logout(player);
         helper.succeed();
     }
@@ -55,17 +56,17 @@ public final class SpellTextGameTests {
     @QaGameTest
     public static void theTooltipReadsFromData(GameTestHelper helper) {
         ServerPlayer player = player(helper, "qa-spell-tooltip");
-        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 0.5);
+        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 5);
         StatsCommands.setBase(player, GeneratedStats.FIRE_POWER, 0.2);
         StatsCommands.setBase(player, GeneratedStats.COOLDOWN_REDUCTION, 0.5);
         helper.assertValueEqual(tooltip(helper, player, GeneratedSpells.TEST_BOLT, 3), List.of("Test Bolt",
                 "Rank 3 of 3", "20 Mana", "16 block range", "Instant", "1.5 sec cooldown",
-                "Hurls a bolt of fire at an enemy for Fire 17 damage."),
+                "Hurls a bolt of fire at an enemy for Fire 18 damage."),
                 "test_bolt at rank 3; as plain text the school's icon reads as its name");
         StatsCommands.setBase(player, GeneratedStats.CAST_TIME_REDUCTION, 0.5);
         helper.assertValueEqual(tooltip(helper, player, GeneratedSpells.TEST_DRAIN, 1), List.of("Test Drain",
                 "15 Mana per sec", "16 block range", "Channeled (1.5 sec)", "2.5 sec cooldown",
-                "Drains an enemy for Arcane 1.5 damage at every tick of the channel."),
+                "Drains an enemy for Arcane 1 damage at every tick of the channel."),
                 "a channel of 6 ticks of 0.25 s after 50 % Cast Time Reduction (RLM-518), its cost per second "
                         + "(RLM-403)");
         helper.assertValueEqual(tooltip(helper, player, GeneratedSpells.TEST_MENDING_RING, 1).subList(1, 3),

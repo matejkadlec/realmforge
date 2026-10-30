@@ -36,7 +36,9 @@ public enum CastFailure implements StringRepresentable {
     /** A player's spell needs a melee weapon in the main hand, and none is there (RLM-499). */
     NO_MELEE_WEAPON("no_melee_weapon"),
     /** A player's spell needs a shield in either hand, and neither holds one (Shield Bash, C4). */
-    NO_SHIELD("no_shield");
+    NO_SHIELD("no_shield"),
+    /** A passive spell (RLM-541), which works while it is known and is never cast. */
+    PASSIVE("passive");
 
     private final String serializedName;
 

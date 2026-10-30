@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 class DamageCalculatorTest {
     private static final double EPSILON = 1e-12;
     // Crit chance 0: no roll, so the school formula alone decides.
-    private static final Attacker NO_CRIT = new Attacker(0, 0.5, 0.2, 0.1);
+    private static final Attacker NO_CRIT = new Attacker(0, 0.5, 0.3);
 
     @Test
     void armorMatchesVanillasFormula() {
@@ -63,16 +63,17 @@ class DamageCalculatorTest {
         assertEquals(DamageCalculator.armorReduction(10, 15, 0), DamageCalculator.armorReduction(10, 15, -4), EPSILON);
     }
 
+    /**
+     * Scaling system C (RLM-534): the hit grows by the school's power and its passives, never by Spell Power, which the
+     * spell already added to the damage through its coefficient.
+     */
     @Test
-    void magicAddsSpellPowerAndSchoolPower() {
-        SchoolHit hit = DamageCalculator.schoolHit(10, true, NO_CRIT, 0, random());
+    void aSchoolHitGrowsByItsDamageBonus() {
+        SchoolHit hit = DamageCalculator.schoolHit(10, NO_CRIT, 0, random());
         assertEquals(10 * 1.3, hit.damage(), EPSILON);
         assertFalse(hit.crit());
-    }
-
-    @Test
-    void physicalIgnoresSpellPower() {
-        assertEquals(10 * 1.1, DamageCalculator.schoolHit(10, false, NO_CRIT, 0, random()).damage(), EPSILON);
+        assertEquals(10, DamageCalculator.schoolHit(10, Attacker.NONE, 0, random()).damage(), EPSILON,
+                "no bonus, the damage as it is");
     }
 
     /** Spell penetration (C4) ignores its share of the resistance: 25 % of a 40 % resistance leaves 30 %. */
@@ -87,22 +88,22 @@ class DamageCalculatorTest {
 
     @Test
     void resistanceLowersTheHit() {
-        assertEquals(10 * 1.3 * 0.75, DamageCalculator.schoolHit(10, true, NO_CRIT, 0.25, random()).damage(), EPSILON);
+        assertEquals(10 * 1.3 * 0.75, DamageCalculator.schoolHit(10, NO_CRIT, 0.25, random()).damage(), EPSILON);
         assertEquals(0, DamageCalculator.afterResistance(10, 2), "a resistance above 1 counts as 1");
         assertEquals(10, DamageCalculator.afterResistance(10, -1), EPSILON, "a negative resistance counts as 0");
     }
 
     @Test
     void aSureCritMultipliesByOnePlusCritDamage() {
-        Attacker sure = new Attacker(1, 0.5, 0, 0);
-        SchoolHit hit = DamageCalculator.schoolHit(10, true, sure, 0, random());
+        Attacker sure = new Attacker(1, 0.5, 0);
+        SchoolHit hit = DamageCalculator.schoolHit(10, sure, 0, random());
         assertTrue(hit.crit());
         assertEquals(15, hit.damage(), EPSILON);
     }
 
     @Test
     void negativeBonusesNeverMakeDamageNegative() {
-        assertEquals(0, DamageCalculator.schoolHit(10, true, new Attacker(0, 0, -3, 0), 0, random()).damage());
+        assertEquals(0, DamageCalculator.schoolHit(10, new Attacker(0, 0, -3), 0, random()).damage());
     }
 
     @Test

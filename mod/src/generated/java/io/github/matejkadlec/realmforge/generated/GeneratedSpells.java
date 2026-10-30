@@ -41,8 +41,14 @@ public final class GeneratedSpells {
     /** {@code realmforge:ice_barrier} from {@code content/spells/ice_barrier.yaml}: frost, self, apply_effect. */
     public static final ResourceKey<Spell> ICE_BARRIER = key("ice_barrier");
 
+    /** {@code realmforge:improved_frostbolt} from {@code content/spells/improved_frostbolt.yaml}: frost, passive. */
+    public static final ResourceKey<Spell> IMPROVED_FROSTBOLT = key("improved_frostbolt");
+
     /** {@code realmforge:reckless_strike} from {@code content/spells/reckless_strike.yaml}: physical, enemy, damage. */
     public static final ResourceKey<Spell> RECKLESS_STRIKE = key("reckless_strike");
+
+    /** {@code realmforge:shatter} from {@code content/spells/shatter.yaml}: frost, passive. */
+    public static final ResourceKey<Spell> SHATTER = key("shatter");
 
     /** {@code realmforge:shield_bash} from {@code content/spells/shield_bash.yaml}: physical, enemy, damage, apply_effect. */
     public static final ResourceKey<Spell> SHIELD_BASH = key("shield_bash");
@@ -131,11 +137,14 @@ public final class GeneratedSpells {
     /** {@code realmforge:test_titan_harden} from {@code content/spells/test_titan_harden.yaml}: physical, self, apply_effect. */
     public static final ResourceKey<Spell> TEST_TITAN_HARDEN = key("test_titan_harden");
 
+    /** {@code realmforge:two_handed_weapon_specialization} from {@code content/spells/two_handed_weapon_specialization.yaml}: no school, passive. */
+    public static final ResourceKey<Spell> TWO_HANDED_WEAPON_SPECIALIZATION = key("two_handed_weapon_specialization");
+
     /** {@code realmforge:will_to_survive} from {@code content/spells/will_to_survive.yaml}: no school, self, cleanse. */
     public static final ResourceKey<Spell> WILL_TO_SURVIVE = key("will_to_survive");
 
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Spell>> ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, ASTONE_SHOCKWAVE, BATTLE_SHOUT, FIREBALL, FROSTBOLT, ICE_BARRIER, RECKLESS_STRIKE, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TITAN_HARDEN, WILL_TO_SURVIVE);
+    public static final List<ResourceKey<Spell>> ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, ASTONE_SHOCKWAVE, BATTLE_SHOUT, FIREBALL, FROSTBOLT, ICE_BARRIER, IMPROVED_FROSTBOLT, RECKLESS_STRIKE, SHATTER, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TITAN_HARDEN, TWO_HANDED_WEAPON_SPECIALIZATION, WILL_TO_SURVIVE);
 
     private GeneratedSpells() {
     }

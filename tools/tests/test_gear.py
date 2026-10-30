@@ -33,7 +33,7 @@ gear:
   attack_speed: 1.0
   two_handed: true
   modifiers:
-    - {attribute: realmforge:spell_power, operation: add_value, amount_percent: 15}
+    - {attribute: realmforge:spell_power, operation: add_value, amount: 2}
     - {attribute: realmforge:magic_shield, operation: add_value, amount: 3}
 """
 CAP = """\
@@ -90,7 +90,7 @@ def test_a_wand_gets_durability_its_attack_and_its_stats_in_the_main_hand(repo: 
         "1.0 attacks a second less a hand's 4"
     )
     assert (
-        'attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 0.15, '
+        'attribute(context, "realmforge:spell_power"), modifier("realmforge:gear/mainhand/0", 2.0, '
         "AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND" in wand
     )
     assert 'modifier("realmforge:gear/mainhand/1", 3.0' in wand
@@ -116,7 +116,7 @@ def test_a_wand_gets_durability_its_attack_and_its_stats_in_the_main_hand(repo: 
     assert '"wand", "mainhand", 131, 5, "#minecraft:stone_tool_materials",' in expectations
     assert '2.0, 1.0, "", true,' in expectations, "the wand is two-handed"
     assert (
-        'new GearModifier("realmforge:gear/mainhand/0", "realmforge:spell_power", "add_value", 0.15)'
+        'new GearModifier("realmforge:gear/mainhand/0", "realmforge:spell_power", "add_value", 2.0)'
         in expectations
     )
 
@@ -202,7 +202,7 @@ def test_gear_stacks_to_one(repo: RepoPaths) -> None:
             "{attribute: minecraft:attack_damage, operation: add_value, amount: 2}",
             "attack damage is its attack_damage",
         ),
-        ("{attribute: realmforge:spell_power, operation: add_value, amount: 2}", "is a share"),
+        ("{attribute: realmforge:crit_chance, operation: add_value, amount: 2}", "is a share"),
         ("{attribute: realmforge:magic_shield, operation: add_value, amount_percent: 2}", "counts points"),
         (
             "{attribute: realmforge:spel_power, operation: add_value, amount: 2}",

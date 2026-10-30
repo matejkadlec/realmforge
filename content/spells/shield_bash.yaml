@@ -1,7 +1,9 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # Protection's first spell (C4, RLM-392): a blow with the shield, so it needs a shield in either hand and no weapon
 # (the other hand may hold a one-handed weapon or nothing, Matěj, 2026-10-27, RLM-418). It stuns its target for 0.5 s,
-# 0.25 s longer per rank (1.5 s at rank 5). Rage per second of cooldown: 15 / 6 s = 2.5. About 4 damage at level 1.
+# 0.25 s longer per rank (1.5 s at rank 5). Rage per second of cooldown: 15 / 6 s = 2.5. Scaling system C (RLM-534,
+# Claude's proposal for Matěj's playtest): a utility blow with a cooldown, so the least per cast of the Warrior's hits,
+# 1/1.5/2/2.5/3 + 60/70/80/90/100 % of Attack Damage.
 id: shield_bash
 name: {en_us: Shield Bash}
 description: {en_us: "Bashes an enemy with your shield for {damage} damage, stunning it for {duration} sec."}
@@ -14,7 +16,11 @@ cooldown_seconds: 6
 max_level: 5
 requires: [shield]
 effects:
-  - {type: realmforge:damage, amount: 1, per_level: 0.5, attack_damage_percent: 60}
+  - type: realmforge:damage
+    amount: 1
+    per_level: 0.5
+    attack_damage_percent: 60
+    attack_damage_per_level_percent: 10
   - type: realmforge:apply_effect
     effect: realmforge:stunned
     duration_seconds: 0.5

@@ -30,10 +30,11 @@
   "castable_while_stunned": false,
   "effects": [
     {
-      "amount": 2.0,
-      "per_level": 1.0,
-      "type": "realmforge:damage",
-      "attack_damage": 1.0
+      "amount": 3.0,
+      "per_level": 0.5,
+      "attack_damage": 0.8,
+      "attack_damage_per_level": 0.1,
+      "type": "realmforge:damage"
     }
   ]
 }
