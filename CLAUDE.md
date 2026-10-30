@@ -537,7 +537,10 @@ merges). Four parts:
    he should see. A behavior change he must decide on comes first and says so
    ([flow: What to test](docs/ai-development-flow.md#what-to-test)). Three or more setup commands
    in a row go as one command for an impulse command block, `execute as @p at @p run qa run <command>; <command>;
-   ...`, with how to run it ([flow: Reaching the state](docs/ai-development-flow.md#reaching-the-state)).
+   ...`, with how to run it ([flow: Reaching the state](docs/ai-development-flow.md#reaching-the-state)). A balance
+   check of a dungeon, an instance or a boss also gives the gear a player is expected to bring there in that line,
+   and names the loadout in one line: what, and why it is the expected one
+   ([gear.md](docs/design/gear.md#expected-gear-for-balance-tests), RLM-551).
 2. **Launch commands:** complete commands he can paste, in one block, with the checkout named in the heading,
    e.g. "Launch commands (your Windows clone)"
    ([flow: Launch commands](docs/ai-development-flow.md#launch-commands)). For the Windows clone, always the whole

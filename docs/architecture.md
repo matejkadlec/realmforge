@@ -355,8 +355,9 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 ### 6.1 Stages
 
 1. **Schema:** one pydantic model per content type (`tools/realmforge_tools/schema/`).
-2. **Ids and references** against the ID universe: the vanilla snapshot plus our content; the full-pack registry
-   dump is still a TODO ([ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)).
+2. **Ids and references** against the ID universe: the vanilla snapshot, NeoForge's own attributes
+   (`id_universe.NEOFORGE_ATTRIBUTES`, [ADR 0064](decisions/0064-neoforges-attributes-join-the-id-universe.md)) plus
+   our content; the full-pack registry dump is still a TODO ([ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)).
 3. **Semantic rules:** the ADR 0005 rules (every item obtainable, rewards usable and repairable in their chapter,
    quest texts match the data, no orphaned lang keys or textures), structural rules per type (talent trees have
    no cycles and no unreachable nodes, boss phase thresholds decrease, dungeon rules are satisfiable) and the
@@ -575,8 +576,9 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   name for it, RLM-234; both lower the armor a hit meets, never its toughness), lifesteal (a share of a melee or ranged hit's damage healed back), overheal (a
   share of max health that healing past it fills as absorption), spell resistance (a share, added to a magic
   school's resistance, the sum at most 75 %), health regeneration (points healed every 5 seconds) and magic shield (a
-  pool of points that takes damage before health). Not working yet: cast time reduction (C3a-2, RLM-210) and the XP
-  multiplier (100 % by default, C2, RLM-23). Max mana, mana regeneration and cooldown reduction (which replaced haste)
+  pool of points that takes damage before health). Cast time reduction (C3a-2, RLM-210: `spell/Casting#begin` and the
+  spell tooltips) and the XP multiplier (100 % by default; C2, RLM-23: `character/Leveling` applies it to character
+  XP) work too. Max mana, mana regeneration and cooldown reduction (which replaced haste)
   work since C3a-1 ([11.5](#115-resources-cooldowns-modifiers)).
   Healing power is gone: healing spells scale with spell power and their school. Protection pierce, flat and in
   percent, is gone too (Matěj, 2026-10-14: mainly a PvP stat; RLM-159 rejected, RLM-170).
@@ -3756,8 +3758,10 @@ that agents can read. So far:
   points its level added, and the damage multiple of its hits; without an argument, the nearest hostile mob within
   32 blocks. The training dummy joins at level 1, which adds nothing;
 - `/qa character show|reset [<player>]` and `/qa character create <race> <class> [<player>]` (C1): reset removes the
-  character, so the creation screen opens again (the starting kit's items stay); create applies the same rules as the
-  screen;
+  character, so the creation screen opens again (the starting kit's items stay), and since C4 also sets the level back
+  to 1 and empties the spellbook (the stats recomputed, health capped at the new maximum); a character created after a
+  reset gets no starting kit, which comes with the player's first character only (`realmforge:starting_kit`,
+  [10.1](#101-races-and-classes)); create applies the same rules as the screen;
 - `/qa dummy [<armor>]` (F5): a training dummy three blocks ahead, a pillager without a crossbow that stands still
   and never dies. A pillager is not undead, so poison and harming hurt it, healing heals it, and daylight does not
   burn it: it takes damage and healing the way a player does (RLM-187). Neat's card above it is its only display
