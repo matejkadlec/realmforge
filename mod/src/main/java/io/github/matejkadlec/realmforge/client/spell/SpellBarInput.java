@@ -25,7 +25,8 @@ import net.neoforged.neoforge.common.NeoForge;
  * The spell bar's keys in play (architecture 11.2 step 1; C3b, RLM-25): every client tick, the presses and the held
  * keys of the bar's slots and the racial slot go through {@link CastQueue}, with the options of
  * {@link ClientConfig}, and what it decides goes to the server as {@code CastSpellPayload}, aimed at the entity under
- * the crosshair ({@link SpellTargetPicker}). The server decides; a refusal comes back with its reason.
+ * the crosshair ({@link SpellTargetPicker}). The server decides; a refusal comes back with its reason. Right click
+ * with a wand presses and holds the first slot's key too ({@link WandCasting}, RLM-500).
  */
 public final class SpellBarInput {
     private static final CastQueue QUEUE = new CastQueue();
@@ -53,12 +54,14 @@ public final class SpellBarInput {
         for (int slot = 0; slot < Spellbook.SLOT_COUNT; slot++) {
             KeyMapping key = SpellKeys.slot(slot);
             Optional<ResourceKey<Spell>> spell = book.slot(slot);
-            while (key.consumeClick()) {
+            boolean wandSlot = slot == WandCasting.SLOT;
+            while (key.consumeClick() || wandSlot && WandCasting.consumeClick()) {
                 if (canCast && spell.isPresent()) {
                     QUEUE.press(slot, spell.get(), state, options);
                 }
             }
-            if (canCast && spell.isPresent() && key.isDown()) {
+            boolean wandDown = wandSlot && WandCasting.isDown(player);
+            if (canCast && spell.isPresent() && (key.isDown() || wandDown)) {
                 held.put(slot, spell.get());
             }
         }
