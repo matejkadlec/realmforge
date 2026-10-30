@@ -8,8 +8,9 @@ import java.util.Collection;
  * player inventory slot index): a sort of the player's inventory that moved the backpack closed its screen, or showed
  * the backpack that landed in that slot instead. Inventory Sorting's own setting keeps a stack where it is: a sort
  * priority rule with the position {@code ignore}, which leaves every matching stack in its slot and sorts the rest
- * around it. This is that rule's match, every backpack tier by item id, in Inventory Sorting's rule syntax ({@code a |
- * b}); the client adds it to the player's rules ({@code client/compat/inventorysorter/BackpacksStayInPlace}), and
+ * around it; {@code mixin/InventorySortingStacksMixin} keeps it the same stack, not a copy (ADR 0065). This is that
+ * rule's match, every backpack tier by item id, in Inventory Sorting's rule syntax ({@code a | b}); the client adds it
+ * to the player's rules ({@code client/compat/inventorysorter/BackpacksStayInPlace}), and
  * {@code InventorySortingGameTests} check it against the pack's Inventory Sorting.
  */
 public final class BackpackSortRule {
