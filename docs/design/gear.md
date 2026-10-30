@@ -286,6 +286,20 @@ stones with RLM-433.
   Overworld gems (Earth, Royalty, Verdant Ruin) stay Overworld's.
 - Max health on gems: the Brawler's and the Warlord's, as above.
 
+## Expected gear for balance tests
+
+When a handoff asks Matěj to judge the balance of a dungeon, an instance or a boss, its command block line also gives
+him the gear a player is expected to bring there (Matěj, 2026-10-30, RLM-551; the rule:
+[Reaching the state](../ai-development-flow.md#reaching-the-state)). Expected is the best a player can have on
+entering: the reference set of the content's world tier ([above](#loot-only-gear)), its enchantments, an Apotheosis
+rarity with its affixes and filled sockets, and the level and stat points when the check needs them, for the class
+the check is about. Where exact affixes or gems are impractical, stronger base gear or enchantments of equal power
+stand in, and the handoff says so. Later handoffs add rows; Matěj's corrections from playtests update them.
+
+| Content | Level | Melee (Warrior) | Caster (Mage) | Enchantments | Rarity and sockets | Source |
+| --- | --- | --- | --- | --- | --- | --- |
+| Astone, Undervault's final boss | 18 | full netherite armor and a netherite sword | the Netherite set (cap, robes, pants, sandals) and the Netherite Wand | about level V (each at its maximum where that is lower: Protection IV, Unbreaking III) | Rare, every socket filled with a Flawed gem | Matěj, 2026-10-30: "full netherite, enchantments at about level V, rare gems"; gems have purities, not rarities, so "rare gems" reads as Rare pieces with Flawed gems until a playtest says otherwise. RLM-534's target: such a player deals about 50 per spell to her |
+
 ## What follows from it
 
 Once Matěj approves, these tickets carry it (names for the follow-ups, not tickets yet):
