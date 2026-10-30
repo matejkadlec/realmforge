@@ -279,6 +279,8 @@
   "message.realmforge.stat_points_returned": "Your level fell, so your stat points are unspent again. Unspent stat points: %1$s.",
   "message.realmforge.stat_points_unlearned": "Your stat points are unspent again. Unspent stat points: %1$s.",
   "message.realmforge.stat_points_unspent": "Unspent stat points: %1$s. Press %2$s to spend them on your character sheet.",
+  "message.realmforge.welcome": "Welcome to Realmforge v%1$s",
+  "message.realmforge.welcome_phase": "Welcome to Realmforge v%1$s (%2$s)",
   "message.realmforge.xp_gained": "+%1$s XP",
   "quest.realmforge.bring": "Bring: %1$s",
   "quest.realmforge.craft": "Craft: %1$s",

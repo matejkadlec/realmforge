@@ -106,6 +106,7 @@ public final class QaGameTests {
             StatPointsGameTests.class,
             StatsGameTests.class,
             WeaponBlockGameTests.class,
+            WelcomeGameTests.class,
             WorldRulesGameTests.class);
 
     private static final DeferredRegister<Consumer<GameTestHelper>> FUNCTIONS =

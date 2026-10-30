@@ -455,6 +455,12 @@ public final class GeneratedTexts {
     /** {@code message.realmforge.stat_points_unspent} from {@code content/texts/message.yaml}: "Unspent stat points: %1$s. Press %2$s to spend them on your character sheet." */
     public static final String MESSAGE_STAT_POINTS_UNSPENT = "message.realmforge.stat_points_unspent";
 
+    /** {@code message.realmforge.welcome} from {@code content/texts/message.yaml}: "Welcome to Realmforge v%1$s" */
+    public static final String MESSAGE_WELCOME = "message.realmforge.welcome";
+
+    /** {@code message.realmforge.welcome_phase} from {@code content/texts/message.yaml}: "Welcome to Realmforge v%1$s (%2$s)" */
+    public static final String MESSAGE_WELCOME_PHASE = "message.realmforge.welcome_phase";
+
     /** {@code message.realmforge.xp_gained} from {@code content/texts/message.yaml}: "+%1$s XP" */
     public static final String MESSAGE_XP_GAINED = "message.realmforge.xp_gained";
 

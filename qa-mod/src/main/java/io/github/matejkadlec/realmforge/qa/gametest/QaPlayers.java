@@ -13,10 +13,12 @@ import java.util.function.Consumer;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.Connection;
 import net.minecraft.network.ConnectionProtocol;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.BundlePacket;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -150,6 +152,27 @@ public final class QaPlayers {
             collect(message, type, payloads);
         }
         return payloads;
+    }
+
+    /**
+     * The chat lines (system messages, not the action bar) the server sent {@code player} since the last drain, oldest
+     * first. Like {@link #sentPayloads}, this drains the fake connection's channel, bundles included.
+     */
+    static List<Component> sentChatLines(ServerPlayer player) {
+        EmbeddedChannel channel = (EmbeddedChannel) player.connection.getConnection().channel();
+        List<ClientboundSystemChatPacket> packets = new ArrayList<>();
+        for (Object message = channel.readOutbound(); message != null; message = channel.readOutbound()) {
+            collectPackets(message, ClientboundSystemChatPacket.class, packets);
+        }
+        return packets.stream().filter(packet -> !packet.overlay()).map(ClientboundSystemChatPacket::content).toList();
+    }
+
+    private static <T> void collectPackets(Object packet, Class<T> type, List<T> into) {
+        if (type.isInstance(packet)) {
+            into.add(type.cast(packet));
+        } else if (packet instanceof BundlePacket<?> bundle) {
+            bundle.subPackets().forEach(inner -> collectPackets(inner, type, into));
+        }
     }
 
     private static <T> void collect(Object packet, Class<T> type, List<T> into) {

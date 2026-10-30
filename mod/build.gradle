@@ -146,6 +146,7 @@ def generateModMetadata = tasks.register('generateModMetadata', ProcessResources
             loader_version_range   : loader_version_range,
             mod_license            : mod_license,
             mod_version            : project.version,
+            mod_phase              : mod_phase,
     ]
     inputs.properties replaceProperties
     expand replaceProperties
