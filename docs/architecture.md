@@ -490,6 +490,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | --- | --- | --- | --- | --- |
 | `realmforge:level` | `stats` | every living entity | the level: derived from XP and the cap for players, set at spawn for mobs, fixed for bosses | the player itself and everyone tracking the entity |
 | `realmforge:character` | `character` | players | race, class (a one-entry list, from when dual class was planned; there is none, [10.1](#101-races-and-classes)), total character XP, cached level cap, the stat points spent on each primary stat | the owner and nearby players (small, nothing secret) |
+| `realmforge:starting_kit` | `character` | players | whether the player has received a class's starting kit, which comes with their first character only, so a new character after a reset brings none (Matěj, 2026-10-30); a login records it for a character older than the attachment; copied on death | not synced |
 | `realmforge:spellbook` | `spell` | players | known spells and their levels, the spell bar's layout: its eight slots and the racial slot beside it (C3b) | owner |
 | `realmforge:combat` | `spell` | players and mobs that cast | resource pools (mana, rage), cooldowns, current cast (transient), whether a cast set Better Combat's disable tag | owner, throttled (players; clients never read a mob's copy) |
 | `realmforge:effect_sources` | `effect` | living entities | who applied each status effect a spell gave the holder: the caster's UUID, the spell's id, the proc origin ([11.4](#114-status-effects), C3c) | not synced (the server reads it) |
@@ -1055,12 +1056,14 @@ go of right click stops its charge.
   C3b); the passive applies whenever its condition
   holds. The Human's:
   - **Will To Survive** (active) cleanses the player of every negative effect: disabling effects such as a stun
-    (much rarer here than in WoW) and also damage over time and other debuffs. Cooldown 5 minutes.
+    (much rarer here than in WoW) and also damage over time and other debuffs. Cooldown 1 minute (Matěj,
+    2026-10-30: 5 minutes is far too long in Minecraft). It belongs to no spell school, so the spell bar frames it in
+    black with a dark grey fill.
   - **Sword Specialization** (passive; only its name, not a class specialization) gives +10% damage with sword-like
     weapons: the item tag `#realmforge:sword_like`, swords and katanas today, and longswords and maybe rapiers once
     the pack has them. For a Human, the tooltip of every such weapon (hover, JEI) shows two lines below the weapon's
     stats and above the Apotheosis affixes, where Apotheosis puts "Heavenly Implements": "Sword Specialization" in
-    dark gray and "+10% damage" in light gray.
+    gold and "+10% damage" in yellow (Matěj, 2026-10-30).
 - **A class** gives its role, resource type, starting stats, spells by level, its specializations' spell trees and
   starting kit. Its role (melee, caster or ranged) decides which role-bound bonuses of the stat rules its players get
   ([8.3](#83-derived-stats-and-milestones), RLM-170). Race and
@@ -1094,7 +1097,8 @@ go of right click stops its charge.
   `CharacterCreation` holds the rules: the player has no character yet, the race and the class exist, and the race
   lists the class, checked in that order; then it sets the attachment, recomputes the stats, refills health to the
   new maximum and gives the class's starting kit once (into the inventory, or dropped for the player alone when it
-  is full, as `/give` does). `Characters` is the public API (`exists`, `mainClass`). The client opens
+  is full, as `/give` does), with the player's first character only (`realmforge:starting_kit`, so a character
+  created after `/qa character reset` brings none, Matěj, 2026-10-30). `Characters` is the public API (`exists`, `mainClass`). The client opens
   `client/screen/CharacterCreationScreen` once a new player entity has existed for a second without a character (so
   the synced attachment can arrive first), and closes it when the character arrives. Esc opens the pause menu
   instead, so the player can still change options or quit, and back in the game creation opens again. It pauses
@@ -1534,8 +1538,9 @@ harmful, neutral), its particle colour, its attribute modifiers (units as for th
 multiplied operations; one per attribute, as `MobEffect` keeps one) and its `periodic` damage or healing: a school, an
 amount per tick at the first level and an interval from 0.25 to 10 s. `generate/effects.py` writes `GeneratedEffects`
 (a `DeferredRegister<MobEffect>`, which `effect/EffectFeature` registers; NeoForge registers attributes before status
-effects, so a modifier finds its attribute, ours included), an 18 by 18 placeholder icon in
-`textures/mob_effect/<id>.png` (a disc in the effect's colour with an arrow up or down), the name
+effects, so a modifier finds its attribute, ours included), an 18 by 18 icon in `textures/mob_effect/<id>.png` (a
+placeholder disc in the effect's colour with an arrow up or down, or one drawn in pixel rows in
+`generate/effect_icons.py`: Battle Shout's and Ice Barrier's, C4), the name
 `effect.realmforge.<id>` and `GeneratedEffectExpectations`, which `ContentEffectGameTests` checks. Each is an
 `effect/StatusEffect`: vanilla's modifiers, multiplied by the amplifier + 1, and an `effect/Periodic` that ticks at the
 end of every interval since the effect began (an effect of 4 s and 1 s intervals ticks 4 times, the first after a
@@ -1569,8 +1574,10 @@ attack; the spell engine refuses a stunned caster's spells and interrupts the ca
 but for a spell `castable_while_stunned`. Ordinary mobs have no stun immunity or diminishing returns (Matěj,
 2026-10-24, RLM-392). `apply_effect` grows with the spell's rank: `duration_per_level_seconds` adds to its duration
 for every rank above 1 (at most a minute) and `stronger_at_levels` lists the ranks that raise its amplifier by one
-(Frostbolt's Slowness II at rank 5). `realmforge:cleanse` (`spell/CleanseEffect`, Will To Survive) removes every
-harmful effect from the caster or an ally, a stun included.
+(Frostbolt's Slowness II at rank 5). An effect's modifier may grow by a fixed step per amplifier level instead of
+vanilla's multiplying by the level (`per_amplifier`, NeoForge's attribute curve: Battle Shout's 10, 15 and 20 %).
+`realmforge:cleanse` (`spell/CleanseEffect`, Will To Survive) removes every harmful effect from the caster or an ally,
+a stun included.
 
 ### 11.5 Resources, cooldowns, modifiers
 
@@ -1868,10 +1875,14 @@ tunes them). A class teaches its spells by level ([10.1](#101-races-and-classes)
 - **Frostbolt:** 9 + 2 per rank, 10 mana; Slowness 3 s and 0.5 s more per rank, II from rank 5. **Fireball:** 8 + 2
   per rank, 12 mana; Burning (0.75 fire every 0.5 s, many small ticks, RLM-518) 4 s and 0.5 s more per rank, II from
   rank 5. **Arcane Missiles:** 3 × (5 + 1 per rank), 12 mana a second.
-- **The self-buffs** (a proposal for Matěj): the Warrior's **Battle Shout** (10 rage, no cooldown: +10 % attack
-  damage for the Warrior and the allies within 10 blocks for a minute) and the Mage's **Ice Barrier** (25 mana, 30 s:
-  +12 Magic Shield for 20 s, filled at once; the Mage survives through shields, not heals, Matěj, 2026-10-22).
-- **Will To Survive** (the Human's racial): free, 5 minutes, cast while stunned.
+- **The self-buffs**, max rank 3 (Matěj, 2026-10-30): the Warrior's **Battle Shout** (10 rage, 1 minute: +10 / 15 /
+  20 % attack damage for the Warrior and the allies within 10 blocks for 10 / 15 / 20 s) and the Mage's **Ice
+  Barrier** (25 mana, 1 minute: +10 / 20 / 30 Magic Shield for 10 / 20 / 30 s, filled at once; the Mage survives
+  through shields, not heals, Matěj, 2026-10-22). Spell power raises neither, Cooldown Reduction shortens both, and a
+  second cast refreshes the effect instead of stacking it.
+- **Will To Survive** (the Human's racial): free, 1 minute, cast while stunned, of no school.
+- **Arcane Missiles' damage per second** stays above Frostbolt's and Fireball's (Matěj, 2026-10-30: Frostbolt slows,
+  Fireball burns, Arcane Missiles should deal the most damage).
 - **Rage gain** stays at the Warrior's starting numbers ([11.5](#115-resources-cooldowns-modifiers)).
 
 **Open, for C5 and the playtest:** the numbers above; the stance percentages (X); which tree each class gets in M1;
@@ -3709,6 +3720,10 @@ that agents can read. So far:
   cooldowns, the cast in progress and how the last cast-time or channelled spell ended
   ([11.2](#112-casting-server-authoritative)); `/qa spell bar <slot> [<spell>]` (C3b) puts a known spell into a spell
   bar slot (1 to 8, 9 the racial slot) or empties it;
+- `/qa resource <mana|rage> autofill <true|false>` (C4's playtest, Matěj, 2026-10-30): keeps the player's pool full
+  every tick, so rage needs no hits on the dummy; saved with the player (`realmforge_qa:resource_autofill`);
+- `/qa inventory clear` (the same): empties the 27 main inventory slots and keeps the hotbar, the armor and the
+  offhand;
 - `/qa run <command>; <command>; ...`: runs the commands in order as its source, so a playtest's setup takes one line;
   chat cuts a line at 256 characters, so the line goes into an impulse command block as `execute as @p at @p run qa
   run ...` ([flow: Reaching the state](ai-development-flow.md#reaching-the-state));

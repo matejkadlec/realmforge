@@ -266,7 +266,7 @@ Rules:
   the whole max health to attackers, a hit for a tenth of it giving a tenth), `decay_per_second` and
   `decay_after_seconds` (how long after the last hit dealt or taken the pool starts to decay;
   [architecture 11.5](../docs/architecture.md#115-resources-cooldowns-modifiers)). A class
-  gives `modifiers` and a `starting_kit` (items with a `count` of 1 to 64, given once when the character is created; every class's kit
+  gives `modifiers` and a `starting_kit` (items with a `count` of 1 to 64, given once, when the player's first character is created; every class's kit
   holds Bread ×32, Matěj, 2026-10-14, which validation checks), and its `spells` by level (C4: `{spell, level}`, each
   spell once, taught at rank 1 when the character reaches the level; the class's resource must pay for them; one at
   level 1, decision D4, and at most 4 × N by the end of chapter N's level cap). A modifier is the stat rules' shape (`attribute`,
@@ -335,7 +335,9 @@ Rules:
 - `effects/` holds our status effects ([architecture 11.4](../docs/architecture.md#114-status-effects), C3c): a
   `name`, a `category` (`beneficial`, `harmful` or `neutral`), a particle `color` (`"#RRGGBB"`), `modifiers` (an
   `attribute`, an `operation` and the first level's `amount`, or `amount_percent` for a multiplied operation or one of
-  our shares, as for races and classes; one per attribute; each amplifier level multiplies it, as vanilla does) and
+  our shares, as for races and classes; one per attribute; each amplifier level multiplies it, as vanilla does,
+  unless `per_amplifier` or `per_amplifier_percent` gives the step each level above the first adds instead: Battle
+  Shout's 10, 15 and 20 %) and
   `periodic` damage or healing (`type: damage` or `heal`, a `school`, the `amount` of a tick at the first level, which
   each amplifier level adds again, and `interval_seconds` from 0.25 to 10): at least one of the two. `stun: true`
   makes it a stun (C4): its holder neither moves, jumps, attacks nor casts, a mob's AI waits, and a cast is
@@ -353,7 +355,8 @@ Rules:
   player's rank;
   validation checks that each has its effect, [architecture 11.6](../docs/architecture.md#116-client-side); a damage
   number shows its school's icon and colour, so write "for {damage} damage", never the school's name); the
-  `school` whose damage they deal; what they `scales_with`, `spell_power` for a magic school and `attack_damage`
+  `school` whose damage they deal (a spell that neither deals damage nor heals may leave it out and belongs to no
+  school, framed in black on the spell bar: Will To Survive, Matěj, 2026-10-30); what they `scales_with`, `spell_power` for a magic school and `attack_damage`
   for a physical one (off-class stats do nothing for a class's abilities, Matěj, 2026-10-15); their `targeting`
   (`{type: realmforge:self}`, or `realmforge:enemy`, `realmforge:ally`, `realmforge:ground_point` or
   `realmforge:direction` with a `range` of at most 128 blocks; from a player's spell bar, an `enemy` or `ally` spell
