@@ -1,7 +1,7 @@
 package io.github.matejkadlec.realmforge.client;
 
 import io.github.matejkadlec.realmforge.client.hud.SpellBarLayout;
-import io.github.matejkadlec.realmforge.client.screen.SpellOptionsScreen;
+import io.github.matejkadlec.realmforge.client.screen.RealmforgeConfigScreen;
 import io.github.matejkadlec.realmforge.client.spell.CastQueue;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
 import net.neoforged.fml.ModContainer;
@@ -10,13 +10,20 @@ import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
- * The client options (architecture 19.2: UI preferences only), in {@code config/realmforge-client.toml}: how the spell
- * bar's presses wait (Matěj, 2026-10-19, RLM-25), where the spell bar and resource bar group goes and how big it is
- * (RLM-404), and how the Highlight Spell Target key works (RLM-468). {@link SpellOptionsScreen} edits them, from the
- * spellbook and from the mod list's Config button.
+ * The client options (architecture 19.2: UI preferences only), in {@code config/realmforge-client.toml}: Auto Shoot
+ * for bows and crossbows (RLM-496), how the spell bar's presses wait (Matěj, 2026-10-19, RLM-25), where the spell bar
+ * and resource bar group goes and how big it is (RLM-404), and how the Highlight Spell Target key works (RLM-468).
+ * {@link RealmforgeConfigScreen} edits them, from the spellbook's gear button and from the mod list's Config button.
  */
 public final class ClientConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+
+    /** On (the default): holding right click fires a bow at full draw and a loaded crossbow, then draws or loads again. */
+    public static final ModConfigSpec.BooleanValue AUTO_SHOOT = BUILDER
+            .comment("Whether holding right click with a bow or crossbow fires it on its own (true): a bow at full "
+                    + "draw, a crossbow once loaded, each starting again while the button stays down.")
+            .translation(GeneratedTexts.GUI_AUTO_SHOOT)
+            .define("autoShoot", true);
 
     /** Off (the default): a spell pressed during another spell's cast cancels it and casts at once. */
     public static final ModConfigSpec.BooleanValue QUEUE_SPELL_CASTS = BUILDER
@@ -95,7 +102,7 @@ public final class ClientConfig {
     public static void register(ModContainer container) {
         container.registerConfig(ModConfig.Type.CLIENT, SPEC);
         container.registerExtensionPoint(IConfigScreenFactory.class,
-                (mod, parent) -> new SpellOptionsScreen(parent));
+                (mod, parent) -> new RealmforgeConfigScreen(parent));
     }
 
     /** The spell bar and resource bar group's scale as the options set it. */

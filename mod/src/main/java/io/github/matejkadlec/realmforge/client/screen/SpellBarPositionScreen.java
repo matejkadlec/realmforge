@@ -1,9 +1,9 @@
 package io.github.matejkadlec.realmforge.client.screen;
 
-import io.github.matejkadlec.realmforge.client.ClientConfig;
 import io.github.matejkadlec.realmforge.client.hud.SpellBarHud;
 import io.github.matejkadlec.realmforge.client.hud.SpellBarLayout;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
+import java.util.function.Consumer;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -13,11 +13,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 
 /**
- * The spell bar's drag mode (RLM-404; Matěj, 2026-10-24), opened by Spellbar Position in the spell options, which it
- * hides: the player drags the spell bar and the resource bar under it, one group, anywhere on the screen but off it,
+ * The spell bar's drag mode (RLM-404; Matěj, 2026-10-24), opened by Spellbar Position's button in the Realmforge config
+ * screen ({@link RealmforgeConfigScreen}, RLM-495), which it hides: the player drags the spell bar and the resource bar under it, one group, anywhere on the screen but off it,
  * partly or wholly ({@link SpellBarLayout#clamp}). While dragging, a red dashed line twice a line's width marks the
- * screen's middle, and the group snaps to it ({@link CentreSnap}). Cancel (and Escape) goes back to the options with
- * the place before, Save keeps the new one, Reset Position puts the group back at its default place. In game the world
+ * screen's middle, and the group snaps to it ({@link CentreSnap}). Cancel (and Escape) goes back to the config screen
+ * with the place before, Save hands it the new one, Reset Position puts the group back at its default place. The
+ * config screen keeps the place as a draft, which its own Save &amp; Quit writes into the client config and its Cancel
+ * drops; the group is drawn at the size the screen's drafts set. In game the world
  * and the HUD show through, with the group drawn where it is being dragged ({@link SpellBarHud#draw}); from the main
  * menu empty slots stand in for it.
  */
@@ -37,8 +39,11 @@ public final class SpellBarPositionScreen extends Screen {
     private static final int HINT = 0xFFC8C8C8;
 
     private final Screen parent;
+    /** The group's scale, as the config screen's drafts set it. */
+    private final float scale;
+    private final Consumer<RealmforgeConfigScreen.Place> onSave;
     private final CentreSnap snap = new CentreSnap();
-    /** The group's place as fractions of the room the screen leaves it, as the options save it. */
+    /** The group's place as fractions of the room the screen leaves it, as the client config saves it. */
     private double placeX;
     private double placeY;
     /** Whether the group is being dragged, where the mouse holds it, and where the mouse was last. */
@@ -48,11 +53,14 @@ public final class SpellBarPositionScreen extends Screen {
     private double lastMouseX;
     private double lastMouseY;
 
-    public SpellBarPositionScreen(Screen parent) {
+    public SpellBarPositionScreen(Screen parent, RealmforgeConfigScreen.Place place, float scale,
+            Consumer<RealmforgeConfigScreen.Place> onSave) {
         super(Component.translatable(GeneratedTexts.GUI_SPELL_BAR_POSITION));
         this.parent = parent;
-        placeX = ClientConfig.SPELL_BAR_X.get();
-        placeY = ClientConfig.SPELL_BAR_Y.get();
+        this.scale = scale;
+        this.onSave = onSave;
+        placeX = place.x();
+        placeY = place.y();
     }
 
     @Override
@@ -69,7 +77,7 @@ public final class SpellBarPositionScreen extends Screen {
     }
 
     private SpellBarLayout.Group group() {
-        return SpellBarLayout.place(width, height, placeX, placeY, ClientConfig.spellBarScale());
+        return SpellBarLayout.place(width, height, placeX, placeY, scale);
     }
 
     @Override
@@ -120,7 +128,6 @@ public final class SpellBarPositionScreen extends Screen {
     private void move(double mouseX, double mouseY) {
         lastMouseX = mouseX;
         lastMouseY = mouseY;
-        float scale = ClientConfig.spellBarScale();
         SpellBarLayout.Group wanted = SpellBarLayout.clamp(width, height, new SpellBarLayout.Group(
                 (int) Math.round(mouseX - grabX), (int) Math.round(mouseY - grabY), scale));
         int roomX = width - wanted.width();
@@ -130,9 +137,7 @@ public final class SpellBarPositionScreen extends Screen {
     }
 
     private void save() {
-        ClientConfig.SPELL_BAR_X.set(placeX);
-        ClientConfig.SPELL_BAR_Y.set(placeY);
-        ClientConfig.SPEC.save();
+        onSave.accept(new RealmforgeConfigScreen.Place(placeX, placeY));
         minecraft.setScreen(parent);
     }
 

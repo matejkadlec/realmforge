@@ -43,6 +43,7 @@ public final class QaGameTests {
             ApotheosisGameTests.class,
             ApothicAttributesGameTests.class,
             AstoneGameTests.class,
+            AutoShootGameTests.class,
             BossBarGameTests.class,
             BossGameTests.class,
             CastGameTests.class,

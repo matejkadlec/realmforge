@@ -111,13 +111,27 @@ texts:
   # A known spell in the list: "Test Bolt (Rank 2)" (%1$s the name, %2$s the rank).
   spell_with_rank:
     en_us: "%1$s (Rank %2$s)"
+  # The tooltip of the spellbook's gear button (RLM-497), which opens the Realmforge config screen.
   spell_options:
     en_us: Options
-  # The spell casting options (Matěj, 2026-10-19, RLM-25; client/screen/SpellOptionsScreen), also behind the
-  # Config button of the mod list. The tooltips are Matěj's (2026-10-29): "Spellbar" is one word, and a tooltip's
-  # second case ("Off:", "Hold:") starts on a new line.
-  spell_casting_options:
-    en_us: Spell Casting Options
+  # The Realmforge config screen (RLM-495; client/screen/RealmforgeConfigScreen), in Better Combat's style: the
+  # spellbook's gear button and the mod list's Config button open it. Its title, the search bar's hint, a slider's
+  # value ("Value: 3", %1$s the value) and the button that keeps the changes; Cancel and Reset are vanilla's. The
+  # options' tooltips are Matěj's (2026-10-29): "Spellbar" is one word, and a tooltip's second case ("Off:",
+  # "Hold:") starts on a new line.
+  config_title:
+    en_us: Realmforge
+  config_search:
+    en_us: Search...
+  option_value:
+    en_us: "Value: %1$s"
+  save_and_quit:
+    en_us: Save & Quit
+  # Auto Shoot (RLM-496; Matěj, 2026-10-29): holding right click with a bow or crossbow draws and fires on its own.
+  auto_shoot:
+    en_us: Auto Shoot
+  auto_shoot_tooltip:
+    en_us: "On: holding right click with a bow fires at full draw and draws again, and a crossbow loads, fires and loads again.\nOff: release right click to shoot."
   queue_spell_casts:
     en_us: Queue Spell Casts
   queue_spell_casts_tooltip:
@@ -130,8 +144,9 @@ texts:
   # Position opens the drag mode (client/screen/SpellBarPositionScreen), whose title it is too.
   spell_bar_position:
     en_us: Spellbar Position
+  # The row's button, which opens the drag mode.
   spell_bar_position_button:
-    en_us: Spellbar Position...
+    en_us: Move...
   spell_bar_position_tooltip:
     en_us: Reposition the spellbar wherever you want it on the screen.
   spell_bar_position_hint:

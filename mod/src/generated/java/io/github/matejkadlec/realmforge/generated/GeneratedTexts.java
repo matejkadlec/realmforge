@@ -80,6 +80,12 @@ public final class GeneratedTexts {
     /** {@code entity.realmforge.spell_projectile} from {@code content/texts/entity.yaml}: "Spell Projectile" */
     public static final String ENTITY_SPELL_PROJECTILE = "entity.realmforge.spell_projectile";
 
+    /** {@code gui.realmforge.auto_shoot} from {@code content/texts/gui.yaml}: "Auto Shoot" */
+    public static final String GUI_AUTO_SHOOT = "gui.realmforge.auto_shoot";
+
+    /** {@code gui.realmforge.auto_shoot_tooltip} from {@code content/texts/gui.yaml}: "On: holding right click with a bow fires at full draw and draws again, and a crossbow loads, fires and loads again.\nOff: release right click to shoot." */
+    public static final String GUI_AUTO_SHOOT_TOOLTIP = "gui.realmforge.auto_shoot_tooltip";
+
     /** {@code gui.realmforge.block_reach} from {@code content/texts/gui.yaml}: "Block Reach" */
     public static final String GUI_BLOCK_REACH = "gui.realmforge.block_reach";
 
@@ -100,6 +106,12 @@ public final class GeneratedTexts {
 
     /** {@code gui.realmforge.class_resource} from {@code content/texts/gui.yaml}: "Resource: %1$s" */
     public static final String GUI_CLASS_RESOURCE = "gui.realmforge.class_resource";
+
+    /** {@code gui.realmforge.config_search} from {@code content/texts/gui.yaml}: "Search..." */
+    public static final String GUI_CONFIG_SEARCH = "gui.realmforge.config_search";
+
+    /** {@code gui.realmforge.config_title} from {@code content/texts/gui.yaml}: "Realmforge" */
+    public static final String GUI_CONFIG_TITLE = "gui.realmforge.config_title";
 
     /** {@code gui.realmforge.create_character} from {@code content/texts/gui.yaml}: "Create Character" */
     public static final String GUI_CREATE_CHARACTER = "gui.realmforge.create_character";
@@ -152,6 +164,9 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.offense} from {@code content/texts/gui.yaml}: "Offense" */
     public static final String GUI_OFFENSE = "gui.realmforge.offense";
 
+    /** {@code gui.realmforge.option_value} from {@code content/texts/gui.yaml}: "Value: %1$s" */
+    public static final String GUI_OPTION_VALUE = "gui.realmforge.option_value";
+
     /** {@code gui.realmforge.origin_class} from {@code content/texts/gui.yaml}: "Class: %1$s" */
     public static final String GUI_ORIGIN_CLASS = "gui.realmforge.origin_class";
 
@@ -182,6 +197,9 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.save} from {@code content/texts/gui.yaml}: "Save" */
     public static final String GUI_SAVE = "gui.realmforge.save";
 
+    /** {@code gui.realmforge.save_and_quit} from {@code content/texts/gui.yaml}: "Save & Quit" */
+    public static final String GUI_SAVE_AND_QUIT = "gui.realmforge.save_and_quit";
+
     /** {@code gui.realmforge.specialization_wip} from {@code content/texts/gui.yaml}: "Specialization: WIP" */
     public static final String GUI_SPECIALIZATION_WIP = "gui.realmforge.specialization_wip";
 
@@ -194,7 +212,7 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.spell_bar_position} from {@code content/texts/gui.yaml}: "Spellbar Position" */
     public static final String GUI_SPELL_BAR_POSITION = "gui.realmforge.spell_bar_position";
 
-    /** {@code gui.realmforge.spell_bar_position_button} from {@code content/texts/gui.yaml}: "Spellbar Position..." */
+    /** {@code gui.realmforge.spell_bar_position_button} from {@code content/texts/gui.yaml}: "Move..." */
     public static final String GUI_SPELL_BAR_POSITION_BUTTON = "gui.realmforge.spell_bar_position_button";
 
     /** {@code gui.realmforge.spell_bar_position_hint} from {@code content/texts/gui.yaml}: "Drag the bar to change its position." */
@@ -208,9 +226,6 @@ public final class GeneratedTexts {
 
     /** {@code gui.realmforge.spell_bar_size_tooltip} from {@code content/texts/gui.yaml}: "Size of the spellbar. The width-to-height ratio stays the same." */
     public static final String GUI_SPELL_BAR_SIZE_TOOLTIP = "gui.realmforge.spell_bar_size_tooltip";
-
-    /** {@code gui.realmforge.spell_casting_options} from {@code content/texts/gui.yaml}: "Spell Casting Options" */
-    public static final String GUI_SPELL_CASTING_OPTIONS = "gui.realmforge.spell_casting_options";
 
     /** {@code gui.realmforge.spell_options} from {@code content/texts/gui.yaml}: "Options" */
     public static final String GUI_SPELL_OPTIONS = "gui.realmforge.spell_options";

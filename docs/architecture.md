@@ -1039,6 +1039,29 @@ are still in it and 11 s after they are out, a dodged hit counts, falls, lava, f
 of Oblivion fails and is kept in combat and works after a full charge once the window has passed, and a hit or letting
 go of right click stops its charge.
 
+### 9.5 Auto Shoot
+
+Built for RLM-496 (Matěj, 2026-10-29): **with the client option Auto Shoot on (the default), holding right click with
+a bow fires it at full draw and draws it again, and a crossbow loads, fires and loads again**, for as long as the
+button is held and there is ammunition. Letting go early still fires a weaker shot, as in vanilla; with the option
+off nothing changes.
+
+- **The rule** (`combat/AutoShoot`): an item is a bow or a crossbow when it is a `ProjectileWeaponItem` with the bow's
+  or the crossbow's use animation, so other mods' bows and crossbows count; the trident and throwables do not. A bow
+  is released after `BOW_RELEASE_TICKS`, one tick past vanilla's full draw (20 ticks, power 1, the crit arrow that
+  `HitTracker` reads): the server counts the draw from the moment the client's use packet reaches it and the
+  release packet takes as long, so it counts about the client's ticks, and the extra tick keeps a release that lands
+  a tick early at full draw. A crossbow is released once it holds its projectiles (`CrossbowItem#isCharged`), which
+  the server sets when loading ends and syncs to the client, so its own charge time (Quick Charge included) decides.
+- **The client** (`client/input/AutoShootInput`, every client tick) releases the item in use through the game mode,
+  as letting go would, while the option is on and the use key is held. Vanilla's own repeat of a held use key
+  (`Minecraft#handleKeybinds`, every 4 ticks while nothing is in use) then draws the bow again, or fires the loaded
+  crossbow and loads it again. Nothing on the server changes: no payload, no new rule there.
+
+`AutoShootTest` (JUnit) covers the release rule, and `AutoShootGameTests` the items it counts and that its bow release
+fires a crit arrow even a tick early, while a tick short of full draw does not. Holding the button needs a client:
+the playtest covers it.
+
 ## 10. Character: races, classes, leveling
 
 ### 10.1 Races and classes
@@ -1667,7 +1690,8 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   or an unknown spell.
 - **Casting** (Matěj, 2026-10-19): `client/spell/CastQueue` decides every client tick, from the presses and the held
   keys and the client options `Queue Spell Casts` (off) and `Spells Queue Size` (1 to 3; `client/ClientConfig`, edited
-  in `client/screen/SpellOptionsScreen`, behind the spellbook's Options button and the mod list's Config button).
+  in the Realmforge config screen, `client/screen/RealmforgeConfigScreen` ([18](#18-client-code-rendering-gui-input)),
+  behind the spellbook's gear button and the mod list's Config button).
   Without queueing a press goes at once with `replaceCast`, cancelling another spell's cast in progress, and waits only
   for the global cooldown; with queueing it waits for the cast to end too, and up to the queue size presses wait in
   order, a new press replacing the waiting one at size 1. A held key casts its spell again whenever its cooldowns
@@ -1701,13 +1725,14 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   spell's name is on the left and the seconds "elapsed / total" on the right, smaller. After a cast the bar stays a
   moment: full and flashing toward white as it fades, or red with how it ended in place of the name ("Interrupted", "Out
   of range"), and a refused cast's reason shows there in red (`spell/CastTexts`, research SP-3).
-- **The spell bar's place and size** (RLM-404; Matěj, 2026-10-24 and 2026-10-29): three rows of the spell options
-  (`client/screen/SpellOptionsScreen`), after the casting ones and with no section heading, saved in the client config
-  (`client/ClientConfig`). Spellbar Position opens the drag mode (`client/screen/SpellBarPositionScreen`), which hides
-  the options: the player drags the group anywhere on the screen but off it, partly or wholly
+- **The spell bar's place and size** (RLM-404; Matěj, 2026-10-24 and 2026-10-29): three rows of the Realmforge config
+  screen (`client/screen/RealmforgeConfigScreen`), after the casting ones and with no section heading, saved in the
+  client config (`client/ClientConfig`). Spellbar Position's button opens the drag mode
+  (`client/screen/SpellBarPositionScreen`), which hides the config screen: the player drags the group anywhere on the screen but off it, partly or wholly
   (`SpellBarLayout#clamp`). While dragging, a red dashed line 2 px wide marks the screen's middle, and the group snaps
   to it within 6 px and holds there against a sideways pull until the pull has lasted 0.25 s (`CentreSnap`). Cancel
-  (and Escape) goes back with the place before, Save keeps the new one, Reset Position (bottom left) puts the group
+  (and Escape) goes back with the place before, Save hands the config screen the new one as a draft (its Save & Quit
+  keeps it, its Cancel drops it), and the group shows at the size the screen's drafts set; Reset Position (bottom left) puts the group
   back at its default place. In game the screen has no dimmed or blurred background and draws the group itself
   (`SpellBarHud#draw`, which the HUD layer skips meanwhile); from the main menu empty slots stand in for it. A saved
   place is two fractions of the room the screen leaves the group each way (`spellBarX`, `spellBarY`, -1 for the
@@ -1769,7 +1794,7 @@ through vanilla's `RenderTypes#debugQuads`: translucent position and colour quad
 write, so neither night nor a torch changes it, every frame, also while paused. **The Highlight Spell Target key**
 (RLM-468, `SpellKeys#HIGHLIGHT_SPELL_TARGET`, Left Alt by default, which no key of the pack takes, under Realmforge
 Spell Bar) shows it without a cast. The client option Highlight Spell Target (`ClientConfig#HIGHLIGHT_SPELL_TARGET`, a
-row of the spell options) makes it a toggle (the default: a press switches the highlight on until the next press) or
+row of the Realmforge config screen) makes it a toggle (the default: a press switches the highlight on until the next press) or
 Hold (on while the key is held). While the highlight is on, `TargetCircle` draws the ring under the mob the server names
 in `HighlightedTargetPayload` ([11.2](#112-casting-server-authoritative)), unless the local player's cast names its own
 mob, which wins (`TargetCircle#under`, `TargetCircleTest`). It tells the server when the highlight goes on and off, and
@@ -3373,17 +3398,35 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     the chosen one, each with its description and what it gives ("+5 Strength"); a class also its resource and
     starting kit. It opens and closes by itself ([10.1](#101-races-and-classes)).
   - The spell bar with the resource bar under it and the cast bar (`client/hud/SpellBarHud`, `ResourceBarHud`,
-    `CastBarHud`), the spellbook
-    (`client/screen/SpellbookScreen`, P by default) and the spell options (`SpellOptionsScreen`), C3b, with the
-    spell bar's place and size and its drag mode (`SpellBarPositionScreen`, RLM-404): [11.6](#116-client-side).
+    `CastBarHud`) and the spellbook (`client/screen/SpellbookScreen`, P by default), C3b, with the spell bar's place
+    and size and its drag mode (`SpellBarPositionScreen`, RLM-404): [11.6](#116-client-side). The spellbook's gear
+    button, top right and level with its title (RLM-497; Matěj, 2026-10-29: an icon instead of the word "Options",
+    which a panel drawn over it had greyed out), opens the config screen; "Options" is its tooltip. The panel is the
+    screen's background now, under its widgets. The gear is our sprite `realmforge:icon/gear`, drawn as pixel rows in
+    palette colours by `tools/realmforge_tools/generate/gui_icons.py`, like the font's symbols.
+  - The Realmforge config screen (`client/screen/RealmforgeConfigScreen`, RLM-495; Matěj, 2026-10-29), in the style of
+    Better Combat's (Cloth Config's), behind the spellbook's gear button and the mod list's Config button
+    (`IConfigScreenFactory`): the title "Realmforge", a search bar under it that filters the rows by name (ignoring
+    case), and one flat list of the client options, a row each, with no sections until there are many options. A row
+    has the option's name on the left (its tooltip on hover; in italics while changed and unsaved; grey while the
+    option does not apply), its control on the right (Yes in green or No in red, a slider reading "Value: N", a cycle
+    or a button) and Reset, which puts the option back to its default. Cancel (and Escape) and Save & Quit close it.
+    The rows edit drafts (`OptionDraft`): Save & Quit writes the changed ones into the client config and its file,
+    Cancel drops them. The rows, in order: Auto Shoot (RLM-496, [9.5](#95-auto-shoot)), Queue Spell Casts, Spells
+    Queue Size (greyed out while queueing is off), Spellbar Position (a button that opens the drag mode), Spellbar
+    Size (greyed out while Mirror Hotbar's Width is on), Mirror Hotbar's Width, Highlight Spell Target. A new client
+    option is another row. It is built on vanilla widgets (`ContainerObjectSelectionList`, `EditBox`, buttons and
+    sliders), not on Cloth Config, so the core mod keeps no dependency on it (the lean dev client and CI run without
+    it), and it is one screen for both entry points.
 - **Minecraft 26.1 draws GUIs by render-state extraction:** a HUD layer (`GuiLayer`) and a screen
   (`Screen#extractRenderState`) receive a `GuiGraphicsExtractor` (`text`, `centeredText`, `fill`, `pose()` for
   scaling). A layer registered through `RegisterGuiLayersEvent` checks `options.hideGui` itself.
 - **Little rendering code:** GeckoLib for animated entities, vanilla widgets for UI, no rendering mixins unless
   unavoidable, no shaders of our own (Iris and Complementary). Porting costs the most here
   ([ADR 0003](decisions/0003-platform-minecraft-1-21-1-neoforge.md)), so it stays small.
-- **Client config** (`ModConfigSpec`, client type) holds UI preferences only: `client/ClientConfig` (C3b), the spell
-  casting options, the spell bar's place and size (RLM-404) and how the Highlight Spell Target key works (RLM-468).
+- **Client config** (`ModConfigSpec`, client type) holds UI preferences only: `client/ClientConfig` (C3b), Auto Shoot
+  (RLM-496), the spell casting options, the spell bar's place and size (RLM-404) and how the Highlight Spell Target key
+  works (RLM-468).
 
 ## 19. Cross-cutting rules
 
@@ -3445,8 +3488,9 @@ Implemented in the `world` feature (R1): `WorldDefaults`, `GriefingProtection`, 
 
 `ModConfigSpec` only for operator and UI settings (instance limits, timeouts, debug flags, HUD options). Gameplay
 numbers are content, so they are versioned, validated and tested. The client config exists (C3b): `client/ClientConfig`,
-`config/realmforge-client.toml`, holds how the spell bar's presses wait, where the spell bar goes and how big it is,
-and whether the Highlight Spell Target key toggles or is held ([11.6](#116-client-side)). One exception: the
+`config/realmforge-client.toml`, holds Auto Shoot ([9.5](#95-auto-shoot)), how the spell bar's presses wait, where the
+spell bar goes and how big it is, and whether the Highlight Spell Target key toggles or is held
+([11.6](#116-client-side)); the Realmforge config screen edits them ([18](#18-client-code-rendering-gui-input)). One exception: the
 common config, `combat/CombatConfig`, `config/realmforge-common.toml`, holds the blocking rules
 ([9.3](#93-blocking-with-two-handed-weapons)) and the in-combat window ([9.4](#94-in-combat), RLM-348, whose ticket
 allowed content or config), because Matěj tunes them while he plays (RLM-297) and NeoForge reloads the file when it
