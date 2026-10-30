@@ -3,8 +3,9 @@
 # second, 3 in all, at every rank (Matěj, 2026-10-29, RLM-518; it was 3 missiles in 3 s), no cooldown. High damage and
 # more mana than Fireball or Frostbolt: 12 a second, so 24 a cast. Each missile ignores 5 % of the target's resistance
 # to arcane per rank (spell penetration). Each flies where the crosshair points at its tick, homing on an enemy near it.
-# At level 1 about 19 damage a cast, 12.9 a second: more than Frostbolt's 7.7 (RLM-518 halved the channel), paid for in
-# mana; Matěj rebalances it in the playtest.
+# Scaling system C (RLM-534, Claude's proposal for Matěj's playtest): a channel splits its coefficient over its ticks,
+# so each missile deals 3/3.5/4/4.5/5 + 35/42.5/50/57.5/65 % of Spell Power, about Frostbolt's coefficient in all
+# (105 % to 195 %) on a slightly higher base, paid for in mana. At 7 Spell Power (a level 1 Mage) about 16.4 a cast.
 id: arcane_missiles
 name: {en_us: Arcane Missiles}
 description: {en_us: "Fires 3 arcane missiles, each for {damage} damage, ignoring {penetration}% of the target's resistance to arcane."}
@@ -22,7 +23,9 @@ effects:
     appearance: {model: orb, color: "#C77DFF"}
     effects:
       - type: realmforge:damage
-        amount: 5
-        per_level: 1
+        amount: 3
+        per_level: 0.5
+        spell_power_percent: 35
+        spell_power_per_level_percent: 7.5
         penetration_percent: 5
         penetration_per_level_percent: 5

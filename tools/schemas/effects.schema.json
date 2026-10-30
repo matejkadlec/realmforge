@@ -99,7 +99,7 @@
     },
     "PeriodicDef": {
       "additionalProperties": false,
-      "description": "Damage or healing of a spell school at the end of every interval while the effect lasts (damage or healing\nover time). Each amplifier level adds the amount again, and the caster's stats raise it as they would the\nschool's hit or heal: spell power for a magic school, and the school's power. Ticks never crit.",
+      "description": "Damage or healing of a spell school at the end of every interval while the effect lasts (damage or healing\nover time). One tick is (amount + its share of the caster's Spell Power) times (1 + the school's power), scaling\nsystem C (RLM-534): a damage over time splits its spell's coefficient over its ticks. Each amplifier level adds the\ntick again. The caster's stats count as each tick lands. Ticks never crit.",
       "properties": {
         "amount": {
           "description": "Damage or healing of one tick at the first level (amplifier 0).",
@@ -118,6 +118,21 @@
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
           "title": "School",
           "type": "string"
+        },
+        "spell_power_percent": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 1000,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Share of the caster's Spell Power (points) one tick adds at the first level, in percent (a magic school only). Without it, Spell Power adds nothing.",
+          "title": "Spell Power Percent"
         },
         "type": {
           "description": "damage: a hit of the school; heal: healing.",

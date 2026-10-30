@@ -6,6 +6,7 @@
 # takes both hands: no shield with it, and every shield stays locked for 3 minutes after (Matěj, 2026-10-26).
 # Recipe (Matěj, 2026-10-26): an amethyst shard over the material over a stick.
 # The generated placeholder texture until A1's art.
+# Spell Power is flat points since RLM-534 (Matěj, 2026-10-30).
 id: wooden_wand
 name:
   en_us: Wooden Wand
@@ -21,7 +22,7 @@ gear:
   attack_speed: 1.0
   two_handed: true
   modifiers:
-    - {attribute: realmforge:spell_power, operation: add_value, amount_percent: 10}
+    - {attribute: realmforge:spell_power, operation: add_value, amount: 1}
     - {attribute: realmforge:cast_time_reduction, operation: add_value, amount_percent: 3}
     - {attribute: realmforge:cooldown_reduction, operation: add_value, amount_percent: 3}
 recipe:

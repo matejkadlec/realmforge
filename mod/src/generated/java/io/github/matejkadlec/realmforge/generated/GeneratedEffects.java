@@ -34,7 +34,7 @@ public final class GeneratedEffects {
     /** {@code realmforge:burning} from {@code content/effects/burning.yaml}: harmful, "Burning". */
     public static final DeferredHolder<MobEffect, MobEffect> BURNING =
             EFFECTS.register("burning", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0xFF7F1F,
-                    Optional.of(Periodic.damage("realmforge:fire", 0.75, 10))));
+                    Optional.of(Periodic.damage("realmforge:fire", 0.5, 0.03, 10))));
 
     /** {@code realmforge:cracked_stone} from {@code content/effects/cracked_stone.yaml}: beneficial, "Cracked Stone". */
     public static final DeferredHolder<MobEffect, MobEffect> CRACKED_STONE =
@@ -61,19 +61,19 @@ public final class GeneratedEffects {
     /** {@code realmforge:test_burning} from {@code content/effects/test_burning.yaml}: harmful, "Test Burning". */
     public static final DeferredHolder<MobEffect, MobEffect> TEST_BURNING =
             EFFECTS.register("test_burning", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0xFF7F1F,
-                    Optional.of(Periodic.damage("realmforge:fire", 2.0, 20))));
+                    Optional.of(Periodic.damage("realmforge:fire", 2.0, 0.1, 20))));
 
     /** {@code realmforge:test_regrowth} from {@code content/effects/test_regrowth.yaml}: beneficial, "Test Regrowth". */
     public static final DeferredHolder<MobEffect, MobEffect> TEST_REGROWTH =
             EFFECTS.register("test_regrowth", () -> new StatusEffect(MobEffectCategory.BENEFICIAL, 0x4FCF6F,
-                    Optional.of(Periodic.heal("realmforge:arcane", 2.0, 20))));
+                    Optional.of(Periodic.heal("realmforge:arcane", 2.0, 0.1, 20))));
 
     /** {@code realmforge:test_sapped} from {@code content/effects/test_sapped.yaml}: harmful, "Test Sapped". */
     public static final DeferredHolder<MobEffect, MobEffect> TEST_SAPPED =
             EFFECTS.register("test_sapped", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0x8F8FA0,
                     Optional.empty())
                     .modifier("minecraft:movement_speed", "realmforge:effect.test_sapped.minecraft.movement_speed", -0.2, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
-                    .modifier("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", -0.1, AttributeModifier.Operation.ADD_VALUE));
+                    .modifier("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", -1.0, AttributeModifier.Operation.ADD_VALUE));
 
     /** Every effect above, in id order. */
     public static final List<DeferredHolder<MobEffect, MobEffect>> ALL = List.of(BATTLE_SHOUT, BURNING, CRACKED_STONE, ICE_BARRIER, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);

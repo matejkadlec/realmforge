@@ -7,9 +7,10 @@ import net.minecraft.util.Mth;
  * <ul>
  *   <li><b>Per spell level:</b> an amount at level 1 grows by its {@code per_level} for every level above it (research
  *   SP-9).</li>
- *   <li><b>Scaling</b> (Matěj, 2026-10-15): a physical ability adds its share of the caster's attack damage to each
- *   amount. A magic spell's damage gets spell power and the school's power in the damage pipeline (architecture 9.1);
- *   its heals get the same factor here: × (1 + spell power + the school's power).</li>
+ *   <li><b>Scaling</b> (system C, Matěj, 2026-10-30, RLM-534): each amount adds its {@link Coefficient}, a share of
+ *   the caster's power growing per rank, Attack Damage for a physical ability and Spell Power (points) for a magic
+ *   spell. The damage pipeline then multiplies a hit by 1 + the school's power + passives (architecture 9.1); a magic
+ *   spell's heals get × (1 + the school's power) here.</li>
  *   <li><b>Cooldowns:</b> Cooldown Reduction shortens a spell's own cooldown, never the global cooldown.</li>
  *   <li><b>Cast times:</b> Cast Time Reduction shortens a cast time, and a channel's interval, so the channel keeps its
  *   number of ticks.</li>
@@ -29,21 +30,22 @@ public final class SpellScaling {
     }
 
     /**
-     * An effect's base amount for its caster: the amount at the spell level, plus {@code attackDamageShare} of the
-     * caster's {@code attackDamage} (an attack damage ability; 0 for magic). Never negative.
+     * An effect's base amount for its caster: the amount at the spell level plus its {@code coefficient} of the
+     * caster's {@code attackDamage} and {@code spellPower} at that level, (Base(rank) + Coefficient(rank) × Power) of
+     * system C. Never negative.
      */
-    public static double base(double amount, double perLevel, int level, double attackDamageShare,
-            double attackDamage) {
-        return Math.max(0, atLevel(amount, perLevel, level) + attackDamageShare * Math.max(0, attackDamage));
+    public static double base(double amount, double perLevel, int level, Coefficient coefficient,
+            double attackDamage, double spellPower) {
+        return Math.max(0, atLevel(amount, perLevel, level) + coefficient.addedAt(level, attackDamage, spellPower));
     }
 
     /**
-     * A heal before its crit: {@code base} × (1 + spell power + the school's power) for a spell that scales with spell
-     * power, {@code base} alone for one that scales with attack damage (its share is already in the base). Never
-     * negative.
+     * A heal before its crit: {@code base} × (1 + the school's power) for a spell that scales with spell power,
+     * {@code base} alone for one that scales with attack damage. The caster's power is already in the base (its
+     * {@link Coefficient}). Never negative.
      */
-    public static double heal(double base, Scaling scaling, double spellPower, double schoolPower) {
-        double factor = scaling == Scaling.SPELL_POWER ? 1 + spellPower + schoolPower : 1;
+    public static double heal(double base, Scaling scaling, double schoolPower) {
+        double factor = scaling == Scaling.SPELL_POWER ? 1 + schoolPower : 1;
         return Math.max(0, base * Math.max(0, factor));
     }
 

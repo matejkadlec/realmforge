@@ -79,7 +79,7 @@ def _periodic(effect: EffectDef) -> str:
         return "Optional.empty()"
     return (
         f"Optional.of(Periodic.{periodic.type}({string_literal(periodic.school)}, {_double(periodic.amount)}, "
-        f"{seconds_to_ticks(periodic.interval_seconds)}))"
+        f"{_double(periodic.spell_power_fraction)}, {seconds_to_ticks(periodic.interval_seconds)}))"
     )
 
 
@@ -156,7 +156,8 @@ def _expectation(effect: EffectDef) -> str:
     periodic = effect.periodic
     periodic_expectation = (
         f"Optional.of(new PeriodicExpectation({string_literal(periodic.type)}, {string_literal(periodic.school)}, "
-        f"{_double(periodic.amount)}, {seconds_to_ticks(periodic.interval_seconds)}))"
+        f"{_double(periodic.amount)}, {_double(periodic.spell_power_fraction)}, "
+        f"{seconds_to_ticks(periodic.interval_seconds)}))"
         if periodic is not None
         else "Optional.empty()"
     )
@@ -195,8 +196,12 @@ def _expectations(content: Content) -> bytes:
         "            double secondLevelAmount) {\n"
         "    }\n"
         "\n"
-        "    /** Damage or healing over time: one tick's amount at the first level, every {@code intervalTicks}. */\n"
-        "    public record PeriodicExpectation(String type, String school, double amount, int intervalTicks) {\n"
+        "    /**\n"
+        "     * Damage or healing over time: one tick's amount and its share of the caster's Spell Power at the first level,\n"
+        "     * every {@code intervalTicks}.\n"
+        "     */\n"
+        "    public record PeriodicExpectation(String type, String school, double amount, double spellPower,\n"
+        "            int intervalTicks) {\n"
         "    }\n"
         "\n"
         "    /**\n"

@@ -1,6 +1,8 @@
 # yaml-language-server: $schema=../../tools/schemas/stats.schema.json
-# More spell damage, in percent of the spell's own damage (F5 and the spell engine apply it).
+# Points that a magic spell's damage and healing add a share of, its coefficient per rank (scaling system C, Matěj,
+# 2026-10-30, RLM-534): Frostbolt rank 1 deals 8 + 100 % of it. Gear, Intellect and buffs give it flat ("+2 Spell
+# Power") or in percent ("+10% Spell Power", add_multiplied_base), total = flat × (1 + percents) (architecture 8.2).
 id: spell_power
 name: {en_us: Spell Power}
 kind: secondary
-max_percent: 1000
+max: 100000

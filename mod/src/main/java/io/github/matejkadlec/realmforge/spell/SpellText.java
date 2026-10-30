@@ -39,13 +39,14 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  * each one has the effect it reads:
  *
  * <ul>
- *   <li>{@code damage}, {@code heal}: the first damage or heal effect (a projectile's or an area's included), raised by
- *   spell power and the school's power as the hit or heal is ({@code DamageCalculator#schoolHit},
- *   {@link SpellScaling#heal}), before the target's resistance and without a crit;</li>
+ *   <li>{@code damage}, {@code heal}: the first damage or heal effect (a projectile's or an area's included): its
+ *   amount plus its coefficient of the caster's power (system C, RLM-534), raised by the school's power as the hit or
+ *   heal is ({@code DamageCalculator#schoolHit}, {@link SpellScaling#heal}), before the target's resistance and
+ *   without a crit;</li>
  *   <li>{@code duration}: the first {@code apply_effect}'s duration in seconds;</li>
  *   <li>{@code periodic}, {@code periodic_total}, {@code interval}: one tick, every tick and the seconds between two
- *   ticks of that effect's damage or healing over time ({@link Periodic}), raised by the caster's stats as its ticks
- *   are ({@link EffectTicks#factor});</li>
+ *   ticks of that effect's damage or healing over time ({@link Periodic}), with the caster's stats as its ticks
+ *   have them ({@link EffectTicks#tickFor});</li>
  *   <li>{@code radius}: the first area's radius in blocks;</li>
  *   <li>{@code armor_shred}, {@code penetration}: the first damage effect's extra armor shred and spell penetration
  *   at the rank, in percent, for an effect that has them (C4);</li>
@@ -147,16 +148,13 @@ public final class SpellText {
         double spellPower = stats.applyAsDouble(GeneratedStats.SPELL_POWER);
         double schoolPower = school.flatMap(SpellSchool::power).map(stats::applyAsDouble).orElse(0.0);
         first(effects, DamageEffect.class).ifPresent(damage -> {
-            double base = SpellScaling.base(damage.amount(), damage.perLevel(), level, damage.attackDamage(),
-                    attackDamage);
-            double bonus = (school.map(SpellSchool::magic).orElse(false) ? spellPower : 0) + schoolPower;
-            values.put("damage", DamageNumbers.format(base * Math.max(0, 1 + bonus)));
+            double base = damage.baseAt(level, attackDamage, spellPower);
+            values.put("damage", DamageNumbers.format(base * Math.max(0, 1 + schoolPower)));
         });
         first(effects, HealEffect.class).ifPresent(heal -> {
-            double base = SpellScaling.base(heal.amount(), heal.perLevel(), level, heal.attackDamage(),
-                    attackDamage);
-            values.put("heal", DamageNumbers.format(SpellScaling.heal(base, spell.scalesWith(), spellPower,
-                    schoolPower)));
+            double base = SpellScaling.base(heal.amount(), heal.perLevel(), level, heal.coefficient(), attackDamage,
+                    spellPower);
+            values.put("heal", DamageNumbers.format(SpellScaling.heal(base, spell.scalesWith(), schoolPower)));
         });
         first(effects, DamageEffect.class).ifPresent(damage -> {
             HitBonus hit = damage.bonusAt(level);
@@ -176,9 +174,9 @@ public final class SpellText {
             values.put("duration", decimal(duration / TICKS_PER_SECOND));
             if (applied.effect().value() instanceof StatusEffect status && status.periodic().isPresent()) {
                 Periodic periodic = status.periodic().get();
-                double factor = schools.apply(periodic.school()).map(tickSchool -> EffectTicks.factor(tickSchool,
-                        stats)).orElse(1.0);
-                double tick = periodic.amountAt(amplifier) * factor;
+                double tick = schools.apply(periodic.school())
+                        .map(tickSchool -> EffectTicks.tickFor(periodic, tickSchool, amplifier, stats))
+                        .orElse(periodic.amountAt(amplifier));
                 values.put("periodic", DamageNumbers.format(tick));
                 values.put("periodic_total", DamageNumbers.format(tick * periodic.tickCount(duration)));
                 values.put("interval", decimal(periodic.intervalTicks() / TICKS_PER_SECOND));

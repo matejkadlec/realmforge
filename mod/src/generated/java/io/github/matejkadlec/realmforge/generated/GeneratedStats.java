@@ -130,7 +130,7 @@ public final class GeneratedStats {
     /** {@code realmforge:spell_power} from {@code content/stats/spell_power.yaml}: secondary, "Spell Power". */
     public static final DeferredHolder<Attribute, Attribute> SPELL_POWER =
             ATTRIBUTES.register("spell_power",
-                    () -> new PercentageAttribute("attribute.realmforge.spell_power", 0.0, 0.0, 10.0).setSyncable(true));
+                    () -> new RangedAttribute("attribute.realmforge.spell_power", 0.0, 0.0, 100000.0).setSyncable(true));
 
     /** {@code realmforge:spell_resistance} from {@code content/stats/spell_resistance.yaml}: secondary, "Spell Resistance". */
     public static final DeferredHolder<Attribute, Attribute> SPELL_RESISTANCE =

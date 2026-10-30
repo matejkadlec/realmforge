@@ -19,7 +19,8 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
  * {@code #minecraft:bypasses_cooldown}, so its hits are never swallowed by the hurt cooldown.
  *
  * @param name translation key of the school's name
- * @param kind physical (armor reduces it, it can be dodged) or magic (bypasses armor, spell power raises it)
+ * @param kind physical (armor reduces it, it can be dodged, attack damage drives its spells) or magic (bypasses armor,
+ *     Spell Power drives its spells)
  * @param color colour of the school's spells: spell bar frames, the cast bar, damage numbers in tooltips; opaque ARGB
  *              (written {@code "#RRGGBB"})
  * @param combatTextColor colour of the school's floating combat text, opaque ARGB
@@ -40,16 +41,16 @@ public record SpellSchool(String name, Kind kind, int color, int combatTextColor
             .apply(instance, SpellSchool::new))
             .validate(SpellSchool::validate);
 
-    /** Whether the school is magic: bypasses armor, cannot be dodged, spell power raises it. */
+    /** Whether the school is magic: bypasses armor, cannot be dodged, its spells scale with Spell Power. */
     public boolean magic() {
         return kind == Kind.MAGIC;
     }
 
     /** The two kinds of damage (architecture 9.1). */
     public enum Kind implements StringRepresentable {
-        /** Armor reduces it and it can be dodged, like a melee hit; spell power does not raise it. */
+        /** Armor reduces it and it can be dodged, like a melee hit; its spells scale with attack damage. */
         PHYSICAL("physical"),
-        /** Bypasses armor and cannot be dodged; spell power and the school's power raise it, its resistance lowers it. */
+        /** Bypasses armor and cannot be dodged; its spells scale with Spell Power, its resistance lowers it. */
         MAGIC("magic");
 
         public static final Codec<Kind> CODEC = StringRepresentable.fromEnum(Kind::values);

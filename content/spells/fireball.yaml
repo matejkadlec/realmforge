@@ -1,7 +1,10 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # Fire's first spell (C4, RLM-391; the Fire Mage plays as damage over time): a 1.5 s cast at every rank, no cooldown.
 # Medium damage on the hit, then Burning for 4 s, 0.5 s longer per rank, Burning II from rank 5. It forms in the hands
-# and flies like Frostbolt. About 10.3 damage on the hit at level 1 and 7.7 more over the Burning.
+# and flies like Frostbolt. Scaling system C (RLM-534, Claude's proposal for Matěj's playtest): the hit 6/7/8/9/10 +
+# 70/80/90/100/110 % of Spell Power, less than Frostbolt's because the Burning carries the rest of the coefficient over
+# its ticks (content/effects/burning.yaml: 3 % a tick, 24 % to 36 % over ranks 1 to 4, 72 % as Burning II). At 7 Spell
+# Power (a level 1 Mage) about 10.9 on the hit and 5.7 more over the Burning.
 id: fireball
 name: {en_us: Fireball}
 description: {en_us: "Hurls a ball of fire for {damage} damage that burns the target for {periodic_total} more over {duration} sec."}
@@ -18,7 +21,11 @@ effects:
     impact: {sound: minecraft:entity.generic.extinguish_fire, particles: minecraft:magma_block}
     appearance: {model: orb, color: "#FF7F1F"}
     effects:
-      - {type: realmforge:damage, amount: 8, per_level: 2}
+      - type: realmforge:damage
+        amount: 6
+        per_level: 1
+        spell_power_percent: 70
+        spell_power_per_level_percent: 10
       - type: realmforge:apply_effect
         effect: realmforge:burning
         duration_seconds: 4

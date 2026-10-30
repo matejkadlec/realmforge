@@ -5,6 +5,7 @@
 # No armor: robes protect with Magic Shield, as much as the same tier's vanilla piece has armor, and give Spell
 # Power and Max Mana (Matěj, 2026-10-15). Durability and enchantability
 # as vanilla's leather armor. The generated placeholder textures until A1's art.
+# The set's Spell Power is flat points (Matěj, 2026-10-30, RLM-534), split over its pieces like its Magic Shield.
 id: apprentice_robes
 name:
   en_us: Apprentice's Robes
@@ -19,7 +20,7 @@ gear:
   look: apprentice
   modifiers:
     - {attribute: realmforge:magic_shield, operation: add_value, amount: 3}
-    - {attribute: realmforge:spell_power, operation: add_value, amount_percent: 2}
+    - {attribute: realmforge:spell_power, operation: add_value, amount: 0.8}
     - {attribute: realmforge:max_mana, operation: add_value, amount: 10}
 recipe:
   pattern: ['X X', 'XXX', 'XXX']

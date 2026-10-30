@@ -11,4 +11,4 @@ cast: {type: instant}
 cost: {resource: realmforge:mana, amount: 8}
 max_level: 2
 effects:
-  - {type: realmforge:heal, amount: 4, per_level: 1}
+  - {type: realmforge:heal, amount: 4, per_level: 1, spell_power_percent: 100}

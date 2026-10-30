@@ -120,17 +120,55 @@ class _LeveledAmount(StrictModel):
         return self.amount + self.per_level * (level - 1)
 
 
-class DamageEffectDef(_LeveledAmount):
-    """Damage of the spell's school to each target. A magic school's hit gets the caster's spell power and the
-    school's power in the damage pipeline (architecture 9.1); a physical ability adds a share of the caster's attack
-    damage instead (``attack_damage_percent``). Either way the hit can crit as the spell's ``crit`` says."""
+class _ScaledAmount(_LeveledAmount):
+    """An amount that adds a share of the caster's power, the coefficient, growing per rank like the amount (scaling
+    system C, Matěj, 2026-10-30, RLM-534): (amount + coefficient times power) times (1 + the school's power +
+    passives). The power is Spell Power for a spell that scales with spell_power and Attack Damage for one that scales
+    with attack_damage, so an effect names the coefficient of its spell's power only."""
 
-    type: Literal["realmforge:damage"]
     attack_damage_percent: NonNegative | None = Field(
         default=None,
-        description="Share of the caster's attack damage added to the amount (100 adds all of it). Required for "
-        "spells that scale with attack_damage, refused for spells that scale with spell_power.",
+        description="Share of the caster's attack damage added to the amount at spell level 1 (100 adds all of it). "
+        "Required for the damage of spells that scale with attack_damage, refused for spells that scale with "
+        "spell_power.",
     )
+    attack_damage_per_level_percent: NonNegative | None = Field(
+        default=None, description="Added to attack_damage_percent for every spell level above 1."
+    )
+    spell_power_percent: NonNegative | None = Field(
+        default=None,
+        description="Share of the caster's Spell Power (points) added to the amount at spell level 1 (100 adds all "
+        "of it). Only for spells that scale with spell_power; without it, Spell Power adds nothing.",
+    )
+    spell_power_per_level_percent: NonNegative | None = Field(
+        default=None, description="Added to spell_power_percent for every spell level above 1."
+    )
+
+    @model_validator(mode="after")
+    def _coefficient_growth_needs_base(self) -> _ScaledAmount:
+        for name in ("attack_damage", "spell_power"):
+            if (
+                getattr(self, f"{name}_per_level_percent") is not None
+                and getattr(self, f"{name}_percent") is None
+            ):
+                raise ValueError(f"{name}_per_level_percent grows {name}_percent: set it too")
+        return self
+
+    def attack_damage_at(self, level: int) -> float:
+        """The share of attack damage added at ``level``, in percent; 0 without any."""
+        return _leveled_percent(self.attack_damage_percent, self.attack_damage_per_level_percent, level)
+
+    def spell_power_at(self, level: int) -> float:
+        """The share of Spell Power added at ``level``, in percent; 0 without any."""
+        return _leveled_percent(self.spell_power_percent, self.spell_power_per_level_percent, level)
+
+
+class DamageEffectDef(_ScaledAmount):
+    """Damage of the spell's school to each target: its amount plus its coefficient of the caster's power (Spell
+    Power for magic, Attack Damage for a physical ability), then times (1 + the school's power + passives) in the damage
+    pipeline (architecture 9.1). The hit can crit as the spell's ``crit`` says."""
+
+    type: Literal["realmforge:damage"]
     armor_shred_percent: Percent | None = Field(
         default=None,
         description="Armor shred this hit adds to the caster's own, in percent at spell level 1: the share of the "
@@ -171,17 +209,11 @@ def _leveled_percent(base: float | None, per_level: float | None, level: int) ->
     return (base or 0) + (per_level or 0) * (level - 1)
 
 
-class HealEffectDef(_LeveledAmount):
-    """Healing of each target. A spell that scales with spell power heals times (1 + spell power + the school's power);
-    one that scales with attack damage adds a share of the caster's attack damage instead. Heals can crit too
-    (Matěj, 2026-10-15)."""
+class HealEffectDef(_ScaledAmount):
+    """Healing of each target: its amount plus its coefficient of the caster's power, times (1 + the school's power) for
+    a spell that scales with spell power. Heals can crit too (Matěj, 2026-10-15)."""
 
     type: Literal["realmforge:heal"]
-    attack_damage_percent: NonNegative | None = Field(
-        default=None,
-        description="Share of the caster's attack damage added to the amount (100 adds all of it). Only for spells "
-        "that scale with attack_damage.",
-    )
 
 
 class ApplyEffectEffectDef(StrictModel):
@@ -870,6 +902,8 @@ def _grows_with_level(effect: BaseModel) -> bool:
     """Whether an effect has anything that grows with the spell level."""
     return (
         getattr(effect, "per_level", 0) != 0
+        or getattr(effect, "attack_damage_per_level_percent", None) is not None
+        or getattr(effect, "spell_power_per_level_percent", None) is not None
         or getattr(effect, "armor_shred_per_level_percent", None) is not None
         or getattr(effect, "penetration_per_level_percent", None) is not None
         or getattr(effect, "duration_per_level_seconds", None) is not None

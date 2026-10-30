@@ -37,8 +37,8 @@
         {
           "amount": 2.0,
           "per_level": 0,
-          "type": "realmforge:damage",
-          "attack_damage": 1.0
+          "attack_damage": 1.0,
+          "type": "realmforge:damage"
         },
         {
           "type": "realmforge:knockback",

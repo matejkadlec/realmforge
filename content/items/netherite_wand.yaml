@@ -6,6 +6,7 @@
 # takes both hands: no shield with it, and every shield stays locked for 3 minutes after (Matěj, 2026-10-26).
 # Upgraded from the Diamond Wand at the smithing table, as vanilla's netherite tools (Claude's decision).
 # The generated placeholder texture until A1's art.
+# Spell Power is flat points since RLM-534 (Matěj, 2026-10-30).
 id: netherite_wand
 name:
   en_us: Netherite Wand
@@ -22,7 +23,7 @@ gear:
   attack_speed: 1.0
   two_handed: true
   modifiers:
-    - {attribute: realmforge:spell_power, operation: add_value, amount_percent: 40}
+    - {attribute: realmforge:spell_power, operation: add_value, amount: 5}
     - {attribute: realmforge:cast_time_reduction, operation: add_value, amount_percent: 15}
     - {attribute: realmforge:cooldown_reduction, operation: add_value, amount_percent: 15}
 recipe:

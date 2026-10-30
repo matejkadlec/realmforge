@@ -4,6 +4,7 @@
 # Power and Max Mana and, from diamond on, Cooldown Reduction (Matěj, 2026-10-15). Durability and enchantability
 # as vanilla's netherite armor. The generated placeholder textures until A1's art.
 # Upgraded from the Arcane Silk piece at the smithing table, as vanilla's netherite armor (Matěj, 2026-10-15).
+# The set's Spell Power is flat points (Matěj, 2026-10-30, RLM-534), split over its pieces like its Magic Shield.
 id: netherite_cap
 name:
   en_us: Netherite Cap
@@ -20,7 +21,7 @@ gear:
   equip_sound: minecraft:item.armor.equip_netherite
   modifiers:
     - {attribute: realmforge:magic_shield, operation: add_value, amount: 3}
-    - {attribute: realmforge:spell_power, operation: add_value, amount_percent: 10}
+    - {attribute: realmforge:spell_power, operation: add_value, amount: 0.9}
     - {attribute: realmforge:max_mana, operation: add_value, amount: 40}
     - {attribute: realmforge:cooldown_reduction, operation: add_value, amount_percent: 5}
 recipe:

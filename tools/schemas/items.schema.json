@@ -114,7 +114,7 @@
           "title": "Look"
         },
         "modifiers": {
-          "description": "Its fixed stats while in its slot, e.g. {attribute: realmforge:spell_power, operation: add_value, amount_percent: 15}.",
+          "description": "Its fixed stats while in its slot, e.g. {attribute: realmforge:spell_power, operation: add_value, amount: 2}.",
           "items": {
             "$ref": "#/$defs/GearModifierDef"
           },

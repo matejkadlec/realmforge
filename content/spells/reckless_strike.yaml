@@ -1,7 +1,9 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # Fury's first spell (C4, RLM-392): a reckless thrust, Medium damage, with 10 % more chance to crit at rank 1 and 5 %
 # more per rank (30 % at rank 5). Crit chance above 100 % turns into crit damage 1:1 (combat/DamageCalculator). It needs
-# a melee weapon (RLM-499). Rage per second of cooldown: 20 / 4 s = 5. With a Stone Sword at level 1, about 7 damage.
+# a melee weapon (RLM-499). Rage per second of cooldown: 20 / 4 s = 5. Scaling system C (RLM-534, Claude's proposal
+# for Matěj's playtest): an instant spell with a shorter cooldown than Slam's, so less per cast, 3/3.5/4/4.5/5 +
+# 80/90/100/110/120 % of Attack Damage, about Slam's damage a second before its crit bonus.
 id: reckless_strike
 name: {en_us: Reckless Strike}
 description: {en_us: "Strikes an enemy recklessly for {damage} damage, with {crit_chance}% more chance to crit."}
@@ -15,4 +17,8 @@ max_level: 5
 requires: [melee_weapon]
 crit: {bonus_chance_percent: 10, bonus_chance_per_level_percent: 5}
 effects:
-  - {type: realmforge:damage, amount: 2, per_level: 1, attack_damage_percent: 100}
+  - type: realmforge:damage
+    amount: 3
+    per_level: 0.5
+    attack_damage_percent: 80
+    attack_damage_per_level_percent: 10

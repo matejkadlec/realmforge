@@ -120,7 +120,8 @@ def _effect(effect: BaseModel, indent: str) -> str:
             numbers[field] = converted
     if effect.type in (DAMAGE, HEAL):
         # The codec reads a missing share as 0.
-        numbers.setdefault("attack_damage", 0.0)
+        for share in ("attack_damage", "attack_damage_per_level", "spell_power", "spell_power_per_level"):
+            numbers.setdefault(share, 0.0)
     number_map = ", ".join(f"{string_literal(key)}, {_double(numbers[key])}" for key in sorted(numbers))
     name_map = ", ".join(f"{string_literal(key)}, {string_literal(names[key])}" for key in sorted(names))
     nested = (

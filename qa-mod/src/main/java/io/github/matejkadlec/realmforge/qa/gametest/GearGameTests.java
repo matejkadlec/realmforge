@@ -196,7 +196,8 @@ public final class GearGameTests {
 
     /**
      * RLM-197: a full caster set adds up as Matěj's table of 2026-10-15 says (magic shield, spell power, max mana,
-     * cooldown reduction), written here on its own so a typo in one piece's YAML shows.
+     * cooldown reduction), with the flat Spell Power of RLM-534 (2026-10-30), written here on its own so a typo in one
+     * piece's YAML shows.
      */
     @QaGameTest
     public static void fullCasterSetsAddUpAsTheTableSays(GameTestHelper helper) {
@@ -206,16 +207,16 @@ public final class GearGameTests {
         List<CasterSet> sets = List.of(
                 new CasterSet("Apprentice's", List.of(GeneratedItems.APPRENTICE_HAT.get(),
                         GeneratedItems.APPRENTICE_ROBES.get(), GeneratedItems.APPRENTICE_PANTS.get(),
-                        GeneratedItems.APPRENTICE_BOOTS.get()), 7, 0.08, 40, 0),
+                        GeneratedItems.APPRENTICE_BOOTS.get()), 7, 2, 40, 0),
                 new CasterSet("Spellweave", List.of(GeneratedItems.SPELLWEAVE_CAP.get(),
                         GeneratedItems.SPELLWEAVE_ROBES.get(), GeneratedItems.SPELLWEAVE_PANTS.get(),
-                        GeneratedItems.SPELLWEAVE_SANDALS.get()), 15, 0.16, 60, 0),
+                        GeneratedItems.SPELLWEAVE_SANDALS.get()), 15, 3.5, 60, 0),
                 new CasterSet("Arcane Silk", List.of(GeneratedItems.ARCANE_SILK_CAP.get(),
                         GeneratedItems.ARCANE_SILK_ROBES.get(), GeneratedItems.ARCANE_SILK_PANTS.get(),
-                        GeneratedItems.ARCANE_SILK_SANDALS.get()), 20, 0.28, 100, 0.12),
+                        GeneratedItems.ARCANE_SILK_SANDALS.get()), 20, 4.5, 100, 0.12),
                 new CasterSet("Netherite", List.of(GeneratedItems.NETHERITE_CAP.get(),
                         GeneratedItems.NETHERITE_ROBES.get(), GeneratedItems.NETHERITE_PANTS.get(),
-                        GeneratedItems.NETHERITE_SANDALS.get()), 20, 0.40, 160, 0.20));
+                        GeneratedItems.NETHERITE_SANDALS.get()), 20, 6, 160, 0.20));
         List<EquipmentSlot> slots = List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS,
                 EquipmentSlot.FEET);
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-gear-sets");
@@ -275,8 +276,8 @@ public final class GearGameTests {
             assertCast(helper, player, GeneratedSpells.TEST_BOLT, husk);
             helper.assertValueEqual(wand.getDamageValue(), 1, "a cast wears the Stone Wand by one");
             double dealt = before - husk.getHealth();
-            helper.assertTrue(Math.abs(dealt - 6 * 1.15) <= HEALTH_TOLERANCE,
-                    "test_bolt with the Stone Wand's +15 % spell power deals 6.9, not " + dealt);
+            helper.assertTrue(Math.abs(dealt - (6 + 2)) <= HEALTH_TOLERANCE,
+                    "test_bolt adds 100 % of the Stone Wand's 2 Spell Power: 8, not " + dealt);
             helper.assertFalse(SpellCaster.cast(player, GeneratedSpells.TEST_BOLT, husk).success(),
                     "test_bolt is on its cooldown");
             helper.assertValueEqual(wand.getDamageValue(), 1, "a refused cast wears nothing");

@@ -29,6 +29,7 @@
     {
       "amount": 6.0,
       "per_level": 2.0,
+      "spell_power": 1.0,
       "type": "realmforge:damage"
     }
   ]

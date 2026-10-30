@@ -204,26 +204,29 @@ public final class CombatGameTests {
         helper.succeed();
     }
 
-    /** School hits: spell power for magic, the school's power, the defender's resistance; physical meets armor. */
+    /**
+     * School hits: the school's power, the defender's resistance; physical meets armor. Spell Power is no multiplier of
+     * the hit since RLM-534: a spell adds its share of it to the damage before the hit (scaling system C).
+     */
     @QaGameTest
     public static void schoolHitsGetPowerAndResistance(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-combat-school", EDGE);
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
-        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 0.5);
+        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 5);
         StatsCommands.setBase(player, GeneratedStats.FIRE_POWER, 0.2);
         Pillager mob = target(helper);
         setBase(mob, Attributes.ARMOR, 15);
         setBase(mob, GeneratedStats.FIRE_RESISTANCE, 0.25);
 
-        assertDealt(helper, mob, school(helper, GeneratedSpellSchools.FIRE, player), 10, 10 * 1.7 * 0.75,
-                "fire: +50 % spell power, +20 % fire power, 25 % fire resistance, armor ignored");
+        assertDealt(helper, mob, school(helper, GeneratedSpellSchools.FIRE, player), 10, 10 * 1.2 * 0.75,
+                "fire: +20 % fire power, 25 % fire resistance, armor ignored, Spell Power no multiplier");
         settle(mob);
-        assertDealt(helper, mob, school(helper, GeneratedSpellSchools.FROST, player), 10, 10 * 1.5,
-                "frost: spell power only");
+        assertDealt(helper, mob, school(helper, GeneratedSpellSchools.FROST, player), 10, 10,
+                "frost: no frost power, and Spell Power multiplies no hit");
         settle(mob);
         assertDealt(helper, mob, school(helper, GeneratedSpellSchools.PHYSICAL, player), 10,
-                10 * (1 - blocked(mob, 10, 15, 0)), "physical: no spell power, armor applies");
+                10 * (1 - blocked(mob, 10, 15, 0)), "physical: armor applies");
         server.getPlayerList().remove(player);
         helper.succeed();
     }

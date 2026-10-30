@@ -37,8 +37,10 @@
       "size": 0.5,
       "effects": [
         {
-          "amount": 8.0,
-          "per_level": 2.0,
+          "amount": 6.0,
+          "per_level": 1.0,
+          "spell_power": 0.7,
+          "spell_power_per_level": 0.1,
           "type": "realmforge:damage"
         },
         {

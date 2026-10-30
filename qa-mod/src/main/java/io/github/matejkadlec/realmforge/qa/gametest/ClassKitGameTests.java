@@ -24,6 +24,7 @@ import io.github.matejkadlec.realmforge.spell.ApplyEffectEffect;
 import io.github.matejkadlec.realmforge.spell.CastEnd;
 import io.github.matejkadlec.realmforge.spell.CastFailure;
 import io.github.matejkadlec.realmforge.spell.CastResult;
+import io.github.matejkadlec.realmforge.spell.DamageEffect;
 import io.github.matejkadlec.realmforge.spell.EffectContext;
 import io.github.matejkadlec.realmforge.spell.ProjectileEffect;
 import io.github.matejkadlec.realmforge.spell.ResourceTypes;
@@ -76,7 +77,8 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
  * and their racial spell; melee spells need a melee weapon and Shield Bash a shield; a stun stops casts, attacks and a
  * mob's AI, and Will To Survive breaks it; Reckless Strike's crit chance above 100 % turns into crit damage; Slam's
  * armor shred and a hit's spell penetration grow with the rank; Ice Barrier fills the Magic Shield at once; Battle
- * Shout reaches allies; Sword Specialization raises a Human's attack damage with a sword. Expected numbers follow
+ * Shout reaches allies; Sword Specialization raises a Human's attack damage with a sword; spells add their coefficient
+ * of the caster's power (scaling system C, RLM-534). Expected numbers follow
  * {@code content/spells/} and {@code content/effects/}; husks stand still with 1000 health and no armor unless a test
  * gives them some.
  */
@@ -282,7 +284,7 @@ public final class ClassKitGameTests {
         Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
         double attackDamage = player.getAttributeValue(Attributes.ATTACK_DAMAGE);
         assertCast(helper, player, GeneratedSpells.RECKLESS_STRIKE, husk);
-        double expected = (2 + 4 + attackDamage) * (1 + 0.5 + 0.3);
+        double expected = (3 + 0.5 * 4 + (0.8 + 0.1 * 4) * attackDamage) * (1 + 0.5 + 0.3);
         helper.assertTrue(close(HEALTH - husk.getHealth(), expected), "a crit for 180 %: " + expected
                 + " expected, dealt " + (HEALTH - husk.getHealth()));
         logout(player);
@@ -304,12 +306,52 @@ public final class ClassKitGameTests {
             Resources.set(player, ResourceTypes.RAGE, 100);
             float before = husk.getHealth();
             assertCast(helper, player, GeneratedSpells.SLAM, husk);
-            double raw = 4 + 1.5 * (rank - 1) + 1.2 * attackDamage;
+            double raw = 4 + 1.5 * (rank - 1) + (1.2 + 0.2 * (rank - 1)) * attackDamage;
             double shred = 0.05 * rank;
             double expected = raw * (1 - DamageCalculator.armorReduction(raw, 15, 0, 0, shred));
             helper.assertTrue(close(before - husk.getHealth(), expected), "rank " + rank + ": " + expected
                     + " expected, dealt " + (before - husk.getHealth()));
         }
+        logout(player);
+        helper.succeed();
+    }
+
+    /**
+     * Scaling system C (Matěj, 2026-10-30, RLM-534), the ticket's checks: with 5.5 Spell Power Frostbolt rank 1 deals
+     * 8 + 100 % of it, 13.5, and with 19 rank 5 deals 12 + 200 %, 50; Slam rank 5 with 15 Attack Damage deals
+     * 10 + 200 %, 40, before armor (the husk has none). No crit, no school power, a player without a character.
+     */
+    @QaGameTest
+    public static void spellsAddTheirCoefficientOfTheCastersPower(GameTestHelper helper) {
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-kit-scaling", new Vec3(2.5, 1, 0.5));
+        player.setGameMode(GameType.SURVIVAL);
+        StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
+        Holder.Reference<Spell> frostbolt = Spells.get(helper.getLevel().registryAccess(), GeneratedSpells.FROSTBOLT)
+                .orElseThrow();
+        DamageEffect bolt = (DamageEffect) ((ProjectileEffect) frostbolt.value().effects().getFirst()).effects()
+                .getFirst();
+        for (double[] check : new double[][] {{1, 5.5, 13.5}, {5, 19, 50}}) {
+            StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, check[1]);
+            float before = husk.getHealth();
+            bolt.applyTo(EffectContext.of(helper.getLevel(), player, frostbolt, (int) check[0], Optional.empty()),
+                    husk, SpellTarget.of(player, husk));
+            helper.assertTrue(close(before - husk.getHealth(), check[2]), "Frostbolt rank " + (int) check[0]
+                    + " with " + check[1] + " Spell Power: " + check[2] + " expected, dealt "
+                    + (before - husk.getHealth()));
+        }
+
+        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 0);
+        player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STONE_SWORD));
+        StatsCommands.setBase(player, Attributes.ATTACK_DAMAGE, 15);
+        helper.assertTrue(close(player.getAttributeValue(Attributes.ATTACK_DAMAGE), 15),
+                "the sword's own modifiers wait for a tick that never comes here");
+        Resources.set(player, ResourceTypes.RAGE, 100);
+        learn(helper, player, GeneratedSpells.SLAM, 5);
+        float before = husk.getHealth();
+        assertCast(helper, player, GeneratedSpells.SLAM, husk);
+        helper.assertTrue(close(before - husk.getHealth(), 40), "Slam rank 5 with 15 Attack Damage: 40 expected, "
+                + "dealt " + (before - husk.getHealth()));
         logout(player);
         helper.succeed();
     }
@@ -487,8 +529,8 @@ public final class ClassKitGameTests {
         assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 3, "bonus", "20");
         assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 3, "duration", "20");
         assertText(helper, player, GeneratedSpells.SHIELD_BASH, 5, "duration", "1.5");
-        assertText(helper, player, GeneratedSpells.FIREBALL, 5, "periodic", "1.5");
-        assertText(helper, player, GeneratedSpells.FIREBALL, 5, "periodic_total", "18");
+        assertText(helper, player, GeneratedSpells.FIREBALL, 5, "periodic", "1");
+        assertText(helper, player, GeneratedSpells.FIREBALL, 5, "periodic_total", "12");
         logout(player);
         helper.succeed();
     }

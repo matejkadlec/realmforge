@@ -892,6 +892,7 @@ def _check_effects(content: Content, universe: IdUniverse) -> list[Problem]:
     """A status effect's periodic school exists, and its modifiers name attributes that exist, in their unit."""
     problems: list[Problem] = []
     stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
+    schools = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spell_schools}
     for entry in content.effects:
         effect = entry.model
         if effect.periodic is not None and not universe.contains(
@@ -902,6 +903,15 @@ def _check_effects(content: Content, universe: IdUniverse) -> list[Problem]:
                     entry.source,
                     "periodic.school",
                     _unknown(effect.periodic.school, SPELL_SCHOOL_REGISTRY, universe),
+                )
+            )
+        school = schools.get(effect.periodic.school) if effect.periodic is not None else None
+        if school is not None and school.kind != "magic" and effect.periodic.spell_power_percent is not None:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "periodic.spell_power_percent",
+                    f"{effect.periodic.school} is a {school.kind} school, and only magic scales with spell power",
                 )
             )
         for n, modifier in enumerate(effect.modifiers):
@@ -1375,6 +1385,14 @@ def _check_effect(
                 source,
                 f"{path}.attack_damage_percent",
                 "the spell scales with spell_power, so attack damage adds nothing to it",
+            )
+        )
+    if spell.scales_with == "attack_damage" and getattr(effect, "spell_power_percent", None) is not None:
+        problems.append(
+            Problem(
+                source,
+                f"{path}.spell_power_percent",
+                "the spell scales with attack_damage, so spell power adds nothing to it",
             )
         )
     if spell.scales_with == "attack_damage" and effect.type == DAMAGE and percent is None:

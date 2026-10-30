@@ -154,7 +154,7 @@ class GearDef(StrictModel):
     )
     modifiers: list[GearModifierDef] = Field(
         default_factory=list,
-        description="Its fixed stats while in its slot, e.g. {attribute: realmforge:spell_power, operation: add_value, amount_percent: 15}.",
+        description="Its fixed stats while in its slot, e.g. {attribute: realmforge:spell_power, operation: add_value, amount: 2}.",
     )
 
     @model_validator(mode="after")

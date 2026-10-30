@@ -503,7 +503,7 @@
     },
     "DamageEffectDef": {
       "additionalProperties": false,
-      "description": "Damage of the spell's school to each target. A magic school's hit gets the caster's spell power and the\nschool's power in the damage pipeline (architecture 9.1); a physical ability adds a share of the caster's attack\ndamage instead (``attack_damage_percent``). Either way the hit can crit as the spell's ``crit`` says.",
+      "description": "Damage of the spell's school to each target: its amount plus its coefficient of the caster's power (Spell\nPower for magic, Attack Damage for a physical ability), then times (1 + the school's power + passives) in the damage\npipeline (architecture 9.1). The hit can crit as the spell's ``crit`` says.",
       "properties": {
         "amount": {
           "description": "The amount at spell level 1.",
@@ -541,6 +541,20 @@
           "description": "Armor shred this hit adds to the caster's own, in percent at spell level 1: the share of the target's armor (after armor pierce) the hit ignores. Only a school that armor stops (physical).",
           "title": "Armor Shred Percent"
         },
+        "attack_damage_per_level_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to attack_damage_percent for every spell level above 1.",
+          "title": "Attack Damage Per Level Percent"
+        },
         "attack_damage_percent": {
           "anyOf": [
             {
@@ -552,7 +566,7 @@
             }
           ],
           "default": null,
-          "description": "Share of the caster's attack damage added to the amount (100 adds all of it). Required for spells that scale with attack_damage, refused for spells that scale with spell_power.",
+          "description": "Share of the caster's attack damage added to the amount at spell level 1 (100 adds all of it). Required for the damage of spells that scale with attack_damage, refused for spells that scale with spell_power.",
           "title": "Attack Damage Percent"
         },
         "penetration_per_level_percent": {
@@ -591,6 +605,34 @@
           "minimum": 0,
           "title": "Per Level",
           "type": "number"
+        },
+        "spell_power_per_level_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to spell_power_percent for every spell level above 1.",
+          "title": "Spell Power Per Level Percent"
+        },
+        "spell_power_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Share of the caster's Spell Power (points) added to the amount at spell level 1 (100 adds all of it). Only for spells that scale with spell_power; without it, Spell Power adds nothing.",
+          "title": "Spell Power Percent"
         },
         "type": {
           "const": "realmforge:damage",
@@ -727,13 +769,27 @@
     },
     "HealEffectDef": {
       "additionalProperties": false,
-      "description": "Healing of each target. A spell that scales with spell power heals times (1 + spell power + the school's power);\none that scales with attack damage adds a share of the caster's attack damage instead. Heals can crit too\n(Matěj, 2026-10-15).",
+      "description": "Healing of each target: its amount plus its coefficient of the caster's power, times (1 + the school's power) for\na spell that scales with spell power. Heals can crit too (Matěj, 2026-10-15).",
       "properties": {
         "amount": {
           "description": "The amount at spell level 1.",
           "minimum": 0,
           "title": "Amount",
           "type": "number"
+        },
+        "attack_damage_per_level_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to attack_damage_percent for every spell level above 1.",
+          "title": "Attack Damage Per Level Percent"
         },
         "attack_damage_percent": {
           "anyOf": [
@@ -746,7 +802,7 @@
             }
           ],
           "default": null,
-          "description": "Share of the caster's attack damage added to the amount (100 adds all of it). Only for spells that scale with attack_damage.",
+          "description": "Share of the caster's attack damage added to the amount at spell level 1 (100 adds all of it). Required for the damage of spells that scale with attack_damage, refused for spells that scale with spell_power.",
           "title": "Attack Damage Percent"
         },
         "per_level": {
@@ -755,6 +811,34 @@
           "minimum": 0,
           "title": "Per Level",
           "type": "number"
+        },
+        "spell_power_per_level_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to spell_power_percent for every spell level above 1.",
+          "title": "Spell Power Per Level Percent"
+        },
+        "spell_power_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Share of the caster's Spell Power (points) added to the amount at spell level 1 (100 adds all of it). Only for spells that scale with spell_power; without it, Spell Power adds nothing.",
+          "title": "Spell Power Percent"
         },
         "type": {
           "const": "realmforge:heal",

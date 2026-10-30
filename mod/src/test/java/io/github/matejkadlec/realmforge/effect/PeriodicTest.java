@@ -44,10 +44,21 @@ class PeriodicTest {
         assertEquals(6, burning.amountAt(2), EPSILON);
     }
 
+    /** Scaling system C (RLM-534): a tick adds its share of the caster's Spell Power, and each level doubles that too. */
+    @Test
+    void aTickAddsItsShareOfSpellPower() {
+        Periodic burning = Periodic.damage("realmforge:fire", 0.5, 0.03, 10);
+        assertEquals(0.5 + 0.03 * 10, burning.amountAt(0, 10), EPSILON);
+        assertEquals(2 * (0.5 + 0.03 * 10), burning.amountAt(1, 10), EPSILON, "Burning II");
+        assertEquals(0.5, burning.amountAt(0), EPSILON, "without a caster, the bare amount");
+        assertEquals(0.5, burning.amountAt(0, -3), EPSILON, "negative spell power counts as none");
+    }
+
     @Test
     void aTickDealsOrHealsSomethingAndComesAfterATickOrMore() {
         assertThrows(IllegalArgumentException.class, () -> Periodic.damage("realmforge:fire", 0, 20));
         assertThrows(IllegalArgumentException.class, () -> Periodic.damage("realmforge:fire", 1, 0));
         assertThrows(IllegalArgumentException.class, () -> Periodic.heal("realmforge:fire", Double.NaN, 20));
+        assertThrows(IllegalArgumentException.class, () -> Periodic.damage("realmforge:fire", 1, -0.1, 20));
     }
 }

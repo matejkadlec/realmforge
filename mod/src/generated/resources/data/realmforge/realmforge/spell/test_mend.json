@@ -29,6 +29,7 @@
     {
       "amount": 4.0,
       "per_level": 1.0,
+      "spell_power": 1.0,
       "type": "realmforge:heal"
     }
   ]

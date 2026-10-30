@@ -71,6 +71,7 @@ public final class ContentEffectGameTests {
 
     private static PeriodicExpectation periodic(Periodic periodic) {
         return new PeriodicExpectation(periodic.kind().name().toLowerCase(Locale.ROOT),
-                periodic.school().identifier().toString(), periodic.amount(), periodic.intervalTicks());
+                periodic.school().identifier().toString(), periodic.amount(), periodic.spellPower(),
+                periodic.intervalTicks());
     }
 }

@@ -5,12 +5,13 @@ from __future__ import annotations
 import json
 import re
 
+import pydantic
 import pytest
 
 from realmforge_tools.generate import generate_all
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import RepoPaths
-from realmforge_tools.schema.spell import SpellDef
+from realmforge_tools.schema.spell import DamageEffectDef, SpellDef
 from realmforge_tools.validate import load_and_validate
 from tests.conftest import write
 
@@ -251,6 +252,45 @@ def test_attack_damage_adds_nothing_to_spell_power_spells(repo: RepoPaths) -> No
     )
 
 
+def test_spell_power_adds_nothing_to_attack_damage_spells(repo: RepoPaths) -> None:
+    body = FIREBALL.replace("realmforge:fire", "realmforge:physical").replace("spell_power", "attack_damage")
+    spell(
+        repo,
+        "slam",
+        body.replace("amount: 12", "amount: 12, attack_damage_percent: 100, spell_power_percent: 50"),
+    )
+    assert_problem(
+        repo,
+        "effects.0.spell_power_percent: the spell scales with attack_damage, so spell power adds nothing to it",
+    )
+
+
+def test_a_coefficient_grows_per_rank_from_its_base(repo: RepoPaths) -> None:
+    """Scaling system C (RLM-534): Frostbolt's 100 % + 25 % a rank, 200 % at rank 5; growth without a base is
+    refused."""
+    damage = DamageEffectDef(
+        type="realmforge:damage",
+        amount=8,
+        per_level=1,
+        spell_power_percent=100,
+        spell_power_per_level_percent=25,
+    )
+    assert damage.spell_power_at(5) == 200
+    assert damage.attack_damage_at(5) == 0
+    with pytest.raises(
+        pydantic.ValidationError, match="spell_power_per_level_percent grows spell_power_percent"
+    ):
+        DamageEffectDef(type="realmforge:damage", amount=8, spell_power_per_level_percent=25)
+    spell(
+        repo,
+        "fireball",
+        FIREBALL.replace(
+            "amount: 12", "amount: 12, spell_power_percent: 100, spell_power_per_level_percent: 25"
+        ),
+    )
+    assert_problem(repo, "nothing grows with the level at max_level 1 (effects.0)")
+
+
 def test_attack_damage_damage_names_its_share(repo: RepoPaths) -> None:
     body = FIREBALL.replace("realmforge:fire", "realmforge:physical").replace("spell_power", "attack_damage")
     spell(repo, "slam", body)
@@ -433,10 +473,12 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "                    false,\n"
         "                    List.of(\n"
         '                            new EffectExpectation("realmforge:damage", '
-        'Map.of("amount", 6.0, "attack_damage", 0.0, "per_level", 2.0), Map.of(), List.of())))'
+        'Map.of("amount", 6.0, "attack_damage", 0.0, "attack_damage_per_level", 0.0, "per_level", 2.0, '
+        '"spell_power", 1.0, "spell_power_per_level", 0.0), Map.of(), List.of())))'
     ) in expectations
     assert (
-        'new EffectExpectation("realmforge:damage", Map.of("amount", 2.0, "attack_damage", 1.0, "per_level", 0.0)'
+        'new EffectExpectation("realmforge:damage", Map.of("amount", 2.0, "attack_damage", 1.0, '
+        '"attack_damage_per_level", 0.0, "per_level", 0.0, "spell_power", 0.0, "spell_power_per_level", 0.0)'
     ) in expectations
     assert "Optional.of(2.0),\n                    1.0," in expectations
     channel = expectations[expectations.index('"realmforge:test_drain"') :]

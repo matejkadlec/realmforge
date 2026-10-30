@@ -47,11 +47,11 @@ class CritRuleTest {
 
     @Test
     void schoolHitsCritByTheRule() {
-        Attacker sureCrit = new Attacker(1, 0.5, 0, 0);
-        assertEquals(15, DamageCalculator.schoolHit(10, true, sureCrit, 0, random()).damage(), EPSILON,
+        Attacker sureCrit = new Attacker(1, 0.5, 0);
+        assertEquals(15, DamageCalculator.schoolHit(10, sureCrit, 0, random()).damage(), EPSILON,
                 "a hit without a rule of its own crits by the default");
-        assertEquals(10, DamageCalculator.schoolHit(10, true, sureCrit, 0, NEVER, random()).damage(), EPSILON);
-        DamageCalculator.SchoolHit doubled = DamageCalculator.schoolHit(10, true, Attacker.NONE, 0.5, DOUBLE_ON_BONUS,
+        assertEquals(10, DamageCalculator.schoolHit(10, sureCrit, 0, NEVER, random()).damage(), EPSILON);
+        DamageCalculator.SchoolHit doubled = DamageCalculator.schoolHit(10, Attacker.NONE, 0.5, DOUBLE_ON_BONUS,
                 random());
         assertTrue(doubled.crit());
         assertEquals(10, doubled.damage(), EPSILON, "doubled, then halved by the resistance");

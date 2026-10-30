@@ -47,15 +47,15 @@ public final class EffectGameTests {
     }
 
     /**
-     * Damage over time ticks at the end of each interval, raised by the caster's spell power and fire power as they are
-     * when it ticks, and the effect remembers its caster and spell until it ends.
+     * Damage over time ticks at the end of each interval, with its share of the caster's Spell Power and raised by fire
+     * power as they are when it ticks (RLM-534), and the effect remembers its caster and spell until it ends.
      */
     @QaGameTest
     public static void damageOverTimeTicksWithTheCastersStats(GameTestHelper helper) {
         ServerPlayer player = caster(helper, "qa-effect-dot");
         Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 3));
         learn(helper, player, GeneratedSpells.TEST_IGNITE);
-        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 0.5);
+        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 5);
         StatsCommands.setBase(player, GeneratedStats.FIRE_POWER, 0.2);
         CastResult result = SpellCaster.cast(player, GeneratedSpells.TEST_IGNITE, husk);
         helper.assertTrue(result.success(), "test_ignite was refused: " + result.failure());
@@ -65,10 +65,10 @@ public final class EffectGameTests {
                 Optional.of(GeneratedSpells.TEST_IGNITE.identifier()), "its spell");
         helper.assertValueEqual(source.flatMap(EffectSource::procOrigin), Optional.empty(), "no proc applied it");
         helper.runAfterDelay(15, () -> assertHealth(helper, husk, HEALTH, "no tick before its first interval"));
-        helper.runAfterDelay(25, () -> assertHealth(helper, husk, HEALTH - 2 * 1.7,
-                "the first tick: 2 × (1 + 50 % spell power + 20 % fire power)"));
+        helper.runAfterDelay(25, () -> assertHealth(helper, husk, HEALTH - (2 + 0.5) * 1.2,
+                "the first tick: (2 + 10 % of 5 Spell Power) × (1 + 20 % fire power)"));
         helper.runAfterDelay(90, () -> {
-            assertHealth(helper, husk, HEALTH - 4 * 2 * 1.7, "4 s, 4 ticks");
+            assertHealth(helper, husk, HEALTH - 4 * (2 + 0.5) * 1.2, "4 s, 4 ticks");
             helper.assertFalse(husk.hasEffect(GeneratedEffects.TEST_BURNING), "the effect ran out");
             helper.assertValueEqual(Effects.source(husk, GeneratedEffects.TEST_BURNING), Optional.empty(),
                     "an ended effect has no source");
@@ -82,7 +82,7 @@ public final class EffectGameTests {
     public static void damageOverTimeWithoutItsCasterDealsTheBareAmount(GameTestHelper helper) {
         ServerPlayer player = caster(helper, "qa-effect-dot-gone");
         Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 3));
-        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 1);
+        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 10);
         apply(husk, GeneratedEffects.TEST_BURNING, 40, 1, player);
         logout(player);
         helper.runAfterDelay(45, () -> {
@@ -91,16 +91,16 @@ public final class EffectGameTests {
         });
     }
 
-    /** Healing over time heals at the end of each interval, raised by the caster's spell power. */
+    /** Healing over time heals at the end of each interval, with its share of the caster's Spell Power. */
     @QaGameTest
     public static void healingOverTimeHealsWithTheCastersStats(GameTestHelper helper) {
         ServerPlayer player = caster(helper, "qa-effect-hot");
         Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 3));
         husk.setHealth(100);
-        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 0.5);
+        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 5);
         apply(husk, GeneratedEffects.TEST_REGROWTH, 60, 0, player);
         helper.runAfterDelay(65, () -> {
-            assertHealth(helper, husk, 100 + 3 * 2 * 1.5, "3 ticks of 2 × 1.5");
+            assertHealth(helper, husk, 100 + 3 * (2 + 0.5), "3 ticks of 2 + 10 % of 5 Spell Power");
             logout(player);
             helper.succeed();
         });
@@ -118,8 +118,8 @@ public final class EffectGameTests {
         AttributeInstance power = target.getAttribute(GeneratedStats.SPELL_POWER);
         helper.assertValueEqual(modifier(speed, speedId), Optional.of(new AttributeModifier(speedId, -0.4,
                 AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)), "-20 % movement speed, twice at level 2");
-        helper.assertValueEqual(modifier(power, powerId), Optional.of(new AttributeModifier(powerId, -0.2,
-                AttributeModifier.Operation.ADD_VALUE)), "-10 % spell power, twice at level 2");
+        helper.assertValueEqual(modifier(power, powerId), Optional.of(new AttributeModifier(powerId, -2,
+                AttributeModifier.Operation.ADD_VALUE)), "-1 Spell Power, twice at level 2");
         target.removeEffect(GeneratedEffects.TEST_SAPPED);
         helper.assertValueEqual(modifier(speed, speedId), Optional.empty(), "the speed modifier left");
         helper.assertValueEqual(modifier(power, powerId), Optional.empty(), "the spell power modifier left");
