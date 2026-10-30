@@ -297,15 +297,22 @@ missing link. A dependency is met when its ticket is Done.
 For each unmet dependency of a selected ticket, in this order:
 
 1. **Waiting on Matěj** (a `decision` ticket, or one [waiting on Matěj](#tickets-waiting-on-matěj)): the ticket
-   cannot be implemented. Leave it, and list it with the dependency.
-2. **[In flight](#in-flight) elsewhere:** it belongs to that batch. Defer the ticket. A stacked branch on the
+   cannot be implemented. Leave it without listing it for Matěj, since each ticket already says what it needs; the
+   batch announcement names the selected ticket it defers. When every candidate waits on him, the response says so.
+2. **An M2 task while M1 is not done** (a ticket under M2's epic, RLM-7, while M1's
+   [definition of done](roadmap.md#definition-of-done) does not hold): it is not pulled into the sprint, however its
+   `Blocks` link reads, unless Matěj says so ([ADR 0058](decisions/0058-player-systems-before-world-content.md):
+   technical "after" links alone never make world work ready). Treat it like a dependency waiting on Matěj (step 1):
+   the dependent ticket is deferred, and the run's response says which M2 dependency holds it.
+3. **[In flight](#in-flight) elsewhere:** it belongs to that batch. Defer the ticket. A stacked branch on the
    dependency's branch is allowed only when it is necessary and safe; its pull request targets that branch and
    says so, and `finalize-pr` retargets it once the base has merged.
-3. **Otherwise** (To Do, Next, the Jira backlog or a future sprint): pull it into the batch. Put it into the
+4. **Otherwise** (To Do, Next, the Jira backlog or a future sprint): pull it into the batch. Put it into the
    active sprint when it is outside it (the sprint field), promote it from To Do to Next, and claim it with the
    rest of the batch. Check its own dependencies the same way, recursively.
 
-- Pulling in a dependency is the one case where Backlog or future-sprint work enters Next without Matěj.
+- Pulling in a dependency is the one case where Backlog or future-sprint work enters Next without Matěj, and never
+  an M2 task while M1's definition of done does not hold (step 2).
 - Inside the batch, dependencies are implemented and committed first.
 - When the whole chain does not fit one batch ([Batch selection](#batch-selection)), the batch takes the chain
   from the bottom (the unblocked dependencies, as many as fit) and the dependent ticket stays in Next for a later
@@ -446,7 +453,8 @@ Matěj's `qa2` with what is wrong sends the batch back for a revision on the sam
    User QA. The batch keeps its playtest slot through the revision.
 6. **Hand back** with the status overview in its manual-test shape: What to test limited to the revision, the
    whole block of commands that switches his checkout to the branch, updates it and launches the game
-   ([Launch commands](#launch-commands)), and the closing line on `qa1` and `qa2`. Then wait for his next answer.
+   ([Launch commands](#launch-commands)), how he answers (`qa1`, `qa2`), and Verification with its `Tickets:` line.
+   Then wait for his next answer.
 
 ### Reconfirmation
 
@@ -543,6 +551,21 @@ the QA mod's `/qa` commands in the dev client (Matěj, 2026-10-29, RLM-508).
   data an existing world cannot carry. Never "start a new world" as boilerplate.
 - When a state is tedious to reach (a high level, a late boss phase), the batch adds or extends a `/qa` command
   in `qa-mod/` (dev-only, merged with the batch) instead of asking Matěj to grind.
+- **A balance check gives the expected gear** (Matěj, 2026-10-30, RLM-551): whenever a handoff asks him to judge the
+  balance of a dungeon, an instance or a boss, the command block line also gives him the gear a player is expected
+  to bring there, and What to test names that loadout in one line (what, and why it is the expected one).
+  - **What counts as expected:** the best gear a player can have on entering, from the content's level band and world
+    tier ([gear.md](design/gear.md), [apotheosis.md](design/apotheosis.md)): the armor or robe and the weapon or wand
+    tier, the enchantment levels, the Apotheosis rarity with its affixes and filled sockets, and the level and stat
+    points when the check needs them. [Expected gear for balance tests](design/gear.md#expected-gear-for-balance-tests)
+    has a row per dungeon, instance or boss (Astone's first); a handoff for new content adds its row, and Matěj's
+    corrections from a playtest update it.
+  - **For the class the check is about,** or both class kits when it is about both.
+  - **Stand-ins:** when exact affixes or gems are impractical, stronger base gear or enchantments of equal power, and
+    the handoff says so.
+  - **Long lines:** when the command block line gets too long or unreadable, the batch adds a `/qa` gear preset
+    subcommand in `qa-mod/` (for example `/qa gear astone`) instead, with a GameTest that gives the loadout and checks
+    its pieces, enchantment levels and filled sockets.
 - **Three or more commands in a row** go to Matěj as one command for an impulse command block (Matěj,
   2026-10-22), in a code block he can copy: `execute as @p at @p run qa run <command>; <command>; ...`, without the
   commands' slashes. `/qa run` runs them in order as the player; chat cuts a line at 256 characters, a command block

@@ -30,8 +30,9 @@ Name the mode in the batch announcement.
    work that overlaps in-flight ownership or regenerates a generated file an in-flight batch regenerates; and
    check each batch's _Conflict domains_ against the caps in _Concurrency and run boundaries_ before selecting.
 2. **Dependencies:** resolve every candidate's unfinished dependencies under _Dependencies_: pull each one from
-   To Do, Next or the backlog into the batch, defer a ticket whose dependency is in flight elsewhere, and list one
-   that waits on Matěj.
+   To Do, Next or the backlog into the batch, defer a ticket whose dependency is in flight elsewhere, and defer one
+   whose dependency waits on Matěj or is an M2 task while M1's definition of done does not hold, without listing the
+   waiting ticket (it says what it needs; the batch announcement names the deferred ticket).
 3. **Classify** each candidate AI-only or Playtest under _QA classification_, and local-only or cloud-capable under
    _Run location_. A batch has one QA mode; a pulled-in dependency follows _Dependencies_.
 4. **Select and announce** one coherent batch from Next under _Priority and the Next queue_, _Run location_ and
