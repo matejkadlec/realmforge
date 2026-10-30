@@ -925,7 +925,7 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
     mob_tags = {tag for entry in content.mobs for tag in entry.model.tags}
     for entry in content.spells:
         spell = entry.model
-        school = schools.get(spell.school)
+        school = schools.get(spell.school) if spell.school is not None else None
         periodic_names = sorted(PERIODIC_PLACEHOLDERS & set(spell.placeholders()))
         applied = spell.first_effect(APPLY_EFFECT)
         if periodic_names and applied is not None and applied.effect not in effects:
@@ -937,7 +937,7 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
                     f"{applied.effect} has none (only our effects with periodic do)",
                 )
             )
-        if not universe.contains(SPELL_SCHOOL_REGISTRY, spell.school):
+        if spell.school is not None and not universe.contains(SPELL_SCHOOL_REGISTRY, spell.school):
             problems.append(
                 Problem(entry.source, "school", _unknown(spell.school, SPELL_SCHOOL_REGISTRY, universe))
             )

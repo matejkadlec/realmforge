@@ -7,10 +7,10 @@ import io.github.matejkadlec.realmforge.character.CharacterRegistries;
 import io.github.matejkadlec.realmforge.character.Characters;
 import io.github.matejkadlec.realmforge.character.RacialPassives;
 import io.github.matejkadlec.realmforge.combat.CombatAttachments;
+import io.github.matejkadlec.realmforge.combat.CritRule;
 import io.github.matejkadlec.realmforge.combat.DamageCalculator;
 import io.github.matejkadlec.realmforge.combat.HitBonus;
 import io.github.matejkadlec.realmforge.combat.MagicShield;
-import io.github.matejkadlec.realmforge.combat.CritRule;
 import io.github.matejkadlec.realmforge.combat.SpellSchools;
 import io.github.matejkadlec.realmforge.effect.Effects;
 import io.github.matejkadlec.realmforge.generated.GeneratedEffects;
@@ -23,6 +23,7 @@ import io.github.matejkadlec.realmforge.spell.ApplyEffectEffect;
 import io.github.matejkadlec.realmforge.spell.CastEnd;
 import io.github.matejkadlec.realmforge.spell.CastFailure;
 import io.github.matejkadlec.realmforge.spell.CastResult;
+import io.github.matejkadlec.realmforge.spell.EffectContext;
 import io.github.matejkadlec.realmforge.spell.ProjectileEffect;
 import io.github.matejkadlec.realmforge.spell.ResourceTypes;
 import io.github.matejkadlec.realmforge.spell.Resources;
@@ -30,18 +31,23 @@ import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.SpellArea;
 import io.github.matejkadlec.realmforge.spell.SpellAttachments;
 import io.github.matejkadlec.realmforge.spell.SpellCaster;
+import io.github.matejkadlec.realmforge.spell.SpellProjectile;
+import io.github.matejkadlec.realmforge.spell.SpellTarget;
 import io.github.matejkadlec.realmforge.spell.SpellText;
+import io.github.matejkadlec.realmforge.spell.SpellVisuals;
 import io.github.matejkadlec.realmforge.spell.Spellbook;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import io.github.matejkadlec.realmforge.stats.CharacterStats;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
@@ -92,8 +98,8 @@ public final class ClassKitGameTests {
         helper.assertValueEqual(book.barSlotOf(GeneratedSpells.WILL_TO_SURVIVE), -1, "and not on the bar itself");
 
         ServerPlayer mage = character(helper, "qa-kit-mage", "mage");
-        helper.assertValueEqual(mage.getData(SpellAttachments.SPELLBOOK).slot(0), Optional.of(GeneratedSpells.FROSTBOLT),
-                "a new Mage knows Frostbolt");
+        helper.assertValueEqual(mage.getData(SpellAttachments.SPELLBOOK).slot(0),
+                Optional.of(GeneratedSpells.FROSTBOLT), "a new Mage knows Frostbolt");
         logout(warrior);
         logout(mage);
         helper.succeed();
@@ -221,8 +227,8 @@ public final class ClassKitGameTests {
         helper.assertFalse(player.hasEffect(GeneratedEffects.BURNING), "and the burning");
         helper.assertTrue(player.hasEffect(GeneratedEffects.BATTLE_SHOUT), "but left the buff");
         helper.assertValueEqual(player.getData(SpellAttachments.COMBAT).cooldowns()
-                .get(GeneratedSpells.WILL_TO_SURVIVE), helper.getLevel().getGameTime() + 6000,
-                "a 5 minute cooldown");
+                .get(GeneratedSpells.WILL_TO_SURVIVE), helper.getLevel().getGameTime() + 1200,
+                "a 1 minute cooldown");
         Spells.resetCooldowns(player);
         assertCast(helper, player, GeneratedSpells.TEST_BOLT, husk);
         logout(player);
@@ -321,7 +327,10 @@ public final class ClassKitGameTests {
         helper.succeed();
     }
 
-    /** Ice Barrier raises the Magic Shield by 12 and fills those points at once; they go when it ends. */
+    /**
+     * Ice Barrier raises the Magic Shield by 10 for 10 s at rank 1 and by 30 for 30 s at rank 3, and fills those points
+     * at once; they go when it ends, and a second cast refreshes the barrier instead of stacking it.
+     */
     @QaGameTest
     public static void iceBarrierFillsTheMagicShieldAtOnce(GameTestHelper helper) {
         ServerPlayer player = character(helper, "qa-kit-barrier", "mage");
@@ -332,45 +341,78 @@ public final class ClassKitGameTests {
         player.setData(CombatAttachments.MAGIC_SHIELD, new MagicShield(2, player.tickCount + 1000));
         assertCast(helper, player, GeneratedSpells.ICE_BARRIER, null);
         helper.assertTrue(close(Resources.amount(player, ResourceTypes.MANA), 75), "for 25 mana");
+        helper.assertValueEqual(player.getEffect(GeneratedEffects.ICE_BARRIER).getDuration(), 200, "for 10 s");
         player.doTick();
-        helper.assertTrue(close(player.getAttributeValue(GeneratedStats.MAGIC_SHIELD), 19), "the stat raised by 12");
-        helper.assertTrue(close(player.getData(CombatAttachments.MAGIC_SHIELD).points(), 14),
-                "the pool waiting for its refill got the 12 at once: "
+        helper.assertTrue(close(player.getAttributeValue(GeneratedStats.MAGIC_SHIELD), 17), "the stat raised by 10");
+        helper.assertTrue(close(player.getData(CombatAttachments.MAGIC_SHIELD).points(), 12),
+                "the pool waiting for its refill got the 10 at once: "
                         + player.getData(CombatAttachments.MAGIC_SHIELD).points());
         player.removeEffect(GeneratedEffects.ICE_BARRIER);
         player.doTick();
         helper.assertTrue(close(player.getData(CombatAttachments.MAGIC_SHIELD).points(), 7),
                 "the barrier's points go with it");
+
+        learn(helper, player, GeneratedSpells.ICE_BARRIER, 3);
+        for (int cast = 0; cast < 2; cast++) {
+            Spells.resetCooldowns(player);
+            Resources.set(player, ResourceTypes.MANA, 100);
+            assertCast(helper, player, GeneratedSpells.ICE_BARRIER, null);
+            player.doTick();
+        }
+        helper.assertValueEqual(player.getEffect(GeneratedEffects.ICE_BARRIER).getDuration(), 599,
+                "rank 3 lasts 30 s");
+        helper.assertTrue(close(player.getAttributeValue(GeneratedStats.MAGIC_SHIELD), 37), "and raises it by 30");
+        helper.assertTrue(close(player.getData(CombatAttachments.MAGIC_SHIELD).points(), 37),
+                "a second cast refreshes the barrier, never stacking past the raised stat: "
+                        + player.getData(CombatAttachments.MAGIC_SHIELD).points());
         logout(player);
         helper.succeed();
     }
 
-    /** Battle Shout raises the attack damage of its caster and of the allies within 10 blocks by 10 % for a minute. */
+    /**
+     * Battle Shout raises the attack damage of its caster and of the allies within 10 blocks by 10 % for 10 s at rank
+     * 1 and by 20 % for 20 s at rank 3, on a minute's cooldown; a second shout refreshes the effect instead of stacking
+     * it.
+     */
     @QaGameTest
     public static void battleShoutRaisesAlliesAttackDamage(GameTestHelper helper) {
         ServerPlayer player = character(helper, "qa-kit-shout", "warrior");
         ServerPlayer ally = QaPlayers.loginOnPlatform(helper, "qa-kit-shout-ally", new Vec3(4.5, 1, 4.5));
-        Resources.set(player, ResourceTypes.RAGE, 100);
-        learn(helper, player, GeneratedSpells.BATTLE_SHOUT, 1);
         double before = ally.getAttributeValue(Attributes.ATTACK_DAMAGE);
-        assertCast(helper, player, GeneratedSpells.BATTLE_SHOUT, null);
-        helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 90), "for 10 rage");
-        List<SpellArea> areas = helper.getLevel().getEntitiesOfClass(SpellArea.class,
-                player.getBoundingBox().inflate(1));
-        helper.assertValueEqual(areas.size(), 1, "the shout's area around the warrior");
-        // Its first tick pulses. It ticks here: the neighbouring tests clear their space of entities, and a 20 blocks
-        // wide area reaches into it.
-        areas.getFirst().tick();
-        for (ServerPlayer shouted : List.of(player, ally)) {
-            MobEffectInstance effect = shouted.getEffect(GeneratedEffects.BATTLE_SHOUT);
-            helper.assertTrue(effect != null && effect.getDuration() == 1200, shouted.getPlainTextName()
-                    + " has Battle Shout for a minute: " + effect);
+        for (int rank : new int[] {1, 3, 3}) {
+            learn(helper, player, GeneratedSpells.BATTLE_SHOUT, rank);
+            Spells.resetCooldowns(player);
+            Resources.set(player, ResourceTypes.RAGE, 100);
+            shout(helper, player);
+            helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 90), "for 10 rage");
+            helper.assertValueEqual(player.getData(SpellAttachments.COMBAT).cooldowns()
+                    .get(GeneratedSpells.BATTLE_SHOUT), helper.getLevel().getGameTime() + 1200, "a minute's cooldown");
+            for (ServerPlayer shouted : List.of(player, ally)) {
+                MobEffectInstance effect = shouted.getEffect(GeneratedEffects.BATTLE_SHOUT);
+                helper.assertTrue(effect != null && effect.getDuration() == (rank == 1 ? 200 : 400)
+                        && effect.getAmplifier() == rank - 1, shouted.getPlainTextName() + " has Battle Shout at rank "
+                                + rank + ": " + effect);
+            }
+            helper.assertTrue(close(ally.getAttributeValue(Attributes.ATTACK_DAMAGE),
+                    before * (rank == 1 ? 1.1 : 1.2)), "rank " + rank + " raised the ally's attack damage: "
+                            + ally.getAttributeValue(Attributes.ATTACK_DAMAGE));
         }
-        helper.assertTrue(close(ally.getAttributeValue(Attributes.ATTACK_DAMAGE), before * 1.1),
-                "the ally's attack damage rose by 10 %");
         logout(player);
         logout(ally);
         helper.succeed();
+    }
+
+    /** The warrior's shout: cast, then the area's first tick, which pulses. */
+    private static void shout(GameTestHelper helper, ServerPlayer player) {
+        List<SpellArea> before = helper.getLevel().getEntitiesOfClass(SpellArea.class,
+                player.getBoundingBox().inflate(1));
+        assertCast(helper, player, GeneratedSpells.BATTLE_SHOUT, null);
+        List<SpellArea> areas = helper.getLevel().getEntitiesOfClass(SpellArea.class,
+                player.getBoundingBox().inflate(1), area -> !before.contains(area));
+        helper.assertValueEqual(areas.size(), 1, "the shout's area around the warrior");
+        // It ticks here: the neighbouring tests clear their space of entities, and a 20 blocks wide area reaches into
+        // it.
+        areas.getFirst().tick();
     }
 
     /**
@@ -387,8 +429,13 @@ public final class ClassKitGameTests {
         helper.assertTrue(attackDamage.getModifier(passive) != null
                 && close(attackDamage.getModifier(passive).amount(), 0.1), "+10 % with a sword: "
                         + attackDamage.getModifier(passive));
-        helper.assertValueEqual(lines(RacialPassives.tooltip(player, new ItemStack(Items.IRON_SWORD))),
-                List.of("Sword Specialization", "+10% damage"), "the sword's tooltip lines");
+        List<Component> tooltip = RacialPassives.tooltip(player, new ItemStack(Items.IRON_SWORD));
+        helper.assertValueEqual(lines(tooltip), List.of("Sword Specialization", "+10% damage"),
+                "the sword's tooltip lines");
+        helper.assertValueEqual(tooltip.stream().map(line -> line.getStyle().getColor()).toList(),
+                List.of(TextColor.fromLegacyFormat(ChatFormatting.GOLD),
+                        TextColor.fromLegacyFormat(ChatFormatting.YELLOW)),
+                "the name in gold, the bonus in yellow (Matěj, 2026-10-30)");
 
         player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_AXE));
         CharacterStats.recompute(player);
@@ -423,11 +470,43 @@ public final class ClassKitGameTests {
         assertText(helper, player, GeneratedSpells.RECKLESS_STRIKE, 5, "crit_chance", "30");
         assertText(helper, player, GeneratedSpells.ARCANE_MISSILES, 2, "penetration", "10");
         assertText(helper, player, GeneratedSpells.FROSTBOLT, 5, "duration", "5");
-        assertText(helper, player, GeneratedSpells.ICE_BARRIER, 1, "bonus", "12");
+        assertText(helper, player, GeneratedSpells.ICE_BARRIER, 1, "bonus", "10");
+        assertText(helper, player, GeneratedSpells.ICE_BARRIER, 3, "bonus", "30");
+        assertText(helper, player, GeneratedSpells.ICE_BARRIER, 3, "duration", "30");
         assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 1, "bonus", "10");
+        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 2, "bonus", "15");
+        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 3, "bonus", "20");
+        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 3, "duration", "20");
         assertText(helper, player, GeneratedSpells.SHIELD_BASH, 5, "duration", "1.5");
         assertText(helper, player, GeneratedSpells.FIREBALL, 5, "periodic", "1.5");
         assertText(helper, player, GeneratedSpells.FIREBALL, 5, "periodic_total", "18");
+        logout(player);
+        helper.succeed();
+    }
+
+    /**
+     * Arcane Missiles' missiles leave from the hands, where Frostbolt and Fireball form theirs, not from the eyes,
+     * where one filled the middle of the caster's own screen for a frame (Matěj's playtest of 2026-10-30).
+     */
+    @QaGameTest
+    public static void arcaneMissilesLeaveFromTheHands(GameTestHelper helper) {
+        ServerPlayer player = character(helper, "qa-kit-missiles", "mage");
+        Holder.Reference<Spell> missiles = Spells.get(helper.getLevel().registryAccess(),
+                GeneratedSpells.ARCANE_MISSILES).orElseThrow();
+        ProjectileEffect missile = (ProjectileEffect) missiles.value().effects().getFirst();
+        Vec3 look = player.getLookAngle();
+        List<SpellProjectile> before = helper.getLevel().getEntitiesOfClass(SpellProjectile.class,
+                player.getBoundingBox().inflate(4));
+        missile.apply(EffectContext.of(helper.getLevel(), player, missiles, 1, Optional.empty()),
+                SpellTarget.direction(player.getEyePosition().add(look.scale(40)), look));
+        List<SpellProjectile> launched = helper.getLevel().getEntitiesOfClass(SpellProjectile.class,
+                player.getBoundingBox().inflate(4), projectile -> !before.contains(projectile));
+        helper.assertValueEqual(launched.size(), 1, "one missile");
+        Vec3 hands = SpellVisuals.formPoint(player, player.yBodyRot);
+        Vec3 middle = launched.getFirst().position().add(0, missile.size() / 2, 0);
+        helper.assertTrue(middle.distanceTo(hands) < 1e-6, "the missile left from the hands " + hands + ", not "
+                + middle + " (the eyes are at " + player.getEyePosition() + ")");
+        launched.getFirst().discard();
         logout(player);
         helper.succeed();
     }

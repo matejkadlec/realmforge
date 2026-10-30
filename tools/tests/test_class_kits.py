@@ -5,13 +5,15 @@ by level, the racial spell and passive, and the melee and sword-like item tags."
 from __future__ import annotations
 
 import json
+import struct
 
 import pytest
 
 from realmforge_tools.generate import generate_all
+from realmforge_tools.generate.effect_icons import ICONS, PIXELS, drawn_icon
 from realmforge_tools.id_universe import load_vanilla
 from realmforge_tools.problems import ValidationFailed
-from realmforge_tools.project import RepoPaths
+from realmforge_tools.project import REPO_ROOT, RepoPaths
 from realmforge_tools.schema.character import passive_bonuses, passive_modifier_id
 from realmforge_tools.schema.effect import EffectDef
 from realmforge_tools.schema.item import FIXED_ITEM_TAGS, MELEE_WEAPONS_TAG, SWORD_LIKE_TAG
@@ -529,3 +531,116 @@ def test_the_fixed_tags_name_vanilla_ids_that_exist() -> None:
                 assert vanilla.contains_tag("minecraft:item", member[1:]), member
             else:
                 assert vanilla.contains("minecraft:item", member), member
+
+
+# The playtest revision (Matěj, 2026-10-30)
+
+
+def test_the_self_buffs_have_three_ranks_and_a_minute_cooldown() -> None:
+    content, _ = load_and_validate(RepoPaths())
+    spells = {entry.model.id: entry.model for entry in content.spells}
+    effects = {entry.model.id: entry.model for entry in content.effects}
+    shout, barrier = spells["battle_shout"], spells["ice_barrier"]
+    assert (shout.max_level, shout.cooldown_seconds, barrier.max_level, barrier.cooldown_seconds) == (
+        3,
+        60,
+        3,
+        60,
+    )
+    shout_effect = shout.effects[0].effects[0]
+    assert [shout_effect.duration_at(rank) for rank in (1, 2, 3)] == [10, 15, 20]
+    assert [shout_effect.amplifier_at(rank) for rank in (1, 2, 3)] == [0, 1, 2]
+    bonus = effects["battle_shout"].modifiers[0]
+    assert [round(bonus.game_amount_at(level), 6) for level in (0, 1, 2)] == [0.1, 0.15, 0.2]
+    barrier_effect = barrier.effects[0]
+    assert [barrier_effect.duration_at(rank) for rank in (1, 2, 3)] == [10, 20, 30]
+    shield = effects["ice_barrier"].modifiers[0]
+    assert [shield.game_amount_at(barrier_effect.amplifier_at(rank)) for rank in (1, 2, 3)] == [10, 20, 30]
+    assert spells["will_to_survive"].cooldown_seconds == 60
+
+
+@pytest.mark.parametrize(
+    ("modifier", "expected"),
+    [
+        (
+            {
+                "attribute": "realmforge:magic_shield",
+                "operation": "add_value",
+                "amount": 2,
+                "per_amplifier_percent": 5,
+            },
+            "write its growth as per_amplifier",
+        ),
+        ({"amount_percent": 10, "per_amplifier": 0.05}, "write its growth as per_amplifier_percent"),
+        (
+            {"amount_percent": 10, "per_amplifier": 0.05, "per_amplifier_percent": 5},
+            "set at most one of per_amplifier and per_amplifier_percent",
+        ),
+    ],
+)
+def test_per_amplifier_growth_takes_the_amounts_units(modifier: dict, expected: str) -> None:
+    data = {
+        "id": "rally",
+        "name": {"en_us": "Rally"},
+        "category": "beneficial",
+        "color": "#F5241B",
+        "modifiers": [
+            {"attribute": "minecraft:attack_damage", "operation": "add_multiplied_total"} | modifier
+        ],
+    }
+    with pytest.raises(ValueError, match=expected):
+        EffectDef.model_validate(data)
+
+
+def test_per_amplifier_growth_reaches_the_registration_and_expectations() -> None:
+    files = generate(RepoPaths())
+    effects = files[
+        "mod/src/generated/java/io/github/matejkadlec/realmforge/generated/GeneratedEffects.java"
+    ].decode()
+    shout = effects[effects.index("BATTLE_SHOUT =") :]
+    assert "AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL, 0.05)" in shout[: shout.index(";")]
+    expectations = files[f"{QA}/GeneratedEffectExpectations.java"].decode()
+    # 0.1 + 0.05 in doubles, as the game's curve computes it.
+    assert f'"add_multiplied_total", {0.1 + 0.05!r})' in expectations
+    assert '"realmforge:effect.ice_barrier.realmforge.magic_shield", 10.0, "add_value", 20.0)' in expectations
+
+
+def test_a_spell_of_no_school_neither_deals_damage_nor_heals() -> None:
+    assert spell_model(
+        school=None, effects=[{"type": "realmforge:cleanse"}], targeting={"type": "realmforge:self"}
+    )
+    with pytest.raises(ValueError, match="a spell that deals damage or heals names its school"):
+        spell_model(school=None)
+
+
+def test_will_to_survive_has_no_school_in_the_data() -> None:
+    files = generate(RepoPaths())
+    data = json.loads(files[f"{DATA}/realmforge/spell/will_to_survive.json"])
+    assert "school" not in data
+    assert data["cooldown_ticks"] == 1200
+    expectations = files[f"{QA}/GeneratedSpellExpectations.java"].decode()
+    will = expectations[expectations.index('"realmforge:will_to_survive"') :]
+    assert will.index("Optional.empty()") < will.index('"attack_damage"')
+
+
+def test_battle_shout_and_ice_barrier_have_drawn_icons() -> None:
+    files = generate(RepoPaths())
+    icons = "mod/src/generated/resources/assets/realmforge/textures/mob_effect"
+    for effect in ("battle_shout", "ice_barrier"):
+        icon = files[f"{icons}/{effect}.png"]
+        assert icon == drawn_icon(effect)
+        assert icon.startswith(b"\x89PNG") and struct.unpack(">II", icon[16:24]) == (18, 18)
+    assert drawn_icon("stunned") is None
+
+
+def test_drawn_icons_use_only_palette_colours() -> None:
+    palette = {
+        tuple(int(part) for part in line.split()[:3])
+        for line in (REPO_ROOT / "art" / "palette" / "realmforge.gpl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line[:1].isspace() or line[:1].isdigit()
+    }
+    assert all(colour[3] == 0 or colour[:3] in palette for colour in PIXELS.values())
+    for rows in ICONS.values():
+        assert all(char in PIXELS for row in rows for char in row)

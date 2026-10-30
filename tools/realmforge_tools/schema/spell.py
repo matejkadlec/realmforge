@@ -683,7 +683,12 @@ class SpellDef(StrictModel):
         description="What the spell does, in its tooltip: one or two sentences. Numbers come from data through "
         "placeholders: {damage}, {heal}, {duration}, {periodic}, {periodic_total}, {interval} and {radius}."
     )
-    school: ResourceId = Field(description="The spell school whose damage it deals, e.g. realmforge:fire.")
+    school: ResourceId | None = Field(
+        default=None,
+        description="The spell school whose damage it deals, e.g. realmforge:fire. A spell that neither deals damage "
+        "nor heals may leave it out: it belongs to no school (Will To Survive, Matěj, 2026-10-30), and the spell bar "
+        "frames it in black.",
+    )
     scales_with: ScalesWith = Field(
         description="spell_power for magic schools, attack_damage for physical abilities (Matěj, 2026-10-15)."
     )
@@ -736,6 +741,17 @@ class SpellDef(StrictModel):
                 raise ValueError(
                     f"nothing grows with the level at max_level 1 ({', '.join(leveled)}): raise max_level or drop "
                     "the per-level growth"
+                )
+        return self
+
+    @model_validator(mode="after")
+    def _school(self) -> SpellDef:
+        if self.school is None:
+            hits = [path for path, effect in self.all_effects() if effect.type in (DAMAGE, HEAL)]
+            if hits:
+                raise ValueError(
+                    f"{hits[0]}: a spell that deals damage or heals names its school; only a spell that does "
+                    "neither belongs to none"
                 )
         return self
 

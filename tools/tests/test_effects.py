@@ -215,7 +215,7 @@ def test_expectations(repo: RepoPaths) -> None:
     ) in expectations
     assert (
         'new ModifierExpectation("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", '
-        '-0.1, "add_value")'
+        '-0.1, "add_value", -0.2)'
     ) in expectations
 
 

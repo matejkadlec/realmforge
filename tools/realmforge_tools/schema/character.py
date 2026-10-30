@@ -90,7 +90,7 @@ class RacialPassiveDef(StrictModel):
     shows the passive's name and description below the item's stats (architecture 10.1)."""
 
     name: LocalizedText = Field(
-        description="The passive's name, e.g. Sword Specialization (dark gray in tooltips)."
+        description="The passive's name, e.g. Sword Specialization (gold in tooltips)."
     )
     description: LocalizedText = Field(
         description='What it gives, one short line in tooltips, e.g. "+{bonus}% damage": {bonus} is its first '

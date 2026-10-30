@@ -14,9 +14,9 @@
     "per_level": 0,
     "resource": "realmforge:mana"
   },
-  "cooldown_ticks": 600,
+  "cooldown_ticks": 1200,
   "global_cooldown_ticks": 10,
-  "max_level": 1,
+  "max_level": 3,
   "crit": {
     "can_crit": true,
     "bonus_chance": 0.0
@@ -28,9 +28,13 @@
     {
       "type": "realmforge:apply_effect",
       "effect": "realmforge:ice_barrier",
-      "duration_ticks": 400,
+      "duration_ticks": 200,
+      "duration_per_level_ticks": 200,
       "amplifier": 0,
-      "stronger_at_levels": []
+      "stronger_at_levels": [
+        2,
+        3
+      ]
     }
   ]
 }

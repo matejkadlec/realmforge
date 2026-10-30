@@ -21,8 +21,8 @@ import net.minecraft.world.phys.Vec3;
  * (toward an enemy, a ground point, or along a direction: where the crosshair points, RLM-344), which runs its own
  * {@code effects} on the first enemy it hits (architecture 11.3). A spell that forms it during its cast
  * ({@link SpellCast#formsProjectile}) launches it from where it formed, in front of the caster
- * ({@link SpellVisuals#formPoint}), toward the target. A player's projectile is aim assisted (RLM-345): it leaves
- * toward the enemy it homes in on and curves after it ({@link #homing}).
+ * ({@link SpellVisuals#formPoint}), toward the target; a channel launches each from there too. A player's projectile
+ * is aim assisted (RLM-345): it leaves toward the enemy it homes in on and curves after it ({@link #homing}).
  *
  * @param speed blocks per second
  * @param size the width and height of its hitbox, in blocks
@@ -67,7 +67,10 @@ public record ProjectileEffect(double speed, double size, Optional<Integer> life
         boolean formed = context.direct() == context.caster()
                 && SpellVisuals.formedProjectile(spell).filter(formedOne -> formedOne == this).isPresent();
         LivingEntity caster = context.caster();
-        Vec3 origin = formed ? SpellVisuals.formPoint(caster, caster.yBodyRot) : caster.getEyePosition();
+        // A channel's projectiles leave from the hands too, as a formed one does: from the eyes, a missile fills the
+        // middle of the caster's own screen for a frame (Arcane Missiles, Matěj's playtest of 2026-10-30).
+        boolean fromHands = formed || context.direct() == caster && spell.cast().type() == SpellCast.Type.CHANNEL;
+        Vec3 origin = fromHands ? SpellVisuals.formPoint(caster, caster.yBodyRot) : caster.getEyePosition();
         Vec3 direction = target.direction();
         Optional<LivingEntity> homing = homing(context, target);
         Optional<LivingEntity> toward = homing.isPresent() ? homing : target.entity().filter(entity -> formed);

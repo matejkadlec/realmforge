@@ -12,8 +12,12 @@ import java.util.Optional;
  * fractions).
  */
 public final class GeneratedEffectExpectations {
-    /** An attribute modifier at the first level (amplifier 0); vanilla multiplies it by the amplifier + 1. */
-    public record ModifierExpectation(String attribute, String id, double amount, String operation) {
+    /**
+     * An attribute modifier at the first level (amplifier 0), and its amount at the second (amplifier 1): vanilla
+     * multiplies it by the amplifier + 1, a per-amplifier growth adds its step instead.
+     */
+    public record ModifierExpectation(String attribute, String id, double amount, String operation,
+            double secondLevelAmount) {
     }
 
     /** Damage or healing over time: one tick's amount at the first level, every {@code intervalTicks}. */
@@ -34,7 +38,7 @@ public final class GeneratedEffectExpectations {
                     "effect.realmforge.battle_shout",
                     "beneficial",
                     0xF5241B,
-                    List.of(new ModifierExpectation("minecraft:attack_damage", "realmforge:effect.battle_shout.minecraft.attack_damage", 0.1, "add_multiplied_total")),
+                    List.of(new ModifierExpectation("minecraft:attack_damage", "realmforge:effect.battle_shout.minecraft.attack_damage", 0.1, "add_multiplied_total", 0.15000000000000002)),
                     Optional.empty(),
                     false),
             new EffectExpectation(
@@ -50,7 +54,7 @@ public final class GeneratedEffectExpectations {
                     "effect.realmforge.cracked_stone",
                     "beneficial",
                     0xB5654A,
-                    List.of(new ModifierExpectation("minecraft:attack_damage", "realmforge:effect.cracked_stone.minecraft.attack_damage", 0.3, "add_multiplied_total"), new ModifierExpectation("minecraft:movement_speed", "realmforge:effect.cracked_stone.minecraft.movement_speed", 0.25, "add_multiplied_total"), new ModifierExpectation("minecraft:armor", "realmforge:effect.cracked_stone.minecraft.armor", -0.5, "add_multiplied_total")),
+                    List.of(new ModifierExpectation("minecraft:attack_damage", "realmforge:effect.cracked_stone.minecraft.attack_damage", 0.3, "add_multiplied_total", 0.6), new ModifierExpectation("minecraft:movement_speed", "realmforge:effect.cracked_stone.minecraft.movement_speed", 0.25, "add_multiplied_total", 0.5), new ModifierExpectation("minecraft:armor", "realmforge:effect.cracked_stone.minecraft.armor", -0.5, "add_multiplied_total", -1.0)),
                     Optional.empty(),
                     false),
             new EffectExpectation(
@@ -58,7 +62,7 @@ public final class GeneratedEffectExpectations {
                     "effect.realmforge.ice_barrier",
                     "beneficial",
                     0x7FD4FF,
-                    List.of(new ModifierExpectation("realmforge:magic_shield", "realmforge:effect.ice_barrier.realmforge.magic_shield", 12.0, "add_value")),
+                    List.of(new ModifierExpectation("realmforge:magic_shield", "realmforge:effect.ice_barrier.realmforge.magic_shield", 10.0, "add_value", 20.0)),
                     Optional.empty(),
                     false),
             new EffectExpectation(
@@ -66,7 +70,7 @@ public final class GeneratedEffectExpectations {
                     "effect.realmforge.stunned",
                     "harmful",
                     0xF4D35E,
-                    List.of(new ModifierExpectation("minecraft:movement_speed", "realmforge:effect.stunned.minecraft.movement_speed", -1.0, "add_multiplied_total"), new ModifierExpectation("minecraft:jump_strength", "realmforge:effect.stunned.minecraft.jump_strength", -1.0, "add_multiplied_total")),
+                    List.of(new ModifierExpectation("minecraft:movement_speed", "realmforge:effect.stunned.minecraft.movement_speed", -1.0, "add_multiplied_total", -2.0), new ModifierExpectation("minecraft:jump_strength", "realmforge:effect.stunned.minecraft.jump_strength", -1.0, "add_multiplied_total", -2.0)),
                     Optional.empty(),
                     true),
             new EffectExpectation(
@@ -90,7 +94,7 @@ public final class GeneratedEffectExpectations {
                     "effect.realmforge.test_sapped",
                     "harmful",
                     0x8F8FA0,
-                    List.of(new ModifierExpectation("minecraft:movement_speed", "realmforge:effect.test_sapped.minecraft.movement_speed", -0.2, "add_multiplied_total"), new ModifierExpectation("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", -0.1, "add_value")),
+                    List.of(new ModifierExpectation("minecraft:movement_speed", "realmforge:effect.test_sapped.minecraft.movement_speed", -0.2, "add_multiplied_total", -0.4), new ModifierExpectation("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", -0.1, "add_value", -0.2)),
                     Optional.empty(),
                     false));
 

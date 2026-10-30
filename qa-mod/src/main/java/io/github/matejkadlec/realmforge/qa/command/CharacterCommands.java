@@ -33,7 +33,8 @@ import net.minecraft.server.level.ServerPlayer;
  *   and class modifiers go; the level falls back to 1 and the spellbook empties (C4), and the items of the starting
  *   kit stay.</li>
  *   <li>{@code /qa character create <race> <class> [<player>]} creates a character as the screen does, with the same
- *   rules and the starting kit, and says why when it refuses.</li>
+ *   rules, and says why when it refuses. The starting kit comes with a player's first character only, so a character
+ *   created after a reset brings none (Matěj, 2026-10-30).</li>
  * </ul>
  */
 public final class CharacterCommands {

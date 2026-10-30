@@ -90,7 +90,7 @@
         },
         "name": {
           "$ref": "#/$defs/LocalizedText",
-          "description": "The passive's name, e.g. Sword Specialization (dark gray in tooltips)."
+          "description": "The passive's name, e.g. Sword Specialization (gold in tooltips)."
         },
         "weapons": {
           "description": "An item tag, e.g. realmforge:sword_like: the passive applies while an item of it is in the main hand.",

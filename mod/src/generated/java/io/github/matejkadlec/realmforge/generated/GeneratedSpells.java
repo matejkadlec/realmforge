@@ -131,7 +131,7 @@ public final class GeneratedSpells {
     /** {@code realmforge:test_titan_harden} from {@code content/spells/test_titan_harden.yaml}: physical, self, apply_effect. */
     public static final ResourceKey<Spell> TEST_TITAN_HARDEN = key("test_titan_harden");
 
-    /** {@code realmforge:will_to_survive} from {@code content/spells/will_to_survive.yaml}: physical, self, cleanse. */
+    /** {@code realmforge:will_to_survive} from {@code content/spells/will_to_survive.yaml}: no school, self, cleanse. */
     public static final ResourceKey<Spell> WILL_TO_SURVIVE = key("will_to_survive");
 
     /** Every key above, in id order. */

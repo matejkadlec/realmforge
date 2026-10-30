@@ -5,6 +5,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.matejkadlec.realmforge.combat.HitBonus;
 import io.github.matejkadlec.realmforge.combat.SpellSchools;
+import net.minecraft.core.Holder;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
@@ -62,7 +63,8 @@ public record DamageEffect(double amount, double perLevel, double attackDamage, 
                 context.casterStat(Attributes.ATTACK_DAMAGE));
         LivingEntity caster = context.caster();
         target.hurtServer(context.level(), SpellSchools.damage(context.level().registryAccess(),
-                spell.school().unwrapKey().orElseThrow(), context.direct(), caster,
+                // The pipeline makes every spell that deals damage name its school.
+                spell.school().flatMap(Holder::unwrapKey).orElseThrow(), context.direct(), caster,
                 spell.crit().atLevel(context.spellLevel()), bonusAt(context.spellLevel()), context.procOrigin()),
                 (float) damage);
     }

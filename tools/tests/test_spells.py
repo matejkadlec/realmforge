@@ -404,7 +404,7 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         '                    "realmforge:test_bolt",\n'
         '                    "spell.realmforge.test_bolt.name",\n'
         '                    "spell.realmforge.test_bolt.description",\n'
-        '                    "realmforge:fire",\n'
+        '                    Optional.of("realmforge:fire"),\n'
         '                    "spell_power",\n'
         '                    "realmforge:enemy",\n'
         "                    16.0,\n"

@@ -45,7 +45,7 @@ def _double(value: float) -> str:
 
 def _comment(spell: SpellDef) -> str:
     effects = ", ".join(effect.type.removeprefix(f"{MOD_ID}:") for effect in spell.effects)
-    school = spell.school.removeprefix(f"{MOD_ID}:")
+    school = spell.school.removeprefix(f"{MOD_ID}:") if spell.school is not None else "no school"
     return f"{school}, {spell.targeting.type.removeprefix(f'{MOD_ID}:')}, {effects}"
 
 
@@ -147,7 +147,7 @@ def _expectation(spell: SpellDef) -> str:
         f"                    {string_literal(f'{MOD_ID}:{spell.id}')},\n"
         f"                    {string_literal(translation_key('spell', spell.id, 'name'))},\n"
         f"                    {string_literal(translation_key('spell', spell.id, 'description'))},\n"
-        f"                    {string_literal(spell.school)},\n"
+        f"                    {_optional_string(spell.school)},\n"
         f"                    {string_literal(spell.scales_with)},\n"
         f"                    {string_literal(spell.targeting.type)},\n"
         f"                    {_double(getattr(spell.targeting, 'range', 0.0))},\n"
@@ -209,7 +209,8 @@ def _expectations(content: Content) -> bytes:
         "     * {@code castAnimation} is how a mob moves while it casts, {@code raise} unless the data says otherwise;\n"
         "     * {@code requires} names what a player's cast needs in hand ({@code melee_weapon}, {@code shield}).\n"
         "     */\n"
-        "    public record SpellExpectation(String id, String name, String description, String school, String scalesWith,\n"
+        "    public record SpellExpectation(String id, String name, String description, Optional<String> school,\n"
+        "            String scalesWith,\n"
         "            String targeting, double range,\n"
         "            String cast, int castDurationTicks, int castIntervalTicks, boolean castableWhileMoving, boolean lockOn,\n"
         "            boolean keepSight, Optional<Double> keepRange, Optional<String> castSound, boolean formsProjectile,\n"

@@ -258,7 +258,10 @@ public final class CharacterGameTests {
         helper.succeed();
     }
 
-    /** {@code /qa character create|reset}: a playtest can create, remove and recreate a character. */
+    /**
+     * {@code /qa character create|reset}: a playtest can create, remove and recreate a character; the recreated one
+     * brings no second starting kit (Matěj, 2026-10-30).
+     */
     @QaGameTest
     public static void qaCharacterCommandsCreateAndReset(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
@@ -275,8 +278,11 @@ public final class CharacterGameTests {
         helper.assertFalse(Characters.exists(player), "reset removed the character");
         helper.assertFalse(player.hasData(CharacterAttachments.CHARACTER), "and its attachment");
         helper.assertTrue(characterModifiers(player).isEmpty(), "and the race and class modifiers");
+        helper.assertTrue(player.getData(CharacterAttachments.STARTING_KIT), "the first character's kit came");
+        player.getInventory().clearContent();
         run(server, player, "qa character create " + race.id() + " " + race.classes().getFirst());
         helper.assertTrue(Characters.exists(player), "a character can be created again after a reset");
+        helper.assertTrue(inventory(player).isEmpty(), "with no second starting kit");
         server.getPlayerList().remove(player);
         helper.succeed();
     }

@@ -2,6 +2,7 @@ package io.github.matejkadlec.realmforge.qa.gametest;
 
 import io.github.matejkadlec.realmforge.character.Characters;
 import io.github.matejkadlec.realmforge.character.Scrolls;
+import io.github.matejkadlec.realmforge.combat.DamageCalculator;
 import io.github.matejkadlec.realmforge.combat.DamageOverTime;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
 import io.github.matejkadlec.realmforge.generated.GeneratedItems;
@@ -12,8 +13,15 @@ import io.github.matejkadlec.realmforge.mob.MobScaling;
 import io.github.matejkadlec.realmforge.qa.combat.TrainingDummy;
 import io.github.matejkadlec.realmforge.qa.command.MobCommands;
 import io.github.matejkadlec.realmforge.qa.command.PuppetCommands;
+import io.github.matejkadlec.realmforge.qa.command.ResourceCommands;
+import io.github.matejkadlec.realmforge.spell.CastResult;
+import io.github.matejkadlec.realmforge.spell.ResourceTypes;
+import io.github.matejkadlec.realmforge.spell.Resources;
 import io.github.matejkadlec.realmforge.spell.SpellAttachments;
+import io.github.matejkadlec.realmforge.spell.SpellCaster;
 import io.github.matejkadlec.realmforge.spell.Spellbook;
+import io.github.matejkadlec.realmforge.spell.Spells;
+import io.github.matejkadlec.realmforge.stats.CharacterStats;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -34,15 +42,18 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.illager.Pillager;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -332,6 +343,93 @@ public final class QaCommandGameTests {
             server.getPlayerList().remove(player);
             helper.succeed();
         });
+    }
+
+    /**
+     * C4's revised playtest (RLM-27): {@code /qa stats set crit_chance 100} gives 100 %, so Reckless Strike at rank 5
+     * (+30 %) crits every time for 1 + 50 % + 30 % (crit overflow) on a dummy without armor; on a dummy with 20 armor
+     * the same crit loses the armor's share (15.4 × 1.8 = 27.7 lands as about 21, what Matěj saw on 2026-10-30).
+     * Everything runs within one tick: another test's {@code /qa dummy remove} removes every dummy between ticks.
+     */
+    @QaGameTest
+    public static void recklessStrikeCritsForMoreAbove100Percent(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-crit-commands", new Vec3(2.5, 1, 0.5));
+        player.setGameMode(GameType.SURVIVAL);
+        run(server, player, "qa character create realmforge:human realmforge:warrior");
+        run(server, player, "item replace entity @s weapon.mainhand with minecraft:iron_sword");
+        run(server, player, "qa stats set crit_chance 100");
+        helper.assertValueEqual(player.getAttributeValue(GeneratedStats.CRIT_CHANCE), 1.0, "100 % crit chance");
+        run(server, player, "qa spell learn realmforge:reckless_strike 5");
+        run(server, player, "qa resource rage autofill true");
+        helper.assertValueEqual(Resources.amount(player, ResourceTypes.RAGE), 100.0F, "autofill filled the rage");
+        // A tick applies the sword's attack damage (vanilla's equipment check), and Sword Specialization with it.
+        player.doTick();
+        CharacterStats.recompute(player);
+        double raw = 2 + 4 + player.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        double crit = raw * (1 + player.getAttributeValue(GeneratedStats.CRIT_DAMAGE) + 0.3);
+
+        Pillager dummy = TrainingDummy.spawn(helper.getLevel(), helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
+        try {
+            for (double armor : new double[] {0, 20}) {
+                dummy.getAttribute(Attributes.ARMOR).setBaseValue(armor);
+                TrainingDummy.reset(dummy);
+                Spells.resetCooldowns(player);
+                CastResult result = SpellCaster.cast(player, GeneratedSpells.RECKLESS_STRIKE, dummy);
+                helper.assertTrue(result.success(), "Reckless Strike was refused: " + result.failure());
+                // The dummy heals itself after every hit; its DPS meter keeps what each hit dealt.
+                TrainingDummy.Session session = TrainingDummy.session(dummy);
+                helper.assertTrue(session != null && session.hits() == 1 && session.crits() == 1,
+                        "one hit, a crit: " + session);
+                double dealt = session.total();
+                double expected = crit * (1 - DamageCalculator.armorReduction(crit, armor, 0, 0, 0));
+                helper.assertTrue(Math.abs(dealt - expected) < 1e-3, String.format(Locale.ROOT,
+                        "a %.1f hit crits for 180 %% (%.2f) against %.0f armor: %.2f expected, dealt %.2f", raw, crit,
+                        armor, expected, dealt));
+            }
+        } finally {
+            TrainingDummy.remove(dummy);
+        }
+        run(server, player, "qa resource rage autofill false");
+        server.getPlayerList().remove(player);
+        helper.succeed();
+    }
+
+    /**
+     * The testing aids of C4's revision (Matěj, 2026-10-30): {@code /qa resource rage autofill} keeps the rage full
+     * until it is turned off, and {@code /qa inventory clear} empties the 27 main slots and keeps the hotbar, the armor
+     * and the offhand.
+     */
+    @QaGameTest
+    public static void resourceAutofillAndInventoryClear(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-aid-commands", new Vec3(2.5, 1, 0.5));
+        player.setGameMode(GameType.SURVIVAL);
+        run(server, player, "qa resource rage autofill true");
+        Resources.set(player, ResourceTypes.RAGE, 0);
+        player.doTick();
+        helper.assertValueEqual(Resources.amount(player, ResourceTypes.RAGE), 100.0F, "refilled on the next tick");
+        run(server, player, "qa resource rage autofill false");
+        helper.assertValueEqual(player.getData(ResourceCommands.AUTOFILL), List.of(), "autofill off");
+        Resources.set(player, ResourceTypes.RAGE, 0);
+        player.doTick();
+        helper.assertTrue(Resources.amount(player, ResourceTypes.RAGE) < 1, "no longer refilled");
+
+        Inventory inventory = player.getInventory();
+        inventory.setItem(0, new ItemStack(Items.IRON_SWORD));
+        inventory.setItem(Inventory.SELECTION_SIZE, new ItemStack(Items.BREAD, 32));
+        inventory.setItem(Inventory.INVENTORY_SIZE - 1, new ItemStack(Items.STONE, 64));
+        player.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+        player.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.LEATHER_CHESTPLATE));
+        run(server, player, "qa inventory clear");
+        for (int slot = Inventory.SELECTION_SIZE; slot < Inventory.INVENTORY_SIZE; slot++) {
+            helper.assertTrue(inventory.getItem(slot).isEmpty(), "main inventory slot " + slot + " cleared");
+        }
+        helper.assertTrue(inventory.getItem(0).is(Items.IRON_SWORD), "the hotbar stays");
+        helper.assertTrue(player.getOffhandItem().is(Items.SHIELD), "the offhand stays");
+        helper.assertTrue(player.getItemBySlot(EquipmentSlot.CHEST).is(Items.LEATHER_CHESTPLATE), "the armor stays");
+        server.getPlayerList().remove(player);
+        helper.succeed();
     }
 
     private static void run(MinecraftServer server, ServerPlayer player, String command) {

@@ -13,7 +13,7 @@ from typing import Annotated, Literal
 from pydantic import Field, model_validator
 
 from realmforge_tools.project import MOD_ID
-from realmforge_tools.schema.character import CharacterModifierDef
+from realmforge_tools.schema.character import CharacterModifierDef, FiniteNumber
 from realmforge_tools.schema.common import ContentId, LocalizedText, ResourceId, Seconds, StrictModel
 from realmforge_tools.schema.spell_school import HexColor
 
@@ -29,8 +29,43 @@ MAX_INTERVAL_SECONDS = 10.0
 
 class EffectModifierDef(CharacterModifierDef):
     """An attribute modifier the effect gives while it lasts. The amount is the first level's: vanilla multiplies it
-    by the amplifier + 1, so Slowness II (amplifier 1) slows twice as much as Slowness I. Units follow the stat rules:
-    multiplied operations take ``amount_percent``; ``add_value`` on one of our stats takes its unit."""
+    by the amplifier + 1, so Slowness II (amplifier 1) slows twice as much as Slowness I, unless ``per_amplifier`` (or
+    ``per_amplifier_percent``) gives what each level above the first adds instead (Battle Shout's 10, 15 and 20 %,
+    Matěj, 2026-10-30). Units follow the stat rules: multiplied operations take ``amount_percent``; ``add_value`` on
+    one of our stats takes its unit."""
+
+    per_amplifier: FiniteNumber | None = Field(
+        default=None,
+        description="Added for every amplifier level above the first, in the amount's units, instead of vanilla's "
+        "multiplying the amount by the level.",
+    )
+    per_amplifier_percent: FiniteNumber | None = Field(
+        default=None, description="per_amplifier in percent, for an amount_percent."
+    )
+
+    @model_validator(mode="after")
+    def _per_amplifier(self) -> EffectModifierDef:
+        if self.per_amplifier is not None and self.per_amplifier_percent is not None:
+            raise ValueError("set at most one of per_amplifier and per_amplifier_percent")
+        if self.per_amplifier is not None and self.is_percent:
+            raise ValueError("the amount is amount_percent: write its growth as per_amplifier_percent")
+        if self.per_amplifier_percent is not None and not self.is_percent:
+            raise ValueError("the amount is amount: write its growth as per_amplifier")
+        return self
+
+    @property
+    def game_per_amplifier(self) -> float | None:
+        """What each amplifier level above the first adds, in game units; None for vanilla's multiplication."""
+        if self.per_amplifier_percent is not None:
+            return self.per_amplifier_percent / 100
+        return self.per_amplifier
+
+    def game_amount_at(self, amplifier: int) -> float:
+        """The amount at ``amplifier`` (0 for the first level), as the game gives it."""
+        per_amplifier = self.game_per_amplifier
+        if per_amplifier is None:
+            return self.game_amount * (amplifier + 1)
+        return self.game_amount + per_amplifier * amplifier
 
 
 class PeriodicDef(StrictModel):

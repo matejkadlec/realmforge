@@ -85,6 +85,8 @@ public final class PlayerStateGameTests {
         ClassSpells.teach(first, false);
         Spellbook saved = first.getData(SpellAttachments.SPELLBOOK);
         helper.assertValueEqual(saved.level(FIREBOLT), Optional.of(2), "a taught spell keeps the rank it had");
+        // A character from before the starting kit was recorded: the login records it (Matěj, 2026-10-30).
+        first.removeData(CharacterAttachments.STARTING_KIT);
         server.getPlayerList().remove(first);
 
         ServerPlayer again = QaPlayers.login(server, profile);
@@ -181,6 +183,7 @@ public final class PlayerStateGameTests {
     private static void fill(LivingEntity entity) {
         entity.setData(StatsAttachments.LEVEL, PLAYER_LEVEL);
         entity.setData(CharacterAttachments.CHARACTER, CHARACTER);
+        entity.setData(CharacterAttachments.STARTING_KIT, true);
         entity.setData(SpellAttachments.SPELLBOOK, SPELLBOOK);
         entity.setData(SpellAttachments.COMBAT, combat(true));
         entity.setData(TalentAttachments.TALENTS, TALENTS);
@@ -189,6 +192,7 @@ public final class PlayerStateGameTests {
     private static void assertFilled(GameTestHelper helper, LivingEntity entity, Spellbook spellbook, String when) {
         helper.assertValueEqual(entity.getData(StatsAttachments.LEVEL), PLAYER_LEVEL, "level " + when);
         helper.assertValueEqual(entity.getData(CharacterAttachments.CHARACTER), CHARACTER, "character " + when);
+        helper.assertTrue(entity.getData(CharacterAttachments.STARTING_KIT), "the starting kit given " + when);
         helper.assertValueEqual(entity.getData(SpellAttachments.SPELLBOOK), spellbook, "spellbook " + when);
         helper.assertValueEqual(entity.getData(SpellAttachments.COMBAT), combat(false),
                 "combat state (resource pools and cooldowns, no cast) " + when);

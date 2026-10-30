@@ -1,6 +1,8 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # The Mage's self-buff (C4): the Mage never heals but survives through shields (Matěj, 2026-10-22). Ice Barrier raises
-# the Magic Shield by 12 for 20 s and fills those points at once, so it shields in the middle of a fight.
+# the Magic Shield by 10 / 20 / 30 for 10 / 20 / 30 s by rank and fills those points at once, so it shields in the
+# middle of a fight, on a 1 minute cooldown (Matěj, 2026-10-30). Spell power raises nothing of it; Cooldown Reduction
+# shortens its cooldown, and a second cast refreshes the barrier instead of stacking it.
 id: ice_barrier
 name: {en_us: Ice Barrier}
 description: {en_us: "Wraps you in ice that raises your Magic Shield by {bonus} for {duration} sec."}
@@ -9,6 +11,11 @@ scales_with: spell_power
 targeting: {type: realmforge:self}
 cast: {type: instant}
 cost: {resource: realmforge:mana, amount: 25}
-cooldown_seconds: 30
+cooldown_seconds: 60
+max_level: 3
 effects:
-  - {type: realmforge:apply_effect, effect: realmforge:ice_barrier, duration_seconds: 20}
+  - type: realmforge:apply_effect
+    effect: realmforge:ice_barrier
+    duration_seconds: 10
+    duration_per_level_seconds: 10
+    stronger_at_levels: [2, 3]

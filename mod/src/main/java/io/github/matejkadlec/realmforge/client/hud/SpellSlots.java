@@ -13,13 +13,18 @@ import net.minecraft.util.ARGB;
 
 /**
  * Draws a spell bar slot (C3b, RLM-25), on the HUD ({@link SpellBarHud}) and in the spellbook: a dark square framed in
- * the spell's school colour, the spell's initials until spells have icons (C6, A1; the frame stays then, Matěj
- * 2026-10-21), a blue tint while the player lacks its resource, the cooldown sweep ({@link CooldownSweep}) with the
- * seconds left of a long cooldown, a gold frame while it is being cast, and the slot's key in the corner.
+ * the spell's school colour (a spell of no school: black, filled dark grey), the spell's initials until spells have
+ * icons (C6, A1; the frame stays then, Matěj 2026-10-21), a blue tint while the player lacks its resource, the cooldown
+ * sweep ({@link CooldownSweep}) with the seconds left of a long cooldown, a gold frame while it is being cast, and the
+ * slot's key in the corner.
  */
 public final class SpellSlots {
     private static final int BACKGROUND = 0xA0101010;
     private static final int EMPTY_FRAME = 0xFF4A4A4A;
+    /** A spell of no school (Will To Survive): a black frame and a dark grey fill (Matěj, 2026-10-30). */
+    private static final int NO_SCHOOL_FRAME = 0xFF000000;
+    private static final int NO_SCHOOL_FILL_ALPHA = 200;
+    private static final int SCHOOL_FILL_ALPHA = 70;
     private static final int CASTING_FRAME = 0xFFFFD24A;
     private static final int UNAFFORDABLE = 0x903048C8;
     private static final int SWEEP = 0xB0000000;
@@ -41,11 +46,12 @@ public final class SpellSlots {
             Optional<Component> key) {
         graphics.fill(x, y, x + size, y + size, BACKGROUND);
         Optional<Spell> spell = slot.spell();
-        int frame = spell.map(value -> ARGB.opaque(value.school().value().color())).orElse(EMPTY_FRAME);
+        int frame = spell.map(value -> value.school().isPresent() ? ARGB.opaque(value.color()) : NO_SCHOOL_FRAME)
+                .orElse(EMPTY_FRAME);
         int textY = y + size / 2 - 2;
         if (spell.isPresent()) {
-            int color = spell.get().school().value().color();
-            graphics.fill(x + 1, y + 1, x + size - 1, y + size - 1, ARGB.color(70, color));
+            int alpha = spell.get().school().isPresent() ? SCHOOL_FILL_ALPHA : NO_SCHOOL_FILL_ALPHA;
+            graphics.fill(x + 1, y + 1, x + size - 1, y + size - 1, ARGB.color(alpha, spell.get().color()));
             graphics.centeredText(font, initials(Language.getInstance().getOrDefault(spell.get().name())),
                     x + size / 2 + 1, textY, TEXT);
             if (!slot.affordable()) {

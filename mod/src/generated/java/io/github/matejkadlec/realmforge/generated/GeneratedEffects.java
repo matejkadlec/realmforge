@@ -29,7 +29,7 @@ public final class GeneratedEffects {
     public static final DeferredHolder<MobEffect, MobEffect> BATTLE_SHOUT =
             EFFECTS.register("battle_shout", () -> new StatusEffect(MobEffectCategory.BENEFICIAL, 0xF5241B,
                     Optional.empty())
-                    .modifier("minecraft:attack_damage", "realmforge:effect.battle_shout.minecraft.attack_damage", 0.1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+                    .modifier("minecraft:attack_damage", "realmforge:effect.battle_shout.minecraft.attack_damage", 0.1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL, 0.05));
 
     /** {@code realmforge:burning} from {@code content/effects/burning.yaml}: harmful, "Burning". */
     public static final DeferredHolder<MobEffect, MobEffect> BURNING =
@@ -48,7 +48,7 @@ public final class GeneratedEffects {
     public static final DeferredHolder<MobEffect, MobEffect> ICE_BARRIER =
             EFFECTS.register("ice_barrier", () -> new StatusEffect(MobEffectCategory.BENEFICIAL, 0x7FD4FF,
                     Optional.empty())
-                    .modifier("realmforge:magic_shield", "realmforge:effect.ice_barrier.realmforge.magic_shield", 12.0, AttributeModifier.Operation.ADD_VALUE));
+                    .modifier("realmforge:magic_shield", "realmforge:effect.ice_barrier.realmforge.magic_shield", 10.0, AttributeModifier.Operation.ADD_VALUE));
 
     /** {@code realmforge:stunned} from {@code content/effects/stunned.yaml}: harmful, "Stunned". */
     public static final DeferredHolder<MobEffect, MobEffect> STUNNED =

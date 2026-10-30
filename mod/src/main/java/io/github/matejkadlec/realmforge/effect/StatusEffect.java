@@ -47,10 +47,25 @@ public class StatusEffect extends MobEffect {
      * registers attributes before status effects, so the attribute, ours included, exists when the effect is built.
      */
     public StatusEffect modifier(String attribute, String id, double amount, AttributeModifier.Operation operation) {
-        Holder<Attribute> holder = BuiltInRegistries.ATTRIBUTE.get(Identifier.parse(attribute))
-                .orElseThrow(() -> new IllegalStateException("No attribute " + attribute + " for a status effect"));
-        addAttributeModifier(holder, Identifier.parse(id), amount, operation);
+        addAttributeModifier(attribute(attribute), Identifier.parse(id), amount, operation);
         return this;
+    }
+
+    /**
+     * Adds the modifier {@code id} on {@code attribute} that gives {@code amount} at the first level and
+     * {@code perAmplifier} more at each level above it, instead of vanilla's multiplying by the level (Battle Shout's
+     * 10, 15 and 20 %): NeoForge's attribute curve.
+     */
+    public StatusEffect modifier(String attribute, String id, double amount, AttributeModifier.Operation operation,
+            double perAmplifier) {
+        addAttributeModifier(attribute(attribute), Identifier.parse(id), operation,
+                amplifier -> amount + perAmplifier * amplifier);
+        return this;
+    }
+
+    private static Holder<Attribute> attribute(String attribute) {
+        return BuiltInRegistries.ATTRIBUTE.get(Identifier.parse(attribute))
+                .orElseThrow(() -> new IllegalStateException("No attribute " + attribute + " for a status effect"));
     }
 
     @Override

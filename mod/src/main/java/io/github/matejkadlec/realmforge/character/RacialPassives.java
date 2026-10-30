@@ -30,12 +30,15 @@ public final class RacialPassives {
                 .map(Holder::value).flatMap(Race::racialPassive);
     }
 
-    /** The tooltip lines {@code stack} gets for {@code player}: none unless it is a weapon of their racial passive. */
+    /**
+     * The tooltip lines {@code stack} gets for {@code player}: none unless it is a weapon of their racial passive; the
+     * passive's name in gold and its description in yellow (Matěj, 2026-10-30).
+     */
     public static List<Component> tooltip(Player player, ItemStack stack) {
         return of(player).filter(passive -> passive.appliesWith(stack))
                 .map(passive -> List.<Component>of(
-                        Component.translatable(passive.name()).withStyle(ChatFormatting.DARK_GRAY),
-                        Component.literal(description(passive)).withStyle(ChatFormatting.GRAY)))
+                        Component.translatable(passive.name()).withStyle(ChatFormatting.GOLD),
+                        Component.literal(description(passive)).withStyle(ChatFormatting.YELLOW)))
                 .orElse(List.of());
     }
 

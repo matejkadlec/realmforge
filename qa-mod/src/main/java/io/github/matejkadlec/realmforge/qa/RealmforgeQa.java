@@ -10,6 +10,7 @@ import io.github.matejkadlec.realmforge.qa.combat.QaItems;
 import io.github.matejkadlec.realmforge.qa.combat.QaProcs;
 import io.github.matejkadlec.realmforge.qa.combat.TrainingDummy;
 import io.github.matejkadlec.realmforge.qa.command.QaCommands;
+import io.github.matejkadlec.realmforge.qa.command.ResourceCommands;
 import io.github.matejkadlec.realmforge.qa.gametest.QaGameTests;
 import io.github.matejkadlec.realmforge.qa.instance.GameTestChunkLoads;
 import io.github.matejkadlec.realmforge.qa.instance.InstanceBench;
@@ -34,6 +35,7 @@ public final class RealmforgeQa {
         TrainingDummy.register(modEventBus);
         QaItems.register(modEventBus);
         QaBosses.register(modEventBus);
+        ResourceCommands.register(modEventBus);
         CombatLog.register();
         CastLog.register();
         SoundLog.register();

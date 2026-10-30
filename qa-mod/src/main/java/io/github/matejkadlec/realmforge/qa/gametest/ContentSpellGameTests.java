@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.locale.Language;
@@ -68,7 +69,7 @@ public final class ContentSpellGameTests {
             helper.assertValueEqual(spell.description(), expected.description(), id + " description");
             helper.assertTrue(Language.getInstance().has(spell.name()) && Language.getInstance().has(
                     spell.description()), id + " has no name or description in the lang file");
-            helper.assertValueEqual(spell.school().getRegisteredName(), expected.school(), id + " school");
+            helper.assertValueEqual(spell.school().map(Holder::getRegisteredName), expected.school(), id + " school");
             helper.assertValueEqual(spell.scalesWith().getSerializedName(), expected.scalesWith(), id + " scales with");
             helper.assertValueEqual(targetingType(spell.targeting()), expected.targeting(), id + " targeting");
             helper.assertValueEqual(range(spell.targeting()), expected.range(), id + " range");

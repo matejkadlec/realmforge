@@ -45,6 +45,7 @@ public final class CharacterFeature {
                 : Optional.empty());
         AimAssist.rankBy(mob -> Leveling.killXpMultiplier(mob.registryAccess(), mob));
         Leveling.register();
+        CharacterCreation.register();
         Scrolls.register();
         StatPoints.register();
         modBus.addListener(FMLCommonSetupEvent.class,

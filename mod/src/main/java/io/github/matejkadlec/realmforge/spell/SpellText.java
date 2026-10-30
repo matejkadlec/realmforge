@@ -122,7 +122,7 @@ public final class SpellText {
         Map<String, ResourceKey<SpellSchool>> placeholders = new LinkedHashMap<>();
         List<SpellEffect> effects = allEffects(spell.effects());
         if (first(effects, DamageEffect.class).isPresent()) {
-            spell.school().unwrapKey().ifPresent(key -> placeholders.put("damage", key));
+            spell.school().flatMap(Holder::unwrapKey).ifPresent(key -> placeholders.put("damage", key));
         }
         first(effects, ApplyEffectEffect.class).ifPresent(applied -> {
             if (applied.effect().value() instanceof StatusEffect status && status.periodic().isPresent()
@@ -142,14 +142,14 @@ public final class SpellText {
             Function<ResourceKey<SpellSchool>, Optional<SpellSchool>> schools) {
         Map<String, String> values = new LinkedHashMap<>();
         List<SpellEffect> effects = allEffects(spell.effects());
-        SpellSchool school = spell.school().value();
+        Optional<SpellSchool> school = spell.school().map(Holder::value);
         double attackDamage = stats.applyAsDouble(Attributes.ATTACK_DAMAGE);
         double spellPower = stats.applyAsDouble(GeneratedStats.SPELL_POWER);
-        double schoolPower = school.power().map(stats::applyAsDouble).orElse(0.0);
+        double schoolPower = school.flatMap(SpellSchool::power).map(stats::applyAsDouble).orElse(0.0);
         first(effects, DamageEffect.class).ifPresent(damage -> {
             double base = SpellScaling.base(damage.amount(), damage.perLevel(), level, damage.attackDamage(),
                     attackDamage);
-            double bonus = (school.magic() ? spellPower : 0) + schoolPower;
+            double bonus = (school.map(SpellSchool::magic).orElse(false) ? spellPower : 0) + schoolPower;
             values.put("damage", DamageNumbers.format(base * Math.max(0, 1 + bonus)));
         });
         first(effects, HealEffect.class).ifPresent(heal -> {
@@ -191,7 +191,7 @@ public final class SpellText {
         return values;
     }
 
-    /** An attribute modifier {@code effect} gives at {@code amplifier}, if it gives any: its only one for {@code bonus}. */
+    /** An attribute modifier {@code effect} gives at {@code amplifier}, if any: its only one for {@code bonus}. */
     private static Optional<AttributeModifier> firstModifier(Holder<MobEffect> effect, int amplifier) {
         List<AttributeModifier> modifiers = new ArrayList<>();
         effect.value().createModifiers(amplifier, (attribute, modifier) -> modifiers.add(modifier));
