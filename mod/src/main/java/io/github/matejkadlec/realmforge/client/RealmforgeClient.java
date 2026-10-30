@@ -14,6 +14,7 @@ import io.github.matejkadlec.realmforge.client.hud.MagicShieldHud;
 import io.github.matejkadlec.realmforge.client.hud.RealmRefusalHud;
 import io.github.matejkadlec.realmforge.client.hud.SpellBarHud;
 import io.github.matejkadlec.realmforge.client.hud.XpBarHud;
+import io.github.matejkadlec.realmforge.client.input.AutoShootInput;
 import io.github.matejkadlec.realmforge.client.input.CharacterSheetKey;
 import io.github.matejkadlec.realmforge.client.input.NightVisionKey;
 import io.github.matejkadlec.realmforge.client.input.SpellKeys;
@@ -66,6 +67,7 @@ public final class RealmforgeClient {
         ClientCasts.register();
         CastAnimation.register(modBus);
         SpellBarInput.register();
+        AutoShootInput.register();
         WandCasting.register();
         TargetCircle.register();
         SpellEntityRenderers.register(modBus);

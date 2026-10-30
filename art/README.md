@@ -26,7 +26,9 @@ Our font's symbols (the mob level's skull, RLM-340) are not generator output: th
 `tools/realmforge_tools/generate/fonts.py`, on the default Minecraft font's 8x8 grid in palette colours, and `rf gen`
 writes the font and its texture. A few status effect icons are drawn the same way (Battle Shout's shouting head and Ice
 Barrier's ice shield, Matěj, 2026-10-30): 18x18 pixel rows in `tools/realmforge_tools/generate/effect_icons.py`,
-which `rf gen` writes instead of the effect's placeholder.
+which `rf gen` writes instead of the effect's placeholder. Small GUI icons in the vanilla GUI style (the spellbook's
+gear, RLM-497) are pixel rows too, in `tools/realmforge_tools/generate/gui_icons.py`, which `rf gen` writes as sprites
+under `textures/gui/sprites/icon/`.
 
 Until a piece of content has approved art, its texture is a generated placeholder
 (`tools/realmforge_tools/generate/textures.py`). Never use vanilla textures or recolors of them, not even as AI

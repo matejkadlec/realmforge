@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.client.screen;
 
+import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.client.hud.SpellBarHud;
 import io.github.matejkadlec.realmforge.client.hud.SpellBarLayout;
 import io.github.matejkadlec.realmforge.client.hud.SpellSlots;
@@ -21,7 +22,7 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.SpriteIconButton;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -41,7 +42,9 @@ import org.lwjgl.glfw.GLFW;
  * player knows, and each spell's tooltip with live numbers ({@link SpellTooltip}). A click on a known spell, then on a
  * bar slot, puts it there ({@code SetSpellBarSlotPayload}); a click on a slot's spell picks it up to move it, and
  * dropping it on another spell swaps them; a right click empties a slot. The racial slot is the race's (C4), so it
- * only shows. The Options button opens the spell casting options.
+ * only shows. The gear button top right, level with the title (RLM-497; Matěj, 2026-10-29: an icon instead of the
+ * word), opens the Realmforge config screen ({@link RealmforgeConfigScreen}), "Options" in its tooltip. The panel is
+ * drawn as the background, under the button, so the button shows at full brightness.
  */
 public final class SpellbookScreen extends Screen {
     private static final int PANEL_WIDTH = 236;
@@ -56,6 +59,9 @@ public final class SpellbookScreen extends Screen {
     private static final int HINT = 0xFFA0A0A0;
     private static final int SELECTED = 0xFFFFD24A;
     private static final int HOVER = 0x30FFFFFF;
+    /** The gear button and its sprite ({@code realmforge:icon/gear}, drawn in {@code generate/gui_icons.py}). */
+    private static final int GEAR_BUTTON = 16;
+    private static final int GEAR_SPRITE = 12;
 
     /** The spell picked up to put on the bar, if any. */
     @Nullable
@@ -68,9 +74,16 @@ public final class SpellbookScreen extends Screen {
 
     @Override
     protected void init() {
-        addRenderableWidget(Button.builder(Component.translatable(GeneratedTexts.GUI_SPELL_OPTIONS),
-                        button -> minecraft.setScreen(new SpellOptionsScreen(this)))
-                .bounds(left() + PANEL_WIDTH - 70, bottom() - 24, 62, 18).build());
+        SpriteIconButton gear = SpriteIconButton.builder(Component.translatable(GeneratedTexts.GUI_SPELL_OPTIONS),
+                        button -> minecraft.setScreen(new RealmforgeConfigScreen(this)), true)
+                .size(GEAR_BUTTON, GEAR_BUTTON)
+                .sprite(Realmforge.id("icon/gear"), GEAR_SPRITE, GEAR_SPRITE)
+                .withTootip()
+                .build();
+        // Level with the title: its middle on the title's line of text.
+        gear.setPosition(left() + PANEL_WIDTH - PADDING - GEAR_BUTTON,
+                top() + PADDING + font.lineHeight / 2 - GEAR_BUTTON / 2);
+        addRenderableWidget(gear);
     }
 
     @Override
@@ -123,6 +136,13 @@ public final class SpellbookScreen extends Screen {
         return super.mouseClicked(event, doubleClick);
     }
 
+    /** The panel, under the widgets: drawn over them, it greyed the old Options button out (RLM-497). */
+    @Override
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+        super.extractBackground(graphics, mouseX, mouseY, a);
+        graphics.fill(left(), top(), left() + PANEL_WIDTH, bottom(), PANEL);
+    }
+
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
         super.extractRenderState(graphics, mouseX, mouseY, a);
@@ -132,7 +152,6 @@ public final class SpellbookScreen extends Screen {
         }
         int x = left();
         int y = top();
-        graphics.fill(x, y, x + PANEL_WIDTH, bottom(), PANEL);
         graphics.text(font, title.copy().withStyle(ChatFormatting.BOLD), x + PADDING, y + PADDING, HEADING);
 
         SpellBarView bar = SpellBarHud.view(player);
