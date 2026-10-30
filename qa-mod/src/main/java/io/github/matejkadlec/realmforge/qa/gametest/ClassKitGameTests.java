@@ -19,6 +19,7 @@ import io.github.matejkadlec.realmforge.generated.GeneratedItems;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpellSchools;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpells;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
+import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import io.github.matejkadlec.realmforge.spell.ApplyEffectEffect;
 import io.github.matejkadlec.realmforge.spell.CastEnd;
@@ -61,6 +62,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.monster.zombie.Husk;
@@ -85,6 +87,8 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 public final class ClassKitGameTests {
     private static final double TOLERANCE = 1e-3;
     private static final double HEALTH = SpellGameTests.HEALTH;
+    /** Multiplies a character's crit chance by 0 ({@link #character}); the stat recompute leaves it alone. */
+    private static final Identifier NO_CRITS = RealmforgeQa.id("gametest/no_crits");
 
     private ClassKitGameTests() {
     }
@@ -279,6 +283,7 @@ public final class ClassKitGameTests {
         Resources.set(player, ResourceTypes.RAGE, 100);
         learn(helper, player, GeneratedSpells.RECKLESS_STRIKE, 5);
         player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STONE_SWORD));
+        allowCrits(player);
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 1);
         StatsCommands.setBase(player, GeneratedStats.CRIT_DAMAGE, 0.5);
         Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
@@ -562,7 +567,11 @@ public final class ClassKitGameTests {
         helper.succeed();
     }
 
-    /** A Human Warrior or Mage at level 1, as a new player creates one, at 0 % crit chance and no magic shield. */
+    /**
+     * A Human Warrior or Mage at level 1, as a new player creates one, at 0 % crit chance and no magic shield. A base
+     * crit chance of 0 alone leaves the class's and race's Dexterity's (1.5 % for a Warrior), which made exact damage
+     * checks crit now and then, so {@link #NO_CRITS} takes the total to 0; {@link #allowCrits} gives it back.
+     */
     static ServerPlayer character(GameTestHelper helper, String name, String playerClass) {
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, name, new Vec3(2.5, 1, 0.5));
         player.setGameMode(GameType.SURVIVAL);
@@ -573,9 +582,16 @@ public final class ClassKitGameTests {
                         ResourceKey.create(CharacterRegistries.CLASS, Realmforge.id(playerClass))),
                 CharacterCreation.Result.CREATED, "a human " + playerClass);
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
+        player.getAttribute(GeneratedStats.CRIT_CHANCE).addTransientModifier(
+                new AttributeModifier(NO_CRITS, -1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
         StatsCommands.setBase(player, GeneratedStats.MAGIC_SHIELD, 0);
         player.getInventory().clearContent();
         return player;
+    }
+
+    /** Takes {@link #character}'s {@link #NO_CRITS} away again, for a check that wants crits. */
+    static void allowCrits(ServerPlayer player) {
+        player.getAttribute(GeneratedStats.CRIT_CHANCE).removeModifier(NO_CRITS);
     }
 
     private static void reachLevel(GameTestHelper helper, ServerPlayer player, int level) {
