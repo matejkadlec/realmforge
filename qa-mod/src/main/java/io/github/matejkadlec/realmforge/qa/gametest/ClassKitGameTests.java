@@ -430,7 +430,7 @@ public final class ClassKitGameTests {
                 && close(attackDamage.getModifier(passive).amount(), 0.1), "+10 % with a sword: "
                         + attackDamage.getModifier(passive));
         List<Component> tooltip = RacialPassives.tooltip(player, new ItemStack(Items.IRON_SWORD));
-        helper.assertValueEqual(lines(tooltip), List.of("Sword Specialization", "+10% damage"),
+        helper.assertValueEqual(lines(tooltip), List.of("Sword Specialization", "+10% damage with swords"),
                 "the sword's tooltip lines");
         helper.assertValueEqual(tooltip.stream().map(line -> line.getStyle().getColor()).toList(),
                 List.of(TextColor.fromLegacyFormat(ChatFormatting.GOLD),

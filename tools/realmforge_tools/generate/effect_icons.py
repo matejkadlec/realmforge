@@ -1,7 +1,7 @@
 """Drawn status effect icons: 18x18 pixel rows (vanilla's effect icon size) for the effects that should not wait for
 generated art, in the palette's colours, as the font's symbols are (``fonts.py``). ``effects.py`` writes an effect's
 drawn icon to ``textures/mob_effect/<id>.png`` instead of its placeholder disc. Matěj asked for these on 2026-10-30
-(C4's playtest): Battle Shout a shouting man, Ice Barrier an ice barrier.
+(C4's playtest): Battle Shout a shouting head, Ice Barrier an ice barrier.
 """
 
 from __future__ import annotations
@@ -14,15 +14,16 @@ PIXELS: dict[str, Rgba] = {
     ".": (0, 0, 0, 0),
     "K": (11, 11, 14, 255),  # black
     "W": (255, 255, 255, 255),  # white
-    "w": (230, 230, 231, 255),  # iron 3
-    "d": (134, 90, 66, 255),  # skin 2
-    "s": (182, 132, 101, 255),  # skin 3
-    "S": (222, 178, 144, 255),  # skin 4
-    "h": (87, 63, 38, 255),  # wood 4
-    "H": (133, 101, 64, 255),  # wood 6
+    "A": (28, 16, 44, 255),  # shadow 1
+    "B": (48, 26, 76, 255),  # shadow 2
+    "C": (73, 40, 110, 255),  # shadow 3
+    "D": (102, 59, 146, 255),  # shadow 4
+    "E": (138, 92, 182, 255),  # shadow 5
+    "e": (250, 230, 140, 255),  # gold 6
     "m": (50, 12, 14, 255),  # blood 1
-    "t": (163, 41, 36, 255),  # blood 4
-    "r": (222, 30, 44, 255),  # ruby 3
+    "y": (255, 236, 160, 255),  # fire 5
+    "o": (250, 195, 80, 255),  # fire 4
+    "f": (232, 144, 46, 255),  # fire 3
     "1": (15, 24, 56, 255),  # frost 1
     "2": (24, 44, 98, 255),  # frost 2
     "3": (33, 72, 145, 255),  # frost 3
@@ -32,25 +33,26 @@ PIXELS: dict[str, Rgba] = {
     "7": (200, 236, 252, 255),  # frost 7
 }
 
-# Battle Shout: a man's face, brows down, mouth wide open in a war cry, the cry's waves in red on both sides.
+# Battle Shout: a head in profile, turned left, its eye aglow and its mouth wide open, a war cry bursting from it in
+# rays of light (WoW's Battle Shout icon as Matěj's reference, 2026-10-30).
 BATTLE_SHOUT_ROWS = (
     "..................",
-    "......KKKKKK......",
-    ".....KhHHHhhK.....",
-    "....KhHhhhhhhK....",
-    "....KhhhhhhhhK....",
-    "....KsKssssKsK....",
-    "..r.KSsKssKsSK.r..",
-    ".r..KSwKssKwSK..r.",
-    "r...KSssssssSK...r",
-    "r...KsSsddssdK...r",
-    "r..KdssKKKKssdK..r",
-    ".r.KdsKwmmwKsdK.r.",
-    "..rKdsKmttmKsdKr..",
-    "...KddKmttmKddK...",
-    "....KdsKmmKsdK....",
-    ".....KddKKddK.....",
-    "......KKKKKK......",
+    "o.........KKKKK...",
+    ".f.......KEEDDCK..",
+    "..f.....KEDDDCCCK.",
+    "o..f...KEDDDCCCCK.",
+    ".o..o..KDeKDCCCBK.",
+    "..o.o.KDDDDCCCBK..",
+    "yy..yKDDDDCCCBK...",
+    "..yyyKKmmKCCCBAK..",
+    "yyyyyyymmKCCCBBAK.",
+    "..yyyKKmmKCCCBBAK.",
+    "yy..yKDDDKCCBBAK..",
+    "..o.o.KKDDCCBBAK..",
+    ".o..o...KDCCBBAK..",
+    "o..f....KDCBBAK...",
+    "..f......KBBAK....",
+    ".f........KKK.....",
     "..................",
 )
 

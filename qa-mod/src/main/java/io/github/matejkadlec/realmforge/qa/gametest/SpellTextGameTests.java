@@ -40,8 +40,8 @@ public final class SpellTextGameTests {
         helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_MEND, 2), Map.of("heal", "7.5"),
                 "level 2 heals 5 × (1 + 50 %), arcane having no power yet");
         helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_IGNITE, 1), Map.of("duration", "4",
-                "periodic", "3.4", "periodic_total", "14", "interval", "1"),
-                "4 ticks of 2 × 1.7, combat text rounding 13.6 to 14");
+                "periodic", "3.4", "periodic_total", "13.6", "interval", "1"),
+                "4 ticks of 2 × 1.7, with one decimal as everywhere (Matěj, 2026-10-30)");
         helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_MENDING_RING, 1),
                 Map.of("heal", "3", "radius", "3"), "the area's own heal and its radius");
         helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_MISSILE, 1),

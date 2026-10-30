@@ -158,11 +158,8 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.origin_race} from {@code content/texts/gui.yaml}: "Race: %1$s" */
     public static final String GUI_ORIGIN_RACE = "gui.realmforge.origin_race";
 
-    /** {@code gui.realmforge.origin_racial_ability} from {@code content/texts/gui.yaml}: "Racial ability: %1$s" */
+    /** {@code gui.realmforge.origin_racial_ability} from {@code content/texts/gui.yaml}: "Racial Ability" */
     public static final String GUI_ORIGIN_RACIAL_ABILITY = "gui.realmforge.origin_racial_ability";
-
-    /** {@code gui.realmforge.origin_racial_passive} from {@code content/texts/gui.yaml}: "%1$s: %2$s" */
-    public static final String GUI_ORIGIN_RACIAL_PASSIVE = "gui.realmforge.origin_racial_passive";
 
     /** {@code gui.realmforge.other_stats} from {@code content/texts/gui.yaml}: "Other" */
     public static final String GUI_OTHER_STATS = "gui.realmforge.other_stats";

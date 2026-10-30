@@ -18,7 +18,7 @@ modifiers:
 racial_spell: realmforge:will_to_survive
 racial_passive:
   name: {en_us: Sword Specialization}
-  description: {en_us: "+{bonus}% damage"}
+  description: {en_us: "+{bonus}% damage with swords"}
   weapons: realmforge:sword_like
   modifiers:
     - {attribute: minecraft:attack_damage, operation: add_multiplied_base, amount_percent: 10}

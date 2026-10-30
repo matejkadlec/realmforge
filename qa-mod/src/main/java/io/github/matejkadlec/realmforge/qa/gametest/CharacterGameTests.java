@@ -14,6 +14,7 @@ import io.github.matejkadlec.realmforge.character.CharacterSheetView;
 import io.github.matejkadlec.realmforge.character.Characters;
 import io.github.matejkadlec.realmforge.character.PlayerClass;
 import io.github.matejkadlec.realmforge.character.Race;
+import io.github.matejkadlec.realmforge.character.RacialPassives;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedClassExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedClassExpectations.ClassExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedClassExpectations.KitItem;
@@ -212,8 +213,20 @@ public final class CharacterGameTests {
         Race raceEntry = server.registryAccess().lookupOrThrow(CharacterRegistries.RACE).getValue(
                 Identifier.parse(race.id()));
         helper.assertValueEqual(raceSection.rows().size(), 1 + raceEntry.modifiers().size()
-                + (raceEntry.racialSpell().isPresent() ? 1 : 0) + (raceEntry.racialPassive().isPresent() ? 1 : 0),
+                + (raceEntry.racialSpell().isPresent() ? 2 : 0) + (raceEntry.racialPassive().isPresent() ? 2 : 0),
                 "the description, a line for each modifier of the race, then its racial ability and passive (C4)");
+        if (raceEntry.racialSpell().isPresent() && raceEntry.racialPassive().isPresent()) {
+            List<CharacterSheetView.Row> rows = raceSection.rows();
+            List<CharacterSheetView.Row> racial = rows.subList(rows.size() - 4, rows.size());
+            helper.assertValueEqual(racial.stream().map(row -> row.label().getString()).toList(), List.of(
+                    "Racial Ability", Component.translatable(raceEntry.racialSpell().get().value().name()).getString(),
+                    Component.translatable(raceEntry.racialPassive().get().name()).getString(),
+                    RacialPassives.description(raceEntry.racialPassive().get())),
+                    "each racial on two rows: its heading or name, then what it is (Matěj, 2026-10-30)");
+            helper.assertValueEqual(racial.stream().map(CharacterSheetView.Row::color).toList(), List.of(
+                    CharacterSheetView.RACIAL_NAME, CharacterSheetView.RACIAL_DETAIL, CharacterSheetView.RACIAL_NAME,
+                    CharacterSheetView.RACIAL_DETAIL), "gold over yellow");
+        }
         CharacterSheetView.Section classSection = origin.right().getFirst();
         helper.assertValueEqual(classSection.title().getString(),
                 "Class: " + Component.translatable(playerClass.nameKey()).getString(), "the class");
