@@ -2,6 +2,7 @@ package io.github.matejkadlec.realmforge.client.hud;
 
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.client.ClientConfig;
+import io.github.matejkadlec.realmforge.client.input.KeyLabels;
 import io.github.matejkadlec.realmforge.client.input.SpellKeys;
 import io.github.matejkadlec.realmforge.client.screen.SpellBarPositionScreen;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
@@ -70,10 +71,14 @@ public final class SpellBarHud {
                 DamagePipeline.stat(player, GeneratedStats.COOLDOWN_REDUCTION), globalCooldownTicks);
     }
 
-    /** The label of {@code slot}'s key, empty while it is unbound; a § shows ({@code KeyLabels}). */
+    /**
+     * The short label of {@code slot}'s key bind ("R", "RMB", "CTR-R"), empty while it is unbound; a § shows
+     * ({@link KeyLabels#spellBarLabel}, RLM-498).
+     */
     public static Optional<Component> keyLabel(int slot) {
         KeyMapping key = SpellKeys.slot(slot);
-        return key.isUnbound() ? Optional.empty() : Optional.of(key.getTranslatedKeyMessage());
+        return key.isUnbound() ? Optional.empty()
+                : Optional.of(KeyLabels.spellBarLabel(key.getKeyModifier(), key.getKey()));
     }
 
     private static void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {

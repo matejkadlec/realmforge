@@ -1,6 +1,5 @@
 package io.github.matejkadlec.realmforge.client.hud;
 
-import io.github.matejkadlec.realmforge.client.input.KeyLabels;
 import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.SpellBarView;
 import java.util.Locale;
@@ -34,6 +33,8 @@ public final class SpellSlots {
     /** A cooldown with at least this much left shows its seconds over the sweep. */
     private static final int SECONDS_FROM_TICKS = 40;
     private static final float KEY_SCALE = 2 / 3F;
+    /** The key label's distance from the slot's top left corner, and the least from its right edge. */
+    private static final int KEY_INSET = 2;
 
     private SpellSlots() {
     }
@@ -67,11 +68,12 @@ public final class SpellSlots {
         }
         graphics.outline(x, y, size, size, slot.casting() ? CASTING_FRAME : frame);
         key.ifPresent(label -> {
-            // Two thirds of the font, so the key fits above the initials.
+            // Two thirds of the font, so the key fits above the initials; smaller still if it would leave the slot.
+            float scale = Math.min(KEY_SCALE, (size - 2 * KEY_INSET) / (float) Math.max(1, font.width(label)));
             graphics.pose().pushMatrix();
-            graphics.pose().translate(x + 2, y + 2);
-            graphics.pose().scale(KEY_SCALE, KEY_SCALE);
-            graphics.text(font, KeyLabels.shortLabel(label), 0, 0, KEY_TEXT);
+            graphics.pose().translate(x + KEY_INSET, y + KEY_INSET);
+            graphics.pose().scale(scale, scale);
+            graphics.text(font, label, 0, 0, KEY_TEXT);
             graphics.pose().popMatrix();
         });
     }
