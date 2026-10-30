@@ -62,15 +62,15 @@
       "level": 1
     },
     {
-      "spell": "realmforge:ice_barrier",
+      "spell": "realmforge:fireball",
       "level": 3
     },
     {
-      "spell": "realmforge:fireball",
+      "spell": "realmforge:arcane_missiles",
       "level": 5
     },
     {
-      "spell": "realmforge:arcane_missiles",
+      "spell": "realmforge:ice_barrier",
       "level": 8
     }
   ]

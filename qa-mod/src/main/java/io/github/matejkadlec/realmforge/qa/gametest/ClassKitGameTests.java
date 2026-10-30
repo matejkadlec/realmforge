@@ -92,7 +92,8 @@ public final class ClassKitGameTests {
         Spellbook book = warrior.getData(SpellAttachments.SPELLBOOK);
         helper.assertValueEqual(book.level(GeneratedSpells.SLAM), Optional.of(1), "a new Warrior knows Slam");
         helper.assertValueEqual(book.slot(0), Optional.of(GeneratedSpells.SLAM), "on the bar's first slot");
-        helper.assertValueEqual(book.level(GeneratedSpells.BATTLE_SHOUT), Optional.empty(), "Battle Shout comes at 3");
+        helper.assertValueEqual(book.level(GeneratedSpells.RECKLESS_STRIKE), Optional.empty(),
+                "Reckless Strike comes at 3");
         helper.assertValueEqual(book.slot(Spellbook.RACIAL_SLOT), Optional.of(GeneratedSpells.WILL_TO_SURVIVE),
                 "a Human's racial spell beside the bar");
         helper.assertValueEqual(book.barSlotOf(GeneratedSpells.WILL_TO_SURVIVE), -1, "and not on the bar itself");
@@ -115,13 +116,13 @@ public final class ClassKitGameTests {
         reachLevel(helper, player, 5);
         Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
         helper.assertValueEqual(List.of(book.slot(0), book.slot(1), book.slot(2), book.slot(3)), List.of(
-                Optional.of(GeneratedSpells.SLAM), Optional.of(GeneratedSpells.BATTLE_SHOUT),
+                Optional.of(GeneratedSpells.SLAM), Optional.of(GeneratedSpells.RECKLESS_STRIKE),
                 Optional.of(GeneratedSpells.SHIELD_BASH), Optional.empty()), "the spells of levels 1, 3 and 5");
-        helper.assertTrue(Spells.placeOnBar(player, 1, Optional.empty()), "Battle Shout taken off the bar");
+        helper.assertTrue(Spells.placeOnBar(player, 1, Optional.empty()), "Reckless Strike taken off the bar");
         reachLevel(helper, player, 8);
         book = player.getData(SpellAttachments.SPELLBOOK);
-        helper.assertValueEqual(book.level(GeneratedSpells.RECKLESS_STRIKE), Optional.of(1), "level 8's spell");
-        helper.assertValueEqual(book.slot(1), Optional.of(GeneratedSpells.RECKLESS_STRIKE),
+        helper.assertValueEqual(book.level(GeneratedSpells.BATTLE_SHOUT), Optional.of(1), "level 8's spell");
+        helper.assertValueEqual(book.slot(1), Optional.of(GeneratedSpells.BATTLE_SHOUT),
                 "into the first empty slot; the spell taken off stays off");
 
         player.setData(SpellAttachments.SPELLBOOK, Spellbook.EMPTY);

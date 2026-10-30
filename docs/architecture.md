@@ -1864,11 +1864,13 @@ aura spell.
 
 **C4's first balance pass** (RLM-27; the numbers are in `content/spells/`, each file's comment says why; the playtest
 tunes them). A class teaches its spells by level ([10.1](#101-races-and-classes)): four by level 10, chapter 1's cap.
+The M1 specializations' first spells come at level 1 (Arms's Slam, Frost's Frostbolt); the other trees' first spells
+stand in until C5 builds the M1 trees, and the self-buff comes last (Matěj, 2026-10-30).
 
 | Class | Level 1 | Level 3 | Level 5 | Level 8 |
 | --- | --- | --- | --- | --- |
-| Warrior | Slam | Battle Shout | Shield Bash | Reckless Strike |
-| Mage | Frostbolt | Ice Barrier | Fireball | Arcane Missiles |
+| Warrior | Slam | Reckless Strike | Shield Bash | Battle Shout |
+| Mage | Frostbolt | Fireball | Arcane Missiles | Ice Barrier |
 
 - **Slam:** 4 + 1.5 per rank + 120 % of attack damage, 30 rage, 6 s, needs a melee weapon (RLM-499); armor shred
   5 % per rank. **Reckless Strike:** 2 + 1 per rank + 100 % of attack damage, 20 rage, 4 s, a melee weapon; crit

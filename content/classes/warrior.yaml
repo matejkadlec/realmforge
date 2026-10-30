@@ -1,8 +1,9 @@
 # yaml-language-server: $schema=../../tools/schemas/classes.schema.json
 # The M1 melee class (decision D1, RLM-51): strength and vitality. The stats stay the same at every level: each level
 # gives a stat point to spend instead, and the class keeps these as its starting identity until Matěj decides on them
-# (2026-10-15, RLM-196). Its kit (C4): Slam at level 1 (decision D4's starting spell, Arms's first, the M1 tree), Battle
-# Shout at 3, Shield Bash at 5 and Reckless Strike at 8, four spells by the end of chapter 1 (D4: 4 x N).
+# (2026-10-15, RLM-196). Its kit (C4): Slam at level 1 (decision D4's starting spell, Arms's first, the M1 tree),
+# Reckless Strike at 3, Shield Bash at 5 and Battle Shout at 8 (Matěj, 2026-10-30: the other trees' first spells stand
+# in for the Arms tree's own until C5), four spells by the end of chapter 1 (D4: 4 x N).
 id: warrior
 name:
   en_us: Warrior
@@ -33,6 +34,6 @@ starting_kit:
   - {item: minecraft:bread, count: 32}
 spells:
   - {spell: realmforge:slam, level: 1}
-  - {spell: realmforge:battle_shout, level: 3}
+  - {spell: realmforge:reckless_strike, level: 3}
   - {spell: realmforge:shield_bash, level: 5}
-  - {spell: realmforge:reckless_strike, level: 8}
+  - {spell: realmforge:battle_shout, level: 8}

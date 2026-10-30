@@ -85,15 +85,15 @@ def test_the_classes_teach_four_spells_by_level_10_and_one_at_level_1() -> None:
     assert kits == {
         "warrior": [
             ("realmforge:slam", 1),
-            ("realmforge:battle_shout", 3),
+            ("realmforge:reckless_strike", 3),
             ("realmforge:shield_bash", 5),
-            ("realmforge:reckless_strike", 8),
+            ("realmforge:battle_shout", 8),
         ],
         "mage": [
             ("realmforge:frostbolt", 1),
-            ("realmforge:ice_barrier", 3),
-            ("realmforge:fireball", 5),
-            ("realmforge:arcane_missiles", 8),
+            ("realmforge:fireball", 3),
+            ("realmforge:arcane_missiles", 5),
+            ("realmforge:ice_barrier", 8),
         ],
     }
     human = content.races[0].model
@@ -492,7 +492,7 @@ def test_class_spells_and_racials_reach_the_data_and_expectations() -> None:
         "description": "race.realmforge.human.racial_passive.description",
         "weapons": "realmforge:sword_like",
         "modifiers": [
-            {"attribute": "minecraft:attack_damage", "operation": "add_multiplied_total", "amount": 0.1}
+            {"attribute": "minecraft:attack_damage", "operation": "add_multiplied_base", "amount": 0.1}
         ],
     }
     races = files[f"{QA}/GeneratedRaceExpectations.java"].decode()
@@ -507,7 +507,7 @@ def test_passive_modifier_ids_name_the_race() -> None:
     human = content.races[0].model
     assert passive_modifier_id("human", 0) == "realmforge:race/realmforge/passive/0/human"
     assert passive_bonuses("human", human.racial_passive) == [
-        ("realmforge:race/realmforge/passive/0/human", "minecraft:attack_damage", "add_multiplied_total", 0.1)
+        ("realmforge:race/realmforge/passive/0/human", "minecraft:attack_damage", "add_multiplied_base", 0.1)
     ]
 
 

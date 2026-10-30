@@ -62,7 +62,7 @@
       "level": 1
     },
     {
-      "spell": "realmforge:battle_shout",
+      "spell": "realmforge:reckless_strike",
       "level": 3
     },
     {
@@ -70,7 +70,7 @@
       "level": 5
     },
     {
-      "spell": "realmforge:reckless_strike",
+      "spell": "realmforge:battle_shout",
       "level": 8
     }
   ]

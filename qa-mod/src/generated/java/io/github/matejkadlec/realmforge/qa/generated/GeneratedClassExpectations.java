@@ -45,7 +45,7 @@ public final class GeneratedClassExpectations {
                     Optional.empty(),
                     List.of(new KitItem("realmforge:stone_wand", 1), new KitItem("realmforge:apprentice_hat", 1), new KitItem("realmforge:apprentice_robes", 1), new KitItem("realmforge:apprentice_pants", 1), new KitItem("realmforge:apprentice_boots", 1), new KitItem("minecraft:bread", 32)),
                     List.of(new Bonus("realmforge:class/realmforge/0/mage", "realmforge:intellect", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/mage", "realmforge:vitality", "add_value", 2.0), new Bonus("realmforge:class/realmforge/2/mage", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:class/realmforge/3/mage", "realmforge:max_mana", "add_value", 100.0), new Bonus("realmforge:class/realmforge/4/mage", "realmforge:mana_regeneration", "add_value", 5.0)),
-                    List.of(new ClassSpell("realmforge:frostbolt", 1), new ClassSpell("realmforge:ice_barrier", 3), new ClassSpell("realmforge:fireball", 5), new ClassSpell("realmforge:arcane_missiles", 8))),
+                    List.of(new ClassSpell("realmforge:frostbolt", 1), new ClassSpell("realmforge:fireball", 3), new ClassSpell("realmforge:arcane_missiles", 5), new ClassSpell("realmforge:ice_barrier", 8))),
             new ClassExpectation(
                     "realmforge:warrior",
                     "class.realmforge.warrior.name",
@@ -54,7 +54,7 @@ public final class GeneratedClassExpectations {
                     Optional.of(new Rage(10.0, 50.0, 2.0, 100)),
                     List.of(new KitItem("minecraft:stone_sword", 1), new KitItem("minecraft:shield", 1), new KitItem("minecraft:leather_helmet", 1), new KitItem("minecraft:leather_chestplate", 1), new KitItem("minecraft:leather_leggings", 1), new KitItem("minecraft:leather_boots", 1), new KitItem("minecraft:bread", 32)),
                     List.of(new Bonus("realmforge:class/realmforge/0/warrior", "realmforge:strength", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/warrior", "realmforge:vitality", "add_value", 4.0), new Bonus("realmforge:class/realmforge/2/warrior", "realmforge:dexterity", "add_value", 2.0)),
-                    List.of(new ClassSpell("realmforge:slam", 1), new ClassSpell("realmforge:battle_shout", 3), new ClassSpell("realmforge:shield_bash", 5), new ClassSpell("realmforge:reckless_strike", 8))));
+                    List.of(new ClassSpell("realmforge:slam", 1), new ClassSpell("realmforge:reckless_strike", 3), new ClassSpell("realmforge:shield_bash", 5), new ClassSpell("realmforge:battle_shout", 8))));
 
     private GeneratedClassExpectations() {
     }
