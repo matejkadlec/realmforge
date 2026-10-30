@@ -17,12 +17,15 @@
     "bonus_chance": 0.0
   },
   "npc_only": true,
+  "requires": [],
+  "castable_while_stunned": false,
   "effects": [
     {
       "type": "realmforge:apply_effect",
       "effect": "minecraft:resistance",
       "duration_ticks": 600,
-      "amplifier": 0
+      "amplifier": 0,
+      "stronger_at_levels": []
     }
   ]
 }

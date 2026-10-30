@@ -60,9 +60,10 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
  *   {@link KillXp}, with the victim's {@link KillXpMultiplier}, shown in the action bar. Players without a character
  *   gain no XP (architecture 10.1).</li>
  *   <li>A level-up earns stat points ({@link StatPoints}), recomputes the stats, shows a title, plays a fanfare to the
- *   player and bursts particles around them, says in chat how many stat points are unspent, and fires
- *   {@code realmforge:level_reached}, as does every login. A level that falls below the points spent returns them all.
- *   Class spells join with C4 and specialization points with C5; talent points wait with talents (RLM-28).</li>
+ *   player and bursts particles around them, says in chat how many stat points are unspent, teaches the class's spells
+ *   of the new level with a chat line each ({@link ClassSpells}, C4), and fires {@code realmforge:level_reached}, as
+ *   does every login. A level that falls below the points spent returns them all. Specialization points come with C5;
+ *   talent points wait with talents (RLM-28).</li>
  *   <li>A login leaves the stat recompute to the player's first tick (architecture 8.2): only then are the gear's
  *   modifiers back, which the saved stat modifiers were computed with (RLM-202).</li>
  * </ul>
@@ -165,6 +166,10 @@ public final class Leveling {
             } else {
                 CharacterStats.recompute(player);
             }
+        }
+        if (level != oldLevel || login) {
+            // A login catches up on class spells too: a character from before its class taught them gets them.
+            ClassSpells.teach(player, announce && change.leveledUp());
         }
         if (level != oldLevel) {
             ProgressionTriggers.LEVEL_REACHED.get().trigger(player, level);

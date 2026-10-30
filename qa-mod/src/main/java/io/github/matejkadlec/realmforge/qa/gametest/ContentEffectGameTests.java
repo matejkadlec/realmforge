@@ -11,11 +11,13 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.locale.Language;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 
 /**
  * C3c (RLM-26): every status effect of {@code content/effects/} is registered as its YAML says
@@ -43,16 +45,28 @@ public final class ContentEffectGameTests {
             helper.assertValueEqual(status.getColor(), expected.color(), id + " colour");
             helper.assertValueEqual(status.periodic().map(ContentEffectGameTests::periodic), expected.periodic(),
                     id + " periodic");
+            helper.assertValueEqual(status.isStun(), expected.stun(), id + " stuns");
             List<ModifierExpectation> modifiers = new ArrayList<>();
             status.createModifiers(0, (attribute, modifier) -> modifiers.add(new ModifierExpectation(
                     attribute.getRegisteredName(), modifier.id().toString(), modifier.amount(),
-                    modifier.operation().getSerializedName())));
+                    modifier.operation().getSerializedName(), secondLevelAmount(status, attribute))));
             modifiers.sort(Comparator.comparing(ModifierExpectation::attribute));
             List<ModifierExpectation> wanted = new ArrayList<>(expected.modifiers());
             wanted.sort(Comparator.comparing(ModifierExpectation::attribute));
             helper.assertValueEqual(modifiers, wanted, id + " modifiers");
         }
         helper.succeed();
+    }
+
+    /** The amount {@code status} gives {@code attribute} at its second level (amplifier 1). */
+    private static double secondLevelAmount(StatusEffect status, Holder<Attribute> attribute) {
+        double[] amount = {Double.NaN};
+        status.createModifiers(1, (modified, modifier) -> {
+            if (modified.equals(attribute)) {
+                amount[0] = modifier.amount();
+            }
+        });
+        return amount[0];
     }
 
     private static PeriodicExpectation periodic(Periodic periodic) {

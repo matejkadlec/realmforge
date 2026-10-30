@@ -279,7 +279,7 @@ def test_the_qa_mod_gets_sample_task_advancements_and_the_expected_book(repo: Re
         f"{root}/{name}.json" for name in ("any_dungeon", "any_spell", "level", "spell")
     ]
     assert samples[f"{root}/spell.json"]["criteria"]["done"]["conditions"] == {
-        "spell": "realmforge:test_mending_ring"
+        "spell": "realmforge:battle_shout"
     }
     expectations = files[EXPECTATIONS].decode()
     assert "public static final List<ChapterExpectation> CHAPTERS = List.of();" in expectations

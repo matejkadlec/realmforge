@@ -75,6 +75,16 @@ class DamageCalculatorTest {
         assertEquals(10 * 1.1, DamageCalculator.schoolHit(10, false, NO_CRIT, 0, random()).damage(), EPSILON);
     }
 
+    /** Spell penetration (C4) ignores its share of the resistance: 25 % of a 40 % resistance leaves 30 %. */
+    @Test
+    void penetrationIgnoresAShareOfTheResistance() {
+        assertEquals(0.3, DamageCalculator.penetrated(0.4, 0.25), EPSILON);
+        assertEquals(0.4, DamageCalculator.penetrated(0.4, 0), EPSILON, "no penetration, the whole resistance");
+        assertEquals(0, DamageCalculator.penetrated(0.4, 2), EPSILON, "a share above 1 counts as 1");
+        assertEquals(0.4, DamageCalculator.penetrated(0.4, -1), EPSILON, "a negative share counts as 0");
+        assertEquals(0, DamageCalculator.penetrated(-0.2, 0.5), EPSILON, "a negative resistance counts as 0");
+    }
+
     @Test
     void resistanceLowersTheHit() {
         assertEquals(10 * 1.3 * 0.75, DamageCalculator.schoolHit(10, true, NO_CRIT, 0.25, random()).damage(), EPSILON);

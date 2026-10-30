@@ -39,6 +39,27 @@ public final class Spells {
         player.setData(SpellAttachments.SPELLBOOK, placed ? book.withSpellOnBar(spell.key()) : book);
     }
 
+    /** The level (rank) at which {@code player} knows {@code spell}, if they know it. */
+    public static Optional<Integer> knownLevel(Player player, ResourceKey<Spell> spell) {
+        return player.getData(SpellAttachments.SPELLBOOK).level(spell);
+    }
+
+    /**
+     * Teaches {@code player} their race's racial spell (C4, RLM-219) and puts it into the racial slot beside the bar
+     * ({@link Spellbook#RACIAL_SLOT}, X), never into the bar's own slots: a spell they did not know is learned at level
+     * 1, one they knew keeps its level. Returns whether anything changed.
+     */
+    public static boolean learnRacial(Player player, Holder.Reference<Spell> spell) {
+        Spellbook old = player.getData(SpellAttachments.SPELLBOOK);
+        Spellbook book = old.level(spell.key()).isPresent() ? old : old.withSpell(spell.key(), 1);
+        book = book.withSlot(Spellbook.RACIAL_SLOT, Optional.of(spell.key()));
+        if (book.equals(old)) {
+            return false;
+        }
+        player.setData(SpellAttachments.SPELLBOOK, book);
+        return true;
+    }
+
     /**
      * Puts {@code spell} into the bar's {@code slot} (0 to 7), or empties the slot: the spellbook's intent
      * ({@code SetSpellBarSlotPayload}). Refused, changing nothing, for another slot or a spell the player does not

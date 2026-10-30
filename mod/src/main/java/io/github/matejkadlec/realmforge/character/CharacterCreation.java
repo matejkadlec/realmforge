@@ -8,16 +8,34 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 /**
  * Creates a player's character from {@code CreateCharacterPayload(race, class)} (architecture 10.1). The client's screen
  * only offers valid choices, but the server checks every request again: the player has no character yet, the race and
  * the class exist, and the race allows the class. Then it sets the {@code character} attachment, brings the level and
- * level cap up to date ({@link Leveling}), recomputes the stats (race and class modifiers), refills health to the new
- * maximum and gives the class's starting kit, once.
+ * level cap up to date ({@link Leveling}), teaches the class's first spells and the racial spell with a chat line each
+ * ({@link ClassSpells}, C4), recomputes the stats (race and class modifiers), refills health to the new maximum and
+ * gives the class's starting kit with the player's first character only ({@link CharacterAttachments#STARTING_KIT}).
  */
 public final class CharacterCreation {
     private CharacterCreation() {
+    }
+
+    static void register() {
+        NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class, CharacterCreation::onLogin);
+    }
+
+    /**
+     * A player whose character is older than {@link CharacterAttachments#STARTING_KIT} received its kit at creation
+     * all the same: their login records it, so a character after a reset brings no second one in an old world either.
+     */
+    private static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player && Characters.exists(player)
+                && !player.getData(CharacterAttachments.STARTING_KIT)) {
+            player.setData(CharacterAttachments.STARTING_KIT, true);
+        }
     }
 
     /** What a creation request led to. Only {@link #CREATED} changes anything. */
@@ -68,12 +86,17 @@ public final class CharacterCreation {
         }
         player.setData(CharacterAttachments.CHARACTER, current.create(race, playerClass));
         Leveling.update(player, false);
+        ClassSpells.teach(player, true);
         CharacterStats.recompute(player);
         player.setHealth(player.getMaxHealth());
-        PlayerClass entry = player.registryAccess().lookupOrThrow(CharacterRegistries.CLASS).getOrThrow(playerClass)
-                .value();
-        for (KitItem item : entry.startingKit()) {
-            item.stacks().forEach(stack -> give(player, stack));
+        // The starting kit comes with the player's first character only (Matěj, 2026-10-30).
+        if (!player.getData(CharacterAttachments.STARTING_KIT)) {
+            PlayerClass entry = player.registryAccess().lookupOrThrow(CharacterRegistries.CLASS)
+                    .getOrThrow(playerClass).value();
+            for (KitItem item : entry.startingKit()) {
+                item.stacks().forEach(stack -> give(player, stack));
+            }
+            player.setData(CharacterAttachments.STARTING_KIT, true);
         }
         Realmforge.LOGGER.info("{} created a character: {} {}", player.getPlainTextName(), race.identifier(),
                 playerClass.identifier());

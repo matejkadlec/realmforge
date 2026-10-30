@@ -43,7 +43,7 @@ public final class GeneratedQuestBookExpectations {
             new TaskSample("realmforge_qa:quest_task/any_dungeon", "dungeon", ""),
             new TaskSample("realmforge_qa:quest_task/any_spell", "spell", ""),
             new TaskSample("realmforge_qa:quest_task/dungeon", "dungeon", "realmforge:test_dungeon"),
-            new TaskSample("realmforge_qa:quest_task/spell", "spell", "realmforge:test_mending_ring"));
+            new TaskSample("realmforge_qa:quest_task/spell", "spell", "realmforge:battle_shout"));
 
     /** Our custom statistics, which a stat task may name. */
     public static final List<String> CUSTOM_STATS = List.of("realmforge:dungeons_completed");

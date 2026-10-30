@@ -55,7 +55,17 @@ public final class SpellSchools {
      */
     public static SchoolDamageSource damage(RegistryAccess registries, ResourceKey<SpellSchool> school,
             @Nullable Entity direct, @Nullable Entity causing, CritRule crit, Optional<Identifier> procOrigin) {
-        return new SchoolDamageSource(damageType(registries, school), direct, causing, crit, procOrigin);
+        return damage(registries, school, direct, causing, crit, HitBonus.NONE, procOrigin);
+    }
+
+    /**
+     * A damage source of the school's type, as {@link #damage(RegistryAccess, ResourceKey, Entity, Entity, CritRule,
+     * Optional)}, that also adds {@code bonus} to its attacker's armor shred and spell penetration (C4).
+     */
+    public static SchoolDamageSource damage(RegistryAccess registries, ResourceKey<SpellSchool> school,
+            @Nullable Entity direct, @Nullable Entity causing, CritRule crit, HitBonus bonus,
+            Optional<Identifier> procOrigin) {
+        return new SchoolDamageSource(damageType(registries, school), direct, causing, crit, bonus, procOrigin);
     }
 
     private static Holder<DamageType> damageType(RegistryAccess registries, ResourceKey<SpellSchool> school) {

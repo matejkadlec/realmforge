@@ -7,7 +7,10 @@ status effect, movement and knockback effect types and the ``ground_point`` and 
 fourth (C3a-4, RLM-212) the NPC targeting types ``current_target``, ``random_player`` and ``farthest_player``. The spell
 bar and its tooltips (C3b, RLM-25) add the name and the description, whose numbers come from data through
 placeholders (architecture 6.3); our own status effects (C3c, RLM-26) add damage and healing over time. Spell
-aiming (RLM-344, RLM-346) lets a projectile fly without a lifetime and a ground point clamp to its range.
+aiming (RLM-344, RLM-346) lets a projectile fly without a lifetime and a ground point clamp to its range. The class
+kits (C4, RLM-27) add what a cast needs in hand (``requires``, RLM-499), the per-rank armor shred, spell penetration
+and crit chance of a hit, status effects that last longer and grow stronger with the rank, ``cleanse``, spells cast
+while stunned, and the rule that a player's channel ticks every 0.5 s (RLM-518).
 """
 
 from __future__ import annotations
@@ -24,6 +27,7 @@ from realmforge_tools.schema.spell_school import HexColor
 
 FiniteNumber = Annotated[float, Field(allow_inf_nan=False)]
 NonNegative = Annotated[float, Field(ge=0, allow_inf_nan=False)]
+Percent = Annotated[float, Field(gt=0, le=100, allow_inf_nan=False)]
 
 # Vanilla's line of sight check (LivingEntity#hasLineOfSight) fails beyond 128 blocks, so no range may exceed it.
 MAX_RANGE = 128.0
@@ -47,11 +51,19 @@ MAX_PROJECTILE_LIFETIME = 10.0
 MAX_AREA_RADIUS = 16.0
 MAX_AREA_DURATION = 60.0
 MAX_STRENGTH = 5.0
+# Every channel a player casts ticks every half second (Matěj, 2026-10-29, RLM-518: more, smaller hits beat fewer,
+# bigger ones). Mob and boss spells keep their own pace for now (Astone's Quake slams every 0.75 s).
+PLAYER_CHANNEL_INTERVAL = 0.5
+
+# What a player's cast needs in hand (RLM-499); mobs and bosses cast without it. melee_weapon: an item of
+# realmforge:melee_weapons in the main hand; shield: a shield (c:tools/shield) in either hand.
+Requirement = Literal["melee_weapon", "shield"]
 
 DAMAGE = f"{MOD_ID}:damage"
 HEAL = f"{MOD_ID}:heal"
 APPLY_EFFECT = f"{MOD_ID}:apply_effect"
 REMOVE_EFFECT = f"{MOD_ID}:remove_effect"
+CLEANSE = f"{MOD_ID}:cleanse"
 KNOCKBACK = f"{MOD_ID}:knockback"
 PROJECTILE = f"{MOD_ID}:projectile"
 AREA = f"{MOD_ID}:area"
@@ -75,7 +87,12 @@ NPC_TARGETING: tuple[str, ...] = (CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLAYER
 # - duration: the first apply_effect's duration in seconds;
 # - periodic, periodic_total, interval: one tick, every tick and the time between two ticks of that effect's damage or
 #   healing over time (one of ours with periodic), raised by the caster's stats as its ticks are;
-# - radius: the first area's radius in blocks.
+# - radius: the first area's radius in blocks;
+# - armor_shred, penetration: the first damage effect's extra armor shred and spell penetration, in percent;
+# - crit_chance: the spell's bonus crit chance, in percent;
+# - bonus: the one attribute modifier of the first apply_effect's status effect at its strength, in percent for a
+#   multiplied operation and in the attribute's points otherwise.
+# Every number is the one at the player's spell level (rank).
 PLACEHOLDERS: tuple[str, ...] = (
     "damage",
     "heal",
@@ -84,6 +101,10 @@ PLACEHOLDERS: tuple[str, ...] = (
     "periodic_total",
     "interval",
     "radius",
+    "armor_shred",
+    "penetration",
+    "crit_chance",
+    "bonus",
 )
 PERIODIC_PLACEHOLDERS: frozenset[str] = frozenset({"periodic", "periodic_total", "interval"})
 _PLACEHOLDER = re.compile(r"\{([^{}]*)\}")
@@ -110,6 +131,44 @@ class DamageEffectDef(_LeveledAmount):
         description="Share of the caster's attack damage added to the amount (100 adds all of it). Required for "
         "spells that scale with attack_damage, refused for spells that scale with spell_power.",
     )
+    armor_shred_percent: Percent | None = Field(
+        default=None,
+        description="Armor shred this hit adds to the caster's own, in percent at spell level 1: the share of the "
+        "target's armor (after armor pierce) the hit ignores. Only a school that armor stops (physical).",
+    )
+    armor_shred_per_level_percent: Percent | None = Field(
+        default=None, description="Added to armor_shred_percent for every spell level above 1."
+    )
+    penetration_percent: Percent | None = Field(
+        default=None,
+        description="Spell penetration, in percent at spell level 1: the share of the target's resistance to the "
+        "school the hit ignores. Only a magic school.",
+    )
+    penetration_per_level_percent: Percent | None = Field(
+        default=None, description="Added to penetration_percent for every spell level above 1."
+    )
+
+    @model_validator(mode="after")
+    def _per_level_needs_base(self) -> DamageEffectDef:
+        for name in ("armor_shred", "penetration"):
+            if (
+                getattr(self, f"{name}_per_level_percent") is not None
+                and getattr(self, f"{name}_percent") is None
+            ):
+                raise ValueError(f"{name}_per_level_percent grows {name}_percent: set it too")
+        return self
+
+    def armor_shred_at(self, level: int) -> float:
+        """The extra armor shred at ``level``, in percent; 0 without any."""
+        return _leveled_percent(self.armor_shred_percent, self.armor_shred_per_level_percent, level)
+
+    def penetration_at(self, level: int) -> float:
+        """The spell penetration at ``level``, in percent; 0 without any."""
+        return _leveled_percent(self.penetration_percent, self.penetration_per_level_percent, level)
+
+
+def _leveled_percent(base: float | None, per_level: float | None, level: int) -> float:
+    return (base or 0) + (per_level or 0) * (level - 1)
 
 
 class HealEffectDef(_LeveledAmount):
@@ -131,12 +190,23 @@ class ApplyEffectEffectDef(StrictModel):
 
     type: Literal["realmforge:apply_effect"]
     effect: ResourceId = Field(description="The status effect, e.g. minecraft:slowness.")
-    duration_seconds: Seconds = Field(description="How long it lasts; more than 0, at most 60.")
+    duration_seconds: Seconds = Field(
+        description="How long it lasts at spell level 1; more than 0, at most 60."
+    )
+    duration_per_level_seconds: Seconds | None = Field(
+        default=None,
+        description="Added to the duration for every spell level above 1 (C4: a rank lasts longer).",
+    )
     amplifier: int = Field(
         default=0,
         ge=0,
         le=MAX_AMPLIFIER,
-        description="Its strength above the first: 0 is Slowness I, 1 is Slowness II.",
+        description="Its strength above the first at spell level 1: 0 is Slowness I, 1 is Slowness II.",
+    )
+    stronger_at_levels: list[int] = Field(
+        default_factory=list,
+        description="Spell levels (ranks) from which the amplifier is one higher, in ascending order: [5] makes "
+        "Slowness I Slowness II from rank 5.",
     )
 
     @model_validator(mode="after")
@@ -145,7 +215,27 @@ class ApplyEffectEffectDef(StrictModel):
             raise ValueError(
                 f"duration_seconds is more than 0 and at most {MAX_EFFECT_SECONDS:g} (research SP-8)"
             )
+        if self.stronger_at_levels != sorted(set(self.stronger_at_levels)) or any(
+            level < 2 for level in self.stronger_at_levels
+        ):
+            raise ValueError("stronger_at_levels lists spell levels from 2 up, each once, in ascending order")
+        if self.amplifier + len(self.stronger_at_levels) > MAX_AMPLIFIER:
+            raise ValueError(f"the amplifier never rises above {MAX_AMPLIFIER}")
         return self
+
+    def duration_at(self, level: int) -> float:
+        """How long it lasts at spell ``level``, in seconds."""
+        return self.duration_seconds + (self.duration_per_level_seconds or 0) * (level - 1)
+
+    @model_validator(mode="after")
+    def _growth(self) -> ApplyEffectEffectDef:
+        if self.duration_per_level_seconds is not None and self.duration_per_level_seconds <= 0:
+            raise ValueError("duration_per_level_seconds is more than 0: leave it out for no growth")
+        return self
+
+    def amplifier_at(self, level: int) -> int:
+        """Its amplifier at spell ``level``."""
+        return self.amplifier + sum(1 for stronger in self.stronger_at_levels if level >= stronger)
 
 
 class RemoveEffectEffectDef(StrictModel):
@@ -153,6 +243,13 @@ class RemoveEffectEffectDef(StrictModel):
 
     type: Literal["realmforge:remove_effect"]
     effect: ResourceId = Field(description="The status effect, e.g. minecraft:slowness.")
+
+
+class CleanseEffectDef(StrictModel):
+    """Removes every harmful status effect from each target: debuffs, damage over time and loss of control such as a
+    stun (the Human's Will To Survive, C4)."""
+
+    type: Literal["realmforge:cleanse"]
 
 
 class KnockbackEffectDef(StrictModel):
@@ -171,7 +268,12 @@ class KnockbackEffectDef(StrictModel):
 
 # Effects that act on an entity: the spell's target, or what a projectile hits or an area holds.
 EntityEffectDef = Annotated[
-    DamageEffectDef | HealEffectDef | ApplyEffectEffectDef | RemoveEffectEffectDef | KnockbackEffectDef,
+    DamageEffectDef
+    | HealEffectDef
+    | ApplyEffectEffectDef
+    | RemoveEffectEffectDef
+    | CleanseEffectDef
+    | KnockbackEffectDef,
     Field(discriminator="type"),
 ]
 
@@ -308,6 +410,7 @@ SpellEffectDef = Annotated[
     | HealEffectDef
     | ApplyEffectEffectDef
     | RemoveEffectEffectDef
+    | CleanseEffectDef
     | KnockbackEffectDef
     | ProjectileEffectDef
     | AreaEffectDef
@@ -523,17 +626,32 @@ class CritDef(StrictModel):
         ge=0,
         le=100,
         allow_inf_nan=False,
-        description="Crit chance in percent added to the caster's own for this spell.",
+        description="Crit chance in percent added to the caster's own for this spell, at spell level 1. A chance "
+        "above 100 % in all turns into crit damage, 1 % for 1 % (C4).",
+    )
+    bonus_chance_per_level_percent: Percent | None = Field(
+        default=None, description="Added to bonus_chance_percent for every spell level above 1."
     )
 
     @model_validator(mode="after")
     def _consistent(self) -> CritDef:
-        if not self.can_crit and (self.multiplier_percent is not None or self.bonus_chance_percent != 0):
-            raise ValueError("a spell that cannot crit takes no multiplier_percent or bonus_chance_percent")
+        if not self.can_crit and (
+            self.multiplier_percent is not None
+            or self.bonus_chance_percent != 0
+            or self.bonus_chance_per_level_percent is not None
+        ):
+            raise ValueError(
+                "a spell that cannot crit takes no multiplier_percent, bonus_chance_percent or "
+                "bonus_chance_per_level_percent"
+            )
         return self
 
+    def bonus_chance_at(self, level: int) -> float:
+        """The bonus crit chance at spell ``level``, in percent."""
+        return _leveled_percent(self.bonus_chance_percent, self.bonus_chance_per_level_percent, level)
 
-# The effect type each placeholder reads.
+
+# The effect type each placeholder reads; crit_chance reads the spell's crit data instead.
 _PLACEHOLDER_EFFECT: dict[str, str] = {
     "damage": DAMAGE,
     "heal": HEAL,
@@ -542,6 +660,14 @@ _PLACEHOLDER_EFFECT: dict[str, str] = {
     "periodic_total": APPLY_EFFECT,
     "interval": APPLY_EFFECT,
     "radius": AREA,
+    "armor_shred": DAMAGE,
+    "penetration": DAMAGE,
+    "bonus": APPLY_EFFECT,
+}
+# Placeholders that read a field of the first damage effect, which it must set.
+_DAMAGE_FIELD_PLACEHOLDERS: dict[str, str] = {
+    "armor_shred": "armor_shred_percent",
+    "penetration": "penetration_percent",
 }
 
 
@@ -557,7 +683,12 @@ class SpellDef(StrictModel):
         description="What the spell does, in its tooltip: one or two sentences. Numbers come from data through "
         "placeholders: {damage}, {heal}, {duration}, {periodic}, {periodic_total}, {interval} and {radius}."
     )
-    school: ResourceId = Field(description="The spell school whose damage it deals, e.g. realmforge:fire.")
+    school: ResourceId | None = Field(
+        default=None,
+        description="The spell school whose damage it deals, e.g. realmforge:fire. A spell that neither deals damage "
+        "nor heals may leave it out: it belongs to no school (Will To Survive, Matěj, 2026-10-30), and the spell bar "
+        "frames it in black.",
+    )
     scales_with: ScalesWith = Field(
         description="spell_power for magic schools, attack_damage for physical abilities (Matěj, 2026-10-15)."
     )
@@ -585,18 +716,85 @@ class SpellDef(StrictModel):
         default_factory=CritDef, description="How the spell crits; every spell can by default."
     )
     npc_only: bool = Field(default=False, description="For mob and boss spells that no player may cast.")
+    requires: list[Requirement] = Field(
+        default_factory=list,
+        description="What a player needs in hand to cast it (RLM-499): melee_weapon (an item of "
+        "realmforge:melee_weapons in the main hand) or shield (a shield in either hand). A player's physical spell "
+        "that deals damage in melee names one. Mobs and bosses cast without it.",
+    )
+    castable_while_stunned: bool = Field(
+        default=False,
+        description="Whether a stunned caster may cast it, as the Human's Will To Survive breaks a stun; every other "
+        "spell waits until the stun ends.",
+    )
     effects: list[SpellEffectDef] = Field(min_length=1, description="What the spell does, in order.")
 
     @model_validator(mode="after")
     def _levels(self) -> SpellDef:
         if self.max_level == 1:
-            leveled = [path for path, effect in self.all_effects() if getattr(effect, "per_level", 0) != 0]
+            leveled = [path for path, effect in self.all_effects() if _grows_with_level(effect)]
             if self.cost is not None and self.cost.per_level != 0:
                 leveled.append("cost")
+            if self.crit.bonus_chance_per_level_percent is not None:
+                leveled.append("crit")
             if leveled:
                 raise ValueError(
-                    f"per_level never applies with max_level 1 ({', '.join(leveled)}): raise max_level or drop it"
+                    f"nothing grows with the level at max_level 1 ({', '.join(leveled)}): raise max_level or drop "
+                    "the per-level growth"
                 )
+        return self
+
+    @model_validator(mode="after")
+    def _school(self) -> SpellDef:
+        if self.school is None:
+            hits = [path for path, effect in self.all_effects() if effect.type in (DAMAGE, HEAL)]
+            if hits:
+                raise ValueError(
+                    f"{hits[0]}: a spell that deals damage or heals names its school; only a spell that does "
+                    "neither belongs to none"
+                )
+        return self
+
+    @model_validator(mode="after")
+    def _top_rank(self) -> SpellDef:
+        top = self.max_level
+        for path, effect in self.all_effects():
+            if effect.type == DAMAGE and max(effect.armor_shred_at(top), effect.penetration_at(top)) > 100:
+                raise ValueError(f"{path}: armor shred and penetration stay at most 100 % at max_level {top}")
+            if effect.type == APPLY_EFFECT:
+                if effect.duration_at(top) > MAX_EFFECT_SECONDS:
+                    raise ValueError(
+                        f"{path}: lasts {effect.duration_at(top):g} s at max_level {top}, more than "
+                        f"{MAX_EFFECT_SECONDS:g} (research SP-8)"
+                    )
+                if any(level > top for level in effect.stronger_at_levels):
+                    raise ValueError(
+                        f"{path}.stronger_at_levels: a level above max_level {top} is never reached"
+                    )
+        if self.crit.bonus_chance_at(top) > 100:
+            raise ValueError(f"crit: the bonus chance stays at most 100 % at max_level {top}")
+        return self
+
+    @model_validator(mode="after")
+    def _requirements(self) -> SpellDef:
+        if len(set(self.requires)) != len(self.requires):
+            raise ValueError("requires names each requirement once")
+        if self.requires and self.npc_only:
+            raise ValueError("requires is checked for players only; a mob or boss casts without it (RLM-499)")
+        return self
+
+    @model_validator(mode="after")
+    def _player_channel(self) -> SpellDef:
+        interval = getattr(self.cast, "interval_seconds", None)
+        if (
+            self.cast.type == "channel"
+            and not self.npc_only
+            and abs(interval - PLAYER_CHANNEL_INTERVAL) > 1e-9
+        ):
+            raise ValueError(
+                f"a player's channel ticks every {PLAYER_CHANNEL_INTERVAL:g} s (Matěj, 2026-10-29, RLM-518), not "
+                f"every {interval:g} s"
+            )
         return self
 
     @model_validator(mode="after")
@@ -633,9 +831,21 @@ class SpellDef(StrictModel):
                 raise ValueError(
                     f"description: unknown placeholder {{{name}}}; known: {', '.join(PLACEHOLDERS)}"
                 )
+            if name == "crit_chance":
+                if self.crit.bonus_chance_at(self.max_level) == 0:
+                    raise ValueError(
+                        "description: {crit_chance} reads the crit's bonus chance, and the spell has none"
+                    )
+                continue
             needed = _PLACEHOLDER_EFFECT[name]
-            if self.first_effect(needed) is None:
+            first = self.first_effect(needed)
+            if first is None:
                 raise ValueError(f"description: {{{name}}} needs a {needed} effect, and the spell has none")
+            field = _DAMAGE_FIELD_PLACEHOLDERS.get(name)
+            if field is not None and getattr(first, field) is None:
+                raise ValueError(
+                    f"description: {{{name}}} reads the first damage effect's {field}, which it lacks"
+                )
         return self
 
     def placeholders(self) -> list[str]:
@@ -654,3 +864,14 @@ class SpellDef(StrictModel):
             for m, inner in enumerate(getattr(effect, "effects", ())):
                 found.append((f"effects.{n}.effects.{m}", inner))
         return found
+
+
+def _grows_with_level(effect: BaseModel) -> bool:
+    """Whether an effect has anything that grows with the spell level."""
+    return (
+        getattr(effect, "per_level", 0) != 0
+        or getattr(effect, "armor_shred_per_level_percent", None) is not None
+        or getattr(effect, "penetration_per_level_percent", None) is not None
+        or getattr(effect, "duration_per_level_seconds", None) is not None
+        or bool(getattr(effect, "stronger_at_levels", ()))
+    )

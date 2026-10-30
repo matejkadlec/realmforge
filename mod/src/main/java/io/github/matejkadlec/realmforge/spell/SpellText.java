@@ -3,6 +3,7 @@ package io.github.matejkadlec.realmforge.spell;
 import io.github.matejkadlec.realmforge.combat.CombatRegistries;
 import io.github.matejkadlec.realmforge.combat.DamageNumbers;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
+import io.github.matejkadlec.realmforge.combat.HitBonus;
 import io.github.matejkadlec.realmforge.combat.SpellSchool;
 import io.github.matejkadlec.realmforge.combat.SpellSchools;
 import io.github.matejkadlec.realmforge.effect.EffectTicks;
@@ -25,8 +26,10 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
 /**
@@ -43,10 +46,17 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  *   <li>{@code periodic}, {@code periodic_total}, {@code interval}: one tick, every tick and the seconds between two
  *   ticks of that effect's damage or healing over time ({@link Periodic}), raised by the caster's stats as its ticks
  *   are ({@link EffectTicks#factor});</li>
- *   <li>{@code radius}: the first area's radius in blocks.</li>
+ *   <li>{@code radius}: the first area's radius in blocks;</li>
+ *   <li>{@code armor_shred}, {@code penetration}: the first damage effect's extra armor shred and spell penetration
+ *   at the rank, in percent, for an effect that has them (C4);</li>
+ *   <li>{@code crit_chance}: the spell's bonus crit chance at the rank, in percent, for a spell that has one;</li>
+ *   <li>{@code bonus}: the one attribute modifier of the first applied status effect at its strength (the pipeline
+ *   allows it only for an effect with one), in percent for a multiplied operation and in the attribute's points
+ *   otherwise (Ice Barrier's Magic Shield).</li>
  * </ul>
  *
- * Damage and healing read like combat text ({@link DamageNumbers}); seconds and blocks keep up to two decimals. A
+ * Every number is the one at the player's rank: an effect's duration and strength grow with it (C4). Damage and
+ * healing read like combat text ({@link DamageNumbers}); seconds, blocks and percentages keep up to two decimals. A
  * placeholder without a value stays as it is written. A damage number shows its school instead of naming it (Matěj's
  * playtest of 2026-10-21): the school's icon before it ({@link SpellSchools#icon}) and the number in the school's
  * colour, so a description reads "for [icon]17 damage".
@@ -54,6 +64,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 public final class SpellText {
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{([a-z_]+)\\}");
     private static final double TICKS_PER_SECOND = 20;
+    private static final double PERCENT = 100;
 
     private SpellText() {
     }
@@ -111,7 +122,7 @@ public final class SpellText {
         Map<String, ResourceKey<SpellSchool>> placeholders = new LinkedHashMap<>();
         List<SpellEffect> effects = allEffects(spell.effects());
         if (first(effects, DamageEffect.class).isPresent()) {
-            spell.school().unwrapKey().ifPresent(key -> placeholders.put("damage", key));
+            spell.school().flatMap(Holder::unwrapKey).ifPresent(key -> placeholders.put("damage", key));
         }
         first(effects, ApplyEffectEffect.class).ifPresent(applied -> {
             if (applied.effect().value() instanceof StatusEffect status && status.periodic().isPresent()
@@ -131,14 +142,14 @@ public final class SpellText {
             Function<ResourceKey<SpellSchool>, Optional<SpellSchool>> schools) {
         Map<String, String> values = new LinkedHashMap<>();
         List<SpellEffect> effects = allEffects(spell.effects());
-        SpellSchool school = spell.school().value();
+        Optional<SpellSchool> school = spell.school().map(Holder::value);
         double attackDamage = stats.applyAsDouble(Attributes.ATTACK_DAMAGE);
         double spellPower = stats.applyAsDouble(GeneratedStats.SPELL_POWER);
-        double schoolPower = school.power().map(stats::applyAsDouble).orElse(0.0);
+        double schoolPower = school.flatMap(SpellSchool::power).map(stats::applyAsDouble).orElse(0.0);
         first(effects, DamageEffect.class).ifPresent(damage -> {
             double base = SpellScaling.base(damage.amount(), damage.perLevel(), level, damage.attackDamage(),
                     attackDamage);
-            double bonus = (school.magic() ? spellPower : 0) + schoolPower;
+            double bonus = (school.map(SpellSchool::magic).orElse(false) ? spellPower : 0) + schoolPower;
             values.put("damage", DamageNumbers.format(base * Math.max(0, 1 + bonus)));
         });
         first(effects, HealEffect.class).ifPresent(heal -> {
@@ -147,21 +158,44 @@ public final class SpellText {
             values.put("heal", DamageNumbers.format(SpellScaling.heal(base, spell.scalesWith(), spellPower,
                     schoolPower)));
         });
+        first(effects, DamageEffect.class).ifPresent(damage -> {
+            HitBonus hit = damage.bonusAt(level);
+            if (damage.armorShred() > 0 || damage.armorShredPerLevel() > 0) {
+                values.put("armor_shred", decimal(hit.armorShred() * PERCENT));
+            }
+            if (damage.penetration() > 0 || damage.penetrationPerLevel() > 0) {
+                values.put("penetration", decimal(hit.penetration() * PERCENT));
+            }
+        });
+        if (spell.crit().bonusChance() > 0 || spell.crit().bonusChancePerLevel() > 0) {
+            values.put("crit_chance", decimal(spell.crit().atLevel(level).bonusChance() * PERCENT));
+        }
         first(effects, ApplyEffectEffect.class).ifPresent(applied -> {
-            values.put("duration", decimal(applied.durationTicks() / TICKS_PER_SECOND));
+            int duration = applied.durationAt(level);
+            int amplifier = applied.amplifierAt(level);
+            values.put("duration", decimal(duration / TICKS_PER_SECOND));
             if (applied.effect().value() instanceof StatusEffect status && status.periodic().isPresent()) {
                 Periodic periodic = status.periodic().get();
                 double factor = schools.apply(periodic.school()).map(tickSchool -> EffectTicks.factor(tickSchool,
                         stats)).orElse(1.0);
-                double tick = periodic.amountAt(applied.amplifier()) * factor;
+                double tick = periodic.amountAt(amplifier) * factor;
                 values.put("periodic", DamageNumbers.format(tick));
-                values.put("periodic_total",
-                        DamageNumbers.format(tick * periodic.tickCount(applied.durationTicks())));
+                values.put("periodic_total", DamageNumbers.format(tick * periodic.tickCount(duration)));
                 values.put("interval", decimal(periodic.intervalTicks() / TICKS_PER_SECOND));
             }
+            firstModifier(applied.effect(), amplifier).ifPresent(modifier -> values.put("bonus", decimal(
+                    modifier.operation() == AttributeModifier.Operation.ADD_VALUE ? modifier.amount()
+                            : modifier.amount() * PERCENT)));
         });
         first(effects, AreaEffect.class).ifPresent(area -> values.put("radius", decimal(area.radius())));
         return values;
+    }
+
+    /** An attribute modifier {@code effect} gives at {@code amplifier}, if any: its only one for {@code bonus}. */
+    private static Optional<AttributeModifier> firstModifier(Holder<MobEffect> effect, int amplifier) {
+        List<AttributeModifier> modifiers = new ArrayList<>();
+        effect.value().createModifiers(amplifier, (attribute, modifier) -> modifiers.add(modifier));
+        return modifiers.stream().findFirst();
     }
 
     /** Seconds or blocks: up to two decimals, rounded half up, without trailing zeros ({@code 1.5}, {@code 3}). */

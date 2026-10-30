@@ -37,10 +37,11 @@ public record HealEffect(double amount, double perLevel, double attackDamage) im
         Spell spell = context.spell().value();
         double base = SpellScaling.base(amount, perLevel, context.spellLevel(), attackDamage,
                 context.casterStat(Attributes.ATTACK_DAMAGE));
-        double schoolPower = spell.school().value().power().map(context::casterStat).orElse(0.0);
+        double schoolPower = spell.school().flatMap(school -> school.value().power()).map(context::casterStat)
+                .orElse(0.0);
         double heal = SpellScaling.heal(base, spell.scalesWith(), context.casterStat(GeneratedStats.SPELL_POWER),
                 schoolPower);
-        DamageCalculator.Crit crit = DamageCalculator.crit(spell.crit(),
+        DamageCalculator.Crit crit = DamageCalculator.crit(spell.crit().atLevel(context.spellLevel()),
                 context.casterStat(GeneratedStats.CRIT_CHANCE), context.casterStat(GeneratedStats.CRIT_DAMAGE),
                 context.random());
         target.heal((float) (heal * crit.multiplier()));

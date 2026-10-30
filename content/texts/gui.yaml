@@ -87,6 +87,10 @@ texts:
     en_us: "Race: %1$s"
   origin_class:
     en_us: "Class: %1$s"
+  # The heading of the race's racial active under its bonuses (C4, RLM-219), in gold over the spell's name in yellow;
+  # the racial passive follows the same way, its name over its tooltip line (Matěj, 2026-10-30).
+  origin_racial_ability:
+    en_us: Racial Ability
   none:
     en_us: None
   specialization_wip:

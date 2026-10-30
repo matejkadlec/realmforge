@@ -45,7 +45,7 @@ def _double(value: float) -> str:
 
 def _comment(spell: SpellDef) -> str:
     effects = ", ".join(effect.type.removeprefix(f"{MOD_ID}:") for effect in spell.effects)
-    school = spell.school.removeprefix(f"{MOD_ID}:")
+    school = spell.school.removeprefix(f"{MOD_ID}:") if spell.school is not None else "no school"
     return f"{school}, {spell.targeting.type.removeprefix(f'{MOD_ID}:')}, {effects}"
 
 
@@ -109,6 +109,10 @@ def _effect(effect: BaseModel, indent: str) -> str:
             continue
         if name == "effects":
             inner = value
+        elif isinstance(value, list):
+            # stronger_at_levels: named only when it has levels, as the game reads an empty list by default.
+            if value:
+                names[name] = ",".join(str(item) for item in value)
         elif isinstance(value, str):
             names[name] = value
         elif isinstance(value, int | float) and not isinstance(value, bool):
@@ -143,7 +147,7 @@ def _expectation(spell: SpellDef) -> str:
         f"                    {string_literal(f'{MOD_ID}:{spell.id}')},\n"
         f"                    {string_literal(translation_key('spell', spell.id, 'name'))},\n"
         f"                    {string_literal(translation_key('spell', spell.id, 'description'))},\n"
-        f"                    {string_literal(spell.school)},\n"
+        f"                    {_optional_string(spell.school)},\n"
         f"                    {string_literal(spell.scales_with)},\n"
         f"                    {string_literal(spell.targeting.type)},\n"
         f"                    {_double(getattr(spell.targeting, 'range', 0.0))},\n"
@@ -166,7 +170,10 @@ def _expectation(spell: SpellDef) -> str:
         f"                    {_bool(crit.can_crit)},\n"
         f"                    {_optional_double(multiplier)},\n"
         f"                    {_double(crit.bonus_chance_percent / 100)},\n"
+        f"                    {_double((crit.bonus_chance_per_level_percent or 0) / 100)},\n"
         f"                    {_bool(spell.npc_only)},\n"
+        f"                    List.of({', '.join(string_literal(requirement) for requirement in spell.requires)}),\n"
+        f"                    {_bool(spell.castable_while_stunned)},\n"
         "                    List.of(\n"
         f"{effects}))"
     )
@@ -187,7 +194,8 @@ def _expectations(content: Content) -> bytes:
         "    /**\n"
         "     * One effect as written in the YAML, in game units: its numbers and names by their data field names (e.g.\n"
         "     * {@code amount}, {@code duration_ticks}, {@code attack_damage} as a fraction, 0 when it adds none;\n"
-        "     * {@code effect}, {@code affects}), and the effects a projectile or an area runs.\n"
+        '     * {@code effect}, {@code affects}; a list of levels as {@code "2,5"}), and the effects a projectile or an\n'
+        "     * area runs.\n"
         "     */\n"
         "    public record EffectExpectation(String type, Map<String, Double> numbers, Map<String, String> names,\n"
         "            List<EffectExpectation> effects) {\n"
@@ -198,15 +206,18 @@ def _expectations(content: Content) -> bytes:
         "     * {@code realmforge:test_bolt}; the name and description are translation keys; {@code range} is 0 for a\n"
         "     * spell on the caster itself, the cost's amounts are 0 for a free spell, and the cast's duration and interval\n"
         "     * are 0 where its type has none; {@code keepRange} is the share of the cast that keeps the target in range;\n"
-        "     * {@code castAnimation} is how a mob moves while it casts, {@code raise} unless the data says otherwise.\n"
+        "     * {@code castAnimation} is how a mob moves while it casts, {@code raise} unless the data says otherwise;\n"
+        "     * {@code requires} names what a player's cast needs in hand ({@code melee_weapon}, {@code shield}).\n"
         "     */\n"
-        "    public record SpellExpectation(String id, String name, String description, String school, String scalesWith,\n"
+        "    public record SpellExpectation(String id, String name, String description, Optional<String> school,\n"
+        "            String scalesWith,\n"
         "            String targeting, double range,\n"
         "            String cast, int castDurationTicks, int castIntervalTicks, boolean castableWhileMoving, boolean lockOn,\n"
         "            boolean keepSight, Optional<Double> keepRange, Optional<String> castSound, boolean formsProjectile,\n"
         "            String castAnimation, Optional<String> costResource, double costAmount, double costPerLevel,\n"
         "            int cooldownTicks, int globalCooldownTicks, int maxLevel, boolean canCrit, Optional<Double> critMultiplier,\n"
-        "            double critBonusChance, boolean npcOnly, List<EffectExpectation> effects) {\n"
+        "            double critBonusChance, double critBonusChancePerLevel, boolean npcOnly, List<String> requires,\n"
+        "            boolean castableWhileStunned, List<EffectExpectation> effects) {\n"
         "    }\n"
         "\n"
         f"    public static final List<SpellExpectation> SPELLS = {spells};\n"

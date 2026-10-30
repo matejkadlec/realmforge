@@ -74,7 +74,12 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   the test titan. The first real boss is Astone, the Unbroken (W5b, RLM-491), Undervault's guardian: three phases
   (a boulder, then a quake and a rockfall, then cracked stone), and the Stone Heart and the twins' shards on every
   kill; `/summon realmforge:astone` until W6's altar. A new player
-  creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits.
+  creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits,
+  and their class kits (C4, RLM-27): four spells each, taught by level to 8 (Slam, Reckless Strike, Shield Bash,
+  Battle Shout; Frostbolt, Fireball, Arcane Missiles, Ice Barrier), the first spells of rank 5, and the Human's
+  Will To Survive in the racial slot and Sword Specialization; melee spells need a melee weapon in the main hand and
+  Shield Bash a shield (RLM-499), stuns stop mobs and casts, crit chance above 100 % turns into crit damage, and a
+  player's channel ticks every 0.5 s (RLM-518).
   Casters have their gear (RLM-172, RLM-197), from an item's `gear` in YAML: seven two-handed wands from wood to
   netherite whose stats count in the main hand, which every cast wears and which lock shields, and four robe sets (Apprentice's, Spellweave, Arcane Silk,
   Netherite) with magic shield, spell power and mana instead of armor; Arcane Dust drops from witches, evokers and

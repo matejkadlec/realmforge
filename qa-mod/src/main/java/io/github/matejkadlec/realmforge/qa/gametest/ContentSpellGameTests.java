@@ -24,6 +24,7 @@ import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.SpellEntities;
 import io.github.matejkadlec.realmforge.spell.SpellEffect;
 import io.github.matejkadlec.realmforge.spell.SpellRegistries;
+import io.github.matejkadlec.realmforge.spell.SpellRequirement;
 import io.github.matejkadlec.realmforge.spell.SpellTargeting;
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +32,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.locale.Language;
@@ -66,7 +69,7 @@ public final class ContentSpellGameTests {
             helper.assertValueEqual(spell.description(), expected.description(), id + " description");
             helper.assertTrue(Language.getInstance().has(spell.name()) && Language.getInstance().has(
                     spell.description()), id + " has no name or description in the lang file");
-            helper.assertValueEqual(spell.school().getRegisteredName(), expected.school(), id + " school");
+            helper.assertValueEqual(spell.school().map(Holder::getRegisteredName), expected.school(), id + " school");
             helper.assertValueEqual(spell.scalesWith().getSerializedName(), expected.scalesWith(), id + " scales with");
             helper.assertValueEqual(targetingType(spell.targeting()), expected.targeting(), id + " targeting");
             helper.assertValueEqual(range(spell.targeting()), expected.range(), id + " range");
@@ -97,7 +100,13 @@ public final class ContentSpellGameTests {
             helper.assertValueEqual(spell.crit().canCrit(), expected.canCrit(), id + " can crit");
             helper.assertValueEqual(spell.crit().multiplier(), expected.critMultiplier(), id + " crit multiplier");
             helper.assertValueEqual(spell.crit().bonusChance(), expected.critBonusChance(), id + " bonus crit chance");
+            helper.assertValueEqual(spell.crit().bonusChancePerLevel(), expected.critBonusChancePerLevel(),
+                    id + " bonus crit chance per level");
             helper.assertValueEqual(spell.npcOnly(), expected.npcOnly(), id + " npc only");
+            helper.assertValueEqual(spell.requires().stream().map(SpellRequirement::getSerializedName).toList(),
+                    expected.requires(), id + " requires");
+            helper.assertValueEqual(spell.castableWhileStunned(), expected.castableWhileStunned(),
+                    id + " castable while stunned");
             helper.assertValueEqual(spell.effects().stream().map(ContentSpellGameTests::effect).toList(),
                     expected.effects(), id + " effects");
         }
@@ -149,13 +158,11 @@ public final class ContentSpellGameTests {
     private static EffectExpectation effect(SpellEffect effect) {
         String type = SpellRegistries.EFFECT_TYPES.getKey(effect.codec()).toString();
         return switch (effect) {
-            case DamageEffect damage -> numbers(type, Map.of("amount", damage.amount(), "per_level",
-                    damage.perLevel(), "attack_damage", damage.attackDamage()));
+            case DamageEffect damage -> numbers(type, damageNumbers(damage));
             case HealEffect heal -> numbers(type, Map.of("amount", heal.amount(), "per_level", heal.perLevel(),
                     "attack_damage", heal.attackDamage()));
-            case ApplyEffectEffect apply -> new EffectExpectation(type, Map.of("duration_ticks",
-                    (double) apply.durationTicks(), "amplifier", (double) apply.amplifier()),
-                    Map.of("effect", apply.effect().getRegisteredName()), List.of());
+            case ApplyEffectEffect apply -> new EffectExpectation(type, applyNumbers(apply), applyNames(apply),
+                    List.of());
             case RemoveEffectEffect remove -> new EffectExpectation(type, Map.of(),
                     Map.of("effect", remove.effect().getRegisteredName()), List.of());
             case KnockbackEffect knockback -> numbers(type, Map.of("strength", knockback.strength()));
@@ -168,6 +175,44 @@ public final class ContentSpellGameTests {
                     areaNames(area), area.effects().stream().map(ContentSpellGameTests::effect).toList());
             default -> new EffectExpectation(type, Map.of(), Map.of(), List.of());
         };
+    }
+
+    /**
+     * A damage effect's numbers; its armor shred and spell penetration (C4) only when it has them, as the data names
+     * them only then.
+     */
+    private static Map<String, Double> damageNumbers(DamageEffect damage) {
+        Map<String, Double> numbers = new HashMap<>(Map.of("amount", damage.amount(), "per_level", damage.perLevel(),
+                "attack_damage", damage.attackDamage()));
+        putIfSet(numbers, "armor_shred", damage.armorShred());
+        putIfSet(numbers, "armor_shred_per_level", damage.armorShredPerLevel());
+        putIfSet(numbers, "penetration", damage.penetration());
+        putIfSet(numbers, "penetration_per_level", damage.penetrationPerLevel());
+        return Map.copyOf(numbers);
+    }
+
+    /** A status effect's numbers; its growth per level (C4) only when it grows, as the data names it only then. */
+    private static Map<String, Double> applyNumbers(ApplyEffectEffect apply) {
+        Map<String, Double> numbers = new HashMap<>(Map.of("duration_ticks", (double) apply.durationTicks(),
+                "amplifier", (double) apply.amplifier()));
+        putIfSet(numbers, "duration_per_level_ticks", apply.durationPerLevelTicks());
+        return Map.copyOf(numbers);
+    }
+
+    /** A status effect's names; the levels it grows stronger at, "2,5", only when it has them. */
+    private static Map<String, String> applyNames(ApplyEffectEffect apply) {
+        Map<String, String> names = new HashMap<>(Map.of("effect", apply.effect().getRegisteredName()));
+        if (!apply.strongerAtLevels().isEmpty()) {
+            names.put("stronger_at_levels", apply.strongerAtLevels().stream().map(String::valueOf)
+                    .collect(Collectors.joining(",")));
+        }
+        return Map.copyOf(names);
+    }
+
+    private static void putIfSet(Map<String, Double> numbers, String name, double value) {
+        if (value != 0) {
+            numbers.put(name, value);
+        }
     }
 
     /** An area's names; its ring's colour, "#RRGGBB", only when it has one, as the data names it only then. */

@@ -24,6 +24,8 @@
     "bonus_chance": 0.0
   },
   "npc_only": true,
+  "requires": [],
+  "castable_while_stunned": false,
   "effects": [
     {
       "type": "realmforge:area",
@@ -42,7 +44,8 @@
           "type": "realmforge:apply_effect",
           "effect": "minecraft:slowness",
           "duration_ticks": 30,
-          "amplifier": 0
+          "amplifier": 0,
+          "stronger_at_levels": []
         }
       ],
       "ring_color": "#8C8C8C"

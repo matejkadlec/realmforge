@@ -1,7 +1,9 @@
 # yaml-language-server: $schema=../../tools/schemas/classes.schema.json
-# The M1 melee class (decision D1, RLM-51): strength and vitality. Spells come in C4. The stats stay the same at every
-# level: each level gives a stat point to spend instead, and the class keeps these as its starting identity until
-# Matěj decides on them (2026-10-15, RLM-196).
+# The M1 melee class (decision D1, RLM-51): strength and vitality. The stats stay the same at every level: each level
+# gives a stat point to spend instead, and the class keeps these as its starting identity until Matěj decides on them
+# (2026-10-15, RLM-196). Its kit (C4): Slam at level 1 (decision D4's starting spell, Arms's first, the M1 tree),
+# Reckless Strike at 3, Shield Bash at 5 and Battle Shout at 8 (Matěj, 2026-10-30: the other trees' first spells stand
+# in for the Arms tree's own until C5), four spells by the end of chapter 1 (D4: 4 x N).
 id: warrior
 name:
   en_us: Warrior
@@ -9,8 +11,10 @@ description:
   en_us: Fights up close with steel and a stubborn heart. Rage builds as you trade blows.
 role: melee
 resource: realmforge:rage
-# Starting numbers (C3a-4, RLM-212) until the class kits (C4) tune them: a full-strength hit gives 10 rage, losing half
-# the max health to attackers 25, and 5 s after the last hit dealt or taken the pool loses 2 a second.
+# A full-strength hit gives 10 rage, losing half the max health to attackers 25, and 5 s after the last hit dealt or
+# taken the pool loses 2 a second (C3a-4, RLM-212). C4's first balance pass keeps them: a Stone Sword's full-strength
+# hits every 0.625 s give 16 a second, more than Slam, Reckless Strike and Shield Bash cost on cooldown together
+# (about 12.5 a second), so a Warrior who keeps swinging casts all three.
 rage:
   per_hit_dealt: 10
   per_max_health_taken: 50
@@ -28,3 +32,8 @@ starting_kit:
   - {item: minecraft:leather_leggings}
   - {item: minecraft:leather_boots}
   - {item: minecraft:bread, count: 32}
+spells:
+  - {spell: realmforge:slam, level: 1}
+  - {spell: realmforge:reckless_strike, level: 3}
+  - {spell: realmforge:shield_bash, level: 5}
+  - {spell: realmforge:battle_shout, level: 8}

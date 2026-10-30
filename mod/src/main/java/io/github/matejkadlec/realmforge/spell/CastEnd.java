@@ -30,7 +30,9 @@ public enum CastEnd implements StringRepresentable {
     /** The target is no longer one the spell may hit (it joined the caster's team, say). */
     INVALID_TARGET("invalid_target", false),
     /** The caster has less of the spell's resource than a channel's next second costs. */
-    NOT_ENOUGH_RESOURCE("not_enough_resource", false);
+    NOT_ENOUGH_RESOURCE("not_enough_resource", false),
+    /** A stun (C4) interrupted it, whether the spell may be cast while moving or not. */
+    STUNNED("stunned", true);
 
     private final String serializedName;
     private final boolean interrupt;

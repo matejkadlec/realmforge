@@ -30,6 +30,9 @@ public final class CastTexts {
             case OUT_OF_RANGE -> GeneratedTexts.CAST_OUT_OF_RANGE;
             case NO_LINE_OF_SIGHT -> GeneratedTexts.CAST_NO_LINE_OF_SIGHT;
             case NOT_ENOUGH_RESOURCE -> GeneratedTexts.CAST_NOT_ENOUGH_RESOURCE;
+            case STUNNED -> GeneratedTexts.CAST_STUNNED;
+            case NO_MELEE_WEAPON -> GeneratedTexts.CAST_NO_MELEE_WEAPON;
+            case NO_SHIELD -> GeneratedTexts.CAST_NO_SHIELD;
         };
         if (failure == CastFailure.NOT_ENOUGH_RESOURCE) {
             Component resource = spell.flatMap(Spell::cost).flatMap(cost -> cost.resource().unwrapKey())
@@ -43,7 +46,7 @@ public final class CastTexts {
     public static Optional<Component> end(CastEnd end, Optional<Spell> spell) {
         return switch (end) {
             case COMPLETED -> Optional.empty();
-            case KNOCKED_BACK, CANCELLED, DIED, CHANGED_DIMENSION, LOGGED_OUT ->
+            case KNOCKED_BACK, CANCELLED, DIED, CHANGED_DIMENSION, LOGGED_OUT, STUNNED ->
                     Optional.of(Component.translatable(GeneratedTexts.CAST_INTERRUPTED));
             case TARGET_LOST -> Optional.of(Component.translatable(GeneratedTexts.CAST_TARGET_LOST));
             case OUT_OF_RANGE -> Optional.of(failure(CastFailure.OUT_OF_RANGE, spell));

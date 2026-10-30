@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Fire's first spell (C4, RLM-391; the Fire Mage plays as damage over time): a 1.5 s cast at every rank, no cooldown.
+# Medium damage on the hit, then Burning for 4 s, 0.5 s longer per rank, Burning II from rank 5. It forms in the hands
+# and flies like Frostbolt. About 10.3 damage on the hit at level 1 and 7.7 more over the Burning.
+id: fireball
+name: {en_us: Fireball}
+description: {en_us: "Hurls a ball of fire for {damage} damage that burns the target for {periodic_total} more over {duration} sec."}
+school: realmforge:fire
+scales_with: spell_power
+targeting: {type: realmforge:direction, range: 40}
+cast: {type: cast_time, duration_seconds: 1.5, forms_projectile: true}
+cost: {resource: realmforge:mana, amount: 12}
+max_level: 5
+effects:
+  - type: realmforge:projectile
+    speed: 30
+    size: 0.5
+    impact: {sound: minecraft:entity.generic.extinguish_fire, particles: minecraft:magma_block}
+    appearance: {model: orb, color: "#FF7F1F"}
+    effects:
+      - {type: realmforge:damage, amount: 8, per_level: 2}
+      - type: realmforge:apply_effect
+        effect: realmforge:burning
+        duration_seconds: 4
+        duration_per_level_seconds: 0.5
+        stronger_at_levels: [5]

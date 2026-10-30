@@ -55,5 +55,23 @@
       "item": "minecraft:bread",
       "count": 32
     }
+  ],
+  "spells": [
+    {
+      "spell": "realmforge:slam",
+      "level": 1
+    },
+    {
+      "spell": "realmforge:reckless_strike",
+      "level": 3
+    },
+    {
+      "spell": "realmforge:shield_bash",
+      "level": 5
+    },
+    {
+      "spell": "realmforge:battle_shout",
+      "level": 8
+    }
   ]
 }

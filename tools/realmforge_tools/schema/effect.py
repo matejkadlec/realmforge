@@ -13,11 +13,14 @@ from typing import Annotated, Literal
 from pydantic import Field, model_validator
 
 from realmforge_tools.project import MOD_ID
-from realmforge_tools.schema.character import CharacterModifierDef
+from realmforge_tools.schema.character import CharacterModifierDef, FiniteNumber
 from realmforge_tools.schema.common import ContentId, LocalizedText, ResourceId, Seconds, StrictModel
 from realmforge_tools.schema.spell_school import HexColor
 
 Positive = Annotated[float, Field(gt=0, allow_inf_nan=False)]
+
+# What a stun's modifiers bring to a halt (C4): walking and jumping.
+STUN_STOPS: tuple[str, ...] = ("minecraft:movement_speed", "minecraft:jump_strength")
 
 # A tick of damage or healing is a hit or a heal of its own, so a few per second at most.
 MIN_INTERVAL_SECONDS = 0.25
@@ -26,8 +29,43 @@ MAX_INTERVAL_SECONDS = 10.0
 
 class EffectModifierDef(CharacterModifierDef):
     """An attribute modifier the effect gives while it lasts. The amount is the first level's: vanilla multiplies it
-    by the amplifier + 1, so Slowness II (amplifier 1) slows twice as much as Slowness I. Units follow the stat rules:
-    multiplied operations take ``amount_percent``; ``add_value`` on one of our stats takes its unit."""
+    by the amplifier + 1, so Slowness II (amplifier 1) slows twice as much as Slowness I, unless ``per_amplifier`` (or
+    ``per_amplifier_percent``) gives what each level above the first adds instead (Battle Shout's 10, 15 and 20 %,
+    Matěj, 2026-10-30). Units follow the stat rules: multiplied operations take ``amount_percent``; ``add_value`` on
+    one of our stats takes its unit."""
+
+    per_amplifier: FiniteNumber | None = Field(
+        default=None,
+        description="Added for every amplifier level above the first, in the amount's units, instead of vanilla's "
+        "multiplying the amount by the level.",
+    )
+    per_amplifier_percent: FiniteNumber | None = Field(
+        default=None, description="per_amplifier in percent, for an amount_percent."
+    )
+
+    @model_validator(mode="after")
+    def _per_amplifier(self) -> EffectModifierDef:
+        if self.per_amplifier is not None and self.per_amplifier_percent is not None:
+            raise ValueError("set at most one of per_amplifier and per_amplifier_percent")
+        if self.per_amplifier is not None and self.is_percent:
+            raise ValueError("the amount is amount_percent: write its growth as per_amplifier_percent")
+        if self.per_amplifier_percent is not None and not self.is_percent:
+            raise ValueError("the amount is amount: write its growth as per_amplifier")
+        return self
+
+    @property
+    def game_per_amplifier(self) -> float | None:
+        """What each amplifier level above the first adds, in game units; None for vanilla's multiplication."""
+        if self.per_amplifier_percent is not None:
+            return self.per_amplifier_percent / 100
+        return self.per_amplifier
+
+    def game_amount_at(self, amplifier: int) -> float:
+        """The amount at ``amplifier`` (0 for the first level), as the game gives it."""
+        per_amplifier = self.game_per_amplifier
+        if per_amplifier is None:
+            return self.game_amount * (amplifier + 1)
+        return self.game_amount + per_amplifier * amplifier
 
 
 class PeriodicDef(StrictModel):
@@ -66,11 +104,31 @@ class EffectDef(StrictModel):
     periodic: PeriodicDef | None = Field(
         default=None, description="Damage or healing at the end of every interval while it lasts."
     )
+    stun: bool = Field(
+        default=False,
+        description="A stun (C4): its holder neither attacks nor casts, a mob's AI stands still, and a cast in "
+        "progress is interrupted. Harmful only; its modifiers stop movement (movement_speed and jump_strength at "
+        "-100 % add_multiplied_total).",
+    )
 
     @model_validator(mode="after")
     def _does_something(self) -> EffectDef:
         if not self.modifiers and self.periodic is None:
             raise ValueError("an effect gives modifiers, periodic damage or healing, or both")
+        if self.stun:
+            if self.category != "harmful":
+                raise ValueError("a stun is harmful")
+            stopped = {
+                modifier.attribute
+                for modifier in self.modifiers
+                if modifier.operation == "add_multiplied_total" and modifier.amount_percent == -100
+            }
+            missing = sorted(set(STUN_STOPS) - stopped)
+            if missing:
+                raise ValueError(
+                    f"a stun stops movement: give it {', '.join(missing)} at amount_percent -100, "
+                    "add_multiplied_total"
+                )
         attributes = [modifier.attribute for modifier in self.modifiers]
         repeated = sorted({attribute for attribute in attributes if attributes.count(attribute) > 1})
         if repeated:

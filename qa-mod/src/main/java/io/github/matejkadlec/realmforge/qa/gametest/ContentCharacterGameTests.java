@@ -5,6 +5,7 @@ import io.github.matejkadlec.realmforge.character.CharacterBonuses;
 import io.github.matejkadlec.realmforge.character.CharacterRegistries;
 import io.github.matejkadlec.realmforge.character.KitItem;
 import io.github.matejkadlec.realmforge.character.PlayerClass;
+import io.github.matejkadlec.realmforge.character.RacialPassive;
 import io.github.matejkadlec.realmforge.character.Race;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedClassExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedClassExpectations.ClassExpectation;
@@ -16,6 +17,7 @@ import io.github.matejkadlec.realmforge.spell.SpellRegistries;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
@@ -49,6 +51,22 @@ public final class ContentCharacterGameTests {
                     CharacterBonuses.bonuses(CharacterBonuses.RACE_PREFIX, id, race.modifiers()),
                     expected.bonuses().stream().map(b -> new Bonus(b.id(), b.attribute(), b.operation(), b.amount()))
                             .toList(), expected.id() + " bonuses");
+            helper.assertValueEqual(race.racialSpell().map(Holder::getRegisteredName), expected.racialSpell(),
+                    expected.id() + " racial spell");
+            helper.assertValueEqual(race.racialPassive().isPresent(), expected.racialPassive().isPresent(),
+                    expected.id() + " has a racial passive");
+            if (race.racialPassive().isPresent() && expected.racialPassive().isPresent()) {
+                RacialPassive passive = race.racialPassive().get();
+                GeneratedRaceExpectations.Passive wanted = expected.racialPassive().get();
+                helper.assertValueEqual(passive.name(), wanted.nameKey(), expected.id() + " passive name");
+                helper.assertValueEqual(passive.description(), wanted.descriptionKey(),
+                        expected.id() + " passive description");
+                helper.assertValueEqual(passive.weapons().location().toString(), wanted.weapons(),
+                        expected.id() + " passive weapons");
+                ContentStatGameTests.assertBonuses(helper, CharacterBonuses.passiveBonuses(id, passive.modifiers()),
+                        wanted.bonuses().stream().map(b -> new Bonus(b.id(), b.attribute(), b.operation(),
+                                b.amount())).toList(), expected.id() + " passive bonuses");
+            }
         }
         helper.succeed();
     }
@@ -81,6 +99,9 @@ public final class ContentCharacterGameTests {
                     CharacterBonuses.bonuses(CharacterBonuses.CLASS_PREFIX, id, playerClass.modifiers()),
                     expected.bonuses().stream().map(b -> new Bonus(b.id(), b.attribute(), b.operation(), b.amount()))
                             .toList(), expected.id() + " bonuses");
+            helper.assertValueEqual(playerClass.spells().stream().map(taught -> taught.spell().getRegisteredName()
+                    + " at " + taught.level()).toList(), expected.spells().stream().map(taught -> taught.spell()
+                    + " at " + taught.level()).toList(), expected.id() + " spells by level");
         }
         helper.succeed();
     }

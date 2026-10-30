@@ -54,6 +54,31 @@
       "title": "CharacterModifierDef",
       "type": "object"
     },
+    "ClassSpellDef": {
+      "additionalProperties": false,
+      "description": "A spell a class teaches its players at a level (C4): they learn it at rank 1 once they reach the level, and\nkeep it.",
+      "properties": {
+        "level": {
+          "description": "The character level that teaches it.",
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Level",
+          "type": "integer"
+        },
+        "spell": {
+          "description": "The spell, e.g. realmforge:slam.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Spell",
+          "type": "string"
+        }
+      },
+      "required": [
+        "spell",
+        "level"
+      ],
+      "title": "ClassSpellDef",
+      "type": "object"
+    },
     "KitItemDef": {
       "additionalProperties": false,
       "description": "One item of a class's starting kit.",
@@ -142,7 +167,7 @@
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "A class: its role, its resource, the stats it gives and its starting kit (architecture 10.1). Spells by level\nand talent trees come with C4 and C5.",
+  "description": "A class: its role, its resource, the stats it gives, its spells by level and its starting kit (architecture\n10.1). The specialization spell trees come with C5.",
   "properties": {
     "description": {
       "$ref": "#/$defs/LocalizedText",
@@ -197,6 +222,14 @@
       ],
       "title": "Role",
       "type": "string"
+    },
+    "spells": {
+      "description": "The spells the class teaches by level (C4): one at level 1, and at most 4 per chapter in all (decision D4: chapter N allows 4 x N spells).",
+      "items": {
+        "$ref": "#/$defs/ClassSpellDef"
+      },
+      "title": "Spells",
+      "type": "array"
     },
     "starting_kit": {
       "description": "Items a new character of this class receives once.",

@@ -13,7 +13,7 @@
     "keep_sight": false,
     "type": "channel",
     "duration_ticks": 60,
-    "interval_ticks": 20
+    "interval_ticks": 10
   },
   "cost": {
     "amount": 15.0,
@@ -28,9 +28,11 @@
     "bonus_chance": 0.0
   },
   "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
   "effects": [
     {
-      "amount": 2.0,
+      "amount": 1.0,
       "per_level": 0,
       "type": "realmforge:damage"
     }

@@ -2,7 +2,7 @@
   "$defs": {
     "EffectModifierDef": {
       "additionalProperties": false,
-      "description": "An attribute modifier the effect gives while it lasts. The amount is the first level's: vanilla multiplies it\nby the amplifier + 1, so Slowness II (amplifier 1) slows twice as much as Slowness I. Units follow the stat rules:\nmultiplied operations take ``amount_percent``; ``add_value`` on one of our stats takes its unit.",
+      "description": "An attribute modifier the effect gives while it lasts. The amount is the first level's: vanilla multiplies it\nby the amplifier + 1, so Slowness II (amplifier 1) slows twice as much as Slowness I, unless ``per_amplifier`` (or\n``per_amplifier_percent``) gives what each level above the first adds instead (Battle Shout's 10, 15 and 20 %,\nMatěj, 2026-10-30). Units follow the stat rules: multiplied operations take ``amount_percent``; ``add_value`` on\none of our stats takes its unit.",
       "properties": {
         "amount": {
           "anyOf": [
@@ -45,6 +45,32 @@
           ],
           "title": "Operation",
           "type": "string"
+        },
+        "per_amplifier": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added for every amplifier level above the first, in the amount's units, instead of vanilla's multiplying the amount by the level.",
+          "title": "Per Amplifier"
+        },
+        "per_amplifier_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "per_amplifier in percent, for an amount_percent.",
+          "title": "Per Amplifier Percent"
         }
       },
       "required": [
@@ -163,6 +189,12 @@
       ],
       "default": null,
       "description": "Damage or healing at the end of every interval while it lasts."
+    },
+    "stun": {
+      "default": false,
+      "description": "A stun (C4): its holder neither attacks nor casts, a mob's AI stands still, and a cast in progress is interrupted. Harmful only; its modifiers stop movement (movement_speed and jump_strength at -100 % add_multiplied_total).",
+      "title": "Stun",
+      "type": "boolean"
     }
   },
   "required": [

@@ -1,5 +1,7 @@
 # yaml-language-server: $schema=../../tools/schemas/races.schema.json
-# The one race of M1 (roadmap, M1 scope). A little of everything: one point in every primary stat.
+# The one race of M1 (roadmap, M1 scope). A little of everything: one point in every primary stat. Its racial active and
+# passive (Matěj, 2026-10-15, RLM-219; C4): Will To Survive in the racial slot beside the spell bar (X), and Sword
+# Specialization, +10 % damage with a sword-like weapon in the main hand (a Human is not meant to be a special race).
 id: human
 name:
   en_us: Human
@@ -13,3 +15,10 @@ modifiers:
   - {attribute: realmforge:dexterity, operation: add_value, amount: 1}
   - {attribute: realmforge:vitality, operation: add_value, amount: 1}
   - {attribute: realmforge:intellect, operation: add_value, amount: 1}
+racial_spell: realmforge:will_to_survive
+racial_passive:
+  name: {en_us: Sword Specialization}
+  description: {en_us: "+{bonus}% damage with swords"}
+  weapons: realmforge:sword_like
+  modifiers:
+    - {attribute: minecraft:attack_damage, operation: add_multiplied_base, amount_percent: 10}

@@ -155,7 +155,7 @@ public final class CastBarHud {
         graphics.fill(iconX, innerY, iconX + ICON, innerY + innerHeight, ARGB.color(alpha, ICON_BACKGROUND));
         spell.ifPresent(value -> {
             graphics.fill(iconX, innerY, iconX + ICON, innerY + innerHeight,
-                    ARGB.color(alpha * 110 / 255, value.school().value().color()));
+                    ARGB.color(alpha * 110 / 255, value.color()));
             graphics.centeredText(font, SpellSlots.initials(Language.getInstance().getOrDefault(value.name())),
                     iconX + ICON / 2 + 1, innerY + (innerHeight - 8) / 2, ARGB.color(alpha, TEXT));
         });
@@ -218,7 +218,7 @@ public final class CastBarHud {
     }
 
     private static int schoolColor(Optional<Spell> spell) {
-        return spell.map(value -> value.school().value().color()).orElse(FAILED);
+        return spell.map(Spell::color).orElse(FAILED);
     }
 
     private static Component name(Optional<Spell> spell, ResourceKey<Spell> key) {

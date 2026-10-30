@@ -66,6 +66,12 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
     public static final int CHOICE = 0xFF7FD97F;
     /** Descriptions on the Origin tab. */
     public static final int TEXT = 0xFFC8C8C8;
+    /**
+     * The Origin tab's racial ability and passive: the heading or name in gold, what it is or gives in yellow, as on a
+     * sword's tooltip (Matěj, 2026-10-30).
+     */
+    public static final int RACIAL_NAME = 0xFFFFAA00;
+    public static final int RACIAL_DETAIL = 0xFFFFFF55;
 
     /** A tab: its name and the sections of its two columns. */
     public record Tab(Component name, List<Section> left, List<Section> right) {
@@ -237,10 +243,10 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
     }
 
     /**
-     * The Origin tab (Matěj, 2026-10-14): the race on the left (its description and what it gives; its racial ability
-     * comes with the spell system), the class on the right (its description, then the specialization, a placeholder
-     * until the specialization spell trees exist, C5). A race or class the player lacks, or whose entry is gone, reads
-     * as "None".
+     * The Origin tab (Matěj, 2026-10-14): the race on the left (its description, what it gives, its racial ability and
+     * its racial passive, C4, each a gold heading over a yellow line), the class on the right (its description, then the specialization, a placeholder until
+     * the specialization spell trees exist, C5). A race or class the player lacks, or whose entry is gone, reads as
+     * "None".
      */
     private static Tab origin(CharacterData character, HolderLookup.Provider registries) {
         Optional<Race> race = character.race()
@@ -256,6 +262,18 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
             for (int n = 0; n < bonuses.size(); n++) {
                 raceRows.add(new Row(ORIGIN + "race/bonus/" + n, bonuses.get(n), "", false, BONUS));
             }
+            entry.racialSpell().ifPresent(spell -> {
+                raceRows.add(new Row(ORIGIN + "race/racial_ability",
+                        Component.translatable(GeneratedTexts.GUI_ORIGIN_RACIAL_ABILITY), "", false, RACIAL_NAME));
+                raceRows.add(new Row(ORIGIN + "race/racial_ability/spell", Component.translatable(spell.value().name()),
+                        "", false, RACIAL_DETAIL));
+            });
+            entry.racialPassive().ifPresent(passive -> {
+                raceRows.add(new Row(ORIGIN + "race/racial_passive", Component.translatable(passive.name()), "", false,
+                        RACIAL_NAME));
+                raceRows.add(new Row(ORIGIN + "race/racial_passive/description",
+                        Component.literal(RacialPassives.description(passive)), "", false, RACIAL_DETAIL));
+            });
         });
         List<Row> classRows = new ArrayList<>();
         playerClass.ifPresent(entry -> classRows.add(new Row(ORIGIN + "class/description",

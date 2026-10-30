@@ -1,5 +1,5 @@
-"""Status effects: the ``MobEffect`` registrations, placeholder icons and the QA mod's expectations (the names: the
-lang files, lang.py)."""
+"""Status effects: the ``MobEffect`` registrations, icons (drawn ones from effect_icons.py, placeholders otherwise) and
+the QA mod's expectations (the names: the lang files, lang.py)."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from pathlib import Path
 
 from realmforge_tools.content import Content
 from realmforge_tools.generate.datapack import seconds_to_ticks
+from realmforge_tools.generate.effect_icons import drawn_icon
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
 from realmforge_tools.generate.textures import placeholder_effect_icon
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
@@ -40,7 +41,10 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     }
     for entry in content.effects:
         effect = entry.model
-        files[icons / f"{effect.id}.png"] = placeholder_effect_icon(_rgb(effect.color), effect.category)
+        drawn = drawn_icon(effect.id)
+        files[icons / f"{effect.id}.png"] = (
+            drawn if drawn is not None else placeholder_effect_icon(_rgb(effect.color), effect.category)
+        )
     return files
 
 
@@ -83,12 +87,14 @@ def _registration(effect: EffectDef) -> str:
     modifiers = "".join(
         f"\n                    .modifier({string_literal(modifier.attribute)}, "
         f"{string_literal(modifier_id(effect.id, modifier.attribute))}, {_double(modifier.game_amount)}, "
-        f"AttributeModifier.Operation.{_OPERATIONS[modifier.operation]})"
+        f"AttributeModifier.Operation.{_OPERATIONS[modifier.operation]}"
+        + (f", {_double(modifier.game_per_amplifier)})" if modifier.game_per_amplifier is not None else ")")
         for modifier in effect.modifiers
     )
+    stun = "\n                    .stuns()" if effect.stun else ""
     return (
         f"() -> new StatusEffect(MobEffectCategory.{_CATEGORIES[effect.category]}, {_hex(effect.color)},\n"
-        f"                    {_periodic(effect)}){modifiers}"
+        f"                    {_periodic(effect)}){stun}{modifiers}"
     )
 
 
@@ -118,9 +124,9 @@ def _registrations(content: Content) -> bytes:
         "import net.neoforged.neoforge.registries.DeferredRegister;\n"
         "\n"
         "/**\n"
-        " * Status effects generated from {@code content/effects/} (architecture 11.4): attribute modifiers, and damage or\n"
-        " * healing over time ({@link Periodic}). NeoForge registers attributes before status effects, so a modifier\n"
-        " * finds its attribute, ours included, when its effect is built.\n"
+        " * Status effects generated from {@code content/effects/} (architecture 11.4): attribute modifiers, damage or\n"
+        " * healing over time ({@link Periodic}) and stuns. NeoForge registers attributes before status effects, so a\n"
+        " * modifier finds its attribute, ours included, when its effect is built.\n"
         " */\n"
         "public final class GeneratedEffects {\n"
         "    public static final DeferredRegister<MobEffect> EFFECTS =\n"
@@ -144,7 +150,7 @@ def _expectation(effect: EffectDef) -> str:
     modifiers = ", ".join(
         f"new ModifierExpectation({string_literal(modifier.attribute)}, "
         f"{string_literal(modifier_id(effect.id, modifier.attribute))}, {_double(modifier.game_amount)}, "
-        f"{string_literal(modifier.operation)})"
+        f"{string_literal(modifier.operation)}, {_double(modifier.game_amount_at(1))})"
         for modifier in effect.modifiers
     )
     periodic = effect.periodic
@@ -161,7 +167,8 @@ def _expectation(effect: EffectDef) -> str:
         f"                    {string_literal(effect.category)},\n"
         f"                    {_hex(effect.color)},\n"
         f"                    List.of({modifiers}),\n"
-        f"                    {periodic_expectation})"
+        f"                    {periodic_expectation},\n"
+        f"                    {'true' if effect.stun else 'false'})"
     )
 
 
@@ -180,17 +187,24 @@ def _expectations(content: Content) -> bytes:
         " * fractions).\n"
         " */\n"
         "public final class GeneratedEffectExpectations {\n"
-        "    /** An attribute modifier at the first level (amplifier 0); vanilla multiplies it by the amplifier + 1. */\n"
-        "    public record ModifierExpectation(String attribute, String id, double amount, String operation) {\n"
+        "    /**\n"
+        "     * An attribute modifier at the first level (amplifier 0), and its amount at the second (amplifier 1): vanilla\n"
+        "     * multiplies it by the amplifier + 1, a per-amplifier growth adds its step instead.\n"
+        "     */\n"
+        "    public record ModifierExpectation(String attribute, String id, double amount, String operation,\n"
+        "            double secondLevelAmount) {\n"
         "    }\n"
         "\n"
         "    /** Damage or healing over time: one tick's amount at the first level, every {@code intervalTicks}. */\n"
         "    public record PeriodicExpectation(String type, String school, double amount, int intervalTicks) {\n"
         "    }\n"
         "\n"
-        "    /** Expected state of one effect: its category, particle colour (RGB), modifiers and periodic ticks. */\n"
+        "    /**\n"
+        "     * Expected state of one effect: its category, particle colour (RGB), modifiers, periodic ticks and whether\n"
+        "     * it stuns.\n"
+        "     */\n"
         "    public record EffectExpectation(String id, String descriptionId, String category, int color,\n"
-        "            List<ModifierExpectation> modifiers, Optional<PeriodicExpectation> periodic) {\n"
+        "            List<ModifierExpectation> modifiers, Optional<PeriodicExpectation> periodic, boolean stun) {\n"
         "    }\n"
         "\n"
         f"    public static final List<EffectExpectation> EFFECTS = {effects};\n"

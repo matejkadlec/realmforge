@@ -6,10 +6,11 @@ import org.junit.jupiter.api.Test;
 
 class DamageNumbersTest {
     @Test
-    void bigNumbersAreWhole() {
-        assertEquals("12", DamageNumbers.format(12.4));
-        assertEquals("13", DamageNumbers.format(12.5));
-        assertEquals("1500", DamageNumbers.format(1500.2));
+    void bigNumbersKeepOneDecimalToo() {
+        assertEquals("12.4", DamageNumbers.format(12.4));
+        assertEquals("27.7", DamageNumbers.format(15.4 * 1.8), "Reckless Strike's crit (Matěj, 2026-10-30)");
+        assertEquals("1500.2", DamageNumbers.format(1500.2));
+        assertEquals("28", DamageNumbers.format(27.96));
     }
 
     @Test
@@ -24,7 +25,7 @@ class DamageNumbersTest {
         assertEquals("20!", DamageNumbers.label(20, true, false));
         assertEquals("7.5", DamageNumbers.label(7.5, false, false));
         assertEquals("+4", DamageNumbers.label(4, false, true));
-        assertEquals("+12!", DamageNumbers.label(12.2, true, true), "a crit heal, for spells to come");
+        assertEquals("+12.2!", DamageNumbers.label(12.2, true, true), "a crit heal, for spells to come");
     }
 
     @Test

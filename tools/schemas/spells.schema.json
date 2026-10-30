@@ -30,14 +30,28 @@
       "properties": {
         "amplifier": {
           "default": 0,
-          "description": "Its strength above the first: 0 is Slowness I, 1 is Slowness II.",
+          "description": "Its strength above the first at spell level 1: 0 is Slowness I, 1 is Slowness II.",
           "maximum": 9,
           "minimum": 0,
           "title": "Amplifier",
           "type": "integer"
         },
+        "duration_per_level_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to the duration for every spell level above 1 (C4: a rank lasts longer).",
+          "title": "Duration Per Level Seconds"
+        },
         "duration_seconds": {
-          "description": "How long it lasts; more than 0, at most 60.",
+          "description": "How long it lasts at spell level 1; more than 0, at most 60.",
           "minimum": 0,
           "title": "Duration Seconds",
           "type": "number"
@@ -47,6 +61,14 @@
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
           "title": "Effect",
           "type": "string"
+        },
+        "stronger_at_levels": {
+          "description": "Spell levels (ranks) from which the amplifier is one higher, in ascending order: [5] makes Slowness I Slowness II from rank 5.",
+          "items": {
+            "type": "integer"
+          },
+          "title": "Stronger At Levels",
+          "type": "array"
         },
         "type": {
           "const": "realmforge:apply_effect",
@@ -88,6 +110,7 @@
             "discriminator": {
               "mapping": {
                 "realmforge:apply_effect": "#/$defs/ApplyEffectEffectDef",
+                "realmforge:cleanse": "#/$defs/CleanseEffectDef",
                 "realmforge:damage": "#/$defs/DamageEffectDef",
                 "realmforge:heal": "#/$defs/HealEffectDef",
                 "realmforge:knockback": "#/$defs/KnockbackEffectDef",
@@ -107,6 +130,9 @@
               },
               {
                 "$ref": "#/$defs/RemoveEffectEffectDef"
+              },
+              {
+                "$ref": "#/$defs/CleanseEffectDef"
               },
               {
                 "$ref": "#/$defs/KnockbackEffectDef"
@@ -350,6 +376,22 @@
       "title": "ChannelCastDef",
       "type": "object"
     },
+    "CleanseEffectDef": {
+      "additionalProperties": false,
+      "description": "Removes every harmful status effect from each target: debuffs, damage over time and loss of control such as a\nstun (the Human's Will To Survive, C4).",
+      "properties": {
+        "type": {
+          "const": "realmforge:cleanse",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "CleanseEffectDef",
+      "type": "object"
+    },
     "CostDef": {
       "additionalProperties": false,
       "description": "What a cast costs: an amount of a resource (mana or rage), growing per spell level like the effects.",
@@ -388,9 +430,24 @@
       "additionalProperties": false,
       "description": "How the spell crits (Matěj, 2026-10-15). By default every spell can crit, on the caster's crit chance, and a\ncrit deals or heals 1 + the caster's crit damage (150 % with the base 50 %). Talents (postponed, RLM-28) will\nchange all three.",
       "properties": {
+        "bonus_chance_per_level_percent": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 100,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to bonus_chance_percent for every spell level above 1.",
+          "title": "Bonus Chance Per Level Percent"
+        },
         "bonus_chance_percent": {
           "default": 0,
-          "description": "Crit chance in percent added to the caster's own for this spell.",
+          "description": "Crit chance in percent added to the caster's own for this spell, at spell level 1. A chance above 100 % in all turns into crit damage, 1 % for 1 % (C4).",
           "maximum": 100,
           "minimum": 0,
           "title": "Bonus Chance Percent",
@@ -454,6 +511,36 @@
           "title": "Amount",
           "type": "number"
         },
+        "armor_shred_per_level_percent": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 100,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to armor_shred_percent for every spell level above 1.",
+          "title": "Armor Shred Per Level Percent"
+        },
+        "armor_shred_percent": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 100,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Armor shred this hit adds to the caster's own, in percent at spell level 1: the share of the target's armor (after armor pierce) the hit ignores. Only a school that armor stops (physical).",
+          "title": "Armor Shred Percent"
+        },
         "attack_damage_percent": {
           "anyOf": [
             {
@@ -467,6 +554,36 @@
           "default": null,
           "description": "Share of the caster's attack damage added to the amount (100 adds all of it). Required for spells that scale with attack_damage, refused for spells that scale with spell_power.",
           "title": "Attack Damage Percent"
+        },
+        "penetration_per_level_percent": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 100,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to penetration_percent for every spell level above 1.",
+          "title": "Penetration Per Level Percent"
+        },
+        "penetration_percent": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 100,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Spell penetration, in percent at spell level 1: the share of the target's resistance to the school the hit ignores. Only a magic school.",
+          "title": "Penetration Percent"
         },
         "per_level": {
           "default": 0,
@@ -755,6 +872,7 @@
             "discriminator": {
               "mapping": {
                 "realmforge:apply_effect": "#/$defs/ApplyEffectEffectDef",
+                "realmforge:cleanse": "#/$defs/CleanseEffectDef",
                 "realmforge:damage": "#/$defs/DamageEffectDef",
                 "realmforge:heal": "#/$defs/HealEffectDef",
                 "realmforge:knockback": "#/$defs/KnockbackEffectDef",
@@ -774,6 +892,9 @@
               },
               {
                 "$ref": "#/$defs/RemoveEffectEffectDef"
+              },
+              {
+                "$ref": "#/$defs/CleanseEffectDef"
               },
               {
                 "$ref": "#/$defs/KnockbackEffectDef"
@@ -999,6 +1120,12 @@
       ],
       "title": "Cast"
     },
+    "castable_while_stunned": {
+      "default": false,
+      "description": "Whether a stunned caster may cast it, as the Human's Will To Survive breaks a stun; every other spell waits until the stun ends.",
+      "title": "Castable While Stunned",
+      "type": "boolean"
+    },
     "cooldown_seconds": {
       "default": 0,
       "description": "The spell's own cooldown; Cooldown Reduction shortens it.",
@@ -1033,6 +1160,7 @@
           "mapping": {
             "realmforge:apply_effect": "#/$defs/ApplyEffectEffectDef",
             "realmforge:area": "#/$defs/AreaEffectDef",
+            "realmforge:cleanse": "#/$defs/CleanseEffectDef",
             "realmforge:damage": "#/$defs/DamageEffectDef",
             "realmforge:dash": "#/$defs/DashEffectDef",
             "realmforge:heal": "#/$defs/HealEffectDef",
@@ -1055,6 +1183,9 @@
           },
           {
             "$ref": "#/$defs/RemoveEffectEffectDef"
+          },
+          {
+            "$ref": "#/$defs/CleanseEffectDef"
           },
           {
             "$ref": "#/$defs/KnockbackEffectDef"
@@ -1110,6 +1241,18 @@
       "title": "Npc Only",
       "type": "boolean"
     },
+    "requires": {
+      "description": "What a player needs in hand to cast it (RLM-499): melee_weapon (an item of realmforge:melee_weapons in the main hand) or shield (a shield in either hand). A player's physical spell that deals damage in melee names one. Mobs and bosses cast without it.",
+      "items": {
+        "enum": [
+          "melee_weapon",
+          "shield"
+        ],
+        "type": "string"
+      },
+      "title": "Requires",
+      "type": "array"
+    },
     "scales_with": {
       "description": "spell_power for magic schools, attack_damage for physical abilities (Matěj, 2026-10-15).",
       "enum": [
@@ -1120,10 +1263,19 @@
       "type": "string"
     },
     "school": {
-      "description": "The spell school whose damage it deals, e.g. realmforge:fire.",
-      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
-      "title": "School",
-      "type": "string"
+      "anyOf": [
+        {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The spell school whose damage it deals, e.g. realmforge:fire. A spell that neither deals damage nor heals may leave it out: it belongs to no school (Will To Survive, Matěj, 2026-10-30), and the spell bar frames it in black.",
+      "title": "School"
     },
     "targeting": {
       "description": "Who the spell can target.",
@@ -1173,7 +1325,6 @@
     "id",
     "name",
     "description",
-    "school",
     "scales_with",
     "targeting",
     "cast",

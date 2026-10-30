@@ -14,11 +14,12 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
 /**
  * One of our status effects, from {@code content/effects/} through {@code GeneratedEffects} (architecture 11.4):
- * vanilla's attribute modifiers, and damage or healing at the end of every interval ({@link Periodic}), which takes
- * the stats of the caster that applied it ({@link EffectTicks}).
+ * vanilla's attribute modifiers, damage or healing at the end of every interval ({@link Periodic}), which takes the
+ * stats of the caster that applied it ({@link EffectTicks}), and whether it stuns ({@link Stuns}, C4).
  */
 public class StatusEffect extends MobEffect {
     private final Optional<Periodic> periodic;
+    private boolean stuns;
 
     public StatusEffect(MobEffectCategory category, int color, Optional<Periodic> periodic) {
         super(category, color);
@@ -30,15 +31,41 @@ public class StatusEffect extends MobEffect {
         return periodic;
     }
 
+    /** Makes it a stun ({@link Stuns}); the generated registration calls it while it builds the effect. */
+    public StatusEffect stuns() {
+        stuns = true;
+        return this;
+    }
+
+    /** Whether it is a stun: its holder neither attacks nor casts, and a mob's AI stands still. */
+    public boolean isStun() {
+        return stuns;
+    }
+
     /**
      * Adds the modifier {@code id} on {@code attribute} (both full ids), its amount at the first level. NeoForge
      * registers attributes before status effects, so the attribute, ours included, exists when the effect is built.
      */
     public StatusEffect modifier(String attribute, String id, double amount, AttributeModifier.Operation operation) {
-        Holder<Attribute> holder = BuiltInRegistries.ATTRIBUTE.get(Identifier.parse(attribute))
-                .orElseThrow(() -> new IllegalStateException("No attribute " + attribute + " for a status effect"));
-        addAttributeModifier(holder, Identifier.parse(id), amount, operation);
+        addAttributeModifier(attribute(attribute), Identifier.parse(id), amount, operation);
         return this;
+    }
+
+    /**
+     * Adds the modifier {@code id} on {@code attribute} that gives {@code amount} at the first level and
+     * {@code perAmplifier} more at each level above it, instead of vanilla's multiplying by the level (Battle Shout's
+     * 10, 15 and 20 %): NeoForge's attribute curve.
+     */
+    public StatusEffect modifier(String attribute, String id, double amount, AttributeModifier.Operation operation,
+            double perAmplifier) {
+        addAttributeModifier(attribute(attribute), Identifier.parse(id), operation,
+                amplifier -> amount + perAmplifier * amplifier);
+        return this;
+    }
+
+    private static Holder<Attribute> attribute(String attribute) {
+        return BuiltInRegistries.ATTRIBUTE.get(Identifier.parse(attribute))
+                .orElseThrow(() -> new IllegalStateException("No attribute " + attribute + " for a status effect"));
     }
 
     @Override

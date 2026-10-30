@@ -1,0 +1,65 @@
+{
+  "name": "spell.realmforge.fireball.name",
+  "description": "spell.realmforge.fireball.description",
+  "school": "realmforge:fire",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:direction",
+    "range": 40.0
+  },
+  "cast": {
+    "castable_while_moving": false,
+    "lock_on": false,
+    "keep_sight": false,
+    "type": "cast_time",
+    "duration_ticks": 30,
+    "forms_projectile": true
+  },
+  "cost": {
+    "amount": 12.0,
+    "per_level": 0,
+    "resource": "realmforge:mana"
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 10,
+  "max_level": 5,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
+  "effects": [
+    {
+      "type": "realmforge:projectile",
+      "speed": 30.0,
+      "size": 0.5,
+      "effects": [
+        {
+          "amount": 8.0,
+          "per_level": 2.0,
+          "type": "realmforge:damage"
+        },
+        {
+          "type": "realmforge:apply_effect",
+          "effect": "realmforge:burning",
+          "duration_ticks": 80,
+          "duration_per_level_ticks": 10,
+          "amplifier": 0,
+          "stronger_at_levels": [
+            5
+          ]
+        }
+      ],
+      "impact": {
+        "sound": "minecraft:entity.generic.extinguish_fire",
+        "particles": "minecraft:magma_block"
+      },
+      "appearance": {
+        "model": "orb",
+        "color": "#FF7F1F"
+      }
+    }
+  ]
+}

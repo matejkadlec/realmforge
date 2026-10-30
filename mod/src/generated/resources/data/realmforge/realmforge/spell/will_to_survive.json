@@ -1,0 +1,26 @@
+{
+  "name": "spell.realmforge.will_to_survive.name",
+  "description": "spell.realmforge.will_to_survive.description",
+  "scales_with": "attack_damage",
+  "targeting": {
+    "type": "realmforge:self"
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cooldown_ticks": 1200,
+  "global_cooldown_ticks": 10,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": true,
+  "effects": [
+    {
+      "type": "realmforge:cleanse"
+    }
+  ]
+}

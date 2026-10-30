@@ -31,6 +31,7 @@ public final class StateCommands {
     public static final List<Entry> ATTACHMENTS = List.of(
             new Entry("level", StatsAttachments.LEVEL),
             new Entry("character", CharacterAttachments.CHARACTER),
+            new Entry("starting_kit", CharacterAttachments.STARTING_KIT),
             new Entry("spellbook", SpellAttachments.SPELLBOOK),
             new Entry("combat", SpellAttachments.COMBAT),
             new Entry("talents", TalentAttachments.TALENTS));

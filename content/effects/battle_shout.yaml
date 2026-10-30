@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../tools/schemas/effects.schema.json
+# The Warrior's Battle Shout (C4): +10 % attack damage at Battle Shout I and 5 % more at each level above it (II and
+# III from the spell's ranks 2 and 3, Matěj, 2026-10-30), for the Warrior and every ally the shout reaches.
+id: battle_shout
+name: {en_us: Battle Shout}
+category: beneficial
+color: "#F5241B"
+modifiers:
+  - {attribute: minecraft:attack_damage, operation: add_multiplied_total, amount_percent: 10, per_amplifier_percent: 5}

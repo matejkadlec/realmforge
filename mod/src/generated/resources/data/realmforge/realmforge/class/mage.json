@@ -55,5 +55,23 @@
       "item": "minecraft:bread",
       "count": 32
     }
+  ],
+  "spells": [
+    {
+      "spell": "realmforge:frostbolt",
+      "level": 1
+    },
+    {
+      "spell": "realmforge:fireball",
+      "level": 3
+    },
+    {
+      "spell": "realmforge:arcane_missiles",
+      "level": 5
+    },
+    {
+      "spell": "realmforge:ice_barrier",
+      "level": 8
+    }
   ]
 }

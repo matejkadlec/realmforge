@@ -31,6 +31,15 @@ texts:
   # %1$s is the resource's name (Mana, Rage).
   not_enough_resource:
     en_us: Not enough %1$s
+  # A stun (C4) keeps every spell but Will To Survive from being cast.
+  stunned:
+    en_us: You are stunned
+  # A melee spell without a melee weapon in the main hand (Matěj, 2026-10-29, RLM-499).
+  no_melee_weapon:
+    en_us: You need a melee weapon in your main hand
+  # A shield strike (Shield Bash) without a shield in either hand.
+  no_shield:
+    en_us: You need a shield in your hand
   # The cast bar when the caster's side ended a cast: a knockback, death, a cancel, a new spell.
   interrupted:
     en_us: Interrupted

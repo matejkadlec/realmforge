@@ -10,7 +10,11 @@ import io.github.matejkadlec.realmforge.character.CharacterRegistries;
 import io.github.matejkadlec.realmforge.character.Characters;
 import io.github.matejkadlec.realmforge.character.PlayerClass;
 import io.github.matejkadlec.realmforge.character.Race;
+import io.github.matejkadlec.realmforge.spell.SpellAttachments;
+import io.github.matejkadlec.realmforge.spell.Spellbook;
 import io.github.matejkadlec.realmforge.stats.CharacterStats;
+import io.github.matejkadlec.realmforge.stats.EntityLevel;
+import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -26,9 +30,11 @@ import net.minecraft.server.level.ServerPlayer;
  * <ul>
  *   <li>{@code /qa character show [<player>]} prints the player's race, classes and character XP.</li>
  *   <li>{@code /qa character reset [<player>]} removes the character, so the creation screen opens again and the race
- *   and class modifiers go; the items of the starting kit stay, as does the level.</li>
+ *   and class modifiers go; the level falls back to 1 and the spellbook empties (C4), and the items of the starting
+ *   kit stay.</li>
  *   <li>{@code /qa character create <race> <class> [<player>]} creates a character as the screen does, with the same
- *   rules and the starting kit, and says why when it refuses.</li>
+ *   rules, and says why when it refuses. The starting kit comes with a player's first character only, so a character
+ *   created after a reset brings none (Matěj, 2026-10-30).</li>
  * </ul>
  */
 public final class CharacterCommands {
@@ -64,11 +70,14 @@ public final class CharacterCommands {
 
     /**
      * Removes the player's character and recomputes their stats, so the race and class modifiers go and the client
-     * opens the creation screen again. Returns whether the player had one.
+     * opens the creation screen again. The level falls back to 1 and the spellbook empties with it (C4: the next
+     * character learns its own class's spells). Returns whether the player had one.
      */
     public static boolean reset(ServerPlayer player) {
         boolean had = Characters.exists(player);
         player.removeData(CharacterAttachments.CHARACTER);
+        player.setData(StatsAttachments.LEVEL, new EntityLevel(EntityLevel.MIN));
+        player.setData(SpellAttachments.SPELLBOOK, Spellbook.EMPTY);
         CharacterStats.recompute(player);
         player.setHealth(Math.min(player.getHealth(), player.getMaxHealth()));
         return had;

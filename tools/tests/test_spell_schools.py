@@ -12,7 +12,7 @@ from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import RepoPaths
 from realmforge_tools.schema.spell_school import SpellSchoolDef
 from realmforge_tools.validate import load_and_validate
-from tests.conftest import write
+from tests.conftest import drop_class_kits, write
 
 DATA = "mod/src/generated/resources/data"
 SCHOOL_DATA = f"{DATA}/realmforge/realmforge/spell_school"
@@ -244,6 +244,11 @@ def test_no_magic_school_writes_no_armor_tag(repo: RepoPaths) -> None:
     for file in (repo.content / "spells").glob("astone_*.yaml"):
         file.unlink()
     (repo.content / "kill_xp_multipliers" / "astone.yaml").unlink()
+    # The Warrior's Battle Shout and Shield Bash apply effects of no school, which went, and the class kits name the
+    # spells that went.
+    for name in ("battle_shout", "shield_bash"):
+        (repo.content / "spells" / f"{name}.yaml").unlink()
+    drop_class_kits(repo.content)
     files = generate(repo)
     assert f"{TAGS}/bypasses_cooldown.json" in files
     assert json.loads(files[f"{TAGS}/no_knockback.json"]) == {"values": ["realmforge:physical"]}
@@ -281,12 +286,13 @@ def test_keys_and_expectations_cover_every_school(repo: RepoPaths) -> None:
 
 
 def test_no_schools_still_compile(repo: RepoPaths) -> None:
-    # Spells and effects name their school, so they go too, and the mobs and bosses that cast the spells, and Astone's
-    # kill XP rank, which names her body.
+    # Spells and effects name their school, so they go too, and the mobs and bosses that cast the spells, the class
+    # kits that teach them, and Astone's kill XP rank, which names her body.
     for folder in ("spell_schools", "spells", "effects", "mobs", "bosses"):
         for file in (repo.content / folder).glob("*.yaml"):
             file.unlink()
     (repo.content / "kill_xp_multipliers" / "astone.yaml").unlink()
+    drop_class_kits(repo.content)
     files = generate(repo)
     assert "ALL = List.of();" in files[KEYS_JAVA].decode()
     assert "SPELL_SCHOOLS = List.of();" in files[EXPECTATIONS].decode()

@@ -23,6 +23,12 @@ public final class GeneratedTexts {
     /** {@code cast.realmforge.no_line_of_sight} from {@code content/texts/cast.yaml}: "Target not in line of sight" */
     public static final String CAST_NO_LINE_OF_SIGHT = "cast.realmforge.no_line_of_sight";
 
+    /** {@code cast.realmforge.no_melee_weapon} from {@code content/texts/cast.yaml}: "You need a melee weapon in your main hand" */
+    public static final String CAST_NO_MELEE_WEAPON = "cast.realmforge.no_melee_weapon";
+
+    /** {@code cast.realmforge.no_shield} from {@code content/texts/cast.yaml}: "You need a shield in your hand" */
+    public static final String CAST_NO_SHIELD = "cast.realmforge.no_shield";
+
     /** {@code cast.realmforge.no_target} from {@code content/texts/cast.yaml}: "You have no target" */
     public static final String CAST_NO_TARGET = "cast.realmforge.no_target";
 
@@ -43,6 +49,9 @@ public final class GeneratedTexts {
 
     /** {@code cast.realmforge.out_of_range} from {@code content/texts/cast.yaml}: "Out of range" */
     public static final String CAST_OUT_OF_RANGE = "cast.realmforge.out_of_range";
+
+    /** {@code cast.realmforge.stunned} from {@code content/texts/cast.yaml}: "You are stunned" */
+    public static final String CAST_STUNNED = "cast.realmforge.stunned";
 
     /** {@code cast.realmforge.target_lost} from {@code content/texts/cast.yaml}: "Target lost" */
     public static final String CAST_TARGET_LOST = "cast.realmforge.target_lost";
@@ -148,6 +157,9 @@ public final class GeneratedTexts {
 
     /** {@code gui.realmforge.origin_race} from {@code content/texts/gui.yaml}: "Race: %1$s" */
     public static final String GUI_ORIGIN_RACE = "gui.realmforge.origin_race";
+
+    /** {@code gui.realmforge.origin_racial_ability} from {@code content/texts/gui.yaml}: "Racial Ability" */
+    public static final String GUI_ORIGIN_RACIAL_ABILITY = "gui.realmforge.origin_racial_ability";
 
     /** {@code gui.realmforge.other_stats} from {@code content/texts/gui.yaml}: "Other" */
     public static final String GUI_OTHER_STATS = "gui.realmforge.other_stats";
@@ -409,6 +421,9 @@ public final class GeneratedTexts {
 
     /** {@code message.realmforge.shield_locked} from {@code content/texts/message.yaml}: "You can't use this now." */
     public static final String MESSAGE_SHIELD_LOCKED = "message.realmforge.shield_locked";
+
+    /** {@code message.realmforge.spell_learned} from {@code content/texts/message.yaml}: "You have learned a new spell: %1$s" */
+    public static final String MESSAGE_SPELL_LEARNED = "message.realmforge.spell_learned";
 
     /** {@code message.realmforge.stat_points_none_spent} from {@code content/texts/message.yaml}: "You have no spent stat points to unlearn." */
     public static final String MESSAGE_STAT_POINTS_NONE_SPENT = "message.realmforge.stat_points_none_spent";

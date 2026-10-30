@@ -1,0 +1,50 @@
+{
+  "name": "spell.realmforge.battle_shout.name",
+  "description": "spell.realmforge.battle_shout.description",
+  "school": "realmforge:physical",
+  "scales_with": "attack_damage",
+  "targeting": {
+    "type": "realmforge:self"
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cost": {
+    "amount": 10.0,
+    "per_level": 0,
+    "resource": "realmforge:rage"
+  },
+  "cooldown_ticks": 1200,
+  "global_cooldown_ticks": 10,
+  "max_level": 3,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
+  "effects": [
+    {
+      "type": "realmforge:area",
+      "radius": 10.0,
+      "duration_ticks": 10,
+      "interval_ticks": 10,
+      "affects": "allies",
+      "effects": [
+        {
+          "type": "realmforge:apply_effect",
+          "effect": "realmforge:battle_shout",
+          "duration_ticks": 200,
+          "duration_per_level_ticks": 100,
+          "amplifier": 0,
+          "stronger_at_levels": [
+            2,
+            3
+          ]
+        }
+      ],
+      "ring_color": "#F5241B"
+    }
+  ]
+}

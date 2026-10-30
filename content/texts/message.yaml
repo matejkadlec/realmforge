@@ -21,6 +21,10 @@ texts:
   level_cap_raised:
     en_us: "%1$s complete! Your level cap is now %2$s."
   # Stat points (RLM-196). After a level-up (%1$s the unspent points, %2$s the character sheet's key).
+  # In chat when a level teaches a class spell (C4), %1$s the spell's name; it goes into the spell bar's first empty
+  # slot.
+  spell_learned:
+    en_us: "You have learned a new spell: %1$s"
   stat_points_unspent:
     en_us: "Unspent stat points: %1$s. Press %2$s to spend them on your character sheet."
   # The Scroll of Oblivion returned every spent point (%1$s the unspent points now).
