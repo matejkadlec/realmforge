@@ -133,6 +133,15 @@ versionRange = "*"
 ordering = "NONE"
 side = "CLIENT"
 
+# Inventory Sorting leaves Sophisticated Backpacks' backpacks in their slots, so an open backpack stays open (RLM-519,
+# architecture 19.4).
+[[dependencies.realmforge]]
+modId = "inventorysorter"
+type = "optional"
+versionRange = "*"
+ordering = "NONE"
+side = "CLIENT"
+
 # stats/AttributeCaps raises vanilla's attribute caps through a mixin accessor (architecture 8.4), and
 # dungeon/instance/InstanceRules lets Adventure mode break the blocks an instance allows (15.5); architecture 19.3.
 [[mixins]]

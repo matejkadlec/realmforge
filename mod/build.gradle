@@ -125,6 +125,9 @@ dependencies {
     compileOnly packModrinthMod('puzzles-lib')
     // FTB Teams' parties are off, so quest progress stays per player (compat/ftbteams, RLM-206).
     compileOnly packCurseForgeMod('ftb-teams-forge')
+    // Inventory Sorting leaves backpacks in their slots, so an open backpack stays open (client/compat/inventorysorter,
+    // RLM-519).
+    compileOnly packModrinthMod('inventory-sorting')
 
     testImplementation platform("org.junit:junit-bom:${junit_version}")
     testImplementation 'org.junit.jupiter:junit-jupiter'
