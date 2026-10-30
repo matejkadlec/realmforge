@@ -165,7 +165,7 @@ The QA mod may call the core mod's public APIs; the core mod never depends on th
 io.github.matejkadlec.realmforge
 ├─ Realmforge         entry point: registers every feature in a fixed order
 ├─ generated/         output of `rf gen` (never edit)
-├─ core/              shared infrastructure: registry keys, codec helpers, requirements, curves
+├─ core/              shared infrastructure: registry keys, codec helpers, requirements, curves, the welcome line
 ├─ network/           payload registration (one place), versioned by the mod version
 ├─ progression/       chapters, criteria triggers, statistics: the bridge to quests
 ├─ stats/             attributes, entity levels, stat sources, derived stats, caps
@@ -3564,11 +3564,14 @@ changes. Once they settle they can move into content.
 
 Last resort, only where no event or API exists. Each one sits in `mixin/` (or the access transformer file) with a
 comment saying why, and gets a test. A mod lists its mixins in `<modid>.mixins.json`, which `neoforge.mods.toml`
-names under `[[mixins]]`. The core mod has three: `RangedAttributeAccessor`, which raises attribute caps
+names under `[[mixins]]`. The core mod has four: `RangedAttributeAccessor`, which raises attribute caps
 ([8.4](#84-caps)) and caps two of Apothic Attributes' down ([19.4](#194-optional-integrations)),
-`PlayerBlockActionMixin`, which lets Adventure mode break the allowlist inside instances ([15.5](#155-instances)), and
+`PlayerBlockActionMixin`, which lets Adventure mode break the allowlist inside instances ([15.5](#155-instances)),
 `PlayerExhaustionMixin`, which lowers a player's food exhaustion by their Stamina ([8.1](#81-the-attribute-set);
-`StaminaGameTests`). The QA mod has one too, for tests only: `GameTestServerMixin` gives the GameTest world the data
+`StaminaGameTests`), and `InventorySortingStacksMixin`, which keeps a stack that Inventory Sorting's sort would only
+replace with an identical copy, so an open backpack stays open ([19.4](#194-optional-integrations), RLM-519;
+`InventorySortingGameTests`). It targets another mod's class by name and is `@Pseudo`, so the core mod loads without
+Inventory Sorting; with it, its injector is required, so a changed target fails at load. The QA mod has one too, for tests only: `GameTestServerMixin` gives the GameTest world the data
 pack dimensions, which vanilla leaves out ([20](#20-tests-per-layer)).
 
 Access transformers live in `src/main/resources/META-INF/accesstransformer.cfg`, which ModDevGradle applies to the
@@ -3653,6 +3656,31 @@ height (`Window#getGuiScaledHeight`) every client tick (`ClientTickEvent.Post`),
 the config is loaded (`ConfigDataHolder#isAvailable`; earlier, Puzzles Lib logs an error and hands out a default copy)
 and leaves any other corner alone. The core mod compiles against the pack's builds of Pick Up Notifier and Puzzles
 Lib; `neoforge.mods.toml` names Pick Up Notifier as an optional client dependency.
+
+**Inventory Sorting and Sophisticated Backpacks** (RLM-519,
+[ADR 0065](decisions/0065-inventory-sorting-leaves-backpacks-in-their-slots.md)): with a backpack open from the
+inventory, `;` over the player's slots sorts the inventory through Inventory Sorting, and a sort that moved the
+backpack, or wrote it back as another stack object, closed its screen: Sophisticated Core closes a backpack opened from
+a slot when that slot's stack is no longer the one it opened (`BackpackContainer#storageItemHasChanged`). Two parts keep
+it open:
+
+- `client/compat/inventorysorter/BackpacksStayInPlace` adds a sort priority rule, every backpack tier with the
+  position `ignore` (`compat/inventorysorter/BackpackSortRule`), to Inventory Sorting's loaded client config, in memory,
+  on `ClientPlayerNetworkEvent.LoggingIn` at the highest priority, before Inventory Sorting's own listener sends the
+  rules to the server, which sorts by them. The player's `config/inventorysorter.json` and their own rules stay as they
+  are; the pack ships no copy of that file, which would overwrite them. Like Pick Up Notifier's, it changes the mod's
+  loaded config, compiled against the pack's build (`compileOnly`, read from `pack/mods/inventory-sorting.pw.toml`),
+  and runs only while both mods are loaded; `neoforge.mods.toml` names Inventory Sorting as an optional client
+  dependency.
+- `mixin/InventorySortingStacksMixin` ([19.3](#193-mixins-and-access-transformers)): an ignored stack keeps its slot,
+  but Inventory Sorting writes a copy of it back; the mixin leaves a slot alone whose sorted stack matches the stack
+  there (`ItemStack#matches`), so the backpack keeps its very stack.
+
+Which side a press of `;` sorts is the mods' own split ([ADR 0062](decisions/0062-backpack-keys-and-alt-k-amend-the-pack-defaults.md)):
+Sophisticated Core over a backpack slot or no slot, Inventory Sorting (the 27 main slots, never the hotbar or the
+armour) over the player's own. `InventorySortingGameTests` run the pack's Inventory Sorting with the rule (`/invsort
+priority add`, `/invsort sortme`): both backpacks keep their slots and the same stacks while the rest sorts to the
+front, and without the rule a lone backpack moves.
 
 **FTB Teams' parties are off** (RLM-206,
 [ADR 0053](decisions/0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md)): FTB Quests
@@ -3770,6 +3798,27 @@ Checked against our systems (RLM-271), with nothing to fix:
 - Dungeon building runs under a per-tick time budget.
 - The network carries changes, not full state every tick.
 - A spark profile before every release; nightly profiles later ([ADR 0010](decisions/0010-testing-strategy.md)).
+
+### 19.6 The welcome message and the version
+
+On joining a world, once per login (`PlayerEvent.PlayerLoggedInEvent`, never on a respawn or a dimension change), a
+player gets one chat line from `core/WelcomeMessage`: "Welcome to Realmforge v0.0.1 (Alpha)" (RLM-520, Matěj's format
+of 2026-10-29), the same everywhere, the dev client included.
+
+- **The version** is the mod's own, from its metadata (`IModInfo#getVersion`), without the jar's `+mc<minecraft>`
+  suffix. Its source is `mod_version` in `gradle.properties`; the pack's version in `pack/pack.toml` names the same
+  release, and `tools/tests/test_versions.py` keeps the two equal. The mod's version, not the pack's, because the
+  server sends the line and only the mod's metadata is in the game. It changes only with a release: 0.0.1 until the
+  first release (v0.1.0), each later milestone a minor version, the complete v1 1.0.0.
+- **The phase** is `mod_phase` next to it: Alpha until the game is feature-complete, then Beta, then empty from v1.0.0,
+  which leaves out the parentheses (`message.realmforge.welcome` instead of `welcome_phase`). `neoforge.mods.toml`
+  hands it to the mod as the property `phase` (`[modproperties.realmforge]`, `IModInfo#getModProperties`).
+- **FTB Library's "Hello from FTB Library!"** shows only in a development environment (its `Platform#isDev` is
+  `!FMLEnvironment.isProduction()`), never in the pack, and has no config. The QA mod's dev client drops it
+  (`qa/client/FtbLibraryGreetingFilter`, `ClientChatReceivedEvent.System`), so the dev client shows only our line too.
+- `WelcomeGameTests` log a player in and read the chat lines it was sent: one welcome line with the mod's version and
+  phase, none on a respawn, and FTB Library's greeting matched by the filter's check; `WelcomeMessageTest` checks the
+  line's shape.
 
 ## 20. Tests per layer
 
