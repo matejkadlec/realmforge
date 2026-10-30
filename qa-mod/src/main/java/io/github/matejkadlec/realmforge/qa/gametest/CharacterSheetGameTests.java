@@ -91,12 +91,13 @@ public final class CharacterSheetGameTests {
         Row milestone = rowById(helper, view, strength + "/3");
         helper.assertValueEqual(milestone.label().getString(), "At 25: +25% Attack Damage, +5 Armor Pierce",
                 "Strength's second milestone");
-        helper.assertValueEqual(milestone.color(), CharacterSheetView.BONUS, "the milestone is reached at 25");
+        helper.assertValueEqual(milestone.color(), CharacterSheetView.MILESTONE, "the milestone is reached at 25");
+        helper.assertValueEqual(perPoint.color(), CharacterSheetView.BONUS, "what each point gives");
         String vitality = GeneratedStats.VITALITY.value().getDescriptionId();
         // A player without a character gets no role's bonus, so Vitality lists health and regeneration only.
         helper.assertValueEqual(rowById(helper, view, vitality + "/1").label().getString(),
                 "+2 Health Regeneration", "10 Vitality's health regeneration");
-        helper.assertValueEqual(rowById(helper, view, vitality + "/2").color(), CharacterSheetView.BONUS,
+        helper.assertValueEqual(rowById(helper, view, vitality + "/2").color(), CharacterSheetView.MILESTONE,
                 "Vitality's 10 is reached");
         helper.assertValueEqual(rowById(helper, view, vitality + "/3").color(), CharacterSheetView.AHEAD,
                 "Vitality's 25 is still ahead");

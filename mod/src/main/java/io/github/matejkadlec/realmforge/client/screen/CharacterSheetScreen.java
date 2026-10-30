@@ -176,9 +176,9 @@ public final class CharacterSheetScreen extends Screen {
             hoveredSpend = over ? spend : hoveredSpend;
             graphics.fill(spend.x(), spend.y(), spend.x() + SPEND_SIZE, spend.y() + SPEND_SIZE,
                     over ? SPEND_FILL_HOVER : SPEND_FILL);
-            graphics.outline(spend.x(), spend.y(), SPEND_SIZE, SPEND_SIZE, CharacterSheetView.BONUS);
+            graphics.outline(spend.x(), spend.y(), SPEND_SIZE, SPEND_SIZE, CharacterSheetView.CHOICE);
             graphics.centeredText(font, "+", spend.x() + SPEND_SIZE / 2 + 1, spend.y() + 1,
-                    over ? HEADING : CharacterSheetView.BONUS);
+                    over ? HEADING : CharacterSheetView.CHOICE);
         }
         pose.popMatrix();
         if (hoveredSpend != null) {

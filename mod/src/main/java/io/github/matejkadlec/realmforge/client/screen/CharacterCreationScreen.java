@@ -199,7 +199,7 @@ public final class CharacterCreationScreen extends Screen {
         lines.add(new Line(option.description(), TEXT, false));
         boolean first = true;
         for (Component bonus : option.bonuses()) {
-            lines.add(new Line(bonus, CharacterSheetView.BONUS, first));
+            lines.add(new Line(bonus, CharacterSheetView.CHOICE, first));
             first = false;
         }
         return lines;
@@ -210,7 +210,7 @@ public final class CharacterCreationScreen extends Screen {
         lines.add(new Line(option.description(), TEXT, false));
         lines.add(new Line(option.resource(), HEADING, true));
         for (Component bonus : option.bonuses()) {
-            lines.add(new Line(bonus, CharacterSheetView.BONUS, false));
+            lines.add(new Line(bonus, CharacterSheetView.CHOICE, false));
         }
         if (!option.startingKit().isEmpty()) {
             lines.add(new Line(Component.translatable(GeneratedTexts.GUI_STARTING_KIT)

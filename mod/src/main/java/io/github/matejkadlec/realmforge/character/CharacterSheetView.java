@@ -51,11 +51,19 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
     /** The id prefix of the Origin tab's rows, for tests: {@code origin/race/description}, ... */
     public static final String ORIGIN = "origin/";
 
-    /** Text colours the screen draws with: section titles, rows, reached bonuses and bonuses still ahead. */
+    /**
+     * Text colours the screen draws with: section titles, rows, what a primary stat or the race gives in vanilla's
+     * yellow ({@code ChatFormatting.YELLOW}), the milestones a stat has reached in vanilla's gold
+     * ({@code ChatFormatting.GOLD}) and those still ahead in gray (Matěj, 2026-10-30: the green the bonuses had read
+     * badly).
+     */
     public static final int TITLE = 0xFFFFD24D;
     public static final int STAT = 0xFFFFFFFF;
-    public static final int BONUS = 0xFF7FD97F;
+    public static final int BONUS = 0xFFFFFF55;
+    public static final int MILESTONE = 0xFFFFAA00;
     public static final int AHEAD = 0xFF8C8C8C;
+    /** What a choice would give: the {@code +} that spends a stat point, and character creation's bonus lines. */
+    public static final int CHOICE = 0xFF7FD97F;
     /** Descriptions on the Origin tab. */
     public static final int TEXT = 0xFFC8C8C8;
 
@@ -410,7 +418,8 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
                 continue;
             }
             Component label = Component.translatable(GeneratedTexts.GUI_STAT_MILESTONE, milestone.points(), bonuses);
-            rows.add(new Row(id + "/" + rows.size(), label, "", true, points >= milestone.points() ? BONUS : AHEAD));
+            rows.add(new Row(id + "/" + rows.size(), label, "", true, points >= milestone.points() ? MILESTONE
+                    : AHEAD));
         }
         return rows;
     }

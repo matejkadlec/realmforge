@@ -3263,9 +3263,11 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   - The character sheet (`client/screen/CharacterSheetScreen`, opened and closed by `client/input/CharacterSheetKey`,
     K by default) draws `character/CharacterSheetView`: the player's name and level in bold ("Steve · Lv. 12"),
     then four tabs of two columns (a click, the number keys, Tab or the arrow keys switch them). The heading and the
-    selected tab are white, and gold marks only the section titles. Stats: the primary stats with what they give the
-    player's class role and their milestones (a player without a character sees the role-free bonuses,
-    [8.3](#83-derived-stats-and-milestones)), and the other attributes (luck, Stamina right below it, mining speed,
+    selected tab are white, and gold marks the section titles. Stats: the primary stats with what they give the
+    player's class role (a player without a character sees the role-free bonuses,
+    [8.3](#83-derived-stats-and-milestones)) in vanilla's yellow, and their milestones in vanilla's gold once reached
+    and gray while ahead (Matěj, 2026-10-30: the green they had read badly; a race's bonuses on Origin are yellow
+    too, while the `+` and character creation's bonus lines stay green), and the other attributes (luck, Stamina right below it, mining speed,
     reach, movement speed, swimming speed, the XP multiplier); Combat: offense, and defense with spell resistance last; Magic: spells (max mana, mana regeneration,
     spell power, cooldown and cast time reduction) and the spell schools' power and resistance; Origin (C1): the race
     with its description and what it gives (its racial passive and active once spells exist), and the class with its
