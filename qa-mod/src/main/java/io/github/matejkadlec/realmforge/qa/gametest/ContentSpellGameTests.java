@@ -108,6 +108,7 @@ public final class ContentSpellGameTests {
                     expected.requires(), id + " requires");
             helper.assertValueEqual(spell.castableWhileStunned(), expected.castableWhileStunned(),
                     id + " castable while stunned");
+            helper.assertValueEqual(spell.isPassive(), expected.passive(), id + " passive");
             helper.assertValueEqual(spell.effects().stream().map(ContentSpellGameTests::effect).toList(),
                     expected.effects(), id + " effects");
         }

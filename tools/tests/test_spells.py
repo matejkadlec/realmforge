@@ -89,6 +89,10 @@ def test_repository_spells_are_the_class_kits_engine_tests_stoneform_and_astones
         "fireball",
         "arcane_missiles",
         "will_to_survive",
+        # The first passive spells (RLM-541), of the M1 trees (RLM-542, RLM-543).
+        "improved_frostbolt",
+        "shatter",
+        "two_handed_weapon_specialization",
         # Astone's (W5b, RLM-491).
         "astone_boulder",
         "astone_cracked_stone",
@@ -134,7 +138,7 @@ def test_repository_spells_are_the_class_kits_engine_tests_stoneform_and_astones
 @pytest.mark.parametrize(
     ("fields", "expected"),
     [
-        ({"effects": []}, "at least 1 item"),
+        ({"effects": []}, "an active spell has at least one effect"),
         ({"effects": [{"type": "realmforge:fly", "amount": 1}]}, "does not match any of the expected tags"),
         ({"effects": [{"type": "realmforge:damage", "amount": -1}]}, "greater than or equal to 0"),
         (
@@ -432,11 +436,12 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
     assert 'public static final ResourceKey<Spell> TEST_BOLT = key("test_bolt");' in keys
     assert (
         "ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, "
-        "ASTONE_SHOCKWAVE, BATTLE_SHOUT, FIREBALL, FROSTBOLT, ICE_BARRIER, RECKLESS_STRIKE, SHIELD_BASH, SLAM, "
-        "STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, "
-        "TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, "
-        "TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, "
-        "TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TITAN_HARDEN, WILL_TO_SURVIVE);"
+        "ASTONE_SHOCKWAVE, BATTLE_SHOUT, FIREBALL, FROSTBOLT, ICE_BARRIER, IMPROVED_FROSTBOLT, RECKLESS_STRIKE, "
+        "SHATTER, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, "
+        "TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, "
+        "TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, "
+        "TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, "
+        "TEST_TITAN_HARDEN, TWO_HANDED_WEAPON_SPECIALIZATION, WILL_TO_SURVIVE);"
     ) in keys
     expectations = files[EXPECTATIONS].decode()
     assert (
@@ -470,6 +475,7 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "                    0.0,\n"
         "                    false,\n"
         "                    List.of(),\n"
+        "                    false,\n"
         "                    false,\n"
         "                    List.of(\n"
         '                            new EffectExpectation("realmforge:damage", '
@@ -1238,3 +1244,76 @@ def test_a_cast_sound_must_exist(repo: RepoPaths) -> None:
         + STONE_PROJECTILE,
     )
     assert_problem(repo, "cast.sound: unknown id 'realmforge:spell.nothing'")
+
+
+# RLM-541: passive spells, learned with ranks and never cast.
+
+PASSIVE = (
+    "max_level: 3\n"
+    "passive:\n"
+    "  spell_damage:\n"
+    "    - {spells: [realmforge:frostbolt], damage_percent: 5, damage_per_level_percent: 5}\n"
+)
+
+
+def test_a_passive_spell_names_no_cast_and_reads_its_rank(repo: RepoPaths) -> None:
+    spell(
+        repo, "keen_frost", "name: {en_us: Keen Frost}\ndescription: {en_us: '+{spell_damage}%'}\n" + PASSIVE
+    )
+    content, _ = load_and_validate(repo)
+    passive = next(entry.model for entry in content.spells if entry.model.id == "keen_frost")
+    assert passive.is_passive
+    assert passive.passive is not None and passive.passive.spell_damage[0].damage_at(3) == 15
+    data = json.loads(generate(repo)[f"{SPELL_DATA}/keen_frost.json"])
+    assert data["effects"] == [] and data["targeting"] == {"type": "realmforge:self"}
+    assert data["passive"]["spell_damage"][0] == {
+        "spells": ["realmforge:frostbolt"],
+        "damage": 0.05,
+        "damage_per_level": 0.05,
+    }
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        (PASSIVE + "cooldown_seconds: 3\n", "a passive spell is never cast, so it names no cooldown_seconds"),
+        (
+            PASSIVE.replace("realmforge:frostbolt", "realmforge:frost_bolt"),
+            "passive.spell_damage.0.spells.0: unknown id 'realmforge:frost_bolt'",
+        ),
+        (
+            PASSIVE.replace("realmforge:frostbolt", "realmforge:ice_barrier"),
+            "realmforge:ice_barrier deals no damage, so more damage does nothing",
+        ),
+        (
+            "max_level: 3\npassive:\n  crit_chance: {chance_percent: 10, against: realmforge:chilled}\n",
+            "passive.crit_chance.against: unknown id 'realmforge:chilled'",
+        ),
+        (
+            "passive:\n  while_wielding: realmforge:greatswords\n"
+            "  modifiers: [{attribute: minecraft:attack_damage, operation: add_multiplied_base, amount_percent: 4}]\n",
+            "unknown item tag 'realmforge:greatswords'",
+        ),
+        (
+            "passive:\n  modifiers: [{attribute: minecraft:attack_damage, operation: add_multiplied_total, "
+            "amount_percent: 4}]\n",
+            "use add_multiplied_base, not add_multiplied_total",
+        ),
+        (
+            "name: {en_us: Keen Frost}\ndescription: {en_us: '{damage}'}\n" + PASSIVE,
+            "unknown placeholder {damage} for a passive spell",
+        ),
+        (
+            "name: {en_us: Keen Frost}\ndescription: {en_us: '{crit_chance}'}\n" + PASSIVE,
+            "{crit_chance} reads a part of the passive it does not have",
+        ),
+    ],
+)
+def test_invalid_passive_spells_are_rejected(repo: RepoPaths, body: str, message: str) -> None:
+    spell(repo, "keen_frost", body)
+    assert_problem(repo, message)
+
+
+def test_an_active_spell_still_names_its_cast(repo: RepoPaths) -> None:
+    spell(repo, "fireball", FIREBALL.replace("cast: {type: instant}\n", ""))
+    assert_problem(repo, "an active spell names cast; a passive one names passive instead")

@@ -79,10 +79,13 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   Battle Shout; Frostbolt, Fireball, Arcane Missiles, Ice Barrier), the first spells of rank 5, and the Human's
   Will To Survive in the racial slot and Sword Specialization; melee spells need a melee weapon in the main hand and
   Shield Bash a shield (RLM-499), stuns stop mobs and casts, crit chance above 100 % turns into crit damage, and a
-  player's channel ticks every 0.5 s (RLM-518).
+  player's channel ticks every 0.5 s (RLM-518). Spells scale by system C (RLM-534): an amount plus a coefficient of
+  the caster's Spell Power (points) or Attack Damage, both per rank, × (1 + School Power + passives); passive spells
+  (RLM-541) are learned with ranks but never cast: modifiers, more damage for named spells, crit chance against Frozen
+  targets, a shorter two-handed block cooldown.
   Casters have their gear (RLM-172, RLM-197), from an item's `gear` in YAML: seven two-handed wands from wood to
   netherite whose stats count in the main hand, which every cast wears and which lock shields, and four robe sets (Apprentice's, Spellweave, Arcane Silk,
-  Netherite) with magic shield, spell power and mana instead of armor; Arcane Dust drops from witches, evokers and
+  Netherite) with magic shield, flat Spell Power and mana instead of armor; Arcane Dust drops from witches, evokers and
   illusioners through a NeoForge loot modifier.
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell

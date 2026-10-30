@@ -187,6 +187,31 @@
       "title": "AreaEffectDef",
       "type": "object"
     },
+    "BlockCooldownDef": {
+      "additionalProperties": false,
+      "description": "A raised two-handed weapon's cooldown after a block or after lowering it (architecture 9.3), shorter from a rank\non (RLM-541: Two-Handed Weapon Specialization's 0.25 s at rank 3).",
+      "properties": {
+        "from_level": {
+          "default": 1,
+          "description": "The rank from which it applies.",
+          "maximum": 100,
+          "minimum": 1,
+          "title": "From Level",
+          "type": "integer"
+        },
+        "reduction_seconds": {
+          "description": "How much shorter, in seconds; more than 0, at most 10.",
+          "minimum": 0,
+          "title": "Reduction Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "reduction_seconds"
+      ],
+      "title": "BlockCooldownDef",
+      "type": "object"
+    },
     "CastTimeCastDef": {
       "additionalProperties": false,
       "description": "The spell takes ``duration_seconds`` to cast, which Cast Time Reduction shortens. At the end the cost and the\ntarget are checked again; the cost, its own cooldown and the effects follow. The global cooldown starts with the\ncast.",
@@ -424,6 +449,46 @@
         "resource"
       ],
       "title": "CostDef",
+      "type": "object"
+    },
+    "CritChanceDef": {
+      "additionalProperties": false,
+      "description": "More crit chance for the player's spell hits on a target with a status effect (RLM-541: Shatter, against Frozen\ntargets).",
+      "properties": {
+        "against": {
+          "description": "The status effect the target has, e.g. realmforge:frozen.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Against",
+          "type": "string"
+        },
+        "chance_per_level_percent": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 100,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to chance_percent for every rank above 1.",
+          "title": "Chance Per Level Percent"
+        },
+        "chance_percent": {
+          "description": "The crit chance added at rank 1, in percent.",
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Chance Percent",
+          "type": "number"
+        }
+      },
+      "required": [
+        "chance_percent",
+        "against"
+      ],
+      "title": "CritChanceDef",
       "type": "object"
     },
     "CritDef": {
@@ -910,6 +975,149 @@
       "title": "LocalizedText",
       "type": "object"
     },
+    "PassiveDef": {
+      "additionalProperties": false,
+      "description": "What a passive spell does (RLM-541): it is never cast and never on the spell bar; while the player knows it, at\nits rank, it gives modifiers, raises named spells' damage, adds crit chance against a condition or shortens a\ntwo-handed block's cooldown. Procs (Frostbite, Taste for Blood, Deep Wounds) come with the windows-and-procs\nticket and live in a passive spell too.",
+      "properties": {
+        "block_cooldown": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BlockCooldownDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A two-handed block's cooldown, shorter from a rank on."
+        },
+        "crit_chance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CritChanceDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "More crit chance for the player's spell hits on a target with a status effect."
+        },
+        "modifiers": {
+          "description": "Attribute modifiers it gives, growing per rank.",
+          "items": {
+            "$ref": "#/$defs/PassiveModifierDef"
+          },
+          "title": "Modifiers",
+          "type": "array"
+        },
+        "spell_damage": {
+          "description": "More damage for named spells, growing per rank.",
+          "items": {
+            "$ref": "#/$defs/SpellDamageDef"
+          },
+          "title": "Spell Damage",
+          "type": "array"
+        },
+        "while_wielding": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "An item tag, e.g. realmforge:two_handed_weapons: the whole passive applies only while the main hand holds an item of it.",
+          "title": "While Wielding"
+        }
+      },
+      "title": "PassiveDef",
+      "type": "object"
+    },
+    "PassiveModifierDef": {
+      "additionalProperties": false,
+      "description": "An attribute modifier a passive spell gives (RLM-541), growing per rank: its amount at rank 1 plus ``per_level``\n(or ``per_level_percent``, in the amount's unit) for every rank above it.",
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The amount, in game units.",
+          "title": "Amount"
+        },
+        "amount_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The amount in percent (5 means 5 %, the fraction 0.05).",
+          "title": "Amount Percent"
+        },
+        "attribute": {
+          "description": "The attribute it modifies, e.g. realmforge:strength.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Attribute",
+          "type": "string"
+        },
+        "operation": {
+          "description": "How the amount applies (vanilla's attribute modifier operations).",
+          "enum": [
+            "add_value",
+            "add_multiplied_base",
+            "add_multiplied_total"
+          ],
+          "title": "Operation",
+          "type": "string"
+        },
+        "per_level": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to amount for every rank above 1.",
+          "title": "Per Level"
+        },
+        "per_level_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to amount_percent for every rank above 1.",
+          "title": "Per Level Percent"
+        }
+      },
+      "required": [
+        "attribute",
+        "operation"
+      ],
+      "title": "PassiveModifierDef",
+      "type": "object"
+    },
     "ProjectileAppearanceDef": {
       "additionalProperties": false,
       "description": "How a projectile looks; without it, a trail of sparks (until C6, RLM-29). Its placeholder texture is\ngenerated at ``textures/entity/spell/<spell>.png`` until real art exists.",
@@ -1160,6 +1368,50 @@
       "title": "SelfTargetingDef",
       "type": "object"
     },
+    "SpellDamageDef": {
+      "additionalProperties": false,
+      "description": "More damage for named spells (RLM-541: Improved Frostbolt), added to their hits' (1 + School Power + passives)\nlayer.",
+      "properties": {
+        "damage_per_level_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to damage_percent for every rank above 1.",
+          "title": "Damage Per Level Percent"
+        },
+        "damage_percent": {
+          "description": "How much more damage at rank 1, in percent.",
+          "exclusiveMinimum": 0,
+          "maximum": 1000,
+          "title": "Damage Percent",
+          "type": "number"
+        },
+        "spells": {
+          "description": "The spells whose hits deal more, e.g. [realmforge:frostbolt].",
+          "items": {
+            "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Spells",
+          "type": "array"
+        }
+      },
+      "required": [
+        "spells",
+        "damage_percent"
+      ],
+      "title": "SpellDamageDef",
+      "type": "object"
+    },
     "TeleportEffectDef": {
       "additionalProperties": false,
       "description": "Moves the caster at once to the target: a ground point, or as far along a direction as its range allows. It\nstops short of blocks, and does not move when no free spot is found on the way.",
@@ -1182,7 +1434,7 @@
   "description": "A spell for players or NPCs: its school, what it scales with, its targeting, cast, cost, cooldowns, crit\nrules and typed effects, with numbers per spell level up to ``max_level`` (architecture 11.1).",
   "properties": {
     "cast": {
-      "description": "How it is cast: {type: instant}, {type: cast_time, duration_seconds: 2} or {type: channel, duration_seconds: 3, interval_seconds: 1}.",
+      "description": "How it is cast: {type: instant}, {type: cast_time, duration_seconds: 2} or {type: channel, duration_seconds: 3, interval_seconds: 1}. Required for an active spell; a passive one leaves it out.",
       "discriminator": {
         "mapping": {
           "cast_time": "#/$defs/CastTimeCastDef",
@@ -1238,7 +1490,7 @@
       "description": "What the spell does, in its tooltip: one or two sentences. Numbers come from data through placeholders: {damage}, {heal}, {duration}, {periodic}, {periodic_total}, {interval} and {radius}."
     },
     "effects": {
-      "description": "What the spell does, in order.",
+      "description": "What the spell does, in order. Required for an active spell; a passive one leaves it out.",
       "items": {
         "discriminator": {
           "mapping": {
@@ -1288,7 +1540,6 @@
           }
         ]
       },
-      "minItems": 1,
       "title": "Effects",
       "type": "array"
     },
@@ -1325,6 +1576,18 @@
       "title": "Npc Only",
       "type": "boolean"
     },
+    "passive": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PassiveDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Makes the spell passive (RLM-541): learned with ranks, never cast and never on the spell bar, it does this while the player knows it. A passive spell names no targeting, cast, cost, cooldowns, crit, effects or scales_with."
+    },
     "requires": {
       "description": "What a player needs in hand to cast it (RLM-499): melee_weapon (an item of realmforge:melee_weapons in the main hand) or shield (a shield in either hand). A player's physical spell that deals damage in melee names one. Mobs and bosses cast without it.",
       "items": {
@@ -1338,7 +1601,8 @@
       "type": "array"
     },
     "scales_with": {
-      "description": "spell_power for magic schools, attack_damage for physical abilities (Matěj, 2026-10-15).",
+      "default": "spell_power",
+      "description": "spell_power for magic schools, attack_damage for physical abilities (Matěj, 2026-10-15). Required for an active spell; a passive one leaves it out.",
       "enum": [
         "spell_power",
         "attack_damage"
@@ -1362,7 +1626,7 @@
       "title": "School"
     },
     "targeting": {
-      "description": "Who the spell can target.",
+      "description": "Who the spell can target. Required for an active spell; a passive one leaves it out.",
       "discriminator": {
         "mapping": {
           "realmforge:ally": "#/$defs/AllyTargetingDef",
@@ -1408,11 +1672,7 @@
   "required": [
     "id",
     "name",
-    "description",
-    "scales_with",
-    "targeting",
-    "cast",
-    "effects"
+    "description"
   ],
   "title": "SpellDef",
   "type": "object"

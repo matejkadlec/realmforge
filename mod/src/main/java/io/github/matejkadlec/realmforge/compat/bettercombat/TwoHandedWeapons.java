@@ -1,14 +1,17 @@
 package io.github.matejkadlec.realmforge.compat.bettercombat;
 
 import com.mojang.logging.LogUtils;
+import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.combat.WeaponBlocks;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import net.bettercombat.api.WeaponAttributes;
 import net.bettercombat.logic.WeaponRegistry;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
@@ -25,7 +28,9 @@ import org.slf4j.Logger;
  * the weapons a player raises with right click to block (RLM-297, architecture 9.3), so a new two-handed weapon blocks
  * with no list to keep: ours (from their Better Combat weapon files), other mods' (their own files, or Better Combat's
  * fallback by item id) and vanilla's. A weapon whose right click already does something stays out, because its use
- * animation is not {@code NONE}: a spear keeps its charge (Matěj, 2026-10-22), a bow its draw.
+ * animation is not {@code NONE}: a spear keeps its charge (Matěj, 2026-10-22), a bow its draw. Every two-handed weapon,
+ * spears included, also goes into {@link #TWO_HANDED_WEAPONS}, the weapons of Two-Handed Weapon Specialization
+ * (RLM-541), bound the same way.
  *
  * <p>Better Combat decides what is two-handed at run time, after the tags have loaded, so the tag cannot be data: the
  * core mod's data replaces Sword Blocking Mechanics' default (every sword) with an empty tag, and this class binds the
@@ -42,6 +47,13 @@ import org.slf4j.Logger;
  */
 public final class TwoHandedWeapons {
     public static final String MOD_ID = "bettercombat";
+    /**
+     * Every weapon Better Combat calls two-handed, spears included (RLM-541): Two-Handed Weapon Specialization applies
+     * while one is in the main hand. Bound with {@link WeaponBlocks#RAISABLE}, the same way; the core mod's data
+     * writes it empty.
+     */
+    public static final TagKey<Item> TWO_HANDED_WEAPONS = TagKey.create(Registries.ITEM,
+            Realmforge.id("two_handed_weapons"));
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private TwoHandedWeapons() {
@@ -70,18 +82,24 @@ public final class TwoHandedWeapons {
     }
 
     /**
-     * Binds {@link WeaponBlocks#RAISABLE} to exactly the raisable items ({@link #raisable}), keeping every other tag
-     * of every item; the items it holds, sorted. Does nothing while the items' default components are not bound yet.
+     * Binds {@link WeaponBlocks#RAISABLE} to exactly the raisable items ({@link #raisable}) and
+     * {@link #TWO_HANDED_WEAPONS} to every two-handed one ({@link #twoHanded}), keeping every other tag of every item;
+     * the raisable items, sorted. Does nothing while the items' default components are not bound yet.
      */
     public static List<Identifier> bind() {
         if (BuiltInRegistries.ITEM.listElements().anyMatch(holder -> !holder.areComponentsBound())) {
             return List.of();
         }
-        TagKey<Item> tag = WeaponBlocks.RAISABLE;
-        List<Holder.Reference<Item>> raisable = BuiltInRegistries.ITEM.listElements()
-                .filter(holder -> raisable(holder.value()))
+        bind(TWO_HANDED_WEAPONS, TwoHandedWeapons::twoHanded);
+        return bind(WeaponBlocks.RAISABLE, TwoHandedWeapons::raisable);
+    }
+
+    /** Binds {@code tag} to exactly the items {@code member} accepts; those items, sorted. */
+    private static List<Identifier> bind(TagKey<Item> tag, Predicate<Item> member) {
+        List<Holder.Reference<Item>> members = BuiltInRegistries.ITEM.listElements()
+                .filter(holder -> member.test(holder.value()))
                 .toList();
-        Set<Holder.Reference<Item>> wanted = new HashSet<>(raisable);
+        Set<Holder.Reference<Item>> wanted = new HashSet<>(members);
         BuiltInRegistries.ITEM.listElements().forEach(holder -> {
             boolean want = wanted.contains(holder);
             if (holder.is(tag) != want) {
@@ -93,7 +111,17 @@ public final class TwoHandedWeapons {
                 holder.bindTags(tags);
             }
         });
-        return raisable.stream().map(holder -> holder.key().identifier()).sorted().toList();
+        return members.stream().map(holder -> holder.key().identifier()).sorted().toList();
+    }
+
+    /** Whether Better Combat calls the item two-handed (RLM-541: Two-Handed Weapon Specialization's weapons). */
+    public static boolean twoHanded(Item item) {
+        ItemStack stack = new ItemStack(item);
+        if (stack.isEmpty()) {
+            return false;
+        }
+        WeaponAttributes attributes = WeaponRegistry.getAttributes(stack);
+        return attributes != null && attributes.isTwoHanded();
     }
 
     /**
@@ -105,8 +133,7 @@ public final class TwoHandedWeapons {
         if (stack.isEmpty()) {
             return false;
         }
-        WeaponAttributes attributes = WeaponRegistry.getAttributes(stack);
-        return attributes != null && attributes.isTwoHanded() && stack.getUseAnimation() == ItemUseAnimation.NONE;
+        return twoHanded(item) && stack.getUseAnimation() == ItemUseAnimation.NONE;
     }
 
     private static void logged(List<Identifier> raisable) {

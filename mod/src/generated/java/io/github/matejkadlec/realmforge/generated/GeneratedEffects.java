@@ -44,6 +44,13 @@ public final class GeneratedEffects {
                     .modifier("minecraft:movement_speed", "realmforge:effect.cracked_stone.minecraft.movement_speed", 0.25, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
                     .modifier("minecraft:armor", "realmforge:effect.cracked_stone.minecraft.armor", -0.5, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 
+    /** {@code realmforge:frozen} from {@code content/effects/frozen.yaml}: harmful, "Frozen". */
+    public static final DeferredHolder<MobEffect, MobEffect> FROZEN =
+            EFFECTS.register("frozen", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0xA8E4FF,
+                    Optional.empty())
+                    .modifier("minecraft:movement_speed", "realmforge:effect.frozen.minecraft.movement_speed", -1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
+                    .modifier("minecraft:jump_strength", "realmforge:effect.frozen.minecraft.jump_strength", -1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+
     /** {@code realmforge:ice_barrier} from {@code content/effects/ice_barrier.yaml}: beneficial, "Ice Barrier". */
     public static final DeferredHolder<MobEffect, MobEffect> ICE_BARRIER =
             EFFECTS.register("ice_barrier", () -> new StatusEffect(MobEffectCategory.BENEFICIAL, 0x7FD4FF,
@@ -76,7 +83,7 @@ public final class GeneratedEffects {
                     .modifier("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", -1.0, AttributeModifier.Operation.ADD_VALUE));
 
     /** Every effect above, in id order. */
-    public static final List<DeferredHolder<MobEffect, MobEffect>> ALL = List.of(BATTLE_SHOUT, BURNING, CRACKED_STONE, ICE_BARRIER, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);
+    public static final List<DeferredHolder<MobEffect, MobEffect>> ALL = List.of(BATTLE_SHOUT, BURNING, CRACKED_STONE, FROZEN, ICE_BARRIER, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);
 
     private GeneratedEffects() {
     }

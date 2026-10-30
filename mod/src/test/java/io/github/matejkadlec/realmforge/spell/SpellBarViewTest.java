@@ -30,7 +30,7 @@ class SpellBarViewTest {
         boolean bolt = key.equals(BOLT);
         return new Spell("n", "d", Optional.of(Holder.direct(FIRE)), Scaling.SPELL_POWER, SelfTargeting.INSTANCE,
                 SpellCast.INSTANT, Optional.empty(), bolt ? 80 : 0, bolt ? 10 : 0, 1, CritRule.DEFAULT, false,
-                List.of(), false, List.of(new DamageEffect(1, 0, Coefficient.NONE)));
+                List.of(), false, List.of(new DamageEffect(1, 0, Coefficient.NONE)), Optional.empty());
     }
 
     @Test

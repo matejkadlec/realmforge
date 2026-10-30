@@ -60,6 +60,7 @@ def test_repository_effects_are_the_engine_tests() -> None:
         "battle_shout",
         "burning",
         "cracked_stone",
+        "frozen",
         "ice_barrier",
         "stunned",
         "test_burning",
@@ -193,7 +194,7 @@ def test_registrations(repo: RepoPaths) -> None:
         "AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)\n"
     ) in java
     assert (
-        "ALL = List.of(BATTLE_SHOUT, BURNING, CRACKED_STONE, ICE_BARRIER, STUNNED, TEST_BURNING, TEST_REGROWTH, "
+        "ALL = List.of(BATTLE_SHOUT, BURNING, CRACKED_STONE, FROZEN, ICE_BARRIER, STUNNED, TEST_BURNING, TEST_REGROWTH, "
         "TEST_SAPPED);"
     ) in java
 
@@ -246,6 +247,7 @@ def test_no_effects_still_compile(repo: RepoPaths) -> None:
         "fireball",
         "ice_barrier",
         "shield_bash",
+        "shatter",
     ):
         (repo.content / "spells" / f"{name}.yaml").unlink()
     drop_class_kits(repo.content)

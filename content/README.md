@@ -207,7 +207,8 @@ Rules:
   `roles` (`[melee]`, `[caster, ranged]`): then only players whose class plays one of them get it, and a player
   without a character never does; without `roles`, every player gets it.
 - `spell_schools/` defines the kinds of damage ([architecture 9.1](../docs/architecture.md#91-damage-pipeline)):
-  `physical` (armor reduces it, it can be dodged) or `magic` (bypasses armor; spell power raises it). `power` and
+  `physical` (armor reduces it, it can be dodged; its spells scale with attack damage) or `magic` (bypasses armor;
+  its spells scale with Spell Power, RLM-534). `power` and
   `resistance` name secondary stats that are shares (`fire_power`, `fire_resistance`), each serving one school.
   The death message names only the victim, `%1$s`: the game passes the killer only sometimes. `color` is the
   colour of the school's spells (spell bar frames, the cast bar, damage numbers in tooltips); `combat_text_color`
@@ -340,12 +341,15 @@ Rules:
   our shares, as for races and classes; one per attribute; each amplifier level multiplies it, as vanilla does,
   unless `per_amplifier` or `per_amplifier_percent` gives the step each level above the first adds instead: Battle
   Shout's 10, 15 and 20 %) and
-  `periodic` damage or healing (`type: damage` or `heal`, a `school`, the `amount` of a tick at the first level, which
-  each amplifier level adds again, and `interval_seconds` from 0.25 to 10): at least one of the two. `stun: true`
+  `periodic` damage or healing (`type: damage` or `heal`, a `school`, the `amount` of a tick at the first level,
+  `spell_power_percent`, the share of the caster's Spell Power a tick adds (a magic school only; scaling system C,
+  RLM-534: a damage over time splits its spell's coefficient over its ticks), both of which each amplifier level adds
+  again, and `interval_seconds` from 0.25 to 10): at least one of the two. `stun: true`
   makes it a stun (C4): its holder neither moves, jumps, attacks nor casts, a mob's AI waits, and a cast is
   interrupted; it needs -100 % `minecraft:movement_speed` and `minecraft:jump_strength` among its `modifiers`. A tick is a hit
-  or heal of the school from the caster that applied the effect, raised by its spell power and school power, and it
-  never crits. A spell applies one through `realmforge:apply_effect`, for a whole number of its intervals. The
+  or heal of the school from the caster that applied the effect, its share of the caster's Spell Power added and
+  raised by the school's power, and it never crits. `frozen` roots its holder (no walking, no jumping) but lets it
+  attack and cast, unlike a stun; Shatter reads it (RLM-541). A spell applies one through `realmforge:apply_effect`, for a whole number of its intervals. The
   `test_*` effects are engine tests, not gameplay content.
 - `spells/` holds the spells of players, mobs and bosses ([architecture 11](../docs/architecture.md#11-spells-and-status-effects)):
   a `name` and a `description` (what it does in a sentence or two, shown in its tooltip; numbers come from data
@@ -397,8 +401,12 @@ Rules:
   `shield`, one in either hand; a player's physical spell that deals damage in melee range needs one, and a cast
   without it is refused; never on an `npc_only` spell); `castable_while_stunned` (Will To Survive); and the
   `effects`, in order: `realmforge:damage` (a hit of the school on an enemy) and `realmforge:heal`
-  (on the caster or an ally), each with `amount` at level 1 and `per_level`, and `attack_damage_percent` (the share
-  of the caster's attack damage added) on an attack damage spell, where its damage effects need one; a damage
+  (on the caster or an ally), each with `amount` at level 1 and `per_level`, and its coefficient of the caster's
+  power (scaling system C, Matěj, 2026-10-30, RLM-534: damage = (amount + coefficient × power) × (1 + the school's
+  power + passives) × crit): `attack_damage_percent` (the share of the caster's attack damage added) on an attack
+  damage spell, where its damage effects need one, or `spell_power_percent` (the share of the caster's Spell Power,
+  points, added) on a spell power spell, each with a `_per_level_percent` for every rank above 1 (Frostbolt's 100 % +
+  25 % a rank, 200 % at rank 5); a spell names only its own power's; a damage
   effect may add `armor_shred_percent` (that share of the target's armor ignored by this hit) and
   `penetration_percent` (that share of its resistance to the school ignored), each with a `_per_level_percent` for
   every rank above 1, at most 100 % at `max_level`;
@@ -430,6 +438,21 @@ Rules:
   `per_level` needs a `max_level` above 1, on the effects of a projectile or an area too, and so does any other
   growth with the rank. The `test_*` spells are engine tests (like `items/test_item`), not gameplay content; the
   class kits' spells (C4) are the Warrior's and the Mage's ([architecture 11.7](../docs/architecture.md#117-class-spells-and-stances)).
+
+  **A passive spell** (RLM-541) has a `passive` block instead of `scales_with`, `targeting`, `cast`, `cost`,
+  cooldowns, `crit`, `npc_only`, `requires`, `castable_while_stunned` and `effects`, which validation refuses on it (an
+  active spell must name `scales_with`, `targeting`, `cast` and at least one effect). It keeps its `name`,
+  `description`, an optional `school` (its colour) and `max_level`. While its player knows it, at its rank, and only
+  while the main hand holds an item of `while_wielding` (an item tag, e.g. `realmforge:two_handed_weapons`) when it
+  names one, it gives: `modifiers` (as a race's, with `per_level` or `per_level_percent` in the amount's unit for every
+  rank above 1; never `add_multiplied_total`); `spell_damage` (a list of `spells`, active ones that deal damage, whose
+  hits deal `damage_percent` more, `damage_per_level_percent` more a rank: the passives of the damage formula);
+  `crit_chance` (`chance_percent`, `chance_per_level_percent`, at most 100 % at `max_level`, for the player's spell hits
+  on a target with the status effect `against`); and `block_cooldown` (`reduction_seconds` off a two-handed block's
+  cooldown from rank `from_level`). Its description's placeholders are its own, at the player's rank and, in the
+  tooltip, at the next: `{bonus}` (the first modifier), `{spell_damage}`, `{crit_chance}`, `{block_cooldown}` and
+  `{block_cooldown_rank}`. It never goes onto the spell bar and is never cast. Improved Frostbolt, Shatter and
+  Two-Handed Weapon Specialization are the first, of the M1 trees that RLM-542 and RLM-543 teach.
 - `worldgen/` is the one exception to YAML: Minecraft's own worldgen JSON (`dimension/`, `dimension_type/`,
   `biome/`, `noise_settings/`, ...), validated (location, id, JSON, dimension types, no clash with the core mod's
   own `realmforge:instances`) and copied byte for byte; the game decodes it when a world loads.

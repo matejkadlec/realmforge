@@ -3,6 +3,7 @@ package io.github.matejkadlec.realmforge.spell;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.matejkadlec.realmforge.combat.CritRule;
 import io.github.matejkadlec.realmforge.combat.HitBonus;
 import io.github.matejkadlec.realmforge.combat.SpellSchools;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
@@ -16,7 +17,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  * magic spell; system C, RLM-534) is computed here; the hit then goes through the damage pipeline like any school hit:
  * × (1 + the school's power), a crit roll by the spell's crit rule at its rank, the target's resistance. A hit may add
  * armor shred to the caster's own (Slam) or ignore a share of the target's resistance (spell penetration, Arcane
- * Missiles), both growing with the rank (C4).
+ * Missiles), both growing with the rank (C4). The caster's passive spells (RLM-541) add to the hit's damage (its
+ * passives layer, Improved Frostbolt) and to its crit chance against the target (Shatter on a Frozen one).
  *
  * @param amount the damage at spell level 1
  * @param perLevel added for every spell level above 1
@@ -68,10 +70,14 @@ public record DamageEffect(double amount, double perLevel, Coefficient coefficie
         double damage = baseAt(context.spellLevel(), context.casterStat(Attributes.ATTACK_DAMAGE),
                 context.casterStat(GeneratedStats.SPELL_POWER));
         LivingEntity caster = context.caster();
+        // The caster's passive spells (RLM-541): more damage for this spell, more crit chance against this target.
+        HitBonus bonus = bonusAt(context.spellLevel()).withDamage(context.spell().unwrapKey()
+                .map(key -> Passives.damageBonus(caster, key)).orElse(0.0));
+        CritRule crit = spell.crit().atLevel(context.spellLevel())
+                .withBonusChance(Passives.critChanceAgainst(caster, target));
         target.hurtServer(context.level(), SpellSchools.damage(context.level().registryAccess(),
                 // The pipeline makes every spell that deals damage name its school.
-                spell.school().flatMap(Holder::unwrapKey).orElseThrow(), context.direct(), caster,
-                spell.crit().atLevel(context.spellLevel()), bonusAt(context.spellLevel()), context.procOrigin()),
-                (float) damage);
+                spell.school().flatMap(Holder::unwrapKey).orElseThrow(), context.direct(), caster, crit, bonus,
+                context.procOrigin()), (float) damage);
     }
 }

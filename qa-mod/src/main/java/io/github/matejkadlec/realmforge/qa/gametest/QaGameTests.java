@@ -87,6 +87,7 @@ public final class QaGameTests {
             LevelingGameTests.class,
             MobLevelGameTests.class,
             NpcCastGameTests.class,
+            PassiveSpellGameTests.class,
             PlayerStateGameTests.class,
             ProcGameTests.class,
             QaCastGameTests.class,

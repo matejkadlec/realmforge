@@ -137,10 +137,23 @@ public final class SpellText {
 
     /**
      * The value of every placeholder {@code spell} can fill at {@code level} for a caster with {@code stats}, as it
-     * reads in a description.
+     * reads in a description, without passive spells.
      */
     public static Map<String, String> values(Spell spell, int level, ToDoubleFunction<Holder<Attribute>> stats,
             Function<ResourceKey<SpellSchool>, Optional<SpellSchool>> schools) {
+        return values(spell, level, stats, schools, 0);
+    }
+
+    /**
+     * The value of every placeholder {@code spell} can fill at {@code level} for a caster with {@code stats} whose
+     * passive spells add {@code passiveDamage} to its hits (RLM-541, {@link Passives#damageBonus}), as it reads in a
+     * description. A passive spell fills its own placeholders ({@link #passiveValues}).
+     */
+    public static Map<String, String> values(Spell spell, int level, ToDoubleFunction<Holder<Attribute>> stats,
+            Function<ResourceKey<SpellSchool>, Optional<SpellSchool>> schools, double passiveDamage) {
+        if (spell.passive().isPresent()) {
+            return passiveValues(spell.passive().get(), level);
+        }
         Map<String, String> values = new LinkedHashMap<>();
         List<SpellEffect> effects = allEffects(spell.effects());
         Optional<SpellSchool> school = spell.school().map(Holder::value);
@@ -149,7 +162,7 @@ public final class SpellText {
         double schoolPower = school.flatMap(SpellSchool::power).map(stats::applyAsDouble).orElse(0.0);
         first(effects, DamageEffect.class).ifPresent(damage -> {
             double base = damage.baseAt(level, attackDamage, spellPower);
-            values.put("damage", DamageNumbers.format(base * Math.max(0, 1 + schoolPower)));
+            values.put("damage", DamageNumbers.format(base * Math.max(0, 1 + schoolPower + passiveDamage)));
         });
         first(effects, HealEffect.class).ifPresent(heal -> {
             double base = SpellScaling.base(heal.amount(), heal.perLevel(), level, heal.coefficient(), attackDamage,
@@ -186,6 +199,27 @@ public final class SpellText {
                             : modifier.amount() * PERCENT)));
         });
         first(effects, AreaEffect.class).ifPresent(area -> values.put("radius", decimal(area.radius())));
+        return values;
+    }
+
+    /**
+     * A passive spell's placeholders at rank {@code level} (RLM-541): {@code bonus}, its first modifier (in percent for
+     * a multiplied operation, in the attribute's unit otherwise); {@code spell_damage}, its first spell damage bonus in
+     * percent; {@code crit_chance}, its crit chance against its condition in percent; {@code block_cooldown} and
+     * {@code block_cooldown_rank}, a two-handed block's shorter cooldown in seconds and the rank it starts at.
+     */
+    public static Map<String, String> passiveValues(Passive passive, int level) {
+        Map<String, String> values = new LinkedHashMap<>();
+        passive.modifiers().stream().findFirst().ifPresent(modifier -> values.put("bonus", decimal(
+                modifier.operation() == AttributeModifier.Operation.ADD_VALUE ? modifier.amountAt(level)
+                        : modifier.amountAt(level) * PERCENT)));
+        passive.spellDamage().stream().findFirst().ifPresent(bonus -> values.put("spell_damage",
+                decimal(bonus.damageAt(level) * PERCENT)));
+        passive.critChance().ifPresent(bonus -> values.put("crit_chance", decimal(bonus.chanceAt(level) * PERCENT)));
+        passive.blockCooldown().ifPresent(cooldown -> {
+            values.put("block_cooldown", decimal(cooldown.reductionTicks() / TICKS_PER_SECOND));
+            values.put("block_cooldown_rank", Integer.toString(cooldown.fromLevel()));
+        });
         return values;
     }
 

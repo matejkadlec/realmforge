@@ -21,7 +21,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, Field, model_validator
 
 from realmforge_tools.project import MOD_ID
-from realmforge_tools.schema.character import ResourceType
+from realmforge_tools.schema.character import CharacterModifierDef, ResourceType
 from realmforge_tools.schema.common import ContentId, LocalizedText, ResourceId, Seconds, StrictModel
 from realmforge_tools.schema.spell_school import HexColor
 
@@ -107,6 +107,20 @@ PLACEHOLDERS: tuple[str, ...] = (
     "bonus",
 )
 PERIODIC_PLACEHOLDERS: frozenset[str] = frozenset({"periodic", "periodic_total", "interval"})
+# The placeholders a passive spell's description may name (RLM-541), each at the player's rank; the next rank's tooltip
+# line reads them at that rank:
+# - bonus: the passive's first modifier, in percent for a multiplied operation, in the attribute's unit otherwise;
+# - spell_damage: its first spell damage bonus, in percent;
+# - crit_chance: its crit chance against the condition, in percent;
+# - block_cooldown, block_cooldown_rank: how much shorter a two-handed block's cooldown is, in seconds, and from which
+#   rank.
+PASSIVE_PLACEHOLDERS: tuple[str, ...] = (
+    "bonus",
+    "spell_damage",
+    "crit_chance",
+    "block_cooldown",
+    "block_cooldown_rank",
+)
 _PLACEHOLDER = re.compile(r"\{([^{}]*)\}")
 
 
@@ -683,6 +697,150 @@ class CritDef(StrictModel):
         return _leveled_percent(self.bonus_chance_percent, self.bonus_chance_per_level_percent, level)
 
 
+class PassiveModifierDef(CharacterModifierDef):
+    """An attribute modifier a passive spell gives (RLM-541), growing per rank: its amount at rank 1 plus ``per_level``
+    (or ``per_level_percent``, in the amount's unit) for every rank above it."""
+
+    per_level: FiniteNumber | None = Field(
+        default=None, description="Added to amount for every rank above 1."
+    )
+    per_level_percent: FiniteNumber | None = Field(
+        default=None, description="Added to amount_percent for every rank above 1."
+    )
+
+    @model_validator(mode="after")
+    def _growth_unit(self) -> PassiveModifierDef:
+        if self.per_level is not None and self.amount is None:
+            raise ValueError("per_level grows amount: write it as per_level_percent with amount_percent")
+        if self.per_level_percent is not None and self.amount_percent is None:
+            raise ValueError("per_level_percent grows amount_percent: write it as per_level with amount")
+        return self
+
+    def amount_at(self, level: int) -> float:
+        """The amount at rank ``level`` in its own unit (percent for amount_percent)."""
+        if self.amount_percent is not None:
+            return _leveled_percent(self.amount_percent, self.per_level_percent, level)
+        assert self.amount is not None
+        return self.amount + (self.per_level or 0) * (level - 1)
+
+    def grows(self) -> bool:
+        return self.per_level is not None or self.per_level_percent is not None
+
+
+class SpellDamageDef(StrictModel):
+    """More damage for named spells (RLM-541: Improved Frostbolt), added to their hits' (1 + School Power + passives)
+    layer."""
+
+    spells: Annotated[list[ResourceId], Field(min_length=1)] = Field(
+        description="The spells whose hits deal more, e.g. [realmforge:frostbolt]."
+    )
+    damage_percent: Annotated[float, Field(gt=0, le=1000, allow_inf_nan=False)] = Field(
+        description="How much more damage at rank 1, in percent."
+    )
+    damage_per_level_percent: NonNegative | None = Field(
+        default=None, description="Added to damage_percent for every rank above 1."
+    )
+
+    @model_validator(mode="after")
+    def _unique(self) -> SpellDamageDef:
+        if len(set(self.spells)) != len(self.spells):
+            raise ValueError("spells names each spell once")
+        return self
+
+    def damage_at(self, level: int) -> float:
+        """The bonus at rank ``level``, in percent."""
+        return _leveled_percent(self.damage_percent, self.damage_per_level_percent, level)
+
+
+class CritChanceDef(StrictModel):
+    """More crit chance for the player's spell hits on a target with a status effect (RLM-541: Shatter, against Frozen
+    targets)."""
+
+    chance_percent: Percent = Field(description="The crit chance added at rank 1, in percent.")
+    chance_per_level_percent: Percent | None = Field(
+        default=None, description="Added to chance_percent for every rank above 1."
+    )
+    against: ResourceId = Field(description="The status effect the target has, e.g. realmforge:frozen.")
+
+    def chance_at(self, level: int) -> float:
+        """The crit chance added at rank ``level``, in percent."""
+        return _leveled_percent(self.chance_percent, self.chance_per_level_percent, level)
+
+
+class BlockCooldownDef(StrictModel):
+    """A raised two-handed weapon's cooldown after a block or after lowering it (architecture 9.3), shorter from a rank
+    on (RLM-541: Two-Handed Weapon Specialization's 0.25 s at rank 3)."""
+
+    reduction_seconds: Seconds = Field(description="How much shorter, in seconds; more than 0, at most 10.")
+    from_level: int = Field(
+        default=1, ge=1, le=MAX_SPELL_LEVEL, description="The rank from which it applies."
+    )
+
+    @model_validator(mode="after")
+    def _seconds(self) -> BlockCooldownDef:
+        if not 0 < self.reduction_seconds <= 10:
+            raise ValueError("reduction_seconds is more than 0 and at most 10")
+        return self
+
+
+class PassiveDef(StrictModel):
+    """What a passive spell does (RLM-541): it is never cast and never on the spell bar; while the player knows it, at
+    its rank, it gives modifiers, raises named spells' damage, adds crit chance against a condition or shortens a
+    two-handed block's cooldown. Procs (Frostbite, Taste for Blood, Deep Wounds) come with the windows-and-procs
+    ticket and live in a passive spell too."""
+
+    while_wielding: ResourceId | None = Field(
+        default=None,
+        description="An item tag, e.g. realmforge:two_handed_weapons: the whole passive applies only while the main "
+        "hand holds an item of it.",
+    )
+    modifiers: list[PassiveModifierDef] = Field(
+        default_factory=list, description="Attribute modifiers it gives, growing per rank."
+    )
+    spell_damage: list[SpellDamageDef] = Field(
+        default_factory=list, description="More damage for named spells, growing per rank."
+    )
+    crit_chance: CritChanceDef | None = Field(
+        default=None,
+        description="More crit chance for the player's spell hits on a target with a status effect.",
+    )
+    block_cooldown: BlockCooldownDef | None = Field(
+        default=None, description="A two-handed block's cooldown, shorter from a rank on."
+    )
+
+    @model_validator(mode="after")
+    def _does_something(self) -> PassiveDef:
+        if not (self.modifiers or self.spell_damage or self.crit_chance or self.block_cooldown):
+            raise ValueError("a passive gives modifiers, spell_damage, crit_chance or block_cooldown")
+        return self
+
+    def grows(self) -> bool:
+        """Whether anything grows with the rank."""
+        return (
+            any(modifier.grows() for modifier in self.modifiers)
+            or any(bonus.damage_per_level_percent is not None for bonus in self.spell_damage)
+            or (self.crit_chance is not None and self.crit_chance.chance_per_level_percent is not None)
+            or (self.block_cooldown is not None and self.block_cooldown.from_level > 1)
+        )
+
+
+# The fields an active spell names and a passive one leaves out (RLM-541).
+ACTIVE_FIELDS: tuple[str, ...] = (
+    "scales_with",
+    "targeting",
+    "cast",
+    "cost",
+    "cooldown_seconds",
+    "global_cooldown_seconds",
+    "crit",
+    "npc_only",
+    "requires",
+    "castable_while_stunned",
+    "effects",
+)
+REQUIRED_ACTIVE_FIELDS: tuple[str, ...] = ("scales_with", "targeting", "cast", "effects")
+
+
 # The effect type each placeholder reads; crit_chance reads the spell's crit data instead.
 _PLACEHOLDER_EFFECT: dict[str, str] = {
     "damage": DAMAGE,
@@ -722,12 +880,19 @@ class SpellDef(StrictModel):
         "frames it in black.",
     )
     scales_with: ScalesWith = Field(
-        description="spell_power for magic schools, attack_damage for physical abilities (Matěj, 2026-10-15)."
+        default="spell_power",
+        description="spell_power for magic schools, attack_damage for physical abilities (Matěj, 2026-10-15). "
+        "Required for an active spell; a passive one leaves it out.",
     )
-    targeting: TargetingDef = Field(description="Who the spell can target.")
+    targeting: TargetingDef = Field(
+        default_factory=lambda: SelfTargetingDef(type=SELF),
+        description="Who the spell can target. Required for an active spell; a passive one leaves it out.",
+    )
     cast: CastDef = Field(
+        default_factory=lambda: InstantCastDef(type="instant"),
         description="How it is cast: {type: instant}, {type: cast_time, duration_seconds: 2} or "
-        "{type: channel, duration_seconds: 3, interval_seconds: 1}."
+        "{type: channel, duration_seconds: 3, interval_seconds: 1}. Required for an active spell; a passive one "
+        "leaves it out.",
     )
     cost: CostDef | None = Field(
         default=None,
@@ -759,12 +924,43 @@ class SpellDef(StrictModel):
         description="Whether a stunned caster may cast it, as the Human's Will To Survive breaks a stun; every other "
         "spell waits until the stun ends.",
     )
-    effects: list[SpellEffectDef] = Field(min_length=1, description="What the spell does, in order.")
+    effects: list[SpellEffectDef] = Field(
+        default_factory=list,
+        description="What the spell does, in order. Required for an active spell; a passive one leaves it out.",
+    )
+    passive: PassiveDef | None = Field(
+        default=None,
+        description="Makes the spell passive (RLM-541): learned with ranks, never cast and never on the spell bar, it "
+        "does this while the player knows it. A passive spell names no targeting, cast, cost, cooldowns, crit, "
+        "effects or scales_with.",
+    )
+
+    @model_validator(mode="after")
+    def _active_or_passive(self) -> SpellDef:
+        if self.passive is None:
+            missing = [name for name in REQUIRED_ACTIVE_FIELDS if name not in self.model_fields_set]
+            if missing:
+                raise ValueError(
+                    f"an active spell names {', '.join(missing)}; a passive one names passive instead"
+                )
+            if not self.effects:
+                raise ValueError("an active spell has at least one effect")
+            return self
+        named = [name for name in ACTIVE_FIELDS if name in self.model_fields_set]
+        if named:
+            raise ValueError(f"a passive spell is never cast, so it names no {', '.join(named)}")
+        return self
+
+    @property
+    def is_passive(self) -> bool:
+        return self.passive is not None
 
     @model_validator(mode="after")
     def _levels(self) -> SpellDef:
         if self.max_level == 1:
             leveled = [path for path, effect in self.all_effects() if _grows_with_level(effect)]
+            if self.passive is not None and self.passive.grows():
+                leveled.append("passive")
             if self.cost is not None and self.cost.per_level != 0:
                 leveled.append("cost")
             if self.crit.bonus_chance_per_level_percent is not None:
@@ -805,6 +1001,13 @@ class SpellDef(StrictModel):
                     )
         if self.crit.bonus_chance_at(top) > 100:
             raise ValueError(f"crit: the bonus chance stays at most 100 % at max_level {top}")
+        if self.passive is not None:
+            if self.passive.crit_chance is not None and self.passive.crit_chance.chance_at(top) > 100:
+                raise ValueError(f"passive.crit_chance stays at most 100 % at max_level {top}")
+            if self.passive.block_cooldown is not None and self.passive.block_cooldown.from_level > top:
+                raise ValueError(
+                    f"passive.block_cooldown.from_level: a rank above max_level {top} is never reached"
+                )
         return self
 
     @model_validator(mode="after")
@@ -858,6 +1061,9 @@ class SpellDef(StrictModel):
         text = self.description.en_us
         if _PLACEHOLDER.sub("", text).count("{") or _PLACEHOLDER.sub("", text).count("}"):
             raise ValueError("description: a brace that opens or closes no {placeholder}")
+        if self.passive is not None:
+            self._passive_placeholders()
+            return self
         for name in self.placeholders():
             if name not in PLACEHOLDERS:
                 raise ValueError(
@@ -879,6 +1085,25 @@ class SpellDef(StrictModel):
                     f"description: {{{name}}} reads the first damage effect's {field}, which it lacks"
                 )
         return self
+
+    def _passive_placeholders(self) -> None:
+        passive = self.passive
+        assert passive is not None
+        present = {
+            "bonus": bool(passive.modifiers),
+            "spell_damage": bool(passive.spell_damage),
+            "crit_chance": passive.crit_chance is not None,
+            "block_cooldown": passive.block_cooldown is not None,
+            "block_cooldown_rank": passive.block_cooldown is not None,
+        }
+        for name in self.placeholders():
+            if name not in PASSIVE_PLACEHOLDERS:
+                raise ValueError(
+                    f"description: unknown placeholder {{{name}}} for a passive spell; known: "
+                    f"{', '.join(PASSIVE_PLACEHOLDERS)}"
+                )
+            if not present[name]:
+                raise ValueError(f"description: {{{name}}} reads a part of the passive it does not have")
 
     def placeholders(self) -> list[str]:
         """The names of the placeholders in the description, in order."""

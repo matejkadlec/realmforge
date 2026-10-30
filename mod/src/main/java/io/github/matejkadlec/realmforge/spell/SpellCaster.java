@@ -98,6 +98,9 @@ public final class SpellCaster {
         if (holder.isEmpty()) {
             return CastResult.refused(CastFailure.UNKNOWN_SPELL);
         }
+        if (holder.get().value().isPassive()) {
+            return CastResult.refused(CastFailure.PASSIVE);
+        }
         int level = 1;
         if (caster instanceof Player player) {
             if (holder.get().value().npcOnly()) {

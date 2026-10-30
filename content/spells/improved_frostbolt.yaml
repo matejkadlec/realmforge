@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# The Frost Mage's passive of the M1 tree (Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1; RLM-541):
+# Frostbolt deals 5/10/15 % more damage, added to its hit's (1 + Frost Power + passives) layer. Its rank 3 also slows
+# the enemies Frostbolt's splash damages, once Frostbolt has its splash (RLM-542). The tree that teaches it is
+# RLM-542's; until then /qa spell learn does.
+id: improved_frostbolt
+name: {en_us: Improved Frostbolt}
+description: {en_us: "Your Frostbolt deals {spell_damage}% more damage."}
+school: realmforge:frost
+max_level: 3
+passive:
+  spell_damage:
+    - spells: [realmforge:frostbolt]
+      damage_percent: 5
+      damage_per_level_percent: 5

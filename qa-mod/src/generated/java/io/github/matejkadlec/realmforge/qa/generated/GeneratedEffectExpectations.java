@@ -62,6 +62,14 @@ public final class GeneratedEffectExpectations {
                     Optional.empty(),
                     false),
             new EffectExpectation(
+                    "realmforge:frozen",
+                    "effect.realmforge.frozen",
+                    "harmful",
+                    0xA8E4FF,
+                    List.of(new ModifierExpectation("minecraft:movement_speed", "realmforge:effect.frozen.minecraft.movement_speed", -1.0, "add_multiplied_total", -2.0), new ModifierExpectation("minecraft:jump_strength", "realmforge:effect.frozen.minecraft.jump_strength", -1.0, "add_multiplied_total", -2.0)),
+                    Optional.empty(),
+                    false),
+            new EffectExpectation(
                     "realmforge:ice_barrier",
                     "effect.realmforge.ice_barrier",
                     "beneficial",
