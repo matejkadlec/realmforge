@@ -3758,8 +3758,10 @@ that agents can read. So far:
   points its level added, and the damage multiple of its hits; without an argument, the nearest hostile mob within
   32 blocks. The training dummy joins at level 1, which adds nothing;
 - `/qa character show|reset [<player>]` and `/qa character create <race> <class> [<player>]` (C1): reset removes the
-  character, so the creation screen opens again (the starting kit's items stay); create applies the same rules as the
-  screen;
+  character, so the creation screen opens again (the starting kit's items stay), and since C4 also sets the level back
+  to 1 and empties the spellbook (the stats recomputed, health capped at the new maximum); a character created after a
+  reset gets no starting kit, which comes with the player's first character only (`realmforge:starting_kit`,
+  [10.1](#101-races-and-classes)); create applies the same rules as the screen;
 - `/qa dummy [<armor>]` (F5): a training dummy three blocks ahead, a pillager without a crossbow that stands still
   and never dies. A pillager is not undead, so poison and harming hurt it, healing heals it, and daylight does not
   burn it: it takes damage and healing the way a player does (RLM-187). Neat's card above it is its only display
