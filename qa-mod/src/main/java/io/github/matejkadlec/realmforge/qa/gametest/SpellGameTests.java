@@ -161,26 +161,26 @@ public final class SpellGameTests {
         ServerPlayer player = caster(helper, "qa-spell-heal");
         withMana(player);
         learn(helper, player, GeneratedSpells.TEST_MEND, 2);
-        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 5);
+        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 2);
         StatsCommands.setBase(player, GeneratedStats.ARCANE_POWER, 0.2);
 
         player.setHealth(5);
         assertCast(helper, player, GeneratedSpells.TEST_MEND, null, player);
-        assertHealth(helper, player, 5 + (5 + 5) * 1.2,
-                "level 2 heals 5 + 100 % of 5 Spell Power, with +20 % arcane power");
+        assertHealth(helper, player, 5 + (5 + 2) * 1.2,
+                "level 2 heals 5 + 100 % of 2 Spell Power, with +20 % arcane power");
 
         Spells.resetCooldowns(player);
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 1);
         player.setHealth(5);
         assertCast(helper, player, GeneratedSpells.TEST_MEND, null, player);
-        assertHealth(helper, player, 5 + (5 + 5) * 1.2 * 1.5, "a healing crit heals 150 %");
+        assertHealth(helper, player, 5 + (5 + 2) * 1.2 * 1.5, "a healing crit heals 150 %, below max health");
 
         ServerPlayer ally = caster(helper, "qa-spell-heal-ally");
         ally.snapTo(helper.absoluteVec(new Vec3(0.5, 1, 0.5)), 0, 0);
         ally.setHealth(5);
         Spells.resetCooldowns(player);
         assertCast(helper, player, GeneratedSpells.TEST_MEND, ally, ally);
-        assertHealth(helper, ally, 5 + 5 * 1.7 * 1.5, "another player is an ally");
+        assertHealth(helper, ally, 5 + (5 + 2) * 1.2 * 1.5, "another player is an ally");
 
         Husk husk = husk(helper, new BlockPos(2, 1, 2));
         husk.setHealth(500);

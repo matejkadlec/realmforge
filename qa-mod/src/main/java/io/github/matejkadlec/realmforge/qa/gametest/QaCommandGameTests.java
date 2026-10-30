@@ -366,7 +366,8 @@ public final class QaCommandGameTests {
         // A tick applies the sword's attack damage (vanilla's equipment check), and Sword Specialization with it.
         player.doTick();
         CharacterStats.recompute(player);
-        double raw = 2 + 4 + player.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        // Rank 5: 5 + 120 % of Attack Damage (scaling system C, RLM-534).
+        double raw = 5 + 1.2 * player.getAttributeValue(Attributes.ATTACK_DAMAGE);
         double crit = raw * (1 + player.getAttributeValue(GeneratedStats.CRIT_DAMAGE) + 0.3);
 
         Pillager dummy = TrainingDummy.spawn(helper.getLevel(), helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
