@@ -37,7 +37,9 @@ Rules:
 
 - One YAML file per entry; the file name (without `.yaml`) must equal the entry's `id`.
 - References to other content use full ids (`minecraft:ingredients`, `realmforge:test_item`); every one is
-  validated against the ID universe (`tools/id_universe/`) plus our own content. Lists of ids must not repeat
+  validated against the ID universe (the vanilla snapshot in `tools/id_universe/` and NeoForge's own attributes,
+  `id_universe.NEOFORGE_ATTRIBUTES`, [ADR 0064](../docs/decisions/0064-neoforges-attributes-join-the-id-universe.md))
+  plus our own content. Lists of ids must not repeat
   an entry (e.g. the same creative tab twice crashes the game).
 - Player-facing texts are `LocalizedText` with one locale, `en_us`, which is required: Realmforge is English
   only (Matěj, 2026-10-13), so any other locale key (`cs_cz`, ...) is an error. In lore and texts the in-game

@@ -26,7 +26,8 @@ import net.minecraft.util.RandomSource;
  *   Toughness is never pierced.</li>
  *   <li><b>Lifesteal:</b> a melee or ranged hit heals the attacker by its lifesteal share of the damage it dealt.</li>
  *   <li><b>Overheal:</b> healing beyond max health becomes absorption, up to the overheal share of max health.</li>
- *   <li><b>Health regeneration:</b> heals its points every second, never beyond max health.</li>
+ *   <li><b>Health regeneration:</b> heals its points every 5 seconds ({@link HealthRegeneration#INTERVAL_TICKS}),
+ *   never beyond max health.</li>
  *   <li><b>Magic shield:</b> takes what is left of a hit after absorption hearts, up to the points in the pool.</li>
  * </ul>
  */
@@ -198,11 +199,12 @@ public final class DamageCalculator {
     }
 
     /**
-     * What health regeneration heals in one second: {@code perSecond} points, never beyond max health, so it never
-     * overheals. Nothing for a negative rate or a full health bar.
+     * What one health regeneration heal restores (every {@link HealthRegeneration#INTERVAL_TICKS} ticks, 5 seconds):
+     * {@code perHeal} points, never beyond max health, so it never overheals. Nothing for a negative rate or a full
+     * health bar.
      */
-    public static double regeneration(double perSecond, double health, double maxHealth) {
-        return Math.max(0, Math.min(perSecond, maxHealth - health));
+    public static double regeneration(double perHeal, double health, double maxHealth) {
+        return Math.max(0, Math.min(perHeal, maxHealth - health));
     }
 
     /**
