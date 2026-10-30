@@ -1063,7 +1063,9 @@ go of right click stops its charge.
     weapons: the item tag `#realmforge:sword_like`, swords and katanas today, and longswords and maybe rapiers once
     the pack has them. For a Human, the tooltip of every such weapon (hover, JEI) shows two lines below the weapon's
     stats and above the Apotheosis affixes, where Apotheosis puts "Heavenly Implements": "Sword Specialization" in
-    gold and "+10% damage" in yellow (Matěj, 2026-10-30).
+    gold and "+10% damage with swords" in yellow (Matěj, 2026-10-30). The character sheet's Origin tab shows the
+    racial ability and passive the same way, each on two rows: "Racial Ability" in gold over "Will To Survive" in
+    yellow, and "Sword Specialization" in gold over its line in yellow.
 - **A class** gives its role, resource type, starting stats, spells by level, its specializations' spell trees and
   starting kit. Its role (melee, caster or ranged) decides which role-bound bonuses of the stat rules its players get
   ([8.3](#83-derived-stats-and-milestones), RLM-170). Race and

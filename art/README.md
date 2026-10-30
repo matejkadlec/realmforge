@@ -24,7 +24,7 @@ Texture pipeline ([ADR 0007](../docs/decisions/0007-asset-pipeline.md),
 
 Our font's symbols (the mob level's skull, RLM-340) are not generator output: they are pixel rows in
 `tools/realmforge_tools/generate/fonts.py`, on the default Minecraft font's 8x8 grid in palette colours, and `rf gen`
-writes the font and its texture. A few status effect icons are drawn the same way (Battle Shout's shouting man and Ice
+writes the font and its texture. A few status effect icons are drawn the same way (Battle Shout's shouting head and Ice
 Barrier's ice shield, Matěj, 2026-10-30): 18x18 pixel rows in `tools/realmforge_tools/generate/effect_icons.py`,
 which `rf gen` writes instead of the effect's placeholder.
 
