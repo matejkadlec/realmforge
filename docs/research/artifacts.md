@@ -19,7 +19,7 @@ vanilla chests across Overworld, from suspicious sand and gravel, from rare mob 
 campsites, and from the Mimic, a chest monster in those campsites. No item depends on the Nether or the End: every
 one also rolls in Overworld structures, campsites and mimics. The catch is Matěj's curio rule (RLM-7, 2026-10-12: "the
 library is fine, I just don't want rings, necklaces, gloves... from other mods; the exception is the backpack from
-Sophisticated"), which [ADR 0025](../decisions/0025-remove-the-nether-and-end.md) records. Only 11 of the 45 fit our
+Sophisticated"), which [ADR 0025](../decisions/0025-remove-the-nether-and-end.md) records. Only 12 of the 45 fit our
 four slots by kind (a necklace, a bracelet, two rings), about a dozen fight our stats or the combat pipeline
 directly, and another dozen hand out early what later realms or systems are meant to give (flight, water breathing,
 fire and lava safety, mount speed). The proposal: take Artifacts in narrowly, as a source of six hand-picked utility
@@ -359,8 +359,10 @@ item except the Sophisticated backpack, stays out. Artifacts adds no slot of its
 Trinkets compatibility off); our data tags each kept item into one of our slots. Every world source of Artifacts is
 off (chests, brushing, mob equipment, campsites and mimics, the beef); a kept item comes only from our own sources,
 first as a unique quest reward. The items not kept stay registered but have no source and are hidden. A new kept item
-is a decision of Matěj's, recorded in this ADR's list." Under A, no ADR: the rule and the hold stand, and ADR 0044's
-Artifacts entry moves to Rejected.
+is a decision of Matěj's, recorded in this ADR's list." Under A, the curio rule stands, and a short new ADR amends
+0044 to move its Artifacts entry from held to Rejected: CLAUDE.md rule 10 never rewrites an accepted ADR in place
+(the precedent: [ADR 0049](../decisions/0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md) amended 0044
+for Iron's RPG Tweaks).
 
 ## Questions for Matěj
 

@@ -80,7 +80,8 @@ Everything below is Apotheosis data and stays at its defaults until a playtest s
 These answer RLM-204's question on Haven's 4 % Rare: it stays. RLM-198's rarity bands per realm (Common–Uncommon
 in Overworld and Undervault up to Epic–Legendary in Ashfire and Unmade Isles) now describe what a player at that
 realm's tier mostly finds, not a cap; our own dungeon chests can still name a rarity set
-(`apotheosis:random_affix_item`), whose pick the tier then weights (RLM-198).
+(`apotheosis:reforge_item` with `rarities`, [gear.md](gear.md#where-an-items-rarity-comes-from)), whose pick the tier
+then weights (RLM-198).
 
 **Gem purities** (`purity_weights`): Summit gives 58 % normal, 2 % flawless and 1 % perfect gems; Pinnacle 33 %
 normal, 47 % flawless and 10 % perfect.

@@ -456,8 +456,10 @@ on: they are the reason to take the mod.
    exist.
 5. **GameTests:** Heavy's attributes after the override; Divine's deflection through our pipeline (combat text,
    magic shield untouched); the Slime set's push on a boss; the removed recipes gone.
-6. **Docs:** the [third-party mods](third-party-mods.md) row, architecture 19.4, and the milestone if Matěj moves the
-   mod from M2 (ADR 0044) to M1 with the gear.
+6. **Docs:** the [third-party mods](third-party-mods.md) row, architecture 19.4, and, if Matěj moves the mod from M2
+   to M1 with the gear, a short new ADR that amends [ADR 0044](../decisions/0044-third-party-mods-by-milestone.md)'s
+   milestone for it (CLAUDE.md rule 10: an accepted ADR is never rewritten in place; ADR 0049 amended 0044 the same
+   way for Iron's RPG Tweaks).
 
 ## Questions for Matěj
 
