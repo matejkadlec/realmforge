@@ -1682,7 +1682,12 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   code, so a key on § would show an empty label; ours draws it from the font `realmforge:keys`
   (`assets/realmforge/font/keys.json`), which maps a private codepoint to the section sign of vanilla's font sheet.
   NeoForge's Key Binds screen marks a key yellow when any other mapping shares it, even one that works only in a
-  screen (JEI's Show Recipe on R) or with F3 held; in game only the spell bar's key acts.
+  screen (JEI's Show Recipe on R) or with F3 held; in game only the spell bar's key acts. A slot's corner shows its
+  key bind short (`KeyLabels#spellBarLabel`, RLM-498; Matěj, 2026-10-29): a fixed label of three capitals for a long
+  key name (RMB, CTR, PRS, PGU; the mouse's buttons LMB to MB5 and on, the keypad's keys N and the key, as N1), a name
+  of up to three characters as the game shows it (T, F12, §), the first three characters in capitals otherwise, and a
+  key with a modifier as the modifier's label, a hyphen and the key's first character (CTRL + R reads CTR-R, CTRL +
+  SHIFT reads CTR-S), drawn smaller when it would leave the slot.
 - **Learning and placing:** `Spells#learn` puts a newly learned spell into the bar's first empty slot, unless it is a
   mob's. Learning a known spell again, at any level (a class level, C4, or a specialization point, C5), leaves the bar
   as the player arranged it, so a spell taken off stays off (RLM-374). The spellbook (`client/screen/SpellbookScreen`) moves a known spell into a slot, swapping with
@@ -1701,6 +1706,15 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   crosshair points, and `replaceCast`); `spell/SpellBar` picks a targeted spell's target by aim assistance when it names
   none ([11.2](#112-casting-server-authoritative)) and casts it through `SpellCaster`, which with `replaceCast` skips
   the already-casting check for another spell and cancels the cast in progress only once every other check passed. A refusal goes back as `CastRefusedPayload`.
+- **Right click with a wand** (RLM-500; Matěj, 2026-10-29) is the first slot's key: with an item of
+  `#realmforge:wands` in the main hand and a spell in the first slot, `client/spell/WandCasting` turns a right click
+  that interacts with nothing into a press of that slot and holding it into holding the key, which `SpellBarInput`
+  casts as it does the key's. It listens to NeoForge's `InputEvent.InteractionKeyMappingTriggered`: vanilla's use key
+  goes through the main hand first (an entity's interaction, a block's, which sneaking skips, then the wand's use,
+  which does nothing) and reaches the off hand only when the main hand found nothing, so that turn becomes the click
+  and is cancelled, and the off hand's item is not used. Until right click is let go of, vanilla's repeats of the use
+  key are cancelled at the main hand too, so a hold that sweeps across a door never opens it (`WandClicks`). An empty
+  first slot, or no wand, leaves right click as it is.
 - **HUD** (`client/hud`): the spell bar (`SpellBarHud`, drawn from `spell/SpellBarView` by `SpellSlots`) has its nine
   24 px slots side by side, the racial slot last, 216 px wide (Matěj's playtest of 2026-10-21). Its layer comes right
   after vanilla's selected item name, which is drawn on the line above the status rows and the XP bar. The bar and
@@ -1766,8 +1780,8 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   range, the cast after Cast Time Reduction, the cooldown after Cooldown Reduction and the filled description.
   `SpellTextGameTests` and `SpellBarGameTests` cover the server side and the texts, `CastQueueTest`,
   `CooldownSweepTest`, `SpellBarLayoutTest` (the default place, the clamping, the saved places, the size and mirror
-  rules), `CentreSnapTest`, `CastBarStyleTest`, `KeyLabelsTest`, `SpellTextTest` and `SpellBarViewTest` the client's
-  logic.
+  rules), `CentreSnapTest`, `CastBarStyleTest`, `KeyLabelsTest` (the key labels), `WandClicksTest`, `SpellTextTest`
+  and `SpellBarViewTest` the client's logic.
 
 **In code (W3 revision, RLM-33): projectile appearances.** A projectile with an `appearance` is drawn by
 `client/render/SpellProjectileRenderer` instead of its trail of sparks: the `orb` is vanilla's shulker bullet model
