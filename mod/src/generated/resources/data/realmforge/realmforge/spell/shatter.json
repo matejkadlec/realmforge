@@ -27,6 +27,7 @@
       "chance": 0.1,
       "chance_per_level": 0.1,
       "against": "realmforge:frozen"
-    }
+    },
+    "procs": []
   }
 }

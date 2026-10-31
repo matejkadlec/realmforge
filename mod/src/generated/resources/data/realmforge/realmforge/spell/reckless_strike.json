@@ -4,11 +4,12 @@
   "school": "realmforge:physical",
   "scales_with": "attack_damage",
   "targeting": {
-    "type": "realmforge:enemy",
-    "range": 4.0
+    "type": "realmforge:self"
   },
   "cast": {
-    "type": "instant"
+    "type": "instant",
+    "animation_ticks": 10,
+    "hit_at": 0.25
   },
   "cost": {
     "amount": 20.0,
@@ -30,11 +31,17 @@
   "castable_while_stunned": false,
   "effects": [
     {
-      "amount": 3.0,
-      "per_level": 0.5,
-      "attack_damage": 0.8,
-      "attack_damage_per_level": 0.1,
-      "type": "realmforge:damage"
+      "type": "realmforge:melee",
+      "shape": "swing",
+      "effects": [
+        {
+          "amount": 3.0,
+          "per_level": 0.5,
+          "attack_damage": 0.8,
+          "attack_damage_per_level": 0.1,
+          "type": "realmforge:damage"
+        }
+      ]
     }
   ]
 }

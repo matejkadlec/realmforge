@@ -3,9 +3,11 @@ package io.github.matejkadlec.realmforge.boss;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.List;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.BossEvent;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.EntityType;
 
 /**
@@ -19,10 +21,11 @@ import net.minecraft.world.entity.EntityType;
  * @param arena where it fights
  * @param barColor its boss bar's colour
  * @param phaseChangeTicks how long it stands, unhurt and casting nothing, when it enters a later phase
+ * @param immuneTo the status effects it never takes (RLM-539: Frozen, Stunned), per boss
  * @param phases its phases, in the order the fight goes through; never empty
  */
 public record Boss(EntityType<?> entity, int level, Arena arena, BossEvent.BossBarColor barColor, int phaseChangeTicks,
-        List<BossPhase> phases) {
+        List<Holder<MobEffect>> immuneTo, List<BossPhase> phases) {
     public static final Codec<Boss> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     BuiltInRegistries.ENTITY_TYPE.byNameCodec().fieldOf("entity").forGetter(Boss::entity),
                     ExtraCodecs.POSITIVE_INT.fieldOf("level").forGetter(Boss::level),
@@ -31,11 +34,18 @@ public record Boss(EntityType<?> entity, int level, Arena arena, BossEvent.BossB
                             .forGetter(Boss::barColor),
                     ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("phase_change_ticks", 0)
                             .forGetter(Boss::phaseChangeTicks),
+                    MobEffect.CODEC.listOf().optionalFieldOf("immune_to", List.of()).forGetter(Boss::immuneTo),
                     ExtraCodecs.nonEmptyList(BossPhase.CODEC.listOf()).fieldOf("phases").forGetter(Boss::phases))
             .apply(instance, Boss::new));
 
     public Boss {
+        immuneTo = List.copyOf(immuneTo);
         phases = List.copyOf(phases);
+    }
+
+    /** Whether it never takes {@code effect}. */
+    public boolean isImmuneTo(Holder<MobEffect> effect) {
+        return immuneTo.stream().anyMatch(effect::is);
     }
 
     /**

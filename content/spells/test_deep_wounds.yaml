@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (RLM-540): a passive whose proc makes the enemy the player crits bleed (Test Deep Wound), as the Arms
+# Warrior's Deep Wounds will (RLM-543). A sure chance; the bleed's own hits trigger no proc. Not gameplay content.
+id: test_deep_wounds
+name: {en_us: Test Deep Wounds}
+description: {en_us: "Your critical hits make the enemy bleed for 6 sec."}
+school: realmforge:physical
+passive:
+  procs:
+    - trigger: crit
+      chance_percent: 100
+      cast: realmforge:test_deep_wound

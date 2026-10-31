@@ -54,6 +54,10 @@ MAX_STRENGTH = 5.0
 # Every channel a player casts ticks every half second (Matěj, 2026-10-29, RLM-518: more, smaller hits beat fewer,
 # bigger ones). Mob and boss spells keep their own pace for now (Astone's Quake slams every 0.75 s).
 PLAYER_CHANNEL_INTERVAL = 0.5
+# A bolt's splash (RLM-399): within about a block of its target, at most 4.
+MAX_SPLASH_RADIUS = 4.0
+# What a window or an internal cooldown lasts at most: a minute.
+MAX_WINDOW_SECONDS = 60.0
 
 # What a player's cast needs in hand (RLM-499); mobs and bosses cast without it. melee_weapon: an item of
 # realmforge:melee_weapons in the main hand; shield: a shield (c:tools/shield) in either hand.
@@ -66,6 +70,8 @@ REMOVE_EFFECT = f"{MOD_ID}:remove_effect"
 CLEANSE = f"{MOD_ID}:cleanse"
 KNOCKBACK = f"{MOD_ID}:knockback"
 PROJECTILE = f"{MOD_ID}:projectile"
+DAMAGE_OVER_TIME = f"{MOD_ID}:damage_over_time"
+MELEE = f"{MOD_ID}:melee"
 AREA = f"{MOD_ID}:area"
 TELEPORT = f"{MOD_ID}:teleport"
 DASH = f"{MOD_ID}:dash"
@@ -177,6 +183,15 @@ class _ScaledAmount(_LeveledAmount):
         return _leveled_percent(self.spell_power_percent, self.spell_power_per_level_percent, level)
 
 
+class AgainstEffectDef(StrictModel):
+    """More damage against a target that has a status effect (RLM-540: Ice Lance against a Frozen target)."""
+
+    effect: ResourceId = Field(description="The status effect the target has, e.g. realmforge:frozen.")
+    damage_percent: Annotated[float, Field(gt=0, le=1000, allow_inf_nan=False)] = Field(
+        description="How much more damage the hit deals then, in percent: 200 triples it."
+    )
+
+
 class DamageEffectDef(_ScaledAmount):
     """Damage of the spell's school to each target: its amount plus its coefficient of the caster's power (Spell
     Power for magic, Attack Damage for a physical ability), then times (1 + the school's power + passives) in the damage
@@ -198,6 +213,11 @@ class DamageEffectDef(_ScaledAmount):
     )
     penetration_per_level_percent: Percent | None = Field(
         default=None, description="Added to penetration_percent for every spell level above 1."
+    )
+    against_effect: AgainstEffectDef | None = Field(
+        default=None,
+        description="More damage against a target with a status effect (RLM-540), e.g. "
+        "{effect: realmforge:frozen, damage_percent: 200} triples it against a Frozen target.",
     )
 
     @model_validator(mode="after")
@@ -228,6 +248,36 @@ class HealEffectDef(_ScaledAmount):
     a spell that scales with spell power. Heals can crit too (Matěj, 2026-10-15)."""
 
     type: Literal["realmforge:heal"]
+
+
+class DamageOverTimeEffectDef(_ScaledAmount):
+    """Damage over time kept as the caster's own stack of a status effect with ``stacks`` (RLM-539, Bleeding): the
+    amount (plus its coefficient of the caster's power) is the damage over the whole duration, fixed from the caster's
+    stats when it is applied, and its ticks split it evenly. Another spell or caster stacks; the same spell from the
+    same caster refreshes its stack."""
+
+    type: Literal["realmforge:damage_over_time"]
+    effect: ResourceId = Field(description="One of our status effects with stacks, e.g. realmforge:bleeding.")
+    duration_seconds: Seconds = Field(
+        description="How long it lasts at spell level 1: a whole number of the effect's intervals, at most 60."
+    )
+    duration_per_level_seconds: Seconds | None = Field(
+        default=None, description="Added to the duration for every spell level above 1."
+    )
+
+    @model_validator(mode="after")
+    def _duration(self) -> DamageOverTimeEffectDef:
+        if not 0 < self.duration_seconds <= MAX_EFFECT_SECONDS:
+            raise ValueError(
+                f"duration_seconds is more than 0 and at most {MAX_EFFECT_SECONDS:g} (research SP-8)"
+            )
+        if self.duration_per_level_seconds is not None and self.duration_per_level_seconds <= 0:
+            raise ValueError("duration_per_level_seconds is more than 0: leave it out for no growth")
+        return self
+
+    def duration_at(self, level: int) -> float:
+        """How long it lasts at spell ``level``, in seconds."""
+        return self.duration_seconds + (self.duration_per_level_seconds or 0) * (level - 1)
 
 
 class ApplyEffectEffectDef(StrictModel):
@@ -316,6 +366,7 @@ class KnockbackEffectDef(StrictModel):
 EntityEffectDef = Annotated[
     DamageEffectDef
     | HealEffectDef
+    | DamageOverTimeEffectDef
     | ApplyEffectEffectDef
     | RemoveEffectEffectDef
     | CleanseEffectDef
@@ -345,6 +396,19 @@ class ProjectileAppearanceDef(StrictModel):
         description="orb: a small spinning orb of three crossed slabs, the shape of a shulker's bullet."
     )
     color: HexColor = Field(description='Main colour of its placeholder texture, "#RRGGBB".')
+
+
+class SplashDef(StrictModel):
+    """A bolt's small explosion where it hits an enemy (RLM-399): every other enemy within ``radius`` of the target
+    takes the projectile's effects too, its damage at ``damage_percent`` and every other effect at full strength."""
+
+    radius: float = Field(
+        gt=0,
+        le=MAX_SPLASH_RADIUS,
+        allow_inf_nan=False,
+        description="In blocks from the target's hitbox, at most 4.",
+    )
+    damage_percent: Percent = Field(description="The share of the damage the enemies round the target take.")
 
 
 class ProjectileEffectDef(StrictModel):
@@ -384,6 +448,11 @@ class ProjectileEffectDef(StrictModel):
     )
     appearance: ProjectileAppearanceDef | None = Field(
         default=None, description="How it looks; without it, a trail of sparks."
+    )
+    splash: SplashDef | None = Field(
+        default=None,
+        description="A small explosion where it hits an enemy (RLM-399): the enemies round the target take its "
+        "effects too, its damage at a share.",
     )
 
     @model_validator(mode="after")
@@ -431,6 +500,24 @@ class AreaEffectDef(StrictModel):
         return self
 
 
+class MeleeEffectDef(StrictModel):
+    """A melee spell's hit shape in front of the caster (RLM-399): every enemy whose hitbox it strikes takes
+    ``effects``, the same for each, and none behind a wall: an enemy more than half hidden behind blocks from the
+    caster's eyes is spared. The shape is one of Better Combat's sword hitboxes at the caster's melee reach (its entity
+    interaction range: 3, 5 in creative mode), so it grows with the reach (Matěj's playtest of 2026-10-31), and it
+    follows the caster's look (the crosshair), so it tilts with the pitch. swing: Better Combat's sword swing, twice
+    the reach wide, reach / 3 tall, reach deep and 120° wide, the default melee hit shape (Slam, Reckless Strike);
+    stab: its sword stab, reach / 2 wide and tall and as deep (Shield Bash)."""
+
+    type: Literal["realmforge:melee"]
+    shape: Literal["swing", "stab"] = Field(
+        description="swing: Better Combat's sword swing, the default; stab: its narrower sword stab."
+    )
+    effects: list[EntityEffectDef] = Field(
+        min_length=1, description="What it does to each enemy inside, in order."
+    )
+
+
 class TeleportEffectDef(StrictModel):
     """Moves the caster at once to the target: a ground point, or as far along a direction as its range allows. It
     stops short of blocks, and does not move when no free spot is found on the way."""
@@ -454,12 +541,14 @@ class DashEffectDef(StrictModel):
 SpellEffectDef = Annotated[
     DamageEffectDef
     | HealEffectDef
+    | DamageOverTimeEffectDef
     | ApplyEffectEffectDef
     | RemoveEffectEffectDef
     | CleanseEffectDef
     | KnockbackEffectDef
     | ProjectileEffectDef
     | AreaEffectDef
+    | MeleeEffectDef
     | TeleportEffectDef
     | DashEffectDef,
     Field(discriminator="type"),
@@ -473,10 +562,24 @@ class SelfTargetingDef(StrictModel):
 
 
 class EnemyTargetingDef(StrictModel):
-    """A living entity that is not the caster's ally, in range and in line of sight."""
+    """A living entity that is not the caster's ally, in range and in line of sight. A melee spell's (``melee:
+    true``) is instead in the caster's melee swing, Better Combat's sword swing at its melee reach (the default melee
+    hit shape, Matěj's playtest of 2026-10-31), so it reaches as far as a melee attack."""
 
     type: Literal["realmforge:enemy"]
-    range: float = Field(gt=0, le=MAX_RANGE, allow_inf_nan=False, description="Range in blocks, at most 128.")
+    range: float | None = Field(
+        default=None, gt=0, le=MAX_RANGE, allow_inf_nan=False, description="Range in blocks, at most 128."
+    )
+    melee: Literal[True] | None = Field(
+        default=None,
+        description="true: the target must be in the caster's melee swing instead; then no range.",
+    )
+
+    @model_validator(mode="after")
+    def _range_or_melee(self) -> EnemyTargetingDef:
+        if (self.range is None) == (not self.melee):
+            raise ValueError("an enemy targeting has either a range or melee: true")
+        return self
 
 
 class AllyTargetingDef(StrictModel):
@@ -543,9 +646,31 @@ TargetingDef = Annotated[
 
 
 class InstantCastDef(StrictModel):
-    """The spell's effects run when it is cast."""
+    """The spell's effects run when it is cast; with ``animation_seconds``, it starts at once but plays out over its
+    animation (RLM-399: a Warrior's swing), and its effects run at its hit moment. The caster may move but not swing a
+    weapon meanwhile; another spell cuts it, and a stun or death before the hit moment gives half its cost and half its
+    cooldown back."""
 
     type: Literal["instant"]
+    animation_seconds: Seconds | None = Field(
+        default=None,
+        description="How long it plays out (its animation, about 0.5 to 1.5 s); Attack Speed never shortens it.",
+    )
+    hit_at_percent: float | None = Field(
+        default=None,
+        gt=0,
+        le=100,
+        allow_inf_nan=False,
+        description="When its effects run, in percent of the animation (50 by default: the middle of a swing).",
+    )
+
+    @model_validator(mode="after")
+    def _animation(self) -> InstantCastDef:
+        if self.animation_seconds is not None and self.animation_seconds <= 0:
+            raise ValueError("animation_seconds is more than 0: leave it out for a spell that lands at once")
+        if self.hit_at_percent is not None and self.animation_seconds is None:
+            raise ValueError("hit_at_percent is a moment of the animation: name animation_seconds too")
+        return self
 
 
 class _TimedCastDef(StrictModel):
@@ -643,10 +768,26 @@ class ChannelCastDef(_TimedCastDef):
 CastDef = Annotated[InstantCastDef | CastTimeCastDef | ChannelCastDef, Field(discriminator="type")]
 
 
+class ExtraCostDef(StrictModel):
+    """More of the resource a cast spends when the caster has it (RLM-540: Execute's extra rage), each point raising
+    the spell's damage."""
+
+    max: Annotated[float, Field(gt=0, allow_inf_nan=False)] = Field(
+        description="The most it spends beyond the cost, e.g. 30 rage."
+    )
+    damage_per_point_percent: Annotated[float, Field(gt=0, le=100, allow_inf_nan=False)] = Field(
+        description="How much more damage the spell deals for each point spent, in percent."
+    )
+
+
 class CostDef(_LeveledAmount):
     """What a cast costs: an amount of a resource (mana or rage), growing per spell level like the effects."""
 
     resource: ResourceType = Field(description="The resource the cast costs.")
+    extra: ExtraCostDef | None = Field(
+        default=None,
+        description="More of the resource the cast spends when the caster has it, for more damage (RLM-540).",
+    )
 
     @model_validator(mode="after")
     def _positive(self) -> CostDef:
@@ -783,11 +924,80 @@ class BlockCooldownDef(StrictModel):
         return self
 
 
+class ProcApplyEffectDef(StrictModel):
+    """A status effect a proc gives the other entity."""
+
+    effect: ResourceId = Field(description="The status effect, e.g. realmforge:frozen.")
+    duration_seconds: Seconds = Field(description="How long it lasts; more than 0, at most 60.")
+
+    @model_validator(mode="after")
+    def _duration(self) -> ProcApplyEffectDef:
+        if not 0 < self.duration_seconds <= MAX_EFFECT_SECONDS:
+            raise ValueError(f"duration_seconds is more than 0 and at most {MAX_EFFECT_SECONDS:g}")
+        return self
+
+
+class ProcDef(StrictModel):
+    """A proc of a passive spell (RLM-540): when its trigger happens, at its chance and outside its internal cooldown
+    on that target (research SP-15), it does one thing: gives the other entity a status effect, casts a spell at it
+    at the passive's rank, or opens a spell's window. Procs never trigger procs."""
+
+    trigger: Literal["hit", "crit", "kill", "hit_taken", "applies_effect", "tick"] = Field(
+        description="hit, crit, kill, hit_taken: the player's hit, crit or kill, or a hit on the player; "
+        "applies_effect: the player gives an enemy the status effect `effect`; tick: a tick of the player's damage "
+        "over time of `effect` (and `spell`) on an enemy."
+    )
+    effect: ResourceId | None = Field(
+        default=None, description="applies_effect, tick: the status effect, e.g. minecraft:slowness."
+    )
+    spell: ResourceId | None = Field(
+        default=None,
+        description="tick: only the ticks of this spell's damage over time, e.g. realmforge:rend.",
+    )
+    chance_percent: Percent = Field(description="The chance it fires at rank 1, in percent.")
+    chance_per_level_percent: Percent | None = Field(
+        default=None, description="Added to chance_percent for every rank above 1."
+    )
+    cooldown_seconds: Seconds = Field(
+        default=0, description="Its internal cooldown on each target, after it fired; at most 60 s."
+    )
+    apply_effect: ProcApplyEffectDef | None = Field(
+        default=None, description="Gives the other entity a status effect."
+    )
+    cast: ResourceId | None = Field(
+        default=None,
+        description="Casts this spell at the other entity, at the passive's rank (at most its own).",
+    )
+    open_window: ResourceId | None = Field(
+        default=None, description="Opens this spell's window for the player, e.g. realmforge:overpower."
+    )
+
+    @model_validator(mode="after")
+    def _consistent(self) -> ProcDef:
+        actions = [
+            name for name in ("apply_effect", "cast", "open_window") if getattr(self, name) is not None
+        ]
+        if len(actions) != 1:
+            raise ValueError("a proc does one thing: apply_effect, cast or open_window")
+        if self.trigger in ("applies_effect", "tick") and self.effect is None:
+            raise ValueError(f"a {self.trigger} proc names the effect it watches")
+        if self.trigger not in ("applies_effect", "tick") and self.effect is not None:
+            raise ValueError("only an applies_effect or tick proc names an effect")
+        if self.trigger != "tick" and self.spell is not None:
+            raise ValueError("only a tick proc names a spell")
+        if self.cooldown_seconds > MAX_WINDOW_SECONDS:
+            raise ValueError(f"cooldown_seconds is at most {MAX_WINDOW_SECONDS:g}")
+        return self
+
+    def chance_at(self, level: int) -> float:
+        """The chance at rank ``level``, in percent."""
+        return _leveled_percent(self.chance_percent, self.chance_per_level_percent, level)
+
+
 class PassiveDef(StrictModel):
     """What a passive spell does (RLM-541): it is never cast and never on the spell bar; while the player knows it, at
     its rank, it gives modifiers, raises named spells' damage, adds crit chance against a condition or shortens a
-    two-handed block's cooldown. Procs (Frostbite, Taste for Blood, Deep Wounds) come with the windows-and-procs
-    ticket and live in a passive spell too."""
+    two-handed block's cooldown, and its procs fire (RLM-540: Frostbite, Taste for Blood, Deep Wounds)."""
 
     while_wielding: ResourceId | None = Field(
         default=None,
@@ -804,14 +1014,19 @@ class PassiveDef(StrictModel):
         default=None,
         description="More crit chance for the player's spell hits on a target with a status effect.",
     )
+    procs: list[ProcDef] = Field(
+        default_factory=list,
+        description="What fires on the player's hits, crits, kills, effects and ticks (RLM-540): Frostbite, Taste for "
+        "Blood, Deep Wounds.",
+    )
     block_cooldown: BlockCooldownDef | None = Field(
         default=None, description="A two-handed block's cooldown, shorter from a rank on."
     )
 
     @model_validator(mode="after")
     def _does_something(self) -> PassiveDef:
-        if not (self.modifiers or self.spell_damage or self.crit_chance or self.block_cooldown):
-            raise ValueError("a passive gives modifiers, spell_damage, crit_chance or block_cooldown")
+        if not (self.modifiers or self.spell_damage or self.crit_chance or self.block_cooldown or self.procs):
+            raise ValueError("a passive gives modifiers, spell_damage, crit_chance, block_cooldown or procs")
         return self
 
     def grows(self) -> bool:
@@ -821,6 +1036,7 @@ class PassiveDef(StrictModel):
             or any(bonus.damage_per_level_percent is not None for bonus in self.spell_damage)
             or (self.crit_chance is not None and self.crit_chance.chance_per_level_percent is not None)
             or (self.block_cooldown is not None and self.block_cooldown.from_level > 1)
+            or any(proc.chance_per_level_percent is not None for proc in self.procs)
         )
 
 
@@ -836,6 +1052,8 @@ ACTIVE_FIELDS: tuple[str, ...] = (
     "npc_only",
     "requires",
     "castable_while_stunned",
+    "window",
+    "target_health_below_percent",
     "effects",
 )
 REQUIRED_ACTIVE_FIELDS: tuple[str, ...] = ("scales_with", "targeting", "cast", "effects")
@@ -859,6 +1077,26 @@ _DAMAGE_FIELD_PLACEHOLDERS: dict[str, str] = {
     "armor_shred": "armor_shred_percent",
     "penetration": "penetration_percent",
 }
+
+
+class WindowDef(StrictModel):
+    """How long a spell stays usable after what opens its window (RLM-540). The spell bar shows the open window with a
+    glow and the time left; a cast closes it."""
+
+    duration_seconds: Seconds = Field(description="How long the window stays open; more than 0, at most 60.")
+    opened_by: list[Literal["block", "kill"]] = Field(
+        default_factory=list,
+        description="block: the player blocks a hit with a shield or a two-handed weapon; kill: the player kills an "
+        "enemy that is not gray (its level at least the player's - 3). A passive's proc may open it too.",
+    )
+
+    @model_validator(mode="after")
+    def _seconds(self) -> WindowDef:
+        if not 0 < self.duration_seconds <= MAX_WINDOW_SECONDS:
+            raise ValueError(f"duration_seconds is more than 0 and at most {MAX_WINDOW_SECONDS:g}")
+        if len(set(self.opened_by)) != len(self.opened_by):
+            raise ValueError("opened_by names each trigger once")
+        return self
 
 
 class SpellDef(StrictModel):
@@ -923,6 +1161,15 @@ class SpellDef(StrictModel):
         default=False,
         description="Whether a stunned caster may cast it, as the Human's Will To Survive breaks a stun; every other "
         "spell waits until the stun ends.",
+    )
+    window: WindowDef | None = Field(
+        default=None,
+        description="Makes the spell usable only for a while after something happens (RLM-540): Overpower after a "
+        "block, Victory Rush after a kill. A cast closes the window.",
+    )
+    target_health_below_percent: Percent | None = Field(
+        default=None,
+        description="Castable only on a target below this share of its health, in percent (RLM-540: Execute's 20).",
     )
     effects: list[SpellEffectDef] = Field(
         default_factory=list,

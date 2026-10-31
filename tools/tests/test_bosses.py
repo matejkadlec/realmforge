@@ -274,6 +274,30 @@ def test_a_bosses_spells_must_exist(repo: RepoPaths) -> None:
     assert_problem(repo, "phases.1.on_enter.0")
 
 
+def test_a_bosses_immunities_name_status_effects_that_exist(repo: RepoPaths) -> None:
+    body(repo)
+    fight(
+        repo,
+        text=FIGHT.replace(
+            "arena: {radius: 20}\n",
+            "arena: {radius: 20}\nimmune_to: [realmforge:frozen, realmforge:no_such_effect]\n",
+        ),
+    )
+    problems = problems_for(repo)
+    assert any("immune_to.1" in problem for problem in problems), problems
+    assert not any("immune_to.0" in problem for problem in problems), problems
+
+
+def test_a_bosses_immunities_go_into_its_data(repo: RepoPaths) -> None:
+    body(repo)
+    fight(
+        repo,
+        text=FIGHT.replace("arena: {radius: 20}\n", "arena: {radius: 20}\nimmune_to: [realmforge:frozen]\n"),
+    )
+    data = json.loads(generate(repo)[f"{BOSS_DATA}/stone_colossus.json"])
+    assert data["immune_to"] == ["realmforge:frozen"]
+
+
 def test_a_boss_casts_no_ally_spell(repo: RepoPaths) -> None:
     body(repo)
     fight(

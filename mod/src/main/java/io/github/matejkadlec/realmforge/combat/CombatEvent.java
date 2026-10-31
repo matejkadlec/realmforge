@@ -82,6 +82,16 @@ public abstract class CombatEvent extends LivingEvent {
         }
     }
 
+    /**
+     * A hit the entity blocked in full or in part with a shield or a raised two-handed weapon (RLM-540: it opens
+     * Overpower's window).
+     */
+    public static final class Block extends CombatEvent {
+        public Block(LivingEntity entity, DamageSource source) {
+            super(entity, source);
+        }
+    }
+
     /** A hit the entity dodged: it dealt nothing, and its damage events stopped at {@code LivingIncomingDamageEvent}. */
     public static final class Dodge extends CombatEvent {
         public Dodge(LivingEntity entity, DamageSource source) {

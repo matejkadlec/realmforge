@@ -18,7 +18,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * Status effects generated from {@code content/effects/} (architecture 11.4): attribute modifiers, damage or
- * healing over time ({@link Periodic}) and stuns. NeoForge registers attributes before status effects, so a
+ * healing over time ({@link Periodic}), damage over time kept per caster's spell (stacks) and stuns. NeoForge registers attributes before status effects, so a
  * modifier finds its attribute, ours included, when its effect is built.
  */
 public final class GeneratedEffects {
@@ -30,6 +30,12 @@ public final class GeneratedEffects {
             EFFECTS.register("battle_shout", () -> new StatusEffect(MobEffectCategory.BENEFICIAL, 0xF5241B,
                     Optional.empty())
                     .modifier("minecraft:attack_damage", "realmforge:effect.battle_shout.minecraft.attack_damage", 0.1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL, 0.05));
+
+    /** {@code realmforge:bleeding} from {@code content/effects/bleeding.yaml}: harmful, "Bleeding". */
+    public static final DeferredHolder<MobEffect, MobEffect> BLEEDING =
+            EFFECTS.register("bleeding", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0x8A0303,
+                    Optional.empty())
+                    .stacks("realmforge:physical", 10, true));
 
     /** {@code realmforge:burning} from {@code content/effects/burning.yaml}: harmful, "Burning". */
     public static final DeferredHolder<MobEffect, MobEffect> BURNING =
@@ -48,6 +54,7 @@ public final class GeneratedEffects {
     public static final DeferredHolder<MobEffect, MobEffect> FROZEN =
             EFFECTS.register("frozen", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0xA8E4FF,
                     Optional.empty())
+                    .looks(StatusEffect.Look.ICE)
                     .modifier("minecraft:movement_speed", "realmforge:effect.frozen.minecraft.movement_speed", -1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
                     .modifier("minecraft:jump_strength", "realmforge:effect.frozen.minecraft.jump_strength", -1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 
@@ -83,7 +90,7 @@ public final class GeneratedEffects {
                     .modifier("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", -1.0, AttributeModifier.Operation.ADD_VALUE));
 
     /** Every effect above, in id order. */
-    public static final List<DeferredHolder<MobEffect, MobEffect>> ALL = List.of(BATTLE_SHOUT, BURNING, CRACKED_STONE, FROZEN, ICE_BARRIER, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);
+    public static final List<DeferredHolder<MobEffect, MobEffect>> ALL = List.of(BATTLE_SHOUT, BLEEDING, BURNING, CRACKED_STONE, FROZEN, ICE_BARRIER, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);
 
     private GeneratedEffects() {
     }

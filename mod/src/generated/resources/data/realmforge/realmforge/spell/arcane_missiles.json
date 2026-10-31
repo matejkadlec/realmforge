@@ -53,6 +53,10 @@
       "appearance": {
         "model": "orb",
         "color": "#C77DFF"
+      },
+      "splash": {
+        "radius": 1.0,
+        "damage": 0.5
       }
     }
   ]

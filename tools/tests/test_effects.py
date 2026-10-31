@@ -58,6 +58,7 @@ def test_repository_effects_are_the_engine_tests() -> None:
     content, _ = load_and_validate(RepoPaths())
     assert {entry.model.id for entry in content.effects} == {
         "battle_shout",
+        "bleeding",
         "burning",
         "cracked_stone",
         "frozen",
@@ -72,7 +73,7 @@ def test_repository_effects_are_the_engine_tests() -> None:
 @pytest.mark.parametrize(
     ("fields", "expected"),
     [
-        ({"periodic": None}, "an effect gives modifiers, periodic damage or healing, or both"),
+        ({"periodic": None}, "an effect gives modifiers, periodic damage or healing, stacks, or both"),
         ({"category": "cursed"}, "Input should be 'beneficial', 'harmful' or 'neutral'"),
         ({"color": "blue"}, "String should match pattern"),
         (
@@ -194,8 +195,8 @@ def test_registrations(repo: RepoPaths) -> None:
         "AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)\n"
     ) in java
     assert (
-        "ALL = List.of(BATTLE_SHOUT, BURNING, CRACKED_STONE, FROZEN, ICE_BARRIER, STUNNED, TEST_BURNING, TEST_REGROWTH, "
-        "TEST_SAPPED);"
+        "ALL = List.of(BATTLE_SHOUT, BLEEDING, BURNING, CRACKED_STONE, FROZEN, ICE_BARRIER, STUNNED, TEST_BURNING, "
+        "TEST_REGROWTH, TEST_SAPPED);"
     ) in java
 
 
@@ -225,6 +226,7 @@ def test_expectations(repo: RepoPaths) -> None:
         "                    0x4FCF6F,\n"
         "                    List.of(),\n"
         '                    Optional.of(new PeriodicExpectation("heal", "realmforge:arcane", 2.0, 0.1, 20)),\n'
+        "                    Optional.empty(),\n"
         "                    false)"
     ) in expectations
     assert (
@@ -248,8 +250,17 @@ def test_no_effects_still_compile(repo: RepoPaths) -> None:
         "ice_barrier",
         "shield_bash",
         "shatter",
+        "test_rend",
+        "test_lacerate",
+        "test_deep_wound",
+        "test_deep_wounds",
+        "test_ice_lance",
+        "test_frostbite",
+        "test_taste_for_blood",
     ):
         (repo.content / "spells" / f"{name}.yaml").unlink()
+    titan = repo.content / "bosses" / "test_titan.yaml"
+    titan.write_text(titan.read_text().replace("immune_to: [realmforge:frozen]\n", ""))
     drop_class_kits(repo.content)
     for folder in ("bosses", "mobs", "kill_xp_multipliers"):
         (repo.content / folder / "astone.yaml").unlink()
@@ -257,3 +268,68 @@ def test_no_effects_still_compile(repo: RepoPaths) -> None:
     assert "ALL = List.of();" in files[REGISTRATIONS].decode()
     assert "EFFECTS = List.of();" in files[EXPECTATIONS].decode()
     assert not any(path.startswith(ICONS) for path in files)
+
+
+# Stacks of damage over time (RLM-539)
+
+
+@pytest.mark.parametrize(
+    ("fields", "expected"),
+    [
+        (
+            {
+                "stacks": {"school": "realmforge:physical", "interval_seconds": 0.5},
+                "periodic": {
+                    "type": "damage",
+                    "school": "realmforge:fire",
+                    "amount": 1,
+                    "interval_seconds": 1,
+                },
+            },
+            "an effect's ticks come from periodic or from stacks, not both",
+        ),
+        (
+            {
+                "periodic": None,
+                "category": "beneficial",
+                "stacks": {"school": "realmforge:physical", "interval_seconds": 1},
+            },
+            "stacks deal damage over time, so the effect is harmful",
+        ),
+        (
+            {"periodic": None, "stacks": {"school": "realmforge:physical", "interval_seconds": 0.1}},
+            "interval_seconds is from 0.25 to 10 seconds",
+        ),
+    ],
+)
+def test_invalid_stacks_are_rejected(fields: dict, expected: str) -> None:
+    with pytest.raises(ValueError) as excinfo:
+        effect_model(**fields)
+    assert expected in str(excinfo.value)
+
+
+def test_stacks_and_a_look_are_generated(repo: RepoPaths) -> None:
+    effect(
+        repo,
+        "test_bleed",
+        'category: harmful\ncolor: "#8A0303"\nlook: ice\n'
+        "stacks: {school: realmforge:physical, interval_seconds: 0.5, ignores_armor: true}\n",
+    )
+    files = generate(repo)
+    registrations = files[REGISTRATIONS].decode()
+    assert (
+        '.looks(StatusEffect.Look.ICE)\n                    .stacks("realmforge:physical", 10, true)'
+        in registrations
+    )
+    assert (
+        'Optional.of(new StacksExpectation("realmforge:physical", 10, true))' in files[EXPECTATIONS].decode()
+    )
+
+
+def test_the_stacks_school_must_exist(repo: RepoPaths) -> None:
+    effect(
+        repo,
+        "test_bleed",
+        'category: harmful\ncolor: "#8A0303"\nstacks: {school: realmforge:shadow, interval_seconds: 0.5}\n',
+    )
+    assert_problem(repo, "stacks.school")

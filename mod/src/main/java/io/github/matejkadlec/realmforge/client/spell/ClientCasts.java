@@ -45,9 +45,17 @@ public final class ClientCasts {
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, ClientCasts::onMovementInput);
     }
 
+    /** A swing (RLM-399) is kept, so the attack key does nothing during it, but raises no hands: its own animation is C6's. */
     public static void start(CastStartedPayload payload) {
         CASTS.start(payload.casterId(), payload.cast());
-        caster(payload.casterId()).ifPresent(caster -> CastAnimation.show(caster, true));
+        if (!payload.cast().swing()) {
+            caster(payload.casterId()).ifPresent(caster -> CastAnimation.show(caster, true));
+        }
+    }
+
+    /** Whether the cast this client knows {@code casterId} to be casting is a swing (RLM-399). */
+    public static boolean isSwing(int casterId) {
+        return caster(casterId).flatMap(ClientCasts::current).filter(Cast::swing).isPresent();
     }
 
     /** The hands stay up until the next client tick ({@link PendingLowerings}). */

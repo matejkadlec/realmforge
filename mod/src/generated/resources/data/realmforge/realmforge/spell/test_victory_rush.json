@@ -1,0 +1,39 @@
+{
+  "name": "spell.realmforge.test_victory_rush.name",
+  "description": "spell.realmforge.test_victory_rush.description",
+  "school": "realmforge:physical",
+  "scales_with": "attack_damage",
+  "targeting": {
+    "type": "realmforge:enemy",
+    "melee": true
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 10,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [
+    "melee_weapon"
+  ],
+  "castable_while_stunned": false,
+  "window": {
+    "duration_ticks": 400,
+    "opened_by": [
+      "kill"
+    ]
+  },
+  "effects": [
+    {
+      "amount": 5.0,
+      "per_level": 0,
+      "attack_damage": 0.0,
+      "type": "realmforge:damage"
+    }
+  ]
+}

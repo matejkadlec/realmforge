@@ -65,6 +65,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   <li><b>Clients</b> learn of a cast from {@link CastStartedPayload} (the caster and every tracking player, and a
  *   player who starts tracking the caster later, with the original start time) and of its end from
  *   {@link CastEndedPayload}. The end is also posted as a {@link CastEndedEvent}.</li>
+ *   <li><b>A swing</b> (RLM-399, Matěj, 2026-10-24 and 2026-10-29): an instant spell with an animation starts at once
+ *   (its cost, global cooldown and own cooldown applied) but plays out over its animation as a cast of its own, without
+ *   a cast bar, a cast animation or the slow: its caster moves freely. Its effects run once, at its hit moment; a new
+ *   spell cuts it, and damage lands only if the hit moment had passed. A stun or death before the hit moment gives
+ *   half its cost and half its cooldown back; Attack Speed shortens neither.</li>
  *   <li><b>No melee while casting</b> (ADR 0020, architecture 9.2): a casting player's {@code AttackEntityEvent} is
  *   cancelled, and the cast sets Better Combat's tag {@value CombatState#BETTER_COMBAT_DISABLED_TAG}, which stops its
  *   swings, unless the player already had it. The {@code combat} attachment records that the cast set it, so the end
@@ -105,9 +110,10 @@ public final class Casting {
     /**
      * Begins {@code caster}'s cast of {@code spell} at {@code target}, at game time {@code now}, after {@link
      * SpellCaster}'s checks passed and the global cooldown and the cost (for a channel its first second's, and its
-     * cooldown) applied.
+     * cooldown) applied. Its damage is multiplied by {@code damageScale} (extra rage spent, RLM-540).
      */
-    static void begin(LivingEntity caster, Holder.Reference<Spell> spell, int level, SpellTarget target, long now) {
+    static void begin(LivingEntity caster, Holder.Reference<Spell> spell, int level, SpellTarget target, long now,
+            double damageScale) {
         SpellCast spellCast = spell.value().cast();
         double reduction = DamagePipeline.stat(caster, GeneratedStats.CAST_TIME_REDUCTION);
         boolean channel = spellCast.type() == SpellCast.Type.CHANNEL;
@@ -132,12 +138,32 @@ public final class Casting {
             }
         }
         Running running = new Running(caster, spell, level, target, (ServerLevel) caster.level(), cast, interval,
-                second, payments);
+                second, payments, damageScale, 0);
         RUNNING.put(caster, running);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new CastStartedPayload(caster.getId(), cast));
         showCircle(running);
         spellCast.sound().map(BuiltInRegistries.SOUND_EVENT::getValue).ifPresent(sound -> caster.level()
                 .playSound(null, caster, sound, caster.getSoundSource(), 1.0F, 1.0F));
+    }
+
+    /**
+     * Begins {@code caster}'s swing of {@code spell} (RLM-399) at game time {@code now}: an instant spell with an
+     * animation, whose cost ({@code paid} in all), global cooldown and own cooldown already applied. Its effects run at
+     * its hit moment, on {@code target} as it is then, multiplied by {@code damageScale}.
+     */
+    static void beginSwing(LivingEntity caster, Holder.Reference<Spell> spell, int level, SpellTarget target, long now,
+            double damageScale, double paid) {
+        Cast cast = new Cast(spell.key(), now, spell.value().cast().animationTicks(), false, true);
+        CombatState state = caster.getData(SpellAttachments.COMBAT);
+        state.startCast(cast);
+        if (caster instanceof Player player && player.addTag(CombatState.BETTER_COMBAT_DISABLED_TAG)) {
+            state.setSetBetterCombatTag(true);
+        }
+        caster.syncData(SpellAttachments.COMBAT);
+        Running running = new Running(caster, spell, level, target, (ServerLevel) caster.level(), cast, 0, 0, 0,
+                damageScale, paid);
+        RUNNING.put(caster, running);
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new CastStartedPayload(caster.getId(), cast));
     }
 
     /**
@@ -174,8 +200,25 @@ public final class Casting {
      * (RLM-371, ADR 0057). Reads the {@code combat} attachment, so the caster's own client gets the same answer.
      */
     public static boolean blocksSprint(LivingEntity caster) {
-        return current(caster).flatMap(cast -> Spells.get(caster.registryAccess(), cast.spell()))
+        return current(caster).filter(cast -> !cast.swing())
+                .flatMap(cast -> Spells.get(caster.registryAccess(), cast.spell()))
                 .filter(spell -> !spell.value().cast().castableWhileMoving()).isPresent();
+    }
+
+    /** Lands {@code caster}'s swing now: its effects if they have not run, then its end; whether a swing ran. */
+    static boolean land(LivingEntity caster) {
+        Running running = RUNNING.get(caster);
+        if (running == null || !running.cast().swing()) {
+            return false;
+        }
+        if (!running.hit) {
+            running.hit = true;
+            SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(),
+                    running.target().now(caster, running.spell().value().targeting()), Optional.empty(),
+                    running.damageScale());
+        }
+        end(caster, CastEnd.COMPLETED);
+        return true;
     }
 
     /** Cancels {@code caster}'s cast in progress, if any; returns whether one ran. */
@@ -212,6 +255,10 @@ public final class Casting {
         }
         long now = running.level().getGameTime();
         Spell spell = running.spell().value();
+        if (running.cast().swing()) {
+            swing(running, now);
+            return;
+        }
         if (!spell.cast().castableWhileMoving() && caster.isSprinting()) {
             // A player's client asked to sprint (ServerboundPlayerCommandPacket) before it knew of the cast.
             caster.setSprinting(false);
@@ -232,7 +279,7 @@ public final class Casting {
                 }
                 running.ticksRun++;
                 SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(),
-                        running.target().now(caster, spell.targeting()));
+                        running.target().now(caster, spell.targeting()), Optional.empty(), running.damageScale());
                 if (RUNNING.get(caster) != running) {
                     return;
                 }
@@ -255,7 +302,44 @@ public final class Casting {
         SpellCaster.startCooldown(caster, spell, running.spell().key(), caster.getData(SpellAttachments.COMBAT), now);
         end(caster, CastEnd.COMPLETED);
         SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(),
-                running.target().now(caster, spell.targeting()));
+                running.target().now(caster, spell.targeting()), Optional.empty(), running.damageScale());
+    }
+
+    /** A swing's tick: its effects at its hit moment, once, then the rest of its animation until it completes. */
+    private static void swing(Running running, long now) {
+        LivingEntity caster = running.caster();
+        Spell spell = running.spell().value();
+        if (!running.hit && now >= running.cast().startGameTime() + spell.cast().hitTick()) {
+            running.hit = true;
+            SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(),
+                    running.target().now(caster, spell.targeting()), Optional.empty(), running.damageScale());
+            if (RUNNING.get(caster) != running) {
+                return;
+            }
+        }
+        if (now >= running.cast().endGameTime()) {
+            end(caster, CastEnd.COMPLETED);
+        }
+    }
+
+    /**
+     * A swing that a stun or death stopped before its hit moment gives half its cost and half its cooldown back (Matěj,
+     * 2026-10-29: a light penalty, not a full one).
+     */
+    private static void refundSwing(Running running, CastEnd end, CombatState state) {
+        if (!running.cast().swing() || running.hit || end != CastEnd.STUNNED && end != CastEnd.DIED) {
+            return;
+        }
+        LivingEntity caster = running.caster();
+        Spell spell = running.spell().value();
+        SpellCaster.refund(caster, spell, running.paid() / 2, state);
+        Long cooldownEnd = state.cooldowns().get(running.spell().key());
+        if (cooldownEnd != null) {
+            int cooldown = SpellScaling.cooldownTicks(spell.cooldownTicks(),
+                    DamagePipeline.stat(caster, GeneratedStats.COOLDOWN_REDUCTION));
+            state.setCooldownEnd(running.spell().key(),
+                    Math.max(running.level().getGameTime(), cooldownEnd - cooldown / 2));
+        }
     }
 
     /**
@@ -287,7 +371,7 @@ public final class Casting {
         Cast cast = running.cast();
         double share = cast.durationTicks() > 0 ? (double) (now - cast.startGameTime()) / cast.durationTicks() : 1;
         if (spellCast.keepRange().filter(kept -> share < kept).isPresent()
-                && Targets.distance(caster, target) > running.spell().value().targeting().reach()) {
+                && Targets.distance(caster, target) > running.spell().value().targeting().reach(caster)) {
             return Optional.of(CastEnd.OUT_OF_RANGE);
         }
         return Optional.empty();
@@ -383,6 +467,7 @@ public final class Casting {
             return false;
         }
         CombatState state = caster.getData(SpellAttachments.COMBAT);
+        refundSwing(running, end, state);
         state.clearCast();
         clearBetterCombatTag(caster, state);
         AttributeInstance speed = caster.getAttribute(Attributes.MOVEMENT_SPEED);
@@ -469,15 +554,20 @@ public final class Casting {
         private final int interval;
         private final int second;
         private final int payments;
+        private final double damageScale;
+        private final double paid;
         /** How many of a channel's ticks have run. */
         private int ticksRun;
+        /** Whether a swing's effects ran: its hit moment passed. */
+        private boolean hit;
         /** How many of a channel's seconds it paid for: the first when it began. */
         private int paymentsMade = 1;
         /** The entity id a casting player's client was last told the target circle is under. */
         private int circle = NO_CIRCLE;
 
         private Running(LivingEntity caster, Holder.Reference<Spell> spell, int spellLevel, SpellTarget target,
-                ServerLevel level, Cast cast, int interval, int second, int payments) {
+                ServerLevel level, Cast cast, int interval, int second, int payments, double damageScale,
+                double paid) {
             this.caster = caster;
             this.spell = spell;
             this.spellLevel = spellLevel;
@@ -487,6 +577,18 @@ public final class Casting {
             this.interval = interval;
             this.second = second;
             this.payments = payments;
+            this.damageScale = damageScale;
+            this.paid = paid;
+        }
+
+        /** What its damage is multiplied by: extra rage spent (RLM-540), 1 otherwise. */
+        double damageScale() {
+            return damageScale;
+        }
+
+        /** What a swing cost in all, its extra included (RLM-399): half comes back if it is stopped early. */
+        double paid() {
+            return paid;
         }
 
         LivingEntity caster() {

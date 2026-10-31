@@ -370,7 +370,8 @@ public final class QaCommandGameTests {
         double raw = 5 + 1.2 * player.getAttributeValue(Attributes.ATTACK_DAMAGE);
         double crit = raw * (1 + player.getAttributeValue(GeneratedStats.CRIT_DAMAGE) + 0.3);
 
-        Pillager dummy = TrainingDummy.spawn(helper.getLevel(), helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
+        // In Reckless Strike's box in front of the player (RLM-399).
+        Pillager dummy = TrainingDummy.spawn(helper.getLevel(), helper.absoluteVec(new Vec3(2.5, 1, 1.5)), 0, 0);
         try {
             for (double armor : new double[] {0, 20}) {
                 dummy.getAttribute(Attributes.ARMOR).setBaseValue(armor);
@@ -378,6 +379,8 @@ public final class QaCommandGameTests {
                 Spells.resetCooldowns(player);
                 CastResult result = SpellCaster.cast(player, GeneratedSpells.RECKLESS_STRIKE, dummy);
                 helper.assertTrue(result.success(), "Reckless Strike was refused: " + result.failure());
+                // A swing (RLM-399): it lands at its hit moment, brought forward here.
+                helper.assertTrue(Spells.landSwing(player), "Reckless Strike swung");
                 // The dummy heals itself after every hit; its DPS meter keeps what each hit dealt.
                 TrainingDummy.Session session = TrainingDummy.session(dummy);
                 helper.assertTrue(session != null && session.hits() == 1 && session.crits() == 1,

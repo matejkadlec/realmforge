@@ -177,8 +177,9 @@ Rules:
   body (a mob of archetype `boss` in `mobs/`, one boss per body and a boss for every such mob), its fixed `level` (a
   dungeon run's level wins over it), its `arena` (`radius`, 4 to 64 blocks round its home, the spot where it first
   stood: it fights only what stands inside, takes no hurt from outside, and resets when pulled out), its `bar_color`
-  (vanilla's boss bar colours, `red` by default) and `phase_change_seconds` (3 by default: how long it stands unhurt,
-  casting nothing, when it enters a later phase). Its `phases` come in order: each has an `id`, a `name` the boss bar
+  (vanilla's boss bar colours, `red` by default), `phase_change_seconds` (3 by default: how long it stands unhurt,
+  casting nothing, when it enters a later phase) and `immune_to` (RLM-539: the status effects it never takes, boss by
+  boss, e.g. `[realmforge:frozen, realmforge:stunned]`; ordinary mobs have no immunity). Its `phases` come in order: each has an `id`, a `name` the boss bar
   shows after the boss's name (Title Case, 1 to 3 words), and every phase after the first an `enter_when`, a
   `realmforge:health_below` (`health_percent`, decreasing from phase to phase) or a `realmforge:time_in_phase`
   (`after_seconds` of fight in the phase before: a boss nobody has pulled stays in its first phase); `on_enter` names
@@ -372,7 +373,11 @@ Rules:
   interrupted; it needs -100 % `minecraft:movement_speed` and `minecraft:jump_strength` among its `modifiers`. A tick is a hit
   or heal of the school from the caster that applied the effect, its share of the caster's Spell Power added and
   raised by the school's power, and it never crits. `frozen` roots its holder (no walking, no jumping) but lets it
-  attack and cast, unlike a stun; Shatter reads it (RLM-541). A spell applies one through `realmforge:apply_effect`, for a whole number of its intervals. The
+  attack and cast, unlike a stun; Shatter reads it (RLM-541). `look: ice` makes clients draw its holder covered in
+  Packed Ice and shivering (Frozen, RLM-539). `stacks` (`school`, `interval_seconds`, `ignores_armor`; instead of
+  `periodic`, harmful only) makes it damage over time kept per caster's spell (Bleeding, RLM-539): the spell that applies
+  it through `realmforge:damage_over_time` names the damage, fixed when applied; two spells or casters stack, the same
+  spell from the same caster refreshes its stack, and its ticks are never dodged or blocked. A spell applies one through `realmforge:apply_effect`, for a whole number of its intervals. The
   `test_*` effects are engine tests, not gameplay content.
 - `spells/` holds the spells of players, mobs and bosses ([architecture 11](../docs/architecture.md#11-spells-and-status-effects)):
   a `name` and a `description` (what it does in a sentence or two, shown in its tooltip; numbers come from data
@@ -388,7 +393,9 @@ Rules:
   school, framed in black on the spell bar: Will To Survive, Matěj, 2026-10-30); what they `scales_with`, `spell_power` for a magic school and `attack_damage`
   for a physical one (off-class stats do nothing for a class's abilities, Matěj, 2026-10-15); their `targeting`
   (`{type: realmforge:self}`, or `realmforge:enemy`, `realmforge:ally`, `realmforge:ground_point` or
-  `realmforge:direction` with a `range` of at most 128 blocks; from a player's spell bar, an `enemy` or `ally` spell
+  `realmforge:direction` with a `range` of at most 128 blocks; a melee spell's `realmforge:enemy` says `melee: true`
+  instead of a range: its target must be in the caster's melee swing, the default melee hit shape below, RLM-399;
+  from a player's spell bar, an `enemy` or `ally` spell
   takes the entity under the crosshair, else the one aim assistance picks in a narrow cone around it, within its range
   and 32 blocks (ADR 0055); an enemy spell without one is refused, and an ally spell without one takes the caster; a
   ground point lands on the block the crosshair hits within range, or beyond it, or at the sky, at the farthest point
@@ -422,7 +429,12 @@ Rules:
   crit by default, heals too; a crit chance above 100 % turns into crit damage 1:1); `npc_only` for mob and boss
   spells; `requires` (C4, RLM-499: `melee_weapon`, an item of `#realmforge:melee_weapons` in the main hand, or
   `shield`, one in either hand; a player's physical spell that deals damage in melee range needs one, and a cast
-  without it is refused; never on an `npc_only` spell); `castable_while_stunned` (Will To Survive); and the
+  without it is refused; never on an `npc_only` spell); `castable_while_stunned` (Will To Survive); `window`
+  (RLM-540: `duration_seconds` the spell stays usable after what opens it, `opened_by` `block` or `kill`; a cast closes
+  it, and a passive's proc may open it too); `target_health_below_percent` (castable only on an enemy below that share
+  of its health: Execute's 20); a `cost` may add `extra` (`max` more of the resource spent when the player has it,
+  `damage_per_point_percent` more damage for each); an `instant` cast may play out over `animation_seconds` (RLM-399: a
+  Warrior's swing, its effects at `hit_at_percent` of it, 50 by default; a player's only); and the
   `effects`, in order: `realmforge:damage` (a hit of the school on an enemy) and `realmforge:heal`
   (on the caster or an ally), each with `amount` at level 1 and `per_level`, and its coefficient of the caster's
   power (scaling system C, Matěj, 2026-10-30, RLM-534: damage = (amount + coefficient × power) × (1 + the school's
@@ -432,7 +444,10 @@ Rules:
   25 % a rank, 200 % at rank 5); a spell names only its own power's; a damage
   effect may add `armor_shred_percent` (that share of the target's armor ignored by this hit) and
   `penetration_percent` (that share of its resistance to the school ignored), each with a `_per_level_percent` for
-  every rank above 1, at most 100 % at `max_level`;
+  every rank above 1, at most 100 % at `max_level`, and `against_effect` (`effect`, `damage_percent`: more damage against
+  a target with that status effect, Ice Lance's 200 against Frozen, RLM-540); `realmforge:damage_over_time` (RLM-539:
+  `effect`, one of ours with `stacks`, `amount` the damage over the whole `duration_seconds`, a whole number of the
+  effect's intervals, with `per_level`, its coefficient as for damage and `duration_per_level_seconds`);
   `realmforge:apply_effect` (`effect`, a status effect id: one of ours from `effects/`, or a vanilla one such as
   `minecraft:slowness`, never an instant one such as
   `minecraft:instant_health`, which would apply every tick: use `realmforge:heal` or `realmforge:damage`;
@@ -449,8 +464,14 @@ Rules:
   leaves the world, and its own `effects` on the first enemy it reaches that can be damaged, hostile or passive; it
   passes the caster's allies, and an entity that cannot be damaged stops it untouched; `spares`, an entity type tag
   whose entities stop it untouched; `impact`, a `sound` and a block's break `particles` where it hits; `appearance`,
-  `{model: orb, color}`, its look, with a placeholder texture `textures/entity/spell/<spell>.png`, one per spell) at
-  an enemy, a ground point or along a direction; `realmforge:area` (`radius`, `duration_seconds`, `interval_seconds`, `affects: enemies` or
+  `{model: orb, color}`, its look, with a placeholder texture `textures/entity/spell/<spell>.png`, one per spell;
+  `splash`, `{radius, damage_percent}`: a small explosion where it hits an enemy, every other enemy within the radius of
+  the target taking its effects too, the damage at the share and the rest at full strength, RLM-399) at
+  an enemy, a ground point or along a direction; `realmforge:melee` (RLM-399, on a `realmforge:self` spell: a hit shape in
+  front of the player, one of Better Combat's sword hitboxes at the caster's melee reach, its entity interaction range,
+  so it grows with the reach: `shape: swing`, the default melee hit shape, 2 × reach wide, reach / 3 tall, reach deep
+  and 120°, or `shape: stab`, reach / 2 wide and tall and as deep; its own `effects` on every enemy whose hitbox it
+  strikes, none behind a wall or more than half hidden by a corner); `realmforge:area` (`radius`, `duration_seconds`, `interval_seconds`, `affects: enemies` or
   `allies`, its own `effects` on each of them inside as it appears and then at every interval, once per interval
   of its duration, and an optional `ring_color`, the dust ring that shows its edge instead of purple sparks) at the
   caster's feet, an enemy's or a ground point; `realmforge:teleport` (the caster to a ground
@@ -471,8 +492,12 @@ Rules:
   rank above 1; never `add_multiplied_total`); `spell_damage` (a list of `spells`, active ones that deal damage, whose
   hits deal `damage_percent` more, `damage_per_level_percent` more a rank: the passives of the damage formula);
   `crit_chance` (`chance_percent`, `chance_per_level_percent`, at most 100 % at `max_level`, for the player's spell hits
-  on a target with the status effect `against`); and `block_cooldown` (`reduction_seconds` off a two-handed block's
-  cooldown from rank `from_level`). Its description's placeholders are its own, at the player's rank and, in the
+  on a target with the status effect `against`); `block_cooldown` (`reduction_seconds` off a two-handed block's
+  cooldown from rank `from_level`); and `procs` (RLM-540: each a `trigger`, `hit`, `crit`, `kill`, `hit_taken`,
+  `applies_effect` (the player gives an enemy the status effect `effect`) or `tick` (a tick of the player's damage over
+  time of `effect`, of `spell` when named), a `chance_percent` with `chance_per_level_percent`, an internal
+  `cooldown_seconds` on each target, and one action: `apply_effect` (`effect`, `duration_seconds`), `cast` (a spell cast
+  at the other entity at the passive's rank) or `open_window` (a spell with a `window`)). Its description's placeholders are its own, at the player's rank and, in the
   tooltip, at the next: `{bonus}` (the first modifier), `{spell_damage}`, `{crit_chance}`, `{block_cooldown}` and
   `{block_cooldown_rank}`. It never goes onto the spell bar and is never cast. Improved Frostbolt, Shatter and
   Two-Handed Weapon Specialization are the first, of the M1 trees that RLM-542 and RLM-543 teach.

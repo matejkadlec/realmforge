@@ -1,0 +1,43 @@
+{
+  "name": "spell.realmforge.test_execute.name",
+  "description": "spell.realmforge.test_execute.description",
+  "school": "realmforge:physical",
+  "scales_with": "attack_damage",
+  "targeting": {
+    "type": "realmforge:enemy",
+    "melee": true
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cost": {
+    "amount": 15.0,
+    "per_level": 0,
+    "resource": "realmforge:rage",
+    "extra": {
+      "max": 30.0,
+      "damage_per_point": 0.03
+    }
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 10,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [
+    "melee_weapon"
+  ],
+  "castable_while_stunned": false,
+  "target_health_below": 0.2,
+  "effects": [
+    {
+      "amount": 10.0,
+      "per_level": 0,
+      "attack_damage": 0.0,
+      "type": "realmforge:damage"
+    }
+  ]
+}

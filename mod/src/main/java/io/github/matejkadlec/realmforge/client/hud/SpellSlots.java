@@ -15,7 +15,8 @@ import net.minecraft.util.ARGB;
  * the spell's school colour (a spell of no school: black, filled dark grey), the spell's initials until spells have
  * icons (C6, A1; the frame stays then, Matěj 2026-10-21), a blue tint while the player lacks its resource, the cooldown
  * sweep ({@link CooldownSweep}) with the seconds left of a long cooldown, a gold frame while it is being cast, and the
- * slot's key in the corner.
+ * slot's key in the corner. A spell usable only in its window (RLM-540: Overpower, Victory Rush) is greyed out while the
+ * window is closed, and glows with the seconds left in its lower corner while it is open.
  */
 public final class SpellSlots {
     private static final int BACKGROUND = 0xA0101010;
@@ -26,6 +27,11 @@ public final class SpellSlots {
     private static final int SCHOOL_FILL_ALPHA = 70;
     private static final int CASTING_FRAME = 0xFFFFD24A;
     private static final int UNAFFORDABLE = 0x903048C8;
+    /** A closed window (RLM-540): grey over the slot. */
+    private static final int WINDOW_CLOSED = 0xA0303030;
+    /** An open window: a bright frame inside the school's, and its seconds left. */
+    private static final int WINDOW_GLOW = 0xFFFFF27A;
+    private static final int WINDOW_TEXT = 0xFFFFF27A;
     private static final int SWEEP = 0xB0000000;
     private static final int TEXT = 0xFFFFFFFF;
     private static final int KEY_TEXT = 0xFFD0D0D0;
@@ -58,6 +64,9 @@ public final class SpellSlots {
             if (!slot.affordable()) {
                 graphics.fill(x + 1, y + 1, x + size - 1, y + size - 1, UNAFFORDABLE);
             }
+            if (slot.windowTicks() == 0) {
+                graphics.fill(x + 1, y + 1, x + size - 1, y + size - 1, WINDOW_CLOSED);
+            }
             for (CooldownSweep.Span span : CooldownSweep.spans(size - 2, slot.cooldown())) {
                 graphics.fill(x + 1 + span.x(), y + 1 + span.top(), x + 2 + span.x(), y + 1 + span.bottom(), SWEEP);
             }
@@ -67,6 +76,12 @@ public final class SpellSlots {
             }
         }
         graphics.outline(x, y, size, size, slot.casting() ? CASTING_FRAME : frame);
+        if (slot.windowTicks() > 0) {
+            graphics.outline(x + 1, y + 1, size - 2, size - 2, WINDOW_GLOW);
+            String seconds = Integer.toString((slot.windowTicks() + 19) / 20);
+            graphics.text(font, seconds, x + size - 2 - font.width(seconds), y + size - 2 - font.lineHeight + 1,
+                    WINDOW_TEXT);
+        }
         key.ifPresent(label -> {
             // Two thirds of the font, so the key fits above the initials; smaller still if it would leave the slot.
             float scale = Math.min(KEY_SCALE, (size - 2 * KEY_INSET) / (float) Math.max(1, font.width(label)));

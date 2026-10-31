@@ -1,0 +1,34 @@
+{
+  "name": "spell.realmforge.test_rend.name",
+  "description": "spell.realmforge.test_rend.description",
+  "school": "realmforge:physical",
+  "scales_with": "attack_damage",
+  "targeting": {
+    "type": "realmforge:enemy",
+    "melee": true
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 10,
+  "max_level": 2,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
+  "effects": [
+    {
+      "amount": 12.0,
+      "per_level": 0,
+      "attack_damage": 0.0,
+      "attack_damage_per_level": 0.5,
+      "type": "realmforge:damage_over_time",
+      "effect": "realmforge:bleeding",
+      "duration_ticks": 120
+    }
+  ]
+}

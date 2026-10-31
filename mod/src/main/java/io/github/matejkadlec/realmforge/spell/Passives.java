@@ -22,7 +22,8 @@ import net.minecraft.world.entity.player.Player;
  * them at the end of the same tick, and learning a spell marks the stats for a recompute. The damage engine reads the
  * rest per hit: {@link #damageBonus} for a spell's hit (the passives of system C's (1 + School Power + passives)),
  * {@link #critChanceAgainst} against its target, and {@code combat} asks {@link #blockCooldownReductionTicks} for a
- * raised two-handed weapon's cooldown. Mobs know no spells, so their passives give nothing. Works on the client too,
+ * raised two-handed weapon's cooldown. Their procs reach the proc engine through {@link #procs} (RLM-540), each with its
+ * internal cooldown per target and its id {@code realmforge:spell/<namespace>/proc/<n>/<path>}. Mobs know no spells, so their passives give nothing. Works on the client too,
  * from the synced spellbook, for the tooltips.
  *
  * <p>Modifier ids are unique per spell and position: {@code realmforge:spell/<namespace>/<n>/<path>} for the n-th
@@ -87,6 +88,30 @@ public final class Passives {
     public static int blockCooldownReductionTicks(Player player) {
         return active(player).stream().mapToInt(known -> known.passive().blockCooldownReductionAt(known.level()))
                 .sum();
+    }
+
+    /**
+     * The procs {@code holder}'s passive spells give now, at their ranks (RLM-540): a {@link Procs.Source}. Each runs its
+     * internal cooldown on every target apart; one that casts a spell casts it at the passive's rank.
+     */
+    public static List<Proc> procs(LivingEntity holder) {
+        List<Proc> procs = new ArrayList<>();
+        for (Known known : active(holder)) {
+            List<Passive.Proc> own = known.passive().procs();
+            for (int n = 0; n < own.size(); n++) {
+                Passive.Proc proc = own.get(n);
+                procs.add(new Proc(procId(known.spell().key().identifier(), n), proc.trigger(),
+                        proc.chanceAt(known.level()), proc.cooldownTicks(), proc.actionAt(known.level()),
+                        proc.effect().flatMap(Holder::unwrapKey).map(ResourceKey::identifier),
+                        proc.spell().map(ResourceKey::identifier), true));
+            }
+        }
+        return procs;
+    }
+
+    /** The id of the n-th proc of the passive spell {@code spell}: {@code realmforge:spell/<ns>/proc/<n>/<path>}. */
+    public static Identifier procId(Identifier spell, int n) {
+        return Realmforge.id(PREFIX + spell.getNamespace() + "/proc/" + n + "/" + spell.getPath());
     }
 
     /** The modifiers {@code player}'s passive spells give now, skipping any whose amount is 0 at the rank. */

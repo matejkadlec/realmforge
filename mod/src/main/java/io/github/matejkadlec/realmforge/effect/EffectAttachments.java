@@ -21,6 +21,25 @@ public final class EffectAttachments {
                     .serialize(EffectSources.CODEC.fieldOf("value"))
                     .build());
 
+    /**
+     * {@code realmforge:effect_stacks}: the stacks of damage over time the holder carries ({@link EffectStacks},
+     * RLM-539). Saved, never synced, not copied on death.
+     */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<EffectStacks>> STACKS =
+            ATTACHMENTS.register("effect_stacks", () -> AttachmentType.builder(EffectStacks::new)
+                    .serialize(EffectStacks.CODEC.fieldOf("value"))
+                    .build());
+
+    /**
+     * {@code realmforge:effect_looks}: how clients draw the holder because of its effects ({@link EffectLooks},
+     * RLM-539). Saved, synced to every tracking player, not copied on death.
+     */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<EffectLooks>> LOOKS =
+            ATTACHMENTS.register("effect_looks", () -> AttachmentType.builder(() -> EffectLooks.NONE)
+                    .serialize(EffectLooks.CODEC.fieldOf("value"))
+                    .sync(EffectLooks.STREAM_CODEC)
+                    .build());
+
     private EffectAttachments() {
     }
 

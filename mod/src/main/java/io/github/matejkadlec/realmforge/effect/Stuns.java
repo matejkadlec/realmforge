@@ -32,8 +32,8 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
  *   ({@code spell/SpellCaster}, {@code spell/Casting}), but the spells cast while stunned (Will To Survive).</li>
  * </ul>
  *
- * Ordinary mobs have no stun immunity and no diminishing returns (Matěj, 2026-10-24, RLM-392); bosses get theirs one
- * by one later.
+ * Ordinary mobs have no stun immunity and no diminishing returns (Matěj, 2026-10-24, RLM-392); a boss gets its
+ * immunities one by one ({@code immune_to} in {@code content/bosses/}, RLM-539).
  */
 public final class Stuns {
     private Stuns() {

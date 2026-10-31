@@ -1,12 +1,14 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
 import io.github.matejkadlec.realmforge.effect.Periodic;
+import io.github.matejkadlec.realmforge.effect.StackedDamage;
 import io.github.matejkadlec.realmforge.effect.StatusEffect;
 import io.github.matejkadlec.realmforge.generated.GeneratedEffects;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedEffectExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedEffectExpectations.EffectExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedEffectExpectations.ModifierExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedEffectExpectations.PeriodicExpectation;
+import io.github.matejkadlec.realmforge.qa.generated.GeneratedEffectExpectations.StacksExpectation;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -22,7 +24,7 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 /**
  * C3c (RLM-26): every status effect of {@code content/effects/} is registered as its YAML says
  * ({@link GeneratedEffectExpectations}): category, particle colour, modifiers at the first level, damage or healing
- * over time, and a name in the lang file.
+ * over time, stacks of damage over time (RLM-539), and a name in the lang file.
  */
 public final class ContentEffectGameTests {
     private ContentEffectGameTests() {
@@ -45,6 +47,8 @@ public final class ContentEffectGameTests {
             helper.assertValueEqual(status.getColor(), expected.color(), id + " colour");
             helper.assertValueEqual(status.periodic().map(ContentEffectGameTests::periodic), expected.periodic(),
                     id + " periodic");
+            helper.assertValueEqual(status.stacks().map(ContentEffectGameTests::stacks), expected.stacks(),
+                    id + " stacks");
             helper.assertValueEqual(status.isStun(), expected.stun(), id + " stuns");
             List<ModifierExpectation> modifiers = new ArrayList<>();
             status.createModifiers(0, (attribute, modifier) -> modifiers.add(new ModifierExpectation(
@@ -67,6 +71,11 @@ public final class ContentEffectGameTests {
             }
         });
         return amount[0];
+    }
+
+    private static StacksExpectation stacks(StackedDamage stacks) {
+        return new StacksExpectation(stacks.school().identifier().toString(), stacks.intervalTicks(),
+                stacks.ignoresArmor());
     }
 
     private static PeriodicExpectation periodic(Periodic periodic) {

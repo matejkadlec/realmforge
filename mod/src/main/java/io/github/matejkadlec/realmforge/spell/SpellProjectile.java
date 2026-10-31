@@ -27,6 +27,7 @@ import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -72,6 +73,7 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
     private List<SpellEffect> effects = List.of();
     private Optional<TagKey<EntityType<?>>> spares = Optional.empty();
     private Optional<ProjectileEffect.Impact> impact = Optional.empty();
+    private Optional<ProjectileEffect.Splash> splash = Optional.empty();
     /** The texture of its appearance, on the server and its clients; empty for a trail of sparks. */
     private Optional<Identifier> texture = Optional.empty();
     /** How many ticks it flies before it fizzles; 0 for no lifetime. */
@@ -98,6 +100,7 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
         entity.effects = projectile.effects();
         entity.spares = projectile.spares();
         entity.impact = projectile.impact();
+        entity.splash = projectile.splash();
         entity.texture = projectile.appearance().flatMap(appearance -> context.spell().unwrapKey())
                 .map(SpellVisuals::projectileTexture);
         entity.lifetimeTicks = projectile.lifetimeTicks().orElse(0);
@@ -262,10 +265,40 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
                 for (SpellEffect effect : effects) {
                     effect.apply(context, target);
                 }
+                splash.ifPresent(explosion -> splash(serverLevel, context, living, explosion));
             }
             impact(serverLevel, position().add(0, getBbHeight() / 2, 0));
         }
         discard();
+    }
+
+    /**
+     * Its small explosion round {@code hit} (RLM-399): the caster's other enemies within the radius of the target's
+     * hitbox take its effects, the damage at the splash's share, the rest at full strength, pushed out from the target;
+     * its impact's particles burst over the whole of it.
+     */
+    private void splash(ServerLevel level, EffectContext context, LivingEntity hit, ProjectileEffect.Splash explosion) {
+        LivingEntity caster = context.caster();
+        AABB reach = hit.getBoundingBox().inflate(explosion.radius());
+        List<LivingEntity> around = level.getEntitiesOfClass(LivingEntity.class, reach, entity -> entity != hit
+                && entity != caster && entity.isAlive() && !entity.isSpectator() && !Targets.allied(caster, entity)
+                && entity.canBeSeenAsEnemy() && !spared(entity));
+        EffectContext share = context.scaled(explosion.damage());
+        Vec3 middle = hit.getBoundingBox().getCenter();
+        for (LivingEntity entity : around) {
+            Vec3 out = entity.getBoundingBox().getCenter().subtract(middle);
+            SpellTarget target = SpellTarget.hit(entity, out.lengthSqr() > 1e-6 ? out.normalize()
+                    : getDeltaMovement().normalize());
+            for (SpellEffect effect : effects) {
+                effect.apply(share, target);
+            }
+        }
+        impact.flatMap(ProjectileEffect.Impact::particles).map(BuiltInRegistries.BLOCK::getValue)
+                .filter(block -> block != Blocks.AIR)
+                .ifPresent(block -> level.sendParticles(
+                        new BlockParticleOption(ParticleTypes.BLOCK, block.defaultBlockState()), middle.x, middle.y,
+                        middle.z, IMPACT_PARTICLES * 2, explosion.radius() / 2, hit.getBbHeight() / 3,
+                        explosion.radius() / 2, 0.15));
     }
 
     /** A block stops it, without its effects and without touching the block (no bell, no target block). */

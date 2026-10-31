@@ -80,8 +80,14 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   Battle Shout; Frostbolt, Fireball, Arcane Missiles, Ice Barrier), the first spells of rank 5, and the Human's
   Will To Survive in the racial slot and Sword Specialization; melee spells need a melee weapon in the main hand and
   Shield Bash a shield (RLM-499), stuns stop mobs and casts, crit chance above 100 % turns into crit damage, and a
-  player's channel ticks every 0.5 s (RLM-518). Spells scale by system C (RLM-534): an amount plus a coefficient of
-  the caster's Spell Power (points) or Attack Damage, both per rank, × (1 + School Power + passives); passive spells
+  player's channel ticks every 0.5 s (RLM-518). Slam, Reckless Strike and Shield Bash are swings with hit shapes in
+  front of the player (Better Combat's sword swing, the default, and its stab, at the player's melee reach, so they grow
+  with it), counted down on the cast bar, that hit every enemy in them at their hit moment, never through walls, and the
+  Mage's bolts splash half their damage within a block (RLM-399); Frozen roots and shows ice, Bleeding keeps a stack per
+  caster's spell, bosses have per-boss immunities (RLM-539); spells may have windows (after a block, after a kill),
+  target health conditions and extra rage, and passive spells' procs have internal cooldowns per target (RLM-540).
+  Spells scale by system C (RLM-534): an amount plus a coefficient of the caster's Spell Power (points) or Attack
+  Damage, both per rank, × (1 + School Power + passives); passive spells
   (RLM-541) are learned with ranks but never cast: modifiers, more damage for named spells, crit chance against Frozen
   targets, a shorter two-handed block cooldown.
   Casters have their gear (RLM-172, RLM-197), from an item's `gear` in YAML: seven two-handed wands from wood to

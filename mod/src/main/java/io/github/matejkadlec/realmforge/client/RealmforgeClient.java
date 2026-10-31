@@ -21,6 +21,8 @@ import io.github.matejkadlec.realmforge.client.input.NightVisionKey;
 import io.github.matejkadlec.realmforge.client.input.SpellKeys;
 import io.github.matejkadlec.realmforge.client.network.ClientPayloadHandlers;
 import io.github.matejkadlec.realmforge.client.render.CustomMobRenderers;
+import io.github.matejkadlec.realmforge.client.render.FrozenLook;
+import io.github.matejkadlec.realmforge.client.render.SwingShapes;
 import io.github.matejkadlec.realmforge.client.render.RealmPortalColors;
 import io.github.matejkadlec.realmforge.client.render.ScrollCharge;
 import io.github.matejkadlec.realmforge.client.render.SpellEntityRenderers;
@@ -74,6 +76,8 @@ public final class RealmforgeClient {
         TargetCircle.register();
         SpellEntityRenderers.register(modBus);
         CustomMobRenderers.register(modBus);
+        FrozenLook.register(modBus);
+        SwingShapes.register(modBus);
         RealmPortalColors.register(modBus);
         ScrollCharge.register(modBus);
         InstanceArrivalTitle.register();
